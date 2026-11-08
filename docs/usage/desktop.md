@@ -54,7 +54,7 @@ grafischen Desktop und die Swift-Kommandozeilenwerkzeuge von Apple
 für die Prüfung von Fenster und Quit.
 
 ```sh
-java build/InterlisJvmBuild.java build --module interlis-compiler-gui
+java build/jenesis/Make.java +interlis-compiler-gui
 java build/InterlisJvmBuild.java gui-run
 java build/InterlisJvmBuild.java gui-runtime
 java build/InterlisJvmBuild.java gui-package

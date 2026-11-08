@@ -38,7 +38,7 @@ class BuildExecutorDefault implements BuildExecutor {
                          String run,
                          String location,
                          Map<String, StepSummary> inherited) throws IOException {
-        this.target = Files.isDirectory(target) ? target : Files.createDirectory(target);
+        this.target = Files.createDirectories(target);
         this.timeout = timeout;
         this.algorithm = algorithm;
         this.hash = hash;

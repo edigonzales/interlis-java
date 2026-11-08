@@ -7,10 +7,21 @@ Gradle-Wrapper baut ausschliesslich TeaVM und GraalVM Web Image.
 
 ## JVM und Auslieferung
 
+```sh
+java build/jenesis/Make.java
+java build/jenesis/Make.java +interlis-compiler
+java '-Djenesis.test.filter=.*VersionScannerTest#detectsUnsupportedVersion' build/jenesis/Make.java +interlis-compiler
+```
+
+Der erste Aufruf baut und prüft alle JVM-Module. `+interlis-compiler`
+wählt die Compiler-Closure und die Tests des Compilers. Jenesis verwendet
+seinen Daemon und seine kompilierten Buildklassen automatisch wieder.
+Die JPMS-Tests verwenden die von Jenesis kompilierten Testklassen und
+starten sie als Patch des jeweiligen Produktmoduls. Die Produktdeskriptoren
+bleiben dabei unverändert.
+
 | Aufruf nach `java build/InterlisJvmBuild.java` | Ergebnis |
 |---|---|
-| `build` | JVM-Produkte und reguläre Tests |
-| `build --module interlis-compiler --tests '.*VersionScannerTest'` | Eine explizite Klassen- oder Methodenfilterung im angegebenen Modul |
 | `artifacts` | JVM-Produkte ohne Tests |
 | `conformance` | Gepinnte externe Codeberg-Suite für INTERLIS 2.3 und 2.4 |
 | `compiler-bindist` | Compiler-ZIP, Prüfung des entpackten Launchers und SHA256SUMS |

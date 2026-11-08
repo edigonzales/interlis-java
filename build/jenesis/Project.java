@@ -3598,7 +3598,11 @@ public record Project(
             }
             assembler = assembler.resources(resources);
         }
-        Project project = new Project(root, assembler, environment).plugins(projectPlugins);
+        MultiProjectAssembler<? super ProjectModuleDescriptor> configured =
+                environment.flag("project.interlis", Setting.PROJECT)
+                        ? build.jenesis.project.InterlisProject.assemble(environment, assembler)
+                        : assembler;
+        Project project = new Project(root, configured, environment).plugins(projectPlugins);
         String configuration = environment.getProperty("project.configuration", Setting.PROJECT);
         if (configuration != null) {
             project = project.configuration(locations(environment, "project.configuration", configuration, project).toArray(Path[]::new));
@@ -4715,6 +4719,7 @@ public record Project(
     }
 
     private static final String CATALOGUE = """
+                project.interlis|false|Apply the INTERLIS product packaging and JPMS test configuration
                 project.target|target|Folder the build writes its outputs to; a file a project provides names only a folder inside the project
                 project.reproduce||Build the selection a second time into this folder, which must be absent or empty, consulting and filling no build cache, then compare what every step wrote in both builds, printing a fingerprint over every step's output: a clean comparison deletes the folder, while a difference keeps it, without failing the build, and names the steps that wrote a different output from the same input first, and the steps handed that output after them, as jenesis.print.reproduce asks; read by Make.java and jenesis-make, not by Execute.java; a file a project provides names only a folder inside the project
                 project.await||Phases of the modules a module depends on that its build waits for, comma-separated, such as verify for their checks, so that a module builds only once the modules it depends on passed them; by default a build waits for their builds alone, and every phase runs as soon as what it reads is built
@@ -5066,7 +5071,16 @@ public record Project(
             watch(selectors);
             return Collections.emptyNavigableMap();
         }
-        return this.build(selectors);
+        var outputs = this.build(selectors);
+        if (environment.flag("project.interlis", Setting.PROJECT)
+                && !environment.flag("test.skip", Setting.PROJECT)
+                && environment.getProperty("test.filter", Setting.PROJECT) != null
+                && (selectors.length == 0 || Stream.of(selectors)
+                        .anyMatch(selector -> selector.equals("build") || selector.startsWith("+") && !selector.contains("/")))
+                && outputs.keySet().stream().noneMatch(key -> key.endsWith("/observed/test/executed"))) {
+            throw new IllegalStateException("No test module matched the requested filter");
+        }
+        return outputs;
     }
 
     public static SequencedMap<String, Path> perform(Map<String, String> keys,

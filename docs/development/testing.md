@@ -8,9 +8,9 @@ ausgeführte Prozesse, Rohberichte und bekannte Skips.
 
 ## Direkte Prüfungen
 
-- `java build/InterlisJvmBuild.java build` führt die regulären JVM-Tests aus.
-- `java build/InterlisJvmBuild.java build --module interlis-model` prüft ein Modul.
-- `java build/InterlisJvmBuild.java build --module interlis-compiler --tests '.*VersionScannerTest'`
+- `java build/jenesis/Make.java` führt die regulären JVM-Tests aus.
+- `java build/jenesis/Make.java +interlis-model` prüft ein Modul.
+- `java '-Djenesis.test.filter=.*VersionScannerTest' build/jenesis/Make.java +interlis-compiler`
   wählt eine JUnit-Klasse. `#method` schränkt die Auswahl auf eine Methode ein.
 - `java build/InterlisJvmBuild.java sdk-check` prüft installierte CLI, SDK und LSP.
   Der LSP-Prozesscheck benötigt Node.

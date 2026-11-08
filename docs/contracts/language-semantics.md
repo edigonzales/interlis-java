@@ -483,7 +483,7 @@ Der portable Compiler verwendet gepinnte Unicode-17.0.0-Gewichtungsintervalle
 und Hanguls kanonische Zerlegung, ohne Laufzeit-Normalizer und ohne neue
 Abhängigkeit. `UnicodeWeightsTest` prüft die Tabellenwerte und das vollständige
 explizite NFD-Orakel anhand der [gepinnten Unicode-Originale](../../testdata/reference/unicode/17.0.0/README.md).
-Den Test startet `java build/InterlisJvmBuild.java build --module interlis-compiler --tests '.*UnicodeWeightsTest'`.
+Den Test startet `java '-Djenesis.test.filter=.*UnicodeWeightsTest' build/jenesis/Make.java +interlis-compiler`.
 Klassen von kombinierenden Zeichen werden nicht aus der
 allgemeinen Zeichenkategorie Mn/Mc abgeleitet. NFKD-Kompatibilitätszerlegungen
 werden nicht angewendet. Die Längenregel gilt in beiden Sprachversionen;
@@ -1002,7 +1002,7 @@ Der portable Compiler verwendet gepinnte Unicode-17.0.0-Gewichtungsintervalle
 und Hanguls kanonische Zerlegung, ohne Laufzeit-Normalizer und ohne neue
 Abhängigkeit. `UnicodeWeightsTest` prüft die Tabellenwerte und das vollständige
 explizite NFD-Orakel anhand der [gepinnten Unicode-Originale](../../testdata/reference/unicode/17.0.0/README.md).
-Den Test startet `java build/InterlisJvmBuild.java build --module interlis-compiler --tests '.*UnicodeWeightsTest'`.
+Den Test startet `java '-Djenesis.test.filter=.*UnicodeWeightsTest' build/jenesis/Make.java +interlis-compiler`.
 Klassen von kombinierenden Zeichen werden nicht aus der
 allgemeinen Zeichenkategorie Mn/Mc abgeleitet. NFKD-Kompatibilitätszerlegungen
 werden nicht angewendet. Bisheriges Codepoint-Längenverhalten in 2.3 bleibt

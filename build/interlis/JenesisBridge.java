@@ -135,76 +135,12 @@ public final class JenesisBridge {
 
     public static BuildOutcome run(BuildRequest request) throws Exception {
         Path root = request.root();
-        Path cliRevision = cliRevisionResource(root);
         var settings = new LinkedHashMap<>(Make.settings(root).keys());
         settings.put("maven.local", "");
         settings.put("module.local", "");
-        settings.put("variable.repoRoot", root.toString());
-        settings.put("variable.testdataRoot", root.resolve("testdata").toString());
-        if (request.tests() != null) settings.put("test.filter", JpmsTestRun.selections(request.tests()).stream()
-                .map(test -> request.module() + "/" + test).collect(java.util.stream.Collectors.joining(",")));
-        var env = new Environment(settings).root(root);
-        Set<String> discovered = java.util.concurrent.ConcurrentHashMap.newKeySet();
-        var project = Project.ofEnvironment(env, root).assembler((descriptor, repositories, resolvers) -> {
-            String module = descriptor.location().getFileName().toString();
-            if (!JvmBuildInputs.MODULES.contains(module)) throw new IllegalStateException("Foreign project: " + descriptor.location());
-            discovered.add(module);
-            var local = new LinkedHashMap<>(settings);
-            // Keep existing relative file accesses and Gradle's module working directory.
-            local.put("process.directory", root.resolve(module).toString());
-            var assembler = InferredMultiProjectAssembler.ofEnvironment(new Environment(local).root(root));
-            if (module.equals("interlis-compiler") && !descriptor.name().startsWith("test")) {
-                var resources = new LinkedHashMap<Path, Path>();
-                resources.put(Path.of("META-INF/licenses/UNICODE-LICENSE.txt"),
-                        root.resolve("testdata/reference/unicode/17.0.0/UNICODE-LICENSE.txt"));
-                assembler = assembler.resources(resources);
-            }
-            if (module.equals("interlis-compiler-cli") && descriptor.name().equals("module-" + module)
-                    && cliRevision != null) {
-                var resources = new LinkedHashMap<Path, Path>();
-                resources.put(Path.of("guru/interlis/cli/build-revision.txt"), cliRevision);
-                assembler = assembler.resources(resources);
-            }
-            if(descriptor.test()&&Files.isRegularFile(root.resolve(module+"/src/main/java/module-info.java"))) {
-                boolean selected = request.profile().equals("build")
-                        && (request.module() == null || module.equals(request.module()));
-                Map<String,String> testSettings=Map.copyOf(local);
-                assembler=assembler.observe(observation->observation.test(nativeTests->{
-                    try{return JpmsTestRun.observe(nativeTests, root, module, testSettings, selected);}
-                    catch(java.io.IOException failure){throw new java.io.UncheckedIOException(failure);}
-                }));
-            }
-            var assembly=assembler.apply(descriptor, repositories, resolvers);
-            if(descriptor.name().equals("module-"+module)) {
-                var sourceEnvironment=new Environment(local).root(root);
-                // Native Jar step, with source-only grammar bindings and an
-                // internal source archive that retains stage=false.
-                assembly=assembly.nest("source","",stock->(executor,inherited)->{
-                    var wanted=new TreeSet<String>();
-                    // Bind only Java compilation sources, matching Gradle's Java source set.
-                    // Finder metadata such as .DS_Store is not a maintained source.
-                    for(String name:descriptor.resources())wanted.add(localIdentity(name));
-                    for(String name:descriptor.manifests())wanted.add(localIdentity(name));
-                    wanted.addAll(List.of("prepare","binary","include"));
-                    var required=new ArrayList<String>();
-                    for(String key:inherited.sequencedKeySet()) {
-                        String name=localIdentity(key);if(name.startsWith("build/"))name=name.substring(6);
-                        String identity=name;
-                        if(wanted.stream().anyMatch(w->identity.equals(w)||identity.startsWith(w+"/")))required.add(key);
-                    }
-                    executor.addSource("maintained-java",build.jenesis.step.Bind.asSources().extensions(Set.of(".java")),root.resolve(module+"/src/main/java"));required.add("maintained-java");
-                    if(module.equals("interlis-compiler")) {
-                        executor.addSource("grammars",build.jenesis.step.Bind.asResources(),root.resolve(module+"/src/main/antlr"));required.add("grammars");
-                    }
-                    if(required.isEmpty())throw new IllegalStateException("Missing native source bindings: "+inherited.keySet()+" expected "+wanted);
-                    executor.addStep("archive",build.jenesis.step.Jar.ofEnvironment(sourceEnvironment,
-                            build.jenesis.step.ProcessHandler.Factory.ofEnvironment(sourceEnvironment),build.jenesis.step.Jar.Sort.SOURCES),required.stream());
-                    var inventoryInputs=new ArrayList<>(required);inventoryInputs.add("archive");
-                    executor.addStep("inventory",new build.jenesis.step.Inventory().supplement(true),inventoryInputs.stream());
-                });
-            }
-            return assembly;
-        });
+        if (!request.profile().equals("build")) settings.put("test.skip", "true");
+        if (request.tests() != null) settings.put("test.filter", request.module() + "/" + request.tests());
+        var project = Project.ofEnvironment(new Environment(settings).root(root), root);
         if(request.profile().equals("artifacts"))project=project.tests(false);
         String[] selectors = request.profile().equals("artifacts") && request.module()==null ? new String[]{"stage"} : request.module() == null ? new String[]{"build"}
                 : new String[]{"+" + request.module(), "build/maven/compose/module/source-module-" + request.module()};
@@ -212,8 +148,6 @@ public final class JenesisBridge {
         var results = new LinkedHashMap<>(project.build(selectors));
         results.keySet().removeIf(key -> !key.endsWith("/inventory") && !key.equals("stage/maven"));
         if (results.isEmpty()) throw new IllegalStateException("Empty engine result");
-        if (!discovered.equals(Set.copyOf(JvmBuildInputs.MODULES)))
-            throw new IllegalStateException("Discovery differs from the registered module scope: " + discovered);
         var index = new Properties();
         index.setProperty("scope", request.module() == null ? "all" : request.module());
         index.setProperty("tests", Objects.toString(request.tests(), "normal"));
@@ -255,32 +189,6 @@ public final class JenesisBridge {
 
     private static List<Path> runtimeClasspath(String module,BuildOutcome outcome,boolean test) throws Exception {
         return inventoryResult(outcome,module,test).paths("runtime");
-    }
-
-    @SuppressWarnings("unchecked")
-    private static String localIdentity(String value) {
-        while(value.startsWith("../"))value=value.substring(3);return value;
-    }
-
-    private static Path cliRevisionResource(Path root) throws Exception {
-        String revision;
-        try {
-            revision = git(root, "rev-parse", "--verify", "HEAD");
-        } catch (java.io.IOException | IllegalStateException unavailable) {
-            return null;
-        }
-        if (!revision.matches("[0-9a-f]{40}|[0-9a-f]{64}")) return null;
-        Path resource = JvmBuildInputs.requireOutputRoot(root, "target/jenesis-jvm/build-revisions/" + revision + ".txt");
-        Files.createDirectories(resource.getParent());
-        if (!Files.exists(resource) || !Files.readString(resource).equals(revision)) Files.writeString(resource, revision);
-        return resource;
-    }
-
-    private static String git(Path root,String... args) throws Exception {
-        var command=new ArrayList<String>();command.add("git");command.addAll(List.of(args));
-        var process=new ProcessBuilder(command).directory(root.toFile()).redirectErrorStream(true).start();
-        String output=new String(process.getInputStream().readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).trim();
-        if(process.waitFor()!=0)throw new IllegalStateException("Cannot inspect Git provenance");return output;
     }
 
     static Path requireArtifact(Path engine, Path output, String relative) throws Exception {
