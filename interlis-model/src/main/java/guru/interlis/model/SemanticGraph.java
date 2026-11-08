@@ -485,12 +485,13 @@ public final class SemanticGraph {
     }
 
     private void collectType(TypeId id, Set<TypeId> target, Set<ExpressionId> targetExpressions) {
-        if (!target.add(id)) {
-            return;
-        }
-        TypeDescriptor type = types.get(id);
-        if (type == null) {
-            return;
+        TypeDescriptor type;
+        while (true) {
+            if (!target.add(id)) return;
+            type = types.get(id);
+            if (type == null) return;
+            if (!(type instanceof EnumerationType enumeration) || enumeration.baseType().isEmpty()) break;
+            id = enumeration.baseType().orElseThrow();
         }
         switch (type) {
             case AttributePathType path -> {
@@ -502,7 +503,6 @@ public final class SemanticGraph {
             }
             case CollectionType collection -> collectType(collection.elementType(), target, targetExpressions);
             case OidType oid -> oid.valueType().ifPresent(t -> collectType(t, target, targetExpressions));
-            case EnumerationType e -> e.baseType().ifPresent(t -> collectType(t, target, targetExpressions));
             case DomainReferenceType reference -> {
                 // The target domain symbol is selected with its model; only the
                 // type chain is needed here.

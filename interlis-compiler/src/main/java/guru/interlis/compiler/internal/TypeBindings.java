@@ -61,6 +61,7 @@ import guru.interlis.syntax.TemporalTypeSyntax;
 import guru.interlis.syntax.TextTypeSyntax;
 import guru.interlis.syntax.TypeSyntax;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -156,75 +157,91 @@ final class TypeBindings {
         return type;
     }
 
-    /** Bind referenced types before expressions without recursively building their constraints. */
-    TypeId domainType(DeclInfo decl) {
-        TypeId existing = state.declaredType(decl.id());
+    /** Bind the base chain before completing descriptors and leave constraint binding to declarations. */
+    TypeId domainType(DeclInfo declaration) {
+        TypeId existing = state.declaredType(declaration.id());
         if (existing != null) return existing;
-        work.checkpoint();
-        if (!resolvingDomainTypes.add(decl.id())) {
-            TypeId error = nextTypeId();
-            state.defineType(new ErrorType(error, decl.origin(),
-                    List.of(diagnostics.emitRule(decl, "cyclic domain type dependency", "DOMAIN_TYPE_CYCLE"))));
-            state.bindDeclaredType(decl.id(), error);
-            return error;
-        }
+        var pending = new ArrayDeque<DomainFrame>();
         try {
-            DomainDeclarationSyntax syntax = (DomainDeclarationSyntax) decl.syntax();
-            Optional<SymbolId> base=syntax.baseDomain().flatMap(name->names.bindTarget(decl,name,Set.of(SymbolKind.DOMAIN),ReferenceUsage.BASE_TYPE,new ArrayList<>()));
-
-            base.ifPresent(id -> {
-                inheritance.bindBase(decl.id(), id);
-                index.byId(id).ifPresent(this::domainType);
-                if ((state.symbol(id) != null && state.symbol(id).header().has(guru.interlis.model.Modifier.FINAL))
-                        || index.byId(id).filter(d -> d.modifiers().contains(guru.interlis.model.Modifier.FINAL)).isPresent())
-                    diagnostics.emitRule(decl, "cannot extend FINAL domain", "DOMAIN_FINAL");
-            });
-            TypeId type;
-            if (syntax.type() instanceof GenericTypeSyntax generic && "INHERITED".equals(generic.name()) && base.isPresent()) {
-                type = nextTypeId();
-                state.defineType(new DomainReferenceType(type, new Origin.DeclaredOrigin(syntax.type().range()), base.orElseThrow()));
-            } else type = buildType(syntax.type(), decl.id(), decl.sourceId());
-            TypeDescriptor inherited = base.map(state::declaredType).map(this::effectiveDescriptor).orElse(null);
-            inheritTypeProperties(type, syntax.type(), inherited,decl);
-            if (syntax.type() instanceof LineTypeSyntax) lineForms.effective(type, inherited, decl);
-            else if (inherited instanceof GeometryType && !(effectiveDescriptor(type) instanceof GeometryType))
-                diagnostics.emitRule(decl, "geometry base requires a geometric extension", "GEOMETRY_EXTENSION");
-            if (effectiveDescriptor(type) instanceof NumericType numeric && inherited instanceof NumericType parent) {
-                var relation = units.numericExtension(numeric, parent, decl.language());
-                if (relation.decision() == guru.interlis.model.RelationDecision.DISALLOWED)
-                    diagnostics.emitRule(decl, "numeric type does not specialize its base: " + relation.reason(), relation.reason().startsWith("numeric-unit") || relation.reason().contains("unit-") ? "NUMERIC_UNIT_EXTENSION" : "NUMERIC_EXTENSION");
+            DeclInfo current = declaration;
+            while (current != null && state.declaredType(current.id()) == null) {
+                work.checkpoint();
+                if (resolvingDomainTypes.contains(current.id())) {
+                    TypeId error = nextTypeId();
+                    state.defineType(new ErrorType(error, current.origin(),
+                            List.of(diagnostics.emitRule(current, "cyclic domain type dependency", "DOMAIN_TYPE_CYCLE"))));
+                    state.bindDeclaredType(current.id(), error);
+                    break;
+                }
+                DeclInfo owner = current;
+                var syntax = (DomainDeclarationSyntax) owner.syntax();
+                var base = syntax.baseDomain().flatMap(name -> names.bindTarget(owner, name,
+                        Set.of(SymbolKind.DOMAIN), ReferenceUsage.BASE_TYPE, new ArrayList<>()));
+                pending.push(new DomainFrame(owner, base));
+                resolvingDomainTypes.add(owner.id());
+                base.ifPresent(id -> inheritance.bindBase(owner.id(), id));
+                current = base.flatMap(index::byId).orElse(null);
             }
-            // Recursive cycle recovery can assign the declaration an error type while its descriptor is built.
-            TypeId assigned = state.declaredType(decl.id());
-            if (assigned == null) {
-                state.bindDeclaredType(decl.id(), type);
-                assigned = type;
-            } else if (!(state.type(assigned) instanceof ErrorType error && error.origin().equals(decl.origin()))) {
-                throw new IllegalStateException("Domain type already bound: " + decl.id());
+            while (!pending.isEmpty()) {
+                work.checkpoint();
+                var frame = pending.peek();
+                finishDomainType(frame.declaration(), frame.base());
+                resolvingDomainTypes.remove(pending.pop().declaration().id());
             }
-            if (syntax.type() instanceof EnumerationTypeSyntax enumeration) {
-                if (base.isPresent() && inherited == null) diagnostics.emitRule(decl, "enumeration base must already be defined", "ENUM_BASE");
-                state.replaceType(effectiveEnumeration(type, enumeration, inherited, decl));
-            }
-            TypeDescriptor own=effectiveDescriptor(type);
-            if(inherited!=null && !(inherited instanceof NumericType && own instanceof NumericType)
-                    && !(own instanceof GeometryType) && !(inherited instanceof guru.interlis.model.OidType)
-                    && !(own instanceof ErrorType) && !(inherited instanceof ErrorType)) {
-                var relation=extension(own,inherited,decl.language());
-                if(relation.decision()==guru.interlis.model.RelationDecision.DISALLOWED)
-                    diagnostics.emitRule(decl,"domain does not specialize its base: "+relation.reason(),"TYPE_EXTENSION");
-            }
-            if (base.isPresent() && effectiveDescriptor(state.declaredType(base.orElseThrow())) instanceof guru.interlis.model.OidType oid
-                    && (Optional.ofNullable(state.symbol(base.orElseThrow()))
-                            .filter(s -> s.name().value().equals("INTERLIS.NOOID")).isPresent()
-                    || oid.oidKind() != guru.interlis.model.OidKind.ANY
-                    || !(effectiveDescriptor(type) instanceof guru.interlis.model.OidType derived)
-                    || derived.oidKind() == guru.interlis.model.OidKind.ANY))
-                diagnostics.emitRule(decl, "concrete OID domain cannot be extended", "OID_EXTENSION");
-            return assigned;
+            return state.declaredType(declaration.id());
         } finally {
-            resolvingDomainTypes.remove(decl.id());
+            while (!pending.isEmpty()) resolvingDomainTypes.remove(pending.pop().declaration().id());
         }
+    }
+
+    private record DomainFrame(DeclInfo declaration, Optional<SymbolId> base) { }
+
+    private void finishDomainType(DeclInfo decl, Optional<SymbolId> base) {
+        var syntax = (DomainDeclarationSyntax) decl.syntax();
+        if (base.filter(inheritance::isFinalDeclaration).isPresent()) {
+            diagnostics.emitRule(decl, "cannot extend FINAL domain", "DOMAIN_FINAL");
+        }
+        TypeId type;
+        if (syntax.type() instanceof GenericTypeSyntax generic && "INHERITED".equals(generic.name()) && base.isPresent()) {
+            type = nextTypeId();
+            state.defineType(new DomainReferenceType(type, new Origin.DeclaredOrigin(syntax.type().range()), base.orElseThrow()));
+        } else type = buildType(syntax.type(), decl.id(), decl.sourceId());
+        TypeDescriptor inherited = base.map(state::declaredType).map(this::effectiveDescriptor).orElse(null);
+        inheritTypeProperties(type, syntax.type(), inherited,decl);
+        if (syntax.type() instanceof LineTypeSyntax) lineForms.effective(type, inherited, decl);
+        else if (inherited instanceof GeometryType && !(effectiveDescriptor(type) instanceof GeometryType))
+            diagnostics.emitRule(decl, "geometry base requires a geometric extension", "GEOMETRY_EXTENSION");
+        if (effectiveDescriptor(type) instanceof NumericType numeric && inherited instanceof NumericType parent) {
+            var relation = units.numericExtension(numeric, parent, decl.language());
+            if (relation.decision() == guru.interlis.model.RelationDecision.DISALLOWED)
+                diagnostics.emitRule(decl, "numeric type does not specialize its base: " + relation.reason(), relation.reason().startsWith("numeric-unit") || relation.reason().contains("unit-") ? "NUMERIC_UNIT_EXTENSION" : "NUMERIC_EXTENSION");
+        }
+        // Re-entry during type construction may already have bound the cycle error.
+        TypeId assigned = state.declaredType(decl.id());
+        if (assigned == null) {
+            state.bindDeclaredType(decl.id(), type);
+        } else if (!(state.type(assigned) instanceof ErrorType error && error.origin().equals(decl.origin()))) {
+            throw new IllegalStateException("Domain type already bound: " + decl.id());
+        }
+        if (syntax.type() instanceof EnumerationTypeSyntax enumeration) {
+            if (base.isPresent() && inherited == null) diagnostics.emitRule(decl, "enumeration base must already be defined", "ENUM_BASE");
+            state.replaceType(effectiveEnumeration(type, enumeration, inherited, decl));
+        }
+        TypeDescriptor own=effectiveDescriptor(type);
+        if(inherited!=null && !(inherited instanceof NumericType && own instanceof NumericType)
+                && !(own instanceof GeometryType) && !(inherited instanceof guru.interlis.model.OidType)
+                && !(own instanceof ErrorType) && !(inherited instanceof ErrorType)) {
+            var relation=extension(own,inherited,decl.language());
+            if(relation.decision()==guru.interlis.model.RelationDecision.DISALLOWED)
+                diagnostics.emitRule(decl,"domain does not specialize its base: "+relation.reason(),"TYPE_EXTENSION");
+        }
+        if (base.isPresent() && effectiveDescriptor(state.declaredType(base.orElseThrow())) instanceof guru.interlis.model.OidType oid
+                && (Optional.ofNullable(state.symbol(base.orElseThrow()))
+                        .filter(s -> s.name().value().equals("INTERLIS.NOOID")).isPresent()
+                || oid.oidKind() != guru.interlis.model.OidKind.ANY
+                || !(effectiveDescriptor(type) instanceof guru.interlis.model.OidType derived)
+                || derived.oidKind() == guru.interlis.model.OidKind.ANY))
+            diagnostics.emitRule(decl, "concrete OID domain cannot be extended", "OID_EXTENSION");
     }
 
     private EnumerationType effectiveEnumeration(TypeId id, EnumerationTypeSyntax syntax,

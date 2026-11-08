@@ -231,6 +231,13 @@ oder verschärft: Deren ursprüngliche Marker und Identitäten bleiben sichtbar.
 <a id="typen-und-ausdrücke"></a>
 ### Typen und Ausdrücke
 
+Die Vorbindung von Domänenbasen verarbeitet lange EXTENDS-Ketten mit einem
+laufgebundenen Arbeitsstapel. Aktive Deklarationen erkennen Rückkanten auch
+bei Wiedereintritt aus einem Typkörper. Domänenconstraints werden anschliessend
+an den abgeschlossenen Typ gebunden. Die Schemasicht verfolgt die Basistypen
+effektiver Enumerationen iterativ. Arbeitsbudget und Benutzerabbruch gelten
+für die Vorbindung und den Typabschluss.
+
 `TypeResolver.resolve` delegiert auf kleine Fachregeln wie `NumericTypeRules`, `EnumerationRules`, `GeometryTypeRules`, `ReferenceTypeRules`, `FormattedTypeRules` und `GenericBindingRules`. Diese Dienste rufen die Relationselemente aus05 auf und ergänzen kontextbezogene Diagnostik. Methoden und Tests werden je Fachfamilie benannt; eine monolithische mehrere tausend Zeilen lange Visitor-Methode ist zu vermeiden.
 
 Seit API 0.3 umfasst `BinaryOperator` bei Arithmetik die Operatoren
