@@ -68,7 +68,7 @@ final class ImportBinder {
                 if ("INTERLIS".equals(site.modelName())) {
                     continue;
                 }
-                ImportBinding binding = bindings.get(siteKey(model, site));
+                ImportBinding binding = bindings.get(key(site.range(), site.modelName()));
                 if (binding == null) {
                     DiagnosticId id = missing(site, collector);
                     diagnostics.add(id);
@@ -87,7 +87,7 @@ final class ImportBinder {
                                 resolved.target().modelName(),
                                 resolved.target().modelVersion(),
                                 resolved.target().declarationOffset());
-                        if (target.isEmpty()) {
+                        if (target.isEmpty() || !target.get().name().equals(site.modelName())) {
                             DiagnosticId id = collector.emit(DiagnosticDraft.of(
                                             new DiagnosticCode("ILI-RES-0004"), Severity.ERROR,
                                             Phase.SOURCE_RESOLUTION,
@@ -162,10 +162,6 @@ final class ImportBinder {
             result.put(key, binding);
         }
         return result;
-    }
-
-    private String siteKey(ModelDecl model, ImportSyntax site) {
-        return key(site.range(), site.modelName());
     }
 
     private String key(guru.interlis.source.SourceRange range, String importedModel) {

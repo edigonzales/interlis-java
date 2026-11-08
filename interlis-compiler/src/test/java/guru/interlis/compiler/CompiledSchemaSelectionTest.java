@@ -1,11 +1,15 @@
 package guru.interlis.compiler;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.ScopeId;
+import guru.interlis.model.SymbolRef;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
 import guru.interlis.syntax.SyntaxSnapshot;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -52,6 +56,72 @@ class CompiledSchemaSelectionTest {
             END Unrelated.
             GARBAGE
             """;
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void referenceOccurrencesBelongToTheSelectedModels(boolean sharedSource) {
+        String header = "INTERLIS 2.4;\n";
+        String rootModel = """
+                MODEL Root AT "x" VERSION "1" =
+                  IMPORTS Base;
+                  STRUCTURE Holder = label : INTERLIS.NAME; value : Base.D; END Holder;
+                END Root.
+                """;
+        String otherModel = """
+                MODEL Other AT "x" VERSION "1" =
+                  STRUCTURE Holder = label : INTERLIS.NAME; END Holder;
+                END Other.
+                """;
+        var root = source("root.ili", header + rootModel + (sharedSource ? otherModel : ""));
+        var other = sharedSource ? root : source("other.ili", header + otherModel);
+        var base = source("base.ili", header + """
+                MODEL Base AT "x" VERSION "1" =
+                  DOMAIN D = TEXT;
+                  STRUCTURE Holder = label : INTERLIS.NAME; END Holder;
+                END Base.
+                """);
+        var sources = new LinkedHashMap<SourceId, SourceText>();
+        for (var source : List.of(root, other, base)) sources.put(source.id(), source);
+        var binding = CompilerTestSupport.binding(CompilerTestSupport.parse(root), "Base", base,
+                CompilerTestSupport.parse(base));
+        var options = CompilerOptions.defaults();
+        var request = CompilerTestSupport.request(List.of("Root"), sources, List.of(binding), options);
+        var engine = CompilerEngines.create();
+        var token = CancellationToken.none();
+        var outcome = engine.compile(request, token);
+        var success = assertInstanceOf(CompilationOutcome.Succeeded.class, outcome, () -> outcome instanceof CompilationOutcome.Rejected rejected
+                        ? rejected.analysis().diagnostics().toString() : outcome.toString());
+        var schema = success.schema();
+        var graph = schema.semanticGraph();
+        var fullGraph = success.analysis().semanticGraph();
+        var nameRef = graph.references().stream().filter(ref -> sources.get(ref.range().source()).slice(ref.range()).equals("INTERLIS.NAME"))
+                .findFirst().orElseThrow();
+        var name = nameRef.segments().getLast().target().orElseThrow();
+        var handle = new SymbolRef(schema.snapshotId(), name);
+        var fullRefs = fullGraph.references().stream().filter(ref -> sources.get(ref.range().source()).slice(ref.range()).equals("INTERLIS.NAME")).toList();
+        assertEquals(3, fullRefs.size());
+        var expected = fullRefs.stream().filter(ref -> ref.range().source().equals(base.id())
+                || ref.range().source().equals(root.id()) && ref.range().startOffset() < header.length() + rootModel.length())
+                .toList();
+        assertEquals(2, expected.size());
+        assertEquals(expected, graph.references().stream().filter(ref -> sources.get(ref.range().source()).slice(ref.range()).equals("INTERLIS.NAME")).toList());
+        assertEquals(expected, schema.queries().referencesTo(handle));
+        for (var ref : expected) {
+            assertTrue(graph.symbols().stream().anyMatch(s -> ScopeId.forOwner(s.id()).equals(ref.originalScope())));
+            assertEquals("INTERLIS.NAME", sources.get(ref.range().source()).text()
+                    .substring(ref.range().startOffset(), ref.range().endOffset()));
+        }
+        var imported = graph.references().stream().filter(ref -> sources.get(ref.range().source()).slice(ref.range()).equals("Base.D")).findFirst().orElseThrow();
+        assertTrue(fullGraph.references().contains(imported));
+        assertEquals(List.of("Base", "D"), imported.segments().stream().map(segment -> segment.text()).toList());
+        assertTrue(imported.segments().stream().allMatch(segment ->
+                segment.target().flatMap(graph::symbol).isPresent()));
+
+        var otherRequest = CompilerTestSupport.request(List.of("Other"), sources, List.of(binding), options);
+        var reuse = new AnalysisReuse(Optional.of(success.analysis()), success.analysis().syntaxSnapshots());
+        assertInstanceOf(CompilationOutcome.Succeeded.class, engine.compile(otherRequest, reuse, token));
+        assertEquals(expected, schema.queries().referencesTo(handle));
+    }
 
     @Test
     void unrelatedBrokenModelStaysOutsideTheCompiledClosure() {

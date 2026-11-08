@@ -1,17 +1,22 @@
 package guru.interlis.compiler;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.DomainSymbol;
+import guru.interlis.model.TextType;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
 import guru.interlis.syntax.SyntaxSnapshot;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -39,6 +44,57 @@ class ImportBindingContractTest {
               END Data;
             END Survey.
             """;
+
+    @ParameterizedTest
+    @ValueSource(strings = {"2.3", "2.4"})
+    void resolvedImportMustNameTheActualRequestedModel(String version) {
+        SourceText root = CompilerTestSupport.source("memory:/root.ili", """
+                INTERLIS %s;
+                MODEL Root AT "https://example.org" VERSION "1" =
+                  IMPORTS UNQUALIFIED Wanted;
+                  STRUCTURE Holder = value : D; END Holder;
+                END Root.
+                """.formatted(version));
+        SourceText targets = CompilerTestSupport.source("memory:/targets.ili", """
+                INTERLIS %s;
+                MODEL Wanted AT "https://example.org" VERSION "1" =
+                  DOMAIN D = TEXT*30;
+                END Wanted.
+                MODEL Other AT "https://example.org" VERSION "1" =
+                  DOMAIN D = 0..10;
+                END Other.
+                """.formatted(version));
+        var syntax = CompilerTestSupport.parse(targets);
+        var correct = CompilerTestSupport.binding(CompilerTestSupport.parse(root), "Wanted", targets, syntax);
+        var other = syntax.root().models().getLast();
+        var wrong = new ImportBinding(correct.site(), new ImportResolution.Resolved(new ModelLocation(
+                targets.id(), targets.revision(), other.name(), Optional.of(other.modelVersion()),
+                other.range().startOffset())));
+        var sources = Map.of(root.id(), root, targets.id(), targets);
+        var initial = CompilerTestSupport.request(List.of("Root"), sources, List.of(correct), CompilerOptions.defaults());
+        var changed = new CompilationRequest(initial.roots(), SourceSet.of(sources, List.of(wrong), List.of(),
+                new ResolutionFingerprint("test-resolver/wrong-target")), initial.options());
+        var engine = CompilerEngines.create();
+        var token = CancellationToken.none();
+        var initialOutcome = engine.compile(initial, token);
+        var good = assertInstanceOf(CompilationOutcome.Succeeded.class, initialOutcome, () -> initialOutcome instanceof CompilationOutcome.Rejected rejected
+                        ? rejected.analysis().diagnostics().toString() : initialOutcome.toString());
+        var graph = good.schema().semanticGraph();
+        var domain = graph.symbols().stream().filter(DomainSymbol.class::isInstance)
+                .map(DomainSymbol.class::cast).filter(d -> d.name().value().equals("D"))
+                .findFirst().orElseThrow();
+        var type = assertInstanceOf(TextType.class, graph.type(domain.typeId()).orElseThrow());
+        assertEquals(30, type.maxLength().orElseThrow());
+
+        var reuse = new AnalysisReuse(Optional.of(good.analysis()), good.analysis().syntaxSnapshots());
+        for (var outcome : List.of(engine.compile(changed, token), engine.compile(changed, reuse, token))) {
+            var rejected = assertInstanceOf(CompilationOutcome.Rejected.class, outcome);
+            assertTrue(rejected.rejection().reasons().contains(RejectionReason.MISSING_INPUT));
+            assertTrue(rejected.analysis().diagnostics().stream().anyMatch(d ->
+                    d.code().value().equals("ILI-RES-0004") && d.primaryRange().orElseThrow().equals(correct.site().nameRange())));
+        }
+        assertEquals(type, graph.type(domain.typeId()).orElseThrow());
+    }
 
     @Test
     void staleTargetRevisionIsRejected() {

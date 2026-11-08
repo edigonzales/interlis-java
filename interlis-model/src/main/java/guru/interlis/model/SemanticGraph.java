@@ -381,7 +381,8 @@ public final class SemanticGraph {
 
     /**
      * Returns a graph view restricted to the given model subtrees. Shared
-     * immutable symbols/types/expressions are reused, not re-analyzed.
+     * immutable symbols, types, expressions and reference occurrences are reused.
+     * References retain their order and are selected by the owner of their original scope.
      */
     public SemanticGraph subsetForModels(Set<SymbolId> allowedModels,
                                          List<SymbolId> schemaRoots) {
@@ -458,9 +459,10 @@ public final class SemanticGraph {
                 selectedMembers.put(key, value);
             }
         });
+        Set<ScopeId> selectedScopes = selected.stream().map(ScopeId::forOwner)
+                .collect(java.util.stream.Collectors.toSet());
         List<NameReference> selectedReferences = references.values().stream()
-                .filter(ref -> ref.segments().stream()
-                        .anyMatch(segment -> segment.target().filter(selected::contains).isPresent()))
+                .filter(ref -> selectedScopes.contains(ref.originalScope()))
                 .toList();
         Set<SourceId> selectedSources = new LinkedHashSet<>();
         for (Symbol symbol : selectedSymbols) {
