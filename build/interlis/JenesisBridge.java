@@ -14,12 +14,13 @@ public final class JenesisBridge {
         }
     }
 
-    /** Actual product files, with optional sources when this invocation did not select that phase. */
-    public record ModuleResult(String projectId, String engineLocator, Path inventoryDirectory,
-            String inventoryPrefix, Path jar, Path pom, Optional<Path> sources,
+    /** Runtime artifact and descriptor from the native inventory. */
+    public record ModuleResult(Path inventoryDirectory, String inventoryPrefix, Path jar,
             Optional<String> moduleName, boolean explicitDescriptor, List<Path> runtime) {
-        public ModuleResult { sources=Objects.requireNonNull(sources);moduleName=Objects.requireNonNull(moduleName);
-            runtime=List.copyOf(runtime); }
+        public ModuleResult {
+            moduleName = Objects.requireNonNull(moduleName);
+            runtime = List.copyOf(runtime);
+        }
     }
 
     /** Resolves identities from inventory contents; engine path spelling is not a consumer contract. */
@@ -27,16 +28,7 @@ public final class JenesisBridge {
         InventoryResult product=inventoryResult(outcome,projectId,false);
         Path jar=product.file("artifacts.0");
         if(product.data().containsKey(product.prefix()+".artifacts.1"))throw new IllegalStateException("Ambiguous product JAR: "+projectId);
-        Path pom=product.file("pom");
-        var sources=new ArrayList<Path>();
-        for(var entry:outcome.engineResults().entrySet()) {
-            Path inventory=checkedOutput(outcome,entry.getValue()).resolve("inventory.properties");
-            if(!Files.isRegularFile(inventory))continue;
-            Properties data=readProperties(inventory);
-            String value=data.getProperty(product.prefix()+".sources.0");
-            if(value!=null)sources.add(requireArtifact(outcome.root().resolve("target/jenesis-jvm/engine"),inventory.getParent(),value));
-        }
-        if(sources.size()>1)throw new IllegalStateException("Ambiguous sources result: "+projectId);
+        product.file("pom");
         Optional<String> moduleName=Optional.empty();boolean explicit=false;
         try(var archive=new java.util.jar.JarFile(jar.toFile(),true,java.util.zip.ZipFile.OPEN_READ,Runtime.version())) {
             if(archive.getJarEntry("module-info.class")!=null) {
@@ -46,8 +38,8 @@ public final class JenesisBridge {
                 moduleName=Optional.of(module.name());explicit=!module.isAutomatic();
             }
         }
-        return new ModuleResult(projectId,product.locator(),product.directory(),product.prefix(),jar,pom,
-                sources.stream().findFirst(),moduleName,explicit,product.paths("runtime"));
+        return new ModuleResult(product.directory(), product.prefix(), jar, moduleName, explicit,
+                product.paths("runtime"));
     }
 
     public static List<Path> runtimeModulePath(String projectId,BuildOutcome outcome) throws Exception {
@@ -56,7 +48,7 @@ public final class JenesisBridge {
         return result.runtime();
     }
 
-    private record InventoryResult(BuildOutcome outcome,String locator,Path directory,String prefix,Properties data) {
+    private record InventoryResult(BuildOutcome outcome,Path directory,String prefix,Properties data) {
         Path file(String role) throws Exception {
             String value=data.getProperty(prefix+"."+role);
             if(value==null)throw new IllegalStateException("Missing inventory role: "+prefix+"."+role);
@@ -89,7 +81,7 @@ public final class JenesisBridge {
                 if(test!=data.containsKey(prefix+".test"))continue;
                 String locator=entry.getKey();
                 if(!locator.endsWith("/inventory"))throw new IllegalStateException("Unidentified inventory locator: "+locator);
-                matches.add(new InventoryResult(outcome,locator.substring(0,locator.length()-10),directory,prefix,data));
+                matches.add(new InventoryResult(outcome,directory,prefix,data));
             }
         }
         return List.copyOf(matches);

@@ -23,9 +23,9 @@ public final class ArtifactContracts {
         Path engine=Files.createDirectories(root.resolve("target/jenesis-jvm/engine"));
         Files.writeString(root.resolve("pom.xml"),"<project><version>1</version></project>");
         Path inventory=Files.createDirectories(engine.resolve("unrelated-engine-layout/receipt"));
-        Path jar=engine.resolve("product.jar"),pom=engine.resolve("pom.xml"),sources=engine.resolve("sources.jar");
+        Path jar=engine.resolve("product.jar"),pom=engine.resolve("pom.xml");
         try(var archive=new JarOutputStream(Files.newOutputStream(jar))) { }
-        Files.copy(jar,sources);Files.writeString(pom,"<project/>");
+        Files.writeString(pom,"<project/>");
         var data=new Properties();String prefix="actual-engine-identity";
         data.setProperty(prefix+".path","interlis-model");data.setProperty(prefix+".artifact","interlis-model");
         data.setProperty(prefix+".identity.0","maven/guru.interlis/interlis-model/1");
@@ -35,11 +35,10 @@ public final class ArtifactContracts {
         var paths=Map.of("build/arbitrary/product/inventory",inventory);
         var outcome=new JenesisBridge.BuildOutcome(root,paths);
         var result=JenesisBridge.moduleResult(outcome,"interlis-model");
-        check(result.jar().equals(jar));check(result.pom().equals(pom));check(result.sources().isEmpty());
+        check(result.jar().equals(jar));
         check(result.runtime().equals(List.of(jar)));check(result.moduleName().isEmpty());
         check(ModuleArtifacts.runtime(root,"interlis-model",outcome).getFirst().sha256().equals(JvmBuildInputs.sha256(jar)));
         rejects(()->JenesisBridge.runtimeModulePath("interlis-model",outcome),"decorative module mode");
-        rejects(()->ModuleArtifacts.sources(outcome,"interlis-model"),"unselected sources");
         rejects(()->JenesisBridge.moduleResult(new JenesisBridge.BuildOutcome(root,Map.of()),"interlis-model"),"missing result");
         rejects(()->JenesisBridge.moduleResult(new JenesisBridge.BuildOutcome(root,Map.of("build/a/inventory",inventory,"build/b/inventory",inventory)),"interlis-model"),"ambiguous result");
         rejects(()->JenesisBridge.moduleResult(outcome,"foreign"),"unknown project");
@@ -96,6 +95,7 @@ public final class ArtifactContracts {
             rejects(()->BuildOutputs.clean(root,"editor"),"active editor clean");check(Files.isDirectory(active));
         }
         Path project=Path.of("").toAbsolutePath();
+        Files.createDirectories(project.resolve("target/jenesis-jvm"));
         try(var channel=java.nio.channels.FileChannel.open(project.resolve("target/jenesis-jvm/project.lock"),
                 StandardOpenOption.CREATE,StandardOpenOption.WRITE);var lock=channel.lock()) {
             long started=System.nanoTime();
