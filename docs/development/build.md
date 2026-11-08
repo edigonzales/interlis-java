@@ -16,6 +16,8 @@ java '-Djenesis.test.filter=.*VersionScannerTest#detectsUnsupportedVersion' buil
 Der erste Aufruf baut und prüft alle JVM-Module. `+interlis-compiler`
 wählt die Compiler-Closure und die Tests des Compilers. Jenesis verwendet
 seinen Daemon und seine kompilierten Buildklassen automatisch wieder.
+Die native ABI-Prüfung im Maven-Layout lässt abhängige Kompilierungen aus,
+wenn sich ausschliesslich die Implementierung einer Abhängigkeit ändert.
 Die JPMS-Tests verwenden die von Jenesis kompilierten Testklassen und
 starten sie als Patch des jeweiligen Produktmoduls. Die Produktdeskriptoren
 bleiben dabei unverändert.
