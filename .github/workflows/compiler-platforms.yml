@@ -20,7 +20,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '25.0.3'
-      - name: Run JVM tests
+      - name: Build and test the JVM modules with Jenesis
         run: java build/jenesis/Make.java
       - name: Check installed SDK, CLI and LSP
         run: java build/interlis/ExistingJvmDistribution.java check

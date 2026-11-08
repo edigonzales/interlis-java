@@ -18,7 +18,8 @@ target/jenesis-jvm/delivery/compiler/bin/interlis-compiler check \
 ```
 
 Unter Windows heisst der Launcher `interlis-compiler.bat`. Der JVM-Build
-verwendet Jenesis 0.18.1. Node.js 24.22.0 und der Gradle-Wrapper werden für
+verwendet Jenesis 0.18.1. `java build/jenesis/Make.java` baut und prüft
+alle JVM-Module. Node.js 24.22.0 und der Gradle-Wrapper werden für
 die portablen Backends benötigt.
 
 - [Compiler-Anleitung](docs/usage/compiler.md), [CLI-Referenz](docs/usage/cli.md),
