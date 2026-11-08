@@ -5,12 +5,6 @@
   [Verträge](docs/README.md) und [Modulgrenzen](docs/architecture.md).
   Veröffentlichungen und Arbeiten an Produktionssystemen brauchen einen
   konkreten Auftrag.
-- Nutze [Jenesis 0.18.1 mit Java 25](docs/development/build.md) für alle
-  [registrierten JVM-Module](build/interlis/JvmBuildInputs.java). POMs definieren
-  Koordinaten und Abhängigkeiten. Der Gradle-Wrapper
-  baut die beiden Wasm-Backends mit explizitem geprüftem ConsumerSnapshot.
-  `build/jenesis/`, `build/interlis/`, `build/InterlisJvmBuild.java` und der
-  Upstreampin sind Quellen. Verwende die gezielten Clean-Sichten.
 - Unterstütze INTERLIS 2.3 und 2.4. ANTLR bleibt intern. Compiler und Modell
   arbeiten mit expliziten Daten und Diensten. Dateisystem, HTTP, JDBC, LSP und
   UI gehören an ihre Hostgrenzen.
@@ -41,6 +35,27 @@
   Vertragsversion betroffen ist. Erhöhe sie bei einem inkompatiblen Bruch im
   selben PR. Begründe bei kompatiblen Änderungen die Versionsentscheidung.
   Die Prüfliste steht in der [Freigabeprüfung](docs/development/release.md#vertragsversionen).
+
+## Buildphilosophie
+
+**Jenesis macht Jenesis-Sachen. Gradle macht Gradle-Sachen. Wir implementieren
+nicht nochmals, was die Buildwerkzeuge bereits können.**
+
+- Nutze den offiziellen Einstieg von [Jenesis 0.18.1 mit Java 25](docs/development/build.md)
+  für JVM-Produkte. POMs definieren Koordinaten und Abhängigkeiten. Bevorzuge
+  native Buildschritte, Tests, Änderungserkennung und Caches sowie vorhandene
+  Konfigurations- und Erweiterungspunkte.
+- Der normale Build funktioniert nach einem frischen Checkout ohne manuelle
+  Vorkompilierung und verwendet Engine und unveränderte Ergebnisse automatisch
+  wieder. Quellen, Tests, Grammatik, Abhängigkeiten und Buildoptionen
+  invalidieren nur die betroffenen Schritte.
+- Der Gradle-Wrapper baut ausschliesslich die portablen Backends TeaVM und
+  GraalVM Web Image. Jenesis erzeugt die JVM-Produkte.
+- Zusätzliche Buildlogik braucht einen konkreten, nachgewiesenen Produktbedarf.
+  Keine eigene allgemeine Fingerprint-, Cache-, Artefaktbeglaubigungs- oder
+  Buildgraph-Infrastruktur. Entferne ersetzte Buildpfade und Kompatibilitätswrapper.
+- Erhalte notwendige Tests, aktuelle Produkte und öffentliche Produktverträge.
+  Behandle `build/jenesis/` als Quellen und verwende gezielte Clean-Sichten.
 
 ## Testphilosophie
 
