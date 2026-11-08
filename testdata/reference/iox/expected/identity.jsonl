@@ -1,9 +1,0 @@
-{"event":"startTransfer","sender":"iox-reference","comment":null,"version":"2.3","oidSpaces":[],"headerObjects":{"1":{"tag":"iom04.metamodel.ModelEntry","oid":"1","reference":null,"operation":0,"consistency":0,"attributes":{"model":["Reference23"],"uri":["https://example.invalid/iox-reference"],"version":["2026-11-06"]}}}}
-{"event":"startBasket","type":"Reference23.Records","bid":"records-1","kind":0,"consistency":0,"startState":null,"endState":null,"topicTypes":null,"domains":{}}
-{"event":"object","value":{"tag":"Reference23.Records.Parent","oid":"parent-1","reference":null,"operation":0,"consistency":0,"attributes":{}}}
-{"event":"object","value":{"tag":"Reference23.Records.Item","oid":"item-1","reference":null,"operation":0,"consistency":0,"attributes":{"code":["same"],"details":[{"tag":"Reference23.Records.Detail","oid":null,"reference":null,"operation":0,"consistency":0,"attributes":{"description":["zéro & \\"]}},{"tag":"Reference23.Records.Detail","oid":null,"reference":null,"operation":0,"consistency":0,"attributes":{"description":["alpha"]}}],"parent":[{"tag":"REF","oid":null,"reference":{"oid":"parent-1","bid":"records-1","orderPosition":0},"operation":0,"consistency":0,"attributes":{}}]}}}
-{"event":"endBasket"}
-{"event":"startBasket","type":"Reference23.Records","bid":"records-2","kind":0,"consistency":0,"startState":null,"endState":null,"topicTypes":null,"domains":{}}
-{"event":"object","value":{"tag":"Reference23.Records.Item","oid":"item-2","reference":null,"operation":0,"consistency":0,"attributes":{"code":["other"]}}}
-{"event":"endBasket"}
-{"event":"endTransfer"}

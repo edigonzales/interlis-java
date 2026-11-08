@@ -294,16 +294,13 @@ Zeitstempel, Runtimeziel und Laufzeiten liegen ausserhalb der fachlichen Golden-
 Jeder Portabilitätslauf erzeugt ein maschinenlesbares Manifest mit Quellcommit, Toolchainständen, Artefakthashes, Fixture-/Konfigurationshash, Betriebssystem/Architektur, Browser-/Node-Version, Flags, Teststatus und Fehlerdetails. Der Status unterscheidet `passed`, `failed`, `blocked` und `notRun`.
 
 Das tatsächlich ausgelieferte Browserverzeichnis enthält ein
-`build-manifest.json`: Commit und Quellfingerprint, Hash und Bytezahl jeder
+`build-manifest.json`: Commit und Produktinput-Fingerprint aus dem JVM-Snapshot,
+Hash und Bytezahl jeder
 ausgelieferten Ressource sowie getrennte Werkzeug-/API-/Diagnose-/Bridge-/
 Formatierungs-/Diagrammschemaversionen. Fähigkeiten werden aus dem tatsächlich
 gebauten Wasm-Modul gelesen und mit dem SDK-Versionsmanifest verglichen.
 Aktuelle Laufzeitprüfungen schützen die geladenen Artefakthashes gegen
-Änderungen während des Laufs. Die Compiler-Freigabeprüfung vergleicht
-diese Lieferung zusätzlich mit zwei separaten sauberen Builds; ein Bericht
-eines anderen Commits oder Artefakts genügt nicht.
-
-Die Performanceprüfung misst mindestens kalten Modulstart, erste Analyse, wiederholte unveränderte Analyse, Ein-Datei-Änderung und mehrfaches Editieren einer Sitzung. Median und Streuung werden bei ausreichend wiederholten Läufen angegeben. Der Vergleich nennt Messgrenzen: Download, Modulinstanziierung, JSON-Kodierung, Workerkommunikation und reine Compilerzeit sind getrennte Abschnitte.
+Änderungen während des Laufs.
 
 Die aktuelle [Freigabeprüfung](../development/release.md) bindet Antwortzeit- und Speicherbudgets an den vollen Modellkorpus. Ergebnisse kleiner Syntaxproben gelten nur für ihre Eingaben.
 

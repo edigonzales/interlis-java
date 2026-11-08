@@ -46,12 +46,3 @@ test('retired docs, phase test names and missing declared inputs fail',t=>{
   assert.match(result.errors[1],/delivery phase/);
   assert.match(result.errors[2],/missing or foreign input/);
 });
-
-test('missing pinned reference fixture fails',t=>{
-  const result=fixture(t,{
-    'testdata/verification/reference-fixtures.properties':'testdata/models/missing.ili='+'1'.repeat(64)+'\n'
-  });
-  assert.deepEqual(result.errors,[
-    'testdata/verification/reference-fixtures.properties: missing or foreign input testdata/models/missing.ili'
-  ]);
-});

@@ -19,7 +19,7 @@ class ViewProjectionAcceptanceTest {
     }
 
     private void assertBasename(String test, String alias, boolean explicit) throws Exception {
-        var result = original("ili23.Expressions23Test." + test);
+        var result = original(test + ".ili");
         var view = view(result, "Test.Base.VB");
         var base = projection(result, view, alias, "Test.Base.B");
         assertEquals(explicit, base.nameRange().isPresent());
@@ -31,7 +31,7 @@ class ViewProjectionAcceptanceTest {
     }
 
     @Test void abstractView_AbstractBaseInConcretViewDef() throws Exception {
-        var result = original("ili23.View23Test.abstractView_AbstractBaseInConcretViewDef");
+        var result = original("abstractView_AbstractBaseInConcretViewDef.ili");
         var view = view(result, "Test.Join.BC");
         assertFalse(view.header().has(Modifier.ABSTRACT));
         assertInstanceOf(ViewSymbol.Join.class, view.formation().orElseThrow());
@@ -50,7 +50,7 @@ class ViewProjectionAcceptanceTest {
     }
 
     @Test void view_AcceptBasicSelectionViewDef() throws Exception {
-        var result = original("ili23.View23Test.view_AcceptBasicSelectionViewDef");
+        var result = original("view_AcceptBasicSelectionViewDef.ili");
         var view = view(result, "Test.View.VB");
         var base = projection(result, view, "B", "Test.Base.B");
         assertEquals(List.of("Attr1", "Attr2"), names(result, view.members()));
@@ -66,7 +66,7 @@ class ViewProjectionAcceptanceTest {
     }
 
     @Test void view_AcceptSimpleBaseExtentionInView() throws Exception {
-        var result = original("ili23.View23Test.view_AcceptSimpleBaseExtentionInView");
+        var result = original("view_AcceptSimpleBaseExtentionInView.ili");
         var view = view(result, "Test.SelectionView.VB");
         var base = projection(result, view, "B", "Test.Base.B");
         assertEquals(1, view.baseExtensions().size());
@@ -85,7 +85,7 @@ class ViewProjectionAcceptanceTest {
     }
 
     @Test void viewProjectionComplete() throws Exception {
-        var result = original("ili23.ViewDef23Test.viewProjectionComplete");
+        var result = original("viewProjectionComplete.ili");
         assertEquals(10, result.schema().semanticGraph().symbols().stream().filter(ViewSymbol.class::isInstance).count());
         var translated = assertInstanceOf(ModelSymbol.class, named(result, "ModelB"));
         assertEquals("ModelA", translated.translation().orElseThrow().sourceModel());
@@ -139,7 +139,7 @@ class ViewProjectionAcceptanceTest {
             assertEquals(named(result, second + className).id(), extAlias.target());
             navigation(result, extAlias.nameRange().orElseThrow(), extAlias.id());
         }
-        var source = source("ili23.ViewDef23Test.viewProjectionComplete");
+        var source = source("viewProjectionComplete.ili");
         // b0 and b1 have identical types. Translation must still preserve the selected identity.
         var changed = source.text().replace("WHERE B0->b0==1", "WHERE B0->b1==1");
         assertNotEquals(source.text(), changed);

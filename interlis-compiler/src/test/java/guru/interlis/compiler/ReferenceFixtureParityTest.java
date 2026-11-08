@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -18,13 +17,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Exercises the small ili2c profile originally recorded in
- * testdata/verification/reference-profile.json. This is deliberately a
- * selected P1 profile, not the historical 610-case suite. The 2.4 Base fixture
- * now declares stable object identity as required by the 2.4 reference rule;
- * the historical report is not evidence for these modified input bytes.
- */
+/** Direct acceptance and rejection probes for the small ili2c comparison fixtures. */
 class ReferenceFixtureParityTest {
     private static final Path TESTDATA = Path.of(System.getProperty("testdata.dir"));
 

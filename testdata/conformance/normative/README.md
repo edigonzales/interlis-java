@@ -27,7 +27,7 @@ negativen Diagnosen stehen im Manifest. Die Gegenproben gehören zum normalen
 - `iliconversion_ConversionOfSETCONSTRAINT`: DEFINED(attr2) in den WHERE-Filter übernehmen; der Hauptausdruck prüft objectCount(ALL).
 
 Die letzten beiden Fassungen folgen dem ausdrücklich bestätigten SET-Kontextprofil.
-Der [Normdatensatz](../../reference/norms/normative-decisions.json) bindet Fallidentität und bestätigte Erwartung.
+Die [Normauslegung](../../../docs/contracts/norm-decisions.md) erläutert die bestätigten Sprachentscheidungen.
 
 Jede Korrektur erhält die übrige Modellstruktur. Damit darf eine Ausnahme keine
 weitere Implementierungslücke im betreffenden Original verdecken. Die Dateien

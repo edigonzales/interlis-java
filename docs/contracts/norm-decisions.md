@@ -2,8 +2,13 @@
 
 Die massgeblichen Normausgaben sind [INTERLIS 2.3, 13. April 2006][norm23] und [INTERLIS 2.4, eCH-0031 V2.1.0, 24. April 2024][norm24]. Die Seiten verweisen direkt auf die jeweiligen Stellen. Beobachtetes Verhalten von ili2c 5.6.9 dient dem gezielten Vergleich. Der aktuelle Vertrag gilt nach Massgabe der ausdrücklich genannten Kompatibilitätsprofile.
 
-Gepinnte Eingaben stehen im [Normregister](../../testdata/reference/norms/documents.json), die Fallentscheidungen im [Entscheidungsdatensatz](../../testdata/reference/norms/normative-decisions.json) und im [Conformance-Profil](../../testdata/conformance/normative/expectations.json).
+Die [Codeberg-Ausnahmen](../../testdata/conformance/normative/expectations.json) halten die fallbezogenen Kontrollen fest.
 
+
+Die [Originalmodelle für Views und abgeleitete Assoziationen](../../testdata/conformance/views)
+stammen unverändert aus den INTERLIS-2.3-Testdaten von
+[ili2c im Quellstand 4ea207f](https://github.com/claeis/ili2c/tree/4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23).
+Compiler-, Reuse- und Diagrammtests laden die Modellquellen direkt.
 
 ## Bewusst gewählte Kompatibilitätsprofile und Normauslegungen
 

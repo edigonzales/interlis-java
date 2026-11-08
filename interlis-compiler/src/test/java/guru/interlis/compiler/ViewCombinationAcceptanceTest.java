@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /** B2 acceptance of unchanged, pinned upstream inputs: META-008/014, SEM-008/010/014. */
 class ViewCombinationAcceptanceTest {
     @Test void abstractView_AcceptAbstractBaseInAbstractJoinDef() throws Exception {
-        var result = original("ili23.View23Test.abstractView_AcceptAbstractBaseInAbstractJoinDef");
+        var result = original("abstractView_AcceptAbstractBaseInAbstractJoinDef.ili");
         var view = view(result, "Test.Join.BC");
         assertTrue(view.header().has(Modifier.ABSTRACT));
         assertJoin(result, view, List.of("B", "C"), List.of("Test.Base.B", "Test.Base.C"), false);
@@ -24,12 +24,12 @@ class ViewCombinationAcceptanceTest {
         assertTrue(attribute(result, "Test.Join.BC.Attr1").header().has(Modifier.ABSTRACT));
         assertFalse(attribute(result, "Test.Join.BC.Attr2").header().has(Modifier.ABSTRACT));
         assertTrue(view.selections().isEmpty());
-        changedOriginalRejected("ili23.View23Test.abstractView_AcceptAbstractBaseInAbstractJoinDef",
+        changedOriginalRejected("abstractView_AcceptAbstractBaseInAbstractJoinDef.ili",
                 "VIEW BC (ABSTRACT)", "VIEW BC", "VIEW_ABSTRACT_ATTRIBUTE");
     }
 
     @Test void view_AcceptBasicJoinDef() throws Exception {
-        var result = original("ili23.View23Test.view_AcceptBasicJoinDef");
+        var result = original("view_AcceptBasicJoinDef.ili");
         var view = view(result, "Test.Join.BC");
         assertJoin(result, view, List.of("B", "C"), List.of("Test.Base.B", "Test.Base.C"), true);
         assertAllOf(result, view, List.of("Attr1", "Attr2", "Attr3"),
@@ -44,7 +44,7 @@ class ViewCombinationAcceptanceTest {
     }
 
     @Test void view_AcceptBasicUnionDef() throws Exception {
-        var result = original("ili23.View23Test.view_AcceptBasicUnionDef");
+        var result = original("view_AcceptBasicUnionDef.ili");
         var view = view(result, "Test.Union.CC");
         assertUnion(result, view, List.of("C1", "C2"), List.of("Test.Base.C1", "Test.Base.C2"));
         assertEquals(List.of("Attr1"), names(result, view.members()));
@@ -62,14 +62,14 @@ class ViewCombinationAcceptanceTest {
     }
 
     @Test void view_AcceptJoinDefWithoutBasenames() throws Exception {
-        var result = original("ili23.View23Test.view_AcceptJoinDefWithoutBasenames");
+        var result = original("view_AcceptJoinDefWithoutBasenames.ili");
         var view = view(result, "Test.Join.BC");
         assertJoin(result, view, List.of("B", "C"), List.of("Test.Base.B", "Test.Base.C"), true);
         assertAllOf(result, view, List.of("Attr1", "Attr2", "Attr3"),
                 List.of("Test.Base.B.Attr1", "Test.Base.B.Attr2", "Test.Base.C.Attr3"), List.of(20, 10, 30));
         assertTrue(view.selections().isEmpty());
         // Implicit bases retain local names but the qualified source names navigate to classes.
-        var source = source("ili23.View23Test.view_AcceptJoinDefWithoutBasenames");
+        var source = source("view_AcceptJoinDefWithoutBasenames.ili");
         int first = source.text().indexOf("JOIN OF Test.Base.B") + "JOIN OF Test.Base.".length();
         int second = source.text().indexOf("Test.Base.C (OR NULL)") + "Test.Base.".length();
         navigation(result, source.range(first, first + 1), named(result, "Test.Base.B").id());
@@ -77,7 +77,7 @@ class ViewCombinationAcceptanceTest {
     }
 
     @Test void viewAggregationComplete() throws Exception {
-        var result = original("ili23.ViewDef23Test.viewAggregationComplete");
+        var result = original("viewAggregationComplete.ili");
         assertTranslatedModel(result);
         var original = view(result, "ModelA.TopicA1.ViewA0");
         var translated = view(result, "ModelB.TopicB1.ViewB0");
@@ -85,12 +85,12 @@ class ViewCombinationAcceptanceTest {
         assertAggregation(result, original, "A0", "ModelA.TopicA1.ClassA0", "ModelA.TopicA1.ClassA0.a0");
         assertAggregation(result, translated, "B0", "ModelB.TopicB1.ClassB0", "ModelB.TopicB1.ClassB0.b0");
         assertNotEquals(original.bases().getFirst(), translated.bases().getFirst());
-        changedOriginalRejected("ili23.ViewDef23Test.viewAggregationComplete", "EQUAL (B0->b0)",
+        changedOriginalRejected("viewAggregationComplete.ili", "EQUAL (B0->b0)",
                 "EQUAL (B0->b1)", "TRANSLATION_REFERENCE");
     }
 
     @Test void viewJoinComplete() throws Exception {
-        var result = original("ili23.ViewDef23Test.viewJoinComplete");
+        var result = original("viewJoinComplete.ili");
         assertTranslatedModel(result);
         var original = view(result, "ModelA.TopicA1.ViewA0");
         var translated = view(result, "ModelB.TopicB1.ViewB0");
@@ -108,12 +108,12 @@ class ViewCombinationAcceptanceTest {
             assertNotEquals(original.bases().get(i), translated.bases().get(i));
             assertNotEquals(basis(result, original.bases().get(i)).target(), basis(result, translated.bases().get(i)).target());
         }
-        changedOriginalRejected("ili23.ViewDef23Test.viewJoinComplete", "B1~ClassB1 (OR NULL)",
+        changedOriginalRejected("viewJoinComplete.ili", "B1~ClassB1 (OR NULL)",
                 "B1~ClassB1", "TRANSLATION_REFERENCE");
     }
 
     @Test void viewUnionComplete() throws Exception {
-        var result = original("ili23.ViewDef23Test.viewUnionComplete");
+        var result = original("viewUnionComplete.ili");
         assertTranslatedModel(result);
         var original = view(result, "ModelA.TopicA1.ViewA0");
         var translated = view(result, "ModelB.TopicB1.ViewB0");
@@ -130,7 +130,7 @@ class ViewCombinationAcceptanceTest {
                     "ModelB.TopicB1.ClassB0.b" + i, "ModelB.TopicB1.ClassB1.b" + (i + 2));
             assertNotEquals(original.members().get(i), translated.members().get(i));
         }
-        changedOriginalRejected("ili23.ViewDef23Test.viewUnionComplete", "B0->b0, B1->b2",
+        changedOriginalRejected("viewUnionComplete.ili", "B0->b0, B1->b2",
                 "B0->b0, B1->b3", "TRANSLATION_REFERENCE");
     }
 
@@ -251,8 +251,8 @@ class ViewCombinationAcceptanceTest {
         assertTrue(type.range().unit().isEmpty());
     }
 
-    private static void changedOriginalRejected(String testId, String before, String after, String rule) throws Exception {
-        var source = source(testId);
+    private static void changedOriginalRejected(String fileName, String before, String after, String rule) throws Exception {
+        var source = source(fileName);
         assertTrue(source.text().contains(before), "negative control must modify its intended construct");
         var changed = new SourceText(source.id(), new SourceRevision(2), source.text().replace(before, after));
         var outcome = CompilerEngines.create().compile(request(changed), CancellationToken.none());

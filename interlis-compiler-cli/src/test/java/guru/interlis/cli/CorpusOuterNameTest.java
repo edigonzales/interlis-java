@@ -10,7 +10,6 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
-import java.util.zip.ZipFile;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
@@ -23,7 +22,7 @@ class CorpusOuterNameTest {
 
     @Test void originalMetadataRejectsOuterNameAndRenamedClassInheritsMembers() throws Exception {
         String model = "SO_AGI_Metadata_20230304";
-        var original = reject(model, "AGI", "FileFormat", 2442, 2544, 1135, 1145);
+        var original = reject(model, "FileFormat", 2442, 2544, 1135, 1145);
         var schema = compileControl(model, "metadata", original);
         var type = classSymbol(schema, model + ".FileFormats.PublishedFileFormat");
         var base = find(schema, model + ".FileFormat");
@@ -34,20 +33,16 @@ class CorpusOuterNameTest {
 
     @Test void originalApplicantRejectsOuterNameAndRenamedClassKeepsMembers() throws Exception {
         String model = "SO_AWJF_Gesuchsteller_20210202";
-        var original = reject(model, "AWJF", "Gesuchsteller", 734, 1238, 635, 648);
+        var original = reject(model, "Gesuchsteller", 734, 1238, 635, 648);
         var schema = compileControl(model, "applicant", original);
         String name = model + ".Gesuchsteller.Applicant";
         assertEquals(Optional.empty(), classSymbol(schema, name).baseType());
         assertMembers(schema, name, List.of("Gesuchsteller", "Forstrevier", "Forstkreis", "Abstufung_50_100", "Gesuchsnummer"));
     }
 
-    private CompilationOutcome.Rejected reject(String model, String archivePrefix, String name,
+    private CompilationOutcome.Rejected reject(String model, String name,
                                                 int start, int end, int relatedStart, int relatedEnd) throws Exception {
-        String original;
-        try (var zip = new ZipFile(DATA.resolve("corpus/seed/sources.zip").toFile());
-             var bytes = zip.getInputStream(zip.getEntry(archivePrefix + "__" + model + ".ili"))) {
-            original = new String(bytes.readAllBytes(), StandardCharsets.UTF_8);
-        }
+        String original = Files.readString(DATA.resolve("compiler/name-resolution/" + model + ".ili"));
         var rejected = assertInstanceOf(CompilationOutcome.Rejected.class,
                 CompilerEngines.create().compile(request(model, original, 1), CancellationToken.none()));
         assertEquals(Set.of(RejectionReason.SOURCE_ERRORS), rejected.rejection().reasons());

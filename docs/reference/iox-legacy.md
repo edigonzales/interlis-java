@@ -5,13 +5,12 @@ Erhebung P4.0-A vom 6. November 2026 auf `interlis-java`
 INTERLIS 2.3 und 2.4. Einzelne Klassen tragen ITF im Namen, weil XTF die
 Kurven- und Poolinfrastruktur wiederverwendet.
 
-Der [Fallindex](../../testdata/reference/iox-issue-index.json) ordnet
+Der [Fallindex](https://github.com/edigonzales/interlis-java/blob/2c07d29bea4a32e5207266760026dba7eb029135/testdata/reference/iox-issue-index.json) ordnet
 Problemfälle, Quellstände, Belege und Gegenproben den Verbraucherphasen zu.
 Die Einstufung unterscheidet fachlich korrektes Verhalten, historische
 Kompromisse, bekannte Fehler und ungeklärte Fälle. Der Belegstand unterscheidet
 Quellbefund, Upstream-Bericht und lokal ausgeführte Probe. Ein geschlossener
 Issue kann weiterhin einen Regressionsfall liefern. Die
-[Normpins](../../testdata/reference/norms/documents.json) und
 [Sprachentscheidungen](../contracts/norm-decisions.md) bleiben massgeblich.
 Phasenbezeichnungen nach P4.1 bezeichnen fachliche Arbeitsschritte, ohne
 ihnen eine neue Paketnummer zu geben.
@@ -36,7 +35,7 @@ separat gepinnte Closure. [ilivalidator-Build][validator-build],
 
 ## Issue-Abdeckung von iox-ili
 
-Der [Fallindex](../../testdata/reference/iox-issue-index.json) erfasst unter
+Der [Fallindex](https://github.com/edigonzales/interlis-java/blob/2c07d29bea4a32e5207266760026dba7eb029135/testdata/reference/iox-issue-index.json) erfasst unter
 `issueCoverage` alle 61 am 6. November 2026 per GitHub-API ermittelten Issues
 von `claeis/iox-ili` (14 offen, 47 geschlossen). Aus dem unter `retrievedAt`
 datierten Abruf wurden 105 Pull Requests herausgefiltert. Acht Issues sind
@@ -340,7 +339,7 @@ getrennte Vertragsfelder. [#296][v296], [PR #112][i112],
 
 ### Lokale Geometrie-Baseline
 
-Zwölf synthetische [Profile](../../testdata/reference/iox/geometry-cases.json)
+Zwölf synthetische [Profile](https://github.com/edigonzales/interlis-java/blob/2c07d29bea4a32e5207266760026dba7eb029135/testdata/reference/iox/geometry-cases.json)
 liefen am 6. November 2026 mit ilivalidator 1.15.0, Temurin 25.0.2+10
 und `-Xmx2g` auf macOS arm64. Sieben Transfers wurden akzeptiert,
 fünf mit den erwarteten Diagnosen abgewiesen. AREA und `areAreas(ALL, …)`
@@ -363,17 +362,16 @@ letzte Lauf mit gemeinsamen Rändern gezielt wiederholt. Die Zeiten
 enthalten den JVM-Start. Die Stichproben können
 kurze Heap- und Temp-Spitzen verfehlen. Produktionsdaten und
 Kandidatenzahlen blieben offen.
-[Benchmarkmodus](../../tools/iox-reference-harness/README.md#geometrie-und-ressourcen-messen)
 
 ## Normbelege
 
 | Aussage | Gepinnte PDF-Seiten und Auszüge |
 | --- | --- |
-| 2.3 Objektstrom und gemeinsame Eindeutigkeit von TID und BID in XTF FULL | [§3.2.6, S. 77][pdf-23-stream], [§3.3.7, S. 86][pdf-23-full], [Inventar Objektstrom][inv-23-stream], [Inventar FULL][inv-23-full] |
-| 2.4 Objektstrom und Eindeutigkeit von TID in XTF FULL | [§4.2.5, S. 99][pdf-24-stream], [§4.3.7, S. 105][pdf-24-full], [Inventar Objektstrom][inv-24-stream], [Inventar FULL][inv-24-full] |
-| 2.3 XML-Attribute einer nicht eingebetteten Rolle | [§3.3.9.2, S. 88][pdf-23-role], [Inventar Rollen][inv-23-role] |
-| 2.4 Attribute einer nicht eingebetteten Rolle und lax erweiterbarer `RoleDef` | [§4.3.9.2, S. 106][pdf-24-role], [§4.4.4.7, S. 117][pdf-24-role-xsd], [§4.4.5, S. 118][pdf-24-role-def], [Inventar Rollen][inv-24-role], [Inventar XSD-Rollen][inv-24-role-xsd], [Inventar RoleDef][inv-24-role-def] |
-| Constraints und Rundung | [2.3 §2.12, S. 60][pdf-23-constraint], [2.4 §3.12, S. 77][pdf-24-rounding], [2.4 §3.12, S. 78][pdf-24-constraint], [Inventar 2.3 Constraints][inv-23-constraint], [Inventar 2.4 Rundung][inv-24-rounding], [Inventar 2.4 Constraints][inv-24-constraint] |
+| 2.3 Objektstrom und gemeinsame Eindeutigkeit von TID und BID in XTF FULL | [§3.2.6, S. 77][pdf-23-stream], [§3.3.7, S. 86][pdf-23-full] |
+| 2.4 Objektstrom und Eindeutigkeit von TID in XTF FULL | [§4.2.5, S. 99][pdf-24-stream], [§4.3.7, S. 105][pdf-24-full] |
+| 2.3 XML-Attribute einer nicht eingebetteten Rolle | [§3.3.9.2, S. 88][pdf-23-role] |
+| 2.4 Attribute einer nicht eingebetteten Rolle und lax erweiterbarer `RoleDef` | [§4.3.9.2, S. 106][pdf-24-role], [§4.4.4.7, S. 117][pdf-24-role-xsd], [§4.4.5, S. 118][pdf-24-role-def] |
+| Constraints und Rundung | [2.3 §2.12, S. 60][pdf-23-constraint], [2.4 §3.12, S. 77][pdf-24-rounding], [2.4 §3.12, S. 78][pdf-24-constraint] |
 
 ## Selbstprüfung
 
@@ -522,26 +520,15 @@ dieser Auswahl belegen einzelne Referenzfälle, keine Gesamtkompatibilität.
 [unique-key]: https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/Validator.java#L4015-L4059
 [rounding-order]: https://github.com/claeis/iox-ili/blob/b8192c1aec4fff9b047ab49deeba1c8921d8ecb4/src/main/java/ch/interlis/iox_j/validator/Validator.java#L2399-L2510
 [rounding-write]: https://github.com/claeis/iox-ili/blob/b8192c1aec4fff9b047ab49deeba1c8921d8ecb4/src/main/java/ch/interlis/iox_j/validator/Validator.java#L2926-L2934
-[b-observed]: ../../testdata/reference/iox/observed.json
+[b-observed]: https://github.com/edigonzales/interlis-java/blob/2c07d29bea4a32e5207266760026dba7eb029135/testdata/reference/iox/observed.json
 [pdf-23-stream]: https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf#page=77
-[inv-23-stream]: ../../testdata/reference/norms/norm-inventory.json#L6729-L6736
 [pdf-23-full]: https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf#page=86
-[inv-23-full]: ../../testdata/reference/norms/norm-inventory.json#L8025-L8032
 [pdf-24-stream]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=99
-[inv-24-stream]: ../../testdata/reference/norms/norm-inventory.json#L29988-L29995
 [pdf-24-full]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=105
-[inv-24-full]: ../../testdata/reference/norms/norm-inventory.json#L30580-L30587
 [pdf-23-role]: https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf#page=88
-[inv-23-role]: ../../testdata/reference/norms/norm-inventory.json#L8153-L8160
 [pdf-24-role]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=106
-[inv-24-role]: ../../testdata/reference/norms/norm-inventory.json#L30724-L30731
 [pdf-24-role-xsd]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=117
-[inv-24-role-xsd]: ../../testdata/reference/norms/norm-inventory.json#L32500-L32507
 [pdf-24-role-def]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=118
-[inv-24-role-def]: ../../testdata/reference/norms/norm-inventory.json#L32692-L32699
 [pdf-23-constraint]: https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf#page=60
-[inv-23-constraint]: ../../testdata/reference/norms/norm-inventory.json#L4553-L4560
 [pdf-24-rounding]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=77
-[inv-24-rounding]: ../../testdata/reference/norms/norm-inventory.json#L26996-L27003
 [pdf-24-constraint]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=78
-[inv-24-constraint]: ../../testdata/reference/norms/norm-inventory.json#L27044-L27051

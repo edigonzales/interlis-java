@@ -32,18 +32,15 @@ den passenden `.bat`-Launcher auswählen.
 
 ## Build- und Editor-Adapter
 
-`layout.test.cjs` prüft die expliziten Rollenpfade für die Host- und
-Releaseprofile. `node-junit.test.cjs` prüft das Einlesen der Node-JUnit-Berichte.
-Beide sind über `node --test` ausführbar. Die portablen Buildprofile verwenden
-`backend-smoke.cjs`, `node-contract.cjs` und `runtime-evidence.cjs` mit den
-erzeugten Artefakten und der zugehörigen Layout- und Snapshot-Evidenz.
+`node-junit.test.cjs` prüft das Einlesen der Node-JUnit-Berichte der
+portablen Testpfade. Die Backendaufrufe verwenden die erzeugten Artefakte
+und den geprüften JVM-Snapshot.
 
 `editor-check.cjs` gehört zum Jenesis-Einstieg
 `editor-check --extension-dir ABSOLUT --reference-bundle ABSOLUT`.
 Die vorbereitete Extension und das isolierte VS-Code-Programm werden über
 `INTERLIS_EDITOR_PREPARED` und `INTERLIS_TEST_CODE` ausgewählt. Die Extension
-besitzt den Host-Harness. Die Pythonfreiheitsprüfung läuft im JVM-Gesamtbuild
-über `without-python.cjs` und die JVM-Quellenprüfung.
+besitzt den Host-Harness.
 
 ## Repositoryhygiene
 
@@ -53,5 +50,5 @@ node --test tools/verification/repository-hygiene.test.cjs
 ```
 
 Die Prüfung validiert aktive Markdown-Pfade und Anker, deklarierte
-Testinputs sowie gepinnte Referenzpfade. Sie erkennt wieder eingeführte
+Testinputs. Sie erkennt wieder eingeführte
 abgeschlossene Dokumentationsablagen und phasenbezogene Testklassennamen.

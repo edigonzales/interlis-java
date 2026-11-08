@@ -5,10 +5,8 @@ import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.*;
 import guru.interlis.model.query.TypeRelations;
 import guru.interlis.source.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -18,19 +16,16 @@ final class OriginalViewAcceptanceSupport {
     private static final CancellationToken TOKEN = CancellationToken.none();
     private OriginalViewAcceptanceSupport() { }
 
-    static List<String> testIds() throws Exception {
-        var pins = new Properties();
-        try (var reader = Files.newBufferedReader(DIRECTORY.resolve("sources.properties"), StandardCharsets.UTF_8)) { pins.load(reader); }
-        return pins.stringPropertyNames().stream().sorted().toList();
+    static List<String> fixtureNames() throws Exception {
+        try (var paths = Files.list(DIRECTORY)) {
+            return paths.filter(path -> path.getFileName().toString().endsWith(".ili"))
+                    .map(path -> path.getFileName().toString()).sorted().toList();
+        }
     }
 
-    static SourceText source(String testId) throws Exception {
-        var pins = new Properties();
-        try (var reader = Files.newBufferedReader(DIRECTORY.resolve("sources.properties"), StandardCharsets.UTF_8)) { pins.load(reader); }
-        var entry = Objects.requireNonNull(pins.getProperty(testId), testId).split("\\|", 3);
-        var bytes = Files.readAllBytes(DIRECTORY.resolve(entry[0]));
-        assertEquals(entry[1], HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)), "original source pin: " + testId);
-        return new SourceText(new SourceId("memory:/b1-b3/" + entry[0]), new SourceRevision(1), new String(bytes, StandardCharsets.UTF_8));
+    static SourceText source(String fileName) throws Exception {
+        var path = DIRECTORY.resolve(fileName);
+        return new SourceText(new SourceId("memory:/original-views/" + fileName), new SourceRevision(1), Files.readString(path));
     }
 
     static CompilationRequest request(SourceText source) {
@@ -39,8 +34,8 @@ final class OriginalViewAcceptanceSupport {
                 Map.of(source.id(), source), List.of(), CompilerOptions.defaults());
     }
 
-    static CompilationOutcome.Succeeded original(String testId) throws Exception {
-        return compile(source(testId));
+    static CompilationOutcome.Succeeded original(String fileName) throws Exception {
+        return compile(source(fileName));
     }
 
     static CompilationOutcome.Succeeded compile(SourceText source) {

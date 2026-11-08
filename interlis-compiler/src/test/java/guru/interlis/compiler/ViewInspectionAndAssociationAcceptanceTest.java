@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Public semantic/query proofs for the six unchanged B3 suite sources. */
 class ViewInspectionAndAssociationAcceptanceTest {
     @Test void renamedInspectionBindsItsAliasToTheInspectedElement() throws Exception {
-        var result = original("ili23.View23Test.view_AcceptBasenameOfRenamedInspectionDef");
+        var result = original("view_AcceptBasenameOfRenamedInspectionDef.ili");
         var inspection = structureInspection(result, "Test.Base.VB", "Test.Base.B", "Test.Base.A",
                 "Test.Base.B.Attr2", CollectionKind.BAG);
         var basis = (ViewSymbol.Base) result.schema().semanticGraph().symbol(inspection.base()).orElseThrow();
@@ -26,7 +26,7 @@ class ViewInspectionAndAssociationAcceptanceTest {
     }
 
     @Test void unrenamedInspectionUsesItsSourceNameAndInspectedMemberNamespace() throws Exception {
-        var result = original("ili23.View23Test.view_AcceptBasenameOfUnrenamedInspectionDef");
+        var result = original("view_AcceptBasenameOfUnrenamedInspectionDef.ili");
         var inspection = structureInspection(result, "Test.Base.VB", "Test.Base.B", "Test.Base.A",
                 "Test.Base.B.Attr2", CollectionKind.BAG);
         var basis = (ViewSymbol.Base) result.schema().semanticGraph().symbol(inspection.base()).orElseThrow();
@@ -39,7 +39,7 @@ class ViewInspectionAndAssociationAcceptanceTest {
     }
 
     @Test void inspectionAllOfCopiesTheStructureAttributeAndRetainsItsOrigin() throws Exception {
-        var result = original("ili23.View23Test.view_AcceptBasicInspectionDef");
+        var result = original("view_AcceptBasicInspectionDef.ili");
         var graph = result.schema().semanticGraph();
         var inspected = view(result, "Test.Inspection.VB");
         var parent = assertInstanceOf(ClassSymbol.class, named(result, "Test.Base.B"));
@@ -77,7 +77,7 @@ class ViewInspectionAndAssociationAcceptanceTest {
     }
 
     @Test void translatedInspectionUsesTranslatedStructureParentAndCollectionPath() throws Exception {
-        var result = original("ili23.ViewDef23Test.viewInspectionComplete");
+        var result = original("viewInspectionComplete.ili");
         var graph = result.schema().semanticGraph();
         var a = structureInspection(result, "ModelA.TopicA1.ViewA0", "ModelA.TopicA1.ClassA0",
                 "ModelA.TopicA1.StructA0", "ModelA.TopicA1.ClassA0.a0", CollectionKind.LIST);
@@ -101,7 +101,7 @@ class ViewInspectionAndAssociationAcceptanceTest {
     }
 
     @Test void derivedAssociationRetainsViewBasisRoleTargetsAndJoinSelection() throws Exception {
-        var result = original("ili23.Association23Test.association_DerivedAssociationDef");
+        var result = original("association_DerivedAssociationDef.ili");
         var graph = result.schema().semanticGraph();
         var join = view(result, "model.topic.ABIntersection");
         var formation = assertInstanceOf(ViewSymbol.Join.class, join.formation().orElseThrow());
@@ -144,7 +144,7 @@ class ViewInspectionAndAssociationAcceptanceTest {
     }
 
     @Test void projectedRolePathsDistinguishParticipantsSingletonAccessAndObjectSets() throws Exception {
-        var result = original("ili23.View23Test.view_ObjectPathWithRolename");
+        var result = original("view_ObjectPathWithRolename.ili");
         var graph = result.schema().semanticGraph();
         var manyToMany = view(result, "ModelA.Topic.View_n2n");
         assertEquals(named(result, "ModelA.Topic.n2n").id(), ((ViewSymbol.Base) graph.symbol(manyToMany.bases().getFirst()).orElseThrow()).target());

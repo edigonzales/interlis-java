@@ -45,8 +45,8 @@ Ausgabeatomizität, Revisionen und veröffentlichte Diagnosen.
 
 Differentialtests unterscheiden normativ bestätigte Abweichungen,
 Implementierungsunterschiede und Defekte der Referenzwerkzeuge. Die
-[Sprachentscheidungen](../contracts/norm-decisions.md) und die
-[Normpins](../../testdata/reference/norms/documents.json) geben den Massstab.
+[Sprachentscheidungen und ihre Normquellen](../contracts/norm-decisions.md)
+geben den Massstab.
 Robustheitsläufe brauchen begrenzte Eingaben, Zeit- und Ressourcenbudgets,
 reproduzierbare Seeds sowie explizite Grenzen für Exits und Skips.
 

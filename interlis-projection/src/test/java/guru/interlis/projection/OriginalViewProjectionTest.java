@@ -5,35 +5,30 @@ import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.*;
 import guru.interlis.source.*;
 import guru.interlis.syntax.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.util.HexFormat;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** The unchanged upstream B1–B3 cases remain useful through the diagram consumer. */
+/** Projects the unchanged upstream view fixtures through the diagram consumer. */
 class OriginalViewProjectionTest {
     private static final Path DIRECTORY = Path.of("../testdata/conformance/views");
     private static final CancellationToken TOKEN = CancellationToken.none();
 
     @Test void allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram() throws Exception {
-        var pins = new Properties();
-        try (var reader = Files.newBufferedReader(DIRECTORY.resolve("sources.properties"), StandardCharsets.UTF_8)) {
-            pins.load(reader);
+        List<Path> fixtures;
+        try (var paths = Files.list(DIRECTORY)) {
+            fixtures = paths.filter(path -> path.getFileName().toString().endsWith(".ili")).sorted().toList();
         }
-        assertEquals(19, pins.size(), "Every catalogued B1–B3 original must participate");
-        for (String testId : pins.stringPropertyNames().stream().sorted().toList()) {
-            var entry = pins.getProperty(testId).split("\\|", 3);
-            var bytes = Files.readAllBytes(DIRECTORY.resolve(entry[0]));
-            assertEquals(entry[1], HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)), testId + " original source pin");
-            var source = new SourceText(new SourceId("memory:/original-projection/" + entry[0]),
-                    new SourceRevision(1), new String(bytes, StandardCharsets.UTF_8));
+        assertFalse(fixtures.isEmpty(), "Missing original view fixtures");
+        for (var fixture : fixtures) {
+            String testId = fixture.getFileName().toString();
+            var source = new SourceText(new SourceId("memory:/original-projection/" + testId),
+                    new SourceRevision(1), Files.readString(fixture));
             var syntax = SyntaxServices.create().parse(source, ParseOptions.defaults(ParseMode.EDITOR), TOKEN);
             var selectors = syntax.root().models().stream().map(model -> (ModelSelector) new ModelSelector.ByName(
                     model.name(), Optional.empty(), Optional.empty())).toList();

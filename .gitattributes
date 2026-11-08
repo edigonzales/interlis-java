@@ -7,3 +7,6 @@ testdata/reference/character-sets/character-sets-2026-10-02.csv -text whitespace
 # Preserve the published INTERLIS 2.4 regression model bytes.
 testdata/conformance/no-oid/CoordSys.ili -text whitespace=cr-at-eol,-blank-at-eol
 testdata/conformance/no-oid/roads/*.ili -text whitespace=cr-at-eol,-blank-at-eol
+# Preserve the original Solothurn regression sources byte for byte.
+testdata/compiler/name-resolution/SO_AGI_Metadata_20230304.ili -text whitespace=-blank-at-eol
+testdata/compiler/name-resolution/SO_AWJF_Gesuchsteller_20210202.ili -text

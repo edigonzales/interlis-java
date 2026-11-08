@@ -1,13 +1,13 @@
 # Anforderungsregister
 
-Die IDs bezeichnen stabile Anforderungen. Geltend beschreibt den Produktvertrag. Einen ausgeführten Nachweis liefern die gebundenen Tests und ihre Rohberichte. Geplant bezeichnet Anforderungen an künftige Verbraucher. Die Compilerpflichten für ihre Eingaben gelten bereits. Zurückgestellt bezeichnet den optionalen mutierbaren Java-Adapter.
+Die IDs bezeichnen stabile Anforderungen. Geltend beschreibt den Produktvertrag. Einen ausgeführten Nachweis liefern die ausgeführten Tests und ihre Rohberichte. Geplant bezeichnet Anforderungen an künftige Verbraucher. Die Compilerpflichten für ihre Eingaben gelten bereits. Zurückgestellt bezeichnet den optionalen mutierbaren Java-Adapter.
 
-Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) bindet die ausführbaren Compilerfälle an konkrete Suite, Methode und Invocation. Für weitere Anforderungen nennt die Tabelle die erforderliche Abnahme.
+Die Spalte Prüfhinweis nennt relevante Prüfinhalte. Die Assertions stehen in den ausführbaren Tests.
 
 
 ## AGENT
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
 | <a id="agent-001"></a>`AGENT-001` | Der Agent MUSS den aktuellen Repositoryzustand und vorhandene Arbeitsregeln lesen und fremde Änderungen erhalten. | Arbeitsregel | [Vertrag](../../AGENTS.md) | Arbeitsbericht nennt Ausgangszustand und abgegrenzte Änderungen. |
 | <a id="agent-002"></a>`AGENT-002` | Jedes Arbeitspaket MUSS Anforderungen, Implementierung, aussagekräftige Prüfungen und Dokumentationsänderungen zusammen liefern. | Arbeitsregel | [Vertrag](../../AGENTS.md) | Vier Teile sind im Ergebnis nachvollziehbar; keine reine Dateiliste. |
@@ -22,7 +22,7 @@ Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) binde
 
 ## GOAL
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
 | <a id="goal-001"></a>`GOAL-001` | Der Kern MUSS INTERLIS 2.3 und 2.4 mit expliziter Versionsauswahl analysieren; andere Modellsprachen werden eindeutig abgelehnt. | Geltend | [Vertrag](../../README.md) | Versionsmatrix einschliesslich versionsabhängiger Schlüsselwörter und nachgewiesener semantischer Abdeckung. |
 | <a id="goal-002"></a>`GOAL-002` | Batch, IDE und Browser MÜSSEN dieselbe semantische Implementierung verwenden. | Geltend | [Vertrag](../../README.md) | Dieselben Eingaben liefern dieselbe normalisierte Analyse und dieselben Diagnosecodes. |
@@ -39,12 +39,12 @@ Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) binde
 
 ## NFR
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
 | <a id="nfr-001"></a>`NFR-001` | Quelltextanalyse MUSS bei gleichen fachlichen Inputs deterministisch sein. | Geltend | [Vertrag](../architecture.md) | Reihenfolge, Diagnostik und normalisierte Projektion bleiben über Wiederholung/Plattform gleich. |
 | <a id="nfr-002"></a>`NFR-002` | Unveränderliche veröffentlichte Snapshots MÜSSEN gefahrlos parallel lesbar sein. | Geltend | [Vertrag](../architecture.md) | Parallele Abfragen verändern weder Resultate noch Cachezustand des Snapshots. |
 | <a id="nfr-003"></a>`NFR-003` | Der portable Kern DARF keine impliziten Netzwerk-, Dateisystem-, DB- oder UI-Zugriffe benötigen. | Geltend | [Vertrag](../architecture.md) | Abhängigkeitsprüfung und In-Memory-/WASM-Lauf. |
-| <a id="nfr-004"></a>`NFR-004` | Laufzeit und Speicher MÜSSEN auf einem versionierten Korpus gemessen und gegen Budgets geprüft werden. | Geltend | [Vertrag](../architecture.md) | Messverfahren mit Rohresultaten; Ziele und Messungen getrennt. |
+| <a id="nfr-004"></a>`NFR-004` | Relevante Laufzeit- und Speicheränderungen MÜSSEN mit repräsentativen Eingaben gemessen werden. | Geltend | [Vertrag](../architecture.md) | Messverfahren mit Rohresultaten; Ziele und Messungen getrennt. |
 | <a id="nfr-005"></a>`NFR-005` | Abbruch und Ressourcenlimits MÜSSEN definierte Resultate liefern; ein Abbruch darf kein gültiges Teilergebnis ausstellen. | Geltend | [Vertrag](../architecture.md) | Phasenabbruchtests und Worker-Verhalten. |
 | <a id="nfr-006"></a>`NFR-006` | Unicode, CRLF, Kommentare und Quellpositionen MÜSSEN verlustfrei und versionsbezogen behandelt werden. | Geltend | [Vertrag](../architecture.md) | UTF-16-/Codepoint-/Zeilenmatrix mit Emojis und Umlauten. |
 | <a id="nfr-007"></a>`NFR-007` | Diagnostik und Projektionen MÜSSEN ohne localeabhängige Zahlen-/Sortierunterschiede erzeugt werden. | Geltend | [Vertrag](../architecture.md) | Tests mit verschiedenen JVM-Locale-/Timezone-Einstellungen. |
@@ -56,7 +56,7 @@ Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) binde
 
 ## ARCH
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
 | <a id="arch-001"></a>`ARCH-001` | Der Modulgraph MUSS azyklisch sein und die erlaubten Abhängigkeiten einhalten. | Geltend | [Vertrag](../architecture.md) | Build-/Architekturtest liest Produktionsgraph und Importgrenzen. |
 | <a id="arch-002"></a>`ARCH-002` | Öffentliche API DARF keine ANTLR-, LSP-, JDBC- oder UI-Typen in den portablen Kern tragen. | Geltend | [Vertrag](../architecture.md) | Signaturprüfung plus portable Kompilierung. |
@@ -71,14 +71,14 @@ Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) binde
 
 ## BUILD
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
 | <a id="build-001"></a>`BUILD-001` | Jenesis MUSS der alleinige aktive JVM-Builder sein; Gradle/Groovy/Wrapper MUSS ausschliesslich die zwei Wasm-Backends bauen. | Geltend | [Vertrag](../development/build.md) | Frischer Checkout baut ohne Maven/Ant-Installation. |
 | <a id="build-002"></a>`BUILD-002` | JDK 25 und feste verifizierte Versionen MÜSSEN dokumentiert sein. | Geltend | [Vertrag](../development/build.md) | Versionen-/Wrapper-/Dependencyreport. |
 | <a id="build-003"></a>`BUILD-003` | Teilprojekte MÜSSEN dem azyklischen fachlichen Modulgraph entsprechen. | Geltend | [Vertrag](../development/build.md) | Dependencytest, keine impliziten Zwischen-JAR-Kopien. |
 | <a id="build-004"></a>`BUILD-004` | Buildlogik MUSS klein und sichtbar bleiben; Projektzugriffe in `afterEvaluate` sind zu vermeiden. | Geltend | [Vertrag](../development/build.md) | Konfiguration ist deklarativ, Taskabhängigkeiten explizit. |
 | <a id="build-005"></a>`BUILD-005` | ANTLR-Generator und Runtime MÜSSEN getrennt und gleichversioniert sein. | Geltend | [Vertrag](../development/build.md) | Runtimeclasspath und generierter Parser geprüft. |
-| <a id="build-006"></a>`BUILD-006` | Generierte Artefakte MÜSSEN aus gepinnten Quellen entstehen; fachliche Ergebnisse bleiben deterministisch. JVM-/SDK- und nicht von TeaVM-Programmen abhängige Lieferdateien MÜSSEN binär reproduzierbar bleiben. TeaVM-Programme und ausschliesslich ihre Hash-/Grössenfelder im Manifest sind davon ausgenommen. | Geltend | [Vertrag](../development/release.md#pflichtnachweise) | Zwei unabhängige Builds mit vollständigen Inventaren, funktionalen JS-/Wasm-Nachweisen und präzisem Bytevergleich; Integrität der konkreten Lieferung bleibt geprüft. |
+| <a id="build-006"></a>`BUILD-006` | Generierte Artefakte MÜSSEN aus gepinnten Quellen entstehen; fachliche Ergebnisse bleiben deterministisch. JVM-/SDK- und nicht von TeaVM-Programmen abhängige Lieferdateien MÜSSEN binär reproduzierbar bleiben. TeaVM-Programme und ausschliesslich ihre Hash-/Grössenfelder im Manifest sind davon ausgenommen. | Geltend | [Vertrag](../development/release.md#plattformen-und-ablauf) | Zwei unabhängige Builds mit vollständigen Inventaren, funktionalen JS-/Wasm-Nachweisen und präzisem Bytevergleich; Integrität der konkreten Lieferung bleibt geprüft. |
 | <a id="build-007"></a>`BUILD-007` | Der normale JVMbuild MUSS eine schnelle, netzwerkunabhängige Entwicklerabnahme sein, sobald Abhängigkeiten/Korpus bereitstehen. | Geltend | [Vertrag](../development/build.md) | Wiederholung offline ohne Live-Repositoryzugriff. |
 | <a id="build-008"></a>`BUILD-008` | Pflichtprüfungen DÜRFEN bei fehlenden Tools nicht als erfolgreich übersprungen gelten. | Geltend | [Vertrag](../development/build.md) | Releaseprofil scheitert mit konkreter Vorbedingung. |
 | <a id="build-009"></a>`BUILD-009` | Publishing DARF keine Voraussetzung für lokales Bauen/Testen sein. | Geltend | [Vertrag](../development/build.md) | Lokale Distribution funktioniert ohne Zugangsdaten. |
@@ -86,44 +86,44 @@ Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) binde
 
 ## SRC
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
-| <a id="src-001"></a>`SRC-001` | Jede Quelle MUSS eine opake `SourceId`, eine Revision und den unveränderten Java-String besitzen. | Geltend | [Vertrag](sources-and-syntax.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Zwei Revisionen derselben Quelle bleiben getrennt adressierbar. |
+| <a id="src-001"></a>`SRC-001` | Jede Quelle MUSS eine opake `SourceId`, eine Revision und den unveränderten Java-String besitzen. | Geltend | [Vertrag](sources-and-syntax.md) | Direkte Modultests. · Zwei Revisionen derselben Quelle bleiben getrennt adressierbar. |
 | <a id="src-002"></a>`SRC-002` | Alle internen Quellbereiche MÜSSEN halb-offene UTF-16-Offsets verwenden. | Geltend | [Vertrag](sources-and-syntax.md) | Tests mit Umlauten, Supplementary Characters, CRLF und EOF. |
 | <a id="src-003"></a>`SRC-003` | Zeilen- und Spaltenumrechnung MUSS deterministisch und ohne Plattform-Newline-Annahmen sein. | Geltend | [Vertrag](sources-and-syntax.md) | Roundtrip der gültigen Positionen und dokumentierte Behandlung von Zeilenumbrüchen. |
 | <a id="src-004"></a>`SRC-004` | Ein Offset oder Bereich ausserhalb der bezeichneten Quellrevision MUSS als API-Fehlgebrauch zurückgewiesen werden. | Geltend | [Vertrag](sources-and-syntax.md) | Negative Offsets, falsche Quelle, falsche Revision und Ende hinter Textlänge. |
 | <a id="src-005"></a>`SRC-005` | Inhalt, Kommentare und Zwischenräume MÜSSEN aus einem Syntaxsnapshot exakt rekonstruierbar bleiben. | Geltend | [Vertrag](sources-and-syntax.md) | Identischer UTF-16-String nach Rekonstruktion für jedes Syntaxfixture. |
-| <a id="src-006"></a>`SRC-006` | Kanonisierung einer URI MUSS vor Eintritt in den Kern erfolgen; Gleichheit von `SourceId` ist Stringgleichheit. | Geltend | [Vertrag](sources-and-syntax.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Keine plattformabhängige Auflösung und keine Netz-/Dateizugriffe bei Konstruktion. |
-| <a id="src-007"></a>`SRC-007` | Content-Fingerprints MÜSSEN Algorithmus und Eingabekodierung festlegen und dürfen keine Prozessidentitäten enthalten. | Geltend | [Vertrag](sources-and-syntax.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Gleiche Inhalte erhalten auf allen Zielplattformen denselben Fingerprint. |
+| <a id="src-006"></a>`SRC-006` | Kanonisierung einer URI MUSS vor Eintritt in den Kern erfolgen; Gleichheit von `SourceId` ist Stringgleichheit. | Geltend | [Vertrag](sources-and-syntax.md) | Direkte Modultests. · Keine plattformabhängige Auflösung und keine Netz-/Dateizugriffe bei Konstruktion. |
+| <a id="src-007"></a>`SRC-007` | Content-Fingerprints MÜSSEN Algorithmus und Eingabekodierung festlegen und dürfen keine Prozessidentitäten enthalten. | Geltend | [Vertrag](sources-and-syntax.md) | Direkte Modultests. · Gleiche Inhalte erhalten auf allen Zielplattformen denselben Fingerprint. |
 
 ## SYN
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
-| <a id="syn-001"></a>`SYN-001` | Der produktive Einstieg MUSS die gesamte Eingabe bis EOF prüfen. | Geltend | [Vertrag](sources-and-syntax.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Gültiges Modell plus nachlaufender Text wird abgelehnt. |
+| <a id="syn-001"></a>`SYN-001` | Der produktive Einstieg MUSS die gesamte Eingabe bis EOF prüfen. | Geltend | [Vertrag](sources-and-syntax.md) | Direkte Modultests. · Gültiges Modell plus nachlaufender Text wird abgelehnt. |
 | <a id="syn-002"></a>`SYN-002` | Lexerfehler und Parserfehler MÜSSEN gesammelt werden; Standardlistener auf stderr sind zu entfernen. | Geltend | [Vertrag](sources-and-syntax.md) | Ein unzulässiges Zeichen ist sichtbar, auch wenn der Parser den Rest akzeptiert. |
-| <a id="syn-003"></a>`SYN-003` | Ausschliesslich INTERLIS 2.3 und 2.4 sind zulässige Sprachversionen. | Geltend | [Vertrag](sources-and-syntax.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · 1.0, 2.2 und unbekannte Versionsangaben erhalten eine erklärende Diagnose. |
+| <a id="syn-003"></a>`SYN-003` | Ausschliesslich INTERLIS 2.3 und 2.4 sind zulässige Sprachversionen. | Geltend | [Vertrag](sources-and-syntax.md) | Direkte Modultests. · 1.0, 2.2 und unbekannte Versionsangaben erhalten eine erklärende Diagnose. |
 | <a id="syn-004"></a>`SYN-004` | Versionsabhängige Schlüsselwörter und Konstrukte MÜSSEN über einen expliziten Sprachprofilvertrag geprüft werden. | Geltend | [Vertrag](sources-and-syntax.md) | Positive und negative versionsbezogene Tests; keine blosse Prüfung des Headers. |
 | <a id="syn-005"></a>`SYN-005` | `STRICT` und `EDITOR` MÜSSEN dieselbe Sprachgültigkeit verwenden. | Geltend | [Vertrag](sources-and-syntax.md) | Recovery allein erzeugt in keinem Modus ein gültiges Compile-Ergebnis. |
 | <a id="syn-006"></a>`SYN-006` | Editor-Recovery MUSS noch erkennbare umgebende Deklarationen und ihre Bereiche erhalten. | Geltend | [Vertrag](sources-and-syntax.md) | `height :` zerstört nicht die umgebende Klasse oder die folgende Klasse. |
-| <a id="syn-007"></a>`SYN-007` | Fehlende, übersprungene und synthetische Syntax MUSS ausdrücklich von ursprünglicher Syntax unterscheidbar sein. | Geltend | [Vertrag](sources-and-syntax.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Fehlstellen mit Nullbreite; Recoverysegment mit originalem Textbereich. |
-| <a id="syn-008"></a>`SYN-008` | Kein öffentlicher Typ DARF von ANTLR-Bäumen, Tokens oder RecognitionExceptions abhängen. | Geltend | [Vertrag](sources-and-syntax.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Architekturtest und öffentliche API-Prüfung. |
-| <a id="syn-009"></a>`SYN-009` | Parsen MUSS bei Fehlern und bei Budgetüberschreitung terminieren. | Geltend | [Vertrag](sources-and-syntax.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Wiederholte fehlerhafte Eingaben und tiefe Verschachtelung liefern definiertes Ergebnis. |
+| <a id="syn-007"></a>`SYN-007` | Fehlende, übersprungene und synthetische Syntax MUSS ausdrücklich von ursprünglicher Syntax unterscheidbar sein. | Geltend | [Vertrag](sources-and-syntax.md) | Direkte Modultests. · Fehlstellen mit Nullbreite; Recoverysegment mit originalem Textbereich. |
+| <a id="syn-008"></a>`SYN-008` | Kein öffentlicher Typ DARF von ANTLR-Bäumen, Tokens oder RecognitionExceptions abhängen. | Geltend | [Vertrag](sources-and-syntax.md) | Direkte Modultests. · Architekturtest und öffentliche API-Prüfung. |
+| <a id="syn-009"></a>`SYN-009` | Parsen MUSS bei Fehlern und bei Budgetüberschreitung terminieren. | Geltend | [Vertrag](sources-and-syntax.md) | Direkte Modultests. · Wiederholte fehlerhafte Eingaben und tiefe Verschachtelung liefern definiertes Ergebnis. |
 | <a id="syn-010"></a>`SYN-010` | Fragmentanalyse MUSS expliziten Fragmenttyp und einen unveränderten Quellbereich besitzen. | Geltend | [Vertrag](sources-and-syntax.md) | Ausdruck, Objektpfad und Attributfragment mit korrektem Offset; Restinhalt wird erkannt. |
-| <a id="syn-011"></a>`SYN-011` | Verlustfreie Syntax und fachliche Modellprojektion MÜSSEN getrennte Repräsentationen bleiben. | Geltend | [Vertrag](sources-and-syntax.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Syntax enthält Fehlerknoten; Metamodell enthält keinen ANTLR-Kontext. |
+| <a id="syn-011"></a>`SYN-011` | Verlustfreie Syntax und fachliche Modellprojektion MÜSSEN getrennte Repräsentationen bleiben. | Geltend | [Vertrag](sources-and-syntax.md) | Direkte Modultests. · Syntax enthält Fehlerknoten; Metamodell enthält keinen ANTLR-Kontext. |
 | <a id="syn-012"></a>`SYN-012` | Grammatikstand, Generatorversion und Runtimeversion MÜSSEN fest gepinnt sein. | Geltend | [Vertrag](sources-and-syntax.md) | Gepinnter Jenesis-JVM-Build mit gleicher ANTLR-Generator- und Runtimeversion. Dokumentierte Grammatikherkunft und Lizenz. |
 | <a id="syn-013"></a>`SYN-013` | Die AST-Abbildung MUSS jeden erkannten Produktionszweig behandeln oder sichtbar als noch nicht unterstützt kennzeichnen. | Geltend | [Vertrag](sources-and-syntax.md) | Coverage-Test; kein `default -> null` und kein stilles Überspringen. |
-| <a id="syn-014"></a>`SYN-014` | Identitäten für Syntaxknoten DÜRFEN keinen statischen Zähler und keine FQN als alleinige Identität verwenden. | Geltend | [Vertrag](sources-and-syntax.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Sitzungsparallelität, Duplikate und Einfügen einer vorangehenden Deklaration. |
+| <a id="syn-014"></a>`SYN-014` | Identitäten für Syntaxknoten DÜRFEN keinen statischen Zähler und keine FQN als alleinige Identität verwenden. | Geltend | [Vertrag](sources-and-syntax.md) | Direkte Modultests. · Sitzungsparallelität, Duplikate und Einfügen einer vorangehenden Deklaration. |
 | <a id="syn-015"></a>`SYN-015` | Grammatikänderungen MÜSSEN Gültigkeit, Operatorbindung und Recovery gemeinsam regressionsprüfen. | Geltend | [Vertrag](sources-and-syntax.md) | Gültige, ungültige und Editorfixtures für jede betroffene Regel. |
 
 ## META
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
-| <a id="meta-001"></a>`META-001` | Veröffentlichte Modellgraphen MÜSSEN unveränderlich sein, einschliesslich enthaltener Collections. | Geltend | [Vertrag](compiler-and-model.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Keine Änderung über zurückgegebene Listen, Maps, Builder oder Consumer. |
-| <a id="meta-002"></a>`META-002` | Fehlerhafte Analyse und erfolgreich geprüftes Schema MÜSSEN im API unterscheidbar sein. | Geltend | [Vertrag](compiler-and-model.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · [`CompiledSchema` nur über das Gate](compiler-and-model.md#gültigkeitsgate-und-veröffentlichung). Partielle Analyse bleibt erkennbar. |
+| <a id="meta-001"></a>`META-001` | Veröffentlichte Modellgraphen MÜSSEN unveränderlich sein, einschliesslich enthaltener Collections. | Geltend | [Vertrag](compiler-and-model.md) | Direkte Modultests. · Keine Änderung über zurückgegebene Listen, Maps, Builder oder Consumer. |
+| <a id="meta-002"></a>`META-002` | Fehlerhafte Analyse und erfolgreich geprüftes Schema MÜSSEN im API unterscheidbar sein. | Geltend | [Vertrag](compiler-and-model.md) | Direkte Modultests. · [`CompiledSchema` nur über das Gate](compiler-and-model.md#gültigkeitsgate-und-veröffentlichung). Partielle Analyse bleibt erkennbar. |
 | <a id="meta-003"></a>`META-003` | Beziehungen MÜSSEN Identitäten verwenden, die nicht allein aus Namen bestehen. | Geltend | [Vertrag](compiler-and-model.md) | Doppelte Namen, Rename und Revisionen ergeben keine falsche Vereinigung. |
-| <a id="meta-004"></a>`META-004` | Jede öffentliche Abfrage mit einem Handle MUSS dessen Snapshotzugehörigkeit prüfen. | Geltend | [Vertrag](compiler-and-model.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Verwendung eines alten `SymbolRef` löst einen definierten API-Fehler aus. |
+| <a id="meta-004"></a>`META-004` | Jede öffentliche Abfrage mit einem Handle MUSS dessen Snapshotzugehörigkeit prüfen. | Geltend | [Vertrag](compiler-and-model.md) | Direkte Modultests. · Verwendung eines alten `SymbolRef` löst einen definierten API-Fehler aus. |
 | <a id="meta-005"></a>`META-005` | Auflösungsfehler, noch nicht analysierte Teile und rechtmässige spätere Bindung MÜSSEN unterschiedliche Zustände besitzen. | Geltend | [Vertrag](compiler-and-model.md) | Fehlender Domänenname, `ErrorType` und legale Generic-Domäne bleiben unterscheidbar. |
 | <a id="meta-006"></a>`META-006` | Alle Sprachkonstrukte im Featurekatalog MÜSSEN semantisch repräsentiert und geprüft sein. | Geltend | [Vertrag](compiler-and-model.md) | Katalogzeile besitzt Konstruktor-/Analyse-/Negativ-/Export- oder Querytest. |
 | <a id="meta-007"></a>`META-007` | Kanonische Symbolidentität und übersetzte beziehungsweise transferspezifische Namen MÜSSEN getrennt sein. | Geltend | [Vertrag](compiler-and-model.md) | Übersetzungsfixture verändert keine Referenzidentität. |
@@ -131,8 +131,8 @@ Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) binde
 | <a id="meta-009"></a>`META-009` | Numerische Werte MÜSSEN exakt und mit der benötigten INTERLIS-Genauigkeitsinformation gespeichert werden. | Geltend | [Vertrag](compiler-and-model.md) | Zahlen grösser 2^53, Skalen, Exponenten und Grenzen ohne Doubleverlust. |
 | <a id="meta-010"></a>`META-010` | `CompiledSchema` MUSS genau die gewählten Wurzelmodelle samt geprüfter Abhängigkeitsmenge beschreiben. | Geltend | [Vertrag](compiler-and-model.md) | Fehler in unabhängiger Quelle blockiert nicht; Fehler in Importclosure blockiert. |
 | <a id="meta-011"></a>`META-011` | Quellbezug und fachliche Herkunft MÜSSEN auch für geerbte, synthetische und vordefinierte Elemente nachvollziehbar sein. | Geltend | [Vertrag](compiler-and-model.md) | Geerbtes Attribut führt auf Originaldeklaration zurück. |
-| <a id="meta-012"></a>`META-012` | Konfigurationsoverlays und Laufzeitcaches DÜRFEN das gemeinsame Modell nicht mutieren. | Geltend | [Vertrag](compiler-and-model.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Zwei unterschiedlich konfigurierte Verbraucher können dasselbe Schema parallel verwenden. |
-| <a id="meta-013"></a>`META-013` | Modellgültigkeit DARF NICHT von den Fähigkeiten eines einzelnen späteren Consumers abhängen. | Geltend | [Vertrag](compiler-and-model.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Gültiger View wird nicht wegen fehlendem SQL-Exporter abgelehnt oder still verworfen. |
+| <a id="meta-012"></a>`META-012` | Konfigurationsoverlays und Laufzeitcaches DÜRFEN das gemeinsame Modell nicht mutieren. | Geltend | [Vertrag](compiler-and-model.md) | Direkte Modultests. · Zwei unterschiedlich konfigurierte Verbraucher können dasselbe Schema parallel verwenden. |
+| <a id="meta-013"></a>`META-013` | Modellgültigkeit DARF NICHT von den Fähigkeiten eines einzelnen späteren Consumers abhängen. | Geltend | [Vertrag](compiler-and-model.md) | Direkte Modultests. · Gültiger View wird nicht wegen fehlendem SQL-Exporter abgelehnt oder still verworfen. |
 | <a id="meta-014"></a>`META-014` | Ein unbekanntes Modellfeature DARF NICHT als untypisierte Map, `Object`, `Any` oder leere Liste verschwinden. | Geltend | [Vertrag](compiler-and-model.md) | Exhaustive Variantenprüfung und sichtbare Coverage-Lücke. |
 | <a id="meta-015"></a>`META-015` | Builtins MÜSSEN versionsspezifisch, unveränderlich und ohne versteckten globalen Laufzustand verfügbar sein. | Geltend | [Vertrag](compiler-and-model.md) | Parallelkompilierung beider Versionen beeinflusst keine andere Sitzung. |
 | <a id="meta-016"></a>`META-016` | Typbeziehungen MÜSSEN über typisierte Ergebnisobjekte erklärt werden können. | Geltend | [Vertrag](compiler-and-model.md) | Unzulässige Zuweisung liefert Grund und betroffene Teiltypen. |
@@ -140,59 +140,59 @@ Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) binde
 
 ## SEM
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
-| <a id="sem-001"></a>`SEM-001` | Der Compiler MUSS nur explizite Sources/Bindings/Optionen verwenden und darf keine versteckten Quellen nachladen. | Geltend | [Vertrag](compiler-and-model.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Kein Dateisystem-/HTTP-Zugriff aus Compiler- oder Modellmodul. |
+| <a id="sem-001"></a>`SEM-001` | Der Compiler MUSS nur explizite Sources/Bindings/Optionen verwenden und darf keine versteckten Quellen nachladen. | Geltend | [Vertrag](compiler-and-model.md) | Direkte Modultests. · Kein Dateisystem-/HTTP-Zugriff aus Compiler- oder Modellmodul. |
 | <a id="sem-002"></a>`SEM-002` | Analyse, Ablehnung, Abbruch und interner Fehler MÜSSEN typisierte Ergebnisse besitzen. | Geltend | [Vertrag](compiler-and-model.md) | Je ein real auslösender Testfall pro Ergebniskategorie. |
 | <a id="sem-003"></a>`SEM-003` | Das Erfolgsgate MUSS vollständige Coverage und alle kanonischen Fehler der angeforderten Closure prüfen. | Geltend | [Vertrag](compiler-and-model.md#gültigkeitsgate-und-veröffentlichung) | Unterdrückte oder nicht dargestellte Fehler erzeugen keinen Erfolg. |
-| <a id="sem-004"></a>`SEM-004` | Ein Fehler in unabhängigen Workspacequellen DARF eine gültige Rootclosure nicht blockieren. | Geltend | [Vertrag](compiler-and-model.md#gültigkeitsgate-und-veröffentlichung) | [Katalog](../../testdata/verification/compiler-contracts.json) · Zwei unabhängige Modelle, eines fehlerhaft; gezielte Kompilierung des anderen gelingt. |
+| <a id="sem-004"></a>`SEM-004` | Ein Fehler in unabhängigen Workspacequellen DARF eine gültige Rootclosure nicht blockieren. | Geltend | [Vertrag](compiler-and-model.md#gültigkeitsgate-und-veröffentlichung) | Direkte Modultests. · Zwei unabhängige Modelle, eines fehlerhaft; gezielte Kompilierung des anderen gelingt. |
 | <a id="sem-005"></a>`SEM-005` | Unaufgelöste Pflichtbindungen, Error-/Pending-Typen und unbekannte Implementierungszweige MÜSSEN den betroffenen Compile blockieren. | Geltend | [Vertrag](compiler-and-model.md) | Kein Erfolg durch `null`, Defaulttyp oder ausgelassene Deklaration. |
-| <a id="sem-006"></a>`SEM-006` | Rechtmässige Generic-/Deferred-Bindungen und externe Funktionssignaturen MÜSSEN von Fehlern getrennt bleiben. | Geltend | [Vertrag](compiler-and-model.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Gültiger Fall kompiliert ohne Runtimeimplementierung beziehungsweise Datensatzkonkretisierung. |
-| <a id="sem-007"></a>`SEM-007` | Jede Phase MUSS deterministische Eingaben, Ausgaben, Zustandsbesitz und Abbruchpunkte haben. | Geltend | [Vertrag](compiler-and-model.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Wiederholung und Plattformvergleich liefern gleiche fachliche Resultate. |
+| <a id="sem-006"></a>`SEM-006` | Rechtmässige Generic-/Deferred-Bindungen und externe Funktionssignaturen MÜSSEN von Fehlern getrennt bleiben. | Geltend | [Vertrag](compiler-and-model.md) | Direkte Modultests. · Gültiger Fall kompiliert ohne Runtimeimplementierung beziehungsweise Datensatzkonkretisierung. |
+| <a id="sem-007"></a>`SEM-007` | Jede Phase MUSS deterministische Eingaben, Ausgaben, Zustandsbesitz und Abbruchpunkte haben. | Geltend | [Vertrag](compiler-and-model.md) | Direkte Modultests. · Wiederholung und Plattformvergleich liefern gleiche fachliche Resultate. |
 | <a id="sem-008"></a>`SEM-008` | Vorabindexierung DARF sprachlich verbotene Vorwärtsreferenzen oder Sichtbarkeiten nicht erlauben. | Geltend | [Vertrag](compiler-and-model.md) | Ziel vorhanden im globalen Index, aber im fraglichen Scope unzulässig: Diagnose. |
-| <a id="sem-009"></a>`SEM-009` | Zyklen MÜSSEN fachlich klassifiziert und endlich bearbeitet werden. | Geltend | [Vertrag](compiler-and-model.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Alias-/Vererbungszyklus und erlaubter Referenzzyklus besitzen getrennte Ergebnisse. |
+| <a id="sem-009"></a>`SEM-009` | Zyklen MÜSSEN fachlich klassifiziert und endlich bearbeitet werden. | Geltend | [Vertrag](compiler-and-model.md) | Direkte Modultests. · Alias-/Vererbungszyklus und erlaubter Referenzzyklus besitzen getrennte Ergebnisse. |
 | <a id="sem-010"></a>`SEM-010` | Typen, Constraints, Views, Übersetzungen und effektive Eigenschaften MÜSSEN nach Katalog05 vollständig geprüft werden. | Geltend | [Vertrag](compiler-and-model.md) | Vollständige Abdeckungsmatrix mit positiven und negativen Fällen. |
-| <a id="sem-011"></a>`SEM-011` | Wiederverwendung MUSS semantisch optional sein; ohne Cache muss dasselbe fachliche Resultat entstehen. | Geltend | [Vertrag](compiler-and-model.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Fresh-versus-reuse nach Editfolgen. |
-| <a id="sem-012"></a>`SEM-012` | Veraltete, fremde oder nicht passende Cacheeingaben MÜSSEN ignoriert oder als API-Fehlgebrauch zurückgewiesen werden. | Geltend | [Vertrag](compiler-and-model.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Geänderte Sprachoption oder Importrevision verursacht keinen falschen Cachetreffer. |
-| <a id="sem-013"></a>`SEM-013` | Kein global veränderlicher Logger, Modellkatalog, Proxywert, Nameindex oder Fehlerstatus ist zulässig. | Geltend | [Vertrag](compiler-and-model.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Mehrere Engines/Sitzungen ohne gegenseitige Beeinflussung. |
+| <a id="sem-011"></a>`SEM-011` | Wiederverwendung MUSS semantisch optional sein; ohne Cache muss dasselbe fachliche Resultat entstehen. | Geltend | [Vertrag](compiler-and-model.md) | Direkte Modultests. · Fresh-versus-reuse nach Editfolgen. |
+| <a id="sem-012"></a>`SEM-012` | Veraltete, fremde oder nicht passende Cacheeingaben MÜSSEN ignoriert oder als API-Fehlgebrauch zurückgewiesen werden. | Geltend | [Vertrag](compiler-and-model.md) | Direkte Modultests. · Geänderte Sprachoption oder Importrevision verursacht keinen falschen Cachetreffer. |
+| <a id="sem-013"></a>`SEM-013` | Kein global veränderlicher Logger, Modellkatalog, Proxywert, Nameindex oder Fehlerstatus ist zulässig. | Geltend | [Vertrag](compiler-and-model.md) | Direkte Modultests. · Mehrere Engines/Sitzungen ohne gegenseitige Beeinflussung. |
 | <a id="sem-014"></a>`SEM-014` | Ressourcenlimits und Abbruch MÜSSEN als nicht erfolgreiche Ausgänge sichtbar sein. | Geltend | [Vertrag](compiler-and-model.md) | Limit reduziert Ergebnisabdeckung; Gate bleibt geschlossen. |
-| <a id="sem-015"></a>`SEM-015` | Teilergebnisse MÜSSEN ihren tatsächlichen Analysezustand ausweisen. | Geltend | [Vertrag](compiler-and-model.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Completion kann bekannte Symbole nutzen; Typabfrage unbekannter Teile liefert `NotAnalyzed`. |
-| <a id="sem-016"></a>`SEM-016` | Externe Configoverlays MÜSSEN als immutable Eingaben und Fingerprintbestandteile behandelt werden. | Geltend | [Vertrag](compiler-and-model.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Zwei Overlaykonfigurationen verwechseln keine Resultate oder Laufzeitcaches. |
+| <a id="sem-015"></a>`SEM-015` | Teilergebnisse MÜSSEN ihren tatsächlichen Analysezustand ausweisen. | Geltend | [Vertrag](compiler-and-model.md) | Direkte Modultests. · Completion kann bekannte Symbole nutzen; Typabfrage unbekannter Teile liefert `NotAnalyzed`. |
+| <a id="sem-016"></a>`SEM-016` | Externe Configoverlays MÜSSEN als immutable Eingaben und Fingerprintbestandteile behandelt werden. | Geltend | [Vertrag](compiler-and-model.md) | Direkte Modultests. · Zwei Overlaykonfigurationen verwechseln keine Resultate oder Laufzeitcaches. |
 | <a id="sem-017"></a>`SEM-017` | Norm- und Legacyabweichungen MÜSSEN explizit begründet und getestet sein; automatische Baselineanpassung ist verboten. | Geltend | [Vertrag](compiler-and-model.md) | Jede akzeptierte Abweichung besitzt Referenz, Fall und bewusste Entscheidung. |
-| <a id="sem-018"></a>`SEM-018` | Jeder produktive Aufruf von `DefaultCompiledSchema` MUSS durch `CompilationGate` erfolgen. | Geltend | [Vertrag](compiler-and-model.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Architekturtest und gezielter Gate-Negativtest. |
-| <a id="sem-019"></a>`SEM-019` | Die Frontendpipeline MUSS denselben fachlichen Code auf JVM und Wasm verwenden. | Geltend | [Vertrag](compiler-and-model.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Identische semantische Fixtureausgabe; kein nur für Wasm vereinfachtes Modell. |
+| <a id="sem-018"></a>`SEM-018` | Jeder produktive Aufruf von `DefaultCompiledSchema` MUSS durch `CompilationGate` erfolgen. | Geltend | [Vertrag](compiler-and-model.md) | Direkte Modultests. · Architekturtest und gezielter Gate-Negativtest. |
+| <a id="sem-019"></a>`SEM-019` | Die Frontendpipeline MUSS denselben fachlichen Code auf JVM und Wasm verwenden. | Geltend | [Vertrag](compiler-and-model.md) | Direkte Modultests. · Identische semantische Fixtureausgabe; kein nur für Wasm vereinfachtes Modell. |
 | <a id="sem-020"></a>`SEM-020` | CLI/LSP/Projektionen DÜRFEN keine zweite unabhängige Namens- oder Typsemantik implementieren. | Geltend | [Vertrag](compiler-and-model.md) | Adapterdelegation und Vergleich an identischen Modellfällen. |
 
 ## INC
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
-| <a id="inc-001"></a>`INC-001` | Der Workspace MUSS versionierte In-Memory-Quellen ohne Dateisystem und Netzwerk verwalten können. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Dieselbe Sitzung auf JVM und Wasm mit virtuellen URIs. |
-| <a id="inc-002"></a>`INC-002` | Änderungen MÜSSEN atomar sein und die erwartete Ausgangsrevision prüfen. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Konflikt- und ungültige Edit-Tests zeigen unveränderten Ausgangszustand. |
-| <a id="inc-003"></a>`INC-003` | Quellrevision, Workspace-Revision und LSP-Dokumentversion MÜSSEN getrennte Werte sein. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · No-op-Änderung und Schliessen/Wiederöffnen eines Dokuments. |
-| <a id="inc-004"></a>`INC-004` | Veröffentlichte Snapshots MÜSSEN unveränderlich sein und ihren Quellstand vollständig identifizieren. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Alter Snapshot bleibt nach weiteren Änderungen identisch abfragbar. |
-| <a id="inc-005"></a>`INC-005` | EDITOR-Analyse MUSS an unvollständigen Deklarationen brauchbare Nachbarelemente erhalten. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Editfolge mit fehlendem Attributtyp; Nachbarklasse navigierbar. |
-| <a id="inc-006"></a>`INC-006` | Unveränderte Dateien SOLLEN nicht erneut geparst werden; fehlerhafte Dateien dürfen separat erneut geparst werden. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Zähler für Parse-Aufrufe belegen Wiederverwendung ohne Timing-Annahme. |
-| <a id="inc-007"></a>`INC-007` | Cache-Schlüssel MÜSSEN alle fachlich wirksamen Eingaben berücksichtigen. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Änderungen von Sprachversion, Optionen, Imports und Overlays invalidieren. |
-| <a id="inc-008"></a>`INC-008` | Abhängigkeiten auf fehlende oder mehrdeutige Namen und Modelle MÜSSEN erfasst werden. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Später hinzugefügtes Modell oder zweite Kandidatendeklaration aktualisiert Analyse. |
-| <a id="inc-009"></a>`INC-009` | Eine inkrementelle Analyse MUSS fachlich einer frischen Analyse desselben Zustands entsprechen. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Normalisierter Vergleich nach jeder Editfolge. |
-| <a id="inc-010"></a>`INC-010` | Symbolidentitäten MÜSSEN für eindeutig unveränderte Deklarationen innerhalb derselben Sitzung wiederverwendet werden. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Kommentar-/Nachbaränderung verändert die betroffenen SymbolIds nicht. |
-| <a id="inc-011"></a>`INC-011` | Identitätszuordnung DARF bei Mehrdeutigkeit keine falsche Kontinuität erfinden. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Duplikate, Verschieben und Löschen/Neuanlegen erzeugen nötigenfalls neue IDs. |
-| <a id="inc-012"></a>`INC-012` | Alte SymbolRefs und SourceRanges MÜSSEN gegen den jeweiligen Snapshot beziehungsweise die Revision geprüft werden. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Cross-Snapshot- und Cross-Revision-Abfragen schlagen typisiert fehl. |
-| <a id="inc-013"></a>`INC-013` | Abbruch MUSS die Quelle erhalten, unveröffentlichte Teilergebnisse verwerfen und einen gültigen Folgelauf erlauben. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Abbruch an jeder Phasengrenze, danach frische/incrementelle Ergebnisgleichheit. |
-| <a id="inc-014"></a>`INC-014` | Cache-Speicher MUSS begrenzt werden; gehaltene veröffentlichte Snapshots bleiben gültig. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Kleine Limits erzwingen Eviction ohne Ergebnisverlust. |
-| <a id="inc-015"></a>`INC-015` | Ein Analysefehler in einem unabhängigen Workspace-Modell DARF eine gültige angeforderte Wurzelhülle nicht blockieren. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Zwei unabhängige Wurzeln, eine davon ungültig. |
-| <a id="inc-016"></a>`INC-016` | Fachliche Modell-Overlays und Betriebscaches MÜSSEN getrennt bleiben. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Overlay-Fingerprint verändert Ergebnis; Cache-Eviction verändert es nicht. |
+| <a id="inc-001"></a>`INC-001` | Der Workspace MUSS versionierte In-Memory-Quellen ohne Dateisystem und Netzwerk verwalten können. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Dieselbe Sitzung auf JVM und Wasm mit virtuellen URIs. |
+| <a id="inc-002"></a>`INC-002` | Änderungen MÜSSEN atomar sein und die erwartete Ausgangsrevision prüfen. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Konflikt- und ungültige Edit-Tests zeigen unveränderten Ausgangszustand. |
+| <a id="inc-003"></a>`INC-003` | Quellrevision, Workspace-Revision und LSP-Dokumentversion MÜSSEN getrennte Werte sein. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · No-op-Änderung und Schliessen/Wiederöffnen eines Dokuments. |
+| <a id="inc-004"></a>`INC-004` | Veröffentlichte Snapshots MÜSSEN unveränderlich sein und ihren Quellstand vollständig identifizieren. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Alter Snapshot bleibt nach weiteren Änderungen identisch abfragbar. |
+| <a id="inc-005"></a>`INC-005` | EDITOR-Analyse MUSS an unvollständigen Deklarationen brauchbare Nachbarelemente erhalten. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Editfolge mit fehlendem Attributtyp; Nachbarklasse navigierbar. |
+| <a id="inc-006"></a>`INC-006` | Unveränderte Dateien SOLLEN nicht erneut geparst werden; fehlerhafte Dateien dürfen separat erneut geparst werden. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Zähler für Parse-Aufrufe belegen Wiederverwendung ohne Timing-Annahme. |
+| <a id="inc-007"></a>`INC-007` | Cache-Schlüssel MÜSSEN alle fachlich wirksamen Eingaben berücksichtigen. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Änderungen von Sprachversion, Optionen, Imports und Overlays invalidieren. |
+| <a id="inc-008"></a>`INC-008` | Abhängigkeiten auf fehlende oder mehrdeutige Namen und Modelle MÜSSEN erfasst werden. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Später hinzugefügtes Modell oder zweite Kandidatendeklaration aktualisiert Analyse. |
+| <a id="inc-009"></a>`INC-009` | Eine inkrementelle Analyse MUSS fachlich einer frischen Analyse desselben Zustands entsprechen. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Normalisierter Vergleich nach jeder Editfolge. |
+| <a id="inc-010"></a>`INC-010` | Symbolidentitäten MÜSSEN für eindeutig unveränderte Deklarationen innerhalb derselben Sitzung wiederverwendet werden. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Kommentar-/Nachbaränderung verändert die betroffenen SymbolIds nicht. |
+| <a id="inc-011"></a>`INC-011` | Identitätszuordnung DARF bei Mehrdeutigkeit keine falsche Kontinuität erfinden. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Duplikate, Verschieben und Löschen/Neuanlegen erzeugen nötigenfalls neue IDs. |
+| <a id="inc-012"></a>`INC-012` | Alte SymbolRefs und SourceRanges MÜSSEN gegen den jeweiligen Snapshot beziehungsweise die Revision geprüft werden. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Cross-Snapshot- und Cross-Revision-Abfragen schlagen typisiert fehl. |
+| <a id="inc-013"></a>`INC-013` | Abbruch MUSS die Quelle erhalten, unveröffentlichte Teilergebnisse verwerfen und einen gültigen Folgelauf erlauben. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Abbruch an jeder Phasengrenze, danach frische/incrementelle Ergebnisgleichheit. |
+| <a id="inc-014"></a>`INC-014` | Cache-Speicher MUSS begrenzt werden; gehaltene veröffentlichte Snapshots bleiben gültig. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Kleine Limits erzwingen Eviction ohne Ergebnisverlust. |
+| <a id="inc-015"></a>`INC-015` | Ein Analysefehler in einem unabhängigen Workspace-Modell DARF eine gültige angeforderte Wurzelhülle nicht blockieren. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Zwei unabhängige Wurzeln, eine davon ungültig. |
+| <a id="inc-016"></a>`INC-016` | Fachliche Modell-Overlays und Betriebscaches MÜSSEN getrennt bleiben. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Overlay-Fingerprint verändert Ergebnis; Cache-Eviction verändert es nicht. |
 | <a id="inc-017"></a>`INC-017` | Feingranulare semantische Wiederverwendung SOLL erst nach Messungen und korrekter Abhängigkeitsinstrumentierung eingeführt werden. | Geltend | [Vertrag](workspace-and-lsp.md#bedingte-übernahme-einer-abgetrennten-analyse) | Benchmark und Gleichheitsnachweis vor Aktivierung einer Optimierung. |
-| <a id="inc-018"></a>`INC-018` | Veraltete Ergebnisse DÜRFEN aktuelle Diagnostik, Quellverweise und Schreiboperationen nicht ersetzen. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Ergebnis von Revision n trifft nach Revision n+1 ein. |
-| <a id="inc-019"></a>`INC-019` | Ein Konfigurations- oder Resolverwechsel MUSS als Workspace-Änderung behandelt werden. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Gleicher Quelltext, anderer Importstand führt zu neuer Analyse. |
-| <a id="inc-020"></a>`INC-020` | Sitzungen MÜSSEN ohne globale Compiler-Locks, globale Listener und globale mutierbare Namensregister isoliert sein. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Zwei Sitzungen mit gleichnamigen, unterschiedlichen Modellen. |
-| <a id="inc-021"></a>`INC-021` | Gemeinsam zu übernehmende Quellen MÜSSEN über einen atomaren bedingten Batch installierbar sein. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Ein Konflikt in einer von drei Quellen verhindert jede Teilübernahme. |
-| <a id="inc-022"></a>`INC-022` | Eine ausserhalb der Workspace-Ownerqueue berechnete Analyse MUSS bedingt als Wiederverwendungsstand übernommen werden können; veraltete Ergebnisse dürfen weder Caches noch aktuelle Veröffentlichung ersetzen. | Geltend | [Vertrag](workspace-and-lsp.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Capture, paralleles Quellupdate, verspätete Analyse und anschliessender Reuse-Lauf. |
+| <a id="inc-018"></a>`INC-018` | Veraltete Ergebnisse DÜRFEN aktuelle Diagnostik, Quellverweise und Schreiboperationen nicht ersetzen. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Ergebnis von Revision n trifft nach Revision n+1 ein. |
+| <a id="inc-019"></a>`INC-019` | Ein Konfigurations- oder Resolverwechsel MUSS als Workspace-Änderung behandelt werden. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Gleicher Quelltext, anderer Importstand führt zu neuer Analyse. |
+| <a id="inc-020"></a>`INC-020` | Sitzungen MÜSSEN ohne globale Compiler-Locks, globale Listener und globale mutierbare Namensregister isoliert sein. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Zwei Sitzungen mit gleichnamigen, unterschiedlichen Modellen. |
+| <a id="inc-021"></a>`INC-021` | Gemeinsam zu übernehmende Quellen MÜSSEN über einen atomaren bedingten Batch installierbar sein. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Ein Konflikt in einer von drei Quellen verhindert jede Teilübernahme. |
+| <a id="inc-022"></a>`INC-022` | Eine ausserhalb der Workspace-Ownerqueue berechnete Analyse MUSS bedingt als Wiederverwendungsstand übernommen werden können; veraltete Ergebnisse dürfen weder Caches noch aktuelle Veröffentlichung ersetzen. | Geltend | [Vertrag](workspace-and-lsp.md) | Direkte Modultests. · Capture, paralleles Quellupdate, verspätete Analyse und anschliessender Reuse-Lauf. |
 
 ## LSP
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
 | <a id="lsp-001"></a>`LSP-001` | Der JVM-LSP MUSS ein dünner LSP4J-Adapter um Workspace und LanguageQueries sein. | Geltend | [Vertrag](workspace-and-lsp.md) | Keine zweite Binder-/Typprüfungsimplementierung im LSP-Modul. |
 | <a id="lsp-002"></a>`LSP-002` | `initialize`, `initialized`, `shutdown`, `exit` und Dokumentlebenszyklus MÜSSEN protokollkonform funktionieren. | Geltend | [Vertrag](workspace-and-lsp.md) | Prozess-/Protokolltest einschliesslich sauberem Shutdown. |
@@ -213,7 +213,7 @@ Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) binde
 
 ## RES
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
 | <a id="res-001"></a>`RES-001` | Engine und SourceProvider-Snapshot DÜRFEN keine implizite IO ausführen. | Geltend | [Vertrag](repositories.md) | In-Memory- und Browserlauf; fehlende Quelle wird als PendingSourceRequest sichtbar. |
 | <a id="res-002"></a>`RES-002` | Sprache, Modellversion, Quellenrevision und Repositoryrevision MÜSSEN getrennt sein. | Geltend | [Vertrag](repositories.md) | Modelle mit gleichem Namen/verschiedenen Versionsstrings werden korrekt gewählt oder als mehrdeutig gemeldet. |
@@ -231,37 +231,37 @@ Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) binde
 
 ## DIAG
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
-| <a id="diag-001"></a>`DIAG-001` | Der Compiler MUSS Lexer-, Parser-, Bindungs-, Typ- und Semantikfehler als unveränderliche `Diagnostic`-Werte liefern. | Geltend | [Vertrag](diagnostics.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Ein Syntax- und ein Semantikfehler sind ohne Logauswertung über die Java-API und WASM auslesbar. |
-| <a id="diag-002"></a>`DIAG-002` | Jede Diagnose MUSS einen stabil dokumentierten Code und typisierte Argumente besitzen. Ein gerenderter Text DARF NICHT ihre Identität sein. | Geltend | [Vertrag](diagnostics.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Textänderung beeinflusst Code, Ursachenbezug und Tests auf Argumente nicht. |
-| <a id="diag-003"></a>`DIAG-003` | Quellbezogene Diagnosen MÜSSEN `SourceId`, `SourceRevision` und halb offene UTF-16-Bereiche verwenden. Globale Diagnosen MÜSSEN ohne erfundene Quellposition darstellbar sein. | Geltend | [Vertrag](diagnostics.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Tests mit CRLF, Umlauten, Emoji und globalem Auflösungsfehler. |
-| <a id="diag-004"></a>`DIAG-004` | Die vollständige Diagnoseliste MUSS vom gefilterten Anzeigeergebnis getrennt bleiben. Das Compilation-Gate MUSS relevante Fehler, Warnungspolitik und Analyseabdeckung prüfen und eine typisierte Ablehnungszusammenfassung erzeugen. | Geltend | [Vertrag](diagnostics.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Unterdrückte Folgefehler erzeugen keinen Erfolg; Warnungsablehnung wird nicht als Sprachfehler dargestellt. |
-| <a id="diag-005"></a>`DIAG-005` | Ursachen und abhängige Diagnosen MÜSSEN explizit referenziert werden. Unterdrückung allein anhand von Meldungstexten ist unzulässig. | Geltend | [Vertrag](diagnostics.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Fehlender Import verdeckt passende Folgefehler, ein unabhängiger Literalfehler bleibt sichtbar. |
-| <a id="diag-006"></a>`DIAG-006` | Diagnosecodes, Argumentnamen und deren Bedeutung MÜSSEN versioniert und auf unbeabsichtigte inkompatible Änderungen geprüft werden. | Geltend | [Vertrag](diagnostics.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Katalogvertrag und JSON-Vertragstests. |
-| <a id="diag-007"></a>`DIAG-007` | Sprachlich ungültige Benutzereingaben DÜRFEN KEINE ungefangenen internen Exceptions sein. Interne Defekte MÜSSEN als solche erkennbar bleiben. | Geltend | [Vertrag](diagnostics.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Ungültige Modelle ergeben `Rejected`; injizierter interner Defekt ergibt `Failed` mit `FailureId`. |
-| <a id="diag-008"></a>`DIAG-008` | Gleichwertige Läufe mit denselben semantischen Eingaben MÜSSEN dieselbe kanonische Diagnosereihenfolge liefern. Laufzeit- und Run-IDs dürfen diese Reihenfolge nicht beeinflussen. | Geltend | [Vertrag](diagnostics.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Wiederholung und Laufzeitvergleich mit definierter ID-Normalisierung. |
-| <a id="diag-009"></a>`DIAG-009` | Diagnoseerzeugung MUSS begrenzt sein. Ein überschrittenes Ressourcenlimit DARF NICHT als erfolgreiche oder vollständig geprüfte Analyse erscheinen. | Geltend | [Vertrag](diagnostics.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Adversarische Eingabe überschreitet konfiguriertes Limit kontrolliert und zeitnah. |
-| <a id="diag-010"></a>`DIAG-010` | Quick-Fixes MÜSSEN versionierte Quellstände adressieren und separat vom Diagnosekern erzeugt werden. | Geltend | [Vertrag](diagnostics.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Änderung an einem inzwischen modifizierten Dokument wird abgewiesen oder neu berechnet. |
+| <a id="diag-001"></a>`DIAG-001` | Der Compiler MUSS Lexer-, Parser-, Bindungs-, Typ- und Semantikfehler als unveränderliche `Diagnostic`-Werte liefern. | Geltend | [Vertrag](diagnostics.md) | Direkte Modultests. · Ein Syntax- und ein Semantikfehler sind ohne Logauswertung über die Java-API und WASM auslesbar. |
+| <a id="diag-002"></a>`DIAG-002` | Jede Diagnose MUSS einen stabil dokumentierten Code und typisierte Argumente besitzen. Ein gerenderter Text DARF NICHT ihre Identität sein. | Geltend | [Vertrag](diagnostics.md) | Direkte Modultests. · Textänderung beeinflusst Code, Ursachenbezug und Tests auf Argumente nicht. |
+| <a id="diag-003"></a>`DIAG-003` | Quellbezogene Diagnosen MÜSSEN `SourceId`, `SourceRevision` und halb offene UTF-16-Bereiche verwenden. Globale Diagnosen MÜSSEN ohne erfundene Quellposition darstellbar sein. | Geltend | [Vertrag](diagnostics.md) | Direkte Modultests. · Tests mit CRLF, Umlauten, Emoji und globalem Auflösungsfehler. |
+| <a id="diag-004"></a>`DIAG-004` | Die vollständige Diagnoseliste MUSS vom gefilterten Anzeigeergebnis getrennt bleiben. Das Compilation-Gate MUSS relevante Fehler, Warnungspolitik und Analyseabdeckung prüfen und eine typisierte Ablehnungszusammenfassung erzeugen. | Geltend | [Vertrag](diagnostics.md) | Direkte Modultests. · Unterdrückte Folgefehler erzeugen keinen Erfolg; Warnungsablehnung wird nicht als Sprachfehler dargestellt. |
+| <a id="diag-005"></a>`DIAG-005` | Ursachen und abhängige Diagnosen MÜSSEN explizit referenziert werden. Unterdrückung allein anhand von Meldungstexten ist unzulässig. | Geltend | [Vertrag](diagnostics.md) | Direkte Modultests. · Fehlender Import verdeckt passende Folgefehler, ein unabhängiger Literalfehler bleibt sichtbar. |
+| <a id="diag-006"></a>`DIAG-006` | Diagnosecodes, Argumentnamen und deren Bedeutung MÜSSEN versioniert und auf unbeabsichtigte inkompatible Änderungen geprüft werden. | Geltend | [Vertrag](diagnostics.md) | Direkte Modultests. · Katalogvertrag und JSON-Vertragstests. |
+| <a id="diag-007"></a>`DIAG-007` | Sprachlich ungültige Benutzereingaben DÜRFEN KEINE ungefangenen internen Exceptions sein. Interne Defekte MÜSSEN als solche erkennbar bleiben. | Geltend | [Vertrag](diagnostics.md) | Direkte Modultests. · Ungültige Modelle ergeben `Rejected`; injizierter interner Defekt ergibt `Failed` mit `FailureId`. |
+| <a id="diag-008"></a>`DIAG-008` | Gleichwertige Läufe mit denselben semantischen Eingaben MÜSSEN dieselbe kanonische Diagnosereihenfolge liefern. Laufzeit- und Run-IDs dürfen diese Reihenfolge nicht beeinflussen. | Geltend | [Vertrag](diagnostics.md) | Direkte Modultests. · Wiederholung und Laufzeitvergleich mit definierter ID-Normalisierung. |
+| <a id="diag-009"></a>`DIAG-009` | Diagnoseerzeugung MUSS begrenzt sein. Ein überschrittenes Ressourcenlimit DARF NICHT als erfolgreiche oder vollständig geprüfte Analyse erscheinen. | Geltend | [Vertrag](diagnostics.md) | Direkte Modultests. · Adversarische Eingabe überschreitet konfiguriertes Limit kontrolliert und zeitnah. |
+| <a id="diag-010"></a>`DIAG-010` | Quick-Fixes MÜSSEN versionierte Quellstände adressieren und separat vom Diagnosekern erzeugt werden. | Geltend | [Vertrag](diagnostics.md) | Direkte Modultests. · Änderung an einem inzwischen modifizierten Dokument wird abgewiesen oder neu berechnet. |
 
 ## LOG
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
-| <a id="log-001"></a>`LOG-001` | Der portable Kern MUSS ohne konkrete Logging- und Telemetrieimplementierung funktionieren. | Geltend | [Vertrag](diagnostics.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Abhängigkeitsprüfung und JVM-/WASM-Build. |
-| <a id="log-002"></a>`LOG-002` | Jeder angenommene öffentliche Lauf MUSS genau einen Abschlusszustand besitzen: erfolgreich, abgelehnt, abgebrochen oder intern fehlgeschlagen. Der Ablehnungsgrund MUSS Quelle, fehlende Voraussetzung und unvollständige Implementierung unterscheiden. | Geltend | [Vertrag](diagnostics.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Ereignisautomat einschliesslich Exception-, Coverage- und Abbruchpfaden. |
-| <a id="log-003"></a>`LOG-003` | Eine intern kontrollierte Ausführung MUSS genau einen Abschluss-Emissionsversuch durchführen. Eine Exactly-once-Zustellung über Prozessgrenzen darf daraus nicht behauptet werden. | Geltend | [Vertrag](diagnostics.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Testobserver zählt Abschlussversuche, einschliesslich Observerfehlern. |
-| <a id="log-004"></a>`LOG-004` | Ein Fehler einer optionalen Beobachtungssenke DARF das fachliche Ergebnis nicht überschreiben und DARF keine rekursive Logging-Schleife auslösen. | Geltend | [Vertrag](diagnostics.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Werfender Observer verändert das Compile-Ergebnis nicht. |
-| <a id="log-005"></a>`LOG-005` | CLI-Ausgabekanäle, Meldungstexte, Reihenfolge und Exitcodes MÜSSEN anhand des freigegebenen Werkzeugprofils geprüft werden. Das Compiler-CLI hat ausschliesslich den Standardvertrag; externe Sprachreferenzen bleiben unabhängig. | Geltend | [Vertrag](../usage/cli.md#diagnosen-und-farbe) | [Katalog](../../testdata/verification/compiler-contracts.json) · Gepinnte CLI-Fixtures mit getrennt erfasstem stdout, stderr und Exitcode. |
-| <a id="log-006"></a>`LOG-006` | Der LSP-Adapter MUSS Diagnosen direkt projizieren. Bei stdio-Transport MUSS stdout ausschliesslich Protokollnachrichten enthalten. | Geltend | [Vertrag](diagnostics.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · LSP-Test mit parallelen Diagnosen und Betriebsereignissen. |
-| <a id="log-007"></a>`LOG-007` | Strukturierte Ereignisse MÜSSEN ein dokumentiertes Schema mit Ereignisname, Laufbezug und geordneter Sequenz besitzen. | Geltend | [Vertrag](diagnostics.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Schema- und Reihenfolgetests. |
-| <a id="log-008"></a>`LOG-008` | Der Host MUSS die Vertraulichkeit von Credentials und optional von Quellinhalten wahren. Bekannte Geheimnisfelder dürfen nicht in Ereignisse übernommen werden. | Geltend | [Vertrag](diagnostics.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Resolver- und JDBC-Tests mit markierten Testgeheimnissen. |
-| <a id="log-009"></a>`LOG-009` | Häufige Ereignisse MÜSSEN ohne unbeschränkte Puffer und ohne unkontrolliert hohe Metrik-Kardinalität erfasst werden können. | Geltend | [Vertrag](diagnostics.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Lasttest mit begrenzter Queue und dokumentierter Verwerfungsstatistik. |
-| <a id="log-010"></a>`LOG-010` | CLI, JVM-Dienste und WASM MÜSSEN eigene Ausgabeadapter verwenden; globale Logger-Listener und Prozess-Systemproperties zur Steuerung einzelner Läufe sind unzulässig. | Geltend | [Vertrag](diagnostics.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Zwei unabhängige Compilerinstanzen beeinflussen einander nicht. |
+| <a id="log-001"></a>`LOG-001` | Der portable Kern MUSS ohne konkrete Logging- und Telemetrieimplementierung funktionieren. | Geltend | [Vertrag](diagnostics.md) | Direkte Modultests. · Abhängigkeitsprüfung und JVM-/WASM-Build. |
+| <a id="log-002"></a>`LOG-002` | Jeder angenommene öffentliche Lauf MUSS genau einen Abschlusszustand besitzen: erfolgreich, abgelehnt, abgebrochen oder intern fehlgeschlagen. Der Ablehnungsgrund MUSS Quelle, fehlende Voraussetzung und unvollständige Implementierung unterscheiden. | Geltend | [Vertrag](diagnostics.md) | Direkte Modultests. · Ereignisautomat einschliesslich Exception-, Coverage- und Abbruchpfaden. |
+| <a id="log-003"></a>`LOG-003` | Eine intern kontrollierte Ausführung MUSS genau einen Abschluss-Emissionsversuch durchführen. Eine Exactly-once-Zustellung über Prozessgrenzen darf daraus nicht behauptet werden. | Geltend | [Vertrag](diagnostics.md) | Direkte Modultests. · Testobserver zählt Abschlussversuche, einschliesslich Observerfehlern. |
+| <a id="log-004"></a>`LOG-004` | Ein Fehler einer optionalen Beobachtungssenke DARF das fachliche Ergebnis nicht überschreiben und DARF keine rekursive Logging-Schleife auslösen. | Geltend | [Vertrag](diagnostics.md) | Direkte Modultests. · Werfender Observer verändert das Compile-Ergebnis nicht. |
+| <a id="log-005"></a>`LOG-005` | CLI-Ausgabekanäle, Meldungstexte, Reihenfolge und Exitcodes MÜSSEN anhand des freigegebenen Werkzeugprofils geprüft werden. Das Compiler-CLI hat ausschliesslich den Standardvertrag; externe Sprachreferenzen bleiben unabhängig. | Geltend | [Vertrag](../usage/cli.md#diagnosen-und-farbe) | Direkte Modultests. · Gepinnte CLI-Fixtures mit getrennt erfasstem stdout, stderr und Exitcode. |
+| <a id="log-006"></a>`LOG-006` | Der LSP-Adapter MUSS Diagnosen direkt projizieren. Bei stdio-Transport MUSS stdout ausschliesslich Protokollnachrichten enthalten. | Geltend | [Vertrag](diagnostics.md) | Direkte Modultests. · LSP-Test mit parallelen Diagnosen und Betriebsereignissen. |
+| <a id="log-007"></a>`LOG-007` | Strukturierte Ereignisse MÜSSEN ein dokumentiertes Schema mit Ereignisname, Laufbezug und geordneter Sequenz besitzen. | Geltend | [Vertrag](diagnostics.md) | Direkte Modultests. · Schema- und Reihenfolgetests. |
+| <a id="log-008"></a>`LOG-008` | Der Host MUSS die Vertraulichkeit von Credentials und optional von Quellinhalten wahren. Bekannte Geheimnisfelder dürfen nicht in Ereignisse übernommen werden. | Geltend | [Vertrag](diagnostics.md) | Direkte Modultests. · Resolver- und JDBC-Tests mit markierten Testgeheimnissen. |
+| <a id="log-009"></a>`LOG-009` | Häufige Ereignisse MÜSSEN ohne unbeschränkte Puffer und ohne unkontrolliert hohe Metrik-Kardinalität erfasst werden können. | Geltend | [Vertrag](diagnostics.md) | Direkte Modultests. · Lasttest mit begrenzter Queue und dokumentierter Verwerfungsstatistik. |
+| <a id="log-010"></a>`LOG-010` | CLI, JVM-Dienste und WASM MÜSSEN eigene Ausgabeadapter verwenden; globale Logger-Listener und Prozess-Systemproperties zur Steuerung einzelner Läufe sind unzulässig. | Geltend | [Vertrag](diagnostics.md) | Direkte Modultests. · Zwei unabhängige Compilerinstanzen beeinflussen einander nicht. |
 
 ## WASM
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
 | <a id="wasm-001"></a>`WASM-001` | Der portable Kern MUSS denselben fachlichen Java-Quellcode auf JVM und TeaVM verwenden. | Geltend | [Vertrag](bridge-protocol.md) | Gemeinsame Module, keine zweite INTERLIS-Semantik in JavaScript. |
 | <a id="wasm-002"></a>`WASM-002` | Der vorhandene Syntaxversuch MUSS unter Gradle reproduziert werden. | Geltend | [Vertrag](bridge-protocol.md) | Frische Build-/Laufmanifestdatei mit Befehlen und Exitcodes. |
@@ -284,7 +284,7 @@ Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) binde
 
 ## VIZ
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
 | <a id="viz-001"></a>`VIZ-001` | Eine einzige rendererunabhängige Projektion MUSS die fachliche Diagrammstruktur erzeugen. | Geltend | [Vertrag](projection.md) | Zwei Renderer zeigen dieselben Knoten, Rollen und Beziehungen. |
 | <a id="viz-002"></a>`VIZ-002` | Modell-, Topic-, Klassen-, Domänen- und Vererbungsdarstellung MUSS im Editor- und Browserumfang nutzbar sein. | Geltend | [Vertrag](projection.md) | Durchgängiges Editor-/Wasm-Fixture mit Navigation. |
@@ -307,7 +307,7 @@ Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) binde
 
 ## STACK
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
 | <a id="stack-001"></a>`STACK-001` | Der Compiler MUSS alle für Transfer, Validierung und DB-Abbildung relevanten semantischen Informationen typisiert und eindeutig bereitstellen. | Geltend | [Vertrag](../design/transfer-validation-database.md) | Semantische Goldens gegen ausgewählte Altmodelle einschliesslich Reihenfolge, Übersetzung, Views und Rollen. |
 | <a id="stack-002"></a>`STACK-002` | Ein gültiges Sprachkonstrukt DARF wegen einer fehlenden Verbraucherfähigkeit nicht durch den Compiler abgelehnt werden. | Geltend | [Vertrag](../design/transfer-validation-database.md) | Gültiges Modell ergibt Schema; absichtlich begrenzter Projektor liefert `Unsupported`. |
@@ -327,7 +327,7 @@ Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) binde
 
 ## DB
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
 | <a id="db-001"></a>`DB-001` | Bestehende ili2db-Schemata und ihre Metadaten MÜSSEN unter ausdrücklich benannten Referenzprofilen weiterverwendbar sein. | Geplant | [Vertrag](../design/transfer-validation-database.md) | Bidirektionale Interoperabilitätsmatrix mit gepinnten Altversionen. |
 | <a id="db-002"></a>`DB-002` | Bereits gespeicherte Namens- und Abbildungszuordnungen MÜSSEN bei Wiederverwendung massgeblich sein. | Geplant | [Vertrag](../design/transfer-validation-database.md#namemapping-und-dialektgrenze) | Bestehende gekürzte oder kollidierte Namen bleiben erhalten. |
@@ -342,7 +342,7 @@ Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) binde
 
 ## TEST
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
 | <a id="test-001"></a>`TEST-001` | Jede implementierte normative Anforderung MUSS auf einen Test, eine reproduzierbare Inspektion oder eine begründete andere Abnahme abgebildet werden. | Geltend | [Vertrag](../development/testing.md) | Aktualisierte Anforderungs-/Abdeckungsmatrix. |
 | <a id="test-002"></a>`TEST-002` | Referenztools, Grammatik, Testkorpora und externe Suites MÜSSEN über unveränderliche Stände und Integritätsnachweise festgelegt werden. | Geltend | [Vertrag](../development/testing.md) | Manifest und überprüfte Downloads; kein stilles `latest`. |
@@ -351,7 +351,7 @@ Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) binde
 | <a id="test-005"></a>`TEST-005` | Das endgültige Compiler-Gate MUSS vollständige Prüfung der angeforderten Root-Closure verlangen. Teilweise erkannte Syntax darf kein Erfolgsschema erzeugen. | Geltend | [Vertrag](../development/testing.md) | Negativtests für Recovery und unvollständige Abdeckung. |
 | <a id="test-006"></a>`TEST-006` | Der inkrementelle Stand MUSS nach jeder relevanten Editierfolge dem frischen Lauf auf denselben Quellen entsprechen. | Geltend | [Vertrag](../development/testing.md) | Deterministische Editiersequenzen und normalisierter Ergebnisvergleich. |
 | <a id="test-007"></a>`TEST-007` | Die portable Strecke MUSS fachlich identische Fixtures auf JVM und aktivem WASM-Ziel ausführen. | Geltend | [Vertrag](../development/testing.md) | Maschinenlesbarer Paritätsbericht. |
-| <a id="test-008"></a>`TEST-008` | Browserunterstützung DARF nur für tatsächlich getestete Browser-/Versionenkombinationen behauptet werden. | Geltend | [Vertrag](../development/release.md#pflichtnachweise) | Ausführbare Browsermatrix mit Laufzeitvoraussetzungen. |
+| <a id="test-008"></a>`TEST-008` | Browserunterstützung DARF nur für tatsächlich getestete Browser-/Versionenkombinationen behauptet werden. | Geltend | [Vertrag](../development/release.md#plattformen-und-ablauf) | Ausführbare Browsermatrix mit Laufzeitvoraussetzungen. |
 | <a id="test-009"></a>`TEST-009` | Fuzz- und Negativtests MÜSSEN begrenzte Laufzeit, Speicher und Ausgabe besitzen; Hänger und interne Defekte werden als Fehler klassifiziert. | Geltend | [Vertrag](../development/testing.md) | Reproduzierbare Seeds und kontrollierte Ressourcenlimits. |
 | <a id="test-010"></a>`TEST-010` | Benchmarkresultate MÜSSEN Hardware, Laufzeit, Eingaben, Optionen, Warmup und Messmethode nennen. | Geltend | [Vertrag](../development/testing.md) | Versionierter Messbericht, ohne aus kleinen Beispielen abgeleitete Produktionszusagen. |
 | <a id="test-011"></a>`TEST-011` | Bekannte Abweichungen MÜSSEN einzeln begründet, einem Verantwortlichen beziehungsweise Issue und einem Umfang zugeordnet sein. | Geltend | [Vertrag](../development/testing.md) | Überprüfter Baselineeintrag; kein automatisches Umwandeln aller FAILs in XFAIL. |
@@ -362,7 +362,7 @@ Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) binde
 
 ## COMPAT
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
 | <a id="compat-001"></a>`COMPAT-001` | Kompatibilität MUSS getrennt für Sprache, CLI, Diagnostik, Metamodell, Transfer, Java-API und DB ausgewiesen werden. | Geltend | [Vertrag](norm-decisions.md) | Benannte Profile und Matrix; kein pauschaler Kompatibilitätsclaim. |
 | <a id="compat-002"></a>`COMPAT-002` | CLI-Exitcodes und Ausgabekanäle MÜSSEN für das freigegebene Werkzeugprofil geprüft werden; der Compiler-CLI-Standardvertrag ersetzt ausschliesslich dessen frühere Bedienparität. | Geltend | [Vertrag](../development/testing.md) | Getrennte stdout-/stderr-/Exitcode-Fixtures. |
@@ -374,7 +374,7 @@ Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) binde
 
 ## ADR
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
 | <a id="adr-001"></a>`ADR-001` | Monorepo `interlis-java`, Namespace `guru.interlis` | Entscheidung | [Vertrag](../architecture.md) | expliziter Produkt-/Namensentscheidung |
 | <a id="adr-002"></a>`ADR-002` | Java 25 ohne Preview | Entscheidung | [Vertrag](../architecture.md) | nachgewiesener Zielplattformblockade mit Variantenvergleich |
@@ -397,18 +397,18 @@ Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) binde
 
 ## API
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
-| <a id="api-001"></a>`API-001` | Gemeinsame Typen MÜSSEN einen einzigen kanonischen Besitzer und Namen haben. | Geltend | [Vertrag](../usage/sdk.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Register, Modulgraph und reale Imports stimmen überein. |
-| <a id="api-002"></a>`API-002` | Öffentliche Einstiege MÜSSEN tatsächlich konstruierbar sein. | Geltend | [Vertrag](../usage/sdk.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · PublicSdkConstructionTest gegen Artefakte. |
-| <a id="api-003"></a>`API-003` | Klassen-/Methodendokumentation MUSS Vorbedingungen, Nachbedingungen, Reihenfolge, Fehler und Lebensdauer erklären. | Geltend | [Vertrag](../usage/sdk.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Vertragstest-/Javadocreview. |
-| <a id="api-004"></a>`API-004` | Unterschiedliche Ablehnungs-/Abbruchursachen MÜSSEN bis zu den Adaptern unterscheidbar bleiben. | Geltend | [Vertrag](../usage/sdk.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Outcome-/CLI-/Bridge-Matrix. |
-| <a id="api-005"></a>`API-005` | Snapshots und geprüfte Sichten MÜSSEN ihre Auswahl und Herkunft korrekt begrenzen. | Geltend | [Vertrag](../usage/sdk.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Selection-/Ownershiptests. |
-| <a id="api-006"></a>`API-006` | Änderungen an gemeinsamen APIs MÜSSEN Verbraucher, Verträge und Tests gemeinsam aktualisieren. | Geltend | [Vertrag](../usage/sdk.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Kein Drift nach API-Änderung. |
+| <a id="api-001"></a>`API-001` | Gemeinsame Typen MÜSSEN einen einzigen kanonischen Besitzer und Namen haben. | Geltend | [Vertrag](../usage/sdk.md) | Direkte Modultests. · Register, Modulgraph und reale Imports stimmen überein. |
+| <a id="api-002"></a>`API-002` | Öffentliche Einstiege MÜSSEN tatsächlich konstruierbar sein. | Geltend | [Vertrag](../usage/sdk.md) | Direkte Modultests. · PublicSdkConstructionTest gegen Artefakte. |
+| <a id="api-003"></a>`API-003` | Klassen-/Methodendokumentation MUSS Vorbedingungen, Nachbedingungen, Reihenfolge, Fehler und Lebensdauer erklären. | Geltend | [Vertrag](../usage/sdk.md) | Direkte Modultests. · Vertragstest-/Javadocreview. |
+| <a id="api-004"></a>`API-004` | Unterschiedliche Ablehnungs-/Abbruchursachen MÜSSEN bis zu den Adaptern unterscheidbar bleiben. | Geltend | [Vertrag](../usage/sdk.md) | Direkte Modultests. · Outcome-/CLI-/Bridge-Matrix. |
+| <a id="api-005"></a>`API-005` | Snapshots und geprüfte Sichten MÜSSEN ihre Auswahl und Herkunft korrekt begrenzen. | Geltend | [Vertrag](../usage/sdk.md) | Direkte Modultests. · Selection-/Ownershiptests. |
+| <a id="api-006"></a>`API-006` | Änderungen an gemeinsamen APIs MÜSSEN Verbraucher, Verträge und Tests gemeinsam aktualisieren. | Geltend | [Vertrag](../usage/sdk.md) | Direkte Modultests. · Kein Drift nach API-Änderung. |
 
 ## CLI
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
 | <a id="cli-001"></a>`CLI-001` | CLI und SDK MÜSSEN dieselbe CompilerEngine verwenden. | Geltend | [Vertrag](../usage/cli.md) | Fachlich identische normalisierte Resultate. |
 | <a id="cli-002"></a>`CLI-002` | Nur der Prozesseinstieg DARF System.exit verwenden; die Anwendung MUSS als Bibliothek testbar sein. | Geltend | [Vertrag](../usage/cli.md) | In-Process-Tests fangen Resultate und Streams ohne JVM-Ende auf. |
@@ -420,7 +420,7 @@ Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) binde
 
 ## SDK
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
 | <a id="sdk-001"></a>`SDK-001` | Der SDK-Grundfall MUSS rein aus Strings und expliziten Optionen ausführbar sein. | Geltend | [Vertrag](../usage/sdk.md) | Kompilierender Beispiel-/Vertragstest ohne Dateisystem. |
 | <a id="sdk-002"></a>`SDK-002` | Öffentliche SDK-Beispiele MÜSSEN mit den ausgelieferten Artefakten getestet werden. | Geltend | [Vertrag](../usage/sdk.md) | Beispielkompilierung in CI. |
@@ -429,16 +429,16 @@ Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json) binde
 
 ## FMT
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
-| <a id="fmt-001"></a>`FMT-001` | Die Formatierung MUSS als deterministische, idempotente öffentliche API ohne IO verfügbar sein. | Geltend | [Vertrag](formatting.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · API-Vertrag, Wiederholungslauf und Unveränderlichkeit der fachlichen Tokenfolge. |
-| <a id="fmt-002"></a>`FMT-002` | Die Formatierung MUSS Kommentare, Zeichenketten, Unicode und die fachliche Bedeutung erhalten und fehlerhafte Quellen ohne Teilprodukt ablehnen. | Geltend | [Vertrag](formatting.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Positive/negative Formatfixtures, Re-Parse und semantischer Vergleich. |
-| <a id="fmt-003"></a>`FMT-003` | Die CLI MUSS `format` mit stdout, `--write`, `--check` und dokumentierten Exitcodes anbieten. | Geltend | [Vertrag](formatting.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · Prozessfixtures für Ausgabe, In-Place-Schreiben, Check-Modus und Breitenoption. |
-| <a id="fmt-004"></a>`FMT-004` | In-Place-Formatierung MUSS atomar sein und bei Fehlern die vorhandene Datei unverändert lassen. | Geltend | [Vertrag](formatting.md) | [Katalog](../../testdata/verification/compiler-contracts.json) · IO-Fehler-/Abbruchtest mit vorhandener Zieldatei. |
+| <a id="fmt-001"></a>`FMT-001` | Die Formatierung MUSS als deterministische, idempotente öffentliche API ohne IO verfügbar sein. | Geltend | [Vertrag](formatting.md) | Direkte Modultests. · API-Vertrag, Wiederholungslauf und Unveränderlichkeit der fachlichen Tokenfolge. |
+| <a id="fmt-002"></a>`FMT-002` | Die Formatierung MUSS Kommentare, Zeichenketten, Unicode und die fachliche Bedeutung erhalten und fehlerhafte Quellen ohne Teilprodukt ablehnen. | Geltend | [Vertrag](formatting.md) | Direkte Modultests. · Positive/negative Formatfixtures, Re-Parse und semantischer Vergleich. |
+| <a id="fmt-003"></a>`FMT-003` | Die CLI MUSS `format` mit stdout, `--write`, `--check` und dokumentierten Exitcodes anbieten. | Geltend | [Vertrag](formatting.md) | Direkte Modultests. · Prozessfixtures für Ausgabe, In-Place-Schreiben, Check-Modus und Breitenoption. |
+| <a id="fmt-004"></a>`FMT-004` | In-Place-Formatierung MUSS atomar sein und bei Fehlern die vorhandene Datei unverändert lassen. | Geltend | [Vertrag](formatting.md) | Direkte Modultests. · IO-Fehler-/Abbruchtest mit vorhandener Zieldatei. |
 
 ## LEGACY
 
-| ID | Anforderung | Status | Fachvertrag | Testbindung |
+| ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
 | <a id="legacy-001"></a>`LEGACY-001` | Ein Adapter für den alten mutierbaren ili2c-Java-Objektgraphen bleibt zurückgestellt. | Zurückgestellt | [Vertrag](../design/transfer-validation-database.md) | Eigener Auftrag mit echten Verbrauchertests erforderlich. |
 | <a id="legacy-002"></a>`LEGACY-002` | Ein alter mutabler Objektgraph DARF das neue Schema nicht verändern. | Zurückgestellt | [Vertrag](../design/transfer-validation-database.md) | Gilt erst bei Wiederaufnahme des Adapterauftrags. |

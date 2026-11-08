@@ -488,8 +488,6 @@ DomainSymbol.mandatory(), gebundene CLASS-Domänen, unverfälschte fehlerhafte
 NumericTypeSyntax und QueryResult<UnitRelation> mit NOT_A_UNIT. Verbraucher
 verwenden die gemeinsame Typrelation. UnitRelationContractTest und
 DomainRestrictionContractTest prüfen Modell, Queries, Fehlursachen und Edits.
-Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json)
-nennt die gebundenen Normfälle und erforderlichen Testinvocations.
 
 <a id="gebundene-strukturwerte-und-restriktionen"></a>
 ### Gebundene Strukturwerte und Restriktionen

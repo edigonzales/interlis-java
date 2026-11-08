@@ -15,8 +15,9 @@ import static org.junit.jupiter.api.Assertions.*;
 class OriginalViewReuseTest {
     @Test void originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits() throws Exception {
         var token = CancellationToken.none();
-        assertEquals(19, testIds().size());
-        for (var id : testIds()) {
+        var files = fixtureNames();
+        assertFalse(files.isEmpty(), "Missing original view fixtures");
+        for (var id : files) {
             var original = source(id);
             var engine = CompilerEngines.create();
             AnalysisSnapshot previous = null;

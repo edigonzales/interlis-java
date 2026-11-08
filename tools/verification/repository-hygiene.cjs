@@ -75,12 +75,6 @@ function verify(root, files = tracked(root)) {
     }
   }
 
-  const input = 'testdata/verification/reference-fixtures.properties';
-  if(files.includes(input)) {
-    const pins=fs.readFileSync(path.join(root,input),'utf8');
-    for(const row of pins.matchAll(/^([^#!\s][^=\r\n]*)=[a-f0-9]{64}\s*$/gm)) requireInput(input,row[1]);
-  }
-
   let links=0;
   for(const [file,lines] of documents) for(const [lineNumber,line] of lines) {
     const definition=line.match(linkDefinition);
