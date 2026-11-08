@@ -6,4 +6,4 @@ Jeder Pfad unter `originals/` entspricht demselben relativen Pfad unter
 `models/` im Upstream. Die originale MIT-Lizenz liegt in `LICENSE.sogis` bei.
 
 `cases/` enthält eigenständig geschriebene Syntaxfälle. `golden/` enthält
-Solltexte nach STYLE_GUIDE und CONSTRAINT_LAYOUT.
+Solltexte für den [Standardstil 2.0](../../../docs/contracts/formatting.md#standardstil-20).

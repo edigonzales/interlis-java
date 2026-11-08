@@ -33,6 +33,7 @@ der Originalrevision. Eine verletzte interne Quelltreueinvariante gelangt zum
 internen Hostfehlerpfad. Ablehnung, Abbruch und interne Defekte liefern
 keinen formatierten Teiltext.
 
+<a id="standardstil-20"></a>
 ## Standardstil 2.0
 
 Der Solothurner Standardstil verwendet Spaces. Die syntaktische Blocktiefe
@@ -40,6 +41,7 @@ bestimmt die Einrückung; `END` steht auf Höhe des Blockkopfs. Nichtleere
 `MODEL`- und `TOPIC`-Blöcke setzen den Körper durch Leerzeilen ab. Andere
 Blöcke erhalten am Innenrand keine zusätzliche Leerzeile. Abschnitte wie
 `DOMAIN`, `UNIT` und `ATTRIBUTE` rücken ihre Deklarationen eine Stufe ein.
+Präambelzeilen wie `IMPORTS` und `DEPENDS ON` stehen auf Körperebene.
 Sichere Kopfzeilenfortsetzungen werden eingerückt und bleiben erhalten.
 Verschachtelte oder bereits mehrzeilige Enumerationen werden eingerückt,
 mit einem Element pro Zeile.
@@ -50,8 +52,8 @@ mit der Deklaration zusammen. Einfache Mitglieder bleiben ohne erzwungene
 Leerzeilen. Kommentare bleiben zwischen denselben fachlichen Tokens; nach
 `!!` beginnt weiterer Code auf einer neuen Zeile. Mehrzeilige Blockkommentare
 werden bei nachweisbar gemeinsamem Rand als Ganzes verschoben, auch an
-einer Schlusszeile mit weiterem Code. Wo eine solche Verschiebung unsicher
-ist, kann eine Notice die geschützte Stelle bezeichnen.
+einer Schlusszeile mit weiterem Code. `COMMENT_MARGIN_PRESERVED`
+bezeichnet einen Kommentarrand, der nicht sicher verschoben werden kann.
 
 Tokenabstände folgen dem Kontext: `Name : TEXT*100`, `1 .. 100`,
 `{0..*}`, `A * B`, `A == B`, `Model.Topic.Class`, `Role->Attribute`,
@@ -121,5 +123,6 @@ verwendet PRESERVE und ein Schlussnewline. Sie liefert bei unveränderter
 Quelle eine leere Editliste. Die Ergebnisbereiche verwenden UTF-16 und
 gehören zur erfassten Dokumentrevision. Schreibgeschützte, inzwischen
 geänderte oder abgebrochene Dokumentanfragen liefern keine Edits.
-Quickfixes werden weiterhin über Code Actions angeboten. Die vollständige
-Formatierung verwendet den Standardprovider.
+Die vollständige Formatierung verwendet den Standardprovider
+`textDocument/formatting`. Es gibt keinen zweiten Formatierpfad über
+`source.format`. Quickfixes werden über Code Actions angeboten.
