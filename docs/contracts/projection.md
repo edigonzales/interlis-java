@@ -372,9 +372,9 @@ Snapshotwechsel gleichen auch Pin-/Manuell-/Hiddenmengen über die exakten
 Presentationkeys ab. Eigene begrenzte Viewhistory enthält nur Geometrie und
 überschreitet keine externe Projektionsantwort. `settle` erhält manuelle/pinnte
 Knoten und manuelle Routen; `resetLayout` verwirft diese explizit, aber keine Filter.
-Das interaktive Layout verwendet den ELK-Worker. Für das Inkscape-Ziel kann
-Libavoid orthogonale und polygonale Routen berechnen. Splines bleiben
-kubische Bézierpfade. Die fachlichen Endpunkte bleiben unverändert.
+Der ELK-Worker berechnet das interaktive Layout. Inkscape ist ein Exportziel
+für die vorhandene Geometrie. Splines bleiben kubische Bézierpfade. Die
+fachlichen Endpunkte bleiben unverändert.
 
 `exportSvg(FULL|VISIBLE)` serialisiert die aktuelle gefilterte Sprotty-Zeichnung
 mit berechneten Styles und lokalen Referenzen. FULL verwendet gemalte Bounds
