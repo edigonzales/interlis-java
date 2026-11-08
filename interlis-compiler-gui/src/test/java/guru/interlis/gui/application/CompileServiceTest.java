@@ -33,7 +33,7 @@ class CompileServiceTest {
     @Test
     void allInputsAndExplicitRootsCheckTheCorrectModelsAndRetainTheRunSources() throws Exception {
         Path shared = write("shared models.ili", "INTERLIS 2.4; " + model("First", "") + model("Second", ""));
-        Path unrelated = write("bad.ili", "INTERLIS 2.4; " + model("Unrelated", "DOMAIN D = UnknownType;"));
+        Path unrelated = write("bad.ili", "INTERLIS 2.4; " + model("Unrelated", "CLASS C = value : UnknownType; END C;"));
         var inspected = service.inspect(shared, directory, CancellationToken.none()).orElseThrow();
         assertEquals(List.of("First", "Second"), inspected.models().stream().map(RootChoice.Local::name).toList());
         var defaults = SessionOptions.defaults();

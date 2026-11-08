@@ -44,7 +44,7 @@ class RepositoryLogOrderTest {
         assertEquals(CliTermination.INPUT_UNRESOLVED, missing.result().termination());
         assertTrue(missing.err().indexOf(" [ILI-RES-0011]") >= 0, missing.err());
         assertTrue(missing.err().indexOf(" [ILI-RES-0011]") < missing.err().indexOf("ERROR "), missing.err());
-        Files.writeString(directory.resolve("Projekt.ili"), "INTERLIS 2.4; MODEL Projekt AT \"x\" VERSION \"1\" = IMPORTS Basis; DOMAIN D = Missing; END Projekt.");
+        Files.writeString(directory.resolve("Projekt.ili"), "INTERLIS 2.4; MODEL Projekt AT \"x\" VERSION \"1\" = IMPORTS Basis; CLASS C = value : Missing; END C; END Projekt.");
         var bad = fixture.run("check", "Projekt.ili", "--repository", base, "--verbose");
         assertEquals(CliTermination.SOURCE_REJECTED, bad.result().termination());
         assertTrue(bad.err().contains(" [ILI-RES-0011]"), bad.err());
