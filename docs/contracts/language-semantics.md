@@ -269,7 +269,10 @@ fehlen; ein gültiges Schema benötigt die fachlich erforderlichen Bindungen.
 `EnumAssignment`-Werte; deren Pfade gehören zum aufgelösten Enumtyp des Selektors.
 Ein Intervall benötigt geordnete Geschwisterknoten. Basiszuweisungen bleiben am
 Basisregelsymbol erhalten, damit ihre Reihenfolge nicht durch Kopieren verloren
-geht. Die API führt keine Zuweisungen aus.
+geht. Die Typprüfung für Zuweisungen verwendet die gemeinsamen Bereichs- und
+Einheitenregeln. Im informativen Roads-Grafikbeispiel gehören die beiden
+`Angle_Degree`-Deklarationen zu verschiedenen Modellen. Die Zuweisung an
+`Rotation` benötigt daher `INTERLIS.convertUnit(NamOri)`.
 
 Signaturparameter verwenden `ParameterSymbol` mit gebundenem Typ und Override.
 `MetaObjectType(id, origin, target)` unterscheidet Signatur-Metaobjekte von
@@ -574,6 +577,12 @@ Die [FORMAT-Zuweisungs- und Erweiterungsprüfung](#gemeinsame-format-relationen)
 im Syntaxdienst geprüft, mit ILI-SYN-0004 für Folgetokens.
 
 <a id="gebundene-funktionsargumentpfade-und-zahlenkonstanten"></a>
+Enumwerte behalten ihre Originalschreibweise und werden an den konkreten
+erwarteten Typ gebunden. Seit API 0.3 erscheinen Enum- und Boolean-Werte als
+`ConstantExpression`. BOOLEAN akzeptiert `#true` und `#false`. Ein konkreter
+benutzerdefinierter Enumtyp hat Vorrang vor der Boolean-Standardbindung.
+Polymorphe Funktionsargumente können symbolisch bleiben.
+
 Für arithmetische Ausdrücke beschreibt der Compiler eigene numerische
 Ergebnistypen. Die begrenzte Herleitung umfasst exakt darstellbare kleine
 Literaloperationen und einfache ganzzahlige Intervalle auf modellkonformen

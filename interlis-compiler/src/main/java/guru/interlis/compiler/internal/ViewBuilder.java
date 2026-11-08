@@ -287,12 +287,11 @@ final class ViewBuilder {
                         if (old.owner().filter(decl.id()::equals).isPresent())
                             diagnostics.emitRule(child, "EXTENDED requires an inherited attribute", "EXTENDED_BASE");
                         inheritance.validateAttributeOverrideProperties(child, attribute, old);
-                        if (old.header().has(Modifier.FINAL)) diagnostics.emitRule(child, "cannot override FINAL attribute", "VIEW_FINAL");
+                        if (inheritance.isFinalDeclaration(old.id())) diagnostics.emitRule(child, "cannot override FINAL attribute", "VIEW_FINAL");
                         if (!typeBindings.assignable(attribute.declaredType(), old.declaredType()))
                             diagnostics.emitRule(child, "view override must specialize the inherited type", "VIEW_ATTRIBUTE_TYPE");
                         result.set(result.indexOf(old.id()), attribute.id()); scope.remove(old.id()); scope.add(attribute.id());
-                        state.replaceSymbol(new AttributeSymbol(attribute.header(), attribute.declaredType(), attribute.mandatory(),
-                                attribute.transientAttribute(), attribute.continuous(), attribute.subdivision(), Optional.of(old.id()), attribute.derivations()));
+                        state.replaceSymbol(inheritance.withAttributeOverride(child, attribute, old.id()));
                     } else {
                         if (attribute.header().has(Modifier.EXTENDED))
                             diagnostics.emitRule(child, "EXTENDED attribute needs an inherited member", "EXTENDED_BASE");
@@ -301,7 +300,7 @@ final class ViewBuilder {
                 }
             }
             for (var selection : syntax.selections()) {
-                var expression = expressions.buildExpression(selection, decl.id()); selections.add(expression.id());
+                var expression = expressions.buildBooleanExpression(selection, decl.id()); selections.add(expression.id());
                 if (!decl.modifiers().contains(Modifier.ABSTRACT)) validateConcreteExpression(decl, expression.id(), new HashSet<>());
                 if (!expression.error() && !typeBindings.isBoolean(expression.typeId()))
                     diagnostics.emitTypeMismatch(decl.sourceId(), selection.range(), typeBindings.typeName(expression.typeId()), "BOOLEAN");

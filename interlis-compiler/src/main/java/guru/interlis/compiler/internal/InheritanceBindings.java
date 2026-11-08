@@ -11,17 +11,28 @@ import guru.interlis.model.ClassSymbol;
 import guru.interlis.model.DomainReferenceType;
 import guru.interlis.model.EffectiveMember;
 import guru.interlis.model.EffectiveMemberOrigin;
+import guru.interlis.model.Modifier;
 import guru.interlis.model.Origin;
 import guru.interlis.model.ReferenceUsage;
 import guru.interlis.model.RoleAggregation;
 import guru.interlis.model.RoleSymbol;
 import guru.interlis.model.StructureSymbol;
 import guru.interlis.model.Symbol;
+import guru.interlis.model.SymbolHeader;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.TopicSymbol;
 import guru.interlis.model.TypeDescriptor;
+import guru.interlis.syntax.AttributeConstantExpressionSyntax;
+import guru.interlis.syntax.AttributeDeclarationSyntax;
+import guru.interlis.syntax.ClassConstantExpressionSyntax;
 import guru.interlis.syntax.ClassDeclarationSyntax;
+import guru.interlis.syntax.ConstantExpressionSyntax;
+import guru.interlis.syntax.EnumerationConstantExpressionSyntax;
+import guru.interlis.syntax.ExpressionSyntax;
+import guru.interlis.syntax.LiteralExpressionSyntax;
+import guru.interlis.syntax.ParenthesizedExpressionSyntax;
+import guru.interlis.syntax.UndefinedExpressionSyntax;
 import guru.interlis.syntax.StructureDeclarationSyntax;
 
 import java.util.ArrayList;
@@ -491,8 +502,8 @@ final class InheritanceBindings {
 
     /** Declaration metadata is available before an imported base is built. */
     boolean isFinalDeclaration(SymbolId id) {
-        return index.byId(id).map(info -> info.modifiers().contains(guru.interlis.model.Modifier.FINAL))
-                .orElseGet(() -> state.hasSymbol(id) && state.symbol(id).header().has(guru.interlis.model.Modifier.FINAL));
+        return state.hasSymbol(id) ? state.symbol(id).header().has(Modifier.FINAL)
+                : index.byId(id).filter(info -> info.modifiers().contains(Modifier.FINAL)).isPresent();
     }
 
     List<RoleSymbol> associationRoles(SymbolId association) {
@@ -583,10 +594,8 @@ final class InheritanceBindings {
                         result.set(existing, new EffectiveMember(attribute.id(), decl.id(),
                                 pathTo(chain, depth), existing,
                                 depth == 0 ? EffectiveMemberOrigin.OVERRIDDEN : EffectiveMemberOrigin.INHERITED, true));
-                        AttributeSymbol override = attribute.kind() == SymbolKind.ATTRIBUTE
-                                ? overrideAttribute(attribute.id(), old.declaredSymbol()) : null;
-                        if (override != null) {
-                            replaceOverride.accept(override);
+                        if (state.symbol(attribute.id()) instanceof AttributeSymbol built) {
+                            replaceOverride.accept(withAttributeOverride(attribute, built, old.declaredSymbol()));
                         }
                     } else {
                         if (depth == 0 && attribute.kind() == SymbolKind.ATTRIBUTE
@@ -609,13 +618,36 @@ final class InheritanceBindings {
         }
     }
 
-    private AttributeSymbol overrideAttribute(SymbolId id, SymbolId baseId) {
-        if (state.symbol(id) instanceof AttributeSymbol attribute) {
-            return new AttributeSymbol(attribute.header(), attribute.declaredType(),
-                    attribute.mandatory(), attribute.transientAttribute(), attribute.continuous(),
-                    attribute.subdivision(), Optional.of(baseId), attribute.derivations());
+    AttributeSymbol withAttributeOverride(DeclInfo declaration, AttributeSymbol attribute, SymbolId baseId) {
+        SymbolHeader header = attribute.header();
+        if (header.has(Modifier.EXTENDED) && !header.has(Modifier.FINAL)
+                && declaration.syntax() instanceof AttributeDeclarationSyntax syntax
+                && syntax.derivations().size() == 1 && directConstant(syntax.derivations().getFirst())) {
+            var modifiers = new LinkedHashSet<>(header.modifiers());
+            modifiers.add(Modifier.FINAL);
+            header = new SymbolHeader(header.id(), header.kind(), header.name(), header.owner(),
+                    header.declarationOrder(), header.origin(), header.nameRange(), header.languageVersion(),
+                    header.documentation(), header.metaAttributes(), modifiers, header.oidRules());
         }
-        return null;
+        return new AttributeSymbol(header, attribute.declaredType(), attribute.mandatory(),
+                attribute.transientAttribute(), attribute.continuous(), attribute.subdivision(),
+                Optional.of(baseId), attribute.derivations());
+    }
+
+    private boolean directConstant(ExpressionSyntax expression) {
+        while (expression instanceof ParenthesizedExpressionSyntax parenthesized) {
+            work.checkpoint();
+            expression = parenthesized.inner();
+        }
+        return switch (expression) {
+            case LiteralExpressionSyntax ignored -> true;
+            case ConstantExpressionSyntax ignored -> true;
+            case EnumerationConstantExpressionSyntax ignored -> true;
+            case ClassConstantExpressionSyntax ignored -> true;
+            case AttributeConstantExpressionSyntax ignored -> true;
+            case UndefinedExpressionSyntax ignored -> true;
+            default -> false;
+        };
     }
 
     List<SymbolId> baseChain(SymbolId id) {

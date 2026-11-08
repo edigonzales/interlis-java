@@ -143,7 +143,7 @@ final class ExpressionBindings {
                     buildExpression(parenthesized.inner(), owner);
             case FunctionCallExpressionSyntax call -> functionCallExpression(id, call, owner);
             case BuiltinFunctionExpressionSyntax builtin -> builtinFunctionExpression(id, builtin, owner);
-            case EnumerationConstantExpressionSyntax constant -> enumerationConstantExpression(id, constant, owner);
+            case EnumerationConstantExpressionSyntax constant -> enumerationConstantExpression(id, constant);
             case ClassConstantExpressionSyntax constant -> classConstantExpression(id, constant, owner);
             case guru.interlis.syntax.ObjectSetExpressionSyntax set -> objectSetExpression(id, set, owner);
             case guru.interlis.syntax.InspectionExpressionSyntax inspection -> views.get().factor(id, inspection, owner);
@@ -292,18 +292,7 @@ final class ExpressionBindings {
         return failedFunctionArgument(range,causes);
     }
 
-    private ExpressionResult enumerationConstantExpression(ExpressionId id,
-                                                           EnumerationConstantExpressionSyntax syntax,
-                                                           SymbolId owner) {
-        String text = syntax.text().toLowerCase(java.util.Locale.ROOT);
-        if (text.equals("#true") || text.equals("#false")) {
-            TypeId type = typeBindings.builtinBoolean(index.byId(owner).orElseThrow().language());
-            state.defineExpression(new guru.interlis.model.LiteralExpression(id, type,
-                    guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of(),
-                    guru.interlis.model.LiteralKind.BOOLEAN, syntax.text(), Optional.empty(),
-                    Optional.empty()));
-            return new ExpressionResult(id, type, false);
-        }
+    private ExpressionResult enumerationConstantExpression(ExpressionId id, EnumerationConstantExpressionSyntax syntax) {
         TypeId type = typeBindings.nextTypeId();
         typeBindings.defineType(new guru.interlis.model.EnumArgumentType(type,new Origin.DeclaredOrigin(syntax.range()),false));
         state.defineExpression(new guru.interlis.model.ConstantExpression(id, type,
@@ -341,6 +330,10 @@ final class ExpressionBindings {
                 work.checkpoint();
                 var actual = arguments.get(i);
                 var expected = signature.arguments().get(i);
+                TypeId formal = builtinDeclaration(signature, declaration.language()).parameters().get(i).typeId();
+                actual = contextualEnumConstant(actual, formal, owner, "ENUM_CONSTANT");
+                arguments.set(i, actual);
+                error |= actual.error();
                 if (!actual.error() && expected!=BuiltinFunctions.Value.ATTRIBUTE
                         && !(i==1 && (signature.rule()==BuiltinFunctions.Rule.AREAS_ATTRIBUTE || signature.rule()==BuiltinFunctions.Rule.AREAS_TEXT)
                             && state.expression(actual.id()) instanceof guru.interlis.model.UndefinedExpression)
@@ -383,35 +376,52 @@ final class ExpressionBindings {
     }
 
     private boolean enumArgumentsValid(List<ExpressionResult> arguments, BuiltinFunctions.Signature signature, DeclInfo owner, SourceRange range) {
-        var anchor=arguments.stream().filter(a->!isEnumConstant(a)).map(a->typeBindings.effectiveDescriptor(a.typeId()))
-                .filter(a->a instanceof EnumerationType || a instanceof guru.interlis.model.BooleanType || a instanceof guru.interlis.model.AlignmentType).findFirst().orElse(null);
-        if(anchor==null)return true; // Polymorphic literal-only calls have no declared enum identity.
-        for(int i=0;i<arguments.size();i++) {
-            var argument=arguments.get(i);var actual=typeBindings.effectiveDescriptor(argument.typeId());
-            boolean valid;
-            if(isEnumConstant(argument)) {
-                var path=((guru.interlis.model.ConstantExpression)state.expression(argument.id())).constantName().substring(1);
-                var values=enumerationPaths(anchor);
-                valid=values.contains(path) && (signature.arguments().get(i)==BuiltinFunctions.Value.ENUM_TREE
-                        || values.stream().noneMatch(v->v.startsWith(path+".")));
-            } else valid=anchor instanceof EnumerationType a && actual instanceof EnumerationType b
-                        && guru.interlis.model.internal.TypeCompatibility.relatedEnumerations(a,b,typeBindings::effectiveDescriptor)
-                    || anchor instanceof guru.interlis.model.BooleanType && actual instanceof guru.interlis.model.BooleanType
-                    || anchor instanceof guru.interlis.model.AlignmentType a && actual instanceof guru.interlis.model.AlignmentType b && a.alignment()==b.alignment();
-            if(guru.interlis.model.internal.TypeCompatibility.isUndefined(actual))continue;
-            if(!valid) {diagnostics.emitRule(owner,"enumeration function arguments must refer to compatible values of the same enumeration","ENUM_ARGUMENT",range);return false;}
-            if(isEnumConstant(argument)) {
-                TypeId context=anchor.id();
-                if(anchor instanceof EnumerationType enumeration && !enumeration.treeValues()
-                        && signature.arguments().get(i)==BuiltinFunctions.Value.ENUM_TREE) {
-                    context=typeBindings.nextTypeId();typeBindings.defineType(new EnumerationType(context,enumeration.origin(),enumeration.values(),enumeration.ordered(),
-                            enumeration.circular(),enumeration.finalSubtrees(),Optional.of(enumeration.id()),true));
+        var anchor = arguments.stream().map(argument -> typeBindings.effectiveDescriptor(argument.typeId()))
+                .filter(this::hasEnumValues).findFirst().orElse(null);
+        if (anchor == null) return true; // Literal-only polymorphic calls retain symbolic values.
+        for (int i = 0; i < arguments.size(); i++) {
+            work.checkpoint();
+            var argument = arguments.get(i);
+            var actual = typeBindings.effectiveDescriptor(argument.typeId());
+            if (guru.interlis.model.internal.TypeCompatibility.isUndefined(actual)) continue;
+            if (unboundEnum(argument)) {
+                TypeId context = anchor.id();
+                if (anchor instanceof EnumerationType enumeration && !enumeration.treeValues()
+                        && signature.arguments().get(i) == BuiltinFunctions.Value.ENUM_TREE) {
+                    context = typeBindings.nextTypeId();
+                    typeBindings.defineType(new EnumerationType(context, enumeration.origin(), enumeration.values(),
+                            enumeration.ordered(), enumeration.circular(), enumeration.finalSubtrees(),
+                            Optional.of(enumeration.id()), true));
                 }
-                arguments.set(i,contextualEnumConstant(argument,context,owner.id()));
+                var bound = contextualEnumConstant(argument, context, owner.id(), "ENUM_ARGUMENT");
+                arguments.set(i, bound);
+                if (bound.error()) return false;
+            } else if (!compatibleEnumTypes(anchor, actual)) {
+                diagnostics.emitRule(owner, "enumeration function arguments must refer to compatible values of the same enumeration",
+                        "ENUM_ARGUMENT", range);
+                return false;
             }
-
         }
         return true;
+    }
+
+    private boolean hasEnumValues(TypeDescriptor descriptor) {
+        return descriptor instanceof EnumerationType || descriptor instanceof guru.interlis.model.BooleanType
+                || descriptor instanceof guru.interlis.model.AlignmentType;
+    }
+
+    private boolean compatibleEnumTypes(TypeDescriptor left, TypeDescriptor right) {
+        return left instanceof EnumerationType a && right instanceof EnumerationType b
+                    && guru.interlis.model.internal.TypeCompatibility.relatedEnumerations(a, b, typeBindings::effectiveDescriptor)
+                || left instanceof guru.interlis.model.BooleanType && right instanceof guru.interlis.model.BooleanType
+                || left instanceof guru.interlis.model.AlignmentType a && right instanceof guru.interlis.model.AlignmentType b
+                    && a.alignment() == b.alignment();
+    }
+
+    private boolean enumContains(TypeDescriptor descriptor, String path) {
+        var values = enumerationPaths(descriptor);
+        return values.contains(path) && (!(descriptor instanceof EnumerationType enumeration) || enumeration.treeValues()
+                || values.stream().noneMatch(value -> value.startsWith(path + ".")));
     }
 
     private List<String> enumerationPaths(TypeDescriptor descriptor) {
@@ -575,6 +585,9 @@ final class ExpressionBindings {
         boolean error = left.error() || right.error();
         switch (syntax.operator()) {
             case AND, OR, IMPLIES -> {
+                left = contextualEnumConstant(left, result, owner, "ENUM_CONSTANT");
+                right = contextualEnumConstant(right, result, owner, "ENUM_CONSTANT");
+                error |= left.error() || right.error();
                 if (!error && (!typeBindings.isBoolean(left.typeId()) || !typeBindings.isBoolean(right.typeId()))) {
                     diagnostics.emitTypeMismatch(ownerSource(owner), syntax.range(),
                             typeBindings.typeName(left.typeId()) + "," + typeBindings.typeName(right.typeId()), "BOOLEAN");
@@ -584,10 +597,15 @@ final class ExpressionBindings {
             case EQ, NEQ, LT, LTE, GT, GTE -> {
                 var comparison=syntax.operator()==guru.interlis.model.BinaryOperator.EQ || syntax.operator()==guru.interlis.model.BinaryOperator.NEQ
                         ?guru.interlis.model.ComparisonOperator.EQUALITY:guru.interlis.model.ComparisonOperator.ORDERING;
-                left=contextualNumericConstant(left,right.typeId());
-                right=contextualNumericConstant(right,left.typeId());
-                left=contextualValue(left,right.typeId(),owner);
-                right=contextualValue(right,left.typeId(),owner);
+                if (!hasEnumValues(typeBindings.effectiveDescriptor(left.typeId()))
+                        && !hasEnumValues(typeBindings.effectiveDescriptor(right.typeId()))) {
+                    left = inferredBoolean(left, owner);
+                    right = inferredBoolean(right, owner);
+                }
+                left = contextualNumericConstant(left, right.typeId());
+                right = contextualNumericConstant(right, left.typeId());
+                left = contextualValue(left, right.typeId(), owner);
+                right = contextualValue(right, left.typeId(), owner);
                 error |= left.error() || right.error();
                 if(!error && !comparisonAllowed(left,right,comparison)) {
                     diagnostics.emitTypeMismatch(ownerSource(owner),syntax.range(),typeBindings.typeName(left.typeId())+","+typeBindings.typeName(right.typeId()),"COMPARABLE "+comparison);
@@ -635,6 +653,9 @@ final class ExpressionBindings {
                                              SymbolId owner) {
         ExpressionResult operand = buildExpression(syntax.operand(), owner);
         TypeId type = typeBindings.builtinBoolean(index.byId(owner).orElseThrow().language());
+        if (syntax.operator() == guru.interlis.model.UnaryOperator.NOT) {
+            operand = contextualEnumConstant(operand, type, owner, "ENUM_CONSTANT");
+        }
         boolean error = operand.error();
         if (!error && syntax.operator() == guru.interlis.model.UnaryOperator.NOT && !typeBindings.isBoolean(operand.typeId())) {
             diagnostics.emitTypeMismatch(ownerSource(owner), syntax.range(), typeBindings.typeName(operand.typeId()),
@@ -715,39 +736,34 @@ final class ExpressionBindings {
         return formats.formattedValues().parse(formatted, value, true).isPresent();
     }
 
-    private boolean isEnumTreeType(TypeId id) {
-        return typeBindings.effectiveDescriptor(id) instanceof EnumerationType enumeration && enumeration.treeValues();
-    }
-
-    private boolean isEnumConstant(ExpressionResult result) {
-        TypedExpression expression = state.expression(result.id());
-        return expression instanceof guru.interlis.model.ConstantExpression constant
+    private boolean unboundEnum(ExpressionResult value) {
+        return !value.error() && typeBindings.effectiveDescriptor(value.typeId()) instanceof guru.interlis.model.EnumArgumentType
+                && state.expression(value.id()) instanceof guru.interlis.model.ConstantExpression constant
                 && constant.constantName().startsWith("#");
     }
 
-    private boolean enumConstantValid(ExpressionResult left, ExpressionResult right) {
-        ExpressionResult enumSide = null;
-        ExpressionResult constSide = null;
-        if (typeBindings.effectiveDescriptor(left.typeId()) instanceof EnumerationType) {
-            enumSide = left;
-            constSide = right;
-        } else if (typeBindings.effectiveDescriptor(right.typeId()) instanceof EnumerationType) {
-            enumSide = right;
-            constSide = left;
+    ExpressionResult buildBooleanExpression(ExpressionSyntax syntax, SymbolId owner) {
+        return contextualEnumConstant(buildExpression(syntax, owner), booleanType(owner), owner, "ENUM_CONSTANT");
+    }
+
+    private ExpressionResult inferredBoolean(ExpressionResult value, SymbolId owner) {
+        if (unboundEnum(value) && state.expression(value.id()) instanceof guru.interlis.model.ConstantExpression constant
+                && (constant.constantName().equals("#true") || constant.constantName().equals("#false"))) {
+            return contextualEnumConstant(value, booleanType(owner), owner, "ENUM_CONSTANT");
         }
-        if (enumSide == null || constSide == null) {
-            return true;
-        }
-        TypedExpression constant = state.expression(constSide.id());
-        if (!(constant instanceof guru.interlis.model.ConstantExpression value)
-                || !value.constantName().startsWith("#")) {
-            return true;
-        }
-        String path = value.constantName().substring(1);
-        EnumerationType enumeration = (EnumerationType) typeBindings.effectiveDescriptor(enumSide.typeId());
-        boolean exact = enumeration.values().stream().anyMatch(v -> v.path().equals(path));
-        boolean hasChildren = enumeration.values().stream().anyMatch(v -> v.path().startsWith(path + "."));
-        return exact && (!hasChildren || isEnumTreeType(enumSide.typeId()));
+        return value;
+    }
+
+    ExpressionResult inferValue(ExpressionResult value, SymbolId owner) {
+        var inferred = inferredBoolean(value, owner);
+        if (!unboundEnum(inferred)) return inferred;
+        var constant = (guru.interlis.model.ConstantExpression) state.expression(inferred.id());
+        return failedEnumConstant(constant, diagnostics.emitTypeMismatch(ownerSource(owner), constant.range(),
+                constant.constantName(), "a concrete enumeration type"));
+    }
+
+    private TypeId booleanType(SymbolId owner) {
+        return typeBindings.builtinBoolean(index.byId(owner).orElseThrow().language());
     }
 
     /** Bind constants to their expected value type; shared inherited expressions are only checked by valueAssignable. */
@@ -767,7 +783,7 @@ final class ExpressionBindings {
                     error?guru.interlis.model.ExpressionTypeState.ERROR:call.typeState(),call.range(),call.children(),call.functionName(),call.targetFunction(),call.argumentPaths()));
             return new ExpressionResult(call.id(),type,error);
         }
-        var result=contextualEnumConstant(value,expected,owner);
+        var result=contextualEnumConstant(value,expected,owner,"ENUM_CONSTANT");
         if(state.expression(result.id()) instanceof guru.interlis.model.LiteralExpression literal && literal.textValue().isPresent()
                 && typeBindings.effectiveDescriptor(expected) instanceof FormattedType formatted
                 && formats.formattedValues().parse(formatted,literal.textValue().orElseThrow(),true).isPresent()) {
@@ -813,24 +829,29 @@ final class ExpressionBindings {
         if(value instanceof guru.interlis.model.FunctionCallExpression call && isUnitConversion(call) && descriptor instanceof NumericType numeric)
             return conversionCompatible(call,numeric);
         if(value instanceof guru.interlis.model.ConstantExpression constant && constant.constantName().startsWith("#")) {
-            var paths=enumerationPaths(descriptor);String path=constant.constantName().substring(1);
-            if(!paths.isEmpty())return paths.contains(path) && (!(descriptor instanceof EnumerationType enumeration) || enumeration.treeValues()
-                    || paths.stream().noneMatch(p->p.startsWith(path+".")));
+            var actual = typeBindings.effectiveDescriptor(value.typeId());
+            if (hasEnumValues(descriptor)) {
+                return (actual instanceof guru.interlis.model.EnumArgumentType || compatibleEnumTypes(actual, descriptor))
+                        && enumContains(descriptor, constant.constantName().substring(1));
+            }
         }
         if(value instanceof guru.interlis.model.LiteralExpression literal && literal.textValue().isPresent() && descriptor instanceof FormattedType formatted)
             return formats.formattedValues().parse(formatted,literal.textValue().orElseThrow(),true).isPresent();
         return typeBindings.assignable(value.typeId(),expected);
     }
 
-    private ExpressionResult contextualEnumConstant(ExpressionResult value, TypeId context, SymbolId owner) {
-        if(!isEnumConstant(value))return value;
-        var actual=(guru.interlis.model.ConstantExpression)state.expression(value.id());
-        TypeDescriptor expected=typeBindings.effectiveDescriptor(context);
-        String path=actual.constantName().substring(1);
-        var paths=enumerationPaths(expected);
-        boolean valid=paths.contains(path) && (!(expected instanceof EnumerationType e) || e.treeValues()
-                || paths.stream().noneMatch(p->p.startsWith(path+".")));
-        if(!valid)return value;
+    private ExpressionResult contextualEnumConstant(ExpressionResult value, TypeId context, SymbolId owner, String rule) {
+        TypeDescriptor expected = typeBindings.effectiveDescriptor(context);
+        if (!unboundEnum(value) || !hasEnumValues(expected)) return value;
+        var actual = (guru.interlis.model.ConstantExpression) state.expression(value.id());
+        String path = actual.constantName().substring(1);
+        if (!enumContains(expected, path)) {
+            var cause = rule.equals("ENUM_ARGUMENT")
+                    ? diagnostics.emitRule(index.byId(owner).orElseThrow(),
+                            "Value is not a member of the expected enumeration: " + actual.constantName(), rule, actual.range())
+                    : diagnostics.emitTypeMismatch(ownerSource(owner), actual.range(), actual.constantName(), typeBindings.typeName(context));
+            return failedEnumConstant(actual, cause);
+        }
         state.replaceExpression(new guru.interlis.model.ConstantExpression(actual.id(),context,actual.typeState(),actual.range(),actual.children(),actual.constantName()));
         if(expected instanceof EnumerationType enumeration) {
             var segments=new ArrayList<ReferenceSegment>();int start=actual.range().startOffset()+1;String prefix="";
@@ -845,6 +866,14 @@ final class ExpressionBindings {
             references.recordEnumReference(owner, range, segments, target);
         }
         return new ExpressionResult(value.id(),context,value.error());
+    }
+
+    private ExpressionResult failedEnumConstant(guru.interlis.model.ConstantExpression constant, DiagnosticId cause) {
+        TypeId error = typeBindings.nextTypeId();
+        typeBindings.defineType(new ErrorType(error, new Origin.DeclaredOrigin(constant.range()), List.of(cause)));
+        state.replaceExpression(new guru.interlis.model.ConstantExpression(constant.id(), error,
+                guru.interlis.model.ExpressionTypeState.ERROR, constant.range(), constant.children(), constant.constantName()));
+        return new ExpressionResult(constant.id(), error, true);
     }
 
     private SymbolId enumMember(EnumerationType type,String path) {
@@ -862,10 +891,8 @@ final class ExpressionBindings {
     }
 
     private boolean comparisonAllowed(ExpressionResult left, ExpressionResult right, guru.interlis.model.ComparisonOperator operator) {
-        if(!enumConstantValid(left,right) || !formattedTextValid(left,right))return false;
+        if(!formattedTextValid(left,right))return false;
         TypeDescriptor a=typeBindings.effectiveDescriptor(left.typeId()),b=typeBindings.effectiveDescriptor(right.typeId());
-        if(isEnumConstant(left) && b instanceof EnumerationType)a=b;
-        if(isEnumConstant(right) && a instanceof EnumerationType)b=a;
         if(a instanceof FormattedType && state.expression(right.id()) instanceof guru.interlis.model.LiteralExpression literal
                 && literal.literalKind()==guru.interlis.model.LiteralKind.TEXT)b=a;
         if(b instanceof FormattedType && state.expression(left.id()) instanceof guru.interlis.model.LiteralExpression literal

@@ -18,6 +18,22 @@ class ViewInheritanceTranslationContractTest {
                 + "VIEW V PROJECTION OF A; = x : MANDATORY TEXT := A->x; END V; "
                 + "VIEW W EXTENDS V = x (EXTENDED) : TEXT := A->x; END W; END T;", "ATTRIBUTE_OVERRIDE_MANDATORY");
     }
+    @Test void constantViewOverridesPassTheirFinalityThroughAllOf() {
+        for (String version : List.of("2.3", "2.4")) {
+            String body = PREFIX
+                    + "VIEW V PROJECTION OF A; = ALL OF A; END V; "
+                    + "VIEW W EXTENDS V = x (EXTENDED) : TEXT := \"fixed\"; END W; "
+                    + "VIEW Copy PROJECTION OF W; = ALL OF W; END Copy; ";
+            var graph = ViewBindingContractTest.success(version, body + "END T;").schema().semanticGraph();
+            var fixed = (AttributeSymbol) graph.symbol(view(graph, "W").members().getFirst()).orElseThrow();
+            var copy = (AttributeSymbol) graph.symbol(view(graph, "Copy").members().getFirst()).orElseThrow();
+            assertTrue(fixed.header().has(Modifier.FINAL));
+            assertTrue(copy.header().has(Modifier.FINAL));
+            ViewBindingContractTest.rule(version, body
+                    + "VIEW Again EXTENDS Copy = x (EXTENDED) : TEXT := \"other\"; END Again; END T;", "VIEW_FINAL");
+        }
+    }
+
     @Test void mandatoryWithoutTypeCanExtendAnAllOfMember() {
         for (String v : List.of("2.3", "2.4")) {
             var graph = ViewBindingContractTest.success(v, PREFIX
@@ -59,6 +75,20 @@ class ViewInheritanceTranslationContractTest {
                     + "VIEW W EXTENDS V = x (EXTENDED) : Second := A->x; END W; END T;", "ATTRIBUTE_OVERRIDE_TYPE");
         }
     }
+    @Test void translationsCompareEffectiveFinalityAndTheBoundBooleanConstant() {
+        for (String version : List.of("2.3", "2.4")) {
+            String body = "TOPIC T = CLASS A = flag : BOOLEAN; END A; "
+                    + "CLASS B EXTENDS A = flag (EXTENDED) : BOOLEAN := #true; END B; END T;";
+            String explicit = body.replace("(EXTENDED)", "(EXTENDED, FINAL)");
+            var same = translated(version, "", body, explicit);
+            assertInstanceOf(CompilationOutcome.Succeeded.class, same,
+                    () -> same instanceof CompilationOutcome.Rejected r ? r.analysis().diagnostics().toString() : same.toString());
+            var different = assertInstanceOf(CompilationOutcome.Rejected.class,
+                    translated(version, "", body, explicit.replace("#true", "#false")));
+            assertTrue(different.analysis().diagnostics().stream().anyMatch(d -> d.arguments().toString().contains("TRANSLATION")));
+        }
+    }
+
     @Test void translationCannotReplaceAnImportedAttributeDomainWithAnEqualTypedDomain() {
         for (String v : List.of("2.3", "2.4")) {
             String common = "MODEL Shared AT \"https://example.org\" VERSION \"1\" = DOMAIN First = TEXT; Second = TEXT; END Shared.";

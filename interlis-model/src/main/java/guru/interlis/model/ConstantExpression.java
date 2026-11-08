@@ -6,7 +6,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Named language constant such as PI or LNBASE.
+ * Named constant such as PI or LNBASE, or a source-spelled enumeration value.
+ * Boolean values use this form with their Boolean type and exact {@code #true} or {@code #false} spelling.
  *
  * @param id stable identifier
  * @param typeId type identifier

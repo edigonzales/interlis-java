@@ -217,7 +217,10 @@ FINAL wird anhand der gebundenen Deklaration geprüft, auch wenn ein importierte
 Basistyp in der kanonischen Quellenordnung erst später aufgebaut wird.
 Finale Topics, Klassen und Strukturen dürfen nicht erweitert, finale Attribute
 nicht überschrieben werden. EXTENDED an einem Attribut verlangt eine tatsächliche
-geerbte Basiseigenschaft. Assoziationsattribute verwenden dieselbe gemeinsame
+geerbte Basiseigenschaft. Eine Attributübersteuerung mit EXTENDED und einer unmittelbaren Konstante
+ist effektiv FINAL. Der Symbolheader trägt die wirksame Finalität. Die
+Syntaxsicht enthält die im Quelltext geschriebenen Modifikatoren.
+Assoziationsattribute verwenden dieselbe gemeinsame
 Override-, MANDATORY- und Typprüfung wie Klassen-/Strukturattribute; konkrete
 Assoziationen müssen geerbte abstrakte Attribute konkretisieren. Die bestehende
 Behandlung geerbter abstrakter Rollendeklarationen wird dadurch nicht erweitert

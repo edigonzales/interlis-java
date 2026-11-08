@@ -347,7 +347,9 @@ final class TypeBindings {
                     .filter(base->state.symbol(base) instanceof AttributeSymbol || index.byId(base).filter(d->d.kind()==SymbolKind.ATTRIBUTE).isPresent())
                     .ifPresent(base->inheritance.bindBase(decl.id(),base));
             if (syntax.type() instanceof GenericTypeSyntax inferred && "INFERRED".equals(inferred.name())) {
-                var result = expressions.get().buildExpression(syntax.derivations().getFirst(), decl.owner().orElseThrow());
+                SymbolId owner = decl.owner().orElseThrow();
+                var result = expressions.get().inferValue(
+                        expressions.get().buildExpression(syntax.derivations().getFirst(), owner), owner);
                 inferredDerivations.put(decl.id(), List.of(result.id()));
                 type = result.typeId();
             } else if (syntax.type() instanceof GenericTypeSyntax generic && "INHERITED".equals(generic.name())) {

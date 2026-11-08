@@ -52,6 +52,19 @@ class GraphicBindingContractTest {
         }
     }
 
+    @Test void graphicSelectionsAndClausesContextuallyBindBareBooleanValues() {
+        for (String version : List.of("2.3", "2.4")) {
+            var graph = ok(model(version, BODY.replace("kind != #c", "#true").replace("kind == #a", "#false")))
+                    .schema().semanticGraph();
+            var graphic = (GraphicSymbol) named(graph, "Map");
+            var rule = (DrawingRuleSymbol) graph.symbol(graphic.rules().getFirst()).orElseThrow();
+            for (var id : List.of(graphic.selections().getFirst(), rule.clauses().getFirst().condition().orElseThrow())) {
+                var expression = assertInstanceOf(ConstantExpression.class, graph.expression(id).orElseThrow());
+                assertInstanceOf(BooleanType.class, graph.type(expression.typeId()).orElseThrow());
+            }
+        }
+    }
+
     @Test void graphicsExposeBasisClausesBoundParametersAndPaths() {
         for(var version:List.of("2.3","2.4")) {
             var result=ok(model(version,BODY));
@@ -170,13 +183,31 @@ class GraphicBindingContractTest {
         }
     }
 
-    @Test void handBookOriginalPublishesAllGraphicsAndInspections() throws Exception {
+    @Test void handBookGraphicsPublishWithAnExplicitRotationConversion() throws Exception {
         var folder=java.nio.file.Path.of("../testdata/conformance/no-oid/roads");
         Map<guru.interlis.source.SourceId,guru.interlis.source.SourceText> sources=new LinkedHashMap<>();
         try(var files=java.nio.file.Files.list(folder)) {
             for(var path:files.sorted().toList()) { var source=CompilerTestSupport.source("memory:/"+path.getFileName(),java.nio.file.Files.readString(path));sources.put(source.id(),source); }
         }
-        var result=CompilerEngines.create().compile(CompilerTestSupport.request(List.of("RoadsExgm2ien"),sources,bindings(sources),CompilerOptions.defaults()),CancellationToken.none());
+        var engine = CompilerEngines.create();
+        var original = assertInstanceOf(CompilationOutcome.Rejected.class, engine.compile(
+                CompilerTestSupport.request(List.of("RoadsExgm2ien"), sources, bindings(sources), CompilerOptions.defaults()),
+                CancellationToken.none()));
+        assertEquals(Set.of(RejectionReason.SOURCE_ERRORS), original.rejection().reasons());
+        var errors = original.analysis().diagnostics().stream()
+                .filter(d -> d.severity() == guru.interlis.diagnostics.Severity.ERROR).toList();
+        assertEquals(1, errors.size(), errors::toString);
+        var diagnostic = errors.getFirst();
+        assertTrue(diagnostic.arguments().toString().contains("GRAPHIC_PARAMETER_TYPE"));
+
+        // The data and signature models declare separate Angle_Degree units.
+        // The handbook sources stay pinned and the positive variant converts explicitly.
+        var graphicSource = sources.get(diagnostic.primaryRange().orElseThrow().source());
+        assertTrue(graphicSource.slice(diagnostic.primaryRange().orElseThrow()).contains("Rotation := NamOri"));
+        sources.put(graphicSource.id(), new guru.interlis.source.SourceText(graphicSource.id(),
+                new guru.interlis.source.SourceRevision(2),
+                graphicSource.text().replace("Rotation := NamOri", "Rotation := INTERLIS.convertUnit(NamOri)")));
+        var result=engine.compile(CompilerTestSupport.request(List.of("RoadsExgm2ien"),sources,bindings(sources),CompilerOptions.defaults()),CancellationToken.none());
         var success=assertInstanceOf(CompilationOutcome.Succeeded.class,result,()->result instanceof CompilationOutcome.Rejected r?r.analysis().diagnostics().toString():result.toString());
         var graph=success.schema().semanticGraph();assertEquals(5,graph.symbols().stream().filter(GraphicSymbol.class::isInstance).count());
         assertEquals(10,graph.symbols().stream().filter(DrawingRuleSymbol.class::isInstance).count());

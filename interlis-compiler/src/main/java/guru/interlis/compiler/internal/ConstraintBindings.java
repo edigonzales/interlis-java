@@ -202,7 +202,7 @@ final class ConstraintBindings {
             diagnostics.emitRule(decl, "SET CONSTRAINT is not allowed in a structure", "SET_IN_STRUCTURE");
         if (syntax.constraintKind() == guru.interlis.syntax.ConstraintKind.UNIQUENESS) {
             Optional<ExpressionId> where = syntax.expression().map(e -> {
-                ExpressionResult condition = expressions.get().buildExpression(e, decl.id());
+                ExpressionResult condition = expressions.get().buildBooleanExpression(e, decl.id());
                 if (!condition.error() && !typeBindings.get().isBoolean(condition.typeId()))
                     diagnostics.emitTypeMismatch(decl.sourceId(), e.range(), typeBindings.get().typeName(condition.typeId()), "BOOLEAN");
                 return condition.id();
@@ -235,7 +235,7 @@ final class ConstraintBindings {
                     syntax.basket(), where, keys, localKeys), externalTarget);
         }
         Optional<ExpressionId> setWhere=syntax.where().map(e->{
-            var condition=expressions.get().buildExpression(e,decl.id());
+            var condition=expressions.get().buildBooleanExpression(e,decl.id());
             if(!condition.error() && !typeBindings.get().isBoolean(condition.typeId()))diagnostics.emitTypeMismatch(decl.sourceId(),e.range(),typeBindings.get().typeName(condition.typeId()),"BOOLEAN");
             return condition.id();
         });
@@ -245,7 +245,7 @@ final class ConstraintBindings {
         }
         SymbolId expressionOwner = decl.id();
         ExpressionResult expression = syntax.expression()
-                .map(e -> expressions.get().buildExpression(e, expressionOwner))
+                .map(e -> expressions.get().buildBooleanExpression(e, expressionOwner))
                 .orElseGet(() -> missingConstraintExpression(decl,syntax.range()));
         if (!expression.error() && !typeBindings.get().isBoolean(expression.typeId())) {
             diagnostics.emitTypeMismatch(decl.sourceId(), syntax.range(), typeBindings.get().typeName(expression.typeId()),

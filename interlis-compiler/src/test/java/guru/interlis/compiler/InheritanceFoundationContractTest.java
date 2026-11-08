@@ -85,6 +85,68 @@ class InheritanceFoundationContractTest {
             ok(imported(v,base.replace("(FINAL)",""),use,order,8));
         }
     }
+    @Test void constantOverridesAreFinalInThePublishedAndInheritedAttribute() {
+        for (String version : VERSIONS) for (String kind : List.of("CLASS", "STRUCTURE")) {
+            String base = "TOPIC T = " + kind + " Parent = n : 0..10; other : 0..10; END Parent; "
+                    + kind + " Fixed EXTENDS Parent = n (EXTENDED) : 0..10 := 1; END Fixed; ";
+            String child = kind + " Child EXTENDS Fixed = ";
+            for (String body : List.of("n (EXTENDED) : 0..10 := 1;", "n (EXTENDED) : 0..10 := 2;",
+                    "n (EXTENDED) : 0..5;")) {
+                bad(input(version, base + child + body + " END Child; END T;"), "ATTRIBUTE_FINAL");
+            }
+            bad(input(version, base.replace("(EXTENDED)", "(EXTENDED, FINAL)") + child
+                    + "n (EXTENDED) : 0..5; END Child; END T;"), "ATTRIBUTE_FINAL");
+            var success = ok(input(version, base + child + "END Child; END T;"));
+            var graph = success.schema().semanticGraph();
+            var fixed = attribute(graph, "Fixed", "n");
+            assertTrue(fixed.header().has(Modifier.FINAL));
+            assertEquals(attribute(graph, "Parent", "n").id(), fixed.overrides().orElseThrow());
+            assertEquals(fixed.id(), graph.effectiveMembers(named(graph, "Child").id()).getFirst().declaredSymbol());
+            var syntax = success.analysis().syntaxSnapshots().values().iterator().next();
+            var topic = (guru.interlis.syntax.TopicSyntax) syntax.root().models().getFirst().members().getFirst();
+            var declaration = topic.members().get(1);
+            assertFalse(syntax.source().slice(declaration.range()).contains("FINAL"));
+            var nonconstant = ok(input(version, base.replace(":= 1", ":= other") + child
+                    + "n (EXTENDED) : 0..5; END Child; END T;"));
+            assertFalse(attribute(nonconstant.schema().semanticGraph(), "Fixed", "n").header().has(Modifier.FINAL));
+        }
+    }
+
+    @Test void importedConstantOverridesKeepFinalityAcrossOrdersAndRevisions() {
+        for (String version : VERSIONS) for (boolean baseFirst : List.of(true, false)) {
+            String base = "TOPIC T = CLASS Parent = n : 0..10; other : 0..10; END Parent; "
+                    + "CLASS Fixed EXTENDS Parent = n (EXTENDED) : 0..10 := %s; END Fixed; END T;";
+            String use = "TOPIC T = DEPENDS ON F.T; CLASS Child EXTENDS F.T.Fixed = "
+                    + "n (EXTENDED) : 0..5; END Child; END T;";
+            var engine = CompilerEngines.create();
+            AnalysisSnapshot previous = null;
+            AttributeSymbol original = null;
+            for (int revision = 1; revision <= 3; revision++) {
+                boolean constant = revision != 2;
+                var request = imported(version, base.formatted(constant ? "1" : "other"), use, baseFirst, revision);
+                var fresh = engine.analyze(request, TOKEN);
+                var reused = engine.analyze(request, previous == null ? AnalysisReuse.none()
+                        : new AnalysisReuse(Optional.of(previous), previous.syntaxSnapshots()), TOKEN);
+                assertEquals(fresh.diagnostics(), reused.diagnostics());
+                assertEquals(constant, reused.diagnostics().stream().anyMatch(d -> d.arguments().toString().contains("ATTRIBUTE_FINAL")));
+                var fixed = attribute(reused.semanticGraph(), "Fixed", "n");
+                assertEquals(constant, fixed.header().has(Modifier.FINAL));
+                if (revision == 1) original = fixed;
+                previous = reused;
+            }
+            assertTrue(Objects.requireNonNull(original).header().has(Modifier.FINAL));
+        }
+    }
+
+    @Test void constantAssociationAttributesAreFinal() {
+        for (String version : VERSIONS) {
+            String body = association("TEXT*10", "TEXT*5 := \"fixed\"");
+            var graph = ok(input(version, body)).schema().semanticGraph();
+            assertTrue(attribute(graph, "Middle", "value").header().has(Modifier.FINAL));
+            bad(input(version, body.replace("tail:BOOLEAN", "value (EXTENDED):TEXT*5")), "ATTRIBUTE_FINAL");
+        }
+    }
+
     @Test void finalAttributesCannotBeOverriddenEvenByAnOtherwiseValidRestriction() {
         for(String v:VERSIONS)for(String kind:List.of("CLASS","STRUCTURE"))for(String type:List.of("TEXT*5","MANDATORY")) {
             String body="TOPIC T="+kind+" Parent=value(FINAL):TEXT*10;END Parent;"

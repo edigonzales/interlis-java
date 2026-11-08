@@ -823,7 +823,6 @@ final class TranslationBindings {
                         && x.decimal().orElseThrow().exactValue().compareTo(y.decimal().orElseThrow().exactValue())==0
                         && sameNumericContext(x.typeId(),y.typeId(),map);
                 case TEXT -> x.textValue().equals(y.textValue());
-                case BOOLEAN -> x.lexeme().equals(y.lexeme());
             };
         }
         if(a instanceof guru.interlis.model.BinaryExpression x && b instanceof guru.interlis.model.BinaryExpression y && x.operator()!=y.operator())return false;

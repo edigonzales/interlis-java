@@ -99,7 +99,7 @@ final class GraphicBuilder {
     }
 
     private ExpressionId condition(DeclInfo decl,ExpressionSyntax syntax) {
-        var result=expressions.get().buildExpression(syntax,decl.id());
+        var result=expressions.get().buildBooleanExpression(syntax,decl.id());
         if(!result.error() && !typeBindings.isBoolean(result.typeId())) diagnostics.emitRule(decl,"graphic condition must be Boolean","GRAPHIC_CONDITION");
         return result.id();
     }
