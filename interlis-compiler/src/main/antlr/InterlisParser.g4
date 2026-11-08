@@ -553,7 +553,7 @@ inspection : AREA? INSPECTION OF renamedViewableRef
 
 renamedViewableRef : (Name TILDE)? viewableRef;
 
-viewableRef : (Name DOT (Name DOT)?)? Name
+viewableRef : (Name DOT (Name DOT)?)? (Name | SIGN | METAOBJECT)
             | INTERLIS DOT (Name DOT)? (Name | REFSYSTEM | SIGN | METAOBJECT);
 
 baseExtensionDef : BASE Name EXTENDED BY

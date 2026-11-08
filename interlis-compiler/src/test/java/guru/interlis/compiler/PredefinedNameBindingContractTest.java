@@ -82,6 +82,14 @@ class PredefinedNameBindingContractTest {
         }
     }
 
+    @Test void reservedClassNamesRemainUsableInDomainRestrictions() {
+        for (String version : List.of("2.3", "2.4")) {
+            var bare = ok(input(version, "IMPORTS UNQUALIFIED INTERLIS; DOMAIN D = CLASS RESTRICTION (SIGN);"));
+            var qualified = ok(input(version, "DOMAIN D = CLASS RESTRICTION (INTERLIS.SIGN);"));
+            assertEquals(referenceTo(bare, "SIGN"), referenceTo(qualified, "INTERLIS.SIGN"));
+        }
+    }
+
     @Test void qualifiedVertexIgnoresLocalShadowingAndRemainsStableAfterAnImportEdit() {
         String body = "DOMAIN LineCoord = COORD 0..10,0..10; "
                 + "L (ABSTRACT) = POLYLINE WITH (STRAIGHTS) VERTEX INTERLIS.LineCoord;";
