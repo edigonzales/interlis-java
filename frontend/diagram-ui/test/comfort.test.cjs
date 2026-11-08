@@ -15,7 +15,29 @@ test('native shared controls preserve hidden geometry, own undo, real curves and
  fs.writeFileSync(path.join(out,'full.svg'),artifacts.full.svg);fs.writeFileSync(path.join(out,'visible.svg'),artifacts.visible.svg);fs.writeFileSync(path.join(out,'visible.png'),Buffer.from(artifacts.png));
  await page.evaluate(async svg=>{const blob=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));try{const image=new Image();image.src=blob;await image.decode();if(!image.naturalWidth||!image.naturalHeight)throw Error('Export image is empty');}finally{URL.revokeObjectURL(blob);}},artifacts.full.svg);
  const pending=await page.evaluate(()=>{canvas.invalidate('Awaiting current Java source');return layoutCount;});await page.locator('#diagram-filter-kinds-VIEW').uncheck();assert.equal(await page.locator('#canvas').getAttribute('data-status'),'STALE');assert.equal(await page.evaluate(()=>layoutCount),pending,'A stale view was re-laid out as current');assert.equal(await page.evaluate(()=>{try{canvas.exportSvg('FULL');return false;}catch{return true;}}),true,'Stale export was admitted');await page.evaluate(()=>canvas.accept(input,'comfort',canvas.getSettings()));await ready();assert.equal(await page.locator('[data-kind="VIEW"]').count(),0);await page.locator('#diagram-filter-kinds-VIEW').check();await ready();
- const saved=await page.evaluate(()=>canvas.saveState());await page.locator('#diagram-reset-layout').click();await ready();assert.notEqual(await node.getAttribute('transform'),moved);await page.evaluate(value=>canvas.restoreState(value),saved);await ready();assert.equal(await node.getAttribute('transform'),moved);await page.locator('#diagram-edgeRouting').selectOption('ORTHOGONAL');await ready();const orthogonal=await page.evaluate(()=>canvas.exportSvg('FULL'));assert.match(orthogonal.svg,/inkscape:connector-type="orthogonal"/);assert.match(orthogonal.svg,/inkscape:connection-start="#interlis-/);fs.writeFileSync(path.join(out,'orthogonal.svg'),orthogonal.svg);await page.screenshot({path:path.join(out,'restored.png'),fullPage:true});// Presentation-only malicious metadata counterfixture: no fabricated compiler result.
- const danger='<script>alert(1)</script> javascript: command: \u202e';await page.evaluate(async label=>{const dto=structuredClone(input);dto.nodes[0].label=label;await canvas.accept(dto,'comfort',canvas.getSettings());},danger);await ready();assert.equal(await page.locator('#canvas script,#canvas foreignObject').count(),0);const safe=await page.evaluate(()=>canvas.exportSvg('FULL').svg);assert.match(safe,/&lt;script&gt;/);assert.match(safe,/U\+202E/);assert.doesNotMatch(safe,/<script>/);fs.writeFileSync(path.join(out,'safe-label.svg'),safe);assert.deepEqual(errors,[]);
+ const saved=await page.evaluate(()=>canvas.saveState());await page.locator('#diagram-reset-layout').click();await ready();assert.notEqual(await node.getAttribute('transform'),moved);await page.evaluate(value=>canvas.restoreState(value),saved);await ready();assert.equal(await node.getAttribute('transform'),moved);await page.locator('#diagram-edgeRouting').selectOption('ORTHOGONAL');await ready();const orthogonal=await page.evaluate(()=>canvas.exportSvg('FULL'));assert.match(orthogonal.svg,/inkscape:connector-type="orthogonal"/);assert.match(orthogonal.svg,/inkscape:connection-start="#interlis-/);fs.writeFileSync(path.join(out,'orthogonal.svg'),orthogonal.svg);await page.screenshot({path:path.join(out,'restored.png'),fullPage:true});assert.deepEqual(errors,[]);
+
+ // Give the presentation-only counterfixture its own canvas and first render.
+ // A FRESH status from the preceding layout cannot satisfy this check.
+ await page.close();
+ page=await browser.newPage({viewport:{width:1400,height:1050},deviceScaleFactor:2});
+ page.on('pageerror',error=>errors.push(String(error)));
+ const danger='<script>alert(1)</script> javascript: command: \u202e';
+ const dto=JSON.parse(fs.readFileSync(path.join(root,'test/fixtures/interactive.json'),'utf8'));
+ const target=dto.nodes.find(node=>node.canonicalName==='Interactive.Number');
+ assert.ok(target,'Missing SVG counterfixture node');
+ target.label=danger;
+ await page.route('**/test/fixtures/interactive.json',route=>route.fulfill({json:dto}));
+ await page.goto('http://127.0.0.1:'+server.address().port);
+ await ready();
+ const title=page.locator('[data-canonical-name="Interactive.Number"] .interlis-title');
+ assert.equal(await title.textContent(),danger.replace('\u202e','⟪U+202E⟫'));
+ assert.equal(await page.locator('#canvas script,#canvas foreignObject').count(),0);
+ const safe=await page.evaluate(()=>canvas.exportSvg('FULL').svg);
+ assert.match(safe,/&lt;script&gt;/);
+ assert.match(safe,/U\+202E/);
+ assert.doesNotMatch(safe,/<script>/);
+ fs.writeFileSync(path.join(out,'safe-label.svg'),safe);
+ assert.deepEqual(errors,[]);
  }catch(error){if(page){await page.screenshot({path:path.join(out,'failure.png'),fullPage:true});fs.writeFileSync(path.join(out,'failure-dom.html'),await page.content());}throw error;}finally{await browser?.close();await new Promise(r=>server.close(r));}
 });
