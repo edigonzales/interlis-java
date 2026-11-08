@@ -5,15 +5,10 @@ Erhebung P4.0-A vom 6. November 2026 auf `interlis-java`
 INTERLIS 2.3 und 2.4. Einzelne Klassen tragen ITF im Namen, weil XTF die
 Kurven- und Poolinfrastruktur wiederverwendet.
 
-Der [Fallindex](https://github.com/edigonzales/interlis-java/blob/2c07d29bea4a32e5207266760026dba7eb029135/testdata/reference/iox-issue-index.json) ordnet
-Problemfälle, Quellstände, Belege und Gegenproben den Verbraucherphasen zu.
-Die Einstufung unterscheidet fachlich korrektes Verhalten, historische
-Kompromisse, bekannte Fehler und ungeklärte Fälle. Der Belegstand unterscheidet
-Quellbefund, Upstream-Bericht und lokal ausgeführte Probe. Ein geschlossener
-Issue kann weiterhin einen Regressionsfall liefern. Die
+Die Befunde unterscheiden Norm, ausgeführte Proben, Quellbefunde und
+Upstream-Berichte. Der [historische Fallindex](https://github.com/edigonzales/interlis-java/blob/2c07d29bea4a32e5207266760026dba7eb029135/testdata/reference/iox-issue-index.json)
+ist ein GitHub-Permalink zum damaligen Stand. Die
 [Sprachentscheidungen](../contracts/norm-decisions.md) bleiben massgeblich.
-Phasenbezeichnungen nach P4.1 bezeichnen fachliche Arbeitsschritte, ohne
-ihnen eine neue Paketnummer zu geben.
 
 ## Gelesene Upstream-Stände
 
@@ -33,18 +28,7 @@ hier auf Quellbefunde. Für spätere ausführbare Profile braucht es eine
 separat gepinnte Closure. [ilivalidator-Build][validator-build],
 [iox-wkf-Build][wkf-build].
 
-## Issue-Abdeckung von iox-ili
-
-Der [Fallindex](https://github.com/edigonzales/interlis-java/blob/2c07d29bea4a32e5207266760026dba7eb029135/testdata/reference/iox-issue-index.json) erfasst unter
-`issueCoverage` alle 61 am 6. November 2026 per GitHub-API ermittelten Issues
-von `claeis/iox-ili` (14 offen, 47 geschlossen). Aus dem unter `retrievedAt`
-datierten Abruf wurden 105 Pull Requests herausgefiltert. Acht Issues sind
-den bestehenden 35 Fallgruppen zugeordnet, 18 begründet ausgeschlossen
-und 35 mit einer offenen Folgeaufgabe erfasst. Issue-Texte und vorhandene Kommentare
-dienen der Einordnung. Der GitHub-Status und die fachliche Abdeckung sind
-getrennt. Den Umfang einer ausgeführten oder quellengestützten Prüfung
-geben die zugeordneten Fallgruppen an.
-[Upstream-Issues](https://github.com/claeis/iox-ili/issues?q=is%3Aissue).
+## Grenzen der Referenz
 
 Die wichtigsten Geometrielücken betreffen Schnitt- und Ringdiagnosen,
 die separaten SURFACE-Überlappungsproben, Bogen-Overlay und den
@@ -182,7 +166,53 @@ Aufrufpfaden. Die Auswertung braucht zusätzlich den Diagnose- und Coverage-Bele
 | UNIQUE und EXISTENCE | UNIQUE trennt lokale, Basket- und weitere Geltungsbereiche, berücksichtigt WHERE und überspringt undefinierte Schlüsselanteile. Der Pin löscht die Basket-Indizes beim Basketwechsel in Pass 2. EXISTENCE setzt `allObjectsAccessible` voraus. Laufzeit-Gesamtmenge und der normative, gegebenenfalls darüber hinausgehende Geltungsbereich sind getrennt zu belegen. | Gleicher Schlüssel in einem und in zwei Baskets, undefinierte Komponente, abgeleiteter Typ, Vorwärtsverweis und konkreter EXTERNAL-Endpunkt. Kein Objektpool-Zugriff nur zum Vergleich eines bereits vorliegenden, fachlich geeigneten Schlüssels. [Normbelege zu Constraints](#normbelege), [Basket-Verarbeitung][constraint-basket], [UNIQUE][constraint-unique], [UNIQUE-Schlüssel][unique-key], [EXISTENCE][constraint-existence]. |
 | SET CONSTRAINT | Der Pin sammelt Kandidaten und wertet unter anderem für jeden Basket beziehungsweise für transferweite Mengen in Pass 2 aus. Die Pfade für leere Mengen, WHERE und Views sind auseinanderzuhalten. #118 wurde ohne Merge geschlossen und kann keine pauschale Aussage zur Pin-Version tragen. #439 dokumentiert eine verbesserte Teilprobe und einen abweichenden Fall über ein Validierungstopic. | Leerer Basket und durch WHERE leer gefilterte Menge, abgeleitete Typen, View im selben und in anderem Topic, fehlende externe Daten und explizites Scope-Ergebnis. [SET-Auswertung][constraint-set], [#118][i118], [#119][i119], [#439][v439]. |
 
+<a id="geometrie-und-areareas"></a>
 ## Geometrie und areAreas()
+
+### Normative Grundlage
+
+- **Einzelfläche:** Ein äusserer und gegebenenfalls innere geschlossene
+  Ränder begrenzen ein zusammenhängendes Inneres. Ein Rand kann aus
+  mehreren Linienzügen bestehen. Zu prüfen sind alle Kurvenstücke über
+  die Teilung hinweg. Kreuzungen wie beim Schmetterlingspolygon und
+  Linien ohne Flächenrandfunktion sind unzulässig. Löcher sind möglich;
+  die allgemeinen Flächen erlauben punktuelle Randkontakte. In 2.4
+  kennzeichnet Abb. 22 die Zerlegung mit separaten geschlossenen Rändern
+  als gültig und die dort gezeigten Varianten mit Doppelpunkten als
+  ungültig; die 2.3-Abbildung hat diese Kennzeichnung nicht.
+  [2.3 §2.8.13.1][pdf-23-surfaces], [2.4 §3.8.13.1][pdf-24-surfaces].
+- **Gruppe:** Verschiedene SURFACE-Werte dürfen sich überdecken.
+  AREA verlangt zusätzlich zur Einzelprüfung ein Flächennetz mit
+  disjunkten Innenflächen und Restflächen. Gemeinsame Ränder sind
+  zulässig: aneinandergrenzende Gebietsobjekte brauchen entsprechende
+  Kurvenstücke zwischen denselben Stützpunkten (in 2.3 auch gleiche
+  Linienattribute). 2.4 verbietet gemeinsame Kanten zwischen Komponenten
+  desselben MULTISURFACE- oder MULTIAREA-Werts.
+  [2.3 §2.8.13.2–3][pdf-23-area], [2.4 §3.8.13.2–3][pdf-24-area].
+- **Bögen:** Der Bogen-Zwischenpunkt ist kein Stützpunkt. Bei übertragenem
+  Radius bestimmt dieser die Kreisgeometrie; der Zwischenpunkt hilft, den
+  Bogen zu wählen. Die Overlap-Ausnahme betrifft einen Bogen und ein
+  konkurrierendes Kurvenstück mit gemeinsamem Stützpunkt: Die Pfeilhöhe
+  der abgeschnittenen Linse darf die Toleranz erreichen, aber nicht
+  überschreiten. Die Toleranz ist keine allgemeine Freigabe für Kreuzungen
+  oder Flächenüberdeckungen. 2.3 verlangt für konkrete Flächentypen eine
+  deklarierte oder geerbte Toleranz, 2.4 kennt zusätzlich die implizite
+  technische Toleranz. [2.3 §§2.8.12.2, 2.8.13.1][pdf-23-curves],
+  [2.4 §§3.8.12.2, 3.8.13.1][pdf-24-curves].
+- **Rundung:** 2.4 §3.12 empfiehlt für Konsistenzprüfungen einschliesslich
+  Schnittfreiheit und Overlaps die Rundung auf die Genauigkeit des
+  Wertebereichs. Die 2.3-Constraints enthalten diese ausdrückliche Empfehlung
+  nicht. Die 2.4-Transfernorm verlangt beim Empfänger die Rundung
+  numerischer Werte gemäss Wertebereich mit Ausnahme der Bogen-Zwischenpunkte.
+  §4.3.11.14 rät, den Zwischenpunkt für die Rekonstruktion
+  ohne Radius mit der übertragenen Genauigkeit zu verwenden. Die Legacy-
+  Reihenfolge allein begründet keine versionsübergreifende Rundungsregel.
+  Die Codec-Werte bleiben exakt; die spätere Prüfung muss Normalisierung
+  und Bogenrekonstruktion getrennt festlegen.
+  [2.4 §3.12][pdf-24-rounding], [§4.3.11.4][pdf-24-number-wire],
+  [§4.3.11.14][pdf-24-arc-wire].
+
+### Quellbefunde und Grenzen der Referenz
 
 **Vor 2024.** 2018 kamen TIDs in Schnittmeldungen und die Rundung vor
 der Topologieprüfung hinzu. Der historische Diff verschiebt in
@@ -244,14 +274,6 @@ Standardnamen im Legacy-Pin. Lückenfreiheit ist eine eigene Operation.
 [Funktionsdispatch][areareas-dispatch], [TEXT-Funktionen][areareas-ext],
 [Funktionsauswertung][areareas], [AREA-Typprüfung][area-type],
 [#468][v468], [#161][i161], [#162][i162], [Normentscheidung 11][decision-11].
-
-Der offene PR #166 schlägt für die Gruppenprüfung das Maximum der
-modellierten Überlappungstoleranzen der beteiligten Flächenattribute vor.
-Der Diff ermittelt die Toleranzen anhand der konkreten Klassen der
-Objekte und Strukturelemente und ergänzt 2.3-Proben für gemischte
-Toleranzen. Für die spätere Abnahme bleiben die Wahl der Gruppenregel
-und ihr Zusammenspiel mit der Einzelprüfung zu klären.
-[PR #166](https://github.com/claeis/iox-ili/pull/166).
 
 **Wiederverwendung.** #308 beschreibt 2021 den Unterschied zwischen
 Sammeln im ersten Durchlauf und wiederholter SET-Auswertung. 2022
@@ -337,19 +359,18 @@ getrennte Vertragsfelder. [#296][v296], [PR #112][i112],
   unter `-Xmx2g` erfordert Messungen für die zugelassenen Workloads.
   [Entwurf zu Ressourcen und Geometrie][resource-contract].
 
-### Lokale Geometrie-Baseline
+### Historische G0-Beobachtungen
 
-Zwölf synthetische [Profile](https://github.com/edigonzales/interlis-java/blob/2c07d29bea4a32e5207266760026dba7eb029135/testdata/reference/iox/geometry-cases.json)
-liefen am 6. November 2026 mit ilivalidator 1.15.0, Temurin 25.0.2+10
-und `-Xmx2g` auf macOS arm64. Sieben Transfers wurden akzeptiert,
-fünf mit den erwarteten Diagnosen abgewiesen. AREA und `areAreas(ALL, …)`
-akzeptierten den gemeinsamen geraden Rand und erkannten die Kreuzung.
-Bei identischen XTF-2.4-Bytes akzeptierte AREA eine Bogenüberlappung von
-rund 0,0481 m bei modellierten 0,050 m. `areAreas(ALL, …)` wies sie mit
-seiner Nulltoleranz ab. Die normative Funktionspolicy bleibt offen.
-Die separate Rundungsprobe vergleicht gemeinsame Kante und geradlinige
-Überlagerung. Beim selbstschneidenden Ring belegt das Log den Ausfall
-der AREA-Gruppenprüfung nach dem SURFACE-Fehler. [#468][v468]
+Die [damaligen G0-Profile](https://github.com/edigonzales/interlis-java/blob/2c07d29bea4a32e5207266760026dba7eb029135/testdata/reference/iox/geometry-cases.json)
+sind ein historischer GitHub-Permalink. Am 6. November 2026 liefen zwölf
+Proben mit ilivalidator 1.15.0, Temurin 25.0.2+10 und `-Xmx2g` auf macOS
+arm64. Sieben Transfers wurden akzeptiert, fünf abgewiesen. AREA und
+`areAreas(ALL, …)` akzeptierten den gemeinsamen geraden Rand und erkannten
+die Kreuzung. Bei identischen XTF-2.4-Bytes akzeptierte AREA eine
+Bogenüberlappung von rund 0,0481 m bei modellierten 0,050 m.
+`areAreas(ALL, …)` wies sie ab. Die Rundungsprobe vergleicht gemeinsame
+Kante und geradlinige Überlagerung. Beim selbstschneidenden Ring fiel die
+AREA-Gruppenprüfung nach dem SURFACE-Fehler aus. [#468][v468]
 
 Die zwölf Läufe erreichten bis 76,8 MiB abgetasteten Heap, 160,4 MiB RSS
 und 1 ms kumulierte GC-Zeit. Die abgetastete Temp-Spitze stieg in beiden
@@ -363,6 +384,41 @@ enthalten den JVM-Start. Die Stichproben können
 kurze Heap- und Temp-Spitzen verfehlen. Produktionsdaten und
 Kandidatenzahlen blieben offen.
 
+### Offene Entscheidungen für die Validierung
+
+**Welche Toleranz gilt für `areAreas`?** [2.3 §2.14][pdf-23-areareas]
+und [2.4 §3.14][pdf-24-areareas] verlangen eine Gebietseinteilung für
+die durch Objektmenge und Attributpfad ausgewählten Flächen. Die Abschnitte
+zur Gebietseinteilung beschreiben gemeinsame Ränder und die Bogenregel,
+aber die Funktionsbeschreibung legt nicht fest, wie aus den effektiven
+SURFACE-Typen eine gemeinsame Toleranz folgt. Eine strikte Gruppenauswertung
+mit Nulltoleranz erklärt den Pin, folgt aber nicht ausdrücklich aus der Norm.
+Die modellierte Toleranz anzuwenden würde bei einheitlichem Typ die
+Bogenregel wie bei AREA nutzen; bei gemischten Typen bleibt die Paarregel
+offen. Das [Maximum aus PR #166](https://github.com/claeis/iox-ili/pull/166)
+ist ein Vorschlag; es kann eine Überlappung erlauben, die den engeren Typ
+überschreitet. Auch eine gemeinsame strengere Grenze oder ein paarweiser
+Vergleich wäre zu begründen. Weder Null noch Maximum gelten hier als
+Produktentscheidung. Vor der Implementierung sind homogene und gemischte
+Typen sowie direkte und verschachtelte Pfade zu klären. Lückenfreiheit ist
+ein eigener Funktionsvertrag.
+
+**Was folgt auf ungültige Einzelflächen?** Der Pin überspringt die
+Gruppenprüfung. Das schützt seine Voraussetzungen, belegt aber keine
+Gültigkeit der Gruppe. Offen bleibt, ob ein künftiger Validator die Gruppe
+auslässt oder eine ausdrücklich unvollständige Teilprüfung der gültigen
+Flächen ausführt. Ausgelassene Prüfungen müssen als solche sichtbar bleiben.
+
+**Direkte Gegenproben:** Das lokale Modell [Reference23.ili][fixture-model]
+und die Transfers [area-shared-edge.xtf][fixture-shared] und
+[area-overlap.xtf][fixture-overlap] trennen gemeinsamen Rand und Überdeckung.
+Der selbstschneidende Ring steht als Inline-XTF in
+[`Xtf23GeometryTest`](../../interlis-xtf23/src/test/java/guru/interlis/xtf23/Xtf23GeometryTest.java).
+Historische 2.4-Beispiele für die Toleranzfrage sind das
+[Funktionsmodell][historic-arc-model] und der [Transfer unterhalb der Toleranz][historic-arc].
+Sie dienen als direkte fachliche Proben; der damalige Runner ist entfernt.
+
+<a id="normbelege"></a>
 ## Normbelege
 
 | Aussage | Gepinnte PDF-Seiten und Auszüge |
@@ -373,56 +429,16 @@ Kandidatenzahlen blieben offen.
 | 2.4 Attribute einer nicht eingebetteten Rolle und lax erweiterbarer `RoleDef` | [§4.3.9.2, S. 106][pdf-24-role], [§4.4.4.7, S. 117][pdf-24-role-xsd], [§4.4.5, S. 118][pdf-24-role-def] |
 | Constraints und Rundung | [2.3 §2.12, S. 60][pdf-23-constraint], [2.4 §3.12, S. 77][pdf-24-rounding], [2.4 §3.12, S. 78][pdf-24-constraint] |
 
-## Selbstprüfung
+## Weitere historische Laufbelege
 
-Die sieben unten genannten unveränderten Testklassen aus dem
-iox-ili-Tag 1.24.4 wurden gegen das veröffentlichte iox-ili-1.24.4-JAR
-(SHA-256 `7c315dcb2f2f0ac6dfa535db06eb52bc100395b73d570a5612609acf7da5eeef`)
-mit iox-api 1.0.4, ili2c-core/-tool 5.6.8, ehibasics 1.4.1, ANTLR
-2.7.7, JTS 1.14.0, base64 2.3.9, JUnit 4.13.2 und Hamcrest 1.3
-ausgeführt. Temurin 25.0.2, macOS arm64, `-Xmx2g`, eigenes
-`java.io.tmpdir`. Befehle im Upstream-Checkout
-
-```sh
-javac -encoding UTF-8 -cp "$classpath" \
-  -sourcepath src/test/java:jtsext/src/test/java -d "$classes" <Testquelldateien>
-java -Xmx2g -Djava.io.tmpdir="$probe_tmp" -cp "$classes:$classpath" \
-  org.junit.runner.JUnitCore <Testklassen>
-```
-
-| Testklassen | Ergebnis |
-| --- | --- |
-| `AreaValidatorTest`, `Area23OverlapTest`, `AreAreas23Test`, `ObjectPool24Test`, `Xtf23ReaderAssociationTest`, `Xtf24ReaderAssociationTest`, `CompoundCurveNoderTest` | `javac` Exit 0. JUnit Exit 0, `OK (148 tests)`, keine ignorierten Testmethoden in der Auswahl. |
-
-Im Temp-Verzeichnis dieser Testausführung blieben nach dem Prozessende
-170 Dateien mit zusammen 56 691 logischen Bytes. Die Auswahl umfasst
-mehrere Direktaufrufe der Legacy-Pools. Der Befund misst den Restbestand
-der Tests und erlaubt keine Aussage über die Spitzengrösse oder den
-Schliesspfad der CLI.
-
-Die [P4.0-B-Laufbelege][b-observed] ergänzen nach der gemeinsamen
-Integration die drei als `probe` referenzierten Fälle im Fallindex.
-Die Datei wird mit P4.0-B geliefert. Im isolierten A-Reviewarchiv
-fehlt sie daher bewusst. Der jeweilige Lauf steht unter `cases[].id`.
-`argv`, `exitCode` und `inputSha256` dokumentieren das Kommando, den Exit
-und die Eingabebytes. Der Vergleich mit 1.14.7 steht unter
-`historicalDuplicateBid` im selben Bericht.
-
-Die offizielle Gradle-Suite, iox-wkf-Laufzeit, historische Issue-Anhänge und
-breite Speicher-/Plattformtests waren ausserhalb dieses Prüfbereichs.
-Die JUnit-Tests verwenden die genannte Runtime-Closure. Der Upstream-Build
-nennt teilweise ältere Testversionen. Die Positiv- und Negativbefunde in
-dieser Auswahl belegen einzelne Referenzfälle, keine Gesamtkompatibilität.
-
-## Nächste Phasen
-
-| Phase | Voraussetzungen aus der Referenz |
-| --- | --- |
-| P4.1 Transferkern und XTF-Adapter | Gepinnte 2.3-/2.4-Goldens mit Original-BID, Ziel-BID und aktuellem Basket, TID/OID-Domäne, eingebetteter und eigenständiger Rolle, ORDER_POS, primitiver Liste, Struktur, Geometriebogen und Domänenbindung. Normgerechtes Rollenereignis und Robustheitsprobe mit zusätzlichem BID getrennt belegen. |
-| Referenzauflösung und globale Regeln | Nachgewiesene Modellinformationen für Rollenherkunft, Assoziationsidentität und Übersetzung. Scope und Verfügbarkeit deklarieren. Vorwärtsverweis, EXTERNAL, UNIQUE, EXISTENCE, SET, n-äre Rollen und View-Abweichungen gezielt prüfen. |
-| Geometrie | Reproduzierbare Einzelpolygon- und Gruppenproben einschliesslich Loch, Kongruenz, Stützpunkt, Bogen und Toleranzgrenze. Policy für Funktions- und Typprüfung sowie Lückenfreiheit explizit entscheiden. |
-| Ressourcen und Indizes | Gleichheit von Frischlauf, Cache und Spill und ein Stopppfad mit sauberem Close. Getrennte Messung für Objekt-, Link-, Geometrie- und Diagnosewachstum. |
-| Weitere Formate und DB-Verbraucher | Eigene Fähigkeiten und Profile, insbesondere für nicht darstellbare Kurven, Feldkollisionen, Multigeometrien, Zuordnungsmetadaten und Identitäten. Historisches DB-Verhalten anhand separater Versionen und ausführbarer Gegenproben erfassen. |
+Sieben ausgewählte Upstream-Testklassen liefen gegen iox-ili 1.24.4
+mit ilivalidator-Closure, JUnit 4.13.2, Temurin 25.0.2 und `-Xmx2g`:
+148 Tests ohne Fehler oder Skips. 170 Dateien mit zusammen 56 691 Bytes
+blieben im Temp-Verzeichnis. Dies misst den Restbestand der direkten
+Poolproben und sagt nichts über die Temp-Spitze oder den CLI-Schliesspfad.
+Die [P4.0-B-Laufbelege][b-observed] sind ein historischer GitHub-Permalink
+mit Eingaben, Kommandos und Exitcodes. Die breite Upstream-Suite,
+iox-wkf-Laufzeit und historische Issue-Originalanhänge waren nicht geprüft.
 
 [api-reader]: https://github.com/claeis/iox-api/blob/c9209c8ee78225b73b2460561e326b059c40a4ac/src/ch/interlis/iox/IoxReader.java#L52-L76
 [api-alt]: https://github.com/claeis/iox-api/blob/c9209c8ee78225b73b2460561e326b059c40a4ac/src/ch/interlis/iox/IoxReaderAlt.java#L49-L59
@@ -532,3 +548,18 @@ dieser Auswahl belegen einzelne Referenzfälle, keine Gesamtkompatibilität.
 [pdf-23-constraint]: https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf#page=60
 [pdf-24-rounding]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=77
 [pdf-24-constraint]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=78
+[pdf-23-surfaces]: https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf#page=52
+[pdf-24-surfaces]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=68
+[pdf-23-area]: https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf#page=54
+[pdf-24-area]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=70
+[pdf-23-curves]: https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf#page=49
+[pdf-24-curves]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=64
+[pdf-24-arc-wire]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=111
+[pdf-23-areareas]: https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf#page=66
+[pdf-24-areareas]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=87
+[fixture-model]: ../../testdata/reference/iox/ili23/Reference23.ili
+[fixture-shared]: ../../testdata/reference/iox/ili23/area-shared-edge.xtf
+[fixture-overlap]: ../../testdata/reference/iox/ili23/area-overlap.xtf
+[historic-arc-model]: https://github.com/edigonzales/interlis-java/blob/2c07d29bea4a32e5207266760026dba7eb029135/testdata/reference/iox/ili24/areareas/GeometryArc24.ili
+[historic-arc]: https://github.com/edigonzales/interlis-java/blob/2c07d29bea4a32e5207266760026dba7eb029135/testdata/reference/iox/ili24/arc-below-tolerance.xtf
+[pdf-24-number-wire]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=108

@@ -1,6 +1,6 @@
 # Entwurf für Transfer, Validierung und Datenbanken
 
-Der formatunabhängige Transferkern steht in `interlis-transfer` für INTERLIS 2.3 und 2.4 zur Verfügung. `interlis-xtf23` liest und schreibt XTF-2.3-FULL-Transfers objektweise. Weitere Formatadapter, Datenvalidierung und Datenbankabbildung sind geplant. Die API-Skizzen beschreiben den vorgesehenen Ausbau.
+Der formatunabhängige Transferkern steht in `interlis-transfer` für INTERLIS 2.3 und 2.4 zur Verfügung. `interlis-xtf23` liest und schreibt XTF-2.3-FULL-Transfers objektweise. Weitere Formatadapter, Datenvalidierung und Datenbankabbildung sind geplant. Die Entwürfe beschreiben mögliche spätere Lösungen; sie sind weder implementierte Produktverträge noch Vorgaben für konkrete Java-Interfaces.
 
 Die Verantwortung wird entlang fachlicher Produkte geschnitten:
 
@@ -104,7 +104,8 @@ Ein `TransferObject` hält Identität, Typbezug und Attribut-/Rollenwerte eines 
 Der Kern vergleicht die Zeichenwerte innerhalb dieser Namensräume unabhängig von der Herkunft `SOURCE` oder `SYNTHETIC`. Die OID-Regeln für INITIAL und UPDATE gehören zum jeweiligen Transferprofil. Der XTF-2.3-Adapter muss für FULL zusätzlich BID und TID gemeinsam prüfen, auch wenn die gleichlautende Kennung zuerst als TID erscheint. In XTF 2.4 gilt die transferweite Eindeutigkeit der FULL-TIDs und die allgemeine Objektstromregel für Behälter- und Objektidentifikationen. Die Akzeptanz gleicher Zeichenwerte in den getrennten Namensräumen des Kerns trifft keine Aussage über die Gültigkeit einer konkreten XTF-Codierung. [Gepinnte Normbelege und P4.0-Befunde](../reference/iox-legacy.md#normbelege)
 
 `Xtf23Reader` und `Xtf23Writer` verwenden vom Aufrufer verwaltete Streams. OIDSPACE-Deklarationen bleiben in Quellreihenfolge am Adapter verfügbar. Der FULL-Adapter liest und schreibt BLACKBOX XML und BINARY, OID-Attributwerte sowie CLASS-, STRUCTURE- und ATTRIBUTE-Pfadwerte. Modellgebundene Linienattribute bleiben an jeder einzelnen Randlinie von SURFACE und AREA erhalten. Nichtleere ALIAS-Tabellen, inkrementelle Transfers, CLIPPED-Geometrien und benutzerdefinierte Linienformen meldet der Adapter als `UNSUPPORTED`. Er prüft die XML- und Wire-Struktur. Die Standardsegmente COORD und ARC
-sind anhand ihrer Tags dekodierbar. Ob das Modell die jeweilige Linienform
+sind anhand ihrer Tags dekodierbar
+([INTERLIS 2.3 §3.3.11.12](https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf#page=91)). Ob das Modell die jeweilige Linienform
 zulässt, gehört wie Wertebereiche, Datenconstraints und Geometrietopologie
 zur späteren Validierung.
 
@@ -151,11 +152,11 @@ Abnahmefälle umfassen Referenzen, OID-/Basketbezug, verschachtelte Strukturen, 
 
 Der bisherige [`iox-ili Validator`](https://github.com/claeis/iox-ili/blob/master/src/main/java/ch/interlis/iox_j/validator/Validator.java) verwendet zahlreiche Metamodellkonzepte; `ilivalidator` bildet das Werkzeug um diese Fähigkeiten. Der neue Stack soll die getypte semantische Grundlage des Compilers direkt weiterverwenden.
 
-`ValidationPlanner.plan(CompiledSchema schema, ValidationOptions options, FunctionCatalog functions, GeometryCapabilities geometry, CancellationToken token)` liefert `PlanningOutcome<ValidationPlan>`.
-
-`ValidationPlan` enthält lokale Objektregeln, notwendige Referenzprüfungen, Basketregeln, globale beziehungsweise transferweite Regeln und explizite Anforderungen an Indizes und externe Funktionen. Keine Regel wird bei der Planung allein aus ihrem ursprünglichen Text erneut geparst. Eine getypte Ausdrucksprojektion erhält Typen, Pfadschritte, Einheiten, exakte Literale, Unbekannt-/Undefiniertverhalten und Herkunft.
-
-`FunctionCatalog` beschreibt verfügbare Laufzeitimplementierungen über deklarierte Signaturen und versionierte Implementierungsidentitäten. Die Existenz einer fachlich gültigen externen Funktionsdeklaration bedeutet nicht, dass jeder Host diese Funktion ausführen kann. Ein Validator muss vor Ausführung melden können, welche benötigte Implementierung fehlt.
+Ein möglicher Validierungsplan ordnet Regeln nach ihren Eingaben und
+Ausführungsphasen. Die getypte Ausdruckssicht erhält Pfadschritte, Einheiten,
+exakte Literale, Undefiniertverhalten und Herkunft. Fehlende externe Funktionen
+müssen vor der betroffenen Auswertung erkennbar sein; eine gültige
+Funktionsdeklaration allein stellt keine Laufzeitimplementation bereit.
 
 <a id="regelklassen-und-coverage"></a>
 ### Regelklassen und Coverage
@@ -173,46 +174,34 @@ Diese Tabelle legt keine ungeprüften Einzelregeln der INTERLIS-Norm fest. Der A
 `ValidationMode` erhält mindestens `FULL` und `LOCAL_ONLY`. `ValidationCoverage` zählt geprüfte Regeln und führt ausgelassene Regelklassen samt Grund auf. Ein fehlerfreier `LOCAL_ONLY`-Lauf ergibt `PASSED_CHECKED_SCOPE`, nicht `VALID` für den gesamten Transfer.
 
 <a id="laufzeitklassen-und-methoden"></a>
-### Laufzeitklassen und Methoden
+### Laufzeit und Diagnosen
 
-`ValidationSession` ist ein explizit laufgebundener, veränderlicher Zustand mit:
-
-```java
-void beginTransfer(TransferHeader header);
-void beginBasket(BasketHeader header);
-void accept(TransferObject object, DataLocation location,
-            CancellationToken cancellation);
-void endBasket(CancellationToken cancellation);
-ValidationReport finish(CancellationToken cancellation);
-void close();
-```
-
-Vorbedingungen und Nachbedingungen werden über einen Zustandsautomaten durchgesetzt. `accept` vor `beginBasket`, ein zweites `finish` oder ein Objekt nach Transferende sind Protokollfehler des aufrufenden Adapters. Sie dürfen nicht als beliebige fachliche Datenfehler verschleiert werden.
-
-`accept` führt lokale Prüfungen aus und registriert nur die für spätere Regeln erforderlichen Informationen. `endBasket` führt die jetzt abschliessbaren Regeln aus. `finish` bearbeitet verbleibende globale Regeln und erzeugt einen unveränderlichen Bericht mit Coverage, Zählern, begrenzten Diagnosebeispielen und gegebenenfalls einer separaten vollständigen Diagnosesenke.
-
-Eine sehr grosse Anzahl Datenfehler darf nicht zwangsläufig als vollständige Liste im Heap gehalten werden. Der Bericht unterscheidet Gesamtanzahl, gespeicherte Beispiele und ausgeschriebene Diagnosen. Ein Abbruch darf nicht als vollständig bestandene Prüfung erscheinen.
-
-`DataLocation` ist ein eigener Typ für Transferquelle, XML-/Dateiposition soweit verfügbar, Basketidentität, Objektidentität und Attribut-/Strukturpfad. Er darf nicht in einen `SourceRange` für ILI-Modelltext gepresst werden. Eine Datenregel kann sowohl `DataLocation` als auch den `SourceRange` des verursachenden Modellconstraints besitzen.
-
-`ExpressionEvaluator.evaluate(ExpressionProgram program, EvaluationContext context)` liefert einen getaggten `EvaluationResult`. Dieser unterscheidet Wert, fachlich undefiniert, aufgrund fehlender Voraussetzung nicht auswertbar und internen Ausführungsfehler. Java-Exceptions sind kein Ersatz für normale Undefiniertsemantik.
-
-`EvaluationContext` enthält aktuelles Objekt, Basketkontext, Zugriff auf freigegebene Indizes, Funktionsimplementierungen und Budget. Er hält keine versteckten globalen Registries. Der Ausdrucksplan kann referenzielle Reinheit und benötigte Kontexte ausweisen, damit wiederholte Auswertungen gezielt wiederverwendet werden.
+Lokale Regeln können objektweise laufen. Spätere Phasen lösen Referenzen
+auf und prüfen den benötigten Basket- oder Transferbestand. Der Bericht
+unterscheidet geprüfte und ausgelassene Regeln, Gesamtzahl und begrenzte
+Diagnosebeispiele. Abbruch und fehlende Voraussetzungen sind kein Erfolg.
+Datenorte (Transferquelle, Basket, Objekt und Attributpfad) bleiben vom
+Quellbereich des Modellconstraints getrennt. Ausdrucksauswertung unterscheidet
+Wert, fachlich undefiniert, fehlende Voraussetzung und internen Fehler.
 
 <a id="geometrie-und-speicherbudget"></a>
 ### Geometrie und Speicherbudget
 
-Die Schnittstelle `GeometryOperations` kapselt die konkret gewählte Bibliothek. Methoden werden aus echten benötigten Operationen abgeleitet, zum Beispiel `validate`, `relate`, `measure` und eine indexfähige Hüllgeometrie. Der Java-Compiler muss diese Bibliothek nicht laden, um eine Geometriedomäne zu typisieren.
-
-`GeometryPolicy` enthält Präzisionsmodell, Toleranzen, Umgang mit Bögen und relevante Prüfoptionen. `GeometryCacheKey` umfasst Objekt-/Attributidentität beziehungsweise unveränderlichen Inhaltsfingerprint, diese Policy und die Operation. Ein Cache allein nach Objekt-ID ist unzulässig, wenn Geometrie oder Prüfoptionen veränderbar sind.
-
-Teure vorbereitete Geometrien oder räumliche Indizes dürfen wiederverwendet werden, wenn die jeweilige Bibliothek dies für unveränderte Eingaben erlaubt. Konvertierung, Normalisierung und Validierung werden nicht für jede identische Teilprüfung blind wiederholt. Jede Optimierung muss Ergebnisgleichheit einschliesslich Fehlerfällen nachweisen.
+Die [Geometry-Referenz](../reference/iox-legacy.md#geometrie-und-areareas)
+trennt Norm, Laufbeobachtung, Codebefund und offene Entscheidungen. Die Wahl
+von Bibliothek, Präzisionsmodell und Bogenoperationen folgt aus diesen
+Anforderungen. Aufbereitete Geometrien oder räumliche Indizes lassen sich
+wiederverwenden, wenn unveränderte Eingabe, Operation und Prüfparameter
+übereinstimmen. Frische und wiederverwendete Prüfungen müssen auch in
+Fehlerfällen dasselbe Ergebnis liefern.
 
 Das Standardbetriebsprofil strebt repräsentative produktive Datenprüfungen, einschliesslich grösserer Datensätze, mit **`-Xmx2g` (2 × 2^30 = 2'147'483'648 Byte Java-Heap)** an. Das Ziel ist anhand repräsentativer Lasten zu überprüfen und gilt ohne universelle Leistungs- oder Kapazitätsgarantie. Fachlich extrem komplexe Eingaben dürfen nach Begründung höhere Budgets benötigen.
 
 Ein künftiges `ResourceBudget` führt den Java-Heap, den Gesamtprozessspeicher (RSS), native Allokationen, Cachegrenzen und den temporären Spitzenplatz als getrennte Grössen. Für einzelne Objekte und Geometrien gelten eigene Grenzen. I/O und Laufzeit werden separat gemessen. Der Host plant eine gemessene Sicherheitsmarge ein und stoppt kontrolliert vor einer absehbaren Überschreitung.
 
-Transferweite Indizes benötigen eine `IndexStore`-Abstraktion mit kleinen In-Memory- und später bedarfsgerecht ausgelagerten Implementierungen. Die Spezifikation schreibt keinen verteilten Cluster vor. Eine lokale, nachvollziehbare Spill-Strategie wird erst anhand realer Datenmengen gewählt und muss Datentypen, Ordnung und Identitäten verlustfrei erhalten.
+Ob ein Index ausgelagert werden muss, entscheidet sich anhand gemessener
+Last. Eine Auslagerung muss Datentypen, Ordnung und Identitäten erhalten
+und ihr Verhalten bei Abbruch und Platzmangel ausweisen.
 
 <a id="datenbankabbildung-und-bestehende-ili2db-datenbanken"></a>
 ## Datenbankabbildung und bestehende ili2db-Datenbanken
