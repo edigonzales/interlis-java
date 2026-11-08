@@ -41,13 +41,14 @@ public final class GuiRuntime {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length == 1 && List.of("run", "runtime", "package").contains(args[0])) {
-            run(Path.of("").toAbsolutePath().normalize(), args[0], null);
-        } else if (args.length == 2 && args[0].equals("check")
-                && List.of("shell", "compile", "diagnostics", "dependencies", "repositories", "lifecycle", "packaged").contains(args[1])) {
-            run(Path.of("").toAbsolutePath().normalize(), "check", args[1]);
-        } else {
+        if (args.length == 0 || !(args.length == 1 && List.of("run", "runtime", "package").contains(args[0])
+                || args.length == 2 && args[0].equals("check")
+                && List.of("shell", "compile", "diagnostics", "dependencies", "repositories", "lifecycle", "packaged").contains(args[1]))) {
             throw new IllegalArgumentException("Expected run, runtime, package, or check PROFILE");
+        }
+        Path root = Path.of("").toAbsolutePath().normalize();
+        try (var lease = JvmBuildLock.acquire(root)) {
+            run(root, args[0], args.length == 2 ? args[1] : null);
         }
     }
 

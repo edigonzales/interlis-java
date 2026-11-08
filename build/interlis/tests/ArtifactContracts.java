@@ -70,7 +70,17 @@ public final class ArtifactContracts {
         Files.createDirectories(root.resolve("build/interlis"));Files.writeString(root.resolve("build/interlis/sentinel"),"source");
         Files.createDirectories(root.resolve("docs/contracts"));Files.writeString(root.resolve("docs/contracts/sentinel"),"contract");
         Path consumer=Files.createDirectories(root.resolve("target/jenesis-jvm/editor-bundles"));Files.writeString(consumer.resolve("sentinel"),"consumer");
-        BuildOutputs.clean(root,"jvm");check(!Files.exists(engine));check(Files.exists(consumer.resolve("sentinel")));
+        Path engineLock = engine.resolve(build.jenesis.BuildExecutor.LOCK_MARKER);
+        try (var channel = java.nio.channels.FileChannel.open(engineLock, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                var lease = channel.lock()) {
+            rejects(() -> BuildOutputs.clean(root, "jvm"), "active Jenesis clean");
+            check(Files.isRegularFile(jar));
+        }
+        BuildOutputs.clean(root, "jvm");
+        try (var files = Files.list(engine)) {
+            check(files.toList().equals(List.of(engineLock)));
+        }
+        check(Files.exists(consumer.resolve("sentinel")));
         check(Files.readString(root.resolve("build/jenesis/sentinel")).equals("source"));
         check(Files.readString(root.resolve("build/interlis/sentinel")).equals("source"));
         check(Files.readString(root.resolve("docs/contracts/sentinel")).equals("contract"));
@@ -89,7 +99,12 @@ public final class ArtifactContracts {
         try(var channel=java.nio.channels.FileChannel.open(project.resolve("target/jenesis-jvm/project.lock"),
                 StandardOpenOption.CREATE,StandardOpenOption.WRITE);var lock=channel.lock()) {
             long started=System.nanoTime();
-            rejects(()->ExistingJvmDistribution.main(new String[]{"sdk"}),"lock reentry");
+            rejects(()->ExistingJvmDistribution.main(new String[]{"sdk"}),"distribution lock reentry");
+            rejects(()->ModulePathContract.main(new String[0]),"module check lock reentry");
+            rejects(()->CompilerRuntimeCheck.main(new String[0]),"runtime check lock reentry");
+            rejects(()->GuiRuntime.main(new String[]{"runtime"}),"GUI lock reentry");
+            rejects(()->EditorBundleRun.main(new String[0]),"editor producer lock reentry");
+            rejects(()->EditorCompatibilityRun.main(new String[]{root.toString(), root.toString()}),"editor check lock reentry");
             check(java.time.Duration.ofNanos(System.nanoTime()-started).toSeconds()<5);
         }
         System.out.println("BUILD_BOUNDARY_CHECKS="+checks);

@@ -12,6 +12,12 @@ public final class EditorCompatibilityRun {
             throw new IllegalArgumentException("Expected absolute extension and reference bundle directories");
         }
         Path root = Path.of("").toAbsolutePath().normalize();
+        try (var lease = JvmBuildLock.acquire(root)) {
+            check(root, arguments);
+        }
+    }
+
+    private static void check(Path root, String[] arguments) throws Exception {
         Path output = JvmBuildInputs.requireOutputRoot(root, "target/jenesis-jvm/reports");
         Files.createDirectories(output);
         String node=System.getenv("INTERLIS_NODE");if(node==null||!Path.of(node).isAbsolute())throw new IllegalArgumentException("Set INTERLIS_NODE to the documented Node executable");

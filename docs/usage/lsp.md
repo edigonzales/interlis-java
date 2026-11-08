@@ -1,6 +1,6 @@
 # LSP und Editorintegration
 
-Der JVM-Server verwendet LSP über stdin/stdout. `sdk-package` erzeugt den
+Der JVM-Server verwendet LSP über stdin/stdout. `java build/interlis/ExistingJvmDistribution.java sdk` erzeugt den
 modularen Launcher unter `target/jenesis-jvm/delivery/lsp/bin/interlis-lsp`.
 Unter Windows heisst er `interlis-lsp.bat`. Der Editor besitzt den
 Clientprozess und dessen Konfiguration. Server-Logs verwenden die vom

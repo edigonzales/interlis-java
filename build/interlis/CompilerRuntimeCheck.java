@@ -13,7 +13,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class CompilerRuntimeCheck {
     public static void main(String[] args) throws Exception {
         if (args.length != 0) throw new IllegalArgumentException("Expected no arguments");
-        run(Path.of("").toAbsolutePath().normalize());
+        Path root = Path.of("").toAbsolutePath().normalize();
+        try (var lease = JvmBuildLock.acquire(root)) {
+            run(root);
+        }
     }
 
     public static void run(Path root)throws Exception {

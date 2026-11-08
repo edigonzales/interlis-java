@@ -2,7 +2,7 @@
 
 `java build/interlis/ExistingJvmDistribution.java sdk` erzeugt
 `target/jenesis-jvm/delivery/sdk.zip`. Es enthält den modularen CLI-Launcher,
-die Bibliotheksclosure und kompilierbare Beispiele. `sdk-check` führt echte
+die Bibliotheksclosure und kompilierbare Beispiele. `java build/interlis/ExistingJvmDistribution.java check` führt echte
 installierte Prozesse und den Archivconsumer aus.
 
 [SdkExample.java](../../examples/sdk/SdkExample.java) erstellt mit der

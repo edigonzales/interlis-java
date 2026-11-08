@@ -26,7 +26,7 @@ public final class EditorBundleRun {
         Path lock = JvmBuildInputs.requireOutputRoot(root, "target/jenesis-jvm/editor-run.lock");
         Files.createDirectories(lock.getParent());
         try (var channel = java.nio.channels.FileChannel.open(lock, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-                var lease = channel.tryLock()) {
+                var lease = channel.tryLock(); var jvm = JvmBuildLock.acquire(root)) {
             if (lease == null) throw new IllegalStateException("Another editor bundle run is active");
             String requestId = args.length == 0 ? UUID.randomUUID().toString() : args[1];
             run(root, prepare(root, requestId));
