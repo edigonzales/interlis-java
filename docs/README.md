@@ -14,4 +14,3 @@
 - Entwicklung mit [Build](development/build.md), [Tests](development/testing.md)
   und [Freigabe](development/release.md).
 - [Entwurf für Transfer, Validierung und Datenbanken](design/transfer-validation-database.md).
-- [Früherer Formatterauftrag](implementation/README.md).
