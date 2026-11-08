@@ -64,19 +64,10 @@ final class ModelIndex {
         return bySource.getOrDefault(source, List.of());
     }
 
-    Optional<ModelDecl> atLocation(SourceId source, long revision, String name,
-                                   Optional<String> version, int declarationOffset) {
-        for (ModelDecl model : bySource(source)) {
-            if (model.source().revision().value() != revision
-                    || !model.name().equals(name)
-                    || model.declarationOffset() != declarationOffset) {
-                continue;
-            }
-            if (version.isPresent() && !version.get().equals(model.version())) {
-                continue;
-            }
-            return Optional.of(model);
-        }
-        return Optional.empty();
+    Optional<ModelDecl> atLocation(SourceId source, long revision, int declarationOffset) {
+        return bySource(source).stream()
+                .filter(model -> model.source().revision().value() == revision
+                        && model.declarationOffset() == declarationOffset)
+                .findFirst();
     }
 }

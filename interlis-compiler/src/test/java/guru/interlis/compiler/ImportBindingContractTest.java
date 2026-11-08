@@ -1,5 +1,6 @@
 package guru.interlis.compiler;
 
+import guru.interlis.diagnostics.DiagnosticArgument;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.DomainSymbol;
 import guru.interlis.model.TextType;
@@ -70,6 +71,9 @@ class ImportBindingContractTest {
         var wrong = new ImportBinding(correct.site(), new ImportResolution.Resolved(new ModelLocation(
                 targets.id(), targets.revision(), other.name(), Optional.of(other.modelVersion()),
                 other.range().startOffset())));
+        var misleading = new ImportBinding(correct.site(), new ImportResolution.Resolved(new ModelLocation(
+                targets.id(), targets.revision(), "Wanted", Optional.of(other.modelVersion()),
+                other.range().startOffset())));
         var sources = Map.of(root.id(), root, targets.id(), targets);
         var initial = CompilerTestSupport.request(List.of("Root"), sources, List.of(correct), CompilerOptions.defaults());
         var changed = new CompilationRequest(initial.roots(), SourceSet.of(sources, List.of(wrong), List.of(),
@@ -87,11 +91,21 @@ class ImportBindingContractTest {
         assertEquals(30, type.maxLength().orElseThrow());
 
         var reuse = new AnalysisReuse(Optional.of(good.analysis()), good.analysis().syntaxSnapshots());
-        for (var outcome : List.of(engine.compile(changed, token), engine.compile(changed, reuse, token))) {
+        var wrongMetadata = new CompilationRequest(initial.roots(), SourceSet.of(sources, List.of(misleading),
+                List.of(), new ResolutionFingerprint("test-resolver/wrong-metadata")), initial.options());
+        for (var outcome : List.of(engine.compile(changed, token), engine.compile(changed, reuse, token),
+                engine.compile(wrongMetadata, token))) {
             var rejected = assertInstanceOf(CompilationOutcome.Rejected.class, outcome);
             assertTrue(rejected.rejection().reasons().contains(RejectionReason.MISSING_INPUT));
-            assertTrue(rejected.analysis().diagnostics().stream().anyMatch(d ->
-                    d.code().value().equals("ILI-RES-0004") && d.primaryRange().orElseThrow().equals(correct.site().nameRange())));
+            var identity = rejected.analysis().diagnostics().stream()
+                    .filter(d -> d.code().value().equals("ILI-RES-0004")).findFirst().orElseThrow();
+            assertEquals(correct.site().nameRange(), identity.primaryRange().orElseThrow());
+            assertTrue(identity.arguments().contains(new DiagnosticArgument.IdentifierArgument("expected", "Wanted")));
+            assertTrue(identity.arguments().stream().anyMatch(argument ->
+                    argument instanceof DiagnosticArgument.IdentifierListArgument actual
+                            && actual.name().equals("actual")
+                            && actual.values().getFirst().contains("@1:Other")));
+
         }
         assertEquals(type, graph.type(domain.typeId()).orElseThrow());
     }

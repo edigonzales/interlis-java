@@ -81,13 +81,16 @@ final class ImportBinder {
                         // syntax recovery cannot reconstruct its promised declaration.
                         if (sourceSet.sources().containsKey(resolved.target().source()))
                             sources.add(resolved.target().source());
+                        var location = resolved.target();
                         Optional<ModelDecl> target = index.atLocation(
-                                resolved.target().source(),
-                                resolved.target().revision().value(),
-                                resolved.target().modelName(),
-                                resolved.target().modelVersion(),
-                                resolved.target().declarationOffset());
-                        if (target.isEmpty() || !target.get().name().equals(site.modelName())) {
+                                location.source(), location.revision().value(), location.declarationOffset());
+                        if (target.isEmpty() || !target.get().name().equals(site.modelName())
+                                || !target.get().name().equals(location.modelName())
+                                || location.modelVersion().filter(version -> !version.equals(target.get().version())).isPresent()) {
+                            String address = location.source().value() + "@" + location.revision().value()
+                                    + ":" + target.map(ModelDecl::name).orElse(location.modelName())
+                                    + "[" + target.map(ModelDecl::version).or(() -> location.modelVersion()).orElse("") + "]"
+                                    + "#" + location.declarationOffset();
                             DiagnosticId id = collector.emit(DiagnosticDraft.of(
                                             new DiagnosticCode("ILI-RES-0004"), Severity.ERROR,
                                             Phase.SOURCE_RESOLUTION,
@@ -96,9 +99,7 @@ final class ImportBinder {
                                     .argument(new DiagnosticArgument.IdentifierArgument("expected",
                                             site.modelName()))
                                     .argument(new DiagnosticArgument.IdentifierListArgument("actual",
-                                            List.of(resolved.target().source().value()
-                                                    + "@" + resolved.target().revision().value()
-                                                    + ":" + resolved.target().modelName()))));
+                                            List.of(address))));
                             diagnostics.add(id);
                             reasons.add(RejectionReason.MISSING_INPUT);
                         } else {
