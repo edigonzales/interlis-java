@@ -6,7 +6,7 @@ Diese Dateien sind gezielt korrigierte Fassungen der in
 Die Originaldateien, Suite-Erwartungen und Quellenpins werden nicht geändert.
 Die Herkunft jedes Falls, Original-/Kontrollhashes, Normstellen und exakten
 negativen Diagnosen stehen im Manifest. Die Gegenproben gehören zum normalen
-`java build/InterlisJvmBuild.java host --profile conformance`; ihr Inhalt wird dabei nicht erneuert.
+`java build/InterlisJvmBuild.java conformance`; ihr Inhalt wird dabei nicht erneuert.
 
 Änderungen gegenüber den Originalen:
 

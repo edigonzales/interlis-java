@@ -7,43 +7,33 @@ import java.util.*;
 
 /** Existing CLI/LSP/SDK forms; products always come from the current Jenesis invocation. */
 public final class ExistingJvmDistribution {
-    public static void run(Path root)throws Exception { run(root,true); }
-    public static void generate(Path root)throws Exception { run(root,false); }
+    public static void run(Path root) throws Exception {
+        Path delivery = generate(root);
+        DistributionChecks.check(root, delivery);
+    }
 
-    /** Packages the compiler installation from a completed local platform run. */
-    public static void packageCompiler(Path root, Path platformRun) throws Exception {
-        Path run = JvmBuildInputs.requireOutputRoot(root, root.relativize(platformRun.normalize()).toString());
-        if (!run.getParent().equals(root.resolve("target/jenesis-jvm/host"))
-                || !run.getFileName().toString().startsWith("platform-")) {
-            throw new IllegalArgumentException("Expected a local platform verification run");
+    public static Path generate(Path root) throws Exception {
+        var outcome = JenesisBridge.run(new BuildRequest("artifacts", null, null, root));
+        Path delivery = JvmBuildInputs.requireOutputRoot(root, "target/jenesis-jvm/delivery");
+        if (Files.exists(delivery)) {
+            Path previous = JvmBuildInputs.requireOutputRoot(root, "target/jenesis-jvm/delivery-history/" + UUID.randomUUID());
+            Files.createDirectories(previous.getParent());
+            Files.move(delivery, previous);
         }
-        var receipt = (Map<?, ?>) Json.parse(Files.readString(run.resolve("receipt.json")));
-        Path reportPath = run.resolve("reports/platform/result.json");
-        var report = (Map<?, ?>) Json.parse(Files.readString(reportPath));
-        var reports = (Map<?, ?>) receipt.get("reports");
-        if (!"platform".equals(receipt.get("profile")) || !"passed".equals(report.get("status"))
-                || !JvmBuildInputs.sha256(reportPath).equals(reports.get("reports/platform/result.json"))) {
-            throw new IllegalArgumentException("Expected successful platform verification");
-        }
-        var versions = (Map<?, ?>) report.get("versions");
-        String version = Objects.toString(versions.get("version"), "");
+        generateAt(root, outcome, delivery);
+        return delivery;
+    }
+
+    public static void packageCompiler(Path root) throws Exception {
+        Path delivery = generate(root);
+        var manifest = (Map<?, ?>) Json.parse(Files.readString(delivery.resolve("version.json")));
+        String version = Objects.toString(manifest.get("version"), "");
         if (!version.matches("[0-9]+\\.[0-9]+\\.[0-9]+-SNAPSHOT")) {
             throw new IllegalArgumentException("Expected a compiler snapshot version");
         }
-        Path output = Files.createDirectory(run.resolve("bindist"));
-        Path staging = Files.createDirectory(run.resolve("bindist-staging"));
-        Path compiler = run.resolve("delivery/compiler");
-        copyTree(compiler, staging.resolve("cli"));
-        var jars = new TreeMap<String, String>();
-        try (var entries = Files.list(staging.resolve("cli/lib"))) {
-            for (Path jar : entries.toList()) {
-                Path installed = compiler.resolve("lib").resolve(jar.getFileName());
-                jars.put(JvmBuildInputs.portableRelative(root, installed), JvmBuildInputs.sha256(jar));
-            }
-        }
-        if (jars.isEmpty() || !jars.equals(report.get("installedJars"))) {
-            throw new IllegalArgumentException("Compiler libraries differ from the verified installation");
-        }
+        Path output = Files.createDirectory(delivery.resolve("bindist"));
+        Path staging = Files.createDirectory(delivery.resolve("bindist-staging"));
+        copyTree(delivery.resolve("compiler"), staging.resolve("cli"));
         Files.copy(root.resolve("LICENSE"), staging.resolve("LICENSE"));
         Files.writeString(staging.resolve("README.txt"), """
                 INTERLIS Compiler CLI
@@ -53,23 +43,13 @@ public final class ExistingJvmDistribution {
                 Windows:     cli\\bin\\interlis-compiler.bat check model.ili
                 """);
         Path zip = output.resolve("interlis-compiler-bindist-" + version + ".zip");
-        CompilerContractRun.host(root, JenesisBridge.buildArchiveTool(root, false),
-                "build.interlis.archive.ArchiveWriter", List.of(staging.toString(), zip.toString()),
-                run.resolve("bindist-archive-process"));
+        archive(root, staging, zip);
+        DistributionChecks.checkArchive(root, delivery, zip, false);
         Files.writeString(output.resolve("SHA256SUMS"), JvmBuildInputs.sha256(zip) + "  " + zip.getFileName() + "\n");
     }
-    private static void run(Path root,boolean checks)throws Exception {
-        var outcome=JenesisBridge.run(new BuildRequest("artifacts",null,null,root));
-        Path delivery=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/delivery");
-        if(Files.exists(delivery)) {
-            Path history=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/delivery-history/"+UUID.randomUUID());
-            Files.createDirectories(history.getParent());Files.move(delivery,history);
-        }
-        generateAt(root,outcome,delivery,delivery.resolve("reports"),checks);
-    }
-    static void generateAt(Path root,JenesisBridge.BuildOutcome outcome,Path delivery,Path reports,boolean checks)throws Exception {
-        JvmBuildInputs.requireOutputRoot(root,root.relativize(delivery).toString());
-        JvmBuildInputs.requireOutputRoot(root,JvmBuildInputs.portableRelative(root,reports));
+
+    static void generateAt(Path root, JenesisBridge.BuildOutcome outcome, Path delivery) throws Exception {
+        JvmBuildInputs.requireOutputRoot(root, root.relativize(delivery).toString());
         Files.createDirectories(delivery);
         var provenance=new TreeMap<String,Object>();
         for(var item:Map.of("compiler","interlis-compiler-cli","lsp","interlis-lsp").entrySet()) {
@@ -94,47 +74,33 @@ public final class ExistingJvmDistribution {
             provenance.put(item.getValue(),facts);
         }
         Files.writeString(delivery.resolve("runtime-inventory.json"),JsonOutput.write(provenance));
-        Properties layout=new Properties();layout.setProperty("schemaVersion","1");layout.setProperty("builder","jenesis");layout.setProperty("root",root.toString());
-        for(var pair:Map.of("compiler","compiler","lsp","lsp","sdk","sdk.zip","reports","reports","norms","norms").entrySet())layout.setProperty(pair.getKey(),JvmBuildInputs.portableRelative(root,delivery.resolve(pair.getValue())));
-        layout.setProperty("reports",JvmBuildInputs.portableRelative(root,reports));
-        Path file=delivery.resolve("layout.properties");try(var writer=Files.newBufferedWriter(file)){layout.store(writer,"Explicit Jenesis delivery check layout");}
-        var classpath=JenesisBridge.runtimeClasspath("interlis-verification",outcome);
-        if(checks) {
-            host(root,classpath,file,"SdkProcesses",delivery.resolve("sdk-process"));
-            host(root,classpath,file,"CompilerCliProcesses",delivery.resolve("cli-process"));
-        } else {
-            Path manifest=reports.resolve("sdk/version-manifest.json");Files.createDirectories(manifest.getParent());
-            String launcher="interlis-compiler"+(System.getProperty("os.name").startsWith("Windows")?".bat":"");
-            var command=List.of(delivery.resolve("compiler/bin/"+launcher).toString(),"version","--json");
-            Files.writeString(delivery.resolve("version-command.json"),JsonOutput.write(command));
-            var builder=new ProcessBuilder(command).directory(root.toFile()).redirectOutput(manifest.toFile()).redirectError(delivery.resolve("version.stderr").toFile());builder.environment().put("JAVA_HOME",System.getProperty("java.home"));
-            var process=builder.start();try {
-                if(!process.waitFor(30,java.util.concurrent.TimeUnit.SECONDS))throw new IllegalStateException("Version process timeout");
-                Files.writeString(delivery.resolve("version.exit"),Integer.toString(process.exitValue()));
-                if(process.exitValue()!=0||Files.size(delivery.resolve("version.stderr"))!=0)throw new IllegalStateException("Cannot produce SDK version manifest");
-                if(!(Json.parse(Files.readString(manifest)) instanceof Map))throw new IllegalStateException("Malformed SDK version manifest");
-            }finally{if(process.isAlive()){process.descendants().forEach(ProcessHandle::destroyForcibly);process.destroyForcibly();}}
+        var version = DistributionChecks.run(root,
+                List.of(launcher(delivery.resolve("compiler"), "interlis-compiler").toString(), "version", "--json"));
+        version.requireExit(0);
+        if (!version.stderr().isEmpty() || !(Json.parse(version.stdout()) instanceof Map<?, ?> info)
+                || !"interlis-compiler".equals(info.get("tool"))
+                || !JvmBuildInputs.projectVersion(root).equals(info.get("version"))) {
+            throw new IllegalStateException("SDK version output differs from the built compiler");
         }
-        Path staging=delivery.resolve("sdk-staging");copyTree(delivery.resolve("compiler"),staging.resolve("cli"));copyTree(root.resolve("examples/sdk"),staging.resolve("examples/sdk"));
-        Files.createDirectories(staging.resolve("version"));Files.copy(reports.resolve("sdk/version-manifest.json"),staging.resolve("version/version-manifest.json"));
-        CompilerContractRun.host(root,JenesisBridge.buildArchiveTool(root,false),"build.interlis.archive.ArchiveWriter",List.of(staging.toString(),delivery.resolve("sdk.zip").toString()),delivery.resolve("archive-process"));
-        if(checks)host(root,classpath,file,"SdkArchiveCheck",delivery.resolve("sdk-archive-check"));
-        System.out.println((checks?"SDK_CHECK_PASS":"SDK_GENERATED")+"; tests NOT_RUN (artifact generation only); "+delivery);
+        Path manifest = delivery.resolve("version.json");
+        Files.writeString(manifest, version.stdout());
+        Path staging = delivery.resolve("sdk-staging");
+        copyTree(delivery.resolve("compiler"), staging.resolve("cli"));
+        copyTree(root.resolve("examples/sdk"), staging.resolve("examples/sdk"));
+        Files.createDirectories(staging.resolve("version"));
+        Files.copy(manifest, staging.resolve("version/version-manifest.json"));
+        archive(root, staging, delivery.resolve("sdk.zip"));
     }
-    static void host(Path root,List<Path> cp,Path layout,String main,Path log)throws Exception {
-        var command=new ArrayList<String>();command.add(Path.of(System.getProperty("java.home"),"bin/java").toString());
-        command.add("-Dverification.layout="+layout);command.add("-Dverification.layout.sha256="+JvmBuildInputs.sha256(layout));
-        command.add("-cp");command.add(String.join(java.io.File.pathSeparator,cp.stream().map(Path::toString).toList()));command.add("guru.interlis.verification."+main);command.add(root.toString());
-        Files.writeString(log.resolveSibling(log.getFileName()+".argv.json"),JsonOutput.write(command));
-        var builder=new ProcessBuilder(command).directory(root.toFile()).redirectErrorStream(true).redirectOutput(log.toFile());
-        builder.environment().put("JAVA_HOME",System.getProperty("java.home"));
-        var process=builder.start();
-        try {
-            if(!process.waitFor(180,java.util.concurrent.TimeUnit.SECONDS))throw new IllegalStateException("Delivery check timeout: "+main);
-            Files.writeString(log.resolveSibling(log.getFileName()+".exit"),Integer.toString(process.exitValue()));
-            if(process.exitValue()!=0)throw new IllegalStateException("Delivery check failed: "+log);
-        }finally{if(process.isAlive()){process.descendants().forEach(ProcessHandle::destroyForcibly);process.destroyForcibly();}}
+
+    static Path launcher(Path distribution, String name) {
+        return distribution.resolve("bin").resolve(name + (System.getProperty("os.name").startsWith("Windows") ? ".bat" : ""));
     }
+
+    static void archive(Path root, Path staging, Path zip) throws Exception {
+        DistributionChecks.javaMain(root, JenesisBridge.buildArchiveTool(root, false),
+                "build.interlis.archive.ArchiveWriter", List.of(staging.toString(), zip.toString())).requireExit(0);
+    }
+
     private static void copyTree(Path source,Path destination)throws Exception {
         try(var files=Files.walk(source)) {
             for(Path path:files.sorted().toList()) {

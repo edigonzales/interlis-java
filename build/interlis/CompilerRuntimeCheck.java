@@ -17,7 +17,7 @@ public final class CompilerRuntimeCheck {
         Path run=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/runtime-checks/"+UUID.randomUUID());
         Files.createDirectories(run);
         Path delivery=run.resolve("delivery"),image=run.resolve("runtime");
-        ExistingJvmDistribution.generateAt(root,outcome,delivery,delivery.resolve("reports"),false);
+        ExistingJvmDistribution.generateAt(root,outcome,delivery);
         Path lib=delivery.resolve("compiler/lib");
         Path jdk=Path.of(System.getProperty("java.home"));
         var gate=new Gate(run);

@@ -4,7 +4,8 @@ const cp = require('node:child_process'), crypto = require('node:crypto'), asser
 const root = path.resolve(__dirname, '../..');
 const out = path.join(root, 'target/verification/repository-cache');
 fs.mkdirSync(out, {recursive: true});
-const launcher = process.argv[2] || path.join(require('./layout.cjs').resolveRole(require('./layout.cjs').readVerificationInputs(root),'compiler'),'bin/interlis-compiler'+(process.platform==='win32'?'.bat':''));
+const launcher = path.resolve(process.argv[2] || path.join(root, 'target/jenesis-jvm/delivery/compiler/bin',
+    process.platform === 'win32' ? 'interlis-compiler.bat' : 'interlis-compiler'));
 const dir = fs.mkdtempSync(path.join(out, 'run-')), home = path.join(dir, 'home');
 fs.mkdirSync(home);
 const input = path.join(dir, 'Projekt.ili');
@@ -80,7 +81,7 @@ function ordered(row, miss = false) {
     assert.ok(missing.stderr.indexOf(' [ILI-RES-0011]') >= 0);
     assert.ok(missing.stderr.indexOf(' [ILI-RES-0011]') < missing.stderr.indexOf('ERROR ')); assert.equal(missing.http.length, 0);
     assert.match(missing.stderr.trimEnd().split('\n').at(-1), /^ERROR \.\.\.compiler run failed \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
-    fs.writeFileSync(input, project.replace('END Projekt.', 'DOMAIN D = Missing; END Projekt.'));
+    fs.writeFileSync(input, project.replace('END Projekt.', 'TOPIC T = CLASS C = value : Missing; END C; END T; END Projekt.'));
     const bad = await run('compiler-error', ['compile', ...common, '--verbose', '--diagnostic-language', 'de'], 1);
     assert.ok(bad.stderr.indexOf(' [ILI-RES-0011]') < bad.stderr.indexOf('ERROR ')); assert.ok(!bad.stderr.includes('ILI-RES-0013'));
     assert.ok(bad.stderr.split('\n').some(line => /^ERROR .*Projekt\.ili>:\d+:\d+: .* \[ILI-SEM-\d+\]$/.test(line)), bad.stderr);

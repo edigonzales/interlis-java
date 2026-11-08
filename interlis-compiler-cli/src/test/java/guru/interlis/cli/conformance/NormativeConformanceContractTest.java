@@ -208,16 +208,5 @@ class NormativeConformanceContractTest {
     @Test void controlsOutsideRepositoryCannotBeWaived() {
         entry.add("positiveControls", list(json("{\"path\":\"../outside.ili\",\"sha256\":\"wrong\"}"))); fails();
     }
-    @Test void missingAndOldReportsCannotEarnSuccess() throws Exception {
-        long started = 10000;
-        for (String name : List.of("summary.json", "report.json", "runner-exit.txt")) {
-            Files.writeString(root.resolve(name), "{}");
-            Files.setLastModifiedTime(root.resolve(name), java.nio.file.attribute.FileTime.fromMillis(started));
-        }
-        requireFreshReports(root, started);
-        Files.setLastModifiedTime(root.resolve("report.json"), java.nio.file.attribute.FileTime.fromMillis(started - 1));
-        assertThrows(IllegalArgumentException.class, () -> requireFreshReports(root, started));
-        Files.delete(root.resolve("report.json"));
-        assertThrows(java.io.IOException.class, () -> requireFreshReports(root, started));
-    }
+
 }

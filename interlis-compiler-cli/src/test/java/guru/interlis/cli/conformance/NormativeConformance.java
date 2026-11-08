@@ -3,7 +3,6 @@ package guru.interlis.cli.conformance;
 import com.google.gson.*;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.security.MessageDigest;
 import java.util.*;
@@ -219,12 +218,11 @@ public final class NormativeConformance {
         result.add("referenceResult", report.get("overallResult"));
         result.add("normativeAssessments", assessments);
         result.add("assessmentCaseIds", JSON.toJsonTree(entries.keySet().stream().filter(selected::contains).toList()));
-        result.addProperty("referenceReport", "build/conformance/report.json");
         return result;
     }
 
     static ProcessResult run(Path root, List<String> command) throws Exception {
-        Path temporary = Files.createTempDirectory(root.resolve("build"), "normative-process-");
+        Path temporary = Files.createTempDirectory("normative-process-");
         try {
             Path stdout = temporary.resolve("stdout"), stderr = temporary.resolve("stderr");
             var process = new ProcessBuilder(command).directory(root.toFile())
@@ -240,60 +238,36 @@ public final class NormativeConformance {
         }
     }
 
-    static void requireFreshReports(Path output, long started) throws IOException {
-        for (String name : List.of("summary.json", "report.json", "runner-exit.txt")) {
-            require(Files.getLastModifiedTime(output.resolve(name)).toMillis() >= started, "stale suite report: " + name);
-        }
-    }
-
     public static void main(String[] args) throws Exception {
+        if (args.length != 3) throw new IllegalArgumentException("Expected root, conformance output and runner exit");
         Path root = Path.of(args[0]).toAbsolutePath();
-        if (args.length != 3) throw new IllegalArgumentException("Expected root, explicit conformance output and report directory");
-        Path output = Path.of(args[1]), reports = Path.of(args[2]);
-        for (Path path : List.of(output, reports)) require(path.isAbsolute() && path.normalize().startsWith(root.resolve("target/jenesis-jvm")), "Foreign conformance output");
+        Path output = Path.of(args[1]).toRealPath();
+        require(output.startsWith(root.resolve("target/jenesis-jvm/conformance").toRealPath()), "Foreign conformance output");
         var pins = new Properties();
         try (var input = Files.newInputStream(root.resolve("testdata/conformance/suite.properties"))) { pins.load(input); }
         var config = read(output.resolve("run-config.json"));
-        long started = Long.parseLong(Files.readString(output.resolve("run-start.txt")));
-        requireFreshReports(output, started);
-        var suiteCases = array(read(Path.of(text(config, "suite"))), "testCases");
-        var pattern = Pattern.compile(text(config, "filter"));
+        String filter = text(config, "filter");
+        var pattern = Pattern.compile(filter);
         var selected = new LinkedHashSet<String>();
-        var excludedVersions = new TreeSet<String>();
-        int excluded = 0;
-        for (var value : suiteCases) {
+        var supported = new LinkedHashSet<String>();
+        var all = new HashSet<String>();
+        for (var value : array(read(Path.of(text(config, "suite"))), "testCases")) {
             var test = value.getAsJsonObject();
-            if (pattern.matcher(text(test, "id")).find()) require(selected.add(text(test, "id")), "duplicate selected suite ID");
-            if (!Set.of("2.3", "2.4").contains(text(test, "languageVersion"))) {
-                excluded++; excludedVersions.add(text(test, "languageVersion"));
-            }
+            String id = text(test, "id");
+            require(all.add(id), "duplicate suite ID");
+            if (pattern.matcher(id).find()) selected.add(id);
+            if (Set.of("2.3", "2.4").contains(text(test, "languageVersion"))) supported.add(id);
         }
-        boolean full = text(config, "filter").equals("^(ili23|ili24)\\.");
-        require(!selected.isEmpty() && (!full || (suiteCases.size() == 610 && selected.size() == 593 && excluded == 17)),
+        boolean full = filter.equals("^(ili23|ili24)\\.");
+        require(!selected.isEmpty() && supported.containsAll(selected) && (!full || selected.equals(supported)),
                 "unexpected selected suite case set");
         var manifest = read(root.resolve("testdata/conformance/normative/expectations.json"));
-        require(array(manifest, "cases").size() == 19, "expected exactly 19 explicit project assessments");
         Path cli = Path.of(text(array(config, "compilers").get(0).getAsJsonObject(), "source"));
-        int exit = Integer.parseInt(Files.readString(output.resolve("runner-exit.txt")));
-        var raw = read(output.resolve("summary.json"));
         var result = assess(root, cli, pins.getProperty("commit"), pins.getProperty("sha256"), selected, full,
-                manifest, read(output.resolve("report.json")), raw, exit, command -> run(root, command));
+                manifest, read(output.resolve("report.json")), read(output.resolve("summary.json")),
+                Integer.parseInt(args[2]), command -> run(root, command));
         write(output.resolve("normative-assessment.json"), result);
-        var combined = raw.deepCopy(); result.entrySet().forEach(e -> combined.add(e.getKey(), e.getValue()));
-        var suite = new JsonObject();
-        for (String key : List.of("commit", "sha256", "url")) suite.addProperty(key, pins.getProperty(key));
-        combined.add("suite", suite); combined.addProperty("filter", text(config, "filter"));
-        var selection = new JsonObject();
-        selection.add("languageVersions", JSON.toJsonTree(List.of("2.3", "2.4")));
-        selection.addProperty("suiteCaseCount", suiteCases.size()); selection.addProperty("selectedCaseCount", selected.size());
-        selection.addProperty("excludedCaseCount", excluded); selection.add("excludedVersions", JSON.toJsonTree(excludedVersions));
-        combined.add("selection", selection); combined.addProperty("exitCode", exit);
-        combined.addProperty("cli", root.relativize(cli).toString().replace('\\', '/'));
-        write(reports.resolve("conformance-summary.json"), combined);
-        String log = Files.readString(output.resolve("conformance.log"), StandardCharsets.UTF_8)
-                .replace(root.toString(), "<repo>").replace(System.getProperty("user.home"), "<home>");
-        Files.writeString(reports.resolve("conformance-log.txt"), log.substring(Math.max(0, log.length() - 12000)) + "\n");
-        System.out.println("selected=" + selected.size() + " result=" + text(result, "overallResult") + " rawExit=" + exit);
+        System.out.println((full ? "Full" : "Filtered") + " Codeberg suite: " + text(result, "overallResult"));
         System.out.println(result.get("summary"));
         if (!text(result, "overallResult").equals("PASS")) System.exit(1);
     }

@@ -2,7 +2,6 @@ package build;
 
 import build.interlis.JenesisBridge;
 import build.interlis.JvmBuildInputs;
-import build.interlis.CompilerContractRun;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.util.List;
@@ -33,13 +32,10 @@ public final class InterlisJvmBuild {
                 var outcome=JenesisBridge.run(new BuildRequest("artifacts",null,null,request.root()));
                 var snapshot=build.interlis.ConsumerSnapshot.create(request.root(),outcome);
                 System.out.println("Consumer snapshot: "+snapshot.manifest()+" SHA-256="+snapshot.manifestSha256());
-            } else if(request.profile().equals("host")) {
-                build.interlis.HostVerificationProfiles.run(request,lease);
             } else if(request.profile().equals("clean")) {
                 build.interlis.BuildOutputs.clean(request.root(),request.options().get("--scope"));
-            } else if(request.profile().equals("contracts")) {
-                if(request.module()!=null||request.tests()!=null)throw new IllegalArgumentException("contracts uses the full current binding selection");
-                CompilerContractRun.run(request.root());
+            } else if(request.profile().equals("conformance")) {
+                build.interlis.ConformanceRun.run(request.root(), request.options().get("--filter"));
             } else if(request.profile().equals("editor-check")) {
                 build.interlis.EditorCompatibilityRun.run(request);
             } else if(List.of("gui-run", "gui-runtime", "gui-package", "gui-check").contains(request.profile())) {
@@ -51,15 +47,12 @@ public final class InterlisJvmBuild {
             } else if(request.profile().equals("sdk-package")) {
                 build.interlis.ExistingJvmDistribution.generate(request.root());
             } else if(request.profile().equals("compiler-bindist")) {
-                build.interlis.ExistingJvmDistribution.packageCompiler(request.root(), Path.of(request.options().get("--inputs")));
-            } else if(request.profile().equals("release-check")) {
-                build.interlis.HostVerificationProfiles.release(request.root(),lease);
+                build.interlis.ExistingJvmDistribution.packageCompiler(request.root());
             } else if(request.profile().equals("sdk-check")) {
                 if(request.module()!=null||request.tests()!=null)throw new IllegalArgumentException("sdk-check uses complete runtime closures");
                 build.interlis.ExistingJvmDistribution.run(request.root());
             } else if(request.profile().equals("build")||request.profile().equals("artifacts")) {
                 var outcome = JenesisBridge.run(request);
-                if(request.profile().equals("build")&&request.module()==null)build.interlis.HostVerificationProfiles.verifyPythonFree(request.root(),outcome);
                 System.out.println("JVM build completed; scope=" + (request.module() == null ? "all" : request.module())
                         + ", tests=" + (request.profile().equals("artifacts")?"NOT_RUN":request.tests() == null ? "normal" : request.tests())
                         + ", inventory=" + outcome.inventory());
@@ -73,7 +66,7 @@ public final class InterlisJvmBuild {
         var options=new java.util.HashMap<String,String>();
         int i = 0;
         if (args.length > 0 && !args[0].startsWith("--")) profile = args[i++];
-        if (!List.of("build", "artifacts", "wasm-export", "wasm", "host", "clean", "contracts", "sdk-check", "sdk-package", "compiler-bindist", "runtime-check", "module-check", "release-check", "editor-check", "editor-bundle", "gui-run", "gui-runtime", "gui-package", "gui-check").contains(profile))
+        if (!List.of("build", "artifacts", "wasm-export", "wasm", "clean", "conformance", "sdk-check", "sdk-package", "compiler-bindist", "runtime-check", "module-check", "editor-check", "editor-bundle", "gui-run", "gui-runtime", "gui-package", "gui-check").contains(profile))
             throw new IllegalArgumentException("Unknown profile: " + profile);
         while (i < args.length) {
             String option = args[i++];
@@ -93,6 +86,11 @@ public final class InterlisJvmBuild {
                 case "--extension-dir", "--reference-bundle", "--inputs" -> {
                     if(options.put(option,value)!=null||!Path.of(value).isAbsolute()||!Files.exists(Path.of(value)))throw new IllegalArgumentException("Expected existing absolute path for "+option);
                 }
+                case "--filter" -> {
+                    if (value.isBlank() || options.put(option, value) != null)
+                        throw new IllegalArgumentException("Expected one nonempty conformance filter");
+                    java.util.regex.Pattern.compile(value);
+                }
                 case "--application" -> {
                     if(!value.equals("compiler")||options.put(option,value)!=null)throw new IllegalArgumentException("Expected application compiler");
                 }
@@ -101,7 +99,7 @@ public final class InterlisJvmBuild {
                         throw new IllegalArgumentException("Expected exactly one clean scope: jvm|consumer|wasm");
                 }
                 case "--profile" -> {
-                    var profiles=profile.equals("gui-check")?java.util.Set.of("shell","compile","diagnostics","dependencies","repositories","lifecycle","packaged"):profile.equals("release-check")?java.util.Set.of("compiler"):profile.equals("wasm")?build.interlis.WasmBuildRun.PROFILES:build.interlis.HostVerificationProfiles.PROFILES;
+                    var profiles=profile.equals("gui-check")?java.util.Set.of("shell","compile","diagnostics","dependencies","repositories","lifecycle","packaged"):profile.equals("wasm")?build.interlis.WasmBuildRun.PROFILES:java.util.Set.<String>of();
                     if(!profiles.contains(value)||options.put(option,value)!=null)
                         throw new IllegalArgumentException("Unknown or duplicate host profile: "+value);
                 }
@@ -115,8 +113,8 @@ public final class InterlisJvmBuild {
             }
         }
         if (tests != null && module == null) throw new IllegalArgumentException("--tests requires --module");
-        var expected=profile.equals("runtime-check")?java.util.Set.of("--application"):profile.equals("editor-check")?java.util.Set.of("--extension-dir","--reference-bundle"):profile.equals("clean")?java.util.Set.of("--scope"):List.of("host","release-check","gui-check").contains(profile)?java.util.Set.of("--profile"):profile.equals("wasm")?options.containsKey("--inputs-sha256")?java.util.Set.of("--profile","--inputs","--inputs-sha256"):java.util.Set.of("--profile","--inputs"):profile.equals("editor-bundle")&&options.containsKey("--request-id")?java.util.Set.of("--request-id"):java.util.Set.of();
-        if (profile.equals("compiler-bindist")) expected = java.util.Set.of("--inputs");
+        var expected=profile.equals("runtime-check")?java.util.Set.of("--application"):profile.equals("editor-check")?java.util.Set.of("--extension-dir","--reference-bundle"):profile.equals("clean")?java.util.Set.of("--scope"):profile.equals("gui-check")?java.util.Set.of("--profile"):profile.equals("wasm")?options.containsKey("--inputs-sha256")?java.util.Set.of("--profile","--inputs","--inputs-sha256"):java.util.Set.of("--profile","--inputs"):profile.equals("editor-bundle")&&options.containsKey("--request-id")?java.util.Set.of("--request-id"):java.util.Set.of();
+        if (profile.equals("conformance") && options.containsKey("--filter")) expected = java.util.Set.of("--filter");
         if(!options.keySet().equals(expected))throw new IllegalArgumentException("Expected options for "+profile+": "+expected);
         if(!List.of("build","artifacts").contains(profile)&&(module!=null||tests!=null))throw new IllegalArgumentException("Module/test restrictions are only available for build/artifacts");
         if(profile.equals("artifacts")&&tests!=null)throw new IllegalArgumentException("artifacts never selects tests");

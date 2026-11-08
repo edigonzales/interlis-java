@@ -157,10 +157,6 @@ public final class JenesisBridge {
 
 
     public static BuildOutcome run(BuildRequest request) throws Exception {
-        return run(request, Map.of());
-    }
-
-    public static BuildOutcome run(BuildRequest request, Map<String,String> overrides) throws Exception {
         Path root = request.root();
         Path cliRevision = cliRevisionResource(root);
         var settings = new LinkedHashMap<>(Make.settings(root).keys());
@@ -170,7 +166,6 @@ public final class JenesisBridge {
         settings.put("variable.testdataRoot", root.resolve("testdata").toString());
         if (request.tests() != null) settings.put("test.filter", JpmsTestRun.selections(request.tests()).stream()
                 .map(test -> request.module() + "/" + test).collect(java.util.stream.Collectors.joining(",")));
-        settings.putAll(overrides);
         var env = new Environment(settings).root(root);
         Map<String, String> inputs = new HashMap<>();
         for (String module : JvmBuildInputs.MODULES) inputs.put(module, JvmBuildInputs.fingerprint(root, module));
@@ -200,10 +195,11 @@ public final class JenesisBridge {
                 assembler = assembler.resources(resources);
             }
             if(descriptor.test()&&Files.isRegularFile(root.resolve(module+"/src/main/java/module-info.java"))) {
-                boolean selected=!request.profile().equals("artifacts")&&(request.tests()==null||module.equals(request.module()));
+                boolean selected = request.profile().equals("build")
+                        && (request.module() == null || module.equals(request.module()));
                 Map<String,String> testSettings=Map.copyOf(local);
                 assembler=assembler.observe(observation->observation.test(nativeTests->{
-                    try{return JpmsTestRun.observe(nativeTests,root,module,testSettings,selected,"true".equals(testSettings.get("test.force")));}
+                    try{return JpmsTestRun.observe(nativeTests, root, module, testSettings, selected);}
                     catch(java.io.IOException failure){throw new java.io.UncheckedIOException(failure);}
                 }));
             }
@@ -242,7 +238,6 @@ public final class JenesisBridge {
         String[] selectors = request.profile().equals("artifacts") && request.module()==null ? new String[]{"stage"} : request.module() == null ? new String[]{"build"}
                 : new String[]{"+" + request.module(), "build/maven/compose/module/source-module-" + request.module()};
         Files.createDirectories(root.resolve("target/jenesis-jvm"));
-        var invocationStarted=java.time.Instant.now();
         var results = project.build(selectors);
         if (results.isEmpty()) throw new IllegalStateException("Empty engine result");
         if (!discovered.equals(Set.copyOf(JvmBuildInputs.MODULES)))
@@ -250,7 +245,7 @@ public final class JenesisBridge {
         var index = new Properties();
         index.setProperty("scope", request.module() == null ? "all" : request.module());
         index.setProperty("tests", Objects.toString(request.tests(), "normal"));
-        int reports = 0;Set<String> tested=new TreeSet<>();
+        int reports = 0;
         for (var entry : results.entrySet()) {
             Path output = entry.getValue().toAbsolutePath().normalize();
             if (!output.startsWith(root.resolve("target/jenesis-jvm/engine")))
@@ -268,12 +263,10 @@ public final class JenesisBridge {
                 if (!key.endsWith(".report.tests")) continue;
                 Path directory = output.resolve(inventory.getProperty(key)).normalize();
                 requireSuccessfulReports(directory);
-                for(String property:inventory.stringPropertyNames())
-                    if(property.endsWith(".test"))tested.add(inventory.getProperty(property));
                 reports++;
             }
         }
-        if (reports == 0 && !request.profile().equals("artifacts")) throw new IllegalStateException("No required test reports");
+        if (reports == 0 && request.profile().equals("build")) throw new IllegalStateException("No required test reports");
         for (var entry : inputs.entrySet()) {
             if (!entry.getValue().equals(JvmBuildInputs.fingerprint(root, entry.getKey())))
                 throw new IllegalStateException("Inputs changed during build: " + entry.getKey());
@@ -282,23 +275,7 @@ public final class JenesisBridge {
         Path destination = root.resolve("target/jenesis-jvm/reports/engine-results.properties");
         Files.createDirectories(destination.getParent());
         try (var out = Files.newBufferedWriter(destination)) { index.store(out, "Actual engine result paths"); }
-        var outcome=new BuildOutcome(destination, Map.copyOf(results));
-        if(request.profile().equals("build")) {
-            Path evidence=root.resolve("target/jenesis-jvm/evidence/normal").resolve(engineRunId(root));Files.createDirectories(evidence);
-            index.setProperty("evidence.normal",root.relativize(evidence).toString());
-            try(var writer=Files.newBufferedWriter(destination)){index.store(writer,"Actual engine and evidence results");}
-            for(String module:tested) {
-                var facts=snapshotTests(root,module,outcome,evidence.resolve(module),false);
-                facts.setProperty("builder","jenesis");facts.setProperty("module",module);
-                facts.setProperty("invocationStarted",invocationStarted.toString());facts.setProperty("invocationEnded",java.time.Instant.now().toString());
-                facts.setProperty("selection",Objects.toString(request.tests(),"normal"));
-                facts.setProperty("jdk",Runtime.version().toString());facts.setProperty("jenesis","0.18.1");
-                facts.setProperty("gitCommit",git(root,"rev-parse","HEAD"));facts.setProperty("treeSha",git(root,"rev-parse","HEAD^{tree}"));
-                facts.setProperty("dirty",Boolean.toString(!git(root,"status","--porcelain").isBlank()));
-                try(var writer=Files.newBufferedWriter(evidence.resolve(module).resolve("receipt.properties"))){facts.store(writer,"Actual test execution/reuse; run identity comes from the engine");}
-            }
-        }
-        return outcome;
+        return new BuildOutcome(destination, Map.copyOf(results));
     }
 
     /** Reads only the explicit last result index, with no discovery/fallback to unrelated products. */
@@ -330,76 +307,6 @@ public final class JenesisBridge {
     }
 
     @SuppressWarnings("unchecked")
-    static Properties snapshotFreshTests(Path root,String module,BuildOutcome outcome,Path destination) throws Exception {
-        return snapshotTests(root,module,outcome,destination,true);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Properties snapshotTests(Path root,String module,BuildOutcome outcome,Path destination,boolean requireFresh) throws Exception {
-        var test=inventoryResult(outcome,module,true);
-        Path output=test.directory("report.tests").getParent().getParent();
-        output=output.toAbsolutePath().normalize();
-        Path events=root.resolve("target/jenesis-jvm/engine/.jenesis.events.jsonl");
-        String run=null,origin=null;boolean executed=false,found=false,completed=false;
-        for(String line:Files.readAllLines(events)) {
-            var event=(Map<String,Object>)Json.parse(line);
-            if(event.get("status").equals("started"))run=(String)event.get("run");
-            if(event.get("status").equals("completed"))completed=true;
-            if(Objects.equals(event.get("folder"),output.getParent().toString())) {
-                found=true;executed=event.get("status").equals("executed");origin=(String)event.get("run");
-            }
-        }
-        if(!found||(!executed&&requireFresh)||!completed||run==null)throw new IllegalStateException("Missing/freshness-invalid test execution: "+module);
-        Files.createDirectory(destination);
-        Files.copy(events,destination.resolve("engine-events.jsonl"));
-        Path reports=output.resolve("reports/tests"),raw=Files.createDirectory(destination.resolve("native"));
-        var facts=new Properties();facts.setProperty("engineRunId",run);facts.setProperty("originalTestRunId",executed?run:Objects.requireNonNull(origin));
-        facts.setProperty("execution",executed?"EXECUTED":"REUSED");facts.setProperty("exitCode","0");
-        try(var files=Files.list(reports)) {
-            for(Path file:files.filter(p->p.toString().endsWith(".xml")).toList()) {
-                String hash=JvmBuildInputs.sha256(file);Files.copy(file,raw.resolve(file.getFileName()));
-                if(!JvmBuildInputs.sha256(raw.resolve(file.getFileName())).equals(hash)||!JvmBuildInputs.sha256(file).equals(hash))throw new IllegalStateException("Report changed while snapshotting");
-                facts.setProperty("report."+file.getFileName(),hash);
-            }
-        }
-        for(String name:List.of("command","java.args","output","error","compile.args","compile.argv.json","compile.stdout","compile.stderr","compile.process.json","test.args","test.argv.json","test.stdout","test.stderr","test.process.json")) {
-            Path file=output.getParent().resolve("supplement").resolve(name);
-            if(Files.isRegularFile(file)) {
-                Path copy=destination.resolve("process-"+name);Files.copy(file,copy);
-                facts.setProperty("evidence.process-"+name,JvmBuildInputs.sha256(copy));
-            }
-        }
-        Path plan=output.resolve("test-plan.json");
-        if(Files.isRegularFile(plan)) {
-            Files.copy(plan,destination.resolve("test-plan.json"));facts.setProperty("evidence.test-plan.json",JvmBuildInputs.sha256(plan));
-            for(String kind:List.of("classes","modules","test-tools"))try(var walk=Files.walk(output.resolve(kind))) {
-                for(Path file:walk.filter(Files::isRegularFile).toList()) {
-                    String hash=JvmBuildInputs.sha256(file);
-                    facts.setProperty("patch."+kind+"."+output.resolve(kind).relativize(file),hash);
-                    facts.setProperty("artifact."+root.relativize(file),hash);
-                }
-            }
-        }
-        var index=new Properties();try(var reader=Files.newBufferedReader(outcome.inventory())){index.load(reader);}
-        facts.setProperty("inputFingerprint",index.getProperty("input."+module));
-        var inputs=JvmBuildInputs.snapshot(root,module);
-        if(!JvmBuildInputs.fingerprint(inputs).equals(facts.getProperty("inputFingerprint")))throw new IllegalStateException("Changed snapshot inputs");
-        inputs.files().forEach((file,hash)->facts.setProperty("source."+file,hash));
-        facts.setProperty("inputPolicy","interlis-jvm-inputs-v1");
-        var artifacts=new TreeSet<Path>();artifacts.addAll(runtimeClasspath(module,outcome));artifacts.addAll(testClasspath(module,outcome));
-        Path classes=outcome.engineResults().get(test.locator()+"/binary/classes");
-        if(classes==null)throw new IllegalStateException("Missing actual class-directory test input");
-        try(var files=Files.walk(classes)) {artifacts.addAll(files.filter(Files::isRegularFile).map(p->p.toAbsolutePath().normalize()).toList());}
-        for(Path artifact:artifacts)facts.setProperty("artifact."+root.relativize(artifact),JvmBuildInputs.sha256(artifact));
-        return facts;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static String engineRunId(Path root) throws Exception {
-        String first=Files.readAllLines(root.resolve("target/jenesis-jvm/engine/.jenesis.events.jsonl")).getFirst();
-        return (String)((Map<String,Object>)Json.parse(first)).get("run");
-    }
-
     private static String localIdentity(String value) {
         while(value.startsWith("../"))value=value.substring(3);return value;
     }

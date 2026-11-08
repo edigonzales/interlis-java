@@ -75,7 +75,7 @@ snapshot.artifacts.each { item ->
         def ref = item[role]
         if (!ref || ref != ([path:ref.path] + snapshot.files[ref.path])) throw new GradleException('Unbound JVM artifact reference')
     }
-    if (item.coordinate.contains('/interlis-verification/') || item.coordinate ==~ /.*(junit|archive-tool|antlr4\/|commons-compress).*/) throw new GradleException('Tool/test leak in JVM product closure')
+    if (item.coordinate ==~ /.*(junit|archive-tool|antlr4\/|commons-compress).*/) throw new GradleException('Tool/test leak in JVM product closure')
 }
 def used = [] as Set
 snapshot.closures.each { name, closure ->

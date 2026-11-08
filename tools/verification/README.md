@@ -19,7 +19,7 @@ JVM-Verifizierer. Die Mutationen laufen in temporären Kopien.
 
 ```sh
 java build/InterlisJvmBuild.java sdk-package
-node tools/verification/lsp-lifecycle.cjs target/jenesis-jvm/delivery/lsp /tmp/interlis-lsp-lifecycle.json
+node tools/verification/lsp-lifecycle.cjs target/jenesis-jvm/delivery/lsp
 node tools/verification/repository-cache-processes.cjs target/jenesis-jvm/delivery/compiler/bin/interlis-compiler
 node tools/verification/http-network-processes.cjs target/jenesis-jvm/delivery/compiler/bin/interlis-compiler
 node tools/verification/http-redirect-processes.cjs target/jenesis-jvm/delivery/compiler/bin/interlis-compiler

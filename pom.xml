@@ -17,7 +17,6 @@
     <module>interlis-compiler-cli</module>
     <module>interlis-lsp</module>
     <module>interlis-compiler-gui</module>
-    <module>interlis-verification</module>
   </modules>
   <dependencyManagement><dependencies>
     <dependency><groupId>org.junit</groupId><artifactId>junit-bom</artifactId><version>5.11.4</version><type>pom</type><scope>import</scope></dependency>

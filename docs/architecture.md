@@ -26,9 +26,8 @@ Die zugehörigen POMs beschreiben die konkreten Abhängigkeiten und Scopes.
 | `interlis-compiler-gui` | model, compiler, workspace, repository | Desktop-Modellprüfung, Diagnosen, Abhängigkeiten und Repositoryexplorer |
 | `interlis-lsp` | workspace, compiler, projection, model, repository, documentation | LSP-/Editorhost, Scheduling und Ausgaben |
 | `interlis-wasm-bridge` | workspace, compiler, projection, model | Gemeinsames JSON-Protokoll und Sitzungen |
-| `interlis-verification` | compiler, model, workspace, repository, wasm-bridge | Prüfwerkzeuge ausserhalb der SDK-Auslieferung |
 
-Alle dreizehn JVM-Module werden über denselben Builder erzeugt. Die
+Alle zwölf JVM-Module werden über denselben Builder erzeugt. Die
 jeweils ausgewählten JPMS-Closures stehen im
 [Buildvertrag](development/build.md). TeaVM und Web Image konsumieren
 denselben expliziten JVM-Snapshot. Browser und Editor teilen den neutralen
@@ -37,8 +36,7 @@ Renderer unter `frontend/diagram-ui`.
 Artefaktkoordinate, Dateiname und Modulname sind getrennte Identitäten.
 Die JVM-Deskriptoren bestimmen die tatsächlichen Packageexports.
 `guru.interlis.model.internal` ist ausschliesslich für das Compilermodul
-exportiert. Die Gson-Reflection ist für LSP- und interne
-Verifikationsdatentypen qualifiziert geöffnet. ANTLR und interne
+exportiert. Die Gson-Reflection ist für LSP-Datentypen qualifiziert geöffnet. ANTLR und interne
 Compilerklassen bleiben in der Implementierung.
 
 ## Quellen, Identitäten und Zustände

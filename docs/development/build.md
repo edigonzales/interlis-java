@@ -1,6 +1,6 @@
 # Build und Toolchains
 
-Jenesis 0.18.1 erzeugt die dreizehn JVM-Module mit Java 25 ohne Preview. Die POMs
+Jenesis 0.18.1 erzeugt die zwölf JVM-Module mit Java 25 ohne Preview. Die POMs
 definieren Group, Artifact, Version, Scopes und Pins. Der Upstreampin gehört
 zu den [Jenesis-Quellen](../../build/JENESIS-UPSTREAM.json). Der gepinnte
 Gradle-Wrapper baut ausschliesslich TeaVM und GraalVM Web Image.
@@ -12,7 +12,8 @@ Gradle-Wrapper baut ausschliesslich TeaVM und GraalVM Web Image.
 | `build` | JVM-Produkte und reguläre Tests |
 | `build --module interlis-compiler --tests '.*VersionScannerTest'` | Eine explizite Klassen- oder Methodenfilterung im angegebenen Modul |
 | `artifacts` | JVM-Produkte ohne Tests |
-| `contracts` | Vertragstests gemäss aktuellem Katalog, mit frischen Produzenten und originalen JUnit-Berichten |
+| `conformance` | Gepinnte externe Codeberg-Suite für INTERLIS 2.3 und 2.4 |
+| `compiler-bindist` | Compiler-ZIP, Prüfung des entpackten Launchers und SHA256SUMS |
 | `module-check` | Prüfung der Modulgrenzen und des Laufzeitinventars |
 | `sdk-package` | Modulare CLI-/LSP-Launcher und SDK-ZIP |
 | `sdk-check` | Dieselbe Auslieferung plus ausgeführte CLI-/LSP-/SDK-Prozesse |
@@ -28,8 +29,7 @@ die erzeugten ANTLR-Klassen. Grammatikquellen, Lizenzen und handgepflegte
 Ressourcen bleiben im jeweiligen Modul.
 
 Buildausgaben liegen unter `target/jenesis-jvm`. `.jenesis` enthält den
-lokalen Abhängigkeitscache. Verifikationsläufe halten ihren Eingabestand und
-Ausgabepfad in einer gehashten Layoutdatei und ihren Prozessbelegen fest.
+lokalen Abhängigkeitscache. JUnit-Berichte liegen im Engine-Output unter `executed/output/reports/tests`.
 `clean --scope jvm|consumer|wasm` löscht ausschliesslich die ausgewählte
 Outputsicht. Root-`build/`, Dokumentation und externe Belege sind Quellen.
 

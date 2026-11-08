@@ -51,7 +51,7 @@ public final class ConsumerSnapshot {
             if(coordinate.startsWith("maven/guru.interlis/"))ModulePathContract.requireOwnDescriptor(coordinate.split("/")[2],descriptor);row.put("moduleName",descriptor.name());
             row.put("descriptorKind",descriptor.isAutomatic()?"automatic":"explicit");
             if(id[1].equals("guru.interlis")) {
-                if(!JvmBuildInputs.MODULES.contains(id[2])||id[2].equals("interlis-verification"))throw new IllegalStateException("Nonproduct own artifact");
+                if(!JvmBuildInputs.MODULES.contains(id[2]))throw new IllegalStateException("Nonproduct own artifact");
                 row.put("projectId",id[2]);
                 row.put("pom",copy(ModuleArtifacts.pom(outcome,id[2]),staging,base+".pom",files));
                 row.put("sources",copy(ModuleArtifacts.sources(outcome,id[2]),staging,base+"-sources.jar",files));
@@ -161,7 +161,7 @@ public final class ConsumerSnapshot {
         for(Object item:artifacts) {
             var artifact=object(item);String coordinate=string(artifact.get("coordinate"));
             if(!coordinate.matches("maven/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")
-                    ||coordinate.matches(".*(junit|archive-tool|interlis-verification|antlr4/|commons-compress).*"))throw new IllegalStateException("Nonproduct runtime coordinate");
+                    ||coordinate.matches(".*(junit|archive-tool|antlr4/|commons-compress).*"))throw new IllegalStateException("Nonproduct runtime coordinate");
             if(!coordinates.add(coordinate))throw new IllegalStateException("Duplicate coordinate");
             String[] id=coordinate.split("/");
             String base="maven/"+id[1].replace('.','/')+"/"+id[2]+"/"+id[3]+"/"+id[2]+"-"+id[3];

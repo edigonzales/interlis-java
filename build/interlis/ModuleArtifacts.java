@@ -27,7 +27,7 @@ public final class ModuleArtifacts {
             String coordinates=identities.get(path);if(coordinates==null)throw new IllegalStateException("Unidentified runtime artifact: "+path);
             var artifact=new Artifact(coordinates,path,JvmBuildInputs.sha256(path));
             if(!names.add(artifact.fileName()))throw new IllegalStateException("Duplicate runtime name");
-            if(!module.equals("interlis-verification")&&coordinates.matches(".*(interlis-verification|junit|platform-console|antlr4/|commons-compress|archive-tool).*"))throw new IllegalStateException("Tool/runtime leak: "+coordinates);
+            if(coordinates.matches(".*(junit|platform-console|antlr4/|commons-compress|archive-tool).*"))throw new IllegalStateException("Tool/runtime leak: "+coordinates);
             if(coordinates.startsWith("maven/guru.interlis/")) {
                 String[] id=coordinates.split("/");
                 if(id.length!=4||!id[3].equals(JvmBuildInputs.projectVersion(root))||!JvmBuildInputs.MODULES.contains(id[2]))throw new IllegalStateException("Foreign own coordinates: "+coordinates);

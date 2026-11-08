@@ -25,12 +25,11 @@ public final class JpmsTestRun {
         if(depth!=0)throw new IllegalArgumentException("Unbalanced test selector");parts.add(value.substring(start));
         if(parts.stream().anyMatch(String::isBlank))throw new IllegalArgumentException("Empty test selector");return List.copyOf(parts);
     }
-    public static BuildExecutorModule observe(TestModule nativeModule,Path root,String project,Map<String,String> settings,boolean selected,boolean force) throws IOException {
+    public static BuildExecutorModule observe(TestModule nativeModule,Path root,String project,Map<String,String> settings,boolean selected) throws IOException {
         var plan=new TreeMap<String,String>();
         for(var entry:settings.entrySet())if(entry.getKey().startsWith("variable.")||entry.getKey().startsWith("test."))plan.put(entry.getKey(),entry.getValue());
         plan.put("project",project);plan.put("selected",Boolean.toString(selected));
-        if(force)plan.put("forceInvocation",UUID.randomUUID().toString());
-        Path file=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/test-plans/"+project+".json");Files.createDirectories(file.getParent());
+        Path file=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/test-options/"+project+".json");Files.createDirectories(file.getParent());
         String json=JsonOutput.write(plan);if(!Files.exists(file)||!Files.readString(file).equals(json))Files.writeString(file,json);
         Map<String,String> frozen=Map.copyOf(plan);
         return (executor,inherited)->{
@@ -39,8 +38,8 @@ public final class JpmsTestRun {
             if(!selected)return;
             executor.addSource("patch-sources",Bind.asSources().extensions(Set.of(".java")),root.resolve(project+"/src/test/java"));
             if(Files.isDirectory(root.resolve(project+"/src/test/resources")))executor.addSource("patch-resources",Bind.asResources(),root.resolve(project+"/src/test/resources"));
-            executor.addSource("patch-plan",Bind.asResources(),file);
-            var required=new ArrayList<>(inherited.keySet());required.addAll(List.of("dependencies","patch-sources","patch-plan"));
+            executor.addSource("test-options",Bind.asResources(),file);
+            var required=new ArrayList<>(inherited.keySet());required.addAll(List.of("dependencies","patch-sources","test-options"));
             if(Files.isDirectory(root.resolve(project+"/src/test/resources")))required.add("patch-resources");
             executor.addStep("executed",new Run(root,project,frozen),required.stream());
         };
@@ -72,23 +71,20 @@ public final class JpmsTestRun {
             Path modules=Files.createDirectory(context.next().resolve("modules")),tools=Files.createDirectory(context.next().resolve("test-tools"));
             var modulePath=new ArrayList<Path>();var classpath=new ArrayList<Path>();var names=new TreeSet<String>();
             Path product=null;String moduleName=null;
-            var inventory=new TreeMap<String,Object>();
             for(var entry:jars.entrySet()) {
                 String[] coordinate=entry.getKey().split("/");if(coordinate.length!=3)throw new IllegalStateException("Unexpected test GAV");
                 boolean junit=coordinate[0].startsWith("org.junit")||coordinate[0].equals("org.opentest4j")||coordinate[0].equals("org.apiguardian");
                 Path copy=(junit?tools:modules).resolve(coordinate[1]+"-"+coordinate[2]+".jar");Files.copy(entry.getValue(),copy);
                 if(!JvmBuildInputs.sha256(copy).equals(JvmBuildInputs.sha256(entry.getValue())))throw new IllegalStateException("Test dependency copy changed");
-                String name="classpath";
                 if(junit)classpath.add(copy);else {
                     var found=ModuleFinder.of(copy).findAll();if(found.size()!=1)throw new IllegalStateException("Unidentified test module");
-                    var descriptor=found.iterator().next().descriptor();name=descriptor.name();
+                    var descriptor=found.iterator().next().descriptor();String name=descriptor.name();
                     if(!names.add(name))throw new IllegalStateException("Duplicate test module");modulePath.add(copy);
                     if(coordinate[0].equals("guru.interlis")&&coordinate[1].equals(project)) {
                         if(descriptor.isAutomatic())throw new IllegalStateException("Tested product is not explicit JPMS");
                         product=copy;moduleName=name;
                     }
                 }
-                inventory.put(entry.getKey(),Map.of("origin",entry.getValue().toString(),"sha256",JvmBuildInputs.sha256(copy),"module",name));
             }
             if(product==null||classpath.stream().noneMatch(p->p.getFileName().toString().startsWith("junit-platform-console-")))throw new IllegalStateException("Missing producing module or pinned JUnit console: "+jars.keySet());
             Path sources=arguments.get("patch-sources").folder().resolve("sources"),classes=Files.createDirectory(context.next().resolve("classes"));
@@ -136,7 +132,6 @@ public final class JpmsTestRun {
                 }
             }
             var run=new ArrayList<String>(List.of("-Dinterlis.test.modulepath="+mp,"-Dinterlis.test.patch="+classes,"-ea","-Dfile.encoding=UTF-8","-Drepo.root="+root,"-Dtestdata.dir="+root.resolve("testdata"),"-Dinterlis.build.inputs="+plan.get("variable.inputFingerprint")));
-            for(var pair:Map.of("variable.contractRunId","contract.runId","variable.layoutFile","verification.layout","variable.layoutHash","verification.layout.sha256").entrySet())if(plan.containsKey(pair.getKey()))run.add("-D"+pair.getValue()+"="+plan.get(pair.getKey()));
             run.addAll(access);run.addAll(List.of("--patch-module",moduleName+"="+classes));
             for(String pkg:packages)run.addAll(List.of("--add-opens",moduleName+"/"+pkg+"=ALL-UNNAMED"));
             Path reports=Files.createDirectories(context.next().resolve("reports/tests"));
@@ -154,9 +149,6 @@ public final class JpmsTestRun {
                     if(!found)throw new IllegalStateException("No method in selected test class: "+method);
                 }
             }
-            String tags=plan.getOrDefault("test.tag","-compiler-contract");
-            if(!tags.isBlank())run.addAll(List.of(tags.startsWith("-")?"--exclude-tag":"--include-tag",tags.startsWith("-")?tags.substring(1):tags));
-            Files.writeString(context.next().resolve("test-plan.json"),JsonOutput.write(Map.of("schemaVersion",1,"module",moduleName,"selection",testClasses,"methods",methods,"tag",tags,"dependencies",inventory,"productSha256",JvmBuildInputs.sha256(product))));
             process(context,"java",run,"test",root.resolve(project));
             JenesisBridge.requireSuccessfulReports(reports);
         }
