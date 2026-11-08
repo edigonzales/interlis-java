@@ -122,14 +122,7 @@ tasks.register('browserClientTest', Exec) {
     group = 'verification'
     dependsOn 'buildBrowserTools', 'generateJavaScript'
     workingDir = projectDir
-    commandLine nodeExecutable.get(), '--test', 'compiler-client.test.cjs', 'worker-host.test.cjs'
-}
-
-tasks.register('diagramAdapterTest', Exec) {
-    group = 'verification'
-    dependsOn 'buildBrowserTools'
-    workingDir = projectDir
-    commandLine nodeExecutable.get(), '--test', 'diagram-adapter.test.cjs'
+    commandLine nodeExecutable.get(), '--test', 'compiler-client.test.cjs', 'worker-host.test.cjs', 'diagram-projection.test.cjs'
 }
 
 tasks.register('browserSmoke', Exec) {
@@ -138,7 +131,7 @@ tasks.register('browserSmoke', Exec) {
     dependsOn 'prepareBrowserHarness'
     workingDir = projectDir
     environment 'INTERLIS_BROWSER_CHECK', '0'
-    commandLine nodeExecutable.get(), '--test', 'test/browser-smoke.test.cjs', 'ui-projection.test.cjs'
+    commandLine nodeExecutable.get(), '--test', 'test/browser-smoke.test.cjs'
 }
 
 tasks.register('browserCheck', Exec) {
@@ -147,7 +140,7 @@ tasks.register('browserCheck', Exec) {
     dependsOn 'prepareBrowserHarness'
     workingDir = projectDir
     environment 'INTERLIS_BROWSER_CHECK', '1'
-    commandLine nodeExecutable.get(), '--test', 'test/browser-smoke.test.cjs', 'ui-projection.test.cjs'
+    commandLine nodeExecutable.get(), '--test', 'test/browser-smoke.test.cjs'
 }
 
 tasks.register('safariSmoke', Exec) {

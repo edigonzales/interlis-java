@@ -11,18 +11,7 @@
       "ES2022",
       "DOM"
     ],
-    "types": [],
-    "paths": {
-      "libavoid-js": [
-        "../frontend/diagram-ui/src/contracts/libavoid-js.d.ts"
-      ],
-      "elkjs/lib/elk-api.js": [
-        "../frontend/diagram-ui/src/contracts/elk.d.ts"
-      ],
-      "elkjs/lib/elk.bundled.js": [
-        "../frontend/diagram-ui/src/contracts/elk.d.ts"
-      ]
-    }
+    "types": []
   },
   "include": [
     "src/main/typescript/**/*.ts"

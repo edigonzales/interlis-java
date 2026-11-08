@@ -1,10 +1,6 @@
 /** Protocol 1.0 data. Revision and exact numerical payloads remain decimal strings. */
-export type Revision = string;
-export type JsonValue = null | boolean | number | string | JsonValue[] | {[key: string]: JsonValue};
-export type JsonObject = {[key: string]: JsonValue};
-export interface SourceRangeDto { readonly source: string; readonly revision: Revision; readonly startOffset: number; readonly endOffset: number; }
-export interface SymbolRefDto { readonly snapshot: string; readonly symbol: string; }
-export interface SourceAnchorDto { readonly snapshotId: string; readonly nameRange: SourceRangeDto; readonly declarationRange: SourceRangeDto | null; }
+import type {Revision, JsonValue, JsonObject, SourceRangeDto, SymbolRefDto, SourceAnchorDto} from '../../../../interlis-projection/src/main/typescript/diagram-document';
+export type {Revision, JsonValue, JsonObject, SourceRangeDto, SymbolRefDto, SourceAnchorDto} from '../../../../interlis-projection/src/main/typescript/diagram-document';
 export interface SessionLimits {
   readonly maxSourceUtf16Length: number; readonly maxTotalSourceUtf16Length: string;
   readonly maxSources: number; readonly maxRetainedSnapshots: number;
@@ -114,4 +110,4 @@ export type QueryResultDto = {readonly snapshotId:string} & (
    readonly metadata:readonly {readonly key:string; readonly text:string; readonly origin:OriginDto}[]; readonly effectiveMembers:readonly EffectiveMemberDto[];
    readonly translation?:{readonly sourceModel:string; readonly sourceTarget?:string; readonly origin?:OriginDto; readonly correspondences:readonly {readonly original:string; readonly translated:string}[]}}
 );
-export type {DiagramOptionsDto,DiagramRequestDto,DiagramMemberDto,DiagramCompartmentDto,DiagramNodeDto,DiagramContainerDto,DiagramEndpointDto,DiagramEdgeEndDto,DiagramEdgeDto,ProjectionNoticeDto,DiagramDocumentDto} from '../../../../frontend/diagram-ui/src/types';
+export type {DiagramOptionsDto,DiagramRequestDto,DiagramMemberDto,DiagramCompartmentDto,DiagramNodeDto,DiagramContainerDto,DiagramEndpointDto,DiagramEdgeEndDto,DiagramEdgeDto,ProjectionNoticeDto,DiagramDocumentDto} from '../../../../interlis-projection/src/main/typescript/diagram-document';

@@ -1,3 +1,0 @@
-const fs=require('fs'),path=require('path'),cp=require('child_process'),crypto=require('crypto');const root=__dirname,lock=path.join(root,'package-lock.json'),stamp=path.join(root,'build/dependency-lock.sha256'),identity=crypto.createHash('sha256').update(fs.readFileSync(lock)).digest('hex');
-if(!fs.existsSync(path.join(root,'node_modules/.package-lock.json'))||!fs.existsSync(stamp)||fs.readFileSync(stamp,'utf8').trim()!==identity){cp.execFileSync('npm',['ci','--ignore-scripts'],{cwd:root,stdio:'inherit'});fs.mkdirSync(path.dirname(stamp),{recursive:true});fs.writeFileSync(stamp,identity+'\n');}
-cp.execFileSync(process.execPath,[path.join(root,'build.cjs')],{cwd:root,stdio:'inherit'});

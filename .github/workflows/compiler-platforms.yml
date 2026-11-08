@@ -84,13 +84,8 @@ jobs:
         run: |
           ./gradlew "-PnodeExecutable=$(command -v node)" \
             :interlis-wasm-teavm:teavmJsTest :interlis-wasm-teavm:teavmWasmTest \
-            :interlis-wasm-teavm:browserClientTest :interlis-wasm-teavm:diagramAdapterTest \
+            :interlis-wasm-teavm:browserClientTest \
             :interlis-wasm-teavm:browserSmoke
-      - name: Check the shared diagram UI
-        working-directory: frontend/diagram-ui
-        run: |
-          npm ci
-          npm test
 
   windows:
     name: JVM and distribution (windows-x64)

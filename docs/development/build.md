@@ -33,8 +33,7 @@ bleiben dabei unverändert.
 | `java build/interlis/CompilerRuntimeCheck.java` | Laufzeitclosure des Compilers prüfen |
 | `java build/interlis/GuiRuntime.java run\| runtime\| package` | Desktop starten, Java-Laufzeitimage bauen oder macOS-App auf Apple Silicon paketieren |
 | `java build/interlis/GuiRuntime.java check PROFILE` | GUI-Probe `shell`, `compile`, `diagnostics`, `dependencies`, `repositories`, `lifecycle` oder `packaged` |
-| `java build/interlis/EditorBundleRun.java` | Geprüfte Übergabe für Editorclients |
-| `java build/interlis/EditorCompatibilityRun.java EXTENSION BUNDLE` | Prüfung der expliziten Editorübergabe mit absoluten Verzeichnissen |
+| `java build/interlis/EditorBundleRun.java` | Geprüftes Core-Bundle (Manifestversion 4) mit Server, Wire-Verträgen und Lizenzen |
 
 Die Paketprüfungen benötigen Git für die Buildrevision und entpacken die
 Archive mit `unzip` unter macOS und Linux beziehungsweise der Java-ZIP-API
@@ -51,8 +50,7 @@ Buildausgaben liegen unter `target/jenesis-jvm`. `.jenesis` enthält den
 lokalen Abhängigkeitscache. JUnit-Berichte liegen im Engine-Output unter `executed/output/reports/tests`.
 `java build/interlis/BuildOutputs.java jvm` entfernt die JVM-Ausgaben
 einschliesslich GUI-Paketen und Revisionsressourcen.
-`java build/interlis/BuildOutputs.java editor` entfernt Editor-Bundles und
-die zugehörigen Renderer-Ausgaben. `./gradlew clean` entfernt ausschliesslich
+`java build/interlis/BuildOutputs.java editor` entfernt Core-Editor-Bundles. `./gradlew clean` entfernt ausschliesslich
 die beiden Backend-Buildverzeichnisse. Die Jenesis-Quellen und
 Abhängigkeitscaches bleiben erhalten.
 
@@ -71,7 +69,7 @@ export PATH="$(dirname "$INTERLIS_NODE"):$PATH"
 npm ci --prefix interlis-wasm-teavm
 ./gradlew "-PnodeExecutable=$INTERLIS_NODE" \
   :interlis-wasm-teavm:teavmJsTest :interlis-wasm-teavm:teavmWasmTest \
-  :interlis-wasm-teavm:browserClientTest :interlis-wasm-teavm:diagramAdapterTest
+  :interlis-wasm-teavm:browserClientTest
 ```
 
 Gradle startet den offiziellen Jenesis-Einstieg bei Bedarf und übernimmt

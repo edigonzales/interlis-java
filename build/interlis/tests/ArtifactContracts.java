@@ -104,7 +104,6 @@ public final class ArtifactContracts {
             rejects(()->CompilerRuntimeCheck.main(new String[0]),"runtime check lock reentry");
             rejects(()->GuiRuntime.main(new String[]{"runtime"}),"GUI lock reentry");
             rejects(()->EditorBundleRun.main(new String[0]),"editor producer lock reentry");
-            rejects(()->EditorCompatibilityRun.main(new String[]{root.toString(), root.toString()}),"editor check lock reentry");
             check(java.time.Duration.ofNanos(System.nanoTime()-started).toSeconds()<5);
         }
         System.out.println("BUILD_BOUNDARY_CHECKS="+checks);

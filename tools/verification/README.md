@@ -19,14 +19,6 @@ und speichern ihre isolierten Läufe unter `target/verification`. Unter Windows
 prüft `java build/interlis/ExistingJvmDistribution.java check` den installierten
 `.bat`-Launcher einschliesslich einer lokalen HTTP-Gegenstelle.
 
-## Build- und Editor-Adapter
-
-`editor-check.cjs` gehört zum Jenesis-Einstieg
-`java build/interlis/EditorCompatibilityRun.java EXTENSION BUNDLE`. Beide Pfade sind absolut.
-Die vorbereitete Extension und das isolierte VS-Code-Programm werden über
-`INTERLIS_EDITOR_PREPARED` und `INTERLIS_TEST_CODE` ausgewählt. Die Extension
-besitzt den Host-Harness.
-
 ## Repositoryhygiene
 
 ```sh

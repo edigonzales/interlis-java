@@ -1,24 +1,16 @@
 import {verifyBrowserClient} from './browser-client-contract.js';
 import {CompilerClient} from './compiler-client.js';
-import {diagramAdapter,DiagramCanvas,mountDiagramControls} from './diagram-ui.js';
 
 const source=document.getElementById('source'),output=document.getElementById('output');
-const picker=document.getElementById('sources'),canvas=document.getElementById('diagram-view'),members=document.getElementById('members');
+const picker=document.getElementById('sources');
 const drafts=new Map([['memory:/browser.ili',source.value]]);
-let activeSource='memory:/browser.ili',session=null,snapshot=null,schema=null,view=null,generation=0,sequence=Promise.resolve(),activeRequest=null;
-const diagramCanvas=new DiagramCanvas(canvas,{navigate:id=>navigate(id),singleClickNavigation:true,status:(_status,message)=>{document.getElementById('diagram-status').textContent=message;}},new URL('./diagram-layout-worker.js',import.meta.url));
-const focusPicker=document.getElementById('diagram-focus'),scopePicker=document.getElementById('diagram-scope'),depthPicker=document.getElementById('diagram-depth'),languagePicker=document.getElementById('diagram-language');
-const associationPicker=document.getElementById('diagram-associations');
-const controlRoot=document.createElement('div');canvas.before(controlRoot);
-const sharedControls=mountDiagramControls(controlRoot,diagramCanvas,{error:message=>{document.getElementById('diagram-status').textContent=message;},export:(format,scope)=>{void(async()=>{const artifact=format==='SVG'?new Blob([diagramCanvas.exportSvg(scope).svg],{type:'image/svg+xml'}):new Blob([(await diagramCanvas.exportPng(scope)).data],{type:'image/png'}),url=URL.createObjectURL(artifact),link=document.createElement('a');link.href=url;link.download='diagram-'+scope.toLowerCase()+'.'+format.toLowerCase();link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);})().catch(displayError);}});
-
+let activeSource='memory:/browser.ili',session=null,snapshot=null,schema=null,diagramDocument=null,generation=0,sequence=Promise.resolve(),activeRequest=null;
 const client=new CompilerClient({onRestored:pairs=>{
   const pair=pairs.find(p=>p.previous===session);session=pair?.current??null;invalidate(false);
 },onFailure:error=>{invalidate(false);output.textContent=error.code+': '+error.message;}});
-function invalidate(release=true){diagramCanvas.invalidate();const old=snapshot,handle=session;generation++;snapshot=null;schema=null;view=null;canvas.dataset.stale='true';canvas.setAttribute('aria-label','Diagram is stale; compile again.');members.replaceChildren();if(release&&old&&handle)void client.releaseSnapshot(handle,old).catch(displayError);}
+function invalidate(release=true){const old=snapshot,handle=session;generation++;snapshot=null;schema=null;diagramDocument=null;if(release&&old&&handle)void client.releaseSnapshot(handle,old).catch(displayError);}
 function serial(operation){const pending=sequence.then(operation);sequence=pending.catch(()=>{});return pending;}
 function displayError(error){output.textContent=JSON.stringify({code:error.code??'HOST_FAILURE',message:error.message},null,2);}
-function sourceMap(){return new Map([...drafts].map(([id,text])=>[id,{text,revision:session?client.state(session).sourceRevisions[id]??'absent':'absent'}]));}
 function captured(){return JSON.stringify([...drafts]);}
 async function ensureSession(){if(!session)session=await client.openSession();return session;}
 async function discard(){const old=snapshot,handle=session;invalidate(false);if(old&&handle)await client.releaseSnapshot(handle,old);}
@@ -43,61 +35,33 @@ async function execute(operation){
 }
 const analyze=()=>execute('analyze'),compile=()=>execute('compile');
 function navigate(id){
-  if(!view)return {kind:'stale',code:'STALE_SELECTION'};
-  const result=diagramAdapter.resolveNavigation(view,id,snapshot??'',sourceMap());
-  if(result.kind==='resolved'){
-    activeSource=result.range.source;refreshPicker();source.value=drafts.get(activeSource);source.focus();source.setSelectionRange(result.range.startOffset,result.range.endOffset);
-  }else output.textContent=JSON.stringify(result);return result;
+  const anchor=diagramDocument?.nodes.find(node=>node.id===id)?.anchor;
+  const range=anchor?.nameRange;
+  if(!range||!session||anchor.snapshotId!==snapshot||diagramDocument.sourceRevisions[range.source]!==range.revision
+      ||client.state(session).sourceRevisions[range.source]!==range.revision
+      ||drafts.get(range.source)!==client.sourceText(session,range.source)){
+    return {kind:'stale',code:'STALE_SELECTION'};
+  }
+  activeSource=range.source;refreshPicker();source.value=drafts.get(activeSource);
+  source.focus();source.setSelectionRange(range.startOffset,range.endOffset);
+  return {kind:'resolved',range};
 }
 function refreshPicker(){picker.replaceChildren(...[...drafts.keys()].map(id=>{const option=document.createElement('option');option.value=id;option.textContent=id;option.selected=id===activeSource;return option;}));}
-async function publishDiagram(result){
-  const accepted=await diagramCanvas.accept(result,String(session),diagramCanvas.getSettings());if(!accepted)return false;
-  sharedControls.refresh();
-  canvas.dataset.stale='false';canvas.setAttribute('aria-label',result.completeness==='COMPLETE'?'Current INTERLIS diagram':'Partial INTERLIS diagram');
-  members.replaceChildren();
-  for(const node of result.nodes)for(const compartment of node.compartments)for(const member of compartment.members){
-    const button=document.createElement('button');button.textContent=node.canonicalName+'.'+member.label;button.dataset.memberId=member.id;button.onclick=()=>navigate(member.id);members.append(button);
-  }
-  return true;
-}
-
-function refreshDiagramOptions(document){
-  const previousFocus=focusPicker.value,previousLanguage=languagePicker.value;
-  const choice=(value,label)=>{const option=window.document.createElement('option');option.value=value;option.textContent=label;return option;};
-  focusPicker.replaceChildren(choice('','All root models'),...document.nodes.filter(n=>n.symbol).map(n=>choice(n.symbol.symbol,n.canonicalName)));
-  if([...focusPicker.options].some(o=>o.value===previousFocus))focusPicker.value=previousFocus;
-  const translated=new Set(document.edges.filter(e=>e.kind==='TRANSLATION').map(e=>e.source.elementId));
-  languagePicker.replaceChildren(choice('','Canonical'),...document.containers.filter(c=>c.symbol&&translated.has(c.id)).map(c=>choice(c.symbol.symbol,c.canonicalName)));
-  if([...languagePicker.options].some(o=>o.value===previousLanguage))languagePicker.value=previousLanguage;
-}
-function selectedDiagramRequest(){
-  const options={schemaVersion:'1.0',scope:scopePicker.value,associationPresentation:associationPicker.value};
-  if(scopePicker.value==='NEIGHBOURHOOD')options.neighbourhoodDepth=Number(depthPicker.value);
-  if(languagePicker.value){options.labelPolicy='TRANSLATED';options.translationModel={snapshot:snapshot,symbol:languagePicker.value};}
-  return {...(schema?{schemaId:schema}:{snapshotId:snapshot}),...(focusPicker.value?{selection:[{snapshot:snapshot,symbol:focusPicker.value}]}:{}),options};
-}
-async function drawCurrent(){
-  const handle=session,mark=generation,current=snapshot,text=captured();
-  const document=await client.diagram(handle,selectedDiagramRequest());const candidate=diagramAdapter.adapt(document,sourceMap());
-  if(mark!==generation||current!==snapshot||handle!==session||text!==captured())return {status:'ok',result:document,stale:true};
-  const accepted=await publishDiagram(document);
-  if(!accepted||mark!==generation||current!==snapshot||handle!==session||text!==captured())return {status:'ok',result:document,stale:true};
-  view=candidate;output.textContent=JSON.stringify({document,presentationNotices:candidate.notices},null,2);return {status:'ok',result:document};
-}
-async function diagram(){
-  const compiled=await compile();if(compiled.stale||!compiled.result.snapshotId)return compiled;
+async function diagram(options){
+  const compiled=await compile();
+  if(compiled.stale||!compiled.result.snapshotId)return compiled;
   return serial(async()=>{
     const handle=session,mark=generation,current=snapshot,text=captured();
-    const document=await client.diagram(handle,schema?{schemaId:schema}:{snapshotId:snapshot});
-    if(mark!==generation||current!==snapshot||handle!==session||text!==captured())return {status:'ok',result:document,stale:true};
-    refreshDiagramOptions(document);return drawCurrent();
+    if(current!==compiled.result.snapshotId)return {...compiled,stale:true};
+    const requestId='diagram-'+Date.now()+'-'+mark;activeRequest=requestId;
+    try {
+      const result=await client.diagram(handle,{...(schema?{schemaId:schema}:{snapshotId:current}),...(options?{options}:{})},{requestId});
+      if(mark!==generation||current!==snapshot||handle!==session||text!==captured())return {status:'ok',result,stale:true};
+      diagramDocument=result;output.textContent=JSON.stringify({document:result},null,2);
+      return {status:'ok',result};
+    }finally{if(activeRequest===requestId)activeRequest=null;}
   });
 }
-for(const control of [focusPicker,scopePicker,depthPicker,languagePicker,associationPicker])control.addEventListener('change',()=>{
-  diagramCanvas.invalidate();generation++;canvas.dataset.stale='true';
-  void serial(async()=>{if(!snapshot)return;return drawCurrent();}).catch(displayError);
-});
-document.getElementById('fit-diagram').onclick=()=>diagramCanvas.fit();
 async function restartWorker(){await client.restart();return compile();}
 async function cancel(){if(!activeRequest)return 'alreadyCompleted';return client.cancel(activeRequest);}
 async function benchmark(text,modelName,expectation){
@@ -131,10 +95,15 @@ async function runClientContract(){
   const succeeded=await compile();assert(succeeded.result.outcome==='succeeded','valid source rejected: '+JSON.stringify(succeeded));
   const drawn=await diagram();assert(!drawn.stale&&drawn.result.nodes.length>0,'diagram missing');
   assert(JSON.stringify(drawn.result).includes('9007199254740993.0010'),'decimal lost');
-  assert(canvas.querySelector('svg.sprotty-graph')&&Object.keys(diagramCanvas.getViewState().positions).length,'actual pinned renderer missing');
-  const node=drawn.result.nodes.find(n=>n.anchor);assert(navigate(node.id).kind==='resolved','source navigation failed');
-  const old=view;assert(diagramAdapter.isStale(old,'expired'),'stale diagram accepted');
-  const nodeCount=drawn.result.nodes.length,edgeCount=drawn.result.edges.length,associationCount=old.associations.size;
+  const node=drawn.result.nodes.find(n=>n.anchor);
+  assert(navigate(node.id).kind==='resolved','source navigation failed');
+  const revision=drawn.result.sourceRevisions[node.anchor.nameRange.source];
+  source.value=initial+'\n!! newer revision';source.dispatchEvent(new Event('input'));
+  assert(navigate(node.id).kind==='stale','old diagram navigated after source edit');
+  const changed=await diagram();
+  assert(!changed.stale&&changed.result.sourceRevisions[node.anchor.nameRange.source]!==revision,'new diagram did not use edited revision');
+  const nodeCount=drawn.result.nodes.length,edgeCount=drawn.result.edges.length;
+  const associationCount=drawn.result.nodes.filter(n=>n.kind==='ASSOCIATION').length;
   const base='INTERLIS 2.4;MODEL Base AT "x" VERSION "1"=DOMAIN D=TEXT;END Base.';
   const root='INTERLIS 2.4;MODEL Root AT "x" VERSION "1"=IMPORTS Base;TOPIC T=CLASS C=a:Base.D;END C;END T;END Root.';
   let restored;const local=new CompilerClient({onRestored:pairs=>{restored=pairs;}});
@@ -160,20 +129,11 @@ async function runClientContract(){
   return {status:'ok',rejectedOutcome:rejected.result.outcome,compiledOutcome:succeeded.result.outcome,diagramNodes:nodeCount,diagramEdges:edgeCount,diagramAssociations:associationCount,diagnostics:succeeded.result.diagnostics.length,exactDecimal:true,workerRestartOutcome:restarted.result.outcome,clientContractChecks:checks,transportChecks};
 }
 source.addEventListener('input',()=>{drafts.set(activeSource,source.value);invalidate();});
-source.addEventListener('select',()=>{
-  if(!snapshot||!view||!session)return;const handle=session,current=snapshot,selection=source.selectionStart,id=activeSource;
-  client.query(handle,{snapshotId:current,query:{kind:'symbolAt',sourceId:id,revision:client.state(handle).sourceRevisions[id],startOffset:selection,endOffset:selection}}).then(result=>{
-    if(current!==snapshot||handle!==session)return;
-    const ids=result.kind==='known'?diagramAdapter.elementsForSymbol(view,{snapshot:current,symbol:result.symbolId}):[];
-    void diagramCanvas.select(ids);
-  }).catch(error=>{if(current===snapshot&&handle===session)displayError(error);});
-});
 picker.onchange=()=>{drafts.set(activeSource,source.value);activeSource=picker.value;source.value=drafts.get(activeSource);};
 document.getElementById('add-source').onclick=()=>{const input=document.getElementById('source-name'),id=input.value.trim();if(!id||drafts.has(id)){output.textContent='Enter a unique source URI.';return;}drafts.set(id,'');activeSource=id;source.value='';refreshPicker();invalidate();};
 document.getElementById('remove-source').onclick=()=>{if(drafts.size<=1)return;invalidate();drafts.delete(activeSource);activeSource=drafts.keys().next().value;source.value=drafts.get(activeSource);refreshPicker();void serial(synchronize).catch(displayError);};
 document.getElementById('configuration').onclick=()=>void serial(async()=>{const configuration=JSON.parse(document.getElementById('configuration-text').value);const handle=await synchronize();await client.setConfiguration(handle,{expectedWorkspaceRevision:client.state(handle).workspaceRevision,configuration});output.textContent='Configuration accepted.';}).catch(displayError);
 for(const [id,action]of [['analyze',analyze],['compile',compile],['diagram',diagram],['restart',restartWorker],['cancel',cancel]])document.getElementById(id).onclick=()=>void action().catch(displayError);
-window.addEventListener('pagehide',()=>{diagramCanvas.dispose();void client.dispose();});
+window.addEventListener('pagehide',()=>{void client.dispose();});
 refreshPicker();
-window.interlisDiagramAdapter=diagramAdapter;
 window.interlisBrowserTest={runClientContract,analyze,compile,diagram,benchmark,restartWorker,client,get session(){return session;},navigate};

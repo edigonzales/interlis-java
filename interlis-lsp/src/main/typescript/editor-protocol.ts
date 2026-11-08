@@ -1,6 +1,6 @@
 /** Host protocol version 1. UTF-16 positions and opaque identities are resolved only by Java. */
-import type {DiagramDocumentDto,DiagramOptionsDto} from '../../../../frontend/diagram-ui/src/types';
-export type {DiagramDocumentDto,DiagramOptionsDto} from '../../../../frontend/diagram-ui/src/types';
+import type {DiagramDocumentDto,DiagramOptionsDto} from '../../../../interlis-projection/src/main/typescript/diagram-document';
+export type {DiagramDocumentDto,DiagramOptionsDto} from '../../../../interlis-projection/src/main/typescript/diagram-document';
 export interface VersionedDocument {uri:string;version:number;}
 export interface DiagramRequest {protocolVersion:1;requestId:string;textDocument:VersionedDocument;symbolIds?:string[];options?:DiagramOptionsDto;}
 export interface DiagramResponse {protocolVersion:1;serverInstanceId:string;requestId:string;diagramId:string;rootUri:string;documentVersion:number;workspaceRevision:string;snapshotId:string;documentVersions:Record<string,number>;selectedSymbolIds:string[];document:DiagramDocumentDto;}

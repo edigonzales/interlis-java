@@ -30,8 +30,8 @@ Die zugehörigen POMs beschreiben die konkreten Abhängigkeiten und Scopes.
 Alle zwölf JVM-Module werden über denselben Builder erzeugt. Die
 jeweils ausgewählten JPMS-Closures stehen im
 [Buildvertrag](development/build.md). TeaVM und Web Image verwenden dieselben
-JVM-Laufzeit-JARs aus dem Jenesis-Inventar des aktuellen Checkouts. Browser und Editor teilen den neutralen
-Renderer unter `frontend/diagram-ui`.
+JVM-Laufzeit-JARs aus dem Jenesis-Inventar des aktuellen Checkouts. Der Browserharness prüft den Compiler und zeigt Diagramm-DTOs.
+Der produktive Renderer liegt im Repository der VS-Code-Extension.
 
 Artefaktkoordinate, Dateiname und Modulname sind getrennte Identitäten.
 Die JVM-Deskriptoren bestimmen die tatsächlichen Packageexports.

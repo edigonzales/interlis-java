@@ -13,7 +13,7 @@ public final class BuildOutputs {
                     "target/jenesis-jvm/conformance", "target/jenesis-jvm/module-checks", "target/jenesis-jvm/runtime-checks",
                     "target/jenesis-jvm/gui", "target/jenesis-jvm/build-revisions"),
             "editor", List.of("target/jenesis-jvm/editor-bundles", "target/jenesis-jvm/editor-runs",
-                    "target/jenesis-jvm/reports/editor-bundle.json", "frontend/diagram-ui/dist", "frontend/diagram-ui/build"));
+                    "target/jenesis-jvm/reports/editor-bundle.json"));
 
     public static void main(String[] args) throws Exception {
         if (args.length != 1 || !SCOPES.containsKey(args[0])) {

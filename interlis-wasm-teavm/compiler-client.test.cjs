@@ -184,8 +184,10 @@ test('translation labels and bounded neighbourhoods preserve canonical ids and s
     assert.deepEqual(translated.nodes.map(n=>n.id),canonical.nodes.map(n=>n.id));
     const road=canonical.nodes.find(n=>n.label==='Road'),route=translated.nodes.find(n=>n.id===road.id);assert.equal(route.label,'Route');assert.equal(route.canonicalName,'English.Data.Road');assert.deepEqual(route.anchor,road.anchor);
     const member=route.compartments.flatMap(c=>c.members).find(m=>m.label==='nom');assert.equal(member.typeLabel,'Identifiant');
-    const adapter=require('./build/diagram-adapter.cjs'),sources=new Map([['memory:/languages',{text,revision:'1'}]]),view=adapter.adapt(translated,sources);
-    assert.equal(adapter.resolveNavigation(view,route.id,compiled.snapshotId,sources).kind,'resolved');assert.ok((await adapter.render(view)).svg.includes('Route'));
+    const range=route.anchor.nameRange;
+    assert.equal(route.anchor.snapshotId,compiled.snapshotId);
+    assert.equal(range.revision,translated.sourceRevisions[range.source]);
+    assert.equal(text.slice(range.startOffset,range.endOffset),'Road');
     const near=await client.diagram(session,{schemaId:compiled.schemaId,selection:[road.symbol],options:{schemaVersion:'1.0',scope:'NEIGHBOURHOOD',neighbourhoodDepth:0}});
     assert.deepEqual(near.nodes.filter(n=>n.kind!=='EXTERNAL_REFERENCE').map(n=>n.label),['Road']);
     const wide=await client.diagram(session,{schemaId:compiled.schemaId,selection:[road.symbol],options:{schemaVersion:'1.0',scope:'NEIGHBOURHOOD',neighbourhoodDepth:1}});

@@ -1,5 +1,4 @@
 import {CompilerClient} from './compiler-client.js';
-import {diagramAdapter} from './compiler-diagram.js';
 
 /** Exercises actual Workers, including an interrupted synchronous Wasm request. */
 export async function verifyBrowserClient(){
@@ -25,11 +24,14 @@ export async function verifyBrowserClient(){
     current=await client.openSession({sources:[{sourceId:'memory:/wire',text}]});
     window.interlisContractProgress="transport: compiling";
     const initial=await client.compile(current,req());assert(initial.outcome==='succeeded','actual browser n-ary fixture rejected: '+JSON.stringify(initial));
-    const doc=await client.diagram(current,{schemaId:initial.schemaId});const sources=new Map([['memory:/wire',{text,revision:client.state(current).sourceRevisions['memory:/wire']}]]);
-    const view=diagramAdapter.adapt(doc,sources),link=doc.nodes.find(n=>n.kind==='ASSOCIATION');
-    assert(view.associations.get(link.symbol.snapshot+'\0'+link.symbol.symbol).length===3,'n-ary role edges lost');
-    const member=link.compartments.flatMap(c=>c.members).find(m=>m.label==='note');assert(diagramAdapter.resolveNavigation(view,member.id,doc.snapshotId,sources).kind==='resolved','member source anchor missing');
-    const rendered=await diagramAdapter.render(view);assert(rendered.svg.includes('data-edge-id=')&&rendered.sprotty.children.length>0,'actual SVG/Sprotty missing');
+    const doc=await client.diagram(current,{schemaId:initial.schemaId});
+    const link=doc.nodes.find(n=>n.kind==='ASSOCIATION');
+    const roles=doc.edges.filter(edge=>edge.kind==='ASSOCIATION_ROLE'&&edge.source.elementId===link.id);
+    assert(roles.length===3,'n-ary role edges lost');
+    const member=link.compartments.flatMap(c=>c.members).find(m=>m.label==='note');
+    const range=member.anchor.nameRange;
+    assert(member.anchor.snapshotId===doc.snapshotId&&range.revision===doc.sourceRevisions[range.source]
+      &&text.slice(range.startOffset,range.endOffset)==='note','member source anchor missing');
     await client.releaseSnapshot(current,initial.snapshotId);
     // Cancellation observes the actual Worker's started event. The host rejects
     // every old-epoch response and replays acknowledged inputs into a new Worker.
@@ -43,7 +45,10 @@ export async function verifyBrowserClient(){
     try{await client.diagram(current,{schemaId:initial.schemaId});throw new Error('old schema accepted');}catch(error){assert(error.code==='SNAPSHOT_EXPIRED','old schema not expired');}
     const before=client.state(current),changed=text+'\r\n!! edit';
     await client.updateSource(current,{sourceId:'memory:/wire',expectation:{kind:'at',revision:before.sourceRevisions['memory:/wire']},change:{kind:'replace',text:changed}});
-    assert(diagramAdapter.resolveNavigation(view,member.id,view.snapshotId,new Map([['memory:/wire',{text:changed,revision:client.state(current).sourceRevisions['memory:/wire']}]] )).kind==='stale','old member offset navigated into edited source');
+    const updated=await client.compile(current,req());
+    const currentDoc=await client.diagram(current,{schemaId:updated.schemaId});
+    assert(currentDoc.sourceRevisions[range.source]===client.state(current).sourceRevisions[range.source]
+      &&currentDoc.sourceRevisions[range.source]!==range.revision,'old member revision accepted after edit');
     const controller=new AbortController();controller.abort();
     try{await client.analyze(current,req(),{signal:controller.signal});throw new Error('aborted request ran');}catch(error){assert(error.code==='CANCELLED','pre-dispatch cancellation mismatch');}
 
@@ -52,8 +57,6 @@ export async function verifyBrowserClient(){
     const partialAnalysis=await client.analyze(partialSession,{expectedWorkspaceRevision:client.state(partialSession).workspaceRevision,roots:[{kind:'byName',modelName:'Partial'}]});
     const partial=await client.diagram(partialSession,{snapshotId:partialAnalysis.snapshotId});
     assert(partial.completeness==='PARTIAL'&&partial.nodes.some(n=>n.status==='UNRESOLVED'&&n.symbol===null),'partial diagram hides its missing import');
-    const partialView=diagramAdapter.adapt(partial,new Map([['memory:/partial',{text:partialText,revision:client.state(partialSession).sourceRevisions['memory:/partial']}]]));
-    assert((await diagramAdapter.render(partialView)).svg.includes('UNRESOLVED'),'partial stub is invisible in actual SVG');
     const limited=await client.diagram(partialSession,{snapshotId:partialAnalysis.snapshotId,options:{schemaVersion:'1.0',budget:{maxNodes:1}}});
     assert(limited.completeness==='LIMITED'&&limited.nodes.length===1,'wire budget ignored');
     try{await client.diagram(partialSession,{snapshotId:partialAnalysis.snapshotId,selection:[]});throw new Error('empty selection silently defaulted');}catch(error){assert(error.code==='INVALID_REQUEST','empty selection error mismatch');}
@@ -70,9 +73,6 @@ export async function verifyBrowserClient(){
     const road=canonicalLanguage.nodes.find(n=>n.label==='Road'),route=translatedLanguage.nodes.find(n=>n.id===road.id);
     assert(route.label==='Route'&&route.canonicalName==='English.Data.Road'&&JSON.stringify(route.anchor)===JSON.stringify(road.anchor),'translated label changed canonical navigation');
     assert(route.compartments.flatMap(c=>c.members).some(m=>m.label==='nom'&&m.typeLabel==='Identifiant'),'translated members/types missing');
-    const languageSources=new Map([['memory:/languages',{text:languageText,revision:'1'}]]),languageView=diagramAdapter.adapt(translatedLanguage,languageSources);
-    assert((await diagramAdapter.render(languageView)).svg.includes('Route'),'translated label absent from actual SVG');
-    assert(diagramAdapter.resolveNavigation(languageView,route.id,languageCompile.snapshotId,languageSources).kind==='resolved','translated source anchor does not navigate');
     const focused=await client.diagram(languages,{schemaId:languageCompile.schemaId,selection:[road.symbol],options:{schemaVersion:'1.0',scope:'NEIGHBOURHOOD',neighbourhoodDepth:0}});
     assert(JSON.stringify(focused.nodes.filter(n=>n.kind!=='EXTERNAL_REFERENCE').map(n=>n.label))==='["Road"]','depth0 expanded unrelated nodes');
     const neighbour=await client.diagram(languages,{schemaId:languageCompile.schemaId,selection:[road.symbol],options:{schemaVersion:'1.0',scope:'NEIGHBOURHOOD',neighbourhoodDepth:1}});

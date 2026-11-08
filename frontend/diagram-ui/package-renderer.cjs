@@ -1,4 +1,0 @@
-const fs=require('fs'),path=require('path'),cp=require('child_process');
-const root=__dirname,output=path.join(root,'build/package');fs.mkdirSync(output,{recursive:true});
-const result=cp.execFileSync('npm',['pack','--ignore-scripts','--json','--pack-destination',output],{cwd:root,encoding:'utf8'});
-const values=JSON.parse(result);if(values.length!==1)throw Error('Expected one neutral renderer package');console.log(values[0].filename);

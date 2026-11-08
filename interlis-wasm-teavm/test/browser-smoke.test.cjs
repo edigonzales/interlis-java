@@ -58,6 +58,31 @@ for (const [name, type] of Object.entries(browsers)) {
       assert.equal(result.workerRestartOutcome, 'succeeded');
       assert.equal(result.exactDecimal, true);
       assert.ok(wasmRequests.includes(200), 'No generated Wasm was loaded');
+      await page.evaluate(() => {
+        const {client} = window.interlisBrowserTest;
+        const diagram = client.diagram.bind(client);
+        client.diagram = async (...args) => {
+          const response = await diagram(...args);
+          client.diagram = diagram;
+          await new Promise(resolve => { window.releaseDiagram = resolve; });
+          return response;
+        };
+        window.lateDiagram = window.interlisBrowserTest.diagram();
+      });
+      await page.waitForFunction(() => typeof window.releaseDiagram === 'function');
+      const oldOutput = await page.locator('#output').textContent();
+      const source = page.locator('#source');
+      await source.fill(await source.inputValue() + '\n!! another revision');
+      const late = await page.evaluate(() => {
+        window.releaseDiagram();
+        return window.lateDiagram;
+      });
+      assert.equal(late.stale, true);
+      assert.equal(await page.locator('#output').textContent(), oldOutput);
+      const current = await page.evaluate(() => window.interlisBrowserTest.diagram());
+      assert.equal(current.stale, undefined);
+      assert.notEqual(current.result.snapshotId, late.result.snapshotId);
+      assert.notDeepEqual(current.result.sourceRevisions, late.result.sourceRevisions);
       assert.deepEqual(errors, []);
     } finally {
       await browser?.close();

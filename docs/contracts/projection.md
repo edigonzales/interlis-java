@@ -261,16 +261,11 @@ die Knoten, Beziehungen und den Diagrammvalidator.
 <a id="eigener-gemeinsamer-interaktiver-diagrammconsumer"></a>
 ### Eigener gemeinsamer interaktiver Diagrammconsumer
 
-`frontend/diagram-ui` besitzt die neutrale Darstellung für Core-Browser und
-VS-Code-Host. Es importiert ausschliesslich eigene DiagramDocument1.0-/Layout-
-DTOs, Sprotty/ELK und deklarierte Hilfsbibliotheken; keine Compiler-AST- oder
-Language-Service-Typen. Die alte aktive Vendorquelle ist entfernt. Provenienz,
-Originalhashes und MIT-/EPL-Hinweise bleiben erhalten. `diagramUiBuild` baut
-strikte Deklarationen, den echten Sprotty-Viewer, CSS, native ELKworker und
-Lizenzinventar. Der Diagrammschemavalidator wird zur Buildzeit erzeugt, sodass
-eine Webview keine Eval-Freigabe benötigt. `editorBundle` paketiert Server,
-neutralen Renderer als TGZ und entpackte Assets, Schemas und eigene Hosttypen;
-sein Manifest bindet Nutzdateien über SHA-256 und den Core-Commit.
+Der interaktive Renderer gehört zur VS-Code-Extension. Er verwendet die
+DiagramDocument-1.0-Typen und das Schema aus dem Core-Bundle. Die Wire-Typen
+liegen in `interlis-projection/src/main/typescript/diagram-document.ts`.
+Der Compilerharness zeigt fachliche Diagrammantworten als JSON. Das
+Core-Bundle enthält Serverlaufzeit, Typen, Schemas und Lizenzen.
 
 DiagramCanvas hält eingefrorene Semantik getrennt vom mutierbaren Sprotty-
 Viewmodell. Native Move-/Routing-/Selectioncommands verändern Positionen und
@@ -395,8 +390,7 @@ Skalierung0.5..3. Ein währenddessen veränderter View bricht das Ergebnis ab.
 Beide Exporte begrenzen ihre Nutzlast auf16MB; der Host besitzt Save/Cancel,
 Zieldatei und abschliessendes Schreiben, nicht der Renderer.
 
-`mountDiagramControls` ist die gemeinsame lokale Bedienoberfläche für beide
-Consumer. Native Zeiger-/Tastatureingaben, ResizeObserver, begrenzter Pan und
+`mountDiagramControls` ist die lokale Bedienoberfläche der VS-Code-Extension. Native Zeiger-/Tastatureingaben, ResizeObserver, begrenzter Pan und
 Viewportzoom verwenden CSSpixel; die Rasterauflösung ist explizit. Toolbarfokus
 und Quelleditorfokus dürfen von Hintergrundpatches nicht übernommen werden.
 
