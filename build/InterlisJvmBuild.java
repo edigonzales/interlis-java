@@ -101,7 +101,7 @@ public final class InterlisJvmBuild {
                 case "--profile" -> {
                     var profiles=profile.equals("gui-check")?java.util.Set.of("shell","compile","diagnostics","dependencies","repositories","lifecycle","packaged"):profile.equals("wasm")?build.interlis.WasmBuildRun.PROFILES:java.util.Set.<String>of();
                     if(!profiles.contains(value)||options.put(option,value)!=null)
-                        throw new IllegalArgumentException("Unknown or duplicate host profile: "+value);
+                        throw new IllegalArgumentException("Unknown or duplicate profile: "+value);
                 }
                 case "--inputs-sha256" -> {
                     if(!value.matches("[0-9a-f]{64}")||options.put(option,value)!=null)throw new IllegalArgumentException("Expected producer manifest SHA-256");

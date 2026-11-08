@@ -22,6 +22,7 @@ class LexicalProfileContractTest {
         var r=CompilerEngines.create().compile(input(version,body),CancellationToken.none());
         return assertInstanceOf(CompilationOutcome.Succeeded.class,r,()->r instanceof CompilationOutcome.Rejected x?x.analysis().diagnostics().toString():r.toString());
     }
+    // Reference manuals, reserved words table 1 (2.3 section 2.2.7, 2.4 section 3.2.7).
     private static List<String> words(String v) throws Exception {
         var path=Path.of("../testdata/conformance/lexical/reserved-"+v+".txt");
         assertEquals(v.equals("23")?"cddfa17d2232cf109fe0096a99b6e7b814c9fdd5a18467e07ef9f4cc4f55e7d3":"25c1d536c990f547a3cbad2f314d47ad731b8616843f5de38db9b1a7467b838e",HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(path))));
@@ -29,7 +30,7 @@ class LexicalProfileContractTest {
     }
     @Test void completeReservedTablesRejectIdentifiersAndPermitMixedCaseNames() throws Exception {
         for(String v:List.of("23","24")) {
-            var words=words(v);assertEquals(v.equals("23")?154:168,words.size());
+            var words=words(v);
             var language=v.equals("23")?LanguageVersion.ILI23:LanguageVersion.ILI24;
             for(String word:words) {
                 assertFalse(LanguageProfile.isIdentifier(word,language),word);

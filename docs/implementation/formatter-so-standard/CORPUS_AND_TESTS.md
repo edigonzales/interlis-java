@@ -26,46 +26,12 @@ Ergänzung auf etwa acht bis zwölf gezielt ausgewählte eigene Modelle, nicht n
 
 INTERLIS2.3 und2.4, LF/CRLF, Kopfvarianten, Klassen/Structures/Associations/Views, Domains/Enums, Kommentare mit und ohne `*`, Versionshistorien und Metaattribute abdecken. Gespiegelte fremde Modelle und `/replaced/` nicht als primäre SO-Stilnorm werten; bei konkreter Randfrage separat kennzeichnen.
 
-## 3. Erwerb und Manifest
+## 3. Erwerb und Herkunft
 
-F0 darf Referenzen ausdrücklich aus dem gepinnten Repository beziehen. Danach Tests offline. Keine Netzabfrage bei jedem JUnit-Lauf und kein Formatieren in einem fremden Arbeitsbaum.
-
-Ablagevorschlag unter `testdata/formatter/so-standard/`:
-
-```text
-corpus-manifest.json
-originals/<source-path>.ili
-variants/<case-id>.ili
-golden/<case-id>.ili
-cases/<self-contained-case>.ili
-README.md
-```
-
-Originaldateien nur nach Prüfung der vorhandenen Nutzungs-/Lizenzhinweise mit Herkunft übernehmen; nicht selbst eine Lizenz erfinden. Für kleine abgeleitete Fixtures Herkunft und eigene Änderungen angeben. Keine font-/Binär-/ganze Repositoriumskopie im Testbaum.
-
-Manifestdaten: schemaVersion, repository, commit, relativeOriginalPath, lokaleFixture, tatsächlicher SHA-256 der unveränderten Bytes, Bytezahl, beobachtete EOLs/Encoding/BOM, Sprachversion, Prüfrollen und erwartete Baselinesyntax. Eventuelle Auszüge zusätzlich durch Originalbereich und eigene Änderungen kenntlich machen. Git-Blob-SHA ist nicht der SHA-256 der Datei; nicht verwechseln.
-
-Beispiel eines Schemas, mit echten Werten zu füllen, kein fertiger Nachweis:
-
-```json
-{
-  "schemaVersion": 1,
-  "repository": "sogis/sogis-interlis-repository",
-  "commit": "630e3550a93288a99dd9eb4d2d6dc804f9027107",
-  "files": [
-    {
-      "sourcePath": "models/AGI/SO_AGI_Datahub_20240403.ili",
-      "fixturePath": "originals/AGI/SO_AGI_Datahub_20240403.ili",
-      "sha256": "<ACTUAL_FILE_SHA256>",
-      "bytes": "<ACTUAL_INTEGER>",
-      "roles": ["comments", "declarations", "metadata"],
-      "baselineSyntax": "<ACCEPTED_OR_REJECTED_WITH_EVIDENCE>"
-    }
-  ]
-}
-```
-
-Vor einem Testlauf Hashes überprüfen. Ein geändertes Original ist ein Fehler, keine automatische Manifestaktualisierung. Nicht erfolgreiche Fixtureauswahl löschen, um die Bilanz zu verschönern; ursprünglichen Befund dokumentieren.
+Die [Formatterfixtures](../../../testdata/formatter/so-standard/README.md)
+enthalten die Originale, ihre Herkunft und Lizenz sowie die getrennten
+Test- und Solldateien. Die direkten JUnit-Tests lesen die .ili-Dateien lokal.
+Bei neuen Referenzfixtures die Originalbytes und die Herkunft sichern.
 
 ## 4. Baseline und Golden-Abnahme
 

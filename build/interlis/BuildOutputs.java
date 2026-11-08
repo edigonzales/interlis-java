@@ -6,8 +6,8 @@ import java.util.*;
 /** Finite output ownership. Callers hold the project lock; sources and dependency caches are never selected. */
 public final class BuildOutputs {
     private static final Map<String,List<String>> SCOPES=Map.of(
-            "jvm",List.of("engine","reports","evidence","tools","delivery","delivery-history","host","conformance","reference","module-checks","runtime-checks","test-plans"),
-            "consumer",List.of("consumers","consumer-references","handoffs","editor-bundles","editor-runs","wasm-runs"),
+            "jvm",List.of("engine","reports","tools","delivery","delivery-history","conformance","module-checks","runtime-checks","test-options"),
+            "consumer",List.of("consumers","consumer-references","handoffs","editor-bundles","editor-runs"),
             "wasm",List.of("interlis-wasm-teavm/build","interlis-wasm-webimage/build"));
 
     public static void clean(Path root,String scope) throws Exception {

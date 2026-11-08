@@ -26,7 +26,7 @@ Pro Korrektur kurz protokollieren: Finding, geänderte Inputs, betroffene Vertr�
 
 ## 3. Inkrementelle Testinputs
 
-Formattertests hängen auch von `.ili`-Fixtures, Goldens, Manifesten und gegebenenfalls Stilkonstanten ab. Neue Inputpfade in bestehende `build.jenesis/test-inputs.properties` oder die tatsächlich aktive Inputbindung aufnehmen. Beweise mit einer kleinen Mutation, dass ein geändertes Fixture nicht durch einen alten grünen Report verdeckt wird. Kein pauschales `--rerun-all` als dauerhafte Reparatur.
+Formattertests hängen auch von `.ili`-Fixtures, Goldens, Manifesten und gegebenenfalls Stilkonstanten ab. Neue Inputpfade in die modulbezogene Jenesis-Inputbindung aufnehmen. Beweise mit einer kleinen Mutation, dass ein geändertes Fixture nicht durch einen alten grünen Report verdeckt wird. Kein pauschales `--rerun-all` als dauerhafte Reparatur.
 
 Ein Testbericht gehört zum tatsächlichen Quell-/Fixture-/Options-/Toolchainstand. Bei Wiederverwendung Gleichheit relevanter Inputs und Artefakte nachweisen. Ein Dokumentationscommit kann dieselben Produktbytes besitzen; er macht alte Ausführungen nicht rückwirkend zu Läufen auf seinem Commit. SHAs/Dirtyangaben alter Reports nicht umschreiben.
 

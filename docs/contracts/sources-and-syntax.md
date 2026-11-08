@@ -279,7 +279,10 @@ Jede Recoveryiteration muss entweder mindestens einen Originaltoken verbrauchen,
 
 Die Hauptregel wird für vollständige Dokumente mit EOF abgeschlossen. Der in der Ausgangsgrammatik vorhandene INTERLIS-1-Einstieg wird für den neuen Compiler entfernt oder ausdrücklich als unzulässige Versionsfamilie diagnostiziert. Der versionsbezogene Header ist keine frei akzeptierte Dezimalzahl.
 
-Eine maschinenlesbare Tabelle `language-features.json` oder eine typisierte Java-Tabelle verbindet `LanguageFeature`, erlaubte Versionen, Normreferenz und positive/negative Tests. Sie erfasst die Sprachfeatures mit Versionsgrenzen. Es darf keine unausgefüllte Versionszelle für eine als fertig deklarierte Fähigkeit geben. Neue 2.4-Schlüsselwörter dürfen Namen gültiger 2.3-Modelle nicht unbeabsichtigt sperren.
+Direkte positive und negative Sprachtests prüfen versionsabhängige Funktionen
+in INTERLIS 2.3 und 2.4. Bei relevanten Sprachgrenzen prüfen sie die konkreten
+Diagnosen und Quellbereiche. Neue 2.4-Schlüsselwörter dürfen Namen gültiger
+2.3-Modelle nicht unbeabsichtigt sperren.
 
 Die Grammatik muss die Operatorbindung aus dem Referenzhandbuch abbilden. Die im Ausgangsprojekt vorgefundenen Alternativen und Präzedenzstufen werden geprüft; allein die erfolgreiche ANTLR-Generierung gilt nicht als Nachweis. Zahlentokens enthalten das Exponentenvorzeichen. Ein führendes Vorzeichen ist
 ein eigenes Token und gehört im Parser nur bei direkt anschliessender Zahl zum

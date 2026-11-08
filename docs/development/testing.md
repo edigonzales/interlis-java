@@ -1,4 +1,4 @@
-# Prüfung und Evidenz
+# Tests
 
 Wähle Prüfungen anhand der betroffenen [Anforderungen](../contracts/requirements.md),
 Verbraucher und Risiken. Ein JVM-Test belegt weder einen Browserlauf noch einen
@@ -9,16 +9,18 @@ ausgeführte Prozesse, Rohberichte und bekannte Skips.
 ## Direkte Prüfungen
 
 - `java build/InterlisJvmBuild.java build` führt die regulären JVM-Tests aus.
+- `java build/InterlisJvmBuild.java build --module interlis-model` prüft ein Modul.
 - `java build/InterlisJvmBuild.java build --module interlis-compiler --tests '.*VersionScannerTest'`
   wählt eine JUnit-Klasse. `#method` schränkt die Auswahl auf eine Methode ein.
 - `java build/InterlisJvmBuild.java sdk-check` prüft installierte CLI, SDK und LSP.
   Der LSP-Prozesscheck benötigt Node.
 - `java build/InterlisJvmBuild.java conformance` führt die gepinnte Codeberg-Suite aus.
-  `--filter REGEX` prüft eine Teilmenge. Die [Erwartungen](../../testdata/conformance/normative/expectations.json)
+  `--filter '^ili23\.Class23Test\.classComplete$'` prüft einen gezielten Fall.
+  Die [Erwartungen](../../testdata/conformance/normative/expectations.json)
   und [Baseline](../../testdata/conformance/baseline.json) halten die begründeten Abweichungen fest.
   Native Reports liegen unter `target/jenesis-jvm/conformance/`.
-- Die [Buildanleitung](build.md#portable-backends) beschreibt die direkten Aufrufe
-  für die generierten Backends und die explizite Artefaktübergabe.
+- Die [Buildanleitung](build.md#portable-backends) zeigt `teavm-smoke` für die
+  erzeugten JS-/WasmGC-Artefakte und `browser-smoke` für die Browserintegration.
 
 ## Testinhalte
 

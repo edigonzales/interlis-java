@@ -8,7 +8,10 @@ import java.util.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Exact historical C findings; reference expectations are assessed separately. */
+/**
+ * Original geometry probes from K4 metadata (22 and 50), OPEN_GEOMETRY_COMPLETENESS
+ * (the four missing-overlap fixtures) and the versioned k4-lines fineTolerance cases.
+ */
 class GeometryOriginalAcceptanceTest {
     @Test void pinnedOriginalsHaveVersionedOutcomesAndUsablePublicGeometry() throws Exception {
         var pins=Map.of(

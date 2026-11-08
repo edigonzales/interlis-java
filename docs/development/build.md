@@ -36,21 +36,24 @@ Outputsicht. Root-`build/`, Dokumentation und externe Belege sind Quellen.
 ## Portable Backends
 
 Verwende Node.js 24.22.0 und setze `INTERLIS_NODE` auf das absolute
-Executable. Installiere die gepinnten Abhängigkeiten des Browserharness mit
+Executable. Installiere die gepinnten Abhängigkeiten des Browserpakets mit
 `npm ci` in `interlis-wasm-teavm`. GraalVM Web Image benötigt zusätzlich
 `GRAALVM_HOME` mit SVM-Wasm und `BINARYEN_HOME` mit `bin/wasm-opt`.
-Die [Freigabematrix](release.md) definiert die erforderlichen Laufzeiten.
+Die [Freigabeprüfung](release.md#plattformen-und-ablauf) beschreibt die CI-Jobs
+und die Prüfungen vor einer Browserveröffentlichung.
 
 ```sh
 export INTERLIS_NODE=/absolute/node-24.22.0/bin/node
+export PATH="$(dirname "$INTERLIS_NODE"):$PATH"
+npm ci --prefix interlis-wasm-teavm
 java build/InterlisJvmBuild.java wasm-export
-JVM_INPUTS=$(jq -r .manifest target/jenesis-jvm/reports/wasm-export.json)
-JVM_INPUTS_SHA256=$(jq -r .manifestSha256 target/jenesis-jvm/reports/wasm-export.json)
+JVM_INPUTS=$(jq -er .manifest target/jenesis-jvm/reports/wasm-export.json)
+JVM_INPUTS_SHA256=$(jq -er .manifestSha256 target/jenesis-jvm/reports/wasm-export.json)
 java build/InterlisJvmBuild.java wasm --profile teavm-smoke \
   --inputs "$JVM_INPUTS" --inputs-sha256 "$JVM_INPUTS_SHA256"
 ```
 
-Das Receipt enthält den absoluten Manifestpfad und den Producerhash. Gradle
+Die Exportdatei enthält den absoluten Manifestpfad und dessen SHA-256-Prüfsumme. Gradle
 verifiziert beides und prüft die im unveränderlichen ConsumerSnapshot
 erfassten Artefakte, Closure, Module und Ressourcen. Backend-Codegenerierung
 und Laufproben bleiben an denselben Snapshot gebunden. Direkte

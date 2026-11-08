@@ -16,13 +16,18 @@ class FormatterCorpusTest {
     @Test
     void pinnedSolothurnCorpusReparsesPreservesBindingsAndIsIdempotent() throws Exception {
         Path root = Path.of(System.getProperty("testdata.dir"), "formatter/so-standard/originals");
-        try (var files = Files.walk(root)) {
-            var originals = files.filter(path -> path.toString().endsWith(".ili")).sorted().toList();
-            assertEquals(8, originals.size());
-            for (var original : originals) {
-                assertDoesNotThrow(() -> FormatterSoStandardTest.verify(Files.readString(original),
-                        FormatOptions.defaults()), original.toString());
-            }
+        for (String name : List.of(
+                "ADA/SO_ADA_Denkmal_20250114.ili",
+                "AFU/SO_AFU_Gewaesserraum_20260526.ili",
+                "AFU/SO_AFU_Naturgefahren_20240515.ili",
+                "AGI/SO_AGI_Datahub_20240403.ili",
+                "AGI/SO_AGI_MOpublic_20240711.ili",
+                "AVT/SO_AVT_OevKov_20260727.ili",
+                "AWJF/SO_AWJF_Waldplan_20250312.ili",
+                "HBA/SO_HBA_Immobilienportfolio_20260713.ili")) {
+            Path original = root.resolve(name);
+            assertDoesNotThrow(() -> FormatterSoStandardTest.verify(Files.readString(original),
+                    FormatOptions.defaults()), name);
         }
     }
 

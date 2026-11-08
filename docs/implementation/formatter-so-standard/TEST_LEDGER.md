@@ -49,8 +49,8 @@ sind Bestandteil der folgenden Phasen.
   `f3/corpus-narrow/corpus-report.json` erfassen acht Originale bei
   Breite 120 bzw. 40. Beide Läufe haben je acht erfolgreiche Reparses
   und Wiederholungsvergleiche, ohne Schutzhinweise im Korpus.
-- `node --test tools/release/evidence.test.cjs` ergibt 81 Tests, keine
-  Fehler oder Skips. Geprüft wurde der Versionskonsument, kein Releasegate.
+- Der damalige Test des Versionskonsumenten umfasste 81 Tests ohne Fehler
+  oder Skips.
 
 ## Korrektur nach Reviewrunde 01
 

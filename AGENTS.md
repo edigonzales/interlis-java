@@ -73,3 +73,7 @@
   Sie müssen nicht identische breite Läufe wiederholen. Ein Bericht dokumentiert
   den geprüften Commit, Befehle, Ergebnisse und offene Grenzen ohne eigene
   neue maschinenlesbare Review-/Gatearchitektur.
+
+Die [Testanleitung](docs/development/testing.md) und die
+[Freigabeprüfung](docs/development/release.md) beschreiben die direkten Aufrufe
+und die Prüfungen für die Auslieferung.

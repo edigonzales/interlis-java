@@ -1,8 +1,8 @@
 {
-  "name": "interlis-wasm-teavm-browser-contract",
+  "name": "interlis-wasm-teavm-browser",
   "private": true,
   "version": "0.1.0",
-  "description": "Browser contract harness for the portable compiler",
+  "description": "Browser build and integration tests for the portable compiler",
   "scripts": {
     "test": "node --test test/browser-smoke.test.cjs ui-projection.test.cjs"
   },

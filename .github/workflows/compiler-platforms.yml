@@ -83,10 +83,10 @@ jobs:
       - name: Export the JVM inputs without running JVM tests
         id: jvm
         run: |
-          java build/InterlisJvmBuild.java wasm-export | tee wasm-export.log
-          snapshot=$(sed -n 's/^Consumer snapshot: //p' wasm-export.log)
-          manifest=${snapshot% SHA-256=*}
-          checksum=${snapshot##* SHA-256=}
+          java build/InterlisJvmBuild.java wasm-export
+          handoff=target/jenesis-jvm/reports/wasm-export.json
+          manifest=$(jq -er .manifest "$handoff")
+          checksum=$(jq -er .manifestSha256 "$handoff")
           test -f "$manifest"
           [[ "$checksum" =~ ^[a-f0-9]{64}$ ]]
           printf 'manifest=%s\nchecksum=%s\n' "$manifest" "$checksum" >> "$GITHUB_OUTPUT"

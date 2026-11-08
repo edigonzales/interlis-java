@@ -26,7 +26,7 @@ tasks.register('compileWebImageProbe', JavaCompile) {
     options.encoding = 'UTF-8'
     doFirst {
         if (!graalHome.get()) {
-            throw new GradleException('webImageProbe requires -PgraalVmHome or GRAALVM_HOME')
+            throw new GradleException('webImageBuild requires -PgraalVmHome or GRAALVM_HOME')
         }
         options.compilerArgs += ['--module-path', "${graalHome.get()}/jmods",
                                  '--add-modules', 'org.graalvm.webimage.api']
@@ -40,10 +40,10 @@ tasks.register('webImageBuild', Exec) {
     dependsOn 'compileWebImageProbe'
     doFirst {
         if (!graalHome.get()) {
-            throw new GradleException('webImageProbe requires -PgraalVmHome or GRAALVM_HOME')
+            throw new GradleException('webImageBuild requires -PgraalVmHome or GRAALVM_HOME')
         }
         if (!binaryenHome.get()) {
-            throw new GradleException('webImageProbe requires -PbinaryenHome or BINARYEN_HOME')
+            throw new GradleException('webImageBuild requires -PbinaryenHome or BINARYEN_HOME')
         }
         def out = layout.buildDirectory.dir('webimage').get().asFile
         out.mkdirs()

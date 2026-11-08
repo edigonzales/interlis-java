@@ -16,10 +16,9 @@ public final class JenesisBridge {
     /** Actual product files, with optional sources when this invocation did not select that phase. */
     public record ModuleResult(String projectId, String engineLocator, Path inventoryDirectory,
             String inventoryPrefix, Path jar, Path pom, Optional<Path> sources,
-            Optional<String> moduleName, boolean explicitDescriptor, List<Path> runtime,
-            Optional<Path> testReports) {
+            Optional<String> moduleName, boolean explicitDescriptor, List<Path> runtime) {
         public ModuleResult { sources=Objects.requireNonNull(sources);moduleName=Objects.requireNonNull(moduleName);
-            runtime=List.copyOf(runtime);testReports=Objects.requireNonNull(testReports); }
+            runtime=List.copyOf(runtime); }
     }
 
     /** Resolves identities from inventory contents; engine path spelling is not a consumer contract. */
@@ -46,13 +45,8 @@ public final class JenesisBridge {
                 moduleName=Optional.of(module.name());explicit=!module.isAutomatic();
             }
         }
-        Optional<Path> reports=Optional.empty();
-        var test=findInventories(outcome,projectId,true);
-        if(test.size()>1)throw new IllegalStateException("Ambiguous tests: "+projectId);
-        if(!test.isEmpty()&&test.getFirst().data().containsKey(test.getFirst().prefix()+".report.tests"))
-            reports=Optional.of(test.getFirst().directory("report.tests"));
         return new ModuleResult(projectId,product.locator(),product.directory(),product.prefix(),jar,pom,
-                sources.stream().findFirst(),moduleName,explicit,product.paths("runtime"),reports);
+                sources.stream().findFirst(),moduleName,explicit,product.paths("runtime"));
     }
 
     public static List<Path> runtimeModulePath(String projectId,BuildOutcome outcome) throws Exception {
@@ -82,13 +76,6 @@ public final class JenesisBridge {
             String value=data.getProperty(prefix+"."+role);
             if(value==null)throw new IllegalStateException("Missing inventory role: "+prefix+"."+role);
             return requireArtifact(outcome.root().resolve("target/jenesis-jvm/engine"),directory,value);
-        }
-        Path directory(String role) throws Exception {
-            String value=data.getProperty(prefix+"."+role);
-            if(value==null)throw new IllegalStateException("Missing directory role: "+role);
-            Path result=checkedOutput(outcome,directory.resolve(value));
-            if(!Files.isDirectory(result))throw new IllegalStateException("Not a report directory: "+result);
-            return result;
         }
         List<Path> paths(String role) throws Exception {
             var paths=new ArrayList<Path>();

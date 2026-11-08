@@ -184,15 +184,9 @@ Im Compiler-Testbaum fachliche Tests pro Vertragsbereich, z.B.:
 
 Namen können an lokale Konventionen angepasst werden, aber keine neue SourceSet-Erfindung. Bestehende `FormatterContractTest`/`FormatterPolicyContractTest` methodengenau migrieren oder vereinigen; relevante Fälle nicht verlieren.
 
-Ein kleines explizites `FormatterCorpusCheck` unter `interlis-verification` ist zulässig, wenn es die vollständigen Korpusdateien und Diffs ausführt. Vorgesehene Verantwortlichkeiten:
-
-```java
-CorpusRun run(CorpusManifest manifest, Path output, FormatOptions options, CancellationToken token)
-CorpusCaseResult checkCase(CorpusCase entry, FormatOptions options, CancellationToken token)
-void writeReport(CorpusRun run, Path output)
-```
-
-Es lädt nur gepinnte lokale Referenzbytes, schreibt nur in den ausgewählten Ausgabebereich, führt Formatier-/Reparse-/Idempotenzkontrollen aus und erzeugt diffbare Outputs. Kein Netzwerk im Testlauf und kein `--accept-all`-Schalter, der Goldens aus Istwerten macht. Herkunftssammlung erfolgt explizit in F0. Named Consumerprobe gegen den Produktmodulpfad als kleiner vorhandener Testadapter, nicht als neues veröffentlichtes Produkt.
+Die direkten JUnit-Tests formatieren die gepinnten lokalen Originale und
+prüfen Reparse, Idempotenz und Bindungen. Die installierte SDK-Probe verwendet
+den Produktmodulpfad und einen regulären Verbraucher.
 
 ## 13. Entfernbarkeit und Altlasten
 

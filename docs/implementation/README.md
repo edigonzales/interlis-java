@@ -1,6 +1,6 @@
-# Aktiver Implementierungsauftrag
+# Früherer Formatterauftrag
 
-[Quellformatierung im Solothurner Stil](formatter-so-standard/README.md) legt
-den separaten Umfang und seine Abnahme fest. Sein
-[Implementierungseinstieg](formatter-so-standard/CODEX_STARTPROMPT.md) verweist
-auf die aktuellen Produktverträge.
+[Quellformatierung im Solothurner Stil](formatter-so-standard/README.md)
+dokumentiert den damaligen Auftrag und seine Abnahme. Für heutige Änderungen
+gelten der [Formatierungsvertrag](../contracts/formatting.md) und die
+[Testanleitung](../development/testing.md).
