@@ -5,9 +5,14 @@ import guru.interlis.compiler.CompilationOutcome;
 import guru.interlis.compiler.ModelSelector;
 import guru.interlis.compiler.RejectionReason;
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.BinaryExpression;
+import guru.interlis.model.BinaryOperator;
 import guru.interlis.model.ClassSymbol;
 import guru.interlis.model.CompiledSchema;
 import guru.interlis.model.EffectiveMember;
+import guru.interlis.model.NumericRange;
+import guru.interlis.model.NumericType;
+import guru.interlis.model.PrecisionOrigin;
 import guru.interlis.model.QualifiedName;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.source.SourceId;
@@ -80,6 +85,62 @@ class WorkspaceTest {
                 CompilationOutcome.Succeeded.class, second);
         assertEquals(firstMembers, memberNames(succeededAgain.schema()));
         assertTrue(workspace.metrics().acceptedAnalyses() >= 2);
+    }
+
+    @Test
+    void editedImportedBoundsAgreeWithFreshWorkspaceAndPreserveOldSchema() {
+        Workspace reused = WorkspaceTestSupport.workspace();
+        SourceId baseId = new SourceId("memory:/base.ili");
+        String survey = """
+                INTERLIS 2.4;
+                MODEL Survey AT "https://example.interlis.ch" VERSION "1.0" =
+                  IMPORTS Base;
+                  TOPIC Data =
+                    CLASS Building =
+                      height : Base.Count;
+                    END Building;
+                    VIEW Heights PROJECTION OF b~Building; =
+                      doubled := b->height+b->height;
+                    END Heights;
+                  END Data;
+                END Survey.
+                """;
+        WorkspaceTestSupport.add(reused, baseId.value(), BASE);
+        WorkspaceTestSupport.add(reused, "memory:/survey.ili", survey);
+        var roots = List.<ModelSelector>of(new ModelSelector.ByName("Survey", Optional.empty(), Optional.empty()));
+        var before = reused.compile(new WorkspaceCompileRequest(reused.currentRevision(), roots),
+                CancellationToken.none());
+        var old = assertInstanceOf(CompilationOutcome.Succeeded.class, before, () -> describe(before));
+        long syntaxReuses = reused.metrics().syntaxReuses();
+
+        String editedBase = BASE.replace("0..999", "0..1000");
+        WorkspaceTestSupport.replace(reused, baseId, editedBase);
+        Workspace fresh = WorkspaceTestSupport.workspace();
+        WorkspaceTestSupport.add(fresh, baseId.value(), editedBase);
+        WorkspaceTestSupport.add(fresh, "memory:/survey.ili", survey);
+        var incremental = assertInstanceOf(CompilationOutcome.Succeeded.class, reused.compile(
+                new WorkspaceCompileRequest(reused.currentRevision(), roots), CancellationToken.none()));
+        var clean = assertInstanceOf(CompilationOutcome.Succeeded.class, fresh.compile(
+                new WorkspaceCompileRequest(fresh.currentRevision(), roots), CancellationToken.none()));
+
+        assertTrue(reused.metrics().syntaxReuses() > syntaxReuses);
+        assertEquals(clean.analysis().diagnostics(), incremental.analysis().diagnostics());
+        NumericRange range = sumRange(incremental.schema());
+        assertEquals(sumRange(clean.schema()), range);
+        assertEquals(0, range.minimum().orElseThrow().exactValue().intValueExact());
+        var maximum = range.maximum().orElseThrow();
+        assertEquals(2000, maximum.exactValue().intValueExact());
+        assertEquals(PrecisionOrigin.COMPUTED, maximum.precision().origin());
+        assertEquals(1998, sumRange(old.schema()).maximum().orElseThrow().exactValue().intValueExact());
+    }
+
+    private static NumericRange sumRange(CompiledSchema schema) {
+        var graph = schema.semanticGraph();
+        var sum = graph.expressions().stream().filter(BinaryExpression.class::isInstance)
+                .map(BinaryExpression.class::cast)
+                .filter(binary -> binary.operator() == BinaryOperator.PLUS)
+                .findFirst().orElseThrow();
+        return assertInstanceOf(NumericType.class, graph.type(sum.typeId()).orElseThrow()).range();
     }
 
     @Test
