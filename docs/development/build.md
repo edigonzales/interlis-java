@@ -19,8 +19,8 @@ Gradle-Wrapper baut ausschliesslich TeaVM und GraalVM Web Image.
 | `sdk-check` | Dieselbe Auslieferung plus ausgeführte CLI-/LSP-/SDK-Prozesse |
 | `runtime-check --application compiler` | Nachweis der Laufzeitclosure |
 | `gui-run` | Desktop-GUI starten |
-| `gui-runtime` | Modulare JavaFX-Laufzeit für die Desktop-GUI erzeugen |
-| `gui-package` | Native Desktop-App auf der unterstützten Hostplattform paketieren |
+| `gui-runtime` | Modulares Java-Laufzeitimage für die Desktop-GUI erzeugen |
+| `gui-package` | Native Desktop-App für macOS auf Apple Silicon paketieren |
 | `gui-check --profile <profil>` | Gezielte GUI-Probe mit `shell`, `compile`, `diagnostics`, `dependencies`, `repositories`, `lifecycle` oder `packaged` |
 | `editor-bundle` | Geprüfte Übergabe für Editorclients |
 | `editor-check --extension-dir /absolute/extension --reference-bundle /absolute/bundle` | Prüfung der expliziten Editorübergabe |
