@@ -18,6 +18,10 @@ Gradle-Wrapper baut ausschliesslich TeaVM und GraalVM Web Image.
 | `sdk-package` | Modulare CLI-/LSP-Launcher und SDK-ZIP |
 | `sdk-check` | Dieselbe Auslieferung plus ausgeführte CLI-/LSP-/SDK-Prozesse |
 | `runtime-check --application compiler` | Nachweis der Laufzeitclosure |
+| `gui-run` | Desktop-GUI starten |
+| `gui-runtime` | Modulare JavaFX-Laufzeit für die Desktop-GUI erzeugen |
+| `gui-package` | Native Desktop-App auf der unterstützten Hostplattform paketieren |
+| `gui-check --profile <profil>` | Gezielte GUI-Probe mit `shell`, `compile`, `diagnostics`, `dependencies`, `repositories`, `lifecycle` oder `packaged` |
 | `editor-bundle` | Geprüfte Übergabe für Editorclients |
 | `editor-check --extension-dir /absolute/extension --reference-bundle /absolute/bundle` | Prüfung der expliziten Editorübergabe |
 
@@ -30,8 +34,17 @@ Ressourcen bleiben im jeweiligen Modul.
 
 Buildausgaben liegen unter `target/jenesis-jvm`. `.jenesis` enthält den
 lokalen Abhängigkeitscache. JUnit-Berichte liegen im Engine-Output unter `executed/output/reports/tests`.
-`clean --scope jvm|consumer|wasm` löscht ausschliesslich die ausgewählte
-Outputsicht. Root-`build/`, Dokumentation und externe Belege sind Quellen.
+`clean --scope jvm` entfernt Engine-Ausgaben, Berichte, Buildtools,
+Distributionen, Conformance-Ausgaben sowie Modul-, Laufzeit- und Testoptionen.
+`clean --scope consumer` entfernt Snapshots, Übergaben und Editor-Bundles
+sowie ihre Laufverzeichnisse. `clean --scope wasm` entfernt die
+Buildverzeichnisse der beiden portablen Backends.
+
+Die derzeitigen Clean-Sichten erfassen GUI-Pakete unter `target/jenesis-jvm/gui`,
+CLI-Revisionsressourcen unter `target/jenesis-jvm/build-revisions` und
+Renderer-Ausgaben unter `frontend/diagram-ui/{dist,build}` nicht. Diese
+Ausgaben gehören zur Bestandsaufnahme für die gezielte Clean-Umstellung.
+Root-`build/`, Dokumentation und externe Belege sind Quellen.
 
 ## Portable Backends
 
