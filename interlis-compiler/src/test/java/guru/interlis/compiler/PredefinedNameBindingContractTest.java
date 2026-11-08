@@ -63,6 +63,61 @@ class PredefinedNameBindingContractTest {
         }
     }
 
+    @Test void classConstantsAndVerticesBindTheCanonicalPredefinedSymbols() {
+        String vertex = "DOMAIN L (ABSTRACT) = POLYLINE WITH (STRAIGHTS) VERTEX %s;";
+        String constant = "FUNCTION f(c: CLASS): BOOLEAN; "
+                + "TOPIC T = CLASS C = MANDATORY CONSTRAINT f(>%s); END C; END T;";
+        for (String version : List.of("2.3", "2.4")) {
+            for (var test : Map.of("LineCoord", vertex, "METAOBJECT_TRANSLATION", constant).entrySet()) {
+                String name = test.getKey();
+                String qualified = "INTERLIS." + name;
+                String body = test.getValue();
+                var qualifiedResult = ok(input(version, body.formatted(qualified)));
+                var bareResult = ok(input(version, "IMPORTS UNQUALIFIED INTERLIS;" + body.formatted(name)));
+                assertEquals(referenceTo(bareResult, name), referenceTo(qualifiedResult, qualified));
+                bad(input(version, body.formatted(name)));
+                bad(input(version, body.formatted("INTERLIS.UnknownTarget")));
+                bad(input(version, body.formatted("INTERLIS.m")));
+            }
+        }
+    }
+
+    @Test void qualifiedVertexIgnoresLocalShadowingAndRemainsStableAfterAnImportEdit() {
+        String body = "DOMAIN LineCoord = COORD 0..10,0..10; "
+                + "L (ABSTRACT) = POLYLINE WITH (STRAIGHTS) VERTEX INTERLIS.LineCoord;";
+        for (String version : List.of("2.3", "2.4")) {
+            var initial = input(version, body);
+            var original = ok(initial);
+            var oldSource = initial.sources().sources().values().iterator().next();
+            var edited = new SourceText(oldSource.id(), new SourceRevision(2),
+                    oldSource.text().replace("=DOMAIN", "=IMPORTS UNQUALIFIED INTERLIS; DOMAIN"));
+            var next = request(List.of("F"), Map.of(edited.id(), edited), List.of(), initial.options());
+            var engine = CompilerEngines.create();
+            var reuse = new AnalysisReuse(Optional.of(original.analysis()), original.analysis().syntaxSnapshots());
+            var reused = assertInstanceOf(CompilationOutcome.Succeeded.class, engine.compile(next, reuse, TOKEN));
+            var fresh = ok(next);
+            assertEquals(fresh.analysis().diagnostics(), reused.analysis().diagnostics());
+            assertEquals(referenceTo(original, "INTERLIS.LineCoord"), referenceTo(reused, "INTERLIS.LineCoord"));
+            assertEquals(referenceTo(fresh, "INTERLIS.LineCoord"), referenceTo(reused, "INTERLIS.LineCoord"));
+            assertNotEquals(referenceTo(ok(input(version, body.replace("INTERLIS.LineCoord", "LineCoord"))),
+                    "LineCoord"), referenceTo(original, "INTERLIS.LineCoord"));
+        }
+    }
+
+    private static SymbolId referenceTo(CompilationOutcome.Succeeded result, String text) {
+        var source = result.analysis().syntaxSnapshots().values().iterator().next().source();
+        var reference = result.schema().semanticGraph().references().stream()
+                .filter(ref -> source.slice(ref.range()).equals(text)).findFirst().orElseThrow();
+        for (var segment : reference.segments()) {
+            assertEquals(segment.text(), source.slice(segment.range()));
+        }
+        var target = reference.segments().getLast().target().orElseThrow();
+        var leaf = reference.segments().getLast().range();
+        assertEquals(target, LanguageQueries.create().symbolAt(result.analysis(),
+                source.range(leaf.startOffset(), leaf.startOffset()), TOKEN).known().orElseThrow().symbol());
+        return target;
+    }
+
     @Test void primitiveTypeKeywordsRemainAvailableWithoutAnImport() {
         for(String version:List.of("2.3","2.4"))
             ok(input(version,"STRUCTURE S=flag:BOOLEAN;url:URI;name:NAME;horizontal:HALIGNMENT;vertical:VALIGNMENT;END S;"));

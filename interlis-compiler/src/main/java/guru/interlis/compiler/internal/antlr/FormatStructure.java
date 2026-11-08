@@ -56,8 +56,12 @@ public final class FormatStructure {
                 case RULE_metaDataBasketDef -> metadataBasket((MetaDataBasketDefContext) node);
                 case RULE_drawingRule -> drawingRule((DrawingRuleContext) node);
                 case RULE_constraintDef -> constraint((ConstraintDefContext) node);
-                case RULE_domainDef -> domain(node);
-                case RULE_unitDef -> prefixedSection(node);
+                case RULE_domainSection, RULE_unitSection, RULE_contextSection -> section(node);
+                case RULE_domainDef -> {
+                    boundary(first(node), 1, false);
+                    headers.add(new Header(first(node), last(node)));
+                }
+                case RULE_unitDef -> boundary(first(node), 1, false);
                 case RULE_contextDef -> context((ContextDefContext) node);
                 case RULE_enumeration -> enumeration((EnumerationContext) node, offsets);
                 case RULE_cardinality -> {
@@ -251,10 +255,12 @@ public final class FormatStructure {
     }
 
     private void context(ContextDefContext node) {
-        prefixedSection(node);
-        int body = ordinal(node.EQ()) + 1;
-        indents.add(new Indent(body, last(node) + 1));
-        boundary(body, 1, true);
+        boundary(first(node), 1, false);
+        if (!node.contextMapping().isEmpty()) {
+            int body = first(node.contextMapping(0));
+            indents.add(new Indent(body, last(node) + 1));
+            boundary(body, 1, true);
+        }
     }
 
     private void sections(ParserRuleContext node) {
@@ -264,27 +270,9 @@ public final class FormatStructure {
             children.add(child instanceof DefinitionsContext definition ? definition.getChild(0) : child);
         }
         for (int i = 0; i < children.size(); i++) {
-            if (children.get(i) instanceof ParserRuleContext heading) {
-                int kind = heading.getStart().getType();
-                if (kind == UNIT || kind == CONTEXT) {
-                    int end = last(heading) + 1;
-                    for (int j = i + 1; j < children.size(); j++) {
-                        if (!(children.get(j) instanceof ParserRuleContext member)
-                                || member.getRuleIndex() != heading.getRuleIndex()
-                                || member.getStart().getType() == kind) break;
-                        end = last(member) + 1;
-                        i = j;
-                    }
-                    if (end > last(heading) + 1) indents.add(new Indent(last(heading) + 1, end));
-                }
-                continue;
-            }
             if (!(children.get(i) instanceof TerminalNode token)) continue;
             int kind = token.getSymbol().getType();
             String sectionRule = switch (kind) {
-                case DOMAIN -> "domainDef";
-                case UNIT -> "unitDef";
-                case CONTEXT -> "contextDef";
                 case PARAMETER -> "runTimeParameterDef";
                 case ATTRIBUTE -> "attributeDef";
                 case LINE -> "lineFormTypeDef";
@@ -313,25 +301,12 @@ public final class FormatStructure {
         }
     }
 
-    private void domain(ParserRuleContext node) {
-        prefixedSection(node);
-        int start = first(node) + (node.getStart().getType() == DOMAIN ? 1 : 0);
-        for (TerminalNode separator : node.getTokens(SEMI)) {
-            int end = ordinal(separator);
-            headers.add(new Header(start, end));
-            start = end + 1;
-            if (start <= last(node)) boundary(start, 1, false);
-        }
-    }
-
-    private void prefixedSection(ParserRuleContext node) {
-        if (node.getStart().getType() == DOMAIN || node.getStart().getType() == UNIT
-                || node.getStart().getType() == CONTEXT) {
-            boundary(first(node), 2, false);
-            boundary(first(node) + 1, 1, true);
-            indents.add(new Indent(first(node) + 1, last(node) + 1));
-        } else {
-            boundary(first(node), 1, false);
+    private void section(ParserRuleContext node) {
+        int heading = first(node);
+        boundary(heading, 2, false);
+        if (last(node) > heading) {
+            boundary(heading + 1, 1, true);
+            indents.add(new Indent(heading + 1, last(node) + 1));
         }
     }
 

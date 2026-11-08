@@ -302,15 +302,15 @@ final class SyntaxTreeBuilder {
         for (InterlisParser.StructureDefContext structure : context.structureDef()) {
             members.add(new Member(structure.getStart().getTokenIndex(), buildStructure(structure)));
         }
-        for (InterlisParser.DomainDefContext domain : context.domainDef()) {
-            int domainIndex = domain.getStart().getTokenIndex();
-            for (DomainDeclarationSyntax declaration : buildDomains(domain)) {
-                members.add(new Member(domainIndex++, declaration));
+        for (var section : context.domainSection()) {
+            for (var domain : section.domainDef()) {
+                members.add(new Member(domain.getStart().getTokenIndex(), buildDomain(domain)));
             }
         }
-        for (InterlisParser.UnitDefContext unit : context.unitDef()) {
-            members.add(new Member(unit.getStart().getTokenIndex(),
-                    isDomainEnumeration(unit) ? buildDomainFromUnit(unit) : buildUnit(unit)));
+        for (var section : context.unitSection()) {
+            for (var unit : section.unitDef()) {
+                members.add(new Member(unit.getStart().getTokenIndex(), buildUnit(unit)));
+            }
         }
         for (InterlisParser.FunctionDefContext function : context.functionDef()) {
             members.add(new Member(function.getStart().getTokenIndex(), buildFunction(function)));
@@ -325,9 +325,10 @@ final class SyntaxTreeBuilder {
             members.add(new Member(basket.getStart().getTokenIndex(),
                     buildMetadataBasket(basket)));
         }
-        for (var definition : context.contextDef()) {
-            members.add(new Member(definition.getStart().getTokenIndex(),
-                    buildContext(definition)));
+        for (var section : context.contextSection()) {
+            for (var definition : section.contextDef()) {
+                members.add(new Member(definition.getStart().getTokenIndex(), buildContext(definition)));
+            }
         }
         for (var lineForm : context.lineFormTypeDef()) {
             members.add(new Member(lineForm.getStart().getTokenIndex(),
@@ -591,7 +592,13 @@ final class SyntaxTreeBuilder {
         }
         List<SyntaxNode> members = new ArrayList<>();
         for (InterlisParser.DefinitionsContext definition : context.definitions()) {
-            members.add(buildDefinition(definition));
+            if (definition.domainSection() != null) {
+                definition.domainSection().domainDef().stream().map(this::buildDomain).forEach(members::add);
+            } else if (definition.unitSection() != null) {
+                definition.unitSection().unitDef().stream().map(this::buildUnit).forEach(members::add);
+            } else {
+                members.add(buildDefinition(definition));
+            }
         }
         return new TopicSyntax(nextId(), range(context), name, modifiers,
                 endName(context.END(), context), base, dependencies, members, oidRules(context),
@@ -599,14 +606,6 @@ final class SyntaxTreeBuilder {
     }
 
     private SyntaxNode buildDefinition(InterlisParser.DefinitionsContext context) {
-        if ((context.DOMAIN() != null && context.domainDef() == null)
-                || (context.UNIT() != null && context.unitDef() == null)
-                || (context.CONTEXT() != null && context.contextDef() == null)) {
-            // The grammar has standalone keyword alternatives and the real
-            // declarations; the actual declaration is emitted separately.
-            return new guru.interlis.syntax.RecoveredSyntax(nextId(), range(context),
-                    List.of(), "standalone-declaration-keyword");
-        }
         if (context.classDef() != null) {
             return buildClass(context.classDef());
         }
@@ -615,17 +614,6 @@ final class SyntaxTreeBuilder {
         }
         if (context.associationDef() != null) {
             return buildAssociation(context.associationDef());
-        }
-        if (context.domainDef() != null) {
-            List<DomainDeclarationSyntax> domains = buildDomains(context.domainDef());
-            if (domains.size() == 1) {
-                return domains.getFirst();
-            }
-            // Multiple domain declarations are represented by a recovered
-            // container; each declaration remains separately addressable.
-            List<SyntaxNode> children = new ArrayList<>(domains);
-            return new guru.interlis.syntax.RecoveredSyntax(nextId(), range(context), children,
-                    "multiple-domain-declarations");
         }
         if (context.viewDef() != null) {
             return buildView(context.viewDef());
@@ -639,53 +627,10 @@ final class SyntaxTreeBuilder {
         if (context.functionDef() != null) {
             return buildFunction(context.functionDef());
         }
-        if (context.unitDef() != null) {
-            if (isDomainEnumeration(context.unitDef())) {
-                return buildDomainFromUnit(context.unitDef());
-            }
-            return buildUnit(context.unitDef());
-        }
         if (context.metaDataBasketDef() != null) {
             return buildMetadataBasket(context.metaDataBasketDef());
         }
-        if (context.contextDef() != null) {
-            return buildContext(context.contextDef());
-        }
         return unsupportedDeclaration(context, "DECLARATION", "unknown declaration");
-    }
-
-    /** A single enum element and a composed unit share a grammar shape; the section decides. */
-    private boolean isDomainEnumeration(InterlisParser.UnitDefContext context) {
-        var value = context.composedUnit();
-        if (value == null || !value.MUL().isEmpty() || !value.DIV().isEmpty()) return false;
-        ParseTree boundary = context;
-        ParserRuleContext scope = context.getParent();
-        if (scope instanceof InterlisParser.DefinitionsContext) {
-            boundary = scope;
-            scope = scope.getParent();
-        }
-        boolean domain = false;
-        for (int i = 0; i < scope.getChildCount(); i++) {
-            ParseTree child = scope.getChild(i);
-            if (child == boundary) break;
-            Token start = child instanceof TerminalNode terminal ? terminal.getSymbol()
-                    : child instanceof ParserRuleContext rule ? rule.getStart() : null;
-            if (start != null && start.getType() == InterlisParser.DOMAIN) domain = true;
-            if (start != null && start.getType() == InterlisParser.UNIT) domain = false;
-        }
-        return context.UNIT() == null && domain;
-    }
-
-    private DomainDeclarationSyntax buildDomainFromUnit(InterlisParser.UnitDefContext context) {
-        Token name = context.Name(0).getSymbol();
-        Optional<NameSyntax> base = context.unitRef() == null ? Optional.empty()
-                : Optional.of(nameFromContext(context.unitRef()));
-        NameSyntax value = nameFromContext(context.composedUnit());
-        EnumerationTypeSyntax type = new EnumerationTypeSyntax(nextId(), range(context.composedUnit()),
-                List.of(new EnumerationTypeSyntax.EnumerationValueSyntax(value.text(), value.range(),
-                        false, value.segments().size() > 1)), false, false, Set.of());
-        return new DomainDeclarationSyntax(nextId(), range(context), name.getText(),
-                optionalRange(name, context), directModifiers(context), base, type, List.of());
     }
 
     private ClassDeclarationSyntax buildClass(InterlisParser.ClassDefContext context) {
@@ -792,152 +737,37 @@ final class SyntaxTreeBuilder {
                 context.SUBDIVISION() != null, attributeModifiers, type.type, context.expression().stream().map(this::buildExpression).toList());
     }
 
-    private List<DomainDeclarationSyntax> buildDomains(InterlisParser.DomainDefContext context) {
-        List<DomainDeclarationSyntax> result = new ArrayList<>();
-        List<Token> semis = context.SEMI().stream().map(TerminalNode::getSymbol).toList();
-        int segmentStart = context.getStart().getTokenIndex();
-        for (Token semi : semis) {
-            int segmentEnd = semi.getTokenIndex();
-            DomainDeclarationSyntax declaration = buildDomainSegment(context, segmentStart, segmentEnd);
-            if (declaration != null) {
-                result.add(declaration);
-            }
-            segmentStart = segmentEnd + 1;
-        }
-        return result;
-    }
-
-    private DomainDeclarationSyntax buildDomainSegment(InterlisParser.DomainDefContext context,
-                                                       int startIndex, int endIndex) {
-        Token nameToken = null;
-        int eqIndex = -1;
-        for (int i = startIndex; i <= endIndex && i < tokenStream.size(); i++) {
-            Token token = tokenStream.get(i);
-            if (token.getType() == InterlisParser.SEMI) {
-                break;
-            }
-            if (nameToken == null && (token.getType() == InterlisParser.Name
-                    || token.getType() == InterlisParser.UUIDOID)) {
-                nameToken = token;
-            }
-            if (token.getType() == InterlisParser.EQ && eqIndex < 0) {
-                eqIndex = i;
-            }
-        }
-        if (nameToken == null || eqIndex < 0) {
-            return null;
-        }
-        String name = nameToken.getText();
-        Optional<NameSyntax> base = Optional.empty();
-        for (InterlisParser.DomainRefContext candidate : context.domainRef()) {
-            int index = candidate.getStart().getTokenIndex();
-            if (index >= startIndex && index < eqIndex) {
-                base = Optional.of(nameFromContext(candidate));
-                break;
-            }
-        }
-        TypeSyntax type = null;
-        for (InterlisParser.TypeContext candidate : context.type()) {
-            int index = candidate.getStart().getTokenIndex();
-            if (index > eqIndex && index <= endIndex) {
-                type = buildType(candidate);
-                break;
-            }
-        }
-        if (type == null) {
-            for (InterlisParser.NumericContext candidate : context.numeric()) {
-                int index = candidate.getStart().getTokenIndex();
-                if (index > eqIndex && index <= endIndex) {
-                    type = numericType(candidate);
-                    break;
-                }
-            }
-        }
-        if (type == null) {
-            for (InterlisParser.EnumerationContext candidate : context.enumeration()) {
-                int index = candidate.getStart().getTokenIndex();
-                if (index > eqIndex && index <= endIndex) {
-                    type = enumerationType(candidate);
-                    break;
-                }
-            }
-        }
-        if (type == null) {
-            List<Token> bounds = new ArrayList<>();
-            for (int i = eqIndex + 1; i <= endIndex; i++)
-                if (tokenStream.get(i).getType() == InterlisParser.STRING) bounds.add(tokenStream.get(i));
-            if (bounds.size() == 2) type = new FormattedTypeSyntax(nextId(), range(context), Optional.empty(),
-                    false, false, List.of(), Optional.of(unquote(bounds.get(0).getText())), Optional.of(unquote(bounds.get(1).getText())));
-        }
-        if (type == null) {
-            for (int i = eqIndex + 1; i <= endIndex; i++) {
-                int tokenType = tokenStream.get(i).getType();
-                if (tokenType == InterlisParser.CLASS) {
-                    int typeStart = eqIndex;
-                    var restrictions = context.classOrAssociationRef().stream()
-                            .filter(r -> r.getStart().getTokenIndex() > typeStart && r.getStop().getTokenIndex() <= endIndex)
-                            .map(this::nameFromContext).toList();
-                    type = new ClassValueTypeSyntax(nextId(), tokenRange(tokenStream.get(i)), false, restrictions);
-                    break;
-                }
-                if (tokenType == InterlisParser.STRUCTURE) {
-                    type = new GenericTypeSyntax(nextId(), tokenRange(tokenStream.get(i)), "STRUCTURE");
-                    break;
-                }
-            }
-        }
-        if (type == null) {
-            boolean mandatoryOnly = false;
-            for (int i = eqIndex + 1; i <= endIndex; i++) {
-                if (tokenStream.get(i).getType() == InterlisParser.MANDATORY) {
-                    mandatoryOnly = true;
-                }
-            }
-            if (mandatoryOnly) {
-                type = new GenericTypeSyntax(nextId(), tokenRange(tokenStream.get(eqIndex + 1)), "INHERITED");
-            } else {
-                type = new UnsupportedTypeSyntax(nextId(), range(context),
-                        "UNSUPPORTED_DOMAIN_TYPE", "unsupported domain type");
-                unsupportedFeatures.add("UNSUPPORTED_DOMAIN_TYPE");
-            }
+    private DomainDeclarationSyntax buildDomain(InterlisParser.DomainDefContext context) {
+        Token name = context.name;
+        Optional<NameSyntax> base = Optional.ofNullable(context.domainRef()).map(this::nameFromContext);
+        TypeSyntax type;
+        if (context.type() != null) {
+            type = buildType(context.type());
+        } else if (context.numeric() != null) {
+            type = numericType(context.numeric());
+        } else if (context.enumeration() != null) {
+            type = enumerationType(context.enumeration());
+        } else if (context.MANDATORY() != null) {
+            type = new GenericTypeSyntax(nextId(), tokenRange(context.MANDATORY().getSymbol()), "INHERITED");
+        } else {
+            type = unsupportedType(context, "UNSUPPORTED_DOMAIN_TYPE", "unsupported domain type");
         }
         List<ConstraintDeclarationSyntax> constraints = new ArrayList<>();
-        for (int i = 2; i < context.getChildCount(); i++) {
-            if (context.getChild(i) instanceof InterlisParser.ExpressionContext condition
-                    && condition.getStart().getTokenIndex() > eqIndex
-                    && condition.getStop().getTokenIndex() < endIndex) {
-                Token constraintName = ((TerminalNode) context.getChild(i - 2)).getSymbol();
-                SourceRange constraintRange = tokenRange(constraintName, condition.getStop());
-                constraints.add(new ConstraintDeclarationSyntax(nextId(), constraintRange,
-                        Optional.of(constraintName.getText()), ConstraintKind.DOMAIN,
-                        Optional.of(buildExpression(condition)), List.of(), Optional.empty(), Optional.empty(), false, Optional.empty(), Optional.empty()));
-                if (!LanguageProfile.supports(language, LanguageProfile.Feature.DOMAIN_CONSTRAINT)) {
-                    versionViolations.add(LanguageProfile.Feature.DOMAIN_CONSTRAINT);
-                    versionViolationRanges.add(constraintRange);
-                }
+        for (var constraint : context.domainConstraint()) {
+            var condition = constraint.expression();
+            SourceRange constraintRange = range(constraint);
+            constraints.add(new ConstraintDeclarationSyntax(nextId(), constraintRange,
+                    Optional.ofNullable(constraint.Name()).map(TerminalNode::getText), ConstraintKind.DOMAIN,
+                    Optional.ofNullable(condition).map(this::buildExpression), List.of(),
+                    Optional.empty(), Optional.empty(), false, Optional.empty(), Optional.empty()));
+            if (!LanguageProfile.supports(language, LanguageProfile.Feature.DOMAIN_CONSTRAINT)) {
+                versionViolations.add(LanguageProfile.Feature.DOMAIN_CONSTRAINT);
+                versionViolationRanges.add(constraintRange);
             }
         }
-        SourceRange declarationRange = tokenRange(tokenStream.get(startIndex),
-                tokenStream.get(endIndex));
-        return new DomainDeclarationSyntax(nextId(), declarationRange, name,
-                Optional.of(tokenRange(nameToken)), domainModifiers(startIndex, eqIndex, endIndex), base, type, constraints);
-    }
-
-    private Set<Modifier> domainModifiers(int start, int end, int declarationEnd) {
-        Set<Modifier> result = new LinkedHashSet<>();
-        for (int i = start; i < end; i++) switch (tokenStream.get(i).getType()) {
-            case InterlisParser.ABSTRACT -> addModifier(result, Modifier.ABSTRACT, tokenStream.get(i));
-            case InterlisParser.FINAL -> addModifier(result, Modifier.FINAL, tokenStream.get(i));
-            case InterlisParser.GENERIC -> addModifier(result, Modifier.GENERIC, tokenStream.get(i));
-            default -> { }
-        }
-        for (int i = end + 1; i <= declarationEnd; i++) {
-            Token token = tokenStream.get(i);
-            if (token.getChannel() != Token.DEFAULT_CHANNEL) continue;
-            if (token.getType() == InterlisParser.MANDATORY) result.add(Modifier.MANDATORY);
-            break;
-        }
-        return result;
+        return new DomainDeclarationSyntax(nextId(), range(context),
+                name == null ? "<missing-domain>" : name.getText(), optionalRange(name, context),
+                directModifiers(context), base, type, constraints);
     }
 
     private AssociationDeclarationSyntax buildAssociation(
@@ -1362,10 +1192,8 @@ final class SyntaxTreeBuilder {
             lineForms.add(nameSyntax(names.isEmpty() ? List.of(form.getStart()) : names));
         }
         Optional<NameSyntax> vertexDomain = Optional.empty();
-        if (context.controlPoints() != null && !context.controlPoints().Name().isEmpty()) {
-            List<Token> names = context.controlPoints().Name().stream()
-                    .map(TerminalNode::getSymbol).toList();
-            vertexDomain = Optional.of(nameSyntax(names));
+        if (context.controlPoints() != null && context.controlPoints().domainRef() != null) {
+            vertexDomain = Optional.of(nameFromContext(context.controlPoints().domainRef()));
         }
         Optional<NameSyntax> lineAttributes = context.LINE() != null && context.Name() != null
                 ? Optional.of(nameSyntax(List.of(context.Name().getSymbol()))) : Optional.empty();

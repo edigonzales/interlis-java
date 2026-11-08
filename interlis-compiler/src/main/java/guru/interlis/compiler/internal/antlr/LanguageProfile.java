@@ -71,7 +71,14 @@ ABSTRACT ACCORDING AGGREGATES AGGREGATION ALL AND ANY ANYCLASS ANYSTRUCTURE ARCS
                     || language==LanguageVersion.ILI23 && switch(token.getType()) {
                         case InterlisLexer.NOINCREMENTALTRANSFER -> next==InterlisLexer.MODEL;
                         case InterlisLexer.CHARSET,InterlisLexer.XMLNS,InterlisLexer.REFSYS -> next==InterlisLexer.STRING;
-                        case InterlisLexer.CONTEXT -> next==InterlisLexer.Name;
+                        case InterlisLexer.CONTEXT -> switch (next) {
+                            case InterlisLexer.Name, InterlisLexer.END, InterlisLexer.DOMAIN, InterlisLexer.UNIT,
+                                    InterlisLexer.CONTEXT, InterlisLexer.CLASS, InterlisLexer.STRUCTURE,
+                                    InterlisLexer.FUNCTION, InterlisLexer.TOPIC, InterlisLexer.VIEW,
+                                    InterlisLexer.LINE, InterlisLexer.PARAMETER, InterlisLexer.REFSYSTEM,
+                                    InterlisLexer.SIGN -> true;
+                            default -> false;
+                        };
                         case InterlisLexer.DEFERRED -> next==InterlisLexer.GENERICS;
                         case InterlisLexer.MULTICOORD -> next==InterlisLexer.NUMERIC || next==InterlisLexer.PosNumber || next==InterlisLexer.Number || next==InterlisLexer.Dec;
                         case InterlisLexer.MULTIPOLYLINE,InterlisLexer.MULTISURFACE,InterlisLexer.MULTIAREA -> next==InterlisLexer.WITH || next==InterlisLexer.VERTEX;

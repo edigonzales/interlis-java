@@ -309,6 +309,8 @@ final class EditorCompletions {
             String kind = block == null ? "ROOT" : block.node().kind().name();
             var items = new ArrayList<CompletionCandidate>();
             for (String k : declarations(kind)) {
+                if (k.equals("CONTEXT") && syntax.language().version().filter(v -> v.literal().equals("2.4")).isEmpty())
+                    continue;
                 items.add(word(k));
                 String snippet = template(k);
                 if (snippet != null)
@@ -440,7 +442,6 @@ final class EditorCompletions {
                             "DOMAIN",
                             "UNIT",
                             "FUNCTION",
-                            "CONTEXT",
                             "CONSTRAINTS");
             case "ASSOCIATION" -> List.of("Role");
             default -> List.of();

@@ -55,6 +55,15 @@ class EditorCompletionTest {
     }
 
     @Test
+    void contextSectionIsOfferedOnlyInInterlis24Models() {
+        assertTrue(labels(complete("INTERLIS 2.4; MODEL M AT \"x\" VERSION \"1\" = CON│ END M."))
+                .contains("CONTEXT"));
+        assertFalse(labels(complete("INTERLIS 2.3; MODEL M AT \"x\" VERSION \"1\" = CON│ END M."))
+                .contains("CONTEXT"));
+        assertFalse(labels(complete(PREFIX + "CON│ END T; END M.")).contains("CONTEXT"));
+    }
+
+    @Test
     void attributeTargetsAreTypesAndExactQualifiedSegmentIsReplaced() {
         String text = PREFIX + "CLASS C=attribute: M.Co│de;END C;END T;END M.";
         var r = complete(text);

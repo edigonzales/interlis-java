@@ -37,6 +37,8 @@ import guru.interlis.syntax.TriviaSpan;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.DefaultErrorStrategy;
+import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.Token;
 
 import java.util.ArrayList;
@@ -119,6 +121,18 @@ public final class AntlrSyntaxService implements SyntaxService {
         checkTokenProfile(tokens,profileVersion,offsets,collector);
 
         InterlisParser parser = new InterlisParser(tokens);
+        parser.setErrorHandler(new DefaultErrorStrategy() {
+            @Override
+            protected Token singleTokenDeletion(Parser recognizer) {
+                // The semicolon ends the damaged domain. The next declaration may
+                // start with a token that also introduces a domain type.
+                if (recognizer.getContext() instanceof InterlisParser.DomainDefContext
+                        && recognizer.getCurrentToken().getType() == InterlisParser.SEMI) {
+                    return null;
+                }
+                return super.singleTokenDeletion(recognizer);
+            }
+        });
         parser.removeErrorListeners();
         var parserListener = new CollectingParserErrorListener(offsets, collector);
         parser.addErrorListener(parserListener);

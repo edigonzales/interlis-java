@@ -85,6 +85,15 @@ class GenericContextContractTest {
         bad(model(DOMAINS + "CONTEXT default = G = A; G = B; " + topic("")), "CONTEXT_DUPLICATE");
     }
 
+    @Test void emptySectionsAndEmptyAdjacentContextsStayDistinct() {
+        var result = ok(model(DOMAINS + "CONTEXT CONTEXT first = second = third = G = A;"));
+        var graph = result.schema().semanticGraph();
+        assertTrue(((ContextSymbol) named(graph, "first")).mappings().isEmpty());
+        assertTrue(((ContextSymbol) named(graph, "second")).mappings().isEmpty());
+        assertEquals(1, ((ContextSymbol) named(graph, "third")).mappings().size());
+        bad(model("CONTEXT").replace("2.4", "2.3"), "ILI-SYN-0006");
+    }
+
     @Test void alternativesMustBeConcreteCoordinatesWithCompatibleBounds() {
         bad(model(DOMAINS + "CONTEXT default = A = B; " + topic("")), "CONTEXT_GENERIC");
         bad(model(DOMAINS + "CONTEXT default = G = G; " + topic("")), "CONTEXT_CONCRETE");
@@ -94,7 +103,7 @@ class GenericContextContractTest {
         bad(model(DOMAINS + "X (ABSTRACT) = COORD NUMERIC, NUMERIC; CONTEXT default = G = X; " + topic("")), "CONTEXT_CONCRETE");
         bad(model("DOMAIN G (GENERIC) = TEXT;"), "GENERIC_TYPE");
         bad(model(DOMAINS + "CONTEXT default = Missing.G = A; " + topic("")), "ILI-SEM-0001");
-        bad(model(DOMAINS + "TOPIC T = CONTEXT default = G = A; END T;"), "CONTEXT_SCOPE");
+        bad(model(DOMAINS + "TOPIC T = CONTEXT default = G = A; END T;"), "ILI-SYN-0002");
         bad(model(DOMAINS + "CONTEXT default = G = A; default = G = A;"), "CONTEXT_NAME_UNIQUE");
     }
 

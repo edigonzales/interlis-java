@@ -376,7 +376,12 @@ Fehler gehen durch die bestehenden Recovery-/Diagnoseverträge. UNQUALIFIED
 wirkt je Importname und wird nicht auf nachfolgende Namen übertragen.
 
 <a id="context-und-deferred"></a>
-### CONTEXT und DEFERRED
+### Deklarationsabschnitte, CONTEXT und DEFERRED
+
+DOMAIN und UNIT eröffnen Modell- oder Topic-Abschnitte. CONTEXT eröffnet in
+INTERLIS 2.4 einen Modellabschnitt. Ein Abschnitt darf leer sein und wiederholt
+werden. Die Syntaxsicht gibt seine Deklarationen in Quellreihenfolge mit eigenen
+Bereichen aus. Die Abschnittsmarker bleiben in der Tokenfolge erhalten.
 
 `ContextDeclarationSyntax` in `guru.interlis.syntax` bewahrt Namen und
 Namensbereich sowie geordnete `Mapping(genericDomain, alternatives)` mit
@@ -565,7 +570,7 @@ geschlossener String bleibt ein Quellfehler; eine folgende Deklaration wird
 nicht zur Fortsetzung. Leere Annotationen sind erlaubt; fehlerhafte Zuweisungen
 erhalten Quellfehler. Dies ist ein dokumentiertes Kommentarprofil, kein neues
 INTERLIS-Schlüsselwort. /** ... */ liefert Dokumentation; übrige Kommentare
-bleiben unverändert als Trivia erhalten. Die Zuordnung gilt zum folgenden Token; reine Gruppenintroduktoren DOMAIN, UNIT,
+bleiben unverändert als Trivia erhalten. Die Zuordnung gilt zum folgenden Token; reine Gruppenintroduktoren DOMAIN, UNIT, CONTEXT,
 ATTRIBUTE und PARAMETER werden bis zur ersten Deklaration übergangen.
 Der Binder ordnet führende Gruppen vor Deklarationsbeginn und innerhalb des
 Präfixes bis zum deklarierten Namen zu, einschliesslich Enumwerten.

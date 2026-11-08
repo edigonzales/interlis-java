@@ -72,8 +72,6 @@ final class GenericBindings {
 
     guru.interlis.model.ContextSymbol buildContext(DeclInfo decl) {
         var syntax = (guru.interlis.syntax.ContextDeclarationSyntax) decl.syntax();
-        if (index.byId(decl.owner().orElseThrow()).orElseThrow().kind() != SymbolKind.MODEL)
-            diagnostics.emitRule(decl, "CONTEXT must be declared at model level", "CONTEXT_SCOPE");
         if (index.children(decl.owner().orElseThrow()).stream()
                 .anyMatch(d -> !d.id().equals(decl.id()) && d.name().equals(decl.name())))
             diagnostics.emitRule(decl, "context name must be unique", "CONTEXT_NAME_UNIQUE");

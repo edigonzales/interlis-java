@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 public final class Fingerprints {
     public static final String COMPILER_VERSION = "interlis-java/0.2.0-SNAPSHOT";
     public static final String GRAMMAR_VERSION =
-            "geostandards-ch/interlis-antlr4@f8f97238c2540a49915f8bb97ee99bbf434b74da+antlr-4.13.2";
+            "geostandards-ch/interlis-antlr4@f8f97238c2540a49915f8bb97ee99bbf434b74da+antlr-4.13.2+sections-v1";
     public static final String SEMANTIC_PROFILE = "interlis-2.3-2.4/v1";
 
     private Fingerprints() {

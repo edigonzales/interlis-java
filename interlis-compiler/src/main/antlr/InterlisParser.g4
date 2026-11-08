@@ -25,12 +25,11 @@ modeldef
     (XMLNS STRING SEMI)?
     (IMPORTS UNQUALIFIED? (Name | INTERLIS) (COMMA UNQUALIFIED? (Name | INTERLIS))* SEMI)*
     (metaDataBasketDef
-    | unitDef
+    | unitSection
     | functionDef
     | LINE FORM lineFormTypeDef*
-    | DOMAIN | UNIT | CONTEXT
-    | domainDef
-    | contextDef
+    | domainSection
+    | contextSection
     | PARAMETER runTimeParameterDef*
     | classDef
     | structureDef
@@ -52,11 +51,9 @@ topicDef
   ;
 
 definitions : metaDataBasketDef
-            | DOMAIN | UNIT | CONTEXT
-            | unitDef
+            | unitSection
             | functionDef
-            | domainDef
-            | contextDef
+            | domainSection
             | classDef
             | structureDef
             | associationDef
@@ -162,17 +159,17 @@ cardinality : LCBR (MUL | PosNumber (DOTDOT (PosNumber | MUL))?) RCBR;
 
 // 3.8 Domaines de valeurs et constantes - Wertebereiche und Konstanten
 
+domainSection : DOMAIN domainDef*;
+
 domainDef
-  : DOMAIN?
-    (
-      (Name | UUIDOID)
-      (LPAR (ABSTRACT | FINAL | GENERIC) (COMMA (ABSTRACT | FINAL | GENERIC))* RPAR)?
-      (EXTENDS domainRef)?
-      EQ (MANDATORY? (CLASS (RESTRICTION LPAR classOrAssociationRef (SEMI classOrAssociationRef)* RPAR)? | type | numeric | enumeration | (STRING DOTDOT STRING)) | MANDATORY)
-      (CONSTRAINTS Name COLON expression (COMMA Name COLON expression)*)?
-      SEMI
-    )+
+  : name=(Name | UUIDOID)
+    (LPAR (ABSTRACT | FINAL | GENERIC) (COMMA (ABSTRACT | FINAL | GENERIC))* RPAR)?
+    (EXTENDS domainRef)?
+    EQ (MANDATORY? (type | numeric | enumeration) | MANDATORY)
+    (CONSTRAINTS domainConstraint (COMMA domainConstraint)*)? SEMI
   ;
+
+domainConstraint : Name COLON expression;
 
 type : baseType
      | lineType
@@ -291,7 +288,8 @@ coordinateType : (COORD | MULTICOORD)
 
 rotationDef : ROTATION PosNumber MINUS GT PosNumber;
 
-contextDef : CONTEXT? Name EQ contextMapping+;
+contextSection : CONTEXT contextDef*;
+contextDef : Name EQ contextMapping*;
 contextMapping : domainRef EQ domainRef (OR domainRef)* SEMI;
 
 // 3.8.9 Domaines de valeurs des identifications d’objet - Wertebereiche von Objektidentifikationen
@@ -331,7 +329,7 @@ lineForm : WITH LPAR lineFormType (COMMA lineFormType)* RPAR;
 
 lineFormType : STRAIGHTS | ARCS | (Name DOT)? Name;
 
-controlPoints : VERTEX Name (DOT Name)*;
+controlPoints : VERTEX domainRef;
 
 intersectionDef : WITHOUT OVERLAPS (GT (Dec | Number | PosNumber))?;
 
@@ -343,8 +341,10 @@ lineFormTypeDef : Name COLON Name SEMI;
 
 // 3.9.3 Unités composées - Zusammengesetzte Einheiten
 
+unitSection : UNIT unitDef*;
+
 unitDef
-  : UNIT? Name
+  : Name
     ((LSBR Name RSBR) | (LPAR ABSTRACT RPAR))?
     (EXTENDS unitRef)?
     (EQ (derivedUnit | composedUnit))?
@@ -553,11 +553,8 @@ inspection : AREA? INSPECTION OF renamedViewableRef
 
 renamedViewableRef : (Name TILDE)? viewableRef;
 
-viewableRef : (Name DOT (Name DOT)?)?
-        (Name
-        | Name
-        | Name
-        | Name);
+viewableRef : (Name DOT (Name DOT)?)? Name
+            | INTERLIS DOT (Name DOT)? (Name | REFSYSTEM | SIGN | METAOBJECT);
 
 baseExtensionDef : BASE Name EXTENDED BY
            renamedViewableRef (COMMA renamedViewableRef)*;

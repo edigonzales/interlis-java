@@ -41,6 +41,36 @@ class FormatterSemanticsTest {
         }
     }
 
+    @Test
+    void sectionFormattingPreservesOrderMetadataAndReferenceTargets() {
+        String input = """
+                INTERLIS 2.4;
+                MODEL M AT "https://example.org" VERSION "1" =
+                  DOMAIN
+                  !!@ label = "Coordinate"
+                  G (GENERIC) = COORD NUMERIC, NUMERIC;
+                  A = COORD 0..10, 0..10;
+                  CONTEXT empty = chosen = G = A;
+                  UNIT metre; square = (metre * metre);
+                  DOMAIN L (ABSTRACT) = POLYLINE WITH (STRAIGHTS) VERTEX INTERLIS.LineCoord;
+                END M.
+                """;
+        var output = FormatterSoStandardTest.verify(input,
+                new FormatOptions(2, FormatOptions.LineEnding.PRESERVE, true, 40));
+        var original = compile(input).schema().semanticGraph();
+        var formatted = compile(output).schema().semanticGraph();
+        assertEquals(symbols(original), symbols(formatted));
+        assertEquals(referenceTargets(original), referenceTargets(formatted));
+    }
+
+    private static List<?> referenceTargets(SemanticGraph graph) {
+        return graph.references().stream()
+                .map(ref -> ref.segments().stream()
+                        .map(segment -> List.of(segment.text(), segment.target().map(target -> name(graph, target))))
+                        .toList())
+                .toList();
+    }
+
     private static CompilationOutcome.Succeeded compile(String text) {
         var source = CompilerTestSupport.source("memory:/format-semantic.ili", text);
         var request = CompilerTestSupport.request(List.of("M"), Map.of(source.id(), source),

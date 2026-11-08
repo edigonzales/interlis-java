@@ -41,7 +41,7 @@ final class SourceAnnotations {
                 documentation.add(new SourceMetadata.Text(content,offsets.tokenRange(token)));
             } else if(token.getChannel()==Token.DEFAULT_CHANNEL && (!attributes.isEmpty() || !documentation.isEmpty())
                     && token.getType()!=InterlisLexer.DOMAIN && token.getType()!=InterlisLexer.UNIT
-                    && token.getType()!=InterlisLexer.ATTRIBUTE && token.getType()!=InterlisLexer.PARAMETER) {
+                    && token.getType()!=InterlisLexer.CONTEXT && token.getType()!=InterlisLexer.ATTRIBUTE && token.getType()!=InterlisLexer.PARAMETER) {
                 result.put(offsets.tokenRange(token),new SourceMetadata(attributes,documentation));attributes.clear();documentation.clear();
             }
         }
