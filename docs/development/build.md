@@ -36,6 +36,10 @@ bleiben dabei unverändert.
 | `java build/interlis/EditorBundleRun.java` | Geprüfte Übergabe für Editorclients |
 | `java build/interlis/EditorCompatibilityRun.java EXTENSION BUNDLE` | Prüfung der expliziten Editorübergabe mit absoluten Verzeichnissen |
 
+Die Paketprüfungen benötigen Git für die Buildrevision und entpacken die
+Archive mit `unzip` unter macOS und Linux beziehungsweise der Java-ZIP-API
+unter Windows. Die installierte LSP-Prozessprobe benötigt Node.
+
 Eigene JVM-Produkte haben explizite JPMS-Deskriptoren. Die normalen
 CLI-/LSP-Launcher starten mit dem jeweiligen Modul und einer geprüften
 Laufzeitclosure. Bibliotheksverbraucher verwenden die tatsächlich
