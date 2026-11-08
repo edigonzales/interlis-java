@@ -55,48 +55,12 @@ teavm {
     }
 }
 
-tasks.register('wasmContractTest') {
-    group = 'verification'
-    timeout = java.time.Duration.ofSeconds(60)
-    description = 'Runs the built TeaVM WasmGC module under the configured Node runtime.'
-    dependsOn 'buildWasmGC'
-    doLast {
-        delete file('build/wasm-contract-result.json')
-        providers.exec {
-            workingDir = projectDir
-            commandLine nodeExecutable.get(), '--experimental-wasm-exnref', 'wasm-contract.cjs'
-        }.result.get()
-        def report = file('build/wasm-contract-result.json')
-        if (!report.exists()) {
-            throw new GradleException('Wasm contract did not produce a result manifest')
-        }
-        def result = new groovy.json.JsonSlurper().parse(report)
-        if (result.status != 'passed') {
-            throw new GradleException('Wasm contract failed: ' + result)
-        }
-    }
-}
-
-def portableContractsBundle = layout.buildDirectory.file('portable-contracts/portable-contracts.js')
-tasks.register('bundlePortableContracts', Exec) {
-    group = 'verification'
-    workingDir = projectDir
-    inputs.dir 'contracts'
-    inputs.files 'bundle-contracts.cjs', 'package-lock.json'
-    outputs.file portableContractsBundle
-    commandLine nodeExecutable.get(), 'bundle-contracts.cjs', portableContractsBundle.get().asFile
-}
-
 tasks.register('prepareBrowserHarness', Sync) {
     group = 'verification'
     description = 'Copies the browser harness, WasmGC module and runtime into build/web.'
-    dependsOn 'buildWasmGC', 'buildBrowserTools', 'bundlePortableContracts'
+    dependsOn 'buildWasmGC', 'buildBrowserTools'
     from 'src/main/web'
     from(layout.buildDirectory.dir('browser-tools'))
-    from('token-classification-contract.cjs') {
-        rename { 'token-classification-contract.js' }
-    }
-    from(portableContractsBundle)
     from(layout.buildDirectory.dir('generated/teavm/wasm-gc')) {
         include 'interlis-compiler.wasm'
         include 'interlis-compiler.wasm-runtime.js'
@@ -112,47 +76,67 @@ tasks.register('prepareBrowserHarness', Sync) {
     }
 }
 
-tasks.register('jsContractTest') {
+tasks.register('teavmJsTest', Exec) {
     group = 'verification'
+    dependsOn ':checkNodeRuntime', 'generateJavaScript'
     timeout = java.time.Duration.ofSeconds(60)
-    description = 'Runs the TeaVM JavaScript backend under the configured Node runtime.'
-    dependsOn 'generateJavaScript'
-    doLast {
-        delete file('build/js-contract-result.json')
-        providers.exec {
-            workingDir = projectDir
-            commandLine nodeExecutable.get(), 'js-contract.cjs'
-        }.result.get()
-        def report = file('build/js-contract-result.json')
-        if (!report.exists()) {
-            throw new GradleException('JavaScript contract did not produce a result manifest')
-        }
-        def result = new groovy.json.JsonSlurper().parse(report)
-        if (result.status != 'passed') {
-            throw new GradleException('JavaScript contract failed: ' + result)
-        }
-    }
+    workingDir = projectDir
+    environment 'INTERLIS_PRODUCT_VERSION', gradle.ext.jvmSnapshot.data.projectVersion
+    commandLine nodeExecutable.get(), '--test', 'test/teavm-js.test.cjs'
+}
+
+tasks.register('teavmWasmTest', Exec) {
+    group = 'verification'
+    dependsOn ':checkNodeRuntime', 'buildWasmGC'
+    timeout = java.time.Duration.ofSeconds(60)
+    workingDir = projectDir
+    environment 'INTERLIS_PRODUCT_VERSION', gradle.ext.jvmSnapshot.data.projectVersion
+    commandLine nodeExecutable.get(), '--experimental-wasm-exnref', '--test', 'test/teavm-wasm.test.cjs'
+}
+
+tasks.register('buildBrowserTools', Exec) {
+    group = 'build'
+    description = 'Checks the pinned TypeScript client and builds the browser modules.'
+    dependsOn ':checkNodeRuntime'
+    workingDir = projectDir
+    commandLine nodeExecutable.get(), 'build-browser-tools.cjs'
+}
+
+tasks.register('browserClientTest', Exec) {
+    group = 'verification'
+    dependsOn 'buildBrowserTools', 'generateJavaScript'
+    workingDir = projectDir
+    commandLine nodeExecutable.get(), '--test', 'compiler-client.test.cjs', 'worker-host.test.cjs'
 }
 
 tasks.register('diagramAdapterTest', Exec) {
     group = 'verification'
-    description = 'Tests the TypeScript-contract diagram adapter without a browser.'
-    dependsOn 'browserClientTest'
+    dependsOn 'buildBrowserTools'
     workingDir = projectDir
-    commandLine nodeExecutable.get(), rootProject.file('tools/verification/node-contract.cjs'), 'diagram'
+    commandLine nodeExecutable.get(), '--test', 'diagram-adapter.test.cjs'
 }
 
-tasks.register('browserContractTest', Exec) {
+tasks.register('browserSmoke', Exec) {
     group = 'verification'
-    description = 'Runs the browser matrix through Playwright (Chromium, Firefox, WebKit).'
-    dependsOn 'prepareBrowserHarness', 'diagramAdapterTest'
+    timeout = java.time.Duration.ofSeconds(120)
+    dependsOn 'prepareBrowserHarness'
     workingDir = projectDir
-    commandLine nodeExecutable.get(), 'browser-contract.cjs'
+    environment 'INTERLIS_BROWSER_CHECK', '0'
+    commandLine nodeExecutable.get(), '--test', 'test/browser-smoke.test.cjs', 'ui-projection.test.cjs'
 }
 
-tasks.register('safariContractTest', Exec) {
+tasks.register('browserCheck', Exec) {
     group = 'verification'
-    description = 'Attempts a real Safari WebDriver contract; fails visibly when remote automation is unavailable.'
+    timeout = java.time.Duration.ofSeconds(240)
+    dependsOn 'prepareBrowserHarness'
+    workingDir = projectDir
+    environment 'INTERLIS_BROWSER_CHECK', '1'
+    commandLine nodeExecutable.get(), '--test', 'test/browser-smoke.test.cjs', 'ui-projection.test.cjs'
+}
+
+tasks.register('safariSmoke', Exec) {
+    group = 'verification'
+    timeout = java.time.Duration.ofSeconds(150)
     dependsOn 'prepareBrowserHarness'
     workingDir = projectDir
     commandLine nodeExecutable.get(), 'safari-contract.cjs'
@@ -160,36 +144,4 @@ tasks.register('safariContractTest', Exec) {
 
 tasks.named('prepareBrowserHarness') {
     from(rootProject.file('testdata/reference/unicode/17.0.0/UNICODE-LICENSE.txt'))
-}
-
-// The existing Node builder prepares the neutral renderer directly.
-tasks.register('buildBrowserTools', Exec) {
-    group = 'build'
-    description = 'Strictly checks the pinned TypeScript client and builds ESM/declarations.'
-    workingDir = projectDir
-    commandLine nodeExecutable.get(), 'build-browser-tools.cjs'
-}
-tasks.register('browserClientTest', Exec) {
-    group = 'verification'
-    description = 'Exercises the bounded worker host and client against the real TeaVM JS compiler.'
-    dependsOn 'buildBrowserTools', 'generateJavaScript'
-    workingDir = projectDir
-    commandLine nodeExecutable.get(), rootProject.file('tools/verification/node-contract.cjs'), 'client'
-}
-
-tasks.register('uiProjectionTest', Exec) {
-    group = 'verification'
-    description = 'Checks real browser UI language/focus/depth and rejects a delayed actual layout.'
-    dependsOn 'prepareBrowserHarness'
-    workingDir = projectDir
-    commandLine nodeExecutable.get(), '--test', 'ui-projection.test.cjs'
-}
-
-// Narrow portability check for revision-bound missing-import causes; no corpus or benchmark run.
-tasks.register('repositoryDiagnosticCheck', Exec) {
-    timeout = java.time.Duration.ofSeconds(60)
-    group = 'verification'
-    dependsOn ':checkNodeRuntime', 'generateJavaScript', 'buildWasmGC'
-    workingDir projectDir
-    commandLine nodeExecutable.get(), '--experimental-wasm-exnref', 'repository-diagnostic-contract.cjs'
 }

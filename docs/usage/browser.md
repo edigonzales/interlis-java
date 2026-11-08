@@ -20,4 +20,4 @@ ES-Module und Wasm zusammen geladen werden. Der TypeScript-Client besitzt
 Sitzung und Transport. Er unterstützt Modelltexte, Analyse, Compile,
 revisionstreue Abfragen und Diagramme. Fremde Modelle beschafft der Host
 nach expliziter Policy. Die Bridge führt keine versteckten Abrufe aus.
-Die Browser- und Runtime-Matrix ist Teil des [Freigabegates](../development/release.md).
+Der [Buildvertrag](../development/build.md#portable-backends) beschreibt die direkten Browserprüfungen.

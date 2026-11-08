@@ -281,28 +281,18 @@ Der Host verwendet dokumentierte konservative Standardwerte. Sie sind Betriebsgr
 
 Der Client gibt alte Snapshots nach Ablösung frei. Ein für eine laufende Query gehaltener Snapshot wird bis zum Ende dieser Query nicht entfernt. Die Freigabe eines Snapshots darf andere Snapshots nicht verändern. Vollständige Parse-Trees, Quelltextkopien, JSON-Strings und DTOs sind bei Speicheranalysen getrennt zu zählen; nur die Grösse des `.wasm`-Files zu messen genügt nicht.
 
-<a id="deterministischer-ergebnisvergleich"></a>
-### Deterministischer Ergebnisvergleich
+### Laufzeitprüfungen
 
-`PortableFixtureRunner` nimmt dieselben Fixturebytes, Wurzeln, Optionen und Änderungsschritte entgegen. Er erzeugt eine normalisierte fachliche Projektion. Snapshot- und Symbol-IDs dürfen zwischen unabhängigen Sitzungen variieren und werden anhand eindeutiger fachlicher Testanker normalisiert. Quellbereiche, Deklarationsreihenfolgen, Typwerte, Diagnosecodes, Argumente und Ursachebeziehungen werden nicht weg-normalisiert.
+Direkte Node-Tests laden die erzeugten JS- und WasmGC-Artefakte. Sie prüfen
+Quellbereiche, Präzision, Importbindung, Revisionen, Limits und Fehlererholung.
+Die Browserprobe verwendet den tatsächlichen Worker und den installierten
+Client. Die Sprachsemantik wird umfassend in den JVM-Modultests geprüft.
 
-Zeitstempel, Runtimeziel und Laufzeiten liegen ausserhalb der fachlichen Golden-Datei. Fehler werden nicht dadurch verborgen, dass gesamte Diagnoselisten oder komplizierte Modellteile aus dem Vergleich entfernt werden. Eine bewusst noch nicht unterstützte Spracheigenschaft benötigt eine explizite Phasen-/Capability-Erwartung.
-
-<a id="messungen-und-ergebnismanifest"></a>
-### Messungen und Ergebnismanifest
-
-Jeder Portabilitätslauf erzeugt ein maschinenlesbares Manifest mit Quellcommit, Toolchainständen, Artefakthashes, Fixture-/Konfigurationshash, Betriebssystem/Architektur, Browser-/Node-Version, Flags, Teststatus und Fehlerdetails. Der Status unterscheidet `passed`, `failed`, `blocked` und `notRun`.
-
-Das tatsächlich ausgelieferte Browserverzeichnis enthält ein
-`build-manifest.json`: Commit und Produktinput-Fingerprint aus dem JVM-Snapshot,
-Hash und Bytezahl jeder
-ausgelieferten Ressource sowie getrennte Werkzeug-/API-/Diagnose-/Bridge-/
-Formatierungs-/Diagrammschemaversionen. Fähigkeiten werden aus dem tatsächlich
-gebauten Wasm-Modul gelesen und mit dem SDK-Versionsmanifest verglichen.
-Aktuelle Laufzeitprüfungen schützen die geladenen Artefakthashes gegen
-Änderungen während des Laufs.
-
-Die aktuelle [Freigabeprüfung](../development/release.md) bindet Antwortzeit- und Speicherbudgets an den vollen Modellkorpus. Ergebnisse kleiner Syntaxproben gelten nur für ihre Eingaben.
+Das ausgelieferte Browserverzeichnis enthält `build-manifest.json` mit
+Commit und Produktinput-Fingerprint aus dem JVM-Snapshot, Hash und Bytezahl
+jeder Ressource sowie den Produktversionen. Die Vorbereitung liest die
+Fähigkeiten aus dem gebauten Wasm-Modul und vergleicht sie mit dem SDK-
+Versionsmanifest.
 
 <a id="explizite-auswahlpolicy-in-der-wire-konfiguration"></a>
 ### explizite Auswahlpolicy in der Wire-Konfiguration

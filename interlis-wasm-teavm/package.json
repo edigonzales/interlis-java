@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "Browser contract harness for the portable compiler",
   "scripts": {
-    "test": "node browser-contract.cjs"
+    "test": "node --test test/browser-smoke.test.cjs ui-projection.test.cjs"
   },
   "devDependencies": {
     "ajv": "8.20.0",

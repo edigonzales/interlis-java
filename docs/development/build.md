@@ -58,11 +58,19 @@ Wrapperaufrufe benötigen ebenfalls `-PjvmInputs`, `-PjvmInputsSha256` und das
 geprüfte `-PnodeExecutable`. Der normale JVM-Build braucht diese Toolchains
 nicht.
 
-Die Backendprofile sind `wasm-prepare` für eine kleine WasmGC-Ladekette,
-`teavm-smoke` für JS und WasmGC, `webimage-smoke`, `teavm-contracts`,
-`webimage-contracts`, `browser-prepare` und `browser-contracts`.
-Eine erfolgreiche Smoke-Quittung bindet die beiden positiven und negativen
-Vertragsfälle an den Snapshot und ist auf diesen Prüfbereich beschränkt.
+- `teavm-smoke` baut JS und WasmGC und führt direkte Node-Tests für beide
+  Laufzeiten, den Client und den Diagrammadapter aus.
+- `browser-smoke` lädt das vorbereitete Browserpaket in Chromium mit dem
+  tatsächlichen Worker. `browser-check` führt dieselben Prüfungen zusätzlich
+  in Firefox und Playwright-WebKit aus.
+- `webimage-smoke` prüft das experimentelle Web-Image-Backend explizit.
+- `wasm-prepare` und `browser-prepare` erzeugen die jeweiligen Artefakte.
+
+Installiere für Browserproben den entsprechenden gepinnten Playwright-Browser,
+beispielsweise mit `npm exec -- playwright install chromium` in
+`interlis-wasm-teavm`. Ein echter Safari-Lauf erfolgt separat mit
+`:interlis-wasm-teavm:safariSmoke` am Gradle-Wrapper und derselben expliziten
+Snapshotübergabe.
 
 Native APE und der CosmoGVM-Uhrpfad sind zurückgestellt. Der JVM- und
 Portable-Build verwenden die hier beschriebenen Laufzeiten und Übergaben.

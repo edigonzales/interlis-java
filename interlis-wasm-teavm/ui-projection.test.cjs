@@ -1,17 +1,16 @@
-const runtimeEvidence=require('../tools/verification/runtime-evidence.cjs');
-const evidence=runtimeEvidence.begin(['interlis-wasm-teavm/build/web/build-manifest.json','interlis-wasm-teavm/build/web/interlis-compiler.wasm','interlis-wasm-teavm/build/diagram-adapter.cjs']);
 'use strict';
 const {test,before,after}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 const {chromium,firefox,webkit}=require('playwright');
-let server,url;const results=[],web=path.resolve(__dirname,'build/web'),output=path.resolve(__dirname,'build/ui-projection-results.json');
+let server,url;const web=path.resolve(__dirname,'build/web');
 const text='INTERLIS 2.4;MODEL English(en) AT "x" VERSION "1"=DOMAIN Identifier=TEXT*10;TOPIC Data=CLASS Road=name:Identifier;END Road;END Data;END English.'+
   'MODEL French(fr) AT "x" VERSION "1" TRANSLATION OF English["1"]=DOMAIN Identifiant=TEXT*10;TOPIC Donnees=CLASS Route=nom:Identifiant;END Route;END Donnees;END French.';
-before(async()=>{fs.rmSync(output,{force:true});server=http.createServer((req,res)=>{const name=new URL(req.url,'http://localhost').pathname,file=path.resolve(web,name==='/'?'index.html':name.slice(1));if(!file.startsWith(web+path.sep)||!fs.existsSync(file)){res.writeHead(404);res.end();return;}res.writeHead(200,{'content-type':file.endsWith('.wasm')?'application/wasm':file.endsWith('.html')?'text/html; charset=utf-8':file.endsWith('.css')?'text/css; charset=utf-8':'text/javascript; charset=utf-8'});fs.createReadStream(file).pipe(res);});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));url='http://127.0.0.1:'+server.address().port+'/';});
-after(async()=>{server?.close();fs.writeFileSync(output,JSON.stringify(results,null,2)+'\n');});
-for(const [name,type]of [['chromium',chromium],['firefox',firefox],['webkit',webkit]])test(name+' UI language/focus/depth and delayed actual layout remain snapshot-safe',{timeout:60000},async()=>{
-  let browser;const report={...evidence,browser:name,status:'failed'};
+before(async()=>{server=http.createServer((req,res)=>{const name=new URL(req.url,'http://localhost').pathname,file=path.resolve(web,name==='/'?'index.html':name.slice(1));if(!file.startsWith(web+path.sep)||!fs.existsSync(file)){res.writeHead(404);res.end();return;}res.writeHead(200,{'content-type':file.endsWith('.wasm')?'application/wasm':file.endsWith('.html')?'text/html; charset=utf-8':file.endsWith('.css')?'text/css; charset=utf-8':'text/javascript; charset=utf-8'});fs.createReadStream(file).pipe(res);});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));url='http://127.0.0.1:'+server.address().port+'/';});
+after(()=>{if(!server)return;server.closeAllConnections();return new Promise(resolve=>server.close(resolve));});
+const browsers=process.env.INTERLIS_BROWSER_CHECK==='1'?{chromium,firefox,webkit}:{chromium};
+for(const [name,type] of Object.entries(browsers))test(name+' UI language/focus/depth and delayed actual layout remain snapshot-safe',{timeout:60000},async()=>{
+  let browser;
   try{
-    browser=await type.launch({headless:true});report.version=browser.version();const page=await browser.newPage();const errors=[];page.on('pageerror',error=>errors.push(String(error)));page.on('console',message=>{if(message.type()==='error'&&!message.location().url.endsWith('/favicon.ico'))errors.push(message.text());});
+    browser=await type.launch({headless:true});const page=await browser.newPage();const errors=[];page.on('pageerror',error=>errors.push(String(error)));page.on('console',message=>{if(message.type()==='error'&&!message.location().url.endsWith('/favicon.ico'))errors.push(message.text());});
     // Test-only wrapper waits after the unchanged real pinned renderer finishes.
     // The original bundle is served byte-for-byte via a query URL.
     await page.route(/\/diagram-ui\.js$/,route=>route.fulfill({contentType:'text/javascript',body:`import {DiagramCanvas as RealCanvas,ElkLayoutService,defaultInteractiveSettings} from './diagram-ui.js?unmodified-renderer';
@@ -52,13 +51,11 @@ export class DiagramCanvas extends RealCanvas {
     const compact=await page.evaluate(()=>JSON.parse(document.getElementById('output').textContent).document),self=compact.edges.find(e=>e.kind==='ASSOCIATION');
     assert.equal(self.source.elementId,self.target.elementId);assert.equal(compact.nodes.some(n=>n.kind==='ASSOCIATION'),false);
     const rendered=await page.locator('#diagram-view').innerText();assert.match(rendered,/parent/);assert.match(rendered,/children/);
-    const image=path.resolve(__dirname,'build',name+'-compact-self.png');await page.locator('#diagram-view').screenshot({path:image});report.compactSelfImage=image;
     // Exercise the shared viewer's second supported route mode through its real
     // settings API, preserving the unchanged genuine compiler/ELK response.
     await page.evaluate(()=>{window.__testPolyline=true;return interlisBrowserTest.diagram();});
     await page.waitForFunction(()=>{const p=document.querySelector('#diagram-view .sprotty-edge path');if(!p)return false;const b=p.getBBox();return b.width>15&&b.height>15;});
     const polyline=await page.locator('#diagram-view .sprotty-edge path').first().evaluate(path=>{const box=path.getBBox(),start=path.getPointAtLength(0),end=path.getPointAtLength(path.getTotalLength());return {width:box.width,height:box.height,endSeparation:Math.hypot(end.x-start.x,end.y-start.y)};});assert.ok(polyline.width>15&&polyline.height>15&&polyline.endSeparation>15,'Polyline self association collapsed: '+JSON.stringify(polyline));
-    const polylineImage=path.resolve(__dirname,'build',name+'-compact-self-polyline.png');await page.locator('#diagram-view').screenshot({path:polylineImage});report.polylineSelfImage=polylineImage;
-    assert.deepEqual(errors,[],'Browser renderer or asset errors');Object.assign(report,runtimeEvidence.finish(evidence));report.status='passed';report.observations=['actual UI translation changes labels while preserving ids/anchors','focus does not expand unrelated siblings','neighbourhood depth0/1 applied','late actual SVG/ELK layout discarded after source edit','current source navigation succeeds','actual Wasm producer and shared renderer show compact self association with both roles'];
-  }catch(error){report.error=String(error);throw error;}finally{results.push(report);await browser?.close();}
+    assert.deepEqual(errors,[],'Browser renderer or asset errors');
+  }finally{await browser?.close();}
 });

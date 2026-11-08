@@ -32,10 +32,6 @@ den passenden `.bat`-Launcher auswählen.
 
 ## Build- und Editor-Adapter
 
-`node-junit.test.cjs` prüft das Einlesen der Node-JUnit-Berichte der
-portablen Testpfade. Die Backendaufrufe verwenden die erzeugten Artefakte
-und den geprüften JVM-Snapshot.
-
 `editor-check.cjs` gehört zum Jenesis-Einstieg
 `editor-check --extension-dir ABSOLUT --reference-bundle ABSOLUT`.
 Die vorbereitete Extension und das isolierte VS-Code-Programm werden über

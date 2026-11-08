@@ -1,7 +1,7 @@
 'use strict';
+const assert = require('node:assert/strict');
 async function verifyTokenClassification(api){
-  let sequence=0,checks=0;
-  const assert=(condition,message)=>{if(!condition)throw Error(message);checks++;};
+  let sequence=0;
   const call=async(operation,sessionId,params={})=>JSON.parse(await api.handle(JSON.stringify({protocol:'interlis.compiler',protocolVersion:'1.0',requestId:'token-'+ ++sequence,operation,params,...(sessionId?{sessionId}:{})})));
   for(const version of ['2.3','2.4']){
     const sourceId='memory:/token-classification',text='INTERLIS '+version+';\n!!'+'-'.repeat(100000)+'\n!! mixed A\n!! 🧭\nMODEL F AT "x" VERSION "1"=TOPIC T=CLASS C=value:TEXT;END C;END T;END F.';
@@ -20,7 +20,5 @@ async function verifyTokenClassification(api){
     try {const compiled=await call('compile',session,{expectedWorkspaceRevision:opened.result.workspaceRevision,roots:[{kind:'byName',modelName:'F'}]});assert(compiled.status==='ok'&&compiled.result.outcome===expected,'generic reference deferred/concrete validation failed: '+JSON.stringify(compiled));assert(Object.hasOwn(compiled.result,'schemaId')===(expected==='succeeded'),'generic reference bypassed schema gate');}
     finally {assert((await call('closeSession',session)).status==='ok','generic reference session did not close');}
   }
-  return checks;
 }
-if(typeof module!=='undefined')module.exports=verifyTokenClassification;
-else globalThis.verifyTokenClassification=verifyTokenClassification;
+module.exports = verifyTokenClassification;

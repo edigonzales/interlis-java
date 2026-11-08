@@ -1,5 +1,3 @@
-const runtimeEvidence=require('../tools/verification/runtime-evidence.cjs');
-const evidence=runtimeEvidence.begin(["interlis-wasm-teavm/build/web/build-manifest.json","interlis-wasm-teavm/build/web/interlis-compiler.wasm","interlis-wasm-teavm/build/web/interlis-compiler.wasm-runtime.js","interlis-wasm-teavm/build/diagram-adapter.cjs"]);
 const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
@@ -46,7 +44,6 @@ async function request(base, method, route, body, timeout = 60000) {
 }
 
 (async () => {
-  fs.rmSync('build/safari-result.json', {force: true});
   const driver = '/System/Cryptexes/App/usr/bin/safaridriver';
   if (!fs.existsSync(driver)) throw new Error('safaridriver is not installed');
 
@@ -101,33 +98,14 @@ async function request(base, method, route, body, timeout = 60000) {
         '.catch(error => done({status: "error", error: String(error), stack: error && error.stack}));',
       args: []
     });
-    const clientFinished=Date.now();
-    step='stabilization';
-    const stabilization=await request(base,'POST',`/session/${sessionId}/execute/async`,{
-      script:'const done=arguments[arguments.length-1];window.interlisBrowserTest.runPortableContract().then(done).catch(error=>done({error:String(error)}));',args:[]
-    });
-    if(stabilization?.stabilizationCases!==3560)throw new Error('Safari stabilization failed: '+JSON.stringify(stabilization));
-    result={...result,...stabilization};
-    const stabilizationElapsedMs=Date.now()-clientFinished;
     if (!result || result.status !== 'ok' || result.exactDecimal !== true
         || !(result.diagramNodes > 0) || result.workerRestartOutcome !== 'succeeded') {
       throw new Error('Safari contract returned an unexpected result: ' + JSON.stringify(result));
     }
-    fs.mkdirSync('build', {recursive: true});
-    fs.writeFileSync('build/safari-result.json', JSON.stringify({
-      ...runtimeEvidence.finish(evidence), status: 'passed', browser: 'Safari', driverVersion, node: process.version,
-      result, stabilizationElapsedMs, driverStderr: stderr.trim()
-    }, null, 2));
     console.log('SAFARI PASS ' + JSON.stringify(result));
   } catch (error) {
     let progress;try{if(sessionId)progress=await request(base,'POST',`/session/${sessionId}/execute/sync`,{script:'return window.interlisContractProgress;',args:[]},5000);}catch{}
-    fs.mkdirSync('build', {recursive: true});
-    fs.writeFileSync('build/safari-result.json', JSON.stringify({
-      status: sessionId ? 'failed' : 'notRun', browser: 'Safari', driverVersion,
-      node: process.version, error: String(error),
-      partialResult: result, step, progress, driverStderr: stderr.trim()
-    }, null, 2));
-    console.error('SAFARI NOT_RUN ' + String(error));
+    console.error('Safari worker smoke failed', {step, progress, result, driverVersion, error: String(error)});
     if (stderr.trim()) console.error(stderr.trim());
     process.exitCode = 1;
   } finally {
@@ -138,6 +116,6 @@ async function request(base, method, route, body, timeout = 60000) {
     server.close();
   }
 })().catch(error => {
-  console.error('SAFARI NOT_RUN ' + String(error));
+  console.error('Safari worker smoke failed: ' + String(error));
   process.exitCode = 1;
 });

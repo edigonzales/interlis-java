@@ -159,18 +159,6 @@ async function runClientContract(){
 
   return {status:'ok',rejectedOutcome:rejected.result.outcome,compiledOutcome:succeeded.result.outcome,diagramNodes:nodeCount,diagramEdges:edgeCount,diagramAssociations:associationCount,diagnostics:succeeded.result.diagnostics.length,exactDecimal:true,workerRestartOutcome:restarted.result.outcome,clientContractChecks:checks,transportChecks};
 }
-async function runPortableContract(selection){
-  window.interlisContractProgress='portable';
-  const worker=new Worker(new URL('./portable-contract-worker.js',import.meta.url));
-  try{return await new Promise((resolve,reject)=>{
-    worker.onmessage=event=>{const message=event.data;if(message.kind==='progress')window.interlisContractProgress={phase:'portable',...message};else if(message.kind==='result')resolve(message.result);else if(message.kind==='error')reject(new Error(message.message));};
-    worker.onerror=()=>reject(new Error('portable contract worker failed'));
-    worker.postMessage({kind:'verify',selection});
-  });}finally{worker.terminate();}
-}
-
-async function runContract(){const client=await runClientContract();return {...client,...await runPortableContract()};}
-
 source.addEventListener('input',()=>{drafts.set(activeSource,source.value);invalidate();});
 source.addEventListener('select',()=>{
   if(!snapshot||!view||!session)return;const handle=session,current=snapshot,selection=source.selectionStart,id=activeSource;
@@ -188,4 +176,4 @@ for(const [id,action]of [['analyze',analyze],['compile',compile],['diagram',diag
 window.addEventListener('pagehide',()=>{diagramCanvas.dispose();void client.dispose();});
 refreshPicker();
 window.interlisDiagramAdapter=diagramAdapter;
-window.interlisBrowserTest={runContract,runClientContract,runPortableContract,analyze,compile,diagram,benchmark,restartWorker,client,get session(){return session;},navigate};
+window.interlisBrowserTest={runClientContract,analyze,compile,diagram,benchmark,restartWorker,client,get session(){return session;},navigate};

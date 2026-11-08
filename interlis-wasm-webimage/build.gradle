@@ -57,52 +57,11 @@ tasks.register('webImageBuild', Exec) {
     }
 }
 
-tasks.register('webImagePrepareBrowser', Copy) {
+tasks.register('webImageSmoke', Exec) {
     group = 'verification'
-    description = 'Stages the Web Image browser harness.'
-    dependsOn 'webImageBuild', ':interlis-wasm-teavm:bundlePortableContracts'
-    from 'src/web'
-    from(project(':interlis-wasm-teavm').file('token-classification-contract.cjs')) {
-        rename { 'token-classification-contract.js' }
-    }
-    from(project(':interlis-wasm-teavm').layout.buildDirectory.file('portable-contracts/portable-contracts.js'))
-    from(layout.buildDirectory.dir('webimage')) {
-        include 'interlis-compiler.js'
-        include 'interlis-compiler.js.wasm'
-    }
-    into layout.buildDirectory.dir('webimage-browser')
-}
-
-tasks.register('webImageBrowserTest', Exec) {
-    group = 'verification'
-    description = 'Runs the Web Image build in Chromium, Firefox and Playwright-WebKit.'
-    dependsOn 'webImagePrepareBrowser'
-    workingDir = projectDir
-    commandLine nodeExecutable.get(), 'browser-contract.cjs'
-}
-
-tasks.register('webImageProbe') {
-    group = 'verification'
+    dependsOn ':checkNodeRuntime', 'webImageBuild'
     timeout = java.time.Duration.ofSeconds(60)
-    description = 'Runs the built Web Image module under Node and records the comparison result.'
-    dependsOn 'webImageBuild'
-    doLast {
-        delete file('build/webimage/result.json')
-        providers.exec {
-            workingDir = projectDir
-            commandLine nodeExecutable.get(), 'webimage-contract.cjs'
-        }.result.get()
-        def report = file('build/webimage/result.json')
-        if (!report.exists()) {
-            throw new GradleException('Web Image probe did not produce a result manifest')
-        }
-        def result = new groovy.json.JsonSlurper().parse(report)
-        if (result.status != 'ok') {
-            throw new GradleException('Web Image probe failed: ' + result)
-        }
-    }
-}
-
-tasks.named('webImagePrepareBrowser') {
-    from(rootProject.file('testdata/reference/unicode/17.0.0/UNICODE-LICENSE.txt'))
+    workingDir = projectDir
+    environment 'INTERLIS_PRODUCT_VERSION', gradle.ext.jvmSnapshot.data.projectVersion
+    commandLine nodeExecutable.get(), '--test', 'test/webimage.test.cjs'
 }

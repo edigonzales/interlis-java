@@ -14,10 +14,5 @@ tasks.register('checkNodeRuntime') {
     }
 }
 subprojects { sub ->
-    sub.tasks.matching { it.name in ['wasmContractTest','jsContractTest','browserContractTest','safariContractTest',
-        'diagramAdapterTest','browserClientTest','buildBrowserTools','webImageProbe','webImageBrowserTest','uiProjectionTest'] }.configureEach {
-        dependsOn rootProject.tasks.named('checkNodeRuntime')
-        mustRunAfter ':interlis-wasm-webimage:webImageBuild', ':interlis-wasm-teavm:generateJavaScript', ':interlis-wasm-teavm:generateWasmGC'
-    }
     sub.plugins.withId('java') { rootProject.tasks.named('check') { dependsOn "${sub.path}:check" } }
 }
