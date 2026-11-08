@@ -21,13 +21,13 @@ jobs:
           distribution: temurin
           java-version: '25.0.3'
       - name: Run JVM tests
-        run: java build/InterlisJvmBuild.java build
+        run: java build/jenesis/Make.java
       - name: Check installed SDK, CLI and LSP
-        run: java build/InterlisJvmBuild.java sdk-check
+        run: java build/interlis/ExistingJvmDistribution.java check
       - name: Run pinned Codeberg suite
-        run: java build/InterlisJvmBuild.java conformance
+        run: java build/interlis/ConformanceRun.java
       - name: Package and smoke-test the compiler ZIP
-        run: java build/InterlisJvmBuild.java compiler-bindist
+        run: java build/interlis/ExistingJvmDistribution.java compiler
       - name: Retain native JVM and Codeberg reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -80,32 +80,12 @@ jobs:
         run: |
           npm ci
           npm exec -- playwright install --with-deps chromium
-      - name: Export the JVM inputs without running JVM tests
-        id: jvm
+      - name: Check generated TeaVM JS, WasmGC and Chromium
         run: |
-          java build/InterlisJvmBuild.java wasm-export
-          handoff=target/jenesis-jvm/reports/wasm-export.json
-          manifest=$(jq -er .manifest "$handoff")
-          checksum=$(jq -er .manifestSha256 "$handoff")
-          test -f "$manifest"
-          [[ "$checksum" =~ ^[a-f0-9]{64}$ ]]
-          printf 'manifest=%s\nchecksum=%s\n' "$manifest" "$checksum" >> "$GITHUB_OUTPUT"
-      - name: Check generated TeaVM JS, WasmGC, client and worker
-        env:
-          JVM_INPUTS: ${{ steps.jvm.outputs.manifest }}
-          JVM_INPUTS_SHA256: ${{ steps.jvm.outputs.checksum }}
-        run: |
-          export INTERLIS_NODE="$(command -v node)"
-          java build/InterlisJvmBuild.java wasm --profile teavm-smoke \
-            --inputs "$JVM_INPUTS" --inputs-sha256 "$JVM_INPUTS_SHA256"
-      - name: Check Chromium with the generated browser package
-        env:
-          JVM_INPUTS: ${{ steps.jvm.outputs.manifest }}
-          JVM_INPUTS_SHA256: ${{ steps.jvm.outputs.checksum }}
-        run: |
-          export INTERLIS_NODE="$(command -v node)"
-          java build/InterlisJvmBuild.java wasm --profile browser-smoke \
-            --inputs "$JVM_INPUTS" --inputs-sha256 "$JVM_INPUTS_SHA256"
+          ./gradlew "-PnodeExecutable=$(command -v node)" \
+            :interlis-wasm-teavm:teavmJsTest :interlis-wasm-teavm:teavmWasmTest \
+            :interlis-wasm-teavm:browserClientTest :interlis-wasm-teavm:diagramAdapterTest \
+            :interlis-wasm-teavm:browserSmoke
       - name: Check the shared diagram UI
         working-directory: frontend/diagram-ui
         run: |
@@ -128,13 +108,13 @@ jobs:
           distribution: temurin
           java-version: '25.0.3'
       - name: Check CLI path and repository configuration
-        run: java build/InterlisJvmBuild.java build --module interlis-compiler-cli --tests '.*(CliApplicationTest|RepositoryNetworkConfigurationTest)'
+        run: java '-Djenesis.test.filter=.*(CliApplicationTest|RepositoryNetworkConfigurationTest)' build/jenesis/Make.java +interlis-compiler-cli
       - name: Check repository HTTP and filesystem integration
-        run: java build/InterlisJvmBuild.java build --module interlis-repository --tests '.*(FileSourceLoaderTest|HttpSourceLoaderTest|HttpRedirectFailureTest|HttpNetworkPolicyTest|HttpIdentityCacheTest)'
+        run: java '-Djenesis.test.filter=.*(FileSourceLoaderTest|HttpSourceLoaderTest|HttpRedirectFailureTest|HttpNetworkPolicyTest|HttpIdentityCacheTest)' build/jenesis/Make.java +interlis-repository
       - name: Check installed SDK, CLI and LSP
-        run: java build/InterlisJvmBuild.java sdk-check
+        run: java build/interlis/ExistingJvmDistribution.java check
       - name: Package and smoke-test the compiler ZIP
-        run: java build/InterlisJvmBuild.java compiler-bindist
+        run: java build/interlis/ExistingJvmDistribution.java compiler
       - name: Retain native JVM reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

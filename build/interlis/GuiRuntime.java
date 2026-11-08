@@ -1,6 +1,5 @@
 package build.interlis;
 
-import build.InterlisJvmBuild.BuildRequest;
 import build.jenesis.BuildExecutor;
 import build.jenesis.BuildStep;
 import build.jenesis.Environment;
@@ -41,15 +40,24 @@ public final class GuiRuntime {
     private GuiRuntime() {
     }
 
-    public static void run(BuildRequest request) throws Exception {
-        Path root = request.root();
-        String check = request.options().get("--profile");
-        boolean packageApp = request.profile().equals("gui-package") || "packaged".equals(check);
+    public static void main(String[] args) throws Exception {
+        if (args.length == 1 && List.of("run", "runtime", "package").contains(args[0])) {
+            run(Path.of("").toAbsolutePath().normalize(), args[0], null);
+        } else if (args.length == 2 && args[0].equals("check")
+                && List.of("shell", "compile", "diagnostics", "dependencies", "repositories", "lifecycle", "packaged").contains(args[1])) {
+            run(Path.of("").toAbsolutePath().normalize(), "check", args[1]);
+        } else {
+            throw new IllegalArgumentException("Expected run, runtime, package, or check PROFILE");
+        }
+    }
+
+    private static void run(Path root, String action, String check) throws Exception {
+        boolean packageApp = action.equals("package") || "packaged".equals(check);
         if (packageApp && !(System.getProperty("os.name").startsWith("Mac")
                 && System.getProperty("os.arch").equals("aarch64"))) {
             throw new IllegalArgumentException("The GUI app package requires macOS on ARM64");
         }
-        var outcome = JenesisBridge.run(new BuildRequest("artifacts", PROJECT, null, root));
+        var outcome = JenesisBridge.artifacts(root, "+" + PROJECT);
         var artifacts = ModuleArtifacts.runtime(root, PROJECT, outcome);
         var modules = new TreeMap<String, ModuleArtifacts.Artifact>();
         for (var artifact : artifacts) {
@@ -76,7 +84,7 @@ public final class GuiRuntime {
         Files.writeString(run.resolve("closure.json"), JsonOutput.write(closure));
         String jars = String.join(File.pathSeparator, artifacts.stream().map(a -> a.file().toString()).toList());
         Path jdk = Path.of(System.getProperty("java.home"));
-        if (request.profile().equals("gui-run")) {
+        if (action.equals("run")) {
             var process = new ProcessBuilder(tool(jdk, "java"), NATIVE_ACCESS, "--module-path", jars, "--module", ENTRY)
                     .directory(root.toFile()).inheritIO().start();
             if (process.waitFor() != 0) {

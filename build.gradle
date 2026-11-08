@@ -2,7 +2,9 @@ plugins { id 'base' }
 
 // Gradle owns only the two backend adapters. Root build/ contains versioned sources.
 tasks.named('clean', Delete) { setDelete([]); dependsOn ':interlis-wasm-teavm:clean', ':interlis-wasm-webimage:clean' }
-allprojects { group = 'guru.interlis'; version = gradle.ext.jvmSnapshot.data.projectVersion }
+apply from: 'gradle/jvm-inputs.gradle'
+def productVersion = new groovy.xml.XmlSlurper(false, false).parse(file('pom.xml')).version.text()
+allprojects { group = 'guru.interlis'; version = productVersion }
 
 def nodeExecutable = providers.gradleProperty('nodeExecutable').orElse('node')
 tasks.register('checkNodeRuntime') {

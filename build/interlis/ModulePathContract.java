@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 /** Standard-JDK boundary gate. javac compiles only the separate SDK consumers, never product sources. */
 public final class ModulePathContract {
     public static String name(String project) {
-        if(!JvmBuildInputs.MODULES.contains(project))throw new IllegalArgumentException("Unknown own module");
+        if(!project.matches("interlis-[a-z0-9]+(?:-[a-z0-9]+)*"))throw new IllegalArgumentException("Unknown own module");
         return "guru.interlis."+project.substring(9).replace('-','.');
     }
     /** Own products always have the exact explicit, encapsulated descriptor. */
@@ -23,12 +23,18 @@ public final class ModulePathContract {
                 throw new IllegalStateException("Unexpected XTF 2.3 module boundary: "+descriptor);
         }
     }
+    public static void main(String[] args) throws Exception {
+        if (args.length != 0) throw new IllegalArgumentException("Expected no arguments");
+        run(Path.of("").toAbsolutePath().normalize());
+    }
+
     public static void run(Path root)throws Exception {
-        for(String project:JvmBuildInputs.MODULES)if(!Files.isRegularFile(root.resolve(project+"/src/main/java/module-info.java")))throw new IllegalStateException("Missing own module descriptor: "+project);
-        var outcome=JenesisBridge.run(new build.InterlisJvmBuild.BuildRequest("artifacts",null,null,root));
+        List<String> projects = JvmBuildInputs.projectModules(root);
+        for(String project:projects)if(!Files.isRegularFile(root.resolve(project+"/src/main/java/module-info.java")))throw new IllegalStateException("Missing own module descriptor: "+project);
+        var outcome=JenesisBridge.artifacts(root);
         Path run=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/module-checks/"+UUID.randomUUID()),lib=run.resolve("lib");Files.createDirectories(lib);
         var own=new TreeSet<String>();var files=new TreeMap<String,Path>();
-        for(String project:JvmBuildInputs.MODULES) {
+        for(String project:projects) {
             var result=JenesisBridge.moduleResult(outcome,project);
             if(!result.explicitDescriptor()||!result.moduleName().orElseThrow().equals(name(project)))throw new IllegalStateException("Wrong own module: "+project);
             own.add(name(project));
@@ -53,7 +59,7 @@ public final class ModulePathContract {
             var descriptor=descriptors.iterator().next().descriptor();
             if(modules.containsKey(descriptor.name()))throw new IllegalStateException("Duplicate module name");
             for(String pkg:descriptor.packages())if(packages.putIfAbsent(pkg,descriptor.name())!=null)throw new IllegalStateException("Split production package: "+pkg);
-            if(own.contains(descriptor.name()))requireOwnDescriptor(JvmBuildInputs.MODULES.stream().filter(project->name(project).equals(descriptor.name())).findFirst().orElseThrow(),descriptor);
+            if(own.contains(descriptor.name()))requireOwnDescriptor(projects.stream().filter(project->name(project).equals(descriptor.name())).findFirst().orElseThrow(),descriptor);
             modules.put(descriptor.name(),Map.of("file",copy.toString(),"sha256",JvmBuildInputs.sha256(copy),"automatic",descriptor.isAutomatic(),"descriptor",descriptor.toString()));
         }
         Configuration.resolve(ModuleFinder.of(lib),List.of(ModuleLayer.boot().configuration()),ModuleFinder.ofSystem(),own);

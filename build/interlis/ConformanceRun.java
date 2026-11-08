@@ -1,12 +1,23 @@
 package build.interlis;
 
-import build.InterlisJvmBuild.BuildRequest;
 import java.net.URI;
 import java.nio.file.*;
 import java.time.Duration;
 import java.util.*;
 
 public final class ConformanceRun {
+    public static void main(String[] args) throws Exception {
+        if (args.length != 0 && (args.length != 2 || !args[0].equals("--filter") || args[1].isBlank())) {
+            throw new IllegalArgumentException("Expected optional --filter REGEX");
+        }
+        String filter = args.length == 0 ? null : args[1];
+        if (filter != null) java.util.regex.Pattern.compile(filter);
+        Path root = Path.of("").toAbsolutePath().normalize();
+        try (var lease = JvmBuildLock.acquire(root)) {
+            run(root, filter);
+        }
+    }
+
     public static void run(Path root, String filter) throws Exception {
         var pin = new Properties();
         try (var reader = Files.newBufferedReader(root.resolve("testdata/conformance/suite.properties"))) {
@@ -57,7 +68,7 @@ public final class ConformanceRun {
         Files.writeString(output.resolve("runner.stderr"), result.stderr());
         if (result.exit() != 1) result.requireExit(0);
 
-        var build = JenesisBridge.run(new BuildRequest("conformance-support", "interlis-compiler-cli", null, root));
+        var build = JenesisBridge.artifacts(root, "+interlis-compiler-cli");
         var assessment = DistributionChecks.javaMain(root, JenesisBridge.testClasspath("interlis-compiler-cli", build),
                 "guru.interlis.cli.conformance.NormativeConformance",
                 List.of(root.toString(), output.toString(), Integer.toString(result.exit())));

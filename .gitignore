@@ -6,7 +6,6 @@
 !/build/interlis/
 !/build/interlis/archive-tool/src/main/java/build/
 !/build/interlis/archive-tool/src/main/java/build/**
-!/build/InterlisJvmBuild.java
 !/build/.jenesis.skip
 target/
 .jenesis/

@@ -38,6 +38,11 @@ tasks.register('webImageBuild', Exec) {
     group = 'verification'
     description = 'Builds the same compiler bridge with the GraalVM Web Image backend.'
     dependsOn 'compileWebImageProbe'
+    inputs.files(configurations.runtimeClasspath).withNormalizer(ClasspathNormalizer)
+    inputs.dir layout.buildDirectory.dir('classes/webImage')
+    inputs.property 'graalVmHome', graalHome
+    inputs.property 'binaryenHome', binaryenHome
+    outputs.dir layout.buildDirectory.dir('webimage')
     doFirst {
         if (!graalHome.get()) {
             throw new GradleException('webImageBuild requires -PgraalVmHome or GRAALVM_HOME')
@@ -62,6 +67,6 @@ tasks.register('webImageSmoke', Exec) {
     dependsOn ':checkNodeRuntime', 'webImageBuild'
     timeout = java.time.Duration.ofSeconds(60)
     workingDir = projectDir
-    environment 'INTERLIS_PRODUCT_VERSION', gradle.ext.jvmSnapshot.data.projectVersion
+    environment 'INTERLIS_PRODUCT_VERSION', project.version
     commandLine nodeExecutable.get(), '--test', 'test/webimage.test.cjs'
 }

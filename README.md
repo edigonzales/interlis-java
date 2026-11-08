@@ -12,7 +12,7 @@ Backendvergleich. Transfer, Datenvalidierung und Datenbankabbildung sind
 Mit einem Java-25-JDK im Repository ausführen.
 
 ```sh
-java build/InterlisJvmBuild.java sdk-package
+java build/interlis/ExistingJvmDistribution.java sdk
 target/jenesis-jvm/delivery/compiler/bin/interlis-compiler check \
   testdata/models/base24.ili testdata/models/survey24.ili
 ```

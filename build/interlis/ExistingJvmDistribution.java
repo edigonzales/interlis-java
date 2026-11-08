@@ -1,19 +1,31 @@
 package build.interlis;
 
-import build.InterlisJvmBuild.BuildRequest;
 import build.jenesis.Json;
 import java.nio.file.*;
 import java.util.*;
 
 /** Existing CLI/LSP/SDK forms; products always come from the current Jenesis invocation. */
 public final class ExistingJvmDistribution {
+    public static void main(String[] args) throws Exception {
+        if (args.length != 1) throw new IllegalArgumentException("Expected sdk, check or compiler");
+        Path root = Path.of("").toAbsolutePath().normalize();
+        try (var lease = JvmBuildLock.acquire(root)) {
+            switch (args[0]) {
+                case "sdk" -> generate(root);
+                case "check" -> run(root);
+                case "compiler" -> packageCompiler(root);
+                default -> throw new IllegalArgumentException("Expected sdk, check or compiler");
+            }
+        }
+    }
+
     public static void run(Path root) throws Exception {
         Path delivery = generate(root);
         DistributionChecks.check(root, delivery);
     }
 
     public static Path generate(Path root) throws Exception {
-        var outcome = JenesisBridge.run(new BuildRequest("artifacts", null, null, root));
+        var outcome = JenesisBridge.artifacts(root);
         Path delivery = JvmBuildInputs.requireOutputRoot(root, "target/jenesis-jvm/delivery");
         if (Files.exists(delivery)) {
             Path previous = JvmBuildInputs.requireOutputRoot(root, "target/jenesis-jvm/delivery-history/" + UUID.randomUUID());

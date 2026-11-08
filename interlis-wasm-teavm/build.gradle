@@ -55,10 +55,26 @@ teavm {
     }
 }
 
+def cliRuntime = files(rootProject.jenesisRuntime('interlis-compiler-cli'))
+def cliVersionManifest = layout.buildDirectory.file('version-manifest.json')
+def cliVersion = tasks.register('writeCliVersionManifest') {
+    inputs.files(cliRuntime).withNormalizer(ClasspathNormalizer)
+    outputs.file(cliVersionManifest)
+    doLast {
+        def version = providers.exec {
+            workingDir rootProject.projectDir
+            commandLine rootProject.jenesisJava, '-cp', cliRuntime.asPath,
+                    'guru.interlis.cli.Main', 'version', '--json'
+        }.standardOutput.asText.get()
+        cliVersionManifest.get().asFile.text = version
+    }
+}
+
 tasks.register('prepareBrowserHarness', Sync) {
     group = 'verification'
     description = 'Copies the browser harness, WasmGC module and runtime into build/web.'
-    dependsOn 'buildWasmGC', 'buildBrowserTools'
+    dependsOn 'buildWasmGC', 'buildBrowserTools', cliVersion
+    inputs.file cliVersionManifest
     from 'src/main/web'
     from(layout.buildDirectory.dir('browser-tools'))
     from(layout.buildDirectory.dir('generated/teavm/wasm-gc')) {
@@ -71,7 +87,7 @@ tasks.register('prepareBrowserHarness', Sync) {
         providers.exec {
             workingDir rootProject.projectDir
             commandLine nodeExecutable.get(), rootProject.file('tools/release/browser-manifest.cjs'), layout.buildDirectory.dir('web').get().asFile,
-                    gradle.ext.jvmSnapshot.manifest
+                    cliVersionManifest.get().asFile
         }.result.get().assertNormalExitValue()
     }
 }
@@ -81,7 +97,7 @@ tasks.register('teavmJsTest', Exec) {
     dependsOn ':checkNodeRuntime', 'generateJavaScript'
     timeout = java.time.Duration.ofSeconds(60)
     workingDir = projectDir
-    environment 'INTERLIS_PRODUCT_VERSION', gradle.ext.jvmSnapshot.data.projectVersion
+    environment 'INTERLIS_PRODUCT_VERSION', project.version
     commandLine nodeExecutable.get(), '--test', 'test/teavm-js.test.cjs'
 }
 
@@ -90,7 +106,7 @@ tasks.register('teavmWasmTest', Exec) {
     dependsOn ':checkNodeRuntime', 'buildWasmGC'
     timeout = java.time.Duration.ofSeconds(60)
     workingDir = projectDir
-    environment 'INTERLIS_PRODUCT_VERSION', gradle.ext.jvmSnapshot.data.projectVersion
+    environment 'INTERLIS_PRODUCT_VERSION', project.version
     commandLine nodeExecutable.get(), '--experimental-wasm-exnref', '--test', 'test/teavm-wasm.test.cjs'
 }
 

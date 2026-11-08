@@ -5,18 +5,9 @@ pluginManagement {
     }
 }
 
-apply from: new File(settingsDir, 'gradle/jvm-inputs.gradle')
-
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        exclusiveContent {
-            forRepository { maven { name = 'interlis-' + gradle.ext.jvmSnapshot.data.snapshotDigest; url = new File(gradle.ext.jvmSnapshot.root, 'maven').toURI() } }
-            filter { includeGroup 'guru.interlis' }
-        }
-        maven { url = new File(gradle.ext.jvmSnapshot.root, 'maven').toURI(); content { excludeGroup 'guru.interlis' } }
-        mavenCentral { content { excludeGroup 'guru.interlis' } }
-    }
+    repositories { mavenCentral() }
 }
 
 rootProject.name = 'interlis-java'

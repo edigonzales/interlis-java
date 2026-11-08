@@ -6,12 +6,10 @@ Der JavaScript-Backendpfad und GraalVM Web Image dienen als weitere
 Laufzeitpfade. Die [Bridge](../contracts/bridge-protocol.md) ist die
 gemeinsame Protokollgrenze.
 
-Mit den [Buildvoraussetzungen](../development/build.md) und den beiden
-Werten aus dem aktuellen Wasm-Export starten.
+Mit den [Buildvoraussetzungen](../development/build.md) starten.
 
 ```sh
-java build/InterlisJvmBuild.java wasm --profile browser-prepare \
-  --inputs "$JVM_INPUTS" --inputs-sha256 "$JVM_INPUTS_SHA256"
+./gradlew "-PnodeExecutable=$INTERLIS_NODE" :interlis-wasm-teavm:prepareBrowserHarness
 jwebserver -p 8080 -d interlis-wasm-teavm/build/web
 ```
 

@@ -30,7 +30,7 @@ public final class ModuleArtifacts {
             if(coordinates.matches(".*(junit|platform-console|antlr4/|commons-compress|archive-tool).*"))throw new IllegalStateException("Tool/runtime leak: "+coordinates);
             if(coordinates.startsWith("maven/guru.interlis/")) {
                 String[] id=coordinates.split("/");
-                if(id.length!=4||!id[3].equals(JvmBuildInputs.projectVersion(root))||!JvmBuildInputs.MODULES.contains(id[2]))throw new IllegalStateException("Foreign own coordinates: "+coordinates);
+                if(id.length!=4||!id[3].equals(JvmBuildInputs.projectVersion(root)))throw new IllegalStateException("Foreign own coordinates: "+coordinates);
                 Path producer=JenesisBridge.moduleResult(outcome,id[2]).jar();
                 if(!artifact.sha256().equals(JvmBuildInputs.sha256(producer)))throw new IllegalStateException("Foreign/stale own runtime bytes: "+coordinates);
             }

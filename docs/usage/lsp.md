@@ -13,7 +13,7 @@ Repositoryquellen sind im Editor lesbar und die Auflösung läuft über die
 explizite Hostkonfiguration. Die Diagnoseprosa kann auf Deutsch oder
 Englisch konfiguriert werden.
 
-`editor-bundle` erzeugt die explizite Übergabe für Editorclients.
+`java build/interlis/EditorBundleRun.java` erzeugt die explizite Übergabe für Editorclients.
 Das Paket enthält die benötigten Verträge und Produktartefakte mit
 Prüfsummen. Revisionstreue Editorbefehle können kompilieren, unveränderliche
 Diagramme abfragen und geprüfte Dokumentationsausgaben anfordern.

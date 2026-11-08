@@ -11,11 +11,9 @@ const hash=value=>createHash('sha256').update(value).digest('hex');
  if(capabilities.status!=='ok'||capabilities.protocolVersion!=='1.0')throw Error('cannot obtain actual compiled capabilities');
  const walk=directory=>fs.readdirSync(directory,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(directory,e.name)):[path.join(directory,e.name)]);
  const resources={};for(const file of walk(web).sort()){const name=path.relative(web,file).split(path.sep).join('/');if(name==='build-manifest.json')continue;const bytes=fs.readFileSync(file);resources[name]={sha256:hash(bytes),bytes:bytes.length};}
- const inputs=process.argv[3];if(!inputs||!path.isAbsolute(inputs))throw Error('explicit JVM consumer snapshot required');
- const snapshot=JSON.parse(fs.readFileSync(inputs,'utf8'));
- const versionPath=path.join(path.dirname(inputs),'resources/version-manifest.json');
+ const versionPath=process.argv[3];
+ if(!versionPath||!path.isAbsolute(versionPath))throw Error('explicit CLI version manifest required');
  const versionBytes=fs.readFileSync(versionPath);
- if(snapshot.files?.['resources/version-manifest.json']?.sha256!==hash(versionBytes))throw Error('changed CLI version manifest');
  const versions=JSON.parse(versionBytes);
  if(versions.version!==capabilities.result.toolVersion||versions.protocol!==capabilities.result.protocol+'/'+capabilities.result.protocolVersion)throw Error('actual CLI/compiler version manifests disagree');
  const toolchain=JSON.parse(fs.readFileSync(path.join(root,'interlis-wasm-teavm/build/tooling/teavm/generateWasmGC.json'),'utf8'));

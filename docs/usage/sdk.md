@@ -1,6 +1,6 @@
 # Java SDK
 
-`java build/InterlisJvmBuild.java sdk-package` erzeugt
+`java build/interlis/ExistingJvmDistribution.java sdk` erzeugt
 `target/jenesis-jvm/delivery/sdk.zip`. Es enthält den modularen CLI-Launcher,
 die Bibliotheksclosure und kompilierbare Beispiele. `sdk-check` führt echte
 installierte Prozesse und den Archivconsumer aus.

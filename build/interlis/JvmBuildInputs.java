@@ -9,27 +9,15 @@ import org.w3c.dom.Document;
 
 /** Deterministic file bindings. Missing files and escaping symbolic links fail closed. */
 public final class JvmBuildInputs {
-    public static final List<String> MODULES = List.of("interlis-model", "interlis-compiler",
-            "interlis-workspace", "interlis-repository", "interlis-projection", "interlis-documentation",
-            "interlis-transfer", "interlis-xtf23", "interlis-wasm-bridge", "interlis-compiler-cli", "interlis-lsp",
-            "interlis-compiler-gui");
-
-    public static void requireProject(Path root) throws Exception {
-        if (Runtime.version().feature() != 25) throw new IllegalStateException("Java25 required");
-        var pom = xml(root.resolve("pom.xml"));
-        String version = projectVersion(root);
-        var nodes = pom.getElementsByTagName("module");
-        var actual = new ArrayList<String>();
-        for (int i = 0; i < nodes.getLength(); i++) actual.add(nodes.item(i).getTextContent());
-        if (actual.size() != MODULES.size() || !new HashSet<>(actual).equals(new HashSet<>(MODULES)))
-            throw new IllegalStateException("Unexpected JVM module inventory: " + actual);
-        for (String module : MODULES) {
-            var child = xml(root.resolve(module + "/pom.xml"));
-            var parent = child.getElementsByTagName("parent").item(0);
-            var versions = ((org.w3c.dom.Element) parent).getElementsByTagName("version");
-            if (!versions.item(0).getTextContent().equals(version))
-                throw new IllegalStateException("Child version drift: " + module);
+    public static List<String> projectModules(Path root) throws Exception {
+        var modules = xml(root.resolve("pom.xml")).getElementsByTagName("modules").item(0);
+        var names = new ArrayList<String>();
+        for (var child = modules.getFirstChild(); child != null; child = child.getNextSibling()) {
+            if (child instanceof org.w3c.dom.Element element && element.getTagName().equals("module")) {
+                names.add(element.getTextContent().strip());
+            }
         }
+        return List.copyOf(names);
     }
 
     /** Portable relative output spelling shared by Java and Node layout readers. */

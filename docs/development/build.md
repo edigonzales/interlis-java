@@ -20,21 +20,19 @@ Die JPMS-Tests verwenden die von Jenesis kompilierten Testklassen und
 starten sie als Patch des jeweiligen Produktmoduls. Die Produktdeskriptoren
 bleiben dabei unverändert.
 
-| Aufruf nach `java build/InterlisJvmBuild.java` | Ergebnis |
+| Aufruf | Ergebnis |
 |---|---|
-| `artifacts` | JVM-Produkte ohne Tests |
-| `conformance` | Gepinnte externe Codeberg-Suite für INTERLIS 2.3 und 2.4 |
-| `compiler-bindist` | Compiler-ZIP, Prüfung des entpackten Launchers und SHA256SUMS |
-| `module-check` | Prüfung der Modulgrenzen und des Laufzeitinventars |
-| `sdk-package` | Modulare CLI-/LSP-Launcher und SDK-ZIP |
-| `sdk-check` | Dieselbe Auslieferung plus ausgeführte CLI-/LSP-/SDK-Prozesse |
-| `runtime-check --application compiler` | Nachweis der Laufzeitclosure |
-| `gui-run` | Desktop-GUI starten |
-| `gui-runtime` | Modulares Java-Laufzeitimage für die Desktop-GUI erzeugen |
-| `gui-package` | Native Desktop-App für macOS auf Apple Silicon paketieren |
-| `gui-check --profile <profil>` | Gezielte GUI-Probe mit `shell`, `compile`, `diagnostics`, `dependencies`, `repositories`, `lifecycle` oder `packaged` |
-| `editor-bundle` | Geprüfte Übergabe für Editorclients |
-| `editor-check --extension-dir /absolute/extension --reference-bundle /absolute/bundle` | Prüfung der expliziten Editorübergabe |
+| `java -Djenesis.test.skip=true build/jenesis/Make.java stage` | JVM-Produkte und Staging ohne Testausführung |
+| `java build/interlis/ConformanceRun.java` | Gepinnte Codeberg-Suite für INTERLIS 2.3 und 2.4 |
+| `java build/interlis/ExistingJvmDistribution.java compiler` | Compiler-ZIP, Prüfung des entpackten Launchers und SHA256SUMS |
+| `java build/interlis/ExistingJvmDistribution.java sdk` | Modulare CLI-/LSP-Launcher und SDK-ZIP |
+| `java build/interlis/ExistingJvmDistribution.java check` | SDK-Auslieferung und installierte CLI-/LSP-/SDK-Prozesse prüfen |
+| `java build/interlis/ModulePathContract.java` | Modulgrenzen und Laufzeitinventar prüfen |
+| `java build/interlis/CompilerRuntimeCheck.java` | Laufzeitclosure des Compilers prüfen |
+| `java build/interlis/GuiRuntime.java run\| runtime\| package` | Desktop starten, Java-Laufzeitimage bauen oder macOS-App auf Apple Silicon paketieren |
+| `java build/interlis/GuiRuntime.java check PROFILE` | GUI-Probe `shell`, `compile`, `diagnostics`, `dependencies`, `repositories`, `lifecycle` oder `packaged` |
+| `java build/interlis/EditorBundleRun.java` | Geprüfte Übergabe für Editorclients |
+| `java build/interlis/EditorCompatibilityRun.java EXTENSION BUNDLE` | Prüfung der expliziten Editorübergabe mit absoluten Verzeichnissen |
 
 Eigene JVM-Produkte haben explizite JPMS-Deskriptoren. Die normalen
 CLI-/LSP-Launcher starten mit dem jeweiligen Modul und einer geprüften
@@ -45,17 +43,12 @@ Ressourcen bleiben im jeweiligen Modul.
 
 Buildausgaben liegen unter `target/jenesis-jvm`. `.jenesis` enthält den
 lokalen Abhängigkeitscache. JUnit-Berichte liegen im Engine-Output unter `executed/output/reports/tests`.
-`clean --scope jvm` entfernt Engine-Ausgaben, Berichte, Buildtools,
-Distributionen, Conformance-Ausgaben sowie Modul- und Laufzeitprüfungen.
-`clean --scope consumer` entfernt Snapshots, Übergaben und Editor-Bundles
-sowie ihre Laufverzeichnisse. `clean --scope wasm` entfernt die
-Buildverzeichnisse der beiden portablen Backends.
-
-Die derzeitigen Clean-Sichten erfassen GUI-Pakete unter `target/jenesis-jvm/gui`,
-CLI-Revisionsressourcen unter `target/jenesis-jvm/build-revisions` und
-Renderer-Ausgaben unter `frontend/diagram-ui/{dist,build}` nicht. Diese
-Ausgaben gehören zur Bestandsaufnahme für die gezielte Clean-Umstellung.
-Root-`build/`, Dokumentation und externe Belege sind Quellen.
+`java build/interlis/BuildOutputs.java jvm` entfernt die JVM-Ausgaben
+einschliesslich GUI-Paketen und Revisionsressourcen.
+`java build/interlis/BuildOutputs.java editor` entfernt Editor-Bundles und
+die zugehörigen Renderer-Ausgaben. `./gradlew clean` entfernt ausschliesslich
+die beiden Backend-Buildverzeichnisse. Die Jenesis-Quellen und
+Abhängigkeitscaches bleiben erhalten.
 
 ## Portable Backends
 
@@ -70,34 +63,24 @@ und die Prüfungen vor einer Browserveröffentlichung.
 export INTERLIS_NODE=/absolute/node-24.22.0/bin/node
 export PATH="$(dirname "$INTERLIS_NODE"):$PATH"
 npm ci --prefix interlis-wasm-teavm
-java build/InterlisJvmBuild.java wasm-export
-JVM_INPUTS=$(jq -er .manifest target/jenesis-jvm/reports/wasm-export.json)
-JVM_INPUTS_SHA256=$(jq -er .manifestSha256 target/jenesis-jvm/reports/wasm-export.json)
-java build/InterlisJvmBuild.java wasm --profile teavm-smoke \
-  --inputs "$JVM_INPUTS" --inputs-sha256 "$JVM_INPUTS_SHA256"
+./gradlew "-PnodeExecutable=$INTERLIS_NODE" \
+  :interlis-wasm-teavm:teavmJsTest :interlis-wasm-teavm:teavmWasmTest \
+  :interlis-wasm-teavm:browserClientTest :interlis-wasm-teavm:diagramAdapterTest
 ```
 
-Die Exportdatei enthält den absoluten Manifestpfad und dessen SHA-256-Prüfsumme. Gradle
-verifiziert beides und prüft die im unveränderlichen ConsumerSnapshot
-erfassten Artefakte, Closure, Module und Ressourcen. Backend-Codegenerierung
-und Laufproben bleiben an denselben Snapshot gebunden. Direkte
-Wrapperaufrufe benötigen ebenfalls `-PjvmInputs`, `-PjvmInputsSha256` und das
-geprüfte `-PnodeExecutable`. Der normale JVM-Build braucht diese Toolchains
-nicht.
+Gradle startet den offiziellen Jenesis-Einstieg bei Bedarf und übernimmt
+die in dessen Modul-Inventar ausgewiesenen Runtime-JARs aus dem aktuellen
+Checkout. Die Backend-Tasks verfolgen diese JARs als Classpath-Eingaben.
+Für die Browserversion liest Gradle zusätzlich das Versionsmanifest aus
+der aktuellen CLI. Der JVM-Build benötigt weder Node noch GraalVM Web Image.
 
-- `teavm-smoke` baut JS und WasmGC und führt direkte Node-Tests für beide
-  Laufzeiten, den Client und den Diagrammadapter aus.
-- `browser-smoke` lädt das vorbereitete Browserpaket in Chromium mit dem
-  tatsächlichen Worker. `browser-check` führt dieselben Prüfungen zusätzlich
-  in Firefox und Playwright-WebKit aus.
-- `webimage-smoke` prüft das experimentelle Web-Image-Backend explizit.
-- `wasm-prepare` und `browser-prepare` erzeugen die jeweiligen Artefakte.
+- `:interlis-wasm-teavm:buildWasmGC` erzeugt die WasmGC-Dateien.
+- `:interlis-wasm-teavm:prepareBrowserHarness` baut das Browserpaket.
+- `:interlis-wasm-teavm:browserSmoke` prüft dieses Paket mit Chromium.
+  `:interlis-wasm-teavm:browserCheck` prüft zusätzlich Firefox und Playwright-WebKit.
+- `:interlis-wasm-teavm:safariSmoke` startet die Probe mit installiertem Safari.
+- `:interlis-wasm-webimage:webImageSmoke` prüft das experimentelle Web-Image-Backend.
 
 Installiere für Browserproben den entsprechenden gepinnten Playwright-Browser,
 beispielsweise mit `npm exec -- playwright install chromium` in
-`interlis-wasm-teavm`. Ein echter Safari-Lauf erfolgt separat mit
-`:interlis-wasm-teavm:safariSmoke` am Gradle-Wrapper und derselben expliziten
-Snapshotübergabe.
-
-Native APE und der CosmoGVM-Uhrpfad sind zurückgestellt. Der JVM- und
-Portable-Build verwenden die hier beschriebenen Laufzeiten und Übergaben.
+`interlis-wasm-teavm`. Native APE und der CosmoGVM-Uhrpfad sind zurückgestellt.

@@ -97,6 +97,9 @@ public final class InterlisProject {
         String revision = new String(git.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).strip();
         if (!revision.matches("[0-9a-f]{40}|[0-9a-f]{64}")) return null;
         Path file = root.resolve("target/jenesis-jvm/build-revisions").resolve(revision + ".txt");
+        for (Path path = file; !path.equals(root); path = path.getParent()) {
+            if (Files.isSymbolicLink(path)) throw new IllegalStateException("Symlink in CLI revision output: " + path);
+        }
         Files.createDirectories(file.getParent());
         if (!Files.exists(file)) Files.writeString(file, revision);
         return file;

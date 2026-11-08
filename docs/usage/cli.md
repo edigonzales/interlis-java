@@ -2,7 +2,7 @@
 
 Die [Compiler-Anleitung](compiler.md) führt anhand von Beispielen in die Bedienung ein.
 
-`java build/InterlisJvmBuild.java sdk-package` erzeugt den modularen
+`java build/interlis/ExistingJvmDistribution.java sdk` erzeugt den modularen
 Launcher unter `target/jenesis-jvm/delivery/compiler/bin`. Im entpackten
 SDK liegt er unter `cli/bin`. Windows verwendet `interlis-compiler.bat`.
 `help` dokumentiert die verfügbaren Befehle und ihre Optionen.

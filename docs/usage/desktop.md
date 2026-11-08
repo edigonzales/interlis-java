@@ -55,13 +55,13 @@ für die Prüfung von Fenster und Quit.
 
 ```sh
 java build/jenesis/Make.java +interlis-compiler-gui
-java build/InterlisJvmBuild.java gui-run
-java build/InterlisJvmBuild.java gui-runtime
-java build/InterlisJvmBuild.java gui-package
-java build/InterlisJvmBuild.java gui-check --profile packaged
+java build/interlis/GuiRuntime.java run
+java build/interlis/GuiRuntime.java runtime
+java build/interlis/GuiRuntime.java package
+java build/interlis/GuiRuntime.java check packaged
 ```
 
-`gui-package` gibt den genauen Pfad zur App unter
+`GuiRuntime.java package` gibt den genauen Pfad zur App unter
 `target/jenesis-jvm/gui/<run-id>/macos-arm64/` aus. Dieser Befehl startet
 kein Fenster. Er verpackt das für die GUI erzeugte jlink-Image und
 schreibt das JAR- und Modulinventar neben die App. Die sichtbare

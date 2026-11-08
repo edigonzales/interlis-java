@@ -1,6 +1,5 @@
 package build.interlis;
 
-import build.InterlisJvmBuild.BuildRequest;
 import com.sun.net.httpserver.*;
 import javax.net.ssl.*;
 import java.net.InetSocketAddress;
@@ -12,8 +11,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /** Explicit, private HotSpot capability gate; no installer or native compiler is invoked. */
 public final class CompilerRuntimeCheck {
+    public static void main(String[] args) throws Exception {
+        if (args.length != 0) throw new IllegalArgumentException("Expected no arguments");
+        run(Path.of("").toAbsolutePath().normalize());
+    }
+
     public static void run(Path root)throws Exception {
-        var outcome=JenesisBridge.run(new BuildRequest("artifacts",null,null,root));
+        var outcome=JenesisBridge.artifacts(root);
         Path run=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/runtime-checks/"+UUID.randomUUID());
         Files.createDirectories(run);
         Path delivery=run.resolve("delivery"),image=run.resolve("runtime");
@@ -79,7 +83,7 @@ public final class CompilerRuntimeCheck {
         gate.process("app-image-version",List.of(app.resolve(appLauncher).toString(),"version","--json"),Map.of("JAVA_HOME",run.resolve("foreign-home").toString(),"PATH",env.get("PATH")),0);
         if(!Files.isRegularFile(image.resolve("legal/java.base/LICENSE")))throw new IllegalStateException("Missing runtime license");
         var inventory=new TreeMap<String,String>();try(var paths=Files.walk(image)){for(Path file:paths.filter(Files::isRegularFile).sorted().toList())inventory.put(image.relativize(file).toString(),JvmBuildInputs.sha256(file));}
-        Files.writeString(run.resolve("result.json"),JsonOutput.write(Map.of("status","passed","jdkHome",jdk.toString(),"jdkReleaseSha256",JvmBuildInputs.sha256(jdk.resolve("release")),"jdkModules",modules,"dynamicModuleReasons",Map.of("jdk.crypto.ec","HTTPS cryptographic provider","jdk.compiler","SDK javac consumer"),"bindServices",false,"runtimeFiles",inventory,"appImageCapability",true,"productionFormatSelected",false,"engineInventorySha256",JvmBuildInputs.sha256(outcome.inventory()))));
+        Files.writeString(run.resolve("result.json"),JsonOutput.write(Map.of("status","passed","jdkHome",jdk.toString(),"jdkReleaseSha256",JvmBuildInputs.sha256(jdk.resolve("release")),"jdkModules",modules,"dynamicModuleReasons",Map.of("jdk.crypto.ec","HTTPS cryptographic provider","jdk.compiler","SDK javac consumer"),"bindServices",false,"runtimeFiles",inventory,"appImageCapability",true,"productionFormatSelected",false,"engineInventorySha256",JvmBuildInputs.sha256(JenesisBridge.moduleResult(outcome, "interlis-compiler-cli").inventoryDirectory().resolve("inventory.properties")))));
         System.out.println("COMPILER_RUNTIME_CHECK_PASS "+run);
     }
     private record Gate(Path run) {
