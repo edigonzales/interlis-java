@@ -203,8 +203,8 @@ final class FunctionBindings {
     }
 
     private boolean assign(TypeId source,TypeId target) {
-        return guru.interlis.model.internal.TypeCompatibility.assign(typeBindings.effectiveDescriptor(source),typeBindings.effectiveDescriptor(target),
-                typeBindings::effectiveDescriptor,state::baseOf,domain->typeBindings.effectiveDescriptor(state.declaredType(domain)),AssignmentContext.FUNCTION_ARGUMENT)
+        return typeBindings.assignment(typeBindings.effectiveDescriptor(source),
+                typeBindings.effectiveDescriptor(target), AssignmentContext.FUNCTION_ARGUMENT)
                 .decision()==RelationDecision.ALLOWED;
     }
 

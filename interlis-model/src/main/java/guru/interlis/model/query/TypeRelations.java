@@ -81,6 +81,11 @@ public final class TypeRelations {
         return new QueryResult.Known<>(new EffectiveType(descriptor.id(), current.id(), aliasPath));
     }
 
+    /**
+     * Checks value assignment in this snapshot. Numeric assignment checks
+     * interval containment and bound unit compatibility. A wholly unbounded
+     * unitless numeric target accepts unit-bearing values.
+     */
     public QueryResult<TypeRelation> canAssign(TypeRef source, TypeRef target,
                                                 AssignmentContext context) {
         Objects.requireNonNull(context, "context");
@@ -128,7 +133,12 @@ public final class TypeRelations {
                 id -> resolveAliases(new TypeRef(graph.snapshotId(), id)).known()
                         .flatMap(e -> graph.type(e.effectiveType())).orElse(null),
                 this::declarationBase,id -> graph.declaredType(id).flatMap(type->resolveAliases(new TypeRef(graph.snapshotId(),type)).known())
-                        .flatMap(e->graph.type(e.effectiveType())).orElse(null), context);
+                        .flatMap(e->graph.type(e.effectiveType())).orElse(null), this::unit, context);
+    }
+
+    private guru.interlis.model.UnitSymbol unit(guru.interlis.model.SymbolId id) {
+        return graph.symbol(id).filter(guru.interlis.model.UnitSymbol.class::isInstance)
+                .map(guru.interlis.model.UnitSymbol.class::cast).orElse(null);
     }
 
     private guru.interlis.model.SymbolId declarationBase(guru.interlis.model.SymbolId id) {
@@ -179,8 +189,7 @@ public final class TypeRelations {
                     id -> resolveAliases(new TypeRef(graph.snapshotId(),id)).known().flatMap(e -> graph.type(e.effectiveType())).orElse(null),
                     this::declarationBase, id -> graph.declaredType(id).flatMap(type -> resolveAliases(new TypeRef(graph.snapshotId(),type)).known())
                             .flatMap(e -> graph.type(e.effectiveType())).orElse(null),
-                    id -> graph.symbol(id).filter(guru.interlis.model.UnitSymbol.class::isInstance)
-                            .map(guru.interlis.model.UnitSymbol.class::cast).orElse(null)));
+                    this::unit));
         return canAssign(derived, base, AssignmentContext.NORMAL);
     }
 

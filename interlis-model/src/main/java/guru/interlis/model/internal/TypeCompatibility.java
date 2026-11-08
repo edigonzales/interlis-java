@@ -56,7 +56,7 @@ public final class TypeCompatibility {
         if(derived instanceof TextType a && base instanceof TextType b && (b.textKind()==TextKind.NAME || b.textKind()==TextKind.URI))
             return a.textKind()==b.textKind() && a.maxLength().equals(b.maxLength())
                     ? allowed("unchanged-final-text-type") : disallowed("final-text-type");
-        return assign(derived,base,resolve,baseOf,domainType);
+        return assign(derived,base,resolve,baseOf,domainType,units,AssignmentContext.NORMAL);
     }
 
     /** Geometry extension over effective, alias-resolved definitions. Unlike value
@@ -205,6 +205,7 @@ public final class TypeCompatibility {
         if (base.isEmpty()) return true;
         if (actual.isEmpty()) return false;
         DecimalLiteral boundary = base.orElseThrow();
+        if (boundary.precision().origin() == PrecisionOrigin.COMPUTED) return false;
         int scale = boundary.precision().fractionalDigits() - boundary.precision().exponent();
         BigDecimal value = actual.orElseThrow().exactValue().setScale(scale, java.math.RoundingMode.HALF_UP);
         return minimum ? value.compareTo(boundary.exactValue()) >= 0 : value.compareTo(boundary.exactValue()) <= 0;
@@ -212,7 +213,9 @@ public final class TypeCompatibility {
 
     private static boolean precisionChanged(java.util.Optional<DecimalLiteral> base, java.util.Optional<DecimalLiteral> derived) {
         return base.isPresent() && derived.isPresent()
-                && base.orElseThrow().precision().fractionalDigits() != derived.orElseThrow().precision().fractionalDigits();
+                && (base.orElseThrow().precision().origin() == PrecisionOrigin.COMPUTED
+                || derived.orElseThrow().precision().origin() == PrecisionOrigin.COMPUTED
+                || base.orElseThrow().precision().fractionalDigits() != derived.orElseThrow().precision().fractionalDigits());
     }
 
     /** Static conversion compatibility, using declared conversion links and
@@ -407,31 +410,13 @@ public final class TypeCompatibility {
         return type instanceof ReferenceType || type instanceof ObjectArgumentType o && !o.objects();
     }
 
-    public static TypeRelation assign(TypeDescriptor source, TypeDescriptor target,
-                                      java.util.function.Function<TypeId, TypeDescriptor> resolve) {
-        return assign(source, target, resolve, ignored -> null);
-    }
-
-    public static TypeRelation assign(TypeDescriptor source, TypeDescriptor target,
-                                      java.util.function.Function<TypeId, TypeDescriptor> resolve,
-                                      java.util.function.Function<SymbolId, SymbolId> baseOf) {
-        return assign(source,target,resolve,baseOf,ignored->null);
-    }
-
-    /** Domain descriptors are needed for geometric vertex specialization; callers supply their existing graph lookup. */
-    public static TypeRelation assign(TypeDescriptor source, TypeDescriptor target,
-            java.util.function.Function<TypeId,TypeDescriptor> resolve,
-            java.util.function.Function<SymbolId,SymbolId> baseOf,
-            java.util.function.Function<SymbolId,TypeDescriptor> domainType) {
-        return assign(source,target,resolve,baseOf,domainType,AssignmentContext.NORMAL);
-    }
-
     /** Function arguments may view an object as its inherited structure, unlike
      * ordinary embedded value assignment. Context is explicit and shared. */
     public static TypeRelation assign(TypeDescriptor source, TypeDescriptor target,
             java.util.function.Function<TypeId,TypeDescriptor> resolve,
             java.util.function.Function<SymbolId,SymbolId> baseOf,
-            java.util.function.Function<SymbolId,TypeDescriptor> domainType, AssignmentContext context) {
+            java.util.function.Function<SymbolId,TypeDescriptor> domainType,
+            java.util.function.Function<SymbolId,UnitSymbol> units, AssignmentContext context) {
         java.util.Objects.requireNonNull(context,"context");
         if (source == null || target == null || source instanceof ErrorType || target instanceof ErrorType) {
             return disallowed("unresolved-type");
@@ -478,6 +463,8 @@ public final class TypeCompatibility {
         if (source instanceof EnumerationType s && target instanceof EnumerationType t)
             return enumerationExtends(s, t, resolve) ? allowed("enumeration-specialization") : disallowed("enumeration-target-differs");
         if (source instanceof NumericType s && target instanceof NumericType t) {
+            TypeRelation unit = numericUnitExtension(s, t, units);
+            if (unit.decision() == RelationDecision.DISALLOWED) return unit;
             return numericContained(s, t) ? allowed("numeric-range-contained")
                     : disallowed("numeric-range-widens");
         }
@@ -503,7 +490,7 @@ public final class TypeCompatibility {
             if (t.owner().isPresent() && !s.owner().equals(t.owner())) return disallowed("attribute-path-owner-differs");
             if (t.restrictions().isEmpty()) return allowed("unrestricted-attribute-path");
             boolean fits = !s.restrictions().isEmpty() && s.restrictions().stream().allMatch(a ->
-                    t.restrictions().stream().anyMatch(b -> assign(resolve.apply(a), resolve.apply(b), resolve, baseOf, domainType).decision() == RelationDecision.ALLOWED));
+                    t.restrictions().stream().anyMatch(b -> assign(resolve.apply(a), resolve.apply(b), resolve, baseOf, domainType, units, context).decision() == RelationDecision.ALLOWED));
             return fits ? allowed("attribute-path-type-contained") : disallowed("attribute-path-type-widens");
         }
         if (source instanceof ClassValueType s && target instanceof ClassValueType t) {
@@ -556,7 +543,7 @@ public final class TypeCompatibility {
             }
             TypeDescriptor se = resolve.apply(s.elementType());
             TypeDescriptor te = resolve.apply(t.elementType());
-            TypeRelation element = assign(se, te, resolve, baseOf, domainType, context);
+            TypeRelation element = assign(se, te, resolve, baseOf, domainType, units, context);
             if (element.decision() != RelationDecision.ALLOWED) {
                 return disallowed("collection-element-" + element.reason());
             }

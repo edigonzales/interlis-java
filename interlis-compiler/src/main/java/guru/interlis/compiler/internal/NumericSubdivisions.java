@@ -68,8 +68,11 @@ final class NumericSubdivisions {
         if(unknown(own)||unknown(predecessor))return;
         if(!(own instanceof NumericType number)) {error(declaration,"subdivision must have a scalar numeric type","SUBDIVISION_NUMERIC");return;}
         if(!(predecessor instanceof NumericType parent)) {error(declaration,"subdivision predecessor must have a scalar numeric type","SUBDIVISION_PREDECESSOR_NUMERIC");return;}
-        if(parent.range().minimum().filter(v->!integerPrecision(v)).isPresent()
-                ||parent.range().maximum().filter(v->!integerPrecision(v)).isPresent()) {
+        boolean unknownArithmeticPrecision = parent.range().minimum().isEmpty() && parent.range().maximum().isEmpty()
+                && previous.derivations().stream().map(state::expression).anyMatch(expression ->
+                        expression instanceof BinaryExpression binary && binary.typeId().equals(parent.id()));
+        if (unknownArithmeticPrecision || parent.range().minimum().filter(v -> !integerPrecision(v)).isPresent()
+                || parent.range().maximum().filter(v -> !integerPrecision(v)).isPresent()) {
             error(declaration,"subdivision predecessor must be integer-valued","SUBDIVISION_PREDECESSOR_INTEGER");return;
         }
         if(number.range().minimum().filter(v->v.exactValue().signum()<0).isPresent()
@@ -107,6 +110,7 @@ final class NumericSubdivisions {
         for(long i=0;i<work;i++)this.work.checkpoint();
     }
     private static boolean unknown(TypeDescriptor type) {return type==null||type instanceof ErrorType||type instanceof PendingType;}
-    private static boolean integerPrecision(DecimalLiteral value) {return value.precision().exponent()>=value.precision().fractionalDigits();}
+    private static boolean integerPrecision(DecimalLiteral value) {return value.precision().origin() != PrecisionOrigin.COMPUTED
+                && value.precision().exponent() >= value.precision().fractionalDigits();}
     private void error(DeclInfo declaration,String message,String reason) {diagnostics.emitRule(declaration,message,reason);}
 }

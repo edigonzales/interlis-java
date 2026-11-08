@@ -4,11 +4,14 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 /**
- * Exact numeric literal with its original lexeme and precision metadata.
+ * Exact decimal value with a spelling and its representation metadata.
  *
- * @param lexeme the {@code lexeme} component
- * @param exactValue the {@code exactValue} component
- * @param precision the {@code precision} component
+ * @param lexeme original source spelling for {@link PrecisionOrigin#LEXICAL};
+ *               deterministic generated spelling of the exact value for
+ *               {@link PrecisionOrigin#COMPUTED}
+ * @param exactValue exact, non-null decimal value
+ * @param precision non-null metadata describing the spelling and its origin.
+ *                  A computed spelling alone establishes no quantization grid.
  */
 public record DecimalLiteral(String lexeme, BigDecimal exactValue, DecimalPrecision precision) {
     /** Creates a validated instance. */

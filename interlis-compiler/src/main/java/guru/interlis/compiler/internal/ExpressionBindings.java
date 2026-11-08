@@ -5,6 +5,7 @@ import guru.interlis.diagnostics.DiagnosticId;
 import guru.interlis.diagnostics.Severity;
 import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.Cardinality;
+import guru.interlis.model.BinaryOperator;
 import guru.interlis.model.ClassValueType;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.DecimalLiteral;
@@ -467,9 +468,8 @@ final class ExpressionBindings {
     }
 
     private boolean builtinArgumentMatches(TypeId actual, BuiltinFunctions.Value expected, guru.interlis.model.LanguageVersion language) {
-        return guru.interlis.model.internal.TypeCompatibility.assign(typeBindings.effectiveDescriptor(actual),
-                typeBindings.effectiveDescriptor(builtinResultType(expected,language)),typeBindings::effectiveDescriptor,state::baseOf,
-                domain->typeBindings.effectiveDescriptor(state.declaredType(domain)),guru.interlis.model.AssignmentContext.FUNCTION_ARGUMENT)
+        return typeBindings.assignment(typeBindings.effectiveDescriptor(actual),
+                typeBindings.effectiveDescriptor(builtinResultType(expected,language)), guru.interlis.model.AssignmentContext.FUNCTION_ARGUMENT)
                 .decision()==guru.interlis.model.RelationDecision.ALLOWED;
     }
 
@@ -506,9 +506,9 @@ final class ExpressionBindings {
                 var actual = arguments.get(i);
                 TypeId expected = function.parameters().get(i).typeId();
                 actual=contextualValue(actual,expected,owner);arguments.set(i,actual);
-                if (!actual.error() && !(typeBindings.effectiveDescriptor(expected) instanceof guru.interlis.model.AttributePathType) && guru.interlis.model.internal.TypeCompatibility.assign(
+                if (!actual.error() && !(typeBindings.effectiveDescriptor(expected) instanceof guru.interlis.model.AttributePathType) && typeBindings.assignment(
                         typeBindings.effectiveDescriptor(actual.typeId()), typeBindings.effectiveDescriptor(expected),
-                        typeBindings::effectiveDescriptor, state::baseOf, domain -> typeBindings.effectiveDescriptor(state.declaredType(domain)),guru.interlis.model.AssignmentContext.FUNCTION_ARGUMENT).decision()
+                        guru.interlis.model.AssignmentContext.FUNCTION_ARGUMENT).decision()
                         != guru.interlis.model.RelationDecision.ALLOWED) {
                     diagnostics.emitTypeMismatch(ownerSource(owner), syntax.arguments().get(i).range(),
                             typeBindings.typeName(actual.typeId()), typeBindings.typeName(expected));
@@ -595,11 +595,30 @@ final class ExpressionBindings {
                 }
             }
             case PLUS, MINUS, MUL, DIV -> {
-                result = left.typeId();
-                if (!error && (!typeBindings.isNumeric(left.typeId()) || !typeBindings.isNumeric(right.typeId()))) {
-                    diagnostics.emitTypeMismatch(ownerSource(owner), syntax.range(),
+                work.checkpoint();
+                if (error) {
+                    result = left.error() ? left.typeId() : right.typeId();
+                } else if (!typeBindings.isNumeric(left.typeId()) || !typeBindings.isNumeric(right.typeId())) {
+                    DiagnosticId diagnostic = diagnostics.emitTypeMismatch(ownerSource(owner), syntax.range(),
                             typeBindings.typeName(left.typeId()) + "," + typeBindings.typeName(right.typeId()), "NUMERIC");
+                    result = typeBindings.nextTypeId();
+                    typeBindings.defineType(new ErrorType(result, new Origin.DeclaredOrigin(syntax.range()), List.of(diagnostic)));
                     error = true;
+                } else {
+                    if (syntax.operator() == BinaryOperator.PLUS || syntax.operator() == BinaryOperator.MINUS) {
+                        left = contextualNumericConstant(left, right.typeId());
+                        right = contextualNumericConstant(right, left.typeId());
+                    }
+                    TypeDescriptor a = typeBindings.effectiveDescriptor(left.typeId());
+                    TypeDescriptor b = typeBindings.effectiveDescriptor(right.typeId());
+                    if (a instanceof NumericType x && b instanceof NumericType y) {
+                        result = typeBindings.nextTypeId();
+                        typeBindings.defineType(new NumericType(result, new Origin.DeclaredOrigin(syntax.range()),
+                                NumericExpressionRanges.infer(syntax.operator(), x.range(), y.range(), work)));
+                    } else {
+                        // Numeric-family validation above leaves only UNDEFINED here.
+                        result = a instanceof NumericType ? right.typeId() : left.typeId();
+                    }
                 }
             }
         }

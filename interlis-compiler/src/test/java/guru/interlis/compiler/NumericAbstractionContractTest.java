@@ -66,7 +66,11 @@ class NumericAbstractionContractTest {
     }
     @Test void formalNumericArgumentsAndInferredViewResultsAreNotAbstractDeclarations() {
         for(String v:List.of("2.3","2.4")) {
-            ok(v,"UNIT L(ABSTRACT);FUNCTION check(n:NUMERIC[L]):NUMERIC;TOPIC T=CLASS C=n:0..10;MANDATORY CONSTRAINT F.check(n)>0;END C;VIEW V AGGREGATION OF C ALL;=count:=INTERLIS.elementCount(AGGREGATES);END V;END T;");
+            String model = "UNIT L(ABSTRACT);m EXTENDS L;FUNCTION check(n:NUMERIC[L]):NUMERIC;"
+                    + "TOPIC T=CLASS C=n:0..10[m];MANDATORY CONSTRAINT F.check(n)>0;END C;"
+                    + "VIEW V AGGREGATION OF C ALL;=count:=INTERLIS.elementCount(AGGREGATES);END V;END T;";
+            ok(v, model);
+            bad(v, model.replace("0..10[m]", "0..10"), "ILI-SEM-0005");
         }
     }
     @Test void genericCoordinatesKeepTheirLegalContextAndDeferredState() {

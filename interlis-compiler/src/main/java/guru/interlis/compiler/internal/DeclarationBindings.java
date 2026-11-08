@@ -700,7 +700,8 @@ final class DeclarationBindings {
                     && guru.interlis.model.internal.TypeCompatibility.isUndefined(typeBindings.effectiveDescriptor(bound.typeId())))
                 diagnostics.emitRule(decl,"MANDATORY attribute excludes an explicitly undefined derived value","MANDATORY_VALUE",expression.range());
             if (!bound.error() && !typeBindings.assignable(bound.typeId(), type))
-                diagnostics.emitTypeMismatch(decl.sourceId(), expression.range(), typeBindings.typeName(bound.typeId()), typeBindings.typeName(type));
+                diagnostics.emitTypeMismatch(decl.sourceId(), expression.range(), typeBindings.assignmentTypeName(bound.typeId()),
+                        typeBindings.assignmentTypeName(type));
         }
         return List.copyOf(result);
     }

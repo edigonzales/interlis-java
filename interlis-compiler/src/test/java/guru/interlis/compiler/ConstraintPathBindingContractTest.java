@@ -188,8 +188,10 @@ class ConstraintPathBindingContractTest {
                 var existence = (ExistenceConstraint) constraints(graph).getFirst();
                 var from = graph.type(path(graph, existence.source()).typeId()).orElseThrow();
                 var to = graph.type(path(graph, existence.targets().getFirst().path()).typeId()).orElseThrow();
-                assertEquals(RelationDecision.DISALLOWED, guru.interlis.model.internal.TypeCompatibility
-                        .assign(from, to, id -> graph.type(id).orElseThrow()).decision());
+                var queries = new guru.interlis.model.query.TypeRelations(graph);
+                assertEquals(RelationDecision.DISALLOWED, queries.canAssign(
+                        new TypeRef(graph.snapshotId(), from.id()), new TypeRef(graph.snapshotId(), to.id()),
+                        AssignmentContext.NORMAL).known().orElseThrow().decision());
             }
             String units = "UNIT metre [m]; second [s]; TOPIC T = CLASS A = value: 0..10 [m]; END A; "
                     + "CLASS B = value: 0..999 [s]; EXISTENCE CONSTRAINT value REQUIRED IN A:value; END B; END T;";

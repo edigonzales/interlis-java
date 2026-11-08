@@ -574,6 +574,24 @@ Die [FORMAT-Zuweisungs- und Erweiterungsprüfung](#gemeinsame-format-relationen)
 im Syntaxdienst geprüft, mit ILI-SYN-0004 für Folgetokens.
 
 <a id="gebundene-funktionsargumentpfade-und-zahlenkonstanten"></a>
+Für arithmetische Ausdrücke beschreibt der Compiler eigene numerische
+Ergebnistypen. Die begrenzte Herleitung umfasst exakt darstellbare kleine
+Literaloperationen und einfache ganzzahlige Intervalle auf modellkonformen
+nominalen Werten. Fehlt ein Nachweis für die Grenzen oder die Einheit, ist das
+Ergebnis vollständig offenes NUMERIC. Die Typgrenzen beschreiben definierte
+Werte. Die Pflicht eines Attributes ergibt sich separat aus seiner Deklaration.
+
+Berechnete Grenzen tragen `PrecisionOrigin.COMPUTED`. Ihr Lexem stellt den
+exakten Grenzwert deterministisch dar. Das Lexem allein liefert kein
+Quantisierungsraster. Lexikalische Literale behalten ihre Originalschreibweise.
+
+Compiler und `TypeRelations.canAssign` prüfen numerische Bereichsenthaltung
+und gebundene Einheiten gemeinsam. Ein Ziel mit konkreter Einheit verlangt
+dieselbe Einheit. Bei abstrakten Zieleinheiten zählen die gebundenen
+Spezialisierungen. Vollständig offenes einheitenloses NUMERIC ist ein Wildcard.
+Die Bindung eines nackten Literals kann die erwartete Einheit ergänzen.
+`INTERLIS.convertUnit` stellt die ausdrückliche Umrechnung bereit.
+
 ## Gebundene Funktionsargumentpfade und Zahlenkonstanten
 
 META-006/011/014: FunctionCallExpression.argumentPaths ist eine unveränderliche,

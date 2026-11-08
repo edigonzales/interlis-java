@@ -346,8 +346,7 @@ final class ConstraintBindings {
             return guru.interlis.model.internal.TypeCompatibility.relatedEnumerations(a, b, typeBindings.get()::effectiveDescriptor) || a.ordered() == b.ordered() && a.circular() == b.circular()
                     && a.values().stream().map(EnumerationValue::path).toList()
                     .equals(b.values().stream().map(EnumerationValue::path).toList());
-        return guru.interlis.model.internal.TypeCompatibility.assign(actual, expected,
-                typeBindings.get()::effectiveDescriptor, state::baseOf, domain -> typeBindings.get().effectiveDescriptor(state.declaredType(domain))).decision() == guru.interlis.model.RelationDecision.ALLOWED;
+        return typeBindings.get().assignment(actual, expected, guru.interlis.model.AssignmentContext.NORMAL).decision() == guru.interlis.model.RelationDecision.ALLOWED;
     }
 
     private boolean numericValueCompatible(NumericRange a, NumericRange b) {

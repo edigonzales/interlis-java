@@ -10,6 +10,7 @@ import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.ClassValueType;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.CoordinateType;
+import guru.interlis.model.DecimalLiteral;
 import guru.interlis.model.DeclaredName;
 import guru.interlis.model.Documentation;
 import guru.interlis.model.DomainReferenceType;
@@ -318,7 +319,14 @@ final class TypeBindings {
 
     boolean assignable(TypeId actual, TypeId expected) {
         if(mandatoryType(expected) && guru.interlis.model.internal.TypeCompatibility.isUndefined(effectiveDescriptor(actual)))return false;
-        return guru.interlis.model.internal.TypeCompatibility.assign(effectiveDescriptor(actual), effectiveDescriptor(expected), this::effectiveDescriptor, state::baseOf, domain -> effectiveDescriptor(state.declaredType(domain))).decision() == guru.interlis.model.RelationDecision.ALLOWED;
+        return assignment(effectiveDescriptor(actual), effectiveDescriptor(expected), guru.interlis.model.AssignmentContext.NORMAL)
+                .decision() == guru.interlis.model.RelationDecision.ALLOWED;
+    }
+
+    guru.interlis.model.TypeRelation assignment(TypeDescriptor actual, TypeDescriptor expected,
+            guru.interlis.model.AssignmentContext context) {
+        return guru.interlis.model.internal.TypeCompatibility.assign(actual, expected, this::effectiveDescriptor,
+                state::baseOf, domain -> effectiveDescriptor(state.declaredType(domain)), units::extensionUnit, context);
     }
 
     /** Resolve once so every expression and the published attribute share the same type. */
@@ -694,6 +702,15 @@ final class TypeBindings {
             return text.textKind().name() + (text.maxLength().isPresent() ? "*" + text.maxLength().getAsInt() : "");
         }
         return descriptor == null ? "UNKNOWN" : descriptor.kind().name();
+    }
+
+    String assignmentTypeName(TypeId id) {
+        if (!(effectiveDescriptor(id) instanceof NumericType numeric)) return typeName(id);
+        var range = numeric.range();
+        String bounds = range.minimum().isEmpty() && range.maximum().isEmpty() ? "NUMERIC"
+                : range.minimum().map(DecimalLiteral::lexeme).orElse("*") + ".."
+                + range.maximum().map(DecimalLiteral::lexeme).orElse("*");
+        return bounds + range.unit().map(units::extensionUnit).map(unit -> " [" + unit.name().value() + "]").orElse("");
     }
 
     void buildEffectiveTypes() {
