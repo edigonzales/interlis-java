@@ -35,13 +35,41 @@
   Vertragsversion betroffen ist. Erhöhe sie bei einem inkompatiblen Bruch im
   selben PR. Begründe bei kompatiblen Änderungen die Versionsentscheidung.
   Die Prüfliste steht in der [Freigabeprüfung](docs/development/release.md#vertragsversionen).
-- Wähle die kleinsten [aussagekräftigen Prüfungen](docs/development/testing.md).
-  Führe breite Korpus-, Browser-, Plattform- und Benchmarkläufe aus, wenn
-  eine betroffene Abnahme sie fordert. Unabhängige Reviews prüfen Originalbelege
-  und eigene gezielte Gegenproben. Belastbare Nachweise dürfen wiederverwendet
-  werden, wenn relevante Eingaben und Produktstand übereinstimmen.
-- Erfasse Befehle, Werkzeugversionen, Prüfbereiche, Exits, Skips und offene
-  Nachweise. Ein abgebrochener oder übersprungener Lauf zählt nicht als Erfolg.
-  Ändere Goldens, XFAILs und erwartete Diagnosen nur mit fachlicher Begründung.
-  Ein vollständiges Freigabegate richtet sich nach
-  [development/release.md](docs/development/release.md).
+
+## Testphilosophie
+
+- Halte Tests direkt und verständlich. Testfälle sind Java-/JUnit- oder
+  JavaScript-/Node-Code; INTERLIS- und Transferfixtures liegen als `.ili` bzw.
+  `.xtf` vor. Kurze lokale Quelltexte und Parameterisierung im Test sind erlaubt.
+- Keine separaten JSON-/YAML-/XML-/Properties-Testregistrierungen, Norm-Test-
+  Mappings, generierten Testpläne oder künstlichen Coverage-Inventare. Keine
+  gleichwertige Ersatzregistry in Java. Einzige fachliche Ausnahme ist die
+  externe Codeberg-Conformance-Suite mit ihren eng begründeten Abweichungen.
+- JSON als Produktprotokoll, fachliches Golden, Abhängigkeits-Lock oder notwendiges
+  Buildmanifest ist kein Testkatalog. Produkt- und Buildintegrität bleiben erhalten.
+- Sprachsemantik und öffentliche Schemaergebnisse werden umfassend auf der JVM
+  geprüft. JS/WasmGC prüfen die echten generierten Laufzeiten mit wenigen
+  aussagekräftigen Integrationsfällen und gezielten Backendregressionen. Keine
+  pauschale Duplizierung der gesamten Sprachtestsuite über alle Laufzeiten.
+- Wähle die kleinste ausreichende Testauswahl für eine Änderung. Breite
+  Modultests gehören an sinnvolle Integrationspunkte; vollständige Browser-,
+  Benchmark- oder Referenzmatrizen sind kein Standard nach jedem Edit oder Review.
+- Keine doppelte Testausführung allein für einen zweiten Nachweis. Unveränderte
+  gültige Läufe dürfen verwendet werden; Produkt, Tests, Fixtures, relevante
+  Buildoptionen und Toolchain müssen dazu passen. Nie einen nicht ausgeführten,
+  abgebrochenen oder übersprungenen Pflichtlauf als Erfolg ausgeben.
+- Tests prüfen fachliche Ergebnisse, Fehlerzustände und Isolation, nicht nur
+  erfolgreiche Exits oder Mindestanzahlen. Gezielte Originalnorm-/Issue-Verweise
+  im Test sind sinnvoll; eine maschinelle Vollständigkeitsbehauptung ist es nicht.
+- JUnit-/Node-Discovery und native Reports haben Vorrang vor eigenen Frameworks,
+  Profilgraphen, Reportprojektionen und Belegsammlern. Prozess-, Timeout-,
+  Leerauswahl- und Fehlerweitergabe müssen zuverlässig bleiben.
+- Entferne ersetzte Testinfrastruktur mit ihren Aufrufern, Tags und Dokumentations-
+  vorgaben. Keine Legacy-Aliase, Dummyreports oder parallelen Ersatzpfade.
+- Erhalte konkrete Regressionen, insbesondere Quellbereiche, Typen, Referenzen,
+  Sprachversionsgrenzen, Abbruch, Ressourcenlimits und frische versus
+  wiederverwendete Analysen. Keine Schwächung von Assertions für einen grünen Build.
+- Unabhängige Reviews prüfen Originalcode, Ziele und eigene gezielte Gegenproben.
+  Sie müssen nicht identische breite Läufe wiederholen. Ein Bericht dokumentiert
+  den geprüften Commit, Befehle, Ergebnisse und offene Grenzen ohne eigene
+  neue maschinenlesbare Review-/Gatearchitektur.
