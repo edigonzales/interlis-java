@@ -10,3 +10,6 @@ testdata/conformance/no-oid/roads/*.ili -text whitespace=cr-at-eol,-blank-at-eol
 # Preserve the original Solothurn regression sources byte for byte.
 testdata/compiler/name-resolution/SO_AGI_Metadata_20230304.ili -text whitespace=-blank-at-eol
 testdata/compiler/name-resolution/SO_AWJF_Gesuchsteller_20210202.ili -text
+# Preserve the pinned Codeberg controls with only their intended source edits.
+testdata/conformance/normative/ili23.XMLGenerator23Test.attribute_GenerateXMLSchemaWithTransientAttribute.ili -text whitespace=-blank-at-eol
+testdata/conformance/normative/ili24.Refhb24Test.roadsExgm2ien.ili -text

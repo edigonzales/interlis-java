@@ -20,6 +20,8 @@ negativen Diagnosen stehen im Manifest. Die Gegenproben gehören zum normalen
 - `expressions_ParentPathElement`: Zielattribut auf `TEXT*20` erweitern.
 - `view_AcceptBasicViewProjectionDef`: Funktionsergebnis auf `TEXT*80` begrenzen.
 - `iliconversion_CheckViewDefWithALLOF`: boolesches `attr3` statt numerischem `attr4` zuweisen.
+- `attribute_GenerateXMLSchemaWithTransientAttribute`: `#true` statt `#True` verwenden. Die vordefinierten BOOLEAN-Werte sind kleingeschrieben. Auch ein transientes Attribut verlangt einen typgerechten Ausdruck.
+- `roadsExgm2ien`: `Rotation := INTERLIS.convertUnit(NamOri)` verwenden. Quell- und Zieltyp deklarieren Grad als getrennte konkrete Einheiten mit gemeinsamer Ableitung aus `INTERLIS.rad`. Die Kontrolle verwendet alle fünf Modelle, davon vier unveränderte Originale aus dem vorhandenen Roads-Fixturebestand.
 
 - `expressions_ThisAreaThatArea`: nur das verbotene `ALL OF` der AREA-Inspektion entfernen; THISAREA und THATAREA bleiben erhalten.
 - `attributeComplete`: CIRCULAR bei den zwei kontinuierlichen Unterteilungen ergänzen.

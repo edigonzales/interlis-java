@@ -736,7 +736,7 @@
             {
               "name": "actual",
               "kind": "TYPE_NAME",
-              "value": "NUMERIC"
+              "value": "1..9999"
             },
             {
               "name": "expected",
@@ -1265,6 +1265,142 @@
         "questionCondition": "Gewöhnliche Werte wie SET CONSTRAINT n>0, len(label)>0 oder DEFINED(THIS) sind nicht vorgesehen. Empfehlung: diese direkten Objekt-/Attributwerte im Hauptausdruck ablehnen; der WHERE-Filter bleibt objektbezogen.",
         "meaning": "Records concrete reference divergences implied by the explicitly approved SET context rule; does not claim separate per-fixture approval."
       }
+    },
+    {
+      "testId": "ili23.XMLGenerator23Test.attribute_GenerateXMLSchemaWithTransientAttribute",
+      "owner": "TS6 Codeberg",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "rejected",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.2.2, 2.6.1, 2.8.4",
+        "reason": "Die BOOLEAN-Aufzählung enthält true, aber kein True. Auch der Ausdruck eines transienten Attributs muss zum Attributtyp passen."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/xml/attribute/attribute_GenerateXMLSchemaWithTransientAttribute.ili",
+          "sha256": "bf17a88b3447997858c2f9734e4979a674923764f22326f9d4756a61c6614533"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.XMLGenerator23Test.attribute_GenerateXMLSchemaWithTransientAttribute.ili",
+          "sha256": "10a584cdb1d3cb11fbd4f5462d1b001b5491edc02efb1a870ab34948b139974a"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0005",
+          "severity": "ERROR",
+          "phase": "TYPE_CHECKING",
+          "messageKey": "diagnostic.semantics.type",
+          "arguments": [
+            {
+              "name": "actual",
+              "kind": "TYPE_NAME",
+              "value": "#True"
+            },
+            {
+              "name": "expected",
+              "kind": "TYPE_NAME",
+              "value": "BOOLEAN"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/xml/attribute/attribute_GenerateXMLSchemaWithTransientAttribute.ili",
+            "revision": "1",
+            "startOffset": 186,
+            "endOffset": 191
+          }
+        }
+      ]
+    },
+    {
+      "testId": "ili24.Refhb24Test.roadsExgm2ien",
+      "owner": "TS6 Codeberg",
+      "languageVersion": "2.4",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "rejected",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf",
+        "sections": "3.8.5, 3.14, 3.16",
+        "reason": "NamOri und der Signaturparameter Rotation verwenden separat deklarierte konkrete Gradeinheiten. Der gemeinsame Bezug auf INTERLIS.rad erlaubt die explizite Umrechnung mit convertUnit."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili24/refhb/RoadsExdm2ben.ili",
+          "sha256": "1385416340fffd1fd4fdbe43e00f1591d87c5573cbc42755bdb7c581d226de23"
+        },
+        {
+          "path": "test/data/ili24/refhb/AbstractSymbology.ili",
+          "sha256": "026d80963c8541bf1069d6ac41c9e3ed9fdc10cb8d839e285dbd3c0f2e49713b"
+        },
+        {
+          "path": "test/data/ili24/refhb/RoadsExdm2ien.ili",
+          "sha256": "12086918610a7deaebbaa2fc646148ad095f31d28a700c99a8dcd950c5da223c"
+        },
+        {
+          "path": "test/data/ili24/refhb/StandardSymbology.ili",
+          "sha256": "2cdd2ef1eafb4096cbdc4fb02fee00405908e069c2e9b7991b18110395e9b9e3"
+        },
+        {
+          "path": "test/data/ili24/refhb/RoadsExgm2ien.ili",
+          "sha256": "0f5776a3ad25b6c3d991deae2e8689740b71bb0dc43e0d1ead15994cd4bf611a"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/no-oid/roads/RoadsExdm2ben.ili",
+          "sha256": "1385416340fffd1fd4fdbe43e00f1591d87c5573cbc42755bdb7c581d226de23"
+        },
+        {
+          "path": "testdata/conformance/no-oid/roads/AbstractSymbology.ili",
+          "sha256": "026d80963c8541bf1069d6ac41c9e3ed9fdc10cb8d839e285dbd3c0f2e49713b"
+        },
+        {
+          "path": "testdata/conformance/no-oid/roads/RoadsExdm2ien.ili",
+          "sha256": "12086918610a7deaebbaa2fc646148ad095f31d28a700c99a8dcd950c5da223c"
+        },
+        {
+          "path": "testdata/conformance/no-oid/roads/StandardSymbology.ili",
+          "sha256": "2cdd2ef1eafb4096cbdc4fb02fee00405908e069c2e9b7991b18110395e9b9e3"
+        },
+        {
+          "path": "testdata/conformance/normative/ili24.Refhb24Test.roadsExgm2ien.ili",
+          "sha256": "174a91974b5dfecc061019828233e97c32e10dafc50902f3d3fb3bd0ea1701d0"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "StreetName"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "incompatible signature parameter assignment/GRAPHIC_PARAMETER_TYPE"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/RoadsExgm2ien.ili",
+            "revision": "1",
+            "startOffset": 2644,
+            "endOffset": 2855
+          }
+        }
+      ]
     }
   ]
 }
