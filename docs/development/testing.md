@@ -8,6 +8,9 @@ ausgeführte Prozesse, Rohberichte und bekannte Skips.
 
 ## Direkte Prüfungen
 
+Führe JVM-Tests mit einem normalen Benutzerkonto aus. Die Dateirechtetests
+prüfen tatsächliche Schreibverbote des Betriebssystems.
+
 - `java build/jenesis/Make.java` führt die regulären JVM-Tests aus.
 - `java build/jenesis/Make.java +interlis-model` prüft ein Modul.
 - `java '-Djenesis.test.filter=.*VersionScannerTest' build/jenesis/Make.java +interlis-compiler`
