@@ -289,8 +289,9 @@ Die Browserprobe verwendet den tatsächlichen Worker und den installierten
 Client. Die Sprachsemantik wird umfassend in den JVM-Modultests geprüft.
 
 Das ausgelieferte Browserverzeichnis enthält `build-manifest.json` mit
-Commit und Produktinput-Fingerprint aus dem JVM-Snapshot, Hash und Bytezahl
-jeder Ressource sowie den Produktversionen. Die Vorbereitung liest die
+Commit, Hash und Bytezahl jeder Ressource sowie den Produktversionen.
+Seit Manifestversion 2.0 identifizieren die Ressourcen-Hashes die erzeugte
+Lieferung. Der frühere Quellfingerprint entfällt. Die Vorbereitung liest die
 Fähigkeiten aus dem gebauten Wasm-Modul und vergleicht sie mit dem SDK-
 Versionsmanifest.
 

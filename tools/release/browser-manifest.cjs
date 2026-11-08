@@ -22,6 +22,6 @@ const hash=value=>createHash('sha256').update(value).digest('hex');
  const pin=JSON.parse(fs.readFileSync(path.join(root,'gradle/teavm-core.json'),'utf8'));
  if(JSON.stringify(toolchain.core)!==JSON.stringify(pin)||toolchain.artifactSha256!==hash(fs.readFileSync(compiler)))throw Error('unbound upstream TeaVM generation');
  for(const [file,sha256] of Object.entries(artifacts))if(hash(fs.readFileSync(path.join(root,file)))!==sha256)throw Error('browser artifact changed during preparation');
- const result={schemaVersion:'1.0',versions,gitCommit:versions.gitCommit,sourceFingerprint:snapshot.productInputDigest,artifacts,compilerCapabilities:capabilities.result,toolchain:{core:toolchain.core},resources};
+ const result={schemaVersion:'2.0',versions,gitCommit:versions.gitCommit,artifacts,compilerCapabilities:capabilities.result,toolchain:{core:toolchain.core},resources};
  fs.writeFileSync(path.join(web,'build-manifest.json'),JSON.stringify(result,null,2)+'\n');console.log('BROWSER_BUILD_MANIFEST_PASS',Object.keys(resources).length,versions.gitCommit);
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -1,7 +1,6 @@
 package build.interlis;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.security.MessageDigest;
 import java.util.*;
@@ -30,19 +29,6 @@ public final class JvmBuildInputs {
             var versions = ((org.w3c.dom.Element) parent).getElementsByTagName("version");
             if (!versions.item(0).getTextContent().equals(version))
                 throw new IllegalStateException("Child version drift: " + module);
-        }
-        // Source hashes are verified independently of the asserted upstream version.
-        String manifest = Files.readString(root.resolve("build/JENESIS-UPSTREAM.json"));
-        var entry = java.util.regex.Pattern.compile("\"([^\"]+)\": \"([0-9a-f]{64})\"").matcher(manifest);
-        var expected = new TreeSet<Path>();
-        while (entry.find()) {
-            Path path = confined(root.resolve("build/jenesis"), entry.group(1));
-            if (!sha256(path).equals(entry.group(2))) throw new IllegalStateException("Changed engine: " + path);
-            expected.add(path);
-        }
-        try (var files = Files.walk(root.resolve("build/jenesis"))) {
-            var actualFiles = new TreeSet<>(files.filter(Files::isRegularFile).toList());
-            if (expected.isEmpty() || !expected.equals(actualFiles)) throw new IllegalStateException("Engine file set drift");
         }
     }
 
@@ -94,52 +80,6 @@ public final class JvmBuildInputs {
         if (!file.startsWith(base) || !file.toRealPath().startsWith(base.toRealPath()))
             throw new IllegalArgumentException("Input escapes root: " + relative);
         return file;
-    }
-
-    public static String fingerprint(Path root, String module) throws Exception {
-        return fingerprint(snapshot(root,module));
-    }
-
-    /** Relative names and content hashes in deterministic order; no clock or HEAD in cache inputs. */
-    public record InputSnapshot(Map<String,String> files) {
-        public InputSnapshot { files=Collections.unmodifiableMap(new TreeMap<>(files)); }
-    }
-
-    public static InputSnapshot snapshot(Path root,String module) throws Exception {
-        var paths = new TreeSet<Path>();
-        for (String p : List.of("pom.xml", "jenesis.properties", "build/InterlisJvmBuild.java", "build/interlis",
-                "build/JENESIS-UPSTREAM.json", "build.jenesis", module + "/pom.xml", module + "/src")) {
-            add(root, p, paths);
-        }
-        if (Files.exists(root.resolve(module + "/build.jenesis"))) add(root, module + "/build.jenesis", paths);
-        Path matrix = root.resolve(module + "/build.jenesis/test-inputs.properties");
-        if (Files.exists(matrix)) {
-            var inputs = new Properties();
-            try (var reader = Files.newBufferedReader(matrix)) { inputs.load(reader); }
-            for (String value : inputs.values().stream().map(Object::toString).toList()) add(root, value, paths);
-        }
-        var hashes=new TreeMap<String,String>();
-        for(Path file:paths)hashes.put(root.relativize(file).toString().replace('\\','/'),sha256(file));
-        return new InputSnapshot(hashes);
-    }
-
-    public static String fingerprint(InputSnapshot snapshot) throws Exception {
-        var digest = MessageDigest.getInstance("SHA-256");
-        digest.update("interlis-jvm-inputs-v1\n".getBytes(StandardCharsets.UTF_8));
-        for (var file : snapshot.files().entrySet()) {
-            digest.update((file.getKey() + "\0" + file.getValue() + "\n")
-                    .getBytes(StandardCharsets.UTF_8));
-        }
-        return HexFormat.of().formatHex(digest.digest());
-    }
-
-    private static void add(Path root, String relative, Set<Path> files) throws IOException {
-        Path path = confined(root, relative);
-        if (Files.isDirectory(path)) {
-            try (var walk = Files.walk(path)) {
-                for (Path p : walk.filter(Files::isRegularFile).toList()) files.add(confined(root, portableRelative(root, p)));
-            }
-        } else files.add(path);
     }
 
     public static String sha256(Path file) throws IOException {

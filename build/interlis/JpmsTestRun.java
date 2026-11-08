@@ -26,29 +26,39 @@ public final class JpmsTestRun {
         if(parts.stream().anyMatch(String::isBlank))throw new IllegalArgumentException("Empty test selector");return List.copyOf(parts);
     }
     public static BuildExecutorModule observe(TestModule nativeModule,Path root,String project,Map<String,String> settings,boolean selected) throws IOException {
-        var plan=new TreeMap<String,String>();
-        for(var entry:settings.entrySet())if(entry.getKey().startsWith("variable.")||entry.getKey().startsWith("test."))plan.put(entry.getKey(),entry.getValue());
-        plan.put("project",project);plan.put("selected",Boolean.toString(selected));
-        Path file=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/test-options/"+project+".json");Files.createDirectories(file.getParent());
-        String json=JsonOutput.write(plan);if(!Files.exists(file)||!Files.readString(file).equals(json))Files.writeString(file,json);
-        Map<String,String> frozen=Map.copyOf(plan);
+        String filter = settings.getOrDefault("test.filter", project + "/.*");
+        var fixtures = new Properties();
+        Path fixtureConfig = root.resolve(project).resolve("build.jenesis/test-inputs.properties");
+        if (selected && Files.isRegularFile(fixtureConfig)) {
+            try (var reader = Files.newBufferedReader(fixtureConfig)) {
+                fixtures.load(reader);
+            }
+        }
+        var fixtureInputs = new TreeMap<String, Path>();
+        for (String key : fixtures.stringPropertyNames()) {
+            fixtureInputs.put("fixtures-" + key, JvmBuildInputs.confined(root, fixtures.getProperty(key)));
+        }
         return (executor,inherited)->{
             // Keep the original pinned JUnit/tool resolver, replacing only test execution.
             nativeModule.skip(true).accept(executor,inherited);
             if(!selected)return;
             executor.addSource("patch-sources",Bind.asSources().extensions(Set.of(".java")),root.resolve(project+"/src/test/java"));
             if(Files.isDirectory(root.resolve(project+"/src/test/resources")))executor.addSource("patch-resources",Bind.asResources(),root.resolve(project+"/src/test/resources"));
-            executor.addSource("test-options",Bind.asResources(),file);
-            var required=new ArrayList<>(inherited.keySet());required.addAll(List.of("dependencies","patch-sources","test-options"));
+            var required = new ArrayList<>(inherited.keySet());
+            required.addAll(List.of("dependencies", "patch-sources"));
+            fixtureInputs.forEach((key, path) -> {
+                executor.addSource(key, path);
+                required.add(key);
+            });
             if(Files.isDirectory(root.resolve(project+"/src/test/resources")))required.add("patch-resources");
-            executor.addStep("executed",new Run(root,project,frozen),required.stream());
+            executor.addStep("executed",new Run(root, project, filter),required.stream());
         };
     }
     private static String className(java.lang.constant.ClassDesc descriptor) {
         if(descriptor.isArray())return className(descriptor.componentType())+"[]";
         String value=descriptor.descriptorString();return descriptor.isPrimitive()?descriptor.displayName():value.substring(1,value.length()-1).replace('/','.');
     }
-    private record Run(Path root,String project,Map<String,String> plan) implements BuildStep {
+    private record Run(Path root, String project, String filter) implements BuildStep {
         public CompletionStage<BuildStepResult> apply(Executor executor,BuildStepContext context,SequencedMap<String,BuildStepArgument> arguments)throws IOException {
             try {execute(context,arguments);return CompletableFuture.completedFuture(new BuildStepResult(true));}
             catch(IOException|RuntimeException failure){throw failure;}
@@ -56,7 +66,9 @@ public final class JpmsTestRun {
         }
         void execute(BuildStepContext context,SequencedMap<String,BuildStepArgument> arguments)throws Exception {
             var jars=new TreeMap<String,Path>();
-            for(var argument:arguments.values())if(!argument.removed()) {
+            for (var entry : arguments.entrySet()) {
+                var argument = entry.getValue();
+                if (argument.removed() || entry.getKey().startsWith("fixtures-")) continue;
                 Path index=argument.folder().resolve("dependencies.properties");if(!Files.isRegularFile(index))continue;
                 var properties=new Properties();try(var reader=Files.newBufferedReader(index)){properties.load(reader);}
                 for(String key:properties.stringPropertyNames())if(key.startsWith("main/runtime/maven/")) {
@@ -92,7 +104,6 @@ public final class JpmsTestRun {
             if(javaSources.isEmpty())throw new IllegalStateException("No test sources");
             var testClasses=new TreeSet<String>();var packages=new TreeSet<String>();
             var methods=new TreeMap<String,Set<String>>();
-            String filter=plan.getOrDefault("test.filter",project+"/.*");
             var selectors=selections(filter).stream().filter(p->p.startsWith(project+"/")).map(p->p.substring(project.length()+1)).toList();
             try(var archive=new JarFile(product.toFile())) {
                 for(Path source:javaSources) {
@@ -131,7 +142,7 @@ public final class JpmsTestRun {
                     Path copy=classes.resolve(relative);Files.createDirectories(copy.getParent());Files.copy(file,copy);
                 }
             }
-            var run=new ArrayList<String>(List.of("-Dinterlis.test.modulepath="+mp,"-Dinterlis.test.patch="+classes,"-ea","-Dfile.encoding=UTF-8","-Drepo.root="+root,"-Dtestdata.dir="+root.resolve("testdata"),"-Dinterlis.build.inputs="+plan.get("variable.inputFingerprint")));
+            var run=new ArrayList<String>(List.of("-Dinterlis.test.modulepath="+mp,"-Dinterlis.test.patch="+classes,"-ea","-Dfile.encoding=UTF-8","-Drepo.root="+root,"-Dtestdata.dir="+root.resolve("testdata")));
             run.addAll(access);run.addAll(List.of("--patch-module",moduleName+"="+classes));
             for(String pkg:packages)run.addAll(List.of("--add-opens",moduleName+"/"+pkg+"=ALL-UNNAMED"));
             Path reports=Files.createDirectories(context.next().resolve("reports/tests"));

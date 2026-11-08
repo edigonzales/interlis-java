@@ -9,7 +9,7 @@ import java.util.*;
 /** Immutable, content-addressed consumer files. Expected manifest hashes are supplied by the producer receipt. */
 public final class ConsumerSnapshot {
     private static final List<String> PAYLOAD=List.of("schemaVersion","kind","projectVersion",
-            "productInputDigest","enginePinDigest","artifacts","closures","files");
+            "artifacts","closures","files");
     public record Snapshot(Path manifest,String manifestSha256,String digest,Map<String,Object> data) {
         public Snapshot { manifest=manifest.toAbsolutePath().normalize();data=object(freeze(data)); }
         public Path root() { return manifest.getParent(); }
@@ -37,7 +37,7 @@ public final class ConsumerSnapshot {
             JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/"+directory);
         Files.createDirectories(consumers);
         Path staging=Files.createDirectory(consumers.resolve(".staging-"+UUID.randomUUID()));
-        var files=new TreeMap<String,Object>();var rows=new ArrayList<Object>();var inputs=new TreeMap<String,Object>();
+        var files=new TreeMap<String,Object>();var rows=new ArrayList<Map<String,Object>>();
         for(var artifact:artifacts.values()) {
             String coordinate=artifact.coordinates();String[] id=coordinate.split("/");
             if(id.length!=4||!id[0].equals("maven"))throw new IllegalStateException("Unexpected runtime coordinate: "+coordinate);
@@ -55,13 +55,13 @@ public final class ConsumerSnapshot {
                 row.put("projectId",id[2]);
                 row.put("pom",copy(ModuleArtifacts.pom(outcome,id[2]),staging,base+".pom",files));
                 row.put("sources",copy(ModuleArtifacts.sources(outcome,id[2]),staging,base+"-sources.jar",files));
-                inputs.put(id[2],JvmBuildInputs.fingerprint(root,id[2]));
             }
             rows.add(row);
         }
         // Preserve the actual resolved POMs, including required parent/BOM metadata.
         // Own generated POMs are flattened by the engine and were copied above.
-        for(String project:inputs.keySet()) {
+        for (var artifact : rows) {
+            if (!(artifact.get("projectId") instanceof String project)) continue;
             var module=JenesisBridge.moduleResult(outcome,project);var data=new Properties();
             try(var reader=Files.newBufferedReader(module.inventoryDirectory().resolve("inventory.properties"))){data.load(reader);}
             for(int i=0;data.containsKey(module.inventoryPrefix()+".pom."+i);i++) {
@@ -74,13 +74,12 @@ public final class ConsumerSnapshot {
                 if(!JvmBuildInputs.sha256(source).equals(fields[2].substring(8)))throw new IllegalStateException("Changed resolved POM");
                 String path="maven/"+id[1].replace('.','/')+"/"+id[2]+"/"+id[4]+"/"+id[2]+"-"+id[4]+".pom";
                 copy(source,staging,path,files);
-                for(Object value:rows) {
-                    var row=object(value);
+                for (var row : rows) {
                     if(row.get("coordinate").equals("maven/"+id[1]+"/"+id[2]+"/"+id[4]))row.put("pom",reference(path,files));
                 }
             }
         }
-        for(Object value:rows)if(!object(value).containsKey("pom"))throw new IllegalStateException("Runtime artifact without resolved POM");
+        for(var row:rows)if(!row.containsKey("pom"))throw new IllegalStateException("Runtime artifact without resolved POM");
         Path versionRun=outputs.resolve("handoffs/version-"+UUID.randomUUID());Files.createDirectories(versionRun);
         var versionRuntime=ModuleArtifacts.runtime(root,"interlis-compiler-cli",outcome);
         var command=List.of(Path.of(System.getProperty("java.home"),"bin/java").toString(),"-cp",
@@ -96,10 +95,8 @@ public final class ConsumerSnapshot {
                 throw new IllegalStateException("Invalid actual CLI version metadata");
         } finally { if(process.isAlive()){process.descendants().forEach(ProcessHandle::destroyForcibly);process.destroyForcibly();} }
         copy(versions,staging,"resources/version-manifest.json",files);
-        inputs.put("interlis-compiler-cli",JvmBuildInputs.fingerprint(root,"interlis-compiler-cli"));
         var payload=new TreeMap<String,Object>();payload.put("schemaVersion",1);payload.put("kind","interlis-jvm-consumer-snapshot");
-        payload.put("projectVersion",JvmBuildInputs.projectVersion(root));payload.put("productInputDigest",digest(JsonOutput.write(inputs)));
-        payload.put("enginePinDigest",JvmBuildInputs.sha256(root.resolve("build/JENESIS-UPSTREAM.json")));
+        payload.put("projectVersion",JvmBuildInputs.projectVersion(root));
         payload.put("artifacts",rows);payload.put("closures",closures);payload.put("files",files);
         String digest=digest(JsonOutput.write(payload));
         var producer=new TreeMap<String,Object>();producer.put("builder","jenesis");producer.put("coreCommit",git(root,"rev-parse","HEAD"));
@@ -124,7 +121,7 @@ public final class ConsumerSnapshot {
         Path receipts=outputs.resolve("handoffs");Files.createDirectories(receipts);
         Path receipt=receipts.resolve("handoff-"+UUID.randomUUID()+".json");
         Files.writeString(receipt,JsonOutput.write(Map.of("manifest",result.manifest().toString(),"manifestSha256",result.manifestSha256(),
-                "snapshotDigest",result.digest(),"currentProducer",producer,"productInputs",inputs))+"\n");
+                "snapshotDigest",result.digest(),"currentProducer",producer))+"\n");
         Path reports=outputs.resolve("reports");Files.createDirectories(reports);
         Files.writeString(reports.resolve("wasm-export.json"),JsonOutput.write(Map.of("manifest",result.manifest().toString(),
                 "manifestSha256",result.manifestSha256(),"snapshotDigest",result.digest(),"receipt",receipt.toString()))+"\n");
@@ -143,8 +140,6 @@ public final class ConsumerSnapshot {
         var keys=new HashSet<>(PAYLOAD);keys.addAll(List.of("snapshotDigest","producer"));
         if(!keys.equals(data.keySet())||!(data.get("schemaVersion") instanceof Number number)||number.intValue()!=1
                 ||!data.get("kind").equals("interlis-jvm-consumer-snapshot"))throw new IllegalStateException("Unknown consumer schema");
-        for(String key:List.of("productInputDigest","enginePinDigest"))
-            if(!string(data.get(key)).matches("[0-9a-f]{64}"))throw new IllegalStateException("Missing producer input identity");
         var producer=object(data.get("producer"));
         if(!producer.keySet().equals(Set.of("builder","coreCommit","coreTree","dirty","resultInventorySha256"))
                 ||!producer.get("builder").equals("jenesis")||!(producer.get("dirty") instanceof Boolean)

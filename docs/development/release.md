@@ -9,6 +9,7 @@ für jede betroffene Fläche separat.
 - Öffentliche Java-SDK-API
 - Diagnosekatalog
 - Bridge-Protokoll
+- Browser-Buildmanifest
 - Unterstützte INTERLIS-Sprachprofile
 - Quelltextformatierung
 - Diagrammschema

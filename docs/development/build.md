@@ -1,8 +1,8 @@
 # Build und Toolchains
 
 Jenesis 0.18.1 erzeugt die zwölf JVM-Module mit Java 25 ohne Preview. Die POMs
-definieren Group, Artifact, Version, Scopes und Pins. Der Upstreampin gehört
-zu den [Jenesis-Quellen](../../build/JENESIS-UPSTREAM.json). Der gepinnte
+definieren Group, Artifact, Version, Scopes und Pins. Die [Jenesis-Quellen](../../build/jenesis) liegen im Repository.
+Der gepinnte
 Gradle-Wrapper baut ausschliesslich TeaVM und GraalVM Web Image.
 
 ## JVM und Auslieferung
@@ -35,7 +35,7 @@ Ressourcen bleiben im jeweiligen Modul.
 Buildausgaben liegen unter `target/jenesis-jvm`. `.jenesis` enthält den
 lokalen Abhängigkeitscache. JUnit-Berichte liegen im Engine-Output unter `executed/output/reports/tests`.
 `clean --scope jvm` entfernt Engine-Ausgaben, Berichte, Buildtools,
-Distributionen, Conformance-Ausgaben sowie Modul-, Laufzeit- und Testoptionen.
+Distributionen, Conformance-Ausgaben sowie Modul- und Laufzeitprüfungen.
 `clean --scope consumer` entfernt Snapshots, Übergaben und Editor-Bundles
 sowie ihre Laufverzeichnisse. `clean --scope wasm` entfernt die
 Buildverzeichnisse der beiden portablen Backends.

@@ -8,9 +8,9 @@ import java.util.jar.JarFile;
 
 /** Fixed JVM snapshot -> Node renderer -> pure bundle assembly, without invoking Gradle or an extension build. */
 public final class EditorBundleRun {
-    private record Inputs(ConsumerSnapshot.Snapshot snapshot,Map<String,String> jvmInputs,
+    private record Inputs(ConsumerSnapshot.Snapshot snapshot,
             Map<String,String> sources,Map<String,Object> metadata,String requestId) {
-        public Inputs {jvmInputs=Map.copyOf(jvmInputs);sources=Map.copyOf(sources);metadata=Map.copyOf(metadata);}
+        public Inputs {sources=Map.copyOf(sources);metadata=Map.copyOf(metadata);}
     }
 
     /** Called under the JVM producer lock. No Node/consumer process is launched here. */
@@ -45,9 +45,8 @@ public final class EditorBundleRun {
         }
         metadata.put("moduleInventory",moduleInventory);
         metadata.put("snapshotDigest",snapshot.digest());metadata.put("snapshotManifestSha256",snapshot.manifestSha256());
-        metadata.put("productInputDigest",snapshot.data().get("productInputDigest"));
         var sources=sources(root);metadata.put("editorSourceDigest",digest(sources));
-        return new Inputs(snapshot,JenesisBridge.inputFingerprints(outcome),sources,metadata,
+        return new Inputs(snapshot,sources,metadata,
                 request.options().getOrDefault("--request-id",UUID.randomUUID().toString()));
     }
 
@@ -101,7 +100,6 @@ public final class EditorBundleRun {
     }
     private static void verify(Path root,Inputs input) throws Exception {
         if(!git(root,"rev-parse","HEAD").equals(input.metadata().get("coreCommit"))||!sources(root).equals(input.sources()))throw new IllegalStateException("Editor sources changed during build");
-        for(var entry:input.jvmInputs().entrySet())if(!JvmBuildInputs.fingerprint(root,entry.getKey()).equals(entry.getValue()))throw new IllegalStateException("JVM inputs changed during editor build");
         ConsumerSnapshot.read(input.snapshot().manifest(),input.snapshot().manifestSha256());
     }
     private static Map<String,String> sources(Path root) throws Exception {

@@ -61,16 +61,6 @@ public final class JenesisBridge {
         return checkedOutput(outcome,path);
     }
 
-    public static Map<String,String> inputFingerprints(BuildOutcome outcome) throws Exception {
-        var data=readProperties(outcome.inventory());var inputs=new TreeMap<String,String>();
-        for(String module:JvmBuildInputs.MODULES) {
-            String value=data.getProperty("input."+module);
-            if(value==null||!value.matches("[0-9a-f]{64}"))throw new IllegalStateException("Missing actual input fingerprint: "+module);
-            inputs.put(module,value);
-        }
-        return Map.copyOf(inputs);
-    }
-
     private record InventoryResult(BuildOutcome outcome,String locator,Path directory,String prefix,Properties data) {
         Path file(String role) throws Exception {
             String value=data.getProperty(prefix+"."+role);
@@ -154,18 +144,12 @@ public final class JenesisBridge {
         if (request.tests() != null) settings.put("test.filter", JpmsTestRun.selections(request.tests()).stream()
                 .map(test -> request.module() + "/" + test).collect(java.util.stream.Collectors.joining(",")));
         var env = new Environment(settings).root(root);
-        Map<String, String> inputs = new HashMap<>();
-        for (String module : JvmBuildInputs.MODULES) inputs.put(module, JvmBuildInputs.fingerprint(root, module));
         Set<String> discovered = java.util.concurrent.ConcurrentHashMap.newKeySet();
         var project = Project.ofEnvironment(env, root).assembler((descriptor, repositories, resolvers) -> {
             String module = descriptor.location().getFileName().toString();
-            if (!inputs.containsKey(module)) throw new IllegalStateException("Foreign project: " + descriptor.location());
+            if (!JvmBuildInputs.MODULES.contains(module)) throw new IllegalStateException("Foreign project: " + descriptor.location());
             discovered.add(module);
             var local = new LinkedHashMap<>(settings);
-            local.put("variable.inputFingerprint", inputs.get(module));
-            // There are no test grammars. The module-level generator config must
-            // not regenerate the main parser into the packaged white-box tests.
-            if (descriptor.name().startsWith("testmodule-")) local.put("generate.antlr", "false");
             // Keep existing relative file accesses and Gradle's module working directory.
             local.put("process.directory", root.resolve(module).toString());
             var assembler = InferredMultiProjectAssembler.ofEnvironment(new Environment(local).root(root));
@@ -225,7 +209,8 @@ public final class JenesisBridge {
         String[] selectors = request.profile().equals("artifacts") && request.module()==null ? new String[]{"stage"} : request.module() == null ? new String[]{"build"}
                 : new String[]{"+" + request.module(), "build/maven/compose/module/source-module-" + request.module()};
         Files.createDirectories(root.resolve("target/jenesis-jvm"));
-        var results = project.build(selectors);
+        var results = new LinkedHashMap<>(project.build(selectors));
+        results.keySet().removeIf(key -> !key.endsWith("/inventory") && !key.equals("stage/maven"));
         if (results.isEmpty()) throw new IllegalStateException("Empty engine result");
         if (!discovered.equals(Set.copyOf(JvmBuildInputs.MODULES)))
             throw new IllegalStateException("Discovery differs from the registered module scope: " + discovered);
@@ -254,31 +239,10 @@ public final class JenesisBridge {
             }
         }
         if (reports == 0 && request.profile().equals("build")) throw new IllegalStateException("No required test reports");
-        for (var entry : inputs.entrySet()) {
-            if (!entry.getValue().equals(JvmBuildInputs.fingerprint(root, entry.getKey())))
-                throw new IllegalStateException("Inputs changed during build: " + entry.getKey());
-            index.setProperty("input." + entry.getKey(), entry.getValue());
-        }
         Path destination = root.resolve("target/jenesis-jvm/reports/engine-results.properties");
         Files.createDirectories(destination.getParent());
         try (var out = Files.newBufferedWriter(destination)) { index.store(out, "Actual engine result paths"); }
         return new BuildOutcome(destination, Map.copyOf(results));
-    }
-
-    /** Reads only the explicit last result index, with no discovery/fallback to unrelated products. */
-    public static BuildOutcome readExistingOutcome(Path root)throws Exception {
-        Path index=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/reports/engine-results.properties");var properties=new Properties();
-        try(var reader=Files.newBufferedReader(index)){properties.load(reader);}
-        for(String module:JvmBuildInputs.MODULES)
-            if(!JvmBuildInputs.fingerprint(root,module).equals(properties.getProperty("input."+module)))
-                throw new IllegalStateException("Stale recorded product inputs: "+module);
-        var paths=new TreeMap<String,Path>();
-        for(String key:properties.stringPropertyNames())if(key.startsWith("build/")||key.startsWith("stage/")) {
-            Path path=root.resolve(properties.getProperty(key)).toAbsolutePath().normalize();
-            if(!path.startsWith(root.resolve("target/jenesis-jvm/engine"))||!Files.exists(path)||!path.toRealPath().startsWith(root.resolve("target/jenesis-jvm/engine").toRealPath()))throw new IllegalStateException("Foreign/missing recorded output: "+path);
-            paths.put(key,path);
-        }
-        if(paths.isEmpty())throw new IllegalStateException("No actual engine outputs");return new BuildOutcome(index,Map.copyOf(paths));
     }
 
     public static List<Path> runtimeClasspath(String module, BuildOutcome outcome) throws Exception {

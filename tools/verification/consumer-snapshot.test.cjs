@@ -10,7 +10,7 @@ test.after(()=>fs.rmSync(scratch,{recursive:true,force:true}));
 const java=process.env.JAVA_HOME?path.join(process.env.JAVA_HOME,'bin','java'):'java';
 const sha=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
 const canonical=value=>Array.isArray(value)?value.map(canonical):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,canonical(value[key])])):value;
-const payloadKeys=['schemaVersion','kind','projectVersion','productInputDigest','enginePinDigest','artifacts','closures','files'];
+const payloadKeys=['schemaVersion','kind','projectVersion','artifacts','closures','files'];
 function fixture(name){const dir=path.join(scratch,name);fs.cpSync(path.dirname(handoff.manifest),dir,{recursive:true});return {dir,manifest:path.join(dir,'consumer-manifest.json'),data:structuredClone(original)};}
 function write(f,recompute=true){if(recompute)f.data.snapshotDigest=sha(JSON.stringify(canonical(Object.fromEntries(payloadKeys.map(k=>[k,f.data[k]])))));fs.writeFileSync(f.manifest,JSON.stringify(canonical(f.data))+'\n');return sha(fs.readFileSync(f.manifest));}
 function check(manifest,expected,accept){const result=cp.spawnSync(java,['build/interlis/ConsumerSnapshot.java','verify',manifest,expected],{cwd:root,encoding:'utf8',timeout:20000});assert.equal(result.signal,null);assert.equal(result.error,undefined);if(accept)assert.equal(result.status,0,result.stderr);else assert.notEqual(result.status,0,'Invalid snapshot accepted');return result;}

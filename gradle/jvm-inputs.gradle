@@ -42,7 +42,7 @@ if (!manifest.isFile() || sha(manifest) != expected || Files.isSymbolicLink(mani
 def snapshot = new JsonSlurper().parse(manifest)
 def canonical
 canonical = { value -> value instanceof Map ? new TreeMap(value.collectEntries { k,v -> [(k):canonical(v)] }) : value instanceof List ? value.collect { canonical(it) } : value }
-def keys = ['schemaVersion','kind','projectVersion','productInputDigest','enginePinDigest','artifacts','closures','files']
+def keys = ['schemaVersion','kind','projectVersion','artifacts','closures','files']
 if (snapshot.keySet() != (keys + ['producer','snapshotDigest']).toSet() || snapshot.schemaVersion != 1 || snapshot.kind != 'interlis-jvm-consumer-snapshot') throw new GradleException('Unknown JVM snapshot schema')
 def payload = keys.collectEntries { [(it):snapshot[it]] }
 def digest = HexFormat.of().formatHex(MessageDigest.getInstance('SHA-256').digest(JsonOutput.toJson(canonical(payload)).getBytes('UTF-8')))
