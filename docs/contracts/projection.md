@@ -276,11 +276,10 @@ werden neben belegten Positionen platziert, Container wachsen entsprechend.
 Navigation wird als opaque Element-ID an den Host delegiert. Komposition und
 Aggregation stammen unverändert vom jeweils publizierten Diagrammende.
 
-Die erste interaktive Lieferung unterstützt STANDARD mit ORTHOGONAL/POLYLINE.
-SPLINES und Inkscape im interaktiven Viewer sind bis zur folgenden UMLlieferung
-explizit abgewiesen; vorhandene statische Adapterexporte bleiben erhalten.
-Browsercontract- und native Mausinteraktionstests prüfen dieselbe Quelle; sie
-ersetzen keine installierten VS-Code-GUItests oder spätere Exportabnahme.
+Die Extension unterstützt orthogonale, polygonale und kubische Kanten.
+Der Compilerharness prüft die portable Projektion. Renderer- und native
+VS-Code-Tests prüfen Layout, Interaktion und die tatsächlich gespeicherten
+Exporte.
 
 Aufzählungsdomänen behalten ihre effektiven Pfade in ENUM_VALUES als
 `DiagramMember.MemberKind.ENUM_VALUE`, mit Deklarationsreihenfolge, echtem
@@ -289,8 +288,8 @@ Inherited-Markierung. HIDE und gemeinsames Memberbudget gelten auch dafür;
 LIMITED bleibt explizit. Identitäten/Anker bleiben bei übersetzten Labels
 kanonisch. Das vorhandene Schema1.0 erlaubt offene Memberkind-Zeichenketten.
 DiagramProjectionTest prüft verschachtelte/effektive Werte, Quellen, HIDE und
-Budget. Inline-Enum-Komfort-/Filterfunktionen bleiben dem folgenden UIumfang
-zugeordnet. Der neutrale interaktive Default zeigt eigene und geerbte Member.
+Budget. Die Extension steuert Aufzählungsdomänen und Inline-Aufzählungen
+deklarierter Attribute unabhängig.
 
 COMPACT_BINARY wird im reinen Java-Projektor aus bereits gebundenen Symbolen
 gebildet. Genau zwei eindeutige Rollen ohne eigene Attribute/Constraints,
@@ -373,9 +372,9 @@ Snapshotwechsel gleichen auch Pin-/Manuell-/Hiddenmengen über die exakten
 Presentationkeys ab. Eigene begrenzte Viewhistory enthält nur Geometrie und
 überschreitet keine externe Projektionsantwort. `settle` erhält manuelle/pinnte
 Knoten und manuelle Routen; `resetLayout` verwirft diese explizit, aber keine Filter.
-Layout verwendet den vorhandenen ELKworker; Inkscape ist ein Exportziel und löst
-keinen zweiten Layoutrouter im interaktiven Consumer aus. SPLINES werden als
-kubische Bézierpfade gemalt; fachliche Endpunkte bleiben unverändert.
+Das interaktive Layout verwendet den ELK-Worker. Für das Inkscape-Ziel kann
+Libavoid orthogonale und polygonale Routen berechnen. Splines bleiben
+kubische Bézierpfade. Die fachlichen Endpunkte bleiben unverändert.
 
 `exportSvg(FULL|VISIBLE)` serialisiert die aktuelle gefilterte Sprotty-Zeichnung
 mit berechneten Styles und lokalen Referenzen. FULL verwendet gemalte Bounds
