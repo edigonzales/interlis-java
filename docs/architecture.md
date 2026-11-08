@@ -39,6 +39,11 @@ Die JVM-Deskriptoren bestimmen die tatsächlichen Packageexports.
 exportiert. Die Gson-Reflection ist für LSP-Datentypen qualifiziert geöffnet. ANTLR und interne
 Compilerklassen bleiben in der Implementierung.
 
+Der Transferkern prüft die Integrität seiner neutralen Ereignisfolge.
+Formatadapter verwenden Modell und Transferplan für das Wire-Layout und
+melden nicht unterstützte Kodierungen explizit. Modellbasierte Datenvalidierung
+ist eine separate Aufgabe; dekodierbare Verstösse bleiben als Transferwerte erhalten.
+
 ## Quellen, Identitäten und Zustände
 
 `SourceText` enthält opake `SourceId`, Revision und exakten Text.

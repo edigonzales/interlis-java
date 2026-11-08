@@ -14,6 +14,12 @@
 - Unterstütze INTERLIS 2.3 und 2.4. ANTLR bleibt intern. Compiler und Modell
   arbeiten mit expliziten Daten und Diensten. Dateisystem, HTTP, JDBC, LSP und
   UI gehören an ihre Hostgrenzen.
+- Readers and writers are codecs, not data validators. Transfer adapters enforce
+  wire syntax, structural decodability, protocol rules, security and resource
+  limits. They may use model information to interpret the wire format. They
+  must accept decodable data even when it violates model constraints. Domain
+  ranges, mandatory attributes, referential existence and geometry topology
+  belong to a separate validation component.
 - Erhalte unveränderliche, revisionstreue Syntax-, Analyse- und Schemasichten.
   Das Compiler-Gate entscheidet über die Gültigkeit der angeforderten Closure.
   Diagnostik und Laufbeobachtung verwenden ihre zentralen Datenverträge.

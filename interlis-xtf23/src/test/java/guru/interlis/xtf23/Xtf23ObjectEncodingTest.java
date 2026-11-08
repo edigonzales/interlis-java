@@ -45,7 +45,7 @@ final class Xtf23ObjectEncodingTest {
                     END Detail;
                     CLASS Item =
                       quantity: -100.000 .. 999.000;
-                      flag: BOOLEAN;
+                      flag: MANDATORY BOOLEAN;
                       shade: (dark (red, blue), light);
                       label: TEXT*32;
                       notes: MTEXT*64;
@@ -126,6 +126,17 @@ final class Xtf23ObjectEncodingTest {
             assertEquals(CollectionKind.LIST, sequence.kind());
             assertEquals(bag.values().getFirst(), sequence.values().getFirst());
             assertTrue(((Structured) sequence.values().getLast()).values().isEmpty());
+        }
+    }
+
+    @Test
+    void readsDecodableValuesOutsideTheModelDomain() {
+        String fields = "<quantity>1000.000</quantity><shade>dark.unknown</shade>";
+        try (var reader = new Xtf23Reader(values, input(valuesDocument(VALUES, item("item", fields))))) {
+            var object = objects(reader).getFirst();
+            assertEquals(new NumberValue("1000.000", new BigDecimal("1000.000")), field(values, object, "quantity"));
+            assertEquals(new Enumeration(List.of("dark", "unknown")), field(values, object, "shade"));
+            assertTrue(object.value(slot(values, "Values.Data.Item", "flag")).isEmpty());
         }
     }
 

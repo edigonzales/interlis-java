@@ -604,18 +604,8 @@ public final class Xtf23Reader extends TransferReader {
             rejectGeometryExtension(token);
             String segment = elementName(token);
             segments.add(switch (segment) {
-                case "COORD" -> {
-                    if (!curve.straights()) {
-                        throw xml.error(INVALID_WIRE, "Straight segment is not declared by the line type");
-                    }
-                    yield new TransferGeometry.Straight(readCoordinate(token, curve.dimensions()));
-                }
-                case "ARC" -> {
-                    if (!curve.arcs()) {
-                        throw xml.error(INVALID_WIRE, "ARC is not declared by the line type");
-                    }
-                    yield readArc(curve.dimensions());
-                }
+                case "COORD" -> new TransferGeometry.Straight(readCoordinate(token, curve.dimensions()));
+                case "ARC" -> readArc(curve.dimensions());
                 default -> throw xml.error(INVALID_WIRE, "Unexpected XTF line segment " + segment);
             });
             token = xml.nextTag();

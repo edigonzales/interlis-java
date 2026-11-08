@@ -524,16 +524,8 @@ public final class Xtf23Writer extends TransferWriter {
         writeCoordinate(part.start(), curve.dimensions());
         for (var segment : part.segments()) {
             switch (segment) {
-                case Straight straight -> {
-                    if (!curve.straights()) {
-                        throw error(INVALID_WIRE, "Straight segment is not declared by the line type");
-                    }
-                    writeCoordinate(straight.end(), curve.dimensions());
-                }
+                case Straight straight -> writeCoordinate(straight.end(), curve.dimensions());
                 case Arc arc -> {
-                    if (!curve.arcs()) {
-                        throw error(INVALID_WIRE, "ARC is not declared by the line type");
-                    }
                     xml.start("ARC");
                     writePosition(arc.end(), "C", curve.dimensions());
                     writePosition(arc.support(), "A", 2);

@@ -7,6 +7,8 @@ import guru.interlis.transfer.TransferValue;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -124,6 +126,29 @@ final class Xtf23GeometryTest {
     }
 
     @Test
+    void roundTripsAnArcEvenWhenTheModelAllowsOnlyStraightSegments() {
+        String arc = "<ARC><C1>3</C1><C2>4</C2><A1>2</A1><A2>4</A2></ARC>";
+        String fields = "<straight>" + line(point("1", "2"), arc) + "</straight>";
+        try (var reader = new Xtf23Reader(curves, input(shape(fields)))) {
+            var events = readAll(reader);
+            var object = assertInstanceOf(ObjectEvent.class, events.get(2)).object();
+            var polyline = assertInstanceOf(Polyline.class, field(curves, object, "straight"));
+            var decoded = assertInstanceOf(Arc.class, polyline.parts().getFirst().segments().getFirst());
+            assertEquals(List.of("2", "4"), lexemes(decoded.support()));
+
+            var output = new ByteArrayOutputStream();
+            try (var writer = new Xtf23Writer(curves, output)) {
+                for (var event : events) {
+                    writer.write(event, TOKEN);
+                }
+            }
+            try (var rereader = new Xtf23Reader(curves, new ByteArrayInputStream(output.toByteArray()))) {
+                assertEquals(events, readAll(rereader));
+            }
+        }
+    }
+
+    @Test
     void rejectsMalformedGeometryAndReportsClippedAsUnsupported() {
         String two = point("1", "2");
         String validArc = "<ARC><C1>3</C1><C2>4</C2><A1>2</A1><A2>3</A2></ARC>";
@@ -135,7 +160,6 @@ final class Xtf23GeometryTest {
                 "<surface><SURFACE><BOUNDARY/></SURFACE></surface>",
                 "<surface><SURFACE/></surface>",
                 "<surface><AREA/></surface>",
-                "<straight>" + line(two, validArc) + "</straight>",
                 "<surface><SURFACE><BOUNDARY>" + line(two, validArc.replace("</ARC>", "<R>0.0</R></ARC>"))
                         + "</BOUNDARY></SURFACE></surface>",
                 "<surface><SURFACE><BOUNDARY>" + line(two, validArc.replace("</ARC>", "<RADIUS>1</RADIUS></ARC>"))
