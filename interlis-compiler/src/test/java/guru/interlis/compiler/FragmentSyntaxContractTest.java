@@ -21,6 +21,56 @@ class FragmentSyntaxContractTest {
             assertTrue(syntax.segments().getLast().index().isPresent());
         }
     }
+    @Test void numericSignsAndOperatorsKeepTheirOriginalOffsetsAndPrecedence() {
+        for (String expression : List.of("n-1", "n -1", "n- 1", "n - 1", "n/*c*/-/*d*/1", "n--1", "n+1", "n+-1")) {
+            var syntax = expressionFragment(expression, LanguageVersion.ILI24);
+            assertTrue(syntax.diagnostics().isEmpty(), syntax.diagnostics()::toString);
+            assertTrue(syntax.consumedEntireFragment());
+            var binary = assertInstanceOf(BinaryExpressionSyntax.class, syntax.root());
+            var expected = expression.contains("+") ? guru.interlis.model.BinaryOperator.PLUS
+                    : guru.interlis.model.BinaryOperator.MINUS;
+            assertEquals(expected, binary.operator());
+            assertInstanceOf(PathExpressionSyntax.class, binary.left());
+            var literal = assertInstanceOf(LiteralExpressionSyntax.class, binary.right());
+            String lexeme = expression.endsWith("--1") || expression.endsWith("+-1") ? "-1" : "1";
+            assertEquals(lexeme, literal.lexeme());
+            assertEquals(lexeme, syntax.source().slice(literal.range()));
+            assertEquals(new java.math.BigDecimal(lexeme), literal.decimal().orElseThrow().exactValue());
+        }
+        var callSyntax = expressionFragment("positive(n-1)", LanguageVersion.ILI24);
+        assertTrue(callSyntax.diagnostics().isEmpty(), callSyntax.diagnostics()::toString);
+        var call = assertInstanceOf(FunctionCallExpressionSyntax.class, callSyntax.root());
+        assertEquals(guru.interlis.model.BinaryOperator.MINUS,
+                assertInstanceOf(BinaryExpressionSyntax.class, call.arguments().getFirst()).operator());
+        var version = expressionFragment("n-1", LanguageVersion.ILI23);
+        var diagnostic = version.diagnostics().stream().filter(d -> d.code().value().equals("ILI-SYN-0006"))
+                .findFirst().orElseThrow();
+        assertEquals("-", version.source().slice(diagnostic.primaryRange().orElseThrow()));
+        for (String expression : List.of("+ 7", "n + -/*c*/1", "n +", "1e-")) {
+            assertFalse(expressionFragment(expression, LanguageVersion.ILI24).diagnostics().isEmpty(), expression);
+        }
+        var subtraction = assertInstanceOf(BinaryExpressionSyntax.class,
+                expressionFragment("a-b-c", LanguageVersion.ILI24).root());
+        assertEquals(guru.interlis.model.BinaryOperator.MINUS,
+                assertInstanceOf(BinaryExpressionSyntax.class, subtraction.left()).operator());
+        var addition = assertInstanceOf(BinaryExpressionSyntax.class,
+                expressionFragment("a+b*c", LanguageVersion.ILI24).root());
+        assertEquals(guru.interlis.model.BinaryOperator.MUL,
+                assertInstanceOf(BinaryExpressionSyntax.class, addition.right()).operator());
+        var comparison = assertInstanceOf(BinaryExpressionSyntax.class,
+                expressionFragment("a+b>c", LanguageVersion.ILI24).root());
+        assertEquals(guru.interlis.model.BinaryOperator.PLUS, comparison.operator());
+        assertEquals(guru.interlis.model.BinaryOperator.GT,
+                assertInstanceOf(BinaryExpressionSyntax.class, comparison.right()).operator());
+    }
+
+    private static FragmentSnapshot expressionFragment(String expression, LanguageVersion version) {
+        String prefix = "!! 😀\r\n";
+        var source = new SourceText(new SourceId("memory:/operator-fragment.ili"), new SourceRevision(7), prefix + expression);
+        return SyntaxServices.create().parseFragment(source, source.range(prefix.length(), source.text().length()),
+                FragmentKind.EXPRESSION, version, CancellationToken.none());
+    }
+
     @Test void fragmentLexerFailuresCannotDisappearAndKeepTheirOriginalLocation() {
         for(String prefix:List.of("prefix ","😀\r\n")) {
             String path="alpha$";var source=new SourceText(new SourceId("memory:/fragment-error.ili"),new SourceRevision(9),prefix+path+" suffix");

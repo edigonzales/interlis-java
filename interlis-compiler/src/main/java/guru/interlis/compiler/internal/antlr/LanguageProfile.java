@@ -16,6 +16,8 @@ public final class LanguageProfile {
         DEFERRED_GENERICS("DEFERRED GENERICS"),
         CONTEXT_DEFINITION("CONTEXT"),
         DOMAIN_CONSTRAINT("domain constraint"),
+        ARITHMETIC("arithmetic expression"),
+        IMPLICATION("implication"),
         NAMED_OR_BASKET_CONSTRAINT("named or basket constraint"),
         INLINE_ENUM_COLLECTION("inline enumeration collection"),
         EMPTY_FUNCTION_PARAMETERS("empty function parameter list"),
@@ -80,7 +82,7 @@ ABSTRACT ACCORDING AGGREGATES AGGREGATION ALL AND ANY ANYCLASS ANYSTRUCTURE ARCS
                             default -> false;
                         };
                         case InterlisLexer.DEFERRED -> next==InterlisLexer.GENERICS;
-                        case InterlisLexer.MULTICOORD -> next==InterlisLexer.NUMERIC || next==InterlisLexer.PosNumber || next==InterlisLexer.Number || next==InterlisLexer.Dec;
+                        case InterlisLexer.MULTICOORD -> next==InterlisLexer.NUMERIC || next==InterlisLexer.PosNumber || next==InterlisLexer.DecimalNumber || next==InterlisLexer.PLUS || next==InterlisLexer.MINUS;
                         case InterlisLexer.MULTIPOLYLINE,InterlisLexer.MULTISURFACE,InterlisLexer.MULTIAREA -> next==InterlisLexer.WITH || next==InterlisLexer.VERTEX;
                         default -> false;
                     };

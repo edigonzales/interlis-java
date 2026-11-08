@@ -1203,8 +1203,7 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Gemischter Absatz: tatsächliche areAreas-Signaturen und gebundene Aufrufe sind Compilerpflicht; Daten-Flächentopologie und globale Datenprüfung bleiben P4.",
       "links": [
-        "BuiltinSignatureFoundationContractTest.allAvailableBuiltinsKeepTheirRealSignaturesAndBoundCallsInCompiledSchema",
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile"
+        "BuiltinSignatureFoundationContractTest.allAvailableBuiltinsKeepTheirRealSignaturesAndBoundCallsInCompiledSchema"
       ],
       "resolution": "Gemischter Absatz: tatsächliche areAreas-Signaturen und gebundene Aufrufe sind Compilerpflicht; Daten-Flächentopologie und globale Datenprüfung bleiben P4."
     },
@@ -1263,7 +1262,8 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
+        "ExpressionConstraintContractTest.builtinFunctionAndBooleanConditionCompileInBothVersions",
+        "ExpressionConstraintContractTest.expressionOperatorsFollowTheLanguageVersion",
         "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
         "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
@@ -1279,7 +1279,6 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
         "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
@@ -1295,7 +1294,6 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
         "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
@@ -1311,7 +1309,6 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
         "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
@@ -1327,7 +1324,7 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
+        "ExpressionConstraintContractTest.builtinFunctionAndBooleanConditionCompileInBothVersions",
         "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
         "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
@@ -1343,7 +1340,6 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
         "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
@@ -3514,8 +3510,7 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Gemischter Absatz: tatsächliche areAreas-Signaturen und gebundene Aufrufe sind Compilerpflicht; Daten-Flächentopologie und globale Datenprüfung bleiben P4.",
       "links": [
-        "BuiltinSignatureFoundationContractTest.allAvailableBuiltinsKeepTheirRealSignaturesAndBoundCallsInCompiledSchema",
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile"
+        "BuiltinSignatureFoundationContractTest.allAvailableBuiltinsKeepTheirRealSignaturesAndBoundCallsInCompiledSchema"
       ],
       "resolution": "Gemischter Absatz: tatsächliche areAreas-Signaturen und gebundene Aufrufe sind Compilerpflicht; Daten-Flächentopologie und globale Datenprüfung bleiben P4."
     },
@@ -3586,7 +3581,8 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
+        "ExpressionConstraintContractTest.builtinFunctionAndBooleanConditionCompileInBothVersions",
+        "ExpressionConstraintContractTest.expressionOperatorsFollowTheLanguageVersion",
         "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
         "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
@@ -3602,7 +3598,7 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
+        "ExpressionConstraintContractTest.expressionOperatorsFollowTheLanguageVersion",
         "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
         "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
@@ -3618,7 +3614,7 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
+        "ExpressionConstraintContractTest.expressionOperatorsFollowTheLanguageVersion",
         "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
         "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
@@ -3634,7 +3630,6 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
         "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
@@ -3650,7 +3645,6 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
         "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
@@ -3666,7 +3660,6 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
         "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
@@ -3682,7 +3675,7 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
+        "ExpressionConstraintContractTest.builtinFunctionAndBooleanConditionCompileInBothVersions",
         "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
         "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
@@ -3698,7 +3691,6 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
         "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
@@ -3714,7 +3706,6 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
         "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
@@ -3730,7 +3721,6 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
         "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
@@ -9520,7 +9510,7 @@
         "StructuredTranslationContractTest.plausibilityRetainsExactThresholdOperatorAndOriginalPercentageRange",
         "SetConditionContextContractTest.whereRetainsIndividualValuesAndPublicReferencesWhileTheBodyUsesTheSet",
         "BuiltinSignatureFoundationContractTest.allAvailableBuiltinsKeepTheirRealSignaturesAndBoundCallsInCompiledSchema",
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile"
+        "ExpressionConstraintContractTest.builtinFunctionAndBooleanConditionCompileInBothVersions"
       ],
       "conditionIds": [
         "NORM:2.4:3.12:C01",
@@ -9536,7 +9526,8 @@
     "3.13": {
       "id": "3.13",
       "links": [
-        "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
+        "ExpressionConstraintContractTest.builtinFunctionAndBooleanConditionCompileInBothVersions",
+        "ExpressionConstraintContractTest.expressionOperatorsFollowTheLanguageVersion",
         "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
         "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
@@ -12928,17 +12919,28 @@
       "module": "interlis-compiler",
       "requirementIds": []
     },
-    "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile": {
+    "ExpressionConstraintContractTest.builtinFunctionAndBooleanConditionCompileInBothVersions": {
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ExpressionConstraintContractTest.java",
       "suite": "guru.interlis.compiler.ExpressionConstraintContractTest",
-      "method": "builtinFunctionAndImplicationCompile",
+      "method": "builtinFunctionAndBooleanConditionCompileInBothVersions",
       "observations": [
-        "logical expression boolean/implication",
-        "logical expression",
-        "MANDATORY/boolean expression and function clauses compile through the public gate"
+        "Builtin INTERLIS.len and a Boolean condition compile under INTERLIS 2.3 and 2.4."
       ],
       "invocations": [
-        "builtinFunctionAndImplicationCompile()"
+        "builtinFunctionAndBooleanConditionCompileInBothVersions()"
+      ],
+      "module": "interlis-compiler",
+      "requirementIds": []
+    },
+    "ExpressionConstraintContractTest.expressionOperatorsFollowTheLanguageVersion": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ExpressionConstraintContractTest.java",
+      "suite": "guru.interlis.compiler.ExpressionConstraintContractTest",
+      "method": "expressionOperatorsFollowTheLanguageVersion",
+      "observations": [
+        "All four arithmetic operators and implication are diagnosed at their original operators in 2.3 and accepted in 2.4; the public graph contains IMPLIES. Both versions reject **."
+      ],
+      "invocations": [
+        "expressionOperatorsFollowTheLanguageVersion()"
       ],
       "module": "interlis-compiler",
       "requirementIds": []

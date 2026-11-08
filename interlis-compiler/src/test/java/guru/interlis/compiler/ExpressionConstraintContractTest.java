@@ -26,19 +26,63 @@ class ExpressionConstraintContractTest {
     }
 
     @Test
-    void builtinFunctionAndImplicationCompile() {
-        assertInstanceOf(CompilationOutcome.Succeeded.class, compile("""
-                INTERLIS 2.3;
+    void builtinFunctionAndBooleanConditionCompileInBothVersions() {
+        for (String version : List.of("2.3", "2.4")) {
+            assertInstanceOf(CompilationOutcome.Succeeded.class, compile(expressionModel(version,
+                    "INTERLIS.len(attr) >= 0 AND #true")));
+        }
+    }
+
+    @Test
+    void expressionOperatorsFollowTheLanguageVersion() {
+        var arithmetic = Map.of("+", "(n + 1) > 0", "-", "(n - 1) > 0",
+                "*", "(n * 2) > 0", "/", "(n / 2) > 0", "=>", "#true => #true");
+        for (var entry : arithmetic.entrySet()) {
+            for (var mode : guru.interlis.syntax.ParseMode.values()) {
+                String text23 = expressionModel("2.3", entry.getValue());
+                SourceText source = CompilerTestSupport.source("memory:/operators.ili", text23);
+                var syntax = guru.interlis.syntax.SyntaxServices.create().parse(source,
+                        guru.interlis.syntax.ParseOptions.defaults(mode), CancellationToken.none());
+                var versionError = syntax.diagnostics().stream().filter(d -> d.code().value().equals("ILI-SYN-0006"))
+                        .findFirst().orElseThrow();
+                assertEquals(entry.getKey(), source.slice(versionError.primaryRange().orElseThrow()));
+                var valid = guru.interlis.syntax.SyntaxServices.create().parse(
+                        CompilerTestSupport.source("memory:/operators.ili", expressionModel("2.4", entry.getValue())),
+                        guru.interlis.syntax.ParseOptions.defaults(mode), CancellationToken.none());
+                assertTrue(valid.diagnostics().isEmpty(), valid.diagnostics()::toString);
+            }
+            var rejected = assertInstanceOf(CompilationOutcome.Rejected.class, compile(expressionModel("2.3", entry.getValue())));
+            assertTrue(rejected.rejection().reasons().contains(RejectionReason.SOURCE_ERRORS));
+            var success = assertInstanceOf(CompilationOutcome.Succeeded.class, compile(expressionModel("2.4", entry.getValue())));
+            if (entry.getKey().equals("=>")) {
+                assertTrue(success.schema().semanticGraph().expressions().stream().anyMatch(expression ->
+                        expression instanceof guru.interlis.model.BinaryExpression binary
+                                && binary.operator() == guru.interlis.model.BinaryOperator.IMPLIES));
+            }
+        }
+        for (String version : List.of("2.3", "2.4")) {
+            var rejected = assertInstanceOf(CompilationOutcome.Rejected.class,
+                    compile(expressionModel(version, "(n ** 2) > 0")));
+            assertTrue(rejected.analysis().diagnostics().stream().anyMatch(d ->
+                    d.phase() == guru.interlis.diagnostics.Phase.PARSING));
+        }
+        assertInstanceOf(CompilationOutcome.Succeeded.class,
+                compile(expressionModel("2.3", "n >= -1 AND #true OR #false")));
+    }
+
+    private static String expressionModel(String version, String expression) {
+        return """
+                INTERLIS %s;
                 MODEL M AT "https://example.interlis.ch" VERSION "1.0" =
                   TOPIC T =
                     CLASS A =
                       attr : TEXT*10;
-                      MANDATORY CONSTRAINT INTERLIS.len(attr) >= 0;
-                      MANDATORY CONSTRAINT #true => #true;
+                      n : 0..10;
+                      MANDATORY CONSTRAINT %s;
                     END A;
                   END T;
                 END M.
-                """));
+                """.formatted(version, expression);
     }
 
     @Test

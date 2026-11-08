@@ -27,7 +27,5 @@ public enum BinaryOperator {
     /** The {@code MUL} constant. */
     MUL,
     /** The {@code DIV} constant. */
-    DIV,
-    /** The {@code POW} constant. */
-    POW
+    DIV
 }

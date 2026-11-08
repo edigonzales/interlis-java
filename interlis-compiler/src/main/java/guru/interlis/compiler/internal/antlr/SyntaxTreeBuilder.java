@@ -549,7 +549,7 @@ final class SyntaxTreeBuilder {
                                 : value.LNBASE() != null ? guru.interlis.model.UnitSymbol.ConstantKind.LNBASE
                                 : guru.interlis.model.UnitSymbol.ConstantKind.DECIMAL;
                         Optional<DecimalLiteral> decimal = kind == guru.interlis.model.UnitSymbol.ConstantKind.DECIMAL
-                                ? decimal(value.getText(),range(value)) : Optional.empty();
+                                ? decimalLiteral(value.decimalLiteral()) : Optional.empty();
                         if (kind != guru.interlis.model.UnitSymbol.ConstantKind.DECIMAL || decimal.isPresent())
                             factors.add(new guru.interlis.model.UnitSymbol.ConversionFactor(operator, kind, decimal, range(value)));
                         else invalidConstant = true;
@@ -934,9 +934,9 @@ final class SyntaxTreeBuilder {
                     ? Optional.empty() : Optional.of(buildExpression(plausibility.expression()));
             return new ConstraintDeclarationSyntax(nextId(), range(context), name,
                     ConstraintKind.PLAUSIBILITY, expression, List.of(), Optional.empty(), Optional.empty(), false,
-                    plausibility.percentage==null?Optional.empty():decimal(plausibility.percentage.getText(),tokenRange(plausibility.percentage)).map(value->new ConstraintDeclarationSyntax.Plausibility(value,
+                    plausibility.percentage==null?Optional.empty():decimalLiteral(plausibility.percentage).map(value->new ConstraintDeclarationSyntax.Plausibility(value,
                             plausibility.GTEQ()!=null?guru.interlis.model.BinaryOperator.GTE:guru.interlis.model.BinaryOperator.LTE,
-                            tokenRange(plausibility.percentage))), Optional.empty());
+                            range(plausibility.percentage))), Optional.empty());
         }
         if (context.existenceConstraint() != null) {
             InterlisParser.ExistenceConstraintContext existence = context.existenceConstraint();
@@ -1197,16 +1197,9 @@ final class SyntaxTreeBuilder {
         }
         Optional<NameSyntax> lineAttributes = context.LINE() != null && context.Name() != null
                 ? Optional.of(nameSyntax(List.of(context.Name().getSymbol()))) : Optional.empty();
-        Optional<String> overlap = Optional.empty();
-        if (context.intersectionDef() != null) {
-            if (context.intersectionDef().Dec() != null) {
-                overlap = Optional.of(context.intersectionDef().Dec().getText());
-            } else if (context.intersectionDef().Number() != null) {
-                overlap = Optional.of(context.intersectionDef().Number().getText());
-            } else if (context.intersectionDef().PosNumber() != null) {
-                overlap = Optional.of(context.intersectionDef().PosNumber().getText());
-            }
-        }
+        Optional<String> overlap = Optional.ofNullable(context.intersectionDef())
+                .map(InterlisParser.IntersectionDefContext::decimalLiteral).flatMap(this::decimalLiteral)
+                .map(DecimalLiteral::lexeme);
         return new LineTypeSyntax(nextId(), range(context), kind, lineForms, vertexDomain,
                 lineAttributes, overlap, context.DIRECTED() != null, context.intersectionDef() != null);
     }
@@ -1235,9 +1228,8 @@ final class SyntaxTreeBuilder {
     }
 
     private NumericTypeSyntax numericType(InterlisParser.NumericContext context) {
-        List<Token> numbers = numericTokens(context);
-        Optional<DecimalLiteral> minimum = numbers.isEmpty() ? Optional.empty() : numericBoundary(numbers.getFirst());
-        Optional<DecimalLiteral> maximum = numbers.size() < 2 ? Optional.empty() : numericBoundary(numbers.get(1));
+        Optional<DecimalLiteral> minimum = numericBoundary(context.decimalLiteral(0));
+        Optional<DecimalLiteral> maximum = numericBoundary(context.decimalLiteral(1));
         Optional<NameSyntax> unit = context.unitRef() == null ? Optional.empty()
                 : Optional.of(nameFromContext(context.unitRef()));
         return new NumericTypeSyntax(nextId(), range(context), minimum, maximum,
@@ -1246,12 +1238,11 @@ final class SyntaxTreeBuilder {
                 unit, referenceSystem(context.refSys()));
     }
 
-    /** Scaled type boundaries use Float's mantissa production. Ordinary constants
-     * and unit factors use decimal(), whose independent lexical profile is retained. */
-    private Optional<DecimalLiteral> numericBoundary(Token token) {
-        String text=token.getText();
-        var value=decimal(text,tokenRange(token));
-        if(value.isEmpty())return value;
+    /** Scaled boundaries retain the mantissa rules of the language profile. */
+    private Optional<DecimalLiteral> numericBoundary(InterlisParser.DecimalLiteralContext literal) {
+        var value = decimalLiteral(literal);
+        if (value.isEmpty()) return value;
+        String text = value.orElseThrow().lexeme();
         int exponent=Math.max(text.indexOf('e'),text.indexOf('E'));
         if(exponent>=0) {
             int start=text.startsWith("+") || text.startsWith("-")?1:0;
@@ -1263,7 +1254,7 @@ final class SyntaxTreeBuilder {
             if(!canonical)propertyDiagnostics.add(guru.interlis.diagnostics.DiagnosticDraft.of(
                     new guru.interlis.diagnostics.DiagnosticCode("ILI-SYN-0002"),guru.interlis.diagnostics.Severity.ERROR,
                     guru.interlis.diagnostics.Phase.PARSING,"diagnostic.syntax.unexpected")
-                    .at(tokenRange(token)).argument(new guru.interlis.diagnostics.DiagnosticArgument.TokenArgument("actual",text))
+                    .at(range(literal)).argument(new guru.interlis.diagnostics.DiagnosticArgument.TokenArgument("actual",text))
                     .argument(new guru.interlis.diagnostics.DiagnosticArgument.IdentifierListArgument("expected",
                             List.of("scaled boundary with 0.nonzero-digits or 0.zeros mantissa"))));
         }
@@ -1287,19 +1278,27 @@ final class SyntaxTreeBuilder {
                 context.PosNumber() == null ? java.util.OptionalInt.empty() : java.util.OptionalInt.of(Integer.parseInt(context.PosNumber().getText()))));
     }
 
-    private List<Token> numericTokens(ParserRuleContext context) {
-        List<Token> tokens = new ArrayList<>();
-        for (ParseTree child : context.children) {
-            if (child instanceof TerminalNode terminal) {
-                int type = terminal.getSymbol().getType();
-                if (type == InterlisParser.Number || type == InterlisParser.PosNumber
-                        || type == InterlisParser.Dec || type == InterlisParser.Float) {
-                    tokens.add(terminal.getSymbol());
-                }
-            }
+    private Optional<String> numericLexeme(InterlisParser.DecimalLiteralContext literal) {
+        if (literal == null || literal.magnitude == null || literal.magnitude.getTokenIndex() < 0) {
+            return Optional.empty();
         }
-        tokens.sort(Comparator.comparingInt(Token::getTokenIndex));
-        return tokens;
+        SourceRange literalRange = range(literal);
+        String text = source.slice(literalRange);
+        if (literal.sign != null && tokenRange(literal.sign).endOffset() != tokenRange(literal.magnitude).startOffset()) {
+            propertyDiagnostics.add(guru.interlis.diagnostics.DiagnosticDraft.of(
+                    new guru.interlis.diagnostics.DiagnosticCode("ILI-SYN-0002"),
+                    guru.interlis.diagnostics.Severity.ERROR, guru.interlis.diagnostics.Phase.PARSING,
+                    "diagnostic.syntax.unexpected").at(literalRange)
+                    .argument(new guru.interlis.diagnostics.DiagnosticArgument.TokenArgument("actual", text))
+                    .argument(new guru.interlis.diagnostics.DiagnosticArgument.IdentifierListArgument(
+                            "expected", List.of("adjacent numeric sign and digits"))));
+            return Optional.empty();
+        }
+        return Optional.of(text);
+    }
+
+    private Optional<DecimalLiteral> decimalLiteral(InterlisParser.DecimalLiteralContext literal) {
+        return numericLexeme(literal).flatMap(text -> decimal(text, range(literal)));
     }
 
     private EnumerationTypeSyntax enumerationType(InterlisParser.EnumerationContext context) {
@@ -1440,8 +1439,17 @@ final class SyntaxTreeBuilder {
         return buildTerm(context.term());
     }
 
+    private void expressionFeature(LanguageProfile.Feature feature, SourceRange range) {
+        if (!LanguageProfile.supports(language, feature)) {
+            versionViolations.add(feature);
+            versionViolationRanges.add(range);
+        }
+    }
+
     private ExpressionSyntax buildTerm(InterlisParser.TermContext context) {
         if (context.term0().size() == 2) {
+            expressionFeature(LanguageProfile.Feature.IMPLICATION,
+                    tokenRange(context.EQ().getSymbol(), context.GT().getSymbol()));
             return new BinaryExpressionSyntax(nextId(), range(context),
                     guru.interlis.model.BinaryOperator.IMPLIES,
                     buildTerm0(context.term0(0)), buildTerm0(context.term0(1)));
@@ -1464,6 +1472,9 @@ final class SyntaxTreeBuilder {
                 };
                 if (operator != null) {
                     operators.add(operator);
+                    if (operator != BinaryOperator.OR) {
+                        expressionFeature(LanguageProfile.Feature.ARITHMETIC, tokenRange(terminal.getSymbol()));
+                    }
                 }
             }
         }
@@ -1489,11 +1500,13 @@ final class SyntaxTreeBuilder {
                     case InterlisParser.AND -> BinaryOperator.AND;
                     case InterlisParser.MUL -> BinaryOperator.MUL;
                     case InterlisParser.DIV -> BinaryOperator.DIV;
-                    case InterlisParser.POW -> BinaryOperator.POW;
                     default -> null;
                 };
                 if (operator != null) {
                     operators.add(operator);
+                    if (operator != BinaryOperator.AND) {
+                        expressionFeature(LanguageProfile.Feature.ARITHMETIC, tokenRange(terminal.getSymbol()));
+                    }
                 }
             }
         }
@@ -1579,11 +1592,6 @@ final class SyntaxTreeBuilder {
         if (context.constant() != null) {
             return constantExpression(context.constant());
         }
-        if (context.Number() != null) {
-            Token token = context.Number().getSymbol();
-            return new LiteralExpressionSyntax(nextId(), range(context), LiteralKind.NUMBER,
-                    token.getText(), decimal(token.getText(),tokenRange(token)), Optional.empty());
-        }
         if (context.functionCall() != null) {
             InterlisParser.FunctionCallContext call = context.functionCall();
             checkFunctionList(call.argument().size(), call.LPAR(), call.RPAR(), LanguageProfile.Feature.EMPTY_FUNCTION_ARGUMENTS);
@@ -1655,15 +1663,16 @@ final class SyntaxTreeBuilder {
         }
         if (context.numericConst() != null) {
             InterlisParser.NumericConstContext numeric = context.numericConst();
-            String text = numeric.decConst().getText();
             Optional<NameSyntax> unit = Optional.ofNullable(numeric.unitRef()).map(this::nameFromContext);
-            if ("PI".equals(text) || "LNBASE".equals(text)) {
-                return new ConstantExpressionSyntax(nextId(), range(context), text, unit);
+            var constant = numeric.decConst();
+            if (constant.PI() != null || constant.LNBASE() != null) {
+                return new ConstantExpressionSyntax(nextId(), range(context), constant.getText(), unit);
             }
-            if (numeric.decConst() != null && numeric.decConst().getStart() != null) {
-                String lexeme = numeric.decConst().getText();
+            var literal = constant.decimalLiteral();
+            var lexeme = numericLexeme(literal);
+            if (lexeme.isPresent()) {
                 return new LiteralExpressionSyntax(nextId(), range(context), LiteralKind.NUMBER,
-                        lexeme, decimal(lexeme,range(numeric.decConst())), unit);
+                        lexeme.get(), decimal(lexeme.get(), range(literal)), unit);
             }
             unsupportedFeatures.add("NUMERIC_CONSTANT");
             return unsupportedExpression(context, "NUMERIC_CONSTANT", "numeric constant");

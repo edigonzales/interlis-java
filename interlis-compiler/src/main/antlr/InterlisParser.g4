@@ -7,7 +7,7 @@ options { tokenVocab=InterlisLexer; }
 // 3.3 Règle principale - Hauptregel
 
 interlis2def
-    : (INTERLIS Dec SEMI modeldef*
+    : (INTERLIS DecimalNumber SEMI modeldef*
       | TRANSFER INTERLIS1 SEMI)
     ;
 
@@ -233,11 +233,7 @@ booleanType : BOOLEAN;
 // 3.8.5 Types de données numériques - Numerische Datentypen
 
 numeric
-  : (Number DOTDOT Number
-    | Number DOTDOT PosNumber
-    | PosNumber DOTDOT Number
-    | PosNumber DOTDOT PosNumber
-    | Dec DOTDOT Dec)
+  : decimalLiteral DOTDOT decimalLiteral
     (CIRCULAR)?
     (LSBR unitRef RSBR)?
     (CLOCKWISE | COUNTERCLOCKWISE | refSys)?
@@ -253,7 +249,8 @@ numericType : NUMERIC CIRCULAR? (LSBR unitRef RSBR)? (CLOCKWISE | COUNTERCLOCKWI
 refSys : LCBR metaObjectRef (LSBR PosNumber RSBR)? RCBR
      | LT domainRef (LSBR PosNumber RSBR)? GT;
 
-decConst : Dec | PI | LNBASE | Number | PosNumber;
+decimalLiteral : sign=(PLUS | MINUS)? magnitude=(PosNumber | DecimalNumber);
+decConst : decimalLiteral | PI | LNBASE;
 
 numericConst : decConst (LSBR unitRef RSBR)?;
 
@@ -331,7 +328,7 @@ lineFormType : STRAIGHTS | ARCS | (Name DOT)? Name;
 
 controlPoints : VERTEX domainRef;
 
-intersectionDef : WITHOUT OVERLAPS (GT (Dec | Number | PosNumber))?;
+intersectionDef : WITHOUT OVERLAPS (GT decimalLiteral)?;
 
 // 3.8.12.3 Formes de portions de courbes supplémentaires - Weitere Kurvenstück-Formen
 
@@ -399,7 +396,7 @@ mandatoryConstraint : MANDATORY CONSTRAINT (Name COLON)? expression SEMI;
 
 plausibilityConstraint
     : CONSTRAINT (Name COLON)?
-      (LTEQ | GTEQ) percentage=(Dec | Number | PosNumber) MOD
+      (LTEQ | GTEQ) percentage=decimalLiteral MOD
       expression SEMI
     ;
 
@@ -451,7 +448,7 @@ expression : term;
 
 term : term0 ( EQ GT term0 )?;
 term0 : term1 ( ( OR | PLUS | MINUS ) term1 )*;
-term1 : term2 ( ( AND | MUL | DIV | POW) term2 )*;
+term1 : term2 ( ( AND | MUL | DIV) term2 )*;
 term2 : predicate ( relation predicate )?;
 
 predicate : ( factor
@@ -470,7 +467,6 @@ factor
   | PARAMETER (Name DOT)? Name
   | ALL (OF objectOrAttributePath)?
   | constant
-  | Number
   ;
 
 objectOrAttributePath : pathEl (MINUS GT pathEl)*;

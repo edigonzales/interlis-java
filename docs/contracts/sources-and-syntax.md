@@ -281,7 +281,13 @@ Die Hauptregel wird für vollständige Dokumente mit EOF abgeschlossen. Der in d
 
 Eine maschinenlesbare Tabelle `language-features.json` oder eine typisierte Java-Tabelle verbindet `LanguageFeature`, erlaubte Versionen, Normreferenz und positive/negative Tests. Sie erfasst die Sprachfeatures mit Versionsgrenzen. Es darf keine unausgefüllte Versionszelle für eine als fertig deklarierte Fähigkeit geben. Neue 2.4-Schlüsselwörter dürfen Namen gültiger 2.3-Modelle nicht unbeabsichtigt sperren.
 
-Die Grammatik muss die Operatorbindung aus dem Referenzhandbuch abbilden. Die im Ausgangsprojekt vorgefundenen Alternativen und Präzedenzstufen werden geprüft; allein die erfolgreiche ANTLR-Generierung gilt nicht als Nachweis. Signed-Number-Lexing muss insbesondere `a-1`, `a - 1`, negative Literale, Exponenten und benachbarte Relationsoperatoren unterscheiden. String- und Kommentarinhalt darf von einer solchen Tokenkorrektur nicht betroffen sein.
+Die Grammatik muss die Operatorbindung aus dem Referenzhandbuch abbilden. Die im Ausgangsprojekt vorgefundenen Alternativen und Präzedenzstufen werden geprüft; allein die erfolgreiche ANTLR-Generierung gilt nicht als Nachweis. Zahlentokens enthalten das Exponentenvorzeichen. Ein führendes Vorzeichen ist
+ein eigenes Token und gehört im Parser nur bei direkt anschliessender Zahl zum
+numerischen Literal. Dadurch haben `a-1` und `a - 1` denselben Ausdrucksbaum.
+Lexeme und Literalbereiche stammen aus der Originalquelle.
+Binäre Arithmetik und Implikation sind in Ausdrücken ab INTERLIS 2.4 zulässig.
+Versionsdiagnosen zeigen auf den jeweiligen Operator, auch in Fragmenten.
+Einheitenoperationen und signierte Zahlen behalten ihre eigenen Regeln.
 
 Die optionale leer passende Alternative in `viewDef` erzeugt ANTLR-Warnung 154. Strikte Akzeptanz und Recovery für betroffene Konstrukte werden mit den View-Verträgen geprüft.
 

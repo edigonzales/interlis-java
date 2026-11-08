@@ -64,6 +64,10 @@ public final class FormatStructure {
                 case RULE_unitDef -> boundary(first(node), 1, false);
                 case RULE_contextDef -> context((ContextDefContext) node);
                 case RULE_enumeration -> enumeration((EnumerationContext) node, offsets);
+                case RULE_decimalLiteral -> {
+                    var literal = (DecimalLiteralContext) node;
+                    if (literal.sign != null && literal.magnitude != null) tight.add(literal.magnitude.getTokenIndex());
+                }
                 case RULE_cardinality -> {
                     for (int i = first(node) + 1; i <= last(node); i++) tight.add(i);
                 }

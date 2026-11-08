@@ -230,6 +230,11 @@ oder verschärft: Deren ursprüngliche Marker und Identitäten bleiben sichtbar.
 
 `TypeResolver.resolve` delegiert auf kleine Fachregeln wie `NumericTypeRules`, `EnumerationRules`, `GeometryTypeRules`, `ReferenceTypeRules`, `FormattedTypeRules` und `GenericBindingRules`. Diese Dienste rufen die Relationselemente aus05 auf und ergänzen kontextbezogene Diagnostik. Methoden und Tests werden je Fachfamilie benannt; eine monolithische mehrere tausend Zeilen lange Visitor-Methode ist zu vermeiden.
 
+Seit API 0.3 umfasst `BinaryOperator` bei Arithmetik die Operatoren
+`PLUS`, `MINUS`, `MUL` und `DIV`. Die bisherige Potenzoperation `POW` entfällt
+aus Syntax und semantischem Modell. Die Versionsänderung betrifft den
+öffentlichen Java-Modellvertrag.
+
 `ExpressionTypeChecker.check(ExpressionSyntax syntax, ExpressionContext context)` ermittelt Ergebnisart und Definiertheits-/Kardinalitätswirkung. `ObjectPathResolver.resolve(...)` prüft jeden Pfadschritt. `FunctionCallChecker.check(...)` prüft Aufrufziel, Argumentanzahl, Sonderargumentformen, Typverträglichkeit und Rückgabetyp. Ein unbekanntes Argument wird nicht automatisch als `ANY` passend gemacht.
 
 Jede Regel gibt bekannte Teilinformationen zurück, wenn diese unabhängig vom Fehler sicher sind. Sie darf aber keine provisorische Schlussfolgerung als bestätigt speichern. Zum Beispiel kann das Ziel einer Funktion bekannt sein, während der Typ eines Arguments noch blockiert ist; Hover darf die Signatur zeigen, während die Gesamtprüfung unvollständig bleibt.

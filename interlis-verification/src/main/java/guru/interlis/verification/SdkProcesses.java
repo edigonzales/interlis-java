@@ -54,6 +54,6 @@ public final class SdkProcesses {
         System.out.println("SDK_PROCESS_PASS "+results.size()+" commands");
     }
     static void version(JsonObject manifest) {
-        require(s(manifest,"apiVersion").equals("0.2") && s(manifest,"protocol").equals("interlis.compiler/1.0"),"Wrong SDK version/protocol");
+        require(s(manifest,"apiVersion").equals("0.3") && s(manifest,"protocol").equals("interlis.compiler/1.0"),"Wrong SDK version/protocol");
     }
 }

@@ -261,8 +261,7 @@ public final class AntlrSyntaxService implements SyntaxService {
         if (token.getType() == InterlisLexer.STRING) {
             return TokenKind.STRING;
         }
-        if (token.getType() == InterlisLexer.Number || token.getType() == InterlisLexer.PosNumber
-                || token.getType() == InterlisLexer.Dec || token.getType() == InterlisLexer.Float) {
+        if (token.getType() == InterlisLexer.PosNumber || token.getType() == InterlisLexer.DecimalNumber) {
             return TokenKind.NUMBER;
         }
         String text = token.getText();

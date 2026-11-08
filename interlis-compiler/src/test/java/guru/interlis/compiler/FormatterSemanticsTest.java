@@ -42,6 +42,29 @@ class FormatterSemanticsTest {
     }
 
     @Test
+    void formatterDistinguishesLiteralSignsFromBinaryOperators() {
+        String input = """
+                INTERLIS 2.4;
+                MODEL M AT "https://example.org" VERSION "1" =
+                  DOMAIN Negative = -10..-1;
+                  UNIT metre; factor = 0.12e-3 [metre];
+                  TOPIC T = CLASS C =
+                    n: 0..10;
+                    MANDATORY CONSTRAINT (n-1) >= -1;
+                    MANDATORY CONSTRAINT (n--1) >= +007;
+                  END C; END T;
+                END M.
+                """;
+        String output = FormatterSoStandardTest.verify(input,
+                new FormatOptions(2, FormatOptions.LineEnding.PRESERVE, true, 60));
+        for (String literal : List.of("-10", "-1", "+007", "0.12e-3")) {
+            assertTrue(output.contains(literal), output);
+        }
+        assertEquals(constraints(compile(input).schema().semanticGraph()),
+                constraints(compile(output).schema().semanticGraph()));
+    }
+
+    @Test
     void sectionFormattingPreservesOrderMetadataAndReferenceTargets() {
         String input = """
                 INTERLIS 2.4;

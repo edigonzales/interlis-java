@@ -363,7 +363,6 @@ final class SemanticDescriptions {
             case "MINUS" -> "-";
             case "MUL" -> "*";
             case "DIV" -> "/";
-            case "POW" -> "**";
             default -> op;
         };
     }

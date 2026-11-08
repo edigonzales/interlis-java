@@ -594,7 +594,7 @@ final class ExpressionBindings {
                     error=true;
                 }
             }
-            case PLUS, MINUS, MUL, DIV, POW -> {
+            case PLUS, MINUS, MUL, DIV -> {
                 result = left.typeId();
                 if (!error && (!typeBindings.isNumeric(left.typeId()) || !typeBindings.isNumeric(right.typeId()))) {
                     diagnostics.emitTypeMismatch(ownerSource(owner), syntax.range(),

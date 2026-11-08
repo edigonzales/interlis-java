@@ -103,7 +103,6 @@ METAOBJECT : 'METAOBJECT';
 MOD: '%';
 MODEL : 'MODEL';
 MTEXT : 'MTEXT';
-POW: '**';
 MUL: '*';
 MULTIAREA : 'MULTIAREA';
 MULTICOORD : 'MULTICOORD';
@@ -198,11 +197,8 @@ LSBR: '[';
 RSBR: ']';
 
 PosNumber : Digit+;
-Number : (PLUS | MINUS)? PosNumber;
-Dec : (Number (DOT PosNumber)? | Float);
-Float : (PLUS | MINUS)? Digit+ (DOT Digit+)? Scaling?;
-// Only part of a Float (eCH-0031 3.2.4): as its own token it would swallow names like e2.
-fragment Scaling : ('e' | 'E') Number;
+DecimalNumber : Digit+ DOT Digit+ | Digit+ (DOT Digit+)? Exponent;
+fragment Exponent : [eE] [+-]? Digit+;
 
 // 3.2.2 Noms - Namen
 
