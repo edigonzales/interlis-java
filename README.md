@@ -2,7 +2,7 @@
 
 Java-Werkzeuge für INTERLIS 2.3 und 2.4. Das Repository enthält den Compiler,
 die Java-SDK-Schnittstellen, eine CLI, einen LSP-Server, eine Swing-Anwendung
-zur Modellprüfung und einen Browserclient mit Diagrammen. TeaVM erzeugt
+zur Modellprüfung und einen Browserclient für Compiler und Diagramm-DTOs. TeaVM erzeugt
 JavaScript und WasmGC. Ein separater GraalVM-Web-Image-Adapter dient dem
 Backendvergleich. Transfer, Datenvalidierung und Datenbankabbildung sind
 [geplant](docs/design/transfer-validation-database.md).

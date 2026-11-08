@@ -259,7 +259,7 @@ TypeScript-Adapter unterstützen die vorhandenen offenen Kind-Strings.
 die Knoten, Beziehungen und den Diagrammvalidator.
 
 <a id="eigener-gemeinsamer-interaktiver-diagrammconsumer"></a>
-### Eigener gemeinsamer interaktiver Diagrammconsumer
+### Interaktiver Diagrammconsumer der VS-Code-Extension
 
 Der interaktive Renderer gehört zur VS-Code-Extension. Er verwendet die
 DiagramDocument-1.0-Typen und das Schema aus dem Core-Bundle. Die Wire-Typen
@@ -393,6 +393,8 @@ Zieldatei und abschliessendes Schreiben, nicht der Renderer.
 `mountDiagramControls` ist die lokale Bedienoberfläche der VS-Code-Extension. Native Zeiger-/Tastatureingaben, ResizeObserver, begrenzter Pan und
 Viewportzoom verwenden CSSpixel; die Rasterauflösung ist explizit. Toolbarfokus
 und Quelleditorfokus dürfen von Hintergrundpatches nicht übernommen werden.
+Ein Themewechsel ändert nur die Darstellung. Exporte verwenden die bei
+Exportbeginn berechneten Farben.
 
 Lokale Sichtaktionen dürfen einen durch den Host invalidierten Graphen nicht
 wieder als aktuell ausgeben. Der Canvas behält dafür Quellfrische getrennt von

@@ -36,6 +36,11 @@
   selben PR. Begründe bei kompatiblen Änderungen die Versionsentscheidung.
   Die Prüfliste steht in der [Freigabeprüfung](docs/development/release.md#vertragsversionen).
 
+Der Core besitzt die Diagrammprojektion und ihren Wire-Vertrag. Die
+VS-Code-Extension besitzt Sprotty, ELK, View-State und Bildexport. Fachliche
+Portable-Tests prüfen echte Compiler- und Workerantworten. Darstellungstests
+liegen bei der Extension.
+
 ## Buildphilosophie
 
 **Jenesis macht Jenesis-Sachen. Gradle macht Gradle-Sachen. Wir implementieren
