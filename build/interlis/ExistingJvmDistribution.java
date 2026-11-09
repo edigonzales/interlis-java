@@ -35,7 +35,7 @@ public final class ExistingJvmDistribution {
     }
 
     private static Path replace(Path root, Delivery kind) throws Exception {
-        var outcome = JenesisBridge.artifacts(root);
+        var outcome = JenesisBridge.artifacts(root, "+interlis-compiler-cli", "+interlis-lsp");
         Path delivery = JvmBuildInputs.requireOutputRoot(root, "target/jenesis-jvm/delivery");
         Path work = Files.createTempDirectory(delivery.getParent(), "delivery-");
         Path next = work.resolve("next");
