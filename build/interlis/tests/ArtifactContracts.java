@@ -36,7 +36,7 @@ public final class ArtifactContracts {
         var outcome=new JenesisBridge.BuildOutcome(root,paths);
         var result=JenesisBridge.moduleResult(outcome,"interlis-model");
         check(result.jar().equals(jar));
-        check(result.runtime().equals(List.of(jar)));check(result.moduleName().isEmpty() && !result.explicitDescriptor());
+        check(result.moduleName().isEmpty() && !result.explicitDescriptor());
         check(ModuleArtifacts.runtime(root,"interlis-model",outcome).equals(List.of(
                 new ModuleArtifacts.Artifact("maven/guru.interlis/interlis-model/1", jar))));
         rejects(()->JenesisBridge.moduleResult(new JenesisBridge.BuildOutcome(root,Map.of()),"interlis-model"),"missing result");

@@ -20,7 +20,9 @@ Die native ABI-Prüfung im Maven-Layout lässt abhängige Kompilierungen aus,
 wenn sich ausschliesslich die Implementierung einer Abhängigkeit ändert.
 Die JPMS-Tests verwenden die von Jenesis kompilierten Testklassen und
 starten sie als Patch des jeweiligen Produktmoduls. Die Produktdeskriptoren
-bleiben dabei unverändert.
+bleiben dabei unverändert. `jenesis.project.interlis` aktiviert die
+projektspezifische Assemblierung für diese Testausführung, die CLI-Buildrevision
+und die Compilerressourcen einschliesslich der Grammatik im Source-JAR.
 
 | Aufruf | Ergebnis |
 |---|---|

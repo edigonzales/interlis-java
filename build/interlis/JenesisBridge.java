@@ -13,12 +13,11 @@ public final class JenesisBridge {
         }
     }
 
-    /** Runtime artifact and descriptor from the native inventory. */
+    /** Product artifact and descriptor from the native inventory. */
     public record ModuleResult(Path jar,
-            Optional<String> moduleName, boolean explicitDescriptor, List<Path> runtime) {
+            Optional<String> moduleName, boolean explicitDescriptor) {
         public ModuleResult {
             moduleName = Objects.requireNonNull(moduleName);
-            runtime = List.copyOf(runtime);
         }
     }
 
@@ -36,7 +35,7 @@ public final class JenesisBridge {
                 moduleName=Optional.of(module.name());explicit=!module.isAutomatic();
             }
         }
-        return new ModuleResult(jar, moduleName, explicit, product.paths("runtime"));
+        return new ModuleResult(jar, moduleName, explicit);
     }
 
     static InventoryResult productInventory(BuildOutcome outcome, String projectId) throws Exception {
