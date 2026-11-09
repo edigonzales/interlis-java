@@ -16,29 +16,6 @@ dependencies {
 
 tasks.matching { it.name in ['generateWasmGC', 'generateJavaScript'] }.configureEach {
     outOfProcess = true
-    def pinFile = rootProject.file('gradle/teavm-core.json')
-    inputs.file pinFile
-    def provenance = layout.buildDirectory.file("tooling/teavm/${name}.json")
-    outputs.file provenance
-    doFirst {
-        def pin = new groovy.json.JsonSlurper().parse(pinFile)
-        def cores = daemonClasspath.files.findAll { it.name.startsWith('teavm-core-') }
-        if (cores.size() != 1 || cores.first().name != 'teavm-core-0.16.0.jar'
-                || java.security.MessageDigest.getInstance('SHA-256').digest(cores.first().bytes).encodeHex().toString() != pin.sha256
-                || pin.coordinate != 'org.teavm:teavm-core:0.16.0') {
-            throw new GradleException('Compiler classpath does not contain the pinned upstream TeaVM core')
-        }
-        logger.lifecycle("Upstream TeaVM compiler core: ${cores.first()} SHA-256=${pin.sha256}")
-    }
-    doLast {
-        def pin = new groovy.json.JsonSlurper().parse(pinFile)
-        def generated = name == 'generateJavaScript' ? file('build/generated/teavm/js/interlis-compiler.js') : file('build/generated/teavm/wasm-gc/interlis-compiler.wasm')
-        def artifactSha256 = java.security.MessageDigest.getInstance('SHA-256').digest(generated.bytes).encodeHex().toString()
-        provenance.get().asFile.with {
-            parentFile.mkdirs()
-            setText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson([core: pin, artifactSha256: artifactSha256])) + '\n', 'UTF-8')
-        }
-    }
 }
 
 teavm {

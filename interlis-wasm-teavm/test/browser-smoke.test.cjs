@@ -1,6 +1,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const {createHash} = require('node:crypto');
 const {createServer} = require('node:http');
 const {readFile} = require('node:fs/promises');
 const path = require('node:path');
@@ -10,6 +11,25 @@ const {chromium, firefox, webkit} = require('playwright');
 const web = path.resolve(__dirname, '../build/web');
 const types = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.wasm': 'application/wasm'};
 const browsers = process.env.INTERLIS_BROWSER_CHECK === '1' ? {chromium, firefox, webkit} : {chromium};
+
+test('browser manifest describes the packaged compiler', async () => {
+  const manifest = JSON.parse(await readFile(path.join(web, 'build-manifest.json'), 'utf8'));
+  const versions = JSON.parse(await readFile(path.join(web, '../version-manifest.json'), 'utf8'));
+  assert.equal(manifest.schemaVersion, '3.0');
+  assert.equal(Object.hasOwn(manifest, 'toolchain'), false);
+  assert.deepEqual(manifest.versions, versions);
+  assert.equal(manifest.gitCommit, versions.gitCommit);
+  const capabilities = manifest.compilerCapabilities;
+  assert.equal(capabilities.toolVersion, versions.version);
+  assert.equal(capabilities.protocol + '/' + capabilities.protocolVersion, versions.protocol);
+  for (const name of ['interlis-compiler.wasm', 'interlis-compiler.wasm-runtime.js']) {
+    const bytes = await readFile(path.join(web, name));
+    assert.deepEqual(manifest.resources[name], {
+      bytes: bytes.length,
+      sha256: createHash('sha256').update(bytes).digest('hex')
+    });
+  }
+});
 
 for (const [name, type] of Object.entries(browsers)) {
   test(name + ' runs the packaged compiler through the real worker and recovers after cancellation', {timeout: 75000}, async () => {
