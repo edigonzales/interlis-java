@@ -47,7 +47,7 @@ public final class ConformanceRun {
         Path output = Files.createTempDirectory(Files.createDirectories(JvmBuildInputs.requireOutputRoot(
                 root, "target/jenesis-jvm/conformance")), "run-");
         Path suite = output.resolve("suite");
-        DistributionChecks.javaMain(root, JenesisBridge.buildArchiveTool(root, false), "build.interlis.archive.ExtractTar",
+        DistributionChecks.javaMain(root, JenesisBridge.buildArchiveTool(root), "build.interlis.archive.ExtractTar",
                 List.of(archive.toString(), suite.toString())).requireExit(0);
         Path delivery = ExistingJvmDistribution.generate(root);
         Path cli = ExistingJvmDistribution.launcher(delivery.resolve("compiler"), "interlis-compiler");

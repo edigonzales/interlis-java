@@ -132,7 +132,7 @@ public final class ExistingJvmDistribution {
     }
 
     static void archive(Path root, Path staging, Path zip) throws Exception {
-        DistributionChecks.javaMain(root, JenesisBridge.buildArchiveTool(root, false),
+        DistributionChecks.javaMain(root, JenesisBridge.buildArchiveTool(root),
                 "build.interlis.archive.ArchiveWriter", List.of(staging.toString(), zip.toString())).requireExit(0);
     }
 

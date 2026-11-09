@@ -3,9 +3,9 @@ package build.interlis;
 import java.nio.file.*;
 import java.util.*;
 
-/** Immutable files resolved from this invocation's native inventory, including coordinates and actual hashes. */
+/** Immutable files resolved from this invocation's native inventory, with coordinates for host distribution names. */
 public final class ModuleArtifacts {
-    public record Artifact(String coordinates,Path file,String sha256) {
+    public record Artifact(String coordinates,Path file) {
         public String fileName() {
             String[] fields=coordinates.split("/");
             if(fields.length!=4||!fields[0].equals("maven"))throw new IllegalArgumentException("Unexpected artifact coordinates: "+coordinates);
@@ -13,39 +13,36 @@ public final class ModuleArtifacts {
         }
     }
     public static List<Artifact> runtime(Path root,String module,JenesisBridge.BuildOutcome outcome)throws Exception {
-        var result=JenesisBridge.moduleResult(outcome,module);
-        Path directory=result.inventoryDirectory();
-        Properties data=new Properties();try(var reader=Files.newBufferedReader(directory.resolve("inventory.properties"))){data.load(reader);}
-        String prefix=result.inventoryPrefix();var identities=new HashMap<Path,String>();
-        Path own=file(root,directory,data.getProperty(prefix+".artifacts.0"));identities.put(own,data.getProperty(prefix+".identity.0"));
-        for(int i=0;data.containsKey(prefix+".dependency."+i);i++) {
-            String[] parts=data.getProperty(prefix+".dependency."+i).split(" ");
-            identities.put(file(root,directory,parts[1]),parts[0]);
+        var inventory = JenesisBridge.productInventory(outcome, module);
+        var data = inventory.data();
+        String prefix = inventory.prefix();
+        var identities = new HashMap<Path, String>();
+        Path own = inventory.jar();
+        identities.put(own, data.getProperty(prefix + ".identity.0"));
+        for (int i = 0; data.containsKey(prefix + ".dependency." + i); i++) {
+            String[] parts = data.getProperty(prefix + ".dependency." + i).split(" ");
+            identities.put(inventory.resolve(parts[1]), parts[0]);
         }
         var artifacts=new ArrayList<Artifact>();var names=new HashSet<String>();
         String version = JvmBuildInputs.projectVersion(root);
-        for (Path path : result.runtime()) {
+        for (Path path : inventory.paths("runtime")) {
             String coordinates=identities.get(path);if(coordinates==null)throw new IllegalStateException("Unidentified runtime artifact: "+path);
-            var artifact=new Artifact(coordinates,path,JvmBuildInputs.sha256(path));
+            var artifact=new Artifact(coordinates,path);
             if(!names.add(artifact.fileName()))throw new IllegalStateException("Duplicate runtime name");
             if(coordinates.matches(".*(junit|platform-console|antlr4/|commons-compress|archive-tool).*"))throw new IllegalStateException("Tool/runtime leak: "+coordinates);
             if(coordinates.startsWith("maven/guru.interlis/")) {
                 String[] id=coordinates.split("/");
                 if(id.length!=4||!id[3].equals(version))throw new IllegalStateException("Foreign own coordinates: "+coordinates);
-                Path producer = (module.equals(id[2]) ? result : JenesisBridge.moduleResult(outcome, id[2])).jar();
-                if(!artifact.sha256().equals(JvmBuildInputs.sha256(producer)))throw new IllegalStateException("Foreign/stale own runtime bytes: "+coordinates);
+                Path producer = module.equals(id[2]) ? own : JenesisBridge.productInventory(outcome, id[2]).jar();
+                if (!path.equals(producer) && Files.mismatch(path, producer) != -1) {
+                    throw new IllegalStateException("Foreign/stale own runtime bytes: " + coordinates);
+                }
             }
             artifacts.add(artifact);
         }
         return List.copyOf(artifacts);
     }
     public static Path jar(JenesisBridge.BuildOutcome outcome,String projectId) throws Exception {
-        return JenesisBridge.moduleResult(outcome,projectId).jar();
-    }
-    private static Path file(Path root,Path directory,String value)throws Exception {
-        if(value==null)throw new IllegalStateException("Missing artifact");
-        Path file=directory.resolve(value).normalize().toAbsolutePath();Path boundary=root.resolve("target/jenesis-jvm/engine");
-        if(!file.startsWith(boundary)||!Files.isRegularFile(file)||!file.toRealPath().startsWith(boundary.toRealPath()))throw new IllegalStateException("Foreign/missing artifact: "+file);
-        return file;
+        return JenesisBridge.productInventory(outcome, projectId).jar();
     }
 }

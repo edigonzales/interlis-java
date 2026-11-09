@@ -25,10 +25,10 @@ public final class EditorBundleRun {
         }
     }
 
-    private record Inputs(List<ModuleArtifacts.Artifact> runtime, Map<String, Path> schemaJars,
+    private record Inputs(Map<String, BundleFile> runtime, Map<String, Path> schemaJars,
             Map<String,String> sources, Map<String,Object> metadata, String requestId) {
         private Inputs {
-            runtime = List.copyOf(runtime);
+            runtime = Map.copyOf(runtime);
             schemaJars = Map.copyOf(schemaJars);
             sources = Map.copyOf(sources);
             metadata = Map.copyOf(metadata);
@@ -62,20 +62,23 @@ public final class EditorBundleRun {
         var lsp=JenesisBridge.moduleResult(outcome,"interlis-lsp");
         if(!lsp.explicitDescriptor()||!lsp.moduleName().orElseThrow().equals("guru.interlis.lsp"))throw new IllegalStateException("Editor server must be explicit JPMS");
         metadata.put("launch",Map.of("kind","module","moduleName",lsp.moduleName().orElseThrow(),"mainClass","guru.interlis.lsp.Main"));
+        var runtimeFiles = new TreeMap<String, BundleFile>();
         var moduleInventory=new TreeMap<String,Object>();var moduleNames=new HashSet<String>();
         for (var artifact : runtime) {
             Path jar = artifact.file();
             var found=java.lang.module.ModuleFinder.of(jar).findAll();if(found.size()!=1)throw new IllegalStateException("Unknown editor runtime module");
             var descriptor=found.iterator().next().descriptor();
             if(!moduleNames.add(descriptor.name())||(artifact.coordinates().startsWith("maven/guru.interlis/")&&descriptor.isAutomatic()))throw new IllegalStateException("Duplicate/automatic own editor module");
-            moduleInventory.put("lib/"+artifact.fileName(),Map.of("name",descriptor.name(),"explicit",!descriptor.isAutomatic(),"sha256",artifact.sha256()));
+            String digest = JvmBuildInputs.sha256(jar);
+            add(runtimeFiles, jar, "server/lib/" + artifact.fileName(), digest);
+            moduleInventory.put("lib/"+artifact.fileName(),Map.of("name",descriptor.name(),"explicit",!descriptor.isAutomatic(),"sha256",digest));
         }
         metadata.put("moduleInventory",moduleInventory);
         var sources=sources(root);metadata.put("editorSourceDigest",digest(sources));
         var schemaJars = Map.of(
                 "interlis-projection", ModuleArtifacts.jar(outcome, "interlis-projection"),
                 "interlis-wasm-bridge", ModuleArtifacts.jar(outcome, "interlis-wasm-bridge"));
-        return new Inputs(runtime, schemaJars, sources, metadata, requestId);
+        return new Inputs(runtimeFiles, schemaJars, sources, metadata, requestId);
     }
 
     private static void run(Path root, Inputs prepared) throws Exception {
@@ -83,10 +86,7 @@ public final class EditorBundleRun {
         Path run = JvmBuildInputs.requireOutputRoot(root, "target/jenesis-jvm/editor-runs/" + prepared.requestId());
         Files.createDirectories(run.getParent());
         Files.createDirectory(run);
-        var files = new TreeMap<String, BundleFile>();
-        for (var artifact : prepared.runtime()) {
-            add(files, artifact.file(), "server/lib/" + artifact.fileName(), artifact.sha256());
-        }
+        var files = new TreeMap<>(prepared.runtime());
         Path protocol = run.resolve("editor-protocol.ts");
         Files.writeString(protocol, Files.readString(root.resolve(EDITOR_TYPES))
                 .replace("'../../../../" + DIAGRAM_TYPES.replace(".ts", "") + "'", "'./diagram-document'"));

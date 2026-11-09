@@ -51,13 +51,12 @@ public final class ModulePathContract {
             }
             for(var artifact:runtime) {
                 Path prior=files.putIfAbsent(artifact.fileName(),artifact.file());
-                if(prior!=null&&!JvmBuildInputs.sha256(prior).equals(artifact.sha256()))throw new IllegalStateException("Conflicting module-path artifact");
+                if(prior != null && !prior.equals(artifact.file()) && Files.mismatch(prior, artifact.file()) != -1)throw new IllegalStateException("Conflicting module-path artifact");
             }
         }
         var packages=new TreeMap<String,String>();var modules=new TreeMap<String,Object>();
         for(var file:files.entrySet()) {
             Path copy=lib.resolve(file.getKey());Files.copy(file.getValue(),copy);
-            if(!JvmBuildInputs.sha256(copy).equals(JvmBuildInputs.sha256(file.getValue())))throw new IllegalStateException("Module copy changed");
             var descriptors=ModuleFinder.of(copy).findAll();if(descriptors.size()!=1)throw new IllegalStateException("Missing descriptor");
             var descriptor=descriptors.iterator().next().descriptor();
             if(modules.containsKey(descriptor.name()))throw new IllegalStateException("Duplicate module name");
