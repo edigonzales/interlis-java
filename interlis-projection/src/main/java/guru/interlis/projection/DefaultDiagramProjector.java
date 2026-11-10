@@ -16,6 +16,7 @@ import guru.interlis.model.DomainSymbol;
 import guru.interlis.model.EffectiveMember;
 import guru.interlis.model.EffectiveMemberOrigin;
 import guru.interlis.model.ModelSymbol;
+import guru.interlis.model.Origin;
 import guru.interlis.model.RoleSymbol;
 import guru.interlis.model.StructureSymbol;
 import guru.interlis.model.Symbol;
@@ -203,12 +204,14 @@ final class DefaultDiagramProjector implements DiagramProjector {
         }
         private SymbolId projectedTarget(SymbolId id) {
             var target=context.graph().symbol(id).orElse(null);
-            return target!=null&&projectable(target.kind())?id:null;
+            return target!=null&&!isPredefinedDomain(target)&&projectable(target.kind())?id:null;
         }
         private SymbolId projectedOwner(Symbol symbol) {
             var seen=new LinkedHashSet<SymbolId>();
             while(symbol!=null && seen.add(symbol.id())) {
-                token.throwIfCancellationRequested();if(projectable(symbol.kind()))return symbol.id();
+                token.throwIfCancellationRequested();
+                if (isPredefinedDomain(symbol)) return null;
+                if(projectable(symbol.kind()))return symbol.id();
                 if(!Set.of(SymbolKind.ATTRIBUTE,SymbolKind.ROLE,SymbolKind.PARAMETER,SymbolKind.VIEW_BASE).contains(symbol.kind()))return null;
                 symbol=symbol.owner().flatMap(context.graph()::symbol).orElse(null);
             }return null;
@@ -221,6 +224,10 @@ final class DefaultDiagramProjector implements DiagramProjector {
             token.throwIfCancellationRequested();
             Symbol symbol = context.graph().symbol(id).orElse(null);
             if (symbol == null) {
+                return;
+            }
+            if (isPredefinedDomain(symbol) && options.selection().symbols().stream().noneMatch(ref ->
+                    ref.symbol().equals(id) || symbol.owner().filter(ref.symbol()::equals).isPresent())) {
                 return;
             }
             switch (symbol.kind()) {
@@ -575,9 +582,11 @@ final class DefaultDiagramProjector implements DiagramProjector {
             if (!visited.add(typeId)) return;
             var type=context.graph().type(typeId).orElse(null);
             if (type instanceof guru.interlis.model.DomainReferenceType domain) {
-                addTypeEdge(node,origin,domain.targetDomain(),DiagramEdge.EdgeKind.DOMAIN_USE,Optional.empty());
                 var target=context.graph().symbol(domain.targetDomain()).orElse(null);
-                if (target instanceof guru.interlis.model.DomainSymbol declaration)
+                if (!isPredefinedDomain(target)) {
+                    addTypeEdge(node,origin,domain.targetDomain(),DiagramEdge.EdgeKind.DOMAIN_USE,Optional.empty());
+                }
+                if (target instanceof DomainSymbol declaration)
                     addAttributeTypeEdges(node,origin,declaration.typeId(),cardinality,visited);
             } else if (type instanceof guru.interlis.model.ReferenceType reference) {
                 for(var target:reference.targetRoots()) addTypeEdge(node,origin,target,DiagramEdge.EdgeKind.REFERENCE,cardinality);
@@ -732,6 +741,9 @@ final class DefaultDiagramProjector implements DiagramProjector {
                         List.of(id.value()), Optional.empty(), Optional.empty()));
                 return null;
             }
+            if (isPredefinedDomain(symbol)) {
+                return null;
+            }
             DiagramNodeKind kind = nodeKind(symbol);
             if (!options.visibleKinds().contains(kind) && !(symbol instanceof TopicSymbol)) {
                 return null;
@@ -816,6 +828,10 @@ final class DefaultDiagramProjector implements DiagramProjector {
             return String.join(".", parts);
         }
 
+        private static boolean isPredefinedDomain(Symbol symbol) {
+            return symbol instanceof DomainSymbol && symbol.origin() instanceof Origin.PredefinedOrigin;
+        }
+
         private String typeLabel(TypeId typeId) {
             TypeDescriptor descriptor = context.graph().type(typeId).orElse(null);
             if (descriptor == null) {
@@ -831,7 +847,10 @@ final class DefaultDiagramProjector implements DiagramProjector {
                 }
                 case guru.interlis.model.BooleanType ignored -> "BOOLEAN";
                 case DomainReferenceType reference -> context.graph().symbol(reference.targetDomain())
-                        .map(this::displayName)
+                        .map(symbol -> {
+                            String label = displayName(symbol);
+                            return isPredefinedDomain(symbol) ? label.substring(label.lastIndexOf('.') + 1) : label;
+                        })
                         .orElse("DOMAIN");
                 case guru.interlis.model.StructureValueType structure -> structure.target()
                         .flatMap(context.graph()::symbol).map(this::displayName).orElse("ANYSTRUCTURE")

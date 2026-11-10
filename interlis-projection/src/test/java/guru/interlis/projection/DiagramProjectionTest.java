@@ -4,14 +4,23 @@ import guru.interlis.compiler.CompilationOutcome;
 import guru.interlis.compiler.CompilationRequest;
 import guru.interlis.compiler.CompilerEngines;
 import guru.interlis.compiler.CompilerOptions;
+import guru.interlis.compiler.ImportBinding;
+import guru.interlis.compiler.ImportResolution;
+import guru.interlis.compiler.ImportSite;
+import guru.interlis.compiler.ModelLocation;
 import guru.interlis.compiler.ModelSelector;
+import guru.interlis.compiler.ResolutionFingerprint;
 import guru.interlis.compiler.SourceSet;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.ClassSymbol;
 import guru.interlis.model.CompiledSchema;
+import guru.interlis.model.DomainReferenceType;
+import guru.interlis.model.DomainSymbol;
+import guru.interlis.model.Origin;
 import guru.interlis.model.QualifiedName;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.source.SourceId;
+import guru.interlis.source.SourceRange;
 import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
 import org.junit.jupiter.api.Test;
@@ -19,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -118,7 +128,11 @@ class DiagramProjectionTest {
         assertTrue(new DiagramValidator().validate(document).isEmpty());
         assertTrue(document.nodes().stream().anyMatch(n -> n.label().equals("Curve") && n.kind() == DiagramNodeKind.LINE_FORM));
         assertTrue(document.edges().stream().anyMatch(e -> e.kind() == DiagramEdge.EdgeKind.REFERENCE && e.label().equals("segment")));
-        assertTrue(document.edges().stream().anyMatch(e -> e.kind() == DiagramEdge.EdgeKind.INHERITANCE));
+        var base = document.nodes().stream().filter(n -> n.label().equals("INTERLIS.LineSegment"))
+                .findFirst().orElseThrow();
+        assertEquals(DiagramNodeKind.EXTERNAL_REFERENCE, base.kind());
+        assertTrue(document.edges().stream().anyMatch(e -> e.kind() == DiagramEdge.EdgeKind.INHERITANCE
+                && e.target().elementId().equals(base.id())));
     }
 
     @Test
@@ -271,13 +285,139 @@ class DiagramProjectionTest {
         assertTrue(new DiagramValidator().validate(document).isEmpty());
     }
 
+    @Test
+    void predefinedDomainsKeepShortTypeLabelsWithoutAutomaticNodes() {
+        var schema = compile("""
+                INTERLIS 2.4;
+                MODEL DiagramModel AT "x" VERSION "1" =
+                  IMPORTS INTERLIS;
+                  DOMAIN Identifier = TEXT*20; XMLDate = TEXT*10;
+                  TOPIC T =
+                    CLASS Person =
+                      identifier : Identifier;
+                      homepage : INTERLIS.URI;
+                      created : INTERLIS.XMLDate;
+                      active : INTERLIS.BOOLEAN;
+                      localDate : XMLDate;
+                    END Person;
+                  END T;
+                END DiagramModel.
+                """);
+        var selection = new DiagramSelection(schema.rootModels());
+        var base = DiagramOptions.defaults(selection);
+        var graph = schema.semanticGraph();
+        var predefinedDomains = graph.symbols().stream()
+                .filter(s -> s instanceof DomainSymbol && s.origin() instanceof Origin.PredefinedOrigin)
+                .map(s -> s.id()).toList();
+        var expectedLabels = Map.of("identifier", "Identifier", "homepage", "URI", "created", "XMLDate",
+                "active", "BOOLEAN", "localDate", "XMLDate");
+        for (var scope : DiagramScope.values()) {
+            var options = new DiagramOptions(selection, scope, base.visibleKinds(), base.inheritedMembers(),
+                    base.showTypes(), base.showRoleCardinalities(), base.showConstraints(), base.showImports(),
+                    base.labelPolicy(), base.associationPresentation(), base.budget(), Optional.empty(),
+                    scope == DiagramScope.NEIGHBOURHOOD ? OptionalInt.of(1) : OptionalInt.empty());
+            var document = assertInstanceOf(DiagramProjectionOutcome.Produced.class, DiagramProjectors.create()
+                    .project(new DiagramInput.FromSchema(schema), options, CancellationToken.none())).document();
+            assertEquals(ProjectionCompleteness.COMPLETE, document.completeness(), scope.toString());
+            assertEquals(List.of(), document.notices(), scope.toString());
+            assertTrue(new DiagramValidator().validate(document).isEmpty());
+            assertFalse(document.nodes().stream().flatMap(n -> n.symbol().stream())
+                    .anyMatch(ref -> predefinedDomains.contains(ref.symbol())), scope.toString());
+            var externalNodes = document.nodes().stream()
+                    .filter(n -> n.kind() == DiagramNodeKind.EXTERNAL_REFERENCE).toList();
+            if (scope == DiagramScope.SELECTED) {
+                assertEquals(List.of(), externalNodes);
+            }
+            assertEquals(!externalNodes.isEmpty(),
+                    document.containers().stream().anyMatch(c -> c.id().equals("container-external")), scope.toString());
+            assertTrue(document.edges().stream().anyMatch(e -> e.kind() == DiagramEdge.EdgeKind.MODEL_IMPORT));
+            var person = document.nodes().stream().filter(n -> n.label().equals("Person")).findFirst().orElseThrow();
+            var attributes = person.compartments().stream().filter(c -> c.kind() == DiagramCompartment.CompartmentKind.ATTRIBUTES)
+                    .findFirst().orElseThrow().members();
+            assertEquals(expectedLabels, attributes.stream().collect(java.util.stream.Collectors.toMap(
+                    DiagramMember::label, m -> m.typeLabel().orElseThrow())));
+            for (var attribute : attributes) {
+                var type = assertInstanceOf(DomainReferenceType.class,
+                        graph.declaredType(attribute.declaredSymbol()).flatMap(graph::type).orElseThrow());
+                var target = assertInstanceOf(DomainSymbol.class, graph.symbol(type.targetDomain()).orElseThrow());
+                var declared = attribute.label().equals("identifier") || attribute.label().equals("localDate");
+                if (declared) {
+                    assertInstanceOf(Origin.DeclaredOrigin.class, target.origin());
+                    var node = document.nodes().stream().filter(n -> n.symbol().orElseThrow().symbol().equals(target.id()))
+                            .findFirst().orElseThrow();
+                    assertEquals(DiagramNodeKind.DOMAIN, node.kind());
+                    assertEquals(target.nameRange().orElseThrow(), node.anchor().orElseThrow().nameRange());
+                    var edge = document.edges().stream().filter(e -> e.kind() == DiagramEdge.EdgeKind.DOMAIN_USE
+                            && e.label().equals(attribute.label())).findFirst().orElseThrow();
+                    assertEquals(person.id(), edge.source().elementId());
+                    assertEquals(node.id(), edge.target().elementId());
+                    assertEquals(attribute.anchor(), edge.anchor());
+                } else {
+                    var origin = assertInstanceOf(Origin.PredefinedOrigin.class, target.origin());
+                    assertEquals("INTERLIS." + expectedLabels.get(attribute.label()), origin.key());
+                    assertFalse(document.edges().stream().anyMatch(e -> e.kind() == DiagramEdge.EdgeKind.DOMAIN_USE
+                            && e.label().equals(attribute.label())));
+                }
+            }
+        }
+        var predefinedModel = graph.symbols().stream().filter(s -> s.name().value().equals("INTERLIS"))
+                .findFirst().orElseThrow();
+        var explicit = DiagramOptions.defaults(new DiagramSelection(List.of(
+                schema.rootModels().getFirst(), new SymbolRef(schema.snapshotId(), predefinedModel.id()))));
+        var document = assertInstanceOf(DiagramProjectionOutcome.Produced.class, DiagramProjectors.create()
+                .project(new DiagramInput.FromSchema(schema), explicit, CancellationToken.none())).document();
+        assertTrue(document.nodes().stream().anyMatch(n -> n.kind() == DiagramNodeKind.DOMAIN
+                && n.label().equals("INTERLIS.URI")));
+        assertFalse(document.edges().stream().anyMatch(e -> e.kind() == DiagramEdge.EdgeKind.DOMAIN_USE
+                && e.label().equals("homepage")));
+        assertTrue(new DiagramValidator().validate(document).isEmpty());
+    }
+
+    @Test
+    void retainsExternalClassForInheritance() {
+        String text = """
+                INTERLIS 2.4;
+                MODEL Base AT "x" VERSION "1" =
+                  TOPIC Common = CLASS Parent = END Parent; END Common;
+                END Base.
+                MODEL DiagramModel AT "x" VERSION "1" =
+                  IMPORTS Base;
+                  TOPIC Data =
+                    DEPENDS ON Base.Common;
+                    CLASS Child EXTENDS Base.Common.Parent = END Child;
+                  END Data;
+                END DiagramModel.
+                """;
+        var source = new SourceText(new SourceId("memory:/diagram.ili"), new SourceRevision(1), text);
+        int importOffset = text.indexOf("Base;");
+        var site = new ImportSite(new SourceRange(source.id(), source.revision(), importOffset, importOffset + 4),
+                "DiagramModel", "Base");
+        var target = new ModelLocation(source.id(), source.revision(), "Base", Optional.of("1"), text.indexOf("MODEL Base"));
+        var binding = new ImportBinding(site, new ImportResolution.Resolved(target));
+        var schema = compile(SourceSet.of(Map.of(source.id(), source), List.of(binding), List.of(), ResolutionFingerprint.none()));
+        var document = assertInstanceOf(DiagramProjectionOutcome.Produced.class, DiagramProjectors.create()
+                .project(new DiagramInput.FromSchema(schema),
+                        DiagramOptions.defaults(new DiagramSelection(schema.rootModels())), CancellationToken.none())).document();
+        var parent = document.nodes().stream().filter(n -> n.canonicalName().equals("Base.Common.Parent"))
+                .findFirst().orElseThrow();
+        assertEquals(DiagramNodeKind.EXTERNAL_REFERENCE, parent.kind());
+        var child = document.nodes().stream().filter(n -> n.label().equals("Child")).findFirst().orElseThrow();
+        assertTrue(document.edges().stream().anyMatch(e -> e.kind() == DiagramEdge.EdgeKind.INHERITANCE
+                && e.source().elementId().equals(child.id()) && e.target().elementId().equals(parent.id())));
+        assertTrue(new DiagramValidator().validate(document).isEmpty());
+    }
+
     private static CompiledSchema compile(String text) {
         SourceText source = new SourceText(new SourceId("memory:/diagram.ili"),
                 new SourceRevision(1), text);
+        return compile(SourceSet.of(Map.of(source.id(), source)));
+    }
+
+    private static CompiledSchema compile(SourceSet sources) {
         CompilationRequest request = new CompilationRequest(
                 List.of(new ModelSelector.ByName("DiagramModel", Optional.empty(),
                         Optional.empty())),
-                SourceSet.of(Map.of(source.id(), source)), CompilerOptions.defaults());
+                sources, CompilerOptions.defaults());
         CompilationOutcome outcome = CompilerEngines.create().compile(request,
                 CancellationToken.none());
         CompilationOutcome.Succeeded succeeded = assertInstanceOf(
