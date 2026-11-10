@@ -2,6 +2,9 @@ package guru.interlis.xtf24;
 
 /**
  * Immutable resource limits for an XTF 2.4 stream. All limits are positive.
+ * Each element additionally permits at most 64 attributes and 64 namespace
+ * declarations. The header permits at most 4096 model declarations. These
+ * fixed protocol bounds also apply when the configurable limits are larger.
  *
  * @param maxDepth maximum nested XML element depth, including the root
  * @param maxScalarCodeUnits maximum UTF-16 code units in a scalar, encoded binary, or XML fragment including namespace context

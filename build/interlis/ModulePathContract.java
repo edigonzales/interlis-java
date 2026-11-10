@@ -92,7 +92,7 @@ public final class ModulePathContract {
             "guru.interlis.documentation","guru.interlis.documentation.DocumentationProjector",
             "guru.interlis.transfer","guru.interlis.transfer.TransferPlanner",
             "guru.interlis.xtf23","guru.interlis.xtf23.Xtf23Reader",
-            "guru.interlis.xtf24","guru.interlis.xtf24.Xtf24Limits",
+            "guru.interlis.xtf24","guru.interlis.xtf24.Xtf24Reader",
             "guru.interlis.wasm.bridge","guru.interlis.bridge.BridgeDispatcher");
         String extra=String.join("\n",own.stream().filter(entrypoints::containsKey).map(name->
             "if (named && !"+entrypoints.get(name)+".class.getModule().getName().equals(\""+name+"\")) throw new AssertionError(\"Wrong public entrypoint module\");").toList());
