@@ -12,10 +12,14 @@ public final class Xtf24Exception extends IllegalStateException {
     private final int column;
 
     Xtf24Exception(Reason reason, String message, int line, int column, Throwable cause) {
-        super(line > 0 ? message + " (line " + line + ", column " + column + ")" : message, cause);
+        super(line > 0 ? bounded(message) + " (line " + line + ", column " + column + ")" : bounded(message), cause);
         this.reason = reason;
         this.line = line;
         this.column = column;
+    }
+
+    private static String bounded(String message) {
+        return message.length() <= 512 ? message : message.substring(0, 509) + "...";
     }
 
     /** Returns the stable failure category. */

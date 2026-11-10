@@ -1,6 +1,7 @@
 package guru.interlis.xtf24;
 
 import guru.interlis.model.CollectionType;
+import guru.interlis.model.BlackboxType;
 import guru.interlis.transfer.TransferEvent.Consistency;
 import guru.interlis.model.ReferenceType;
 import guru.interlis.transfer.RoleSlot;
@@ -173,6 +174,7 @@ final class Xtf24ValueReader {
             throw input.error(UNSUPPORTED, "Unexpected attribute on XTF value element");
         }
         return switch (type.kind()) {
+            case BLACKBOX -> Xtf24Blackbox.read(input, (BlackboxType) type);
             case COORDINATE, GEOMETRY -> geometry.read(input, type, concreteTypes, consistency);
             case STRUCTURE_VALUE -> {
                 if (input.nextTag() != START_ELEMENT) {

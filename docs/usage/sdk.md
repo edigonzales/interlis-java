@@ -26,7 +26,7 @@ Ausgabeformate haben getrennte Versionsidentitäten.
 | Vertrag | Wert | Bedeutung |
 |---|---|---|
 | Werkzeug und Artefakte | `0.2.0-SNAPSHOT` | Entwicklungsstand der ausgelieferten Module |
-| Öffentliche Java-API | `0.3` | Öffentliche Packages und Typen von `guru.interlis` |
+| Öffentliche Java-API | `0.4` | Öffentliche Packages und Typen von `guru.interlis` |
 | Diagnosekatalog | `interlis-diagnostics/v4` | Stabile Diagnosecodes und typisierte Argumente |
 | Bridge | `interlis.compiler/1.0` | Nachrichtenhülle, Ergebnisse und Abfragen |
 | Quellformatierung | `2.0` | Formatierungsoptionen und Ergebnisvertrag |
@@ -37,3 +37,11 @@ Ausgabeformate haben getrennte Versionsidentitäten.
 Versionsmanifest stimmen in den gemeinsamen Feldern überein. Snapshot-
 und Schemahandles gehören zu ihrer Sitzung und Generation. Sie werden
 weder persistiert noch zwischen Clients übertragen.
+
+
+API 0.4 ergänzt bei `TransferValue.XmlFragment` die unveränderliche
+`namespaceBindings()`-Map. Sie erhält auch den Namespacekontext textueller
+QNames ausserhalb von Kindelementen. Der Einargument-Konstruktor erzeugt eine
+leere Zusatzmap. Record-Patterns verwenden die beiden Komponenten `xml` und
+`namespaceBindings`; die zusätzliche Komponente begründet die Erhöhung der
+Java-API-Vertragsversion.

@@ -4,10 +4,10 @@ package guru.interlis.xtf24;
  * Immutable resource limits for an XTF 2.4 stream. All limits are positive.
  *
  * @param maxDepth maximum nested XML element depth, including the root
- * @param maxScalarCodeUnits maximum UTF-16 code units in a scalar value
+ * @param maxScalarCodeUnits maximum UTF-16 code units in a scalar, encoded binary, or XML fragment including namespace context
  * @param maxIdentifierCodeUnits maximum UTF-16 code units in an identifier or technical name
- * @param maxObjectEvents maximum XML events processed for one object
- * @param maxObjectCodeUnits maximum aggregate text and attribute UTF-16 code units for one object
+ * @param maxObjectEvents maximum XML events processed for one object or one header/protocol operation
+ * @param maxObjectCodeUnits maximum aggregate UTF-16 code units in XML names, namespaces, text and attributes per object or header/protocol operation
  * @param maxParserAdvanceBytes maximum input bytes read by one parser operation
  * @param maxIdentities maximum distinct basket and object identities per transfer
  */

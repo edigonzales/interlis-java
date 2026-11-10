@@ -50,6 +50,17 @@ class TransferValueTest {
     }
 
     @Test
+    void retainsImmutableNamespaceBindingsForXmlFragments() {
+        var bindings = new java.util.HashMap<String, String>();
+        bindings.put("p", "urn:payload");
+        var value = new TransferValue.XmlFragment("p:Name", bindings);
+        bindings.clear();
+        assertEquals(Map.of("p", "urn:payload"), value.namespaceBindings());
+        assertThrows(UnsupportedOperationException.class, () -> value.namespaceBindings().clear());
+        assertEquals(Map.of(), new TransferValue.XmlFragment("<x/>").namespaceBindings());
+    }
+
+    @Test
     void checksOwnershipInsideEachGeometryContainerIncludingHoles() {
         var type = ref("object");
         var field = ref("geometry");

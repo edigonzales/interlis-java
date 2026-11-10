@@ -101,6 +101,13 @@ Die Zuordnung formatspezifischer Tags gehört zum späteren Adapter. `TransferPl
 
 Ein `TransferObject` hält Identität, Typbezug und Attribut-/Rollenwerte eines einzelnen Objekts. Adapter legen Grössen- und Tiefengrenzen für einzelne Objekte fest. Der Kern hält die Modelldeklarationen, den aktiven Basketkontext und getrennte Mengen für BID und FULL-TID. Der Speicher für diese Kennungen wächst mit ihrer Anzahl und wird bei Transferende, Fehler oder Close freigegeben.
 
+XML-Fragmentwerte halten neben dem serialisierten Inhalt eine unveränderliche
+Map der Namespacebindungen ihres Wertkontexts. Ein leerer Präfix bezeichnet
+den Defaultnamespace. Dadurch bleiben auch rein textuelle QNames interpretierbar.
+XML-Adapter parsen Fragmente sicher und kopieren ihre XML-Ereignisse, bevor sie
+sie in einen Ausgabestrom übernehmen. Technische zusätzliche Präfixbindungen
+und die XML-Serialisierung sind keine bytegetreue Fragmentzusage.
+
 Die neutralen Geometriewerte behalten die Dimension jeder Koordinate sowie
 numerische Radien einschliesslich null bei. Die Konstruktoren sichern
 Nullfreiheit, unveränderliche Komponentenlisten, zwei oder drei Ordinaten pro

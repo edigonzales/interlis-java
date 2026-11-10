@@ -11,7 +11,10 @@ import javax.xml.stream.XMLStreamReader;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayDeque;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 
 import static guru.interlis.xtf24.Xtf24Exception.Reason.*;
 import static javax.xml.stream.XMLStreamConstants.*;
@@ -26,6 +29,10 @@ final class Xtf24Input {
     private XMLStreamReader xml;
     private long objectTokens = -1;
     private long objectUnits;
+    private long operationTokens;
+    private long operationUnits;
+    private int depth;
+    private final ArrayDeque<NamespaceScope> namespaces = new ArrayDeque<>();
 
     Xtf24Input(InputStream input, Xtf24Limits limits) {
         this.input = new BorrowedInput(Objects.requireNonNull(input, "input"));
@@ -35,6 +42,8 @@ final class Xtf24Input {
 
     void begin(CancellationToken cancellation) {
         input.cancellation = cancellation;
+        operationTokens = limits.maxObjectEvents();
+        operationUnits = limits.maxObjectCodeUnits();
     }
 
     void finish() {
@@ -62,7 +71,8 @@ final class Xtf24Input {
             requireProperty(factory, XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
             requireProperty(factory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
             requireProperty(factory, "jdk.xml.maxElementDepth", limits.maxDepth());
-            requireProperty(factory, "jdk.xml.maxXMLNameLimit", limits.maxIdentifierCodeUnits());
+            requireProperty(factory, "jdk.xml.maxXMLNameLimit",
+                    Math.max(limits.maxScalarCodeUnits(), limits.maxIdentifierCodeUnits()));
             requireProperty(factory, "jdk.xml.elementAttributeLimit", MAX_ATTRIBUTES);
             factory.setXMLResolver((publicId, systemId, baseUri, namespace) -> {
                 throw new Xtf24Exception(UNSAFE_XML, "External XML resolution is forbidden", -1, -1, null);
@@ -87,48 +97,79 @@ final class Xtf24Input {
     void beginObject() {
         objectTokens = limits.maxObjectEvents();
         objectUnits = limits.maxObjectCodeUnits();
-        accountObjectToken(START_ELEMENT);
+        accountToken(START_ELEMENT);
     }
 
     void endObject() {
         objectTokens = -1;
     }
 
-    private void accountObjectToken(int token) {
-        if (objectTokens < 0) {
-            return;
+    private void accountToken(int token) {
+        boolean object = objectTokens >= 0;
+        long tokens = object ? objectTokens : operationTokens;
+        long units = object ? objectUnits : operationUnits;
+        if (tokens == 0) {
+            throw error(LIMIT_EXCEEDED, "XTF content exceeds its XML event budget");
         }
-        objectTokens--;
-        switch (token) {
-            case START_ELEMENT -> {
-                for (int i = 0; i < xml.getAttributeCount(); i++) {
-                    objectUnits -= xml.getAttributeValue(i).length();
-                }
-                for (int i = 0; i < xml.getNamespaceCount(); i++) {
-                    objectUnits -= Objects.toString(xml.getNamespaceURI(i), "").length();
-                }
+        if (token == START_ELEMENT) {
+            units = charge(units, xml.getLocalName().length());
+            units = charge(units, xml.getNamespaceURI() == null ? 0 : xml.getNamespaceURI().length());
+            for (int i = 0; i < xml.getAttributeCount(); i++) {
+                units = charge(units, xml.getAttributeValue(i).length());
+                units = charge(units, xml.getAttributeLocalName(i).length());
+                units = charge(units, Objects.toString(xml.getAttributeNamespace(i), "").length());
             }
-            case CHARACTERS, CDATA, SPACE, COMMENT -> objectUnits -= xml.getTextLength();
-            case PROCESSING_INSTRUCTION -> objectUnits -= Objects.toString(xml.getPIData(), "").length();
-            default -> { }
+            for (int i = 0; i < xml.getNamespaceCount(); i++) {
+                units = charge(units, Objects.toString(xml.getNamespaceURI(i), "").length());
+                units = charge(units, Objects.toString(xml.getNamespacePrefix(i), "").length());
+            }
+        } else if (token == CHARACTERS || token == CDATA || token == SPACE || token == COMMENT) {
+            units = charge(units, xml.getTextLength());
+        } else if (token == PROCESSING_INSTRUCTION) {
+            units = charge(units, Objects.toString(xml.getPIData(), "").length());
+            units = charge(units, xml.getPITarget().length());
         }
-        if (objectTokens < 0 || objectUnits < 0) {
-            throw error(LIMIT_EXCEEDED, "XTF object exceeds its XML event or character budget");
+        if (object) {
+            objectTokens = tokens - 1;
+            objectUnits = units;
+        } else {
+            operationTokens = tokens - 1;
+            operationUnits = units;
         }
+    }
+
+    private long charge(long remaining, int units) {
+        if (remaining < units) {
+            throw error(LIMIT_EXCEEDED, "XTF content exceeds its aggregate UTF-16 budget");
+        }
+        return remaining - units;
     }
 
     int next() throws XMLStreamException {
         input.cancellation.throwIfCancellationRequested();
         input.remaining = limits.maxParserAdvanceBytes();
+        if (xml.getEventType() == END_ELEMENT) {
+            if (!namespaces.isEmpty() && namespaces.peek().depth() == depth) {
+                namespaces.pop();
+            }
+            depth--;
+        }
         int token = xml.next();
         if (token == DTD || token == ENTITY_REFERENCE) {
             throw error(UNSAFE_XML, "DTD declarations and custom XML entities are forbidden");
         }
         if (token == START_ELEMENT) {
+            technical(xml.getLocalName());
+            technical(Objects.toString(xml.getPrefix(), ""));
+            for (int i = 0; i < xml.getAttributeCount(); i++) {
+                technical(xml.getAttributeLocalName(i));
+                technical(Objects.toString(xml.getAttributePrefix(i), ""));
+            }
             if (xml.getNamespaceCount() > MAX_ATTRIBUTES) {
                 throw error(LIMIT_EXCEEDED, "Too many namespace declarations on an XTF element");
             }
             for (int i = 0; i < xml.getNamespaceCount(); i++) {
+                technical(Objects.toString(xml.getNamespacePrefix(i), ""));
                 if (Objects.toString(xml.getNamespaceURI(i), "").length() > limits.maxScalarCodeUnits()) {
                     throw error(LIMIT_EXCEEDED, "XTF namespace URI exceeds the text limit");
                 }
@@ -139,9 +180,49 @@ final class Xtf24Input {
                 }
             }
         }
-        accountObjectToken(token);
+        accountToken(token);
+        if (token == START_ELEMENT) {
+            depth++;
+            if (xml.getNamespaceCount() > 0) {
+                var declarations = new TreeMap<String, String>();
+                for (int i = 0; i < xml.getNamespaceCount(); i++) {
+                    declarations.put(Objects.toString(xml.getNamespacePrefix(i), ""),
+                            Objects.toString(xml.getNamespaceURI(i), ""));
+                }
+                namespaces.push(new NamespaceScope(depth, Map.copyOf(declarations)));
+            }
+        }
         return token;
     }
+
+    private void technical(String name) {
+        if (name.length() > limits.maxIdentifierCodeUnits()) {
+            throw error(LIMIT_EXCEEDED, "XML technical name exceeds the identifier limit");
+        }
+    }
+
+    Map<String, String> fragmentNamespaces(boolean root) {
+        if (!root) {
+            return !namespaces.isEmpty() && namespaces.peek().depth() == depth
+                    ? namespaces.peek().declarations() : Map.of();
+        }
+        var bindings = new TreeMap<String, String>();
+        bindings.put("", "");
+        for (var scope : namespaces.reversed()) {
+            bindings.putAll(scope.declarations());
+        }
+        return Map.copyOf(bindings);
+    }
+
+    int depth() {
+        return depth;
+    }
+
+    Xtf24Limits limits() {
+        return limits;
+    }
+
+    private record NamespaceScope(int depth, Map<String, String> declarations) {}
 
     int nextTag() throws XMLStreamException {
         while (true) {
@@ -185,6 +266,7 @@ final class Xtf24Input {
                 throw translate(e);
             } finally {
                 xml = null;
+                namespaces.clear();
             }
         }
     }

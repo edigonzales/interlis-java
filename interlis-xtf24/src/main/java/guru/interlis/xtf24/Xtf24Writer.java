@@ -191,6 +191,7 @@ public final class Xtf24Writer extends TransferWriter {
             throw Xtf24Wire.failure(UNSUPPORTED, "Independent original basket or stable object identity");
         }
         tid.ifPresent(identities::add);
+        output.beginObject();
         output.start(names.objectName(type));
         if (tid.isPresent()) {
             output.attribute(ili("tid"), tid.orElseThrow());

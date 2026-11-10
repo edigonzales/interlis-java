@@ -1,6 +1,7 @@
 package guru.interlis.xtf24;
 
 import guru.interlis.model.CollectionType;
+import guru.interlis.model.BlackboxType;
 import guru.interlis.transfer.TransferEvent.Consistency;
 import guru.interlis.model.ReferenceType;
 import guru.interlis.transfer.RoleSlot;
@@ -138,6 +139,10 @@ final class Xtf24ValueWriter {
                             Set<SymbolRef> activeTypes) throws XMLStreamException {
         if (value == TransferValue.Undefined.INSTANCE) {
             throw Xtf24Wire.failure(UNSUPPORTED, "XTF 2.4 cannot express an explicit undefined value");
+        }
+        if (type instanceof BlackboxType blackbox) {
+            Xtf24Blackbox.write(name, output, blackbox, value);
+            return;
         }
         output.start(name);
         if (type.kind() == guru.interlis.model.TypeKind.COORDINATE
