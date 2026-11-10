@@ -9,7 +9,7 @@ import java.util.*;
 public final class BuildOutputs {
     private static final Map<String, List<String>> SCOPES = Map.of(
             "jvm", List.of("target/jenesis-jvm/reports",
-                    "target/jenesis-jvm/tools", "target/jenesis-jvm/delivery", "target/jenesis-jvm/delivery-history",
+                    "target/jenesis-jvm/tools", "target/jenesis-jvm/delivery",
                     "target/jenesis-jvm/conformance", "target/jenesis-jvm/module-checks", "target/jenesis-jvm/runtime-checks",
                     "target/jenesis-jvm/gui", "target/jenesis-jvm/build-revisions"),
             "editor", List.of("target/jenesis-jvm/editor-bundles", "target/jenesis-jvm/editor-runs",
@@ -63,7 +63,7 @@ public final class BuildOutputs {
         }
     }
 
-    private static void deleteTree(Path output, Set<Path> retained) throws Exception {
+    static void deleteTree(Path output, Set<Path> retained) throws Exception {
         try (var paths = Files.walk(output)) {
             for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
                 if (!retained.contains(path)) Files.delete(path);

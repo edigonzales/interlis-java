@@ -77,10 +77,12 @@ public final class GuiRuntime {
         Path run = Files.createDirectories(JvmBuildInputs.requireOutputRoot(root,
                 "target/jenesis-jvm/gui/" + UUID.randomUUID()));
         System.out.println("GUI artifacts and process records: " + run);
+        String antlrDigest = JvmBuildInputs.sha256(modules.get(ANTLR).file());
         var closure = new TreeMap<String, Object>();
         for (var entry : modules.entrySet()) {
             var artifact = entry.getValue();
-            closure.put(entry.getKey(), Map.of("file", artifact.file().toString(), "sha256", artifact.sha256()));
+            String digest = entry.getKey().equals(ANTLR) ? antlrDigest : JvmBuildInputs.sha256(artifact.file());
+            closure.put(entry.getKey(), Map.of("file", artifact.file().toString(), "sha256", digest));
         }
         Files.writeString(run.resolve("closure.json"), JsonOutput.write(closure));
         String jars = String.join(File.pathSeparator, artifacts.stream().map(a -> a.file().toString()).toList());
@@ -102,7 +104,7 @@ public final class GuiRuntime {
         var linkPath = new ArrayList<String>();
         linkPath.add(jdk.resolve("jmods").toString());
         for (var entry : modules.entrySet()) {
-            Path jar = entry.getKey().equals(ANTLR) ? modularAntlr(run, entry.getValue()) : entry.getValue().file();
+            Path jar = entry.getKey().equals(ANTLR) ? modularAntlr(run, entry.getValue(), antlrDigest) : entry.getValue().file();
             linkPath.add(jar.toString());
         }
         Path image = run.resolve("runtime");
@@ -252,9 +254,9 @@ public final class GuiRuntime {
         }
     }
 
-    private static Path modularAntlr(Path run, ModuleArtifacts.Artifact artifact) throws Exception {
+    private static Path modularAntlr(Path run, ModuleArtifacts.Artifact artifact, String digest) throws Exception {
         if (!artifact.coordinates().equals("maven/org.antlr/antlr4-runtime/4.13.2")
-                || !artifact.sha256().equals(ANTLR_SHA)) {
+                || !digest.equals(ANTLR_SHA)) {
             throw new IllegalStateException("Unexpected ANTLR input to modularization");
         }
         Path inputs = Files.createDirectory(run.resolve("antlr-input"));
@@ -281,7 +283,7 @@ public final class GuiRuntime {
             throw new IllegalStateException("ANTLR runtime still has an automatic module");
         }
         Files.writeString(run.resolve("antlr-modularization.json"), JsonOutput.write(Map.of(
-                "inputSha256", artifact.sha256(), "outputSha256", JvmBuildInputs.sha256(linked),
+                "inputSha256", digest, "outputSha256", JvmBuildInputs.sha256(linked),
                 "descriptor", descriptor.toString(), "output", linked.toString())));
         return linked;
     }

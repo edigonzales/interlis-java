@@ -36,18 +36,18 @@ public final class ArtifactContracts {
         var outcome=new JenesisBridge.BuildOutcome(root,paths);
         var result=JenesisBridge.moduleResult(outcome,"interlis-model");
         check(result.jar().equals(jar));
-        check(result.runtime().equals(List.of(jar)));check(result.moduleName().isEmpty());
-        check(ModuleArtifacts.runtime(root,"interlis-model",outcome).getFirst().sha256().equals(JvmBuildInputs.sha256(jar)));
-        rejects(()->JenesisBridge.runtimeModulePath("interlis-model",outcome),"decorative module mode");
+        check(result.moduleName().isEmpty() && !result.explicitDescriptor());
+        check(ModuleArtifacts.runtime(root,"interlis-model",outcome).equals(List.of(
+                new ModuleArtifacts.Artifact("maven/guru.interlis/interlis-model/1", jar))));
         rejects(()->JenesisBridge.moduleResult(new JenesisBridge.BuildOutcome(root,Map.of()),"interlis-model"),"missing result");
         rejects(()->JenesisBridge.moduleResult(new JenesisBridge.BuildOutcome(root,Map.of("build/a/inventory",inventory,"build/b/inventory",inventory)),"interlis-model"),"ambiguous result");
         rejects(()->JenesisBridge.moduleResult(outcome,"foreign"),"unknown project");
         data.remove(prefix+".pom");store(file,data);
         rejects(()->JenesisBridge.moduleResult(outcome,"interlis-model"),"missing POM");
         data.setProperty(prefix+".pom","../../pom.xml");data.setProperty(prefix+".runtime.2","../../product.jar");store(file,data);
-        rejects(()->JenesisBridge.runtimeClasspath("interlis-model",outcome),"runtime gap");
+        rejects(()->ModuleArtifacts.runtime(root,"interlis-model",outcome),"runtime gap");
         data.remove(prefix+".runtime.2");data.setProperty(prefix+".runtime.1","../../product.jar");store(file,data);
-        rejects(()->JenesisBridge.runtimeClasspath("interlis-model",outcome),"duplicate runtime entry");
+        rejects(()->ModuleArtifacts.runtime(root,"interlis-model",outcome),"duplicate runtime entry");
         data.remove(prefix+".runtime.1");data.setProperty(prefix+".artifacts.1","../../product.jar");store(file,data);
         rejects(()->JenesisBridge.moduleResult(outcome,"interlis-model"),"ambiguous artifact");
         data.remove(prefix+".artifacts.1");data.setProperty(prefix+".identity.0","maven/guru.interlis/interlis-model/2");store(file,data);
@@ -59,6 +59,9 @@ public final class ArtifactContracts {
         store(file,data);
         rejects(()->ModuleArtifacts.runtime(root,"interlis-model",outcome),"changed own JAR with refreshed local hash");
         data.setProperty(prefix+".runtime.0","../../product.jar");data.remove(prefix+".dependency.0");store(file,data);
+        Files.delete(jar);
+        rejects(()->ModuleArtifacts.runtime(root,"interlis-model",outcome),"missing runtime JAR");
+        try (var archive = new JarOutputStream(Files.newOutputStream(jar))) { }
         Path outside=Files.createDirectory(root.resolve("outside"));Files.copy(jar,outside.resolve("jar"));
         Files.delete(jar);Files.createSymbolicLink(jar,outside.resolve("jar"));
         rejects(()->JenesisBridge.moduleResult(outcome,"interlis-model"),"escaped output symlink");

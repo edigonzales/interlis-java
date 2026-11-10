@@ -19,25 +19,54 @@ public final class ExistingJvmDistribution {
         }
     }
 
+    private enum Delivery { SDK, CHECKED_SDK, COMPILER }
+
     public static void run(Path root) throws Exception {
-        Path delivery = generate(root);
-        DistributionChecks.check(root, delivery);
+        replace(root, Delivery.CHECKED_SDK);
+        System.out.println("SDK, CLI and LSP checks passed");
     }
 
     public static Path generate(Path root) throws Exception {
-        var outcome = JenesisBridge.artifacts(root);
-        Path delivery = JvmBuildInputs.requireOutputRoot(root, "target/jenesis-jvm/delivery");
-        if (Files.exists(delivery)) {
-            Path previous = JvmBuildInputs.requireOutputRoot(root, "target/jenesis-jvm/delivery-history/" + UUID.randomUUID());
-            Files.createDirectories(previous.getParent());
-            Files.move(delivery, previous);
-        }
-        generateAt(root, outcome, delivery);
-        return delivery;
+        return replace(root, Delivery.SDK);
     }
 
     public static void packageCompiler(Path root) throws Exception {
-        Path delivery = generate(root);
+        replace(root, Delivery.COMPILER);
+    }
+
+    private static Path replace(Path root, Delivery kind) throws Exception {
+        var outcome = JenesisBridge.artifacts(root, "+interlis-compiler-cli", "+interlis-lsp");
+        Path delivery = JvmBuildInputs.requireOutputRoot(root, "target/jenesis-jvm/delivery");
+        Path work = Files.createTempDirectory(delivery.getParent(), "delivery-");
+        Path next = work.resolve("next");
+        Path previous = work.resolve("previous");
+        boolean cleanup = true;
+        try {
+            generateAt(root, outcome, next);
+            if (kind == Delivery.CHECKED_SDK) DistributionChecks.check(root, next);
+            if (kind == Delivery.COMPILER) packageCompilerAt(root, next);
+            if (Files.exists(delivery)) Files.move(delivery, previous);
+            try {
+                Files.move(next, delivery);
+            } catch (Exception error) {
+                try {
+                    if (Files.exists(previous)) Files.move(previous, delivery);
+                } catch (Exception restore) {
+                    cleanup = false;
+                    error.addSuppressed(restore);
+                }
+                throw error;
+            }
+            return delivery;
+        } finally {
+            // Keep the previous complete delivery available if restoring it failed.
+            if (cleanup) {
+                BuildOutputs.deleteTree(work, Set.of());
+            }
+        }
+    }
+
+    private static void packageCompilerAt(Path root, Path delivery) throws Exception {
         var manifest = (Map<?, ?>) Json.parse(Files.readString(delivery.resolve("version.json")));
         String version = Objects.toString(manifest.get("version"), "");
         if (!version.matches("[0-9]+\\.[0-9]+\\.[0-9]+-SNAPSHOT")) {
@@ -63,14 +92,10 @@ public final class ExistingJvmDistribution {
     static void generateAt(Path root, JenesisBridge.BuildOutcome outcome, Path delivery) throws Exception {
         JvmBuildInputs.requireOutputRoot(root, root.relativize(delivery).toString());
         Files.createDirectories(delivery);
-        var provenance=new TreeMap<String,Object>();
         for(var item:Map.of("compiler","interlis-compiler-cli","lsp","interlis-lsp").entrySet()) {
             Path distribution=delivery.resolve(item.getKey());Files.createDirectories(distribution.resolve("lib"));Files.createDirectories(distribution.resolve("bin"));
-            var artifacts=ModuleArtifacts.runtime(root,item.getValue(),outcome);var facts=new ArrayList<Map<String,String>>();
-            for(var artifact:artifacts) {
-                Path copy=distribution.resolve("lib").resolve(artifact.fileName());Files.copy(artifact.file(),copy);
-                if(!JvmBuildInputs.sha256(copy).equals(artifact.sha256()))throw new IllegalStateException("Copied artifact changed");
-                facts.add(Map.of("coordinates",artifact.coordinates(),"source",JvmBuildInputs.portableRelative(root,artifact.file()),"file",JvmBuildInputs.portableRelative(root,copy),"sha256",artifact.sha256()));
+            for (var artifact : ModuleArtifacts.runtime(root, item.getValue(), outcome)) {
+                Files.copy(artifact.file(), distribution.resolve("lib").resolve(artifact.fileName()));
             }
             String name=item.getKey().equals("compiler")?"interlis-compiler":"interlis-lsp";
             String module=ModulePathContract.name(item.getValue());
@@ -83,9 +108,7 @@ public final class ExistingJvmDistribution {
                 Path launcher=distribution.resolve("bin/"+name+suffix);Files.writeString(launcher,template);
                 if(!launcher.toFile().setExecutable(true,false))throw new IllegalStateException("Cannot set launcher permission");
             }
-            provenance.put(item.getValue(),facts);
         }
-        Files.writeString(delivery.resolve("runtime-inventory.json"),JsonOutput.write(provenance));
         var version = DistributionChecks.run(root,
                 List.of(launcher(delivery.resolve("compiler"), "interlis-compiler").toString(), "version", "--json"));
         version.requireExit(0);
@@ -109,7 +132,7 @@ public final class ExistingJvmDistribution {
     }
 
     static void archive(Path root, Path staging, Path zip) throws Exception {
-        DistributionChecks.javaMain(root, JenesisBridge.buildArchiveTool(root, false),
+        DistributionChecks.javaMain(root, JenesisBridge.buildArchiveTool(root),
                 "build.interlis.archive.ArchiveWriter", List.of(staging.toString(), zip.toString())).requireExit(0);
     }
 

@@ -1,7 +1,6 @@
 package build.interlis;
 
 import build.jenesis.*;
-import build.jenesis.project.InferredMultiProjectAssembler;
 import java.nio.file.*;
 import java.util.*;
 
@@ -14,20 +13,18 @@ public final class JenesisBridge {
         }
     }
 
-    /** Runtime artifact and descriptor from the native inventory. */
-    public record ModuleResult(Path inventoryDirectory, String inventoryPrefix, Path jar,
-            Optional<String> moduleName, boolean explicitDescriptor, List<Path> runtime) {
+    /** Product artifact and descriptor from the native inventory. */
+    public record ModuleResult(Path jar,
+            Optional<String> moduleName, boolean explicitDescriptor) {
         public ModuleResult {
             moduleName = Objects.requireNonNull(moduleName);
-            runtime = List.copyOf(runtime);
         }
     }
 
     /** Resolves identities from inventory contents; engine path spelling is not a consumer contract. */
     public static ModuleResult moduleResult(BuildOutcome outcome,String projectId) throws Exception {
-        InventoryResult product=inventoryResult(outcome,projectId,false);
-        Path jar=product.file("artifacts.0");
-        if(product.data().containsKey(product.prefix()+".artifacts.1"))throw new IllegalStateException("Ambiguous product JAR: "+projectId);
+        var product = productInventory(outcome, projectId);
+        Path jar = product.jar();
         product.file("pom");
         Optional<String> moduleName=Optional.empty();boolean explicit=false;
         try(var archive=new java.util.jar.JarFile(jar.toFile(),true,java.util.zip.ZipFile.OPEN_READ,Runtime.version())) {
@@ -38,22 +35,31 @@ public final class JenesisBridge {
                 moduleName=Optional.of(module.name());explicit=!module.isAutomatic();
             }
         }
-        return new ModuleResult(product.directory(), product.prefix(), jar, moduleName, explicit,
-                product.paths("runtime"));
+        return new ModuleResult(jar, moduleName, explicit);
     }
 
-    public static List<Path> runtimeModulePath(String projectId,BuildOutcome outcome) throws Exception {
-        ModuleResult result=moduleResult(outcome,projectId);
-        if(!result.explicitDescriptor())throw new IllegalStateException("Product is not an explicit module: "+projectId);
-        return result.runtime();
+    static InventoryResult productInventory(BuildOutcome outcome, String projectId) throws Exception {
+        return inventoryResult(outcome, projectId, false);
     }
 
-    private record InventoryResult(BuildOutcome outcome,Path directory,String prefix,Properties data) {
+    record InventoryResult(BuildOutcome outcome,Path directory,String prefix,Properties data) {
+        Path jar() throws Exception {
+            if (data.containsKey(prefix + ".artifacts.1")) {
+                throw new IllegalStateException("Ambiguous product JAR: " + prefix);
+            }
+            return file("artifacts.0");
+        }
+
         Path file(String role) throws Exception {
             String value=data.getProperty(prefix+"."+role);
             if(value==null)throw new IllegalStateException("Missing inventory role: "+prefix+"."+role);
-            return requireArtifact(outcome.root().resolve("target/jenesis-jvm/engine"),directory,value);
+            return resolve(value);
         }
+
+        Path resolve(String relative) throws Exception {
+            return requireArtifact(outcome.root().resolve("target/jenesis-jvm/engine"), directory, relative);
+        }
+
         List<Path> paths(String role) throws Exception {
             var paths=new ArrayList<Path>();
             for(int i=0;data.containsKey(prefix+"."+role+"."+i);i++)paths.add(file(role+"."+i));
@@ -100,16 +106,16 @@ public final class JenesisBridge {
     }
 
     /** Isolated build-only library/ZIP helper; never part of the product projects or their staging. */
-    public static List<Path> buildArchiveTool(Path root,boolean refreshPins) throws Exception {
+    public static List<Path> buildArchiveTool(Path root) throws Exception {
         Path tool=root.resolve("build/interlis/archive-tool");
         var keys=new LinkedHashMap<>(Make.settings(tool).keys());keys.put("maven.local","");keys.put("module.local","");
-        keys.put("dependency.pin",refreshPins?"versions":"strict");
+        keys.put("dependency.pin","strict");
         Path target=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/tools/archive");Files.createDirectories(target.getParent());
         var results=Project.ofEnvironment(new Environment(keys).root(tool),tool).target(target).artifacts(root.resolve(".jenesis/archive-artifacts")).tests(false).sources(false).version("1")
-                .build(refreshPins?"pin":"build");
+                .build("build");
         Path inventory=results.get("build/maven/build-module-/inventory");
         if(inventory==null)throw new IllegalStateException("Missing archive-tool inventory: "+results.keySet());
-        var data=new Properties();try(var reader=Files.newBufferedReader(inventory.resolve("inventory.properties"))){data.load(reader);}
+        var data = readProperties(inventory.resolve("inventory.properties"));
         var classpath=new ArrayList<Path>();
         for(int i=0;data.containsKey("module.runtime."+i);i++) {
             Path file=inventory.resolve(data.getProperty("module.runtime."+i)).normalize();
@@ -131,16 +137,8 @@ public final class JenesisBridge {
         return new BuildOutcome(root, results);
     }
 
-    public static List<Path> runtimeClasspath(String module, BuildOutcome outcome) throws Exception {
-        return runtimeClasspath(module,outcome,false);
-    }
-
     public static List<Path> testClasspath(String module, BuildOutcome outcome) throws Exception {
-        return runtimeClasspath(module,outcome,true);
-    }
-
-    private static List<Path> runtimeClasspath(String module,BuildOutcome outcome,boolean test) throws Exception {
-        return inventoryResult(outcome,module,test).paths("runtime");
+        return inventoryResult(outcome, module, true).paths("runtime");
     }
 
     static Path requireArtifact(Path engine, Path output, String relative) throws Exception {

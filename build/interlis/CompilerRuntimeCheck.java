@@ -85,8 +85,10 @@ public final class CompilerRuntimeCheck {
         String appLauncher=System.getProperty("os.name").startsWith("Mac")?"InterlisCompiler.app/Contents/MacOS/InterlisCompiler":System.getProperty("os.name").startsWith("Windows")?"InterlisCompiler/InterlisCompiler.exe":"InterlisCompiler/bin/InterlisCompiler";
         gate.process("app-image-version",List.of(app.resolve(appLauncher).toString(),"version","--json"),Map.of("JAVA_HOME",run.resolve("foreign-home").toString(),"PATH",env.get("PATH")),0);
         if(!Files.isRegularFile(image.resolve("legal/java.base/LICENSE")))throw new IllegalStateException("Missing runtime license");
-        var inventory=new TreeMap<String,String>();try(var paths=Files.walk(image)){for(Path file:paths.filter(Files::isRegularFile).sorted().toList())inventory.put(image.relativize(file).toString(),JvmBuildInputs.sha256(file));}
-        Files.writeString(run.resolve("result.json"),JsonOutput.write(Map.of("status","passed","jdkHome",jdk.toString(),"jdkReleaseSha256",JvmBuildInputs.sha256(jdk.resolve("release")),"jdkModules",modules,"dynamicModuleReasons",Map.of("jdk.crypto.ec","HTTPS cryptographic provider","jdk.compiler","SDK javac consumer"),"bindServices",false,"runtimeFiles",inventory,"appImageCapability",true,"productionFormatSelected",false,"engineInventorySha256",JvmBuildInputs.sha256(JenesisBridge.moduleResult(outcome, "interlis-compiler-cli").inventoryDirectory().resolve("inventory.properties")))));
+        Files.writeString(run.resolve("result.json"), JsonOutput.write(Map.of(
+                "status", "passed", "jdkHome", jdk.toString(), "jdkModules", modules,
+                "dynamicModuleReasons", Map.of("jdk.crypto.ec", "HTTPS cryptographic provider", "jdk.compiler", "SDK javac consumer"),
+                "bindServices", false, "appImageCapability", true, "productionFormatSelected", false)));
         System.out.println("COMPILER_RUNTIME_CHECK_PASS "+run);
     }
     private record Gate(Path run) {

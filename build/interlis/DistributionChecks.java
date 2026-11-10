@@ -23,7 +23,6 @@ final class DistributionChecks {
         String node = System.getenv().getOrDefault("INTERLIS_NODE", "node");
         run(root, List.of(node, root.resolve("tools/verification/lsp-lifecycle.cjs").toString(),
                 delivery.resolve("lsp").toString())).requireExit(0);
-        System.out.println("SDK, CLI and LSP checks passed");
     }
 
     static void checkArchive(Path root, Path delivery, Path archive, boolean sdk) throws Exception {
