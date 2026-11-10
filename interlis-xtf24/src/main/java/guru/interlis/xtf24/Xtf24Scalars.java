@@ -37,7 +37,7 @@ final class Xtf24Scalars {
                     case "false" -> new BooleanValue(false);
                     default -> throw invalid("Expected XTF BOOLEAN true or false");
                 };
-                case ENUMERATION, ALIGNMENT -> new Enumeration(path(value, 1, Integer.MAX_VALUE, limits).segments());
+                case ENUMERATION, ALIGNMENT -> enumeration(value, limits);
                 case NUMERIC -> number(value);
                 case CLASS_VALUE -> new ClassName(path(value, 2, 3, limits));
                 case ATTRIBUTE_PATH -> new AttributePath(path(value, 3, 4, limits));
@@ -90,6 +90,14 @@ final class Xtf24Scalars {
         } catch (NumberFormatException e) {
             throw Xtf24Wire.failure(LIMIT_EXCEEDED, "XTF numeric exponent is too large");
         }
+    }
+
+    private static Enumeration enumeration(String value, Xtf24Limits limits) {
+        var parts = path(value, 1, Integer.MAX_VALUE, limits).segments();
+        if (parts.size() > 1 && parts.contains("OTHERS")) {
+            throw invalid("OTHERS must be a complete XTF enumeration value");
+        }
+        return new Enumeration(parts);
     }
 
     private static Oid oid(OidType type, String value, Xtf24Limits limits) {

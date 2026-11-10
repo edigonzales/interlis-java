@@ -95,6 +95,14 @@ class Xtf24ValueTest {
         assertEquals("first\rsecond\t", written.getElementsByTagNameNS(NS, "note").item(0).getTextContent());
         assertEquals("+999.1234567890123456789e-1", written.getElementsByTagNameNS(NS, "exact").item(0).getTextContent());
         assertEquals("space:Long_ID", written.getElementsByTagNameNS(NS, "oid").item(0).getTextContent());
+        for (var expected : java.util.Map.of(
+                "enabled", "false", "choice", "unknown.branch", "day", "2026-02-31",
+                "stamp", "2026-11-10T12:30:00.123", "numericOid", "ids:1001.20e-2",
+                "className", "Unknown.T.Thing", "attributeName", "Unknown.T.Thing.flag").entrySet()) {
+            var field = (Element) written.getElementsByTagNameNS(NS, expected.getKey()).item(0);
+            assertEquals(NS, field.getNamespaceURI());
+            assertEquals(expected.getValue(), field.getTextContent());
+        }
         assertEquals(events, read(plan, write(plan, events)));
     }
 
@@ -144,6 +152,55 @@ class Xtf24ValueTest {
         }
         assertEquals(Xtf24Exception.Reason.LIMIT_EXCEEDED,
                 assertThrows(Xtf24Exception.class, () -> read(plan, document("<exact>1e999999</exact>"))).reason());
+    }
+
+    @Test
+    void rejectsOthersInsideEnumPathsOnReadAndWrite() {
+        var events = read(plan, document(""));
+        for (var path : List.of(List.of("root", "OTHERS"), List.of("OTHERS", "a"))) {
+            assertEquals(Xtf24Exception.Reason.INVALID_WIRE, assertThrows(Xtf24Exception.class,
+                    () -> read(plan, document("<choice>" + String.join(".", path) + "</choice>"))).reason());
+            assertEquals(Xtf24Exception.Reason.INVALID_WIRE, assertThrows(Xtf24Exception.class,
+                    () -> write(plan, withValue(events, "choice", new Enumeration(path)))).reason());
+        }
+    }
+
+    @Test
+    void rejectsInterruptedCollectionGroups() {
+        assertEquals(Xtf24Exception.Reason.INVALID_WIRE, assertThrows(Xtf24Exception.class,
+                () -> read(plan, document("<tags>b</tags><order>1</order><tags>a</tags>"))).reason());
+    }
+
+    @Test
+    void decodesConcreteStructureTypesWithoutCheckingSlotAssignability() throws Exception {
+        var fixture = plan("""
+                INTERLIS 2.4;
+                MODEL Values AT "https://example.org" VERSION "1" =
+                  XMLNS "urn:values";
+                  STRUCTURE Parent = inherited : TEXT; END Parent;
+                  STRUCTURE Child EXTENDS Parent = local : TEXT; END Child;
+                  STRUCTURE Other = unrelated : TEXT; END Other;
+                  TOPIC Data = CLASS Item = details : LIST OF Child; END Item; END Data;
+                END Values.
+                """, "Values");
+        var events = read(fixture, document("""
+                <details><Child><inherited>base</inherited><local>child</local></Child></details>
+                <details><Other><unrelated>decodable</unrelated></Other></details>
+                """));
+        var object = object(events);
+        var repeated = (Repeated) object.data().values().values().iterator().next();
+        assertEquals(2, repeated.values().size());
+        var child = assertInstanceOf(Structured.class, repeated.values().getFirst());
+        var other = assertInstanceOf(Structured.class, repeated.values().getLast());
+        assertEquals("Child", fixture.object(child.type()).orElseThrow().name().declared().last());
+        assertEquals(List.of(new Text("base"), new Text("child")), List.copyOf(child.values().values()));
+        assertEquals("Other", fixture.object(other.type()).orElseThrow().name().declared().last());
+        assertEquals(new Text("decodable"), other.values().values().iterator().next());
+        var written = item(write(fixture, events));
+        var first = children(children(written).getFirst()).getFirst();
+        assertEquals(List.of("inherited", "local"), children(first).stream().map(Element::getLocalName).toList());
+        assertEquals("Other", children(children(written).getLast()).getFirst().getLocalName());
+        assertEquals(events, read(fixture, write(fixture, events)));
     }
 
     @Test
