@@ -12,7 +12,6 @@ import guru.interlis.transfer.TransferIdentity.*;
 import guru.interlis.transfer.TransferObject;
 import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferReader;
-import guru.interlis.transfer.TransferValue;
 
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
@@ -48,10 +47,12 @@ public final class Xtf24Reader extends TransferReader {
     private final Xtf24Limits limits;
     private final Xtf24Input input;
     private final Xtf24Names names;
+    private final Xtf24ValueReader values;
     private final Xtf24Domains domains;
     private final Xtf24IdentityScope identities;
     private Position position = Position.BEFORE_TRANSFER;
     private Set<SymbolRef> coveredModels = Set.of();
+    private Set<SymbolRef> structureTypes = Set.of();
     private BasketContext basket;
 
     /** Creates a reader with default limits, without reading the nonnull input. */
@@ -71,7 +72,9 @@ public final class Xtf24Reader extends TransferReader {
         this.source = Objects.requireNonNull(source, "source");
         this.limits = Objects.requireNonNull(limits, "limits");
         this.input = new Xtf24Input(input, limits);
-        names = new Xtf24Names(plan);
+        var layout = new Xtf24Layout(plan);
+        names = layout.names();
+        values = new Xtf24ValueReader(this.input, layout, limits);
         domains = new Xtf24Domains(plan);
         identities = new Xtf24IdentityScope(limits);
     }
@@ -149,6 +152,7 @@ public final class Xtf24Reader extends TransferReader {
         nextStart(ili("datasection"));
         attributes(Set.of());
         coveredModels = plan.modelImportClosure(declared);
+        structureTypes = names.structureTypes(coveredModels);
         position = Position.BETWEEN_BASKETS;
         return new StartTransfer(source, sender, comment, models);
     }
@@ -221,12 +225,10 @@ public final class Xtf24Reader extends TransferReader {
         value.ifPresent(identities::add);
         var tid = value.map(id -> new TransferId(id, IdOrigin.SOURCE));
         var oid = Xtf24Wire.hasStableOid(type) ? value.map(ObjectOid::new) : Optional.<ObjectOid>empty();
-        if (input.nextTag() != END_ELEMENT) {
-            throw input.error(UNSUPPORTED, "Object payload is outside the current XTF 2.4 codec");
-        }
+        var data = values.read(type, basket.concreteTypes(), structureTypes);
         input.endObject();
         var identity = new TransferIdentity(basket.event().id(), Optional.empty(), tid, oid, source);
-        var object = new TransferObject(identity, new TransferValue.Structured(type.symbol(), Map.of()));
+        var object = new TransferObject(identity, data);
         return new ObjectEvent(object, Optional.empty(), Consistency.COMPLETE);
     }
 
@@ -298,6 +300,7 @@ public final class Xtf24Reader extends TransferReader {
     @Override
     protected void release() {
         coveredModels = Set.of();
+        structureTypes = Set.of();
         basket = null;
         identities.clear();
         input.close();

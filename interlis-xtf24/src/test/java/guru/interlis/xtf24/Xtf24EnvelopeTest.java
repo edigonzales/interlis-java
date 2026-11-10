@@ -50,6 +50,39 @@ class Xtf24EnvelopeTest {
     }
 
     @Test
+    void rejectsDuplicateUnknownAndWrongVersionHeaders() {
+        var plan = plan(SOURCE, "Main");
+        var valid = document("", "");
+        for (String xml : List.of(valid.replace("<i:model>Main</i:model>",
+                "<i:model>Main</i:model><i:model>Main</i:model>"),
+                valid.replace(">Main</i:model>", ">Unknown</i:model>"),
+                valid.replace("http://www.interlis.ch/xtf/2.4/INTERLIS", "http://www.interlis.ch/INTERLIS2.3"))) {
+            assertEquals(Xtf24Exception.Reason.INVALID_WIRE,
+                    assertThrows(Xtf24Exception.class, () -> read(plan, xml)).reason());
+        }
+        assertEquals(Xtf24Exception.Reason.UNSUPPORTED, assertThrows(Xtf24Exception.class,
+                () -> read(plan, document("<i:extensions><m:extension/></i:extensions>", ""))).reason());
+    }
+
+    @Test
+    void rejectsUnrepresentableHeaderMetadataBeforeWritingBytes() {
+        var plan = plan(SOURCE, "Main");
+        var start = (StartTransfer) read(plan, document("", "")).getFirst();
+        var model = start.models().getFirst();
+        for (var declaration : List.of(new ModelDeclaration(model.model(), model.languageVersion(),
+                Optional.of("1"), Optional.empty()), new ModelDeclaration(model.model(), model.languageVersion(),
+                Optional.empty(), Optional.of("https://example.org")))) {
+            var output = new ByteArrayOutputStream();
+            try (var writer = new Xtf24Writer(plan, output)) {
+                var header = new StartTransfer(start.source(), start.sender(), start.comment(), List.of(declaration));
+                assertEquals(Xtf24Exception.Reason.UNSUPPORTED,
+                        assertThrows(Xtf24Exception.class, () -> writer.write(header)).reason());
+                assertEquals(0, output.size());
+            }
+        }
+    }
+
+    @Test
     void coversImportedObjectModelWithoutAddingHeaderEntries() {
         var plan = plan(SOURCE, "Main", "Other");
         var xml = document("<i:sender>author</i:sender>", """

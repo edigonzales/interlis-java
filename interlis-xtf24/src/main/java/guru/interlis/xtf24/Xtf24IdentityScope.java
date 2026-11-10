@@ -19,12 +19,7 @@ final class Xtf24IdentityScope {
     }
 
     void add(String id) {
-        if (id.length() > limits.maxIdentifierCodeUnits()) {
-            throw Xtf24Wire.failure(LIMIT_EXCEEDED, "XTF 2.4 identifier is too long");
-        }
-        if (!XML_ID.matcher(id).matches()) {
-            throw Xtf24Wire.failure(INVALID_WIRE, "Expected an INTERLIS XML-ID");
-        }
+        requireIdentifier(id, limits.maxIdentifierCodeUnits());
         if (seen.contains(id)) {
             throw Xtf24Wire.failure(DUPLICATE_ID, "Duplicate basket or object identity");
         }
@@ -32,6 +27,15 @@ final class Xtf24IdentityScope {
             throw Xtf24Wire.failure(LIMIT_EXCEEDED, "XTF 2.4 identity limit exceeded");
         }
         seen.add(id);
+    }
+
+    static void requireIdentifier(String id, int limit) {
+        if (id.length() > limit) {
+            throw Xtf24Wire.failure(LIMIT_EXCEEDED, "XTF 2.4 identifier is too long");
+        }
+        if (!XML_ID.matcher(id).matches()) {
+            throw Xtf24Wire.failure(INVALID_WIRE, "Expected an INTERLIS XML-ID");
+        }
     }
 
     void clear() {

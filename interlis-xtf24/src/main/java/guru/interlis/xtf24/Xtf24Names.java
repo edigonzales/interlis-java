@@ -1,6 +1,8 @@
 package guru.interlis.xtf24;
 
 import guru.interlis.model.ModelSymbol;
+import guru.interlis.model.Modifier;
+import guru.interlis.model.SymbolKind;
 import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.model.TopicSymbol;
@@ -71,6 +73,17 @@ final class Xtf24Names {
             topicIndex.computeIfAbsent(name, ignored -> new ArrayList<>()).add(topic);
         }
         topics = freeze(topicIndex);
+    }
+
+    Set<SymbolRef> structureTypes(Set<SymbolRef> models) {
+        var types = new HashSet<SymbolRef>();
+        for (var type : plan.objects()) {
+            if (type.kind() == SymbolKind.STRUCTURE && !type.modifiers().contains(Modifier.ABSTRACT)
+                    && models.contains(type.model())) {
+                types.add(type.symbol());
+            }
+        }
+        return Set.copyOf(types);
     }
 
     String modelName(ModelDescriptor model) {

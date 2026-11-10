@@ -1,5 +1,10 @@
 package guru.interlis.xtf24;
 
+import guru.interlis.model.DomainReferenceType;
+import guru.interlis.model.DomainSymbol;
+import guru.interlis.model.SymbolRef;
+import guru.interlis.model.TypeDescriptor;
+import guru.interlis.model.TypeRef;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.RoleSlot;
@@ -10,6 +15,7 @@ import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 final class Xtf24Layout {
@@ -48,6 +54,20 @@ final class Xtf24Layout {
                 .thenComparingInt(field -> field.slot() instanceof RoleSlot ? 0 : 1)
                 .thenComparingInt(field -> field.slot().member().position()));
         return List.copyOf(fields);
+    }
+
+    TypeDescriptor type(TypeRef ref, Map<SymbolRef, TypeRef> concreteTypes) {
+        var descriptor = plan.type(ref).known().orElseThrow();
+        while (descriptor instanceof DomainReferenceType alias) {
+            var domainRef = new SymbolRef(plan.snapshotId(), alias.targetDomain());
+            var concrete = concreteTypes.get(domainRef);
+            if (concrete == null) {
+                var domain = (DomainSymbol) plan.symbol(domainRef).known().orElseThrow();
+                concrete = new TypeRef(plan.snapshotId(), domain.typeId());
+            }
+            descriptor = plan.type(concrete).known().orElseThrow();
+        }
+        return descriptor;
     }
 
     private static boolean containsPosition(ObjectDescriptor ancestor, TransferSlot slot) {

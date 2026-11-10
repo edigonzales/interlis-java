@@ -1,6 +1,8 @@
 package guru.interlis.xtf24;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.SymbolRef;
+import guru.interlis.model.TypeRef;
 import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferEvent.*;
 import guru.interlis.transfer.TransferIdentity.ObjectOid;
@@ -13,6 +15,9 @@ import javax.xml.stream.XMLStreamException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.Objects;
 
 import static guru.interlis.xtf24.Xtf24Exception.Reason.*;
@@ -29,8 +34,11 @@ public final class Xtf24Writer extends TransferWriter {
     private final Xtf24Limits limits;
     private final Xtf24Output output;
     private final Xtf24Names names;
+    private final Xtf24ValueWriter values;
     private final Xtf24Domains domains;
     private final Xtf24IdentityScope identities;
+    private Set<SymbolRef> structureTypes = Set.of();
+    private Map<SymbolRef, TypeRef> concreteTypes = Map.of();
 
     /** Creates a writer with default limits, without writing to the nonnull destination. */
     public Xtf24Writer(TransferPlan plan, OutputStream output) {
@@ -43,7 +51,9 @@ public final class Xtf24Writer extends TransferWriter {
         this.plan = plan;
         this.limits = Objects.requireNonNull(limits, "limits");
         this.output = new Xtf24Output(output, limits);
-        names = new Xtf24Names(plan);
+        var layout = new Xtf24Layout(plan);
+        names = layout.names();
+        values = new Xtf24ValueWriter(plan, this.output, layout, limits);
         domains = new Xtf24Domains(plan);
         identities = new Xtf24IdentityScope(limits);
     }
@@ -56,7 +66,10 @@ public final class Xtf24Writer extends TransferWriter {
                 case StartTransfer start -> startTransfer(start);
                 case StartBasket start -> startBasket(start);
                 case ObjectEvent object -> writeObject(object);
-                case EndBasket ignored -> output.end();
+                case EndBasket ignored -> {
+                    output.end();
+                    concreteTypes = Map.of();
+                }
                 case EndTransfer ignored -> {
                     output.end();
                     output.end();
@@ -101,6 +114,8 @@ public final class Xtf24Writer extends TransferWriter {
                 throw Xtf24Wire.failure(LIMIT_EXCEEDED, "XTF header exceeds its aggregate text limit");
             }
         }
+        structureTypes = names.structureTypes(plan.modelImportClosure(start.models().stream()
+                .map(ModelDeclaration::model).collect(Collectors.toSet())));
         output.open();
         output.start(ili("transfer"));
         output.start(ili("headersection"));
@@ -135,7 +150,7 @@ public final class Xtf24Writer extends TransferWriter {
         if (start.stableOid().filter(oid -> !stable || !oid.equals(bid)).isPresent()) {
             throw Xtf24Wire.failure(UNSUPPORTED, "Independent stable basket identity");
         }
-        domains.resolve(topic, start.domainBindings());
+        concreteTypes = domains.resolve(topic, start.domainBindings());
         identities.add(bid);
         output.start(names.topicName(topic));
         output.attribute(ili("bid"), bid);
@@ -163,14 +178,12 @@ public final class Xtf24Writer extends TransferWriter {
                 .filter(oid -> !Xtf24Wire.hasStableOid(type) || tid.filter(oid::equals).isEmpty()).isPresent()) {
             throw Xtf24Wire.failure(UNSUPPORTED, "Independent original basket or stable object identity");
         }
-        if (!object.data().values().isEmpty()) {
-            throw Xtf24Wire.failure(UNSUPPORTED, "Object payload is outside the current XTF 2.4 codec");
-        }
         tid.ifPresent(identities::add);
         output.start(names.objectName(type));
         if (tid.isPresent()) {
             output.attribute(ili("tid"), tid.orElseThrow());
         }
+        values.write(type, object.data(), concreteTypes, structureTypes);
         output.end();
     }
 
@@ -188,6 +201,8 @@ public final class Xtf24Writer extends TransferWriter {
     @Override
     protected void release() {
         identities.clear();
+        structureTypes = Set.of();
+        concreteTypes = Map.of();
         output.close();
     }
 }
