@@ -33,10 +33,12 @@ public final class Xtf24Writer extends TransferWriter {
     private final TransferPlan plan;
     private final Xtf24Limits limits;
     private final Xtf24Output output;
+    private final Xtf24Layout layout;
     private final Xtf24Names names;
     private final Xtf24ValueWriter values;
     private final Xtf24Domains domains;
     private final Xtf24IdentityScope identities;
+    private Set<SymbolRef> activeTypes = Set.of();
     private Set<SymbolRef> structureTypes = Set.of();
     private Map<SymbolRef, TypeRef> concreteTypes = Map.of();
 
@@ -51,10 +53,10 @@ public final class Xtf24Writer extends TransferWriter {
         this.plan = plan;
         this.limits = Objects.requireNonNull(limits, "limits");
         this.output = new Xtf24Output(output, limits);
-        var layout = new Xtf24Layout(plan);
+        layout = new Xtf24Layout(plan);
         names = layout.names();
         values = new Xtf24ValueWriter(plan, this.output, layout, limits);
-        domains = new Xtf24Domains(plan);
+        domains = new Xtf24Domains(plan, names);
         identities = new Xtf24IdentityScope(limits);
     }
 
@@ -69,6 +71,7 @@ public final class Xtf24Writer extends TransferWriter {
                 case EndBasket ignored -> {
                     output.end();
                     concreteTypes = Map.of();
+                    activeTypes = Set.of();
                 }
                 case EndTransfer ignored -> {
                     output.end();
@@ -151,6 +154,7 @@ public final class Xtf24Writer extends TransferWriter {
             throw Xtf24Wire.failure(UNSUPPORTED, "Independent stable basket identity");
         }
         concreteTypes = domains.resolve(topic, start.domainBindings());
+        activeTypes = Set.copyOf(topic.objectTypes());
         identities.add(bid);
         output.start(names.topicName(topic));
         output.attribute(ili("bid"), bid);
@@ -166,16 +170,19 @@ public final class Xtf24Writer extends TransferWriter {
         var object = occurrence.object();
         var type = plan.object(object.type()).orElseThrow();
         var identity = object.identity();
+        if (layout.embedded(type).isPresent()) {
+            throw Xtf24Wire.failure(INVALID_WIRE, "Association belongs in an embedded XTF field");
+        }
         if (occurrence.operation().isPresent() || occurrence.consistency() != Consistency.COMPLETE) {
             throw Xtf24Wire.failure(UNSUPPORTED, "Object operation or consistency metadata");
         }
         var tid = identity.tid().map(TransferId::value);
-        if (tid.isPresent() != Xtf24Wire.hasTid(type)) {
+        if (tid.isPresent() != layout.hasTid(type)) {
             throw Xtf24Wire.failure(INVALID_WIRE, "Object TID does not match its wire type");
         }
         if (identity.originalBasket().filter(original -> !original.value().equals(identity.currentBasket().value())).isPresent()
                 || identity.oid().map(ObjectOid::value)
-                .filter(oid -> !Xtf24Wire.hasStableOid(type) || tid.filter(oid::equals).isEmpty()).isPresent()) {
+                .filter(oid -> !layout.identified(type) || tid.filter(oid::equals).isEmpty()).isPresent()) {
             throw Xtf24Wire.failure(UNSUPPORTED, "Independent original basket or stable object identity");
         }
         tid.ifPresent(identities::add);
@@ -183,7 +190,7 @@ public final class Xtf24Writer extends TransferWriter {
         if (tid.isPresent()) {
             output.attribute(ili("tid"), tid.orElseThrow());
         }
-        values.write(type, object.data(), concreteTypes, structureTypes);
+        values.write(type, object.data(), concreteTypes, structureTypes, activeTypes);
         output.end();
     }
 
@@ -201,6 +208,7 @@ public final class Xtf24Writer extends TransferWriter {
     @Override
     protected void release() {
         identities.clear();
+        activeTypes = Set.of();
         structureTypes = Set.of();
         concreteTypes = Map.of();
         output.close();

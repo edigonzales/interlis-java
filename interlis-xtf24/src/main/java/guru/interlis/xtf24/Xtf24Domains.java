@@ -7,7 +7,6 @@ import guru.interlis.transfer.TopicDescriptor;
 import guru.interlis.transfer.TransferEvent.DomainBinding;
 import guru.interlis.transfer.TransferPlan;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -19,9 +18,11 @@ import static guru.interlis.xtf24.Xtf24Exception.Reason.INVALID_WIRE;
 
 final class Xtf24Domains {
     private final TransferPlan plan;
+    private final Xtf24Names names;
 
-    Xtf24Domains(TransferPlan plan) {
+    Xtf24Domains(TransferPlan plan, Xtf24Names names) {
         this.plan = plan;
+        this.names = names;
     }
 
     List<DomainBinding> parse(TopicDescriptor topic, String text) {
@@ -86,15 +87,7 @@ final class Xtf24Domains {
     }
 
     private String name(SymbolRef ref) {
-        var symbol = plan.symbol(ref).known().orElseThrow(Xtf24Domains::invalid);
-        var segments = new ArrayDeque<String>();
-        segments.addFirst(symbol.name().value());
-        while (symbol.owner().isPresent()) {
-            var owner = new SymbolRef(ref.snapshot(), symbol.owner().orElseThrow());
-            symbol = plan.symbol(owner).known().orElseThrow(Xtf24Domains::invalid);
-            segments.addFirst(symbol.name().value());
-        }
-        return String.join(".", segments);
+        return names.originalName(ref).toString();
     }
 
     private static Xtf24Exception invalid() {

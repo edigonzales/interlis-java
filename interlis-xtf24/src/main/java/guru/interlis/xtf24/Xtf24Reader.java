@@ -4,7 +4,6 @@ import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.model.TypeRef;
 import guru.interlis.source.SourceId;
-import guru.interlis.transfer.ModelDescriptor;
 import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferEvent.*;
 import guru.interlis.transfer.TransferIdentity;
@@ -46,6 +45,7 @@ public final class Xtf24Reader extends TransferReader {
     private final Optional<SourceId> source;
     private final Xtf24Limits limits;
     private final Xtf24Input input;
+    private final Xtf24Layout layout;
     private final Xtf24Names names;
     private final Xtf24ValueReader values;
     private final Xtf24Domains domains;
@@ -72,10 +72,10 @@ public final class Xtf24Reader extends TransferReader {
         this.source = Objects.requireNonNull(source, "source");
         this.limits = Objects.requireNonNull(limits, "limits");
         this.input = new Xtf24Input(input, limits);
-        var layout = new Xtf24Layout(plan);
+        layout = new Xtf24Layout(plan);
         names = layout.names();
         values = new Xtf24ValueReader(this.input, layout, limits);
-        domains = new Xtf24Domains(plan);
+        domains = new Xtf24Domains(plan, names);
         identities = new Xtf24IdentityScope(limits);
     }
 
@@ -122,7 +122,7 @@ public final class Xtf24Reader extends TransferReader {
             if (modelName.length() > limits.maxIdentifierCodeUnits()) {
                 throw input.error(LIMIT_EXCEEDED, "Header model name is too long");
             }
-            var model = findModel(modelName);
+            var model = names.model(modelName);
             if (!declared.add(model.symbol()) || !declaredNames.add(modelName)) {
                 throw input.error(INVALID_WIRE, "Repeated header model");
             }
@@ -217,29 +217,22 @@ public final class Xtf24Reader extends TransferReader {
         }
         input.beginObject();
         var type = names.object(input.cursor().getName(), basket.activeTypes());
+        if (layout.embedded(type).isPresent()) {
+            throw input.error(INVALID_WIRE, "Association belongs in an embedded XTF field");
+        }
         attributes(Set.of(ili("tid")));
         Optional<String> value = attribute("tid");
-        if (value.isPresent() != Xtf24Wire.hasTid(type)) {
+        if (value.isPresent() != layout.hasTid(type)) {
             throw input.error(INVALID_WIRE, "Object TID does not match its wire type");
         }
         value.ifPresent(identities::add);
         var tid = value.map(id -> new TransferId(id, IdOrigin.SOURCE));
-        var oid = Xtf24Wire.hasStableOid(type) ? value.map(ObjectOid::new) : Optional.<ObjectOid>empty();
-        var data = values.read(type, basket.concreteTypes(), structureTypes);
+        var oid = layout.identified(type) ? value.map(ObjectOid::new) : Optional.<ObjectOid>empty();
+        var data = values.read(type, basket.concreteTypes(), structureTypes, basket.activeTypes());
         input.endObject();
         var identity = new TransferIdentity(basket.event().id(), Optional.empty(), tid, oid, source);
         var object = new TransferObject(identity, data);
         return new ObjectEvent(object, Optional.empty(), Consistency.COMPLETE);
-    }
-
-    private ModelDescriptor findModel(String name) {
-        var candidates = plan.models().stream().filter(model -> names.modelName(model).equals(name)).toList();
-        var roots = candidates.stream().filter(model -> plan.rootModels().contains(model.symbol())).toList();
-        var active = roots.isEmpty() ? candidates : roots;
-        if (active.size() != 1) {
-            throw input.error(INVALID_WIRE, "Header model name is unknown or ambiguous");
-        }
-        return active.getFirst();
     }
 
     private long chargeHeader(long remaining, String text) {

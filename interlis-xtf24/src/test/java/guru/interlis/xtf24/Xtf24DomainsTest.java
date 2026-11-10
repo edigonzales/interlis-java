@@ -42,7 +42,7 @@ class Xtf24DomainsTest {
         assertEquals("A", plan.symbol(a.concrete()).known().orElseThrow().name().value());
         assertEquals("B", plan.symbol(b.concrete()).known().orElseThrow().name().value());
         var topic = plan.topic(first.topic()).orElseThrow();
-        var domains = new Xtf24Domains(plan);
+        var domains = new Xtf24Domains(plan, new Xtf24Names(plan));
         var aType = domains.resolve(topic, first.domainBindings()).get(a.generic());
         var bType = domains.resolve(topic, second.domainBindings()).get(b.generic());
         assertNotEquals(aType, bType);

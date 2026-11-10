@@ -1,6 +1,7 @@
 package guru.interlis.xtf24;
 
 import guru.interlis.model.ModelSymbol;
+import guru.interlis.model.QualifiedName;
 import guru.interlis.model.Modifier;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.Symbol;
@@ -27,12 +28,28 @@ final class Xtf24Names {
     private record ObjectLocalName(SymbolRef model, String localName) {}
 
     private final TransferPlan plan;
+    private final Map<SymbolRef, SymbolRef> originals;
     private final Map<SymbolRef, QName> objectNames;
     private final Map<QName, List<ObjectDescriptor>> objects;
     private final Map<QName, List<TopicDescriptor>> topics;
 
     Xtf24Names(TransferPlan plan) {
         this.plan = plan;
+        var links = new HashMap<SymbolRef, SymbolRef>();
+        for (var descriptor : plan.models()) {
+            var model = (ModelSymbol) symbol(descriptor.symbol());
+            model.translation().ifPresent(translation -> translation.correspondences().forEach(link -> {
+                var translated = new SymbolRef(plan.snapshotId(), link.translated());
+                var original = new SymbolRef(plan.snapshotId(), link.original());
+                if (!translated.equals(original)) {
+                    SymbolRef previous = links.putIfAbsent(translated, original);
+                    if (previous != null && !previous.equals(original)) {
+                        throw failure(UNSUPPORTED, "Conflicting checked translation correspondences");
+                    }
+                }
+            }));
+        }
+        originals = Map.copyOf(links);
         Map<ObjectLocalName, Set<SymbolRef>> collisions = new HashMap<>();
         Map<QName, SymbolRef> declarations = new HashMap<>();
         for (var object : plan.objects()) {
@@ -84,6 +101,34 @@ final class Xtf24Names {
             }
         }
         return Set.copyOf(types);
+    }
+
+    QualifiedName originalName(SymbolRef ref) {
+        var seen = new HashSet<SymbolRef>();
+        while (originals.containsKey(ref)) {
+            if (!seen.add(ref)) {
+                throw failure(UNSUPPORTED, "Cyclic checked translation correspondence");
+            }
+            ref = originals.get(ref);
+        }
+        Symbol current = symbol(ref);
+        var segments = new java.util.ArrayDeque<String>();
+        segments.addFirst(current.name().value());
+        while (current.owner().isPresent()) {
+            current = symbol(new SymbolRef(ref.snapshot(), current.owner().orElseThrow()));
+            segments.addFirst(current.name().value());
+        }
+        return new QualifiedName(List.copyOf(segments));
+    }
+
+    ModelDescriptor model(String name) {
+        var candidates = plan.models().stream().filter(model -> modelName(model).equals(name)).toList();
+        var roots = candidates.stream().filter(model -> plan.rootModels().contains(model.symbol())).toList();
+        if (roots.size() == 1) {
+            return roots.getFirst();
+        }
+        var originals = candidates.stream().filter(model -> model.symbol().equals(model.name().canonical())).toList();
+        return unique(new QName("", name), originals);
     }
 
     String modelName(ModelDescriptor model) {
