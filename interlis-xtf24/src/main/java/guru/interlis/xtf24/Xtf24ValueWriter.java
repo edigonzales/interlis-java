@@ -1,6 +1,7 @@
 package guru.interlis.xtf24;
 
 import guru.interlis.model.CollectionType;
+import guru.interlis.transfer.TransferEvent.Consistency;
 import guru.interlis.model.ReferenceType;
 import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.TransferValue.Reference;
@@ -27,6 +28,8 @@ final class Xtf24ValueWriter {
     private final Xtf24Layout layout;
     private final Xtf24Limits limits;
     private final Xtf24References references;
+    private final Xtf24GeometryCodec geometry;
+    private Consistency consistency = Consistency.COMPLETE;
 
     Xtf24ValueWriter(TransferPlan plan, Xtf24Output output, Xtf24Layout layout, Xtf24Limits limits) {
         this.plan = plan;
@@ -34,6 +37,11 @@ final class Xtf24ValueWriter {
         this.layout = layout;
         this.limits = limits;
         references = new Xtf24References(limits);
+        geometry = new Xtf24GeometryCodec(plan, layout);
+    }
+
+    void basketConsistency(Consistency consistency) {
+        this.consistency = consistency;
     }
 
     void write(ObjectDescriptor object, Structured data, Map<SymbolRef, TypeRef> concreteTypes,
@@ -132,7 +140,10 @@ final class Xtf24ValueWriter {
             throw Xtf24Wire.failure(UNSUPPORTED, "XTF 2.4 cannot express an explicit undefined value");
         }
         output.start(name);
-        if (type instanceof ReferenceType reference) {
+        if (type.kind() == guru.interlis.model.TypeKind.COORDINATE
+                || type.kind() == guru.interlis.model.TypeKind.GEOMETRY) {
+            geometry.write(output, type, value, concreteTypes, consistency);
+        } else if (type instanceof ReferenceType reference) {
             references.write(output, Xtf24Scalars.require(value, Reference.class), reference.external(), false,
                     layout.stableTargets(reference.targetRoots()));
         } else if (type.kind() == guru.interlis.model.TypeKind.STRUCTURE_VALUE) {

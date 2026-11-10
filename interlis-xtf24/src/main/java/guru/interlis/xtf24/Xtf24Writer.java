@@ -27,7 +27,10 @@ import static guru.interlis.xtf24.Xtf24Wire.ili;
  * Push writer for XTF 2.4 FULL transfers. Use from one caller. The caller owns
  * the destination. Only a successful EndTransfer completes and flushes the XML
  * document. Limits bound the writer's additional work and identity index.
- * Writing does not validate model constraints.
+ * Writing does not validate model constraints. Negative radii are rejected
+ * because the neutral value does not distinguish invalid 2.4 data from the
+ * signed-direction convention of XTF 2.3. Curve and boundary partitions and
+ * LINEATTR metadata require an explicit external transformation.
  */
 public final class Xtf24Writer extends TransferWriter {
     private final TransferPlan plan;
@@ -72,6 +75,7 @@ public final class Xtf24Writer extends TransferWriter {
                     output.end();
                     concreteTypes = Map.of();
                     activeTypes = Set.of();
+                    values.basketConsistency(Consistency.COMPLETE);
                 }
                 case EndTransfer ignored -> {
                     output.end();
@@ -155,6 +159,7 @@ public final class Xtf24Writer extends TransferWriter {
         }
         concreteTypes = domains.resolve(topic, start.domainBindings());
         activeTypes = Set.copyOf(topic.objectTypes());
+        values.basketConsistency(start.consistency());
         identities.add(bid);
         output.start(names.topicName(topic));
         output.attribute(ili("bid"), bid);
@@ -208,6 +213,7 @@ public final class Xtf24Writer extends TransferWriter {
     @Override
     protected void release() {
         identities.clear();
+        values.basketConsistency(Consistency.COMPLETE);
         activeTypes = Set.of();
         structureTypes = Set.of();
         concreteTypes = Map.of();

@@ -526,6 +526,9 @@ public final class Xtf23Writer extends TransferWriter {
             switch (segment) {
                 case Straight straight -> writeCoordinate(straight.end(), curve.dimensions());
                 case Arc arc -> {
+                    if (arc.radius().filter(radius -> radius.exactValue().signum() == 0).isPresent()) {
+                        throw error(INVALID_WIRE, "XTF 2.3 ARC radius must be nonzero");
+                    }
                     xml.start("ARC");
                     writePosition(arc.end(), "C", curve.dimensions());
                     writePosition(arc.support(), "A", 2);

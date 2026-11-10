@@ -101,6 +101,14 @@ Die Zuordnung formatspezifischer Tags gehört zum späteren Adapter. `TransferPl
 
 Ein `TransferObject` hält Identität, Typbezug und Attribut-/Rollenwerte eines einzelnen Objekts. Adapter legen Grössen- und Tiefengrenzen für einzelne Objekte fest. Der Kern hält die Modelldeklarationen, den aktiven Basketkontext und getrennte Mengen für BID und FULL-TID. Der Speicher für diese Kennungen wächst mit ihrer Anzahl und wird bei Transferende, Fehler oder Close freigegeben.
 
+Die neutralen Geometriewerte behalten die Dimension jeder Koordinate sowie
+numerische Radien einschliesslich null bei. Die Konstruktoren sichern
+Nullfreiheit, unveränderliche Komponentenlisten, zwei oder drei Ordinaten pro
+Position und den zweidimensionalen Bogenzwischenpunkt. Übereinstimmende
+Dimensionen, Radiuswerte und Topologie sind fachliche Prüfungen.
+Der XTF-2.3-Adapter erhält seine profilspezifischen Dimensions- und
+Nullradiusregeln an der Wiregrenze.
+
 Der Kern vergleicht die Zeichenwerte innerhalb dieser Namensräume unabhängig von der Herkunft `SOURCE` oder `SYNTHETIC`. Die OID-Regeln für INITIAL und UPDATE gehören zum jeweiligen Transferprofil. Der XTF-2.3-Adapter muss für FULL zusätzlich BID und TID gemeinsam prüfen, auch wenn die gleichlautende Kennung zuerst als TID erscheint. In XTF 2.4 gilt die transferweite Eindeutigkeit der FULL-TIDs und die allgemeine Objektstromregel für Behälter- und Objektidentifikationen. Die Akzeptanz gleicher Zeichenwerte in den getrennten Namensräumen des Kerns trifft keine Aussage über die Gültigkeit einer konkreten XTF-Codierung. [Gepinnte Normbelege und P4.0-Befunde](../reference/iox-legacy.md#normbelege)
 
 `Xtf23Reader` und `Xtf23Writer` verwenden vom Aufrufer verwaltete Streams. OIDSPACE-Deklarationen bleiben in Quellreihenfolge am Adapter verfügbar. Der FULL-Adapter liest und schreibt BLACKBOX XML und BINARY, OID-Attributwerte sowie CLASS-, STRUCTURE- und ATTRIBUTE-Pfadwerte. Modellgebundene Linienattribute bleiben an jeder einzelnen Randlinie von SURFACE und AREA erhalten. Nichtleere ALIAS-Tabellen, inkrementelle Transfers, CLIPPED-Geometrien und benutzerdefinierte Linienformen meldet der Adapter als `UNSUPPORTED`. Er prüft die XML- und Wire-Struktur. Die Standardsegmente COORD und ARC

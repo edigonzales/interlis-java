@@ -52,6 +52,27 @@ class Xtf24DomainsTest {
     }
 
     @Test
+    void readsGeometryInConsecutiveGenericBasketContexts() {
+        var plan = plan(MODEL.formatted("A OR B", "DEFERRED GENERICS G;"), "GenericExample");
+        var xml = transfer("""
+                <Data ili:bid="b1" ili:domains="GenericExample.G=GenericExample.A">
+                  <Item ili:tid="one"><point><g:coord><g:c1>1.001</g:c1><g:c2>2</g:c2></g:coord></point></Item>
+                </Data>
+                <Data ili:bid="b2" ili:domains="GenericExample.G=GenericExample.B">
+                  <Item ili:tid="two"><point><g:coord><g:c1>250</g:c1><g:c2>260</g:c2></g:coord></point></Item>
+                </Data>
+                """).replace("<ili:transfer ", "<ili:transfer xmlns:g=\"http://www.interlis.ch/geometry/1.0\" ");
+        var events = read(plan, xml);
+        var first = ((guru.interlis.transfer.TransferEvent.ObjectEvent) events.get(2)).object();
+        var second = ((guru.interlis.transfer.TransferEvent.ObjectEvent) events.get(5)).object();
+        var firstPoint = (guru.interlis.transfer.TransferGeometry.Coordinate) first.data().values().values().iterator().next();
+        var secondPoint = (guru.interlis.transfer.TransferGeometry.Coordinate) second.data().values().values().iterator().next();
+        assertEquals("1.001", firstPoint.ordinates().getFirst().lexeme());
+        assertEquals("250", secondPoint.ordinates().getFirst().lexeme());
+        assertEquals(events, read(plan, write(plan, events)));
+    }
+
+    @Test
     void requiresExplicitFixedBindingsOnReadAndWrite() {
         var plan = plan(MODEL.formatted("A", ""), "GenericExample");
         assertEquals(Xtf24Exception.Reason.INVALID_WIRE, assertThrows(Xtf24Exception.class,

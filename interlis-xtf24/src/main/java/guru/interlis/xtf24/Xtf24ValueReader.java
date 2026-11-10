@@ -1,6 +1,7 @@
 package guru.interlis.xtf24;
 
 import guru.interlis.model.CollectionType;
+import guru.interlis.transfer.TransferEvent.Consistency;
 import guru.interlis.model.ReferenceType;
 import guru.interlis.transfer.RoleSlot;
 import guru.interlis.model.SymbolRef;
@@ -30,12 +31,19 @@ final class Xtf24ValueReader {
     private final Xtf24Layout layout;
     private final Xtf24Limits limits;
     private final Xtf24References references;
+    private final Xtf24GeometryCodec geometry;
+    private Consistency consistency = Consistency.COMPLETE;
 
-    Xtf24ValueReader(Xtf24Input input, Xtf24Layout layout, Xtf24Limits limits) {
+    Xtf24ValueReader(guru.interlis.transfer.TransferPlan plan, Xtf24Input input, Xtf24Layout layout, Xtf24Limits limits) {
         this.input = input;
         this.layout = layout;
         this.limits = limits;
         references = new Xtf24References(limits);
+        geometry = new Xtf24GeometryCodec(plan, layout);
+    }
+
+    void basketConsistency(Consistency consistency) {
+        this.consistency = consistency;
     }
 
     Structured read(ObjectDescriptor object, Map<SymbolRef, TypeRef> concreteTypes,
@@ -165,6 +173,7 @@ final class Xtf24ValueReader {
             throw input.error(UNSUPPORTED, "Unexpected attribute on XTF value element");
         }
         return switch (type.kind()) {
+            case COORDINATE, GEOMETRY -> geometry.read(input, type, concreteTypes, consistency);
             case STRUCTURE_VALUE -> {
                 if (input.nextTag() != START_ELEMENT) {
                     throw input.error(INVALID_WIRE, "Expected one structure element");

@@ -74,7 +74,7 @@ public final class Xtf24Reader extends TransferReader {
         this.input = new Xtf24Input(input, limits);
         layout = new Xtf24Layout(plan);
         names = layout.names();
-        values = new Xtf24ValueReader(this.input, layout, limits);
+        values = new Xtf24ValueReader(plan, this.input, layout, limits);
         domains = new Xtf24Domains(plan, names);
         identities = new Xtf24IdentityScope(limits);
     }
@@ -197,6 +197,7 @@ public final class Xtf24Reader extends TransferReader {
                 ? Optional.of(bid) : Optional.<String>empty();
         var start = new StartBasket(new BasketId(bid, IdOrigin.SOURCE), topic.symbol(), List.of(),
                 BasketKind.FULL, consistency, Optional.empty(), Optional.empty(), stableOid, bindings);
+        values.basketConsistency(consistency);
         basket = new BasketContext(start, Set.copyOf(topic.objectTypes()), domains.resolve(topic, bindings));
         position = Position.IN_BASKET;
         return start;
@@ -206,6 +207,7 @@ public final class Xtf24Reader extends TransferReader {
         if (input.nextTag() == END_ELEMENT) {
             var end = new EndBasket(basket.event().id());
             basket = null;
+            values.basketConsistency(Consistency.COMPLETE);
             position = Position.BETWEEN_BASKETS;
             return end;
         }
@@ -296,6 +298,7 @@ public final class Xtf24Reader extends TransferReader {
         structureTypes = Set.of();
         basket = null;
         identities.clear();
+        values.basketConsistency(Consistency.COMPLETE);
         input.close();
     }
 }

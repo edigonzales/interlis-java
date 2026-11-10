@@ -149,6 +149,31 @@ final class Xtf23GeometryTest {
     }
 
     @Test
+    void retainsTheXtf23ZeroRadiusWriterRejectionAfterNeutralRelaxation() {
+        String arc = "<ARC><C1>3</C1><C2>4</C2><A1>2</A1><A2>4</A2><R>1</R></ARC>";
+        try (var reader = new Xtf23Reader(curves, input(shape("<straight>" + line(point("1", "2"), arc) + "</straight>")))) {
+            var events = new java.util.ArrayList<>(readAll(reader));
+            var occurrence = (ObjectEvent) events.get(2);
+            var object = occurrence.object();
+            var original = (Polyline) field(curves, object, "straight");
+            var part = original.parts().getFirst();
+            var originalArc = (Arc) part.segments().getFirst();
+            var zero = new Arc(originalArc.support(), originalArc.end(),
+                    java.util.Optional.of(new TransferValue.NumberValue("0", BigDecimal.ZERO)));
+            var changed = new Polyline(List.of(new CurvePart(part.start(), List.of(zero))));
+            var values = new java.util.LinkedHashMap<>(object.data().values());
+            values.replaceAll((slot, value) -> changed);
+            events.set(2, new ObjectEvent(new TransferObject(object.identity(),
+                    new TransferValue.Structured(object.type(), values)), occurrence.operation(), occurrence.consistency()));
+            try (var writer = new Xtf23Writer(curves, new ByteArrayOutputStream())) {
+                writer.write(events.getFirst());
+                writer.write(events.get(1));
+                assertEquals(INVALID_WIRE, assertThrows(Xtf23Exception.class, () -> writer.write(events.get(2))).reason());
+            }
+        }
+    }
+
+    @Test
     void rejectsMalformedGeometryAndReportsClippedAsUnsupported() {
         String two = point("1", "2");
         String validArc = "<ARC><C1>3</C1><C2>4</C2><A1>2</A1><A2>3</A2></ARC>";
