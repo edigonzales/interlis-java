@@ -22,8 +22,8 @@ public sealed interface TransferEvent permits TransferEvent.StartTransfer, Trans
      * @param source opaque source identifier, if known
      * @param sender supplied sender, if present
      * @param comment supplied comment, if present
-     * @param models immutable list of model declarations in source order, covering every
-     *               basket topic and object model used in the stream
+     * @param models immutable list of model declarations in source order. The sequence
+     *               requires explicit model coverage unless its adapter enables import coverage.
      */
     record StartTransfer(Optional<SourceId> source, Optional<String> sender, Optional<String> comment,
                          List<ModelDeclaration> models) implements TransferEvent {

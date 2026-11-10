@@ -1,40 +1,17 @@
 package guru.interlis.xtf24;
 
-import guru.interlis.compiler.CompilationOutcome;
-import guru.interlis.compiler.CompilationRequest;
-import guru.interlis.compiler.CompilerEngines;
-import guru.interlis.compiler.CompilerOptions;
-import guru.interlis.compiler.ImportBinding;
-import guru.interlis.compiler.ImportResolution;
-import guru.interlis.compiler.ImportSite;
-import guru.interlis.compiler.ModelLocation;
-import guru.interlis.compiler.ModelSelector;
-import guru.interlis.compiler.ResolutionFingerprint;
-import guru.interlis.compiler.SourceSet;
-import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.QualifiedName;
 import guru.interlis.model.SnapshotMismatchException;
-import guru.interlis.source.SourceId;
-import guru.interlis.source.SourceRevision;
-import guru.interlis.source.SourceText;
 import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.TransferPlan;
-import guru.interlis.transfer.TransferPlanner;
-import guru.interlis.transfer.TransferPlanningResult;
-import guru.interlis.syntax.ParseMode;
-import guru.interlis.syntax.ParseOptions;
-import guru.interlis.syntax.SyntaxServices;
 import org.junit.jupiter.api.Test;
 
 import javax.xml.namespace.QName;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
+import static guru.interlis.xtf24.Xtf24TestSchemas.plan;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -142,25 +119,4 @@ class Xtf24NamesTest {
                 .findFirst().orElseThrow();
     }
 
-    private static TransferPlan plan(String text, String... roots) {
-        var source = new SourceText(new SourceId("memory:/names.ili"), new SourceRevision(1), text);
-        List<ModelSelector> selectors = Arrays.stream(roots)
-                .map(name -> (ModelSelector) new ModelSelector.ByName(name, Optional.empty(), Optional.empty()))
-                .toList();
-        var syntax = SyntaxServices.create().parse(source, ParseOptions.defaults(ParseMode.EDITOR),
-                CancellationToken.none()).root();
-        var bindings = syntax.models().stream().filter(model -> !model.imports().isEmpty()).map(importer -> {
-            var imported = syntax.models().getFirst();
-            var site = new ImportSite(importer.imports().getFirst().range(), "Main", "Base");
-            var location = new ModelLocation(source.id(), source.revision(), "Base",
-                    Optional.of(imported.modelVersion()), imported.range().startOffset());
-            return new ImportBinding(site, new ImportResolution.Resolved(location));
-        }).toList();
-        var sources = SourceSet.of(Map.of(source.id(), source), bindings, List.of(), ResolutionFingerprint.none());
-        var request = new CompilationRequest(selectors, sources, CompilerOptions.defaults());
-        var outcome = CompilerEngines.create().compile(request, CancellationToken.none());
-        var schema = assertInstanceOf(CompilationOutcome.Succeeded.class, outcome, outcome::toString).schema();
-        return assertInstanceOf(TransferPlanningResult.Ready.class,
-                TransferPlanner.plan(schema, TransferPlanner.Names.DECLARED)).plan();
-    }
 }

@@ -1,6 +1,7 @@
 package guru.interlis.transfer;
 
 import guru.interlis.model.CompiledSchema;
+import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.SchemaFingerprint;
 import guru.interlis.model.SnapshotId;
 import guru.interlis.model.SnapshotMismatchException;
@@ -11,9 +12,12 @@ import guru.interlis.model.TypeRef;
 import guru.interlis.model.query.QueryResult;
 import guru.interlis.model.query.SemanticQueries;
 
+import java.util.ArrayDeque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -60,6 +64,30 @@ public final class TransferPlan {
     /** Returns the immutable root model references in schema order. */
     public List<SymbolRef> rootModels() {
         return rootModels;
+    }
+
+    /**
+     * Returns the immutable set of the supplied plan models and their transitive
+     * resolved imports present in this plan. Order is unspecified.
+     * @throws SnapshotMismatchException if a root belongs to another snapshot
+     * @throws IllegalArgumentException if a root is absent from this plan
+     */
+    public Set<SymbolRef> modelImportClosure(Set<SymbolRef> roots) {
+        var covered = new HashSet<SymbolRef>();
+        var remaining = new ArrayDeque<>(roots);
+        while (!remaining.isEmpty()) {
+            SymbolRef ref = remaining.removeFirst();
+            if (model(ref).isEmpty()) {
+                throw new IllegalArgumentException("Model is absent from the transfer plan");
+            }
+            if (covered.add(ref) && symbol(ref).known().orElseThrow() instanceof ModelSymbol model) {
+                model.imports().forEach(imported -> imported.targetModel()
+                        .map(id -> new SymbolRef(snapshotId, id))
+                        .filter(modelsBySymbol::containsKey)
+                        .ifPresent(remaining::addLast));
+            }
+        }
+        return Set.copyOf(covered);
     }
 
     /** Returns the immutable model descriptors in plan order. */
