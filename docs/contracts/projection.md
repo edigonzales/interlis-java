@@ -156,6 +156,14 @@ Das Beziehungsschema unterscheidet mindestens INHERITANCE, ASSOCIATION_ROLE, ASS
 
 Eine `REFERENCE TO`-Verwendung und eine Strukturkomposition sind unterschiedliche Beziehungen. Modellimports verbinden Rahmen, nicht zufällige Klassen im importierten Modell. Fachlich verschiedene Beziehungen zwischen denselben zwei Knoten bleiben getrennte Kanten mit eigener Identität.
 
+Verwendungen benutzerdefinierter Domänen und Strukturen bleiben als
+`DOMAIN_USE` und `STRUCTURE_COMPOSITION` im Core-Dokument erhalten. Für
+vordefinierte Domänen behält der Core den kurzen Typnamen im Attribut. Die
+automatische Projektion überspringt deren Domänenknoten, einschliesslich externer
+Stubs, und lässt die zugehörigen `DOMAIN_USE`-Kanten aus. Eine explizite Auswahl
+der Domäne oder ihres vordefinierten Modells kann den Domänenknoten weiterhin
+projizieren.
+
 <a id="filter-und-partielle-daten"></a>
 ### Filter und partielle Daten
 
@@ -347,6 +355,12 @@ nicht als Namen aufgelöst. Externe Stubs müssen über verbleibende sichtbare
 Verbindungen von einem normalen Knoten erreichbar sein; leere Rahmen entfallen.
 Ausblenden löscht keine Geometrie aus dem separaten Viewzustand.
 
+Neue Diagrammansichten und **Reset filters** blenden `DOMAIN_USE` und
+`STRUCTURE_COMPOSITION` vor dem ELK-Layout aus. Unter **Options → Filters →
+Relationships** lassen sich **Domain uses** und **Structure composition**
+unabhängig einschalten. **Show all** aktiviert beide. Gespeicherte Ansichten
+übernehmen ihre bisherigen Filterwerte.
+
 `SavedViewState.version=1` enthält begrenzte Geometrie, Pin-/Manuellmarkierungen,
 Filter, Layoutsettings und Viewport. Persistente Schlüssel sind SHA-256 der
 exakten eindeutigen Presentationkeys; Quelltext, Quell-URIs mit Credentials,
@@ -362,9 +376,9 @@ für Navigation oder Spracheingriffe; diese bleiben versionsgebundene Javaquerie
 Inline-Enumerationen deklarierter Attribute verwenden ebenfalls `ENUM_VALUES`.
 Der Core liefert geordnete Pfade mit Attributpräfix, Original-Enum-Symbol/Anker
 und effektivem Besitzer. Geerbte Darstellungen haben eigene IDs und denselben
-ursprünglichen Anker. Domainreferenzen behalten ihre Domainknoten; der Renderer
-berechnet keine Enumsemantik aus Typtext. Das gemeinsame Memberbudget und
-`InheritedMembers.HIDE` gelten auch hier.
+ursprünglichen Anker. Referenzen auf benutzerdefinierte Domänen behalten ihre
+Domänenknoten gemäss Projektionsumfang und Knotenkategorien. Enumsemantik liefert
+der Core. Das gemeinsame Memberbudget und `InheritedMembers.HIDE` gelten auch hier.
 
 `DiagramCanvas` integriert diese Filter in denselben echten Sprotty-Graphen.
 Sein Beobachter vereinigt sichtbare Geometrie mit ausgeblendeten Elementen;
