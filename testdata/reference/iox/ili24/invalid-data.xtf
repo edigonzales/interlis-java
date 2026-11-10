@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Intentionally violates mandatory, cardinality and numeric range, while remaining wire-decodable. -->
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="urn:reference24">
+  <i:headersection>
+    <i:models><i:model>Reference24</i:model></i:models>
+    <i:sender>interlis-java handwritten fixture</i:sender>
+  </i:headersection>
+  <i:datasection>
+    <Data i:bid="b1">
+      <Item i:tid="i1">
+        <details><Detail><label>same</label></Detail></details>
+        <details><Detail><label>same</label></Detail></details>
+        <details><Detail><label>last</label></Detail></details>
+        <count>999</count>
+      </Item>
+    </Data>
+  </i:datasection>
+</i:transfer>

@@ -1,0 +1,30 @@
+INTERLIS 2.4;
+!! eCH-0031 §§4.3.3–4.3.11. Standard FULL reference cases for the XTF 2.4 codec.
+MODEL Reference24 (en) AT "https://example.org/interlis/xtf24" VERSION "2026-11-11" =
+  XMLNS "urn:reference24";
+  DOMAIN
+    P = COORD 0.00..100.00, 0.00..100.00;
+  STRUCTURE Detail =
+    label : TEXT*20;
+  END Detail;
+  TOPIC Data =
+    CLASS Parent =
+      title : TEXT*20;
+    END Parent;
+    CLASS Item =
+      required : MANDATORY TEXT*3;
+      details : LIST {0..2} OF Detail;
+      count : 0..10;
+      points : MULTICOORD 0.00..100.00, 0.00..100.00;
+      trace : POLYLINE WITH (STRAIGHTS, ARCS) VERTEX P;
+      traces : MULTIPOLYLINE WITH (STRAIGHTS, ARCS) VERTEX P;
+      shape : SURFACE WITH (STRAIGHTS, ARCS) VERTEX P WITHOUT OVERLAPS > 0.01;
+      shapes : MULTISURFACE WITH (STRAIGHTS, ARCS) VERTEX P WITHOUT OVERLAPS > 0.01;
+    END Item;
+    ASSOCIATION Link =
+      parent -- {0..1} Parent;
+      items -- {0..*} Item;
+      note : TEXT*20;
+    END Link;
+  END Data;
+END Reference24.

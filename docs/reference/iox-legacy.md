@@ -563,3 +563,20 @@ iox-wkf-Laufzeit und historische Issue-Originalanhänge waren nicht geprüft.
 [historic-arc-model]: https://github.com/edigonzales/interlis-java/blob/2c07d29bea4a32e5207266760026dba7eb029135/testdata/reference/iox/ili24/areareas/GeometryArc24.ili
 [historic-arc]: https://github.com/edigonzales/interlis-java/blob/2c07d29bea4a32e5207266760026dba7eb029135/testdata/reference/iox/ili24/arc-below-tolerance.xtf
 [pdf-24-number-wire]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=108
+
+
+## Ausgewählte XTF-2.4-Gegenproben
+
+Die handgeschriebenen [2.4-Fixtures](../../testdata/reference/iox/ili24)
+prüfen Hülle und Namespace, strukturierte LIST-Wiederholungen mit eingebetteter
+Beziehung, Standard-/Multi-Geometrien und generische Domänenbindungen über zwei
+Baskets. ilivalidator 1.15.0 mit IOX 1.24.4 und ili2c 5.6.8 akzeptiert sowohl
+die Originalfixtures als auch die Ausgabe von `Xtf24Writer`.
+Der direkte `Xtf24Reader` von IOX bestätigt zusätzlich Listenfolge,
+Referenzkennungen, Multi-Komponentenzahlen und den Bogenradius.
+
+`invalid-data.xtf` ist wire-lesbar und enthält einen fehlenden Pflichtwert,
+drei Einträge einer auf zwei Werte begrenzten Liste und den Zahlenwert 999
+ausserhalb von 0..10. Beide Reader erhalten diese Werte. Der separate Validator
+meldet alle drei Datenverletzungen und liefert Exit 1. Die Gegenproben bilden
+ausgewählte Fähigkeiten der bezeichneten Werkzeugversionen ab.

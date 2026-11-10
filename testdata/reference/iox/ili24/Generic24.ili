@@ -1,0 +1,12 @@
+INTERLIS 2.4;
+!! eCH-0031 §4.3.6. Explicit deferred assignments in consecutive FULL baskets.
+MODEL Generic24 (en) AT "https://example.org/interlis/xtf24" VERSION "2026-11-11" =
+  DOMAIN G (GENERIC) = COORD NUMERIC, NUMERIC;
+         A = COORD 0.00..100.00, 0.00..100.00;
+         B = COORD 200.00..300.00, 200.00..300.00;
+  CONTEXT Default = G = A OR B;
+  TOPIC Data =
+    DEFERRED GENERICS G;
+    CLASS Item = point : G; END Item;
+  END Data;
+END Generic24.
