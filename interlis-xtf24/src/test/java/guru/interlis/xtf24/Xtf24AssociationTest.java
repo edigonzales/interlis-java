@@ -1,5 +1,6 @@
 package guru.interlis.xtf24;
 
+import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferEvent.ObjectEvent;
@@ -175,6 +176,26 @@ class Xtf24AssociationTest {
                 TransferEvent.Consistency.COMPLETE));
         assertEquals(Xtf24Exception.Reason.UNSUPPORTED,
                 assertThrows(Xtf24Exception.class, () -> write(plan, copy)).reason());
+    }
+
+    @Test
+    void rejectsRepeatedEmbeddedLinksBeforePublishingTheObject() {
+        var xml = transfer("""
+                <Item ili:tid="item">
+                  <parent ili:ref="first"><Note><remark>one</remark></Note></parent>
+                  <parent ili:ref="second"><Note><remark>two</remark></Note></parent>
+                </Item>
+                """);
+        try (var reader = new Xtf24Reader(plan,
+                new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)))) {
+            var cancellation = CancellationToken.none();
+            assertInstanceOf(TransferEvent.StartTransfer.class, reader.readNext(cancellation).orElseThrow());
+            assertInstanceOf(TransferEvent.StartBasket.class, reader.readNext(cancellation).orElseThrow());
+            assertEquals(Xtf24Exception.Reason.INVALID_WIRE,
+                    assertThrows(Xtf24Exception.class, () -> reader.readNext(cancellation)).reason());
+            assertThrows(guru.interlis.transfer.TransferProtocolException.class,
+                    () -> reader.readNext(cancellation));
+        }
     }
 
     @Test

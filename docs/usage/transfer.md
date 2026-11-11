@@ -32,8 +32,8 @@ Die Typen stammen aus `guru.interlis.transfer` und `guru.interlis.xtf24`.
 `input`, `output` und der Abbruchtoken werden vom Host bereitgestellt. Beide
 Streams bleiben Eigentum des Aufrufers. Die Konstruktoren führen keine
 Stream-I/O aus. Reader und Writer werden jeweils von einem Aufrufer verwendet.
-Der Reader ist bis zum leeren Ergebnis nach `EndTransfer` zu lesen, damit auch
-das Dokumentende geprüft wird. Erst ein erfolgreiches `EndTransfer` beendet
+Der Reader prüft das XML-Dokumentende vor der Ausgabe von `EndTransfer`.
+Das anschliessende leere Ergebnis bestätigt den Protokollabschluss. Erst ein erfolgreiches `EndTransfer` beendet
 und flusht die Ausgabe. Ein vorzeitiges Writer-Close meldet einen unvollständigen
 Transfer. Nach einem Fehler innerhalb einer Operation bleibt nur Close möglich.
 Eine bereits vor dem Aufruf angeforderte Annullierung lässt die Position bestehen.
@@ -71,8 +71,11 @@ INITIAL/UPDATE und Löschereignisse, eigene LINE FORM, nichtleere unbekannte
 Erweiterungen und Metadaten, 1D-Geometrie sowie vom Transferplaner ausgeschlossene
 Views, Graphics und abgeleitete/synthetische Transferobjekte werden nicht angeboten.
 Eine automatische Konvertierung zwischen XTF 2.3 und 2.4 ist nicht enthalten.
-Mehrere Aussenringe, Kurvenpartitionen, mehrteilige Linien in einem Flächenrand und
-LINEATTR-Payloads benötigen beim Schreiben eine explizite externe Transformation.
+Mehrere Aussenringe werden beim Lesen und Schreiben abgelehnt. Kurvenpartitionen,
+mehrteilige Linien in einem Flächenrand und LINEATTR-Payloads benötigen beim
+Schreiben eine explizite externe Transformation. Ein synthetisches Embedded-Feld
+repräsentiert genau einen Link. Wiederholte gleichnamige Embedded-Links am
+selben Objekt werden mit `INVALID_WIRE` abgelehnt.
 Negative native 2.4-Radien werden gelesen und erhalten. Der Writer meldet dafür
 `UNSUPPORTED`, weil der neutrale Bogenwert sie nicht von der signierten
 Richtungsdarstellung aus XTF 2.3 unterscheiden kann. Nullradien bleiben erhalten.
