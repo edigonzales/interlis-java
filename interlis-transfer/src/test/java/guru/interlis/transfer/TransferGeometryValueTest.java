@@ -114,7 +114,7 @@ class TransferGeometryValueTest {
         assertEquals(List.of(), empty.parts());
         assertEquals(List.of(empty, line2, empty), new MultiPolyline(List.of(empty, line2, empty)).lines());
         assertEquals(List.of(line3, empty), new MultiPolyline(List.of(line3, empty)).lines());
-        assertThrows(IllegalArgumentException.class, () -> new MultiPolyline(List.of(line2, empty, line3)));
+        assertEquals(List.of(line2, empty, line3), new MultiPolyline(List.of(line2, empty, line3)).lines());
         assertThrows(IllegalArgumentException.class, () -> new Ring(List.of(empty)));
     }
 
@@ -132,7 +132,7 @@ class TransferGeometryValueTest {
     }
 
     @Test
-    void rejectsInconsistentDimensionsAndZeroRadius() {
+    void retainsDecodableDimensionDifferencesAndZeroRadius() {
         var xy = coordinate("0", "0");
         var xyz = coordinate("0", "0", "1");
         var line2 = line(xy);
@@ -143,16 +143,18 @@ class TransferGeometryValueTest {
         assertThrows(IllegalArgumentException.class, () -> coordinate("0"));
         assertThrows(IllegalArgumentException.class, () -> coordinate("0", "0", "1", "1"));
         assertThrows(IllegalArgumentException.class, () -> new Arc(xyz, xy, Optional.empty()));
-        assertThrows(IllegalArgumentException.class, () -> new Arc(xy, xyz, Optional.of(number("0.00"))));
-        assertThrows(IllegalArgumentException.class, () -> new CurvePart(xy, List.of(new Straight(xyz))));
-        assertThrows(IllegalArgumentException.class, () -> new CurvePart(xy, List.of(new Arc(xy, xyz, Optional.empty()))));
-        assertThrows(IllegalArgumentException.class, () -> new Polyline(List.of(line2.parts().getFirst(), line3.parts().getFirst())));
-        assertThrows(IllegalArgumentException.class, () -> new MultiCoordinate(List.of(xy, xyz)));
-        assertThrows(IllegalArgumentException.class, () -> new MultiPolyline(List.of(line2, line3)));
-        assertThrows(IllegalArgumentException.class, () -> new Ring(List.of(line2, line3)));
-        assertThrows(IllegalArgumentException.class, () -> new Surface(ring2, List.of(ring3)));
-        assertThrows(IllegalArgumentException.class,
-                () -> new MultiSurface(List.of(new Surface(ring2, List.of()), new Surface(ring3, List.of()))));
+        assertEquals(Optional.of(number("0.00")), new Arc(xy, xyz, Optional.of(number("0.00"))).radius());
+        var straight = new Straight(xyz);
+        var arc = new Arc(xy, xyz, Optional.empty());
+        assertEquals(List.of(straight, arc), new CurvePart(xy, List.of(straight, arc)).segments());
+        assertEquals(List.of(line2.parts().getFirst(), line3.parts().getFirst()),
+                new Polyline(List.of(line2.parts().getFirst(), line3.parts().getFirst())).parts());
+        assertEquals(List.of(xy, xyz), new MultiCoordinate(List.of(xy, xyz)).coordinates());
+        assertEquals(List.of(line2, line3), new MultiPolyline(List.of(line2, line3)).lines());
+        assertEquals(List.of(line2, line3), new Ring(List.of(line2, line3)).lines());
+        assertEquals(List.of(ring3), new Surface(ring2, List.of(ring3)).holes());
+        var surfaces = List.of(new Surface(ring2, List.of()), new Surface(ring3, List.of()));
+        assertEquals(surfaces, new MultiSurface(surfaces).surfaces());
     }
 
     private static Polyline line(Coordinate start, Coordinate... ends) {

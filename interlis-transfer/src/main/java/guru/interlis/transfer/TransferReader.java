@@ -17,7 +17,12 @@ public abstract class TransferReader implements AutoCloseable {
 
     /** Binds this reader to a nonnull plan. */
     protected TransferReader(TransferPlan plan) {
-        sequence = new TransferSequence(plan);
+        this(plan, false);
+    }
+
+    /** Binds to a nonnull plan. If enabled, declared models cover their directed import closure. */
+    protected TransferReader(TransferPlan plan, boolean includeModelImports) {
+        sequence = new TransferSequence(plan, includeModelImports);
     }
 
     /** Reads one event. Empty means the source ended after a valid EndTransfer.
@@ -49,6 +54,13 @@ public abstract class TransferReader implements AutoCloseable {
             return next;
         } catch (RuntimeException failure) {
             sequence.fail();
+            try {
+                onFailure();
+            } catch (RuntimeException cleanup) {
+                if (cleanup != failure) {
+                    failure.addSuppressed(cleanup);
+                }
+            }
             throw failure;
         }
     }
@@ -56,6 +68,9 @@ public abstract class TransferReader implements AutoCloseable {
     /** Pulls one immutable event or reports the underlying source's end. Long reads
      * should observe the cancellation token. */
     protected abstract Optional<TransferEvent> readEvent(CancellationToken cancellation);
+
+    /** Allows an adapter to drop its operation state on a terminal failure. */
+    protected void onFailure() {}
 
     /** Releases the underlying source once, including after partial or failed reads. */
     protected abstract void release();

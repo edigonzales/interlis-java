@@ -38,11 +38,22 @@ public sealed interface TransferValue permits TransferValue.Text, TransferValue.
         @Override public int hashCode() { return Arrays.hashCode(bytes); }
     }
 
-    /** Serialized XML fragment, possibly empty, with any necessary namespace declarations.
-     * Consumers must parse and validate it before emitting XML. */
-    record XmlFragment(String xml) implements TransferValue {
+    /**
+     * Serialized XML fragment, possibly empty, with the in-scope namespace
+     * bindings of its containing value. Bindings also preserve the interpretation
+     * of textual QNames outside child elements. Consumers must securely parse
+     * the fragment before emitting it. The map is immutable, with unspecified
+     * iteration order. An empty prefix denotes the default namespace.
+     */
+    record XmlFragment(String xml, Map<String, String> namespaceBindings) implements TransferValue {
+        /** Creates a self-contained fragment without additional namespace bindings. */
+        public XmlFragment(String xml) {
+            this(xml, Map.of());
+        }
+
         public XmlFragment {
             Objects.requireNonNull(xml, "xml");
+            namespaceBindings = Map.copyOf(namespaceBindings);
         }
     }
 

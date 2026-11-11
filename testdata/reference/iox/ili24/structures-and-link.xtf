@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- eCH-0031 §§4.3.9.1, 4.3.11.1 and 4.3.11.12. Each LIST item has its own attribute tag. -->
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="urn:reference24">
+  <i:headersection>
+    <i:models><i:model>Reference24</i:model></i:models>
+    <i:sender>interlis-java handwritten fixture</i:sender>
+  </i:headersection>
+  <i:datasection>
+    <Data i:bid="b1">
+      <Parent i:tid="p1"><title>Parent</title></Parent>
+      <Item i:tid="i1">
+        <required>yes</required>
+        <details><Detail><label>second</label></Detail></details>
+        <details><Detail><label>first</label></Detail></details>
+        <count>5</count>
+        <parent i:ref="p1"><Link><note>linked</note></Link></parent>
+      </Item>
+    </Data>
+  </i:datasection>
+</i:transfer>

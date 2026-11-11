@@ -15,14 +15,18 @@ public final class ModulePathContract {
     public static void requireOwnDescriptor(String project, ModuleDescriptor descriptor) {
         if(descriptor.isAutomatic()||descriptor.isOpen()||!descriptor.name().equals(name(project)))
             throw new IllegalStateException("Own runtime module must be explicit and encapsulated: "+project);
-        if(project.equals("interlis-xtf23")) {
+        if(isXtfAdapter(project)) {
             var required=descriptor.requires().stream().map(ModuleDescriptor.Requires::name).collect(java.util.stream.Collectors.toSet());
             if(!required.equals(Set.of("java.base","java.xml","guru.interlis.model","guru.interlis.transfer"))
                     ||descriptor.exports().size()!=1||descriptor.exports().stream().anyMatch(export->
-                        export.isQualified()||!export.source().equals("guru.interlis.xtf23"))||!descriptor.opens().isEmpty())
-                throw new IllegalStateException("Unexpected XTF 2.3 module boundary: "+descriptor);
+                        export.isQualified()||!export.source().equals(name(project)))||!descriptor.opens().isEmpty())
+                throw new IllegalStateException("Unexpected XTF module boundary: "+descriptor);
         }
     }
+    private static boolean isXtfAdapter(String project) {
+        return project.equals("interlis-xtf23") || project.equals("interlis-xtf24");
+    }
+
     public static void main(String[] args) throws Exception {
         if (args.length != 0) throw new IllegalArgumentException("Expected no arguments");
         Path root = Path.of("").toAbsolutePath().normalize();
@@ -42,10 +46,10 @@ public final class ModulePathContract {
             if(!result.explicitDescriptor()||!result.moduleName().orElseThrow().equals(name(project)))throw new IllegalStateException("Wrong own module: "+project);
             own.add(name(project));
             var runtime=ModuleArtifacts.runtime(root,project,outcome);
-            if(project.equals("interlis-transfer")||project.equals("interlis-xtf23")) {
+            if(project.equals("interlis-transfer")||isXtfAdapter(project)) {
                 String prefix="maven/guru.interlis/", version="/"+JvmBuildInputs.projectVersion(root);
                 var expected=new HashSet<>(Set.of(prefix+"interlis-transfer"+version,prefix+"interlis-model"+version));
-                if(project.equals("interlis-xtf23"))expected.add(prefix+project+version);
+                if(isXtfAdapter(project))expected.add(prefix+project+version);
                 var actual=runtime.stream().map(ModuleArtifacts.Artifact::coordinates).collect(java.util.stream.Collectors.toSet());
                 if(!actual.equals(expected))throw new IllegalStateException("Unexpected runtime closure for "+project+": "+actual);
             }
@@ -88,6 +92,7 @@ public final class ModulePathContract {
             "guru.interlis.documentation","guru.interlis.documentation.DocumentationProjector",
             "guru.interlis.transfer","guru.interlis.transfer.TransferPlanner",
             "guru.interlis.xtf23","guru.interlis.xtf23.Xtf23Reader",
+            "guru.interlis.xtf24","guru.interlis.xtf24.Xtf24Reader",
             "guru.interlis.wasm.bridge","guru.interlis.bridge.BridgeDispatcher");
         String extra=String.join("\n",own.stream().filter(entrypoints::containsKey).map(name->
             "if (named && !"+entrypoints.get(name)+".class.getModule().getName().equals(\""+name+"\")) throw new AssertionError(\"Wrong public entrypoint module\");").toList());

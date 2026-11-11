@@ -1,6 +1,6 @@
 # Entwurf für Transfer, Validierung und Datenbanken
 
-Der formatunabhängige Transferkern steht in `interlis-transfer` für INTERLIS 2.3 und 2.4 zur Verfügung. `interlis-xtf23` liest und schreibt XTF-2.3-FULL-Transfers objektweise. Weitere Formatadapter, Datenvalidierung und Datenbankabbildung sind geplant. Die Entwürfe beschreiben mögliche spätere Lösungen; sie sind weder implementierte Produktverträge noch Vorgaben für konkrete Java-Interfaces.
+Der formatunabhängige Transferkern steht in `interlis-transfer` für INTERLIS 2.3 und 2.4 zur Verfügung. `interlis-xtf23` liest und schreibt XTF-2.3-FULL-Transfers objektweise. `interlis-xtf24` liest und schreibt XTF-2.4-FULL-Transfers objektweise. Der implementierte Umfang und die Grenzen stehen in der [Transferanleitung](../usage/transfer.md). Weitere Formatadapter, Datenvalidierung und Datenbankabbildung sind geplant. Die Entwürfe beschreiben mögliche spätere Lösungen; sie sind weder implementierte Produktverträge noch Vorgaben für konkrete Java-Interfaces.
 
 Die Verantwortung wird entlang fachlicher Produkte geschnitten:
 
@@ -100,6 +100,21 @@ Die Zuordnung formatspezifischer Tags gehört zum späteren Adapter. `TransferPl
 `TransferReader.readNext(CancellationToken)` und `TransferWriter.write(...)` prüfen die Folge `StartTransfer`, Baskets mit `StartBasket`, `ObjectEvent` und `EndBasket`, sowie `EndTransfer`. `Optional.empty()` bestätigt das Quellenende nach `EndTransfer`. Ereignisse sind unveränderlich und bleiben nach dem nächsten Aufruf lesbar. Assoziationsereignisse erhalten die Rollen und die eigenen Attribute der Beziehung. Die Einbettung im konkreten Format bestimmt der Adapter.
 
 Ein `TransferObject` hält Identität, Typbezug und Attribut-/Rollenwerte eines einzelnen Objekts. Adapter legen Grössen- und Tiefengrenzen für einzelne Objekte fest. Der Kern hält die Modelldeklarationen, den aktiven Basketkontext und getrennte Mengen für BID und FULL-TID. Der Speicher für diese Kennungen wächst mit ihrer Anzahl und wird bei Transferende, Fehler oder Close freigegeben.
+
+XML-Fragmentwerte halten neben dem serialisierten Inhalt eine unveränderliche
+Map der Namespacebindungen ihres Wertkontexts. Ein leerer Präfix bezeichnet
+den Defaultnamespace. Dadurch bleiben auch rein textuelle QNames interpretierbar.
+XML-Adapter parsen Fragmente sicher und kopieren ihre XML-Ereignisse, bevor sie
+sie in einen Ausgabestrom übernehmen. Technische zusätzliche Präfixbindungen
+und die XML-Serialisierung sind keine bytegetreue Fragmentzusage.
+
+Die neutralen Geometriewerte behalten die Dimension jeder Koordinate sowie
+numerische Radien einschliesslich null bei. Die Konstruktoren sichern
+Nullfreiheit, unveränderliche Komponentenlisten, zwei oder drei Ordinaten pro
+Position und den zweidimensionalen Bogenzwischenpunkt. Übereinstimmende
+Dimensionen, Radiuswerte und Topologie sind fachliche Prüfungen.
+Der XTF-2.3-Adapter erhält seine profilspezifischen Dimensions- und
+Nullradiusregeln an der Wiregrenze.
 
 Der Kern vergleicht die Zeichenwerte innerhalb dieser Namensräume unabhängig von der Herkunft `SOURCE` oder `SYNTHETIC`. Die OID-Regeln für INITIAL und UPDATE gehören zum jeweiligen Transferprofil. Der XTF-2.3-Adapter muss für FULL zusätzlich BID und TID gemeinsam prüfen, auch wenn die gleichlautende Kennung zuerst als TID erscheint. In XTF 2.4 gilt die transferweite Eindeutigkeit der FULL-TIDs und die allgemeine Objektstromregel für Behälter- und Objektidentifikationen. Die Akzeptanz gleicher Zeichenwerte in den getrennten Namensräumen des Kerns trifft keine Aussage über die Gültigkeit einer konkreten XTF-Codierung. [Gepinnte Normbelege und P4.0-Befunde](../reference/iox-legacy.md#normbelege)
 

@@ -29,6 +29,7 @@ import static guru.interlis.transfer.TransferProtocolException.Reason.UNKNOWN_MO
 /** Shared sequence checks with the active basket context and transfer-scoped identity sets. */
 final class TransferSequence {
     private final TransferPlan plan;
+    private final boolean includeModelImports;
     private State state = State.BEFORE_TRANSFER;
     private Set<SymbolRef> declaredModels = Set.of();
     private Set<String> basketIds = new HashSet<>();
@@ -37,8 +38,9 @@ final class TransferSequence {
     private boolean closed;
     private boolean failed;
 
-    TransferSequence(TransferPlan plan) {
+    TransferSequence(TransferPlan plan, boolean includeModelImports) {
         this.plan = Objects.requireNonNull(plan, "plan");
+        this.includeModelImports = includeModelImports;
     }
 
     void requireOpen() {
@@ -118,7 +120,7 @@ final class TransferSequence {
             }
             declared.add(ref);
         }
-        return declared;
+        return includeModelImports ? plan.modelImportClosure(declared) : declared;
     }
 
     private ActiveBasket validateBasket(StartBasket start) {

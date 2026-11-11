@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- eCH-0031 §§4.3.11.13–15. Native multi-values, an arc and explicit boundary roles. -->
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="urn:reference24"
+    xmlns:g="http://www.interlis.ch/geometry/1.0">
+  <i:headersection>
+    <i:models><i:model>Reference24</i:model></i:models>
+    <i:sender>interlis-java handwritten fixture</i:sender>
+  </i:headersection>
+  <i:datasection>
+    <Data i:bid="b1">
+      <Item i:tid="i1">
+        <required>geo</required>
+        <points><g:multicoord>
+          <g:coord><g:c1>1.00</g:c1><g:c2>2.00</g:c2></g:coord>
+          <g:coord><g:c1>3.00</g:c1><g:c2>4.00</g:c2></g:coord>
+        </g:multicoord></points>
+        <trace><g:polyline>
+          <g:coord><g:c1>0.00</g:c1><g:c2>0.00</g:c2></g:coord>
+          <g:arc><g:c1>2.00</g:c1><g:c2>0.00</g:c2><g:a1>1.00</g:a1><g:a2>1.00</g:a2><g:r>1.00</g:r></g:arc>
+        </g:polyline></trace>
+        <traces><g:multipolyline>
+          <g:polyline><g:coord><g:c1>0.00</g:c1><g:c2>0.00</g:c2></g:coord>
+            <g:coord><g:c1>1.00</g:c1><g:c2>1.00</g:c2></g:coord></g:polyline>
+          <g:polyline><g:coord><g:c1>2.00</g:c1><g:c2>2.00</g:c2></g:coord>
+            <g:coord><g:c1>3.00</g:c1><g:c2>3.00</g:c2></g:coord></g:polyline>
+        </g:multipolyline></traces>
+        <shape><g:surface><g:exterior><g:polyline>
+          <g:coord><g:c1>0.00</g:c1><g:c2>0.00</g:c2></g:coord>
+          <g:coord><g:c1>10.00</g:c1><g:c2>0.00</g:c2></g:coord>
+          <g:coord><g:c1>10.00</g:c1><g:c2>10.00</g:c2></g:coord>
+          <g:coord><g:c1>0.00</g:c1><g:c2>10.00</g:c2></g:coord>
+          <g:coord><g:c1>0.00</g:c1><g:c2>0.00</g:c2></g:coord>
+        </g:polyline></g:exterior></g:surface></shape>
+        <shapes><g:multisurface>
+          <g:surface><g:exterior><g:polyline>
+            <g:coord><g:c1>20.00</g:c1><g:c2>20.00</g:c2></g:coord>
+            <g:coord><g:c1>30.00</g:c1><g:c2>20.00</g:c2></g:coord>
+            <g:coord><g:c1>30.00</g:c1><g:c2>30.00</g:c2></g:coord>
+            <g:coord><g:c1>20.00</g:c1><g:c2>30.00</g:c2></g:coord>
+            <g:coord><g:c1>20.00</g:c1><g:c2>20.00</g:c2></g:coord>
+          </g:polyline></g:exterior></g:surface>
+          <g:surface><g:exterior><g:polyline>
+            <g:coord><g:c1>40.00</g:c1><g:c2>40.00</g:c2></g:coord>
+            <g:coord><g:c1>50.00</g:c1><g:c2>40.00</g:c2></g:coord>
+            <g:coord><g:c1>50.00</g:c1><g:c2>50.00</g:c2></g:coord>
+            <g:coord><g:c1>40.00</g:c1><g:c2>50.00</g:c2></g:coord>
+            <g:coord><g:c1>40.00</g:c1><g:c2>40.00</g:c2></g:coord>
+          </g:polyline></g:exterior></g:surface>
+        </g:multisurface></shapes>
+      </Item>
+    </Data>
+  </i:datasection>
+</i:transfer>

@@ -14,7 +14,12 @@ public abstract class TransferWriter implements AutoCloseable {
 
     /** Binds this writer to a nonnull plan. */
     protected TransferWriter(TransferPlan plan) {
-        sequence = new TransferSequence(plan);
+        this(plan, false);
+    }
+
+    /** Binds to a nonnull plan. If enabled, declared models cover their directed import closure. */
+    protected TransferWriter(TransferPlan plan, boolean includeModelImports) {
+        sequence = new TransferSequence(plan, includeModelImports);
     }
 
     /** Writes an event without a cancellation request. */
@@ -36,12 +41,22 @@ public abstract class TransferWriter implements AutoCloseable {
             writeEvent(event, cancellation);
         } catch (RuntimeException failure) {
             sequence.fail();
+            try {
+                onFailure();
+            } catch (RuntimeException cleanup) {
+                if (cleanup != failure) {
+                    failure.addSuppressed(cleanup);
+                }
+            }
             throw failure;
         }
     }
 
     /** Writes one checked event to the destination. Long writes should observe cancellation. */
     protected abstract void writeEvent(TransferEvent event, CancellationToken cancellation);
+
+    /** Allows an adapter to drop its operation state on a terminal failure. */
+    protected void onFailure() {}
 
     /** Releases the destination once, including after partial or failed writes. */
     protected abstract void release();

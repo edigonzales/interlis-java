@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
+    xmlns="http://www.interlis.ch/xtf/2.4/Generic24" xmlns:g="http://www.interlis.ch/geometry/1.0">
+  <i:headersection><i:models><i:model>Generic24</i:model></i:models>
+    <i:sender>interlis-java handwritten fixture</i:sender></i:headersection>
+  <i:datasection>
+    <Data i:bid="b1" i:domains="Generic24.G=Generic24.A">
+      <Item i:tid="i1"><point><g:coord><g:c1>10.00</g:c1><g:c2>20.00</g:c2></g:coord></point></Item>
+    </Data>
+    <Data i:bid="b2" i:domains="Generic24.G=Generic24.B">
+      <Item i:tid="i2"><point><g:coord><g:c1>250.00</g:c1><g:c2>260.00</g:c2></g:coord></point></Item>
+    </Data>
+  </i:datasection>
+</i:transfer>
