@@ -90,7 +90,7 @@ final class DistributionChecks {
         var capabilities = run(folder, List.of(cli, "capabilities"));
         capabilities.requireExit(0);
         var info = (Map<?, ?>) Json.parse(capabilities.stdout());
-        require("0.3".equals(info.get("apiVersion")) && "interlis.compiler/1.0".equals(info.get("protocol")),
+        require("0.4".equals(info.get("apiVersion")) && "interlis.compiler/1.0".equals(info.get("protocol")),
                 "Unexpected SDK capabilities");
         Files.copy(root.resolve("testdata/models/broken24.ili"), folder.resolve("Ungültig.ili"));
         var diagnostic = run(folder, List.of(cli, "check", "--json", "--color=always", "Ungültig.ili"));
