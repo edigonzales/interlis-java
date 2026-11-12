@@ -2,6 +2,7 @@ package guru.interlis.validation;
 
 import guru.interlis.model.ConstraintSymbol;
 import guru.interlis.model.Symbol;
+import guru.interlis.model.SymbolId;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
@@ -23,7 +24,8 @@ record ObjectValidationPlan(ObjectDescriptor descriptor, List<FieldRule> fields,
     }
 
     /** Rules for the value itself at depth zero and collection elements at higher depths. */
-    record ValueRules(int depth, TypeDescriptor type, Optional<Symbol> requiredDeclaration,
+    record ValueRules(int depth, TypeDescriptor type, Optional<SymbolId> genericDomain,
+                      Optional<Symbol> requiredDeclaration,
                       List<ConstraintSymbol> constraints, Set<List<String>> enumerationValues) {
         ValueRules {
             constraints = List.copyOf(constraints);

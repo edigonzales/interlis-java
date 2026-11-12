@@ -5,6 +5,11 @@ import guru.interlis.compiler.CompilationRequest;
 import guru.interlis.compiler.CompilerEngines;
 import guru.interlis.compiler.CompilerOptions;
 import guru.interlis.compiler.ModelSelector;
+import guru.interlis.compiler.ImportBinding;
+import guru.interlis.compiler.ImportResolution;
+import guru.interlis.compiler.ImportSite;
+import guru.interlis.compiler.ModelLocation;
+import guru.interlis.compiler.ResolutionFingerprint;
 import guru.interlis.compiler.SourceSet;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.CompiledSchema;
@@ -15,6 +20,9 @@ import guru.interlis.model.SchemaFingerprint;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
+import guru.interlis.syntax.ParseMode;
+import guru.interlis.syntax.ParseOptions;
+import guru.interlis.syntax.SyntaxServices;
 import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferPlanner;
 import guru.interlis.transfer.TransferPlanningResult;
@@ -144,12 +152,32 @@ class ValidationPlannerTest {
         return compile(model, new SourceRevision(1), "Checks");
     }
 
+    static CompiledSchema compileWithOriginImport(String model) {
+        var id = new SourceId("memory:/Checks.ili");
+        var source = new SourceText(id, new SourceRevision(1), model);
+        var parsed = SyntaxServices.create().parse(source, ParseOptions.defaults(ParseMode.EDITOR),
+                CancellationToken.none());
+        var origin = parsed.root().models().getFirst();
+        var checks = parsed.root().models().getLast();
+        var site = new ImportSite(checks.imports().getFirst().range(), "Checks", "Origin");
+        var location = new ModelLocation(id, source.revision(), "Origin",
+                Optional.of(origin.modelVersion()), origin.range().startOffset());
+        var sources = SourceSet.of(Map.of(id, source),
+                List.of(new ImportBinding(site, new ImportResolution.Resolved(location))),
+                List.of(), ResolutionFingerprint.none());
+        return compile(sources, "Checks");
+    }
+
     private static CompiledSchema compile(String model, SourceRevision revision, String... roots) {
         var id = new SourceId("memory:/Checks.ili");
         var source = new SourceText(id, revision, model);
+        return compile(SourceSet.of(Map.of(id, source)), roots);
+    }
+
+    private static CompiledSchema compile(SourceSet sources, String... roots) {
         List<ModelSelector> selectors = java.util.Arrays.stream(roots)
                 .map(name -> (ModelSelector) new ModelSelector.ByName(name, Optional.empty(), Optional.empty())).toList();
-        var request = new CompilationRequest(selectors, SourceSet.of(Map.of(id, source)), CompilerOptions.defaults());
+        var request = new CompilationRequest(selectors, sources, CompilerOptions.defaults());
         var result = CompilerEngines.create().compile(request, CancellationToken.none());
         return assertInstanceOf(CompilationOutcome.Succeeded.class, result,
                 () -> result instanceof CompilationOutcome.Rejected rejected

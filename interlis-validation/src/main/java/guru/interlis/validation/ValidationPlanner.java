@@ -119,7 +119,7 @@ public final class ValidationPlanner {
                 var constraints = rules(object, Optional.empty(), 0, ancestry(object));
                 objects.put(object.symbol(), new ObjectValidationPlan(object, fields, constraints));
             }
-            return new ValidationPlan(transfer, objects, unchecked);
+            return new ValidationPlan(transfer, graph, objects, unchecked);
         }
 
         private ObjectValidationPlan.FieldRule field(ObjectDescriptor object, AttributeSlot slot) {
@@ -128,13 +128,20 @@ public final class ValidationPlanner {
             for (int depth = 0; ; depth++) {
                 Optional<Symbol> required = Optional.empty();
                 Set<SymbolId> domains = new HashSet<>();
+                Optional<SymbolId> genericDomain = Optional.empty();
                 var type = type(valueType, slot.symbol());
                 while (type instanceof DomainReferenceType reference) {
                     var domain = domain(reference.targetDomain(), slot.symbol());
+                    if (domain.generic()) {
+                        genericDomain = Optional.of(domain.id());
+                    }
                     type = type(domain.typeId(), slot.symbol());
                     for (;;) {
                         if (!domains.add(domain.id())) {
                             break;
+                        }
+                        if (domain.generic() && genericDomain.isEmpty()) {
+                            genericDomain = Optional.of(domain.id());
                         }
                         if (required.isEmpty() && domain.mandatory()) {
                             required = Optional.of(domain);
@@ -148,7 +155,7 @@ public final class ValidationPlanner {
                 if (required.isEmpty() && depth == 0 && slot.attribute().mandatory()) {
                     required = Optional.of(slot.attribute());
                 }
-                values.add(new ObjectValidationPlan.ValueRules(depth, type, required,
+                values.add(new ObjectValidationPlan.ValueRules(depth, type, genericDomain, required,
                         rules(object, Optional.of(slot.symbol()), depth, domains),
                         type instanceof EnumerationType enumeration
                                 ? enumValues.computeIfAbsent(type.id(), id -> ScalarRules.enumerationValues(enumeration))

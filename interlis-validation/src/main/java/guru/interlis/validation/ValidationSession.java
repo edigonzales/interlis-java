@@ -4,16 +4,27 @@ import guru.interlis.diagnostics.Severity;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.CardinalityUpper;
 import guru.interlis.model.CollectionType;
+import guru.interlis.model.CoordinateType;
+import guru.interlis.model.GeometryType;
+import guru.interlis.model.Modifier;
+import guru.interlis.model.OidRule;
+import guru.interlis.model.OidType;
 import guru.interlis.model.Origin;
 import guru.interlis.model.StructureValueType;
 import guru.interlis.model.Symbol;
+import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
+import guru.interlis.model.TopicSymbol;
+import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRange;
 import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferObject;
+import guru.interlis.transfer.TransferGeometry;
+import guru.interlis.transfer.TopicDescriptor;
+import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.TransferValue;
 
 import java.math.BigInteger;
@@ -72,6 +83,7 @@ public final class ValidationSession implements AutoCloseable {
                 case TransferEvent.StartBasket start -> {
                     require(State.BETWEEN_BASKETS);
                     basket = BasketContext.of(start, plan);
+                    checkBasketIdentity();
                     baskets = Math.incrementExact(baskets);
                     state = State.IN_BASKET;
                 }
@@ -108,8 +120,7 @@ public final class ValidationSession implements AutoCloseable {
             var report = new ValidationReport(violations == 0 ? PASSED_CHECKED_SCOPE : FAILED_CHECKED_SCOPE,
                     baskets, objects, violations, examples,
                     new ValidationCoverage(counts(checked), plan.uncheckedRules(), counts(incomplete),
-                            counts(missingRuntime), counts(unsupported), List.copyOf(EnumSet.of(IDENTITY, GEOMETRY_VALUES,
-                                    LOCAL_CONSTRAINTS, LOCAL_UNIQUENESS, REFERENTIAL_INTEGRITY, TOPOLOGY))));
+                            counts(missingRuntime), counts(unsupported), List.copyOf(EnumSet.of(LOCAL_CONSTRAINTS, LOCAL_UNIQUENESS, REFERENTIAL_INTEGRITY, TOPOLOGY))));
             clear();
             state = State.FINISHED;
             return report;
@@ -136,7 +147,8 @@ public final class ValidationSession implements AutoCloseable {
         if (objectPlan == null || !objectPlan.descriptor().transferable()) {
             throw new ValidationStreamException("Object type does not belong to the validation plan");
         }
-        long visited = checkValueBudget(object, cancellation);
+        checkObjectIdentity(object, objectPlan);
+        var budget = new ObjectBudget(cancellation, checkValueBudget(object, cancellation));
         var stack = new ArrayDeque<Iterator<PendingValue>>();
         stack.push(fields(objectPlan, object.data(), null));
         boolean delete = event.operation().orElse(null) == TransferEvent.Operation.DELETE;
@@ -149,11 +161,30 @@ public final class ValidationSession implements AutoCloseable {
                 stack.pop();
                 continue;
             }
-            visited = visit(visited);
+            budget.consume();
             var pending = iterator.next();
-            var children = check(object, pending, delete, partial);
+            var children = check(object, pending, delete, partial, budget);
             if (children.isPresent()) {
                 stack.push(children.orElseThrow());
+            }
+        }
+        checkRoles(object, objectPlan, budget);
+    }
+
+    private void checkRoles(TransferObject object, ObjectValidationPlan objectPlan, ObjectBudget budget) {
+        for (var slot : objectPlan.descriptor().slots()) {
+            if (!(slot instanceof RoleSlot role)) {
+                continue;
+            }
+            budget.consume();
+            var value = object.value(role.symbol());
+            if (value.isEmpty() || value.orElseThrow() == TransferValue.Undefined.INSTANCE) {
+                continue;
+            }
+            checked.merge(new SlotKey(object.type(), role.symbol(), VALUE_FAMILY), 1L, Math::addExact);
+            if (!(value.orElseThrow() instanceof TransferValue.Reference)) {
+                violation(object, new ValuePath(null, new DataLocation.Slot(role.symbol())), role.role(), TYPE_MISMATCH,
+                        List.of("REFERENCE", value.orElseThrow().getClass().getSimpleName()));
             }
         }
     }
@@ -165,7 +196,7 @@ public final class ValidationSession implements AutoCloseable {
     }
 
     private Optional<Iterator<PendingValue>> check(TransferObject object, PendingValue pending, boolean delete,
-                                                   boolean partial) {
+                                                   boolean partial, ObjectBudget budget) {
         var field = pending.field();
         var rules = field.values().get(pending.depth());
         var value = pending.value();
@@ -201,7 +232,12 @@ public final class ValidationSession implements AutoCloseable {
             }
             return Optional.empty();
         }
-        switch (ValueFamilies.match(rules.type(), actual)) {
+        var type = rules.genericDomain().map(this::concreteDomain).orElse(Optional.of(rules.type()));
+        if (type.isEmpty()) {
+            count(missingRuntime, pending, GEOMETRY_VALUES);
+        }
+        var effective = type.orElse(rules.type());
+        switch (ValueFamilies.match(effective, actual)) {
             case UNSUPPORTED -> {
                 count(unsupported, pending, VALUE_FAMILY);
                 return Optional.empty();
@@ -209,10 +245,32 @@ public final class ValidationSession implements AutoCloseable {
             case NO -> {
                 count(checked, pending, VALUE_FAMILY);
                 violation(object, pending, field.slot().attribute(), TYPE_MISMATCH,
-                        List.of(rules.type().kind().name(), actual.getClass().getSimpleName()));
+                        List.of(effective.kind().name(), actual.getClass().getSimpleName()));
                 return Optional.empty();
             }
             case YES -> count(checked, pending, VALUE_FAMILY);
+        }
+        if (actual instanceof TransferGeometry geometry) {
+            geometry(object, pending, effective, geometry, partial, type.isPresent(), budget);
+            return Optional.empty();
+        }
+        if (effective instanceof OidType oid && actual instanceof TransferValue.Oid valueOid) {
+            boolean applied = OidRules.check(plan, oid, valueOid.lexeme(), (code, arguments) ->
+                    violation(object, pending, field.slot().attribute(), code, arguments));
+            count(applied ? checked : unsupported, pending, IDENTITY);
+            return Optional.empty();
+        }
+        if (actual instanceof TransferValue.ClassName || actual instanceof TransferValue.AttributePath) {
+            var result = ModelValueRules.check(plan, effective, actual);
+            if (result == ModelValueRules.Result.UNKNOWN) {
+                count(missingRuntime, pending, VALUE_RANGE);
+            } else {
+                count(checked, pending, VALUE_RANGE);
+                if (result == ModelValueRules.Result.INVALID) {
+                    violation(object, pending, field.slot().attribute(), MODEL_VALUE_NOT_ALLOWED, List.of());
+                }
+            }
+            return Optional.empty();
         }
         var coverage = ScalarRules.check(rules, actual, textLength, field.slot().attribute().languageVersion(),
                 field.charset(), (code, arguments) -> violation(object, pending, field.slot().attribute(), code, arguments));
@@ -243,23 +301,108 @@ public final class ValidationSession implements AutoCloseable {
         return Optional.empty();
     }
 
+    private Optional<TypeDescriptor> concreteDomain(SymbolId generic) {
+        var concrete = basket.domains().get(generic);
+        return concrete == null ? Optional.empty() : plan.domainType(concrete);
+    }
+
+    private void geometry(TransferObject object, PendingValue pending, TypeDescriptor type,
+                          TransferGeometry value, boolean partial, boolean concrete, ObjectBudget budget) {
+        final CoordinateType vertices;
+        final List<String> forms;
+        if (type instanceof CoordinateType coordinate) {
+            if (coordinate.multiCoordinate() != (value instanceof TransferGeometry.MultiCoordinate)) {
+                violation(object, pending, pending.field().slot().attribute(), TYPE_MISMATCH,
+                        List.of(coordinate.multiCoordinate() ? "MULTICOORD" : "COORD", value.getClass().getSimpleName()));
+                return;
+            }
+            vertices = concrete ? coordinate : null;
+            forms = List.of();
+        } else if (type instanceof GeometryType geometry) {
+            if (!GeometryRules.accepts(geometry, value, partial)) {
+                violation(object, pending, pending.field().slot().attribute(), TYPE_MISMATCH,
+                        List.of(geometry.geometryKind().name(), value.getClass().getSimpleName()));
+                return;
+            }
+            vertices = geometry.vertexDomain().flatMap(id -> {
+                var symbol = plan.symbol(id).orElse(null);
+                if (symbol instanceof guru.interlis.model.DomainSymbol domain && domain.generic()) {
+                    return concreteDomain(id);
+                }
+                return plan.domainType(id);
+            }).filter(CoordinateType.class::isInstance).map(CoordinateType.class::cast).orElse(null);
+            forms = geometry.lineForms().stream().map(id -> {
+                var origin = plan.symbol(id).orElseThrow().origin();
+                return origin instanceof Origin.PredefinedOrigin predefined ? predefined.key() : "custom";
+            }).toList();
+        } else {
+            return;
+        }
+        var rules = new GeometryRules(vertices, forms, budget::consume, (code, suffix, arguments) -> {
+            var path = pending.path();
+            for (var step : suffix) {
+                path = new ValuePath(path, step);
+            }
+            violation(object, path, pending.field().slot().attribute(), code, arguments);
+        });
+        if (rules.check(value)) {
+            count(checked, pending, GEOMETRY_VALUES);
+        } else if (concrete) {
+            count(vertices == null ? missingRuntime : unsupported, pending, GEOMETRY_VALUES);
+        }
+    }
+
+    private void checkBasketIdentity() {
+        var rule = basket.topic().oidRules().stream().filter(OidRule::basket).findFirst();
+        if (rule.isPresent()) {
+            var event = basket.start();
+            var data = new DataLocation(source, event.id(), Optional.empty(), Optional.empty(), Optional.empty(), List.of());
+            identity(rule.orElseThrow(), basket.topic().symbol(), event.stableOid(), data);
+        }
+    }
+
+    private void checkObjectIdentity(TransferObject object, ObjectValidationPlan objectPlan) {
+        var descriptor = objectPlan.descriptor();
+        var rule = descriptor.oidRules().stream().filter(candidate -> !candidate.basket()).findFirst();
+        if (rule.isEmpty() && descriptor.kind() == SymbolKind.CLASS) {
+            rule = basket.topic().oidRules().stream().filter(candidate -> !candidate.basket()).findFirst();
+        }
+        var id = object.identity();
+        if (rule.isPresent() && rule.orElseThrow().domain().isPresent()) {
+            var data = location(object, List.of());
+            identity(rule.orElseThrow(), object.type(), id.oid().map(oid -> oid.value()), data);
+            if (id.oid().isPresent() && id.tid().isEmpty()) {
+                diagnostic(REQUIRED_TID_MISSING, data, ruleLocation(object.type(), rule.orElseThrow().origin()), List.of());
+            }
+        } else if (rule.isEmpty() && descriptor.modifiers().contains(Modifier.OID) && id.tid().isEmpty()) {
+            var declaration = plan.symbol(object.type().symbol()).orElseThrow();
+            diagnostic(REQUIRED_TID_MISSING, location(object, List.of()),
+                    ruleLocation(object.type(), declaration.origin()), List.of());
+        }
+    }
+
+    private void identity(OidRule rule, SymbolRef owner, Optional<String> value, DataLocation data) {
+        var domain = plan.ref(rule.domain().orElseThrow());
+        var key = new SlotKey(owner, domain, IDENTITY);
+        var location = ruleLocation(domain, rule.origin());
+        if (value.isEmpty()) {
+            checked.merge(key, 1L, Math::addExact);
+            diagnostic(REQUIRED_OID_MISSING, data, location, List.of());
+        } else if (plan.domainType(domain.symbol()).orElse(null) instanceof OidType oid
+                && OidRules.check(plan, oid, value.orElseThrow(),
+                    (code, arguments) -> diagnostic(code, data, location, arguments))) {
+            checked.merge(key, 1L, Math::addExact);
+        } else {
+            unsupported.merge(key, 1L, Math::addExact);
+        }
+    }
+
     private boolean assignable(StructureValueType type, ObjectValidationPlan child) {
         var descriptor = child.descriptor();
         if (descriptor.kind() != SymbolKind.STRUCTURE || descriptor.modifiers().contains(guru.interlis.model.Modifier.ABSTRACT)) {
             return false;
         }
-        if (type.targetRoots().isEmpty()) {
-            return true;
-        }
-        for (;;) {
-            if (type.targetRoots().contains(descriptor.symbol().symbol())) {
-                return true;
-            }
-            if (descriptor.baseType().isEmpty()) {
-                return false;
-            }
-            descriptor = plan.transferPlan().object(descriptor.baseType().orElseThrow()).orElseThrow();
-        }
+        return ModelValueRules.specializes(plan, descriptor, type.targetRoots());
     }
 
     private void cardinality(TransferObject object, PendingValue pending, CollectionType collection, int size) {
@@ -314,25 +457,47 @@ public final class ValidationSession implements AutoCloseable {
 
     private void violation(TransferObject object, PendingValue pending, Symbol declaration,
                            ValidationCode code, List<String> arguments) {
-        violations = Math.incrementExact(violations);
-        if (examples.size() >= options.maxDiagnosticExamples()) {
+        violation(object, pending.path(), declaration, code, arguments);
+    }
+
+    private void violation(TransferObject object, ValuePath at, Symbol declaration,
+                           ValidationCode code, List<String> arguments) {
+        if (!retainExample()) {
             return;
         }
-        var identity = object.identity();
         var path = new ArrayList<DataLocation.Step>();
-        for (var step = pending.path(); step != null; step = step.parent()) {
+        for (var step = at; step != null; step = step.parent()) {
             path.add(step.step());
         }
-        var location = new DataLocation(identity.source().or(() -> source), identity.currentBasket(),
-                identity.tid(), identity.oid(), object.type(), path.reversed());
-        Optional<SourceRange> range = switch (declaration.origin()) {
+        examples.add(new ValidationDiagnostic(code, Severity.ERROR, location(object, path.reversed()),
+                ruleLocation(plan.ref(declaration.id()), declaration.origin()), arguments));
+    }
+
+    private void diagnostic(ValidationCode code, DataLocation data, RuleLocation rule, List<String> arguments) {
+        if (retainExample()) {
+            examples.add(new ValidationDiagnostic(code, Severity.ERROR, data, rule, arguments));
+        }
+    }
+
+    private boolean retainExample() {
+        violations = Math.incrementExact(violations);
+        return examples.size() < options.maxDiagnosticExamples();
+    }
+
+    private DataLocation location(TransferObject object, List<DataLocation.Step> path) {
+        var identity = object.identity();
+        return new DataLocation(identity.source().or(() -> source), identity.currentBasket(),
+                identity.tid(), identity.oid(), Optional.of(object.type()), path);
+    }
+
+    private static RuleLocation ruleLocation(SymbolRef declaration, Origin origin) {
+        Optional<SourceRange> range = switch (origin) {
             case Origin.DeclaredOrigin declared -> Optional.of(declared.range());
             case Origin.OverlayOrigin overlay -> overlay.range();
             case Origin.SyntheticOrigin synthetic -> synthetic.range();
             case Origin.DerivedOrigin _, Origin.PredefinedOrigin _ -> Optional.empty();
         };
-        examples.add(new ValidationDiagnostic(code, Severity.ERROR, location,
-                new RuleLocation(new SymbolRef(plan.snapshotId(), declaration.id()), range), arguments));
+        return new RuleLocation(declaration, range);
     }
 
     private static List<ValidationCoverage.RuleCount> counts(Map<SlotKey, Long> counts) {
@@ -369,20 +534,51 @@ public final class ValidationSession implements AutoCloseable {
     private record PendingValue(SymbolRef owner, ObjectValidationPlan.FieldRule field, int depth,
                                 Optional<TransferValue> value, ValuePath path) { }
 
-    private record BasketContext(TransferEvent.StartBasket start, Map<SymbolRef, SymbolRef> domains) {
+    private final class ObjectBudget {
+        private final CancellationToken cancellation;
+        private long visited;
+
+        private ObjectBudget(CancellationToken cancellation, long visited) {
+            this.cancellation = cancellation;
+            this.visited = visited;
+        }
+
+        void consume() {
+            cancellation.throwIfCancellationRequested();
+            visited = visit(visited);
+        }
+    }
+
+    private record BasketContext(TransferEvent.StartBasket start, TopicDescriptor topic,
+                                 Map<SymbolId, SymbolId> domains) {
         static BasketContext of(TransferEvent.StartBasket event, ValidationPlan plan) {
-            if (!plan.snapshotId().equals(event.topic().snapshot())) {
-                throw new ValidationStreamException("Basket topic belongs to another snapshot");
-            }
-            Map<SymbolRef, SymbolRef> domains = new LinkedHashMap<>();
+            var topic = plan.transferPlan().topic(event.topic())
+                    .orElseThrow(() -> new ValidationStreamException("Basket topic does not belong to the plan"));
+            Map<SymbolId, SymbolId> supplied = new LinkedHashMap<>();
             for (var binding : event.domainBindings()) {
                 if (!plan.snapshotId().equals(binding.generic().snapshot())
                         || !plan.snapshotId().equals(binding.concrete().snapshot())
-                        || domains.putIfAbsent(binding.generic(), binding.concrete()) != null) {
+                        || supplied.putIfAbsent(binding.generic().symbol(), binding.concrete().symbol()) != null) {
                     throw new ValidationStreamException("Invalid basket domain binding");
                 }
             }
-            return new BasketContext(event, Map.copyOf(domains));
+            Map<SymbolId, SymbolId> selected = new LinkedHashMap<>();
+            for (var binding : topic.genericBindings()) {
+                var concrete = supplied.remove(binding.genericDomain());
+                if (concrete == null && binding.state() == TopicSymbol.BindingState.CONCRETE) {
+                    concrete = binding.alternatives().getFirst();
+                }
+                if (concrete != null) {
+                    if (!binding.alternatives().contains(concrete)) {
+                        throw new ValidationStreamException("Basket domain binding is outside the topic alternatives");
+                    }
+                    selected.put(binding.genericDomain(), concrete);
+                }
+            }
+            if (!supplied.isEmpty()) {
+                throw new ValidationStreamException("Unexpected basket domain binding");
+            }
+            return new BasketContext(event, topic, Map.copyOf(selected));
         }
     }
 }

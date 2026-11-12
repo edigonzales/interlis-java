@@ -30,6 +30,12 @@ public record ValidationDiagnostic(ValidationCode code, Severity severity, DataL
             case VALUE_OUT_OF_RANGE -> "Value is outside its model range.";
             case ENUM_VALUE_NOT_ALLOWED -> "Enumeration value is outside its model domain.";
             case INVALID_TEMPORAL_VALUE -> "Value does not match its calendar or time domain.";
+            case INVALID_OID -> "Identifier does not match its OID domain.";
+            case REQUIRED_OID_MISSING -> "The required stable identifier is absent.";
+            case REQUIRED_TID_MISSING -> "The required transfer identifier is absent.";
+            case COORDINATE_DIMENSION_MISMATCH -> "Coordinate has the wrong number of axes.";
+            case SEGMENT_FORM_NOT_ALLOWED -> "Segment form is not allowed by the model.";
+            case MODEL_VALUE_NOT_ALLOWED -> "Model name is outside the allowed type or attribute path.";
             case STRUCTURE_TYPE_MISMATCH -> "Structure type is outside the allowed hierarchy.";
         };
     }
