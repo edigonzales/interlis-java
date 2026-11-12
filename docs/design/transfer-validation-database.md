@@ -1,6 +1,6 @@
 # Entwurf für Transfer, Validierung und Datenbanken
 
-Der formatunabhängige Transferkern steht in `interlis-transfer` für INTERLIS 2.3 und 2.4 zur Verfügung. `interlis-xtf23` liest und schreibt XTF-2.3-FULL-Transfers objektweise. `interlis-xtf24` liest und schreibt XTF-2.4-FULL-Transfers objektweise. Der implementierte Umfang und die Grenzen stehen in der [Transferanleitung](../usage/transfer.md). Weitere Formatadapter, Datenvalidierung und Datenbankabbildung sind geplant. Die Entwürfe beschreiben mögliche spätere Lösungen; sie sind weder implementierte Produktverträge noch Vorgaben für konkrete Java-Interfaces.
+Der formatunabhängige Transferkern steht in `interlis-transfer` für INTERLIS 2.3 und 2.4 zur Verfügung. `interlis-xtf23` liest und schreibt XTF-2.3-FULL-Transfers objektweise. `interlis-xtf24` liest und schreibt XTF-2.4-FULL-Transfers objektweise. Der implementierte Umfang und die Grenzen stehen in der [Transferanleitung](../usage/transfer.md). Lokale Datenvalidierung steht in `interlis-validation` zur Verfügung. Weitere Formatadapter, transferweite Validierung und Datenbankabbildung sind geplant. Die Entwürfe beschreiben mögliche spätere Lösungen; sie sind weder implementierte Produktverträge noch Vorgaben für konkrete Java-Interfaces.
 
 Die Verantwortung wird entlang fachlicher Produkte geschnitten:
 
@@ -13,7 +13,7 @@ CompiledSchema + explizite Verbraucheroptionen
 
 Ein `CompiledSchema` bleibt ein unveränderliches, fachlich geprüftes Modell. Projektionen erzeugen weitere unveränderliche Pläne. Laufzeitdaten, Caches, Objektidentitäten, Datenbankverbindungen und Zwischenergebnisse einer Datenvalidierung gehören in laufgebundene Kontexte.
 
-`interlis-transfer` verwendet die öffentliche, snapshotgebundene Modellsicht. Als weitere Verbraucher sind `interlis-validation` und `interlis-db` vorgesehen. Der Compiler stellt die Modellinformationen bereit und belegt sie mit Metamodell- und Projektionstests.
+`interlis-transfer` verwendet die öffentliche, snapshotgebundene Modellsicht. `interlis-validation` verwendet die Modellsicht und den neutralen Transferkern. `interlis-db` ist ein geplanter Verbraucher. Der Compiler stellt die Modellinformationen bereit und belegt sie mit Metamodell- und Projektionstests.
 
 <a id="gemeinsame-planverträge"></a>
 ## Gemeinsame Planverträge
@@ -186,7 +186,10 @@ Funktionsdeklaration allein stellt keine Laufzeitimplementation bereit.
 
 Diese Tabelle legt keine ungeprüften Einzelregeln der INTERLIS-Norm fest. Der Agent ordnet jede tatsächlich implementierte Normregel anhand ihrer benötigten Information zu und hinterlegt eine Referenz sowie Tests.
 
-`ValidationMode` erhält mindestens `FULL` und `LOCAL_ONLY`. `ValidationCoverage` zählt geprüfte Regeln und führt ausgelassene Regelklassen samt Grund auf. Ein fehlerfreier `LOCAL_ONLY`-Lauf ergibt `PASSED_CHECKED_SCOPE`, nicht `VALID` für den gesamten Transfer.
+Das verfügbare Profil prüft lokale Regeln. `ValidationCoverage` zählt
+ausgeführte Regeln und führt ausgelassene Regeln samt Grund auf.
+`PASSED_CHECKED_SCOPE` bescheinigt nur den geprüften Umfang.
+Ein vollständiges Prüfprofil ist Gegenstand eines späteren Ausbaus.
 
 <a id="laufzeitklassen-und-methoden"></a>
 ### Laufzeit und Diagnosen
@@ -367,7 +370,7 @@ Das alte Werkzeug hat zwei lange Namen auf gespeicherte unterschiedliche SQL-Nam
 <a id="anforderungen-an-die-heutige-compilersicht"></a>
 ## Anforderungen an die heutige Compilersicht
 
-Die heutigen Compilerverträge müssen die Metamodellinformationen und Grenzen dieses Dokuments berücksichtigen. Die Tests zeigen, dass mindestens eine kompakte Projektion aus dem geprüften Schema erzeugt werden kann und ein begrenzter Verbraucher fehlende Fähigkeiten korrekt meldet. Vollständiges XTF-I/O, ausführbare Geometrievalidierung und JDBC-Schemaerzeugung gehören zu den geplanten Verbrauchern.
+Die heutigen Compilerverträge müssen die Metamodellinformationen und Grenzen dieses Dokuments berücksichtigen. Die Tests zeigen, dass mindestens eine kompakte Projektion aus dem geprüften Schema erzeugt werden kann und ein begrenzter Verbraucher fehlende Fähigkeiten korrekt meldet. Weitere Transferprofile, Geometrietopologie und JDBC-Schemaerzeugung gehören zum geplanten Ausbau.
 
 Die Verbraucher werden als eigene Implementierungen geliefert. Die Compilerarbeit bewahrt ihre Eingabeverträge und fachlichen Modellinformationen.
 

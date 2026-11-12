@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="http://www.interlis.ch/xtf/2.4/Checks">
+  <i:headersection><i:models><i:model>Checks</i:model></i:models>
+    <i:sender>validation fixture</i:sender></i:headersection>
+  <i:datasection>
+    <Data i:bid="b1" i:domains="Checks.G=Checks.Local">
+      <Item i:tid="i1"><code>abc</code><count>2</count><active>true</active></Item>
+      <Item i:tid="i2"><code>def</code><count>2</count><active>true</active></Item>
+    </Data>
+  </i:datasection>
+</i:transfer>

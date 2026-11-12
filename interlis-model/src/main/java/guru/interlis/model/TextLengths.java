@@ -1,14 +1,15 @@
-package guru.interlis.compiler.internal;
+package guru.interlis.model;
 
-/** INTERLIS 2.4 text length: CCC=0 code points after canonical decomposition.
+/** INTERLIS text length: CCC=0 code points after canonical decomposition.
  * Data comes from Unicode 17.0.0 and is checked by UnicodeWeightsTest.
  * Copyright Unicode, Inc.; see testdata/reference/unicode/17.0.0/UNICODE-LICENSE.txt.
  * Ordering decomposed marks does not
  * change the count. Source strings and UTF-16 positions are never normalized.
  */
-final class TextLengths {
+public final class TextLengths {
     private TextLengths() { }
-    static int canonicalLength(String text) {
+    /** Counts canonical starters in non-null text without changing its contents. */
+    public static int canonicalLength(String text) {
         java.util.Objects.requireNonNull(text, "text");
         int result=0;
         for(int i=0;i<text.length();) {

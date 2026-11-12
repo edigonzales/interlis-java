@@ -62,6 +62,49 @@ Compiler-, Reuse- und Diagrammtests laden die Modellquellen direkt.
 | <a id="decision-36"></a>**Fremde Signaturklasse bei Grafikregeln** | [2.3 §2.16, S.71][ref-norm23-p71]; [2.4 §3.16, S.92–93][ref-norm24-p92]: Die verantwortliche Signaturklasse ergibt sich aus Metaobjekt und verwendeten Parametern; sie muss mit der deklarierten OF-Klasse in einer passenden Vererbungskette liegen. | Akzeptiert auch die geprüfte fremde Klasse. | Akzeptiert passende Basis-/Unterklassen, lehnt die fremde Klasse ab. **Verantwortlichkeit fachlich prüfen.** |
 | <a id="decision-37"></a>**Wiederholte Metadaten und mehrzeilige `!!@`-Strings** | Projektprofil: [Quell-Metaattribute](sources-and-syntax.md#quell-metaattribute-und-dokumentation). Die Normkapitel [2.3 §2.2.8.1, S.25][ref-norm23-p25]; [2.4 §3.2.8.1, S.31][ref-norm24-p31] definieren Zeilenkommentare, aber keinen öffentlichen `fn.param`-Mehrfachwertvertrag. Unser ursprüngliches Kommentarprofil war enger. | Kein gleichwertiger öffentlicher Mehrfachwertvertrag wurde als Referenzgleichheit abgenommen. | **Vom Nutzer freigegebener Kompatibilitätsfix:** mehrere unterschiedliche `fn.param` an Funktionen und Stringfortsetzungen erlauben; sonstige Skalarkonflikte bleiben Fehler. |
 
+## Lokale Datenwerte
+
+Der Validator zählt TEXT und MTEXT gemäss 2.3 §2.8.1 und 2.4 §3.8.1
+mit Unicode 17.0.0. Die Länge entspricht der Zahl der Zeichen mit
+kanonischer Kombinationsklasse 0 nach kanonischer Zerlegung. Ein Wert mit
+Länge 0 ist fachlich undefiniert. Die TEXT-/MTEXT-Steuerzeichenregel gilt unabhängig vom Repertoire.
+Ein expliziter Modellzeichensatz beschreibt, welche Zeichen eine Software
+verarbeiten können muss (2.4 §3.5.1). Liegt ein Zeichen ausserhalb dieses
+Repertoires oder des Standardrepertoires nach 2.3 Anhang B bzw. 2.4 Anhang D,
+bleibt die Repertoireprüfung ungeprüft. NAME folgt den reservierten Wörtern
+der Sprachversion, URI der URI-Syntax von RFC 2396 ohne Netzwerkzugriff.
+
+Numerische Transferwerte werden unverändert gegen inklusive Modellgrenzen
+verglichen. Höhere Genauigkeit führt innerhalb des Bereichs zu keinem
+Datenfehler (2.3 §3.3.11.4, 2.4 §4.3.11.4). Die Prüfung rundet keinen
+Transferwert und rechnet keine Einheiten um.
+
+Lokale Geometrieprüfungen verwenden die Achsenbereiche der wirksamen
+Domäne und die deklarierten Standardsegmentformen. Eine konkrete Erweiterung
+einer generischen Domäne behält ihre eigenen Achsen. Basket-Bindungen
+konkretisieren generische Verwendungen. Gelieferte Bogenradien bleiben
+unverändert und werden als ungeprüfter Teil der Geometrieregel ausgewiesen.
+
+Eine vollständig lokal ausführbare MANDATORY-Bedingung, die wegen ihrer
+Daten fachlich undefiniert ist, gilt nach 2.4 §3.12 als erfüllt. In 2.3
+gilt das für die belegte ilivalidator-1.15.0-Kompatibilität von Vergleichen
+mit undefiniertem Operand. Der Bericht kennzeichnet diese Fälle separat.
+Nicht unterstützte Ausdrücke (unter anderem Funktionsaufrufe, Fremdobjektpfade
+und Division) und fehlender Laufzeitkontext bleiben als ungeprüft erkennbar.
+
+`UNIQUE (LOCAL)` prüft die über den gebundenen Präfix erreichbaren BAG-/LIST-
+Strukturen pro Besitzerinstanz (2.3 und 2.4 §3.12). Geerbte Felder werden über
+die effektiven Slots gelesen. Schlüssel aus Text, Zahlen, Aufzählungen,
+Ausrichtungen und BOOLEAN werden in Deklarationsreihenfolge verglichen.
+Zahlen mit gleichem exaktem Wert kollidieren auch bei unterschiedlicher
+Schreibweise. Ein Element mit einer undefinierten Komponente, einschliesslich
+TEXT mit normativer Länge null, nimmt nicht am Vergleich teil. Die Diagnose enthält den Pfad der
+späteren Stelle sowie die Vorkommensindizes beider Stellen. Der Index endet
+mit der Prüfung des Besitzers. WHERE, andere Schlüsseltypen, geometrische
+Linienattribute in 2.3 und nicht unterstützte Pfade erscheinen als
+ungeprüfte Regeln. Globales und basketweites UNIQUE bleiben ausserhalb des
+lokalen Prüfumfangs.
+
 ## Quellen
 
 [norm23]: https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf

@@ -34,6 +34,7 @@ import guru.interlis.model.SymbolHeader;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.TextKind;
+import guru.interlis.model.TextLengths;
 import guru.interlis.model.TextType;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeId;

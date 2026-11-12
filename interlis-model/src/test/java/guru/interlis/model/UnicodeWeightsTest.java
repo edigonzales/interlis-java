@@ -1,4 +1,4 @@
-package guru.interlis.compiler.internal;
+package guru.interlis.model;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;

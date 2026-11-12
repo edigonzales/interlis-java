@@ -102,3 +102,57 @@ und liefern keine feste Heap-Kapazitätsgarantie.
 Der Java-SDK-Vertrag ist Version 0.4. `TransferValue.XmlFragment` besitzt neben
 `xml` die unveränderliche Map `namespaceBindings`. Der Einargumentkonstruktor
 bleibt verfügbar. Bestehende Record-Patterns müssen die neue Komponente aufnehmen.
+
+
+## Lokale Datenvalidierung
+
+`guru.interlis:interlis-validation` (`requires guru.interlis.validation;`)
+prüft neutrale Daten nach INTERLIS 2.3 und 2.4. Modell und Transferkern
+bilden die Laufzeitclosure der Bibliothek. Für XML wählt der Host zusätzlich
+den passenden XTF-Reader. Beispiel mit einem `CompiledSchema` und einem
+`TransferPlan` aus derselben Kompilierung:
+
+```java
+var projection = ValidationPlanner.plan(schema, transferPlan);
+if (projection instanceof ValidationPlanningResult.Rejected rejected) {
+    throw new IllegalArgumentException(rejected.problems().toString());
+}
+var plan = ((ValidationPlanningResult.Ready) projection).plan();
+try (var reader = new Xtf24Reader(transferPlan, input)) {
+    var report = LocalValidator.validate(plan, reader, ValidationOptions.defaults(), cancellation);
+    System.out.println(report.result());
+    System.out.println(report.coverage());
+}
+```
+
+Der Host besitzt Reader und Inputstream. `validate` liest bis zum
+bestätigten Quellenende und gibt erst dann einen Bericht zurück. Readerfehler,
+Abbruch und überschrittene Validatorbudgets brechen den Lauf ab. Wer bereits
+neutrale Events liefert, kann eine eigene `ValidationSession` öffnen, Events
+synchron mit `accept` prüfen und nach `EndTransfer` einmal `finish` aufrufen.
+In diesem Fall bestätigt der Host selbst das Quellenende und liefert zum
+Plan passende, strukturell dekodierte Events.
+
+Das Profil prüft Pflichtwerte, Kardinalitäten, Strukturzuweisung, unterstützte
+Skalare und Modellwerte sowie lokale Geometriewerte wie Achsendimensionen,
+Achsenbereiche und Standardsegmentformen. Generische Basketbindungen wählen
+die wirksame Domäne für die Achsenbereiche und lokalen Domain-Ausdrücke. Es wertet vollständig unterstützte
+lokale `MANDATORY CONSTRAINT`- und Domain-Ausdrücke sowie `UNIQUE (LOCAL)`
+mit direkten, typisierten Schlüsseln aus Text, Zahlen, Aufzählungen,
+Ausrichtungen oder BOOLEAN aus. Der Index gilt pro Besitzer.
+
+`PASSED_CHECKED_SCOPE` bedeutet, dass die ausgeführten Regeln keinen Verstoss
+ergaben. `coverage()` zeigt geplante, aber nicht ausgeführte Regeln und
+Laufzeitlücken; normativ undefinierte Ausdrücke bleiben davon unterscheidbar.
+Globale und basketweite Eindeutigkeit, `EXISTENCE`, `SET CONSTRAINT`,
+Prozent-Plausibilität, referenzielle Zielprüfung und Geometrietopologie
+gehören nicht zum Profil. Nicht unterstützte Ausdrücke und Werte wie externe
+Funktionen, `UNIQUE` mit `WHERE`, kundenspezifisches `FORMAT` und Bogenradius
+werden als ungeprüft ausgewiesen.
+
+Der Bericht zählt alle erkannten Verstösse und behält standardmässig höchstens
+200 Beispiele mit Datenpfad und Modellherkunft. Die Standardbudgets pro Objekt
+sind 128 Ebenen und eine Million Wertbesuche, Slotprüfungen und Ausdrucksschritte
+zusammen. `ValidationOptions` erlaubt andere positive Grenzen. Die Sitzung
+behält keine Objektliste; Reader können für ihr Transferprotokoll eigene
+Identitätsmengen halten.
