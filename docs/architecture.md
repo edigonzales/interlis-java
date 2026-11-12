@@ -21,7 +21,8 @@ Die zugehörigen POMs beschreiben die konkreten Abhängigkeiten und Scopes.
 | `interlis-projection` | compiler, model | Diagramm-DTOs und reine Projektion |
 | `interlis-documentation` | model, projection | Lesende Dokumentationsprojektion und Rendering |
 | `interlis-transfer` | model | Formatunabhängige Transferpläne, Objektwerte und Streaming-Protokoll |
-| `interlis-validation` | model, transfer | Revisionsgebundener Regelplan und lokale Validierung neutraler Transferereignisse |
+| `interlis-validation` | model, transfer | Revisionsgebundener Regelplan sowie lokale und datensatzweite Validierung neutraler Transferereignisse |
+| `interlis-validation-mvstore` | validation, H2 MVStore | Optionaler JVM-Speicher für einen Datensatzlauf |
 | `interlis-xtf23` | transfer, model | XML-Adapter für INTERLIS 2.3 |
 | `interlis-xtf24` | transfer, model | XML-Adapter für das XTF-2.4-FULL-Profil |
 | `interlis-compiler-cli` | compiler, model, repository, workspace, projection | CLI, Prozessgrenzen, Präsentation und Ausgabe |
@@ -29,7 +30,7 @@ Die zugehörigen POMs beschreiben die konkreten Abhängigkeiten und Scopes.
 | `interlis-lsp` | workspace, compiler, projection, model, repository, documentation | LSP-/Editorhost, Scheduling und Ausgaben |
 | `interlis-wasm-bridge` | workspace, compiler, projection, model | Gemeinsames JSON-Protokoll und Sitzungen |
 
-Alle vierzehn JVM-Module werden über denselben Builder erzeugt. Die
+Alle fünfzehn JVM-Module werden über denselben Builder erzeugt. Die
 jeweils ausgewählten JPMS-Closures stehen im
 [Buildvertrag](development/build.md). TeaVM und Web Image verwenden dieselben
 JVM-Laufzeit-JARs aus dem Jenesis-Inventar des aktuellen Checkouts. Der Browserharness prüft den Compiler und zeigt Diagramm-DTOs.
@@ -45,12 +46,13 @@ Der Transferkern prüft die Integrität seiner neutralen Ereignisfolge.
 Formatadapter verwenden Modell und Transferplan für das Wire-Layout und
 melden nicht unterstützte Kodierungen explizit. Modellbasierte Datenvalidierung
 ist eine separate Aufgabe; dekodierbare Verstösse bleiben als Transferwerte erhalten.
-`interlis-validation` bindet lokale Regeln an denselben Schema-Snapshot und
-prüft neutrale Transferereignisse. Der Plan ist unveränderlich; jede Sitzung
-besitzt ihren Basketkontext, ihre Zähler und ihre begrenzten Diagnosebeispiele.
-Die Bibliothek benötigt zur Laufzeit nur Modell und Transferkern.
-[Abdeckung und Nutzung](usage/transfer.md#lokale-datenvalidierung)
-beschreiben die Grenze zu Referenzauflösung, globalen Regeln und Topologie.
+`interlis-validation` bindet Regeln an denselben Schema-Snapshot und prüft
+neutrale Transferereignisse. Der Plan ist unveränderlich. Die lokale Sitzung
+hält Basketkontext, Zähler und begrenzte Diagnosebeispiele. Die
+Datensatzsitzung verwendet einen vom Host bereitgestellten Byte-Speicher.
+Die Laufzeitabhängigkeiten des Validators bleiben Modell und Transferkern.
+Der Host kann `interlis-validation-mvstore` für dateigestützte Prüfungen
+wählen. Dieses Modul besitzt die temporären Dateien und bindet H2 MVStore.
 
 ## Quellen, Identitäten und Zustände
 

@@ -13,6 +13,7 @@
     <module>interlis-documentation</module>
     <module>interlis-transfer</module>
     <module>interlis-validation</module>
+    <module>interlis-validation-mvstore</module>
     <module>interlis-xtf23</module>
     <module>interlis-xtf24</module>
     <module>interlis-wasm-bridge</module>

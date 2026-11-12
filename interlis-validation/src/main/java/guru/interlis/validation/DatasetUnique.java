@@ -2,6 +2,7 @@ package guru.interlis.validation;
 
 import guru.interlis.model.SymbolRef;
 import guru.interlis.model.UniquenessConstraint;
+import guru.interlis.validation.DatasetScopeStore.Scope;
 import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferValue;
 
@@ -22,19 +23,20 @@ final class DatasetUnique {
     private final DatasetRulePlan rule;
     private final Map<SymbolRef, List<Binding>> byType;
     private final boolean basket;
-    private final List<DatasetRulePlan> equivalents;
+    private final List<Binding> bindings;
     private final int ordinal;
-    private final LinkedHashMap<Long, Scope> scopes = new LinkedHashMap<>();
+    private final DatasetScopeStore scopes;
 
     DatasetUnique(DatasetRuleContext context, ValidationSession report, List<DatasetRulePlan> equivalents,
                   int ordinal) {
         this.context = context;
         this.report = report;
         this.rule = equivalents.getFirst();
-        this.equivalents = equivalents;
         this.basket = ((UniquenessConstraint) rule.declaration().definition()).basket();
         this.ordinal = ordinal;
-        var bindings = new LinkedHashMap<SymbolRef, List<Binding>>();
+        this.scopes = new DatasetScopeStore(context.temporary, ordinal);
+        var byType = new LinkedHashMap<SymbolRef, List<Binding>>();
+        var bindings = new ArrayList<Binding>();
         for (var equivalent : equivalents) {
             var definition = (UniquenessConstraint) equivalent.declaration().definition();
             var where = definition.where().flatMap(context::program);
@@ -42,11 +44,13 @@ final class DatasetUnique {
             boolean supported = definition.where().isEmpty() == where.isEmpty() && !fields.isEmpty()
                     && fields.size() == definition.keys().size();
             var binding = new Binding(equivalent, where, fields, supported);
+            bindings.add(binding);
             for (var type : equivalent.candidateTypes()) {
-                bindings.computeIfAbsent(type, ignored -> new ArrayList<>()).add(binding);
+                byType.computeIfAbsent(type, ignored -> new ArrayList<>()).add(binding);
             }
         }
-        this.byType = bindings;
+        this.byType = byType;
+        this.bindings = List.copyOf(bindings);
     }
 
     private Optional<Binding> binding(DatasetRuleContext.Occurrence occurrence) {
@@ -56,13 +60,16 @@ final class DatasetUnique {
 
     List<DatasetRuleCoverage> check() {
         boolean globalComplete = !basket && context.declaredComplete(rule.key().applicationRoot());
-        for (var equivalent : equivalents) {
-            for (var initial : context.aggregateScopes(equivalent, basket, true)) {
-                var counts = new DatasetScopeCounts();
-                counts.selected = true;
-                scopes.putIfAbsent(initial.ordinal(), new Scope(basket ? initial.completeness()
-                        : globalComplete ? DECLARED_COMPLETE : OPEN, counts));
-            }
+        for (var binding : bindings) {
+            context.initializeScopes(binding.rule(), basket, true, (ordinal, completeness) -> {
+                if (scopes.get(ordinal).isEmpty()) {
+                    var counts = new DatasetScopeCounts();
+                    counts.selected = true;
+                    counts.unsupported = binding.supported() ? 0 : 1;
+                    scopes.put(ordinal, new Scope(basket ? completeness : globalComplete ? DECLARED_COMPLETE : OPEN,
+                            counts));
+                }
+            });
         }
         context.forObjects(occurrence -> {
             var found = binding(occurrence);
@@ -71,7 +78,7 @@ final class DatasetUnique {
             }
             var binding = found.orElseThrow();
             long scopeId = basket ? occurrence.stored().basket() : 0;
-            var scope = scopes.computeIfAbsent(scopeId, ignored -> new Scope(
+            var scope = scopes.get(scopeId).orElseGet(() -> new Scope(
                     basket ? occurrence.basket().consistency() == TransferEvent.Consistency.COMPLETE
                             ? CLOSED_BY_TRANSFER : OPEN : globalComplete ? DECLARED_COMPLETE : OPEN,
                     new DatasetScopeCounts()));
@@ -84,14 +91,17 @@ final class DatasetUnique {
             } else {
                 observe(occurrence, scopeId, counts, binding.where(), binding.fields());
             }
+            scopes.put(scopeId, scope);
         });
         reportDuplicates();
-        if (scopes.isEmpty()) {
-            return List.of(new DatasetRuleCoverage(rule.key(), basket ? BASKET : DATASET, OPEN,
-                    DatasetRuleCoverage.Outcome.NOT_APPLICABLE, 0, 0, 0, 0, 0));
-        }
-        return DatasetScopeCounts.aggregate(scopes.values().stream().map(scope ->
-                scope.counts().coverage(rule.key(), basket ? BASKET : DATASET, scope.completeness())).toList());
+        var coverage = new DatasetScopeCounts.Coverage();
+        scopes.forScopes((ordinal, scope) -> {
+            context.visit();
+            coverage.add(scope.counts().coverage(rule.key(), basket ? BASKET : DATASET, scope.completeness()));
+        });
+        var reports = coverage.reports();
+        return reports.isEmpty() ? List.of(new DatasetRuleCoverage(rule.key(), basket ? BASKET : DATASET, OPEN,
+                DatasetRuleCoverage.Outcome.NOT_APPLICABLE, 0, 0, 0, 0, 0)) : reports;
     }
 
     private void observe(DatasetRuleContext.Occurrence occurrence, long scope, DatasetScopeCounts counts,
@@ -160,7 +170,9 @@ final class DatasetUnique {
                         ? group.second() : group.first()));
                 var arguments = new ArrayList<>(witness.witness());
                 arguments.add(Long.toString(group.size()));
-                scopes.get(scope).counts().violations++;
+                var scopeData = scopes.get(scope).orElseThrow();
+                scopeData.counts().violations++;
+                scopes.put(scope, scopeData);
                 report.datasetViolation(binding(selected).orElseThrow().rule().declaration(), ValidationCode.DATASET_UNIQUE_DUPLICATE,
                         selected.location(List.of()), arguments);
             }
@@ -170,7 +182,6 @@ final class DatasetUnique {
     private record Binding(DatasetRulePlan rule, Optional<LocalExpressions.Program> where,
                            List<LocalExpressions.Program> fields, boolean supported) { }
 
-    private record Scope(DatasetRuleCoverage.Completeness completeness, DatasetScopeCounts counts) { }
 
     private record Group(long size, long first, long second, long selected) {
         static Group read(ByteBuffer value) {

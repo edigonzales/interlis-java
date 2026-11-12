@@ -101,6 +101,23 @@ class DatasetUniqueTest {
         assertEquals(2, coverage.undecidedCandidates());
     }
     @Test
+    void keepsAnUnsupportedWhereVisibleInAnEmptyBasket() {
+        var plan = plan("""
+                CLASS Item =
+                  code: TEXT*20;
+                  UNIQUE (BASKET) WHERE INTERLIS.isOfClass(THIS, >Item): code;
+                END Item;
+                """);
+        var report = validate(plan, List.of(), primary("p", basket("empty", "")));
+        assertEquals(0, report.detectedViolations());
+        var coverage = report.coverage().datasetRules().getFirst();
+        assertEquals(DatasetRuleCoverage.Outcome.UNSUPPORTED, coverage.outcome());
+        assertEquals(1, coverage.scopes());
+        assertEquals(0, coverage.candidates());
+        assertEquals(0, coverage.evaluations());
+    }
+
+    @Test
     void translatesEnumeratedKeyLabelsToTheOriginalDomain() {
         var schema = ValidationPlannerTest.compile("""
                 INTERLIS 2.4;

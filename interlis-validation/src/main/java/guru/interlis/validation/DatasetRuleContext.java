@@ -17,11 +17,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 final class DatasetRuleContext {
     final ValidationPlan plan;
     final ValidationTable keys;
+    final ValidationTable temporary;
     private final DatasetObjectStore objects;
     private final ValidationTable metadata;
     private final StoredValueCodec codec;
@@ -37,6 +39,7 @@ final class DatasetRuleContext {
                        Set<InputId> inputs, CancellationToken cancellation) {
         this.plan = plan;
         this.keys = storage.table(StorageArea.RULE_KEYS);
+        this.temporary = storage.table(StorageArea.TEMPORARY);
         this.metadata = storage.table(StorageArea.METADATA);
         this.codec = codec;
         this.objects = objects;
@@ -93,23 +96,21 @@ final class DatasetRuleContext {
                 .map(codec::decodeInput).orElseThrow();
     }
 
-    List<AggregateScope> aggregateScopes(DatasetRulePlan rule, boolean basketRule, boolean requiresValues) {
+    void initializeScopes(DatasetRulePlan rule, boolean basketRule, boolean requiresValues,
+                          BiConsumer<Long, DatasetRuleCoverage.Completeness> consumer) {
         var root = rule.key().applicationRoot();
         if (!basketRule) {
             boolean selected = plan.transferPlan().topics().stream()
                     .anyMatch(topic -> selectsPopulation(rule, List.of(topic.symbol())));
-            if (!selected) {
-                return List.of();
+            if (selected) {
+                boolean complete = claimsComplete(root, ExtentAspect.OBJECT_MEMBERSHIP, primaryInputs, Optional.empty())
+                        && (!requiresValues || claimsComplete(root, ExtentAspect.ATTRIBUTE_VALUES,
+                                primaryInputs, Optional.empty()));
+                consumer.accept(0L, complete ? DatasetRuleCoverage.Completeness.DECLARED_COMPLETE
+                        : DatasetRuleCoverage.Completeness.OPEN);
             }
-            boolean complete = claimsComplete(root, ExtentAspect.OBJECT_MEMBERSHIP, primaryInputs, Optional.empty())
-                    && (!requiresValues || claimsComplete(root, ExtentAspect.ATTRIBUTE_VALUES,
-                            primaryInputs, Optional.empty()));
-            return List.of(new AggregateScope(0, DatasetRuleCoverage.ScopeKind.DATASET,
-                    complete ? DatasetRuleCoverage.Completeness.DECLARED_COMPLETE : DatasetRuleCoverage.Completeness.OPEN,
-                    new DataLocation(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-                            Optional.of(root), List.of())));
+            return;
         }
-        var scopes = new ArrayList<AggregateScope>();
         try (var cursor = metadata.scan(new byte[]{3}, Optional.of(new byte[]{4}))) {
             for (var next = cursor.next(); next.isPresent(); next = cursor.next()) {
                 visit();
@@ -136,12 +137,21 @@ final class DatasetRuleContext {
                         completeness = DatasetRuleCoverage.Completeness.DECLARED_COMPLETE;
                     }
                 }
-                scopes.add(new AggregateScope(ordinal, DatasetRuleCoverage.ScopeKind.BASKET, completeness,
-                        new DataLocation(input.header().source(), basket.event().id(), Optional.empty(),
-                                Optional.empty(), Optional.of(root), List.of())));
+                consumer.accept(ordinal, completeness);
             }
         }
-        return List.copyOf(scopes);
+    }
+
+    DataLocation scopeLocation(DatasetRulePlan rule, long ordinal) {
+        var root = rule.key().applicationRoot();
+        if (ordinal == 0) {
+            return new DataLocation(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                    Optional.of(root), List.of());
+        }
+        var basket = metadata.get(DatasetValidationSession.metadataKey((byte) 3, ordinal))
+                .map(codec::decodeBasket).orElseThrow();
+        return new DataLocation(input(basket.input()).header().source(), basket.event().id(),
+                Optional.empty(), Optional.empty(), Optional.of(root), List.of());
     }
 
     private boolean selectsPopulation(DatasetRulePlan rule, List<SymbolRef> active) {
@@ -165,9 +175,6 @@ final class DatasetRuleContext {
         }
         return false;
     }
-
-    record AggregateScope(long ordinal, DatasetRuleCoverage.ScopeKind kind,
-                          DatasetRuleCoverage.Completeness completeness, DataLocation location) { }
 
     boolean candidate(DatasetRulePlan rule, Occurrence occurrence) {
         if (!rule.candidateTypes().contains(occurrence.object().type())) {

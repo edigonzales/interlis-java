@@ -103,3 +103,13 @@ kann einen SET-Befund mit null Kandidaten und einer Auswertung erzeugen.
 Für einen nicht gelieferten Basket weist die Coverage null Scopes aus.
 Prozentbedingungen vergleichen Zähler und Nenner exakt. Die Argumente eines
 Befunds enthalten erfüllte Instanzen, Gesamtzahl, Richtung und Grenzwert.
+
+Das optionale JVM-Artefakt `interlis-validation-mvstore` erweitert API 0.8
+um `MvStoreValidationStorage.open(Path, MvStoreOptions)`. Der Host stellt
+ein vorhandenes Temp-Wurzelverzeichnis und eine Dateiquota bereit. Das Backend
+erzeugt ein privates Laufverzeichnis. Der Host schliesst den Speicher nach
+dem Lauf. Cache und Schreibpuffer sind MVStore-Konfigurationen und keine
+Obergrenze für den gesamten JVM-Heap. Die Dateiquota begrenzt die logische
+Länge der Arbeitsdatei. Der Validator prüft den Schema- und Laufheader und
+schliesst alle Schreibvorgänge vor Ausgabe des Berichts ab.
+[H2 MVStore](https://h2database.github.io/html/mvstore.html)
