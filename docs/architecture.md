@@ -21,7 +21,7 @@ Die zugehörigen POMs beschreiben die konkreten Abhängigkeiten und Scopes.
 | `interlis-projection` | compiler, model | Diagramm-DTOs und reine Projektion |
 | `interlis-documentation` | model, projection | Lesende Dokumentationsprojektion und Rendering |
 | `interlis-transfer` | model | Formatunabhängige Transferpläne, Objektwerte und Streaming-Protokoll |
-| `interlis-validation` | model, transfer | Revisionsgebundene Projektion lokaler Datenregeln und ihres Prüfumfangs |
+| `interlis-validation` | model, transfer | Revisionsgebundener Regelplan und lokale Validierung neutraler Transferereignisse |
 | `interlis-xtf23` | transfer, model | XML-Adapter für INTERLIS 2.3 |
 | `interlis-xtf24` | transfer, model | XML-Adapter für das XTF-2.4-FULL-Profil |
 | `interlis-compiler-cli` | compiler, model, repository, workspace, projection | CLI, Prozessgrenzen, Präsentation und Ausgabe |
