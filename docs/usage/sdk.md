@@ -23,9 +23,7 @@ Ausgabeformate haben getrennte Versionsidentitäten.
 Für [lokale Datenvalidierung](transfer.md#lokale-datenvalidierung) fügt der
 Host die separate Bibliothek `guru.interlis:interlis-validation` hinzu.
 Sie wird wie die Transferadapter unabhängig vom Compiler-SDK-ZIP gebaut.
-Die Validator-API und `TextLengths` ergänzen SDK 0.4. Bereits veröffentlichte
-Signaturen, Modulexports und Wire-Verträge bleiben kompatibel; dafür ist
-keine Erhöhung der Vertragsversion nötig.
+Der lokale Validator und `TextLengths` wurden mit SDK 0.4 eingeführt.
 
 
 ## Getrennte Versionen
@@ -59,3 +57,10 @@ müssen die zusätzliche Komponente aufnehmen. Ein erschöpfender Switch über
 `PlanningProblem.Code` muss den neuen Fall `EXPRESSION_LIMIT_EXCEEDED` behandeln.
 `ValidationCoverage.ConstraintStatus` weist `UNSUPPORTED_EXPRESSION` für
 tatsächlich ausgewählte, nicht ausführbare generische Domainregeln aus.
+
+`TransferReader.transferPlan()` gibt den gebundenen Plan für den
+Revisionsabgleich einer Datensatzsession zurück.
+`stableIdentityNamespaces()` stellt die vom Reader gelesenen Aliasbindungen
+bereit. Diese Methoden erweitern die Reader-API. Die Datensatzvalidierung
+ergänzt ausserdem `ValidationCode` um Diagnosen zu mehrdeutiger Identität sowie
+fehlenden, typfremden und basketfremden Referenzzielen.

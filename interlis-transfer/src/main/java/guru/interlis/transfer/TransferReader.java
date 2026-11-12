@@ -1,7 +1,9 @@
 package guru.interlis.transfer;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.QualifiedName;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -28,6 +30,14 @@ public abstract class TransferReader implements AutoCloseable {
     /** Returns the immutable plan used to decode this reader's events. */
     public final TransferPlan transferPlan() {
         return sequence.plan();
+    }
+
+    /**
+     * Returns immutable aliases of stable identifier namespaces after the header.
+     * Formats with no declared aliases return an empty map.
+     */
+    public Map<String, QualifiedName> stableIdentityNamespaces() {
+        return Map.of();
     }
 
     /** Reads one event. Empty means the source ended after a valid EndTransfer.

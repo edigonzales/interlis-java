@@ -24,6 +24,8 @@ public final class DatasetValidationSession implements AutoCloseable {
     private final DatasetOptions options;
     private final ValidationStorage storage;
     private final StoredValueCodec codec;
+    private final DatasetObjectStore objectStore;
+    private final IdentityIndex identities;
     private final ValidationSession local;
     private final Map<InputId, Long> inputs = new HashMap<>();
     private State state = State.OPEN;
@@ -47,6 +49,8 @@ public final class DatasetValidationSession implements AutoCloseable {
                 header.getBytes(StandardCharsets.UTF_8)).isPresent()) {
             throw new IllegalArgumentException("Dataset storage is already in use");
         }
+        this.objectStore = new DatasetObjectStore(storage, codec);
+        this.identities = new IdentityIndex(storage);
         this.local = new ValidationSession(plan, options.localOptions());
     }
 
@@ -83,6 +87,9 @@ public final class DatasetValidationSession implements AutoCloseable {
                     break;
                 }
                 var event = next.orElseThrow();
+                if (event instanceof TransferEvent.StartTransfer) {
+                    inputState.namespaces = Map.copyOf(reader.stableIdentityNamespaces());
+                }
                 boolean selected = accept(inputOrdinal, input, inputState, event, cancellation);
                 if (checkLocal && selected) {
                     local.accept(event, cancellation);
@@ -114,7 +121,7 @@ public final class DatasetValidationSession implements AutoCloseable {
                         throw new ValidationStreamException("Input model version differs from the dataset plan");
                     }
                 }
-                storage.table(StorageArea.METADATA).put(metadataKey((byte) 2, input), codec.encodeInput(descriptor, start));
+                storage.table(StorageArea.METADATA).put(metadataKey((byte) 2, input), codec.encodeInput(descriptor, start, context.namespaces));
                 yield true;
             }
             case TransferEvent.StartBasket start -> {
@@ -152,8 +159,13 @@ public final class DatasetValidationSession implements AutoCloseable {
                 if (objects == options.limits().maxObjects()) {
                     throw new ValidationLimitException("Dataset object budget exceeded");
                 }
-                var stored = new StoredValueCodec.StoredObject(input, context.basketOrdinal, occurrence);
-                storage.table(StorageArea.OBJECTS).put(ordinal(++objects), codec.encodeObject(stored));
+                var handle = new ObjectHandle(++objects);
+                objectStore.add(handle, new BasketHandle(input, context.basketOrdinal), occurrence);
+                object.identity().tid().ifPresent(tid -> identities.addTemporary(input, tid.value(), handle));
+                object.identity().oid().ifPresent(oid -> {
+                    var key = StableIdentity.bind(context.namespaces, oid.value());
+                    identities.addStable(key.namespace(), key.value(), handle);
+                });
                 yield options.subjects().selects(plan, descriptor.role(), context.basket.topic(), object.type())
                         || context.basket.additionalTopics().stream()
                                 .anyMatch(topic -> options.subjects().selects(plan, descriptor.role(), topic, object.type()));
@@ -238,6 +250,7 @@ public final class DatasetValidationSession implements AutoCloseable {
                 }
             }
             storage.checkpoint();
+            new DatasetReferences(plan, storage, codec, objectStore, identities, options, inputs.keySet(), local).check(cancellation);
             var pending = plan.datasetRules().stream().map(rule ->
                     new DatasetRuleCoverage(rule.key(), DatasetRuleCoverage.ScopeKind.DATASET,
                             DatasetRuleCoverage.Completeness.OPEN, DatasetRuleCoverage.Outcome.UNDETERMINED,
@@ -270,7 +283,7 @@ public final class DatasetValidationSession implements AutoCloseable {
         return ByteBuffer.allocate(Long.BYTES).putLong(value).array();
     }
 
-    private static byte[] metadataKey(byte tag, long value) {
+    static byte[] metadataKey(byte tag, long value) {
         return ByteBuffer.allocate(1 + Long.BYTES).put(tag).putLong(value).array();
     }
 
@@ -310,5 +323,6 @@ public final class DatasetValidationSession implements AutoCloseable {
         private TransferEvent.StartBasket basket;
         private long basketOrdinal;
         private boolean ended;
+        private Map<String, guru.interlis.model.QualifiedName> namespaces = Map.of();
     }
 }

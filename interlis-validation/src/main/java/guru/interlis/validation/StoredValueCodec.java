@@ -44,13 +44,44 @@ final class StoredValueCodec {
         return encodeRecord(out -> write(out, value, 0));
     }
 
-    byte[] encodeInput(InputDescriptor input, TransferEvent.StartTransfer header) {
+    byte[] encodeLink(RelationProjector.Link link) {
+        return encodeRecord(out -> {
+            out.writeLong(link.source().ordinal());
+            symbol(out, link.association());
+            optional(out, link.embeddedField(), field -> symbol(out, field));
+            list(out, link.endpoints(), endpoint -> {
+                symbol(out, endpoint.role());
+                optional(out, endpoint.reference(), reference -> write(out, reference, 0));
+                optional(out, endpoint.implicitTarget(), target -> out.writeLong(target.ordinal()));
+            });
+        });
+    }
+
+    RelationProjector.Link decodeLink(byte[] bytes) {
+        return decodeRecord(bytes, in -> {
+            var source = new ObjectHandle(in.readLong());
+            var association = symbol(in);
+            var field = optional(in, () -> symbol(in));
+            var endpoints = list(in, () -> new RelationProjector.Endpoint(symbol(in),
+                    optional(in, () -> (Reference) read(in, 0)),
+                    optional(in, () -> new ObjectHandle(in.readLong()))));
+            return new RelationProjector.Link(source, association, field, endpoints);
+        });
+    }
+
+    byte[] encodeInput(InputDescriptor input, TransferEvent.StartTransfer header,
+                       java.util.Map<String, QualifiedName> namespaces) {
         return encodeRecord(out -> {
             text(out, input.id().value());
             text(out, input.role().name());
             optional(out, header.source(), source -> text(out, source.value()));
             optional(out, header.sender(), sender -> text(out, sender));
             optional(out, header.comment(), comment -> text(out, comment));
+            out.writeInt(namespaces.size());
+            for (var entry : new java.util.TreeMap<>(namespaces).entrySet()) {
+                text(out, entry.getKey());
+                list(out, entry.getValue().segments(), segment -> text(out, segment));
+            }
             list(out, header.models(), model -> {
                 symbol(out, model.model());
                 text(out, model.languageVersion().name());
@@ -59,6 +90,27 @@ final class StoredValueCodec {
             });
         });
     }
+
+    StoredInput decodeInput(byte[] bytes) {
+        return decodeRecord(bytes, in -> {
+            var input = new InputDescriptor(new InputId(text(in)), InputRole.valueOf(text(in)));
+            var source = optional(in, () -> new SourceId(text(in)));
+            var sender = optional(in, () -> text(in));
+            var comment = optional(in, () -> text(in));
+            var namespaces = new LinkedHashMap<String, QualifiedName>();
+            for (int n = length(in); n > 0; n--) {
+                namespaces.put(text(in), new QualifiedName(list(in, () -> text(in))));
+            }
+            var models = list(in, () -> new TransferEvent.ModelDeclaration(symbol(in),
+                    guru.interlis.model.LanguageVersion.valueOf(text(in)), optional(in, () -> text(in)),
+                    optional(in, () -> text(in))));
+            return new StoredInput(input, new TransferEvent.StartTransfer(source, sender, comment, models),
+                    java.util.Map.copyOf(namespaces));
+        });
+    }
+
+    record StoredInput(InputDescriptor descriptor, TransferEvent.StartTransfer header,
+                       java.util.Map<String, QualifiedName> namespaces) { }
 
     byte[] encodeBasket(long input, TransferEvent.StartBasket start) {
         return encodeRecord(out -> {
@@ -77,6 +129,25 @@ final class StoredValueCodec {
             });
         });
     }
+
+    StoredBasket decodeBasket(byte[] bytes) {
+        return decodeRecord(bytes, in -> {
+            long input = in.readLong();
+            var id = basket(in);
+            var topic = symbol(in);
+            var additional = list(in, () -> symbol(in));
+            var kind = TransferEvent.BasketKind.valueOf(text(in));
+            var consistency = TransferEvent.Consistency.valueOf(text(in));
+            var start = optional(in, () -> text(in));
+            var end = optional(in, () -> text(in));
+            var oid = optional(in, () -> text(in));
+            var bindings = list(in, () -> new TransferEvent.DomainBinding(symbol(in), symbol(in)));
+            return new StoredBasket(input, new TransferEvent.StartBasket(id, topic, additional, kind,
+                    consistency, start, end, oid, bindings));
+        });
+    }
+
+    record StoredBasket(long input, TransferEvent.StartBasket event) { }
 
     byte[] encodeObject(StoredObject stored) {
         return encodeRecord(out -> {

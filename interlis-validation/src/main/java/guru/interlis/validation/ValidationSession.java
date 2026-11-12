@@ -153,11 +153,37 @@ public final class ValidationSession implements AutoCloseable {
         return completedReport(datasetCoverage);
     }
 
+    void identityConflict(TransferObject object, DataLocation data, List<String> origins) {
+        var declaration = plan.symbol(object.type().symbol()).orElseThrow();
+        diagnostic(AMBIGUOUS_OBJECT_IDENTITY, data,
+                ruleLocation(object.type(), declaration.origin()), origins);
+    }
+
+    void referenceResult(TransferObject object, Symbol slot, DataLocation data, ReferenceResolver.Result result) {
+        var key = new SlotKey(object.type(), plan.ref(slot.id()), REFERENTIAL_INTEGRITY);
+        if (result == ReferenceResolver.Missing.OPEN) {
+            missingRuntime.merge(key, 1L, Math::addExact);
+            return;
+        }
+        checked.merge(key, 1L, Math::addExact);
+        var rule = ruleLocation(plan.ref(slot.id()), slot.origin());
+        switch (result) {
+            case ReferenceResolver.Found ignored -> { }
+            case ReferenceResolver.Missing ignored -> diagnostic(REFERENCE_TARGET_MISSING, data, rule, List.of());
+            case ReferenceResolver.InvalidTarget invalid -> diagnostic(
+                    invalid.reason() == ReferenceResolver.Reason.TYPE ? REFERENCE_TARGET_TYPE : REFERENCE_TARGET_BASKET,
+                    data, rule, List.of(Long.toString(invalid.target().ordinal())));
+            case ReferenceResolver.Ambiguous ambiguous -> diagnostic(AMBIGUOUS_OBJECT_IDENTITY, data, rule,
+                    List.of(Long.toString(ambiguous.first().ordinal()), Long.toString(ambiguous.second().ordinal())));
+        }
+    }
+
     private ValidationReport completedReport(List<DatasetRuleCoverage> datasetCoverage) {
         var report = new ValidationReport(violations == 0 ? PASSED_CHECKED_SCOPE : FAILED_CHECKED_SCOPE,
                 baskets, objects, violations, examples,
                 new ValidationCoverage(counts(checked), plan.uncheckedRules(), counts(incomplete),
-                        counts(missingRuntime), counts(unsupported), List.of(REFERENTIAL_INTEGRITY, TOPOLOGY),
+                        counts(missingRuntime), counts(unsupported),
+                        plan.profile() == ValidationProfile.LOCAL_ONLY ? List.of(REFERENTIAL_INTEGRITY, TOPOLOGY) : List.of(TOPOLOGY),
                         constraintCounts(), datasetCoverage));
         clear();
         state = State.FINISHED;

@@ -113,6 +113,15 @@ public final class Xtf23Reader extends TransferReader {
         return oidSpaceDeclarations;
     }
 
+    @Override
+    public Map<String, guru.interlis.model.QualifiedName> stableIdentityNamespaces() {
+        var result = new LinkedHashMap<String, guru.interlis.model.QualifiedName>();
+        for (var space : oidSpaceDeclarations) {
+            result.put(space.alias(), new guru.interlis.model.QualifiedName(List.of(space.domain().split("\\."))));
+        }
+        return Map.copyOf(result);
+    }
+
     private static <T> Map<String, T> index(List<T> descriptors, Function<T, TransferName> names) {
         return descriptors.stream().collect(Collectors.toUnmodifiableMap(
                 value -> names.apply(value).declared().toString(), Function.identity()));
