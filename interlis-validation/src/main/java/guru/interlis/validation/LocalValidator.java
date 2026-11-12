@@ -11,7 +11,13 @@ public final class LocalValidator {
 
     /**
      * Reads through EOF before returning a completed report. The caller owns the reader.
-     * Reader failures and cancellation are propagated as supplied.
+     * All inputs are non-null. The reader must provide events for the same
+     * schema revision as the plan. Reader failures and cancellation are
+     * propagated as supplied.
+     *
+     * @throws ValidationStreamException if the events lack the required validation context
+     * @throws ValidationLimitException if a validation budget is exceeded
+     * @throws guru.interlis.execution.OperationCancelledException on cancellation
      */
     public static ValidationReport validate(ValidationPlan plan, TransferReader reader,
                                             ValidationOptions options, CancellationToken cancellation) {

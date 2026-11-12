@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -73,6 +74,9 @@ public final class ValidationPlanner {
         private final TypeRelations types;
         private final Map<ExpressionId, Optional<LocalExpressions.Program>> expressions = new LinkedHashMap<>();
         private final Map<SymbolId, List<IndexedConstraint>> declarations = new LinkedHashMap<>();
+        // Structures may occur in baskets of several topics. Project the union
+        // of alternatives once; a session selects rules for its actual binding.
+        private final Map<SymbolId, Set<SymbolId>> genericAlternatives = new LinkedHashMap<>();
         private final Map<TypeId, Set<List<String>>> enumValues = new LinkedHashMap<>();
         private final List<UncheckedRuleInfo> unchecked = new ArrayList<>();
 
@@ -80,6 +84,12 @@ public final class ValidationPlanner {
             this.graph = graph;
             this.transfer = transfer;
             this.types = new TypeRelations(graph);
+            for (var topic : transfer.topics()) {
+                for (var binding : topic.genericBindings()) {
+                    genericAlternatives.computeIfAbsent(binding.genericDomain(), ignored -> new LinkedHashSet<>())
+                            .addAll(binding.alternatives());
+                }
+            }
             int order = 0;
             for (var symbol : graph.declarationsInOrder()) {
                 if (symbol instanceof ConstraintSymbol constraint) {
@@ -146,8 +156,15 @@ public final class ValidationPlanner {
                 if (required.isEmpty() && depth == 0 && slot.attribute().mandatory()) {
                     required = Optional.of(slot.attribute());
                 }
+                var concreteDomains = genericDomain.map(id -> concreteDomainOwners(id, domains, slot.symbol()))
+                        .orElseGet(Map::of);
+                var allDomains = new HashSet<>(domains);
+                concreteDomains.values().forEach(allDomains::addAll);
+                var compiled = rules(object, Optional.of(slot.symbol()), depth, allDomains);
+                Map<SymbolId, List<ConstraintSymbol>> concreteConstraints = new LinkedHashMap<>();
+                concreteDomains.forEach((id, owners) -> concreteConstraints.put(id, forOwners(compiled, owners)));
                 values.add(new ObjectValidationPlan.ValueRules(depth, type, genericDomain, required,
-                        rules(object, Optional.of(slot.symbol()), depth, domains),
+                        forOwners(compiled, domains), concreteConstraints,
                         type instanceof EnumerationType enumeration
                                 ? enumValues.computeIfAbsent(type.id(), id -> ScalarRules.enumerationValues(enumeration))
                                 : Set.of()));
@@ -156,6 +173,24 @@ public final class ValidationPlanner {
                 }
                 valueType = collection.elementType();
             }
+        }
+
+        private Map<SymbolId, Set<SymbolId>> concreteDomainOwners(SymbolId generic, Set<SymbolId> declared,
+                                                                 SymbolRef slot) {
+            Map<SymbolId, Set<SymbolId>> alternatives = new LinkedHashMap<>();
+            for (var concrete : genericAlternatives.getOrDefault(generic, Set.of())) {
+                var owners = new HashSet<>(declared);
+                var current = domain(concrete, slot);
+                while (owners.add(current.id()) && current.baseDomain().isPresent()) {
+                    current = domain(current.baseDomain().orElseThrow(), slot);
+                }
+                alternatives.put(concrete, owners);
+            }
+            return alternatives;
+        }
+
+        private static List<ConstraintSymbol> forOwners(List<ConstraintSymbol> rules, Set<SymbolId> owners) {
+            return rules.stream().filter(rule -> rule.header().owner().filter(owners::contains).isPresent()).toList();
         }
 
         private Optional<String> charset(Symbol symbol) {

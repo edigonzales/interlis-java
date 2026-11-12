@@ -5,8 +5,10 @@ die Java-SDK-Schnittstellen, eine CLI, einen LSP-Server, eine Swing-Anwendung
 zur Modellprüfung und einen Browserclient für Compiler und Diagramm-DTOs. TeaVM erzeugt
 JavaScript und WasmGC. Ein separater GraalVM-Web-Image-Adapter dient dem
 Backendvergleich. Der Transferkern und die Streaming-Codecs für XTF 2.3 FULL
-und XTF 2.4 FULL sind als Java-Bibliotheken verfügbar. Datenvalidierung und
-Datenbankabbildung sind [geplant](docs/design/transfer-validation-database.md).
+und XTF 2.4 FULL sind als Java-Bibliotheken verfügbar. Eine separate Bibliothek
+[prüft lokale INTERLIS-Datenregeln](docs/usage/transfer.md#lokale-datenvalidierung).
+Transferweite Prüfungen und Datenbankabbildung sind
+[geplant](docs/design/transfer-validation-database.md).
 
 ## Ein Modell prüfen
 

@@ -15,12 +15,14 @@ public final class ModulePathContract {
     public static void requireOwnDescriptor(String project, ModuleDescriptor descriptor) {
         if(descriptor.isAutomatic()||descriptor.isOpen()||!descriptor.name().equals(name(project)))
             throw new IllegalStateException("Own runtime module must be explicit and encapsulated: "+project);
-        if(isXtfAdapter(project)) {
+        if(isXtfAdapter(project)||project.equals("interlis-validation")) {
             var required=descriptor.requires().stream().map(ModuleDescriptor.Requires::name).collect(java.util.stream.Collectors.toSet());
-            if(!required.equals(Set.of("java.base","java.xml","guru.interlis.model","guru.interlis.transfer"))
+            var expected=isXtfAdapter(project)?Set.of("java.base","java.xml","guru.interlis.model","guru.interlis.transfer")
+                    :Set.of("java.base","guru.interlis.transfer");
+            if(!required.equals(expected)
                     ||descriptor.exports().size()!=1||descriptor.exports().stream().anyMatch(export->
                         export.isQualified()||!export.source().equals(name(project)))||!descriptor.opens().isEmpty())
-                throw new IllegalStateException("Unexpected XTF module boundary: "+descriptor);
+                throw new IllegalStateException("Unexpected transfer or validation module boundary: "+descriptor);
         }
     }
     private static boolean isXtfAdapter(String project) {
@@ -46,10 +48,10 @@ public final class ModulePathContract {
             if(!result.explicitDescriptor()||!result.moduleName().orElseThrow().equals(name(project)))throw new IllegalStateException("Wrong own module: "+project);
             own.add(name(project));
             var runtime=ModuleArtifacts.runtime(root,project,outcome);
-            if(project.equals("interlis-transfer")||isXtfAdapter(project)) {
+            if(project.equals("interlis-transfer")||isXtfAdapter(project)||project.equals("interlis-validation")) {
                 String prefix="maven/guru.interlis/", version="/"+JvmBuildInputs.projectVersion(root);
                 var expected=new HashSet<>(Set.of(prefix+"interlis-transfer"+version,prefix+"interlis-model"+version));
-                if(isXtfAdapter(project))expected.add(prefix+project+version);
+                expected.add(prefix+project+version);
                 var actual=runtime.stream().map(ModuleArtifacts.Artifact::coordinates).collect(java.util.stream.Collectors.toSet());
                 if(!actual.equals(expected))throw new IllegalStateException("Unexpected runtime closure for "+project+": "+actual);
             }
@@ -84,16 +86,18 @@ public final class ModulePathContract {
                     } catch (ReflectiveOperationException e) { throw new AssertionError(e); }
                 }
                 SourceText source""";
-        var entrypoints=Map.of("guru.interlis.compiler.cli","guru.interlis.cli.CliApplication",
-            "guru.interlis.lsp","guru.interlis.lsp.InterlisLanguageServerApi",
-            "guru.interlis.workspace","guru.interlis.workspace.Workspace",
-            "guru.interlis.repository","guru.interlis.repository.RepositoryClient",
-            "guru.interlis.projection","guru.interlis.projection.DiagramProjector",
-            "guru.interlis.documentation","guru.interlis.documentation.DocumentationProjector",
-            "guru.interlis.transfer","guru.interlis.transfer.TransferPlanner",
-            "guru.interlis.xtf23","guru.interlis.xtf23.Xtf23Reader",
-            "guru.interlis.xtf24","guru.interlis.xtf24.Xtf24Reader",
-            "guru.interlis.wasm.bridge","guru.interlis.bridge.BridgeDispatcher");
+        var entrypoints=Map.ofEntries(
+            Map.entry("guru.interlis.compiler.cli","guru.interlis.cli.CliApplication"),
+            Map.entry("guru.interlis.lsp","guru.interlis.lsp.InterlisLanguageServerApi"),
+            Map.entry("guru.interlis.workspace","guru.interlis.workspace.Workspace"),
+            Map.entry("guru.interlis.repository","guru.interlis.repository.RepositoryClient"),
+            Map.entry("guru.interlis.projection","guru.interlis.projection.DiagramProjector"),
+            Map.entry("guru.interlis.documentation","guru.interlis.documentation.DocumentationProjector"),
+            Map.entry("guru.interlis.transfer","guru.interlis.transfer.TransferPlanner"),
+            Map.entry("guru.interlis.xtf23","guru.interlis.xtf23.Xtf23Reader"),
+            Map.entry("guru.interlis.xtf24","guru.interlis.xtf24.Xtf24Reader"),
+            Map.entry("guru.interlis.wasm.bridge","guru.interlis.bridge.BridgeDispatcher"),
+            Map.entry("guru.interlis.validation","guru.interlis.validation.LocalValidator"));
         String extra=String.join("\n",own.stream().filter(entrypoints::containsKey).map(name->
             "if (named && !"+entrypoints.get(name)+".class.getModule().getName().equals(\""+name+"\")) throw new AssertionError(\"Wrong public entrypoint module\");").toList());
         checks=checks.replace("SourceText source",extra+"\nSourceText source");

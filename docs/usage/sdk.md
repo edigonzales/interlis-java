@@ -20,6 +20,13 @@ definieren diese Gültigkeitsbereiche. Für Signaturen und Packageexports gilt
 die Javadoc der jeweiligen JVM-Module. Bibliotheks-, Wire-, Katalog- und
 Ausgabeformate haben getrennte Versionsidentitäten.
 
+Für [lokale Datenvalidierung](transfer.md#lokale-datenvalidierung) fügt der
+Host die separate Bibliothek `guru.interlis:interlis-validation` hinzu.
+Sie wird wie die Transferadapter unabhängig vom Compiler-SDK-ZIP gebaut.
+Die Validator-API und `TextLengths` ergänzen SDK 0.4. Bereits veröffentlichte
+Signaturen, Modulexports und Wire-Verträge bleiben kompatibel; dafür ist
+keine Erhöhung der Vertragsversion nötig.
+
 
 ## Getrennte Versionen
 

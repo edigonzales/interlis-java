@@ -17,7 +17,7 @@ class ValidationModuleContractTest {
     @TempDir Path work;
 
     @Test
-    void externalNamedConsumerLoadsValidatorWithOnlyModelAndTransfer() throws Exception {
+    void externalConsumersLoadValidatorWithOnlyModelAndTransfer() throws Exception {
         String modulePath = String.join(File.pathSeparator, List.of(
                 location(CompiledSchema.class), location(TransferPlan.class), location(ValidationPlan.class)));
         Path descriptor = Files.writeString(work.resolve("module-info.java"),
@@ -26,19 +26,34 @@ class ValidationModuleContractTest {
                 package consumer;
                 import guru.interlis.model.CompiledSchema;
                 import guru.interlis.transfer.TransferPlan;
+                import guru.interlis.validation.ValidationOptions;
                 import guru.interlis.validation.ValidationPlan;
                 import guru.interlis.validation.ValidationPlanner;
 
                 public class Main {
                     public static void main(String[] args) throws Exception {
-                        if (!Main.class.getModule().getName().equals("consumer")
-                                || !ValidationPlan.class.getModule().getName().equals("guru.interlis.validation")) {
+                        boolean named = args.length == 0;
+                        if (Main.class.getModule().isNamed() != named || ValidationPlan.class.getModule().isNamed() != named
+                                || named && (!Main.class.getModule().getName().equals("consumer")
+                                    || !ValidationPlan.class.getModule().getName().equals("guru.interlis.validation"))) {
                             throw new AssertionError("Unexpected consumer or validation module");
+                        }
+                        if (ValidationOptions.defaults().maxDiagnosticExamples() != 200) {
+                            throw new AssertionError("Unexpected validation defaults");
                         }
                         ValidationPlanner.class.getMethod("plan", CompiledSchema.class, TransferPlan.class);
                         for (String module : new String[]{"guru.interlis.compiler", "guru.interlis.xtf23", "guru.interlis.xtf24"}) {
                             if (ModuleLayer.boot().findModule(module).isPresent()) {
                                 throw new AssertionError("Unexpected product dependency: " + module);
+                            }
+                        }
+                        for (String type : new String[]{"guru.interlis.compiler.CompilerEngines",
+                                "guru.interlis.xtf23.Xtf23Reader", "guru.interlis.xtf24.Xtf24Reader"}) {
+                            try {
+                                Class.forName(type);
+                                throw new AssertionError("Unexpected class on the consumer path: " + type);
+                            } catch (ClassNotFoundException expected) {
+                                // Only the three library jars are available.
                             }
                         }
                     }
@@ -47,6 +62,9 @@ class ValidationModuleContractTest {
         Path classes = work.resolve("classes");
         run("javac", "--module-path", modulePath, "-d", classes.toString(), descriptor.toString(), source.toString());
         run("java", "--module-path", modulePath + File.pathSeparator + classes, "-m", "consumer/consumer.Main");
+        Path classpathClasses = work.resolve("classpath-classes");
+        run("javac", "--class-path", modulePath, "-d", classpathClasses.toString(), source.toString());
+        run("java", "--class-path", modulePath + File.pathSeparator + classpathClasses, "consumer.Main", "classpath");
     }
 
     private static String location(Class<?> type) throws Exception {

@@ -19,7 +19,6 @@ import guru.interlis.model.StructureValueType;
 import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
-import guru.interlis.model.TopicSymbol;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.validation.ValidationCoverage.ConstraintStatus;
 import guru.interlis.model.TypeKind;
@@ -74,8 +73,15 @@ public final class ValidationSession implements AutoCloseable {
     }
 
     /**
-     * Accepts one non-null event. A sequence error or cancellation makes this session terminal.
-     * Hosts that obtain events from a reader must separately confirm EOF before publishing a report.
+     * Validates one non-null event synchronously using the non-null cancellation
+     * token. The caller supplies structurally decoded events for the plan's schema
+     * revision. The session does not retain an object after the call returns.
+     * Hosts that obtain events from a reader must confirm EOF before publishing
+     * the report. Failure makes this session terminal; close remains available.
+     *
+     * @throws ValidationStreamException if the validation context or event order is invalid
+     * @throws ValidationLimitException if a validation budget is exceeded
+     * @throws guru.interlis.execution.OperationCancelledException on cancellation
      */
     public void accept(TransferEvent event, CancellationToken cancellation) {
         requireActive();
@@ -240,7 +246,8 @@ public final class ValidationSession implements AutoCloseable {
             }
             return Optional.empty();
         }
-        var type = rules.genericDomain().map(this::concreteDomain).orElse(Optional.of(rules.type()));
+        var concreteDomain = rules.genericDomain().map(basket.domains()::get);
+        var type = rules.genericDomain().isPresent() ? concreteDomain.flatMap(plan::domainType) : Optional.of(rules.type());
         if (type.isEmpty()) {
             count(missingRuntime, pending, GEOMETRY_VALUES);
         }
@@ -259,7 +266,7 @@ public final class ValidationSession implements AutoCloseable {
             case YES -> count(checked, pending, VALUE_FAMILY);
         }
         if (type.isPresent()) {
-            for (var declaration : rules.constraints()) {
+            for (var declaration : rules.constraints(concreteDomain)) {
                 if (declaration.definition() instanceof DomainConstraint domain) {
                     checkConstraint(object, pending.owner(), Optional.of(field.slot().symbol()), declaration,
                             domain.condition(), actual, pending.path(), false, partial, budget);
@@ -634,8 +641,12 @@ public final class ValidationSession implements AutoCloseable {
     private record BasketContext(TransferEvent.StartBasket start, TopicDescriptor topic,
                                  Map<SymbolId, SymbolId> domains) {
         static BasketContext of(TransferEvent.StartBasket event, ValidationPlan plan) {
-            var topic = plan.transferPlan().topic(event.topic())
-                    .orElseThrow(() -> new ValidationStreamException("Basket topic does not belong to the plan"));
+            var topic = topic(plan, event.topic());
+            var topics = new ArrayList<TopicDescriptor>();
+            topics.add(topic);
+            for (var ref : event.additionalTopics()) {
+                topics.add(topic(plan, ref));
+            }
             Map<SymbolId, SymbolId> supplied = new LinkedHashMap<>();
             for (var binding : event.domainBindings()) {
                 if (!plan.snapshotId().equals(binding.generic().snapshot())
@@ -645,22 +656,37 @@ public final class ValidationSession implements AutoCloseable {
                 }
             }
             Map<SymbolId, SymbolId> selected = new LinkedHashMap<>();
-            for (var binding : topic.genericBindings()) {
-                var concrete = supplied.remove(binding.genericDomain());
-                if (concrete == null && binding.state() == TopicSymbol.BindingState.CONCRETE) {
-                    concrete = binding.alternatives().getFirst();
-                }
-                if (concrete != null) {
-                    if (!binding.alternatives().contains(concrete)) {
-                        throw new ValidationStreamException("Basket domain binding is outside the topic alternatives");
+            for (var active : topics) {
+                for (var binding : active.genericBindings()) {
+                    var generic = binding.genericDomain();
+                    var concrete = switch (binding.state()) {
+                        case CONCRETE -> supplied.getOrDefault(generic, binding.alternatives().getFirst());
+                        case DEFERRED -> supplied.get(generic);
+                        case ABSTRACT -> null;
+                    };
+                    if (concrete != null) {
+                        if (!binding.alternatives().contains(concrete)) {
+                            throw new ValidationStreamException("Basket domain binding is outside the topic alternatives");
+                        }
+                        var previous = selected.putIfAbsent(generic, concrete);
+                        if (previous != null && !previous.equals(concrete)) {
+                            throw new ValidationStreamException("Basket topics disagree on a generic domain");
+                        }
                     }
-                    selected.put(binding.genericDomain(), concrete);
                 }
             }
-            if (!supplied.isEmpty()) {
+            if (!selected.keySet().containsAll(supplied.keySet())) {
                 throw new ValidationStreamException("Unexpected basket domain binding");
             }
             return new BasketContext(event, topic, Map.copyOf(selected));
+        }
+
+        private static TopicDescriptor topic(ValidationPlan plan, SymbolRef ref) {
+            if (!plan.snapshotId().equals(ref.snapshot())) {
+                throw new ValidationStreamException("Basket topic belongs to another snapshot");
+            }
+            return plan.transferPlan().topic(ref)
+                    .orElseThrow(() -> new ValidationStreamException("Basket topic does not belong to the plan"));
         }
     }
 }

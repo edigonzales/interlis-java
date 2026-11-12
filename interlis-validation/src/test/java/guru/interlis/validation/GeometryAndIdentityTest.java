@@ -93,6 +93,51 @@ class GeometryAndIdentityTest {
     }
 
     @Test
+    void appliesNeutralBasketBindingsDeclaredOnlyByAnAdditionalTopic() {
+        var f = new Fixture(HEADER + """
+                DOMAIN G (GENERIC) = COORD NUMERIC, NUMERIC;
+                       A = COORD 0.00..100.00, 0.00..100.00;
+                       B = COORD 200.00..300.00, 200.00..300.00
+                         CONSTRAINTS OnlyUndefined: NOT (DEFINED(THIS));
+                CONTEXT Default = G = A OR B;
+                TOPIC Base = END Base;
+                TOPIC Extended EXTENDS Base =
+                  DEFERRED GENERICS G;
+                  CLASS Item = point : G; END Item;
+                END Extended;
+                END Checks.
+                """);
+        var base = f.ref("Checks", "Base");
+        var extended = f.ref("Checks", "Extended");
+        var item = f.ref("Checks", "Extended", "Item");
+        var point = f.ref("Checks", "Extended", "Item", "point");
+        try (var session = f.session()) {
+            for (var domain : List.of("A", "B")) {
+                var basket = new TransferEvent.StartBasket(new BasketId(domain, TransferIdentity.IdOrigin.SOURCE),
+                        base, List.of(extended), TransferEvent.BasketKind.FULL, TransferEvent.Consistency.COMPLETE,
+                        Optional.empty(), Optional.empty(), Optional.empty(), List.of(f.binding(domain)));
+                session.accept(basket, RUN);
+                session.accept(object(basket, item, Map.of(point, coord("250", "250")), Optional.empty(), Optional.empty()), RUN);
+                session.accept(new TransferEvent.EndBasket(basket.id()), RUN);
+            }
+            var report = finish(session);
+            assertEquals(List.of(VALUE_OUT_OF_RANGE, VALUE_OUT_OF_RANGE, DOMAIN_CONSTRAINT_FALSE), codes(report));
+            assertTrue(report.examples().subList(0, 2).stream().allMatch(d -> d.data().basket().value().equals("A")));
+            assertEquals("B", report.examples().getLast().data().basket().value());
+            assertEquals(List.of(new DataLocation.Slot(point),
+                    new DataLocation.GeometryComponent(DataLocation.GeometryComponent.Kind.AXIS, 1)),
+                    report.examples().getFirst().data().path());
+            var applied = report.coverage().constraints().getFirst();
+            assertEquals(1, report.coverage().constraints().size());
+            assertEquals(report.examples().getLast().rule().declaration(), applied.constraint());
+            assertEquals(ValidationCoverage.ConstraintStatus.CHECKED, applied.status());
+            assertEquals(1, applied.occurrences());
+            assertEquals(Optional.of(point), applied.slot());
+            assertTrue(report.coverage().missingRuntimeContext().isEmpty());
+        }
+    }
+
+    @Test
     void aConcreteExtensionOfGenericDomainKeepsItsOwnAxes() {
         var fixture = new Fixture(HEADER + """
                 DOMAIN G (GENERIC) = COORD NUMERIC, NUMERIC;

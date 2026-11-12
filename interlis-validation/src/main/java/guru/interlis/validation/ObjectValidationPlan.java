@@ -32,9 +32,14 @@ record ObjectValidationPlan(ObjectDescriptor descriptor, List<FieldRule> fields,
     /** Rules for the value itself at depth zero and collection elements at higher depths. */
     record ValueRules(int depth, TypeDescriptor type, Optional<SymbolId> genericDomain,
                       Optional<Symbol> requiredDeclaration,
-                      List<ConstraintSymbol> constraints, Set<List<String>> enumerationValues) {
+                      List<ConstraintSymbol> constraints, Map<SymbolId, List<ConstraintSymbol>> concreteConstraints,
+                      Set<List<String>> enumerationValues) {
         ValueRules {
             constraints = List.copyOf(constraints);
+        }
+
+        List<ConstraintSymbol> constraints(Optional<SymbolId> concreteDomain) {
+            return concreteDomain.map(concreteConstraints::get).orElse(constraints);
         }
 
         boolean required() {

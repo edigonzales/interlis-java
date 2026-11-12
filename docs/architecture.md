@@ -45,6 +45,12 @@ Der Transferkern prüft die Integrität seiner neutralen Ereignisfolge.
 Formatadapter verwenden Modell und Transferplan für das Wire-Layout und
 melden nicht unterstützte Kodierungen explizit. Modellbasierte Datenvalidierung
 ist eine separate Aufgabe; dekodierbare Verstösse bleiben als Transferwerte erhalten.
+`interlis-validation` bindet lokale Regeln an denselben Schema-Snapshot und
+prüft neutrale Transferereignisse. Der Plan ist unveränderlich; jede Sitzung
+besitzt ihren Basketkontext, ihre Zähler und ihre begrenzten Diagnosebeispiele.
+Die Bibliothek benötigt zur Laufzeit nur Modell und Transferkern.
+[Abdeckung und Nutzung](usage/transfer.md#lokale-datenvalidierung)
+beschreiben die Grenze zu Referenzauflösung, globalen Regeln und Topologie.
 
 ## Quellen, Identitäten und Zustände
 
