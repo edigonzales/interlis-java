@@ -13,6 +13,8 @@ import guru.interlis.model.MandatoryConstraint;
 import guru.interlis.model.GeometryType;
 import guru.interlis.model.Modifier;
 import guru.interlis.model.OidRule;
+import guru.interlis.model.RoleSymbol;
+import guru.interlis.model.TopicSymbol;
 import guru.interlis.model.OidType;
 import guru.interlis.model.Origin;
 import guru.interlis.model.StructureValueType;
@@ -43,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import static guru.interlis.validation.ValidationCode.*;
 import static guru.interlis.validation.ValidationCoverage.RuleFamily.*;
@@ -168,6 +171,18 @@ public final class ValidationSession implements AutoCloseable {
         boolean delete = event.operation().orElse(null) == TransferEvent.Operation.DELETE;
         boolean partial = event.consistency() == TransferEvent.Consistency.INCOMPLETE
                 || basket.start().consistency() == TransferEvent.Consistency.INCOMPLETE;
+        for (var entry : object.data().values().entrySet()) {
+            if (entry.getValue() instanceof TransferValue.Structured payload
+                    && plan.symbol(entry.getKey().symbol()).orElse(null) instanceof RoleSymbol) {
+                var association = plan.object(payload.type());
+                if (association != null && association.descriptor().kind() == SymbolKind.ASSOCIATION) {
+                    budget.consume();
+                    var path = new ValuePath(null, new DataLocation.Slot(entry.getKey()));
+                    checkObjectConstraints(object, association, payload, path, delete, partial, budget);
+                    stack.push(fields(association, payload, path));
+                }
+            }
+        }
         while (!stack.isEmpty()) {
             cancellation.throwIfCancellationRequested();
             var iterator = stack.peek();
@@ -330,6 +345,11 @@ public final class ValidationSession implements AutoCloseable {
                                         TransferValue.Structured current, ValuePath path,
                                         boolean incomplete, boolean partial, ObjectBudget budget) {
         for (var declaration : objectPlan.constraints()) {
+            if (declaration.target().isPresent() && declaration.header().owner()
+                    .filter(id -> plan.symbol(id).orElse(null) instanceof TopicSymbol)
+                    .filter(id -> !basket.topicScope().contains(id)).isPresent()) {
+                continue;
+            }
             if (declaration.definition() instanceof MandatoryConstraint mandatory) {
                 checkConstraint(root, objectPlan.descriptor().symbol(), Optional.empty(), declaration,
                         mandatory.condition(), current, path, incomplete, partial, budget);
@@ -645,7 +665,7 @@ public final class ValidationSession implements AutoCloseable {
     }
 
     private record BasketContext(TransferEvent.StartBasket start, List<TopicDescriptor> topics,
-                                 Map<SymbolId, SymbolId> domains) {
+                                 Map<SymbolId, SymbolId> domains, Set<SymbolId> topicScope) {
         static BasketContext of(TransferEvent.StartBasket event, ValidationPlan plan) {
             var topic = topic(plan, event.topic());
             var topics = new ArrayList<TopicDescriptor>();
@@ -684,7 +704,14 @@ public final class ValidationSession implements AutoCloseable {
             if (!selected.keySet().containsAll(supplied.keySet())) {
                 throw new ValidationStreamException("Unexpected basket domain binding");
             }
-            return new BasketContext(event, List.copyOf(topics), Map.copyOf(selected));
+            var topicScope = new HashSet<SymbolId>();
+            for (var active : topics) {
+                var ancestor = active;
+                while (topicScope.add(ancestor.symbol().symbol()) && ancestor.baseTopic().isPresent()) {
+                    ancestor = topic(plan, ancestor.baseTopic().orElseThrow());
+                }
+            }
+            return new BasketContext(event, List.copyOf(topics), Map.copyOf(selected), Set.copyOf(topicScope));
         }
 
         private static TopicDescriptor topic(ValidationPlan plan, SymbolRef ref) {

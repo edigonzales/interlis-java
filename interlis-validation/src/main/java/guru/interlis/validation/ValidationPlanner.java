@@ -60,6 +60,8 @@ public final class ValidationPlanner {
             return new ValidationPlanningResult.Ready(projection.build());
         } catch (MissingModelInformation missing) {
             return rejected(MISSING_MODEL_INFORMATION, Optional.of(missing.symbol), missing.getMessage());
+        } catch (ValidationLimitException limit) {
+            return rejected(EXPRESSION_LIMIT_EXCEEDED, Optional.empty(), limit.getMessage());
         }
     }
 

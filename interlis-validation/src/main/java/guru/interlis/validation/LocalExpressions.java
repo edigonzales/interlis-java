@@ -170,7 +170,7 @@ final class LocalExpressions {
 
         boolean visit(ExpressionId id, int depth) {
             if (depth > MAX_DEPTH || ++visits > MAX_NODES) {
-                return false;
+                throw new ValidationLimitException("Expression exceeds the validation plan budget");
             }
             var expression = expression(id);
             for (var child : expression.children()) {
@@ -180,12 +180,8 @@ final class LocalExpressions {
             }
             boolean supported = switch (expression) {
                 case LiteralExpression literal -> {
-                    try {
-                        constants.put(id, literal(literal));
-                        yield true;
-                    } catch (ValidationLimitException tooLarge) {
-                        yield false;
-                    }
+                    constants.put(id, literal(literal));
+                    yield true;
                 }
                 case UndefinedExpression _ -> {
                     constants.put(id, new UndefinedByData(false));

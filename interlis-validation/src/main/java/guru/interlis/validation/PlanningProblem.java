@@ -14,6 +14,6 @@ public record PlanningProblem(Code code, Optional<SymbolRef> symbol, String mess
 
     /** Machine-readable planning failure. */
     public enum Code {
-        SNAPSHOT_MISMATCH, SCHEMA_FINGERPRINT_MISMATCH, MISSING_MODEL_INFORMATION
+        SNAPSHOT_MISMATCH, SCHEMA_FINGERPRINT_MISMATCH, MISSING_MODEL_INFORMATION, EXPRESSION_LIMIT_EXCEEDED
     }
 }
