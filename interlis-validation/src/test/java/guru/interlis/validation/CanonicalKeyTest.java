@@ -73,7 +73,7 @@ class CanonicalKeyTest {
                 .filter(candidate -> candidate.name().transfer().segments().getLast().equals(name)).findFirst().orElseThrow();
         var descriptor = PLAN.effectiveType(slot.effectiveType().type()).orElseThrow();
         return assertInstanceOf(ValueSemantics.Known.class,
-                VALUES.key(new LocalExpressions.Known(value), descriptor)).key();
+                VALUES.key(new EvaluationResult.Known(value), descriptor)).key();
     }
 
     private static TransferValue.NumberValue number(String lexeme) {

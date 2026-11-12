@@ -31,7 +31,7 @@ final class LocalUnique {
     private LocalUnique() { }
 
     static boolean supports(UniquenessConstraint rule, SemanticGraph graph, TypeRelations relations,
-                            Function<ExpressionId, LocalExpressions.Program> programs) {
+                            Function<ExpressionId, ExpressionProgram> programs) {
         Function<TypeId, TypeDescriptor> effective = id -> relations.resolveAliases(new TypeRef(graph.snapshotId(), id)).known()
                 .flatMap(resolved -> graph.type(resolved.effectiveType())).orElse(null);
         for (var key : rule.localKeys()) {
@@ -84,7 +84,7 @@ final class LocalUnique {
         return a == UNSUPPORTED_VALUE || b == UNSUPPORTED_VALUE ? UNSUPPORTED_VALUE : CHECKED;
     }
 
-    private record KeyField(LocalExpressions.Program program, TypeDescriptor type) { }
+    private record KeyField(ExpressionProgram program, TypeDescriptor type) { }
 
     private static final class Check {
         private final ValidationPlan plan;
@@ -140,14 +140,15 @@ final class LocalUnique {
                     gap(MISSING_RUNTIME_CONTEXT);
                     return;
                 }
-                var read = LocalExpressions.attribute(context(structured), structured, attribute.target());
+                var read = ExpressionEvaluator.attribute(context(structured), structured, attribute.target());
                 switch (read) {
-                    case LocalExpressions.Known known -> walk(known.value(),
+                    case EvaluationResult.Known known -> walk(known.value(),
                             new ValuePath(path, new DataLocation.Slot(field.slot().symbol())), next + 1,
                             field.values().getFirst().type());
-                    case LocalExpressions.UndefinedByData _ -> { }
-                    case LocalExpressions.MissingContext _ -> gap(MISSING_RUNTIME_CONTEXT);
-                    case LocalExpressions.Unsupported _ -> gap(UNSUPPORTED_VALUE);
+                    case EvaluationResult.UndefinedByData _ -> { }
+                    case EvaluationResult.BlockedByViolation _ -> gap(INCOMPLETE_CONTEXT);
+                    case EvaluationResult.MissingContext _ -> gap(MISSING_RUNTIME_CONTEXT);
+                    case EvaluationResult.Unsupported _ -> gap(UNSUPPORTED_VALUE);
                 }
             } else {
                 gap(UNSUPPORTED_VALUE);
@@ -190,8 +191,8 @@ final class LocalUnique {
             }
         }
 
-        private LocalExpressions.Context context(TransferValue value) {
-            return new LocalExpressions.Context(plan, value, partial, visit);
+        private EvaluationFrame context(TransferValue value) {
+            return new EvaluationFrame(plan, value, partial, visit);
         }
 
         private void gap(ConstraintStatus gap) {

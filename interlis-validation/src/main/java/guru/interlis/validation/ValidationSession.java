@@ -451,9 +451,9 @@ public final class ValidationSession implements AutoCloseable {
             countConstraint(owner, slot, declaration, ConstraintStatus.INCOMPLETE_CONTEXT);
             return;
         }
-        var result = plan.expression(expression).evaluate(new LocalExpressions.Context(plan, current, partial, budget::consume));
+        var result = plan.expression(expression).evaluate(new EvaluationFrame(plan, current, partial, budget::consume));
         var status = switch (result) {
-            case LocalExpressions.Known known when known.value() instanceof TransferValue.BooleanValue value -> {
+            case EvaluationResult.Known known when known.value() instanceof TransferValue.BooleanValue value -> {
                 if (!value.value()) {
                     var code = declaration.definition() instanceof DomainConstraint
                             ? DOMAIN_CONSTRAINT_FALSE : MANDATORY_CONSTRAINT_FALSE;
@@ -461,15 +461,16 @@ public final class ValidationSession implements AutoCloseable {
                 }
                 yield ConstraintStatus.CHECKED;
             }
-            case LocalExpressions.UndefinedByData undefined -> {
+            case EvaluationResult.UndefinedByData undefined -> {
                 if (declaration.definition() instanceof MandatoryConstraint
                         && (declaration.languageVersion() == LanguageVersion.ILI24 || undefined.comparison())) {
                     yield ConstraintStatus.UNDEFINED_BY_DATA;
                 }
                 yield ConstraintStatus.UNSUPPORTED_VALUE;
             }
-            case LocalExpressions.MissingContext _ -> ConstraintStatus.MISSING_RUNTIME_CONTEXT;
-            case LocalExpressions.Unsupported _, LocalExpressions.Known _ -> ConstraintStatus.UNSUPPORTED_VALUE;
+            case EvaluationResult.BlockedByViolation _ -> ConstraintStatus.INCOMPLETE_CONTEXT;
+            case EvaluationResult.MissingContext _ -> ConstraintStatus.MISSING_RUNTIME_CONTEXT;
+            case EvaluationResult.Unsupported _, EvaluationResult.Known _ -> ConstraintStatus.UNSUPPORTED_VALUE;
         };
         countConstraint(owner, slot, declaration, status);
     }

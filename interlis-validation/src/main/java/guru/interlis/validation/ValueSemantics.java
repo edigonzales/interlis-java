@@ -61,17 +61,18 @@ final class ValueSemantics {
 
     enum Gap implements Result { UNDEFINED, MISSING_CONTEXT, INVALID_VALUE, UNSUPPORTED }
 
-    Result key(LocalExpressions.Result result, TypeDescriptor type) {
+    Result key(EvaluationResult result, TypeDescriptor type) {
         return switch (result) {
-            case LocalExpressions.UndefinedByData ignored -> Gap.UNDEFINED;
-            case LocalExpressions.MissingContext ignored -> Gap.MISSING_CONTEXT;
-            case LocalExpressions.Unsupported ignored -> Gap.UNSUPPORTED;
-            case LocalExpressions.Known known -> encode(known.value(), type, 0);
+            case EvaluationResult.UndefinedByData ignored -> Gap.UNDEFINED;
+            case EvaluationResult.BlockedByViolation ignored -> Gap.INVALID_VALUE;
+            case EvaluationResult.MissingContext ignored -> Gap.MISSING_CONTEXT;
+            case EvaluationResult.Unsupported ignored -> Gap.UNSUPPORTED;
+            case EvaluationResult.Known known -> encode(known.value(), type, 0);
         };
     }
 
-    Result existenceKey(LocalExpressions.Result result, TypeDescriptor type) {
-        if (type instanceof EnumerationType && result instanceof LocalExpressions.Known known
+    Result existenceKey(EvaluationResult result, TypeDescriptor type) {
+        if (type instanceof EnumerationType && result instanceof EvaluationResult.Known known
                 && known.value() instanceof TransferValue.Enumeration enumeration) {
             // The bound source and target have already passed compiler compatibility checks.
             visit.run();
@@ -260,14 +261,14 @@ final class ValueSemantics {
         out.number(fields.size());
         for (var field : fields) {
             out.text(canonicalSlot(field.attribute()).value());
-            var context = new LocalExpressions.Context(plan, structure, partial, visit);
-            var result = LocalExpressions.attribute(context, structure, field.symbol().symbol());
-            if (result instanceof LocalExpressions.UndefinedByData) {
+            var context = new EvaluationFrame(plan, structure, partial, visit);
+            var result = ExpressionEvaluator.attribute(context, structure, field.symbol().symbol());
+            if (result instanceof EvaluationResult.UndefinedByData) {
                 out.tag(0);
                 continue;
             }
-            if (!(result instanceof LocalExpressions.Known known)) {
-                return result == LocalExpressions.MissingContext.INSTANCE ? Gap.MISSING_CONTEXT : Gap.UNSUPPORTED;
+            if (!(result instanceof EvaluationResult.Known known)) {
+                return result instanceof EvaluationResult.MissingContext ? Gap.MISSING_CONTEXT : Gap.UNSUPPORTED;
             }
             var fieldType = plan.effectiveType(field.effectiveType().type()).orElse(null);
             switch (encode(known.value(), fieldType, depth + 1)) {

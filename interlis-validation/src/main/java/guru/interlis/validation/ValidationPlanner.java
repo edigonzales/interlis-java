@@ -84,7 +84,7 @@ public final class ValidationPlanner {
         private final List<SymbolRef> rootModels;
         private final Map<ConstraintSymbol, List<SymbolRef>> datasetCandidates = new LinkedHashMap<>();
         private final TypeRelations types;
-        private final Map<ExpressionId, Optional<LocalExpressions.Program>> expressions = new LinkedHashMap<>();
+        private final Map<ExpressionId, Optional<ExpressionProgram>> expressions = new LinkedHashMap<>();
         private final Map<SymbolId, List<IndexedConstraint>> declarations = new LinkedHashMap<>();
         // Structures may occur in baskets of several topics. Project the union
         // of alternatives once; a session selects rules for its actual binding.
@@ -325,7 +325,7 @@ public final class ValidationPlanner {
                 }
                 case SetConstraint set -> {
                     set.where().ifPresent(this::datasetExpression);
-                    expressions.computeIfAbsent(set.condition(), id -> LocalExpressions.compileSet(graph, types, id, application));
+                    expressions.computeIfAbsent(set.condition(), id -> ExpressionCompiler.compileSet(graph, types, id, application));
                 }
                 case PlausibilityConstraint plausibility -> datasetExpression(plausibility.condition());
                 default -> { }
@@ -333,7 +333,7 @@ public final class ValidationPlanner {
         }
 
         private void datasetExpression(ExpressionId root) {
-            expressions.computeIfAbsent(root, id -> LocalExpressions.compile(graph, types, id));
+            expressions.computeIfAbsent(root, id -> ExpressionCompiler.compile(graph, types, id));
         }
 
         private static boolean datasetRule(ConstraintDefinition definition) {
@@ -366,9 +366,9 @@ public final class ValidationPlanner {
                 }
             }
             for (var id : expressions) {
-                Optional<LocalExpressions.Program> program;
+                Optional<ExpressionProgram> program;
                 try {
-                    program = this.expressions.computeIfAbsent(id, root -> LocalExpressions.compile(graph, types, root));
+                    program = this.expressions.computeIfAbsent(id, root -> ExpressionCompiler.compile(graph, types, root));
                 } catch (IllegalArgumentException invalid) {
                     throw missing(constraint, invalid.getMessage());
                 }

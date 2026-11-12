@@ -105,12 +105,12 @@ final class DatasetUnique {
     }
 
     private void observe(DatasetRuleContext.Occurrence occurrence, long scope, DatasetScopeCounts counts,
-                         Optional<LocalExpressions.Program> where, List<LocalExpressions.Program> fields) {
+                         Optional<ExpressionProgram> where, List<ExpressionProgram> fields) {
         if (where.isPresent()) {
             var filter = context.evaluate(where.orElseThrow(), occurrence);
             switch (filter) {
-                case LocalExpressions.UndefinedByData ignored -> { counts.evaluations++; return; }
-                case LocalExpressions.Known known when known.value() instanceof TransferValue.BooleanValue bool -> {
+                case EvaluationResult.UndefinedByData ignored -> { counts.evaluations++; return; }
+                case EvaluationResult.Known known when known.value() instanceof TransferValue.BooleanValue bool -> {
                     if (!bool.value()) {
                         counts.evaluations++;
                         return;
@@ -118,7 +118,7 @@ final class DatasetUnique {
                 }
                 default -> {
                     counts.undecided++;
-                    if (filter == LocalExpressions.Unsupported.INSTANCE) {
+                    if (filter == EvaluationResult.Unsupported.INSTANCE) {
                         counts.unsupported++;
                     }
                     return;
@@ -179,8 +179,8 @@ final class DatasetUnique {
         }
     }
 
-    private record Binding(DatasetRulePlan rule, Optional<LocalExpressions.Program> where,
-                           List<LocalExpressions.Program> fields, boolean supported) { }
+    private record Binding(DatasetRulePlan rule, Optional<ExpressionProgram> where,
+                           List<ExpressionProgram> fields, boolean supported) { }
 
 
     private record Group(long size, long first, long second, long selected) {

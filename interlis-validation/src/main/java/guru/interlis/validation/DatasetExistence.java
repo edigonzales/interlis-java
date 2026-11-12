@@ -25,7 +25,7 @@ final class DatasetExistence {
     private final DatasetRulePlan rule;
     private final int ordinal;
     private final List<Alternative> alternatives;
-    private final Optional<LocalExpressions.Program> source;
+    private final Optional<ExpressionProgram> source;
     private final DatasetScopeCounts counts = new DatasetScopeCounts();
 
     DatasetExistence(DatasetRuleContext context, ValidationSession report, DatasetRulePlan rule,
@@ -85,7 +85,7 @@ final class DatasetExistence {
         var type = context.valueType(program, occurrence);
         var path = sourcePath(program);
         var semantics = context.semantics(occurrence);
-        if (type instanceof GeometryType geometry && result instanceof LocalExpressions.Known known
+        if (type instanceof GeometryType geometry && result instanceof EvaluationResult.Known known
                 && known.value() instanceof TransferGeometry value) {
             checkVertices(occurrence, path, semantics, geometry, value);
             return;
@@ -202,7 +202,7 @@ final class DatasetExistence {
         return context.indexKey(TAG, ordinal, alternative.ordinal, key);
     }
 
-    private List<DataLocation.Step> sourcePath(LocalExpressions.Program program) {
+    private List<DataLocation.Step> sourcePath(ExpressionProgram program) {
         if (!(program.expression() instanceof PathExpression path)) {
             return List.of();
         }
@@ -211,7 +211,7 @@ final class DatasetExistence {
                 .map(step -> (DataLocation.Step) new DataLocation.Slot(context.plan.ref(step.target()))).toList();
     }
 
-    private TypeDescriptor effectiveType(LocalExpressions.Program program) {
+    private TypeDescriptor effectiveType(ExpressionProgram program) {
         return context.plan.effectiveType(program.expression().typeId()).orElse(null);
     }
 
@@ -219,14 +219,14 @@ final class DatasetExistence {
 
     private final class Alternative {
         private final SymbolRef root;
-        private final Optional<LocalExpressions.Program> program;
+        private final Optional<ExpressionProgram> program;
         private final int ordinal;
         private final boolean closed;
         private final boolean coordinate;
         private boolean unknown;
         private boolean unsupportedValue;
 
-        Alternative(SymbolRef root, Optional<LocalExpressions.Program> program, int ordinal) {
+        Alternative(SymbolRef root, Optional<ExpressionProgram> program, int ordinal) {
             this.root = root;
             this.program = program;
             this.ordinal = ordinal;

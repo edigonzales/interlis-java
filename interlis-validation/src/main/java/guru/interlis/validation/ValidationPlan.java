@@ -31,7 +31,7 @@ public final class ValidationPlan {
     private final SemanticGraph graph;
     private final TypeRelations typeRelations;
     private final Map<SymbolRef, ObjectValidationPlan> objects;
-    private final Map<ExpressionId, Optional<LocalExpressions.Program>> expressions;
+    private final Map<ExpressionId, Optional<ExpressionProgram>> expressions;
     private final List<UncheckedRuleInfo> uncheckedRules;
     private final ValidationProfile profile;
     private final List<DatasetRulePlan> datasetRules;
@@ -40,7 +40,7 @@ public final class ValidationPlan {
     private final Map<TypeId, TypeId> originalEnumerations;
 
     ValidationPlan(TransferPlan transferPlan, SemanticGraph graph, Map<SymbolRef, ObjectValidationPlan> objects,
-                   List<UncheckedRuleInfo> uncheckedRules, Map<ExpressionId, Optional<LocalExpressions.Program>> expressions,
+                   List<UncheckedRuleInfo> uncheckedRules, Map<ExpressionId, Optional<ExpressionProgram>> expressions,
                    ValidationProfile profile, List<DatasetRulePlan> datasetRules, List<SymbolRef> rootModels) {
         this.transferPlan = transferPlan;
         this.graph = graph;
@@ -174,11 +174,11 @@ public final class ValidationPlan {
         return transferPlan;
     }
 
-    LocalExpressions.Program expression(ExpressionId root) {
+    ExpressionProgram expression(ExpressionId root) {
         return datasetExpression(root).orElseThrow();
     }
 
-    Optional<LocalExpressions.Program> datasetExpression(ExpressionId root) {
+    Optional<ExpressionProgram> datasetExpression(ExpressionId root) {
         return expressions.getOrDefault(root, Optional.empty());
     }
 

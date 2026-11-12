@@ -231,16 +231,16 @@ final class DatasetRuleContext {
         });
     }
 
-    Optional<LocalExpressions.Program> program(ExpressionId id) {
+    Optional<ExpressionProgram> program(ExpressionId id) {
         return plan.datasetExpression(id);
     }
 
-    LocalExpressions.Result evaluate(LocalExpressions.Program program, Occurrence occurrence) {
-        return program.evaluate(new LocalExpressions.Context(plan, occurrence.object().data(),
+    EvaluationResult evaluate(ExpressionProgram program, Occurrence occurrence) {
+        return program.evaluate(new EvaluationFrame(plan, occurrence.object().data(),
                 occurrence.partial(), this::visit));
     }
 
-    TypeDescriptor valueType(LocalExpressions.Program program, Occurrence occurrence) {
+    TypeDescriptor valueType(ExpressionProgram program, Occurrence occurrence) {
         var declared = plan.effectiveType(program.expression().typeId()).orElse(null);
         if (!(program.expression() instanceof PathExpression path)) {
             return declared;

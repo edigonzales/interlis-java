@@ -49,12 +49,12 @@ final class DatasetAggregate {
                 counts.candidates++;
             } else {
                 switch (context.evaluate(where.orElseThrow(), occurrence)) {
-                    case LocalExpressions.Known known when known.value() instanceof TransferValue.BooleanValue value -> {
+                    case EvaluationResult.Known known when known.value() instanceof TransferValue.BooleanValue value -> {
                         if (value.value()) {
                             counts.candidates++;
                         }
                     }
-                    case LocalExpressions.UndefinedByData ignored -> { }
+                    case EvaluationResult.UndefinedByData ignored -> { }
                     default -> counts.undecided++;
                 }
             }
@@ -89,12 +89,12 @@ final class DatasetAggregate {
                 return;
             }
             switch (context.evaluate(condition.orElseThrow(), occurrence)) {
-                case LocalExpressions.Known known when known.value() instanceof TransferValue.BooleanValue value -> {
+                case EvaluationResult.Known known when known.value() instanceof TransferValue.BooleanValue value -> {
                     if (value.value()) {
                         counts.satisfied++;
                     }
                 }
-                case LocalExpressions.UndefinedByData ignored -> counts.satisfied++;
+                case EvaluationResult.UndefinedByData ignored -> counts.satisfied++;
                 default -> counts.undecided++;
             }
         });
@@ -103,11 +103,12 @@ final class DatasetAggregate {
     }
 
     private DatasetRuleCoverage evaluateSet(long ordinal, Scope population, boolean basket,
-                                            LocalExpressions.Program condition) {
+                                            ExpressionProgram condition) {
         var count = complete(population) ? OptionalLong.of(population.counts().candidates) : OptionalLong.empty();
-        var result = condition.evaluate(new LocalExpressions.Context(context.plan, TransferValue.Undefined.INSTANCE,
-                !complete(population), context::visit, count));
-        if (result instanceof LocalExpressions.Known known && known.value() instanceof TransferValue.BooleanValue value) {
+        var result = condition.evaluate(new EvaluationFrame(context.plan, TransferValue.Undefined.INSTANCE,
+                !complete(population), context::visit,
+                condition.requirements().populationRequired() ? count : OptionalLong.empty()));
+        if (result instanceof EvaluationResult.Known known && known.value() instanceof TransferValue.BooleanValue value) {
             if (!value.value()) {
                 report.datasetViolation(rule.declaration(), ValidationCode.SET_CONSTRAINT_FALSE,
                         context.scopeLocation(rule, ordinal), count.isPresent() ? List.of(Long.toString(count.getAsLong())) : List.of());
@@ -115,7 +116,7 @@ final class DatasetAggregate {
             }
             return setCoverage(population, basket, SATISFIED, 1, 0);
         }
-        return setCoverage(population, basket, result == LocalExpressions.Unsupported.INSTANCE
+        return setCoverage(population, basket, result == EvaluationResult.Unsupported.INSTANCE
                 ? UNSUPPORTED : UNDETERMINED, 0, 0);
     }
 
