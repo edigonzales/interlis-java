@@ -11,6 +11,7 @@ import guru.interlis.model.DefinedExpression;
 import guru.interlis.model.DomainConstraint;
 import guru.interlis.model.DomainReferenceType;
 import guru.interlis.model.DomainSymbol;
+import guru.interlis.model.EnumerationType;
 import guru.interlis.model.ErrorExpression;
 import guru.interlis.model.ExistenceConstraint;
 import guru.interlis.model.ExpressionId;
@@ -18,6 +19,7 @@ import guru.interlis.model.FunctionCallExpression;
 import guru.interlis.model.InspectionExpression;
 import guru.interlis.model.LiteralExpression;
 import guru.interlis.model.MandatoryConstraint;
+import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.ObjectSetExpression;
 import guru.interlis.model.PathExpression;
 import guru.interlis.model.PathStep;
@@ -84,6 +86,7 @@ public final class ValidationPlanner {
         private final SemanticGraph graph;
         private final TransferPlan transfer;
         private final Map<SymbolId, List<IndexedConstraint>> declarations = new LinkedHashMap<>();
+        private final Map<TypeId, Set<List<String>>> enumValues = new LinkedHashMap<>();
         private final List<UncheckedRuleInfo> unchecked = new ArrayList<>();
 
         Projection(SemanticGraph graph, TransferPlan transfer) {
@@ -146,12 +149,29 @@ public final class ValidationPlanner {
                     required = Optional.of(slot.attribute());
                 }
                 values.add(new ObjectValidationPlan.ValueRules(depth, type, required,
-                        rules(object, Optional.of(slot.symbol()), depth, domains)));
+                        rules(object, Optional.of(slot.symbol()), depth, domains),
+                        type instanceof EnumerationType enumeration
+                                ? enumValues.computeIfAbsent(type.id(), id -> ScalarRules.enumerationValues(enumeration))
+                                : Set.of()));
                 if (!(type instanceof CollectionType collection)) {
-                    return new ObjectValidationPlan.FieldRule(slot, hasDerivation(slot), values);
+                    return new ObjectValidationPlan.FieldRule(slot, hasDerivation(slot), charset(slot.attribute()), values);
                 }
                 valueType = collection.elementType();
             }
+        }
+
+        private Optional<String> charset(Symbol symbol) {
+            while (!(symbol instanceof ModelSymbol) && symbol.header().owner().isPresent()) {
+                var owner = graph.symbol(symbol.header().owner().orElseThrow());
+                if (owner.isEmpty()) {
+                    return Optional.empty();
+                }
+                symbol = owner.orElseThrow();
+            }
+            if (symbol instanceof ModelSymbol model) {
+                return model.options().characterSet().map(option -> option.value());
+            }
+            return Optional.empty();
         }
 
         private boolean hasDerivation(AttributeSlot slot) {

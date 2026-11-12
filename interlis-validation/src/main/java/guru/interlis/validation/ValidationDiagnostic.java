@@ -23,6 +23,14 @@ public record ValidationDiagnostic(ValidationCode code, Severity severity, DataL
             case REQUIRED_VALUE_UNDEFINED -> "Required value is undefined.";
             case CARDINALITY_VIOLATION -> "Collection cardinality is outside its bounds.";
             case TYPE_MISMATCH -> "Value has a different family than the model type.";
+            case TEXT_TOO_LONG -> "Text exceeds its model length.";
+            case TEXT_CHARACTER_NOT_ALLOWED -> "Text contains a character outside its repertoire.";
+            case INVALID_NAME -> "Value is not an INTERLIS name.";
+            case INVALID_URI -> "Value is not an INTERLIS URI.";
+            case VALUE_OUT_OF_RANGE -> "Value is outside its model range.";
+            case NUMERIC_PRECISION_EXCEEDED -> "Number exceeds the precision of its model range.";
+            case ENUM_VALUE_NOT_ALLOWED -> "Enumeration value is outside its model domain.";
+            case INVALID_TEMPORAL_VALUE -> "Value does not match its calendar or time domain.";
             case STRUCTURE_TYPE_MISMATCH -> "Structure type is outside the allowed hierarchy.";
         };
     }

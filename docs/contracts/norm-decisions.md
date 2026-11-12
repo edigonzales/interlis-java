@@ -64,6 +64,27 @@ Compiler-, Reuse- und Diagrammtests laden die Modellquellen direkt.
 
 ## Quellen
 
+## Lokale Datenwerte
+
+Der Validator zählt TEXT und MTEXT gemäss 2.3 §2.8.1 und 2.4 §3.8.1
+mit Unicode 17.0.0. Die Länge entspricht der Zahl der Zeichen mit
+kanonischer Kombinationsklasse 0 nach kanonischer Zerlegung. Ein Wert mit
+Länge 0 ist fachlich undefiniert. Bei einem explizit angegebenen, auf der JVM
+verfügbaren Modellzeichensatz wird dessen Repertoire geprüft. Ausserhalb des
+Standardrepertoires nach 2.3 Anhang B bzw. 2.4 Anhang D bleibt der Repertoirecheck
+ohne weitere Vereinbarung ungeprüft. Die TEXT-/MTEXT-Steuerzeichenregel gilt
+unabhängig davon. NAME folgt den reservierten Wörtern der Sprachversion, URI
+der URI-Syntax von RFC 2396 ohne Netzwerkzugriff.
+
+Numerische Transferwerte werden unverändert gegen inklusive Modellgrenzen
+verglichen (2.3 §2.8.5, 2.4 §§2.8 und 3.8.5). Bei gleicher deklarierter
+Stellenzahl prüfen wir die exakte Darstellbarkeit. Ohne Skalierung gilt
+die Zahl der Nachkommastellen, bei skalierten Bereichen die Stellenzahl der
+Mantisse. Überzählige Nullen ändern den exakten Wert nicht. Für gemischte
+Kompatibilitätsformen ohne eindeutiges Präzisionsmodell gilt die Prüfung
+der Grenzen; die Precision-Coverage bleibt offen. Die Prüfung rundet
+keinen Transferwert und rechnet keine Einheiten um.
+
 [norm23]: https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf
 [norm24]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf
 [ref-norm23-p28]: https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf#page=28

@@ -7,6 +7,7 @@ import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 record ObjectValidationPlan(ObjectDescriptor descriptor, List<FieldRule> fields,
                             List<ConstraintSymbol> constraints) {
@@ -15,7 +16,7 @@ record ObjectValidationPlan(ObjectDescriptor descriptor, List<FieldRule> fields,
         constraints = List.copyOf(constraints);
     }
 
-    record FieldRule(AttributeSlot slot, boolean derived, List<ValueRules> values) {
+    record FieldRule(AttributeSlot slot, boolean derived, Optional<String> charset, List<ValueRules> values) {
         FieldRule {
             values = List.copyOf(values);
         }
@@ -23,7 +24,7 @@ record ObjectValidationPlan(ObjectDescriptor descriptor, List<FieldRule> fields,
 
     /** Rules for the value itself at depth zero and collection elements at higher depths. */
     record ValueRules(int depth, TypeDescriptor type, Optional<Symbol> requiredDeclaration,
-                      List<ConstraintSymbol> constraints) {
+                      List<ConstraintSymbol> constraints, Set<List<String>> enumerationValues) {
         ValueRules {
             constraints = List.copyOf(constraints);
         }

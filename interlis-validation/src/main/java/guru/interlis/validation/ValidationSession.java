@@ -108,7 +108,7 @@ public final class ValidationSession implements AutoCloseable {
             var report = new ValidationReport(violations == 0 ? PASSED_CHECKED_SCOPE : FAILED_CHECKED_SCOPE,
                     baskets, objects, violations, examples,
                     new ValidationCoverage(counts(checked), plan.uncheckedRules(), counts(incomplete),
-                            counts(missingRuntime), counts(unsupported), List.copyOf(EnumSet.of(VALUE_RANGE, IDENTITY, GEOMETRY_VALUES,
+                            counts(missingRuntime), counts(unsupported), List.copyOf(EnumSet.of(IDENTITY, GEOMETRY_VALUES,
                                     LOCAL_CONSTRAINTS, LOCAL_UNIQUENESS, REFERENTIAL_INTEGRITY, TOPOLOGY))));
             clear();
             state = State.FINISHED;
@@ -170,9 +170,9 @@ public final class ValidationSession implements AutoCloseable {
         var rules = field.values().get(pending.depth());
         var value = pending.value();
         var actual = value.orElse(TransferValue.Undefined.INSTANCE);
-        boolean undefined = actual == TransferValue.Undefined.INSTANCE
-                || (rules.type().kind() == TypeKind.TEXT && actual instanceof TransferValue.Text text
-                    && text.value().isEmpty());
+        int textLength = rules.type().kind() == TypeKind.TEXT && actual instanceof TransferValue.Text text
+                ? ScalarRules.textLength(text.value()) : -1;
+        boolean undefined = actual == TransferValue.Undefined.INSTANCE || textLength == 0;
         boolean uncertain = value.isEmpty() && (delete || (partial && rules.type().kind() == TypeKind.GEOMETRY));
         if (value.isEmpty() && field.derived()) {
             if (rules.required()) {
@@ -213,6 +213,11 @@ public final class ValidationSession implements AutoCloseable {
                 return Optional.empty();
             }
             case YES -> count(checked, pending, VALUE_FAMILY);
+        }
+        var coverage = ScalarRules.check(rules, actual, textLength, field.slot().attribute().languageVersion(),
+                field.charset(), (code, arguments) -> violation(object, pending, field.slot().attribute(), code, arguments));
+        if (coverage != ScalarRules.Coverage.NOT_APPLICABLE) {
+            count(coverage == ScalarRules.Coverage.CHECKED ? checked : unsupported, pending, VALUE_RANGE);
         }
         if (rules.type() instanceof CollectionType collection && actual instanceof TransferValue.Repeated repeated) {
             if (collection.collectionKind() != repeated.kind()) {

@@ -1,4 +1,4 @@
-package guru.interlis.compiler.internal;
+package guru.interlis.model;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
