@@ -75,7 +75,10 @@ class ScalarRuleTest {
                 TOPIC T = CLASS Item = value : TEXT*4; END Item; END T;
                 END Checks.
                 """);
-        assertEquals(List.of(TEXT_CHARACTER_NOT_ALLOWED), codes(ascii.validate(Map.of("value", text("é")))));
+        var outsideDeclared = ascii.validate(Map.of("value", text("é")));
+        assertEquals(List.of(), codes(outsideDeclared));
+        assertEquals(List.of(new ValidationCoverage.RuleCount(ascii.item, ascii.field("value"),
+                ValidationCoverage.RuleFamily.VALUE_RANGE, 1)), outsideDeclared.coverage().unsupportedValues());
         var defaultCharset = new Fixture(HEADER + """
                 TOPIC T = CLASS Item = value : TEXT*4; END Item; END T;
                 END Checks.
@@ -87,7 +90,7 @@ class ScalarRuleTest {
     }
 
     @Test
-    void checksExactInclusiveRangesAndTheModelPrecisionGrid() {
+    void checksExactInclusiveRangesAndPermitsHigherTransferPrecision() {
         var fixture = new Fixture(HEADER + """
                 DOMAIN Wide = -100.00 .. 200.00 [INTERLIS.m];
                 Narrow EXTENDS Wide = -10.50 .. 100.25 [INTERLIS.m];
@@ -101,12 +104,10 @@ class ScalarRuleTest {
         for (var value : List.of("-10.50001", "100.25001", "1E900")) {
             assertEquals(List.of(VALUE_OUT_OF_RANGE), codes(fixture.validate(Map.of("value", number(value)))), value);
         }
-        assertEquals(List.of(NUMERIC_PRECISION_EXCEEDED),
-                codes(fixture.validate(Map.of("value", number("0.0001")))));
+        assertEquals(List.of(), codes(fixture.validate(Map.of("value", number("0.0001")))));
         assertThrows(ValidationLimitException.class, () -> fixture.validate(Map.of("value", number("1E10001"))));
         assertEquals(List.of(), codes(fixture.validate(Map.of("scaled", number("0.11E-1")))));
-        assertEquals(List.of(NUMERIC_PRECISION_EXCEEDED),
-                codes(fixture.validate(Map.of("scaled", number("0.111E-1")))));
+        assertEquals(List.of(), codes(fixture.validate(Map.of("scaled", number("0.111E-1")))));
     }
 
     @Test

@@ -79,8 +79,9 @@ final class TextRules {
             return standard ? RepertoireResult.ACCEPTED : RepertoireResult.UNKNOWN;
         }
         try {
+            // The model declares a processing repertoire, not an exclusive transfer repertoire.
             return Charset.forName(charset.orElseThrow()).newEncoder().canEncode(value)
-                    ? RepertoireResult.ACCEPTED : RepertoireResult.REJECTED;
+                    ? RepertoireResult.ACCEPTED : RepertoireResult.UNKNOWN;
         } catch (UnsupportedCharsetException | java.nio.charset.IllegalCharsetNameException unsupported) {
             return RepertoireResult.UNKNOWN;
         }

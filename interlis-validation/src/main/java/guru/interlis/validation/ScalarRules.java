@@ -8,7 +8,6 @@ import guru.interlis.model.FormattedType;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.NumericRange;
 import guru.interlis.model.NumericType;
-import guru.interlis.model.PrecisionOrigin;
 import guru.interlis.model.TextKind;
 import guru.interlis.model.TextLengths;
 import guru.interlis.model.TextType;
@@ -61,8 +60,8 @@ final class ScalarRules {
                 return text(type, ((TransferValue.Text) value).value(), length, language, charset, report);
             }
             case NumericType type -> {
-                return checkNumber(type.range(), ((TransferValue.NumberValue) value).exactValue(), true, report)
-                        ? Coverage.CHECKED : Coverage.UNCHECKED;
+                checkNumber(type.range(), ((TransferValue.NumberValue) value).exactValue(), report);
+                return Coverage.CHECKED;
             }
             case EnumerationType _ -> {
                 if (!rules.enumerationValues().contains(((TransferValue.Enumeration) value).path())) {
@@ -109,46 +108,20 @@ final class ScalarRules {
         };
     }
 
-    static boolean checkNumber(NumericRange range, BigDecimal actual, boolean checkPrecision,
+    static void checkNumber(NumericRange range, BigDecimal actual,
                             BiConsumer<ValidationCode, List<String>> report) {
         requireNumericBudget(actual);
         var minimum = range.minimum().map(DecimalLiteral::exactValue);
         var maximum = range.maximum().map(DecimalLiteral::exactValue);
         minimum.ifPresent(ScalarRules::requireNumericBudget);
         maximum.ifPresent(ScalarRules::requireNumericBudget);
-        boolean outside = minimum.filter(bound -> actual.compareTo(bound) < 0).isPresent()
-                || maximum.filter(bound -> actual.compareTo(bound) > 0).isPresent();
-        if (outside) {
+        // INTERLIS 2.3 §3.3.11.4 and 2.4 §4.3.11.4 permit higher transfer
+        // precision as long as the exact value stays within its range.
+        if (minimum.filter(bound -> actual.compareTo(bound) < 0).isPresent()
+                || maximum.filter(bound -> actual.compareTo(bound) > 0).isPresent()) {
             report.accept(VALUE_OUT_OF_RANGE, List.of(example(actual), minimum.map(ScalarRules::example).orElse("*"),
                     maximum.map(ScalarRules::example).orElse("*")));
         }
-        if (!checkPrecision || range.maximum().isEmpty() || range.minimum().isEmpty()) {
-            return true;
-        }
-        var low = range.minimum().orElseThrow();
-        var high = range.maximum().orElseThrow();
-        boolean scaled = hasExponent(high);
-        if (scaled != hasExponent(low) || high.precision().origin() == PrecisionOrigin.COMPUTED
-                || low.precision().origin() == PrecisionOrigin.COMPUTED
-                || high.precision().fractionalDigits() != low.precision().fractionalDigits()) {
-            return false;
-        }
-        if (actual.signum() == 0 || outside) {
-            return true;
-        }
-        int digits = high.precision().fractionalDigits();
-        var reduced = actual.stripTrailingZeros();
-        int actualDigits = scaled ? reduced.precision() : reduced.scale();
-        if (actualDigits > digits) {
-            report.accept(NUMERIC_PRECISION_EXCEEDED,
-                    List.of(example(actual), Integer.toString(digits), scaled ? "significant" : "fractional"));
-        }
-        return true;
-    }
-
-    private static boolean hasExponent(DecimalLiteral literal) {
-        return literal.precision().exponent() != 0
-                || literal.lexeme().indexOf('e') >= 0 || literal.lexeme().indexOf('E') >= 0;
     }
 
     private static void requireNumericBudget(BigDecimal value) {

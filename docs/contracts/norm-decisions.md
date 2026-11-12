@@ -62,28 +62,24 @@ Compiler-, Reuse- und Diagrammtests laden die Modellquellen direkt.
 | <a id="decision-36"></a>**Fremde Signaturklasse bei Grafikregeln** | [2.3 §2.16, S.71][ref-norm23-p71]; [2.4 §3.16, S.92–93][ref-norm24-p92]: Die verantwortliche Signaturklasse ergibt sich aus Metaobjekt und verwendeten Parametern; sie muss mit der deklarierten OF-Klasse in einer passenden Vererbungskette liegen. | Akzeptiert auch die geprüfte fremde Klasse. | Akzeptiert passende Basis-/Unterklassen, lehnt die fremde Klasse ab. **Verantwortlichkeit fachlich prüfen.** |
 | <a id="decision-37"></a>**Wiederholte Metadaten und mehrzeilige `!!@`-Strings** | Projektprofil: [Quell-Metaattribute](sources-and-syntax.md#quell-metaattribute-und-dokumentation). Die Normkapitel [2.3 §2.2.8.1, S.25][ref-norm23-p25]; [2.4 §3.2.8.1, S.31][ref-norm24-p31] definieren Zeilenkommentare, aber keinen öffentlichen `fn.param`-Mehrfachwertvertrag. Unser ursprüngliches Kommentarprofil war enger. | Kein gleichwertiger öffentlicher Mehrfachwertvertrag wurde als Referenzgleichheit abgenommen. | **Vom Nutzer freigegebener Kompatibilitätsfix:** mehrere unterschiedliche `fn.param` an Funktionen und Stringfortsetzungen erlauben; sonstige Skalarkonflikte bleiben Fehler. |
 
-## Quellen
-
 ## Lokale Datenwerte
 
 Der Validator zählt TEXT und MTEXT gemäss 2.3 §2.8.1 und 2.4 §3.8.1
 mit Unicode 17.0.0. Die Länge entspricht der Zahl der Zeichen mit
 kanonischer Kombinationsklasse 0 nach kanonischer Zerlegung. Ein Wert mit
-Länge 0 ist fachlich undefiniert. Bei einem explizit angegebenen, auf der JVM
-verfügbaren Modellzeichensatz wird dessen Repertoire geprüft. Ausserhalb des
-Standardrepertoires nach 2.3 Anhang B bzw. 2.4 Anhang D bleibt der Repertoirecheck
-ohne weitere Vereinbarung ungeprüft. Die TEXT-/MTEXT-Steuerzeichenregel gilt
-unabhängig davon. NAME folgt den reservierten Wörtern der Sprachversion, URI
-der URI-Syntax von RFC 2396 ohne Netzwerkzugriff.
+Länge 0 ist fachlich undefiniert. Die TEXT-/MTEXT-Steuerzeichenregel gilt unabhängig vom Repertoire.
+Ein expliziter Modellzeichensatz beschreibt, welche Zeichen eine Software
+verarbeiten können muss (2.4 §3.5.1). Liegt ein Zeichen ausserhalb dieses
+Repertoires oder des Standardrepertoires nach 2.3 Anhang B bzw. 2.4 Anhang D,
+bleibt die Repertoireprüfung ungeprüft. NAME folgt den reservierten Wörtern
+der Sprachversion, URI der URI-Syntax von RFC 2396 ohne Netzwerkzugriff.
 
 Numerische Transferwerte werden unverändert gegen inklusive Modellgrenzen
-verglichen (2.3 §2.8.5, 2.4 §§2.8 und 3.8.5). Bei gleicher deklarierter
-Stellenzahl prüfen wir die exakte Darstellbarkeit. Ohne Skalierung gilt
-die Zahl der Nachkommastellen, bei skalierten Bereichen die Stellenzahl der
-Mantisse. Überzählige Nullen ändern den exakten Wert nicht. Für gemischte
-Kompatibilitätsformen ohne eindeutiges Präzisionsmodell gilt die Prüfung
-der Grenzen; die Precision-Coverage bleibt offen. Die Prüfung rundet
-keinen Transferwert und rechnet keine Einheiten um.
+verglichen. Höhere Genauigkeit führt innerhalb des Bereichs zu keinem
+Datenfehler (2.3 §3.3.11.4, 2.4 §4.3.11.4). Die Prüfung rundet keinen
+Transferwert und rechnet keine Einheiten um.
+
+## Quellen
 
 [norm23]: https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf
 [norm24]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf
