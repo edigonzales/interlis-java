@@ -70,6 +70,24 @@ class ConstraintRuleTest {
     }
 
     @Test
+    void definedTreatsTextWithCanonicalLengthZeroAsUndefined() {
+        var f = new Fixture(HEADER + """
+                TOPIC T =
+                  CLASS Item =
+                    label : TEXT;
+                    MANDATORY CONSTRAINT HasLabel: DEFINED(label);
+                  END Item;
+                END T;
+                END Checks.
+                """);
+        assertEquals(List.of(), codes(f.validate(Map.of("label", new TransferValue.Text("a\u0301")))));
+        var report = f.validate(Map.of("label", new TransferValue.Text("\u0301")));
+        assertEquals(List.of(MANDATORY_CONSTRAINT_FALSE), codes(report));
+        assertEquals(f.constraint("HasLabel"), report.examples().getFirst().rule().declaration());
+        assertEquals(CHECKED, f.status(report, "HasLabel"));
+    }
+
+    @Test
     void resolvesOverrideSlotsAndReportsEachDomainUseSeparately() {
         var f = new Fixture(HEADER + """
                 DOMAIN Amount = 0.00..100.00 CONSTRAINTS Positive: THIS > 10;
