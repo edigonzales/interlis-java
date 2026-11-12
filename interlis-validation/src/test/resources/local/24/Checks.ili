@@ -1,0 +1,23 @@
+INTERLIS 2.4;
+MODEL Checks (en) AT "https://example.org/interlis/checks" VERSION "1" =
+  DOMAIN G (GENERIC) = COORD NUMERIC, NUMERIC;
+         Local = COORD 0.00..100.00, 0.00..100.00;
+         Far = COORD 200.00..300.00, 200.00..300.00;
+  CONTEXT Default = G = Local OR Far;
+  TOPIC Data =
+    DEFERRED GENERICS G;
+    STRUCTURE Detail =
+      key : TEXT*8;
+    END Detail;
+    CLASS Item =
+      code : MANDATORY TEXT*3;
+      count : 0..9;
+      active : BOOLEAN;
+      details : BAG {0..*} OF Detail;
+      point : G;
+      MANDATORY CONSTRAINT active == #true;
+      UNIQUE (LOCAL) details: key;
+      UNIQUE count;
+    END Item;
+  END Data;
+END Checks.

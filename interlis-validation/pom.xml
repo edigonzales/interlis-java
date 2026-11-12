@@ -7,6 +7,8 @@
     <dependency><groupId>guru.interlis</groupId><artifactId>interlis-model</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>guru.interlis</groupId><artifactId>interlis-transfer</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>guru.interlis</groupId><artifactId>interlis-compiler</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>guru.interlis</groupId><artifactId>interlis-xtf23</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>guru.interlis</groupId><artifactId>interlis-xtf24</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency>
     <dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-launcher</artifactId><scope>test</scope></dependency>
   </dependencies>

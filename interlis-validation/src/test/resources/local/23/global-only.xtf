@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="validation fixture">
+    <MODELS><MODEL NAME="Checks" VERSION="1" URI="https://example.org/interlis/checks"/></MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <Checks.Data BID="b1">
+      <Checks.Data.Item TID="i1"><code>abc</code><count>2</count><active>true</active></Checks.Data.Item>
+      <Checks.Data.Item TID="i2"><code>def</code><count>2</count><active>true</active></Checks.Data.Item>
+    </Checks.Data>
+  </DATASECTION>
+</TRANSFER>
