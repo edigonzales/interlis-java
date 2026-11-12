@@ -36,6 +36,7 @@ import guru.interlis.transfer.TransferValue;
 import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -436,11 +437,15 @@ public final class ValidationSession implements AutoCloseable {
     }
 
     private void checkBasketIdentity() {
-        var rule = basket.topic().oidRules().stream().filter(OidRule::basket).findFirst();
-        if (rule.isPresent()) {
-            var event = basket.start();
-            var data = new DataLocation(source, event.id(), Optional.empty(), Optional.empty(), Optional.empty(), List.of());
-            identity(rule.orElseThrow(), basket.topic().symbol(), event.stableOid(), data);
+        var event = basket.start();
+        var data = new DataLocation(source, event.id(), Optional.empty(), Optional.empty(), Optional.empty(), List.of());
+        var checkedDomains = new HashSet<SymbolId>();
+        for (var topic : basket.topics()) {
+            for (var rule : topic.oidRules()) {
+                if (rule.basket() && rule.domain().filter(checkedDomains::add).isPresent()) {
+                    identity(rule, topic.symbol(), event.stableOid(), data);
+                }
+            }
         }
     }
 
@@ -448,7 +453,8 @@ public final class ValidationSession implements AutoCloseable {
         var descriptor = objectPlan.descriptor();
         var rule = descriptor.oidRules().stream().filter(candidate -> !candidate.basket()).findFirst();
         if (rule.isEmpty() && descriptor.kind() == SymbolKind.CLASS) {
-            rule = basket.topic().oidRules().stream().filter(candidate -> !candidate.basket()).findFirst();
+            rule = descriptor.topic().flatMap(plan.transferPlan()::topic)
+                    .flatMap(topic -> topic.oidRules().stream().filter(candidate -> !candidate.basket()).findFirst());
         }
         var id = object.identity();
         if (rule.isPresent() && rule.orElseThrow().domain().isPresent()) {
@@ -638,7 +644,7 @@ public final class ValidationSession implements AutoCloseable {
         }
     }
 
-    private record BasketContext(TransferEvent.StartBasket start, TopicDescriptor topic,
+    private record BasketContext(TransferEvent.StartBasket start, List<TopicDescriptor> topics,
                                  Map<SymbolId, SymbolId> domains) {
         static BasketContext of(TransferEvent.StartBasket event, ValidationPlan plan) {
             var topic = topic(plan, event.topic());
@@ -678,7 +684,7 @@ public final class ValidationSession implements AutoCloseable {
             if (!selected.keySet().containsAll(supplied.keySet())) {
                 throw new ValidationStreamException("Unexpected basket domain binding");
             }
-            return new BasketContext(event, topic, Map.copyOf(selected));
+            return new BasketContext(event, List.copyOf(topics), Map.copyOf(selected));
         }
 
         private static TopicDescriptor topic(ValidationPlan plan, SymbolRef ref) {
