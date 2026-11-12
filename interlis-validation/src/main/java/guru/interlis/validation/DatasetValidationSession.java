@@ -160,6 +160,10 @@ public final class DatasetValidationSession implements AutoCloseable {
                 yield true;
             }
             case TransferEvent.ObjectEvent occurrence -> {
+                if (occurrence.operation().isPresent()) {
+                    throw new ValidationStreamException("Dataset inputs must not contain incremental object operations: "
+                            + occurrence.operation().orElseThrow());
+                }
                 var object = occurrence.object();
                 requireSnapshot(object.type());
                 if (context.basket == null || plan.object(object.type()) == null) {

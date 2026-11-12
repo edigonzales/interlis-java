@@ -91,6 +91,27 @@ class DatasetLifecycleTest {
     }
 
     @Test
+    void rejectsNeutralIncrementalObjectOperationsBeforeStorage() {
+        var fixture = new Fixture();
+        for (var operation : TransferEvent.Operation.values()) {
+            try (var store = new InMemoryValidationStorage(100, 100_000);
+                 var session = DatasetValidator.session(fixture.plan, DatasetOptions.defaults(fixture.plan), store);
+                 var reader = fixture.reader(true, false, null, Optional.of(operation))) {
+                var failure = assertThrows(ValidationStreamException.class,
+                        () -> session.readInput(input("incremental", InputRole.PRIMARY), reader, RUN));
+                assertTrue(failure.getMessage().contains(operation.name()));
+                try (var objects = store.table(StorageArea.OBJECTS).scan(new byte[0], Optional.empty());
+                     var identities = store.table(StorageArea.IDENTITIES).scan(new byte[0], Optional.empty())) {
+                    assertTrue(objects.next().isEmpty());
+                    assertTrue(identities.next().isEmpty());
+                }
+                assertFalse(reader.closed);
+                assertThrows(ValidationStreamException.class, () -> session.finish(RUN));
+            }
+        }
+    }
+
+    @Test
     void rejectsForeignEmptyHeadersAndCancellationAtSeal() {
         var f = new Fixture();
         var foreign = new Fixture(MODEL.replace("TEXT*3", "TEXT*4"));
@@ -159,6 +180,11 @@ class DatasetLifecycleTest {
         }
 
         Reader reader(boolean object, boolean invalid, RuntimeException failure) {
+            return reader(object, invalid, failure, Optional.empty());
+        }
+
+        Reader reader(boolean object, boolean invalid, RuntimeException failure,
+                      Optional<TransferEvent.Operation> operation) {
             var model = schema.rootModels().getFirst();
             var q = schema.queries();
             var topic = q.findQualifiedName(QualifiedName.of("Checks", "Data")).getFirst();
@@ -174,7 +200,7 @@ class DatasetLifecycleTest {
                         TransferEvent.Consistency.COMPLETE, Optional.empty(), Optional.empty(), Optional.empty(), List.of()));
                 var id = new TransferIdentity(bid, Optional.empty(), Optional.of(tid), Optional.empty(), Optional.empty());
                 var value = new TransferValue.Structured(item, Map.of(code, new TransferValue.Text(invalid ? "long" : "ok")));
-                events.add(new TransferEvent.ObjectEvent(new TransferObject(id, value), Optional.empty(),
+                events.add(new TransferEvent.ObjectEvent(new TransferObject(id, value), operation,
                         TransferEvent.Consistency.COMPLETE));
                 events.add(new TransferEvent.EndBasket(bid));
             }
