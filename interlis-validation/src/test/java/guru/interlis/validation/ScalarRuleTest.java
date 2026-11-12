@@ -129,7 +129,7 @@ class ScalarRuleTest {
     }
 
     @Test
-    void checksStandardCalendarsAndLeavesCustomFormatUnchecked() {
+    void checksStandardCalendarsAndBoundCustomFormat() {
         var fixture = new Fixture(HEADER + """
                 STRUCTURE Digits = n : 0..99; END Digits;
                 DOMAIN Code = FORMAT BASED ON Digits (n/2) "10".."20";
@@ -145,10 +145,10 @@ class ScalarRuleTest {
                 END Checks.
                 """);
         var pass = fixture.validate(Map.of("day", text("2000-02-29"), "time", text("23:59:59.999"),
-                "stamp", text("2999-12-31T00:00:00"), "window", text("2000-01-01"), "custom", text("bogus")));
+                "stamp", text("2999-12-31T00:00:00"), "window", text("2000-01-01"), "custom", text("17")));
         assertEquals(List.of(), codes(pass));
-        assertEquals(List.of(new ValidationCoverage.RuleCount(fixture.item, fixture.field("custom"),
-                ValidationCoverage.RuleFamily.VALUE_RANGE, 1)), pass.coverage().unsupportedValues());
+        assertTrue(pass.coverage().unsupportedValues().isEmpty());
+        assertEquals(List.of(INVALID_FORMATTED_VALUE), codes(fixture.validate(Map.of("custom", text("bogus")))));
         var fail = fixture.validate(Map.of("day", text("1900-02-29"), "time", text("24:00:00"),
                 "stamp", text("3000-01-01T00:00:00"), "window", text("2001-01-01")));
         assertEquals(List.of(INVALID_TEMPORAL_VALUE, INVALID_TEMPORAL_VALUE, INVALID_TEMPORAL_VALUE, VALUE_OUT_OF_RANGE),

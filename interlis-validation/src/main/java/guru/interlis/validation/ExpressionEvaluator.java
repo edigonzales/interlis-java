@@ -4,6 +4,8 @@ import guru.interlis.model.BinaryExpression;
 import guru.interlis.model.BinaryOperator;
 import guru.interlis.model.DefinedExpression;
 import guru.interlis.model.ExpressionId;
+import guru.interlis.model.FormattedType;
+import guru.interlis.model.UnaryOperator;
 import guru.interlis.model.FunctionCallExpression;
 import guru.interlis.model.ObjectSetExpression;
 import guru.interlis.model.PathExpression;
@@ -24,7 +26,7 @@ import java.util.OptionalInt;
 import guru.interlis.validation.EvaluationResult.*;
 
 final class ExpressionEvaluator {
-    enum Family { BOOLEAN, TEXT, NUMBER, ENUM, COORDINATE, UNDEFINED, OTHER }
+    enum Family { BOOLEAN, TEXT, NUMBER, ENUM, COORDINATE, FORMATTED, UNDEFINED, OTHER }
 
     record Comparison(Family family, Map<List<String>, Integer> enumOrder) { }
     private final ExpressionProgram program;
@@ -50,7 +52,7 @@ final class ExpressionEvaluator {
             case PathExpression path -> readPath(path, context);
             case FunctionCallExpression call -> objectCount(call, context);
             case DefinedExpression defined -> switch (evaluate(defined.operand(), context)) {
-                case Known _ -> bool(true);
+                case Known _, KnownNumber _ -> bool(true);
                 case UndefinedByData _ -> bool(false);
                 case EvaluationResult result -> result;
             };
@@ -76,8 +78,8 @@ final class ExpressionEvaluator {
         var left = evaluate(binary.left(), context);
         return switch (binary.operator()) {
             case AND, OR, IMPLIES -> logical(binary, left, context);
-            case EQ, NEQ, LT, LTE, GT, GTE -> comparison(binary, left, evaluate(binary.right(), context));
-            default -> throw new IllegalStateException("Unexpected compiled binary operator");
+            case EQ, NEQ, LT, LTE, GT, GTE -> comparison(binary, left, evaluate(binary.right(), context), context);
+            case PLUS, MINUS, MUL, DIV -> arithmetic(binary.operator(), left, evaluate(binary.right(), context));
         };
     }
 
@@ -96,21 +98,11 @@ final class ExpressionEvaluator {
         };
     }
 
-    private EvaluationResult comparison(BinaryExpression binary, EvaluationResult left, EvaluationResult right) {
-        if (left instanceof BlockedByViolation) {
-            return left;
-        }
-        if (right instanceof BlockedByViolation) {
-            return right;
-        }
-        if (left instanceof MissingContext) {
-            return left;
-        }
-        if (right instanceof MissingContext) {
-            return right;
-        }
-        if (left instanceof Unsupported || right instanceof Unsupported) {
-            return Unsupported.INSTANCE;
+    private EvaluationResult comparison(BinaryExpression binary, EvaluationResult left, EvaluationResult right,
+                                        EvaluationFrame context) {
+        var gap = contextGap(left, right);
+        if (gap != null) {
+            return gap;
         }
         var comparison = program.comparisons().get(binary.id());
         if (left instanceof UndefinedByData || right instanceof UndefinedByData) {
@@ -126,7 +118,16 @@ final class ExpressionEvaluator {
             }
             return new UndefinedByData(true);
         }
-        var ordering = order(comparison, ((Known) left).value(), ((Known) right).value());
+        if (comparison.family() == Family.NUMBER) {
+            var lhs = number(left);
+            var rhs = number(right);
+            return lhs == null || rhs == null ? Unsupported.INSTANCE : bool(NumericSemantics.compare(binary.operator(), lhs, rhs));
+        }
+        if (!(left instanceof Known lhs) || !(right instanceof Known rhs)) {
+            return Unsupported.INSTANCE;
+        }
+        var ordering = comparison.family() == Family.FORMATTED
+                ? formatOrder(binary, context, lhs.value(), rhs.value()) : order(comparison, lhs.value(), rhs.value());
         if (ordering.isEmpty()) {
             return Unsupported.INSTANCE;
         }
@@ -142,21 +143,73 @@ final class ExpressionEvaluator {
         });
     }
 
+    private OptionalInt formatOrder(BinaryExpression binary, EvaluationFrame context,
+                                    TransferValue left, TransferValue right) {
+        if (!(left instanceof TransferValue.Text lhs) || !(right instanceof TransferValue.Text rhs)) {
+            return OptionalInt.empty();
+        }
+        var leftType = context.plan().effectiveType(program.nodes().get(binary.left()).typeId()).orElseThrow();
+        var rightType = context.plan().effectiveType(program.nodes().get(binary.right()).typeId()).orElseThrow();
+        var leftFormat = leftType instanceof FormattedType format ? format : (FormattedType) rightType;
+        var rightFormat = rightType instanceof FormattedType format ? format : leftFormat;
+        return FormatRules.compare(context.plan(), leftFormat, rightFormat, lhs.value(), rhs.value(), context.visit());
+    }
+
+    private static EvaluationResult contextGap(EvaluationResult left, EvaluationResult right) {
+        if (left instanceof BlockedByViolation || right instanceof BlockedByViolation) {
+            return left instanceof BlockedByViolation ? left : right;
+        }
+        if (left instanceof MissingContext || right instanceof MissingContext) {
+            return left instanceof MissingContext ? left : right;
+        }
+        return left instanceof Unsupported || right instanceof Unsupported ? Unsupported.INSTANCE : null;
+    }
+
+    private static NumericSemantics.Number number(EvaluationResult result) {
+        return switch (result) {
+            case KnownNumber known -> known.value();
+            case Known known when known.value() instanceof TransferValue.NumberValue decimal ->
+                    NumericSemantics.Number.exact(decimal.exactValue());
+            default -> null;
+        };
+    }
+
+    private static EvaluationResult arithmetic(BinaryOperator operator, EvaluationResult left, EvaluationResult right) {
+        var gap = contextGap(left, right);
+        if (gap != null) {
+            return gap;
+        }
+        var lhs = number(left);
+        var rhs = number(right);
+        if (lhs == null) {
+            return left instanceof Known ? Unsupported.INSTANCE : left;
+        }
+        if (rhs == null) {
+            return right instanceof Known ? Unsupported.INSTANCE : right;
+        }
+        return switch (operator) {
+            case PLUS -> new KnownNumber(NumericSemantics.add(lhs, rhs));
+            case MINUS -> new KnownNumber(NumericSemantics.subtract(lhs, rhs));
+            case MUL -> new KnownNumber(NumericSemantics.multiply(lhs, rhs));
+            case DIV -> NumericSemantics.divide(lhs, rhs).<EvaluationResult>map(KnownNumber::new)
+                    .orElseGet(() -> new UndefinedByData(false));
+            default -> throw new IllegalArgumentException("Expected an arithmetic operator");
+        };
+    }
+
     private static EvaluationResult unary(UnaryExpression expression, EvaluationResult operand) {
+        if (expression.operator() == UnaryOperator.NEGATE) {
+            var number = number(operand);
+            if (number != null) {
+                return new KnownNumber(NumericSemantics.negate(number));
+            }
+        }
         if (!(operand instanceof Known known)) {
             return operand;
         }
-        return switch (expression.operator()) {
-            case NOT -> known.value() instanceof TransferValue.BooleanValue value ? bool(!value.value()) : Unsupported.INSTANCE;
-            case NEGATE -> {
-                if (!(known.value() instanceof TransferValue.NumberValue value)) {
-                    yield Unsupported.INSTANCE;
-                }
-                ScalarRules.requireNumericBudget(value.exactValue());
-                var negated = value.exactValue().negate();
-                yield new Known(new TransferValue.NumberValue(negated.toString(), negated));
-            }
-        };
+        return known.value() instanceof TransferValue.BooleanValue value
+                && expression.operator() == UnaryOperator.NOT
+                ? bool(!value.value()) : Unsupported.INSTANCE;
     }
 
     private static EvaluationResult logicalOperand(EvaluationResult result) {
@@ -240,7 +293,7 @@ final class ExpressionEvaluator {
         return switch (family) {
             case NUMBER -> value instanceof TransferValue.NumberValue;
             case BOOLEAN -> value instanceof TransferValue.BooleanValue;
-            case TEXT -> value instanceof TransferValue.Text;
+            case TEXT, FORMATTED -> value instanceof TransferValue.Text;
             case ENUM -> value instanceof TransferValue.Enumeration;
             case COORDINATE -> value instanceof TransferGeometry.Coordinate;
             case OTHER, UNDEFINED -> false;
@@ -277,7 +330,7 @@ final class ExpressionEvaluator {
                 }
                 yield OptionalInt.of(order);
             }
-            case OTHER, UNDEFINED -> OptionalInt.empty();
+            case OTHER, UNDEFINED, FORMATTED -> OptionalInt.empty();
         };
     }
 

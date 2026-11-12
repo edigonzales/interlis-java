@@ -168,6 +168,10 @@ final class ExpressionCompiler {
         private boolean constant(ConstantExpression constant) {
             var name = constant.constantName();
             var family = family(constant);
+            if (family == Family.NUMBER && (name.equals("PI") || name.equals("LNBASE"))) {
+                constants.put(constant.id(), new KnownNumber(NumericSemantics.constant(name)));
+                return true;
+            }
             if (family == Family.BOOLEAN && (name.equals("#true") || name.equals("#false"))) {
                 constants.put(constant.id(), bool(name.equals("#true")));
                 return true;
@@ -185,9 +189,15 @@ final class ExpressionCompiler {
             var right = expression(binary.right());
             var lhs = family(left);
             var rhs = family(right);
+            if (lhs == Family.FORMATTED && rhs == Family.TEXT && right instanceof LiteralExpression) {
+                rhs = Family.FORMATTED;
+            }
+            if (rhs == Family.FORMATTED && lhs == Family.TEXT && left instanceof LiteralExpression) {
+                lhs = Family.FORMATTED;
+            }
             return switch (binary.operator()) {
                 case AND, OR, IMPLIES -> lhs == Family.BOOLEAN && rhs == Family.BOOLEAN;
-                case PLUS, MINUS, MUL, DIV -> false;
+                case PLUS, MINUS, MUL, DIV -> lhs == Family.NUMBER && rhs == Family.NUMBER;
                 case EQ, NEQ, LT, LTE, GT, GTE -> {
                     boolean equality = binary.operator() == BinaryOperator.EQ || binary.operator() == BinaryOperator.NEQ;
                     if (equality && (lhs == Family.UNDEFINED || rhs == Family.UNDEFINED)) {
@@ -202,7 +212,7 @@ final class ExpressionCompiler {
                         yield false;
                     }
                     Map<List<String>, Integer> enumOrder = Map.of();
-                    if (!equality && lhs != Family.NUMBER) {
+                    if (!equality && lhs != Family.NUMBER && lhs != Family.FORMATTED) {
                         if (lhs != Family.ENUM) {
                             yield false;
                         }
@@ -248,6 +258,7 @@ final class ExpressionCompiler {
             return effective(expression.typeId()).map(type -> switch (type.kind()) {
                 case BOOLEAN -> Family.BOOLEAN;
                 case TEXT -> Family.TEXT;
+                case FORMATTED -> Family.FORMATTED;
                 case NUMERIC -> Family.NUMBER;
                 case ENUMERATION, ALIGNMENT -> Family.ENUM;
                 case COORDINATE -> ((guru.interlis.model.CoordinateType) type).multiCoordinate()

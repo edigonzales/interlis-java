@@ -152,7 +152,7 @@ class ConstraintRuleTest {
     }
 
     @Test
-    void unknownFunctionForeignPathAndDivisionRemainUnchecked() {
+    void unknownFunctionAndForeignPathRemainUncheckedWhileDivisionIsEvaluated() {
         var f = new Fixture(HEADER + """
                 FUNCTION external(x: NUMERIC): BOOLEAN;
                 TOPIC T =
@@ -174,7 +174,8 @@ class ConstraintRuleTest {
         var report = f.validate(Map.of("divisor", number("0")));
         assertEquals(List.of(REQUIRED_VALUE_MISSING), codes(report));
         assertEquals(UNDEFINED_BY_DATA, f.status(report, "Local"));
-        assertEquals(List.of(f.constraint("Unbound"), f.constraint("Remote"), f.constraint("Quotient")),
+        assertEquals(UNDEFINED_BY_DATA, f.status(report, "Quotient"));
+        assertEquals(List.of(f.constraint("Unbound"), f.constraint("Remote")),
                 report.coverage().notChecked().stream().map(UncheckedRuleInfo::constraint).toList());
         assertTrue(report.coverage().notChecked().stream()
                 .allMatch(rule -> rule.reason() == UncheckedRuleInfo.Reason.UNSUPPORTED_EXPRESSION));

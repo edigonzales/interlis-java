@@ -123,11 +123,15 @@ public final class ValidationPlan {
     }
 
     private Optional<EnumerationType> enumType(SymbolId symbol) {
+        return valueType(symbol).filter(EnumerationType.class::isInstance).map(EnumerationType.class::cast);
+    }
+
+    Optional<TypeDescriptor> valueType(SymbolId symbol) {
         return graph.symbol(symbol).flatMap(value -> switch (value) {
             case DomainSymbol domain -> effectiveType(domain.typeId());
             case AttributeSymbol attribute -> effectiveType(attribute.declaredType());
             default -> Optional.empty();
-        }).filter(EnumerationType.class::isInstance).map(EnumerationType.class::cast);
+        });
     }
 
     ObjectValidationPlan.FieldRule field(ObjectValidationPlan type, SymbolId declaration) {

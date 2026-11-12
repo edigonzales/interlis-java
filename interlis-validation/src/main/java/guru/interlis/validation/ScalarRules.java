@@ -52,7 +52,7 @@ final class ScalarRules {
 
     enum Coverage { CHECKED, UNCHECKED, NOT_APPLICABLE }
 
-    static Coverage check(ObjectValidationPlan.ValueRules rules, TransferValue value, int length,
+    static Coverage check(ValidationPlan plan, Runnable visit, ObjectValidationPlan.ValueRules rules, TransferValue value, int length,
                           LanguageVersion language, Optional<String> charset,
                           BiConsumer<ValidationCode, List<String>> report) {
         switch (rules.type()) {
@@ -78,7 +78,10 @@ final class ScalarRules {
                 return Coverage.CHECKED;
             }
             case FormattedType type -> {
-                return TemporalRules.check(type, ((TransferValue.Text) value).value(), language, report);
+                var text = ((TransferValue.Text) value).value();
+                return type.predefined().isPresent()
+                        ? TemporalRules.check(type, text, language, report)
+                        : FormatRules.check(plan, type, text, visit, report);
             }
             default -> {
                 return Coverage.NOT_APPLICABLE;

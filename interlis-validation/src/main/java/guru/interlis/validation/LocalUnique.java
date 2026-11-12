@@ -148,7 +148,7 @@ final class LocalUnique {
                     case EvaluationResult.UndefinedByData _ -> { }
                     case EvaluationResult.BlockedByViolation _ -> gap(INCOMPLETE_CONTEXT);
                     case EvaluationResult.MissingContext _ -> gap(MISSING_RUNTIME_CONTEXT);
-                    case EvaluationResult.Unsupported _ -> gap(UNSUPPORTED_VALUE);
+                    case EvaluationResult.Unsupported _, EvaluationResult.KnownNumber _ -> gap(UNSUPPORTED_VALUE);
                 }
             } else {
                 gap(UNSUPPORTED_VALUE);

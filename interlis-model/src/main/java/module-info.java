@@ -5,6 +5,6 @@ module guru.interlis.model {
     exports guru.interlis.source;
     exports guru.interlis.diagnostics;
     exports guru.interlis.execution;
-    // Shared implementation rules are consumed by the compiler, not SDK clients.
-    exports guru.interlis.model.internal to guru.interlis.compiler;
+    // Shared implementation rules for the compiler and validator.
+    exports guru.interlis.model.internal to guru.interlis.compiler, guru.interlis.validation;
 }

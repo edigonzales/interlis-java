@@ -392,7 +392,7 @@ public final class ValidationSession implements AutoCloseable {
             }
             return Optional.empty();
         }
-        var coverage = ScalarRules.check(rules, actual, textLength, field.slot().attribute().languageVersion(),
+        var coverage = ScalarRules.check(plan, budget::consume, rules, actual, textLength, field.slot().attribute().languageVersion(),
                 field.charset(), (code, arguments) -> violation(object, pending, field.slot().attribute(), code, arguments));
         if (coverage != ScalarRules.Coverage.NOT_APPLICABLE) {
             count(coverage == ScalarRules.Coverage.CHECKED ? checked : unsupported, pending, VALUE_RANGE);
@@ -470,7 +470,7 @@ public final class ValidationSession implements AutoCloseable {
             }
             case EvaluationResult.BlockedByViolation _ -> ConstraintStatus.INCOMPLETE_CONTEXT;
             case EvaluationResult.MissingContext _ -> ConstraintStatus.MISSING_RUNTIME_CONTEXT;
-            case EvaluationResult.Unsupported _, EvaluationResult.Known _ -> ConstraintStatus.UNSUPPORTED_VALUE;
+            case EvaluationResult.Unsupported _, EvaluationResult.Known _, EvaluationResult.KnownNumber _ -> ConstraintStatus.UNSUPPORTED_VALUE;
         };
         countConstraint(owner, slot, declaration, status);
     }

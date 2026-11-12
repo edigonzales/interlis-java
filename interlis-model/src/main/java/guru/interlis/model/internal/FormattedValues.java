@@ -113,7 +113,7 @@ public final class FormattedValues {
             {
                 String pattern = pattern(type, new HashSet<>() , true);
                 if (pattern == null) return Optional.empty();
-                var match = Pattern.compile(pattern).matcher(text);
+                var match = Pattern.compile(pattern).matcher(new MeteredText(text, checkWork));
                 if (!match.matches()) return Optional.empty();
                 List<BigDecimal> values = new ArrayList<>(); int group = 0;
                 for (var part : type.parts()) {
@@ -141,6 +141,29 @@ public final class FormattedValues {
             active.remove(type.id());
             return withinBounds(type, parsed.orElseThrow(), active) ? parsed : Optional.empty();
         } finally { active.remove(type.id()); }
+    }
+
+    private record MeteredText(String value, Runnable checkWork) implements CharSequence {
+        @Override
+        public int length() {
+            return value.length();
+        }
+
+        @Override
+        public char charAt(int index) {
+            checkWork.run();
+            return value.charAt(index);
+        }
+
+        @Override
+        public CharSequence subSequence(int start, int end) {
+            return new MeteredText(value.substring(start, end), checkWork);
+        }
+
+        @Override
+        public String toString() {
+            return value;
+        }
     }
 
     private String pattern(FormattedType type, Set<TypeId> active, boolean capture) {

@@ -66,7 +66,7 @@ final class ValueSemantics {
             case EvaluationResult.UndefinedByData ignored -> Gap.UNDEFINED;
             case EvaluationResult.BlockedByViolation ignored -> Gap.INVALID_VALUE;
             case EvaluationResult.MissingContext ignored -> Gap.MISSING_CONTEXT;
-            case EvaluationResult.Unsupported ignored -> Gap.UNSUPPORTED;
+            case EvaluationResult.Unsupported _, EvaluationResult.KnownNumber _ -> Gap.UNSUPPORTED;
             case EvaluationResult.Known known -> encode(known.value(), type, 0);
         };
     }
@@ -125,7 +125,7 @@ final class ValueSemantics {
             case REFERENCE, OBJECT_ARGUMENT -> value instanceof TransferValue.Reference ref
                     ? writeReference(out, ref, type) : Gap.UNSUPPORTED;
             case FORMATTED -> value instanceof TransferValue.Text text
-                    ? writeTemporal(out, (FormattedType) type, text.value()) : Gap.INVALID_VALUE;
+                    ? writeFormatted(out, (FormattedType) type, text.value()) : Gap.INVALID_VALUE;
             case OID -> value instanceof TransferValue.Oid id ? writeOid(out, (OidType) type, id) : Gap.INVALID_VALUE;
             case CLASS_VALUE -> value instanceof TransferValue.ClassName name
                     ? out.taggedText(11, name.name().toString()) : Gap.INVALID_VALUE;
@@ -181,9 +181,17 @@ final class ValueSemantics {
         return null;
     }
 
-    private Gap writeTemporal(Output out, FormattedType type, String value) {
+    private Gap writeFormatted(Output out, FormattedType type, String value) {
         if (type.predefined().isEmpty()) {
-            return Gap.UNSUPPORTED;
+            var parsed = FormatRules.parse(plan, type, value, visit);
+            if (parsed.isEmpty()) {
+                return Gap.INVALID_VALUE;
+            }
+            out.tag(15);
+            var parts = parsed.orElseThrow();
+            out.number(parts.size());
+            parts.forEach(part -> out.text(part.stripTrailingZeros().toString()));
+            return null;
         }
         var kind = type.predefined().orElseThrow();
         if (type.parts().size() != (kind == guru.interlis.model.TemporalKind.DATETIME ? 11 : 5)) {

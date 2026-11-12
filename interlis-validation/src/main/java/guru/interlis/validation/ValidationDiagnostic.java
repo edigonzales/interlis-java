@@ -30,6 +30,7 @@ public record ValidationDiagnostic(ValidationCode code, Severity severity, DataL
             case VALUE_OUT_OF_RANGE -> "Value is outside its model range.";
             case ENUM_VALUE_NOT_ALLOWED -> "Enumeration value is outside its model domain.";
             case INVALID_TEMPORAL_VALUE -> "Value does not match its calendar or time domain.";
+            case INVALID_FORMATTED_VALUE -> "Value does not match its declared format or bounds.";
             case INVALID_OID -> "Identifier does not match its OID domain.";
             case REQUIRED_OID_MISSING -> "The required stable identifier is absent.";
             case REQUIRED_TID_MISSING -> "The required transfer identifier is absent.";
