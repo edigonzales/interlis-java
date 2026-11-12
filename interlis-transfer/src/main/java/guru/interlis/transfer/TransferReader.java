@@ -25,6 +25,11 @@ public abstract class TransferReader implements AutoCloseable {
         sequence = new TransferSequence(plan, includeModelImports);
     }
 
+    /** Returns the immutable plan used to decode this reader's events. */
+    public final TransferPlan transferPlan() {
+        return sequence.plan();
+    }
+
     /** Reads one event. Empty means the source ended after a valid EndTransfer.
      * Read through the empty result to confirm that the source has no trailing events.
      * A cancellation already requested on entry leaves the reader at its current position.

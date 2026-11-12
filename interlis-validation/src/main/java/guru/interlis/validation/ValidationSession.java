@@ -134,18 +134,34 @@ public final class ValidationSession implements AutoCloseable {
         requireActive();
         try {
             require(State.AFTER_END);
-            var report = new ValidationReport(violations == 0 ? PASSED_CHECKED_SCOPE : FAILED_CHECKED_SCOPE,
-                    baskets, objects, violations, examples,
-                    new ValidationCoverage(counts(checked), plan.uncheckedRules(), counts(incomplete),
-                            counts(missingRuntime), counts(unsupported), List.of(REFERENTIAL_INTEGRITY, TOPOLOGY), constraintCounts()));
-            clear();
-            state = State.FINISHED;
-            return report;
+            return completedReport(List.of());
         } catch (RuntimeException failure) {
             clear();
             state = State.FAILED;
             throw failure;
         }
+    }
+
+    void finishDatasetInput() {
+        require(State.AFTER_END);
+        source = Optional.empty();
+        state = State.BEFORE_TRANSFER;
+    }
+
+    ValidationReport finishDataset(List<DatasetRuleCoverage> datasetCoverage) {
+        require(State.BEFORE_TRANSFER);
+        return completedReport(datasetCoverage);
+    }
+
+    private ValidationReport completedReport(List<DatasetRuleCoverage> datasetCoverage) {
+        var report = new ValidationReport(violations == 0 ? PASSED_CHECKED_SCOPE : FAILED_CHECKED_SCOPE,
+                baskets, objects, violations, examples,
+                new ValidationCoverage(counts(checked), plan.uncheckedRules(), counts(incomplete),
+                        counts(missingRuntime), counts(unsupported), List.of(REFERENTIAL_INTEGRITY, TOPOLOGY),
+                        constraintCounts(), datasetCoverage));
+        clear();
+        state = State.FINISHED;
+        return report;
     }
 
     /** Releases session state. Repeated close calls are harmless. */

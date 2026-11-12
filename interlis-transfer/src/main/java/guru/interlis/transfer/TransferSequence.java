@@ -38,6 +38,10 @@ final class TransferSequence {
     private boolean closed;
     private boolean failed;
 
+    TransferPlan plan() {
+        return plan;
+    }
+
     TransferSequence(TransferPlan plan, boolean includeModelImports) {
         this.plan = Objects.requireNonNull(plan, "plan");
         this.includeModelImports = includeModelImports;
