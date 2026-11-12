@@ -380,16 +380,15 @@ final class InheritanceBindings {
                         || !roleSyntax.explicitCardinality()) {
                     continue;
                 }
-                boolean one = roleSyntax.cardinality().lower().equals(java.math.BigInteger.ONE)
-                        && roleSyntax.cardinality().upper()
+                boolean atMostOne = roleSyntax.cardinality().upper()
                         instanceof guru.interlis.model.CardinalityUpper.Finite finite
                         && finite.value().equals(java.math.BigInteger.ONE);
-                if (!one) {
+                if (!atMostOne) {
                     DeclInfo roleDecl = index.children(decl.id()).stream()
                             .filter(child -> child.kind() == SymbolKind.ROLE
                                     && child.name().equals(roleSyntax.name()))
                             .findFirst().orElse(decl);
-                    diagnostics.emitRule(roleDecl, "composition role cardinality must be 1", "COMPOSITION_CARDINALITY");
+                    diagnostics.emitRule(roleDecl, "composition role cardinality must be 0..1 or 1", "COMPOSITION_CARDINALITY");
                 }
             }
             List<RoleSymbol> roles = association.roles().stream()

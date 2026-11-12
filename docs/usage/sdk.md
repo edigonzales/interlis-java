@@ -31,7 +31,7 @@ Der lokale Validator und `TextLengths` wurden mit SDK 0.4 eingeführt.
 | Vertrag | Wert | Bedeutung |
 |---|---|---|
 | Werkzeug und Artefakte | `0.2.0-SNAPSHOT` | Entwicklungsstand der ausgelieferten Module |
-| Öffentliche Java-API | `0.5` | Öffentliche Packages und Typen von `guru.interlis` |
+| Öffentliche Java-API | `0.6` | Öffentliche Packages und Typen von `guru.interlis` |
 | Diagnosekatalog | `interlis-diagnostics/v4` | Stabile Diagnosecodes und typisierte Argumente |
 | Bridge | `interlis.compiler/1.0` | Nachrichtenhülle, Ergebnisse und Abfragen |
 | Quellformatierung | `2.0` | Formatierungsoptionen und Ergebnisvertrag |
@@ -64,3 +64,14 @@ Revisionsabgleich einer Datensatzsession zurück.
 bereit. Diese Methoden erweitern die Reader-API. Die Datensatzvalidierung
 ergänzt ausserdem `ValidationCode` um Diagnosen zu mehrdeutiger Identität sowie
 fehlenden, typfremden und basketfremden Referenzzielen.
+
+API 0.6 ergänzt `DatasetLimits` um `maxRelationWork()`. Der bisherige
+Konstruktor setzt das neue Limit auf 10 Millionen Arbeitsschritte.
+Record-Patterns müssen die neue Komponente aufnehmen. Ein erschöpfender Switch
+über `ValidationCode` muss auch `ORDER_POSITION_DUPLICATE`,
+`ORDER_POSITION_GAP`, `COMPOSITION_MULTIPLE_OWNERS` und
+`COMPOSITION_CYCLE` behandeln.
+
+Die Standardkardinalität einer Assoziation ohne `CARDINALITY` ist `{0..1}`
+pro Teilnehmerkombination. INTERLIS 2.3 und 2.4 erlauben bei einer
+Kompositionsrolle `{0..1}` und `{1}`. Ohne Angabe gilt `{0..1}`.

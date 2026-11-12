@@ -40,6 +40,10 @@ public record ValidationDiagnostic(ValidationCode code, Severity severity, DataL
             case LOCAL_UNIQUE_DUPLICATE -> "Local structure key duplicates an earlier occurrence.";
             case AMBIGUOUS_OBJECT_IDENTITY -> "More than one object has the referenced identity.";
             case REFERENCE_TARGET_MISSING -> "The referenced object is absent from the closed extent.";
+            case ORDER_POSITION_DUPLICATE -> "Ordered relationship contains a duplicate position.";
+            case ORDER_POSITION_GAP -> "Complete ordered relationship contains a gap.";
+            case COMPOSITION_MULTIPLE_OWNERS -> "A composition part has more than one owner.";
+            case COMPOSITION_CYCLE -> "Composition ownership contains a cycle.";
             case REFERENCE_TARGET_TYPE -> "The referenced object is outside the allowed type hierarchy.";
             case REFERENCE_TARGET_BASKET -> "The referenced object is outside the allowed basket.";
             case DOMAIN_CONSTRAINT_FALSE -> "Domain constraint evaluated to false.";

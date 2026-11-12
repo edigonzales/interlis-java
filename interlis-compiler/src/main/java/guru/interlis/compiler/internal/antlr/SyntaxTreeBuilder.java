@@ -862,9 +862,7 @@ final class SyntaxTreeBuilder {
         if (explicitCardinality) {
             cardinality = cardinality(context.cardinality());
         } else if (aggregation == RoleAggregation.COMPOSITION) {
-            cardinality = language == LanguageVersion.ILI23
-                    ? new Cardinality(BigInteger.ZERO, CardinalityUpper.finite(1))
-                    : new Cardinality(BigInteger.ONE, CardinalityUpper.finite(1));
+            cardinality = Cardinality.of(0, 1);
         } else {
             cardinality = Cardinality.unboundedFrom(0);
         }

@@ -2,7 +2,7 @@ package guru.interlis.projection;
 
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.AssociationSymbol;
-import guru.interlis.model.Cardinality;
+import guru.interlis.model.CardinalityUpper;
 import guru.interlis.model.RoleSymbol;
 import guru.interlis.model.SemanticGraph;
 import java.util.ArrayList;
@@ -20,7 +20,9 @@ final class CompactAssociationProjection {
             if(!(symbol instanceof AssociationSymbol association)||association.roles().size()!=2
                     ||!association.attributes().isEmpty()||!association.constraints().isEmpty()
                     ||association.baseAssociation().isPresent()||association.derivedFrom().isPresent()
-                    ||!association.header().modifiers().isEmpty()||!association.cardinality().equals(Cardinality.exactly(1)))continue;
+                    ||!association.header().modifiers().isEmpty()
+                    ||!(association.cardinality().upper() instanceof CardinalityUpper.Finite maximum)
+                    ||!maximum.value().equals(java.math.BigInteger.ONE))continue;
             var roleEdges=new ArrayList<DiagramEdge>();
             for(var roleId:association.roles()) {
                 var candidate=graph.symbol(roleId).orElse(null);

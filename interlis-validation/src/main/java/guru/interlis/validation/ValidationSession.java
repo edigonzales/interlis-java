@@ -153,6 +153,34 @@ public final class ValidationSession implements AutoCloseable {
         return completedReport(datasetCoverage);
     }
 
+    void relationCardinality(TransferObject object, Symbol declaration, DataLocation data, long targets,
+                             guru.interlis.model.Cardinality bounds, boolean complete) {
+        var actual = BigInteger.valueOf(targets);
+        var upper = bounds.upper();
+        boolean over = upper instanceof CardinalityUpper.Finite maximum && actual.compareTo(maximum.value()) > 0;
+        var key = new SlotKey(object.type(), plan.ref(declaration.id()), CARDINALITY);
+        if (!complete && !over) {
+            missingRuntime.merge(key, 1L, Math::addExact);
+            return;
+        }
+        checked.merge(key, 1L, Math::addExact);
+        if (over || actual.compareTo(bounds.lower()) < 0) {
+            diagnostic(CARDINALITY_VIOLATION, data, ruleLocation(plan.ref(declaration.id()), declaration.origin()),
+                    List.of(actual.toString(), bounds.lower().toString(),
+                            upper instanceof CardinalityUpper.Finite maximum ? maximum.value().toString() : "*"));
+        }
+    }
+
+    void relationFinding(TransferObject object, Symbol declaration, DataLocation data,
+                         Optional<ValidationCode> violation, boolean complete, List<String> arguments) {
+        var key = new SlotKey(object.type(), plan.ref(declaration.id()), CARDINALITY);
+        if (violation.isPresent()) {
+            diagnostic(violation.orElseThrow(), data,
+                    ruleLocation(plan.ref(declaration.id()), declaration.origin()), arguments);
+        }
+        (complete || violation.isPresent() ? checked : missingRuntime).merge(key, 1L, Math::addExact);
+    }
+
     void identityConflict(TransferObject object, DataLocation data, List<String> origins) {
         var declaration = plan.symbol(object.type().symbol()).orElseThrow();
         diagnostic(AMBIGUOUS_OBJECT_IDENTITY, data,

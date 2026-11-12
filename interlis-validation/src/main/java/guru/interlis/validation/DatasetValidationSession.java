@@ -251,6 +251,7 @@ public final class DatasetValidationSession implements AutoCloseable {
             }
             storage.checkpoint();
             new DatasetReferences(plan, storage, codec, objectStore, identities, options, inputs.keySet(), local).check(cancellation);
+            new RelationCardinalities(plan, storage, codec, objectStore, identities, options, local).check(cancellation);
             var pending = plan.datasetRules().stream().map(rule ->
                     new DatasetRuleCoverage(rule.key(), DatasetRuleCoverage.ScopeKind.DATASET,
                             DatasetRuleCoverage.Completeness.OPEN, DatasetRuleCoverage.Outcome.UNDETERMINED,

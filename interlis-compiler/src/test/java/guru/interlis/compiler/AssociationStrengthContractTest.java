@@ -52,6 +52,20 @@ class AssociationStrengthContractTest {
             bad(version,"ASSOCIATION Link=a-<#>{*}A;b--{*}B;END Link;","COMPOSITION_CARDINALITY");
         }
     }
+    @Test void compositionPermitsAnOptionalOwnerInBothLanguageVersions() {
+        for (String version : List.of("2.3", "2.4")) {
+            for (String cardinality : List.of("", "{0..1}", "{1}")) {
+                var graph = ok(version, "ASSOCIATION Link=a-<#>" + cardinality + "A;b--{*}B;END Link;")
+                        .schema().semanticGraph();
+                var owner = graph.symbols().stream().filter(RoleSymbol.class::isInstance)
+                        .map(RoleSymbol.class::cast).filter(role -> role.aggregation() == RoleAggregation.COMPOSITION)
+                        .findFirst().orElseThrow();
+                assertEquals(cardinality.equals("{1}") ? Cardinality.exactly(1) : Cardinality.of(0, 1),
+                        owner.cardinality());
+            }
+        }
+    }
+
     @Test void version23ModelLevelTargetsRetainTheApprovedCompatibilityProfile() {
         String prefix="INTERLIS 2.3;MODEL F AT \"https://example.org\" VERSION \"1\"=CLASS Outside=END Outside;TOPIC T=CLASS Local=END Local;";
         String relation="ASSOCIATION Link=a--{1}Outside;b--{*}Local;END Link;";

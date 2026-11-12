@@ -30,6 +30,7 @@ final class DatasetReferences {
     private final IdentityIndex identities;
     private final RelationProjector relations;
     private final ValidationTable links;
+    private final ValidationTable incompleteLinks;
     private long linkOrdinal;
 
     DatasetReferences(ValidationPlan plan, ValidationStorage storage, StoredValueCodec codec,
@@ -46,6 +47,7 @@ final class DatasetReferences {
         this.identities = identities;
         this.relations = new RelationProjector(plan);
         this.links = storage.table(StorageArea.LINKS);
+        this.incompleteLinks = storage.table(StorageArea.TEMPORARY);
     }
 
     void check(CancellationToken cancellation) {
@@ -114,6 +116,10 @@ final class DatasetReferences {
             }
             var link = relations.embedded(handle, type, field.getKey(), field.getValue(), context.header());
             link.ifPresent(this::storeLink);
+            if (link.isEmpty() && (field.getValue() instanceof TransferValue.Reference
+                    || field.getValue() instanceof TransferValue.Structured)) {
+                incompleteLinks.put(DatasetValidationSession.metadataKey((byte) 4, context.basket().ordinal()), new byte[0]);
+            }
             if (selected && field.getValue() instanceof TransferValue.Reference reference) {
                 var path = List.<DataLocation.Step>of(new DataLocation.Slot(field.getKey()));
                 if (link.isEmpty()) {

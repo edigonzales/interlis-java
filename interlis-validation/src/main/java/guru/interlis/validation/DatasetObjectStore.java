@@ -29,6 +29,10 @@ final class DatasetObjectStore {
         return table.scan(new byte[0], Optional.empty());
     }
 
+    EntryCursor scan(ObjectHandle first, long exclusiveUpper) {
+        return table.scan(key(first), Optional.of(ByteBuffer.allocate(Long.BYTES).putLong(exclusiveUpper).array()));
+    }
+
     StoredValueCodec.StoredObject decode(EntryCursor.Entry entry) {
         return codec.decodeObject(entry.value());
     }

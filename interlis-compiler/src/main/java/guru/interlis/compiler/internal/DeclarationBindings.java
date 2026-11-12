@@ -594,7 +594,7 @@ final class DeclarationBindings {
                 .filter(child -> child.kind() == SymbolKind.CONSTRAINT)
                 .map(DeclInfo::id).toList();
         Cardinality inheritedCardinality = base.map(state::symbol).map(AssociationSymbol.class::cast)
-                .map(AssociationSymbol::cardinality).orElse(Cardinality.exactly(1));
+                .map(AssociationSymbol::cardinality).orElse(Cardinality.of(0, 1));
         Cardinality effectiveCardinality = syntax.cardinality().orElse(inheritedCardinality);
         if (base.isPresent() && (effectiveCardinality.lower().compareTo(inheritedCardinality.lower()) < 0
                 || widerUpper(effectiveCardinality.upper(), inheritedCardinality.upper()))) {
