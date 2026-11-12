@@ -418,7 +418,7 @@ final class LocalExpressions {
 
     private static Result value(TransferValue value, boolean textType) {
         if (value == TransferValue.Undefined.INSTANCE
-                || textType && value instanceof TransferValue.Text text && text.value().isEmpty()) {
+                || textType && value instanceof TransferValue.Text text && ScalarRules.textLength(text.value()) == 0) {
             return new UndefinedByData(false);
         }
         return new Known(value);

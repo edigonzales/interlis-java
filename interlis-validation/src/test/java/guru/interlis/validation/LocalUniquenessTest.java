@@ -48,11 +48,12 @@ class LocalUniquenessTest {
         var duplicate = f.entry("Entry", "a", "1.00");
         var missing = f.entry("Entry", "a", null);
         var empty = f.entry("Entry", "", "1.00");
+        var zeroLength = f.entry("Entry", "\u0301", "1.00");
         var undefined = new TransferValue.Structured(f.ref("Entry"), Map.of(
                 f.ref("Entry", "kind"), new TransferValue.Text("a"),
                 f.ref("Entry", "number"), TransferValue.Undefined.INSTANCE));
         var invalid = Map.<SymbolRef, TransferValue>of(f.ref("Item", "entries"),
-                repeated(CollectionKind.BAG, a, different, duplicate, missing, missing, empty, empty, undefined));
+                repeated(CollectionKind.BAG, a, different, duplicate, missing, missing, empty, empty, zeroLength, zeroLength, undefined));
         var single = Map.<SymbolRef, TransferValue>of(f.ref("Item", "entries"), repeated(CollectionKind.BAG, duplicate));
         try (var session = f.session(ValidationOptions.defaults())) {
             var b1 = f.startBasket(session, "b1");

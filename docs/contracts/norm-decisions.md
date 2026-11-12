@@ -98,7 +98,7 @@ die effektiven Slots gelesen. Schlüssel aus Text, Zahlen, Aufzählungen,
 Ausrichtungen und BOOLEAN werden in Deklarationsreihenfolge verglichen.
 Zahlen mit gleichem exaktem Wert kollidieren auch bei unterschiedlicher
 Schreibweise. Ein Element mit einer undefinierten Komponente, einschliesslich
-leerem TEXT, nimmt nicht am Vergleich teil. Die Diagnose enthält den Pfad der
+TEXT mit normativer Länge null, nimmt nicht am Vergleich teil. Die Diagnose enthält den Pfad der
 späteren Stelle sowie die Vorkommensindizes beider Stellen. Der Index endet
 mit der Prüfung des Besitzers. WHERE, andere Schlüsseltypen, geometrische
 Linienattribute in 2.3 und nicht unterstützte Pfade erscheinen als
