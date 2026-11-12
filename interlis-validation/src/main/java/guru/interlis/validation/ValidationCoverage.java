@@ -7,12 +7,14 @@ import java.util.Objects;
 
 /** Immutable rule counts and declared coverage gaps for one completed run. */
 public record ValidationCoverage(List<RuleCount> checked, List<UncheckedRuleInfo> notChecked,
-                                 List<RuleCount> incompleteContext, List<RuleCount> unsupportedValues,
+                                 List<RuleCount> incompleteContext, List<RuleCount> missingRuntimeContext,
+                                 List<RuleCount> unsupportedValues,
                                  List<RuleFamily> unavailableFamilies) {
     public ValidationCoverage {
         checked = List.copyOf(checked);
         notChecked = List.copyOf(notChecked);
         incompleteContext = List.copyOf(incompleteContext);
+        missingRuntimeContext = List.copyOf(missingRuntimeContext);
         unsupportedValues = List.copyOf(unsupportedValues);
         unavailableFamilies = List.copyOf(unavailableFamilies);
     }

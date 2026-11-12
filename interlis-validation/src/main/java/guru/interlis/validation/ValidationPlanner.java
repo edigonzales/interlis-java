@@ -1,5 +1,6 @@
 package guru.interlis.validation;
 
+import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.BinaryExpression;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.CompiledSchema;
@@ -147,10 +148,22 @@ public final class ValidationPlanner {
                 values.add(new ObjectValidationPlan.ValueRules(depth, type, required,
                         rules(object, Optional.of(slot.symbol()), depth, domains)));
                 if (!(type instanceof CollectionType collection)) {
-                    return new ObjectValidationPlan.FieldRule(slot, values);
+                    return new ObjectValidationPlan.FieldRule(slot, hasDerivation(slot), values);
                 }
                 valueType = collection.elementType();
             }
+        }
+
+        private boolean hasDerivation(AttributeSlot slot) {
+            var attribute = slot.attribute();
+            while (attribute.derivations().isEmpty() && attribute.overrides().isPresent()) {
+                var base = attribute.overrides().orElseThrow();
+                if (!(graph.symbol(base).orElse(null) instanceof AttributeSymbol inherited)) {
+                    throw missing(slot.symbol(), "Missing inherited attribute " + base);
+                }
+                attribute = inherited;
+            }
+            return !attribute.derivations().isEmpty();
         }
 
         private TypeDescriptor type(TypeId id, SymbolRef symbol) {

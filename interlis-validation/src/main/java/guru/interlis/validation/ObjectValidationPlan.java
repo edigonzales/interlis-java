@@ -15,7 +15,7 @@ record ObjectValidationPlan(ObjectDescriptor descriptor, List<FieldRule> fields,
         constraints = List.copyOf(constraints);
     }
 
-    record FieldRule(AttributeSlot slot, List<ValueRules> values) {
+    record FieldRule(AttributeSlot slot, boolean derived, List<ValueRules> values) {
         FieldRule {
             values = List.copyOf(values);
         }

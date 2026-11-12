@@ -41,6 +41,7 @@ public final class ValidationSession implements AutoCloseable {
     private final List<ValidationDiagnostic> examples = new ArrayList<>();
     private final Map<SlotKey, Long> checked = new LinkedHashMap<>();
     private final Map<SlotKey, Long> incomplete = new LinkedHashMap<>();
+    private final Map<SlotKey, Long> missingRuntime = new LinkedHashMap<>();
     private final Map<SlotKey, Long> unsupported = new LinkedHashMap<>();
     private State state = State.BEFORE_TRANSFER;
     private Optional<SourceId> source = Optional.empty();
@@ -107,7 +108,7 @@ public final class ValidationSession implements AutoCloseable {
             var report = new ValidationReport(violations == 0 ? PASSED_CHECKED_SCOPE : FAILED_CHECKED_SCOPE,
                     baskets, objects, violations, examples,
                     new ValidationCoverage(counts(checked), plan.uncheckedRules(), counts(incomplete),
-                            counts(unsupported), List.copyOf(EnumSet.of(VALUE_RANGE, IDENTITY, GEOMETRY_VALUES,
+                            counts(missingRuntime), counts(unsupported), List.copyOf(EnumSet.of(VALUE_RANGE, IDENTITY, GEOMETRY_VALUES,
                                     LOCAL_CONSTRAINTS, LOCAL_UNIQUENESS, REFERENTIAL_INTEGRITY, TOPOLOGY))));
             clear();
             state = State.FINISHED;
@@ -173,6 +174,15 @@ public final class ValidationSession implements AutoCloseable {
                 || (rules.type().kind() == TypeKind.TEXT && actual instanceof TransferValue.Text text
                     && text.value().isEmpty());
         boolean uncertain = value.isEmpty() && (delete || (partial && rules.type().kind() == TypeKind.GEOMETRY));
+        if (value.isEmpty() && field.derived()) {
+            if (rules.required()) {
+                count(uncertain ? incomplete : missingRuntime, pending, DEFINED_VALUE);
+            }
+            if (rules.type() instanceof CollectionType) {
+                count(uncertain ? incomplete : missingRuntime, pending, CARDINALITY);
+            }
+            return Optional.empty();
+        }
         if (rules.required()) {
             count(uncertain ? incomplete : checked, pending, DEFINED_VALUE);
             if (undefined && !uncertain) {
@@ -343,6 +353,7 @@ public final class ValidationSession implements AutoCloseable {
         examples.clear();
         checked.clear();
         incomplete.clear();
+        missingRuntime.clear();
         unsupported.clear();
     }
 

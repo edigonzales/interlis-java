@@ -40,6 +40,7 @@ class LocalValueRuleTest {
                 CLASS Item =
                   code : ShortLabel;
                   comment : TEXT;
+                  copied : MANDATORY TEXT*20 := code;
                   memory (TRANSIENT) : MANDATORY BOOLEAN := #true;
                   bounded : LIST {2..4} OF Detail;
                   open : BAG {0..*} OF Detail;
@@ -115,6 +116,20 @@ class LocalValueRuleTest {
         assertEquals(List.of(TYPE_MISMATCH, TYPE_MISMATCH, STRUCTURE_TYPE_MISMATCH, REQUIRED_VALUE_MISSING), codes(report));
         assertEquals(List.of(new DataLocation.Slot(bounded), new DataLocation.Index(2), new DataLocation.Slot(note)),
                 report.examples().getLast().data().path());
+    }
+
+    @Test
+    void marksAbsentDerivedValueAsUncheckedAndChecksSuppliedValue() {
+        var values = new java.util.HashMap<SymbolRef, TransferValue>(
+                Map.of(code, new TransferValue.Text("ok"), bounded, validList));
+        var absent = validate(Consistency.INCOMPLETE, Consistency.COMPLETE, values);
+        assertEquals(List.of(), codes(absent));
+        assertEquals(List.of(new ValidationCoverage.RuleCount(item, field("copied"),
+                ValidationCoverage.RuleFamily.DEFINED_VALUE, 1)), absent.coverage().missingRuntimeContext());
+        values.put(field("copied"), new TransferValue.BooleanValue(true));
+        var present = validate(Consistency.INCOMPLETE, Consistency.COMPLETE, values);
+        assertEquals(List.of(TYPE_MISMATCH), codes(present));
+        assertTrue(present.coverage().missingRuntimeContext().isEmpty());
     }
 
     @Test
