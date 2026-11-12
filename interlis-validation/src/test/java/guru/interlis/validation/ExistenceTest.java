@@ -267,6 +267,48 @@ class ExistenceTest {
         }
     }
 
+    @Test
+    void comparesExplicitlyCompatibleDistinctEnumerationDomainsOnlyForExistence() {
+        var plan = plan("""
+                DOMAIN CatalogueCode = (yes, no);
+                SubjectCode = (yes, no);
+                CLASS Target = code: CatalogueCode; END Target;
+                CLASS Subject =
+                  code: SubjectCode;
+                  EXISTENCE CONSTRAINT code REQUIRED IN Target:code;
+                END Subject;
+                """);
+        var witness = "<Target i:tid='w'><code>yes</code></Target>";
+        var matched = "<Subject i:tid='yes'><code>yes</code></Subject>";
+        var missing = "<Subject i:tid='no'><code>no</code></Subject>";
+        var report = validate(plan, List.of("Target"), primary("p", basket("data", witness + matched + missing)));
+        assertEquals(1, report.detectedViolations(), report.examples().toString());
+        assertEquals(ValidationCode.EXISTENCE_TARGET_MISSING, report.examples().getFirst().code());
+        assertEquals("no", report.examples().getFirst().data().tid().orElseThrow().value());
+    }
+
+    @Test
+    void treatsMulticoordinatesAsUnorderedSetsOfExactPositions() {
+        var plan = plan("""
+                DOMAIN Points = MULTICOORD 0.00..100.00, 0.00..100.00;
+                CLASS Target = value: Points; END Target;
+                CLASS Subject =
+                  value: Points;
+                  EXISTENCE CONSTRAINT value REQUIRED IN Target:value;
+                END Subject;
+                """);
+        var witness = "<Target i:tid='w'><value><g:multicoord>" + point("1", "1") + point("2", "2")
+                + "</g:multicoord></value></Target>";
+        var matched = "<Subject i:tid='match'><value><g:multicoord>" + point("2.00", "2") + point("1", "1")
+                + "</g:multicoord></value></Subject>";
+        var missing = "<Subject i:tid='missing'><value><g:multicoord>" + point("1", "1") + point("3", "3")
+                + "</g:multicoord></value></Subject>";
+        var report = validate(plan, List.of("Target"), primary("p", basket("data", witness + matched + missing)));
+        assertEquals(1, report.detectedViolations(), report.examples().toString());
+        assertEquals(ValidationCode.EXISTENCE_TARGET_MISSING, report.examples().getFirst().code());
+        assertEquals("missing", report.examples().getFirst().data().tid().orElseThrow().value());
+    }
+
     private static String line(String points) {
         return "<g:polyline>" + points + "</g:polyline>";
     }

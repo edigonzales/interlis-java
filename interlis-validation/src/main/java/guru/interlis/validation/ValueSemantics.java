@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -69,6 +70,18 @@ final class ValueSemantics {
         };
     }
 
+    Result existenceKey(LocalExpressions.Result result, TypeDescriptor type) {
+        if (type instanceof EnumerationType && result instanceof LocalExpressions.Known known
+                && known.value() instanceof TransferValue.Enumeration enumeration) {
+            // The bound source and target have already passed compiler compatibility checks.
+            visit.run();
+            var out = new Output(maxBytes);
+            var issue = writeEnumeration(out, type, enumeration, false);
+            return issue == null ? new Known(out.finish()) : issue;
+        }
+        return key(result, type);
+    }
+
     CanonicalKey tuple(List<CanonicalKey> keys) {
         var out = new Output(maxBytes);
         out.number(keys.size());
@@ -102,11 +115,8 @@ final class ValueSemantics {
             case NUMERIC -> value instanceof TransferValue.NumberValue number
                     ? writeNumber(out, number.exactValue()) : Gap.INVALID_VALUE;
             case ENUMERATION, ALIGNMENT -> value instanceof TransferValue.Enumeration enumeration
-                    ? writeEnumeration(out, type, enumeration) : Gap.INVALID_VALUE;
-            case COORDINATE -> value instanceof TransferGeometry.Coordinate coordinate
-                    && ((CoordinateType) type).dimensions() == coordinate.ordinates().size()
-                    && !((CoordinateType) type).multiCoordinate()
-                    ? writeCoordinate(out, coordinate) : Gap.INVALID_VALUE;
+                    ? writeEnumeration(out, type, enumeration, true) : Gap.INVALID_VALUE;
+            case COORDINATE -> writeCoordinateValue(out, (CoordinateType) type, value);
             case STRUCTURE_VALUE -> value instanceof TransferValue.Structured structure
                     ? writeStructure(out, (StructureValueType) type, structure, depth) : Gap.INVALID_VALUE;
             case COLLECTION -> value instanceof TransferValue.Repeated collection
@@ -134,7 +144,8 @@ final class ValueSemantics {
         return null;
     }
 
-    private Gap writeEnumeration(Output out, TypeDescriptor type, TransferValue.Enumeration value) {
+    private Gap writeEnumeration(Output out, TypeDescriptor type, TransferValue.Enumeration value,
+                                 boolean includeDomain) {
         out.tag(4);
         var path = value.path();
         if (type instanceof EnumerationType enumeration) {
@@ -160,7 +171,7 @@ final class ValueSemantics {
                 }
                 canonical = plan.canonicalEnumeration(parent);
             }
-            out.text(canonical.id().value());
+            out.text(includeDomain ? canonical.id().value() : "");
         } else {
             out.text(((AlignmentType) type).alignment().name());
         }
@@ -186,6 +197,36 @@ final class ValueSemantics {
         } catch (java.time.DateTimeException invalid) {
             return Gap.INVALID_VALUE;
         }
+    }
+
+    private Gap writeCoordinateValue(Output out, CoordinateType type, TransferValue value) {
+        if (!type.multiCoordinate()) {
+            return value instanceof TransferGeometry.Coordinate coordinate
+                    && type.dimensions() == coordinate.ordinates().size()
+                    ? writeCoordinate(out, coordinate) : Gap.INVALID_VALUE;
+        }
+        if (!(value instanceof TransferGeometry.MultiCoordinate multi)) {
+            return Gap.INVALID_VALUE;
+        }
+        var positions = new TreeSet<CanonicalKey>();
+        long pending = 1 + Integer.BYTES;
+        for (var coordinate : multi.coordinates()) {
+            visit.run();
+            if (type.dimensions() != coordinate.ordinates().size()) {
+                return Gap.INVALID_VALUE;
+            }
+            var key = coordinate(coordinate);
+            if (positions.add(key)) {
+                pending += (long) key.size() + Integer.BYTES;
+                if (pending > maxBytes) {
+                    throw new ValidationLimitException("Canonical key byte budget exceeded");
+                }
+            }
+        }
+        out.tag(14);
+        out.number(positions.size());
+        positions.forEach(out::key);
+        return null;
     }
 
     private Gap writeCoordinate(Output out, TransferGeometry.Coordinate coordinate) {

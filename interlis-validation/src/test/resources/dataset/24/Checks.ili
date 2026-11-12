@@ -1,0 +1,14 @@
+INTERLIS 2.4;
+MODEL Checks (en) AT "https://example.org/checks" VERSION "1" =
+  TOPIC Data =
+    CLASS Owner = END Owner;
+    CLASS Item =
+      code : MANDATORY TEXT*10;
+      UNIQUE code;
+    END Item;
+    ASSOCIATION Link =
+      owner -- {1} Owner;
+      items -- {0..*} Item;
+    END Link;
+  END Data;
+END Checks.

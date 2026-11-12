@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="dataset-probe">
+    <MODELS><MODEL NAME="Checks" VERSION="1" URI="https://example.org/checks"/></MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <Checks.Data BID="first-basket">
+      <Checks.Data.Owner TID="one"/>
+      <Checks.Data.Item TID="first"><code>alpha</code><owner REF="one"/></Checks.Data.Item>
+    </Checks.Data>
+    <Checks.Data BID="second-basket">
+      <Checks.Data.Item TID="second"><code>alpha</code><owner REF="two"/></Checks.Data.Item>
+      <Checks.Data.Owner TID="two"/>
+    </Checks.Data>
+  </DATASECTION>
+</TRANSFER>

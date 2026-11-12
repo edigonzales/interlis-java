@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="http://www.interlis.ch/xtf/2.4/Checks">
+  <i:headersection><i:models><i:model>Checks</i:model></i:models><i:sender>dataset-probe</i:sender></i:headersection>
+  <i:datasection>
+    <Data i:bid="valid">
+      <Item i:tid="first"><code>alpha</code><owner i:ref="late"/></Item>
+      <Owner i:tid="late"/>
+    </Data>
+  </i:datasection>
+</i:transfer>

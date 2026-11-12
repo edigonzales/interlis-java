@@ -49,6 +49,17 @@ class DiskFailureTest {
     }
 
     @Test
+    void removesAnOwnedPartialStoreWhenTheInitialWriteExceedsQuota() throws IOException {
+        var foreign = Files.writeString(root.resolve("host-owned.txt"), "keep");
+        var options = new MvStoreOptions(10, 1_000, 1, 1, 1);
+        var error = assertThrows(ValidationLimitException.class, () -> MvStoreValidationStorage.open(root, options));
+        assertEquals("MVStore temporary file quota exceeded", error.getMessage());
+        try (var files = Files.list(root)) {
+            assertEquals(java.util.List.of(foreign), files.toList());
+        }
+    }
+
+    @Test
     void preservesThePreviousValueWhenALogicalBudgetRejectsAReplacement() {
         try (var disk = MvStoreValidationStorage.open(root, new MvStoreOptions(1, 4, 1_000_000, 1, 1))) {
             var table = disk.table(StorageArea.RULE_KEYS);

@@ -59,7 +59,7 @@ final class DatasetExistence {
                 continue;
             }
             var program = alternative.program.orElseThrow();
-            var key = semantics.key(context.evaluate(program, occurrence), context.valueType(program, occurrence));
+            var key = semantics.existenceKey(context.evaluate(program, occurrence), context.valueType(program, occurrence));
             switch (key) {
                 case ValueSemantics.Known known -> context.keys.putIfAbsent(indexKey(alternative, known.key()),
                         ByteBuffer.allocate(Long.BYTES).putLong(occurrence.handle().ordinal()).array());
@@ -90,7 +90,7 @@ final class DatasetExistence {
             checkVertices(occurrence, path, semantics, geometry, value);
             return;
         }
-        switch (semantics.key(result, type)) {
+        switch (semantics.existenceKey(result, type)) {
             case ValueSemantics.Gap.UNDEFINED -> counts.evaluations++;
             case ValueSemantics.Gap.UNSUPPORTED -> unsupportedValue();
             case ValueSemantics.Gap ignored -> counts.undecided++;

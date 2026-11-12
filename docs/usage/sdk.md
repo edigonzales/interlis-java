@@ -110,6 +110,11 @@ ein vorhandenes Temp-Wurzelverzeichnis und eine Dateiquota bereit. Das Backend
 erzeugt ein privates Laufverzeichnis. Der Host schliesst den Speicher nach
 dem Lauf. Cache und Schreibpuffer sind MVStore-Konfigurationen und keine
 Obergrenze für den gesamten JVM-Heap. Die Dateiquota begrenzt die logische
-Länge der Arbeitsdatei. Der Validator prüft den Schema- und Laufheader und
-schliesst alle Schreibvorgänge vor Ausgabe des Berichts ab.
+Länge der Arbeitsdatei. `diskBytes()` meldet die aktuelle Länge und
+`peakDiskBytes()` die höchste durch einen erfolgreichen Schreibvorgang
+erreichte Länge. Eigene Speicherimplementierungen können bei einem
+Budgetende den öffentlichen `ValidationLimitException(String)`-Konstruktor
+verwenden. Das optionale Modul und der zusätzliche Konstruktor sind
+additive Erweiterungen von API 0.8. Der Validator prüft den Schema- und
+Laufheader und schliesst die Schreibvorgänge vor Ausgabe des Berichts ab.
 [H2 MVStore](https://h2database.github.io/html/mvstore.html)

@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class StorageParityTest {
     private static final CancellationToken TOKEN = CancellationToken.none();
-    private static final String MODEL = """
+    static final String MODEL = """
             INTERLIS 2.4;
             MODEL Checks (en) AT "https://example.org/checks" VERSION "1" =
               TOPIC Data =
@@ -128,8 +128,12 @@ class StorageParityTest {
     }
 
     static Fixture fixture() {
+        return fixture(MODEL);
+    }
+
+    static Fixture fixture(String model) {
         var id = new SourceId("memory:/Checks.ili");
-        var source = new SourceText(id, new SourceRevision(1), MODEL);
+        var source = new SourceText(id, new SourceRevision(1), model);
         var request = new CompilationRequest(List.of(new ModelSelector.ByName("Checks", Optional.empty(), Optional.empty())),
                 SourceSet.of(Map.of(id, source)), CompilerOptions.defaults());
         var outcome = CompilerEngines.create().compile(request, TOKEN);

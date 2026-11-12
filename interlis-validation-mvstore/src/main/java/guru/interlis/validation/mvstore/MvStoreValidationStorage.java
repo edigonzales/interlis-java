@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -76,10 +77,15 @@ public final class MvStoreValidationStorage implements ValidationStorage {
         file = directory.resolve(FILE_NAME);
         fileStore = new QuotaFileStore(options, failure);
         MVStore opened = null;
+        BasicFileAttributes createdDirectory = null;
+        BasicFileAttributes createdFile = null;
         try {
-            directoryKey = attributes(directory).fileKey();
+            createdDirectory = attributes(directory);
+            directoryKey = createdDirectory.fileKey();
+            Files.createFile(file);
+            createdFile = attributes(file);
+            fileKey = createdFile.fileKey();
             fileStore.open(file.toString(), false, (char[]) null);
-            fileKey = attributes(file).fileKey();
             opened = new MVStore.Builder().fileStore(fileStore)
                     .autoCommitDisabled().autoCommitBufferSize(options.writeBufferKiB())
                     .backgroundExceptionHandler((thread, cause) -> remember(cause))
@@ -102,8 +108,10 @@ public final class MvStoreValidationStorage implements ValidationStorage {
                 original.addSuppressed(cleanup);
             }
             try {
-                Files.deleteIfExists(file);
-                Files.deleteIfExists(directory);
+                if (createdDirectory != null) {
+                    removeOwnedFiles(directory, createdDirectory.fileKey(), file,
+                            createdFile == null ? null : createdFile.fileKey(), createdFile != null);
+                }
             } catch (IOException cleanup) {
                 original.addSuppressed(cleanup);
             }
@@ -138,6 +146,12 @@ public final class MvStoreValidationStorage implements ValidationStorage {
     public long diskBytes() {
         requireOpen();
         return verifyOwnedPaths().size();
+    }
+
+    /** Maximum logical file length reached by a successful write in this run. */
+    public long peakDiskBytes() {
+        requireOpen();
+        return fileStore.peakBytes.get();
     }
 
     private BasicFileAttributes verifyOwnedPaths() {
@@ -219,18 +233,7 @@ public final class MvStoreValidationStorage implements ValidationStorage {
             cleanupFailure = combine(cleanupFailure, error);
         }
         try {
-            var owned = attributes(directory);
-            if (!owned.isDirectory() || !Objects.equals(owned.fileKey(), directoryKey)) {
-                throw new IOException("Validation store directory was replaced");
-            }
-            if (Files.exists(file, LinkOption.NOFOLLOW_LINKS)) {
-                var retained = attributes(file);
-                if (!retained.isRegularFile() || !Objects.equals(retained.fileKey(), fileKey)) {
-                    throw new IOException("Validation store file was replaced");
-                }
-                Files.delete(file);
-            }
-            Files.delete(directory);
+            removeOwnedFiles(directory, directoryKey, file, fileKey, true);
         } catch (IOException error) {
             cleanupFailure = combine(cleanupFailure, new UncheckedIOException("Cannot remove validation run files", error));
         }
@@ -240,6 +243,22 @@ public final class MvStoreValidationStorage implements ValidationStorage {
         if (cleanupFailure != null) {
             throw cleanupFailure;
         }
+    }
+
+    private static void removeOwnedFiles(Path directory, Object directoryKey, Path file, Object fileKey,
+                                         boolean fileIdentified) throws IOException {
+        var owned = attributes(directory);
+        if (!owned.isDirectory() || !Objects.equals(owned.fileKey(), directoryKey)) {
+            throw new IOException("Validation store directory was replaced");
+        }
+        if (Files.exists(file, LinkOption.NOFOLLOW_LINKS)) {
+            var retained = attributes(file);
+            if (!fileIdentified || !retained.isRegularFile() || !Objects.equals(retained.fileKey(), fileKey)) {
+                throw new IOException("Validation store file was replaced or could not be identified");
+            }
+            Files.delete(file);
+        }
+        Files.delete(directory);
     }
 
     private static RuntimeException combine(RuntimeException first, RuntimeException next) {
@@ -367,6 +386,7 @@ public final class MvStoreValidationStorage implements ValidationStorage {
 
     private static final class QuotaFileStore extends SingleFileStore {
         private final long quota;
+        private final AtomicLong peakBytes = new AtomicLong();
         private final AtomicReference<RuntimeException> failure;
 
         private QuotaFileStore(MvStoreOptions options, AtomicReference<RuntimeException> failure) {
@@ -383,7 +403,9 @@ public final class MvStoreValidationStorage implements ValidationStorage {
                 failure.compareAndSet(null, exceeded);
                 throw exceeded;
             }
+            long end = position + source.remaining();
             super.writeFully(chunk, position, source);
+            peakBytes.accumulateAndGet(end, Math::max);
         }
     }
 }
