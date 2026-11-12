@@ -93,6 +93,37 @@ class GeometryAndIdentityTest {
     }
 
     @Test
+    void aConcreteExtensionOfGenericDomainKeepsItsOwnAxes() {
+        var fixture = new Fixture(HEADER + """
+                DOMAIN G (GENERIC) = COORD NUMERIC, NUMERIC;
+                       A EXTENDS G = COORD 0.00..10.00, 0.00..10.00;
+                       B EXTENDS G = COORD 100.00..110.00, 100.00..110.00;
+                CONTEXT Default = G = A OR B;
+                TOPIC T =
+                  DEFERRED GENERICS G;
+                  CLASS Item = fixed : A; generic : G; END Item;
+                END T;
+                END Checks.
+                """);
+        var item = fixture.ref("Checks", "T", "Item");
+        var b = fixture.basket("b", List.of(fixture.binding("B")), Optional.empty(), TransferEvent.Consistency.COMPLETE);
+        try (var session = fixture.session()) {
+            session.accept(b, RUN);
+            session.accept(object(b, item, Map.of(fixture.field("fixed"), coord("5", "5"),
+                    fixture.field("generic"), coord("105", "105")), Optional.empty(), Optional.empty()), RUN);
+            session.accept(new TransferEvent.EndBasket(b.id()), RUN);
+            var report = finish(session);
+            assertTrue(report.examples().isEmpty());
+            assertTrue(report.coverage().missingRuntimeContext().isEmpty());
+        }
+        var missing = fixture.validate(item, Map.of(fixture.field("fixed"), coord("11", "0"),
+                fixture.field("generic"), coord("105", "105")));
+        assertEquals(List.of(VALUE_OUT_OF_RANGE), codes(missing));
+        assertEquals(List.of(fixture.field("generic")),
+                missing.coverage().missingRuntimeContext().stream().map(ValidationCoverage.RuleCount::slot).toList());
+    }
+
+    @Test
     void checksCoordinateAxesAndSegmentFormsWithoutCheckingTopology() {
         var fixture = new Fixture(HEADER + """
                 DOMAIN Point = COORD 0.00..10.00, 0.00..10.00;
@@ -125,6 +156,8 @@ class GeometryAndIdentityTest {
         assertEquals(List.of(COORDINATE_DIMENSION_MISMATCH, VALUE_OUT_OF_RANGE, SEGMENT_FORM_NOT_ALLOWED, VALUE_OUT_OF_RANGE),
                 codes(report));
         assertTrue(report.coverage().unavailableFamilies().contains(ValidationCoverage.RuleFamily.TOPOLOGY));
+        assertTrue(report.coverage().unsupportedValues().stream().anyMatch(rule ->
+                rule.slot().equals(fixture.field("curve")) && rule.family() == ValidationCoverage.RuleFamily.GEOMETRY_VALUES));
         var sliced = Map.<SymbolRef, TransferValue>of(fixture.field("trace"),
                 new TransferGeometry.MultiPolyline(List.of(open)));
         assertEquals(List.of(TYPE_MISMATCH), codes(fixture.validate(item, sliced)));

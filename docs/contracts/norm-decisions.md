@@ -79,6 +79,12 @@ verglichen. Höhere Genauigkeit führt innerhalb des Bereichs zu keinem
 Datenfehler (2.3 §3.3.11.4, 2.4 §4.3.11.4). Die Prüfung rundet keinen
 Transferwert und rechnet keine Einheiten um.
 
+Lokale Geometrieprüfungen verwenden die Achsenbereiche der wirksamen
+Domäne und die deklarierten Standardsegmentformen. Eine konkrete Erweiterung
+einer generischen Domäne behält ihre eigenen Achsen. Basket-Bindungen
+konkretisieren generische Verwendungen. Gelieferte Bogenradien bleiben
+unverändert und werden als ungeprüfter Teil der Geometrieregel ausgewiesen.
+
 ## Quellen
 
 [norm23]: https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf

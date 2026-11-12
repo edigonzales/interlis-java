@@ -103,6 +103,7 @@ final class GeometryRules {
                     coordinate(arc.support(), at(segmentPath, SUPPORT, 0));
                     if (arc.radius().isPresent()) {
                         visit.run();
+                        fullyChecked = false;
                     }
                 }
                 coordinate(segment.end(), at(segmentPath, END, 0));

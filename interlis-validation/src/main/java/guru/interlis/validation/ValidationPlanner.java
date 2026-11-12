@@ -140,9 +140,6 @@ public final class ValidationPlanner {
                         if (!domains.add(domain.id())) {
                             break;
                         }
-                        if (domain.generic() && genericDomain.isEmpty()) {
-                            genericDomain = Optional.of(domain.id());
-                        }
                         if (required.isEmpty() && domain.mandatory()) {
                             required = Optional.of(domain);
                         }
