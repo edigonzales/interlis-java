@@ -20,6 +20,10 @@ public record ValidationDiagnostic(ValidationCode code, Severity severity, DataL
     public String message() {
         return switch (code) {
             case REQUIRED_VALUE_MISSING -> "Required attribute is absent.";
+            case REQUIRED_VALUE_UNDEFINED -> "Required value is undefined.";
+            case CARDINALITY_VIOLATION -> "Collection cardinality is outside its bounds.";
+            case TYPE_MISMATCH -> "Value has a different family than the model type.";
+            case STRUCTURE_TYPE_MISMATCH -> "Structure type is outside the allowed hierarchy.";
         };
     }
 }

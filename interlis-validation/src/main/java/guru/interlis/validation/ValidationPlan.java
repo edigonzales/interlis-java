@@ -35,6 +35,10 @@ public final class ValidationPlan {
         return uncheckedRules;
     }
 
+    TransferPlan transferPlan() {
+        return transferPlan;
+    }
+
     ObjectValidationPlan object(SymbolRef type) {
         return objects.get(type);
     }

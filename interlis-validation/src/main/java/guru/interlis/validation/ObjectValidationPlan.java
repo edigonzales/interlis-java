@@ -1,9 +1,12 @@
 package guru.interlis.validation;
 
 import guru.interlis.model.ConstraintSymbol;
+import guru.interlis.model.Symbol;
+import guru.interlis.model.TypeDescriptor;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
 import java.util.List;
+import java.util.Optional;
 
 record ObjectValidationPlan(ObjectDescriptor descriptor, List<FieldRule> fields,
                             List<ConstraintSymbol> constraints) {
@@ -19,9 +22,14 @@ record ObjectValidationPlan(ObjectDescriptor descriptor, List<FieldRule> fields,
     }
 
     /** Rules for the value itself at depth zero and collection elements at higher depths. */
-    record ValueRules(int depth, boolean required, List<ConstraintSymbol> constraints) {
+    record ValueRules(int depth, TypeDescriptor type, Optional<Symbol> requiredDeclaration,
+                      List<ConstraintSymbol> constraints) {
         ValueRules {
             constraints = List.copyOf(constraints);
+        }
+
+        boolean required() {
+            return requiredDeclaration.isPresent();
         }
     }
 }

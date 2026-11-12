@@ -23,6 +23,7 @@ import guru.interlis.model.PathStep;
 import guru.interlis.model.PlausibilityConstraint;
 import guru.interlis.model.SemanticGraph;
 import guru.interlis.model.SetConstraint;
+import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
@@ -121,7 +122,7 @@ public final class ValidationPlanner {
             List<ObjectValidationPlan.ValueRules> values = new ArrayList<>();
             TypeId valueType = slot.declaredType().type();
             for (int depth = 0; ; depth++) {
-                boolean required = depth == 0 && slot.attribute().mandatory();
+                Optional<Symbol> required = Optional.empty();
                 Set<SymbolId> domains = new HashSet<>();
                 var type = type(valueType, slot.symbol());
                 while (type instanceof DomainReferenceType reference) {
@@ -131,14 +132,19 @@ public final class ValidationPlanner {
                         if (!domains.add(domain.id())) {
                             break;
                         }
-                        required |= domain.mandatory();
+                        if (required.isEmpty() && domain.mandatory()) {
+                            required = Optional.of(domain);
+                        }
                         if (domain.baseDomain().isEmpty()) {
                             break;
                         }
                         domain = domain(domain.baseDomain().orElseThrow(), slot.symbol());
                     }
                 }
-                values.add(new ObjectValidationPlan.ValueRules(depth, required,
+                if (required.isEmpty() && depth == 0 && slot.attribute().mandatory()) {
+                    required = Optional.of(slot.attribute());
+                }
+                values.add(new ObjectValidationPlan.ValueRules(depth, type, required,
                         rules(object, Optional.of(slot.symbol()), depth, domains)));
                 if (!(type instanceof CollectionType collection)) {
                     return new ObjectValidationPlan.FieldRule(slot, values);
