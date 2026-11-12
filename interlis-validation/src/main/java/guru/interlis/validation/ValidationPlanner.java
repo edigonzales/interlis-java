@@ -1,28 +1,18 @@
 package guru.interlis.validation;
 
 import guru.interlis.model.AttributeSymbol;
-import guru.interlis.model.BinaryExpression;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.CompiledSchema;
-import guru.interlis.model.ConstantExpression;
 import guru.interlis.model.ConstraintDefinition;
 import guru.interlis.model.ConstraintSymbol;
-import guru.interlis.model.DefinedExpression;
 import guru.interlis.model.DomainConstraint;
 import guru.interlis.model.DomainReferenceType;
 import guru.interlis.model.DomainSymbol;
 import guru.interlis.model.EnumerationType;
-import guru.interlis.model.ErrorExpression;
 import guru.interlis.model.ExistenceConstraint;
 import guru.interlis.model.ExpressionId;
-import guru.interlis.model.FunctionCallExpression;
-import guru.interlis.model.InspectionExpression;
-import guru.interlis.model.LiteralExpression;
 import guru.interlis.model.MandatoryConstraint;
 import guru.interlis.model.ModelSymbol;
-import guru.interlis.model.ObjectSetExpression;
-import guru.interlis.model.PathExpression;
-import guru.interlis.model.PathStep;
 import guru.interlis.model.PlausibilityConstraint;
 import guru.interlis.model.SemanticGraph;
 import guru.interlis.model.SetConstraint;
@@ -30,18 +20,13 @@ import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
-import guru.interlis.model.SymbolValueExpression;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeId;
-import guru.interlis.model.TypedExpression;
-import guru.interlis.model.UnaryExpression;
-import guru.interlis.model.UnaryOperator;
-import guru.interlis.model.UndefinedExpression;
 import guru.interlis.model.UniquenessConstraint;
+import guru.interlis.model.query.TypeRelations;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.TransferPlan;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -85,6 +70,8 @@ public final class ValidationPlanner {
     private static final class Projection {
         private final SemanticGraph graph;
         private final TransferPlan transfer;
+        private final TypeRelations types;
+        private final Map<ExpressionId, Optional<LocalExpressions.Program>> expressions = new LinkedHashMap<>();
         private final Map<SymbolId, List<IndexedConstraint>> declarations = new LinkedHashMap<>();
         private final Map<TypeId, Set<List<String>>> enumValues = new LinkedHashMap<>();
         private final List<UncheckedRuleInfo> unchecked = new ArrayList<>();
@@ -92,6 +79,7 @@ public final class ValidationPlanner {
         Projection(SemanticGraph graph, TransferPlan transfer) {
             this.graph = graph;
             this.transfer = transfer;
+            this.types = new TypeRelations(graph);
             int order = 0;
             for (var symbol : graph.declarationsInOrder()) {
                 if (symbol instanceof ConstraintSymbol constraint) {
@@ -117,9 +105,15 @@ public final class ValidationPlanner {
                     }
                 }
                 var constraints = rules(object, Optional.empty(), 0, ancestry(object));
-                objects.put(object.symbol(), new ObjectValidationPlan(object, fields, constraints));
+                Map<SymbolId, ObjectValidationPlan.FieldRule> pathFields = new LinkedHashMap<>();
+                for (var field : fields) {
+                    for (var attribute : declarations(field.slot())) {
+                        pathFields.put(attribute.id(), field);
+                    }
+                }
+                objects.put(object.symbol(), new ObjectValidationPlan(object, fields, constraints, pathFields));
             }
-            return new ValidationPlan(transfer, graph, objects, unchecked);
+            return new ValidationPlan(transfer, graph, objects, unchecked, expressions);
         }
 
         private ObjectValidationPlan.FieldRule field(ObjectDescriptor object, AttributeSlot slot) {
@@ -179,15 +173,23 @@ public final class ValidationPlanner {
         }
 
         private boolean hasDerivation(AttributeSlot slot) {
+            return declarations(slot).stream().anyMatch(attribute -> !attribute.derivations().isEmpty());
+        }
+
+        private List<AttributeSymbol> declarations(AttributeSlot slot) {
+            var chain = new ArrayList<AttributeSymbol>();
             var attribute = slot.attribute();
-            while (attribute.derivations().isEmpty() && attribute.overrides().isPresent()) {
+            for (;;) {
+                chain.add(attribute);
+                if (attribute.overrides().isEmpty()) {
+                    return chain;
+                }
                 var base = attribute.overrides().orElseThrow();
                 if (!(graph.symbol(base).orElse(null) instanceof AttributeSymbol inherited)) {
                     throw missing(slot.symbol(), "Missing inherited attribute " + base);
                 }
                 attribute = inherited;
             }
-            return !attribute.derivations().isEmpty();
         }
 
         private TypeDescriptor type(TypeId id, SymbolRef symbol) {
@@ -249,37 +251,18 @@ public final class ValidationPlanner {
                     return Optional.of(OUT_OF_SCOPE_GLOBAL);
                 }
             }
-            var pending = new ArrayDeque<>(expressions);
-            Set<ExpressionId> visited = new HashSet<>();
-            while (!pending.isEmpty()) {
-                var id = pending.removeFirst();
-                if (!visited.add(id)) {
-                    continue;
+            for (var id : expressions) {
+                Optional<LocalExpressions.Program> program;
+                try {
+                    program = this.expressions.computeIfAbsent(id, root -> LocalExpressions.compile(graph, types, root));
+                } catch (IllegalArgumentException invalid) {
+                    throw missing(constraint, invalid.getMessage());
                 }
-                var expression = graph.expression(id).orElseThrow(() -> missing(constraint, "Missing expression " + id));
-                if (!supported(expression)) {
+                if (program.isEmpty()) {
                     return Optional.of(UNSUPPORTED_EXPRESSION);
                 }
-                pending.addAll(expression.children());
             }
             return Optional.empty();
-        }
-
-        private boolean supported(TypedExpression expression) {
-            return switch (expression) {
-                case LiteralExpression _, DefinedExpression _, UndefinedExpression _ -> true;
-                case ConstantExpression constant -> constant.constantName().startsWith("#");
-                case BinaryExpression binary -> switch (binary.operator()) {
-                    case EQ, NEQ, LT, LTE, GT, GTE, AND, OR, IMPLIES -> true;
-                    case PLUS, MINUS, MUL, DIV -> false;
-                };
-                case UnaryExpression unary -> unary.operator() == UnaryOperator.NOT;
-                case PathExpression path -> path.path().steps().stream().allMatch(step ->
-                        step instanceof PathStep.ThisStep || step instanceof PathStep.AttributeStep
-                                || step instanceof PathStep.IndexStep);
-                case ErrorExpression _, FunctionCallExpression _, SymbolValueExpression _,
-                     ObjectSetExpression _, InspectionExpression _ -> false;
-            };
         }
     }
 

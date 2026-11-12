@@ -1,6 +1,7 @@
 package guru.interlis.validation;
 
 import guru.interlis.model.DomainSymbol;
+import guru.interlis.model.ExpressionId;
 import guru.interlis.model.QualifiedName;
 import guru.interlis.model.SchemaFingerprint;
 import guru.interlis.model.SemanticGraph;
@@ -23,15 +24,17 @@ public final class ValidationPlan {
     private final SemanticGraph graph;
     private final TypeRelations typeRelations;
     private final Map<SymbolRef, ObjectValidationPlan> objects;
+    private final Map<ExpressionId, Optional<LocalExpressions.Program>> expressions;
     private final List<UncheckedRuleInfo> uncheckedRules;
 
     ValidationPlan(TransferPlan transferPlan, SemanticGraph graph, Map<SymbolRef, ObjectValidationPlan> objects,
-                   List<UncheckedRuleInfo> uncheckedRules) {
+                   List<UncheckedRuleInfo> uncheckedRules, Map<ExpressionId, Optional<LocalExpressions.Program>> expressions) {
         this.transferPlan = transferPlan;
         this.graph = graph;
         this.typeRelations = new TypeRelations(graph);
         this.objects = Map.copyOf(objects);
         this.uncheckedRules = List.copyOf(uncheckedRules);
+        this.expressions = Map.copyOf(expressions);
     }
 
     /** Identifies the snapshot that owns all plan references. */
@@ -77,6 +80,10 @@ public final class ValidationPlan {
 
     TransferPlan transferPlan() {
         return transferPlan;
+    }
+
+    LocalExpressions.Program expression(ExpressionId root) {
+        return expressions.getOrDefault(root, Optional.empty()).orElseThrow();
     }
 
     ObjectValidationPlan object(SymbolRef type) {

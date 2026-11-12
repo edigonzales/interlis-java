@@ -5,7 +5,7 @@ package guru.interlis.validation;
  *
  * @param maxDiagnosticExamples number of retained example diagnostics per session
  * @param maxNestedDepth maximum nested value container depth below an object
- * @param maxValuesPerObject maximum combined supplied-value visits and model slot/element checks per object
+ * @param maxValuesPerObject maximum combined value visits, slot checks and expression steps per object
  */
 public record ValidationOptions(int maxDiagnosticExamples, int maxNestedDepth, long maxValuesPerObject) {
     public ValidationOptions {

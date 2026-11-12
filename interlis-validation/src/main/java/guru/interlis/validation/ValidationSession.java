@@ -5,6 +5,11 @@ import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.CardinalityUpper;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.CoordinateType;
+import guru.interlis.model.ConstraintSymbol;
+import guru.interlis.model.DomainConstraint;
+import guru.interlis.model.ExpressionId;
+import guru.interlis.model.LanguageVersion;
+import guru.interlis.model.MandatoryConstraint;
 import guru.interlis.model.GeometryType;
 import guru.interlis.model.Modifier;
 import guru.interlis.model.OidRule;
@@ -16,6 +21,7 @@ import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.TopicSymbol;
 import guru.interlis.model.TypeDescriptor;
+import guru.interlis.validation.ValidationCoverage.ConstraintStatus;
 import guru.interlis.model.TypeKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.source.SourceId;
@@ -53,6 +59,7 @@ public final class ValidationSession implements AutoCloseable {
     private final Map<SlotKey, Long> checked = new LinkedHashMap<>();
     private final Map<SlotKey, Long> incomplete = new LinkedHashMap<>();
     private final Map<SlotKey, Long> missingRuntime = new LinkedHashMap<>();
+    private final Map<ConstraintKey, Long> constraints = new LinkedHashMap<>();
     private final Map<SlotKey, Long> unsupported = new LinkedHashMap<>();
     private State state = State.BEFORE_TRANSFER;
     private Optional<SourceId> source = Optional.empty();
@@ -120,7 +127,7 @@ public final class ValidationSession implements AutoCloseable {
             var report = new ValidationReport(violations == 0 ? PASSED_CHECKED_SCOPE : FAILED_CHECKED_SCOPE,
                     baskets, objects, violations, examples,
                     new ValidationCoverage(counts(checked), plan.uncheckedRules(), counts(incomplete),
-                            counts(missingRuntime), counts(unsupported), List.copyOf(EnumSet.of(LOCAL_CONSTRAINTS, LOCAL_UNIQUENESS, REFERENTIAL_INTEGRITY, TOPOLOGY))));
+                            counts(missingRuntime), counts(unsupported), List.copyOf(EnumSet.of(LOCAL_UNIQUENESS, REFERENTIAL_INTEGRITY, TOPOLOGY)), constraintCounts()));
             clear();
             state = State.FINISHED;
             return report;
@@ -169,6 +176,7 @@ public final class ValidationSession implements AutoCloseable {
             }
         }
         checkRoles(object, objectPlan, budget);
+        checkObjectConstraints(object, objectPlan, object.data(), null, delete, partial, budget);
     }
 
     private void checkRoles(TransferObject object, ObjectValidationPlan objectPlan, ObjectBudget budget) {
@@ -250,6 +258,14 @@ public final class ValidationSession implements AutoCloseable {
             }
             case YES -> count(checked, pending, VALUE_FAMILY);
         }
+        if (type.isPresent()) {
+            for (var declaration : rules.constraints()) {
+                if (declaration.definition() instanceof DomainConstraint domain) {
+                    checkConstraint(object, pending.owner(), Optional.of(field.slot().symbol()), declaration,
+                            domain.condition(), actual, pending.path(), false, partial, budget);
+                }
+            }
+        }
         if (actual instanceof TransferGeometry geometry) {
             geometry(object, pending, effective, geometry, partial, type.isPresent(), budget);
             return Optional.empty();
@@ -295,10 +311,64 @@ public final class ValidationSession implements AutoCloseable {
             if (child == null || !assignable(structure, child)) {
                 violation(object, pending, field.slot().attribute(), STRUCTURE_TYPE_MISMATCH, List.of());
             } else {
+                checkObjectConstraints(object, child, data, pending.path(), false, partial, budget);
                 return Optional.of(fields(child, data, pending.path()));
             }
         }
         return Optional.empty();
+    }
+
+    private void checkObjectConstraints(TransferObject root, ObjectValidationPlan objectPlan,
+                                        TransferValue.Structured current, ValuePath path,
+                                        boolean incomplete, boolean partial, ObjectBudget budget) {
+        for (var declaration : objectPlan.constraints()) {
+            if (declaration.definition() instanceof MandatoryConstraint mandatory) {
+                checkConstraint(root, objectPlan.descriptor().symbol(), Optional.empty(), declaration,
+                        mandatory.condition(), current, path, incomplete, partial, budget);
+            }
+        }
+    }
+
+    private void checkConstraint(TransferObject root, SymbolRef owner, Optional<SymbolRef> slot,
+                                 ConstraintSymbol declaration, ExpressionId expression, TransferValue current,
+                                 ValuePath path, boolean incomplete, boolean partial, ObjectBudget budget) {
+        if (incomplete) {
+            countConstraint(owner, slot, declaration, ConstraintStatus.INCOMPLETE_CONTEXT);
+            return;
+        }
+        var result = plan.expression(expression).evaluate(new LocalExpressions.Context(plan, current, partial, budget::consume));
+        var status = switch (result) {
+            case LocalExpressions.Known known when known.value() instanceof TransferValue.BooleanValue value -> {
+                if (!value.value()) {
+                    var code = declaration.definition() instanceof DomainConstraint
+                            ? DOMAIN_CONSTRAINT_FALSE : MANDATORY_CONSTRAINT_FALSE;
+                    violation(root, path, declaration, code, List.of());
+                }
+                yield ConstraintStatus.CHECKED;
+            }
+            case LocalExpressions.UndefinedByData undefined -> {
+                if (declaration.definition() instanceof MandatoryConstraint
+                        && (declaration.languageVersion() == LanguageVersion.ILI24 || undefined.comparison())) {
+                    yield ConstraintStatus.UNDEFINED_BY_DATA;
+                }
+                yield ConstraintStatus.UNSUPPORTED_VALUE;
+            }
+            case LocalExpressions.MissingContext _ -> ConstraintStatus.MISSING_RUNTIME_CONTEXT;
+            case LocalExpressions.Unsupported _, LocalExpressions.Known _ -> ConstraintStatus.UNSUPPORTED_VALUE;
+        };
+        countConstraint(owner, slot, declaration, status);
+    }
+
+    private void countConstraint(SymbolRef owner, Optional<SymbolRef> slot, ConstraintSymbol rule, ConstraintStatus status) {
+        constraints.merge(new ConstraintKey(owner, slot, plan.ref(rule.id()), status), 1L, Math::addExact);
+    }
+
+    private List<ValidationCoverage.ConstraintCount> constraintCounts() {
+        return constraints.entrySet().stream().map(entry -> {
+            var key = entry.getKey();
+            return new ValidationCoverage.ConstraintCount(key.owner(), key.slot(), key.declaration(), key.status(),
+                    entry.getValue());
+        }).toList();
     }
 
     private Optional<TypeDescriptor> concreteDomain(SymbolId generic) {
@@ -525,9 +595,13 @@ public final class ValidationSession implements AutoCloseable {
         incomplete.clear();
         missingRuntime.clear();
         unsupported.clear();
+        constraints.clear();
     }
 
     private record SlotKey(SymbolRef objectType, SymbolRef slot, ValidationCoverage.RuleFamily family) { }
+
+    private record ConstraintKey(SymbolRef owner, Optional<SymbolRef> slot, SymbolRef declaration,
+                                 ConstraintStatus status) { }
 
     private record ValuePath(ValuePath parent, DataLocation.Step step) { }
 

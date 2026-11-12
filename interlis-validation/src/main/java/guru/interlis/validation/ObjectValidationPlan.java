@@ -7,14 +7,20 @@ import guru.interlis.model.TypeDescriptor;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 record ObjectValidationPlan(ObjectDescriptor descriptor, List<FieldRule> fields,
-                            List<ConstraintSymbol> constraints) {
+                            List<ConstraintSymbol> constraints, Map<SymbolId, FieldRule> pathFields) {
     ObjectValidationPlan {
         fields = List.copyOf(fields);
         constraints = List.copyOf(constraints);
+        pathFields = Map.copyOf(pathFields);
+    }
+
+    FieldRule field(SymbolId target) {
+        return pathFields.get(target);
     }
 
     record FieldRule(AttributeSlot slot, boolean derived, Optional<String> charset, List<ValueRules> values) {

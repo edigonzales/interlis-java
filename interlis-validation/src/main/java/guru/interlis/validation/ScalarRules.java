@@ -124,7 +124,7 @@ final class ScalarRules {
         }
     }
 
-    private static void requireNumericBudget(BigDecimal value) {
+    static void requireNumericBudget(BigDecimal value) {
         if (value.unscaledValue().bitLength() > 16_384 || Math.abs((long) value.scale()) > 10_000) {
             throw new ValidationLimitException("Numeric magnitude or scale exceeds the local comparison budget");
         }

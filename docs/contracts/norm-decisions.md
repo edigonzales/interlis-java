@@ -85,6 +85,13 @@ einer generischen Domäne behält ihre eigenen Achsen. Basket-Bindungen
 konkretisieren generische Verwendungen. Gelieferte Bogenradien bleiben
 unverändert und werden als ungeprüfter Teil der Geometrieregel ausgewiesen.
 
+Eine vollständig lokal ausführbare MANDATORY-Bedingung, die wegen ihrer
+Daten fachlich undefiniert ist, gilt nach 2.4 §3.12 als erfüllt. In 2.3
+gilt das für die belegte ilivalidator-1.15.0-Kompatibilität von Vergleichen
+mit undefiniertem Operand. Der Bericht kennzeichnet diese Fälle separat.
+Nicht unterstützte Ausdrücke (unter anderem Funktionsaufrufe, Fremdobjektpfade
+und Division) und fehlender Laufzeitkontext bleiben als ungeprüft erkennbar.
+
 ## Quellen
 
 [norm23]: https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf
