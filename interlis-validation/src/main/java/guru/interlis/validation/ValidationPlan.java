@@ -5,6 +5,9 @@ import guru.interlis.model.ExpressionId;
 import guru.interlis.model.QualifiedName;
 import guru.interlis.model.SchemaFingerprint;
 import guru.interlis.model.SemanticGraph;
+import guru.interlis.model.StructureValueType;
+import guru.interlis.model.SymbolKind;
+import guru.interlis.model.Modifier;
 import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.TypeDescriptor;
@@ -63,6 +66,14 @@ public final class ValidationPlan {
     Optional<TypeDescriptor> domainType(SymbolId id) {
         return graph.symbol(id).filter(DomainSymbol.class::isInstance).map(DomainSymbol.class::cast)
                 .flatMap(domain -> effectiveType(domain.typeId()));
+    }
+
+    boolean assignable(StructureValueType type, ObjectValidationPlan child) {
+        var descriptor = child.descriptor();
+        if (descriptor.kind() != SymbolKind.STRUCTURE || descriptor.modifiers().contains(Modifier.ABSTRACT)) {
+            return false;
+        }
+        return ModelValueRules.specializes(this, descriptor, type.targetRoots());
     }
 
     Optional<TypeDescriptor> effectiveType(TypeId id) {

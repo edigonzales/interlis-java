@@ -23,6 +23,7 @@ import guru.interlis.model.TopicSymbol;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.validation.ValidationCoverage.ConstraintStatus;
 import guru.interlis.model.TypeKind;
+import guru.interlis.model.UniquenessConstraint;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRange;
@@ -37,7 +38,6 @@ import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -127,7 +127,7 @@ public final class ValidationSession implements AutoCloseable {
             var report = new ValidationReport(violations == 0 ? PASSED_CHECKED_SCOPE : FAILED_CHECKED_SCOPE,
                     baskets, objects, violations, examples,
                     new ValidationCoverage(counts(checked), plan.uncheckedRules(), counts(incomplete),
-                            counts(missingRuntime), counts(unsupported), List.copyOf(EnumSet.of(LOCAL_UNIQUENESS, REFERENTIAL_INTEGRITY, TOPOLOGY)), constraintCounts()));
+                            counts(missingRuntime), counts(unsupported), List.of(REFERENTIAL_INTEGRITY, TOPOLOGY), constraintCounts()));
             clear();
             state = State.FINISHED;
             return report;
@@ -308,7 +308,7 @@ public final class ValidationSession implements AutoCloseable {
         if (rules.type() instanceof StructureValueType structure && actual instanceof TransferValue.Structured data) {
             count(checked, pending, STRUCTURE);
             var child = plan.object(data.type());
-            if (child == null || !assignable(structure, child)) {
+            if (child == null || !plan.assignable(structure, child)) {
                 violation(object, pending, field.slot().attribute(), STRUCTURE_TYPE_MISMATCH, List.of());
             } else {
                 checkObjectConstraints(object, child, data, pending.path(), false, partial, budget);
@@ -325,6 +325,12 @@ public final class ValidationSession implements AutoCloseable {
             if (declaration.definition() instanceof MandatoryConstraint mandatory) {
                 checkConstraint(root, objectPlan.descriptor().symbol(), Optional.empty(), declaration,
                         mandatory.condition(), current, path, incomplete, partial, budget);
+            } else if (declaration.definition() instanceof UniquenessConstraint unique) {
+                var status = incomplete ? ConstraintStatus.INCOMPLETE_CONTEXT
+                        : LocalUnique.check(unique, plan, current, path, partial, budget::consume,
+                                (first, duplicate) -> violation(root, duplicate, declaration, LOCAL_UNIQUE_DUPLICATE,
+                                        List.of(indices(first), indices(duplicate))));
+                countConstraint(objectPlan.descriptor().symbol(), Optional.empty(), declaration, status);
             }
         }
     }
@@ -467,14 +473,6 @@ public final class ValidationSession implements AutoCloseable {
         }
     }
 
-    private boolean assignable(StructureValueType type, ObjectValidationPlan child) {
-        var descriptor = child.descriptor();
-        if (descriptor.kind() != SymbolKind.STRUCTURE || descriptor.modifiers().contains(guru.interlis.model.Modifier.ABSTRACT)) {
-            return false;
-        }
-        return ModelValueRules.specializes(plan, descriptor, type.targetRoots());
-    }
-
     private void cardinality(TransferObject object, PendingValue pending, CollectionType collection, int size) {
         count(checked, pending, CARDINALITY);
         var bound = collection.cardinality();
@@ -603,7 +601,17 @@ public final class ValidationSession implements AutoCloseable {
     private record ConstraintKey(SymbolRef owner, Optional<SymbolRef> slot, SymbolRef declaration,
                                  ConstraintStatus status) { }
 
-    private record ValuePath(ValuePath parent, DataLocation.Step step) { }
+    private static String indices(ValuePath path) {
+        var positions = new ArrayList<String>();
+        for (var step = path; step != null; step = step.parent()) {
+            if (step.step() instanceof DataLocation.Index index) {
+                positions.add(Integer.toString(index.position()));
+            }
+        }
+        return String.join("/", positions.reversed());
+    }
+
+    record ValuePath(ValuePath parent, DataLocation.Step step) { }
 
     private record PendingValue(SymbolRef owner, ObjectValidationPlan.FieldRule field, int depth,
                                 Optional<TransferValue> value, ValuePath path) { }

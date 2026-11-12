@@ -241,7 +241,12 @@ public final class ValidationPlanner {
                 case MandatoryConstraint rule -> expressions.add(rule.condition());
                 case DomainConstraint rule -> expressions.add(rule.condition());
                 case UniquenessConstraint rule when !rule.localKeys().isEmpty() -> {
-                    rule.where().ifPresent(expressions::add);
+                    if (rule.basket()) {
+                        return Optional.of(OUT_OF_SCOPE_GLOBAL);
+                    }
+                    if (rule.where().isPresent()) {
+                        return Optional.of(UNSUPPORTED_EXPRESSION);
+                    }
                     for (var key : rule.localKeys()) {
                         expressions.add(key.prefix());
                         expressions.addAll(key.fields());
@@ -261,6 +266,10 @@ public final class ValidationPlanner {
                 if (program.isEmpty()) {
                     return Optional.of(UNSUPPORTED_EXPRESSION);
                 }
+            }
+            if (definition instanceof UniquenessConstraint unique
+                    && !LocalUnique.supports(unique, graph, types, id -> this.expressions.get(id).orElseThrow())) {
+                return Optional.of(UNSUPPORTED_EXPRESSION);
             }
             return Optional.empty();
         }

@@ -92,6 +92,19 @@ mit undefiniertem Operand. Der Bericht kennzeichnet diese Fälle separat.
 Nicht unterstützte Ausdrücke (unter anderem Funktionsaufrufe, Fremdobjektpfade
 und Division) und fehlender Laufzeitkontext bleiben als ungeprüft erkennbar.
 
+`UNIQUE (LOCAL)` prüft die über den gebundenen Präfix erreichbaren BAG-/LIST-
+Strukturen pro Besitzerinstanz (2.3 und 2.4 §3.12). Geerbte Felder werden über
+die effektiven Slots gelesen. Schlüssel aus Text, Zahlen, Aufzählungen,
+Ausrichtungen und BOOLEAN werden in Deklarationsreihenfolge verglichen.
+Zahlen mit gleichem exaktem Wert kollidieren auch bei unterschiedlicher
+Schreibweise. Ein Element mit einer undefinierten Komponente, einschliesslich
+leerem TEXT, nimmt nicht am Vergleich teil. Die Diagnose enthält den Pfad der
+späteren Stelle sowie die Vorkommensindizes beider Stellen. Der Index endet
+mit der Prüfung des Besitzers. WHERE, andere Schlüsseltypen, geometrische
+Linienattribute in 2.3 und nicht unterstützte Pfade erscheinen als
+ungeprüfte Regeln. Globales und basketweites UNIQUE bleiben ausserhalb des
+lokalen Prüfumfangs.
+
 ## Quellen
 
 [norm23]: https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf

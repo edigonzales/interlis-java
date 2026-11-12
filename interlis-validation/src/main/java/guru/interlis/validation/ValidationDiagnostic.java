@@ -37,6 +37,7 @@ public record ValidationDiagnostic(ValidationCode code, Severity severity, DataL
             case SEGMENT_FORM_NOT_ALLOWED -> "Segment form is not allowed by the model.";
             case MODEL_VALUE_NOT_ALLOWED -> "Model name is outside the allowed type or attribute path.";
             case MANDATORY_CONSTRAINT_FALSE -> "Mandatory constraint evaluated to false.";
+            case LOCAL_UNIQUE_DUPLICATE -> "Local structure key duplicates an earlier occurrence.";
             case DOMAIN_CONSTRAINT_FALSE -> "Domain constraint evaluated to false.";
             case STRUCTURE_TYPE_MISMATCH -> "Structure type is outside the allowed hierarchy.";
         };

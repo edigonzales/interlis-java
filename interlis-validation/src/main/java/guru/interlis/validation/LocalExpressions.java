@@ -58,6 +58,10 @@ final class LocalExpressions {
             comparisons = Map.copyOf(comparisons);
         }
 
+        TypedExpression expression() {
+            return nodes.get(root);
+        }
+
         Result evaluate(Context context) {
             return evaluate(root, context);
         }
@@ -370,7 +374,7 @@ final class LocalExpressions {
         return current;
     }
 
-    private static Result attribute(Context context, TransferValue current, SymbolId target) {
+    static Result attribute(Context context, TransferValue current, SymbolId target) {
         if (!(current instanceof TransferValue.Structured object)) {
             return Unsupported.INSTANCE;
         }
@@ -414,7 +418,7 @@ final class LocalExpressions {
 
     private static Result value(TransferValue value, boolean textType) {
         if (value == TransferValue.Undefined.INSTANCE
-                || textType && value instanceof TransferValue.Text text && ScalarRules.textLength(text.value()) == 0) {
+                || textType && value instanceof TransferValue.Text text && text.value().isEmpty()) {
             return new UndefinedByData(false);
         }
         return new Known(value);
