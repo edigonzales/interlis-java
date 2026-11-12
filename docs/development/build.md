@@ -1,6 +1,6 @@
 # Build und Toolchains
 
-Jenesis 0.18.1 erzeugt die dreizehn JVM-Module mit Java 25 ohne Preview. Die POMs
+Jenesis 0.18.1 erzeugt die vierzehn JVM-Module mit Java 25 ohne Preview. Die POMs
 definieren Group, Artifact, Version, Scopes und Pins. Die [Jenesis-Quellen](../../build/jenesis) liegen im Repository.
 Der gepinnte
 Gradle-Wrapper baut ausschliesslich TeaVM und GraalVM Web Image.
