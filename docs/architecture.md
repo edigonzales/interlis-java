@@ -29,7 +29,7 @@ Die zugehörigen POMs beschreiben die konkreten Abhängigkeiten und Scopes.
 | `interlis-lsp` | workspace, compiler, projection, model, repository, documentation | LSP-/Editorhost, Scheduling und Ausgaben |
 | `interlis-wasm-bridge` | workspace, compiler, projection, model | Gemeinsames JSON-Protokoll und Sitzungen |
 
-Alle dreizehn JVM-Module werden über denselben Builder erzeugt. Die
+Alle vierzehn JVM-Module werden über denselben Builder erzeugt. Die
 jeweils ausgewählten JPMS-Closures stehen im
 [Buildvertrag](development/build.md). TeaVM und Web Image verwenden dieselben
 JVM-Laufzeit-JARs aus dem Jenesis-Inventar des aktuellen Checkouts. Der Browserharness prüft den Compiler und zeigt Diagramm-DTOs.

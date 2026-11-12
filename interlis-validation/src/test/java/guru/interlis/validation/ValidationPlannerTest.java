@@ -35,13 +35,15 @@ class ValidationPlannerTest {
                 Label = MANDATORY TEXT*30 CONSTRAINTS Length: INTERLIS.len(THIS) > 2;
                 ShortLabel EXTENDS Label = TEXT*20;
                 Amount = 0..100 CONSTRAINTS Minimum: THIS > 10;
+                SmallAmount EXTENDS Amount = 0..50 CONSTRAINTS Limit: THIS < 45;
               TOPIC T =
-                CLASS Base =
+                CLASS Base (ABSTRACT) =
                   code : ShortLabel;
                   value : Amount;
                   UNIQUE code;
                 END Base;
                 CLASS Derived EXTENDS Base =
+                  value (EXTENDED) : SmallAmount;
                 END Derived;
                 CONSTRAINTS OF Base =
                   MANDATORY CONSTRAINT DEFINED(code);
@@ -56,13 +58,25 @@ class ValidationPlannerTest {
         var transfer = transfer(schema);
         var plan = ready(schema, transfer);
         var derived = schema.queries().findQualifiedName(QualifiedName.of("Checks", "T", "Derived")).getFirst();
+        var base = schema.queries().findQualifiedName(QualifiedName.of("Checks", "T", "Base")).getFirst();
+        assertEquals(schema.snapshotId(), plan.snapshotId());
+        assertEquals(schema.fingerprint(), plan.schemaFingerprint());
+        assertNull(plan.object(base));
         var rules = plan.object(derived);
         assertEquals(List.of("code", "value"),
                 rules.fields().stream().map(field -> field.slot().attribute().name().value()).toList());
         assertTrue(rules.fields().getFirst().values().getFirst().required());
-        assertInstanceOf(DomainConstraint.class, rules.fields().getLast().values().getFirst().constraints().getFirst().definition());
+        var amount = rules.fields().getLast();
+        var override = schema.queries().findQualifiedName(QualifiedName.of("Checks", "T", "Derived", "value")).getFirst();
+        assertEquals(override, amount.slot().symbol());
+        var domainRules = amount.values().getFirst().constraints();
+        assertEquals(2, domainRules.size());
+        assertEquals(List.of("Minimum", "Limit"), domainRules.stream().map(rule -> rule.name().value()).toList());
+        domainRules.forEach(rule -> assertInstanceOf(DomainConstraint.class, rule.definition()));
         assertEquals(1, rules.constraints().size());
-        assertInstanceOf(MandatoryConstraint.class, rules.constraints().getFirst().definition());
+        var external = rules.constraints().getFirst();
+        assertInstanceOf(MandatoryConstraint.class, external.definition());
+        assertEquals(Optional.of(base.symbol()), external.target());
         assertEquals(List.of(UncheckedRuleInfo.Reason.UNSUPPORTED_EXPRESSION, UncheckedRuleInfo.Reason.OUT_OF_SCOPE_GLOBAL),
                 plan.uncheckedRules().stream().filter(rule -> rule.objectType().equals(derived))
                         .map(UncheckedRuleInfo::reason).toList());
@@ -73,7 +87,7 @@ class ValidationPlannerTest {
     @Test
     void rejectsTransferPlanFromAnotherSnapshot() {
         var schema = compile(MODEL);
-        var foreign = compile(MODEL.replace("VERSION \"1\"", "VERSION \"2\""));
+        var foreign = compile(MODEL, new SourceRevision(2), "Checks");
         var rejected = assertInstanceOf(ValidationPlanningResult.Rejected.class,
                 ValidationPlanner.plan(schema, transfer(foreign)));
         assertEquals(PlanningProblem.Code.SNAPSHOT_MISMATCH, rejected.problems().getFirst().code());
@@ -92,19 +106,50 @@ class ValidationPlannerTest {
         assertEquals(PlanningProblem.Code.SCHEMA_FINGERPRINT_MISMATCH, rejected.problems().getFirst().code());
     }
 
-    private static ValidationPlan ready(CompiledSchema schema, TransferPlan transfer) {
+    @Test
+    void keepsTranslatedRuleIdentitiesSeparate() {
+        var schema = compile("""
+                INTERLIS 2.4;
+                MODEL Checks (en) AT "https://example.org/checks" VERSION "1" =
+                  TOPIC T = CLASS Item = flag : BOOLEAN; MANDATORY CONSTRAINT flag; END Item; END T;
+                END Checks.
+                MODEL German (de) AT "https://example.org/checks" VERSION "1" TRANSLATION OF Checks["1"] =
+                  TOPIC T = CLASS Item = fahne : BOOLEAN; MANDATORY CONSTRAINT fahne; END Item; END T;
+                END German.
+                MODEL French (fr) AT "https://example.org/checks" VERSION "1" TRANSLATION OF Checks["1"] =
+                  TOPIC T = CLASS Item = drapeau : BOOLEAN; MANDATORY CONSTRAINT drapeau; END Item; END T;
+                END French.
+                """, new SourceRevision(1), "Checks", "German", "French");
+        var plan = ready(schema, transfer(schema));
+        var rules = List.of("Checks", "German", "French").stream().map(name -> {
+            var type = schema.queries().findQualifiedName(QualifiedName.of(name, "T", "Item")).getFirst();
+            var constraints = plan.object(type).constraints();
+            assertEquals(1, constraints.size());
+            var rule = constraints.getFirst();
+            assertEquals(Optional.of(type.symbol()), rule.header().owner());
+            return rule.id();
+        }).toList();
+        assertEquals(3, rules.stream().distinct().count());
+    }
+
+    static ValidationPlan ready(CompiledSchema schema, TransferPlan transfer) {
         return assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(schema, transfer)).plan();
     }
 
-    private static TransferPlan transfer(CompiledSchema schema) {
+    static TransferPlan transfer(CompiledSchema schema) {
         return assertInstanceOf(TransferPlanningResult.Ready.class, TransferPlanner.plan(schema)).plan();
     }
 
-    private static CompiledSchema compile(String model) {
+    static CompiledSchema compile(String model) {
+        return compile(model, new SourceRevision(1), "Checks");
+    }
+
+    private static CompiledSchema compile(String model, SourceRevision revision, String... roots) {
         var id = new SourceId("memory:/Checks.ili");
-        var source = new SourceText(id, new SourceRevision(1), model);
-        var request = new CompilationRequest(List.of(new ModelSelector.ByName("Checks", Optional.empty(), Optional.empty())),
-                SourceSet.of(Map.of(id, source)), CompilerOptions.defaults());
+        var source = new SourceText(id, revision, model);
+        List<ModelSelector> selectors = java.util.Arrays.stream(roots)
+                .map(name -> (ModelSelector) new ModelSelector.ByName(name, Optional.empty(), Optional.empty())).toList();
+        var request = new CompilationRequest(selectors, SourceSet.of(Map.of(id, source)), CompilerOptions.defaults());
         var result = CompilerEngines.create().compile(request, CancellationToken.none());
         return assertInstanceOf(CompilationOutcome.Succeeded.class, result,
                 () -> result instanceof CompilationOutcome.Rejected rejected
