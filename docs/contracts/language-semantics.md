@@ -1382,3 +1382,26 @@ Längen, Listenanzahlen und Optionalmarkern serialisiert. Record-/Listen-
 `toString()` ist kein Identitätsformat; verschachtelte SourceIds und Versionswerte
 dürfen keine Feldgrenzen verschieben. Die Identität bleibt unabhängig von Reuse
 und Parsemodus; Schema-/Snapshotrollen bleiben getrennt.
+
+## Numerik für die geplante Datenauswertung (P4.6)
+
+Die Compilerbindung bleibt die Quelle für Typ, Einheit, Ursprungslexem und
+deklarierte Präzision. Der folgende Auswertungsvertrag gilt für gebundene
+Ausdrücke. INTERLIS 2.3 kennt numerische Literale, Konstanten und Vergleiche
+(§§ 2.8.5 und 2.13). Die allgemeinen arithmetischen Ausdrücke stammen aus
+INTERLIS 2.4 (§ 3.13). [INTERLIS-Referenzhandbücher](https://www.interlis.ch/dokumentation/interlis-2)
+
+| Auswertung | Präzision und Ergebnis |
+| --- | --- |
+| Literale, Transferwerte und Bereichsgrenzen | Dezimalzahlen einschliesslich Exponenten exakt lesen. Das Originallexem und seine Präzisionsherkunft erhalten. Einen gelieferten Wert vor der Bereichsprüfung weder runden noch kürzen. |
+| Addition, Subtraktion, Negation, Multiplikation und Division | Endliche Dezimalzahlen als exakte rationale Zahlen verarbeiten. Ein nichtterminierender Quotient behält Zähler und Nenner. Division durch null ergibt fachlich undefiniert (INTERLIS 2.4 § 3.12). Grössen- und Arbeitsgrenzen führen zu einem technischen Ressourcenfehler. |
+| Endvergleich | Gebundene kompatible Grössen exakt vergleichen. Bei Intervallen für irrationale Konstanten muss das Vergleichsergebnis für das ganze Intervall gelten. Verbleibende Unsicherheit nach Ausschöpfung des Präzisionsbudgets ist eine technische Grenze. |
+| PI und LNBASE | Mathematische Konstanten mit nach aussen begrenzten rationalen Intervallen auswerten. Die Startgrenzen sind für PI `[3.14159265358979323846, 3.14159265358979323847]` und für LNBASE `[2.71828182845904523536, 2.71828182845904523537]`. Intervalle bei Bedarf innerhalb des Budgets verfeinern. Dieselbe Konstante bei kompatibler Einheit ist mit sich selbst gleich. |
+| Einheitenumrechnung | Die explizit gebundene Umrechnung verwenden. Rationale Faktoren und Offsets exakt anwenden. Symbolische Faktoren verwenden dieselbe Konstantensemantik. Benötigt eine externe Umrechnung einen Dienst, ist dessen Fehlen fehlender Auswertungskontext. |
+| Vergleich eines gelieferten abgeleiteten Werts | Bei einem deklarierten Dezimalraster nach INTERLIS 2.4 § 2.8 die beiden angrenzenden Rasterwerte zulassen. Bei einem exakten Rastertreffer fallen beide zusammen. Das Raster folgt aus Exponent minus Nachkommastellen der deklarierten Präzision. Statisch berechnete Typgrenzen mit `PrecisionOrigin.COMPUTED` liefern kein Raster. |
+
+Die Startintervalle verwenden die Dezimalentwicklungen aus dem
+[NIST Digital Library of Mathematical Functions § 3.12](https://dlmf.nist.gov/3.12).
+Eine Intervalloperation erhält beide Schranken. Ein Vergleich mit einer
+Schranke ist erst entschieden, wenn das Ergebnis trotz der verbleibenden
+Unsicherheit feststeht. Im Ausdruck selbst wird kein Transferraster angewendet.
