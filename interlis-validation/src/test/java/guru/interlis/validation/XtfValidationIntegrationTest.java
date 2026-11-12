@@ -40,6 +40,66 @@ class XtfValidationIntegrationTest {
     private static final CancellationToken RUN = CancellationToken.none();
     private static final ValidationOptions OPTIONS = ValidationOptions.defaults();
 
+    @Test
+    void checksOidDomainsFromXtf23AdditionalTopics() {
+        var schema = compile("""
+                INTERLIS 2.3;
+                MODEL Checks (en) AT "https://example.org/checks" VERSION "1" =
+                  DOMAIN ShortId = OID TEXT*3;
+                         ObjectId = OID 1..20;
+                  TOPIC Base =
+                    CLASS BaseItem = END BaseItem;
+                  END Base;
+                  TOPIC Extended EXTENDS Base =
+                    BASKET OID AS ShortId;
+                    OID AS ObjectId;
+                    CLASS Item = END Item;
+                  END Extended;
+                  TOPIC Further EXTENDS Extended = END Further;
+                END Checks.
+                """);
+        var transfer = transfer(schema);
+        var plan = ready(schema, transfer);
+        var input = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+                  <HEADERSECTION VERSION="2.3" SENDER="test">
+                    <MODELS><MODEL NAME="Checks" VERSION="1" URI="https://example.org/checks"/></MODELS>
+                    <OIDSPACES><OIDSPACE NAME="ids" OIDDOMAIN="Checks.ObjectId"/>
+                      <OIDSPACE NAME="bid" OIDDOMAIN="Checks.ShortId"/></OIDSPACES>
+                  </HEADERSECTION>
+                  <DATASECTION>
+                    <Checks.Base BID="b1" TOPICS="Checks.Extended,Checks.Further">
+                      <Checks.Base.BaseItem TID="plain"/>
+                      <Checks.Extended.Item TID="ids:21"/>
+                    </Checks.Base>
+                    <Checks.Base BID="bid:abcd" TOPICS="Checks.Extended">
+                      <Checks.Extended.Item TID="ids:20"/>
+                    </Checks.Base>
+                    <Checks.Base BID="bid:abc" TOPICS="Checks.Extended"/>
+                    <Checks.Extended BID="bid:def">
+                      <Checks.Base.BaseItem TID="inherited"/>
+                    </Checks.Extended>
+                  </DATASECTION>
+                </TRANSFER>
+                """;
+        try (var reader = new Xtf23Reader(transfer, new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)))) {
+            var report = LocalValidator.validate(plan, reader, OPTIONS, RUN);
+            var findings = report.examples();
+            assertEquals(List.of(REQUIRED_OID_MISSING, VALUE_OUT_OF_RANGE, INVALID_OID),
+                    findings.stream().map(ValidationDiagnostic::code).toList());
+            assertEquals(3, report.detectedViolations());
+            assertEquals(List.of("b1", "b1", "bid:abcd"),
+                    findings.stream().map(d -> d.data().basket().value()).toList());
+            var basketDomain = schema.queries().findQualifiedName(QualifiedName.of("Checks", "ShortId")).getFirst();
+            var objectDomain = schema.queries().findQualifiedName(QualifiedName.of("Checks", "ObjectId")).getFirst();
+            assertEquals(List.of(basketDomain, objectDomain, basketDomain),
+                    findings.stream().map(d -> d.rule().declaration()).toList());
+            assertTrue(findings.getFirst().data().objectType().isEmpty());
+            assertEquals("ids:21", findings.get(1).data().tid().orElseThrow().value());
+        }
+    }
+
     enum Version {
         XTF23("23"), XTF24("24");
 

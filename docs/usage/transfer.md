@@ -136,10 +136,16 @@ Plan passende, strukturell dekodierte Events.
 Das Profil prüft Pflichtwerte, Kardinalitäten, Strukturzuweisung, unterstützte
 Skalare und Modellwerte sowie lokale Geometriewerte wie Achsendimensionen,
 Achsenbereiche und Standardsegmentformen. Generische Basketbindungen wählen
-die wirksame Domäne für die Achsenbereiche und lokalen Domain-Ausdrücke. Es wertet vollständig unterstützte
+die wirksame Domäne für die Achsenbereiche und lokalen Domain-Ausdrücke.
+Es wertet vollständig unterstützte
 lokale `MANDATORY CONSTRAINT`- und Domain-Ausdrücke sowie `UNIQUE (LOCAL)`
 mit direkten, typisierten Schlüsseln aus Text, Zahlen, Aufzählungen,
 Ausrichtungen oder BOOLEAN aus. Der Index gilt pro Besitzer.
+
+Bei XTF 2.3 gelten für die Basket-OID auch die Domänen zusätzlicher Topics
+aus `TOPICS`. Eine gemeinsam geerbte Domäne wird pro Basket einmal geprüft.
+Objekt-OIDs folgen der wirksamen Regel der Klasse oder ihres deklarierenden
+Topics.
 
 `PASSED_CHECKED_SCOPE` bedeutet, dass die ausgeführten Regeln keinen Verstoss
 ergaben. `coverage()` zeigt geplante, aber nicht ausgeführte Regeln und
