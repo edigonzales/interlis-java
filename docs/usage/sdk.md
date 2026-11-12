@@ -33,7 +33,7 @@ keine Erhöhung der Vertragsversion nötig.
 | Vertrag | Wert | Bedeutung |
 |---|---|---|
 | Werkzeug und Artefakte | `0.2.0-SNAPSHOT` | Entwicklungsstand der ausgelieferten Module |
-| Öffentliche Java-API | `0.4` | Öffentliche Packages und Typen von `guru.interlis` |
+| Öffentliche Java-API | `0.5` | Öffentliche Packages und Typen von `guru.interlis` |
 | Diagnosekatalog | `interlis-diagnostics/v4` | Stabile Diagnosecodes und typisierte Argumente |
 | Bridge | `interlis.compiler/1.0` | Nachrichtenhülle, Ergebnisse und Abfragen |
 | Quellformatierung | `2.0` | Formatierungsoptionen und Ergebnisvertrag |
@@ -52,3 +52,10 @@ QNames ausserhalb von Kindelementen. Der Einargument-Konstruktor erzeugt eine
 leere Zusatzmap. Record-Patterns verwenden die beiden Komponenten `xml` und
 `namespaceBindings`; die zusätzliche Komponente begründet die Erhöhung der
 Java-API-Vertragsversion.
+
+API 0.5 ergänzt `ValidationCoverage` um `datasetRules()`. Der bisherige
+Konstruktor erzeugt weiterhin einen Bericht für lokale Prüfungen. Record-Patterns
+müssen die zusätzliche Komponente aufnehmen. Ein erschöpfender Switch über
+`PlanningProblem.Code` muss den neuen Fall `EXPRESSION_LIMIT_EXCEEDED` behandeln.
+`ValidationCoverage.ConstraintStatus` weist `UNSUPPORTED_EXPRESSION` für
+tatsächlich ausgewählte, nicht ausführbare generische Domainregeln aus.

@@ -33,9 +33,12 @@ record ObjectValidationPlan(ObjectDescriptor descriptor, List<FieldRule> fields,
     record ValueRules(int depth, TypeDescriptor type, Optional<SymbolId> genericDomain,
                       Optional<Symbol> requiredDeclaration,
                       List<ConstraintSymbol> constraints, Map<SymbolId, List<ConstraintSymbol>> concreteConstraints,
+                      Map<SymbolId, List<ConstraintSymbol>> concreteUnsupported,
                       Set<List<String>> enumerationValues) {
         ValueRules {
             constraints = List.copyOf(constraints);
+            concreteConstraints = Map.copyOf(concreteConstraints);
+            concreteUnsupported = Map.copyOf(concreteUnsupported);
         }
 
         List<ConstraintSymbol> constraints(Optional<SymbolId> concreteDomain) {

@@ -37,6 +37,10 @@ public final class LocalValidator {
 
     /** Creates an independent, single-caller session from a shareable plan. */
     public static ValidationSession session(ValidationPlan plan, ValidationOptions options) {
-        return new ValidationSession(Objects.requireNonNull(plan, "plan"), Objects.requireNonNull(options, "options"));
+        Objects.requireNonNull(plan, "plan");
+        if (plan.profile() != ValidationProfile.LOCAL_ONLY) {
+            throw new IllegalArgumentException("Local validation requires a LOCAL_ONLY plan");
+        }
+        return new ValidationSession(plan, Objects.requireNonNull(options, "options"));
     }
 }

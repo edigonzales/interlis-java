@@ -88,8 +88,10 @@ class DatasetBaselineTest {
         assertEquals(0, report.detectedViolations());
         assertEquals(List.of(UncheckedRuleInfo.Reason.UNSUPPORTED_EXPRESSION),
                 report.coverage().notChecked().stream().map(UncheckedRuleInfo::reason).toList());
-        assertEquals(1, report.coverage().constraints().size());
-        assertEquals(1, report.coverage().constraints().getFirst().occurrences());
+        assertEquals(List.of(ValidationCoverage.ConstraintStatus.UNSUPPORTED_EXPRESSION,
+                        ValidationCoverage.ConstraintStatus.CHECKED),
+                report.coverage().constraints().stream().map(ValidationCoverage.ConstraintCount::status).toList());
+        assertTrue(report.coverage().constraints().stream().allMatch(count -> count.occurrences() == 1));
         assertTrue(report.coverage().missingRuntimeContext().isEmpty());
     }
 

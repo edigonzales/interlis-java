@@ -282,6 +282,13 @@ public final class ValidationSession implements AutoCloseable {
             case YES -> count(checked, pending, VALUE_FAMILY);
         }
         if (type.isPresent()) {
+            concreteDomain.ifPresent(domain -> {
+                for (var declaration : rules.concreteUnsupported().getOrDefault(domain, List.of())) {
+                    budget.consume();
+                    countConstraint(pending.owner(), Optional.of(field.slot().symbol()), declaration,
+                            ConstraintStatus.UNSUPPORTED_EXPRESSION);
+                }
+            });
             for (var declaration : rules.constraints(concreteDomain)) {
                 if (declaration.definition() instanceof DomainConstraint domain) {
                     checkConstraint(object, pending.owner(), Optional.of(field.slot().symbol()), declaration,

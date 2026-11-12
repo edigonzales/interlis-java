@@ -47,6 +47,13 @@ public final class ValidationPlanner {
 
     /** Returns a projection or a structured rejection. Both arguments are non-null. */
     public static ValidationPlanningResult plan(CompiledSchema schema, TransferPlan transferPlan) {
+        return plan(schema, transferPlan, ValidationProfile.LOCAL_ONLY);
+    }
+
+    /** Projects the non-null inputs for the chosen execution profile. */
+    public static ValidationPlanningResult plan(CompiledSchema schema, TransferPlan transferPlan,
+                                                ValidationProfile profile) {
+        Objects.requireNonNull(profile, "profile");
         Objects.requireNonNull(schema, "schema");
         Objects.requireNonNull(transferPlan, "transferPlan");
         if (!schema.snapshotId().equals(transferPlan.snapshotId())) {
@@ -55,7 +62,7 @@ public final class ValidationPlanner {
         if (!schema.fingerprint().equals(transferPlan.schemaFingerprint())) {
             return rejected(SCHEMA_FINGERPRINT_MISMATCH, Optional.empty(), "Transfer plan has a different schema fingerprint");
         }
-        var projection = new Projection(schema.semanticGraph(), transferPlan);
+        var projection = new Projection(schema.semanticGraph(), transferPlan, profile, schema.rootModels());
         try {
             return new ValidationPlanningResult.Ready(projection.build());
         } catch (MissingModelInformation missing) {
@@ -73,6 +80,9 @@ public final class ValidationPlanner {
     private static final class Projection {
         private final SemanticGraph graph;
         private final TransferPlan transfer;
+        private final ValidationProfile profile;
+        private final List<SymbolRef> rootModels;
+        private final Map<ConstraintSymbol, List<SymbolRef>> datasetCandidates = new LinkedHashMap<>();
         private final TypeRelations types;
         private final Map<ExpressionId, Optional<LocalExpressions.Program>> expressions = new LinkedHashMap<>();
         private final Map<SymbolId, List<IndexedConstraint>> declarations = new LinkedHashMap<>();
@@ -82,9 +92,11 @@ public final class ValidationPlanner {
         private final Map<TypeId, Set<List<String>>> enumValues = new LinkedHashMap<>();
         private final List<UncheckedRuleInfo> unchecked = new ArrayList<>();
 
-        Projection(SemanticGraph graph, TransferPlan transfer) {
+        Projection(SemanticGraph graph, TransferPlan transfer, ValidationProfile profile, List<SymbolRef> rootModels) {
             this.graph = graph;
             this.transfer = transfer;
+            this.profile = profile;
+            this.rootModels = rootModels;
             this.types = new TypeRelations(graph);
             for (var topic : transfer.topics()) {
                 for (var binding : topic.genericBindings()) {
@@ -108,6 +120,15 @@ public final class ValidationPlanner {
             Map<SymbolRef, ObjectValidationPlan> objects = new LinkedHashMap<>();
             for (var object : transfer.objects()) {
                 if (!object.transferable() && object.kind() != SymbolKind.STRUCTURE) {
+                    if (profile == ValidationProfile.DATASET && object.topic().isPresent()
+                            && (object.kind() == SymbolKind.CLASS || object.kind() == SymbolKind.ASSOCIATION)) {
+                        for (var indexed : declarations.getOrDefault(object.symbol().symbol(), List.of())) {
+                            var declaration = indexed.constraint();
+                            if (datasetRule(declaration.definition())) {
+                                datasetCandidates.computeIfAbsent(declaration, ignored -> new ArrayList<>());
+                            }
+                        }
+                    }
                     continue;
                 }
                 List<ObjectValidationPlan.FieldRule> fields = new ArrayList<>();
@@ -125,7 +146,15 @@ public final class ValidationPlanner {
                 }
                 objects.put(object.symbol(), new ObjectValidationPlan(object, fields, constraints, pathFields));
             }
-            return new ValidationPlan(transfer, graph, objects, unchecked, expressions);
+            var datasetRules = datasetCandidates.entrySet().stream()
+                    .map(entry -> {
+                        var declaration = entry.getKey();
+                        var application = declaration.target().or(declaration.header()::owner).orElseThrow();
+                        var key = new RuleKey(new SymbolRef(transfer.snapshotId(), declaration.id()),
+                                new SymbolRef(transfer.snapshotId(), application), Optional.empty());
+                        return new DatasetRulePlan(key, declaration, entry.getValue());
+                    }).toList();
+            return new ValidationPlan(transfer, graph, objects, unchecked, expressions, profile, datasetRules, rootModels);
         }
 
         private ObjectValidationPlan.FieldRule field(ObjectDescriptor object, AttributeSlot slot) {
@@ -162,11 +191,20 @@ public final class ValidationPlanner {
                         .orElseGet(Map::of);
                 var allDomains = new HashSet<>(domains);
                 concreteDomains.values().forEach(allDomains::addAll);
+                int firstUnchecked = unchecked.size();
                 var compiled = rules(object, Optional.of(slot.symbol()), depth, allDomains);
                 Map<SymbolId, List<ConstraintSymbol>> concreteConstraints = new LinkedHashMap<>();
-                concreteDomains.forEach((id, owners) -> concreteConstraints.put(id, forOwners(compiled, owners)));
+                Map<SymbolId, List<ConstraintSymbol>> concreteUnsupported = new LinkedHashMap<>();
+                if (!concreteDomains.isEmpty()) {
+                    var unsupported = unchecked.subList(firstUnchecked, unchecked.size()).stream()
+                            .map(rule -> (ConstraintSymbol) graph.symbol(rule.constraint().symbol()).orElseThrow()).toList();
+                    concreteDomains.forEach((id, owners) -> {
+                        concreteConstraints.put(id, forOwners(compiled, owners));
+                        concreteUnsupported.put(id, forOwners(unsupported, owners));
+                    });
+                }
                 values.add(new ObjectValidationPlan.ValueRules(depth, type, genericDomain, required,
-                        forOwners(compiled, domains), concreteConstraints,
+                        forOwners(compiled, domains), concreteConstraints, concreteUnsupported,
                         type instanceof EnumerationType enumeration
                                 ? enumValues.computeIfAbsent(type.id(), id -> ScalarRules.enumerationValues(enumeration))
                                 : Set.of()));
@@ -263,13 +301,23 @@ public final class ValidationPlanner {
             for (var declaration : ordered) {
                 var constraint = new SymbolRef(transfer.snapshotId(), declaration.header().id());
                 var reason = unsupported(declaration.definition(), constraint);
-                if (reason.isPresent()) {
+                if (profile == ValidationProfile.DATASET && datasetRule(declaration.definition())) {
+                    datasetCandidates.computeIfAbsent(declaration, ignored -> new ArrayList<>()).add(object.symbol());
+                } else if (reason.isPresent()) {
                     unchecked.add(new UncheckedRuleInfo(constraint, object.symbol(), slot, depth, reason.orElseThrow()));
                 } else {
                     local.add(declaration);
                 }
             }
             return local;
+        }
+
+        private static boolean datasetRule(ConstraintDefinition definition) {
+            return switch (definition) {
+                case ExistenceConstraint _, SetConstraint _, PlausibilityConstraint _ -> true;
+                case UniquenessConstraint rule -> rule.localKeys().isEmpty();
+                default -> false;
+            };
         }
 
         private Optional<UncheckedRuleInfo.Reason> unsupported(ConstraintDefinition definition, SymbolRef constraint) {

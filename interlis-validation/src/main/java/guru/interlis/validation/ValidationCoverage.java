@@ -10,7 +10,8 @@ import java.util.Optional;
 public record ValidationCoverage(List<RuleCount> checked, List<UncheckedRuleInfo> notChecked,
                                  List<RuleCount> incompleteContext, List<RuleCount> missingRuntimeContext,
                                  List<RuleCount> unsupportedValues,
-                                 List<RuleFamily> unavailableFamilies, List<ConstraintCount> constraints) {
+                                 List<RuleFamily> unavailableFamilies, List<ConstraintCount> constraints,
+                                 List<DatasetRuleCoverage> datasetRules) {
     public ValidationCoverage {
         checked = List.copyOf(checked);
         notChecked = List.copyOf(notChecked);
@@ -19,6 +20,16 @@ public record ValidationCoverage(List<RuleCount> checked, List<UncheckedRuleInfo
         unsupportedValues = List.copyOf(unsupportedValues);
         unavailableFamilies = List.copyOf(unavailableFamilies);
         constraints = List.copyOf(constraints);
+        datasetRules = List.copyOf(datasetRules);
+    }
+
+    /** Creates coverage for a local validation run with no dataset executions. */
+    public ValidationCoverage(List<RuleCount> checked, List<UncheckedRuleInfo> notChecked,
+                              List<RuleCount> incompleteContext, List<RuleCount> missingRuntimeContext,
+                              List<RuleCount> unsupportedValues, List<RuleFamily> unavailableFamilies,
+                              List<ConstraintCount> constraints) {
+        this(checked, notChecked, incompleteContext, missingRuntimeContext, unsupportedValues,
+                unavailableFamilies, constraints, List.of());
     }
 
     /** A model rule family outside this version's executable scope. */
@@ -43,7 +54,8 @@ public record ValidationCoverage(List<RuleCount> checked, List<UncheckedRuleInfo
 
     /** Distinguishes complete evaluation, normative undefined, and skipped applications. */
     public enum ConstraintStatus {
-        CHECKED, UNDEFINED_BY_DATA, MISSING_RUNTIME_CONTEXT, UNSUPPORTED_VALUE, INCOMPLETE_CONTEXT
+        CHECKED, UNDEFINED_BY_DATA, MISSING_RUNTIME_CONTEXT, UNSUPPORTED_VALUE, INCOMPLETE_CONTEXT,
+        UNSUPPORTED_EXPRESSION
     }
 
     /** Count for one effective slot, owned by the plan snapshot. */
