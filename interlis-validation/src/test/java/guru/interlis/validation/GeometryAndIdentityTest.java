@@ -70,7 +70,7 @@ class GeometryAndIdentityTest {
             first.accept(new TransferEvent.EndBasket(b.id()), RUN);
             var report = finish(first);
             assertEquals(4, report.detectedViolations());
-            assertTrue(report.examples().stream().allMatch(d -> d.code() == VALUE_OUT_OF_RANGE && d.data().basket().equals(b.id())));
+            assertTrue(report.examples().stream().allMatch(d -> d.code() == VALUE_OUT_OF_RANGE && d.data().basket().orElseThrow().equals(b.id())));
             assertEquals(List.of(new DataLocation.Slot(details), new DataLocation.Slot(firstPoint),
                             new DataLocation.GeometryComponent(DataLocation.GeometryComponent.Kind.AXIS, 1)),
                     report.examples().getFirst().data().path());
@@ -122,8 +122,8 @@ class GeometryAndIdentityTest {
             }
             var report = finish(session);
             assertEquals(List.of(VALUE_OUT_OF_RANGE, VALUE_OUT_OF_RANGE, DOMAIN_CONSTRAINT_FALSE), codes(report));
-            assertTrue(report.examples().subList(0, 2).stream().allMatch(d -> d.data().basket().value().equals("A")));
-            assertEquals("B", report.examples().getLast().data().basket().value());
+            assertTrue(report.examples().subList(0, 2).stream().allMatch(d -> d.data().basket().orElseThrow().value().equals("A")));
+            assertEquals("B", report.examples().getLast().data().basket().orElseThrow().value());
             assertEquals(List.of(new DataLocation.Slot(point),
                     new DataLocation.GeometryComponent(DataLocation.GeometryComponent.Kind.AXIS, 1)),
                     report.examples().getFirst().data().path());

@@ -13,6 +13,7 @@ import guru.interlis.transfer.TransferValue;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -27,6 +28,7 @@ final class DatasetRuleContext {
     private final ReferenceResolver resolver;
     private final DatasetOptions options;
     private final Set<InputId> inputs;
+    private final Set<InputId> primaryInputs;
     private final CancellationToken cancellation;
     private long remainingWork;
 
@@ -43,6 +45,15 @@ final class DatasetRuleContext {
         this.inputs = Set.copyOf(inputs);
         this.cancellation = cancellation;
         this.remainingWork = options.limits().maxConstraintWork();
+        var primary = new HashSet<InputId>();
+        for (long ordinal = 1; ordinal <= inputs.size(); ordinal++) {
+            cancellation.throwIfCancellationRequested();
+            var input = input(ordinal);
+            if (input.descriptor().role() == InputRole.PRIMARY) {
+                primary.add(input.descriptor().id());
+            }
+        }
+        this.primaryInputs = Set.copyOf(primary);
     }
 
     void visit() {
@@ -69,14 +80,94 @@ final class DatasetRuleContext {
     private Occurrence occurrence(ObjectHandle handle, StoredValueCodec.StoredObject stored) {
         var basket = metadata.get(DatasetValidationSession.metadataKey((byte) 3, stored.basket()))
                 .map(codec::decodeBasket).orElseThrow();
-        var input = metadata.get(DatasetValidationSession.metadataKey((byte) 2, stored.input()))
-                .map(codec::decodeInput).orElseThrow();
+        var input = input(stored.input());
         var topics = new ArrayList<>(basket.event().additionalTopics());
         topics.addFirst(basket.event().topic());
         boolean selected = topics.stream().anyMatch(topic -> options.subjects().selects(plan,
                 input.descriptor().role(), topic, stored.event().object().type()));
         return new Occurrence(handle, stored, basket.event(), input, selected);
     }
+
+    private StoredValueCodec.StoredInput input(long ordinal) {
+        return metadata.get(DatasetValidationSession.metadataKey((byte) 2, ordinal))
+                .map(codec::decodeInput).orElseThrow();
+    }
+
+    List<AggregateScope> aggregateScopes(DatasetRulePlan rule, boolean basketRule, boolean requiresValues) {
+        var root = rule.key().applicationRoot();
+        if (!basketRule) {
+            boolean selected = plan.transferPlan().topics().stream()
+                    .anyMatch(topic -> selectsPopulation(rule, List.of(topic.symbol())));
+            if (!selected) {
+                return List.of();
+            }
+            boolean complete = claimsComplete(root, ExtentAspect.OBJECT_MEMBERSHIP, primaryInputs, Optional.empty())
+                    && (!requiresValues || claimsComplete(root, ExtentAspect.ATTRIBUTE_VALUES,
+                            primaryInputs, Optional.empty()));
+            return List.of(new AggregateScope(0, DatasetRuleCoverage.ScopeKind.DATASET,
+                    complete ? DatasetRuleCoverage.Completeness.DECLARED_COMPLETE : DatasetRuleCoverage.Completeness.OPEN,
+                    new DataLocation(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                            Optional.of(root), List.of())));
+        }
+        var scopes = new ArrayList<AggregateScope>();
+        try (var cursor = metadata.scan(new byte[]{3}, Optional.of(new byte[]{4}))) {
+            for (var next = cursor.next(); next.isPresent(); next = cursor.next()) {
+                visit();
+                var entry = next.orElseThrow();
+                long ordinal = ByteBuffer.wrap(entry.key()).getLong(1);
+                var basket = codec.decodeBasket(entry.value());
+                var input = input(basket.input());
+                if (input.descriptor().role() != InputRole.PRIMARY) {
+                    continue;
+                }
+                var active = new ArrayList<>(basket.event().additionalTopics());
+                active.addFirst(basket.event().topic());
+                if (!selectsPopulation(rule, active)) {
+                    continue;
+                }
+                var completeness = DatasetRuleCoverage.Completeness.OPEN;
+                if (basket.event().consistency() == TransferEvent.Consistency.COMPLETE) {
+                    completeness = DatasetRuleCoverage.Completeness.CLOSED_BY_TRANSFER;
+                } else {
+                    var ids = Set.of(input.descriptor().id());
+                    var id = Optional.of(basket.event().id());
+                    if (claimsComplete(root, ExtentAspect.OBJECT_MEMBERSHIP, ids, id)
+                            && (!requiresValues || claimsComplete(root, ExtentAspect.ATTRIBUTE_VALUES, ids, id))) {
+                        completeness = DatasetRuleCoverage.Completeness.DECLARED_COMPLETE;
+                    }
+                }
+                scopes.add(new AggregateScope(ordinal, DatasetRuleCoverage.ScopeKind.BASKET, completeness,
+                        new DataLocation(input.header().source(), basket.event().id(), Optional.empty(),
+                                Optional.empty(), Optional.of(root), List.of())));
+            }
+        }
+        return List.copyOf(scopes);
+    }
+
+    private boolean selectsPopulation(DatasetRulePlan rule, List<SymbolRef> active) {
+        if (rule.declaration().target().isPresent()) {
+            var declaringTopic = rule.declaration().owner().map(plan::ref)
+                    .filter(topic -> plan.transferPlan().topic(topic).isPresent());
+            if (declaringTopic.isPresent() && active.stream().noneMatch(
+                    topic -> topicSpecializes(topic, declaringTopic.orElseThrow()))) {
+                return false;
+            }
+        }
+        for (var topic : active) {
+            visit();
+            var descriptor = plan.transferPlan().topic(topic).orElseThrow();
+            for (var type : descriptor.objectTypes()) {
+                if ((rule.candidateTypes().contains(type) || rule.key().applicationRoot().equals(type))
+                        && options.subjects().selects(plan, InputRole.PRIMARY, topic, type)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    record AggregateScope(long ordinal, DatasetRuleCoverage.ScopeKind kind,
+                          DatasetRuleCoverage.Completeness completeness, DataLocation location) { }
 
     boolean candidate(DatasetRulePlan rule, Occurrence occurrence) {
         if (!rule.candidateTypes().contains(occurrence.object().type())) {
@@ -89,7 +180,7 @@ final class DatasetRuleContext {
 
     boolean target(SymbolRef root, Occurrence occurrence) {
         var type = plan.transferPlan().object(occurrence.object().type()).orElseThrow();
-        return ModelValueRules.specializes(plan, type, List.of(root.symbol()));
+        return ModelValueRules.specializes(plan, type, List.of(plan.canonical(root.symbol())));
     }
 
     private boolean topicActive(TransferEvent.StartBasket basket, SymbolRef topic) {
@@ -115,15 +206,21 @@ final class DatasetRuleContext {
     }
 
     private boolean declaredComplete(SymbolRef root, ExtentAspect aspect) {
+        return claimsComplete(root, aspect, inputs, Optional.empty());
+    }
+
+    private boolean claimsComplete(SymbolRef root, ExtentAspect aspect, Set<InputId> expected,
+                                   Optional<guru.interlis.transfer.TransferIdentity.BasketId> basket) {
         var descriptor = plan.transferPlan().object(root).orElseThrow();
         return options.extents().claims().stream().anyMatch(claim -> {
             var scope = claim.selector();
-            if (claim.aspect() != aspect || scope.basket().isPresent() || !scope.inputs().equals(inputs)) {
+            if (claim.aspect() != aspect || !scope.inputs().containsAll(expected)
+                    || scope.basket().isPresent() && !scope.basket().equals(basket)) {
                 return false;
             }
             return plan.transferPlan().topic(scope.root()).isPresent()
                     ? descriptor.topic().filter(topic -> topicSpecializes(topic, scope.root())).isPresent()
-                    : ModelValueRules.specializes(plan, descriptor, List.of(scope.root().symbol()));
+                    : ModelValueRules.specializes(plan, descriptor, List.of(plan.canonical(scope.root().symbol())));
         });
     }
 

@@ -99,7 +99,7 @@ und der Anzahl eindeutiger IDs. Auch bei einer direkten Reader-Writer-Pipeline
 existieren die Identitätsindizes beider Instanzen. Die Limits sind Ressourcenbudgets
 und liefern keine feste Heap-Kapazitätsgarantie.
 
-Der Java-SDK-Vertrag ist Version 0.7. `TransferValue.XmlFragment` besitzt neben
+Der Java-SDK-Vertrag ist Version 0.8. `TransferValue.XmlFragment` besitzt neben
 `xml` die unveränderliche Map `namespaceBindings`. Der Einargumentkonstruktor
 bleibt verfügbar. Bestehende Record-Patterns müssen die neue Komponente aufnehmen.
 

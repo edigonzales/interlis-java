@@ -2,7 +2,7 @@ package guru.interlis.validation;
 
 import java.util.Objects;
 
-/** Aggregated executions of one rule with the same scope kind, completeness and outcome. */
+/** Aggregated executions of one rule with the same scope kind, completeness and outcome. A rule without an applicable scope can report zero scopes. */
 public record DatasetRuleCoverage(RuleKey rule, ScopeKind scopeKind, Completeness completeness, Outcome outcome,
                                   long scopes, long candidates, long evaluations, long violations,
                                   long undecidedCandidates) {
@@ -11,7 +11,9 @@ public record DatasetRuleCoverage(RuleKey rule, ScopeKind scopeKind, Completenes
         Objects.requireNonNull(scopeKind, "scopeKind");
         Objects.requireNonNull(completeness, "completeness");
         Objects.requireNonNull(outcome, "outcome");
-        if (scopes < 1 || candidates < 0 || evaluations < 0 || violations < 0
+        if (scopes < 0 || scopes == 0 && (outcome != Outcome.NOT_APPLICABLE
+                || candidates != 0 || evaluations != 0 || violations != 0)
+                || candidates < 0 || evaluations < 0 || violations < 0
                 || undecidedCandidates < 0 || undecidedCandidates > candidates) {
             throw new IllegalArgumentException("Invalid dataset coverage counts");
         }

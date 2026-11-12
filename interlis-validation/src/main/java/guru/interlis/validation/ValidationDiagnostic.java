@@ -48,6 +48,8 @@ public record ValidationDiagnostic(ValidationCode code, Severity severity, DataL
             case COMPOSITION_CYCLE -> "Composition ownership contains a cycle.";
             case REFERENCE_TARGET_TYPE -> "The referenced object is outside the allowed type hierarchy.";
             case REFERENCE_TARGET_BASKET -> "The referenced object is outside the allowed basket.";
+            case SET_CONSTRAINT_FALSE -> "Set constraint evaluated to false for the selected extent.";
+            case PLAUSIBILITY_CONSTRAINT_FALSE -> "Population does not meet the required percentage.";
             case DOMAIN_CONSTRAINT_FALSE -> "Domain constraint evaluated to false.";
             case STRUCTURE_TYPE_MISMATCH -> "Structure type is outside the allowed hierarchy.";
         };

@@ -1,7 +1,12 @@
 package guru.interlis.validation;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.ExistenceConstraint;
+import guru.interlis.model.PlausibilityConstraint;
+import guru.interlis.model.SetConstraint;
+import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolRef;
+import guru.interlis.model.UniquenessConstraint;
 import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferReader;
 import guru.interlis.transfer.TransferValue;
@@ -10,7 +15,9 @@ import guru.interlis.transfer.TransferIdentity.BasketId;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -254,33 +261,7 @@ public final class DatasetValidationSession implements AutoCloseable {
             new RelationCardinalities(plan, storage, codec, objectStore, identities, options, local).check(cancellation);
             var context = new DatasetRuleContext(plan, storage, codec, objectStore, identities, options,
                     inputs.keySet(), cancellation);
-            var coverage = new java.util.ArrayList<DatasetRuleCoverage>();
-            var uniqueGroups = new java.util.LinkedHashMap<guru.interlis.model.SymbolId, java.util.List<DatasetRulePlan>>();
-            for (var rule : plan.datasetRules()) {
-                if (rule.declaration().definition() instanceof guru.interlis.model.UniquenessConstraint) {
-                    var canonical = plan.canonical(rule.key().declaration().symbol());
-                    uniqueGroups.computeIfAbsent(canonical, ignored -> new java.util.ArrayList<>()).add(rule);
-                }
-            }
-            int ruleOrdinal = 0;
-            for (var rule : plan.datasetRules()) {
-                context.visit();
-                int ordinal = ruleOrdinal++;
-                switch (rule.declaration().definition()) {
-                    case guru.interlis.model.UniquenessConstraint ignored -> {
-                        var group = uniqueGroups.remove(plan.canonical(rule.key().declaration().symbol()));
-                        if (group != null) {
-                            coverage.addAll(new DatasetUnique(context, local, group, ordinal).check());
-                        }
-                    }
-                    case guru.interlis.model.ExistenceConstraint existence ->
-                            coverage.add(new DatasetExistence(context, local, rule, existence, ordinal).check());
-                    default -> coverage.add(new DatasetRuleCoverage(rule.key(), DatasetRuleCoverage.ScopeKind.DATASET,
-                            DatasetRuleCoverage.Completeness.OPEN, DatasetRuleCoverage.Outcome.UNDETERMINED,
-                            1, 0, 0, 0, 0));
-                }
-            }
-            var report = local.finishDataset(coverage);
+            var report = local.finishDataset(checkDatasetRules(context));
             cancellation.throwIfCancellationRequested();
             inputs.clear();
             state = State.FINISHED;
@@ -289,6 +270,44 @@ public final class DatasetValidationSession implements AutoCloseable {
             fail();
             throw failure;
         }
+    }
+
+    private List<DatasetRuleCoverage> checkDatasetRules(DatasetRuleContext context) {
+        var uniqueGroups = new LinkedHashMap<SymbolId, List<DatasetRulePlan>>();
+        for (var rule : plan.datasetRules()) {
+            context.visit();
+            if (rule.declaration().definition() instanceof UniquenessConstraint) {
+                var canonical = plan.canonical(rule.key().declaration().symbol());
+                uniqueGroups.computeIfAbsent(canonical, ignored -> new ArrayList<>()).add(rule);
+            }
+        }
+        var coverage = new HashMap<RuleKey, List<DatasetRuleCoverage>>();
+        int ruleOrdinal = 0;
+        for (var rule : plan.datasetRules()) {
+            context.visit();
+            int ordinal = ruleOrdinal++;
+            switch (rule.declaration().definition()) {
+                case UniquenessConstraint ignored -> {
+                    var group = uniqueGroups.remove(plan.canonical(rule.key().declaration().symbol()));
+                    if (group != null) {
+                        coverage.put(rule.key(), new DatasetUnique(context, local, group, ordinal).check());
+                    }
+                }
+                case ExistenceConstraint existence -> coverage.put(rule.key(),
+                        List.of(new DatasetExistence(context, local, rule, existence, ordinal).check()));
+                default -> { }
+            }
+        }
+        for (var rule : plan.datasetRules()) {
+            context.visit();
+            switch (rule.declaration().definition()) {
+                case SetConstraint set -> coverage.put(rule.key(), new DatasetAggregate(context, local, rule).check(set));
+                case PlausibilityConstraint plausibility ->
+                        coverage.put(rule.key(), new DatasetAggregate(context, local, rule).check(plausibility));
+                default -> { }
+            }
+        }
+        return plan.datasetRules().stream().flatMap(rule -> coverage.getOrDefault(rule.key(), List.of()).stream()).toList();
     }
 
     private void requireTopic(SymbolRef topic) {

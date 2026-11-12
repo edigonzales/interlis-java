@@ -64,6 +64,7 @@ final class DatasetExistence {
                 case ValueSemantics.Known known -> context.keys.putIfAbsent(indexKey(alternative, known.key()),
                         ByteBuffer.allocate(Long.BYTES).putLong(occurrence.handle().ordinal()).array());
                 case ValueSemantics.Gap.UNDEFINED -> alternative.unknown |= occurrence.partial();
+                case ValueSemantics.Gap.UNSUPPORTED -> alternative.unsupportedValue = true;
                 case ValueSemantics.Gap ignored -> alternative.unknown = true;
             }
         }
@@ -115,8 +116,10 @@ final class DatasetExistence {
                     result.firstMissing = List.copyOf(location);
                 }
                 result.missing++;
-            } else if (witness == Witness.UNKNOWN) {
+            } else if (witness != Witness.FOUND) {
                 result.unknown = true;
+                result.unsupportedExpression |= witness == Witness.UNSUPPORTED_EXPRESSION;
+                result.unsupportedValue |= witness == Witness.UNSUPPORTED_VALUE;
             }
         });
         if (result.missing > 0) {
@@ -124,6 +127,10 @@ final class DatasetExistence {
             counts.violations++;
             report.datasetViolation(rule.declaration(), ValidationCode.EXISTENCE_TARGET_MISSING,
                     occurrence.location(result.firstMissing), List.of(Long.toString(result.missing)));
+        } else if (result.unsupportedValue) {
+            unsupportedValue();
+        } else if (result.unsupportedExpression) {
+            unsupported();
         } else if (result.unknown || occurrence.partial()) {
             counts.undecided++;
         } else {
@@ -133,21 +140,42 @@ final class DatasetExistence {
 
     private Witness find(CanonicalKey key, boolean geometryVertex) {
         boolean unknown = false;
+        boolean unsupportedExpression = false;
+        boolean unsupportedValue = false;
         for (var alternative : alternatives) {
             context.visit();
-            if (alternative.program.isEmpty() || geometryVertex && !alternative.coordinate()) {
-                unknown = true;
+            if (alternative.program.isEmpty()) {
+                unsupportedExpression = true;
+                continue;
+            }
+            if (geometryVertex && !alternative.coordinate()) {
+                unsupportedValue = true;
                 continue;
             }
             if (context.keys.get(indexKey(alternative, key)).isPresent()) {
                 return Witness.FOUND;
             }
             unknown |= !alternative.closed || alternative.unknown;
+            unsupportedValue |= alternative.unsupportedValue;
+        }
+        if (unsupportedValue) {
+            return Witness.UNSUPPORTED_VALUE;
+        }
+        if (unsupportedExpression) {
+            return Witness.UNSUPPORTED_EXPRESSION;
         }
         return unknown ? Witness.UNKNOWN : Witness.DEFINITELY_MISSING;
     }
 
     private void reportResult(DatasetRuleContext.Occurrence occurrence, List<DataLocation.Step> path, Witness witness) {
+        if (witness == Witness.UNSUPPORTED_VALUE) {
+            unsupportedValue();
+            return;
+        }
+        if (witness == Witness.UNSUPPORTED_EXPRESSION) {
+            unsupported();
+            return;
+        }
         if (witness == Witness.UNKNOWN) {
             counts.undecided++;
             return;
@@ -187,7 +215,7 @@ final class DatasetExistence {
         return context.plan.effectiveType(program.expression().typeId()).orElse(null);
     }
 
-    private enum Witness { FOUND, DEFINITELY_MISSING, UNKNOWN }
+    private enum Witness { FOUND, DEFINITELY_MISSING, UNKNOWN, UNSUPPORTED_EXPRESSION, UNSUPPORTED_VALUE }
 
     private final class Alternative {
         private final SymbolRef root;
@@ -196,6 +224,7 @@ final class DatasetExistence {
         private final boolean closed;
         private final boolean coordinate;
         private boolean unknown;
+        private boolean unsupportedValue;
 
         Alternative(SymbolRef root, Optional<LocalExpressions.Program> program, int ordinal) {
             this.root = root;
@@ -213,8 +242,10 @@ final class DatasetExistence {
     }
 
     private static final class VertexResult {
+        private boolean unsupportedExpression;
         private List<DataLocation.Step> firstMissing;
         private long missing;
         private boolean unknown;
+        private boolean unsupportedValue;
     }
 }

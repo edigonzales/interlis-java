@@ -10,8 +10,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-/** Data provenance and immutable path in outer-to-inner order, with no inferred wire position. The object type is absent for a basket finding. */
-public record DataLocation(Optional<SourceId> source, BasketId basket, Optional<TransferId> tid,
+/**
+ * Data provenance and immutable outer-to-inner path. Dataset findings can omit
+ * a basket. Basket findings can omit the object type. No wire position is inferred.
+ */
+public record DataLocation(Optional<SourceId> source, Optional<BasketId> basket, Optional<TransferId> tid,
                            Optional<ObjectOid> oid, Optional<SymbolRef> objectType, List<Step> path) {
     public DataLocation {
         Objects.requireNonNull(source, "source");
@@ -20,6 +23,15 @@ public record DataLocation(Optional<SourceId> source, BasketId basket, Optional<
         Objects.requireNonNull(oid, "oid");
         Objects.requireNonNull(objectType, "objectType");
         path = List.copyOf(path);
+        if (basket.isEmpty() && (tid.isPresent() || oid.isPresent())) {
+            throw new IllegalArgumentException("Object identity needs a basket");
+        }
+    }
+
+    /** Creates a location within a delivered basket. */
+    public DataLocation(Optional<SourceId> source, BasketId basket, Optional<TransferId> tid,
+                        Optional<ObjectOid> oid, Optional<SymbolRef> objectType, List<Step> path) {
+        this(source, Optional.of(basket), tid, oid, objectType, path);
     }
 
     /** One segment in the data path. */

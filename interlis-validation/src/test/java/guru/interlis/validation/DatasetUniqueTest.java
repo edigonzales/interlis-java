@@ -2,16 +2,9 @@ package guru.interlis.validation;
 
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.source.SourceRevision;
-import guru.interlis.transfer.TransferEvent;
-import guru.interlis.transfer.TransferIdentity;
-import guru.interlis.transfer.TransferObject;
-import guru.interlis.transfer.TransferReader;
-import guru.interlis.transfer.TransferValue;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 import static guru.interlis.validation.DatasetRuleTestSupport.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -139,48 +132,6 @@ class DatasetUniqueTest {
             assertEquals(ValidationCode.DATASET_UNIQUE_DUPLICATE, result.examples().getFirst().code());
             assertEquals(List.of("two", "basket", "translated", "2"), result.examples().getFirst().arguments());
         }
-    }
-
-    private static TransferReader translatedReader(ValidationPlan plan, String modelName,
-                                                                         String objectName, String id, String label) {
-        var model = plan.transferPlan().models().stream().filter(m -> m.name().declared().last().equals(modelName))
-                .findFirst().orElseThrow();
-        var topic = model.topics().getFirst();
-        var type = plan.transferPlan().objects().stream()
-                .filter(o -> o.model().equals(model.symbol()) && o.name().declared().last().equals(objectName))
-                .findFirst().orElseThrow();
-        var field = type.slots().getFirst().symbol();
-        var basket = new TransferIdentity.BasketId("basket",
-                TransferIdentity.IdOrigin.SOURCE);
-        var identity = new TransferIdentity(basket, Optional.empty(),
-                Optional.of(new TransferIdentity.TransferId(id,
-                        TransferIdentity.IdOrigin.SOURCE)), Optional.empty(),
-                Optional.empty());
-        var value = new TransferValue.Structured(type.symbol(),
-                Map.of(field, new TransferValue.Enumeration(List.of(label))));
-        var events = List.<TransferEvent>of(
-                new TransferEvent.StartTransfer(Optional.empty(),
-                        Optional.empty(), Optional.empty(), List.of(
-                        new TransferEvent.ModelDeclaration(model.symbol(),
-                                model.languageVersion(), Optional.empty(), Optional.empty()))),
-                new TransferEvent.StartBasket(basket, topic, List.of(),
-                        TransferEvent.BasketKind.FULL,
-                        TransferEvent.Consistency.COMPLETE, Optional.empty(),
-                        Optional.empty(), Optional.empty(), List.of()),
-                new TransferEvent.ObjectEvent(new TransferObject(identity, value),
-                        Optional.empty(), TransferEvent.Consistency.COMPLETE),
-                new TransferEvent.EndBasket(basket),
-                new TransferEvent.EndTransfer()).iterator();
-        return new TransferReader(plan.transferPlan()) {
-            @Override
-            protected Optional<TransferEvent> readEvent(
-                    CancellationToken cancellation) {
-                return events.hasNext() ? Optional.of(events.next()) : Optional.empty();
-            }
-
-            @Override
-            protected void release() { }
-        };
     }
 
 }

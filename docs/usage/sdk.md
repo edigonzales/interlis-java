@@ -31,7 +31,7 @@ Der lokale Validator und `TextLengths` wurden mit SDK 0.4 eingeführt.
 | Vertrag | Wert | Bedeutung |
 |---|---|---|
 | Werkzeug und Artefakte | `0.2.0-SNAPSHOT` | Entwicklungsstand der ausgelieferten Module |
-| Öffentliche Java-API | `0.7` | Öffentliche Packages und Typen von `guru.interlis` |
+| Öffentliche Java-API | `0.8` | Öffentliche Packages und Typen von `guru.interlis` |
 | Diagnosekatalog | `interlis-diagnostics/v4` | Stabile Diagnosecodes und typisierte Argumente |
 | Bridge | `interlis.compiler/1.0` | Nachrichtenhülle, Ergebnisse und Abfragen |
 | Quellformatierung | `2.0` | Formatierungsoptionen und Ergebnisvertrag |
@@ -90,3 +90,16 @@ Bestand. `EXISTENCE_TARGET_MISSING` setzt voraus, dass sämtliche relevanten
 Zielalternativen geschlossen und prüfbar sind. Eine beobachtete Übereinstimmung
 genügt auch bei offenen Alternativen. `UNSUPPORTED_VALUE_SEMANTICS` kennzeichnet
 unter anderem Geometrievergleiche, die eine topologische Gleichheit voraussetzen.
+
+API 0.8 verwendet `Optional<BasketId>` für `DataLocation.basket()`.
+Der Konstruktor mit einem gelieferten `BasketId` bleibt verfügbar.
+Globale Mengenbefunde können ohne Basket und ohne Objektkennung
+ausgegeben werden. Ein erschöpfender Switch über `ValidationCode`
+berücksichtigt auch `SET_CONSTRAINT_FALSE` und
+`PLAUSIBILITY_CONSTRAINT_FALSE`.
+
+Ein geschlossener Klassen-Extent oder tatsächlich gelieferter leerer Basket
+kann einen SET-Befund mit null Kandidaten und einer Auswertung erzeugen.
+Für einen nicht gelieferten Basket weist die Coverage null Scopes aus.
+Prozentbedingungen vergleichen Zähler und Nenner exakt. Die Argumente eines
+Befunds enthalten erfüllte Instanzen, Gesamtzahl, Richtung und Grenzwert.

@@ -8,8 +8,13 @@ import guru.interlis.model.DefinedExpression;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.ExpressionId;
 import guru.interlis.model.ExpressionTypeState;
+import guru.interlis.model.FunctionCallExpression;
+import guru.interlis.model.FunctionSymbol;
 import guru.interlis.model.LiteralExpression;
 import guru.interlis.model.NumericType;
+import guru.interlis.model.ObjectArgumentType;
+import guru.interlis.model.ObjectSetExpression;
+import guru.interlis.model.Origin;
 import guru.interlis.model.PathExpression;
 import guru.interlis.model.PathIndex;
 import guru.interlis.model.PathStep;
@@ -31,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.OptionalLong;
 
 final class LocalExpressions {
     private static final int MAX_DEPTH = 128;
@@ -48,7 +54,12 @@ final class LocalExpressions {
     enum Family { BOOLEAN, TEXT, NUMBER, ENUM, COORDINATE, UNDEFINED, OTHER }
 
     record Comparison(Family family, Map<List<String>, Integer> enumOrder) { }
-    record Context(ValidationPlan plan, TransferValue current, boolean partial, Runnable visit) { }
+    record Context(ValidationPlan plan, TransferValue current, boolean partial, Runnable visit,
+                   OptionalLong objectCount) {
+        Context(ValidationPlan plan, TransferValue current, boolean partial, Runnable visit) {
+            this(plan, current, partial, visit, OptionalLong.empty());
+        }
+    }
 
     record Program(ExpressionId root, Map<ExpressionId, TypedExpression> nodes,
                    Map<ExpressionId, Result> constants, Map<ExpressionId, Comparison> comparisons) {
@@ -74,6 +85,7 @@ final class LocalExpressions {
             }
             return switch (nodes.get(id)) {
                 case PathExpression path -> readPath(path, context);
+                case FunctionCallExpression call -> objectCount(call, context);
                 case DefinedExpression defined -> switch (evaluate(defined.operand(), context)) {
                     case Known _ -> bool(true);
                     case UndefinedByData _ -> bool(false);
@@ -83,6 +95,18 @@ final class LocalExpressions {
                 case BinaryExpression binary -> binary(binary, context);
                 default -> throw new IllegalStateException("Invalid compiled local expression");
             };
+        }
+
+        private Result objectCount(FunctionCallExpression call, Context context) {
+            context.visit().run();
+            if (!(nodes.get(call.children().getFirst()) instanceof ObjectSetExpression)) {
+                throw new IllegalStateException("Missing compiled object set");
+            }
+            if (context.objectCount().isEmpty()) {
+                return MissingContext.INSTANCE;
+            }
+            long count = context.objectCount().orElseThrow();
+            return new Known(new TransferValue.NumberValue(Long.toString(count), java.math.BigDecimal.valueOf(count)));
         }
 
         private Result binary(BinaryExpression binary, Context context) {
@@ -148,7 +172,16 @@ final class LocalExpressions {
     }
 
     static Optional<Program> compile(SemanticGraph graph, TypeRelations types, ExpressionId root) {
-        var compiler = new Compiler(graph, types);
+        return compile(graph, types, root, Optional.empty());
+    }
+
+    static Optional<Program> compileSet(SemanticGraph graph, TypeRelations types, ExpressionId root, SymbolId extent) {
+        return compile(graph, types, root, Optional.of(extent));
+    }
+
+    private static Optional<Program> compile(SemanticGraph graph, TypeRelations types, ExpressionId root,
+                                             Optional<SymbolId> extent) {
+        var compiler = new Compiler(graph, types, extent);
         return compiler.visit(root, 0)
                 ? Optional.of(new Program(root, compiler.nodes, compiler.constants, compiler.comparisons))
                 : Optional.empty();
@@ -157,15 +190,17 @@ final class LocalExpressions {
     private static final class Compiler {
         private final SemanticGraph graph;
         private final TypeRelations types;
+        private final Optional<SymbolId> extent;
         private final Map<ExpressionId, TypedExpression> nodes = new LinkedHashMap<>();
         private final Map<ExpressionId, Result> constants = new LinkedHashMap<>();
         private final Map<ExpressionId, Comparison> comparisons = new LinkedHashMap<>();
 
         private int visits;
 
-        private Compiler(SemanticGraph graph, TypeRelations types) {
+        private Compiler(SemanticGraph graph, TypeRelations types, Optional<SymbolId> extent) {
             this.graph = graph;
             this.types = types;
+            this.extent = extent;
         }
 
         boolean visit(ExpressionId id, int depth) {
@@ -189,6 +224,8 @@ final class LocalExpressions {
                 }
                 case ConstantExpression constant -> constant(constant);
                 case PathExpression path -> path.path().steps().stream().allMatch(this::localStep);
+                case ObjectSetExpression set -> objectSet(set);
+                case FunctionCallExpression call -> objectCount(call);
                 case DefinedExpression _ -> true;
                 case UnaryExpression unary -> switch (unary.operator()) {
                     case NOT -> family(expression(unary.operand())) == Family.BOOLEAN;
@@ -201,6 +238,19 @@ final class LocalExpressions {
                 nodes.put(id, expression);
             }
             return supported;
+        }
+
+        private boolean objectSet(ObjectSetExpression set) {
+            return extent.isPresent() && effective(set.typeId()).orElse(null) instanceof ObjectArgumentType argument
+                    && argument.objects() && argument.base().equals(extent) && argument.restrictions().isEmpty();
+        }
+
+        private boolean objectCount(FunctionCallExpression call) {
+            return extent.isPresent() && call.children().size() == 1
+                    && expression(call.children().getFirst()) instanceof ObjectSetExpression
+                    && call.targetFunction().flatMap(graph::symbol).orElse(null) instanceof FunctionSymbol function
+                    && function.origin() instanceof Origin.PredefinedOrigin predefined
+                    && predefined.key().equals("INTERLIS.objectCount");
         }
 
         private TypedExpression expression(ExpressionId id) {

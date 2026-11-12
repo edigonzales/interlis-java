@@ -1,5 +1,8 @@
 package guru.interlis.validation;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+
 import static guru.interlis.validation.DatasetRuleCoverage.Completeness.OPEN;
 import static guru.interlis.validation.DatasetRuleCoverage.Outcome.*;
 
@@ -23,4 +26,16 @@ final class DatasetScopeCounts {
         return new DatasetRuleCoverage(rule, kind, completeness, outcome, 1, candidates, evaluations,
                 violations, undecided);
     }
+    static List<DatasetRuleCoverage> aggregate(Iterable<DatasetRuleCoverage> coverage) {
+        var groups = new LinkedHashMap<List<?>, DatasetRuleCoverage>();
+        for (var item : coverage) {
+            groups.merge(List.of(item.scopeKind(), item.completeness(), item.outcome()), item, (a, b) ->
+                    new DatasetRuleCoverage(a.rule(), a.scopeKind(), a.completeness(), a.outcome(),
+                            Math.addExact(a.scopes(), b.scopes()), Math.addExact(a.candidates(), b.candidates()),
+                            Math.addExact(a.evaluations(), b.evaluations()), Math.addExact(a.violations(), b.violations()),
+                            Math.addExact(a.undecidedCandidates(), b.undecidedCandidates())));
+        }
+        return List.copyOf(groups.values());
+    }
+
 }

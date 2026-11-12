@@ -62,7 +62,7 @@ class DatasetBaselineTest {
                 <Extended i:bid="extended"><Item i:tid="i2"><value>0</value></Item></Extended>
                 """);
         assertEquals(List.of("extended"), report.examples().stream()
-                .filter(d -> d.code() == MANDATORY_CONSTRAINT_FALSE).map(d -> d.data().basket().value()).toList());
+                .filter(d -> d.code() == MANDATORY_CONSTRAINT_FALSE).map(d -> d.data().basket().orElseThrow().value()).toList());
     }
 
     @Test

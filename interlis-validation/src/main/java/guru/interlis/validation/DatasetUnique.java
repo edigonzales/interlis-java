@@ -22,6 +22,7 @@ final class DatasetUnique {
     private final DatasetRulePlan rule;
     private final Map<SymbolRef, List<Binding>> byType;
     private final boolean basket;
+    private final List<DatasetRulePlan> equivalents;
     private final int ordinal;
     private final LinkedHashMap<Long, Scope> scopes = new LinkedHashMap<>();
 
@@ -30,6 +31,7 @@ final class DatasetUnique {
         this.context = context;
         this.report = report;
         this.rule = equivalents.getFirst();
+        this.equivalents = equivalents;
         this.basket = ((UniquenessConstraint) rule.declaration().definition()).basket();
         this.ordinal = ordinal;
         var bindings = new LinkedHashMap<SymbolRef, List<Binding>>();
@@ -54,6 +56,14 @@ final class DatasetUnique {
 
     List<DatasetRuleCoverage> check() {
         boolean globalComplete = !basket && context.declaredComplete(rule.key().applicationRoot());
+        for (var equivalent : equivalents) {
+            for (var initial : context.aggregateScopes(equivalent, basket, true)) {
+                var counts = new DatasetScopeCounts();
+                counts.selected = true;
+                scopes.putIfAbsent(initial.ordinal(), new Scope(basket ? initial.completeness()
+                        : globalComplete ? DECLARED_COMPLETE : OPEN, counts));
+            }
+        }
         context.forObjects(occurrence -> {
             var found = binding(occurrence);
             if (found.isEmpty()) {
@@ -77,15 +87,11 @@ final class DatasetUnique {
         });
         reportDuplicates();
         if (scopes.isEmpty()) {
-            return List.of(new DatasetScopeCounts().coverage(rule.key(), basket ? BASKET : DATASET, OPEN));
+            return List.of(new DatasetRuleCoverage(rule.key(), basket ? BASKET : DATASET, OPEN,
+                    DatasetRuleCoverage.Outcome.NOT_APPLICABLE, 0, 0, 0, 0, 0));
         }
-        var aggregated = new LinkedHashMap<CoverageKind, DatasetRuleCoverage>();
-        for (var scope : scopes.values()) {
-            var coverage = scope.counts().coverage(rule.key(), basket ? BASKET : DATASET, scope.completeness());
-            aggregated.merge(new CoverageKind(coverage.completeness(), coverage.outcome()), coverage,
-                    DatasetUnique::merge);
-        }
-        return List.copyOf(aggregated.values());
+        return DatasetScopeCounts.aggregate(scopes.values().stream().map(scope ->
+                scope.counts().coverage(rule.key(), basket ? BASKET : DATASET, scope.completeness())).toList());
     }
 
     private void observe(DatasetRuleContext.Occurrence occurrence, long scope, DatasetScopeCounts counts,
@@ -161,17 +167,9 @@ final class DatasetUnique {
         }
     }
 
-    private static DatasetRuleCoverage merge(DatasetRuleCoverage a, DatasetRuleCoverage b) {
-        return new DatasetRuleCoverage(a.rule(), a.scopeKind(), a.completeness(), a.outcome(),
-                Math.addExact(a.scopes(), b.scopes()), Math.addExact(a.candidates(), b.candidates()),
-                Math.addExact(a.evaluations(), b.evaluations()), Math.addExact(a.violations(), b.violations()),
-                Math.addExact(a.undecidedCandidates(), b.undecidedCandidates()));
-    }
-
     private record Binding(DatasetRulePlan rule, Optional<LocalExpressions.Program> where,
                            List<LocalExpressions.Program> fields, boolean supported) { }
 
-    private record CoverageKind(DatasetRuleCoverage.Completeness completeness, DatasetRuleCoverage.Outcome outcome) { }
     private record Scope(DatasetRuleCoverage.Completeness completeness, DatasetScopeCounts counts) { }
 
     private record Group(long size, long first, long second, long selected) {

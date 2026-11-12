@@ -1,8 +1,13 @@
 package guru.interlis.validation;
 
+import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.QualifiedName;
+import guru.interlis.source.SourceRevision;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static guru.interlis.validation.DatasetRuleTestSupport.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -125,6 +130,145 @@ class ExistenceTest {
                 "<Subject i:tid='s'>" + line + "</Subject><Target i:tid='t'>" + line + "</Target>")));
         assertEquals(0, report.detectedViolations());
         assertEquals(DatasetRuleCoverage.Outcome.UNSUPPORTED_VALUE_SEMANTICS, report.coverage().datasetRules().getFirst().outcome());
+    }
+
+    @Test
+    void marksUnsupportedForeignTargetPathsExplicitly() {
+        var plan = plan("""
+                STRUCTURE Link = target: REFERENCE TO Peer; END Link;
+                CLASS Peer = number: 0.00..20.00; END Peer;
+                CLASS Subject =
+                  number: 0.00..20.00;
+                  link: Link;
+                  EXISTENCE CONSTRAINT number REQUIRED IN Subject:link->target->number;
+                END Subject;
+                """);
+        var report = validate(plan, List.of("Subject"), primary("p", basket("data",
+                "<Subject i:tid='s'><number>1.00</number></Subject>")));
+        assertEquals(0, report.detectedViolations());
+        var rule = report.coverage().datasetRules().getFirst();
+        assertEquals(DatasetRuleCoverage.Outcome.UNSUPPORTED, rule.outcome());
+        assertEquals(1, rule.undecidedCandidates());
+    }
+
+    @Test
+    void checksLaterPartsAndInnerRingsOfMultiGeometries() {
+        var plan = plan("""
+                DOMAIN Position = COORD 0.00..100.00, 0.00..100.00;
+                CLASS Target = point: Position; END Target;
+                CLASS Subject =
+                  lines: MULTIPOLYLINE WITH (STRAIGHTS) VERTEX Position;
+                  shape: MULTISURFACE WITH (STRAIGHTS) VERTEX Position WITHOUT OVERLAPS > 0.01;
+                  EXISTENCE CONSTRAINT lines REQUIRED IN Target:point;
+                  EXISTENCE CONSTRAINT shape REQUIRED IN Target:point;
+                END Subject;
+                """);
+        var a = point("1", "1");
+        var b = point("2", "2");
+        var c = point("3", "3");
+        var missing = point("4", "3");
+        var lines = "<g:multipolyline>" + line(a + b) + line(c + missing) + "</g:multipolyline>";
+        var firstSurface = "<g:surface><g:exterior>" + line(a + b + c + a) + "</g:exterior></g:surface>";
+        var secondSurface = "<g:surface><g:exterior>" + line(a + b + c + a) + "</g:exterior>"
+                + "<g:interior>" + line(a + c + missing + a) + "</g:interior></g:surface>";
+        var data = "<Subject i:tid='s'><lines>" + lines + "</lines><shape><g:multisurface>"
+                + firstSurface + secondSurface + "</g:multisurface></shape></Subject>"
+                + target("a", a) + target("b", b) + target("c", c);
+        var report = validate(plan, List.of("Target"), primary("p", basket("data", data)));
+        var findings = report.examples().stream().filter(d -> d.code() == ValidationCode.EXISTENCE_TARGET_MISSING).toList();
+        assertEquals(2, findings.size(), report.examples().toString());
+        assertTrue(findings.stream().allMatch(finding -> finding.arguments().equals(List.of("1"))));
+        assertEquals(new DataLocation.GeometryComponent(DataLocation.GeometryComponent.Kind.LINE, 2),
+                findings.getFirst().data().path().get(1));
+        assertEquals(new DataLocation.GeometryComponent(DataLocation.GeometryComponent.Kind.SURFACE, 2),
+                findings.getLast().data().path().get(1));
+        assertEquals(new DataLocation.GeometryComponent(DataLocation.GeometryComponent.Kind.RING, 2),
+                findings.getLast().data().path().get(2));
+    }
+
+    @Test
+    void checksXtf23ArcEndWithoutDemandingItsIntermediatePosition() {
+        var plan = plan("2.3", """
+                DOMAIN Position = COORD 0..100, 0..100;
+                CLASS Target = point: Position; END Target;
+                CLASS Subject =
+                  line: POLYLINE WITH (STRAIGHTS, ARCS) VERTEX Position;
+                  EXISTENCE CONSTRAINT line REQUIRED IN Target:point;
+                END Subject;
+                """);
+        var data = """
+                <Checks.Data BID="data">
+                  <Checks.Data.Subject TID="s"><line><POLYLINE>
+                    <COORD><C1>1</C1><C2>1</C2></COORD>
+                    <ARC><C1>4</C1><C2>4</C2><A1>3</A1><A2>3</A2></ARC>
+                  </POLYLINE></line></Checks.Data.Subject>
+                  <Checks.Data.Target TID="first"><point><COORD><C1>1</C1><C2>1</C2></COORD></point></Checks.Data.Target>
+                  %s
+                </Checks.Data>
+                """;
+        var missing = validate(plan, List.of("Target"), primary("p", data.formatted("")));
+        assertEquals(1, missing.detectedViolations(), missing.examples().toString());
+        assertEquals(List.of("1"), missing.examples().getFirst().arguments());
+        var matching = validate(plan, List.of("Target"), primary("p", data.formatted("""
+                <Checks.Data.Target TID="end"><point><COORD><C1>4</C1><C2>4</C2></COORD></point></Checks.Data.Target>
+                """)));
+        assertEquals(0, matching.detectedViolations(), matching.examples().toString());
+        assertEquals(1, matching.coverage().datasetRules().getFirst().evaluations());
+    }
+
+    @Test
+    void acceptsAClosedTranslatedTargetExtentAndWitnessFromTheOriginalModel() {
+        var schema = ValidationPlannerTest.compile("""
+                INTERLIS 2.4;
+                MODEL Checks (en) AT "https://example.org/checks" VERSION "1" =
+                  TOPIC Data =
+                    DOMAIN Choices = (first, second);
+                    CLASS Catalogue = code: Choices; END Catalogue;
+                    CLASS Subject =
+                      code: Choices;
+                      EXISTENCE CONSTRAINT code REQUIRED IN Catalogue:code;
+                    END Subject;
+                  END Data;
+                END Checks.
+                MODEL German (de) AT "https://example.org/checks" VERSION "1" TRANSLATION OF Checks["1"] =
+                  TOPIC Daten =
+                    DOMAIN Auswahl = (erst, zweit);
+                    CLASS Katalog = wert: Auswahl; END Katalog;
+                    CLASS Objekt =
+                      wert: Auswahl;
+                      EXISTENCE CONSTRAINT wert REQUIRED IN Katalog:wert;
+                    END Objekt;
+                  END Daten;
+                END German.
+                """, new SourceRevision(1), "Checks", "German");
+        var transfer = ValidationPlannerTest.transfer(schema);
+        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
+                ValidationPlanner.plan(schema, transfer, ValidationProfile.DATASET)).plan();
+        var originalInput = new InputId("reference");
+        var translatedInput = new InputId("primary");
+        var catalogue = schema.queries().findQualifiedName(QualifiedName.of("Checks", "Data", "Catalogue")).getFirst();
+        var selector = new ExtentSelector(catalogue, Set.of(originalInput, translatedInput), Optional.empty());
+        var defaults = DatasetOptions.defaults(plan);
+        var options = new DatasetOptions(defaults.localOptions(), defaults.subjects(), new ExtentDeclarations(List.of(
+                new ExtentDeclaration(selector, ExtentAspect.OBJECT_MEMBERSHIP, "catalogue inventory"),
+                new ExtentDeclaration(selector, ExtentAspect.ATTRIBUTE_VALUES, "catalogue values"))), defaults.limits());
+        var token = CancellationToken.none();
+        for (var label : List.of("first", "second")) {
+            try (var store = new InMemoryValidationStorage(200, 100_000);
+                 var run = DatasetValidator.session(plan, options, store);
+                 var reference = translatedReader(plan, "Checks", "Catalogue", "ref", label);
+                 var source = translatedReader(plan, "German", "Objekt", "source", "erst")) {
+                run.readInput(new InputDescriptor(originalInput, InputRole.REFERENCE), reference, token);
+                run.readInput(new InputDescriptor(translatedInput, InputRole.PRIMARY), source, token);
+                var report = run.finish(token);
+                assertEquals(label.equals("first") ? 0 : 1, report.detectedViolations(), report.coverage().toString());
+                assertTrue(report.examples().stream().allMatch(d -> d.code() == ValidationCode.EXISTENCE_TARGET_MISSING));
+            }
+        }
+    }
+
+    private static String line(String points) {
+        return "<g:polyline>" + points + "</g:polyline>";
     }
 
     private static String point(String x, String y) {

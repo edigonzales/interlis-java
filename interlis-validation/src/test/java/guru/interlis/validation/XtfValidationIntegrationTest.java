@@ -90,7 +90,7 @@ class XtfValidationIntegrationTest {
                     findings.stream().map(ValidationDiagnostic::code).toList());
             assertEquals(3, report.detectedViolations());
             assertEquals(List.of("b1", "b1", "bid:abcd"),
-                    findings.stream().map(d -> d.data().basket().value()).toList());
+                    findings.stream().map(d -> d.data().basket().orElseThrow().value()).toList());
             var basketDomain = schema.queries().findQualifiedName(QualifiedName.of("Checks", "ShortId")).getFirst();
             var objectDomain = schema.queries().findQualifiedName(QualifiedName.of("Checks", "ObjectId")).getFirst();
             assertEquals(List.of(basketDomain, objectDomain, basketDomain),
