@@ -15,9 +15,10 @@ public final class ModulePathContract {
     public static void requireOwnDescriptor(String project, ModuleDescriptor descriptor) {
         if(descriptor.isAutomatic()||descriptor.isOpen()||!descriptor.name().equals(name(project)))
             throw new IllegalStateException("Own runtime module must be explicit and encapsulated: "+project);
-        if(isXtfAdapter(project)||project.equals("interlis-validation")) {
+        if(isXtfAdapter(project)||project.equals("interlis-validation")||isValidationStorage(project)) {
             var required=descriptor.requires().stream().map(ModuleDescriptor.Requires::name).collect(java.util.stream.Collectors.toSet());
             var expected=isXtfAdapter(project)?Set.of("java.base","java.xml","guru.interlis.model","guru.interlis.transfer")
+                    :isValidationStorage(project)?Set.of("java.base","guru.interlis.validation","com.h2database.mvstore")
                     :Set.of("java.base","guru.interlis.transfer");
             if(!required.equals(expected)
                     ||descriptor.exports().size()!=1||descriptor.exports().stream().anyMatch(export->
@@ -27,6 +28,10 @@ public final class ModulePathContract {
     }
     private static boolean isXtfAdapter(String project) {
         return project.equals("interlis-xtf23") || project.equals("interlis-xtf24");
+    }
+
+    private static boolean isValidationStorage(String project) {
+        return project.equals("interlis-validation-mvstore");
     }
 
     public static void main(String[] args) throws Exception {
@@ -48,11 +53,18 @@ public final class ModulePathContract {
             if(!result.explicitDescriptor()||!result.moduleName().orElseThrow().equals(name(project)))throw new IllegalStateException("Wrong own module: "+project);
             own.add(name(project));
             var runtime=ModuleArtifacts.runtime(root,project,outcome);
-            if(project.equals("interlis-transfer")||isXtfAdapter(project)||project.equals("interlis-validation")) {
+            if(project.equals("interlis-transfer")||isXtfAdapter(project)||project.equals("interlis-validation")
+                    ||isValidationStorage(project)) {
                 String prefix="maven/guru.interlis/", version="/"+JvmBuildInputs.projectVersion(root);
                 var expected=new HashSet<>(Set.of(prefix+"interlis-transfer"+version,prefix+"interlis-model"+version));
                 expected.add(prefix+project+version);
                 var actual=runtime.stream().map(ModuleArtifacts.Artifact::coordinates).collect(java.util.stream.Collectors.toSet());
+                if(isValidationStorage(project)) {
+                    expected.add(prefix+"interlis-validation"+version);
+                    actual.stream().filter(coordinate->coordinate.startsWith("maven/com.h2database/h2-mvstore/"))
+                            .findFirst().ifPresent(expected::add);
+                    if(expected.size()!=5)throw new IllegalStateException("Missing MVStore runtime dependency");
+                }
                 if(!actual.equals(expected))throw new IllegalStateException("Unexpected runtime closure for "+project+": "+actual);
             }
             for(var artifact:runtime) {
@@ -97,7 +109,8 @@ public final class ModulePathContract {
             Map.entry("guru.interlis.xtf23","guru.interlis.xtf23.Xtf23Reader"),
             Map.entry("guru.interlis.xtf24","guru.interlis.xtf24.Xtf24Reader"),
             Map.entry("guru.interlis.wasm.bridge","guru.interlis.bridge.BridgeDispatcher"),
-            Map.entry("guru.interlis.validation","guru.interlis.validation.LocalValidator"));
+            Map.entry("guru.interlis.validation","guru.interlis.validation.LocalValidator"),
+            Map.entry("guru.interlis.validation.mvstore","guru.interlis.validation.mvstore.MvStoreValidationStorage"));
         String extra=String.join("\n",own.stream().filter(entrypoints::containsKey).map(name->
             "if (named && !"+entrypoints.get(name)+".class.getModule().getName().equals(\""+name+"\")) throw new AssertionError(\"Wrong public entrypoint module\");").toList());
         checks=checks.replace("SourceText source",extra+"\nSourceText source");

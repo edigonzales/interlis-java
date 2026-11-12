@@ -20,10 +20,13 @@ definieren diese Gültigkeitsbereiche. Für Signaturen und Packageexports gilt
 die Javadoc der jeweiligen JVM-Module. Bibliotheks-, Wire-, Katalog- und
 Ausgabeformate haben getrennte Versionsidentitäten.
 
-Für [lokale Datenvalidierung](transfer.md#lokale-datenvalidierung) fügt der
-Host die separate Bibliothek `guru.interlis:interlis-validation` hinzu.
-Sie wird wie die Transferadapter unabhängig vom Compiler-SDK-ZIP gebaut.
-Der lokale Validator und `TextLengths` wurden mit SDK 0.4 eingeführt.
+Für [lokale Datenvalidierung](transfer.md#lokale-datenvalidierung) und
+[Datensatzvalidierung](transfer.md#datensatzvalidierung) fügt der Host
+`guru.interlis:interlis-validation` hinzu. Das optionale JVM-Artefakt
+`guru.interlis:interlis-validation-mvstore` liefert den dateigestützten
+Datensatzspeicher. Diese Module werden wie die Transferadapter unabhängig
+vom Compiler-SDK-ZIP gebaut. Der lokale Validator und `TextLengths` wurden
+mit SDK 0.4 eingeführt.
 
 
 ## Getrennte Versionen
@@ -114,7 +117,7 @@ Länge der Arbeitsdatei. `diskBytes()` meldet die aktuelle Länge und
 `peakDiskBytes()` die höchste durch einen erfolgreichen Schreibvorgang
 erreichte Länge. Eigene Speicherimplementierungen können bei einem
 Budgetende den öffentlichen `ValidationLimitException(String)`-Konstruktor
-verwenden. Das optionale Modul und der zusätzliche Konstruktor sind
-additive Erweiterungen von API 0.8. Der Validator prüft den Schema- und
-Laufheader und schliesst die Schreibvorgänge vor Ausgabe des Berichts ab.
+verwenden. Das optionale Modul einschliesslich `peakDiskBytes()` und der zusätzliche
+Konstruktor sind additive Erweiterungen von API 0.8. Der Validator prüft den Schema- und
+Laufheader und schliesst alle Schreibvorgänge vor Ausgabe des Berichts ab.
 [H2 MVStore](https://h2database.github.io/html/mvstore.html)

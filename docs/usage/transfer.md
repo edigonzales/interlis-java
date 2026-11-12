@@ -99,9 +99,9 @@ und der Anzahl eindeutiger IDs. Auch bei einer direkten Reader-Writer-Pipeline
 existieren die Identitätsindizes beider Instanzen. Die Limits sind Ressourcenbudgets
 und liefern keine feste Heap-Kapazitätsgarantie.
 
-Der Java-SDK-Vertrag ist Version 0.8. `TransferValue.XmlFragment` besitzt neben
-`xml` die unveränderliche Map `namespaceBindings`. Der Einargumentkonstruktor
-bleibt verfügbar. Bestehende Record-Patterns müssen die neue Komponente aufnehmen.
+Der [Java-SDK-Vertrag](sdk.md#getrennte-versionen) ist Version 0.8.
+`TransferValue.XmlFragment` erhält neben `xml` den Namespacekontext in
+`namespaceBindings`. Der Einargumentkonstruktor bleibt verfügbar.
 
 
 ## Lokale Datenvalidierung
@@ -162,3 +162,57 @@ sind 128 Ebenen und eine Million Wertbesuche, Slotprüfungen und Ausdrucksschrit
 zusammen. `ValidationOptions` erlaubt andere positive Grenzen. Die Sitzung
 behält keine Objektliste; Reader können für ihr Transferprotokoll eigene
 Identitätsmengen halten.
+
+## Datensatzvalidierung
+
+Ein `DATASET`-Plan verwendet denselben geprüften Schema-Snapshot. Der Host
+liefert eine oder mehrere vollständige Quellen mit jeweils einer eindeutigen
+`InputId`. Der Datensatzlauf akzeptiert FULL-Baskets, einschliesslich leerer
+Baskets und Eingaben ohne Basket. Jede Quelle wird bis zum bestätigten EOF
+gelesen. Referenzdaten erhalten `InputRole.REFERENCE` und können Zeugen
+liefern. Subjekte für lokale Regeln, SET und Prozentbedingungen stammen aus
+`PRIMARY`-Eingaben.
+
+```java
+var projection = ValidationPlanner.plan(schema, transferPlan, ValidationProfile.DATASET);
+if (projection instanceof ValidationPlanningResult.Rejected rejected) {
+    throw new IllegalArgumentException(rejected.problems().toString());
+}
+var plan = ((ValidationPlanningResult.Ready) projection).plan();
+var options = DatasetOptions.defaults(plan);
+try (var storage = new InMemoryValidationStorage(1_000_000, 256L * 1024 * 1024);
+     var run = DatasetValidator.session(plan, options, storage);
+     var reader = new Xtf24Reader(transferPlan, input)) {
+    run.readInput(new InputDescriptor(new InputId("survey"), InputRole.PRIMARY),
+            reader, cancellation);
+    var report = run.finish(cancellation);
+    System.out.println(report.coverage().datasetRules());
+}
+```
+
+Für einen dateigestützten Lauf wählt der Host
+`MvStoreValidationStorage.open(tempRoot, MvStoreOptions.defaults(maxDiskBytes))`
+aus dem optionalen Modul `guru.interlis.validation.mvstore`.
+`tempRoot` ist ein vorhandenes Verzeichnis. Das Backend legt darin sein
+privates Arbeitsverzeichnis an und entfernt es beim Schliessen. Reader und
+Speicher bleiben im Besitz des Hosts. Die Session meldet Lese-, Budget- und
+Speicherfehler vor einem Bericht.
+
+Das Profil prüft aufgelöste Referenzen, Rollen- und Linkkardinalitäten,
+Positionen geordneter Rollen und Kompositionen. Es prüft globale und
+basketbezogene `UNIQUE`-Regeln mit ausführbarem lokalem `WHERE` sowie
+`EXISTENCE` für unterstützte Skalare, Strukturwerte, Koordinaten und
+Stützpunkte von Standardlinien und Flächenrändern. `SET` unterstützt
+`INTERLIS.objectCount(ALL)` mit lokaler Filterung und booleschen Vergleichen.
+Prozentbedingungen verwenden einen exakten Vergleich.
+
+Standardmässig sind globale Extents offen. Ein erfolgreicher Zeuge oder
+eine beobachtete Dublette ist bereits im verfügbaren Umfang aussagekräftig.
+Für Aussagen über Abwesenheit muss der Host bei globalen Regeln die
+relevanten Extents mit `ExtentDeclarations` schliessen. Die Aspekte
+`OBJECT_MEMBERSHIP`, `ATTRIBUTE_VALUES` und `RELATION_MEMBERSHIP` sind
+getrennt. `DatasetRuleCoverage` unterscheidet die Basis der Vollständigkeit
+und den Ausgang der Regel. Die Coverage weist offene Kontexte und Grenzen
+wie fremde Ausdruckspfade, Geometrietopologie, Hostfunktionen und Sichten
+aus. Die Auswahl über `SubjectSelection` bestimmt die zu prüfenden
+Subjekte. Sie erbringt keinen Vollständigkeitsnachweis.
