@@ -49,7 +49,7 @@ class DatasetLifecycleTest {
                 var report = run.finish(RUN);
                 assertEquals(1, report.inspectedObjects());
                 assertEquals(0, report.detectedViolations());
-                assertEquals(DatasetRuleCoverage.Outcome.UNDETERMINED,
+                assertEquals(DatasetRuleCoverage.Outcome.NO_VIOLATION_IN_AVAILABLE_SCOPE,
                         report.coverage().datasetRules().getFirst().outcome());
                 assertFalse(a.closed);
                 assertFalse(b.closed);

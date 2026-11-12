@@ -378,7 +378,7 @@ final class LocalExpressions {
         if (type == null) {
             return MissingContext.INSTANCE;
         }
-        var field = type.field(target);
+        var field = context.plan().field(type, target);
         if (field == null) {
             return MissingContext.INSTANCE;
         }

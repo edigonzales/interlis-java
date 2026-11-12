@@ -25,6 +25,6 @@ public record DatasetRuleCoverage(RuleKey rule, ScopeKind scopeKind, Completenes
 
     /** Conclusion about the rule in this population. */
     public enum Outcome {
-        SATISFIED, VIOLATED, NO_VIOLATION_IN_AVAILABLE_SCOPE, UNDETERMINED, UNSUPPORTED, NOT_APPLICABLE
+        SATISFIED, VIOLATED, NO_VIOLATION_IN_AVAILABLE_SCOPE, UNDETERMINED, UNSUPPORTED, UNSUPPORTED_VALUE_SEMANTICS, NOT_APPLICABLE
     }
 }

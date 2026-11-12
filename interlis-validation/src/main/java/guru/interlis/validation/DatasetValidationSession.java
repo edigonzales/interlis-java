@@ -252,11 +252,35 @@ public final class DatasetValidationSession implements AutoCloseable {
             storage.checkpoint();
             new DatasetReferences(plan, storage, codec, objectStore, identities, options, inputs.keySet(), local).check(cancellation);
             new RelationCardinalities(plan, storage, codec, objectStore, identities, options, local).check(cancellation);
-            var pending = plan.datasetRules().stream().map(rule ->
-                    new DatasetRuleCoverage(rule.key(), DatasetRuleCoverage.ScopeKind.DATASET,
+            var context = new DatasetRuleContext(plan, storage, codec, objectStore, identities, options,
+                    inputs.keySet(), cancellation);
+            var coverage = new java.util.ArrayList<DatasetRuleCoverage>();
+            var uniqueGroups = new java.util.LinkedHashMap<guru.interlis.model.SymbolId, java.util.List<DatasetRulePlan>>();
+            for (var rule : plan.datasetRules()) {
+                if (rule.declaration().definition() instanceof guru.interlis.model.UniquenessConstraint) {
+                    var canonical = plan.canonical(rule.key().declaration().symbol());
+                    uniqueGroups.computeIfAbsent(canonical, ignored -> new java.util.ArrayList<>()).add(rule);
+                }
+            }
+            int ruleOrdinal = 0;
+            for (var rule : plan.datasetRules()) {
+                context.visit();
+                int ordinal = ruleOrdinal++;
+                switch (rule.declaration().definition()) {
+                    case guru.interlis.model.UniquenessConstraint ignored -> {
+                        var group = uniqueGroups.remove(plan.canonical(rule.key().declaration().symbol()));
+                        if (group != null) {
+                            coverage.addAll(new DatasetUnique(context, local, group, ordinal).check());
+                        }
+                    }
+                    case guru.interlis.model.ExistenceConstraint existence ->
+                            coverage.add(new DatasetExistence(context, local, rule, existence, ordinal).check());
+                    default -> coverage.add(new DatasetRuleCoverage(rule.key(), DatasetRuleCoverage.ScopeKind.DATASET,
                             DatasetRuleCoverage.Completeness.OPEN, DatasetRuleCoverage.Outcome.UNDETERMINED,
-                            1, 0, 0, 0, 0)).toList();
-            var report = local.finishDataset(pending);
+                            1, 0, 0, 0, 0));
+                }
+            }
+            var report = local.finishDataset(coverage);
             cancellation.throwIfCancellationRequested();
             inputs.clear();
             state = State.FINISHED;

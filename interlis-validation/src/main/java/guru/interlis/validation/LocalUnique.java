@@ -8,7 +8,6 @@ import guru.interlis.model.SemanticGraph;
 import guru.interlis.model.StructureValueType;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeId;
-import guru.interlis.model.TypeKind;
 import guru.interlis.model.TypeRef;
 import guru.interlis.model.UniquenessConstraint;
 import guru.interlis.model.query.TypeRelations;
@@ -70,7 +69,7 @@ final class LocalUnique {
         for (var key : unique.localKeys()) {
             var prefix = (PathExpression) plan.expression(key.prefix()).expression();
             var fields = key.fields().stream().map(plan::expression).map(program ->
-                    new KeyField(program, plan.effectiveType(program.expression().typeId()).orElseThrow().kind())).toList();
+                    new KeyField(program, plan.effectiveType(program.expression().typeId()).orElseThrow())).toList();
             var check = new LocalUnique.Check(plan, partial, visit, duplicate, prefix.path().steps(), fields);
             check.walk(owner, path, 0, null);
             status = combine(status, check.status);
@@ -85,7 +84,7 @@ final class LocalUnique {
         return a == UNSUPPORTED_VALUE || b == UNSUPPORTED_VALUE ? UNSUPPORTED_VALUE : CHECKED;
     }
 
-    private record KeyField(LocalExpressions.Program program, TypeKind kind) { }
+    private record KeyField(LocalExpressions.Program program, TypeDescriptor type) { }
 
     private static final class Check {
         private final ValidationPlan plan;
@@ -94,7 +93,8 @@ final class LocalUnique {
         private final BiConsumer<ValuePath, ValuePath> duplicate;
         private final List<PathStep> prefix;
         private final List<KeyField> fields;
-        private final Map<List<Object>, ValuePath> first = new HashMap<>();
+        private final Map<CanonicalKey, ValuePath> first = new HashMap<>();
+        private final ValueSemantics semantics;
         private ConstraintStatus status = CHECKED;
 
         Check(ValidationPlan plan, boolean partial, Runnable visit, BiConsumer<ValuePath, ValuePath> duplicate,
@@ -105,6 +105,7 @@ final class LocalUnique {
             this.duplicate = duplicate;
             this.prefix = prefix;
             this.fields = fields;
+            this.semantics = ValueSemantics.local(plan, partial, visit);
         }
 
         private void walk(TransferValue value, ValuePath path, int next, TypeDescriptor expected) {
@@ -167,29 +168,23 @@ final class LocalUnique {
                 gap(UNSUPPORTED_VALUE);
                 return;
             }
-            var parts = new ArrayList<>();
+            var parts = new ArrayList<CanonicalKey>();
             var candidateStatus = CHECKED;
             var context = context(structured);
             for (var field : fields) {
-                switch (field.program().evaluate(context)) {
-                    case LocalExpressions.UndefinedByData _ -> { return; }
-                    case LocalExpressions.MissingContext _ -> candidateStatus = MISSING_RUNTIME_CONTEXT;
-                    case LocalExpressions.Unsupported _ -> candidateStatus = combine(candidateStatus, UNSUPPORTED_VALUE);
-                    case LocalExpressions.Known known -> {
-                        var part = part(known.value(), field.kind());
-                        if (part == null) {
+                switch (semantics.key(field.program().evaluate(context), field.type())) {
+                    case ValueSemantics.Gap.UNDEFINED -> { return; }
+                    case ValueSemantics.Gap.MISSING_CONTEXT -> candidateStatus = MISSING_RUNTIME_CONTEXT;
+                    case ValueSemantics.Gap.INVALID_VALUE, ValueSemantics.Gap.UNSUPPORTED ->
                             candidateStatus = combine(candidateStatus, UNSUPPORTED_VALUE);
-                        } else {
-                            parts.add(part);
-                        }
-                    }
+                    case ValueSemantics.Known known -> parts.add(known.key());
                 }
             }
             if (candidateStatus != CHECKED) {
                 gap(candidateStatus);
                 return;
             }
-            var previous = first.putIfAbsent(List.copyOf(parts), path);
+            var previous = first.putIfAbsent(semantics.tuple(parts), path);
             if (previous != null) {
                 duplicate.accept(previous, path);
             }
@@ -208,19 +203,4 @@ final class LocalUnique {
         return new ValuePath(path, new DataLocation.Index(index));
     }
 
-    private static Object part(TransferValue value, TypeKind kind) {
-        return switch (kind) {
-            case BOOLEAN -> value instanceof TransferValue.BooleanValue bool ? bool.value() : null;
-            case TEXT -> value instanceof TransferValue.Text text ? text.value() : null;
-            case ENUMERATION, ALIGNMENT -> value instanceof TransferValue.Enumeration enumeration ? enumeration.path() : null;
-            case NUMERIC -> {
-                if (value instanceof TransferValue.NumberValue number) {
-                    ScalarRules.requireNumericBudget(number.exactValue());
-                    yield number.exactValue().stripTrailingZeros();
-                }
-                yield null;
-            }
-            default -> throw new IllegalStateException("Unsupported local uniqueness key type");
-        };
-    }
 }

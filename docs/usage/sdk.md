@@ -31,7 +31,7 @@ Der lokale Validator und `TextLengths` wurden mit SDK 0.4 eingeführt.
 | Vertrag | Wert | Bedeutung |
 |---|---|---|
 | Werkzeug und Artefakte | `0.2.0-SNAPSHOT` | Entwicklungsstand der ausgelieferten Module |
-| Öffentliche Java-API | `0.6` | Öffentliche Packages und Typen von `guru.interlis` |
+| Öffentliche Java-API | `0.7` | Öffentliche Packages und Typen von `guru.interlis` |
 | Diagnosekatalog | `interlis-diagnostics/v4` | Stabile Diagnosecodes und typisierte Argumente |
 | Bridge | `interlis.compiler/1.0` | Nachrichtenhülle, Ergebnisse und Abfragen |
 | Quellformatierung | `2.0` | Formatierungsoptionen und Ergebnisvertrag |
@@ -75,3 +75,18 @@ Record-Patterns müssen die neue Komponente aufnehmen. Ein erschöpfender Switch
 Die Standardkardinalität einer Assoziation ohne `CARDINALITY` ist `{0..1}`
 pro Teilnehmerkombination. INTERLIS 2.3 und 2.4 erlauben bei einer
 Kompositionsrolle `{0..1}` und `{1}`. Ohne Angabe gilt `{0..1}`.
+
+API 0.7 ergänzt `DatasetLimits` um `maxConstraintWork()` und
+`maxKeyBytes()`. Die bisherigen Konstruktoren setzen dafür 10 Millionen
+Arbeitsschritte und 8 MiB pro kanonischem Schlüssel. Record-Patterns müssen die
+beiden Komponenten aufnehmen. Erschöpfende Switches über `ValidationCode`
+und `DatasetRuleCoverage.Outcome` müssen die neuen Fälle behandeln.
+
+`DATASET_UNIQUE_DUPLICATE` erscheint einmal pro Dublettengruppe mit
+ausgewähltem Subjekt. Die Argumente enthalten Eingabe, Basket und Kennung
+eines weiteren Gruppenmitglieds sowie die Gruppengrösse. Globale
+Vergleiche ohne geschlossene Extent-Deklaration belegen nur den verfügbaren
+Bestand. `EXISTENCE_TARGET_MISSING` setzt voraus, dass sämtliche relevanten
+Zielalternativen geschlossen und prüfbar sind. Eine beobachtete Übereinstimmung
+genügt auch bei offenen Alternativen. `UNSUPPORTED_VALUE_SEMANTICS` kennzeichnet
+unter anderem Geometrievergleiche, die eine topologische Gleichheit voraussetzen.

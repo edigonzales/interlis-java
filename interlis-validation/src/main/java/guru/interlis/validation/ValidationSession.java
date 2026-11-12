@@ -181,6 +181,10 @@ public final class ValidationSession implements AutoCloseable {
         (complete || violation.isPresent() ? checked : missingRuntime).merge(key, 1L, Math::addExact);
     }
 
+    void datasetViolation(Symbol declaration, ValidationCode code, DataLocation data, List<String> arguments) {
+        diagnostic(code, data, ruleLocation(plan.ref(declaration.id()), declaration.origin()), arguments);
+    }
+
     void identityConflict(TransferObject object, DataLocation data, List<String> origins) {
         var declaration = plan.symbol(object.type().symbol()).orElseThrow();
         diagnostic(AMBIGUOUS_OBJECT_IDENTITY, data,
@@ -512,10 +516,7 @@ public final class ValidationSession implements AutoCloseable {
                 }
                 return plan.domainType(id);
             }).filter(CoordinateType.class::isInstance).map(CoordinateType.class::cast).orElse(null);
-            forms = geometry.lineForms().stream().map(id -> {
-                var origin = plan.symbol(id).orElseThrow().origin();
-                return origin instanceof Origin.PredefinedOrigin predefined ? predefined.key() : "custom";
-            }).toList();
+            forms = GeometryRules.forms(plan, geometry);
         } else {
             return;
         }

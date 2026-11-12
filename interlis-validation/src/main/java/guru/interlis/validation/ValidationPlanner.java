@@ -149,6 +149,7 @@ public final class ValidationPlanner {
             var datasetRules = datasetCandidates.entrySet().stream()
                     .map(entry -> {
                         var declaration = entry.getKey();
+                        projectDatasetExpressions(declaration.definition());
                         var application = declaration.target().or(declaration.header()::owner).orElseThrow();
                         var key = new RuleKey(new SymbolRef(transfer.snapshotId(), declaration.id()),
                                 new SymbolRef(transfer.snapshotId(), application), Optional.empty());
@@ -310,6 +311,24 @@ public final class ValidationPlanner {
                 }
             }
             return local;
+        }
+
+        private void projectDatasetExpressions(ConstraintDefinition definition) {
+            switch (definition) {
+                case UniquenessConstraint unique -> {
+                    unique.where().ifPresent(this::datasetExpression);
+                    unique.keys().forEach(this::datasetExpression);
+                }
+                case ExistenceConstraint existence -> {
+                    datasetExpression(existence.source());
+                    existence.targets().forEach(target -> datasetExpression(target.path()));
+                }
+                default -> { }
+            }
+        }
+
+        private void datasetExpression(ExpressionId root) {
+            expressions.computeIfAbsent(root, id -> LocalExpressions.compile(graph, types, id));
         }
 
         private static boolean datasetRule(ConstraintDefinition definition) {

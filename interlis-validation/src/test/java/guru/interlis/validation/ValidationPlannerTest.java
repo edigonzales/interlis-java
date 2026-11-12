@@ -168,7 +168,7 @@ class ValidationPlannerTest {
         return compile(sources, "Checks");
     }
 
-    private static CompiledSchema compile(String model, SourceRevision revision, String... roots) {
+    static CompiledSchema compile(String model, SourceRevision revision, String... roots) {
         var id = new SourceId("memory:/Checks.ili");
         var source = new SourceText(id, revision, model);
         return compile(SourceSet.of(Map.of(id, source)), roots);

@@ -37,6 +37,8 @@ public record ValidationDiagnostic(ValidationCode code, Severity severity, DataL
             case SEGMENT_FORM_NOT_ALLOWED -> "Segment form is not allowed by the model.";
             case MODEL_VALUE_NOT_ALLOWED -> "Model name is outside the allowed type or attribute path.";
             case MANDATORY_CONSTRAINT_FALSE -> "Mandatory constraint evaluated to false.";
+            case DATASET_UNIQUE_DUPLICATE -> "Key duplicates another object in the comparison scope.";
+            case EXISTENCE_TARGET_MISSING -> "No permitted target contains the required value.";
             case LOCAL_UNIQUE_DUPLICATE -> "Local structure key duplicates an earlier occurrence.";
             case AMBIGUOUS_OBJECT_IDENTITY -> "More than one object has the referenced identity.";
             case REFERENCE_TARGET_MISSING -> "The referenced object is absent from the closed extent.";

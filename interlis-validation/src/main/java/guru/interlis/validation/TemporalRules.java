@@ -51,7 +51,7 @@ final class TemporalRules {
         return CHECKED;
     }
 
-    private static LocalDateTime parse(String text, TemporalKind kind, LanguageVersion language) {
+    static LocalDateTime parse(String text, TemporalKind kind, LanguageVersion language) {
         if (text.length() > 23) {
             throw new DateTimeException("Temporal value exceeds the standard layout");
         }

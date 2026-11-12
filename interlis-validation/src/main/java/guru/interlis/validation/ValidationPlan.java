@@ -1,6 +1,9 @@
 package guru.interlis.validation;
 
+import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.DomainSymbol;
+import guru.interlis.model.EnumerationType;
+import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.ExpressionId;
 import guru.interlis.model.QualifiedName;
 import guru.interlis.model.SchemaFingerprint;
@@ -17,6 +20,7 @@ import guru.interlis.model.query.TypeRelations;
 import guru.interlis.model.SnapshotId;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.TransferPlan;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,6 +36,8 @@ public final class ValidationPlan {
     private final ValidationProfile profile;
     private final List<DatasetRulePlan> datasetRules;
     private final List<SymbolRef> rootModels;
+    private final Map<SymbolId, SymbolId> originals;
+    private final Map<TypeId, TypeId> originalEnumerations;
 
     ValidationPlan(TransferPlan transferPlan, SemanticGraph graph, Map<SymbolRef, ObjectValidationPlan> objects,
                    List<UncheckedRuleInfo> uncheckedRules, Map<ExpressionId, Optional<LocalExpressions.Program>> expressions,
@@ -45,6 +51,23 @@ public final class ValidationPlan {
         this.profile = profile;
         this.datasetRules = List.copyOf(datasetRules);
         this.rootModels = List.copyOf(rootModels);
+        var translatedSymbols = new HashMap<SymbolId, SymbolId>();
+        for (var ref : transferPlan.models()) {
+            var model = (ModelSymbol) graph.symbol(ref.symbol().symbol()).orElseThrow();
+            model.translation().ifPresent(translation -> translation.correspondences().forEach(link ->
+                    translatedSymbols.put(link.translated(), link.original())));
+        }
+        this.originals = Map.copyOf(translatedSymbols);
+        var translatedTypes = new HashMap<TypeId, TypeId>();
+        for (var entry : originals.entrySet()) {
+            var translated = enumType(entry.getKey());
+            var original = enumType(entry.getValue());
+            if (translated.isPresent() && original.isPresent()
+                    && !translated.orElseThrow().id().equals(original.orElseThrow().id())) {
+                translatedTypes.put(translated.orElseThrow().id(), original.orElseThrow().id());
+            }
+        }
+        this.originalEnumerations = Map.copyOf(translatedTypes);
     }
 
     /** Identifies the snapshot that owns all plan references. */
@@ -84,6 +107,39 @@ public final class ValidationPlan {
         return new SymbolRef(snapshotId(), id);
     }
 
+    SymbolId canonical(SymbolId id) {
+        while (originals.containsKey(id) && !originals.get(id).equals(id)) {
+            id = originals.get(id);
+        }
+        return id;
+    }
+
+    EnumerationType canonicalEnumeration(EnumerationType type) {
+        var current = type;
+        while (originalEnumerations.containsKey(current.id())) {
+            current = (EnumerationType) effectiveType(originalEnumerations.get(current.id())).orElseThrow();
+        }
+        return current;
+    }
+
+    private Optional<EnumerationType> enumType(SymbolId symbol) {
+        return graph.symbol(symbol).flatMap(value -> switch (value) {
+            case DomainSymbol domain -> effectiveType(domain.typeId());
+            case AttributeSymbol attribute -> effectiveType(attribute.declaredType());
+            default -> Optional.empty();
+        }).filter(EnumerationType.class::isInstance).map(EnumerationType.class::cast);
+    }
+
+    ObjectValidationPlan.FieldRule field(ObjectValidationPlan type, SymbolId declaration) {
+        var field = type.field(declaration);
+        if (field != null || originals.isEmpty()) {
+            return field;
+        }
+        var canonical = canonical(declaration);
+        return type.fields().stream().filter(candidate -> canonical(candidate.slot().symbol().symbol()).equals(canonical))
+                .findFirst().orElse(null);
+    }
+
     Optional<Symbol> symbol(SymbolId id) {
         return graph.symbol(id);
     }
@@ -119,7 +175,11 @@ public final class ValidationPlan {
     }
 
     LocalExpressions.Program expression(ExpressionId root) {
-        return expressions.getOrDefault(root, Optional.empty()).orElseThrow();
+        return datasetExpression(root).orElseThrow();
+    }
+
+    Optional<LocalExpressions.Program> datasetExpression(ExpressionId root) {
+        return expressions.getOrDefault(root, Optional.empty());
     }
 
     ObjectValidationPlan object(SymbolRef type) {

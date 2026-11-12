@@ -27,7 +27,7 @@ public record VersionManifest(String toolVersion, String apiVersion,
     /** Current tool/package version. */
     public static final String TOOL_VERSION = "0.2.0-SNAPSHOT";
     /** Current Java SDK contract version. */
-    public static final String API_VERSION = "0.6";
+    public static final String API_VERSION = "0.7";
     /** Current bridge protocol name. */
     public static final String PROTOCOL_NAME = "interlis.compiler";
     /** Current bridge protocol version. */

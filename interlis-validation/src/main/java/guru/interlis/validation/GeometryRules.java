@@ -2,10 +2,12 @@ package guru.interlis.validation;
 
 import guru.interlis.model.CoordinateType;
 import guru.interlis.model.GeometryType;
+import guru.interlis.model.Origin;
 import guru.interlis.transfer.TransferGeometry;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 import static guru.interlis.validation.DataLocation.GeometryComponent.Kind.*;
 import static guru.interlis.validation.ValidationCode.*;
@@ -20,14 +22,37 @@ final class GeometryRules {
     private final List<String> forms;
     private final Runnable visit;
     private final Findings findings;
+    private final BiConsumer<TransferGeometry.Coordinate, List<DataLocation.GeometryComponent>> verticesFound;
     private boolean fullyChecked;
 
     GeometryRules(CoordinateType vertices, List<String> forms, Runnable visit, Findings findings) {
+        this(vertices, forms, visit, findings, (coordinate, path) -> { });
+    }
+
+    private GeometryRules(CoordinateType vertices, List<String> forms, Runnable visit, Findings findings,
+                          BiConsumer<TransferGeometry.Coordinate, List<DataLocation.GeometryComponent>> verticesFound) {
         this.vertices = vertices;
         this.forms = forms;
         this.visit = visit;
         this.findings = findings;
+        this.verticesFound = verticesFound;
         fullyChecked = vertices != null;
+    }
+
+    static List<String> forms(ValidationPlan plan, GeometryType type) {
+        return type.lineForms().stream().map(id -> plan.symbol(id).orElseThrow().origin())
+                .map(origin -> origin instanceof Origin.PredefinedOrigin predefined ? predefined.key() : "custom")
+                .toList();
+    }
+
+    static boolean standardForms(List<String> forms) {
+        return !forms.isEmpty() && forms.stream().allMatch(
+                form -> form.equals("INTERLIS.STRAIGHTS") || form.equals("INTERLIS.ARCS"));
+    }
+
+    static void vertices(TransferGeometry geometry, List<String> forms, Runnable visit,
+                         BiConsumer<TransferGeometry.Coordinate, List<DataLocation.GeometryComponent>> consumer) {
+        new GeometryRules(null, forms, visit, (code, path, arguments) -> { }, consumer).check(geometry);
     }
 
     static boolean accepts(GeometryType type, TransferGeometry value, boolean incomplete) {
@@ -82,15 +107,14 @@ final class GeometryRules {
 
     private void line(TransferGeometry.Polyline line, List<DataLocation.GeometryComponent> path) {
         visit.run();
-        if (line.lineAttributes().isPresent() || forms.isEmpty()
-                || forms.stream().anyMatch(form -> !form.equals("INTERLIS.STRAIGHTS") && !form.equals("INTERLIS.ARCS"))) {
+        if (line.lineAttributes().isPresent() || !standardForms(forms)) {
             fullyChecked = false;
         }
         for (int partIndex = 0; partIndex < line.parts().size(); partIndex++) {
             visit.run();
             var part = line.parts().get(partIndex);
             var partPath = at(path, PART, partIndex);
-            coordinate(part.start(), at(partPath, START, 0));
+            vertex(part.start(), at(partPath, START, 0));
             for (int i = 0; i < part.segments().size(); i++) {
                 visit.run();
                 var segment = part.segments().get(i);
@@ -106,9 +130,14 @@ final class GeometryRules {
                         fullyChecked = false;
                     }
                 }
-                coordinate(segment.end(), at(segmentPath, END, 0));
+                vertex(segment.end(), at(segmentPath, END, 0));
             }
         }
+    }
+
+    private void vertex(TransferGeometry.Coordinate value, List<DataLocation.GeometryComponent> path) {
+        verticesFound.accept(value, path);
+        coordinate(value, path);
     }
 
     private void coordinate(TransferGeometry.Coordinate value, List<DataLocation.GeometryComponent> path) {
