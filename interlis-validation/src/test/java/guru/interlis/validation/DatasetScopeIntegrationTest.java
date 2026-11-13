@@ -94,6 +94,46 @@ class DatasetScopeIntegrationTest {
         assertEquals(List.of(ValidationCode.REFERENCE_TARGET_MISSING), codes(supplied));
     }
 
+    @Test
+    void keepsMissingTargetsOpenInAnIncompleteReferenceBasket() {
+        var plan = plan("""
+                CLASS Target = OID AS INTERLIS.UUIDOID; amount: 0..10; END Target;
+                STRUCTURE Link =
+                  peer: REFERENCE TO (EXTERNAL) Target;
+                  MANDATORY CONSTRAINT TargetAmount: peer->amount >= 5;
+                END Link;
+                CLASS Item = link: Link; END Item;
+                """);
+        var source = primary("primary", basket("data", """
+                <Item i:tid="item"><link><Link><peer i:ref="%s"/></Link></link></Item>
+                """.formatted(OID)));
+        var incomplete = """
+                <Data i:bid="reference" i:consistency="INCOMPLETE">%s</Data>
+                """;
+        var missing = validate(plan, DatasetScope.SUPPLIED_DATASET, source,
+                reference("support", incomplete.formatted("")));
+        assertEquals(0, missing.detectedViolations(), missing.examples().toString());
+        assertTrue(missing.coverage().missingRuntimeContext().stream()
+                .anyMatch(rule -> rule.family() == ValidationCoverage.RuleFamily.REFERENTIAL_INTEGRITY));
+        var pending = missing.coverage().constraints().getFirst();
+        assertEquals(ValidationCoverage.ConstraintStatus.MISSING_RUNTIME_CONTEXT, pending.status());
+        assertEquals(1, pending.occurrences());
+
+        var known = validate(plan, DatasetScope.SUPPLIED_DATASET, source,
+                reference("support", incomplete.formatted("""
+                        <Target i:tid="%s"><amount>3</amount></Target>
+                        """.formatted(OID))));
+        assertEquals(List.of(ValidationCode.MANDATORY_CONSTRAINT_FALSE), codes(known));
+        var checked = known.coverage().constraints().getFirst();
+        assertEquals(pending.constraint(), checked.constraint());
+        assertEquals(ValidationCoverage.ConstraintStatus.CHECKED, checked.status());
+        assertEquals(1, checked.occurrences());
+
+        var complete = validate(plan, DatasetScope.SUPPLIED_DATASET, source,
+                reference("support", basket("reference", "")));
+        assertEquals(List.of(ValidationCode.REFERENCE_TARGET_MISSING), codes(complete));
+    }
+
     private static List<ValidationCode> codes(ValidationReport report) {
         return report.examples().stream().map(ValidationDiagnostic::code).toList();
     }
