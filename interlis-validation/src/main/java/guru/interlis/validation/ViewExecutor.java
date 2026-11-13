@@ -145,8 +145,8 @@ final class ViewExecutor {
             throw new ValidationLimitException("Join arity exceeds the validation depth budget");
         }
         if (position == join.bases().size()) {
-            var result = nullPartner ? ExpressionEvaluator.bool(true) : selection(view, prefix);
-            if (isTrue(result)) {
+            var result = selection(view, prefix);
+            if (isTrue(result) || nullPartner && result instanceof EvaluationResult.UndefinedByData) {
                 return consumer.test(prefix) ? JoinOutcome.MATCH : JoinOutcome.NO_MATCH;
             }
             if (unknown(result)) {

@@ -63,6 +63,24 @@ class JoinViewTest {
     }
 
     @Test
+    void aNullPartnerDoesNotOverrideADefinitivelyFalseSelection() {
+        var plan = plan("""
+                CLASS Item = amount: 0..10; END Item;
+                VIEW Pairs JOIN OF a~Item,b~Item (OR NULL);
+                  WHERE a->amount > 1;
+                  =
+                    MANDATORY CONSTRAINT a->amount > 1;
+                END Pairs;
+                """);
+        var report = validate(plan, List.of("Item"), primary("p", basket("basket", """
+                <Item i:tid='one'><amount>1</amount></Item>
+                <Item i:tid='two'><amount>2</amount></Item>
+                """)));
+        assertTrue(report.examples().isEmpty(), report.examples().toString());
+        assertEquals(2, report.coverage().constraints().getFirst().occurrences());
+    }
+
+    @Test
     void failsTheRunWhenCandidateBudgetIsExhausted() {
         var plan = plan("""
                 CLASS Item = amount: 0..10; END Item;
