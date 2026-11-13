@@ -42,15 +42,15 @@ class ValidationCoveragePlanTest {
         var item = schema.queries().findQualifiedName(QualifiedName.of("Checks", "T", "Item")).getFirst();
         var rules = plan.uncheckedRules();
         assertEquals(List.of("Plausible", "GlobalKey", "BasketKey", "KnownCode",
-                        "CountItems", "RuntimeFlag", "ExternalCall"),
+                        "CountItems", "ExternalCall"),
                 rules.stream().map(rule -> (ConstraintSymbol) schema.queries().symbol(rule.constraint())
                                 .known().orElseThrow())
                         .map(rule -> rule.name().value()).toList());
         assertEquals(List.of(OUT_OF_SCOPE_GLOBAL, OUT_OF_SCOPE_GLOBAL, OUT_OF_SCOPE_GLOBAL,
-                        OUT_OF_SCOPE_GLOBAL, OUT_OF_SCOPE_GLOBAL, UNSUPPORTED_EXPRESSION, UNSUPPORTED_EXPRESSION),
+                        OUT_OF_SCOPE_GLOBAL, OUT_OF_SCOPE_GLOBAL, UNSUPPORTED_EXPRESSION),
                 rules.stream().map(UncheckedRuleInfo::reason).toList());
         assertTrue(rules.stream().allMatch(rule -> rule.objectType().equals(item) && rule.slot().isEmpty()));
-        assertTrue(plan.object(item).constraints().isEmpty());
+        assertEquals("RuntimeFlag", plan.object(item).constraints().getFirst().name().value());
         assertTrue(plan.object(item).fields().getFirst().values().getFirst().required());
     }
 }

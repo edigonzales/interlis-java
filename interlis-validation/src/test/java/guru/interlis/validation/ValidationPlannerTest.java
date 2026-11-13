@@ -85,7 +85,7 @@ class ValidationPlannerTest {
         var external = rules.constraints().getFirst();
         assertInstanceOf(MandatoryConstraint.class, external.definition());
         assertEquals(Optional.of(base.symbol()), external.target());
-        assertEquals(List.of(UncheckedRuleInfo.Reason.UNSUPPORTED_EXPRESSION, UncheckedRuleInfo.Reason.OUT_OF_SCOPE_GLOBAL),
+        assertEquals(List.of(UncheckedRuleInfo.Reason.OUT_OF_SCOPE_GLOBAL),
                 plan.uncheckedRules().stream().filter(rule -> rule.objectType().equals(derived))
                         .map(UncheckedRuleInfo::reason).toList());
         assertEquals(plan.uncheckedRules(), ready(schema, transfer).uncheckedRules());

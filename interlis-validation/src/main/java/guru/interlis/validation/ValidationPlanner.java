@@ -12,6 +12,9 @@ import guru.interlis.model.EnumerationType;
 import guru.interlis.model.ExistenceConstraint;
 import guru.interlis.model.ExpressionId;
 import guru.interlis.model.MandatoryConstraint;
+import guru.interlis.model.FunctionSymbol;
+import guru.interlis.model.ParameterSymbol;
+import guru.interlis.model.Origin;
 import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.PlausibilityConstraint;
 import guru.interlis.model.SemanticGraph;
@@ -53,6 +56,13 @@ public final class ValidationPlanner {
     /** Projects the non-null inputs for the chosen execution profile. */
     public static ValidationPlanningResult plan(CompiledSchema schema, TransferPlan transferPlan,
                                                 ValidationProfile profile) {
+        return plan(schema, transferPlan, profile, RuntimeBindings.empty());
+    }
+
+    /** Projects a plan with immutable host values and function implementations. */
+    public static ValidationPlanningResult plan(CompiledSchema schema, TransferPlan transferPlan,
+                                                ValidationProfile profile, RuntimeBindings bindings) {
+        Objects.requireNonNull(bindings, "bindings");
         Objects.requireNonNull(profile, "profile");
         Objects.requireNonNull(schema, "schema");
         Objects.requireNonNull(transferPlan, "transferPlan");
@@ -62,7 +72,7 @@ public final class ValidationPlanner {
         if (!schema.fingerprint().equals(transferPlan.schemaFingerprint())) {
             return rejected(SCHEMA_FINGERPRINT_MISMATCH, Optional.empty(), "Transfer plan has a different schema fingerprint");
         }
-        var projection = new Projection(schema.semanticGraph(), transferPlan, profile, schema.rootModels());
+        var projection = new Projection(schema.semanticGraph(), transferPlan, profile, schema.rootModels(), bindings);
         try {
             return new ValidationPlanningResult.Ready(projection.build());
         } catch (MissingModelInformation missing) {
@@ -81,6 +91,7 @@ public final class ValidationPlanner {
         private final SemanticGraph graph;
         private final TransferPlan transfer;
         private final ValidationProfile profile;
+        private final RuntimeBindings bindings;
         private final List<SymbolRef> rootModels;
         private final Map<ConstraintSymbol, List<SymbolRef>> datasetCandidates = new LinkedHashMap<>();
         private final TypeRelations types;
@@ -92,10 +103,11 @@ public final class ValidationPlanner {
         private final Map<TypeId, Set<List<String>>> enumValues = new LinkedHashMap<>();
         private final List<UncheckedRuleInfo> unchecked = new ArrayList<>();
 
-        Projection(SemanticGraph graph, TransferPlan transfer, ValidationProfile profile, List<SymbolRef> rootModels) {
+        Projection(SemanticGraph graph, TransferPlan transfer, ValidationProfile profile, List<SymbolRef> rootModels, RuntimeBindings bindings) {
             this.graph = graph;
             this.transfer = transfer;
             this.profile = profile;
+            this.bindings = bindings;
             this.rootModels = rootModels;
             this.types = new TypeRelations(graph);
             for (var topic : transfer.topics()) {
@@ -155,7 +167,9 @@ public final class ValidationPlanner {
                                 new SymbolRef(transfer.snapshotId(), application), Optional.empty());
                         return new DatasetRulePlan(key, declaration, entry.getValue());
                     }).toList();
-            return new ValidationPlan(transfer, graph, objects, unchecked, expressions, profile, datasetRules, rootModels);
+            var plan = new ValidationPlan(transfer, graph, objects, unchecked, expressions, profile, datasetRules, rootModels, bindings);
+            validateBindings(plan);
+            return plan;
         }
 
         private ObjectValidationPlan.FieldRule field(ObjectDescriptor object, AttributeSlot slot) {
@@ -313,6 +327,42 @@ public final class ValidationPlanner {
             return local;
         }
 
+        private boolean hasHostFunction(SymbolId id) {
+            var canonical = id;
+            for (var model : transfer.models()) {
+                var symbol = (ModelSymbol) graph.symbol(model.symbol().symbol()).orElseThrow();
+                var original = symbol.translation().stream().flatMap(translation -> translation.correspondences().stream())
+                        .filter(link -> link.translated().equals(id)).findFirst();
+                if (original.isPresent()) {
+                    canonical = original.orElseThrow().original();
+                    break;
+                }
+            }
+            return bindings.functions().containsKey(new SymbolRef(graph.snapshotId(), canonical));
+        }
+
+        private void validateBindings(ValidationPlan plan) {
+            for (var entry : bindings.parameters().entrySet()) {
+                var key = entry.getKey();
+                if (!key.snapshot().equals(plan.snapshotId()) || !plan.canonical(key.symbol()).equals(key.symbol())
+                        || !(plan.symbol(key.symbol()).orElse(null) instanceof ParameterSymbol parameter)
+                        || !(parameter.owner().flatMap(plan::symbol).orElse(null) instanceof ModelSymbol)
+                        || !RuntimeTypeChecks.accepts(plan, parameter.typeId(), parameter.mandatory(), entry.getValue(), () -> { })) {
+                    throw missing(key, "Invalid host parameter binding");
+                }
+            }
+            for (var entry : bindings.functions().entrySet()) {
+                var key = entry.getKey();
+                var signature = entry.getValue().signature();
+                if (!key.snapshot().equals(plan.snapshotId()) || !plan.canonical(key.symbol()).equals(key.symbol())
+                        || signature.origin() instanceof Origin.PredefinedOrigin
+                        || !plan.symbol(key.symbol()).filter(FunctionSymbol.class::isInstance)
+                                .filter(signature::equals).isPresent()) {
+                    throw missing(key, "Invalid host function binding");
+                }
+            }
+        }
+
         private void projectDatasetExpressions(ConstraintDefinition definition, SymbolId application) {
             switch (definition) {
                 case UniquenessConstraint unique -> {
@@ -325,7 +375,7 @@ public final class ValidationPlanner {
                 }
                 case SetConstraint set -> {
                     set.where().ifPresent(this::datasetExpression);
-                    expressions.computeIfAbsent(set.condition(), id -> ExpressionCompiler.compileSet(graph, types, id, application));
+                    expressions.computeIfAbsent(set.condition(), id -> ExpressionCompiler.compileSet(graph, types, id, application, this::hasHostFunction));
                 }
                 case PlausibilityConstraint plausibility -> datasetExpression(plausibility.condition());
                 default -> { }
@@ -333,7 +383,7 @@ public final class ValidationPlanner {
         }
 
         private void datasetExpression(ExpressionId root) {
-            expressions.computeIfAbsent(root, id -> ExpressionCompiler.compile(graph, types, id));
+            expressions.computeIfAbsent(root, id -> ExpressionCompiler.compile(graph, types, id, this::hasHostFunction));
         }
 
         private static boolean datasetRule(ConstraintDefinition definition) {
@@ -368,7 +418,7 @@ public final class ValidationPlanner {
             for (var id : expressions) {
                 Optional<ExpressionProgram> program;
                 try {
-                    program = this.expressions.computeIfAbsent(id, root -> ExpressionCompiler.compile(graph, types, root));
+                    program = this.expressions.computeIfAbsent(id, root -> ExpressionCompiler.compile(graph, types, root, this::hasHostFunction));
                 } catch (IllegalArgumentException invalid) {
                     throw missing(constraint, invalid.getMessage());
                 }

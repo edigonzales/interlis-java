@@ -237,7 +237,11 @@ final class DatasetRuleContext {
 
     EvaluationResult evaluate(ExpressionProgram program, Occurrence occurrence) {
         return program.evaluate(new EvaluationFrame(plan, occurrence.object().data(),
-                occurrence.partial(), this::visit));
+                occurrence.partial(), this::visit, java.util.OptionalLong.empty(), cancellation));
+    }
+
+    guru.interlis.execution.CancellationToken cancellation() {
+        return cancellation;
     }
 
     TypeDescriptor valueType(ExpressionProgram program, Occurrence occurrence) {

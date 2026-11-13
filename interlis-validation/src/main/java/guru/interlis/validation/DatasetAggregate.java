@@ -107,7 +107,7 @@ final class DatasetAggregate {
         var count = complete(population) ? OptionalLong.of(population.counts().candidates) : OptionalLong.empty();
         var result = condition.evaluate(new EvaluationFrame(context.plan, TransferValue.Undefined.INSTANCE,
                 !complete(population), context::visit,
-                condition.requirements().populationRequired() ? count : OptionalLong.empty()));
+                condition.requirements().populationRequired() ? count : OptionalLong.empty(), context.cancellation()));
         if (result instanceof EvaluationResult.Known known && known.value() instanceof TransferValue.BooleanValue value) {
             if (!value.value()) {
                 report.datasetViolation(rule.declaration(), ValidationCode.SET_CONSTRAINT_FALSE,

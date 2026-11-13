@@ -451,7 +451,8 @@ public final class ValidationSession implements AutoCloseable {
             countConstraint(owner, slot, declaration, ConstraintStatus.INCOMPLETE_CONTEXT);
             return;
         }
-        var result = plan.expression(expression).evaluate(new EvaluationFrame(plan, current, partial, budget::consume));
+        var result = plan.expression(expression).evaluate(new EvaluationFrame(plan, current, partial, budget::consume,
+                java.util.OptionalLong.empty(), budget.cancellation));
         var status = switch (result) {
             case EvaluationResult.Known known when known.value() instanceof TransferValue.BooleanValue value -> {
                 if (!value.value()) {

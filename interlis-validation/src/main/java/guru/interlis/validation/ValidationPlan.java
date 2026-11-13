@@ -34,6 +34,7 @@ public final class ValidationPlan {
     private final Map<ExpressionId, Optional<ExpressionProgram>> expressions;
     private final List<UncheckedRuleInfo> uncheckedRules;
     private final ValidationProfile profile;
+    private final RuntimeBindings bindings;
     private final List<DatasetRulePlan> datasetRules;
     private final List<SymbolRef> rootModels;
     private final Map<SymbolId, SymbolId> originals;
@@ -41,7 +42,8 @@ public final class ValidationPlan {
 
     ValidationPlan(TransferPlan transferPlan, SemanticGraph graph, Map<SymbolRef, ObjectValidationPlan> objects,
                    List<UncheckedRuleInfo> uncheckedRules, Map<ExpressionId, Optional<ExpressionProgram>> expressions,
-                   ValidationProfile profile, List<DatasetRulePlan> datasetRules, List<SymbolRef> rootModels) {
+                   ValidationProfile profile, List<DatasetRulePlan> datasetRules, List<SymbolRef> rootModels,
+                   RuntimeBindings bindings) {
         this.transferPlan = transferPlan;
         this.graph = graph;
         this.typeRelations = new TypeRelations(graph);
@@ -49,6 +51,7 @@ public final class ValidationPlan {
         this.uncheckedRules = List.copyOf(uncheckedRules);
         this.expressions = Map.copyOf(expressions);
         this.profile = profile;
+        this.bindings = bindings;
         this.datasetRules = List.copyOf(datasetRules);
         this.rootModels = List.copyOf(rootModels);
         var translatedSymbols = new HashMap<SymbolId, SymbolId>();
@@ -93,6 +96,10 @@ public final class ValidationPlan {
     /** Dataset declarations pending evaluation, in plan order. Local plans return an empty list. */
     public List<RuleKey> deferredRules() {
         return datasetRules.stream().map(DatasetRulePlan::key).toList();
+    }
+
+    RuntimeBindings bindings() {
+        return bindings;
     }
 
     List<DatasetRulePlan> datasetRules() {
@@ -164,6 +171,17 @@ public final class ValidationPlan {
     Optional<TypeDescriptor> effectiveType(TypeId id) {
         return typeRelations.resolveAliases(new TypeRef(snapshotId(), id)).known()
                 .flatMap(resolved -> graph.type(resolved.effectiveType()));
+    }
+
+    QualifiedName qualifiedName(SymbolId id) {
+        var parts = new java.util.ArrayDeque<String>();
+        var current = graph.symbol(id);
+        while (current.isPresent()) {
+            var declaration = current.orElseThrow();
+            parts.addFirst(declaration.name().value());
+            current = declaration.owner().flatMap(graph::symbol);
+        }
+        return new QualifiedName(List.copyOf(parts));
     }
 
     List<SymbolId> symbols(QualifiedName name) {

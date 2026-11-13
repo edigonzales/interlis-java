@@ -4,6 +4,10 @@ import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.BinaryExpression;
 import guru.interlis.model.BinaryOperator;
 import guru.interlis.model.ConstantExpression;
+import guru.interlis.model.ClassSymbol;
+import guru.interlis.model.StructureSymbol;
+import guru.interlis.model.SymbolValueExpression;
+import guru.interlis.model.ParameterSymbol;
 import guru.interlis.model.DefinedExpression;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.ExpressionId;
@@ -32,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import guru.interlis.validation.EvaluationResult.*;
 import guru.interlis.validation.ExpressionEvaluator.Comparison;
@@ -47,16 +52,22 @@ final class ExpressionCompiler {
     private ExpressionCompiler() { }
 
     static Optional<ExpressionProgram> compile(SemanticGraph graph, TypeRelations types, ExpressionId root) {
-        return compile(graph, types, root, Optional.empty());
+        return compile(graph, types, root, function -> false);
     }
 
-    static Optional<ExpressionProgram> compileSet(SemanticGraph graph, TypeRelations types, ExpressionId root, SymbolId extent) {
-        return compile(graph, types, root, Optional.of(extent));
+    static Optional<ExpressionProgram> compile(SemanticGraph graph, TypeRelations types, ExpressionId root,
+                                               Predicate<SymbolId> hostFunction) {
+        return compile(graph, types, root, Optional.empty(), hostFunction);
+    }
+
+    static Optional<ExpressionProgram> compileSet(SemanticGraph graph, TypeRelations types, ExpressionId root,
+                                                  SymbolId extent, Predicate<SymbolId> hostFunction) {
+        return compile(graph, types, root, Optional.of(extent), hostFunction);
     }
 
     private static Optional<ExpressionProgram> compile(SemanticGraph graph, TypeRelations types, ExpressionId root,
-                                             Optional<SymbolId> extent) {
-        var compiler = new Compiler(graph, types, extent);
+                                             Optional<SymbolId> extent, Predicate<SymbolId> hostFunction) {
+        var compiler = new Compiler(graph, types, extent, hostFunction);
         return compiler.visit(root, 0)
                 ? Optional.of(new ExpressionProgram(graph.snapshotId(), root, compiler.nodes, compiler.constants, compiler.comparisons,
                         new ExpressionRequirements(compiler.populationRequired)))
@@ -67,6 +78,7 @@ final class ExpressionCompiler {
         private final SemanticGraph graph;
         private final TypeRelations types;
         private final Optional<SymbolId> extent;
+        private final Predicate<SymbolId> hostFunction;
         private final Map<ExpressionId, TypedExpression> nodes = new LinkedHashMap<>();
         private final Map<ExpressionId, EvaluationResult> constants = new LinkedHashMap<>();
         private final Map<ExpressionId, Comparison> comparisons = new LinkedHashMap<>();
@@ -74,10 +86,12 @@ final class ExpressionCompiler {
         private final Map<ExpressionId, Integer> heights = new LinkedHashMap<>();
         private boolean populationRequired;
 
-        private Compiler(SemanticGraph graph, TypeRelations types, Optional<SymbolId> extent) {
+        private Compiler(SemanticGraph graph, TypeRelations types, Optional<SymbolId> extent,
+                         Predicate<SymbolId> hostFunction) {
             this.graph = graph;
             this.types = types;
             this.extent = extent;
+            this.hostFunction = hostFunction;
         }
 
         boolean visit(ExpressionId id, int depth) {
@@ -109,11 +123,10 @@ final class ExpressionCompiler {
                 case ConstantExpression constant -> constant(constant);
                 case PathExpression path -> path.path().steps().stream().allMatch(this::localStep);
                 case ObjectSetExpression set -> objectSet(set);
-                case FunctionCallExpression call -> {
-                    boolean supportedCall = objectCount(call);
-                    populationRequired |= supportedCall;
-                    yield supportedCall;
-                }
+                case FunctionCallExpression call -> function(call);
+                case SymbolValueExpression value -> graph.symbol(value.target()).filter(symbol ->
+                        symbol instanceof ParameterSymbol || symbol instanceof ClassSymbol
+                                || symbol instanceof StructureSymbol).isPresent();
                 case DefinedExpression _ -> true;
                 case UnaryExpression unary -> switch (unary.operator()) {
                     case NOT -> family(expression(unary.operand())) == Family.BOOLEAN;
@@ -137,12 +150,16 @@ final class ExpressionCompiler {
                     && argument.objects() && argument.base().equals(extent) && argument.restrictions().isEmpty();
         }
 
-        private boolean objectCount(FunctionCallExpression call) {
-            return extent.isPresent() && call.children().size() == 1
-                    && expression(call.children().getFirst()) instanceof ObjectSetExpression
-                    && call.targetFunction().flatMap(graph::symbol).orElse(null) instanceof FunctionSymbol function
-                    && function.origin() instanceof Origin.PredefinedOrigin predefined
-                    && predefined.key().equals("INTERLIS.objectCount");
+        private boolean function(FunctionCallExpression call) {
+            if (!(call.targetFunction().flatMap(graph::symbol).orElse(null) instanceof FunctionSymbol function)) {
+                return false;
+            }
+            if (StandardFunctions.bind(function).orElse(null) == StandardFunctions.OBJECT_COUNT) {
+                populationRequired |= call.children().stream().map(this::expression)
+                        .anyMatch(ObjectSetExpression.class::isInstance);
+            }
+            return function.origin() instanceof Origin.PredefinedOrigin
+                    ? StandardFunctions.bind(function).isPresent() : hostFunction.test(function.id());
         }
 
         private TypedExpression expression(ExpressionId id) {
@@ -176,7 +193,8 @@ final class ExpressionCompiler {
                 constants.put(constant.id(), bool(name.equals("#true")));
                 return true;
             }
-            if (family == Family.ENUM && name.startsWith("#")) {
+            if ((family == Family.ENUM || effective(constant.typeId())
+                    .filter(type -> type.kind() == TypeKind.ENUM_ARGUMENT).isPresent()) && name.startsWith("#")) {
                 constants.put(constant.id(), new Known(new TransferValue.Enumeration(
                         List.of(name.substring(1).split("\\.")))));
                 return true;

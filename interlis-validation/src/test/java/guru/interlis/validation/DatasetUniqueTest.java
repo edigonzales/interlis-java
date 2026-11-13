@@ -85,7 +85,7 @@ class DatasetUniqueTest {
     }
 
     @Test
-    void unsupportedWhereIsVisibleInsteadOfFilteringTheCandidates() {
+    void standardFunctionWhereParticipatesInDuplicateDetection() {
         var plan = plan("""
                 CLASS Item =
                   active: BOOLEAN;
@@ -95,17 +95,20 @@ class DatasetUniqueTest {
                 """);
         var report = validate(plan, List.of(), primary("p", basket("data",
                 "<Item i:tid='i1'><code>x</code></Item><Item i:tid='i2'><code>x</code></Item>")));
-        assertEquals(0, report.detectedViolations());
+        assertEquals(1, report.detectedViolations());
         var coverage = report.coverage().datasetRules().getFirst();
-        assertEquals(DatasetRuleCoverage.Outcome.UNSUPPORTED, coverage.outcome());
-        assertEquals(2, coverage.undecidedCandidates());
+        assertEquals(DatasetRuleCoverage.Outcome.VIOLATED, coverage.outcome());
+        assertEquals(0, coverage.undecidedCandidates());
     }
     @Test
     void keepsAnUnsupportedWhereVisibleInAnEmptyBasket() {
         var plan = plan("""
+                CLASS Peer = active: BOOLEAN; END Peer;
+                STRUCTURE Link = peer: REFERENCE TO Peer; END Link;
                 CLASS Item =
+                  link: Link;
                   code: TEXT*20;
-                  UNIQUE (BASKET) WHERE INTERLIS.isOfClass(THIS, >Item): code;
+                  UNIQUE (BASKET) WHERE link->peer->active: code;
                 END Item;
                 """);
         var report = validate(plan, List.of(), primary("p", basket("empty", "")));

@@ -5,6 +5,12 @@ import guru.interlis.model.BinaryOperator;
 import guru.interlis.model.DefinedExpression;
 import guru.interlis.model.ExpressionId;
 import guru.interlis.model.FormattedType;
+import guru.interlis.model.EnumerationType;
+import guru.interlis.model.FunctionSymbol;
+import guru.interlis.model.ParameterSymbol;
+import guru.interlis.model.SymbolRef;
+import guru.interlis.model.SymbolValueExpression;
+import guru.interlis.model.NumericType;
 import guru.interlis.model.UnaryOperator;
 import guru.interlis.model.FunctionCallExpression;
 import guru.interlis.model.ObjectSetExpression;
@@ -20,6 +26,7 @@ import guru.interlis.transfer.TransferValue;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.OptionalInt;
 
@@ -50,7 +57,8 @@ final class ExpressionEvaluator {
         }
         return switch (program.nodes().get(id)) {
             case PathExpression path -> readPath(path, context);
-            case FunctionCallExpression call -> objectCount(call, context);
+            case FunctionCallExpression call -> function(call, context);
+            case SymbolValueExpression symbol -> symbolValue(symbol, context);
             case DefinedExpression defined -> switch (evaluate(defined.operand(), context)) {
                 case Known _, KnownNumber _ -> bool(true);
                 case UndefinedByData _ -> bool(false);
@@ -62,16 +70,67 @@ final class ExpressionEvaluator {
         };
     }
 
-    private EvaluationResult objectCount(FunctionCallExpression call, EvaluationFrame context) {
-        context.visit().run();
-        if (!(program.nodes().get(call.children().getFirst()) instanceof ObjectSetExpression)) {
-            throw new IllegalStateException("Missing compiled object set");
+    private EvaluationResult symbolValue(SymbolValueExpression expression, EvaluationFrame frame) {
+        var plan = frame.plan();
+        var id = new SymbolRef(plan.snapshotId(), plan.canonical(expression.target()));
+        if (plan.symbol(expression.target()).orElseThrow() instanceof ParameterSymbol) {
+            var parameter = plan.bindings().parameters().get(id);
+            return parameter == null ? MissingContext.PARAMETER : value(parameter, false);
         }
-        if (context.objectCount().isEmpty()) {
-            return MissingContext.POPULATION;
+        return new Known(new TransferValue.ClassName(plan.qualifiedName(expression.target())));
+    }
+
+    private EvaluationResult function(FunctionCallExpression call, EvaluationFrame frame) {
+        var plan = frame.plan();
+        var function = (FunctionSymbol) call.targetFunction().flatMap(plan::symbol).orElseThrow();
+        var standard = StandardFunctions.bind(function).orElse(null);
+        if (standard == StandardFunctions.OBJECT_COUNT
+                && program.nodes().get(call.children().getFirst()) instanceof ObjectSetExpression) {
+            frame.visit().run();
+            return frame.objectCount().isEmpty() ? MissingContext.POPULATION
+                    : StandardFunctions.count(frame.objectCount().orElseThrow());
         }
-        long count = context.objectCount().orElseThrow();
-        return new Known(new TransferValue.NumberValue(Long.toString(count), java.math.BigDecimal.valueOf(count)));
+        if (standard == StandardFunctions.CONVERT_UNIT) {
+            var child = call.children().getFirst();
+            var argument = evaluate(child, frame);
+            var amount = number(argument);
+            if (amount == null) {
+                return argument instanceof Known ? Unsupported.INSTANCE : argument;
+            }
+            var source = (NumericType) plan.effectiveType(program.nodes().get(child).typeId()).orElseThrow();
+            var target = (NumericType) plan.effectiveType(call.typeId()).orElseThrow();
+            return UnitConversions.convert(frame, source.range().unit(), target.range().unit(), amount);
+        }
+        if (standard == null && !plan.bindings().functions().containsKey(
+                new SymbolRef(plan.snapshotId(), plan.canonical(function.id())))) {
+            return Unsupported.INSTANCE;
+        }
+        var args = new ArrayList<TransferValue>(call.children().size());
+        for (var child : call.children()) {
+            var result = evaluate(child, frame);
+            if (result instanceof Known known) {
+                args.add(known.value());
+            } else if (result instanceof UndefinedByData && standard == null) {
+                args.add(TransferValue.Undefined.INSTANCE);
+            } else if (result instanceof KnownNumber numeric) {
+                var decimal = numeric.value().decimal();
+                if (decimal.isEmpty()) {
+                    return Unsupported.INSTANCE;
+                }
+                var value = decimal.orElseThrow();
+                args.add(new TransferValue.NumberValue(value.toString(), value));
+            } else {
+                return result;
+            }
+        }
+        if (standard == null) {
+            return FunctionInvoker.invoke(function, args, frame);
+        }
+        if (standard == StandardFunctions.OBJECT_COUNT) {
+            return args.getFirst() instanceof TransferValue.Structured ? StandardFunctions.count(1) : Unsupported.INSTANCE;
+        }
+        var firstType = plan.effectiveType(program.nodes().get(call.children().getFirst()).typeId()).orElseThrow();
+        return standard.evaluate(args, frame, firstType instanceof EnumerationType enumeration ? enumeration : null);
     }
 
     private EvaluationResult binary(BinaryExpression binary, EvaluationFrame context) {

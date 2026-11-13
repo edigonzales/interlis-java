@@ -69,6 +69,19 @@ final class NumericSemantics {
             return new Number(value, value, "");
         }
 
+        Optional<BigDecimal> decimal() {
+            if (!exact()) {
+                return Optional.empty();
+            }
+            try {
+                var value = new BigDecimal(lower.numerator()).divide(new BigDecimal(lower.denominator()));
+                ScalarRules.requireNumericBudget(value);
+                return Optional.of(value);
+            } catch (ArithmeticException nonTerminating) {
+                return Optional.empty();
+            }
+        }
+
         boolean exact() {
             return lower.equals(upper);
         }

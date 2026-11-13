@@ -127,3 +127,18 @@ verwenden. Das optionale Modul einschliesslich `peakDiskBytes()` und der zusätz
 Konstruktor sind additive Erweiterungen von API 0.8. Der Validator prüft den Schema- und
 Laufheader und schliesst alle Schreibvorgänge vor Ausgabe des Berichts ab.
 [H2 MVStore](https://h2database.github.io/html/mvstore.html)
+
+### Laufzeitparameter und Hostfunktionen (P4.6)
+
+Die zusätzliche Überladung von `ValidationPlanner.plan` nimmt immutable
+`RuntimeBindings` entgegen. Schlüssel sind kanonische `SymbolRef`-Werte
+des geprüften Snapshots. Eine Funktionsbindung trägt die gebundene Signatur,
+Implementierungs-ID und Version. Ein neuer Parametersatz benötigt einen
+neuen Plan. Der Host stellt vertrauenswürdige Java-Implementierungen bereit.
+
+Fehlende Parameter ergeben fehlenden Laufzeitkontext. Für nicht registrierte
+Funktionen weist die Planung fehlende Ausdrucksunterstützung aus. Eine
+Providerexception oder ein unzulässiger Rückgabewert ergibt
+`FunctionEvaluationException`. Abbruch und Ressourcenlimits behalten ihren
+eigenen Fehlerzustand. Die neue Überladung und die Bindungstypen ergänzen
+die SDK-API 0.8 additiv.
