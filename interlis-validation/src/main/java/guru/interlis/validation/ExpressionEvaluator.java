@@ -408,7 +408,12 @@ final class ExpressionEvaluator {
                     occurrence.handle(), source.sourceRole(), source.sourceRole()));
             case PathStep.RoleStep roleStep when value instanceof TransferValue.Structured structure -> {
                 var role = (RoleSymbol) frame.plan().symbol(roleStep.target()).orElseThrow();
-                var ref = structure.value(frame.plan().ref(role.id())).filter(TransferValue.Reference.class::isInstance)
+                var roleRef = frame.plan().ref(role.id());
+                var implicit = path.implicitRole(structure, roleRef);
+                if (implicit.isPresent()) {
+                    yield new KnownObjects(List.of(implicit.orElseThrow()));
+                }
+                var ref = structure.value(roleRef).filter(TransferValue.Reference.class::isInstance)
                         .map(TransferValue.Reference.class::cast);
                 if (ref.isEmpty()) {
                     yield new UndefinedByData(false);

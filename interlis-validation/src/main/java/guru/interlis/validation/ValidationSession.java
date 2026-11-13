@@ -439,9 +439,7 @@ public final class ValidationSession implements AutoCloseable {
                                         TransferValue.Structured current, ValuePath path,
                                         boolean incomplete, boolean partial, ObjectBudget budget) {
         for (var declaration : objectPlan.constraints()) {
-            if (declaration.target().isPresent() && declaration.header().owner()
-                    .filter(id -> plan.symbol(id).orElse(null) instanceof TopicSymbol)
-                    .filter(id -> !basket.topicScope().contains(id)).isPresent()) {
+            if (!ruleApplies(plan, declaration, basket.topicScope())) {
                 continue;
             }
             if (declaration.definition() instanceof MandatoryConstraint mandatory) {
@@ -455,6 +453,12 @@ public final class ValidationSession implements AutoCloseable {
                 countConstraint(objectPlan.descriptor().symbol(), Optional.empty(), declaration, status);
             }
         }
+    }
+
+    static boolean ruleApplies(ValidationPlan plan, ConstraintSymbol declaration, Set<SymbolId> activeTopics) {
+        return declaration.target().isEmpty() || declaration.header().owner()
+                .filter(id -> plan.symbol(id).orElse(null) instanceof TopicSymbol)
+                .filter(id -> !activeTopics.contains(id)).isEmpty();
     }
 
     private void checkConstraint(TransferObject root, SymbolRef owner, Optional<SymbolRef> slot,
@@ -473,11 +477,12 @@ public final class ValidationSession implements AutoCloseable {
     }
 
     void recordDeferredDerived(DatasetRuleContext.Occurrence occurrence, ObjectValidationPlan.FieldRule field,
-                               EvaluationResult result, TypeDescriptor effectiveType) {
+                               EvaluationResult result, TypeDescriptor effectiveType,
+                               TransferValue.Structured current, ValuePath path) {
         var attribute = field.slot().attribute();
-        var location = occurrence.location(List.of(new DataLocation.Slot(field.slot().symbol())));
-        var supplied = occurrence.object().data().value(field.slot().symbol());
-        var key = new SlotKey(occurrence.object().type(), field.slot().symbol(), VALUE_RANGE);
+        var location = occurrence.location(ValuePath.steps(path));
+        var supplied = current.value(field.slot().symbol());
+        var key = new SlotKey(current.type(), field.slot().symbol(), VALUE_RANGE);
         switch (result) {
             case EvaluationResult.Known _, EvaluationResult.KnownNumber _, EvaluationResult.UndefinedByData _ -> {
                 checked.merge(key, 1L, Math::addExact);
@@ -509,10 +514,11 @@ public final class ValidationSession implements AutoCloseable {
                 origin.location(List.of()));
     }
 
-    void recordDatasetConstraint(DatasetRuleContext.Occurrence occurrence, ConstraintSymbol declaration,
-                                 EvaluationResult result) {
-        recordConstraint(occurrence.object(), occurrence.object().type(), Optional.empty(), declaration,
-                null, result, occurrence.location(List.of()));
+    void recordDatasetConstraint(DatasetRuleContext.Occurrence occurrence, SymbolRef owner,
+                                 Optional<SymbolRef> slot, ConstraintSymbol declaration,
+                                 ValuePath path, EvaluationResult result) {
+        recordConstraint(occurrence.object(), owner, slot, declaration, null, result,
+                occurrence.location(ValuePath.steps(path)));
     }
 
     private void recordConstraint(TransferObject root, SymbolRef owner, Optional<SymbolRef> slot,
@@ -715,11 +721,7 @@ public final class ValidationSession implements AutoCloseable {
         if (!retainExample()) {
             return;
         }
-        var path = new ArrayList<DataLocation.Step>();
-        for (var step = at; step != null; step = step.parent()) {
-            path.add(step.step());
-        }
-        examples.add(new ValidationDiagnostic(code, Severity.ERROR, location(object, path.reversed()),
+        examples.add(new ValidationDiagnostic(code, Severity.ERROR, location(object, ValuePath.steps(at)),
                 ruleLocation(plan.ref(declaration.id()), declaration.origin()), arguments));
     }
 
@@ -793,7 +795,15 @@ public final class ValidationSession implements AutoCloseable {
         return String.join("/", positions.reversed());
     }
 
-    record ValuePath(ValuePath parent, DataLocation.Step step) { }
+    record ValuePath(ValuePath parent, DataLocation.Step step) {
+        static List<DataLocation.Step> steps(ValuePath at) {
+            var steps = new ArrayList<DataLocation.Step>();
+            for (var path = at; path != null; path = path.parent()) {
+                steps.add(path.step());
+            }
+            return steps.reversed();
+        }
+    }
 
     private record PendingValue(SymbolRef owner, ObjectValidationPlan.FieldRule field, int depth,
                                 Optional<TransferValue> value, TransferValue.Structured container, ValuePath path) { }

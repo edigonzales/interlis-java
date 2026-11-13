@@ -9,6 +9,61 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class DatasetPathTest {
     @Test
+    void checksDeferredConstraintsOnEachStructureOccurrence() {
+        var plan = plan("""
+                CLASS Target = amount: 0..100; END Target;
+                STRUCTURE Pointer =
+                  link: REFERENCE TO Target;
+                  MANDATORY CONSTRAINT link->amount == 5;
+                END Pointer;
+                CLASS Owner = pointers: LIST {0..*} OF Pointer; END Owner;
+                """);
+        var owner = """
+                <Owner i:tid="owner">
+                  <pointers><Pointer><link i:ref="good"/></Pointer></pointers>
+                  <pointers><Pointer><link i:ref="bad"/></Pointer></pointers>
+                </Owner>
+                """;
+        var targets = """
+                <Target i:tid="good"><amount>5</amount></Target>
+                <Target i:tid="bad"><amount>7</amount></Target>
+                """;
+        for (var objects : List.of(owner + targets, targets + owner)) {
+            var report = validate(plan, List.of("Owner", "Target"),
+                    primary("p", basket("basket", objects)));
+            assertEquals(1, report.examples().size(), report.examples().toString());
+            var diagnostic = report.examples().getFirst();
+            assertEquals(ValidationCode.MANDATORY_CONSTRAINT_FALSE, diagnostic.code());
+            assertEquals(new DataLocation.Index(2), diagnostic.data().path().getLast());
+            assertEquals(2, report.coverage().constraints().getFirst().occurrences());
+        }
+    }
+
+    @Test
+    void checksEmbeddedPayloadWithBothAssociationEnds() {
+        var plan = plan("""
+                CLASS Parent = amount: 0..100; END Parent;
+                CLASS Item = amount: 0..100; END Item;
+                ASSOCIATION Note =
+                  parent -- {0..1} Parent;
+                  item -- {0..*} Item;
+                  MANDATORY CONSTRAINT parent->amount == item->amount;
+                END Note;
+                """);
+        var report = validate(plan, List.of("Parent", "Item"), primary("p", basket("basket", """
+                <Item i:tid="item"><amount>7</amount><parent i:ref="target"><Note/></parent></Item>
+                <Parent i:tid="target"><amount>5</amount></Parent>
+                """)));
+        assertEquals(1, report.examples().size(), report.examples().toString());
+        var diagnostic = report.examples().getFirst();
+        assertEquals(ValidationCode.MANDATORY_CONSTRAINT_FALSE, diagnostic.code());
+        assertEquals("item", diagnostic.data().tid().orElseThrow().value());
+        assertEquals(1, diagnostic.data().path().size());
+        assertInstanceOf(DataLocation.Slot.class, diagnostic.data().path().getFirst());
+        assertEquals(1, report.coverage().constraints().getFirst().occurrences());
+    }
+
+    @Test
     void followsTwoCrossBasketReferenceHopsIncludingACycle() {
         var plan = plan("""
                 CLASS Node =

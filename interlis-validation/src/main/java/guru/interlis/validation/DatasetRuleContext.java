@@ -1,7 +1,11 @@
 package guru.interlis.validation;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.CollectionType;
+import guru.interlis.model.DomainConstraint;
 import guru.interlis.model.ExpressionId;
+import guru.interlis.model.MandatoryConstraint;
+import guru.interlis.model.StructureValueType;
 import guru.interlis.model.PathExpression;
 import guru.interlis.model.PathStep;
 import guru.interlis.model.ReferenceType;
@@ -11,6 +15,7 @@ import guru.interlis.model.TypeDescriptor;
 import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferObject;
 import guru.interlis.transfer.TransferValue;
+import guru.interlis.validation.ValidationSession.ValuePath;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -278,31 +283,93 @@ final class DatasetRuleContext {
         if (!plan.hasDeferredPaths()) {
             return;
         }
+        var relations = new RelationProjector(plan);
         forObjects(occurrence -> {
-            if (!occurrence.selected() || occurrence.input().descriptor().role() != InputRole.PRIMARY) {
+            if (!occurrence.selected() || occurrence.input().descriptor().role() != InputRole.PRIMARY
+                    || occurrence.stored().event().operation().orElse(null) == TransferEvent.Operation.DELETE) {
                 return;
             }
-            var object = plan.object(occurrence.object().type());
-            var frame = new EvaluationFrame(plan, occurrence.object().data(), occurrence.partial(), this::visit,
+            var root = occurrence.object().data();
+            var object = plan.object(root.type());
+            var basket = ValidationSession.BasketContext.of(occurrence.basket(), plan);
+            var frame = new EvaluationFrame(plan, root, occurrence.partial(), this::visit,
                     java.util.OptionalLong.empty(), cancellation).withDataset(new DatasetPathContext(this, occurrence));
-            for (var field : object.fields()) {
-                if (!field.derived() || !plan.derivedNeedsDataset(field.slot().symbol().symbol())) {
-                    continue;
-                }
-                var attribute = field.slot().attribute();
-                var result = DerivedValueResolver.resolve(attribute, frame);
-                var type = frame.effectiveType(field.values().getFirst());
-                report.recordDeferredDerived(occurrence, field, result, type);
-            }
-            for (var declaration : object.constraints()) {
-                if (declaration.definition() instanceof guru.interlis.model.MandatoryConstraint mandatory) {
-                    var program = plan.expression(mandatory.condition());
-                    if (plan.requiresDataset(program)) {
-                        report.recordDatasetConstraint(occurrence, declaration, evaluate(program, occurrence));
-                    }
+            checkDeferredObject(report, occurrence, basket, root, object, frame, null);
+            for (var entry : root.values().entrySet()) {
+                visit();
+                if (entry.getValue() instanceof TransferValue.Structured payload) {
+                    relations.embedded(occurrence.handle(), object.descriptor(), entry.getKey(), payload, occurrence.basket())
+                            .ifPresent(link -> checkDeferredObject(report, occurrence, basket, payload,
+                                    plan.object(payload.type()), frame.withDataset(new DatasetPathContext(this, occurrence, payload, link))
+                                            .descend(root, payload),
+                                    new ValuePath(null, new DataLocation.Slot(entry.getKey()))));
                 }
             }
         });
+    }
+
+    private void checkDeferredObject(ValidationSession report, Occurrence occurrence,
+                                     ValidationSession.BasketContext basket, TransferValue.Structured current,
+                                     ObjectValidationPlan object, EvaluationFrame frame, ValuePath path) {
+        for (var declaration : object.constraints()) {
+            visit();
+            if (declaration.definition() instanceof MandatoryConstraint mandatory
+                    && ValidationSession.ruleApplies(plan, declaration, basket.topicScope())) {
+                var program = plan.expression(mandatory.condition());
+                if (plan.requiresDataset(program)) {
+                    report.recordDatasetConstraint(occurrence, current.type(), Optional.empty(), declaration,
+                            path, program.evaluate(frame));
+                }
+            }
+        }
+        for (var field : object.fields()) {
+            visit();
+            var slot = field.slot().symbol();
+            var at = new ValuePath(path, new DataLocation.Slot(slot));
+            if (field.derived() && plan.derivedNeedsDataset(slot.symbol())) {
+                var result = DerivedValueResolver.resolve(field.slot().attribute(), frame);
+                report.recordDeferredDerived(occurrence, field, result, frame.effectiveType(field.values().getFirst()),
+                        current, at);
+            }
+            current.value(slot).ifPresent(value ->
+                    checkDeferredValue(report, occurrence, basket, current, frame, field, 0, value, at));
+        }
+    }
+
+    private void checkDeferredValue(ValidationSession report, Occurrence occurrence,
+                                    ValidationSession.BasketContext basket, TransferValue.Structured owner,
+                                    EvaluationFrame frame, ObjectValidationPlan.FieldRule field,
+                                    int depth, TransferValue value, ValuePath path) {
+        visit();
+        var rules = field.values().get(depth);
+        var domain = rules.genericDomain().map(basket.domains()::get);
+        var effective = domain.flatMap(plan::domainType).orElse(rules.type());
+        if (ValueFamilies.match(effective, value) != ValueFamilies.Match.YES
+                || value instanceof TransferValue.Text text && text.value().isEmpty()) {
+            return;
+        }
+        for (var declaration : rules.constraints(domain)) {
+            visit();
+            if (declaration.definition() instanceof DomainConstraint constraint) {
+                var program = plan.expression(constraint.condition());
+                if (plan.requiresDataset(program)) {
+                    report.recordDatasetConstraint(occurrence, owner.type(), Optional.of(field.slot().symbol()),
+                            declaration, path, program.evaluate(frame.withCurrent(value)));
+                }
+            }
+        }
+        if (rules.type() instanceof CollectionType collection && value instanceof TransferValue.Repeated repeated
+                && collection.collectionKind() == repeated.kind()) {
+            for (int index = 0; index < repeated.values().size(); index++) {
+                checkDeferredValue(report, occurrence, basket, owner, frame, field, depth + 1,
+                        repeated.values().get(index), new ValuePath(path, new DataLocation.Index(index + 1)));
+            }
+        } else if (rules.type() instanceof StructureValueType structure && value instanceof TransferValue.Structured child) {
+            var type = plan.object(child.type());
+            if (type != null && plan.assignable(structure, type)) {
+                checkDeferredObject(report, occurrence, basket, child, type, frame.descend(owner, child), path);
+            }
+        }
     }
 
     List<ObjectHandle> relationTargets(ObjectHandle source, SymbolId sourceRole, SymbolId targetRole) {
