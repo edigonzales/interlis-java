@@ -121,7 +121,7 @@ final class ExpressionEvaluator {
         for (var child : call.children()) {
             var result = evaluate(child, frame);
             if (result instanceof KnownObjects objects && standard == StandardFunctions.OBJECT_COUNT) {
-                return StandardFunctions.count(objects.handles().size());
+                return StandardFunctions.count(objects.size().getAsLong());
             }
             if (result instanceof Known known) {
                 args.add(known.value());
@@ -339,13 +339,14 @@ final class ExpressionEvaluator {
                     current = objects;
                     continue;
                 }
-                if (objects.handles().isEmpty()) {
+                var handles = objects.firstTwo().get();
+                if (handles.isEmpty()) {
                     return new UndefinedByData(false);
                 }
-                if (objects.handles().size() != 1) {
+                if (handles.size() != 1) {
                     return new BlockedByViolation(frame.dataset().orElseThrow().occurrence().location(List.of()));
                 }
-                var destination = frame.dataset().orElseThrow().target(objects.handles().getFirst());
+                var destination = frame.dataset().orElseThrow().target(handles.getFirst());
                 var object = destination.occurrence().object().data();
                 frame = frame.withDataset(destination).withCurrent(object);
                 current = value(object, false);
@@ -402,10 +403,10 @@ final class ExpressionEvaluator {
         var path = frame.dataset().orElseThrow();
         var occurrence = path.occurrence();
         return switch (step) {
-            case PathStep.AssociationAccessStep access -> new KnownObjects(path.dataset().relationTargets(
-                    occurrence.handle(), access.sourceRole(), access.associationObject() ? access.sourceRole() : access.targetRole()));
-            case PathStep.AssociationSourceStep source -> new KnownObjects(path.dataset().relationTargets(
-                    occurrence.handle(), source.sourceRole(), source.sourceRole()));
+            case PathStep.AssociationAccessStep access -> path.dataset().relationTargets(
+                    occurrence, access.association(), access.sourceRole(), access.associationObject() ? access.sourceRole() : access.targetRole());
+            case PathStep.AssociationSourceStep source -> path.dataset().relationTargets(
+                    occurrence, source.association(), source.sourceRole(), source.sourceRole());
             case PathStep.RoleStep roleStep when value instanceof TransferValue.Structured structure -> {
                 var role = (RoleSymbol) frame.plan().symbol(roleStep.target()).orElseThrow();
                 var roleRef = frame.plan().ref(role.id());

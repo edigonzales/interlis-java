@@ -88,9 +88,8 @@ final class RelationCardinalities {
             }
             if (target.isEmpty()) {
                 temporary.put(DatasetValidationSession.metadataKey((byte) 4, source.basket()), new byte[0]);
-                return;
             }
-            endpoints.add(target.orElseThrow());
+            endpoints.add(target.orElse(null));
         }
 
         var association = plan.transferPlan().object(link.association()).orElseThrow();
@@ -100,6 +99,21 @@ final class RelationCardinalities {
             var roles = roles(descriptor);
             if (roles.size() != endpoints.size()) {
                 throw new ValidationStreamException("Association arity changed along its inheritance chain");
+            }
+            if (endpoints.contains(null)) {
+                if (plan.hasRelationPaths()) {
+                    for (int sourceRole = 0; sourceRole < roles.size(); sourceRole++) {
+                        var from = endpoints.get(sourceRole);
+                        if (from == null) {
+                            continue;
+                        }
+                        for (var targetRole : roles) {
+                            spendWork(cancellation);
+                            paths.markUnresolved(from, roles.get(sourceRole).role().id(), targetRole.role().id());
+                        }
+                    }
+                }
+                continue;
             }
             for (int i = 0; i < roles.size(); i++) {
                 var counterparts = new ArrayList<>(endpoints);

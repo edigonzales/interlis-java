@@ -115,6 +115,28 @@ class DatasetPathTest {
                 .allMatch(rule -> rule.status() == ValidationCoverage.ConstraintStatus.CHECKED));
     }
     @Test
+    void doesNotCountPastAnUnresolvedRelationshipEnd() {
+        var plan = plan("""
+                CLASS Parent = END Parent;
+                CLASS Item = END Item;
+                ASSOCIATION Link =
+                  parent -- {0..1} Parent;
+                  items -- {0..*} Item;
+                END Link;
+                CONSTRAINTS OF Item =
+                  MANDATORY CONSTRAINT NOT (DEFINED(parent));
+                END;
+                """);
+        var report = validate(plan, List.of("Parent", "Item"), primary("p", basket("basket", """
+                <Item i:tid="item"><parent i:ref="missing"/></Item>
+                """)));
+        assertTrue(report.examples().stream().noneMatch(d -> d.code() == ValidationCode.MANDATORY_CONSTRAINT_FALSE),
+                report.examples().toString());
+        assertEquals(ValidationCoverage.ConstraintStatus.INCOMPLETE_CONTEXT,
+                report.coverage().constraints().getFirst().status());
+    }
+
+    @Test
     void evaluatesBoundParentAgainstTheSuppliedStructureStack() {
         var schema = ValidationPlannerTest.compile("""
                 INTERLIS 2.4;
@@ -159,6 +181,7 @@ class DatasetPathTest {
                     java.util.Optional.of(java.math.BigInteger.ONE));
             assertEquals(List.of(new ObjectHandle(3), new ObjectHandle(2)),
                     index.targets(from, source, target, () -> { }));
+            assertEquals(2, index.count(from, source, target, () -> { }));
         }
     }
     @Test

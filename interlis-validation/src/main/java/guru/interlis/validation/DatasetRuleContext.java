@@ -372,8 +372,21 @@ final class DatasetRuleContext {
         }
     }
 
-    List<ObjectHandle> relationTargets(ObjectHandle source, SymbolId sourceRole, SymbolId targetRole) {
-        return new RelationPaths(temporary).targets(source, sourceRole, targetRole, this::visit);
+    EvaluationResult relationTargets(Occurrence source, SymbolId association, SymbolId sourceRole, SymbolId targetRole) {
+        var paths = new RelationPaths(temporary);
+        if (paths.hasUnresolved(source.handle(), sourceRole, targetRole)) {
+            return new EvaluationResult.BlockedByViolation(source.location(List.of(new DataLocation.Slot(plan.ref(sourceRole)))));
+        }
+        var type = plan.transferPlan().object(plan.ref(association)).orElseThrow();
+        var external = type.slots().stream().filter(guru.interlis.transfer.RoleSlot.class::isInstance)
+                .map(guru.interlis.transfer.RoleSlot.class::cast).map(guru.interlis.transfer.RoleSlot::role)
+                .anyMatch(role -> role.external() && role.targetRoots().stream().map(plan::ref)
+                        .anyMatch(root -> !populationClosed(root)));
+        if (source.partial() || external) {
+            return EvaluationResult.MissingContext.POPULATION;
+        }
+        return new EvaluationResult.KnownObjects(() -> paths.firstTwo(source.handle(), sourceRole, targetRole, this::visit),
+                () -> paths.count(source.handle(), sourceRole, targetRole, this::visit));
     }
 
     ReferenceResolver.Result resolveRole(Occurrence occurrence, TransferValue.Reference reference,
