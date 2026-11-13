@@ -91,6 +91,46 @@ final class ExpressionEvaluator {
         var plan = frame.plan();
         var function = (FunctionSymbol) call.targetFunction().flatMap(plan::symbol).orElseThrow();
         var standard = StandardFunctions.bind(function).orElse(null);
+        if (standard == StandardFunctions.GEOMETRY_LENGTH || standard == StandardFunctions.GEOMETRY_AREA) {
+            var child = call.children().getFirst();
+            var result = evaluate(child, frame);
+            if (!(result instanceof Known known)) {
+                return result;
+            }
+            var type = plan.effectiveType(program.nodes().get(child).typeId()).orElseThrow();
+            if (!(type instanceof guru.interlis.model.GeometryType geometryType)
+                    || !(known.value() instanceof TransferGeometry geometry)) {
+                return Unsupported.INSTANCE;
+            }
+            return geometryMeasure(standard, geometry, geometryType, function, frame, known, program.nodes().get(child));
+        }
+        if (standard == StandardFunctions.AREAS || standard == StandardFunctions.AREAS_WITHOUT_GAPS) {
+            var engine = plan.bindings().geometry();
+            if (engine.isEmpty()) {
+                return Unsupported.INSTANCE;
+            }
+            if (!(program.nodes().get(call.children().getFirst()) instanceof ObjectSetExpression set)
+                    || !(plan.effectiveType(set.typeId()).orElse(null) instanceof ObjectArgumentType type)) {
+                return MissingContext.POPULATION;
+            }
+            var paths = GeometrySelection.bind(call, plan);
+            if (paths.isEmpty()) {
+                return Unsupported.INSTANCE;
+            }
+            var source = frame.populations().apply(type, set.explicitSelection()).geometries(paths.orElseThrow());
+            if (source.isEmpty()) {
+                return MissingContext.POPULATION;
+            }
+            var purpose = standard == StandardFunctions.AREAS ? GeometryEngine.CoveragePurpose.AREA
+                    : GeometryEngine.CoveragePurpose.AREA_WITHOUT_GAPS;
+            return switch (engine.orElseThrow().checkCoverage(source.orElseThrow(), purpose,
+                    new GeometryEngine.Control(frame.visit(), ignored -> {}))) {
+                case VALID -> bool(true);
+                case INVALID -> bool(false);
+                case MISSING_PARAMETERS -> MissingContext.POPULATION;
+                case UNSUPPORTED, NUMERICALLY_UNDETERMINED -> Unsupported.INSTANCE;
+            };
+        }
         if (standard == StandardFunctions.ELEMENT_COUNT && frame.row().isPresent()
                 && frame.row().orElseThrow().groupSize().isPresent()
                 && program.nodes().get(call.children().getFirst()) instanceof PathExpression path
@@ -150,6 +190,57 @@ final class ExpressionEvaluator {
         }
         var firstType = plan.effectiveType(program.nodes().get(call.children().getFirst()).typeId()).orElseThrow();
         return standard.evaluate(args, frame, firstType instanceof EnumerationType enumeration ? enumeration : null);
+    }
+
+    private EvaluationResult geometryMeasure(StandardFunctions standard, TransferGeometry value,
+                                            guru.interlis.model.GeometryType type, FunctionSymbol function,
+                                            EvaluationFrame frame, Known known, guru.interlis.model.TypedExpression expression) {
+        var engine = frame.plan().bindings().geometry();
+        if (engine.isEmpty() || !GeometryRules.standardForms(GeometryRules.forms(frame.plan(), type))) {
+            return Unsupported.INSTANCE;
+        }
+        var origin = known.referenceOrigin().or(frame::dataset);
+        var location = origin.map(context -> context.occurrence().location(List.of()))
+                .orElseGet(() -> new DataLocation(java.util.Optional.empty(), java.util.Optional.empty(),
+                        java.util.Optional.empty(), java.util.Optional.empty(), java.util.Optional.empty(), List.of()));
+        if (expression instanceof PathExpression path) {
+            var steps = new ArrayList<DataLocation.Step>();
+            for (var step : path.path().steps()) {
+                if (step instanceof PathStep.AttributeStep attribute) {
+                    steps.add(new DataLocation.Slot(frame.plan().ref(attribute.target())));
+                }
+            }
+            location = new DataLocation(location.source(), location.basket(), location.tid(), location.oid(),
+                    location.objectType(), steps);
+        }
+        java.util.function.Function<SymbolId, guru.interlis.model.CoordinateType> coordinate = id -> {
+            var model = frame.plan().symbol(id).orElse(null);
+            var effective = model instanceof guru.interlis.model.DomainSymbol domain && domain.generic()
+                    ? origin.flatMap(context -> java.util.Optional.ofNullable(context.domains().get(id)))
+                            .flatMap(frame.plan()::domainType) : frame.plan().domainType(id);
+            return effective.filter(guru.interlis.model.CoordinateType.class::isInstance)
+                    .map(guru.interlis.model.CoordinateType.class::cast).orElse(null);
+        };
+        var axes = type.vertexDomain().map(coordinate);
+        if (axes.isEmpty()) {
+            return MissingContext.ATTRIBUTE_VALUE;
+        }
+        var input = new GeometryEngine.Input(value, type, location, function.languageVersion(),
+                GeometryParameters.quantum(axes.orElseThrow()), GeometryParameters.overlap(type, coordinate),
+                frame.partial() || origin.map(context -> context.occurrence().partial()).orElse(false),
+                axes.map(guru.interlis.model.CoordinateType::id));
+        var operation = standard == StandardFunctions.GEOMETRY_LENGTH ? GeometryEngine.Measure.LENGTH : GeometryEngine.Measure.AREA;
+        return switch (engine.orElseThrow().measure(operation, input, new GeometryEngine.Control(frame.visit(), ignored -> {}))) {
+            case GeometryEngine.Measurement.Value measured -> {
+                var number = java.math.BigDecimal.valueOf(measured.value());
+                yield new Known(new TransferValue.NumberValue(number.toPlainString(), number));
+            }
+            case GeometryEngine.Measurement.Unavailable unavailable -> switch (unavailable.reason()) {
+                case INVALID -> new BlockedByViolation(location);
+                case MISSING_PARAMETERS -> MissingContext.ATTRIBUTE_VALUE;
+                case VALID, UNSUPPORTED, NUMERICALLY_UNDETERMINED -> Unsupported.INSTANCE;
+            };
+        };
     }
 
     private EvaluationResult binary(BinaryExpression binary, EvaluationFrame context) {

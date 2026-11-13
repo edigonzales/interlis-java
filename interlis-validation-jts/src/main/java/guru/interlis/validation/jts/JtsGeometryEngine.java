@@ -19,7 +19,7 @@ public final class JtsGeometryEngine implements GeometryEngine {
     }
 
     @Override public Measurement measure(Measure operation, Input input, Control control) {
-        return new Measurement.Unavailable(Check.UNSUPPORTED);
+        return CurveChecks.measure(operation, input, control);
     }
 
     @Override public Check checkCoverage(Source source, CoveragePurpose purpose, Control control) {

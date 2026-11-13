@@ -159,6 +159,35 @@ class CurveValidityTest {
         return new Outcome(status, List.copyOf(findings));
     }
 
+    @Test
+    void measuresTrueArcLengthAndAreaAndRejectsThreeDimensionalLength() {
+        var left = point("-4", "0");
+        var right = point("4", "0");
+        var top = new Arc(point("0", "4"), right, Optional.empty());
+        var arc = new Polyline(List.of(new CurvePart(left, List.of(top))));
+        var half = new Surface(new Ring(List.of(new Polyline(List.of(new CurvePart(left,
+                List.of(top, new Straight(left))))))), List.of());
+        var location = new DataLocation(Optional.empty(), Optional.<BasketId>empty(), Optional.empty(),
+                Optional.empty(), Optional.empty(), List.of());
+        var control = new GeometryEngine.Control(() -> {}, ignored -> {});
+        var engine = JtsGeometryEngine.standard();
+        var type = new GeometryType(new TypeId("test"), new Origin.PredefinedOrigin(LanguageVersion.ILI24, "test"),
+                GeometryKind.POLYLINE, List.of(), Optional.empty(), Optional.empty(), false, true, Optional.empty());
+        var length = engine.measure(GeometryEngine.Measure.LENGTH, new GeometryEngine.Input(
+                new MultiPolyline(List.of(arc, arc)), type, location, LanguageVersion.ILI24,
+                Optional.empty(), Optional.empty(), false), control);
+        assertEquals(8 * Math.PI, assertInstanceOf(GeometryEngine.Measurement.Value.class, length).value(), 1e-12);
+        var area = engine.measure(GeometryEngine.Measure.AREA, new GeometryEngine.Input(
+                half, type, location, LanguageVersion.ILI24, Optional.empty(), Optional.empty(), false), control);
+        assertEquals(8 * Math.PI, assertInstanceOf(GeometryEngine.Measurement.Value.class, area).value(), 1e-12);
+        var start = point("0", "0", "0");
+        var end = point("3", "4", "12");
+        var spatial = new Polyline(List.of(new CurvePart(start, List.of(new Straight(end)))));
+        assertEquals(new GeometryEngine.Measurement.Unavailable(UNSUPPORTED),
+                engine.measure(GeometryEngine.Measure.LENGTH, new GeometryEngine.Input(spatial, type, location,
+                        LanguageVersion.ILI24, Optional.empty(), Optional.empty(), false), control));
+    }
+
     private record Outcome(GeometryEngine.Check status, List<GeometryEngine.Finding> findings) {
         List<ValidationCode> codes() {
             return findings.stream().map(GeometryEngine.Finding::code).toList();
