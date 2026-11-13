@@ -492,6 +492,20 @@ public final class ValidationSession implements AutoCloseable {
         }
     }
 
+    void recordUnavailableView(ViewPlan view) {
+        for (var constraint : view.constraints()) {
+            countConstraint(plan.ref(view.view().id()), Optional.empty(), constraint,
+                    ConstraintStatus.UNSUPPORTED_EXPRESSION);
+        }
+    }
+
+    void recordViewUnique(ViewRow row, ConstraintSymbol declaration, ConstraintStatus status, boolean duplicate) {
+        countConstraint(plan.ref(row.view()), Optional.empty(), declaration, status);
+        if (duplicate) {
+            datasetViolation(declaration, DATASET_UNIQUE_DUPLICATE, row.origins().getFirst().location(List.of()), List.of());
+        }
+    }
+
     void recordViewConstraint(ViewRow row, ConstraintSymbol declaration, EvaluationResult result) {
         var origin = row.origins().getFirst();
         recordConstraint(origin.object(), plan.ref(row.view()), Optional.empty(), declaration, null, result,

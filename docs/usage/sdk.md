@@ -108,8 +108,10 @@ Prozentbedingungen vergleichen Zähler und Nenner exakt. Die Argumente eines
 Befunds enthalten erfüllte Instanzen, Gesamtzahl, Richtung und Grenzwert.
 
 API 0.8 erhält zusätzlich `INVALID_FORMATTED_VALUE` für Verletzungen
-gebundener nichttemporaler FORMAT-Layouts und Grenzen. Geprüfte
-Wertebereiche und Schlüssel berücksichtigen formatierte Werte. Bestehende
+gebundener nichttemporaler FORMAT-Layouts und Grenzen sowie
+`DERIVED_VALUE_MISMATCH` bei einem gelieferten Wert, der von seiner
+gebundenen Ableitung abweicht. Geprüfte Wertebereiche und Schlüssel
+berücksichtigen formatierte Werte. Bestehende
 Methodensignaturen und Diagnoseschlüssel sind kompatibel. Erschöpfende
 Switches über `ValidationCode` müssen den zusätzlichen Code berücksichtigen.
 

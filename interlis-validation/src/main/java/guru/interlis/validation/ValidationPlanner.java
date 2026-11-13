@@ -180,8 +180,13 @@ public final class ValidationPlanner {
                     }
                     view.inheritance().forEach(ancestor -> ancestor.selections().forEach(this::datasetExpression));
                     for (var constraint : view.constraints()) {
-                        if (constraint.definition() instanceof MandatoryConstraint mandatory) {
-                            datasetExpression(mandatory.condition());
+                        switch (constraint.definition()) {
+                            case MandatoryConstraint mandatory -> datasetExpression(mandatory.condition());
+                            case UniquenessConstraint unique -> {
+                                unique.keys().forEach(this::datasetExpression);
+                                unique.where().ifPresent(this::datasetExpression);
+                            }
+                            default -> { }
                         }
                     }
                 }

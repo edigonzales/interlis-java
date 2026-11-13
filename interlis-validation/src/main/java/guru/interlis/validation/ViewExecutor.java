@@ -14,6 +14,7 @@ import java.util.function.Consumer;
 final class ViewExecutor {
     private final DatasetRuleContext dataset;
     private int groupRun;
+    private int uniqueRun;
 
     ViewExecutor(DatasetRuleContext dataset) {
         this.dataset = dataset;
@@ -23,6 +24,16 @@ final class ViewExecutor {
         for (var view : dataset.plan.views().values()) {
             if (!dataset.selectsView(view.view())) {
                 continue;
+            }
+            if (view.formation() instanceof ViewSymbol.Inspection inspection && inspection.area()) {
+                report.recordUnavailableView(view);
+                continue;
+            }
+            var uniqueOrdinals = new LinkedHashMap<SymbolId, Integer>();
+            for (var rule : view.constraints()) {
+                if (rule.definition() instanceof guru.interlis.model.UniquenessConstraint unique && !unique.keys().isEmpty()) {
+                    uniqueOrdinals.put(rule.id(), ++uniqueRun);
+                }
             }
             open(view, row -> {
                 var frame = frame(row);
@@ -36,6 +47,11 @@ final class ViewExecutor {
                         var result = dataset.program(mandatory.condition()).map(program -> program.evaluate(frame))
                                 .orElse(EvaluationResult.Unsupported.INSTANCE);
                         report.recordViewConstraint(row, rule, result);
+                    } else if (rule.definition() instanceof guru.interlis.model.UniquenessConstraint unique
+                            && uniqueOrdinals.containsKey(rule.id())) {
+                        checkUnique(row, frame, rule, unique, uniqueOrdinals.get(rule.id()), report);
+                    } else {
+                        report.recordViewConstraint(row, rule, EvaluationResult.Unsupported.INSTANCE);
                     }
                 }
             }, (row, result) -> {
@@ -44,6 +60,52 @@ final class ViewExecutor {
                 }
             }, 0);
         }
+    }
+
+    private void checkUnique(ViewRow row, EvaluationFrame frame, guru.interlis.model.ConstraintSymbol declaration,
+                             guru.interlis.model.UniquenessConstraint unique, int ordinal, ValidationSession report) {
+        var status = ValidationCoverage.ConstraintStatus.CHECKED;
+        if (unique.where().isPresent()) {
+            var condition = dataset.program(unique.where().orElseThrow()).map(program -> program.evaluate(frame))
+                    .orElse(EvaluationResult.Unsupported.INSTANCE);
+            if (!isTrue(condition)) {
+                report.recordViewUnique(row, declaration, unknown(condition) ? gap(condition) : status, false);
+                return;
+            }
+        }
+        var origin = row.origins().getFirst();
+        var semantics = dataset.semantics(origin);
+        var keys = new java.util.ArrayList<CanonicalKey>();
+        for (var expression : unique.keys()) {
+            var program = dataset.program(expression);
+            if (program.isEmpty()) {
+                report.recordViewUnique(row, declaration, ValidationCoverage.ConstraintStatus.UNSUPPORTED_EXPRESSION, false);
+                return;
+            }
+            var value = program.orElseThrow().evaluate(frame);
+            if (value instanceof EvaluationResult.UndefinedByData) {
+                report.recordViewUnique(row, declaration, status, false);
+                return;
+            }
+            var type = dataset.plan.effectiveType(program.orElseThrow().expression().typeId()).orElseThrow();
+            if (!(semantics.key(value, type) instanceof ValueSemantics.Known key)) {
+                report.recordViewUnique(row, declaration, gap(value), false);
+                return;
+            }
+            keys.add(key.key());
+        }
+        long scope = unique.basket() ? origin.stored().basket() : 0;
+        var key = dataset.indexKey((byte) 9, ordinal, scope, semantics.tuple(keys));
+        var duplicate = dataset.temporary.putIfAbsent(key, new byte[0]).isPresent();
+        report.recordViewUnique(row, declaration, status, duplicate);
+    }
+
+    private static ValidationCoverage.ConstraintStatus gap(EvaluationResult result) {
+        return switch (result) {
+            case EvaluationResult.MissingContext _ -> ValidationCoverage.ConstraintStatus.MISSING_RUNTIME_CONTEXT;
+            case EvaluationResult.BlockedByViolation _ -> ValidationCoverage.ConstraintStatus.INCOMPLETE_CONTEXT;
+            default -> ValidationCoverage.ConstraintStatus.UNSUPPORTED_VALUE;
+        };
     }
 
     private void open(ViewPlan view, Consumer<ViewRow> consumer,
