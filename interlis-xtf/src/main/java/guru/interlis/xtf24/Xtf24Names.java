@@ -122,13 +122,27 @@ final class Xtf24Names {
     }
 
     ModelDescriptor model(String name) {
+        return model(name, false);
+    }
+
+    ModelDescriptor model(String name, boolean explicitOriginal) {
+        var translation = translatedModel(name);
+        if (translation.isPresent()) {
+            return translation.orElseThrow();
+        }
         var candidates = plan.models().stream().filter(model -> modelName(model).equals(name)).toList();
         var roots = candidates.stream().filter(model -> plan.rootModels().contains(model.symbol())).toList();
-        if (roots.size() == 1) {
+        if (!explicitOriginal && roots.size() == 1) {
             return roots.getFirst();
         }
         var originals = candidates.stream().filter(model -> model.symbol().equals(model.name().canonical())).toList();
         return unique(new QName("", name), originals);
+    }
+
+    java.util.Optional<ModelDescriptor> translatedModel(String name) {
+        return plan.models().stream()
+                .filter(model -> !model.symbol().equals(model.name().canonical()))
+                .filter(model -> model.name().declared().last().equals(name)).findFirst();
     }
 
     String modelName(ModelDescriptor model) {
@@ -153,8 +167,15 @@ final class Xtf24Names {
     }
 
     TopicDescriptor topic(QName name, Set<SymbolRef> availableModels) {
-        return unique(name, topics.getOrDefault(name, List.of()).stream()
-                .filter(topic -> availableModels.contains(topic.model())).toList());
+        var candidates = topics.getOrDefault(name, List.of()).stream()
+                .filter(topic -> availableModels.contains(topic.model())).toList();
+        if (candidates.size() > 1) {
+            var original = candidates.stream().filter(topic -> topic.symbol().equals(topic.name().canonical())).findFirst();
+            if (original.isPresent()) {
+                return original.orElseThrow();
+            }
+        }
+        return unique(name, candidates);
     }
 
     ObjectDescriptor object(QName name, Set<SymbolRef> availableTypes) {

@@ -108,11 +108,11 @@ public final class Xtf24Reader extends TransferReader {
         attributes(Set.of());
         List<ModelDeclaration> models = new ArrayList<>();
         Set<SymbolRef> declared = new HashSet<>();
-        Set<String> declaredNames = new HashSet<>();
+        Set<String> declaredNames = new java.util.LinkedHashSet<>();
         long remaining = limits.maxObjectCodeUnits();
         while (input.nextTag() == START_ELEMENT) {
             require(START_ELEMENT, ili("model"));
-            if (models.size() == Xtf24Wire.MAX_MODELS) {
+            if (declaredNames.size() == Xtf24Wire.MAX_MODELS) {
                 throw input.error(LIMIT_EXCEEDED, "Too many header models");
             }
             attributes(Set.of());
@@ -122,16 +122,25 @@ public final class Xtf24Reader extends TransferReader {
             if (modelName.length() > limits.maxIdentifierCodeUnits()) {
                 throw input.error(LIMIT_EXCEEDED, "Header model name is too long");
             }
-            var model = names.model(modelName);
-            if (!declared.add(model.symbol()) || !declaredNames.add(modelName)) {
+            if (!declaredNames.add(modelName)) {
                 throw input.error(INVALID_WIRE, "Repeated header model");
             }
-            models.add(new ModelDeclaration(model.symbol(), model.languageVersion(), Optional.empty(), Optional.empty()));
         }
         require(END_ELEMENT, ili("models"));
-        if (models.isEmpty()) {
+        if (declaredNames.isEmpty()) {
             throw input.error(INVALID_WIRE, "XTF header needs at least one model");
         }
+        var explicitTranslations = declaredNames.stream().flatMap(name -> names.translatedModel(name).stream())
+                .map(names::modelName).collect(java.util.stream.Collectors.toSet());
+        for (var name : declaredNames) {
+            var model = names.model(name, explicitTranslations.contains(name));
+            if (!declared.add(model.symbol())) {
+                throw input.error(INVALID_WIRE, "Repeated header model");
+            }
+            models.add(new ModelDeclaration(model.symbol(), model.languageVersion(),
+                    Optional.empty(), Optional.empty()));
+        }
+
         input.nextTag();
         Optional<String> sender = optionalText(ili("sender"));
         Optional<String> comment = optionalText(ili("comment"));

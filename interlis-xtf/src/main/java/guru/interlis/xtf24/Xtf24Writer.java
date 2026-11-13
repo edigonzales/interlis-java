@@ -103,12 +103,17 @@ public final class Xtf24Writer extends TransferWriter {
         var unique = new HashSet<String>();
         long remaining = limits.maxObjectCodeUnits() - start.sender().orElse("").length()
                 - start.comment().orElse("").length();
+        var declared = start.models().stream().map(ModelDeclaration::model).collect(Collectors.toSet());
         for (var declaration : start.models()) {
             if (declaration.modelVersion().isPresent() || declaration.issuer().isPresent()) {
                 throw Xtf24Wire.failure(UNSUPPORTED, "XTF 2.4 has no model version or issuer header field");
             }
             var model = plan.model(declaration.model()).orElseThrow();
-            String name = names.modelName(model);
+            String canonical = names.modelName(model);
+            boolean originalAlsoDeclared = declared.contains(model.name().canonical());
+            String name = !model.symbol().equals(model.name().canonical())
+                    && (originalAlsoDeclared || !names.model(canonical).symbol().equals(model.symbol()))
+                    ? model.name().declared().last() : canonical;
             if (name.length() > limits.maxIdentifierCodeUnits()) {
                 throw Xtf24Wire.failure(LIMIT_EXCEEDED, "Header model name is too long");
             }
