@@ -41,7 +41,15 @@ class DatasetStreamingTest {
         int rows = Integer.getInteger("interlis.validation.streaming.objects", 256);
         assertTrue(rows > FAN_OUT_LIMIT + 1 && rows <= 250_000);
         var options = new MvStoreOptions(4_000_000, 2L << 30, 2L << 30, 64, 1_024);
-        var fixture = fixture(MODEL.replace("{0..*} Item", "{0.." + FAN_OUT_LIMIT + "} Item"));
+        var fixture = fixture(MODEL.replace("{0..*} Item", "{0.." + FAN_OUT_LIMIT + "} Item")
+                .replace("  END Data;", """
+                          VIEW Selected PROJECTION OF item~Item;
+                            WHERE item->code == "duplicate";
+                            =
+                              MANDATORY CONSTRAINT INTERLIS.len(item->code) == 9;
+                          END Selected;
+                        END Data;
+                        """));
         try (var storage = MvStoreValidationStorage.open(root, options);
              var run = DatasetValidator.session(fixture.plan(), DatasetOptions.defaults(fixture.plan()), storage);
              var input = generated(fixture, rows)) {
@@ -59,6 +67,9 @@ class DatasetStreamingTest {
             assertTrue(report.examples().subList(2, 4).stream().allMatch(
                     finding -> finding.arguments().getLast().equals("2")));
             assertEquals(4, report.detectedViolations());
+            var viewRows = report.coverage().constraints().stream()
+                    .mapToLong(guru.interlis.validation.ValidationCoverage.ConstraintCount::occurrences).sum();
+            assertEquals(2, viewRows);
             long logicalBytes = 0;
             for (var area : StorageArea.values()) {
                 long bytes = 0;
