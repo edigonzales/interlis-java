@@ -8,10 +8,14 @@ import java.util.Objects;
  * Immutable and null-free; the type and range belong to the containing snapshot.
  * An erroneous selection has ERROR state and an ErrorType, never an untyped ALL. */
 public record ObjectSetExpression(ExpressionId id, TypeId typeId, ExpressionTypeState typeState,
-        SourceRange range) implements TypedExpression {
+        SourceRange range, boolean explicitSelection) implements TypedExpression {
     public ObjectSetExpression {
         Objects.requireNonNull(id, "id"); Objects.requireNonNull(typeId, "typeId");
         Objects.requireNonNull(typeState, "typeState"); Objects.requireNonNull(range, "range");
+    }
+    /** Creates a context-bound ALL expression. */
+    public ObjectSetExpression(ExpressionId id, TypeId typeId, ExpressionTypeState typeState, SourceRange range) {
+        this(id, typeId, typeState, range, false);
     }
     @Override public List<ExpressionId> children() { return List.of(); }
 }

@@ -149,7 +149,7 @@ final class ExpressionCompiler {
 
         private boolean objectSet(ObjectSetExpression set) {
             return extent.isPresent() && effective(set.typeId()).orElse(null) instanceof ObjectArgumentType argument
-                    && argument.objects() && argument.base().equals(extent) && argument.restrictions().isEmpty();
+                    && argument.objects();
         }
 
         private boolean function(FunctionCallExpression call) {

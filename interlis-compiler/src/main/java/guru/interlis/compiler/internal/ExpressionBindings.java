@@ -184,7 +184,7 @@ final class ExpressionBindings {
         boolean error = typeBindings.effectiveDescriptor(type) instanceof ErrorType;
         state.defineExpression(new guru.interlis.model.ObjectSetExpression(id, type,
                 error ? guru.interlis.model.ExpressionTypeState.ERROR : guru.interlis.model.ExpressionTypeState.RESOLVED,
-                syntax.range()));
+                syntax.range(), syntax.selection().isPresent()));
         return new ExpressionResult(id, type, error);
     }
 

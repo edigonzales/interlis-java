@@ -88,10 +88,11 @@ final class ExpressionEvaluator {
         var function = (FunctionSymbol) call.targetFunction().flatMap(plan::symbol).orElseThrow();
         var standard = StandardFunctions.bind(function).orElse(null);
         if (standard == StandardFunctions.OBJECT_COUNT
-                && program.nodes().get(call.children().getFirst()) instanceof ObjectSetExpression) {
+                && program.nodes().get(call.children().getFirst()) instanceof ObjectSetExpression set) {
             frame.visit().run();
-            return frame.objectCount().isEmpty() ? MissingContext.POPULATION
-                    : StandardFunctions.count(frame.objectCount().orElseThrow());
+            var type = (ObjectArgumentType) plan.effectiveType(set.typeId()).orElseThrow();
+            var count = frame.populations().apply(type, set.explicitSelection()).count();
+            return count.isEmpty() ? MissingContext.POPULATION : StandardFunctions.count(count.orElseThrow());
         }
         if (standard == StandardFunctions.CONVERT_UNIT) {
             var child = call.children().getFirst();

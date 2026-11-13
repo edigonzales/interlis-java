@@ -574,11 +574,16 @@ und zu weit gefasste Zieltypen. Einzelobjekte sind auf Identität vergleichbar
 (`==`, `!=`, `<>`), nicht auf Ordnung. Objektmengen sind keine skalaren
 Vergleichswerte. Öffentliche Abfragen und Ausdrucksprüfung müssen übereinstimmen.
 
-`ObjectSetExpression(id, typeId, typeState, range)` repräsentiert `ALL` mit einer
+`ObjectSetExpression(id, typeId, typeState, range, explicitSelection)` repräsentiert `ALL` mit einer
 gebundenen Objektmengentypreferenz. Ohne explizite Auswahl ist die Basis die
 Kontextklasse; sonst die angegebene Basis samt Einschränkungen. Die immutable,
 nullfreie Variante besitzt keine Ausdruckskinder. Fehlerhafte Auswahl erhält
 `ERROR` und einen `ErrorType`, niemals ein untypisiertes erfolgreiches `ALL`.
+`explicitSelection` unterscheidet `ALL(Class)` vom kontextgebundenen
+`ALL`, selbst wenn beide dieselbe gebundene Klasse haben. In einem SET
+bezeichnet nur das kontextgebundene `ALL` die durch `WHERE` gefilterte
+Population. Der Vier-Argument-Konstruktor bleibt für kontextgebundenes
+`ALL` verfügbar. Das zusätzliche Merkmal erweitert die SDK-API 0.8.
 
 | Alias/Generics | `AliasType`, `GenericType`, `DeferredTypeBinding`; deklarierte und effektive Sicht bleiben unterscheidbar. |
 | Analysefehler | `ErrorType` mit Diagnoseursache, `PendingType` mit nicht analysiertem Zustand; niemals produktive fachliche Datentypen. |

@@ -224,7 +224,7 @@ final class SegmentContextualizer {
             case FunctionCallExpression x -> new FunctionCallExpression(id, type, state, range, children, x.functionName(), x.targetFunction().map(this::symbol), x.argumentPaths().entrySet().stream().collect(java.util.stream.Collectors.toMap(java.util.Map.Entry::getKey, e2->new FunctionCallExpression.ArgumentPath(e2.getValue().steps(),e2.getValue().rootArgument(),type(e2.getValue().expectedType()),e2.getValue().binding().map(this::expression)))));
             case SymbolValueExpression x -> new SymbolValueExpression(id, type, state, range, symbol(x.target()));
             case ConstantExpression x -> new ConstantExpression(id, type, state, range, children, x.constantName());
-            case ObjectSetExpression x -> new ObjectSetExpression(id, type, state, range);
+            case ObjectSetExpression x -> new ObjectSetExpression(id, type, state, range, x.explicitSelection());
             case InspectionExpression x -> new InspectionExpression(id, type, state, range, x.view().map(this::symbol), symbol(x.source()), symbol(x.element()), expression(x.path()), x.restriction().map(this::expression), x.area());
             case UndefinedExpression x -> new UndefinedExpression(id, type, state, range, children);
             case ErrorExpression x -> new ErrorExpression(id, type, state, range, children, x.causes());

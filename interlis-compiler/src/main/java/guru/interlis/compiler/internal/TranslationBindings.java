@@ -856,7 +856,8 @@ final class TranslationBindings {
                 return sameMappedType(e.id(),f.id(),map) && enumValueIndex(e,x.constantName().substring(1))==enumValueIndex(f,y.constantName().substring(1));
             return x.constantName().equals(y.constantName()) && sameNumericContext(x.typeId(),y.typeId(),map);
         }
-        if(a instanceof guru.interlis.model.ObjectSetExpression)return sameMappedType(a.typeId(),b.typeId(),map);
+        if (a instanceof guru.interlis.model.ObjectSetExpression x && b instanceof guru.interlis.model.ObjectSetExpression y)
+            return x.explicitSelection() == y.explicitSelection() && sameMappedType(a.typeId(), b.typeId(), map);
         if(a instanceof guru.interlis.model.InspectionExpression x && b instanceof guru.interlis.model.InspectionExpression y) {
             if(x.area()!=y.area() || !sameMapped(x.view(),y.view(),map) || !map.getOrDefault(x.source(),x.source()).equals(y.source())
                     || x.restriction().isPresent()!=y.restriction().isPresent())return false;

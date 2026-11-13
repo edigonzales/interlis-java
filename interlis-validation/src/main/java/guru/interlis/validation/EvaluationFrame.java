@@ -13,10 +13,11 @@ import java.util.Set;
 
 record EvaluationFrame(ValidationPlan plan, TransferValue current, boolean partial, Runnable visit,
                OptionalLong objectCount, CancellationToken cancellation, Set<Derivation> activeDerivations,
-                       Optional<DatasetPathContext> dataset, List<TransferValue.Structured> parents) {
+                       Optional<DatasetPathContext> dataset, List<TransferValue.Structured> parents,
+                       java.util.function.BiFunction<guru.interlis.model.ObjectArgumentType, Boolean, RuntimeObjectSet> populations) {
     EvaluationFrame(ValidationPlan plan, TransferValue current, boolean partial, Runnable visit,
                     OptionalLong count, CancellationToken cancellation) {
-        this(plan, current, partial, visit, count, cancellation, Set.of(), Optional.empty(), List.of());
+        this(plan, current, partial, visit, count, cancellation, Set.of(), Optional.empty(), List.of(), (type, explicit) -> () -> count);
     }
 
     guru.interlis.model.TypeDescriptor effectiveType(ObjectValidationPlan.ValueRules rules) {
@@ -25,14 +26,14 @@ record EvaluationFrame(ValidationPlan plan, TransferValue current, boolean parti
     }
 
     EvaluationFrame withCurrent(TransferValue value) {
-        return new EvaluationFrame(plan, value, partial, visit, objectCount, cancellation, activeDerivations, dataset, parents);
+        return new EvaluationFrame(plan, value, partial, visit, objectCount, cancellation, activeDerivations, dataset, parents, populations);
     }
 
     EvaluationFrame descend(TransferValue.Structured parent, TransferValue value) {
         var ancestry = new ArrayList<>(parents);
         ancestry.add(parent);
         return new EvaluationFrame(plan, value, partial, visit, objectCount, cancellation,
-                activeDerivations, dataset, ancestry);
+                activeDerivations, dataset, ancestry, populations);
     }
 
     EvaluationFrame ascend() {
@@ -40,12 +41,17 @@ record EvaluationFrame(ValidationPlan plan, TransferValue current, boolean parti
             return this;
         }
         return new EvaluationFrame(plan, parents.getLast(), partial, visit, objectCount, cancellation,
-                activeDerivations, dataset, parents.subList(0, parents.size() - 1));
+                activeDerivations, dataset, parents.subList(0, parents.size() - 1), populations);
     }
 
     EvaluationFrame withDataset(DatasetPathContext context) {
         return new EvaluationFrame(plan, current, partial, visit, objectCount, cancellation,
-                activeDerivations, Optional.of(context), List.of());
+                activeDerivations, Optional.of(context), List.of(), populations);
+    }
+
+    EvaluationFrame withPopulations(java.util.function.BiFunction<guru.interlis.model.ObjectArgumentType, Boolean, RuntimeObjectSet> sets) {
+        return new EvaluationFrame(plan, current, partial, visit, objectCount, cancellation,
+                activeDerivations, dataset, parents, sets);
     }
 
     boolean evaluating(SymbolId attribute) {
@@ -59,7 +65,7 @@ record EvaluationFrame(ValidationPlan plan, TransferValue current, boolean parti
     EvaluationFrame enterDerivation(SymbolId id) {
         var entered = new HashSet<>(activeDerivations);
         entered.add(new Derivation(id, dataset.map(path -> path.occurrence().handle()), current));
-        return new EvaluationFrame(plan, current, partial, visit, objectCount, cancellation, entered, dataset, parents);
+        return new EvaluationFrame(plan, current, partial, visit, objectCount, cancellation, entered, dataset, parents, populations);
     }
 
     EvaluationFrame {

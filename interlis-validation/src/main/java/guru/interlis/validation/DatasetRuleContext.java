@@ -177,6 +177,30 @@ final class DatasetRuleContext {
         return false;
     }
 
+    java.util.OptionalLong countPopulation(long basketOrdinal, guru.interlis.model.ObjectArgumentType type) {
+        var roots = type.restrictions().isEmpty()
+                ? type.base().map(plan::ref).stream().toList() : type.restrictions().stream().map(plan::ref).toList();
+        var basket = basketOrdinal == 0 ? Optional.<StoredValueCodec.StoredBasket>empty()
+                : metadata.get(DatasetValidationSession.metadataKey((byte) 3, basketOrdinal)).map(codec::decodeBasket);
+        if (basket.isEmpty() || basket.orElseThrow().event().consistency() != TransferEvent.Consistency.COMPLETE) {
+            var expected = basket.map(entry -> Set.of(input(entry.input()).descriptor().id())).orElse(primaryInputs);
+            var basketId = basket.map(entry -> entry.event().id());
+            if (roots.isEmpty() || roots.stream().anyMatch(root ->
+                    !claimsComplete(root, ExtentAspect.OBJECT_MEMBERSHIP, expected, basketId))) {
+                return java.util.OptionalLong.empty();
+            }
+        }
+        var counts = new DatasetScopeCounts();
+        forObjects(occurrence -> {
+            if (occurrence.input().descriptor().role() == InputRole.PRIMARY && occurrence.selected()
+                    && (basketOrdinal == 0 || occurrence.stored().basket() == basketOrdinal)
+                    && (roots.isEmpty() || roots.stream().anyMatch(root -> target(root, occurrence)))) {
+                counts.candidates++;
+            }
+        });
+        return java.util.OptionalLong.of(counts.candidates);
+    }
+
     boolean candidate(DatasetRulePlan rule, Occurrence occurrence) {
         if (!rule.candidateTypes().contains(occurrence.object().type())) {
             return false;
