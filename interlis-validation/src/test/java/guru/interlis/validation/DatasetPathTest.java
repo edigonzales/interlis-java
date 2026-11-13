@@ -179,8 +179,7 @@ class DatasetPathTest {
                   END Data;
                 END Checks.
                 """);
-        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(schema,
-                ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
+        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
         var declaration = schema.semanticGraph().symbols().stream()
                 .filter(guru.interlis.model.AttributeSymbol.class::isInstance)
                 .map(guru.interlis.model.AttributeSymbol.class::cast)
@@ -228,8 +227,7 @@ class DatasetPathTest {
                   END Data;
                 END Checks.
                 """);
-        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(schema,
-                ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
+        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
         var root = type(plan, "Node");
         var topic = plan.transferPlan().object(root).orElseThrow().topic().orElseThrow();
         var generic = schema.queries().findQualifiedName(guru.interlis.model.QualifiedName.of("Checks", "G")).getFirst();

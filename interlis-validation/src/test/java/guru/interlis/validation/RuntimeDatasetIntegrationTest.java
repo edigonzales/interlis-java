@@ -31,8 +31,7 @@ class RuntimeDatasetIntegrationTest {
                   END Data;
                 END Checks.
                 """.formatted(version));
-        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(schema,
-                ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
+        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
         var good = primary("first", xml(version, "first-basket", "Item", "ok", "good"));
         var bad = primary("second", xml(version, "second-basket", "Item", "bad", "wrong"));
         var witness = reference("reference", xml(version, "reference-basket", "Lookup", "witness", "good"));

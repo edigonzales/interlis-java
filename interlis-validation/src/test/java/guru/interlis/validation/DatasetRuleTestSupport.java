@@ -40,7 +40,7 @@ final class DatasetRuleTestSupport {
                 END Checks.
                 """.formatted(version, declarations));
         return assertInstanceOf(ValidationPlanningResult.Ready.class,
-                ValidationPlanner.plan(schema, transfer(schema), ValidationProfile.DATASET)).plan();
+                ValidationPlanner.plan(transfer(schema), ValidationProfile.DATASET)).plan();
     }
 
     static SymbolRef type(ValidationPlan plan, String name) {

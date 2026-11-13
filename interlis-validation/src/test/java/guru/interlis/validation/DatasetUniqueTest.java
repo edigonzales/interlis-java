@@ -160,7 +160,7 @@ class DatasetUniqueTest {
                 """, new SourceRevision(1), "Checks", "German");
         var transfer = ValidationPlannerTest.transfer(schema);
         var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
-                ValidationPlanner.plan(schema, transfer, ValidationProfile.DATASET)).plan();
+                ValidationPlanner.plan(transfer, ValidationProfile.DATASET)).plan();
         var token = CancellationToken.none();
         try (var store = new InMemoryValidationStorage(100, 100_000);
              var run = DatasetValidator.session(plan, DatasetOptions.defaults(plan), store);

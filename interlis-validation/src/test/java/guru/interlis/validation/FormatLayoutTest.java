@@ -34,7 +34,7 @@ class FormatLayoutTest {
                 END Checks.
                 """.formatted(version));
         var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
-                ValidationPlanner.plan(schema, ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
+                ValidationPlanner.plan(ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
         var good = validate(plan, List.of("Item"), primary("p", basket(version, "pass", "10-2#1.00")));
         assertTrue(good.examples().isEmpty(), good.examples().toString());
         assertTrue(good.coverage().unsupportedValues().isEmpty());

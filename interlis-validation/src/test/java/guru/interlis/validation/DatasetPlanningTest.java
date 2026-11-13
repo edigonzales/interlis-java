@@ -29,7 +29,7 @@ class DatasetPlanningTest {
         var transfer = transfer(schema);
         var local = ready(schema, transfer);
         var dataset = assertInstanceOf(ValidationPlanningResult.Ready.class,
-                ValidationPlanner.plan(schema, transfer, ValidationProfile.DATASET)).plan();
+                ValidationPlanner.plan(transfer, ValidationProfile.DATASET)).plan();
 
         var query = schema.queries();
         var base = query.findQualifiedName(QualifiedName.of("Checks", "Data", "Base")).getFirst();
@@ -63,7 +63,7 @@ class DatasetPlanningTest {
                 END Checks.
                 """);
         var dataset = assertInstanceOf(ValidationPlanningResult.Ready.class,
-                ValidationPlanner.plan(schema, transfer(schema), ValidationProfile.DATASET)).plan();
+                ValidationPlanner.plan(transfer(schema), ValidationProfile.DATASET)).plan();
         var item = schema.queries().findQualifiedName(QualifiedName.of("Checks", "Data", "Item")).getFirst();
         var rule = dataset.datasetRules().getFirst();
         assertEquals(item, rule.key().applicationRoot());

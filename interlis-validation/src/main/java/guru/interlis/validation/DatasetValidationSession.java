@@ -13,10 +13,8 @@ import guru.interlis.transfer.TransferValue;
 import guru.interlis.transfer.TransferIdentity.BasketId;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,7 +33,6 @@ public final class DatasetValidationSession implements AutoCloseable {
     private final DatasetObjectStore objectStore;
     private final IdentityIndex identities;
     private final ValidationSession local;
-    private final byte[] runHeader;
     private final Map<InputId, Long> inputs = new HashMap<>();
     private State state = State.OPEN;
     private long baskets;
@@ -51,11 +48,7 @@ public final class DatasetValidationSession implements AutoCloseable {
         if (storage.usage().entries() != 0) {
             throw new IllegalArgumentException("Dataset storage must be empty");
         }
-        var fingerprint = plan.schemaFingerprint();
-        var header = "validation-store-v1\n" + plan.snapshotId().value() + "\n"
-                + fingerprint.algorithm() + "\n" + fingerprint.value() + "\n" + java.util.UUID.randomUUID();
-        this.runHeader = header.getBytes(StandardCharsets.UTF_8);
-        if (storage.table(StorageArea.METADATA).putIfAbsent(new byte[]{0}, runHeader).isPresent()) {
+        if (storage.table(StorageArea.METADATA).putIfAbsent(new byte[]{0}, new byte[0]).isPresent()) {
             throw new IllegalArgumentException("Dataset storage is already in use");
         }
         this.objectStore = new DatasetObjectStore(storage, codec);
@@ -71,10 +64,8 @@ public final class DatasetValidationSession implements AutoCloseable {
             Objects.requireNonNull(input, "input");
             Objects.requireNonNull(reader, "reader");
             Objects.requireNonNull(cancellation, "cancellation").throwIfCancellationRequested();
-            requireStorageHeader();
             var readerPlan = reader.transferPlan();
-            if (!plan.snapshotId().equals(readerPlan.snapshotId())
-                    || !plan.schemaFingerprint().equals(readerPlan.schemaFingerprint())) {
+            if (plan.transferPlan().schema() != readerPlan.schema()) {
                 throw new ValidationStreamException("Reader belongs to another schema revision");
             }
             if (inputs.containsKey(input.id())) {
@@ -248,7 +239,6 @@ public final class DatasetValidationSession implements AutoCloseable {
         state = State.SEALED;
         try {
             Objects.requireNonNull(cancellation, "cancellation").throwIfCancellationRequested();
-            requireStorageHeader();
             if (!primary) {
                 throw new ValidationStreamException("Dataset requires a primary input");
             }
@@ -274,7 +264,6 @@ public final class DatasetValidationSession implements AutoCloseable {
             var coverage = checkDatasetRules(context);
             cancellation.throwIfCancellationRequested();
             storage.checkpoint();
-            requireStorageHeader();
             var report = local.finishDataset(coverage);
             cancellation.throwIfCancellationRequested();
             inputs.clear();
@@ -324,13 +313,6 @@ public final class DatasetValidationSession implements AutoCloseable {
             }
         }
         return plan.datasetRules().stream().flatMap(rule -> coverage.getOrDefault(rule.key(), List.of()).stream()).toList();
-    }
-
-    private void requireStorageHeader() {
-        var header = storage.table(StorageArea.METADATA).get(new byte[]{0});
-        if (header.isEmpty() || !Arrays.equals(runHeader, header.orElseThrow())) {
-            throw new ValidationStreamException("Dataset storage belongs to another run or schema revision");
-        }
     }
 
     private void requireTopic(SymbolRef topic) {

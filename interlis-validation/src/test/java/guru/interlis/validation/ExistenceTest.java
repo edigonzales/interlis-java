@@ -273,7 +273,7 @@ class ExistenceTest {
                 """, new SourceRevision(1), "Checks", "German");
         var transfer = ValidationPlannerTest.transfer(schema);
         var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
-                ValidationPlanner.plan(schema, transfer, ValidationProfile.DATASET)).plan();
+                ValidationPlanner.plan(transfer, ValidationProfile.DATASET)).plan();
         var originalInput = new InputId("reference");
         var translatedInput = new InputId("primary");
         var catalogue = schema.queries().findQualifiedName(QualifiedName.of("Checks", "Data", "Catalogue")).getFirst();

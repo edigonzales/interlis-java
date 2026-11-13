@@ -59,7 +59,7 @@ class ReferenceResolutionTest {
                 """);
         var transfer = transfer(schema);
         var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
-                ValidationPlanner.plan(schema, transfer, ValidationProfile.DATASET)).plan();
+                ValidationPlanner.plan(transfer, ValidationProfile.DATASET)).plan();
         var oid = "71c7dbf0-3dbc-4b5c-aa11-888cbfb13676";
         var source = basket("subject", SOURCE.replace("target", oid));
         var target = basket("reference", TARGET.replace("target", oid));
@@ -106,7 +106,7 @@ class ReferenceResolutionTest {
                 """.formatted(external ? "(EXTERNAL) " : ""));
         var transfer = transfer(schema);
         var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
-                ValidationPlanner.plan(schema, transfer, ValidationProfile.DATASET)).plan();
+                ValidationPlanner.plan(transfer, ValidationProfile.DATASET)).plan();
         var input = new InputId("primary");
         var options = DatasetOptions.defaults(plan);
         if (closed) {

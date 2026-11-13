@@ -114,7 +114,7 @@ class DatasetLifecycleTest {
     @Test
     void rejectsForeignEmptyHeadersAndCancellationAtSeal() {
         var f = new Fixture();
-        var foreign = new Fixture(MODEL.replace("TEXT*3", "TEXT*4"));
+        var foreign = new Fixture(MODEL);
         try (var store = new InMemoryValidationStorage(100, 100_000);
              var run = DatasetValidator.session(f.plan, DatasetOptions.defaults(f.plan), store);
              var empty = foreign.reader(false, false, null)) {
@@ -176,7 +176,7 @@ class DatasetLifecycleTest {
             schema = compile(model);
             transfer = transfer(schema);
             plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
-                    ValidationPlanner.plan(schema, transfer, ValidationProfile.DATASET)).plan();
+                    ValidationPlanner.plan(transfer, ValidationProfile.DATASET)).plan();
         }
 
         Reader reader(boolean object, boolean invalid, RuntimeException failure) {

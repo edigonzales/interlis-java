@@ -31,7 +31,7 @@ class JoinViewTest {
                 END Checks.
                 """);
         var plan = assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(
-                schema, ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
+                ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
         var first = """
                 <Data i:bid="first" i:domains="Checks.G=Checks.A">
                   <Item i:tid="one"><number>1</number><point><g:coord><g:c1>5.0</g:c1><g:c2>5.0</g:c2></g:coord></point>

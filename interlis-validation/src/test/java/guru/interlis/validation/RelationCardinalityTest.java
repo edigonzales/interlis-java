@@ -148,7 +148,7 @@ class RelationCardinalityTest {
                 """.formatted(declarations));
         var transfer = transfer(schema);
         var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
-                ValidationPlanner.plan(schema, transfer, ValidationProfile.DATASET)).plan();
+                ValidationPlanner.plan(transfer, ValidationProfile.DATASET)).plan();
         var xml = """
                 <i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
                             xmlns="http://www.interlis.ch/xtf/2.4/Checks">

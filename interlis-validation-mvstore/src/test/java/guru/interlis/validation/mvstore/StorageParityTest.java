@@ -140,7 +140,7 @@ class StorageParityTest {
         var schema = assertInstanceOf(CompilationOutcome.Succeeded.class, outcome, outcome.toString()).schema();
         var transfer = assertInstanceOf(TransferPlanningResult.Ready.class, TransferPlanner.plan(schema)).plan();
         var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
-                ValidationPlanner.plan(schema, transfer, ValidationProfile.DATASET)).plan();
+                ValidationPlanner.plan(transfer, ValidationProfile.DATASET)).plan();
         return new Fixture(plan, transfer);
     }
 

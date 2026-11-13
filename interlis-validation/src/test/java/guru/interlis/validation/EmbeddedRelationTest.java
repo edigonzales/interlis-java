@@ -32,7 +32,7 @@ class EmbeddedRelationTest {
                     """.formatted(embedded ? "1" : "*"));
             var transfer = transfer(schema);
             var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
-                    ValidationPlanner.plan(schema, transfer, ValidationProfile.DATASET)).plan();
+                    ValidationPlanner.plan(transfer, ValidationProfile.DATASET)).plan();
             var payload = embedded
                     ? """
                       <Item i:tid="i1"><parent i:ref="p1"><Link><note>over</note></Link></parent></Item>

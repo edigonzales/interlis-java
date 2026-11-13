@@ -16,7 +16,6 @@ import guru.interlis.model.CompiledSchema;
 import guru.interlis.model.DomainConstraint;
 import guru.interlis.model.MandatoryConstraint;
 import guru.interlis.model.QualifiedName;
-import guru.interlis.model.SchemaFingerprint;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
@@ -28,7 +27,6 @@ import guru.interlis.transfer.TransferPlanner;
 import guru.interlis.transfer.TransferPlanningResult;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -93,28 +91,6 @@ class ValidationPlannerTest {
     }
 
     @Test
-    void rejectsTransferPlanFromAnotherSnapshot() {
-        var schema = compile(MODEL);
-        var foreign = compile(MODEL, new SourceRevision(2), "Checks");
-        var rejected = assertInstanceOf(ValidationPlanningResult.Rejected.class,
-                ValidationPlanner.plan(schema, transfer(foreign)));
-        assertEquals(PlanningProblem.Code.SNAPSHOT_MISMATCH, rejected.problems().getFirst().code());
-    }
-
-    @Test
-    void rejectsDifferentFingerprintEvenWithMatchingSnapshot() {
-        var schema = compile(MODEL);
-        var altered = (CompiledSchema) Proxy.newProxyInstance(CompiledSchema.class.getClassLoader(),
-                new Class<?>[]{CompiledSchema.class}, (proxy, method, args) ->
-                        method.getName().equals("fingerprint")
-                                ? new SchemaFingerprint("test", "another-schema")
-                                : method.invoke(schema, args));
-        var rejected = assertInstanceOf(ValidationPlanningResult.Rejected.class,
-                ValidationPlanner.plan(altered, transfer(schema)));
-        assertEquals(PlanningProblem.Code.SCHEMA_FINGERPRINT_MISMATCH, rejected.problems().getFirst().code());
-    }
-
-    @Test
     void keepsTranslatedRuleIdentitiesSeparate() {
         var schema = compile("""
                 INTERLIS 2.4;
@@ -141,7 +117,7 @@ class ValidationPlannerTest {
     }
 
     static ValidationPlan ready(CompiledSchema schema, TransferPlan transfer) {
-        return assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(schema, transfer)).plan();
+        return assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(transfer)).plan();
     }
 
     static TransferPlan transfer(CompiledSchema schema) {

@@ -41,7 +41,7 @@ class ValidationModuleContractTest {
                         if (ValidationOptions.defaults().maxDiagnosticExamples() != 200) {
                             throw new AssertionError("Unexpected validation defaults");
                         }
-                        ValidationPlanner.class.getMethod("plan", CompiledSchema.class, TransferPlan.class);
+                        ValidationPlanner.class.getMethod("plan", TransferPlan.class);
                         for (String module : new String[]{"guru.interlis.compiler", "guru.interlis.xtf23", "guru.interlis.xtf24"}) {
                             if (ModuleLayer.boot().findModule(module).isPresent()) {
                                 throw new AssertionError("Unexpected product dependency: " + module);

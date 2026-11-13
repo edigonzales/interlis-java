@@ -66,7 +66,7 @@ class FunctionBindingTest {
         var bindings = implementation == null ? RuntimeBindings.empty()
                 : new RuntimeBindings(Map.of(), Map.of(ref, new FunctionBinding(signature, "host.len", "1", implementation)));
         return assertInstanceOf(ValidationPlanningResult.Ready.class,
-                ValidationPlanner.plan(schema, transfer(schema), ValidationProfile.DATASET, bindings)).plan();
+                ValidationPlanner.plan(transfer(schema), ValidationProfile.DATASET, bindings)).plan();
     }
 
     private static ValidationReport report(ValidationPlan plan) {

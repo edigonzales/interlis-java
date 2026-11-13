@@ -108,7 +108,7 @@ class DatasetBaselineTest {
                 END Checks.
                 """.formatted(String.join(" AND ", java.util.Collections.nCopies(160, "#true"))));
         var rejected = assertInstanceOf(ValidationPlanningResult.Rejected.class,
-                ValidationPlanner.plan(schema, transfer(schema)));
+                ValidationPlanner.plan(transfer(schema)));
         assertEquals(PlanningProblem.Code.EXPRESSION_LIMIT_EXCEEDED, rejected.problems().getFirst().code());
     }
 

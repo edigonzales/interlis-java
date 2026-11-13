@@ -10,7 +10,6 @@ import guru.interlis.model.SymbolRef;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeRef;
 import guru.interlis.model.query.QueryResult;
-import guru.interlis.model.query.SemanticQueries;
 
 import java.util.ArrayDeque;
 import java.util.HashSet;
@@ -26,10 +25,7 @@ import java.util.stream.Collectors;
  * Lists preserve plan order. Lookups reject handles from other snapshots.
  */
 public final class TransferPlan {
-    private final SnapshotId snapshotId;
-    private final SchemaFingerprint schemaFingerprint;
-    private final SemanticQueries queries;
-    private final List<SymbolRef> rootModels;
+    private final CompiledSchema schema;
     private final List<ModelDescriptor> models;
     private final List<TopicDescriptor> topics;
     private final List<ObjectDescriptor> objects;
@@ -39,10 +35,7 @@ public final class TransferPlan {
 
     TransferPlan(CompiledSchema schema, List<ModelDescriptor> models, List<TopicDescriptor> topics,
                  List<ObjectDescriptor> objects) {
-        snapshotId = schema.snapshotId();
-        schemaFingerprint = schema.fingerprint();
-        queries = schema.queries();
-        rootModels = List.copyOf(schema.rootModels());
+        this.schema = schema;
         this.models = List.copyOf(models);
         this.topics = List.copyOf(topics);
         this.objects = List.copyOf(objects);
@@ -51,19 +44,24 @@ public final class TransferPlan {
         objectsBySymbol = index(this.objects, ObjectDescriptor::symbol);
     }
 
+    /** Returns the original non-null, immutable checked schema used for this projection. */
+    public CompiledSchema schema() {
+        return schema;
+    }
+
     /** Returns the snapshot to which the plan and its handles belong. */
     public SnapshotId snapshotId() {
-        return snapshotId;
+        return schema.snapshotId();
     }
 
     /** Returns the fingerprint of the checked schema used for projection. */
     public SchemaFingerprint schemaFingerprint() {
-        return schemaFingerprint;
+        return schema.fingerprint();
     }
 
     /** Returns the immutable root model references in schema order. */
     public List<SymbolRef> rootModels() {
-        return rootModels;
+        return schema.rootModels();
     }
 
     /**
@@ -82,7 +80,7 @@ public final class TransferPlan {
             }
             if (covered.add(ref) && symbol(ref).known().orElseThrow() instanceof ModelSymbol model) {
                 model.imports().forEach(imported -> imported.targetModel()
-                        .map(id -> new SymbolRef(snapshotId, id))
+                        .map(id -> new SymbolRef(snapshotId(), id))
                         .filter(modelsBySymbol::containsKey)
                         .ifPresent(remaining::addLast));
             }
@@ -146,7 +144,7 @@ public final class TransferPlan {
      */
     public QueryResult<TypeDescriptor> type(TypeRef ref) {
         checkSnapshot(ref.snapshot());
-        return queries.type(ref);
+        return schema.queries().type(ref);
     }
 
     /**
@@ -157,7 +155,7 @@ public final class TransferPlan {
      */
     public QueryResult<Symbol> symbol(SymbolRef ref) {
         checkSnapshot(ref.snapshot());
-        return queries.symbol(ref);
+        return schema.queries().symbol(ref);
     }
 
     private <T> Map<SymbolRef, T> index(List<T> descriptors, Function<T, SymbolRef> reference) {
@@ -169,8 +167,8 @@ public final class TransferPlan {
     }
 
     private void checkSnapshot(SnapshotId actual) {
-        if (!snapshotId.equals(actual)) {
-            throw new SnapshotMismatchException(snapshotId, actual);
+        if (!snapshotId().equals(actual)) {
+            throw new SnapshotMismatchException(snapshotId(), actual);
         }
     }
 }

@@ -48,8 +48,7 @@ class DerivedValueTest {
                   END Data;
                 END Checks.
                 """);
-        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(schema,
-                ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
+        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
         var report = validate(plan, List.of("Node"), primary("p",
                 basket("first", "<Node i:tid='a'><amount>5</amount><peer i:ref='b'/></Node>")
                         + basket("second", "<Node i:tid='b'><amount>7</amount><peer i:ref='a'/></Node>")));

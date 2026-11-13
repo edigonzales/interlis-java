@@ -113,7 +113,7 @@ den passenden XTF-Reader. Beispiel mit einem `CompiledSchema` und einem
 `TransferPlan` aus derselben Kompilierung:
 
 ```java
-var projection = ValidationPlanner.plan(schema, transferPlan);
+var projection = ValidationPlanner.plan(transferPlan);
 if (projection instanceof ValidationPlanningResult.Rejected rejected) {
     throw new IllegalArgumentException(rejected.problems().toString());
 }
@@ -174,7 +174,7 @@ liefern. Subjekte für lokale Regeln, SET und Prozentbedingungen stammen aus
 `PRIMARY`-Eingaben.
 
 ```java
-var projection = ValidationPlanner.plan(schema, transferPlan, ValidationProfile.DATASET);
+var projection = ValidationPlanner.plan(transferPlan, ValidationProfile.DATASET);
 if (projection instanceof ValidationPlanningResult.Rejected rejected) {
     throw new IllegalArgumentException(rejected.problems().toString());
 }
