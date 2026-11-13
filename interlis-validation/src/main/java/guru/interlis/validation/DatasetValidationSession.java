@@ -10,7 +10,6 @@ import guru.interlis.model.UniquenessConstraint;
 import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferReader;
 import guru.interlis.transfer.TransferValue;
-import guru.interlis.transfer.TransferIdentity.BasketId;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
@@ -27,6 +26,7 @@ public final class DatasetValidationSession implements AutoCloseable {
     private enum State { OPEN, READING, SEALED, FINISHED, FAILED, CLOSED }
 
     private final ValidationPlan plan;
+    private boolean completeDelivery = true;
     private final DatasetOptions options;
     private final ValidationStorage storage;
     private final StoredValueCodec codec;
@@ -43,7 +43,6 @@ public final class DatasetValidationSession implements AutoCloseable {
         this.plan = plan;
         this.options = options;
         this.storage = storage;
-        options.subjects().check(plan);
         this.codec = new StoredValueCodec(plan.snapshotId(), options.limits().maxRecordBytes());
         if (storage.usage().entries() != 0) {
             throw new IllegalArgumentException("Dataset storage must be empty");
@@ -142,11 +141,11 @@ public final class DatasetValidationSession implements AutoCloseable {
                 if (baskets == options.limits().maxBaskets()) {
                     throw new ValidationLimitException("Dataset basket budget exceeded");
                 }
+                completeDelivery &= start.consistency() == TransferEvent.Consistency.COMPLETE;
                 context.basket = start;
                 context.basketOrdinal = ++baskets;
                 var metadata = storage.table(StorageArea.METADATA);
                 var encoded = codec.encodeBasket(input, start);
-                metadata.put(basketKey(input, start.id()), ordinal(context.basketOrdinal));
                 metadata.put(metadataKey((byte) 3, context.basketOrdinal), encoded);
                 yield true;
             }
@@ -171,9 +170,11 @@ public final class DatasetValidationSession implements AutoCloseable {
                     var key = StableIdentity.bind(context.namespaces, oid.value());
                     identities.addStable(key.namespace(), key.value(), handle);
                 });
-                yield options.subjects().selects(plan, descriptor.role(), context.basket.topic(), object.type())
-                        || context.basket.additionalTopics().stream()
-                                .anyMatch(topic -> options.subjects().selects(plan, descriptor.role(), topic, object.type()));
+                if (occurrence.consistency() != TransferEvent.Consistency.COMPLETE) {
+                    completeDelivery = false;
+                    storage.table(StorageArea.TEMPORARY).put(metadataKey((byte) 9, context.basketOrdinal), new byte[0]);
+                }
+                yield plan.subjects().selects(descriptor.role(), context.basket);
             }
             case TransferEvent.EndBasket ignored -> {
                 context.basket = null;
@@ -242,29 +243,17 @@ public final class DatasetValidationSession implements AutoCloseable {
             if (!primary) {
                 throw new ValidationStreamException("Dataset requires a primary input");
             }
-            if (options.extents().claims().size() > options.limits().maxExtentClaims()) {
-                throw new ValidationLimitException("Dataset extent claim budget exceeded");
-            }
-            options.extents().check(plan, inputs.keySet());
-            for (var claim : options.extents().claims()) {
-                cancellation.throwIfCancellationRequested();
-                var selector = claim.selector();
-                if (selector.basket().filter(id -> storage.table(StorageArea.METADATA)
-                        .get(basketKey(inputs.get(selector.inputs().iterator().next()), id)).isEmpty()).isPresent()) {
-                    throw new ValidationStreamException("Extent basket was not delivered in the selected input");
-                }
-            }
             storage.checkpoint();
-            new DatasetReferences(plan, storage, codec, objectStore, identities, options, inputs.keySet(), local).check(cancellation);
-            new RelationCardinalities(plan, storage, codec, objectStore, identities, options, local).check(cancellation);
+            new DatasetReferences(plan, storage, codec, objectStore, identities, options, completeDelivery, local).check(cancellation);
+            new RelationCardinalities(plan, storage, codec, objectStore, identities, options, completeDelivery, local).check(cancellation);
             var context = new DatasetRuleContext(plan, storage, codec, objectStore, identities, options,
-                    inputs.keySet(), cancellation);
+                    completeDelivery, cancellation);
             context.checkDeferredConstraints(local);
             new ViewExecutor(context).check(local);
             var coverage = checkDatasetRules(context);
             cancellation.throwIfCancellationRequested();
             storage.checkpoint();
-            var report = local.finishDataset(coverage);
+            var report = local.finishDataset(coverage, options.scope());
             cancellation.throwIfCancellationRequested();
             inputs.clear();
             state = State.FINISHED;
@@ -328,25 +317,8 @@ public final class DatasetValidationSession implements AutoCloseable {
         }
     }
 
-    private static byte[] ordinal(long value) {
-        return ByteBuffer.allocate(Long.BYTES).putLong(value).array();
-    }
-
     static byte[] metadataKey(byte tag, long value) {
         return ByteBuffer.allocate(1 + Long.BYTES).put(tag).putLong(value).array();
-    }
-
-    private byte[] basketKey(long input, BasketId id) {
-        var name = id.value();
-        if (name.length() > options.limits().maxRecordBytes() / Character.BYTES) {
-            throw new ValidationLimitException("Basket identity exceeds the record budget");
-        }
-        int size = Math.addExact(1 + Long.BYTES, Math.multiplyExact(Character.BYTES, name.length()));
-        var key = ByteBuffer.allocate(size).put((byte) 1).putLong(input);
-        for (int i = 0; i < name.length(); i++) {
-            key.putChar(name.charAt(i));
-        }
-        return key.array();
     }
 
     private void requireOpen() {

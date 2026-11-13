@@ -32,11 +32,27 @@ class DatasetLifecycleTest {
             """;
 
     @Test
+    void acceptsEachStoreOnlyOnceEvenForAnEmptyDelivery() {
+        var fixture = new Fixture();
+        try (var store = new InMemoryValidationStorage(100, 100_000)) {
+            try (var run = DatasetValidator.session(fixture.plan, DatasetOptions.defaults(), store);
+                 var reader = fixture.reader(false, false, null)) {
+                assertThrows(IllegalArgumentException.class,
+                        () -> DatasetValidator.session(fixture.plan, DatasetOptions.defaults(), store));
+                run.readInput(input("empty", InputRole.PRIMARY), reader, RUN);
+                assertEquals(0, run.finish(RUN).detectedViolations());
+            }
+            assertThrows(IllegalArgumentException.class,
+                    () -> DatasetValidator.session(fixture.plan, DatasetOptions.defaults(), store));
+        }
+    }
+
+    @Test
     void preservesSeparateInputsAndValidatesOnlyPrimarySubjects() {
         var f = new Fixture();
         for (boolean referenceFirst : List.of(true, false)) {
             try (var store = new InMemoryValidationStorage(100, 100_000);
-                 var run = DatasetValidator.session(f.plan, DatasetOptions.defaults(f.plan), store);
+                 var run = DatasetValidator.session(f.plan, DatasetOptions.defaults(), store);
                  var a = f.reader(true, false, null);
                  var b = f.reader(true, true, null)) {
                 if (referenceFirst) {
@@ -49,7 +65,7 @@ class DatasetLifecycleTest {
                 var report = run.finish(RUN);
                 assertEquals(1, report.inspectedObjects());
                 assertEquals(0, report.detectedViolations());
-                assertEquals(DatasetRuleCoverage.Outcome.NO_VIOLATION_IN_AVAILABLE_SCOPE,
+                assertEquals(DatasetRuleCoverage.Outcome.SATISFIED,
                         report.coverage().datasetRules().getFirst().outcome());
                 assertFalse(a.closed);
                 assertFalse(b.closed);
@@ -70,14 +86,14 @@ class DatasetLifecycleTest {
     void acceptsEmptyPrimaryButRejectsFailureBeforeSecondInputEof() {
         var f = new Fixture();
         try (var store = new InMemoryValidationStorage(100, 100_000);
-             var run = DatasetValidator.session(f.plan, DatasetOptions.defaults(f.plan), store);
+             var run = DatasetValidator.session(f.plan, DatasetOptions.defaults(), store);
              var empty = f.reader(false, false, null)) {
             run.readInput(input("empty", InputRole.PRIMARY), empty, RUN);
             assertEquals(0, run.finish(RUN).inspectedObjects());
         }
         var failure = new IllegalStateException("source failed after EndTransfer");
         try (var store = new InMemoryValidationStorage(100, 100_000);
-             var run = DatasetValidator.session(f.plan, DatasetOptions.defaults(f.plan), store);
+             var run = DatasetValidator.session(f.plan, DatasetOptions.defaults(), store);
              var first = f.reader(true, false, null);
              var second = f.reader(false, false, failure)) {
             run.readInput(input("first", InputRole.PRIMARY), first, RUN);
@@ -86,7 +102,7 @@ class DatasetLifecycleTest {
             assertThrows(ValidationStreamException.class, () -> run.finish(RUN));
             assertFalse(second.closed);
             assertThrows(IllegalArgumentException.class,
-                    () -> DatasetValidator.session(f.plan, DatasetOptions.defaults(f.plan), store));
+                    () -> DatasetValidator.session(f.plan, DatasetOptions.defaults(), store));
         }
     }
 
@@ -95,7 +111,7 @@ class DatasetLifecycleTest {
         var fixture = new Fixture();
         for (var operation : TransferEvent.Operation.values()) {
             try (var store = new InMemoryValidationStorage(100, 100_000);
-                 var session = DatasetValidator.session(fixture.plan, DatasetOptions.defaults(fixture.plan), store);
+                 var session = DatasetValidator.session(fixture.plan, DatasetOptions.defaults(), store);
                  var reader = fixture.reader(true, false, null, Optional.of(operation))) {
                 var failure = assertThrows(ValidationStreamException.class,
                         () -> session.readInput(input("incremental", InputRole.PRIMARY), reader, RUN));
@@ -116,14 +132,14 @@ class DatasetLifecycleTest {
         var f = new Fixture();
         var foreign = new Fixture(MODEL);
         try (var store = new InMemoryValidationStorage(100, 100_000);
-             var run = DatasetValidator.session(f.plan, DatasetOptions.defaults(f.plan), store);
+             var run = DatasetValidator.session(f.plan, DatasetOptions.defaults(), store);
              var empty = foreign.reader(false, false, null)) {
             assertThrows(ValidationStreamException.class,
                     () -> run.readInput(input("foreign", InputRole.PRIMARY), empty, RUN));
             assertThrows(ValidationStreamException.class, () -> run.finish(RUN));
         }
         try (var store = new InMemoryValidationStorage(100, 100_000);
-             var run = DatasetValidator.session(f.plan, DatasetOptions.defaults(f.plan), store);
+             var run = DatasetValidator.session(f.plan, DatasetOptions.defaults(), store);
              var empty = f.reader(false, false, null)) {
             run.readInput(input("empty", InputRole.PRIMARY), empty, RUN);
             assertThrows(OperationCancelledException.class, () -> run.finish(() -> true));
@@ -131,33 +147,6 @@ class DatasetLifecycleTest {
         }
     }
 
-    @Test
-    void finishRejectsOverBudgetClaimsAndBasketsOutsideTheInput() {
-        var f = new Fixture();
-        var topic = SubjectSelection.fromRoots(f.plan).roots().getFirst();
-        var id = new InputId("primary");
-        var bid = new TransferIdentity.BasketId("b", TransferIdentity.IdOrigin.SOURCE);
-        var claim = new ExtentDeclaration(new ExtentSelector(topic, java.util.Set.of(id), Optional.of(bid)),
-                ExtentAspect.OBJECT_MEMBERSHIP, "inventory");
-        var subjects = SubjectSelection.fromRoots(f.plan);
-        var overBudget = new DatasetOptions(ValidationOptions.defaults(), subjects,
-                new ExtentDeclarations(List.of(claim, claim)), new DatasetLimits(1, 1, 1, 4096, 1));
-        try (var store = new InMemoryValidationStorage(100, 100_000);
-             var run = DatasetValidator.session(f.plan, overBudget, store);
-             var reader = f.reader(true, false, null)) {
-            run.readInput(new InputDescriptor(id, InputRole.PRIMARY), reader, RUN);
-            assertThrows(ValidationLimitException.class, () -> run.finish(RUN));
-            assertThrows(ValidationStreamException.class, () -> run.finish(RUN));
-        }
-        var missingBasket = new DatasetOptions(ValidationOptions.defaults(), subjects,
-                new ExtentDeclarations(List.of(claim)), DatasetLimits.defaults());
-        try (var store = new InMemoryValidationStorage(100, 100_000);
-             var run = DatasetValidator.session(f.plan, missingBasket, store);
-             var reader = f.reader(false, false, null)) {
-            run.readInput(new InputDescriptor(id, InputRole.PRIMARY), reader, RUN);
-            assertThrows(ValidationStreamException.class, () -> run.finish(RUN));
-        }
-    }
 
     private static InputDescriptor input(String id, InputRole role) {
         return new InputDescriptor(new InputId(id), role);

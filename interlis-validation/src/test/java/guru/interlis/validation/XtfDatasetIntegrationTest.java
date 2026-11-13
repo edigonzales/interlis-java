@@ -78,7 +78,7 @@ class XtfDatasetIntegrationTest {
         ValidationReport validate(String... samples) throws IOException {
             var token = CancellationToken.none();
             try (var storage = new InMemoryValidationStorage(10_000, 2_000_000);
-                 var session = DatasetValidator.session(plan, DatasetOptions.defaults(plan), storage)) {
+                 var session = DatasetValidator.session(plan, DatasetOptions.defaults(), storage)) {
                 for (var sample : samples) {
                     var source = new ByteArrayInputStream(bytes(version, sample + ".xtf"));
                     try (TransferReader reader = version.equals("23")

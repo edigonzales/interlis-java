@@ -23,7 +23,7 @@ class DatasetUniqueTest {
         var first = "<Item i:tid='first'><link><Link><peer i:ref='missing'/></Link></link></Item>";
         var second = "<Item i:tid='second'><link><Link><peer i:ref='%s'/></Link></link></Item>";
         for (var target : List.of("missing", "other")) {
-            var report = validate(plan, List.of("Item", "Peer"),
+            var report = validate(plan, DatasetScope.SUPPLIED_DATASET,
                     primary("p", basket("data", first + second.formatted(target))));
             assertEquals(target.equals("missing") ? 1 : 0, report.examples().stream()
                     .filter(diagnostic -> diagnostic.code() == ValidationCode.DATASET_UNIQUE_DUPLICATE).count(),
@@ -46,7 +46,7 @@ class DatasetUniqueTest {
         var first = "<Left i:tid='first'><code>ab</code><amount>1.0</amount></Left>";
         var second = "<Right i:tid='second'><code>ab</code><amount>1.00</amount></Right>";
         var third = "<Left i:tid='third'><code>ab</code><amount>1.000</amount></Left>";
-        var report = validate(plan, List.of(),
+        var report = validate(plan, DatasetScope.PARTIAL_DATASET,
                 primary("main", basket("same", first) + basket("later", second)),
                 primary("other", basket("same", third)));
         assertEquals(1, report.detectedViolations());
@@ -59,7 +59,7 @@ class DatasetUniqueTest {
         assertEquals(3, report.coverage().datasetRules().stream().filter(
                 rule -> rule.scopeKind() == DatasetRuleCoverage.ScopeKind.BASKET).findFirst().orElseThrow().scopes());
 
-        var sameBasket = validate(plan, List.of(), primary("main", basket("together", first + second)));
+        var sameBasket = validate(plan, DatasetScope.PARTIAL_DATASET, primary("main", basket("together", first + second)));
         assertEquals(2, sameBasket.detectedViolations());
     }
 
@@ -81,7 +81,7 @@ class DatasetUniqueTest {
                 <Item i:tid='e'><active>true</active><code>é</code></Item>
                 <Item i:tid='f'><active>true</active><code>é</code></Item>
                 """;
-        var report = validate(plan, List.of(), primary("p", basket("basket", rows)));
+        var report = validate(plan, DatasetScope.PARTIAL_DATASET, primary("p", basket("basket", rows)));
         assertEquals(0, report.detectedViolations(), report.examples().toString());
         var scope = report.coverage().datasetRules().getFirst();
         assertEquals(DatasetRuleCoverage.Outcome.NO_VIOLATION_IN_AVAILABLE_SCOPE, scope.outcome());
@@ -92,7 +92,7 @@ class DatasetUniqueTest {
     @Test
     void referenceInputsSupplyWitnessesWithoutPromotingReferenceOnlyConflicts() {
         var plan = plan("CLASS Item = code: TEXT*20; UNIQUE code; END Item;");
-        var report = validate(plan, List.of(),
+        var report = validate(plan, DatasetScope.PARTIAL_DATASET,
                 reference("ref", basket("refBasket", """
                         <Item i:tid='ref1'><code>x</code></Item>
                         <Item i:tid='ref2'><code>x</code></Item>
@@ -114,7 +114,7 @@ class DatasetUniqueTest {
                   UNIQUE WHERE INTERLIS.isOfClass(THIS, >Item): code;
                 END Item;
                 """);
-        var report = validate(plan, List.of(), primary("p", basket("data",
+        var report = validate(plan, DatasetScope.PARTIAL_DATASET, primary("p", basket("data",
                 "<Item i:tid='i1'><code>x</code></Item><Item i:tid='i2'><code>x</code></Item>")));
         assertEquals(1, report.detectedViolations());
         var coverage = report.coverage().datasetRules().getFirst();
@@ -132,7 +132,7 @@ class DatasetUniqueTest {
                   UNIQUE (BASKET) WHERE link->peer->active: code;
                 END Item;
                 """);
-        var report = validate(plan, List.of(), primary("p", basket("empty", "")));
+        var report = validate(plan, DatasetScope.PARTIAL_DATASET, primary("p", basket("empty", "")));
         assertEquals(0, report.detectedViolations());
         var coverage = report.coverage().datasetRules().getFirst();
         assertEquals(DatasetRuleCoverage.Outcome.SATISFIED, coverage.outcome());
@@ -163,7 +163,7 @@ class DatasetUniqueTest {
                 ValidationPlanner.plan(transfer, ValidationProfile.DATASET)).plan();
         var token = CancellationToken.none();
         try (var store = new InMemoryValidationStorage(100, 100_000);
-             var run = DatasetValidator.session(plan, DatasetOptions.defaults(plan), store);
+             var run = DatasetValidator.session(plan, DatasetOptions.defaults(), store);
              var original = translatedReader(plan, "Checks", "Item", "original", "first");
              var translated = translatedReader(plan, "German", "Objekt", "translated", "erst")) {
             run.readInput(new InputDescriptor(new InputId("one"), InputRole.PRIMARY), original, token);

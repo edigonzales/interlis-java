@@ -19,7 +19,7 @@ class AggregationViewTest {
                   MANDATORY CONSTRAINT keys->computed == 2 AND INTERLIS.elementCount(AGGREGATES) == 2;
                 END Grouped;
                 """);
-        var report = validate(plan, List.of("Item"), primary("p", basket("basket", """
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", """
                 <Item i:tid='first'><key>1</key></Item>
                 <Item i:tid='second'><key>1</key></Item>
                 <Item i:tid='wrong'><key>2</key></Item>
@@ -43,11 +43,11 @@ class AggregationViewTest {
             data.append("<Item i:tid='g").append(i).append("'><key>1.0</key></Item>");
         }
         data.append("<Item i:tid='only'><key>2.0</key></Item>");
-        var report = validate(plan, List.of("Item"), primary("p", basket("basket", data.toString())));
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", data.toString())));
         assertEquals(1, report.detectedViolations(), report.examples().toString());
         assertEquals("only", report.examples().getFirst().data().tid().orElseThrow().value());
         assertEquals(2, report.coverage().constraints().getFirst().occurrences());
-        var empty = validate(plan, List.of("Item"), primary("p", basket("basket", "")));
+        var empty = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", "")));
         assertTrue(empty.coverage().constraints().isEmpty());
     }
 }

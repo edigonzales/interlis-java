@@ -28,7 +28,7 @@ final class RelationCardinalities {
     private final StoredValueCodec codec;
     private final DatasetObjectStore objects;
     private final ReferenceResolver resolver;
-    private final DatasetOptions options;
+    private final boolean closedDelivery;
     private final ValidationSession report;
     private final RelationGroups groups;
     private final RelationOrdering ordering;
@@ -38,7 +38,7 @@ final class RelationCardinalities {
 
     RelationCardinalities(ValidationPlan plan, ValidationStorage storage, StoredValueCodec codec,
                           DatasetObjectStore objects, IdentityIndex identities, DatasetOptions options,
-                          ValidationSession report) {
+                          boolean completeDelivery, ValidationSession report) {
         this.plan = plan;
         this.metadata = storage.table(StorageArea.METADATA);
         this.links = storage.table(StorageArea.LINKS);
@@ -46,7 +46,7 @@ final class RelationCardinalities {
         this.codec = codec;
         this.objects = objects;
         this.resolver = new ReferenceResolver(plan, identities, objects);
-        this.options = options;
+        this.closedDelivery = completeDelivery && options.scope() == DatasetScope.SUPPLIED_DATASET;
         this.report = report;
         this.groups = new RelationGroups(storage);
         this.ordering = new RelationOrdering(storage);
@@ -277,7 +277,7 @@ final class RelationCardinalities {
         Cardinality bounds = declaration instanceof RoleSymbol role
                 ? role.cardinality() : association.associationCardinality().orElseThrow();
         StoredValueCodec.StoredObject representative = null;
-        boolean complete = roles(association).stream().noneMatch(slot -> slot.role().external());
+        boolean complete = closedDelivery || roles(association).stream().noneMatch(slot -> slot.role().external());
         for (var counterpart : group.counterparts()) {
             var stored = objects.get(counterpart);
             var input = input(stored.input());
@@ -286,7 +286,7 @@ final class RelationCardinalities {
                     && representative == null) {
                 representative = stored;
             }
-            complete &= completeRelation(stored.basket(), input.descriptor().id(), basket, association);
+            complete &= completeRelation(stored.basket(), basket);
         }
         if (representative == null) {
             return;
@@ -304,26 +304,15 @@ final class RelationCardinalities {
     private boolean completeOrderedRelation(long ordinal, SymbolId declaration) {
         var stored = codec.decodeBasket(metadata.get(DatasetValidationSession.metadataKey((byte) 3, ordinal))
                 .orElseThrow());
-        var association = plan.symbol(declaration).orElseThrow().owner()
-                .map(plan::ref).flatMap(plan.transferPlan()::object).orElseThrow();
-        return completeRelation(ordinal, input(stored.input()).descriptor().id(), stored.event(), association);
+        return completeRelation(ordinal, stored.event());
     }
 
-    private boolean completeRelation(long ordinal, InputId input, TransferEvent.StartBasket basket,
-                                     ObjectDescriptor association) {
+    private boolean completeRelation(long ordinal, TransferEvent.StartBasket basket) {
         if (temporary.get(DatasetValidationSession.metadataKey((byte) 4, ordinal)).isPresent()) {
             return false;
         }
-        if (basket.consistency() == TransferEvent.Consistency.COMPLETE) {
-            return true;
-        }
-        return options.extents().claims().stream().anyMatch(claim ->
-                claim.aspect() == ExtentAspect.RELATION_MEMBERSHIP
-                        && (claim.selector().root().equals(association.symbol())
-                            || claim.selector().root().equals(basket.topic())
-                            || basket.additionalTopics().contains(claim.selector().root()))
-                        && claim.selector().inputs().contains(input)
-                        && claim.selector().basket().map(basket.id()::equals).orElse(true));
+        return basket.consistency() == TransferEvent.Consistency.COMPLETE
+                && temporary.get(DatasetValidationSession.metadataKey((byte) 9, ordinal)).isEmpty();
     }
 
     private void reportFinding(ObjectHandle source, List<ObjectHandle> counterparts, SymbolId role,
@@ -347,10 +336,7 @@ final class RelationCardinalities {
 
     private boolean selected(StoredValueCodec.StoredInput input, TransferEvent.StartBasket basket,
                              SymbolRef type) {
-        var subjects = options.subjects();
-        var role = input.descriptor().role();
-        return subjects.selects(plan, role, basket.topic(), type)
-                || basket.additionalTopics().stream().anyMatch(topic -> subjects.selects(plan, role, topic, type));
+        return plan.subjects().selects(input.descriptor().role(), basket);
     }
 
     private StoredValueCodec.StoredInput input(long ordinal) {

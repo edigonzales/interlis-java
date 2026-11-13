@@ -134,7 +134,7 @@ public final class ValidationSession implements AutoCloseable {
         requireActive();
         try {
             require(State.AFTER_END);
-            return completedReport(List.of());
+            return completedReport(List.of(), Optional.empty());
         } catch (RuntimeException failure) {
             clear();
             state = State.FAILED;
@@ -148,9 +148,9 @@ public final class ValidationSession implements AutoCloseable {
         state = State.BEFORE_TRANSFER;
     }
 
-    ValidationReport finishDataset(List<DatasetRuleCoverage> datasetCoverage) {
+    ValidationReport finishDataset(List<DatasetRuleCoverage> datasetCoverage, DatasetScope scope) {
         require(State.BEFORE_TRANSFER);
-        return completedReport(datasetCoverage);
+        return completedReport(datasetCoverage, Optional.of(scope));
     }
 
     void relationCardinality(TransferObject object, Symbol declaration, DataLocation data, long targets,
@@ -210,13 +210,13 @@ public final class ValidationSession implements AutoCloseable {
         }
     }
 
-    private ValidationReport completedReport(List<DatasetRuleCoverage> datasetCoverage) {
+    private ValidationReport completedReport(List<DatasetRuleCoverage> datasetCoverage, Optional<DatasetScope> scope) {
         var report = new ValidationReport(violations == 0 ? PASSED_CHECKED_SCOPE : FAILED_CHECKED_SCOPE,
                 baskets, objects, violations, examples,
                 new ValidationCoverage(counts(checked), plan.uncheckedRules(), counts(incomplete),
                         counts(missingRuntime), counts(unsupported),
                         plan.profile() == ValidationProfile.LOCAL_ONLY ? List.of(REFERENTIAL_INTEGRITY, TOPOLOGY) : List.of(TOPOLOGY),
-                        constraintCounts(), datasetCoverage));
+                        constraintCounts(), datasetCoverage), scope);
         clear();
         state = State.FINISHED;
         return report;

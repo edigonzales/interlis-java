@@ -120,7 +120,7 @@ class DiskFailureTest {
                 @Override
                 public void close() { }
             };
-            try (var run = DatasetValidator.session(plan, DatasetOptions.defaults(plan), fault)) {
+            try (var run = DatasetValidator.session(plan, DatasetOptions.defaults(), fault)) {
                 run.readInput(new InputDescriptor(new InputId("p"), InputRole.PRIMARY), input, token);
                 var failure = assertThrows(UncheckedIOException.class, () -> run.finish(token));
                 assertEquals("Final write failed", failure.getMessage());

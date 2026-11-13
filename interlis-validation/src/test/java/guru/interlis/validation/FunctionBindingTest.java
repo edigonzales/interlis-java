@@ -70,7 +70,7 @@ class FunctionBindingTest {
     }
 
     private static ValidationReport report(ValidationPlan plan) {
-        return validate(plan, List.of("Item"), primary("p", basket("basket",
+        return validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket",
                 "<Item i:tid='item'><label>x</label></Item>")));
     }
 }

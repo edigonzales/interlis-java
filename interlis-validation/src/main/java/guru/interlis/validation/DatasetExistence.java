@@ -14,8 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static guru.interlis.validation.DatasetRuleCoverage.Completeness.DECLARED_COMPLETE;
-import static guru.interlis.validation.DatasetRuleCoverage.Completeness.OPEN;
+import static guru.interlis.validation.DatasetScopeStore.Completeness.CLOSED_DELIVERY;
+import static guru.interlis.validation.DatasetScopeStore.Completeness.OPEN;
 import static guru.interlis.validation.DatasetRuleCoverage.ScopeKind.DATASET;
 
 final class DatasetExistence {
@@ -47,7 +47,7 @@ final class DatasetExistence {
             context.forObjects(this::indexTargets);
         }
         context.forObjects(this::checkSource);
-        var completeness = context.declaredComplete(rule.key().applicationRoot()) ? DECLARED_COMPLETE : OPEN;
+        var completeness = context.declaredComplete(rule.key().applicationRoot()) ? CLOSED_DELIVERY : OPEN;
         return counts.coverage(rule.key(), DATASET, completeness);
     }
 

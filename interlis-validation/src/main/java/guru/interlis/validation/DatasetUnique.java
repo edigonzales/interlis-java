@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Map;
 
-import static guru.interlis.validation.DatasetRuleCoverage.Completeness.*;
+import static guru.interlis.validation.DatasetScopeStore.Completeness.*;
 import static guru.interlis.validation.DatasetRuleCoverage.ScopeKind.*;
 
 final class DatasetUnique {
@@ -61,12 +61,12 @@ final class DatasetUnique {
     List<DatasetRuleCoverage> check() {
         boolean globalComplete = !basket && context.declaredComplete(rule.key().applicationRoot());
         for (var binding : bindings) {
-            context.initializeScopes(binding.rule(), basket, true, (ordinal, completeness) -> {
+            context.initializeScopes(binding.rule(), basket, (ordinal, completeness) -> {
                 if (scopes.get(ordinal).isEmpty()) {
                     var counts = new DatasetScopeCounts();
                     counts.selected = true;
                     counts.unsupported = binding.supported() ? 0 : 1;
-                    scopes.put(ordinal, new Scope(basket ? completeness : globalComplete ? DECLARED_COMPLETE : OPEN,
+                    scopes.put(ordinal, new Scope(basket ? completeness : globalComplete ? CLOSED_DELIVERY : OPEN,
                             counts));
                 }
             });
@@ -80,7 +80,7 @@ final class DatasetUnique {
             long scopeId = basket ? occurrence.stored().basket() : 0;
             var scope = scopes.get(scopeId).orElseGet(() -> new Scope(
                     basket ? occurrence.basket().consistency() == TransferEvent.Consistency.COMPLETE
-                            ? CLOSED_BY_TRANSFER : OPEN : globalComplete ? DECLARED_COMPLETE : OPEN,
+                            ? CLOSED_BY_TRANSFER : OPEN : globalComplete ? CLOSED_DELIVERY : OPEN,
                     new DatasetScopeCounts()));
             var counts = scope.counts();
             counts.candidates++;
@@ -100,7 +100,7 @@ final class DatasetUnique {
             coverage.add(scope.counts().coverage(rule.key(), basket ? BASKET : DATASET, scope.completeness()));
         });
         var reports = coverage.reports();
-        return reports.isEmpty() ? List.of(new DatasetRuleCoverage(rule.key(), basket ? BASKET : DATASET, OPEN,
+        return reports.isEmpty() ? List.of(new DatasetRuleCoverage(rule.key(), basket ? BASKET : DATASET,
                 DatasetRuleCoverage.Outcome.NOT_APPLICABLE, 0, 0, 0, 0, 0)) : reports;
     }
 

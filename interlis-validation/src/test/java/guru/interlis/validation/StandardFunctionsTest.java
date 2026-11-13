@@ -28,7 +28,7 @@ class StandardFunctionsTest {
                   SET CONSTRAINT INTERLIS.objectCount(ALL) == 1;
                 END Item;
                 """);
-        var report = validate(plan, List.of("Item"), primary("p", basket("basket", """
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", """
                 <Item i:tid="item">
                   <single> e&#x301; </single><multi> äb </multi><phase>early.second</phase>
                   <entries><Entry><code>same</code></Entry></entries><entries><Entry><code>same</code></Entry></entries>
@@ -53,12 +53,12 @@ class StandardFunctionsTest {
                   MANDATORY CONSTRAINT INTERLIS.convertUnit(metres) == distance;
                 END Item;
                 """);
-        var good = validate(plan, List.of("Item"), primary("p", basket("basket",
+        var good = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket",
                 "<Item i:tid='item'><distance>2</distance><metres>4000</metres></Item>")));
         assertTrue(good.examples().isEmpty(), good.examples().toString());
         assertTrue(good.coverage().notChecked().isEmpty());
         assertEquals(2, good.coverage().constraints().size());
-        var bad = validate(plan, List.of("Item"), primary("p", basket("basket",
+        var bad = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket",
                 "<Item i:tid='item'><distance>2</distance><metres>3999</metres></Item>")));
         assertEquals(2, bad.detectedViolations());
     }

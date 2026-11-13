@@ -34,7 +34,7 @@ mit SDK 0.4 eingeführt.
 | Vertrag | Wert | Bedeutung |
 |---|---|---|
 | Werkzeug und Artefakte | `0.2.0-SNAPSHOT` | Entwicklungsstand der ausgelieferten Module |
-| Öffentliche Java-API | `0.8` | Öffentliche Packages und Typen von `guru.interlis` |
+| Öffentliche Java-API | `0.9` | Öffentliche Packages und Typen von `guru.interlis` |
 | Diagnosekatalog | `interlis-diagnostics/v4` | Stabile Diagnosecodes und typisierte Argumente |
 | Bridge | `interlis.compiler/1.0` | Nachrichtenhülle, Ergebnisse und Abfragen |
 | Quellformatierung | `2.0` | Formatierungsoptionen und Ergebnisvertrag |
@@ -92,9 +92,7 @@ virtuelle Zeilen denselben Datenort, folgen als fünftes und sechstes Argument
 die einsbasierten Zeilennummern von Subjekt und Zeuge in der
 Auswertungsreihenfolge der Sicht. Die Zeilennummern gelten nur für den
 jeweiligen Validierungslauf. Diese optionale Erweiterung erhält die ersten
-vier Argumente und die SDK-API-Version 0.8. Globale
-Vergleiche ohne geschlossene Extent-Deklaration belegen nur den verfügbaren
-Bestand. `EXISTENCE_TARGET_MISSING` setzt voraus, dass sämtliche relevanten
+vier Argumente und die SDK-API-Version 0.8. Ein partieller Lauf kann konkrete Dubletten im verfügbaren Bestand belegen. `EXISTENCE_TARGET_MISSING` setzt voraus, dass sämtliche relevanten
 Zielalternativen geschlossen und prüfbar sind. Eine beobachtete Übereinstimmung
 genügt auch bei offenen Alternativen. `UNSUPPORTED_VALUE_SEMANTICS` kennzeichnet
 unter anderem Geometrievergleiche, die eine topologische Gleichheit voraussetzen.
@@ -131,8 +129,8 @@ Länge der Arbeitsdatei. `diskBytes()` meldet die aktuelle Länge und
 erreichte Länge. Eigene Speicherimplementierungen können bei einem
 Budgetende den öffentlichen `ValidationLimitException(String)`-Konstruktor
 verwenden. Das optionale Modul einschliesslich `peakDiskBytes()` und der zusätzliche
-Konstruktor sind additive Erweiterungen von API 0.8. Der Validator prüft den Schema- und
-Laufheader und schliesst alle Schreibvorgänge vor Ausgabe des Berichts ab.
+Konstruktor sind additive Erweiterungen von API 0.8. Der Validator übernimmt einen leeren Store exklusiv und schliesst alle
+Schreibvorgänge vor Ausgabe des Berichts ab.
 [H2 MVStore](https://h2database.github.io/html/mvstore.html)
 
 ### Laufzeitparameter und Hostfunktionen (P4.6)
@@ -150,8 +148,17 @@ Providerexception oder ein unzulässiger Rückgabewert ergibt
 eigenen Fehlerzustand. Die neue Überladung und die Bindungstypen ergänzen
 die SDK-API 0.8 additiv.
 
-Datensatzvalidierung akzeptiert virtuelle Sichten als zusätzliche
-`SubjectSelection`-Wurzeln. Die Transferpläne beschreiben weiterhin die
+Datensatzvalidierung wählt virtuelle Sichten aus den angeforderten Modellroots. Die Transferpläne beschreiben weiterhin die
 physisch gelieferten Objekte. Sichten werden aus den gebundenen Basen
 ausgewertet. Befunde an Sichtbedingungen enthalten den Modellort der
 Bedingung und den Datenort der zugrunde liegenden Lieferung.
+
+
+### Validator und Datensatzlauf (API 0.9)
+
+`ValidationPlanner.plan(transferPlan, profile, bindings)` verwendet die
+ursprüngliche Schemainstanz des Transferplans. Datensatz-Reader verwenden
+dieselbe Instanz. `DatasetOptions.defaults()` prüft den gelieferten Bestand,
+`DatasetScope.PARTIAL_DATASET` lässt Aussagen über fehlende Populationen offen.
+Die öffentliche Auswahl und Deklaration einzelner Extents entfällt.
+`ValidationReport.datasetScope()` gibt den vereinbarten Laufumfang an.

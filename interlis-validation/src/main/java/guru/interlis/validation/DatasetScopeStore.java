@@ -45,7 +45,7 @@ final class DatasetScopeStore {
     private static Scope read(byte[] bytes) {
         try {
             var value = ByteBuffer.wrap(bytes);
-            var completeness = DatasetRuleCoverage.Completeness.values()[Byte.toUnsignedInt(value.get())];
+            var completeness = Completeness.values()[Byte.toUnsignedInt(value.get())];
             var counts = new DatasetScopeCounts();
             counts.selected = switch (value.get()) {
                 case 0 -> false;
@@ -69,5 +69,7 @@ final class DatasetScopeStore {
         }
     }
 
-    record Scope(DatasetRuleCoverage.Completeness completeness, DatasetScopeCounts counts) { }
+    enum Completeness { OPEN, CLOSED_BY_TRANSFER, CLOSED_DELIVERY }
+
+    record Scope(Completeness completeness, DatasetScopeCounts counts) { }
 }

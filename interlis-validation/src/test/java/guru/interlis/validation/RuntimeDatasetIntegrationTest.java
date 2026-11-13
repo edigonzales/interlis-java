@@ -35,7 +35,7 @@ class RuntimeDatasetIntegrationTest {
         var good = primary("first", xml(version, "first-basket", "Item", "ok", "good"));
         var bad = primary("second", xml(version, "second-basket", "Item", "bad", "wrong"));
         var witness = reference("reference", xml(version, "reference-basket", "Lookup", "witness", "good"));
-        var report = validate(plan, List.of("Lookup", "Item"), good, bad, witness);
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, good, bad, witness);
         assertEquals(List.of(ValidationCode.MANDATORY_CONSTRAINT_FALSE, ValidationCode.EXISTENCE_TARGET_MISSING),
                 report.examples().stream().map(ValidationDiagnostic::code).toList());
         assertTrue(report.examples().stream().allMatch(diagnostic ->

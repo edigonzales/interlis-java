@@ -27,7 +27,7 @@ class NumericEvaluationTest {
                       ((PI / 1) == PI) AND ((LNBASE - 0) == LNBASE);
                 END Item;
                 """);
-        var report = validate(plan, List.of("Item"), primary("p", basket("b", """
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("b", """
                 <Item i:tid="item"><amount>0.1</amount><divisor>0</divisor></Item>
                 """)));
         assertEquals(0, report.detectedViolations(), report.examples().toString());

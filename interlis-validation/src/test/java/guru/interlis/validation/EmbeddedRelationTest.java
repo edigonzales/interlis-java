@@ -49,7 +49,7 @@ class EmbeddedRelationTest {
                     </i:transfer>
                     """.formatted(payload);
             try (var store = new InMemoryValidationStorage(100, 100_000);
-                 var run = DatasetValidator.session(plan, DatasetOptions.defaults(plan), store);
+                 var run = DatasetValidator.session(plan, DatasetOptions.defaults(), store);
                  var reader = new Xtf24Reader(transfer, new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)))) {
                 var token = CancellationToken.none();
                 run.readInput(new InputDescriptor(new InputId("primary"), InputRole.PRIMARY), reader, token);

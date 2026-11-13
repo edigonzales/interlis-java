@@ -61,20 +61,8 @@ final class DatasetRuleTestSupport {
         return new Input(new InputDescriptor(new InputId(id), InputRole.REFERENCE), baskets);
     }
 
-    static ValidationReport validate(ValidationPlan plan, List<String> completeTypes, Input... inputs) {
-        var claims = new ArrayList<ExtentDeclaration>();
-        var ids = List.of(inputs).stream().map(input -> input.descriptor().id()).collect(Collectors.toSet());
-        for (var name : completeTypes) {
-            var selector = new ExtentSelector(type(plan, name), ids, Optional.empty());
-            claims.add(new ExtentDeclaration(selector, ExtentAspect.OBJECT_MEMBERSHIP, "test extent"));
-            claims.add(new ExtentDeclaration(selector, ExtentAspect.ATTRIBUTE_VALUES, "test extent"));
-        }
-        return validateWithClaims(plan, claims, inputs);
-    }
-
-    static ValidationReport validateWithClaims(ValidationPlan plan, List<ExtentDeclaration> claims, Input... inputs) {
-        var options = new DatasetOptions(ValidationOptions.defaults(), SubjectSelection.fromRoots(plan),
-                new ExtentDeclarations(claims), DatasetLimits.defaults());
+    static ValidationReport validate(ValidationPlan plan, DatasetScope scope, Input... inputs) {
+        var options = new DatasetOptions(ValidationOptions.defaults(), DatasetLimits.defaults(), scope);
         var token = CancellationToken.none();
         try (var storage = new InMemoryValidationStorage(10_000, 10_000_000);
              var run = DatasetValidator.session(plan, options, storage)) {

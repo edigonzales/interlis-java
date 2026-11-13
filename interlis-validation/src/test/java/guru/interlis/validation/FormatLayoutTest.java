@@ -35,13 +35,13 @@ class FormatLayoutTest {
                 """.formatted(version));
         var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
                 ValidationPlanner.plan(ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
-        var good = validate(plan, List.of("Item"), primary("p", basket(version, "pass", "10-2#1.00")));
+        var good = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket(version, "pass", "10-2#1.00")));
         assertTrue(good.examples().isEmpty(), good.examples().toString());
         assertTrue(good.coverage().unsupportedValues().isEmpty());
         assertEquals(ValidationCoverage.ConstraintStatus.CHECKED, good.coverage().constraints().getFirst().status());
         for (var bad : List.of("9-3#1.00", "10-1#1.00", "20-8#1.00", "11-3#1.0", "11-3#10.00", "11/3#1.00",
                 "010-3#1.00", "+10-3#1.00", "11-3#01.00")) {
-            var report = validate(plan, List.of("Item"), primary("p", basket(version, "fail", bad)));
+            var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket(version, "fail", bad)));
             assertEquals(List.of(ValidationCode.INVALID_FORMATTED_VALUE),
                     report.examples().stream().map(ValidationDiagnostic::code).toList(), bad);
         }
@@ -54,9 +54,9 @@ class FormatLayoutTest {
                 DOMAIN Two = FORMAT BASED ON Digits (n/2);
                 CLASS Item = value: Two; END Item;
                 """);
-        var good = validate(plan, List.of("Item"), primary("p", basket("2.4", "pass", "12")));
+        var good = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("2.4", "pass", "12")));
         assertTrue(good.examples().isEmpty(), good.examples().toString());
-        var bad = validate(plan, List.of("Item"), primary("p", basket("2.4", "fail", "123")));
+        var bad = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("2.4", "fail", "123")));
         assertEquals(List.of(ValidationCode.INVALID_FORMATTED_VALUE),
                 bad.examples().stream().map(ValidationDiagnostic::code).toList());
     }

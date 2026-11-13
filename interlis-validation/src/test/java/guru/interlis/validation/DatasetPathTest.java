@@ -26,11 +26,11 @@ class DatasetPathTest {
             data.append("<Item i:tid='item").append(i).append("'/>")
                     .append("<Link><parent i:ref='parent'/><items i:ref='item").append(i).append("'/></Link>");
         }
-        var valid = validate(plan, List.of("Parent", "Item"), primary("p", basket("basket", data.toString())));
+        var valid = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", data.toString())));
         assertTrue(valid.examples().isEmpty(), valid.examples().toString());
         assertEquals(ValidationCoverage.ConstraintStatus.CHECKED, valid.coverage().constraints().getFirst().status());
         data.append("<Link><parent i:ref='parent'/><items i:ref='missing'/></Link>");
-        var broken = validate(plan, List.of("Parent", "Item"), primary("p", basket("basket", data.toString())));
+        var broken = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", data.toString())));
         assertEquals(List.of(ValidationCode.REFERENCE_TARGET_MISSING),
                 broken.examples().stream().map(ValidationDiagnostic::code).toList());
         assertEquals(ValidationCoverage.ConstraintStatus.INCOMPLETE_CONTEXT,
@@ -58,7 +58,7 @@ class DatasetPathTest {
                 <Target i:tid="bad"><amount>7</amount></Target>
                 """;
         for (var objects : List.of(owner + targets, targets + owner)) {
-            var report = validate(plan, List.of("Owner", "Target"),
+            var report = validate(plan, DatasetScope.SUPPLIED_DATASET,
                     primary("p", basket("basket", objects)));
             assertEquals(1, report.examples().size(), report.examples().toString());
             var diagnostic = report.examples().getFirst();
@@ -79,7 +79,7 @@ class DatasetPathTest {
                   MANDATORY CONSTRAINT parent->amount == item->amount;
                 END Note;
                 """);
-        var report = validate(plan, List.of("Parent", "Item"), primary("p", basket("basket", """
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", """
                 <Item i:tid="item"><amount>7</amount><parent i:ref="target"><Note/></parent></Item>
                 <Parent i:tid="target"><amount>5</amount></Parent>
                 """)));
@@ -110,7 +110,7 @@ class DatasetPathTest {
         var second = basket("second", """
                 <Node i:tid="b"><amount>7</amount><pointer><Pointer><link i:ref="a"/></Pointer></pointer></Node>
                 """);
-        var report = validate(plan, List.of("Node"), primary("p", first + second));
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", first + second));
         assertTrue(report.examples().isEmpty(), report.examples().toString());
         assertEquals(1, report.coverage().constraints().size());
         var checked = report.coverage().constraints().getFirst();
@@ -133,7 +133,7 @@ class DatasetPathTest {
                   MANDATORY CONSTRAINT DEFINED(parent);
                 END;
                 """);
-        var report = validate(plan, List.of("Parent", "Item"), primary("p", basket("basket", """
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", """
                 <Parent i:tid="p1"/>
                 <Item i:tid="i1"><parent i:ref="p1"/></Item>
                 <Item i:tid="i2"><parent i:ref="p1"/></Item>
@@ -156,7 +156,7 @@ class DatasetPathTest {
                   MANDATORY CONSTRAINT NOT (DEFINED(parent));
                 END;
                 """);
-        var report = validate(plan, List.of("Parent", "Item"), primary("p", basket("basket", """
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", """
                 <Item i:tid="item"><parent i:ref="missing"/></Item>
                 """)));
         assertTrue(report.examples().stream().noneMatch(d -> d.code() == ValidationCode.MANDATORY_CONSTRAINT_FALSE),

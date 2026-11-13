@@ -51,7 +51,7 @@ class DatasetStreamingTest {
                         END Data;
                         """));
         try (var storage = MvStoreValidationStorage.open(root, options);
-             var run = DatasetValidator.session(fixture.plan(), DatasetOptions.defaults(fixture.plan()), storage);
+             var run = DatasetValidator.session(fixture.plan(), DatasetOptions.defaults(), storage);
              var input = generated(fixture, rows)) {
             run.readInput(PRIMARY, input, TOKEN);
             var report = run.finish(TOKEN);
@@ -123,9 +123,9 @@ class DatasetStreamingTest {
     @Test
     void stopsTheGeneratedRelationRunAtItsWorkBudgetAndCleansUp() throws IOException {
         var fixture = fixture();
-        var defaults = DatasetOptions.defaults(fixture.plan());
-        var limits = new DatasetLimits(1, 1, 1_000, 100_000, 1, 10);
-        var options = new DatasetOptions(defaults.localOptions(), defaults.subjects(), defaults.extents(), limits);
+        var defaults = DatasetOptions.defaults();
+        var limits = new DatasetLimits(1, 1, 1_000, 100_000, 10);
+        var options = new DatasetOptions(defaults.localOptions(), limits, defaults.scope());
         try (var storage = MvStoreValidationStorage.open(root, MvStoreOptions.defaults(64 * 1024 * 1024));
              var run = DatasetValidator.session(fixture.plan(), options, storage);
              var input = generated(fixture, 128)) {

@@ -128,7 +128,7 @@ class RelationCardinalityTest {
                   b -- {0..*} B;
                 END Link;
                 """, "COMPLETE", "<A i:tid='a1'/><B i:tid='b1'/>",
-                new DatasetLimits(1, 1, 2, 10_000, 1, 1)));
+                new DatasetLimits(1, 1, 2, 10_000, 1)));
         assertEquals("Dataset relationship work limit exceeded", failure.getMessage());
     }
 
@@ -156,8 +156,8 @@ class RelationCardinalityTest {
                   <i:datasection><Data i:bid="basket" i:consistency="%s">%s</Data></i:datasection>
                 </i:transfer>
                 """.formatted(consistency, data);
-        var defaults = DatasetOptions.defaults(plan);
-        var options = new DatasetOptions(defaults.localOptions(), defaults.subjects(), defaults.extents(), limits);
+        var defaults = DatasetOptions.defaults();
+        var options = new DatasetOptions(defaults.localOptions(), limits, defaults.scope());
         try (var store = new InMemoryValidationStorage(10_000, 4_000_000);
              var run = DatasetValidator.session(plan, options, store);
              var reader = new Xtf24Reader(transfer, new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)))) {

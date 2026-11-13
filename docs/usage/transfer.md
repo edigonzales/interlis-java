@@ -99,7 +99,7 @@ und der Anzahl eindeutiger IDs. Auch bei einer direkten Reader-Writer-Pipeline
 existieren die Identitätsindizes beider Instanzen. Die Limits sind Ressourcenbudgets
 und liefern keine feste Heap-Kapazitätsgarantie.
 
-Der [Java-SDK-Vertrag](sdk.md#getrennte-versionen) ist Version 0.8.
+Der [Java-SDK-Vertrag](sdk.md#getrennte-versionen) ist Version 0.9.
 `TransferValue.XmlFragment` erhält neben `xml` den Namespacekontext in
 `namespaceBindings`. Der Einargumentkonstruktor bleibt verfügbar.
 
@@ -179,7 +179,7 @@ if (projection instanceof ValidationPlanningResult.Rejected rejected) {
     throw new IllegalArgumentException(rejected.problems().toString());
 }
 var plan = ((ValidationPlanningResult.Ready) projection).plan();
-var options = DatasetOptions.defaults(plan);
+var options = DatasetOptions.defaults();
 try (var storage = new InMemoryValidationStorage(1_000_000, 256L * 1024 * 1024);
      var run = DatasetValidator.session(plan, options, storage);
      var reader = new Xtf24Reader(transferPlan, input)) {
@@ -213,13 +213,16 @@ Gruppierung und nichtgeometrische Strukturinspektion. Gruppengrössen
 sind über `elementCount(AGGREGATES)` verfügbar. Materialisierte Sichten
 haben keinen XTF-Ausgabepfad in diesem Profil.
 
-Standardmässig sind globale Extents offen. Ein erfolgreicher Zeuge oder
-eine beobachtete Dublette ist bereits im verfügbaren Umfang aussagekräftig.
-Für Aussagen über Abwesenheit muss der Host bei globalen Regeln die
-relevanten Extents mit `ExtentDeclarations` schliessen. Die Aspekte
-`OBJECT_MEMBERSHIP`, `ATTRIBUTE_VALUES` und `RELATION_MEMBERSHIP` sind
-getrennt. `DatasetRuleCoverage` unterscheidet die Basis der Vollständigkeit
-und den Ausgang der Regel. Die Coverage weist offene Kontexte und Grenzen
-wie Geometrietopologie, fehlende Hostbindungen und unvollständige
-Bestände aus. Die Auswahl über `SubjectSelection` bestimmt die zu prüfenden
-Subjekte. Sie erbringt keinen Vollständigkeitsnachweis.
+Standardmässig prüft die Session den vollständig eingelesenen Lieferbestand
+(`SUPPLIED_DATASET`). Ein benötigtes externes Ziel muss im gelieferten Primär-
+oder Referenzbestand vorhanden sein. Bei `PARTIAL_DATASET` bleiben Aussagen
+über nicht zugängliche Ziele und offene Populationen ausstehend. Beobachtete
+Verstösse und vorhandene Zeugen zählen in beiden Betriebsarten. Eine geschlossene
+Basketregel kann auch im partiellen Lauf abschliessend geprüft werden.
+Unvollständige oder inkonsistente Transferdaten begrenzen die betroffenen
+Aussagen in beiden Betriebsarten.
+
+Der Bericht nennt den vereinbarten Lieferumfang. Die Modellroots bestimmen
+die Prüfsubjekte in den Primäreingaben. Referenzeingaben liefern Ziele und Zeugen
+und zählen nicht zur primären SET-Population. Reader und Validator müssen mit
+derselben unveränderlichen Schemainstanz geplant sein.

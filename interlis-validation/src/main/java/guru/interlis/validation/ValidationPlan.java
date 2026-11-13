@@ -29,6 +29,7 @@ import java.util.Set;
 /** Immutable and shareable rules for one checked schema revision. */
 public final class ValidationPlan {
     private final TransferPlan transferPlan;
+    private final SubjectSelection subjects;
     private final SemanticGraph graph;
     private final TypeRelations typeRelations;
     private final Map<SymbolRef, ObjectValidationPlan> objects;
@@ -74,6 +75,7 @@ public final class ValidationPlan {
         this.bindings = bindings;
         this.datasetRules = List.copyOf(datasetRules);
         this.rootModels = List.copyOf(rootModels);
+        this.subjects = new SubjectSelection(this);
         var translatedSymbols = new HashMap<SymbolId, SymbolId>();
         for (var ref : transferPlan.models()) {
             var model = (ModelSymbol) graph.symbol(ref.symbol().symbol()).orElseThrow();
@@ -91,6 +93,10 @@ public final class ValidationPlan {
             }
         }
         this.originalEnumerations = Map.copyOf(translatedTypes);
+    }
+
+    SubjectSelection subjects() {
+        return subjects;
     }
 
     /** Identifies the snapshot that owns all plan references. */

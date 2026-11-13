@@ -23,8 +23,7 @@ class ValidationViewPlanTest {
         var ref = plan.ref(id);
         assertTrue(plan.transferPlan().object(ref).isEmpty());
         assertNotNull(plan.views().get(id));
-        new SubjectSelection(plan.snapshotId(), List.of(ref)).check(plan);
-        var report = validate(plan, List.of("Item"), primary("p", basket("basket",
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket",
                 "<Item i:tid='item'><amount>5</amount></Item>")));
         assertTrue(report.examples().isEmpty(), report.examples().toString());
         assertTrue(report.coverage().constraints().isEmpty());
@@ -38,7 +37,7 @@ class ValidationViewPlanTest {
                   UNIQUE code;
                 END Keys;
                 """);
-        var report = validate(plan, List.of("Item"), primary("p", basket("basket", """
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", """
                 <Item i:tid='first'><code>same</code></Item>
                 <Item i:tid='second'><code>same</code></Item>
                 <Item i:tid='third'><code>same</code></Item>
@@ -61,7 +60,7 @@ class ValidationViewPlanTest {
                   MANDATORY CONSTRAINT #false;
                 END Boundaries;
                 """);
-        var report = validate(plan, List.of("Item"), primary("p", basket("basket", "")));
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", "")));
         assertTrue(report.examples().isEmpty(), report.examples().toString());
         assertEquals(ValidationCoverage.ConstraintStatus.UNSUPPORTED_EXPRESSION,
                 report.coverage().constraints().getFirst().status());
@@ -76,7 +75,7 @@ class ValidationViewPlanTest {
                   UNIQUE code;
                 END Keys;
                 """);
-        var report = validate(plan, List.of("LeftSide", "RightSide"), primary("p", basket("basket", """
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", """
                 <LeftSide i:tid='l1'><code>same</code></LeftSide>
                 <LeftSide i:tid='l2'><code>same</code></LeftSide>
                 <RightSide i:tid='r1'/>
@@ -99,7 +98,7 @@ class ValidationViewPlanTest {
                 END Keys;
                 """);
         var part = "<parts><Part><code>same</code></Part></parts>";
-        var report = validate(plan, List.of("Item"), primary("p", basket("basket",
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket",
                 "<Item i:tid='owner'>" + part.repeat(3) + "</Item>")));
         assertEquals(1, report.detectedViolations());
         var finding = report.examples().getFirst();

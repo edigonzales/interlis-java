@@ -19,10 +19,8 @@ import guru.interlis.validation.ValidationSession.ValuePath;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -35,14 +33,13 @@ final class DatasetRuleContext {
     private final StoredValueCodec codec;
     private final ReferenceResolver resolver;
     private final DatasetOptions options;
-    private final Set<InputId> inputs;
-    private final Set<InputId> primaryInputs;
+    private final boolean closedDelivery;
     private final CancellationToken cancellation;
     private long remainingWork;
 
     DatasetRuleContext(ValidationPlan plan, ValidationStorage storage, StoredValueCodec codec,
                        DatasetObjectStore objects, IdentityIndex identities, DatasetOptions options,
-                       Set<InputId> inputs, CancellationToken cancellation) {
+                       boolean completeDelivery, CancellationToken cancellation) {
         this.plan = plan;
         this.keys = storage.table(StorageArea.RULE_KEYS);
         this.temporary = storage.table(StorageArea.TEMPORARY);
@@ -51,26 +48,17 @@ final class DatasetRuleContext {
         this.objects = objects;
         this.resolver = new ReferenceResolver(plan, identities, objects);
         this.options = options;
-        this.inputs = Set.copyOf(inputs);
+        this.closedDelivery = completeDelivery && options.scope() == DatasetScope.SUPPLIED_DATASET;
         this.cancellation = cancellation;
         this.remainingWork = options.limits().maxConstraintWork();
-        var primary = new HashSet<InputId>();
-        for (long ordinal = 1; ordinal <= inputs.size(); ordinal++) {
-            cancellation.throwIfCancellationRequested();
-            var input = input(ordinal);
-            if (input.descriptor().role() == InputRole.PRIMARY) {
-                primary.add(input.descriptor().id());
-            }
-        }
-        this.primaryInputs = Set.copyOf(primary);
     }
 
     boolean populationClosed(SymbolRef root) {
-        return plan.transferPlan().object(root).isPresent() && declaredComplete(root, ExtentAspect.OBJECT_MEMBERSHIP);
+        return closedDelivery && plan.transferPlan().object(root).isPresent();
     }
 
     boolean selectsView(guru.interlis.model.ViewSymbol view) {
-        return options.subjects().selectsView(plan, view);
+        return plan.subjects().selectsView(view);
     }
 
     void visit() {
@@ -98,10 +86,7 @@ final class DatasetRuleContext {
         var basket = metadata.get(DatasetValidationSession.metadataKey((byte) 3, stored.basket()))
                 .map(codec::decodeBasket).orElseThrow();
         var input = input(stored.input());
-        var topics = new ArrayList<>(basket.event().additionalTopics());
-        topics.addFirst(basket.event().topic());
-        boolean selected = topics.stream().anyMatch(topic -> options.subjects().selects(plan,
-                input.descriptor().role(), topic, stored.event().object().type()));
+        boolean selected = plan.subjects().selects(input.descriptor().role(), basket.event());
         return new Occurrence(handle, stored, basket.event(), input, selected);
     }
 
@@ -110,18 +95,15 @@ final class DatasetRuleContext {
                 .map(codec::decodeInput).orElseThrow();
     }
 
-    void initializeScopes(DatasetRulePlan rule, boolean basketRule, boolean requiresValues,
-                          BiConsumer<Long, DatasetRuleCoverage.Completeness> consumer) {
+    void initializeScopes(DatasetRulePlan rule, boolean basketRule,
+                          BiConsumer<Long, DatasetScopeStore.Completeness> consumer) {
         var root = rule.key().applicationRoot();
         if (!basketRule) {
             boolean selected = plan.transferPlan().topics().stream()
                     .anyMatch(topic -> selectsPopulation(rule, List.of(topic.symbol())));
             if (selected) {
-                boolean complete = claimsComplete(root, ExtentAspect.OBJECT_MEMBERSHIP, primaryInputs, Optional.empty())
-                        && (!requiresValues || claimsComplete(root, ExtentAspect.ATTRIBUTE_VALUES,
-                                primaryInputs, Optional.empty()));
-                consumer.accept(0L, complete ? DatasetRuleCoverage.Completeness.DECLARED_COMPLETE
-                        : DatasetRuleCoverage.Completeness.OPEN);
+                consumer.accept(0L, closedDelivery ? DatasetScopeStore.Completeness.CLOSED_DELIVERY
+                        : DatasetScopeStore.Completeness.OPEN);
             }
             return;
         }
@@ -140,17 +122,8 @@ final class DatasetRuleContext {
                 if (!selectsPopulation(rule, active)) {
                     continue;
                 }
-                var completeness = DatasetRuleCoverage.Completeness.OPEN;
-                if (basket.event().consistency() == TransferEvent.Consistency.COMPLETE) {
-                    completeness = DatasetRuleCoverage.Completeness.CLOSED_BY_TRANSFER;
-                } else {
-                    var ids = Set.of(input.descriptor().id());
-                    var id = Optional.of(basket.event().id());
-                    if (claimsComplete(root, ExtentAspect.OBJECT_MEMBERSHIP, ids, id)
-                            && (!requiresValues || claimsComplete(root, ExtentAspect.ATTRIBUTE_VALUES, ids, id))) {
-                        completeness = DatasetRuleCoverage.Completeness.DECLARED_COMPLETE;
-                    }
-                }
+                var completeness = basketClosed(ordinal, basket.event())
+                        ? DatasetScopeStore.Completeness.CLOSED_BY_TRANSFER : DatasetScopeStore.Completeness.OPEN;
                 consumer.accept(ordinal, completeness);
             }
         }
@@ -182,7 +155,7 @@ final class DatasetRuleContext {
             var descriptor = plan.transferPlan().topic(topic).orElseThrow();
             for (var type : descriptor.objectTypes()) {
                 if ((rule.candidateTypes().contains(type) || rule.key().applicationRoot().equals(type))
-                        && options.subjects().selects(plan, InputRole.PRIMARY, topic, type)) {
+                        && plan.subjects().selectsTopic(topic)) {
                     return true;
                 }
             }
@@ -195,13 +168,8 @@ final class DatasetRuleContext {
                 ? type.base().map(plan::ref).stream().toList() : type.restrictions().stream().map(plan::ref).toList();
         var basket = basketOrdinal == 0 ? Optional.<StoredValueCodec.StoredBasket>empty()
                 : metadata.get(DatasetValidationSession.metadataKey((byte) 3, basketOrdinal)).map(codec::decodeBasket);
-        if (basket.isEmpty() || basket.orElseThrow().event().consistency() != TransferEvent.Consistency.COMPLETE) {
-            var expected = basket.map(entry -> Set.of(input(entry.input()).descriptor().id())).orElse(primaryInputs);
-            var basketId = basket.map(entry -> entry.event().id());
-            if (roots.isEmpty() || roots.stream().anyMatch(root ->
-                    !claimsComplete(root, ExtentAspect.OBJECT_MEMBERSHIP, expected, basketId))) {
-                return java.util.OptionalLong.empty();
-            }
+        if (basket.map(entry -> !basketClosed(basketOrdinal, entry.event())).orElse(!closedDelivery)) {
+            return java.util.OptionalLong.empty();
         }
         var counts = new DatasetScopeCounts();
         forObjects(occurrence -> {
@@ -246,27 +214,12 @@ final class DatasetRuleContext {
     }
 
     boolean declaredComplete(SymbolRef root) {
-        return declaredComplete(root, ExtentAspect.OBJECT_MEMBERSHIP)
-                && declaredComplete(root, ExtentAspect.ATTRIBUTE_VALUES);
+        return populationClosed(root);
     }
 
-    private boolean declaredComplete(SymbolRef root, ExtentAspect aspect) {
-        return claimsComplete(root, aspect, inputs, Optional.empty());
-    }
-
-    private boolean claimsComplete(SymbolRef root, ExtentAspect aspect, Set<InputId> expected,
-                                   Optional<guru.interlis.transfer.TransferIdentity.BasketId> basket) {
-        var descriptor = plan.transferPlan().object(root).orElseThrow();
-        return options.extents().claims().stream().anyMatch(claim -> {
-            var scope = claim.selector();
-            if (claim.aspect() != aspect || !scope.inputs().containsAll(expected)
-                    || scope.basket().isPresent() && !scope.basket().equals(basket)) {
-                return false;
-            }
-            return plan.transferPlan().topic(scope.root()).isPresent()
-                    ? descriptor.topic().filter(topic -> topicSpecializes(topic, scope.root())).isPresent()
-                    : ModelValueRules.specializes(plan, descriptor, List.of(plan.canonical(scope.root().symbol())));
-        });
+    private boolean basketClosed(long ordinal, TransferEvent.StartBasket basket) {
+        return basket.consistency() == TransferEvent.Consistency.COMPLETE
+                && temporary.get(DatasetValidationSession.metadataKey((byte) 9, ordinal)).isEmpty();
     }
 
     Optional<ExpressionProgram> program(ExpressionId id) {

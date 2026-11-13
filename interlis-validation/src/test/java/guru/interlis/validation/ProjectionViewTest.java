@@ -24,7 +24,7 @@ class ProjectionViewTest {
         for (var target : List.of(
                 "<Target i:tid='target'><amount>5</amount></Target>",
                 "<Target i:tid='target'/>", "")) {
-            var report = validate(plan, List.of("Item", "Target"), primary("p", basket("basket", """
+            var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", """
                     <Item i:tid='item'><link><Link><target i:ref='target'/></Link></link></Item>
                     """ + target)));
             var falseConstraints = report.examples().stream()
@@ -48,7 +48,7 @@ class ProjectionViewTest {
                   MANDATORY CONSTRAINT DEFINED(renamed->computed);
                 END Result;
                 """);
-        var report = validate(plan, List.of("Item"), primary("p", basket("basket",
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket",
                 "<Item i:tid='item'><name>value</name></Item>")));
         assertEquals(0, report.detectedViolations(), report.examples().toString());
         assertEquals(1, report.coverage().constraints().getFirst().occurrences());
@@ -67,7 +67,7 @@ class ProjectionViewTest {
                     MANDATORY CONSTRAINT doubled > 2;
                 END Selected;
                 """);
-        var report = validate(plan, List.of("Item"), primary("p", basket("basket", """
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", """
                 <Item i:tid='filtered'><amount>0</amount></Item>
                 <Item i:tid='wrong'><amount>1</amount></Item>
                 <Item i:tid='right'><amount>2</amount></Item>
@@ -88,7 +88,7 @@ class ProjectionViewTest {
                     MANDATORY CONSTRAINT (b->amount >= 5) => DEFINED(child->extra);
                 END Selected;
                 """);
-        var report = validate(plan, List.of("Base"), primary("p", basket("basket", """
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", """
                 <Base i:tid='plain'><amount>3</amount></Base>
                 <Child i:tid='extended'><amount>7</amount><extra>available</extra></Child>
                 """)));

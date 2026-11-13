@@ -36,7 +36,7 @@ class RuntimeParameterTest {
                 ValidationCoverage.ConstraintStatus.CHECKED).entrySet()) {
             var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
                     ValidationPlanner.plan(transfer, ValidationProfile.DATASET, entry.getKey())).plan();
-            var report = validate(plan, List.of("Item"), input);
+            var report = validate(plan, DatasetScope.SUPPLIED_DATASET, input);
             assertEquals(entry.getValue(), report.coverage().constraints().getFirst().status());
         }
         var invalid = new RuntimeBindings(Map.of(parameter, new TransferValue.Text("true")), Map.of());

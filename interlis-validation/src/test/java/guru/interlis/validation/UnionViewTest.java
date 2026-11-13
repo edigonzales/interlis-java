@@ -21,7 +21,7 @@ class UnionViewTest {
                   MANDATORY CONSTRAINT INTERLIS.len(label) == 4;
                 END Extended;
                 """);
-        var report = validate(plan, List.of("A", "B"), primary("p", basket("basket", """
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", """
                 <A i:tid='a'><label>same</label></A>
                 <B i:tid='b'><label>same</label></B>
                 """)));
