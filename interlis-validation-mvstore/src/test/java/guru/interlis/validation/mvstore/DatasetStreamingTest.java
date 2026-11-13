@@ -37,6 +37,45 @@ class DatasetStreamingTest {
     @TempDir Path root;
 
     @Test
+    void countsAHighFanOutAndNavigatesItsSingleReverseLink() throws IOException {
+        int rows = Integer.getInteger("interlis.validation.streaming.objects", 256);
+        assertTrue(rows > 0 && rows <= 250_000);
+        var fixture = fixture(MODEL.replace("    END Link;", """
+                    END Link;
+                CONSTRAINTS OF Owner =
+                  MANDATORY CONSTRAINT INTERLIS.objectCount(items) == %d;
+                END;
+                CONSTRAINTS OF Item =
+                  MANDATORY CONSTRAINT DEFINED(owner);
+                END;
+                """.formatted(rows)));
+        var data = new StringBuilder("<Data i:bid='fanout'><Owner i:tid='owner'/>");
+        for (int i = 0; i < rows; i++) {
+            data.append("<Item i:tid='item").append(i).append("'><code>k").append(i)
+                    .append("</code><owner i:ref='owner'/></Item>");
+        }
+        data.append("</Data>");
+        long start = System.nanoTime();
+        try (var storage = MvStoreValidationStorage.open(root, MvStoreOptions.defaults(512L * 1024 * 1024))) {
+            var report = validate(fixture, storage, data.toString());
+            assertEquals(rows + 1L, report.inspectedObjects());
+            assertTrue(report.examples().isEmpty(), report.examples().toString());
+            var checks = report.coverage().constraints();
+            assertTrue(checks.stream().allMatch(check ->
+                    check.status() == guru.interlis.validation.ValidationCoverage.ConstraintStatus.CHECKED));
+            assertEquals(rows + 1L, checks.stream().mapToLong(
+                    guru.interlis.validation.ValidationCoverage.ConstraintCount::occurrences).sum());
+            long heap = Runtime.getRuntime().maxMemory();
+            if (Boolean.getBoolean("interlis.validation.streaming.require2g")) {
+                assertEquals(2L << 30, heap);
+            }
+            System.out.printf("objects=%d links=%d heapBytes=%d elapsedMillis=%d peakTempBytes=%d%n",
+                    rows + 1L, rows, heap, (System.nanoTime() - start) / 1_000_000, storage.peakDiskBytes());
+        }
+        assertClean();
+    }
+
+    @Test
     void streamsLateTargetsAndHighFanOutWithBothDuplicateAndDistinctKeys() throws IOException {
         int rows = Integer.getInteger("interlis.validation.streaming.objects", 256);
         assertTrue(rows > FAN_OUT_LIMIT + 1 && rows <= 250_000);

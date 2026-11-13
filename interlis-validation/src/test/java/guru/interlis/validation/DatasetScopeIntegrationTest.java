@@ -58,6 +58,42 @@ class DatasetScopeIntegrationTest {
         assertEquals(DatasetRuleCoverage.Outcome.SATISFIED, closed.coverage().datasetRules().getLast().outcome());
     }
 
+    @Test
+    void keepsNestedReferenceChecksAndSuppliedScopeDistinctFromPartialDelivery() {
+        var plan = plan("""
+                CLASS Target = OID AS INTERLIS.UUIDOID; amount: 0..10; END Target;
+                STRUCTURE Link =
+                  peer: REFERENCE TO (EXTERNAL) Target;
+                  MANDATORY CONSTRAINT TargetAmount: DEFINED(peer->amount) AND peer->amount >= 5;
+                END Link;
+                CLASS Item = link: Link; END Item;
+                """);
+        var source = primary("primary", basket("data", """
+                <Item i:tid="item"><link><Link><peer i:ref="%s"/></Link></link></Item>
+                """.formatted(OID)));
+        var valid = reference("support", basket("reference", "<Target i:tid='" + OID + "'><amount>7</amount></Target>"));
+        var invalid = reference("support", basket("reference", "<Target i:tid='" + OID + "'/>"));
+        for (var scope : DatasetScope.values()) {
+            var checked = validate(plan, scope, source, valid);
+            assertTrue(checked.examples().isEmpty(), checked.examples().toString());
+            assertEquals(ValidationCoverage.ConstraintStatus.CHECKED,
+                    checked.coverage().constraints().getFirst().status());
+            var falseConstraint = validate(plan, scope, source, invalid);
+            assertEquals(List.of(ValidationCode.MANDATORY_CONSTRAINT_FALSE), codes(falseConstraint));
+            var data = falseConstraint.examples().getFirst().data();
+            assertEquals("item", data.tid().orElseThrow().value());
+            assertEquals(1, data.path().size());
+            var slot = assertInstanceOf(DataLocation.Slot.class, data.path().getFirst());
+            assertEquals("link", plan.transferPlan().symbol(slot.symbol()).known().orElseThrow().name().value());
+        }
+        var partial = validate(plan, DatasetScope.PARTIAL_DATASET, source);
+        assertTrue(partial.examples().isEmpty(), partial.examples().toString());
+        assertEquals(ValidationCoverage.ConstraintStatus.MISSING_RUNTIME_CONTEXT,
+                partial.coverage().constraints().getFirst().status());
+        var supplied = validate(plan, DatasetScope.SUPPLIED_DATASET, source);
+        assertEquals(List.of(ValidationCode.REFERENCE_TARGET_MISSING), codes(supplied));
+    }
+
     private static List<ValidationCode> codes(ValidationReport report) {
         return report.examples().stream().map(ValidationDiagnostic::code).toList();
     }
