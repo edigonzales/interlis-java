@@ -1,8 +1,12 @@
 package guru.interlis.validation;
 
+import guru.interlis.execution.CancellationToken;
+import guru.interlis.transfer.TransferEvent;
+import guru.interlis.transfer.TransferReader;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static guru.interlis.validation.DatasetRuleTestSupport.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -132,6 +136,64 @@ class DatasetScopeIntegrationTest {
         var complete = validate(plan, DatasetScope.SUPPLIED_DATASET, source,
                 reference("support", basket("reference", "")));
         assertEquals(List.of(ValidationCode.REFERENCE_TARGET_MISSING), codes(complete));
+    }
+
+    @Test
+    void keepsMissingTargetsOpenWhenAReferenceObjectIsInconsistent() {
+        var plan = plan("""
+                CLASS Target = OID AS INTERLIS.UUIDOID; amount: 0..10; END Target;
+                STRUCTURE Link =
+                  peer: REFERENCE TO (EXTERNAL) Target;
+                  MANDATORY CONSTRAINT TargetAmount: peer->amount >= 5;
+                END Link;
+                CLASS Item = link: Link; END Item;
+                """);
+        var source = basket("data", """
+                <Item i:tid="item"><link><Link><peer i:ref="%s"/></Link></link></Item>
+                """.formatted(OID));
+        var unrelated = "4ec9c3b6-8ef7-4c96-a809-091cebd492b0";
+        var closed = validateWithReferenceObject(plan, source, unrelated, TransferEvent.Consistency.COMPLETE);
+        assertEquals(List.of(ValidationCode.REFERENCE_TARGET_MISSING), codes(closed));
+
+        var open = validateWithReferenceObject(plan, source, unrelated, TransferEvent.Consistency.INCONSISTENT);
+        assertEquals(0, open.detectedViolations(), open.examples().toString());
+        assertTrue(open.coverage().missingRuntimeContext().stream()
+                .anyMatch(rule -> rule.family() == ValidationCoverage.RuleFamily.REFERENTIAL_INTEGRITY));
+        var pending = open.coverage().constraints().getFirst();
+        assertEquals(ValidationCoverage.ConstraintStatus.MISSING_RUNTIME_CONTEXT, pending.status());
+        assertEquals(1, pending.occurrences());
+
+        var known = validateWithReferenceObject(plan, source, OID, TransferEvent.Consistency.INCONSISTENT);
+        assertEquals(List.of(ValidationCode.MANDATORY_CONSTRAINT_FALSE), codes(known));
+        var checked = known.coverage().constraints().getFirst();
+        assertEquals(pending.constraint(), checked.constraint());
+        assertEquals(ValidationCoverage.ConstraintStatus.CHECKED, checked.status());
+        assertEquals(1, checked.occurrences());
+    }
+
+    private static ValidationReport validateWithReferenceObject(ValidationPlan plan, String source, String tid,
+                                                               TransferEvent.Consistency consistency) {
+        var token = CancellationToken.none();
+        var support = basket("reference", "<Target i:tid='" + tid + "'><amount>3</amount></Target>");
+        try (var storage = new InMemoryValidationStorage(1_000, 1_000_000);
+             var run = DatasetValidator.session(plan, DatasetOptions.defaults(), storage);
+             var primary = reader(plan, source);
+             var decoded = reader(plan, support);
+             var reference = new TransferReader(plan.transferPlan()) {
+                 @Override
+                 protected Optional<TransferEvent> readEvent(CancellationToken cancellation) {
+                     // XTF 2.4 carries consistency on baskets. Set the object status at the neutral boundary.
+                     return decoded.readNext(cancellation).map(event -> event instanceof TransferEvent.ObjectEvent object
+                             ? new TransferEvent.ObjectEvent(object.object(), object.operation(), consistency) : event);
+                 }
+
+                 @Override
+                 protected void release() { }
+             }) {
+            run.readInput(new InputDescriptor(new InputId("primary"), InputRole.PRIMARY), primary, token);
+            run.readInput(new InputDescriptor(new InputId("support"), InputRole.REFERENCE), reference, token);
+            return run.finish(token);
+        }
     }
 
     private static List<ValidationCode> codes(ValidationReport report) {
