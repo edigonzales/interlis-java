@@ -7,13 +7,19 @@ import java.util.Objects;
 
 /** A local violation, with separate data and model provenance. */
 public record ValidationDiagnostic(ValidationCode code, Severity severity, DataLocation data,
-                                   RuleLocation rule, List<String> arguments) {
+                                   RuleLocation rule, List<String> arguments, java.util.Optional<DataLocation> relatedData) {
     public ValidationDiagnostic {
         Objects.requireNonNull(code, "code");
         Objects.requireNonNull(severity, "severity");
         Objects.requireNonNull(data, "data");
         Objects.requireNonNull(rule, "rule");
         arguments = List.copyOf(arguments);
+        Objects.requireNonNull(relatedData, "relatedData");
+    }
+
+    public ValidationDiagnostic(ValidationCode code, Severity severity, DataLocation data,
+                                RuleLocation rule, List<String> arguments) {
+        this(code, severity, data, rule, arguments, java.util.Optional.empty());
     }
 
     /** English fallback message for presentation. */

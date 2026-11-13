@@ -31,6 +31,10 @@ final class DatasetRuleTestSupport {
     }
 
     static ValidationPlan plan(String version, String declarations) {
+        return plan(version, declarations, RuntimeBindings.empty());
+    }
+
+    static ValidationPlan plan(String version, String declarations, RuntimeBindings bindings) {
         var schema = compile("""
                 INTERLIS %s;
                 MODEL Checks (en) AT "https://example.org/checks" VERSION "1" =
@@ -40,7 +44,7 @@ final class DatasetRuleTestSupport {
                 END Checks.
                 """.formatted(version, declarations));
         return assertInstanceOf(ValidationPlanningResult.Ready.class,
-                ValidationPlanner.plan(transfer(schema), ValidationProfile.DATASET)).plan();
+                ValidationPlanner.plan(transfer(schema), ValidationProfile.DATASET, bindings)).plan();
     }
 
     static SymbolRef type(ValidationPlan plan, String name) {

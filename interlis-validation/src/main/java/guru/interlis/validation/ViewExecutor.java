@@ -42,7 +42,8 @@ final class ViewExecutor {
                 var frame = frame(row);
                 for (var attribute : view.attributes()) {
                     if (!attribute.derivations().isEmpty()) {
-                        DerivedValueResolver.resolve(attribute, frame);
+                        var result = DerivedValueResolver.resolve(attribute, frame);
+                        report.recordViewGeometry(row, attribute, result, dataset::visit);
                     }
                 }
                 for (var rule : view.constraints()) {

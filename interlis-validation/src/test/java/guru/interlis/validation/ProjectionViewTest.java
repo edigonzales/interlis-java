@@ -9,6 +9,40 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ProjectionViewTest {
     @Test
+    void checksGeometryOfTheDerivedViewOccurrence() {
+        var engine = new GeometryEngine() {
+            public Check checkValue(Input input, Control control) {
+                control.findings().accept(new Finding(input.location(), List.of(),
+                        ValidationCode.GEOMETRY_DEGENERATE_SEGMENT, "probe"));
+                return Check.INVALID;
+            }
+            public Measurement measure(Measure measure, Input input, Control control) {
+                throw new AssertionError();
+            }
+            public Check checkCoverage(Source source, CoveragePurpose purpose, Control control) {
+                throw new AssertionError();
+            }
+        };
+        var plan = plan("2.4", """
+                DOMAIN Point = COORD 0.00..10.00, 0.00..10.00;
+                CLASS Item = shape : POLYLINE WITH (STRAIGHTS) VERTEX Point; END Item;
+                VIEW Derived PROJECTION OF renamed~Item; =
+                  copy := renamed->shape;
+                  MANDATORY CONSTRAINT DEFINED(copy);
+                END Derived;
+                """, RuntimeBindings.empty().withGeometry(engine));
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", """
+                <Item i:tid="item"><shape><g:polyline><g:coord><g:c1>1</g:c1><g:c2>1</g:c2></g:coord>
+                <g:coord><g:c1>2</g:c1><g:c2>2</g:c2></g:coord></g:polyline></shape></Item>
+                """)));
+        assertEquals(2, report.detectedViolations(), report.examples().toString());
+        assertTrue(report.examples().stream().allMatch(finding -> finding.code()
+                == ValidationCode.GEOMETRY_DEGENERATE_SEGMENT));
+        assertNotEquals(report.examples().getFirst().data().path(), report.examples().getLast().data().path());
+        assertFalse(report.coverage().unavailableFamilies().contains(ValidationCoverage.RuleFamily.TOPOLOGY));
+    }
+
+    @Test
     void followsAReferenceComputedByAnAliasedProjection() {
         var plan = plan("""
                 CLASS Target = amount: 0..10; END Target;

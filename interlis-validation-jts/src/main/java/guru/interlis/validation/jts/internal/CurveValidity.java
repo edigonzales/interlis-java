@@ -1,5 +1,6 @@
 package guru.interlis.validation.jts.internal;
 
+import guru.interlis.validation.DataLocation;
 import guru.interlis.validation.DataLocation.GeometryComponent;
 import guru.interlis.validation.GeometryEngine;
 import guru.interlis.validation.ValidationCode;
@@ -12,6 +13,7 @@ import org.locationtech.jts.operation.valid.TopologyValidationError;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 
 import static guru.interlis.validation.GeometryEngine.Check.*;
 import static guru.interlis.validation.ValidationCode.*;
@@ -92,20 +94,20 @@ final class CurveValidity {
             var hole = segments.get(i);
             for (int j = 0; j < i; j++) {
                 var other = segments.get(j);
-                var contacts = boundaryContacts(other, hole, false);
+                var contacts = boundaryContacts(other, hole, GEOMETRY_SELF_INTERSECTION);
                 int first = root(connected, j);
                 int second = root(connected, i);
                 if (contacts.size() > 1 || !contacts.isEmpty() && first == second) {
-                    invalid(rings.get(i).path(), GEOMETRY_INTERIOR_DISCONNECTED, "Boundary contacts separate the interior");
+                    invalid(rings.get(i).path(), rings.get(j).path(), GEOMETRY_INTERIOR_DISCONNECTED, "Boundary contacts separate the interior");
                 } else if (!contacts.isEmpty()) {
                     connected[first] = second;
                 }
                 if (j == 0 && location(other, hole, contacts) != Position.INSIDE) {
-                    invalid(rings.get(i).path(), GEOMETRY_HOLE_OUTSIDE_SHELL, "Hole is outside its shell");
+                    invalid(rings.get(i).path(), rings.get(j).path(), GEOMETRY_HOLE_OUTSIDE_SHELL, "Hole is outside its shell");
                 }
                 if (j > 0 && (location(other, hole, contacts) == Position.INSIDE
                         || location(hole, other, contacts) == Position.INSIDE)) {
-                    invalid(rings.get(i).path(), GEOMETRY_HOLE_OUTSIDE_SHELL, "Holes are nested");
+                    invalid(rings.get(i).path(), rings.get(j).path(), GEOMETRY_HOLE_OUTSIDE_SHELL, "Holes are nested");
                 }
             }
         }
@@ -196,12 +198,12 @@ final class CurveValidity {
                 if (!conflicts(a.curve(), b.curve(), result.hits(), allowed)) {
                     continue;
                 }
-                invalid(b.path(), GEOMETRY_SELF_INTERSECTION, "Segments intersect within the same curve");
+                invalid(b.path(), a.path(), GEOMETRY_SELF_INTERSECTION, "Segments intersect within the same curve");
             }
         }
     }
 
-    private HashSet<Point> boundaryContacts(List<Segment> a, List<Segment> b, boolean allowSharedEdge) {
+    private HashSet<Point> boundaryContacts(List<Segment> a, List<Segment> b, ValidationCode code) {
         var index = new STRtree();
         for (Segment segment : a) {
             control.visit().run();
@@ -224,11 +226,8 @@ final class CurveValidity {
                         contacts.add(hit.point());
                     }
                 }
-                if (allowSharedEdge && sameSegment(left.curve(), right.curve())) {
-                    continue;
-                }
                 if (conflicts(left.curve(), right.curve(), result.hits(), allowed)) {
-                    invalid(right.path(), GEOMETRY_SELF_INTERSECTION, "Surface boundaries cross or share a segment");
+                    invalid(right.path(), left.path(), code, "Surface boundaries cross or share a segment");
                 }
             }
         }
@@ -292,11 +291,11 @@ final class CurveValidity {
         control.visit().run();
         for (Ring a : rings(first)) {
             for (Ring b : rings(second)) {
-                boundaryContacts(flat(a), flat(b), false);
+                boundaryContacts(flat(a), flat(b), GEOMETRY_AREA_OVERLAP);
             }
         }
         if (within(first, second) || within(second, first)) {
-            invalid(second.shell().path(), GEOMETRY_AREA_OVERLAP, "Surface interiors overlap");
+            invalid(second.shell().path(), first.shell().path(), GEOMETRY_AREA_OVERLAP, "Surface interiors overlap");
         }
     }
 
@@ -436,10 +435,6 @@ final class CurveValidity {
         return sum;
     }
 
-    private static boolean sameSegment(CurveSegment a, CurveSegment b) {
-        return a.equals(b) || a.equals(b.reversed());
-    }
-
     private static int root(int[] links, int index) {
         while (links[index] != index) {
             index = links[index];
@@ -451,6 +446,17 @@ final class CurveValidity {
         if (status == VALID) {
             status = NUMERICALLY_UNDETERMINED;
         }
+    }
+
+    private void invalid(List<GeometryComponent> path, List<GeometryComponent> related,
+                         ValidationCode code, String detail) {
+        var location = input.location();
+        var steps = new ArrayList<>(location.path());
+        steps.addAll(related);
+        var other = new DataLocation(location.source(), location.basket(), location.tid(), location.oid(),
+                location.objectType(), steps);
+        status = INVALID;
+        control.findings().accept(new GeometryEngine.Finding(location, path, code, detail, Optional.of(other)));
     }
 
     private void invalid(List<GeometryComponent> path, ValidationCode code, String detail) {

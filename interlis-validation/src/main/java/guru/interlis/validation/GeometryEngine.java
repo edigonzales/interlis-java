@@ -41,12 +41,17 @@ public interface GeometryEngine {
 
     /** A finding at a data occurrence, with an immutable path relative to that occurrence. */
     record Finding(DataLocation location, List<DataLocation.GeometryComponent> path, ValidationCode code,
-                   String detail) {
+                   String detail, Optional<DataLocation> relatedData) {
         public Finding {
             Objects.requireNonNull(location, "location");
             path = List.copyOf(path);
             Objects.requireNonNull(code, "code");
             Objects.requireNonNull(detail, "detail");
+            Objects.requireNonNull(relatedData, "relatedData");
+        }
+        public Finding(DataLocation location, List<DataLocation.GeometryComponent> path, ValidationCode code,
+                       String detail) {
+            this(location, path, code, detail, Optional.empty());
         }
     }
 

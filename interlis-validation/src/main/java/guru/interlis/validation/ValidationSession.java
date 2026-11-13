@@ -216,11 +216,47 @@ public final class ValidationSession implements AutoCloseable {
                 baskets, objects, violations, examples,
                 new ValidationCoverage(counts(checked), plan.uncheckedRules(), counts(incomplete),
                         counts(missingRuntime), counts(unsupported),
-                        plan.profile() == ValidationProfile.LOCAL_ONLY ? List.of(REFERENTIAL_INTEGRITY, TOPOLOGY) : List.of(TOPOLOGY),
+                        unavailableFamilies(),
                         constraintCounts(), datasetCoverage), scope);
         clear();
         state = State.FINISHED;
         return report;
+    }
+
+    private List<ValidationCoverage.RuleFamily> unavailableFamilies() {
+        var families = new ArrayList<ValidationCoverage.RuleFamily>();
+        if (plan.profile() == ValidationProfile.LOCAL_ONLY) {
+            families.add(REFERENTIAL_INTEGRITY);
+        }
+        if (plan.bindings().geometry().isEmpty()) {
+            families.add(TOPOLOGY);
+        }
+        return families;
+    }
+
+    void recordViewGeometry(ViewRow row, AttributeSymbol attribute, EvaluationResult result, Runnable visit) {
+        if (!(plan.effectiveType(attribute.declaredType()).orElse(null) instanceof GeometryType type)) {
+            return;
+        }
+        var owner = plan.ref(row.view());
+        var slot = plan.ref(attribute.id());
+        var key = new SlotKey(owner, slot, TOPOLOGY);
+        if (!(result instanceof EvaluationResult.Known known && known.value() instanceof TransferGeometry value)) {
+            if (!(result instanceof EvaluationResult.UndefinedByData)) {
+                missingRuntime.merge(key, 1L, Math::addExact);
+            }
+            return;
+        }
+        var origin = row.origins().getFirst();
+        var location = origin.location(List.of(new DataLocation.Slot(slot)));
+        var context = BasketContext.of(origin.basket(), plan);
+        var contexts = row.origins().stream().map(other -> BasketContext.of(other.basket(), plan)).toList();
+        checkTopology(type, value, location, attribute, key, row.origins().stream().anyMatch(DatasetRuleContext.Occurrence::partial),
+                id -> {
+                    var coordinate = effectiveCoordinate(id, context);
+                    return contexts.stream().allMatch(other -> Objects.equals(coordinate, effectiveCoordinate(id, other)))
+                            ? coordinate : null;
+                }, visit);
     }
 
     /** Releases session state. Repeated close calls are harmless. */
@@ -641,9 +677,12 @@ public final class ValidationSession implements AutoCloseable {
             var steps = new ArrayList<>(finding.location().path());
             steps.addAll(finding.path());
             var data = finding.location();
-            diagnostic(finding.code(), new DataLocation(data.source(), data.basket(), data.tid(), data.oid(),
-                    data.objectType(), steps), ruleLocation(plan.ref(attribute.id()), attribute.origin()),
-                    List.of(finding.detail()));
+            if (retainExample()) {
+                examples.add(new ValidationDiagnostic(finding.code(), Severity.ERROR,
+                        new DataLocation(data.source(), data.basket(), data.tid(), data.oid(), data.objectType(), steps),
+                        ruleLocation(plan.ref(attribute.id()), attribute.origin()), List.of(finding.detail()),
+                        finding.relatedData()));
+            }
         });
         switch (engine.orElseThrow().checkValue(input, control)) {
             case VALID, INVALID -> checked.merge(key, 1L, Math::addExact);
