@@ -52,6 +52,10 @@ final class ExpressionEvaluator {
         return evaluate(program.root(), context);
     }
 
+    EvaluationResult evaluateKey(EvaluationFrame frame) {
+        return program.expression() instanceof PathExpression path ? readPath(path, frame, true) : evaluate(frame);
+    }
+
     private EvaluationResult evaluate(ExpressionId id, EvaluationFrame context) {
         context.visit().run();
         var constant = program.constants().get(id);
@@ -59,7 +63,7 @@ final class ExpressionEvaluator {
             return constant;
         }
         return switch (program.nodes().get(id)) {
-            case PathExpression path -> readPath(path, context);
+            case PathExpression path -> readPath(path, context, false);
             case FunctionCallExpression call -> function(call, context);
             case SymbolValueExpression symbol -> symbolValue(symbol, context);
             case DefinedExpression defined -> switch (evaluate(defined.operand(), context)) {
@@ -304,7 +308,7 @@ final class ExpressionEvaluator {
                 ? Unsupported.INSTANCE : result;
     }
 
-    private static EvaluationResult readPath(PathExpression expression, EvaluationFrame context) {
+    private static EvaluationResult readPath(PathExpression expression, EvaluationFrame context, boolean terminalIdentity) {
         EvaluationResult current = value(context.current(), false);
         var frame = context;
         for (var step : expression.path().steps()) {
@@ -371,6 +375,9 @@ final class ExpressionEvaluator {
             if (step instanceof PathStep.AttributeStep attribute && current instanceof Known read
                     && read.value() instanceof TransferValue.Reference reference
                     && frame.plan().valueType(attribute.target()).orElse(null) instanceof ReferenceType type) {
+                if (terminalIdentity && step == expression.path().steps().getLast()) {
+                    return current;
+                }
                 if (frame.dataset().isEmpty()) {
                     return MissingContext.DATASET_REFERENCE;
                 }

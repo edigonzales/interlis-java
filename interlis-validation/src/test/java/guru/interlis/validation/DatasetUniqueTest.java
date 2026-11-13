@@ -11,6 +11,27 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class DatasetUniqueTest {
     @Test
+    void detectsDuplicateTerminalReferencesWhenTheTargetIsMissing() {
+        var plan = plan("""
+                CLASS Peer = END Peer;
+                STRUCTURE Link = peer: REFERENCE TO Peer; END Link;
+                CLASS Item =
+                  link: Link;
+                  UNIQUE link->peer;
+                END Item;
+                """);
+        var first = "<Item i:tid='first'><link><Link><peer i:ref='missing'/></Link></link></Item>";
+        var second = "<Item i:tid='second'><link><Link><peer i:ref='%s'/></Link></link></Item>";
+        for (var target : List.of("missing", "other")) {
+            var report = validate(plan, List.of("Item", "Peer"),
+                    primary("p", basket("data", first + second.formatted(target))));
+            assertEquals(target.equals("missing") ? 1 : 0, report.examples().stream()
+                    .filter(diagnostic -> diagnostic.code() == ValidationCode.DATASET_UNIQUE_DUPLICATE).count(),
+                    report.examples().toString());
+        }
+    }
+
+    @Test
     void groupsInheritedGlobalKeysAcrossSiblingsBasketsAndInputs() {
         var plan = plan("""
                 CLASS Base (ABSTRACT) =

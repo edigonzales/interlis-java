@@ -279,6 +279,12 @@ final class DatasetRuleContext {
                 .withDataset(new DatasetPathContext(this, occurrence)));
     }
 
+    EvaluationResult evaluateKey(ExpressionProgram program, Occurrence occurrence) {
+        var frame = new EvaluationFrame(plan, occurrence.object().data(), occurrence.partial(), this::visit,
+                java.util.OptionalLong.empty(), cancellation).withDataset(new DatasetPathContext(this, occurrence));
+        return new ExpressionEvaluator(program).evaluateKey(frame);
+    }
+
     void checkDeferredConstraints(ValidationSession report) {
         if (!plan.hasDeferredPaths()) {
             return;
@@ -441,7 +447,17 @@ final class DatasetRuleContext {
                     var result = resolver.resolve(new BasketHandle(occurrence.stored().input(),
                                     occurrence.stored().basket()), occurrence.basket(), occurrence.input().namespaces(),
                             reference, target.targetRoots(), target.external(), false);
-                    return result instanceof ReferenceResolver.Found found ? Optional.of(found.target()) : Optional.empty();
+                    if (result instanceof ReferenceResolver.Ambiguous || result instanceof ReferenceResolver.InvalidTarget) {
+                        return Optional.empty();
+                    }
+                    return Optional.of(switch (reference.target()) {
+                        case guru.interlis.transfer.TransferIdentity.TransferId tid ->
+                                new StableIdentity("tid:" + occurrence.stored().input(), tid.value());
+                        case guru.interlis.transfer.TransferIdentity.ObjectOid oid -> {
+                            var identity = StableIdentity.bind(occurrence.input().namespaces(), oid.value());
+                            yield new StableIdentity("oid:" + identity.namespace(), identity.value());
+                        }
+                    });
                 }, oid -> StableIdentity.bind(occurrence.input().namespaces(), oid));
     }
 
