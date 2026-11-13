@@ -53,31 +53,21 @@ final class ViewExecutor {
             throw new ValidationLimitException("View dependency depth exceeds the validation budget");
         }
         Consumer<ViewRow> selected = row -> {
-            var frame = frame(row);
-            for (var ancestor : view.inheritance()) {
-                for (var id : ancestor.selections()) {
-                    var result = dataset.program(id).map(program -> program.evaluate(frame))
-                            .orElse(EvaluationResult.Unsupported.INSTANCE);
-                    if (result instanceof EvaluationResult.Known known
-                            && known.value() instanceof TransferValue.BooleanValue value) {
-                        if (!value.value()) {
-                            return;
-                        }
-                    } else {
-                        if (!(result instanceof EvaluationResult.UndefinedByData)) {
-                            undecided.accept(row, result);
-                        }
-                        return;
-                    }
-                }
+            var result = selection(view, row);
+            if (isTrue(result)) {
+                consumer.accept(row);
+            } else if (unknown(result)) {
+                undecided.accept(row, result);
             }
-            consumer.accept(row);
         };
         switch (view.formation()) {
             case ViewSymbol.Projection projection -> base(view, projection.base(), selected, undecided, depth);
             case ViewSymbol.Union union -> union.bases().forEach(base -> base(view, base, selected, undecided, depth));
             case ViewSymbol.Join join -> join(view, join, 0, new ViewRow(view.view().id(), Map.of(), List.of()),
-                    selected, undecided, depth);
+                    row -> {
+                        consumer.accept(row);
+                        return true;
+                    }, undecided, depth, false);
             case ViewSymbol.Aggregation aggregate -> aggregate(view, aggregate, selected, undecided, depth);
             case ViewSymbol.Inspection inspection -> {
                 if (!inspection.area()) {
@@ -123,33 +113,78 @@ final class ViewExecutor {
         });
     }
 
-    private void join(ViewPlan view, ViewSymbol.Join join, int position, ViewRow prefix, Consumer<ViewRow> consumer,
-                      java.util.function.BiConsumer<ViewRow, EvaluationResult> undecided, int depth) {
+    private EvaluationResult selection(ViewPlan view, ViewRow row) {
+        var frame = frame(row);
+        for (var ancestor : view.inheritance()) {
+            for (var id : ancestor.selections()) {
+                var result = dataset.program(id).map(program -> program.evaluate(frame))
+                        .orElse(EvaluationResult.Unsupported.INSTANCE);
+                if (!isTrue(result)) {
+                    return result;
+                }
+            }
+        }
+        return ExpressionEvaluator.bool(true);
+    }
+
+    private static boolean isTrue(EvaluationResult result) {
+        return result instanceof EvaluationResult.Known known
+                && known.value() instanceof TransferValue.BooleanValue value && value.value();
+    }
+
+    private static boolean unknown(EvaluationResult result) {
+        return !(result instanceof EvaluationResult.Known || result instanceof EvaluationResult.UndefinedByData);
+    }
+
+    private JoinOutcome join(ViewPlan view, ViewSymbol.Join join, int position, ViewRow prefix,
+                             java.util.function.Predicate<ViewRow> consumer,
+                             java.util.function.BiConsumer<ViewRow, EvaluationResult> undecided,
+                             int depth, boolean nullPartner) {
         dataset.visit();
         if (position > 128) {
             throw new ValidationLimitException("Join arity exceeds the validation depth budget");
         }
         if (position == join.bases().size()) {
-            consumer.accept(prefix);
-            return;
+            var result = nullPartner ? ExpressionEvaluator.bool(true) : selection(view, prefix);
+            if (isTrue(result)) {
+                return consumer.test(prefix) ? JoinOutcome.MATCH : JoinOutcome.NO_MATCH;
+            }
+            if (unknown(result)) {
+                undecided.accept(prefix, result);
+                return JoinOutcome.UNKNOWN;
+            }
+            return JoinOutcome.NO_MATCH;
         }
         var base = join.bases().get(position);
         var binding = (ViewSymbol.Base) dataset.plan.symbol(base).orElseThrow();
-        var matched = new boolean[1];
+        var outcome = new JoinOutcome[] {JoinOutcome.NO_MATCH};
         base(view, base, next -> {
-            matched[0] = true;
             var values = new LinkedHashMap<>(prefix.bases());
             values.putAll(next.bases());
             var origins = new java.util.ArrayList<>(prefix.origins());
             origins.addAll(next.origins());
-            join(view, join, position + 1, new ViewRow(view.view().id(), values, origins), consumer, undecided, depth);
-        }, undecided, depth);
-        if (!matched[0] && binding.orNull() && !prefix.origins().isEmpty()) {
+            var evaluated = join(view, join, position + 1, new ViewRow(view.view().id(), values, origins),
+                    consumer, undecided, depth, nullPartner);
+            outcome[0] = outcome[0].merge(evaluated);
+        }, (row, result) -> {
+            outcome[0] = outcome[0].merge(JoinOutcome.UNKNOWN);
+            undecided.accept(prefix.origins().isEmpty() ? row : prefix, result);
+        }, depth);
+        if (outcome[0] == JoinOutcome.NO_MATCH && binding.orNull() && !prefix.origins().isEmpty()) {
             if (dataset.populationClosed(dataset.plan.ref(binding.target()))) {
-                join(view, join, position + 1, prefix, consumer, undecided, depth);
-            } else {
-                undecided.accept(prefix, EvaluationResult.MissingContext.POPULATION);
+                return join(view, join, position + 1, prefix, consumer, undecided, depth, true);
             }
+            undecided.accept(prefix, EvaluationResult.MissingContext.POPULATION);
+            return JoinOutcome.UNKNOWN;
+        }
+        return outcome[0];
+    }
+
+    private enum JoinOutcome {
+        NO_MATCH, UNKNOWN, MATCH;
+
+        JoinOutcome merge(JoinOutcome other) {
+            return ordinal() >= other.ordinal() ? this : other;
         }
     }
 

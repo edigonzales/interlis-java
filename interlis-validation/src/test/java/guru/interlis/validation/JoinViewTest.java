@@ -44,6 +44,25 @@ class JoinViewTest {
         assertEquals(ValidationCoverage.ConstraintStatus.MISSING_RUNTIME_CONTEXT, open.coverage().constraints().getFirst().status());
     }
     @Test
+    void emitsANullPartnerForEachUnmatchedRowInANonemptyExtent() {
+        var plan = plan("""
+                CLASS Item = amount: 0..10; END Item;
+                VIEW Pairs JOIN OF a~Item,b~Item (OR NULL);
+                  WHERE a->amount < b->amount;
+                  =
+                    MANDATORY CONSTRAINT (a->amount == 3) => (b->amount == UNDEFINED);
+                END Pairs;
+                """);
+        var report = validate(plan, List.of("Item"), primary("p", basket("basket", """
+                <Item i:tid='one'><amount>1</amount></Item>
+                <Item i:tid='two'><amount>2</amount></Item>
+                <Item i:tid='three'><amount>3</amount></Item>
+                """)));
+        assertTrue(report.examples().isEmpty(), report.examples().toString());
+        assertEquals(4, report.coverage().constraints().getFirst().occurrences());
+    }
+
+    @Test
     void failsTheRunWhenCandidateBudgetIsExhausted() {
         var plan = plan("""
                 CLASS Item = amount: 0..10; END Item;
