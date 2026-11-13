@@ -428,7 +428,7 @@ final class ValueSemantics {
         private void bytes(byte[] value) {
             require(Integer.BYTES + (long) value.length);
             number(value.length);
-            bytes.writeBytes(value);
+            bytes.write(value, 0, value.length);
         }
 
         private void key(CanonicalKey value) {

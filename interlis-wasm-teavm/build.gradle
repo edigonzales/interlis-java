@@ -131,3 +131,39 @@ tasks.register('safariSmoke', Exec) {
 tasks.named('prepareBrowserHarness') {
     from(rootProject.file('testdata/reference/unicode/17.0.0/UNICODE-LICENSE.txt'))
 }
+
+sourceSets {
+    validationProbe {
+        compileClasspath += sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.runtimeClasspath
+    }
+}
+dependencies {
+    validationProbeImplementation files(rootProject.jenesisRuntime('interlis-validation'),
+            rootProject.jenesisRuntime('interlis-transfer'), rootProject.bridgeRuntime)
+}
+def validationWasm = tasks.register('buildValidationProbeWasm', org.teavm.gradle.tasks.GenerateWasmGCTask) {
+    def compiler = tasks.named('generateWasmGC', org.teavm.gradle.tasks.GenerateWasmGCTask)
+    dependsOn tasks.named('validationProbeClasses'), tasks.named('copyWasmGCRuntime')
+    classpath.from(provider { compiler.get().classpath }, sourceSets.validationProbe.runtimeClasspath)
+    daemonClasspath.from(provider { compiler.get().daemonClasspath })
+    mainClass.set('guru.interlis.wasm.teavm.LocalValidationProbeEntryPoint')
+    outputDir.set(layout.buildDirectory.dir('validation-probe').map { it.asFile })
+    targetFileName.set('local-validation.wasm')
+    outOfProcess.set(true)
+}
+
+tasks.register('validationBrowserSmoke', Exec) {
+    dependsOn validationWasm, rootProject.tasks.named('checkNodeRuntime')
+    workingDir projectDir
+    commandLine nodeExecutable.get(), '--test', 'test/local-validation-wasm.test.cjs'
+}
+
+dependencies {
+    testImplementation sourceSets.validationProbe.output
+    testImplementation sourceSets.validationProbe.compileClasspath
+    testRuntimeOnly sourceSets.validationProbe.runtimeClasspath
+}
+tasks.named('test') {
+    inputs.file('test/LocalValidation.ili')
+}

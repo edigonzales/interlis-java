@@ -1,0 +1,10 @@
+INTERLIS 2.4;
+MODEL Probe AT "https://example.org" VERSION "1" =
+  TOPIC Data =
+    CLASS Item =
+      label: MANDATORY TEXT*10;
+      amount: MANDATORY 0.00..100.00;
+      MANDATORY CONSTRAINT amount >= 10.00;
+    END Item;
+  END Data;
+END Probe.
