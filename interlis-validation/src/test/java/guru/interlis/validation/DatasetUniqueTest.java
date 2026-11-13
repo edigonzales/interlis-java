@@ -101,7 +101,7 @@ class DatasetUniqueTest {
         assertEquals(0, coverage.undecidedCandidates());
     }
     @Test
-    void keepsAnUnsupportedWhereVisibleInAnEmptyBasket() {
+    void evaluatesAnEmptyBasketWithAReferenceWhere() {
         var plan = plan("""
                 CLASS Peer = active: BOOLEAN; END Peer;
                 STRUCTURE Link = peer: REFERENCE TO Peer; END Link;
@@ -114,7 +114,7 @@ class DatasetUniqueTest {
         var report = validate(plan, List.of(), primary("p", basket("empty", "")));
         assertEquals(0, report.detectedViolations());
         var coverage = report.coverage().datasetRules().getFirst();
-        assertEquals(DatasetRuleCoverage.Outcome.UNSUPPORTED, coverage.outcome());
+        assertEquals(DatasetRuleCoverage.Outcome.SATISFIED, coverage.outcome());
         assertEquals(1, coverage.scopes());
         assertEquals(0, coverage.candidates());
         assertEquals(0, coverage.evaluations());

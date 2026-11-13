@@ -6,6 +6,7 @@ import guru.interlis.model.PathExpression;
 import guru.interlis.model.PathStep;
 import guru.interlis.model.ReferenceType;
 import guru.interlis.model.SymbolRef;
+import guru.interlis.model.SymbolId;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferObject;
@@ -237,7 +238,61 @@ final class DatasetRuleContext {
 
     EvaluationResult evaluate(ExpressionProgram program, Occurrence occurrence) {
         return program.evaluate(new EvaluationFrame(plan, occurrence.object().data(),
-                occurrence.partial(), this::visit, java.util.OptionalLong.empty(), cancellation));
+                occurrence.partial(), this::visit, java.util.OptionalLong.empty(), cancellation)
+                .withDataset(new DatasetPathContext(this, occurrence)));
+    }
+
+    void checkDeferredConstraints(ValidationSession report) {
+        if (!plan.hasDeferredPaths()) {
+            return;
+        }
+        forObjects(occurrence -> {
+            if (!occurrence.selected() || occurrence.input().descriptor().role() != InputRole.PRIMARY) {
+                return;
+            }
+            var object = plan.object(occurrence.object().type());
+            var frame = new EvaluationFrame(plan, occurrence.object().data(), occurrence.partial(), this::visit,
+                    java.util.OptionalLong.empty(), cancellation).withDataset(new DatasetPathContext(this, occurrence));
+            for (var field : object.fields()) {
+                if (!field.derived() || !plan.derivedNeedsDataset(field.slot().symbol().symbol())) {
+                    continue;
+                }
+                var attribute = field.slot().attribute();
+                var result = DerivedValueResolver.resolve(attribute, frame);
+                var supplied = occurrence.object().data().value(field.slot().symbol());
+                if (supplied.isPresent() && (result instanceof EvaluationResult.Known
+                        || result instanceof EvaluationResult.KnownNumber || result instanceof EvaluationResult.UndefinedByData)
+                        && !DerivedValueResolver.matches(result, supplied.orElseThrow(), field.values().getFirst().type())) {
+                    report.datasetViolation(attribute, ValidationCode.DERIVED_VALUE_MISMATCH,
+                            occurrence.location(List.of(new DataLocation.Slot(field.slot().symbol()))), List.of());
+                }
+            }
+            for (var declaration : object.constraints()) {
+                if (declaration.definition() instanceof guru.interlis.model.MandatoryConstraint mandatory) {
+                    var program = plan.expression(mandatory.condition());
+                    if (plan.requiresDataset(program)) {
+                        report.recordDatasetConstraint(occurrence, declaration, evaluate(program, occurrence));
+                    }
+                }
+            }
+        });
+    }
+
+    List<ObjectHandle> relationTargets(ObjectHandle source, SymbolId sourceRole, SymbolId targetRole) {
+        return new RelationPaths(temporary).targets(source, sourceRole, targetRole, this::visit);
+    }
+
+    ReferenceResolver.Result resolveRole(Occurrence occurrence, TransferValue.Reference reference,
+                                         guru.interlis.model.RoleSymbol role) {
+        visit();
+        return resolver.resolve(new BasketHandle(occurrence.stored().input(), occurrence.stored().basket()),
+                occurrence.basket(), occurrence.input().namespaces(), reference, role.targetRoots(), role.external(), false);
+    }
+
+    ReferenceResolver.Result resolve(Occurrence occurrence, TransferValue.Reference reference, ReferenceType type) {
+        visit();
+        return resolver.resolve(new BasketHandle(occurrence.stored().input(), occurrence.stored().basket()),
+                occurrence.basket(), occurrence.input().namespaces(), reference, type.targetRoots(), type.external(), false);
     }
 
     guru.interlis.execution.CancellationToken cancellation() {

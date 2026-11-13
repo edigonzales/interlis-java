@@ -119,13 +119,12 @@ class LocalValueRuleTest {
     }
 
     @Test
-    void marksAbsentDerivedValueAsUncheckedAndChecksSuppliedValue() {
+    void computesAbsentDerivedValueAndChecksSuppliedType() {
         var values = new java.util.HashMap<SymbolRef, TransferValue>(
                 Map.of(code, new TransferValue.Text("ok"), bounded, validList));
         var absent = validate(Consistency.INCOMPLETE, Consistency.COMPLETE, values);
         assertEquals(List.of(), codes(absent));
-        assertEquals(List.of(new ValidationCoverage.RuleCount(item, field("copied"),
-                ValidationCoverage.RuleFamily.DEFINED_VALUE, 1)), absent.coverage().missingRuntimeContext());
+        assertTrue(absent.coverage().missingRuntimeContext().isEmpty());
         values.put(field("copied"), new TransferValue.BooleanValue(true));
         var present = validate(Consistency.INCOMPLETE, Consistency.COMPLETE, values);
         assertEquals(List.of(TYPE_MISMATCH), codes(present));

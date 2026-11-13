@@ -167,6 +167,11 @@ public final class ValidationPlanner {
                                 new SymbolRef(transfer.snapshotId(), application), Optional.empty());
                         return new DatasetRulePlan(key, declaration, entry.getValue());
                     }).toList();
+            for (var declaration : graph.symbols()) {
+                if (declaration instanceof AttributeSymbol attribute) {
+                    attribute.derivations().forEach(this::datasetExpression);
+                }
+            }
             var plan = new ValidationPlan(transfer, graph, objects, unchecked, expressions, profile, datasetRules, rootModels, bindings);
             validateBindings(plan);
             return plan;

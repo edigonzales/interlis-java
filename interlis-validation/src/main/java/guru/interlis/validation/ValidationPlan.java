@@ -32,6 +32,7 @@ public final class ValidationPlan {
     private final TypeRelations typeRelations;
     private final Map<SymbolRef, ObjectValidationPlan> objects;
     private final Map<ExpressionId, Optional<ExpressionProgram>> expressions;
+    private final boolean relationPaths;
     private final List<UncheckedRuleInfo> uncheckedRules;
     private final ValidationProfile profile;
     private final RuntimeBindings bindings;
@@ -50,6 +51,8 @@ public final class ValidationPlan {
         this.objects = Map.copyOf(objects);
         this.uncheckedRules = List.copyOf(uncheckedRules);
         this.expressions = Map.copyOf(expressions);
+        this.relationPaths = this.expressions.values().stream().flatMap(Optional::stream)
+                .anyMatch(program -> program.requirements().relationPathRequired());
         this.profile = profile;
         this.bindings = bindings;
         this.datasetRules = List.copyOf(datasetRules);
@@ -151,6 +154,24 @@ public final class ValidationPlan {
                 .findFirst().orElse(null);
     }
 
+    AttributeSymbol effectiveAttribute(SymbolId owner, SymbolId target) {
+        for (var member : graph.effectiveMembers(owner)) {
+            var candidate = graph.symbol(member.declaredSymbol()).orElseThrow();
+            if (!(candidate instanceof AttributeSymbol attribute)) {
+                continue;
+            }
+            for (var current = Optional.of(attribute); current.isPresent();) {
+                var declaration = current.orElseThrow();
+                if (canonical(declaration.id()).equals(canonical(target))) {
+                    return attribute;
+                }
+                current = declaration.overrides().flatMap(graph::symbol).filter(AttributeSymbol.class::isInstance)
+                        .map(AttributeSymbol.class::cast);
+            }
+        }
+        return null;
+    }
+
     Optional<Symbol> symbol(SymbolId id) {
         return graph.symbol(id);
     }
@@ -194,6 +215,48 @@ public final class ValidationPlan {
 
     TransferPlan transferPlan() {
         return transferPlan;
+    }
+
+    boolean hasRelationPaths() {
+        return relationPaths;
+    }
+
+    boolean hasDeferredPaths() {
+        return expressions.values().stream().flatMap(Optional::stream).anyMatch(this::requiresDataset);
+    }
+
+    boolean requiresDataset(ExpressionProgram program) {
+        return requiresDataset(program, new java.util.HashSet<>());
+    }
+
+    private boolean requiresDataset(ExpressionProgram program, java.util.Set<ExpressionId> seen) {
+        if (!seen.add(program.root())) {
+            return false;
+        }
+        if (program.requirements().datasetPathRequired()) {
+            return true;
+        }
+        return program.nodes().values().stream().filter(guru.interlis.model.PathExpression.class::isInstance)
+                .map(guru.interlis.model.PathExpression.class::cast)
+                .flatMap(path -> path.path().steps().stream()).filter(guru.interlis.model.PathStep.AttributeStep.class::isInstance)
+                .map(guru.interlis.model.PathStep.AttributeStep.class::cast)
+                .anyMatch(step -> attributeDependsOnDataset(step.target(), seen));
+    }
+
+    boolean derivedNeedsDataset(SymbolId attribute) {
+        return attributeDependsOnDataset(attribute, new java.util.HashSet<>());
+    }
+
+    private boolean attributeDependsOnDataset(SymbolId target, java.util.Set<ExpressionId> seen) {
+        var declaration = graph.symbol(target).orElse(null);
+        while (declaration instanceof AttributeSymbol attribute) {
+            if (attribute.derivations().stream().flatMap(id -> datasetExpression(id).stream())
+                    .anyMatch(program -> requiresDataset(program, seen))) {
+                return true;
+            }
+            declaration = attribute.overrides().flatMap(graph::symbol).orElse(null);
+        }
+        return false;
     }
 
     ExpressionProgram expression(ExpressionId root) {

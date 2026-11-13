@@ -187,6 +187,18 @@ final class NumericSemantics {
         throw precisionLimit();
     }
 
+    static boolean matchesRounded(Number computed, BigDecimal supplied, int scale) {
+        if (!computed.exact()) {
+            throw precisionLimit();
+        }
+        var rational = computed.lower();
+        var numerator = new BigDecimal(rational.numerator());
+        var denominator = new BigDecimal(rational.denominator());
+        var lower = numerator.divide(denominator, scale, java.math.RoundingMode.FLOOR);
+        var upper = numerator.divide(denominator, scale, java.math.RoundingMode.CEILING);
+        return lower.compareTo(supplied) == 0 || upper.compareTo(supplied) == 0;
+    }
+
     private static boolean is(Number number, Rational value) {
         return number.exact() && number.lower.equals(value);
     }

@@ -11,6 +11,9 @@ import guru.interlis.model.ParameterSymbol;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.model.SymbolValueExpression;
 import guru.interlis.model.NumericType;
+import guru.interlis.model.ReferenceType;
+import guru.interlis.model.RoleSymbol;
+import guru.interlis.model.ObjectArgumentType;
 import guru.interlis.model.UnaryOperator;
 import guru.interlis.model.FunctionCallExpression;
 import guru.interlis.model.ObjectSetExpression;
@@ -60,7 +63,7 @@ final class ExpressionEvaluator {
             case FunctionCallExpression call -> function(call, context);
             case SymbolValueExpression symbol -> symbolValue(symbol, context);
             case DefinedExpression defined -> switch (evaluate(defined.operand(), context)) {
-                case Known _, KnownNumber _ -> bool(true);
+                case Known _, KnownNumber _, KnownObjects _ -> bool(true);
                 case UndefinedByData _ -> bool(false);
                 case EvaluationResult result -> result;
             };
@@ -108,6 +111,9 @@ final class ExpressionEvaluator {
         var args = new ArrayList<TransferValue>(call.children().size());
         for (var child : call.children()) {
             var result = evaluate(child, frame);
+            if (result instanceof KnownObjects objects && standard == StandardFunctions.OBJECT_COUNT) {
+                return StandardFunctions.count(objects.handles().size());
+            }
             if (result instanceof Known known) {
                 args.add(known.value());
             } else if (result instanceof UndefinedByData && standard == null) {
@@ -278,20 +284,110 @@ final class ExpressionEvaluator {
 
     private static EvaluationResult readPath(PathExpression expression, EvaluationFrame context) {
         EvaluationResult current = value(context.current(), false);
+        var frame = context;
         for (var step : expression.path().steps()) {
             context.visit().run();
             if (!(current instanceof Known known)) {
                 return current;
             }
+            if (step instanceof PathStep.AssociationAccessStep || step instanceof PathStep.AssociationSourceStep
+                    || step instanceof PathStep.RoleStep) {
+                var target = relation(frame, known.value(), step);
+                if (!(target instanceof KnownObjects objects)) {
+                    return target;
+                }
+                var resultType = switch (step) {
+                    case PathStep.AssociationAccessStep access -> frame.plan().effectiveType(access.resultType()).orElseThrow();
+                    case PathStep.AssociationSourceStep source -> frame.plan().effectiveType(source.resultType()).orElseThrow();
+                    default -> null;
+                };
+                if (resultType instanceof ObjectArgumentType argument && argument.objects()) {
+                    current = objects;
+                    continue;
+                }
+                if (objects.handles().isEmpty()) {
+                    return new UndefinedByData(false);
+                }
+                if (objects.handles().size() != 1) {
+                    return new BlockedByViolation(frame.dataset().orElseThrow().occurrence().location(List.of()));
+                }
+                var destination = frame.dataset().orElseThrow().target(objects.handles().getFirst());
+                var object = destination.occurrence().object().data();
+                frame = frame.withDataset(destination).withCurrent(object);
+                current = value(object, false);
+                continue;
+            }
+            if (step instanceof PathStep.ParentStep) {
+                if (frame.parents().isEmpty()) {
+                    return MissingContext.STRUCTURE_PARENT;
+                }
+                frame = frame.ascend();
+                current = value(frame.current(), false);
+                continue;
+            }
             current = switch (step) {
                 case PathStep.ThisStep _ -> value(context.current(), false);
-                case PathStep.AttributeStep attribute -> attribute(context, known.value(), attribute.target());
+                case PathStep.AttributeStep attribute -> attribute(frame, known.value(), attribute.target());
                 case PathStep.IndexStep index -> index(known.value(), index.index(),
-                        context.plan().effectiveType(index.resultType()).map(type -> type.kind() == TypeKind.TEXT).orElse(false));
+                        frame.plan().effectiveType(index.resultType()).map(type -> type.kind() == TypeKind.TEXT).orElse(false));
                 default -> throw new IllegalStateException("Unexpected compiled path step");
             };
+            if (step instanceof PathStep.AttributeStep attribute && current instanceof Known read
+                    && read.value() instanceof TransferValue.Reference reference
+                    && frame.plan().valueType(attribute.target()).orElse(null) instanceof ReferenceType type) {
+                if (frame.dataset().isEmpty()) {
+                    return MissingContext.DATASET_REFERENCE;
+                }
+                var dataset = frame.dataset().orElseThrow();
+                var resolved = dataset.resolve(reference, type);
+                if (resolved instanceof ReferenceResolver.Found found) {
+                    var target = dataset.target(found.target());
+                    frame = frame.withDataset(target);
+                    var targetData = target.occurrence().object().data();
+                    frame = frame.withCurrent(targetData);
+                    current = value(targetData, false);
+                } else if (resolved instanceof ReferenceResolver.Ambiguous || resolved instanceof ReferenceResolver.InvalidTarget) {
+                    return new BlockedByViolation(dataset.occurrence().location(
+                            List.of(new DataLocation.Slot(frame.plan().ref(attribute.target())))));
+                } else {
+                    return MissingContext.DATASET_REFERENCE;
+                }
+            } else if (known.value() instanceof TransferValue.Structured parent && current instanceof Known result
+                    && result.value() != parent) {
+                frame = frame.descend(parent, result.value());
+            }
         }
         return current;
+    }
+
+    private static EvaluationResult relation(EvaluationFrame frame, TransferValue value, PathStep step) {
+        if (frame.dataset().isEmpty()) {
+            return MissingContext.DATASET_REFERENCE;
+        }
+        var path = frame.dataset().orElseThrow();
+        var occurrence = path.occurrence();
+        return switch (step) {
+            case PathStep.AssociationAccessStep access -> new KnownObjects(path.dataset().relationTargets(
+                    occurrence.handle(), access.sourceRole(), access.associationObject() ? access.sourceRole() : access.targetRole()));
+            case PathStep.AssociationSourceStep source -> new KnownObjects(path.dataset().relationTargets(
+                    occurrence.handle(), source.sourceRole(), source.sourceRole()));
+            case PathStep.RoleStep roleStep when value instanceof TransferValue.Structured structure -> {
+                var role = (RoleSymbol) frame.plan().symbol(roleStep.target()).orElseThrow();
+                var ref = structure.value(frame.plan().ref(role.id())).filter(TransferValue.Reference.class::isInstance)
+                        .map(TransferValue.Reference.class::cast);
+                if (ref.isEmpty()) {
+                    yield new UndefinedByData(false);
+                }
+                var result = path.dataset().resolveRole(occurrence, ref.orElseThrow(), role);
+                yield switch (result) {
+                    case ReferenceResolver.Found found -> new KnownObjects(List.of(found.target()));
+                    case ReferenceResolver.Ambiguous _, ReferenceResolver.InvalidTarget _ ->
+                            new BlockedByViolation(occurrence.location(List.of(new DataLocation.Slot(frame.plan().ref(role.id())))));
+                    case ReferenceResolver.Missing _ -> MissingContext.DATASET_REFERENCE;
+                };
+            }
+            default -> Unsupported.INSTANCE;
+        };
     }
 
     static EvaluationResult attribute(EvaluationFrame context, TransferValue current, SymbolId target) {
@@ -304,11 +400,15 @@ final class ExpressionEvaluator {
         }
         var field = context.plan().field(type, target);
         if (field == null) {
-            return MissingContext.ATTRIBUTE_VALUE;
+            var attribute = context.plan().effectiveAttribute(object.type().symbol(), target);
+            return attribute != null && attribute.transientAttribute()
+                    ? DerivedValueResolver.resolve(attribute, context.withCurrent(object)) : MissingContext.ATTRIBUTE_VALUE;
         }
         var found = object.value(field.slot().symbol());
-        if (found.isEmpty() && (field.derived() || context.partial()
-                && field.values().getFirst().type().kind() == TypeKind.GEOMETRY)) {
+        if (field.derived()) {
+            return DerivedValueResolver.resolve(field.slot().attribute(), context.withCurrent(object));
+        }
+        if (found.isEmpty() && context.partial() && field.values().getFirst().type().kind() == TypeKind.GEOMETRY) {
             return MissingContext.ATTRIBUTE_VALUE;
         }
         return found.map(item -> value(item, field.values().getFirst().type().kind() == TypeKind.TEXT))

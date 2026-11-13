@@ -133,7 +133,7 @@ class ExistenceTest {
     }
 
     @Test
-    void marksUnsupportedForeignTargetPathsExplicitly() {
+    void reportsMissingWitnessWhenTheReferencePathIsUndefined() {
         var plan = plan("""
                 STRUCTURE Link = target: REFERENCE TO Peer; END Link;
                 CLASS Peer = number: 0.00..20.00; END Peer;
@@ -145,10 +145,11 @@ class ExistenceTest {
                 """);
         var report = validate(plan, List.of("Subject"), primary("p", basket("data",
                 "<Subject i:tid='s'><number>1.00</number></Subject>")));
-        assertEquals(0, report.detectedViolations());
+        assertEquals(1, report.detectedViolations());
+        assertEquals(ValidationCode.EXISTENCE_TARGET_MISSING, report.examples().getFirst().code());
         var rule = report.coverage().datasetRules().getFirst();
-        assertEquals(DatasetRuleCoverage.Outcome.UNSUPPORTED, rule.outcome());
-        assertEquals(1, rule.undecidedCandidates());
+        assertEquals(DatasetRuleCoverage.Outcome.VIOLATED, rule.outcome());
+        assertEquals(0, rule.undecidedCandidates());
     }
 
     @Test

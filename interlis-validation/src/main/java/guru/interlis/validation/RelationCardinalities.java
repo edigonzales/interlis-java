@@ -32,6 +32,7 @@ final class RelationCardinalities {
     private final ValidationSession report;
     private final RelationGroups groups;
     private final RelationOrdering ordering;
+    private final RelationPaths paths;
     private final CompositionGraph composition;
     private long remainingWork;
 
@@ -49,6 +50,7 @@ final class RelationCardinalities {
         this.report = report;
         this.groups = new RelationGroups(storage);
         this.ordering = new RelationOrdering(storage);
+        this.paths = new RelationPaths(temporary);
         this.composition = new CompositionGraph(storage);
         this.remainingWork = options.limits().maxRelationWork();
     }
@@ -110,6 +112,18 @@ final class RelationCardinalities {
                 }
                 if (role.aggregation() == RoleAggregation.COMPOSITION) {
                     composition.observe(counterparts.getFirst(), target, role.id());
+                }
+            }
+            if (plan.hasRelationPaths()) {
+                for (int sourceRole = 0; sourceRole < roles.size(); sourceRole++) {
+                    for (int targetRole = 0; targetRole < roles.size(); targetRole++) {
+                        spendWork(cancellation);
+                        paths.observe(endpoints.get(sourceRole), roles.get(sourceRole).role().id(),
+                                roles.get(targetRole).role().id(), sourceRole == targetRole ? link.source()
+                                        : endpoints.get(targetRole), occurrence,
+                                roles.get(targetRole).role().ordered() ? link.endpoints().get(targetRole).reference()
+                                        .flatMap(TransferValue.Reference::orderPosition) : Optional.empty());
+                    }
                 }
             }
             if (descriptor.associationCardinality().isPresent()) {

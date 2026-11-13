@@ -70,7 +70,7 @@ final class ExpressionCompiler {
         var compiler = new Compiler(graph, types, extent, hostFunction);
         return compiler.visit(root, 0)
                 ? Optional.of(new ExpressionProgram(graph.snapshotId(), root, compiler.nodes, compiler.constants, compiler.comparisons,
-                        new ExpressionRequirements(compiler.populationRequired)))
+                        new ExpressionRequirements(compiler.populationRequired, compiler.datasetPathRequired, compiler.relationPathRequired)))
                 : Optional.empty();
     }
 
@@ -85,6 +85,8 @@ final class ExpressionCompiler {
 
         private final Map<ExpressionId, Integer> heights = new LinkedHashMap<>();
         private boolean populationRequired;
+        private boolean datasetPathRequired;
+        private boolean relationPathRequired;
 
         private Compiler(SemanticGraph graph, TypeRelations types, Optional<SymbolId> extent,
                          Predicate<SymbolId> hostFunction) {
@@ -121,7 +123,7 @@ final class ExpressionCompiler {
                     yield true;
                 }
                 case ConstantExpression constant -> constant(constant);
-                case PathExpression path -> path.path().steps().stream().allMatch(this::localStep);
+                case PathExpression path -> path.path().steps().stream().allMatch(this::pathStep);
                 case ObjectSetExpression set -> objectSet(set);
                 case FunctionCallExpression call -> function(call);
                 case SymbolValueExpression value -> graph.symbol(value.target()).filter(symbol ->
@@ -170,14 +172,21 @@ final class ExpressionCompiler {
             return node;
         }
 
-        private boolean localStep(PathStep step) {
-            if (step instanceof PathStep.ThisStep || step instanceof PathStep.IndexStep) {
+        private boolean pathStep(PathStep step) {
+            if (step instanceof PathStep.ThisStep || step instanceof PathStep.IndexStep || step instanceof PathStep.ParentStep) {
+                return true;
+            }
+            if (step instanceof PathStep.RoleStep || step instanceof PathStep.AssociationAccessStep
+                    || step instanceof PathStep.AssociationSourceStep) {
+                datasetPathRequired = true;
+                relationPathRequired = true;
                 return true;
             }
             if (step instanceof PathStep.AttributeStep attribute
                     && graph.symbol(attribute.target()).orElse(null) instanceof AttributeSymbol symbol) {
-                return effective(symbol.declaredType()).map(type -> type.kind() != TypeKind.REFERENCE
-                        && type.kind() != TypeKind.OBJECT_ARGUMENT && type.kind() != TypeKind.OBJECT_SET).orElse(false);
+                var type = effective(symbol.declaredType()).orElseThrow();
+                datasetPathRequired |= type.kind() == TypeKind.REFERENCE;
+                return type.kind() != TypeKind.OBJECT_ARGUMENT && type.kind() != TypeKind.OBJECT_SET;
             }
             return false;
         }

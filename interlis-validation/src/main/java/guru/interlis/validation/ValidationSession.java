@@ -295,7 +295,7 @@ public final class ValidationSession implements AutoCloseable {
 
     private Iterator<PendingValue> fields(ObjectValidationPlan object, TransferValue.Structured value, ValuePath parent) {
         return object.fields().stream().map(field -> new PendingValue(object.descriptor().symbol(), field, 0,
-                value.value(field.slot().symbol()),
+                value.value(field.slot().symbol()), value,
                 new ValuePath(parent, new DataLocation.Slot(field.slot().symbol())))).iterator();
     }
 
@@ -309,14 +309,27 @@ public final class ValidationSession implements AutoCloseable {
                 ? ScalarRules.textLength(text.value()) : -1;
         boolean undefined = actual == TransferValue.Undefined.INSTANCE || textLength == 0;
         boolean uncertain = value.isEmpty() && (delete || (partial && rules.type().kind() == TypeKind.GEOMETRY));
-        if (value.isEmpty() && field.derived()) {
-            if (rules.required()) {
-                count(uncertain ? incomplete : missingRuntime, pending, DEFINED_VALUE);
+        if (pending.depth() == 0 && field.derived()) {
+            var attribute = field.slot().attribute();
+            boolean deferred = plan.profile() == ValidationProfile.DATASET && plan.derivedNeedsDataset(attribute.id());
+            if (!deferred && !delete) {
+                var frame = new EvaluationFrame(plan, pending.container(), partial, budget::consume,
+                        java.util.OptionalLong.empty(), budget.cancellation);
+                var derived = DerivedValueResolver.resolve(attribute, frame);
+                if (derived instanceof EvaluationResult.Known || derived instanceof EvaluationResult.KnownNumber
+                        || derived instanceof EvaluationResult.UndefinedByData) {
+                    if (value.isPresent() && (actual == TransferValue.Undefined.INSTANCE
+                            || ValueFamilies.match(rules.type(), actual) == ValueFamilies.Match.YES)
+                            && !DerivedValueResolver.matches(derived, actual, rules.type())) {
+                        violation(object, pending, attribute, DERIVED_VALUE_MISMATCH, List.of());
+                    }
+                } else if (value.isEmpty()) {
+                    count(missingRuntime, pending, VALUE_RANGE);
+                }
             }
-            if (rules.type() instanceof CollectionType) {
-                count(uncertain ? incomplete : missingRuntime, pending, CARDINALITY);
+            if (value.isEmpty()) {
+                return Optional.empty();
             }
-            return Optional.empty();
         }
         if (rules.required()) {
             count(uncertain ? incomplete : checked, pending, DEFINED_VALUE);
@@ -406,7 +419,7 @@ public final class ValidationSession implements AutoCloseable {
             cardinality(object, pending, collection, repeated.values().size());
             return Optional.of(java.util.stream.IntStream.range(0, repeated.values().size()).mapToObj(index ->
                     new PendingValue(pending.owner(), field, pending.depth() + 1,
-                            Optional.of(repeated.values().get(index)),
+                            Optional.of(repeated.values().get(index)), pending.container(),
                             new ValuePath(pending.path(), new DataLocation.Index(index + 1)))).iterator());
         }
         if (rules.type() instanceof StructureValueType structure && actual instanceof TransferValue.Structured data) {
@@ -451,14 +464,33 @@ public final class ValidationSession implements AutoCloseable {
             countConstraint(owner, slot, declaration, ConstraintStatus.INCOMPLETE_CONTEXT);
             return;
         }
+        if (plan.profile() == ValidationProfile.DATASET && plan.requiresDataset(plan.expression(expression))) {
+            return;
+        }
         var result = plan.expression(expression).evaluate(new EvaluationFrame(plan, current, partial, budget::consume,
                 java.util.OptionalLong.empty(), budget.cancellation));
+        recordConstraint(root, owner, slot, declaration, path, result, null);
+    }
+
+    void recordDatasetConstraint(DatasetRuleContext.Occurrence occurrence, ConstraintSymbol declaration,
+                                 EvaluationResult result) {
+        recordConstraint(occurrence.object(), occurrence.object().type(), Optional.empty(), declaration,
+                null, result, occurrence.location(List.of()));
+    }
+
+    private void recordConstraint(TransferObject root, SymbolRef owner, Optional<SymbolRef> slot,
+                                  ConstraintSymbol declaration, ValuePath path, EvaluationResult result,
+                                  DataLocation datasetLocation) {
         var status = switch (result) {
             case EvaluationResult.Known known when known.value() instanceof TransferValue.BooleanValue value -> {
                 if (!value.value()) {
                     var code = declaration.definition() instanceof DomainConstraint
                             ? DOMAIN_CONSTRAINT_FALSE : MANDATORY_CONSTRAINT_FALSE;
-                    violation(root, path, declaration, code, List.of());
+                    if (datasetLocation == null) {
+                        violation(root, path, declaration, code, List.of());
+                    } else {
+                        datasetViolation(declaration, code, datasetLocation, List.of());
+                    }
                 }
                 yield ConstraintStatus.CHECKED;
             }
@@ -471,7 +503,7 @@ public final class ValidationSession implements AutoCloseable {
             }
             case EvaluationResult.BlockedByViolation _ -> ConstraintStatus.INCOMPLETE_CONTEXT;
             case EvaluationResult.MissingContext _ -> ConstraintStatus.MISSING_RUNTIME_CONTEXT;
-            case EvaluationResult.Unsupported _, EvaluationResult.Known _, EvaluationResult.KnownNumber _ -> ConstraintStatus.UNSUPPORTED_VALUE;
+            case EvaluationResult.Unsupported _, EvaluationResult.Known _, EvaluationResult.KnownNumber _, EvaluationResult.KnownObjects _ -> ConstraintStatus.UNSUPPORTED_VALUE;
         };
         countConstraint(owner, slot, declaration, status);
     }
@@ -727,7 +759,7 @@ public final class ValidationSession implements AutoCloseable {
     record ValuePath(ValuePath parent, DataLocation.Step step) { }
 
     private record PendingValue(SymbolRef owner, ObjectValidationPlan.FieldRule field, int depth,
-                                Optional<TransferValue> value, ValuePath path) { }
+                                Optional<TransferValue> value, TransferValue.Structured container, ValuePath path) { }
 
     private final class ObjectBudget {
         private final CancellationToken cancellation;

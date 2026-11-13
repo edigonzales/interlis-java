@@ -58,11 +58,11 @@ class ConstraintRuleTest {
         assertEquals(CHECKED, f.status(pass, "Runtime"));
 
         var fail = f.validate(Map.of("state", enumeration("ready"), "test", bool(false)));
-        assertEquals(List.of(MANDATORY_CONSTRAINT_FALSE), codes(fail));
+        assertEquals(List.of(MANDATORY_CONSTRAINT_FALSE, MANDATORY_CONSTRAINT_FALSE), codes(fail));
         assertEquals(f.constraint("RequiresPoint"), fail.examples().getFirst().rule().declaration());
         assertTrue(fail.examples().getFirst().rule().range().isPresent());
         assertTrue(fail.examples().getFirst().data().path().isEmpty());
-        assertEquals(MISSING_RUNTIME_CONTEXT, f.status(fail, "Runtime"));
+        assertEquals(CHECKED, f.status(fail, "Runtime"));
 
         var draft = f.validate(Map.of("state", enumeration("draft"), "test", bool(true)));
         assertTrue(draft.examples().isEmpty());
@@ -152,7 +152,7 @@ class ConstraintRuleTest {
     }
 
     @Test
-    void unknownFunctionAndForeignPathRemainUncheckedWhileDivisionIsEvaluated() {
+    void unknownFunctionRemainsUncheckedWhileDivisionAndReferenceAreEvaluated() {
         var f = new Fixture(HEADER + """
                 FUNCTION external(x: NUMERIC): BOOLEAN;
                 TOPIC T =
@@ -175,7 +175,7 @@ class ConstraintRuleTest {
         assertEquals(List.of(REQUIRED_VALUE_MISSING), codes(report));
         assertEquals(UNDEFINED_BY_DATA, f.status(report, "Local"));
         assertEquals(UNDEFINED_BY_DATA, f.status(report, "Quotient"));
-        assertEquals(List.of(f.constraint("Unbound"), f.constraint("Remote")),
+        assertEquals(List.of(f.constraint("Unbound")),
                 report.coverage().notChecked().stream().map(UncheckedRuleInfo::constraint).toList());
         assertTrue(report.coverage().notChecked().stream()
                 .allMatch(rule -> rule.reason() == UncheckedRuleInfo.Reason.UNSUPPORTED_EXPRESSION));

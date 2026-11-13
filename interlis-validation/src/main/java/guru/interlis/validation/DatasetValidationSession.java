@@ -269,6 +269,7 @@ public final class DatasetValidationSession implements AutoCloseable {
             new RelationCardinalities(plan, storage, codec, objectStore, identities, options, local).check(cancellation);
             var context = new DatasetRuleContext(plan, storage, codec, objectStore, identities, options,
                     inputs.keySet(), cancellation);
+            context.checkDeferredConstraints(local);
             var coverage = checkDatasetRules(context);
             cancellation.throwIfCancellationRequested();
             storage.checkpoint();
