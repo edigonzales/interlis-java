@@ -177,6 +177,9 @@ final class ExpressionCompiler {
                     || step instanceof PathStep.InspectionStep inspection && inspection.kind() == PathStep.InspectionKind.PARENT) {
                 return true;
             }
+            if (step instanceof PathStep.ViewBaseStep) {
+                return true;
+            }
             if (step instanceof PathStep.RoleStep || step instanceof PathStep.AssociationAccessStep
                     || step instanceof PathStep.AssociationSourceStep) {
                 datasetPathRequired = true;

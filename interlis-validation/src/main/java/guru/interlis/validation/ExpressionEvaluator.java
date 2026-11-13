@@ -291,6 +291,18 @@ final class ExpressionEvaluator {
             if (!(current instanceof Known known)) {
                 return current;
             }
+            if (step instanceof PathStep.ViewBaseStep base) {
+                if (frame.row().isEmpty()) {
+                    return MissingContext.VIEW_ROW;
+                }
+                var data = frame.row().orElseThrow().bases().get(base.base());
+                if (data == null) {
+                    return new UndefinedByData(false);
+                }
+                frame = frame.withCurrent(data);
+                current = value(data, false);
+                continue;
+            }
             if (step instanceof PathStep.AssociationAccessStep || step instanceof PathStep.AssociationSourceStep
                     || step instanceof PathStep.RoleStep) {
                 var target = relation(frame, known.value(), step);
@@ -398,7 +410,17 @@ final class ExpressionEvaluator {
         }
         var type = context.plan().object(object.type());
         if (type == null) {
-            return MissingContext.OBJECT_TYPE;
+            var view = context.plan().views().get(object.type().symbol());
+            if (view == null) {
+                return MissingContext.OBJECT_TYPE;
+            }
+            var stored = object.value(context.plan().ref(target));
+            if (stored.isPresent()) {
+                return value(stored.orElseThrow(), false);
+            }
+            var attribute = context.plan().effectiveAttribute(view.view().id(), target);
+            return attribute == null ? MissingContext.ATTRIBUTE_VALUE
+                    : DerivedValueResolver.resolve(attribute, context.withCurrent(object));
         }
         var field = context.plan().field(type, target);
         if (field == null) {

@@ -50,14 +50,30 @@ public record SubjectSelection(SnapshotId snapshot, List<SymbolRef> roots) {
         return false;
     }
 
+    boolean selectsView(ValidationPlan plan, guru.interlis.model.ViewSymbol view) {
+        if (roots.contains(plan.ref(view.id()))) {
+            return true;
+        }
+        var topic = view.owner().map(plan::ref).flatMap(plan.transferPlan()::topic);
+        while (topic.isPresent()) {
+            var current = topic.orElseThrow();
+            if (roots.contains(current.symbol())) {
+                return true;
+            }
+            topic = current.baseTopic().flatMap(plan.transferPlan()::topic);
+        }
+        return false;
+    }
+
     void check(ValidationPlan plan) {
         if (!snapshot.equals(plan.snapshotId())) {
             throw new IllegalArgumentException("Subjects belong to another snapshot");
         }
         for (var root : roots) {
             if (plan.transferPlan().topic(root).isEmpty()
-                    && plan.transferPlan().object(root).filter(type -> type.kind() == SymbolKind.CLASS).isEmpty()) {
-                throw new IllegalArgumentException("Subject must select a class or topic in the plan: " + root);
+                    && plan.transferPlan().object(root).filter(type -> type.kind() == SymbolKind.CLASS).isEmpty()
+                    && !plan.views().containsKey(root.symbol())) {
+                throw new IllegalArgumentException("Subject must select a class, topic or view in the plan: " + root);
             }
         }
     }

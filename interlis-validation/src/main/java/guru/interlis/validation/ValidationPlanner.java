@@ -172,7 +172,18 @@ public final class ValidationPlanner {
                     attribute.derivations().forEach(this::datasetExpression);
                 }
             }
-            var plan = new ValidationPlan(transfer, graph, objects, unchecked, expressions, profile, datasetRules, rootModels, bindings);
+            var views = profile == ValidationProfile.DATASET ? ViewPlanner.compile(graph) : Map.<SymbolId, ViewPlan>of();
+            if (profile == ValidationProfile.DATASET) {
+                for (var view : views.values()) {
+                    view.inheritance().forEach(ancestor -> ancestor.selections().forEach(this::datasetExpression));
+                    for (var constraint : view.constraints()) {
+                        if (constraint.definition() instanceof MandatoryConstraint mandatory) {
+                            datasetExpression(mandatory.condition());
+                        }
+                    }
+                }
+            }
+            var plan = new ValidationPlan(transfer, graph, objects, unchecked, expressions, profile, datasetRules, rootModels, bindings, views);
             validateBindings(plan);
             return plan;
         }

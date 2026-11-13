@@ -142,3 +142,9 @@ Providerexception oder ein unzulässiger Rückgabewert ergibt
 `FunctionEvaluationException`. Abbruch und Ressourcenlimits behalten ihren
 eigenen Fehlerzustand. Die neue Überladung und die Bindungstypen ergänzen
 die SDK-API 0.8 additiv.
+
+Datensatzvalidierung akzeptiert virtuelle Sichten als zusätzliche
+`SubjectSelection`-Wurzeln. Die Transferpläne beschreiben weiterhin die
+physisch gelieferten Objekte. Sichten werden aus den gebundenen Basen
+ausgewertet. Befunde an Sichtbedingungen enthalten den Modellort der
+Bedingung und den Datenort der zugrunde liegenden Lieferung.

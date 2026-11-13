@@ -33,6 +33,7 @@ public final class ValidationPlan {
     private final Map<SymbolRef, ObjectValidationPlan> objects;
     private final Map<ExpressionId, Optional<ExpressionProgram>> expressions;
     private final boolean relationPaths;
+    private final Map<SymbolId, ViewPlan> views;
     private final List<UncheckedRuleInfo> uncheckedRules;
     private final ValidationProfile profile;
     private final RuntimeBindings bindings;
@@ -44,9 +45,10 @@ public final class ValidationPlan {
     ValidationPlan(TransferPlan transferPlan, SemanticGraph graph, Map<SymbolRef, ObjectValidationPlan> objects,
                    List<UncheckedRuleInfo> uncheckedRules, Map<ExpressionId, Optional<ExpressionProgram>> expressions,
                    ValidationProfile profile, List<DatasetRulePlan> datasetRules, List<SymbolRef> rootModels,
-                   RuntimeBindings bindings) {
+                   RuntimeBindings bindings, Map<SymbolId, ViewPlan> views) {
         this.transferPlan = transferPlan;
         this.graph = graph;
+        this.views = views;
         this.typeRelations = new TypeRelations(graph);
         this.objects = Map.copyOf(objects);
         this.uncheckedRules = List.copyOf(uncheckedRules);
@@ -99,6 +101,10 @@ public final class ValidationPlan {
     /** Dataset declarations pending evaluation, in plan order. Local plans return an empty list. */
     public List<RuleKey> deferredRules() {
         return datasetRules.stream().map(DatasetRulePlan::key).toList();
+    }
+
+    Map<SymbolId, ViewPlan> views() {
+        return views;
     }
 
     RuntimeBindings bindings() {

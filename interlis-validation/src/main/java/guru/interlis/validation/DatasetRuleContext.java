@@ -60,6 +60,10 @@ final class DatasetRuleContext {
         this.primaryInputs = Set.copyOf(primary);
     }
 
+    boolean selectsView(guru.interlis.model.ViewSymbol view) {
+        return options.subjects().selectsView(plan, view);
+    }
+
     void visit() {
         cancellation.throwIfCancellationRequested();
         if (remainingWork-- == 0) {

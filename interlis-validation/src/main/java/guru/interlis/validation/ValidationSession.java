@@ -492,6 +492,12 @@ public final class ValidationSession implements AutoCloseable {
         }
     }
 
+    void recordViewConstraint(ViewRow row, ConstraintSymbol declaration, EvaluationResult result) {
+        var origin = row.origins().getFirst();
+        recordConstraint(origin.object(), plan.ref(row.view()), Optional.empty(), declaration, null, result,
+                origin.location(List.of()));
+    }
+
     void recordDatasetConstraint(DatasetRuleContext.Occurrence occurrence, ConstraintSymbol declaration,
                                  EvaluationResult result) {
         recordConstraint(occurrence.object(), occurrence.object().type(), Optional.empty(), declaration,

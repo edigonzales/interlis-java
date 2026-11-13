@@ -14,10 +14,10 @@ import java.util.Set;
 record EvaluationFrame(ValidationPlan plan, TransferValue current, boolean partial, Runnable visit,
                OptionalLong objectCount, CancellationToken cancellation, Set<Derivation> activeDerivations,
                        Optional<DatasetPathContext> dataset, List<TransferValue.Structured> parents,
-                       java.util.function.BiFunction<guru.interlis.model.ObjectArgumentType, Boolean, RuntimeObjectSet> populations) {
+                       java.util.function.BiFunction<guru.interlis.model.ObjectArgumentType, Boolean, RuntimeObjectSet> populations, Optional<ViewRow> row) {
     EvaluationFrame(ValidationPlan plan, TransferValue current, boolean partial, Runnable visit,
                     OptionalLong count, CancellationToken cancellation) {
-        this(plan, current, partial, visit, count, cancellation, Set.of(), Optional.empty(), List.of(), (type, explicit) -> () -> count);
+        this(plan, current, partial, visit, count, cancellation, Set.of(), Optional.empty(), List.of(), (type, explicit) -> () -> count, Optional.empty());
     }
 
     guru.interlis.model.TypeDescriptor effectiveType(ObjectValidationPlan.ValueRules rules) {
@@ -26,14 +26,14 @@ record EvaluationFrame(ValidationPlan plan, TransferValue current, boolean parti
     }
 
     EvaluationFrame withCurrent(TransferValue value) {
-        return new EvaluationFrame(plan, value, partial, visit, objectCount, cancellation, activeDerivations, dataset, parents, populations);
+        return new EvaluationFrame(plan, value, partial, visit, objectCount, cancellation, activeDerivations, dataset, parents, populations, row);
     }
 
     EvaluationFrame descend(TransferValue.Structured parent, TransferValue value) {
         var ancestry = new ArrayList<>(parents);
         ancestry.add(parent);
         return new EvaluationFrame(plan, value, partial, visit, objectCount, cancellation,
-                activeDerivations, dataset, ancestry, populations);
+                activeDerivations, dataset, ancestry, populations, row);
     }
 
     EvaluationFrame ascend() {
@@ -41,17 +41,22 @@ record EvaluationFrame(ValidationPlan plan, TransferValue current, boolean parti
             return this;
         }
         return new EvaluationFrame(plan, parents.getLast(), partial, visit, objectCount, cancellation,
-                activeDerivations, dataset, parents.subList(0, parents.size() - 1), populations);
+                activeDerivations, dataset, parents.subList(0, parents.size() - 1), populations, row);
     }
 
     EvaluationFrame withDataset(DatasetPathContext context) {
         return new EvaluationFrame(plan, current, partial, visit, objectCount, cancellation,
-                activeDerivations, Optional.of(context), List.of(), populations);
+                activeDerivations, Optional.of(context), List.of(), populations, row);
     }
 
     EvaluationFrame withPopulations(java.util.function.BiFunction<guru.interlis.model.ObjectArgumentType, Boolean, RuntimeObjectSet> sets) {
         return new EvaluationFrame(plan, current, partial, visit, objectCount, cancellation,
-                activeDerivations, dataset, parents, sets);
+                activeDerivations, dataset, parents, sets, row);
+    }
+
+    EvaluationFrame withRow(ViewRow currentRow) {
+        return new EvaluationFrame(plan, current, partial, visit, objectCount, cancellation, activeDerivations,
+                dataset, parents, populations, Optional.of(currentRow));
     }
 
     boolean evaluating(SymbolId attribute) {
@@ -65,7 +70,7 @@ record EvaluationFrame(ValidationPlan plan, TransferValue current, boolean parti
     EvaluationFrame enterDerivation(SymbolId id) {
         var entered = new HashSet<>(activeDerivations);
         entered.add(new Derivation(id, dataset.map(path -> path.occurrence().handle()), current));
-        return new EvaluationFrame(plan, current, partial, visit, objectCount, cancellation, entered, dataset, parents, populations);
+        return new EvaluationFrame(plan, current, partial, visit, objectCount, cancellation, entered, dataset, parents, populations, row);
     }
 
     EvaluationFrame {
