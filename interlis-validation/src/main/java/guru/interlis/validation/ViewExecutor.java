@@ -105,8 +105,14 @@ final class ViewExecutor {
         long handle = origin.handle().ordinal();
         var group = dataset.temporary.get(key).map(java.nio.ByteBuffer::wrap).map(DatasetUnique.Group::read)
                 .orElseGet(() -> new DatasetUnique.Group(0, handle, 0, handle));
+        long witness = group.second();
+        if (group.size() > 0 && (witness == 0 || witness == group.first())) {
+            long subject = group.first();
+            witness = row.origins().stream().mapToLong(candidate -> candidate.handle().ordinal())
+                    .filter(candidate -> candidate != subject).findFirst().orElse(handle);
+        }
         var updated = new DatasetUnique.Group(Math.incrementExact(group.size()), group.first(),
-                group.size() == 1 ? handle : group.second(), group.selected());
+                witness, group.selected());
         dataset.temporary.put(key, updated.bytes());
         report.recordViewUnique(row, declaration, status);
     }

@@ -66,4 +66,26 @@ class ValidationViewPlanTest {
         assertEquals(ValidationCoverage.ConstraintStatus.UNSUPPORTED_EXPRESSION,
                 report.coverage().constraints().getFirst().status());
     }
+    @Test
+    void reportsADistinctRealWitnessForJoinedDuplicateRows() {
+        var plan = plan("""
+                CLASS LeftSide = code: TEXT; END LeftSide;
+                CLASS RightSide = END RightSide;
+                VIEW Keys JOIN OF l~LeftSide,r~RightSide; =
+                  code := l->code;
+                  UNIQUE code;
+                END Keys;
+                """);
+        var report = validate(plan, List.of("LeftSide", "RightSide"), primary("p", basket("basket", """
+                <LeftSide i:tid='l1'><code>same</code></LeftSide>
+                <LeftSide i:tid='l2'><code>same</code></LeftSide>
+                <RightSide i:tid='r1'/>
+                <RightSide i:tid='r2'/>
+                """)));
+        assertEquals(1, report.detectedViolations());
+        var finding = report.examples().getFirst();
+        assertEquals("l1", finding.data().tid().orElseThrow().value());
+        assertEquals(List.of("p", "basket", "r2", "4"), finding.arguments());
+        assertEquals(4, report.coverage().constraints().getFirst().occurrences());
+    }
 }
