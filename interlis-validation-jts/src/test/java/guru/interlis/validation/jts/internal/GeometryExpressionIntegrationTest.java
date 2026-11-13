@@ -86,6 +86,67 @@ class GeometryExpressionIntegrationTest {
                 .examples().stream().map(ValidationDiagnostic::code).toList());
     }
 
+    @Test
+    void measuresCurvedSurfaceAndEveryMultiComponentInExpressions() {
+        var halfDisc = "<g:surface><g:exterior>" + ARC.replace("</g:polyline>", point(0, 0) + "</g:polyline>")
+                + "</g:exterior></g:surface>";
+        var model = """
+                CLASS Item =
+                  shape : SURFACE WITH (STRAIGHTS,ARCS) VERTEX Point;
+                  lines : MULTIPOLYLINE WITH (ARCS) VERTEX Point;
+                  shapes : MULTISURFACE WITH (STRAIGHTS) VERTEX Point;
+                  MANDATORY CONSTRAINT INTERLIS.surface(shape) > 6.2 AND INTERLIS.surface(shape) < 6.3;
+                  MANDATORY CONSTRAINT INTERLIS.multilength(lines) > 12.5 AND INTERLIS.multilength(lines) < 12.6;
+                  MANDATORY CONSTRAINT INTERLIS.multisurface(shapes) == 17;
+                END Item;
+                """;
+        var small = "<g:surface><g:exterior>" + ring(5, 5, 6, 6) + "</g:exterior></g:surface>";
+        var data = "<Item i:tid='parcel'><shape>" + halfDisc + "</shape><lines><g:multipolyline>"
+                + ARC + ARC + "</g:multipolyline></lines><shapes><g:multisurface>" + SQUARE + small
+                + "</g:multisurface></shapes></Item>";
+        var report = validate24(model, data, true);
+        assertEquals(0, report.detectedViolations(), report.examples().toString());
+        assertEquals(3, report.coverage().constraints().stream()
+                .filter(result -> result.status() == ValidationCoverage.ConstraintStatus.CHECKED).count());
+    }
+
+    @Test
+    void checksEmptySingleAndDuplicateBagWithTheRealEngine() {
+        var model = """
+                STRUCTURE Piece = shape : SURFACE WITH (STRAIGHTS) VERTEX Point; END Piece;
+                CLASS Item =
+                  pieces : BAG {0..*} OF Piece;
+                  SET CONSTRAINT INTERLIS.areAreas2(ALL,"pieces","shape");
+                END Item;
+                """;
+        var piece = "<pieces><Piece><shape>" + SQUARE + "</shape></Piece></pieces>";
+        for (int count : List.of(0, 1, 2)) {
+            var report = validate24(model, "<Item i:tid='parcel'>" + piece.repeat(count) + "</Item>", true);
+            var outcome = count == 2 ? DatasetRuleCoverage.Outcome.VIOLATED : DatasetRuleCoverage.Outcome.SATISFIED;
+            assertEquals(outcome, report.coverage().datasetRules().getFirst().outcome());
+        }
+    }
+
+    @Test
+    void reportsOpenWhereContextInsteadOfTreatingItAsAnEmptySet() {
+        var model = """
+                CLASS Flag = enabled : BOOLEAN; END Flag;
+                STRUCTURE Link = flag : REFERENCE TO Flag; END Link;
+                CLASS Item =
+                  shape : SURFACE WITH (STRAIGHTS) VERTEX Point;
+                  link : Link;
+                  SET CONSTRAINT WHERE link->flag->enabled : INTERLIS.areAreas2(ALL,UNDEFINED,"shape");
+                END Item;
+                """;
+        var data = "<Item i:tid='parcel'><shape>" + SQUARE
+                + "</shape><link><Link><flag i:ref='missing'/></Link></link></Item>";
+        var report = validate24(model, data, true);
+        var rule = report.coverage().datasetRules().getFirst();
+        assertEquals(DatasetRuleCoverage.Outcome.UNDETERMINED, rule.outcome());
+        assertEquals(1, rule.undecidedCandidates());
+        assertTrue(report.examples().stream().noneMatch(finding -> finding.code() == ValidationCode.SET_CONSTRAINT_FALSE));
+    }
+
     private static ValidationReport validate24(String declarations, String contents, boolean engine) {
         var xtf = """
                 <i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
