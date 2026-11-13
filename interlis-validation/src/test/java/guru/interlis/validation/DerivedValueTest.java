@@ -22,7 +22,7 @@ class DerivedValueTest {
                   MANDATORY CONSTRAINT chosen == expected;
                 END Item;
                 """);
-        var report = validate(plan, List.of("Item"), primary("p", basket("basket", """
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", """
                 <Item i:tid="a"><first>1</first><second>2</second><expected>2</expected></Item>
                 <Item i:tid="b"><first>1</first><expected>1</expected></Item>
                 """)));
@@ -48,9 +48,8 @@ class DerivedValueTest {
                   END Data;
                 END Checks.
                 """);
-        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(schema,
-                ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
-        var report = validate(plan, List.of("Node"), primary("p",
+        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p",
                 basket("first", "<Node i:tid='a'><amount>5</amount><peer i:ref='b'/></Node>")
                         + basket("second", "<Node i:tid='b'><amount>7</amount><peer i:ref='a'/></Node>")));
         assertTrue(report.examples().isEmpty(), report.examples().toString());

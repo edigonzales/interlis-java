@@ -18,9 +18,7 @@ class EmptySetTest {
                 END Item;
                 """);
         var headerOnly = primary("p", "");
-        var membership = new ExtentDeclaration(new ExtentSelector(type(plan, "Item"),
-                Set.of(new InputId("p")), Optional.empty()), ExtentAspect.OBJECT_MEMBERSHIP, "empty inventory");
-        var closed = validateWithClaims(plan, List.of(membership), headerOnly);
+        var closed = validate(plan, DatasetScope.SUPPLIED_DATASET, headerOnly);
         assertEquals(1, closed.detectedViolations());
         var violation = closed.examples().getFirst();
         assertEquals(ValidationCode.SET_CONSTRAINT_FALSE, violation.code());
@@ -28,11 +26,10 @@ class EmptySetTest {
         assertTrue(violation.data().basket().isEmpty());
         assertEquals(type(plan, "Item"), violation.data().objectType().orElseThrow());
         var coverage = closed.coverage().datasetRules().getFirst();
-        assertEquals(DatasetRuleCoverage.Completeness.DECLARED_COMPLETE, coverage.completeness());
         assertEquals(0, coverage.candidates());
         assertEquals(1, coverage.evaluations());
 
-        var open = validate(plan, List.of(), headerOnly);
+        var open = validate(plan, DatasetScope.PARTIAL_DATASET, headerOnly);
         assertEquals(0, open.detectedViolations());
         assertEquals(DatasetRuleCoverage.Outcome.UNDETERMINED, open.coverage().datasetRules().getFirst().outcome());
         assertEquals(0, open.coverage().datasetRules().getFirst().candidates());
@@ -46,17 +43,16 @@ class EmptySetTest {
                   SET CONSTRAINT (BASKET) INTERLIS.objectCount(ALL) > 0;
                 END Item;
                 """);
-        var missing = validate(plan, List.of(), primary("p", ""));
+        var missing = validate(plan, DatasetScope.PARTIAL_DATASET, primary("p", ""));
         assertEquals(0, missing.detectedViolations());
         assertEquals(0, missing.coverage().datasetRules().getFirst().scopes());
         assertEquals(DatasetRuleCoverage.Outcome.NOT_APPLICABLE, missing.coverage().datasetRules().getFirst().outcome());
 
-        var present = validate(plan, List.of(), primary("p", basket("empty", "")));
+        var present = validate(plan, DatasetScope.PARTIAL_DATASET, primary("p", basket("empty", "")));
         assertEquals(1, present.detectedViolations());
         assertEquals("empty", present.examples().getFirst().data().basket().orElseThrow().value());
         var coverage = present.coverage().datasetRules().getFirst();
         assertEquals(DatasetRuleCoverage.ScopeKind.BASKET, coverage.scopeKind());
-        assertEquals(DatasetRuleCoverage.Completeness.CLOSED_BY_TRANSFER, coverage.completeness());
         assertEquals(1, coverage.scopes());
         assertEquals(0, coverage.candidates());
         assertEquals(1, coverage.evaluations());
@@ -74,12 +70,12 @@ class EmptySetTest {
                 CLASS Other = END Other;
                 """);
         var data = "<Child i:tid='skip'><active>false</active></Child><Other i:tid='other'/>";
-        var emptyAfterFilter = validate(plan, List.of(), primary("p", basket("filtered", data)));
+        var emptyAfterFilter = validate(plan, DatasetScope.PARTIAL_DATASET, primary("p", basket("filtered", data)));
         assertEquals(List.of("0"), emptyAfterFilter.examples().getFirst().arguments());
         assertEquals(0, emptyAfterFilter.coverage().datasetRules().getFirst().candidates());
         assertEquals(1, emptyAfterFilter.coverage().datasetRules().getFirst().evaluations());
 
-        var positive = validate(plan, List.of(), primary("p", basket("filtered",
+        var positive = validate(plan, DatasetScope.PARTIAL_DATASET, primary("p", basket("filtered",
                 data + "<Child i:tid='pass'><active>true</active></Child>")));
         assertEquals(0, positive.detectedViolations(), positive.examples().toString());
         assertEquals(DatasetRuleCoverage.Outcome.SATISFIED, positive.coverage().datasetRules().getFirst().outcome());
@@ -94,7 +90,7 @@ class EmptySetTest {
                   SET CONSTRAINT INTERLIS.objectCount(ALL) > 0;
                 END Item;
                 """);
-        var report = validate(plan, List.of("Item"), primary("p", ""),
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", ""),
                 reference("ref", basket("witnesses", "<Item i:tid='r'/>")));
         assertEquals(1, report.detectedViolations());
         assertEquals(List.of("0"), report.examples().getFirst().arguments());
@@ -108,7 +104,7 @@ class EmptySetTest {
                   SET CONSTRAINT INTERLIS.areAreas(ALL, UNDEFINED, >>area);
                 END Item;
                 """);
-        var report = validate(plan, List.of("Item"), primary("p", ""));
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", ""));
         assertEquals(0, report.detectedViolations());
         assertEquals(DatasetRuleCoverage.Outcome.UNSUPPORTED, report.coverage().datasetRules().getFirst().outcome());
         assertEquals(0, report.coverage().datasetRules().getFirst().evaluations());

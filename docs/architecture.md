@@ -18,19 +18,17 @@ Die zugehörigen POMs beschreiben die konkreten Abhängigkeiten und Scopes.
 | `interlis-compiler` | model | Parseradapter, eigene Syntax, Bindung, Analyse und Gültigkeitsgate |
 | `interlis-workspace` | compiler, model | Versionierte Änderungen, Resolver-SPI, Invalidierung und Sprachabfragen |
 | `interlis-repository` | workspace, model | Datei-/HTTP-Host, Indexe, Beschaffung, Cache und Lock |
-| `interlis-projection` | compiler, model | Diagramm-DTOs und reine Projektion |
-| `interlis-documentation` | model, projection | Lesende Dokumentationsprojektion und Rendering |
+| `interlis-projection` | compiler, model | Diagramm-DTOs, Dokumentationsprojektion und Rendering |
 | `interlis-transfer` | model | Formatunabhängige Transferpläne, Objektwerte und Streaming-Protokoll |
 | `interlis-validation` | model, transfer | Revisionsgebundener Regelplan sowie lokale und datensatzweite Validierung neutraler Transferereignisse |
 | `interlis-validation-mvstore` | validation, H2 MVStore | Optionaler JVM-Speicher für einen Datensatzlauf |
-| `interlis-xtf23` | transfer, model | XML-Adapter für INTERLIS 2.3 |
-| `interlis-xtf24` | transfer, model | XML-Adapter für das XTF-2.4-FULL-Profil |
+| `interlis-xtf` | transfer, model | XML-Adapter für XTF 2.3 und 2.4 |
 | `interlis-compiler-cli` | compiler, model, repository, workspace, projection | CLI, Prozessgrenzen, Präsentation und Ausgabe |
 | `interlis-compiler-gui` | model, compiler, workspace, repository | Desktop-Modellprüfung, Diagnosen, Abhängigkeiten und Repositoryexplorer |
-| `interlis-lsp` | workspace, compiler, projection, model, repository, documentation | LSP-/Editorhost, Scheduling und Ausgaben |
+| `interlis-lsp` | workspace, compiler, projection, model, repository | LSP-/Editorhost, Scheduling und Ausgaben |
 | `interlis-wasm-bridge` | workspace, compiler, projection, model | Gemeinsames JSON-Protokoll und Sitzungen |
 
-Alle fünfzehn JVM-Module werden über denselben Builder erzeugt. Die
+Alle dreizehn JVM-Module werden über denselben Builder erzeugt. Die
 jeweils ausgewählten JPMS-Closures stehen im
 [Buildvertrag](development/build.md). TeaVM und Web Image verwenden dieselben
 JVM-Laufzeit-JARs aus dem Jenesis-Inventar des aktuellen Checkouts. Der Browserharness prüft den Compiler und zeigt Diagramm-DTOs.

@@ -120,7 +120,7 @@ class RuntimeModelBaselineTest {
         assertTrue(transfer.object(new SymbolRef(schema.snapshotId(), item.id())).isPresent());
         assertTrue(transfer.object(new SymbolRef(schema.snapshotId(), view.id())).isEmpty());
         var validator = assertInstanceOf(ValidationPlanningResult.Ready.class,
-                ValidationPlanner.plan(schema, transfer, ValidationProfile.DATASET)).plan();
+                ValidationPlanner.plan(transfer, ValidationProfile.DATASET)).plan();
         assertEquals(List.of(new SymbolRef(schema.snapshotId(), declaration.id())),
                 validator.deferredRules().stream().map(RuleKey::declaration).toList());
     }

@@ -24,7 +24,7 @@ final class DatasetReferences {
     private final StoredValueCodec codec;
     private final DatasetObjectStore objects;
     private final DatasetOptions options;
-    private final Set<InputId> inputs;
+    private final boolean completeDelivery;
     private final ValidationSession report;
     private final ReferenceResolver resolver;
     private final IdentityIndex identities;
@@ -35,13 +35,13 @@ final class DatasetReferences {
 
     DatasetReferences(ValidationPlan plan, ValidationStorage storage, StoredValueCodec codec,
                       DatasetObjectStore objects, IdentityIndex identities, DatasetOptions options,
-                      Set<InputId> inputs, ValidationSession report) {
+                      boolean completeDelivery, ValidationSession report) {
         this.plan = plan;
         this.metadata = storage.table(StorageArea.METADATA);
         this.codec = codec;
         this.objects = objects;
         this.options = options;
-        this.inputs = inputs;
+        this.completeDelivery = completeDelivery;
         this.report = report;
         this.resolver = new ReferenceResolver(plan, identities, objects);
         this.identities = identities;
@@ -73,9 +73,7 @@ final class DatasetReferences {
                 var object = stored.event().object();
                 var role = input.descriptor().role();
                 var currentBasket = basket;
-                boolean selected = options.subjects().selects(plan, role, basket.topic(), object.type())
-                        || basket.additionalTopics().stream()
-                                .anyMatch(topic -> options.subjects().selects(plan, role, topic, object.type()));
+                boolean selected = plan.subjects().selects(role, basket);
                 var context = new Context(new BasketHandle(lastInput, lastBasket), input, currentBasket, object, cancellation);
                 projectLinks(DatasetObjectStore.handle(entry), context, selected);
                 if (selected) {
@@ -188,24 +186,12 @@ final class DatasetReferences {
 
     private void resolve(Context context, TransferValue.Reference reference, Symbol slot, List<SymbolId> roots,
                          boolean external, List<DataLocation.Step> path) {
-        boolean closed = !external && context.header().consistency() == TransferEvent.Consistency.COMPLETE
-                || explicitlyClosed(context, reference, roots);
+        boolean closed = context.header().consistency() == TransferEvent.Consistency.COMPLETE
+                && incompleteLinks.get(DatasetValidationSession.metadataKey((byte) 9, context.basket().ordinal())).isEmpty()
+                && (!external || completeDelivery && options.scope() == DatasetScope.SUPPLIED_DATASET);
         var result = resolver.resolve(context.basket(), context.header(), context.input().namespaces(),
                 reference, roots, external, closed);
         report.referenceResult(context.object(), slot, location(context, path), result);
-    }
-
-    private boolean explicitlyClosed(Context context, TransferValue.Reference reference, List<SymbolId> roots) {
-        if (roots.isEmpty()) {
-            return false;
-        }
-        Set<InputId> required = reference.target() instanceof guru.interlis.transfer.TransferIdentity.TransferId
-                ? Set.of(context.input().descriptor().id()) : inputs;
-        return roots.stream().allMatch(root -> options.extents().claims().stream().anyMatch(claim ->
-                claim.aspect() == ExtentAspect.OBJECT_MEMBERSHIP && claim.selector().inputs().containsAll(required)
-                        && claim.selector().root().equals(plan.ref(root))
-                        && (claim.selector().basket().isEmpty() || reference.targetBasket()
-                            .map(id -> id.value().equals(claim.selector().basket().orElseThrow().value())).orElse(false))));
     }
 
     private static DataLocation location(Context context, List<DataLocation.Step> path) {

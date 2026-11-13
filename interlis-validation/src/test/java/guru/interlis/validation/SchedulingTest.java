@@ -27,8 +27,8 @@ class SchedulingTest {
                 <Item i:tid='b'><amount>1</amount></Item>
                 """));
         try (var workers = Executors.newFixedThreadPool(2)) {
-            var first = workers.submit(() -> validate(plan, List.of("Item"), single));
-            var second = workers.submit(() -> validate(plan, List.of("Item"), two));
+            var first = workers.submit(() -> validate(plan, DatasetScope.SUPPLIED_DATASET, single));
+            var second = workers.submit(() -> validate(plan, DatasetScope.SUPPLIED_DATASET, two));
             var good = first.get(10, TimeUnit.SECONDS);
             var bad = second.get(10, TimeUnit.SECONDS);
             assertEquals(0, good.detectedViolations());

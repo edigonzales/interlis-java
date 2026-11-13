@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.OptionalLong;
 
-import static guru.interlis.validation.DatasetRuleCoverage.Completeness.OPEN;
+import static guru.interlis.validation.DatasetScopeStore.Completeness.OPEN;
 import static guru.interlis.validation.DatasetRuleCoverage.Outcome.*;
 import static guru.interlis.validation.DatasetRuleCoverage.ScopeKind.*;
 
@@ -28,7 +28,7 @@ final class DatasetAggregate {
 
     List<DatasetRuleCoverage> check(SetConstraint set) {
         boolean basket = set.scope() == SetConstraint.SetConstraintScope.BASKET;
-        initialize(basket, set.where().isPresent());
+        initialize(basket);
         var where = set.where().flatMap(context::program);
         var condition = context.program(set.condition());
         boolean supported = where.isPresent() == set.where().isPresent() && condition.isPresent();
@@ -71,7 +71,7 @@ final class DatasetAggregate {
     }
 
     List<DatasetRuleCoverage> check(PlausibilityConstraint plausibility) {
-        initialize(false, true);
+        initialize(false);
         var entry = scopes.get(0);
         if (entry.isEmpty()) {
             return List.of(empty(false));
@@ -148,8 +148,8 @@ final class DatasetAggregate {
         return coverage(population, DATASET, passes ? SATISFIED : VIOLATED, denominator, 1, passes ? 0 : 1);
     }
 
-    private void initialize(boolean basket, boolean requiresValues) {
-        context.initializeScopes(rule, basket, requiresValues, (ordinal, completeness) ->
+    private void initialize(boolean basket) {
+        context.initializeScopes(rule, basket, (ordinal, completeness) ->
                 scopes.put(ordinal, new Scope(completeness, new DatasetScopeCounts())));
     }
 
@@ -170,11 +170,11 @@ final class DatasetAggregate {
     private DatasetRuleCoverage coverage(Scope scope, DatasetRuleCoverage.ScopeKind kind,
                                          DatasetRuleCoverage.Outcome outcome, long candidates,
                                          long evaluations, long violations) {
-        return new DatasetRuleCoverage(rule.key(), kind, scope.completeness(), outcome, 1, candidates,
+        return new DatasetRuleCoverage(rule.key(), kind, outcome, 1, candidates,
                 evaluations, violations, scope.counts().undecided);
     }
 
     private DatasetRuleCoverage empty(boolean basket) {
-        return new DatasetRuleCoverage(rule.key(), basket ? BASKET : DATASET, OPEN, NOT_APPLICABLE, 0, 0, 0, 0, 0);
+        return new DatasetRuleCoverage(rule.key(), basket ? BASKET : DATASET, NOT_APPLICABLE, 0, 0, 0, 0, 0);
     }
 }

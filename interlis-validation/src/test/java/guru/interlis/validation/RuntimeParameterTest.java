@@ -35,12 +35,12 @@ class RuntimeParameterTest {
                 new RuntimeBindings(Map.of(parameter, new TransferValue.BooleanValue(true)), Map.of()),
                 ValidationCoverage.ConstraintStatus.CHECKED).entrySet()) {
             var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
-                    ValidationPlanner.plan(schema, transfer, ValidationProfile.DATASET, entry.getKey())).plan();
-            var report = validate(plan, List.of("Item"), input);
+                    ValidationPlanner.plan(transfer, ValidationProfile.DATASET, entry.getKey())).plan();
+            var report = validate(plan, DatasetScope.SUPPLIED_DATASET, input);
             assertEquals(entry.getValue(), report.coverage().constraints().getFirst().status());
         }
         var invalid = new RuntimeBindings(Map.of(parameter, new TransferValue.Text("true")), Map.of());
         assertInstanceOf(ValidationPlanningResult.Rejected.class,
-                ValidationPlanner.plan(schema, transfer, ValidationProfile.DATASET, invalid));
+                ValidationPlanner.plan(transfer, ValidationProfile.DATASET, invalid));
     }
 }

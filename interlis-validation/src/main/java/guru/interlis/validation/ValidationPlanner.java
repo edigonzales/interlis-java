@@ -2,7 +2,6 @@ package guru.interlis.validation;
 
 import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.CollectionType;
-import guru.interlis.model.CompiledSchema;
 import guru.interlis.model.ConstraintDefinition;
 import guru.interlis.model.ConstraintSymbol;
 import guru.interlis.model.DomainConstraint;
@@ -48,30 +47,23 @@ import static guru.interlis.validation.UncheckedRuleInfo.Reason.*;
 public final class ValidationPlanner {
     private ValidationPlanner() { }
 
-    /** Returns a projection or a structured rejection. Both arguments are non-null. */
-    public static ValidationPlanningResult plan(CompiledSchema schema, TransferPlan transferPlan) {
-        return plan(schema, transferPlan, ValidationProfile.LOCAL_ONLY);
+    /** Returns a projection or a structured rejection. The transfer plan is non-null. */
+    public static ValidationPlanningResult plan(TransferPlan transferPlan) {
+        return plan(transferPlan, ValidationProfile.LOCAL_ONLY);
     }
 
     /** Projects the non-null inputs for the chosen execution profile. */
-    public static ValidationPlanningResult plan(CompiledSchema schema, TransferPlan transferPlan,
+    public static ValidationPlanningResult plan(TransferPlan transferPlan,
                                                 ValidationProfile profile) {
-        return plan(schema, transferPlan, profile, RuntimeBindings.empty());
+        return plan(transferPlan, profile, RuntimeBindings.empty());
     }
 
     /** Projects a plan with immutable host values and function implementations. */
-    public static ValidationPlanningResult plan(CompiledSchema schema, TransferPlan transferPlan,
+    public static ValidationPlanningResult plan(TransferPlan transferPlan,
                                                 ValidationProfile profile, RuntimeBindings bindings) {
         Objects.requireNonNull(bindings, "bindings");
         Objects.requireNonNull(profile, "profile");
-        Objects.requireNonNull(schema, "schema");
-        Objects.requireNonNull(transferPlan, "transferPlan");
-        if (!schema.snapshotId().equals(transferPlan.snapshotId())) {
-            return rejected(SNAPSHOT_MISMATCH, Optional.empty(), "Transfer plan belongs to another snapshot");
-        }
-        if (!schema.fingerprint().equals(transferPlan.schemaFingerprint())) {
-            return rejected(SCHEMA_FINGERPRINT_MISMATCH, Optional.empty(), "Transfer plan has a different schema fingerprint");
-        }
+        var schema = Objects.requireNonNull(transferPlan, "transferPlan").schema();
         var projection = new Projection(schema.semanticGraph(), transferPlan, profile, schema.rootModels(), bindings);
         try {
             return new ValidationPlanningResult.Ready(projection.build());

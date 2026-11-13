@@ -140,7 +140,7 @@ class StorageParityTest {
         var schema = assertInstanceOf(CompilationOutcome.Succeeded.class, outcome, outcome.toString()).schema();
         var transfer = assertInstanceOf(TransferPlanningResult.Ready.class, TransferPlanner.plan(schema)).plan();
         var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
-                ValidationPlanner.plan(schema, transfer, ValidationProfile.DATASET)).plan();
+                ValidationPlanner.plan(transfer, ValidationProfile.DATASET)).plan();
         return new Fixture(plan, transfer);
     }
 
@@ -157,7 +157,7 @@ class StorageParityTest {
 
     static ValidationReport validate(Fixture fixture, ValidationStorage storage, String data) {
         var plan = fixture.plan();
-        try (var run = DatasetValidator.session(plan, DatasetOptions.defaults(plan), storage);
+        try (var run = DatasetValidator.session(plan, DatasetOptions.defaults(), storage);
              var reader = reader(fixture, data)) {
             run.readInput(new InputDescriptor(new InputId("primary"), InputRole.PRIMARY), reader, TOKEN);
             return run.finish(TOKEN);

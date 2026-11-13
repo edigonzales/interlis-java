@@ -52,6 +52,10 @@ final class ExpressionEvaluator {
         return evaluate(program.root(), context);
     }
 
+    EvaluationResult evaluateKey(EvaluationFrame frame) {
+        return program.expression() instanceof PathExpression path ? readPath(path, frame, true) : evaluate(frame);
+    }
+
     private EvaluationResult evaluate(ExpressionId id, EvaluationFrame context) {
         context.visit().run();
         var constant = program.constants().get(id);
@@ -59,7 +63,7 @@ final class ExpressionEvaluator {
             return constant;
         }
         return switch (program.nodes().get(id)) {
-            case PathExpression path -> readPath(path, context);
+            case PathExpression path -> readPath(path, context, false);
             case FunctionCallExpression call -> function(call, context);
             case SymbolValueExpression symbol -> symbolValue(symbol, context);
             case DefinedExpression defined -> switch (evaluate(defined.operand(), context)) {
@@ -121,7 +125,7 @@ final class ExpressionEvaluator {
         for (var child : call.children()) {
             var result = evaluate(child, frame);
             if (result instanceof KnownObjects objects && standard == StandardFunctions.OBJECT_COUNT) {
-                return StandardFunctions.count(objects.handles().size());
+                return StandardFunctions.count(objects.size().getAsLong());
             }
             if (result instanceof Known known) {
                 args.add(known.value());
@@ -304,7 +308,7 @@ final class ExpressionEvaluator {
                 ? Unsupported.INSTANCE : result;
     }
 
-    private static EvaluationResult readPath(PathExpression expression, EvaluationFrame context) {
+    private static EvaluationResult readPath(PathExpression expression, EvaluationFrame context, boolean terminalIdentity) {
         EvaluationResult current = value(context.current(), false);
         var frame = context;
         for (var step : expression.path().steps()) {
@@ -320,8 +324,8 @@ final class ExpressionEvaluator {
                 if (data == null) {
                     return new UndefinedByData(false, frame.row().orElseThrow().nullBases().contains(base.base()));
                 }
-                frame = frame.withCurrent(data);
-                current = value(data, false);
+                frame = frame.forBase(data);
+                current = value(data.value(), false);
                 continue;
             }
             if (step instanceof PathStep.AssociationAccessStep || step instanceof PathStep.AssociationSourceStep
@@ -339,13 +343,14 @@ final class ExpressionEvaluator {
                     current = objects;
                     continue;
                 }
-                if (objects.handles().isEmpty()) {
+                var handles = objects.firstTwo().get();
+                if (handles.isEmpty()) {
                     return new UndefinedByData(false);
                 }
-                if (objects.handles().size() != 1) {
+                if (handles.size() != 1) {
                     return new BlockedByViolation(frame.dataset().orElseThrow().occurrence().location(List.of()));
                 }
-                var destination = frame.dataset().orElseThrow().target(objects.handles().getFirst());
+                var destination = frame.dataset().orElseThrow().target(handles.getFirst());
                 var object = destination.occurrence().object().data();
                 frame = frame.withDataset(destination).withCurrent(object);
                 current = value(object, false);
@@ -370,10 +375,14 @@ final class ExpressionEvaluator {
             if (step instanceof PathStep.AttributeStep attribute && current instanceof Known read
                     && read.value() instanceof TransferValue.Reference reference
                     && frame.plan().valueType(attribute.target()).orElse(null) instanceof ReferenceType type) {
-                if (frame.dataset().isEmpty()) {
+                if (terminalIdentity && step == expression.path().steps().getLast()) {
+                    return new Known(reference, read.referenceOrigin().or(frame::dataset));
+                }
+                var origin = read.referenceOrigin().or(frame::dataset);
+                if (origin.isEmpty()) {
                     return MissingContext.DATASET_REFERENCE;
                 }
-                var dataset = frame.dataset().orElseThrow();
+                var dataset = origin.orElseThrow();
                 var resolved = dataset.resolve(reference, type);
                 if (resolved instanceof ReferenceResolver.Found found) {
                     var target = dataset.target(found.target());
@@ -402,13 +411,18 @@ final class ExpressionEvaluator {
         var path = frame.dataset().orElseThrow();
         var occurrence = path.occurrence();
         return switch (step) {
-            case PathStep.AssociationAccessStep access -> new KnownObjects(path.dataset().relationTargets(
-                    occurrence.handle(), access.sourceRole(), access.associationObject() ? access.sourceRole() : access.targetRole()));
-            case PathStep.AssociationSourceStep source -> new KnownObjects(path.dataset().relationTargets(
-                    occurrence.handle(), source.sourceRole(), source.sourceRole()));
+            case PathStep.AssociationAccessStep access -> path.dataset().relationTargets(
+                    occurrence, access.association(), access.sourceRole(), access.associationObject() ? access.sourceRole() : access.targetRole());
+            case PathStep.AssociationSourceStep source -> path.dataset().relationTargets(
+                    occurrence, source.association(), source.sourceRole(), source.sourceRole());
             case PathStep.RoleStep roleStep when value instanceof TransferValue.Structured structure -> {
                 var role = (RoleSymbol) frame.plan().symbol(roleStep.target()).orElseThrow();
-                var ref = structure.value(frame.plan().ref(role.id())).filter(TransferValue.Reference.class::isInstance)
+                var roleRef = frame.plan().ref(role.id());
+                var implicit = path.implicitRole(structure, roleRef);
+                if (implicit.isPresent()) {
+                    yield new KnownObjects(List.of(implicit.orElseThrow()));
+                }
+                var ref = structure.value(roleRef).filter(TransferValue.Reference.class::isInstance)
                         .map(TransferValue.Reference.class::cast);
                 if (ref.isEmpty()) {
                     yield new UndefinedByData(false);

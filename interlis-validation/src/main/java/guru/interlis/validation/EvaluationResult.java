@@ -3,10 +3,15 @@ package guru.interlis.validation;
 import guru.interlis.transfer.TransferValue;
 
 sealed interface EvaluationResult {
-    record Known(TransferValue value) implements EvaluationResult { }
-    record KnownObjects(java.util.List<ObjectHandle> handles) implements EvaluationResult {
-        public KnownObjects {
-            handles = java.util.List.copyOf(handles);
+    record Known(TransferValue value, java.util.Optional<DatasetPathContext> referenceOrigin) implements EvaluationResult {
+        Known(TransferValue value) {
+            this(value, java.util.Optional.empty());
+        }
+    }
+    record KnownObjects(java.util.function.Supplier<java.util.List<ObjectHandle>> firstTwo,
+                        java.util.function.LongSupplier size) implements EvaluationResult {
+        KnownObjects(java.util.List<ObjectHandle> handles) {
+            this(() -> handles, handles::size);
         }
     }
     record KnownNumber(NumericSemantics.Number value) implements EvaluationResult { }

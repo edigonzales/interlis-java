@@ -60,6 +60,17 @@ class CanonicalKeyTest {
     }
 
     @Test
+    void ordersCanonicalKeysByUnsignedBytesAndThenByLength() {
+        var first = new CanonicalKey(new byte[]{0x7f});
+        var prefix = new CanonicalKey(new byte[]{(byte) 0x80});
+        var longer = new CanonicalKey(new byte[]{(byte) 0x80, 0});
+        assertTrue(first.compareTo(prefix) < 0);
+        assertTrue(prefix.compareTo(longer) < 0);
+        assertTrue(longer.compareTo(prefix) > 0);
+        assertEquals(0, prefix.compareTo(new CanonicalKey(prefix.bytes())));
+    }
+
+    @Test
     void rejectsExcessiveKeysBeforeAppendingComponents() {
         var limited = new ValueSemantics(PLAN, 12, false, guru.interlis.model.LanguageVersion.ILI24,
                 () -> { }, (reference, type) -> java.util.Optional.empty(), value -> new StableIdentity("", value));

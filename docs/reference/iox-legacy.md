@@ -413,7 +413,7 @@ Flächen ausführt. Ausgelassene Prüfungen müssen als solche sichtbar bleiben.
 und die Transfers [area-shared-edge.xtf][fixture-shared] und
 [area-overlap.xtf][fixture-overlap] trennen gemeinsamen Rand und Überdeckung.
 Der selbstschneidende Ring steht als Inline-XTF in
-[`Xtf23GeometryTest`](../../interlis-xtf23/src/test/java/guru/interlis/xtf23/Xtf23GeometryTest.java).
+[`Xtf23GeometryTest`](../../interlis-xtf/src/test/java/guru/interlis/xtf23/Xtf23GeometryTest.java).
 Historische 2.4-Beispiele für die Toleranzfrage sind das
 [Funktionsmodell][historic-arc-model] und der [Transfer unterhalb der Toleranz][historic-arc].
 Sie dienen als direkte fachliche Proben; der damalige Runner ist entfernt.

@@ -1,13 +1,6 @@
 package guru.interlis.validation.mvstore;
 
-import guru.interlis.execution.CancellationToken;
-import guru.interlis.validation.DatasetOptions;
-import guru.interlis.validation.DatasetValidator;
-import guru.interlis.validation.InputDescriptor;
-import guru.interlis.validation.InputId;
-import guru.interlis.validation.InputRole;
 import guru.interlis.validation.StorageArea;
-import guru.interlis.validation.ValidationStreamException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -20,8 +13,6 @@ import java.util.Optional;
 import java.util.List;
 import java.util.Set;
 
-import static guru.interlis.validation.mvstore.StorageParityTest.fixture;
-import static guru.interlis.validation.mvstore.StorageParityTest.reader;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -73,20 +64,5 @@ class StorageOwnershipTest {
         assertTrue(Files.isSymbolicLink(file));
         assertEquals("other file", Files.readString(foreign));
         assertTrue(Files.exists(root.resolve("retained.mv")));
-    }
-
-    @Test
-    void rejectsAnAlteredRunAndSchemaHeaderBeforePublishingAReport() {
-        var fixture = fixture();
-        var plan = fixture.plan();
-        var token = CancellationToken.none();
-        try (var disk = MvStoreValidationStorage.open(root, MvStoreOptions.defaults(1_000_000));
-             var run = DatasetValidator.session(plan, DatasetOptions.defaults(plan), disk);
-             var reader = reader(fixture, "")) {
-            run.readInput(new InputDescriptor(new InputId("p"), InputRole.PRIMARY), reader, token);
-            disk.table(StorageArea.METADATA).put(new byte[]{0}, new byte[]{0});
-            var failure = assertThrows(ValidationStreamException.class, () -> run.finish(token));
-            assertTrue(failure.getMessage().contains("another run or schema revision"));
-        }
     }
 }

@@ -35,11 +35,11 @@ final class ValueSemantics {
     private final boolean partial;
     private final LanguageVersion language;
     private final Runnable visit;
-    private final BiFunction<TransferValue.Reference, TypeDescriptor, Optional<ObjectHandle>> reference;
+    private final BiFunction<TransferValue.Reference, TypeDescriptor, Optional<StableIdentity>> reference;
     private final Function<String, StableIdentity> oid;
 
     ValueSemantics(ValidationPlan plan, int maxBytes, boolean partial, LanguageVersion language, Runnable visit,
-                   BiFunction<TransferValue.Reference, TypeDescriptor, Optional<ObjectHandle>> reference,
+                   BiFunction<TransferValue.Reference, TypeDescriptor, Optional<StableIdentity>> reference,
                    Function<String, StableIdentity> oid) {
         this.plan = plan;
         this.maxBytes = maxBytes;
@@ -66,7 +66,10 @@ final class ValueSemantics {
             case EvaluationResult.UndefinedByData ignored -> Gap.UNDEFINED;
             case EvaluationResult.BlockedByViolation ignored -> Gap.INVALID_VALUE;
             case EvaluationResult.MissingContext ignored -> Gap.MISSING_CONTEXT;
-            case EvaluationResult.Unsupported _, EvaluationResult.KnownNumber _, EvaluationResult.KnownObjects _ -> Gap.UNSUPPORTED;
+            case EvaluationResult.KnownNumber number -> number.value().decimal()
+                    .<Result>map(value -> encode(new TransferValue.NumberValue(value.toString(), value), type, 0))
+                    .orElse(Gap.UNSUPPORTED);
+            case EvaluationResult.Unsupported _, EvaluationResult.KnownObjects _ -> Gap.UNSUPPORTED;
             case EvaluationResult.Known known -> encode(known.value(), type, 0);
         };
     }
@@ -337,7 +340,8 @@ final class ValueSemantics {
             return Gap.MISSING_CONTEXT;
         }
         out.tag(9);
-        out.longNumber(target.orElseThrow().ordinal());
+        out.text(target.orElseThrow().namespace());
+        out.text(target.orElseThrow().value());
         return null;
     }
 
@@ -410,14 +414,6 @@ final class ValueSemantics {
             }
         }
 
-        private void longNumber(long value) {
-            require(Long.BYTES);
-            try {
-                stream.writeLong(value);
-            } catch (IOException impossible) {
-                throw new AssertionError(impossible);
-            }
-        }
 
         private void text(String value) {
             require(Integer.BYTES + (long) Character.BYTES * value.length());
@@ -432,7 +428,7 @@ final class ValueSemantics {
         private void bytes(byte[] value) {
             require(Integer.BYTES + (long) value.length);
             number(value.length);
-            bytes.writeBytes(value);
+            bytes.write(value, 0, value.length);
         }
 
         private void key(CanonicalKey value) {

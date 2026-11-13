@@ -21,7 +21,7 @@ class ObjectSetRuntimeTest {
                 CLASS Left EXTENDS Base = END Left;
                 CLASS Right EXTENDS Base = END Right;
                 """);
-        var report = validate(plan, List.of(), primary("p", basket("basket", """
+        var report = validate(plan, DatasetScope.PARTIAL_DATASET, primary("p", basket("basket", """
                 <Left i:tid='left'><active>true</active></Left>
                 <Left i:tid='inactive'><active>false</active></Left>
                 <Right i:tid='right'><active>true</active></Right>
@@ -41,7 +41,7 @@ class ObjectSetRuntimeTest {
                   SET CONSTRAINT (BASKET) INTERLIS.objectCount(ALL(Other)) == 0;
                 END Item;
                 """);
-        var report = validate(plan, List.of(), primary("p", basket("basket", "<Item i:tid='item'/>")));
+        var report = validate(plan, DatasetScope.PARTIAL_DATASET, primary("p", basket("basket", "<Item i:tid='item'/>")));
         assertEquals(DatasetRuleCoverage.Outcome.SATISFIED, report.coverage().datasetRules().getFirst().outcome());
         assertTrue(report.examples().isEmpty());
     }

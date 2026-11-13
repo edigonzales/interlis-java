@@ -59,13 +59,13 @@ class ReferenceResolutionTest {
                 """);
         var transfer = transfer(schema);
         var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
-                ValidationPlanner.plan(schema, transfer, ValidationProfile.DATASET)).plan();
+                ValidationPlanner.plan(transfer, ValidationProfile.DATASET)).plan();
         var oid = "71c7dbf0-3dbc-4b5c-aa11-888cbfb13676";
         var source = basket("subject", SOURCE.replace("target", oid));
         var target = basket("reference", TARGET.replace("target", oid));
         for (boolean collision : List.of(false, true)) {
             try (var store = new InMemoryValidationStorage(100, 100_000);
-                 var session = DatasetValidator.session(plan, DatasetOptions.defaults(plan), store);
+                 var session = DatasetValidator.session(plan, DatasetOptions.defaults(), store);
                  var primary = reader(transfer, source);
                  var reference = reader(transfer, target);
                  var duplicate = reader(transfer, target)) {
@@ -106,17 +106,10 @@ class ReferenceResolutionTest {
                 """.formatted(external ? "(EXTERNAL) " : ""));
         var transfer = transfer(schema);
         var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
-                ValidationPlanner.plan(schema, transfer, ValidationProfile.DATASET)).plan();
+                ValidationPlanner.plan(transfer, ValidationProfile.DATASET)).plan();
         var input = new InputId("primary");
-        var options = DatasetOptions.defaults(plan);
-        if (closed) {
-            var target = schema.queries().findQualifiedName(
-                    guru.interlis.model.QualifiedName.of("Checks", "Data", "Target")).getFirst();
-            var extent = new ExtentDeclaration(new ExtentSelector(target, java.util.Set.of(input), java.util.Optional.empty()),
-                    ExtentAspect.OBJECT_MEMBERSHIP, "complete target population");
-            options = new DatasetOptions(options.localOptions(), options.subjects(),
-                    new ExtentDeclarations(List.of(extent)), options.limits());
-        }
+        var options = new DatasetOptions(ValidationOptions.defaults(), DatasetLimits.defaults(),
+                closed ? DatasetScope.SUPPLIED_DATASET : DatasetScope.PARTIAL_DATASET);
         try (var store = new InMemoryValidationStorage(100, 100_000);
              var session = DatasetValidator.session(plan, options, store);
              var reader = reader(transfer, data)) {

@@ -9,6 +9,90 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class DatasetPathTest {
     @Test
+    void countsManyRelationshipTargetsAndBlocksWhenAnEndpointIsMissing() {
+        var plan = plan("""
+                CLASS Parent = END Parent;
+                CLASS Item = END Item;
+                ASSOCIATION Link =
+                  parent -- {0..*} Parent;
+                  items -- {0..*} Item;
+                END Link;
+                CONSTRAINTS OF Parent =
+                  MANDATORY CONSTRAINT INTERLIS.objectCount(items) == 300;
+                END;
+                """);
+        var data = new StringBuilder("<Parent i:tid='parent'/>");
+        for (int i = 0; i < 300; i++) {
+            data.append("<Item i:tid='item").append(i).append("'/>")
+                    .append("<Link><parent i:ref='parent'/><items i:ref='item").append(i).append("'/></Link>");
+        }
+        var valid = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", data.toString())));
+        assertTrue(valid.examples().isEmpty(), valid.examples().toString());
+        assertEquals(ValidationCoverage.ConstraintStatus.CHECKED, valid.coverage().constraints().getFirst().status());
+        data.append("<Link><parent i:ref='parent'/><items i:ref='missing'/></Link>");
+        var broken = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", data.toString())));
+        assertEquals(List.of(ValidationCode.REFERENCE_TARGET_MISSING),
+                broken.examples().stream().map(ValidationDiagnostic::code).toList());
+        assertEquals(ValidationCoverage.ConstraintStatus.INCOMPLETE_CONTEXT,
+                broken.coverage().constraints().getFirst().status());
+    }
+
+    @Test
+    void checksDeferredConstraintsOnEachStructureOccurrence() {
+        var plan = plan("""
+                CLASS Target = amount: 0..100; END Target;
+                STRUCTURE Pointer =
+                  link: REFERENCE TO Target;
+                  MANDATORY CONSTRAINT link->amount == 5;
+                END Pointer;
+                CLASS Owner = pointers: LIST {0..*} OF Pointer; END Owner;
+                """);
+        var owner = """
+                <Owner i:tid="owner">
+                  <pointers><Pointer><link i:ref="good"/></Pointer></pointers>
+                  <pointers><Pointer><link i:ref="bad"/></Pointer></pointers>
+                </Owner>
+                """;
+        var targets = """
+                <Target i:tid="good"><amount>5</amount></Target>
+                <Target i:tid="bad"><amount>7</amount></Target>
+                """;
+        for (var objects : List.of(owner + targets, targets + owner)) {
+            var report = validate(plan, DatasetScope.SUPPLIED_DATASET,
+                    primary("p", basket("basket", objects)));
+            assertEquals(1, report.examples().size(), report.examples().toString());
+            var diagnostic = report.examples().getFirst();
+            assertEquals(ValidationCode.MANDATORY_CONSTRAINT_FALSE, diagnostic.code());
+            assertEquals(new DataLocation.Index(2), diagnostic.data().path().getLast());
+            assertEquals(2, report.coverage().constraints().getFirst().occurrences());
+        }
+    }
+
+    @Test
+    void checksEmbeddedPayloadWithBothAssociationEnds() {
+        var plan = plan("""
+                CLASS Parent = amount: 0..100; END Parent;
+                CLASS Item = amount: 0..100; END Item;
+                ASSOCIATION Note =
+                  parent -- {0..1} Parent;
+                  item -- {0..*} Item;
+                  MANDATORY CONSTRAINT parent->amount == item->amount;
+                END Note;
+                """);
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", """
+                <Item i:tid="item"><amount>7</amount><parent i:ref="target"><Note/></parent></Item>
+                <Parent i:tid="target"><amount>5</amount></Parent>
+                """)));
+        assertEquals(1, report.examples().size(), report.examples().toString());
+        var diagnostic = report.examples().getFirst();
+        assertEquals(ValidationCode.MANDATORY_CONSTRAINT_FALSE, diagnostic.code());
+        assertEquals("item", diagnostic.data().tid().orElseThrow().value());
+        assertEquals(1, diagnostic.data().path().size());
+        assertInstanceOf(DataLocation.Slot.class, diagnostic.data().path().getFirst());
+        assertEquals(1, report.coverage().constraints().getFirst().occurrences());
+    }
+
+    @Test
     void followsTwoCrossBasketReferenceHopsIncludingACycle() {
         var plan = plan("""
                 CLASS Node =
@@ -26,7 +110,7 @@ class DatasetPathTest {
         var second = basket("second", """
                 <Node i:tid="b"><amount>7</amount><pointer><Pointer><link i:ref="a"/></Pointer></pointer></Node>
                 """);
-        var report = validate(plan, List.of("Node"), primary("p", first + second));
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", first + second));
         assertTrue(report.examples().isEmpty(), report.examples().toString());
         assertEquals(1, report.coverage().constraints().size());
         var checked = report.coverage().constraints().getFirst();
@@ -49,7 +133,7 @@ class DatasetPathTest {
                   MANDATORY CONSTRAINT DEFINED(parent);
                 END;
                 """);
-        var report = validate(plan, List.of("Parent", "Item"), primary("p", basket("basket", """
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", """
                 <Parent i:tid="p1"/>
                 <Item i:tid="i1"><parent i:ref="p1"/></Item>
                 <Item i:tid="i2"><parent i:ref="p1"/></Item>
@@ -59,6 +143,28 @@ class DatasetPathTest {
         assertTrue(report.coverage().constraints().stream()
                 .allMatch(rule -> rule.status() == ValidationCoverage.ConstraintStatus.CHECKED));
     }
+    @Test
+    void doesNotCountPastAnUnresolvedRelationshipEnd() {
+        var plan = plan("""
+                CLASS Parent = END Parent;
+                CLASS Item = END Item;
+                ASSOCIATION Link =
+                  parent -- {0..1} Parent;
+                  items -- {0..*} Item;
+                END Link;
+                CONSTRAINTS OF Item =
+                  MANDATORY CONSTRAINT NOT (DEFINED(parent));
+                END;
+                """);
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket", """
+                <Item i:tid="item"><parent i:ref="missing"/></Item>
+                """)));
+        assertTrue(report.examples().stream().noneMatch(d -> d.code() == ValidationCode.MANDATORY_CONSTRAINT_FALSE),
+                report.examples().toString());
+        assertEquals(ValidationCoverage.ConstraintStatus.INCOMPLETE_CONTEXT,
+                report.coverage().constraints().getFirst().status());
+    }
+
     @Test
     void evaluatesBoundParentAgainstTheSuppliedStructureStack() {
         var schema = ValidationPlannerTest.compile("""
@@ -73,8 +179,7 @@ class DatasetPathTest {
                   END Data;
                 END Checks.
                 """);
-        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(schema,
-                ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
+        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
         var declaration = schema.semanticGraph().symbols().stream()
                 .filter(guru.interlis.model.AttributeSymbol.class::isInstance)
                 .map(guru.interlis.model.AttributeSymbol.class::cast)
@@ -104,6 +209,7 @@ class DatasetPathTest {
                     java.util.Optional.of(java.math.BigInteger.ONE));
             assertEquals(List.of(new ObjectHandle(3), new ObjectHandle(2)),
                     index.targets(from, source, target, () -> { }));
+            assertEquals(2, index.count(from, source, target, () -> { }));
         }
     }
     @Test
@@ -121,8 +227,7 @@ class DatasetPathTest {
                   END Data;
                 END Checks.
                 """);
-        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(schema,
-                ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
+        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
         var root = type(plan, "Node");
         var topic = plan.transferPlan().object(root).orElseThrow().topic().orElseThrow();
         var generic = schema.queries().findQualifiedName(guru.interlis.model.QualifiedName.of("Checks", "G")).getFirst();

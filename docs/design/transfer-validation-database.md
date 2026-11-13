@@ -1,6 +1,6 @@
 # Entwurf für Transfer, Validierung und Datenbanken
 
-Der formatunabhängige Transferkern steht in `interlis-transfer` für INTERLIS 2.3 und 2.4 zur Verfügung. `interlis-xtf23` liest und schreibt XTF-2.3-FULL-Transfers objektweise. `interlis-xtf24` liest und schreibt XTF-2.4-FULL-Transfers objektweise. Der implementierte Umfang und die Grenzen stehen in der [Transferanleitung](../usage/transfer.md). Lokale und datensatzweite Validierung stehen in `interlis-validation` zur Verfügung. Der optionale JVM-Speicher liegt in `interlis-validation-mvstore`. Weitere Formatadapter und die Datenbankabbildung bleiben Entwurfsthemen. Die Entwürfe beschreiben mögliche spätere Lösungen; sie sind weder implementierte Produktverträge noch Vorgaben für konkrete Java-Interfaces.
+Der formatunabhängige Transferkern steht in `interlis-transfer` für INTERLIS 2.3 und 2.4 zur Verfügung. `interlis-xtf` liest und schreibt XTF-2.3- und XTF-2.4-FULL-Transfers objektweise. Der implementierte Umfang und die Grenzen stehen in der [Transferanleitung](../usage/transfer.md). Lokale und datensatzweite Validierung stehen in `interlis-validation` zur Verfügung. Der optionale JVM-Speicher liegt in `interlis-validation-mvstore`. Weitere Formatadapter und die Datenbankabbildung bleiben Entwurfsthemen. Die Entwürfe beschreiben mögliche spätere Lösungen; sie sind weder implementierte Produktverträge noch Vorgaben für konkrete Java-Interfaces.
 
 Die Verantwortung wird entlang fachlicher Produkte geschnitten:
 

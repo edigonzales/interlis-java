@@ -420,8 +420,7 @@ Navigation, Source-Reveal, semantischen Fokus, Persistenz und Exportdialog.
 <a id="reine-dokumentationsprojektion"></a>
 ### Reine Dokumentationsprojektion
 
-Das JVM-Verbrauchermodul `interlis-documentation` hängt vom neutralen Modell
-und der bestehenden Diagrammprojektion ab; der Compiler hängt nicht davon ab.
+Das Package `guru.interlis.documentation` in `interlis-projection` verwendet das neutrale Modell und die Diagrammprojektion.
 `DocumentationProjector.project(CompiledSchema, DocumentationOptions,
 CancellationToken)` akzeptiert ausschliesslich gategeprüfte Schemas. Optionen
 besitzen Root-IDs, Labelsprache DE/FR/IT/EN, SEPARATE/INLINE/INLINE_ABSTRACT_ONLY,

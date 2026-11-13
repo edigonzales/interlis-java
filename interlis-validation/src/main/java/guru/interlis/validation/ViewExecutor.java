@@ -209,7 +209,9 @@ final class ViewExecutor {
         if (virtual != null) {
             open(virtual, parent -> {
                 var values = new LinkedHashMap<>(parent.bases());
-                values.put(baseId, materialize(virtual, parent));
+                var data = new TransferValue.Structured(dataset.plan.ref(parent.view()), Map.of());
+                values.put(baseId, new ViewRow.Base(data, parent.origins().getFirst(), parent.parents(),
+                        java.util.Optional.of(parent)));
                 consumer.accept(new ViewRow(view.view().id(), values, parent.origins()));
             }, undecided, depth + 1);
             return;
@@ -217,8 +219,8 @@ final class ViewExecutor {
         dataset.forObjects(occurrence -> {
             if (occurrence.input().descriptor().role() == InputRole.PRIMARY
                     && dataset.target(dataset.plan.ref(base.target()), occurrence)) {
-                var data = occurrence.object().data();
-                var values = new LinkedHashMap<SymbolId, TransferValue.Structured>();
+                var data = new ViewRow.Base(occurrence.object().data(), occurrence);
+                var values = new LinkedHashMap<SymbolId, ViewRow.Base>();
                 values.put(baseId, data);
                 for (var ancestor : view.inheritance()) {
                     for (var extension : ancestor.baseExtensions()) {
@@ -323,57 +325,86 @@ final class ViewExecutor {
         int run = ++groupRun;
         var prefix = java.nio.ByteBuffer.allocate(1 + Integer.BYTES).put((byte) 8).putInt(run).array();
         var upper = java.nio.ByteBuffer.allocate(1 + Integer.BYTES).put((byte) 8).putInt(run + 1).array();
+        var binding = (ViewSymbol.Base) dataset.plan.symbol(aggregate.base()).orElseThrow();
+        boolean virtual = dataset.plan.views().containsKey(binding.target());
+        var ordinal = new long[1];
         base(view, aggregate.base(), row -> {
-            var origin = row.origins().getFirst();
-            var semantics = dataset.semantics(origin);
-            var keys = new java.util.ArrayList<CanonicalKey>();
-            for (var id : aggregate.equal()) {
-                var program = dataset.program(id);
-                if (program.isEmpty()) {
-                    undecided.accept(row, EvaluationResult.Unsupported.INSTANCE);
-                    return;
-                }
-                var expression = program.orElseThrow();
-                var result = expression.evaluate(frame(row));
-                if (result instanceof EvaluationResult.UndefinedByData) {
-                    keys.add(new CanonicalKey(new byte[0]));
-                    continue;
-                }
-                var type = dataset.plan.effectiveType(expression.expression().typeId()).orElseThrow();
-                if (!(semantics.key(result, type) instanceof ValueSemantics.Known key)) {
-                    undecided.accept(row, result instanceof EvaluationResult.MissingContext
-                            ? result : EvaluationResult.Unsupported.INSTANCE);
-                    return;
-                }
-                keys.add(key.key());
+            long position = ++ordinal[0];
+            var key = groupKey(aggregate, row, prefix, undecided);
+            if (key == null) {
+                return;
             }
-            var encoded = semantics.tuple(keys).bytes();
-            var key = java.nio.ByteBuffer.allocate(prefix.length + encoded.length).put(prefix).put(encoded).array();
             var old = dataset.keys.get(key).map(java.nio.ByteBuffer::wrap);
             long count = old.map(java.nio.ByteBuffer::getLong).orElse(0L);
-            long representative = old.map(java.nio.ByteBuffer::getLong).orElse(origin.handle().ordinal());
+            long representative = old.map(java.nio.ByteBuffer::getLong)
+                    .orElseGet(() -> virtual ? position : row.origins().getFirst().handle().ordinal());
             dataset.keys.put(key, java.nio.ByteBuffer.allocate(2 * Long.BYTES).putLong(Math.addExact(count, 1))
                     .putLong(representative).array());
         }, undecided, depth);
+        if (virtual) {
+            ordinal[0] = 0;
+            base(view, aggregate.base(), row -> {
+                long position = ++ordinal[0];
+                var key = groupKey(aggregate, row, prefix, (ignored, result) -> { });
+                if (key == null) {
+                    return;
+                }
+                var data = java.nio.ByteBuffer.wrap(dataset.keys.get(key).orElseThrow());
+                long count = data.getLong();
+                if (data.getLong() == position) {
+                    consumer.accept(new ViewRow(view.view().id(), row.bases(), row.origins(),
+                            row.parents(), OptionalLong.of(count), row.nullBases()));
+                }
+            }, (ignored, result) -> { }, depth);
+            return;
+        }
         try (var cursor = dataset.keys.scan(prefix, java.util.Optional.of(upper))) {
             for (var entry = cursor.next(); entry.isPresent(); entry = cursor.next()) {
                 dataset.visit();
                 var data = java.nio.ByteBuffer.wrap(entry.orElseThrow().value());
                 var count = data.getLong();
                 var representative = dataset.occurrence(new ObjectHandle(data.getLong()));
-                consumer.accept(new ViewRow(view.view().id(), Map.of(aggregate.base(), representative.object().data()),
+                consumer.accept(new ViewRow(view.view().id(), Map.of(aggregate.base(),
+                        new ViewRow.Base(representative.object().data(), representative)),
                         List.of(representative), List.of(), OptionalLong.of(count)));
             }
         }
+    }
+
+    private byte[] groupKey(ViewSymbol.Aggregation aggregate, ViewRow row, byte[] prefix,
+                            java.util.function.BiConsumer<ViewRow, EvaluationResult> undecided) {
+        var semantics = dataset.semantics(row.origins().getFirst());
+        var keys = new java.util.ArrayList<CanonicalKey>();
+        for (var id : aggregate.equal()) {
+            var program = dataset.program(id);
+            if (program.isEmpty()) {
+                undecided.accept(row, EvaluationResult.Unsupported.INSTANCE);
+                return null;
+            }
+            var expression = program.orElseThrow();
+            var result = expression.evaluate(frame(row));
+            if (result instanceof EvaluationResult.UndefinedByData) {
+                keys.add(new CanonicalKey(new byte[0]));
+                continue;
+            }
+            var type = dataset.plan.effectiveType(expression.expression().typeId()).orElseThrow();
+            if (!(semantics.key(result, type) instanceof ValueSemantics.Known key)) {
+                undecided.accept(row, unknown(result) ? result : EvaluationResult.Unsupported.INSTANCE);
+                return null;
+            }
+            keys.add(key.key());
+        }
+        var encoded = semantics.tuple(keys).bytes();
+        return java.nio.ByteBuffer.allocate(prefix.length + encoded.length).put(prefix).put(encoded).array();
     }
 
     private void inspect(ViewPlan view, ViewSymbol.Inspection inspection, Consumer<ViewRow> consumer,
                          java.util.function.BiConsumer<ViewRow, EvaluationResult> undecided, int depth) {
         var path = dataset.plan.boundPath(inspection.path()).orElseThrow();
         base(view, inspection.base(), row -> {
-            var origin = row.origins().getFirst();
-            inspectPath(row, inspection.base(), row.bases().get(inspection.base()), path.path().steps(),
-                    0, List.of(), frame(row).withCurrent(origin.object().data()), consumer, undecided);
+            var bound = row.bases().get(inspection.base());
+            inspectPath(row, inspection.base(), bound.value(), path.path().steps(),
+                    0, List.of(), frame(row).forBase(bound), consumer, undecided);
         }, undecided, depth);
     }
 
@@ -391,7 +422,8 @@ final class ViewExecutor {
             }
         } else if (current instanceof TransferValue.Structured structure) {
             if (position == steps.size()) {
-                consumer.accept(new ViewRow(row.view(), Map.of(base, structure), row.origins(), parents, OptionalLong.empty()));
+                consumer.accept(new ViewRow(row.view(), Map.of(base, new ViewRow.Base(structure, row.bases().get(base).origin(),
+                        List.copyOf(parents), java.util.Optional.empty())), row.origins(), parents, OptionalLong.empty()));
             } else if (steps.get(position) instanceof guru.interlis.model.PathStep.AttributeStep attribute) {
                 var result = ExpressionEvaluator.attribute(frame.withCurrent(structure), structure, attribute.target());
                 if (result instanceof EvaluationResult.Known known) {
@@ -408,21 +440,6 @@ final class ViewExecutor {
                 undecided.accept(row, EvaluationResult.Unsupported.INSTANCE);
             }
         }
-    }
-
-    private TransferValue.Structured materialize(ViewPlan view, ViewRow row) {
-        var result = new LinkedHashMap<guru.interlis.model.SymbolRef, TransferValue>();
-        var frame = frame(row);
-        for (var attribute : view.attributes()) {
-            var computed = DerivedValueResolver.resolve(attribute, frame);
-            if (computed instanceof EvaluationResult.Known known) {
-                result.put(dataset.plan.ref(attribute.id()), known.value());
-            } else if (computed instanceof EvaluationResult.KnownNumber number) {
-                number.value().decimal().ifPresent(value -> result.put(dataset.plan.ref(attribute.id()),
-                        new TransferValue.NumberValue(value.toString(), value)));
-            }
-        }
-        return new TransferValue.Structured(dataset.plan.ref(view.view().id()), result);
     }
 
     private EvaluationFrame frame(ViewRow row) {

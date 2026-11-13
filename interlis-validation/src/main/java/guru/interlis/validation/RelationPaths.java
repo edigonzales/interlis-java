@@ -46,6 +46,51 @@ final class RelationPaths {
         return handles.stream().map(Target::handle).toList();
     }
 
+    void markUnresolved(ObjectHandle from, SymbolId sourceRole, SymbolId targetRole) {
+        table.put(unresolvedKey(from, sourceRole, targetRole), new byte[0]);
+    }
+
+    boolean hasUnresolved(ObjectHandle from, SymbolId sourceRole, SymbolId targetRole) {
+        return table.get(unresolvedKey(from, sourceRole, targetRole)).isPresent();
+    }
+
+    private static byte[] unresolvedKey(ObjectHandle from, SymbolId sourceRole, SymbolId targetRole) {
+        var key = prefix(from, sourceRole, targetRole);
+        key[key.length - 1] = 1;
+        return key;
+    }
+
+    List<ObjectHandle> firstTwo(ObjectHandle from, SymbolId sourceRole, SymbolId targetRole, Runnable visit) {
+        var prefix = prefix(from, sourceRole, targetRole);
+        var upper = unresolvedKey(from, sourceRole, targetRole);
+        var handles = new ArrayList<ObjectHandle>(2);
+        try (var cursor = table.scan(prefix, Optional.of(upper))) {
+            while (handles.size() < 2) {
+                var item = cursor.next();
+                if (item.isEmpty()) {
+                    break;
+                }
+                visit.run();
+                handles.add(new ObjectHandle(ByteBuffer.wrap(item.orElseThrow().value()).getLong()));
+            }
+        }
+        return handles;
+    }
+
+    long count(ObjectHandle from, SymbolId sourceRole, SymbolId targetRole, Runnable visit) {
+        var prefix = prefix(from, sourceRole, targetRole);
+        var upper = prefix.clone();
+        upper[upper.length - 1] = 1;
+        long count = 0;
+        try (var cursor = table.scan(prefix, Optional.of(upper))) {
+            for (var item = cursor.next(); item.isPresent(); item = cursor.next()) {
+                visit.run();
+                count = Math.incrementExact(count);
+            }
+        }
+        return count;
+    }
+
     private static byte[] prefix(ObjectHandle from, SymbolId sourceRole, SymbolId targetRole) {
         var source = sourceRole.value().getBytes(StandardCharsets.UTF_8);
         var target = targetRole.value().getBytes(StandardCharsets.UTF_8);

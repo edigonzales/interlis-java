@@ -8,7 +8,6 @@
     <dependency><groupId>guru.interlis</groupId><artifactId>interlis-repository</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>guru.interlis</groupId><artifactId>interlis-compiler</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>guru.interlis</groupId><artifactId>interlis-projection</artifactId><version>${project.version}</version></dependency>
-    <dependency><groupId>guru.interlis</groupId><artifactId>interlis-documentation</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>guru.interlis</groupId><artifactId>interlis-model</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>org.eclipse.lsp4j</groupId><artifactId>org.eclipse.lsp4j</artifactId></dependency>
     <dependency><groupId>com.google.code.gson</groupId><artifactId>gson</artifactId></dependency>

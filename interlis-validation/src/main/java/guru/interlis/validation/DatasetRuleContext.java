@@ -1,7 +1,11 @@
 package guru.interlis.validation;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.CollectionType;
+import guru.interlis.model.DomainConstraint;
 import guru.interlis.model.ExpressionId;
+import guru.interlis.model.MandatoryConstraint;
+import guru.interlis.model.StructureValueType;
 import guru.interlis.model.PathExpression;
 import guru.interlis.model.PathStep;
 import guru.interlis.model.ReferenceType;
@@ -11,13 +15,12 @@ import guru.interlis.model.TypeDescriptor;
 import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferObject;
 import guru.interlis.transfer.TransferValue;
+import guru.interlis.validation.ValidationSession.ValuePath;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -30,14 +33,13 @@ final class DatasetRuleContext {
     private final StoredValueCodec codec;
     private final ReferenceResolver resolver;
     private final DatasetOptions options;
-    private final Set<InputId> inputs;
-    private final Set<InputId> primaryInputs;
+    private final boolean closedDelivery;
     private final CancellationToken cancellation;
     private long remainingWork;
 
     DatasetRuleContext(ValidationPlan plan, ValidationStorage storage, StoredValueCodec codec,
                        DatasetObjectStore objects, IdentityIndex identities, DatasetOptions options,
-                       Set<InputId> inputs, CancellationToken cancellation) {
+                       boolean completeDelivery, CancellationToken cancellation) {
         this.plan = plan;
         this.keys = storage.table(StorageArea.RULE_KEYS);
         this.temporary = storage.table(StorageArea.TEMPORARY);
@@ -46,26 +48,17 @@ final class DatasetRuleContext {
         this.objects = objects;
         this.resolver = new ReferenceResolver(plan, identities, objects);
         this.options = options;
-        this.inputs = Set.copyOf(inputs);
+        this.closedDelivery = completeDelivery && options.scope() == DatasetScope.SUPPLIED_DATASET;
         this.cancellation = cancellation;
         this.remainingWork = options.limits().maxConstraintWork();
-        var primary = new HashSet<InputId>();
-        for (long ordinal = 1; ordinal <= inputs.size(); ordinal++) {
-            cancellation.throwIfCancellationRequested();
-            var input = input(ordinal);
-            if (input.descriptor().role() == InputRole.PRIMARY) {
-                primary.add(input.descriptor().id());
-            }
-        }
-        this.primaryInputs = Set.copyOf(primary);
     }
 
     boolean populationClosed(SymbolRef root) {
-        return plan.transferPlan().object(root).isPresent() && declaredComplete(root, ExtentAspect.OBJECT_MEMBERSHIP);
+        return closedDelivery && plan.transferPlan().object(root).isPresent();
     }
 
     boolean selectsView(guru.interlis.model.ViewSymbol view) {
-        return options.subjects().selectsView(plan, view);
+        return plan.subjects().selectsView(view);
     }
 
     void visit() {
@@ -93,10 +86,7 @@ final class DatasetRuleContext {
         var basket = metadata.get(DatasetValidationSession.metadataKey((byte) 3, stored.basket()))
                 .map(codec::decodeBasket).orElseThrow();
         var input = input(stored.input());
-        var topics = new ArrayList<>(basket.event().additionalTopics());
-        topics.addFirst(basket.event().topic());
-        boolean selected = topics.stream().anyMatch(topic -> options.subjects().selects(plan,
-                input.descriptor().role(), topic, stored.event().object().type()));
+        boolean selected = plan.subjects().selects(input.descriptor().role(), basket.event());
         return new Occurrence(handle, stored, basket.event(), input, selected);
     }
 
@@ -105,18 +95,15 @@ final class DatasetRuleContext {
                 .map(codec::decodeInput).orElseThrow();
     }
 
-    void initializeScopes(DatasetRulePlan rule, boolean basketRule, boolean requiresValues,
-                          BiConsumer<Long, DatasetRuleCoverage.Completeness> consumer) {
+    void initializeScopes(DatasetRulePlan rule, boolean basketRule,
+                          BiConsumer<Long, DatasetScopeStore.Completeness> consumer) {
         var root = rule.key().applicationRoot();
         if (!basketRule) {
             boolean selected = plan.transferPlan().topics().stream()
                     .anyMatch(topic -> selectsPopulation(rule, List.of(topic.symbol())));
             if (selected) {
-                boolean complete = claimsComplete(root, ExtentAspect.OBJECT_MEMBERSHIP, primaryInputs, Optional.empty())
-                        && (!requiresValues || claimsComplete(root, ExtentAspect.ATTRIBUTE_VALUES,
-                                primaryInputs, Optional.empty()));
-                consumer.accept(0L, complete ? DatasetRuleCoverage.Completeness.DECLARED_COMPLETE
-                        : DatasetRuleCoverage.Completeness.OPEN);
+                consumer.accept(0L, closedDelivery ? DatasetScopeStore.Completeness.CLOSED_DELIVERY
+                        : DatasetScopeStore.Completeness.OPEN);
             }
             return;
         }
@@ -135,17 +122,8 @@ final class DatasetRuleContext {
                 if (!selectsPopulation(rule, active)) {
                     continue;
                 }
-                var completeness = DatasetRuleCoverage.Completeness.OPEN;
-                if (basket.event().consistency() == TransferEvent.Consistency.COMPLETE) {
-                    completeness = DatasetRuleCoverage.Completeness.CLOSED_BY_TRANSFER;
-                } else {
-                    var ids = Set.of(input.descriptor().id());
-                    var id = Optional.of(basket.event().id());
-                    if (claimsComplete(root, ExtentAspect.OBJECT_MEMBERSHIP, ids, id)
-                            && (!requiresValues || claimsComplete(root, ExtentAspect.ATTRIBUTE_VALUES, ids, id))) {
-                        completeness = DatasetRuleCoverage.Completeness.DECLARED_COMPLETE;
-                    }
-                }
+                var completeness = basketClosed(ordinal, basket.event())
+                        ? DatasetScopeStore.Completeness.CLOSED_BY_TRANSFER : DatasetScopeStore.Completeness.OPEN;
                 consumer.accept(ordinal, completeness);
             }
         }
@@ -177,7 +155,7 @@ final class DatasetRuleContext {
             var descriptor = plan.transferPlan().topic(topic).orElseThrow();
             for (var type : descriptor.objectTypes()) {
                 if ((rule.candidateTypes().contains(type) || rule.key().applicationRoot().equals(type))
-                        && options.subjects().selects(plan, InputRole.PRIMARY, topic, type)) {
+                        && plan.subjects().selectsTopic(topic)) {
                     return true;
                 }
             }
@@ -190,13 +168,8 @@ final class DatasetRuleContext {
                 ? type.base().map(plan::ref).stream().toList() : type.restrictions().stream().map(plan::ref).toList();
         var basket = basketOrdinal == 0 ? Optional.<StoredValueCodec.StoredBasket>empty()
                 : metadata.get(DatasetValidationSession.metadataKey((byte) 3, basketOrdinal)).map(codec::decodeBasket);
-        if (basket.isEmpty() || basket.orElseThrow().event().consistency() != TransferEvent.Consistency.COMPLETE) {
-            var expected = basket.map(entry -> Set.of(input(entry.input()).descriptor().id())).orElse(primaryInputs);
-            var basketId = basket.map(entry -> entry.event().id());
-            if (roots.isEmpty() || roots.stream().anyMatch(root ->
-                    !claimsComplete(root, ExtentAspect.OBJECT_MEMBERSHIP, expected, basketId))) {
-                return java.util.OptionalLong.empty();
-            }
+        if (basket.map(entry -> !basketClosed(basketOrdinal, entry.event())).orElse(!closedDelivery)) {
+            return java.util.OptionalLong.empty();
         }
         var counts = new DatasetScopeCounts();
         forObjects(occurrence -> {
@@ -241,27 +214,12 @@ final class DatasetRuleContext {
     }
 
     boolean declaredComplete(SymbolRef root) {
-        return declaredComplete(root, ExtentAspect.OBJECT_MEMBERSHIP)
-                && declaredComplete(root, ExtentAspect.ATTRIBUTE_VALUES);
+        return populationClosed(root);
     }
 
-    private boolean declaredComplete(SymbolRef root, ExtentAspect aspect) {
-        return claimsComplete(root, aspect, inputs, Optional.empty());
-    }
-
-    private boolean claimsComplete(SymbolRef root, ExtentAspect aspect, Set<InputId> expected,
-                                   Optional<guru.interlis.transfer.TransferIdentity.BasketId> basket) {
-        var descriptor = plan.transferPlan().object(root).orElseThrow();
-        return options.extents().claims().stream().anyMatch(claim -> {
-            var scope = claim.selector();
-            if (claim.aspect() != aspect || !scope.inputs().containsAll(expected)
-                    || scope.basket().isPresent() && !scope.basket().equals(basket)) {
-                return false;
-            }
-            return plan.transferPlan().topic(scope.root()).isPresent()
-                    ? descriptor.topic().filter(topic -> topicSpecializes(topic, scope.root())).isPresent()
-                    : ModelValueRules.specializes(plan, descriptor, List.of(plan.canonical(scope.root().symbol())));
-        });
+    private boolean basketClosed(long ordinal, TransferEvent.StartBasket basket) {
+        return basket.consistency() == TransferEvent.Consistency.COMPLETE
+                && temporary.get(DatasetValidationSession.metadataKey((byte) 9, ordinal)).isEmpty();
     }
 
     Optional<ExpressionProgram> program(ExpressionId id) {
@@ -274,39 +232,120 @@ final class DatasetRuleContext {
                 .withDataset(new DatasetPathContext(this, occurrence)));
     }
 
+    EvaluationResult evaluateKey(ExpressionProgram program, Occurrence occurrence) {
+        var frame = new EvaluationFrame(plan, occurrence.object().data(), occurrence.partial(), this::visit,
+                java.util.OptionalLong.empty(), cancellation).withDataset(new DatasetPathContext(this, occurrence));
+        return new ExpressionEvaluator(program).evaluateKey(frame);
+    }
+
     void checkDeferredConstraints(ValidationSession report) {
         if (!plan.hasDeferredPaths()) {
             return;
         }
+        var relations = new RelationProjector(plan);
         forObjects(occurrence -> {
-            if (!occurrence.selected() || occurrence.input().descriptor().role() != InputRole.PRIMARY) {
+            if (!occurrence.selected() || occurrence.input().descriptor().role() != InputRole.PRIMARY
+                    || occurrence.stored().event().operation().orElse(null) == TransferEvent.Operation.DELETE) {
                 return;
             }
-            var object = plan.object(occurrence.object().type());
-            var frame = new EvaluationFrame(plan, occurrence.object().data(), occurrence.partial(), this::visit,
+            var root = occurrence.object().data();
+            var object = plan.object(root.type());
+            var basket = ValidationSession.BasketContext.of(occurrence.basket(), plan);
+            var frame = new EvaluationFrame(plan, root, occurrence.partial(), this::visit,
                     java.util.OptionalLong.empty(), cancellation).withDataset(new DatasetPathContext(this, occurrence));
-            for (var field : object.fields()) {
-                if (!field.derived() || !plan.derivedNeedsDataset(field.slot().symbol().symbol())) {
-                    continue;
-                }
-                var attribute = field.slot().attribute();
-                var result = DerivedValueResolver.resolve(attribute, frame);
-                var type = frame.effectiveType(field.values().getFirst());
-                report.recordDeferredDerived(occurrence, field, result, type);
-            }
-            for (var declaration : object.constraints()) {
-                if (declaration.definition() instanceof guru.interlis.model.MandatoryConstraint mandatory) {
-                    var program = plan.expression(mandatory.condition());
-                    if (plan.requiresDataset(program)) {
-                        report.recordDatasetConstraint(occurrence, declaration, evaluate(program, occurrence));
-                    }
+            checkDeferredObject(report, occurrence, basket, root, object, frame, null);
+            for (var entry : root.values().entrySet()) {
+                visit();
+                if (entry.getValue() instanceof TransferValue.Structured payload) {
+                    relations.embedded(occurrence.handle(), object.descriptor(), entry.getKey(), payload, occurrence.basket())
+                            .ifPresent(link -> checkDeferredObject(report, occurrence, basket, payload,
+                                    plan.object(payload.type()), frame.withDataset(new DatasetPathContext(this, occurrence, payload, link))
+                                            .descend(root, payload),
+                                    new ValuePath(null, new DataLocation.Slot(entry.getKey()))));
                 }
             }
         });
     }
 
-    List<ObjectHandle> relationTargets(ObjectHandle source, SymbolId sourceRole, SymbolId targetRole) {
-        return new RelationPaths(temporary).targets(source, sourceRole, targetRole, this::visit);
+    private void checkDeferredObject(ValidationSession report, Occurrence occurrence,
+                                     ValidationSession.BasketContext basket, TransferValue.Structured current,
+                                     ObjectValidationPlan object, EvaluationFrame frame, ValuePath path) {
+        for (var declaration : object.constraints()) {
+            visit();
+            if (declaration.definition() instanceof MandatoryConstraint mandatory
+                    && ValidationSession.ruleApplies(plan, declaration, basket.topicScope())) {
+                var program = plan.expression(mandatory.condition());
+                if (plan.requiresDataset(program)) {
+                    report.recordDatasetConstraint(occurrence, current.type(), Optional.empty(), declaration,
+                            path, program.evaluate(frame));
+                }
+            }
+        }
+        for (var field : object.fields()) {
+            visit();
+            var slot = field.slot().symbol();
+            var at = new ValuePath(path, new DataLocation.Slot(slot));
+            if (field.derived() && plan.derivedNeedsDataset(slot.symbol())) {
+                var result = DerivedValueResolver.resolve(field.slot().attribute(), frame);
+                report.recordDeferredDerived(occurrence, field, result, frame.effectiveType(field.values().getFirst()),
+                        current, at);
+            }
+            current.value(slot).ifPresent(value ->
+                    checkDeferredValue(report, occurrence, basket, current, frame, field, 0, value, at));
+        }
+    }
+
+    private void checkDeferredValue(ValidationSession report, Occurrence occurrence,
+                                    ValidationSession.BasketContext basket, TransferValue.Structured owner,
+                                    EvaluationFrame frame, ObjectValidationPlan.FieldRule field,
+                                    int depth, TransferValue value, ValuePath path) {
+        visit();
+        var rules = field.values().get(depth);
+        var domain = rules.genericDomain().map(basket.domains()::get);
+        var effective = domain.flatMap(plan::domainType).orElse(rules.type());
+        if (ValueFamilies.match(effective, value) != ValueFamilies.Match.YES
+                || value instanceof TransferValue.Text text && text.value().isEmpty()) {
+            return;
+        }
+        for (var declaration : rules.constraints(domain)) {
+            visit();
+            if (declaration.definition() instanceof DomainConstraint constraint) {
+                var program = plan.expression(constraint.condition());
+                if (plan.requiresDataset(program)) {
+                    report.recordDatasetConstraint(occurrence, owner.type(), Optional.of(field.slot().symbol()),
+                            declaration, path, program.evaluate(frame.withCurrent(value)));
+                }
+            }
+        }
+        if (rules.type() instanceof CollectionType collection && value instanceof TransferValue.Repeated repeated
+                && collection.collectionKind() == repeated.kind()) {
+            for (int index = 0; index < repeated.values().size(); index++) {
+                checkDeferredValue(report, occurrence, basket, owner, frame, field, depth + 1,
+                        repeated.values().get(index), new ValuePath(path, new DataLocation.Index(index + 1)));
+            }
+        } else if (rules.type() instanceof StructureValueType structure && value instanceof TransferValue.Structured child) {
+            var type = plan.object(child.type());
+            if (type != null && plan.assignable(structure, type)) {
+                checkDeferredObject(report, occurrence, basket, child, type, frame.descend(owner, child), path);
+            }
+        }
+    }
+
+    EvaluationResult relationTargets(Occurrence source, SymbolId association, SymbolId sourceRole, SymbolId targetRole) {
+        var paths = new RelationPaths(temporary);
+        if (paths.hasUnresolved(source.handle(), sourceRole, targetRole)) {
+            return new EvaluationResult.BlockedByViolation(source.location(List.of(new DataLocation.Slot(plan.ref(sourceRole)))));
+        }
+        var type = plan.transferPlan().object(plan.ref(association)).orElseThrow();
+        var external = type.slots().stream().filter(guru.interlis.transfer.RoleSlot.class::isInstance)
+                .map(guru.interlis.transfer.RoleSlot.class::cast).map(guru.interlis.transfer.RoleSlot::role)
+                .anyMatch(role -> role.external() && role.targetRoots().stream().map(plan::ref)
+                        .anyMatch(root -> !populationClosed(root)));
+        if (source.partial() || external) {
+            return EvaluationResult.MissingContext.POPULATION;
+        }
+        return new EvaluationResult.KnownObjects(() -> paths.firstTwo(source.handle(), sourceRole, targetRole, this::visit),
+                () -> paths.count(source.handle(), sourceRole, targetRole, this::visit));
     }
 
     ReferenceResolver.Result resolveRole(Occurrence occurrence, TransferValue.Reference reference,
@@ -361,7 +400,17 @@ final class DatasetRuleContext {
                     var result = resolver.resolve(new BasketHandle(occurrence.stored().input(),
                                     occurrence.stored().basket()), occurrence.basket(), occurrence.input().namespaces(),
                             reference, target.targetRoots(), target.external(), false);
-                    return result instanceof ReferenceResolver.Found found ? Optional.of(found.target()) : Optional.empty();
+                    if (result instanceof ReferenceResolver.Ambiguous || result instanceof ReferenceResolver.InvalidTarget) {
+                        return Optional.empty();
+                    }
+                    return Optional.of(switch (reference.target()) {
+                        case guru.interlis.transfer.TransferIdentity.TransferId tid ->
+                                new StableIdentity("tid:" + occurrence.stored().input(), tid.value());
+                        case guru.interlis.transfer.TransferIdentity.ObjectOid oid -> {
+                            var identity = StableIdentity.bind(occurrence.input().namespaces(), oid.value());
+                            yield new StableIdentity("oid:" + identity.namespace(), identity.value());
+                        }
+                    });
                 }, oid -> StableIdentity.bind(occurrence.input().namespaces(), oid));
     }
 

@@ -19,7 +19,7 @@ class InspectionViewTest {
                 END Expanded;
                 """);
         var repeated = "<parts><Part><label>same</label></Part></parts>";
-        var report = validate(plan, List.of("Item"), primary("p", basket("basket",
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket",
                 "<Item i:tid='a'><code>good</code>" + repeated + repeated + "</Item>"
                         + "<Item i:tid='b'><code>bad</code>" + repeated + "</Item>")));
         assertEquals(1, report.detectedViolations(), report.examples().toString());

@@ -63,7 +63,7 @@ class XtfDatasetIntegrationTest {
         var schema = compile(new String(bytes(version, "Checks.ili"), StandardCharsets.UTF_8));
         var transfer = transfer(schema);
         var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
-                ValidationPlanner.plan(schema, transfer, ValidationProfile.DATASET)).plan();
+                ValidationPlanner.plan(transfer, ValidationProfile.DATASET)).plan();
         return new Fixture(version, transfer, plan);
     }
 
@@ -78,7 +78,7 @@ class XtfDatasetIntegrationTest {
         ValidationReport validate(String... samples) throws IOException {
             var token = CancellationToken.none();
             try (var storage = new InMemoryValidationStorage(10_000, 2_000_000);
-                 var session = DatasetValidator.session(plan, DatasetOptions.defaults(plan), storage)) {
+                 var session = DatasetValidator.session(plan, DatasetOptions.defaults(), storage)) {
                 for (var sample : samples) {
                     var source = new ByteArrayInputStream(bytes(version, sample + ".xtf"));
                     try (TransferReader reader = version.equals("23")

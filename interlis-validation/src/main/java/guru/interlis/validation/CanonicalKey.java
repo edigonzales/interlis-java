@@ -19,7 +19,14 @@ final class CanonicalKey implements Comparable<CanonicalKey> {
 
     @Override
     public int compareTo(CanonicalKey other) {
-        return Arrays.compareUnsigned(bytes, other.bytes);
+        int shared = Math.min(bytes.length, other.bytes.length);
+        for (int i = 0; i < shared; i++) {
+            int comparison = Integer.compare(Byte.toUnsignedInt(bytes[i]), Byte.toUnsignedInt(other.bytes[i]));
+            if (comparison != 0) {
+                return comparison;
+            }
+        }
+        return Integer.compare(bytes.length, other.bytes.length);
     }
 
     @Override
