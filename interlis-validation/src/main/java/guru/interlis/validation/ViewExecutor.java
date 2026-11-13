@@ -146,7 +146,8 @@ final class ViewExecutor {
         }
         if (position == join.bases().size()) {
             var result = selection(view, prefix);
-            if (isTrue(result) || nullPartner && result instanceof EvaluationResult.UndefinedByData) {
+            if (isTrue(result) || nullPartner && result instanceof EvaluationResult.UndefinedByData undefined
+                    && undefined.nullPartner()) {
                 return consumer.test(prefix) ? JoinOutcome.MATCH : JoinOutcome.NO_MATCH;
             }
             if (unknown(result)) {
@@ -163,8 +164,8 @@ final class ViewExecutor {
             values.putAll(next.bases());
             var origins = new java.util.ArrayList<>(prefix.origins());
             origins.addAll(next.origins());
-            var evaluated = join(view, join, position + 1, new ViewRow(view.view().id(), values, origins),
-                    consumer, undecided, depth, nullPartner);
+            var evaluated = join(view, join, position + 1, new ViewRow(view.view().id(), values, origins, List.of(), OptionalLong.empty(),
+                            prefix.nullBases()), consumer, undecided, depth, nullPartner);
             outcome[0] = outcome[0].merge(evaluated);
         }, (row, result) -> {
             outcome[0] = outcome[0].merge(JoinOutcome.UNKNOWN);
@@ -172,7 +173,11 @@ final class ViewExecutor {
         }, depth);
         if (outcome[0] == JoinOutcome.NO_MATCH && binding.orNull() && !prefix.origins().isEmpty()) {
             if (dataset.populationClosed(dataset.plan.ref(binding.target()))) {
-                return join(view, join, position + 1, prefix, consumer, undecided, depth, true);
+                var nullBases = new java.util.HashSet<>(prefix.nullBases());
+                nullBases.add(base);
+                var nullable = new ViewRow(prefix.view(), prefix.bases(), prefix.origins(),
+                        prefix.parents(), prefix.groupSize(), nullBases);
+                return join(view, join, position + 1, nullable, consumer, undecided, depth, true);
             }
             undecided.accept(prefix, EvaluationResult.MissingContext.POPULATION);
             return JoinOutcome.UNKNOWN;

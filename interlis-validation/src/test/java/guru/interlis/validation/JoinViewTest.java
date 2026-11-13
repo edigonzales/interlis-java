@@ -81,6 +81,26 @@ class JoinViewTest {
     }
 
     @Test
+    void aNullPartnerDoesNotMaskAFalseConjunct() {
+        for (var where : List.of("b->amount > 99 AND a->amount > 5", "a->amount > 5 AND b->amount > 99")) {
+            var plan = plan("""
+                    CLASS Item = amount: 0..10; END Item;
+                    VIEW Pairs JOIN OF a~Item,b~Item (OR NULL);
+                      WHERE %s;
+                      =
+                        MANDATORY CONSTRAINT #false;
+                    END Pairs;
+                    """.formatted(where));
+            var report = validate(plan, List.of("Item"), primary("p", basket("basket", """
+                    <Item i:tid='one'><amount>1</amount></Item>
+                    <Item i:tid='two'><amount>2</amount></Item>
+                    """)));
+            assertTrue(report.examples().isEmpty(), report.examples().toString());
+            assertTrue(report.coverage().constraints().isEmpty());
+        }
+    }
+
+    @Test
     void failsTheRunWhenCandidateBudgetIsExhausted() {
         var plan = plan("""
                 CLASS Item = amount: 0..10; END Item;

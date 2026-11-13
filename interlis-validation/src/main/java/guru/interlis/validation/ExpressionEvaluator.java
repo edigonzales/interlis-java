@@ -158,6 +158,17 @@ final class ExpressionEvaluator {
     }
 
     private EvaluationResult logical(BinaryExpression binary, EvaluationResult left, EvaluationFrame context) {
+        if (left instanceof UndefinedByData undefined && undefined.nullPartner()) {
+            var right = logicalOperand(evaluate(binary.right(), context));
+            if (right instanceof Known known && known.value() instanceof TransferValue.BooleanValue value) {
+                return switch (binary.operator()) {
+                    case AND -> value.value() ? left : bool(false);
+                    case OR, IMPLIES -> value.value() ? bool(true) : left;
+                    default -> throw new IllegalStateException("Unexpected logical operator");
+                };
+            }
+            return right instanceof UndefinedByData ? left : right;
+        }
         if (!(left instanceof Known known)) {
             return left;
         }
@@ -190,7 +201,9 @@ final class ExpressionEvaluator {
                     || right instanceof Known rhs && !matches(comparison.family(), rhs.value())) {
                 return Unsupported.INSTANCE;
             }
-            return new UndefinedByData(true);
+            boolean nullPartner = left instanceof UndefinedByData lhs && lhs.nullPartner()
+                    || right instanceof UndefinedByData rhs && rhs.nullPartner();
+            return new UndefinedByData(true, nullPartner);
         }
         if (comparison.family() == Family.NUMBER) {
             var lhs = number(left);
@@ -305,7 +318,7 @@ final class ExpressionEvaluator {
                 }
                 var data = frame.row().orElseThrow().bases().get(base.base());
                 if (data == null) {
-                    return new UndefinedByData(false);
+                    return new UndefinedByData(false, frame.row().orElseThrow().nullBases().contains(base.base()));
                 }
                 frame = frame.withCurrent(data);
                 current = value(data, false);
