@@ -1,5 +1,6 @@
 package guru.interlis.validation;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -44,6 +45,20 @@ class FormatLayoutTest {
             assertEquals(List.of(ValidationCode.INVALID_FORMATTED_VALUE),
                     report.examples().stream().map(ValidationDiagnostic::code).toList(), bad);
         }
+    }
+
+    @Test
+    void rejectsTooManySignificantDigitsEvenWhenTheComponentRangeAllowsThem() {
+        var plan = plan("""
+                STRUCTURE Digits = n: 0..999; END Digits;
+                DOMAIN Two = FORMAT BASED ON Digits (n/2);
+                CLASS Item = value: Two; END Item;
+                """);
+        var good = validate(plan, List.of("Item"), primary("p", basket("2.4", "pass", "12")));
+        assertTrue(good.examples().isEmpty(), good.examples().toString());
+        var bad = validate(plan, List.of("Item"), primary("p", basket("2.4", "fail", "123")));
+        assertEquals(List.of(ValidationCode.INVALID_FORMATTED_VALUE),
+                bad.examples().stream().map(ValidationDiagnostic::code).toList());
     }
 
     private static String basket(String version, String id, String value) {

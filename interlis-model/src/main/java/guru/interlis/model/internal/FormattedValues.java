@@ -213,7 +213,7 @@ public final class FormattedValues {
                 checkWork.run();
                 significantDigits--;
             }
-            var requiredDigits = width.orElse(BigInteger.ONE).max(BigInteger.valueOf(significantDigits));
+            var requiredDigits = width.orElse(BigInteger.valueOf(significantDigits));
             if (mantissa.startsWith("+") || requiredDigits.compareTo(BigInteger.valueOf(integerDigits)) != 0) {
                 return Optional.empty();
             }
