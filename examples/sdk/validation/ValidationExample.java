@@ -93,7 +93,7 @@ public final class ValidationExample {
         }
         var documentation = new DocumentationProjector().project(compilation.schema(),
                 DocumentationOptions.defaults(), token);
-        if (documentation.sections().stream().noneMatch(section -> section.name().equals("Item"))) {
+        if (documentation.sections().stream().noneMatch(section -> section.name().equals("Delivery.Data.Item"))) {
             throw new AssertionError("Missing Item in the documentation projection");
         }
         var input = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
