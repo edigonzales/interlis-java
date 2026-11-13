@@ -78,19 +78,22 @@ final class DatasetRuleContext {
         }
     }
 
-    GeometryEngine.Cursor geometryCursor(java.util.function.Function<Occurrence, Optional<GeometryEngine.Input>> select) {
+    GeometryEngine.Cursor geometryCursor(java.util.function.Function<Occurrence, List<GeometryEngine.Input>> select) {
         var entries = objects.scan();
         return new GeometryEngine.Cursor() {
+            private java.util.Iterator<GeometryEngine.Input> values = java.util.Collections.emptyIterator();
+
             @Override public Optional<GeometryEngine.Input> next() {
-                for (var entry = entries.next(); entry.isPresent(); entry = entries.next()) {
+                while (!values.hasNext()) {
+                    var entry = entries.next();
+                    if (entry.isEmpty()) {
+                        return Optional.empty();
+                    }
                     visit();
                     var value = entry.orElseThrow();
-                    var selected = select.apply(occurrence(DatasetObjectStore.handle(value), objects.decode(value)));
-                    if (selected.isPresent()) {
-                        return selected;
-                    }
+                    values = select.apply(occurrence(DatasetObjectStore.handle(value), objects.decode(value))).iterator();
                 }
-                return Optional.empty();
+                return Optional.of(values.next());
             }
 
             @Override public void close() {

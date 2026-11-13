@@ -32,6 +32,13 @@ final class TransferGeometryAdapter {
         this.control = control;
     }
 
+    TransferGeometryAdapter(GeometryEngine.Input input, GeometryEngine.Control control,
+                            BigDecimal originX, BigDecimal originY) {
+        this(input, control);
+        this.originX = originX;
+        this.originY = originY;
+    }
+
     Result read() {
         var lines = new ArrayList<Part>();
         var surfaces = new ArrayList<Surface>();

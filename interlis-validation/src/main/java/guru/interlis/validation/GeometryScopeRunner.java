@@ -2,6 +2,7 @@ package guru.interlis.validation;
 
 import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.GeometryType;
+import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolId;
 import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TransferValue;
@@ -22,7 +23,8 @@ final class GeometryScopeRunner {
         var rules = new LinkedHashMap<SymbolId, AttributeSymbol>();
         for (var object : dataset.plan.transferPlan().objects()) {
             dataset.visit();
-            if (!object.transferable() || object.topic().filter(dataset.plan.subjects()::selectsTopic).isEmpty()) {
+            if (object.kind() != SymbolKind.STRUCTURE
+                    && (!object.transferable() || object.topic().filter(dataset.plan.subjects()::selectsTopic).isEmpty())) {
                 continue;
             }
             for (var field : dataset.plan.object(object.symbol()).fields()) {
@@ -43,10 +45,14 @@ final class GeometryScopeRunner {
             var source = new GeometryEngine.Source() {
                 @Override public GeometryEngine.Cursor open() {
                     candidates[0] = 0;
-                    return dataset.geometryCursor(occurrence -> select(attribute, occurrence, missing).map(input -> {
-                        candidates[0]++;
-                        return input;
-                    }));
+                    return dataset.geometryCursor(occurrence -> {
+                        var inputs = new ArrayList<GeometryEngine.Input>();
+                        if (occurrence.selected() && occurrence.input().descriptor().role() == InputRole.PRIMARY) {
+                            collect(attribute, occurrence, occurrence.object().data(), null, missing, inputs);
+                        }
+                        candidates[0] += inputs.size();
+                        return inputs;
+                    });
                 }
 
                 @Override public boolean complete() {
@@ -73,21 +79,50 @@ final class GeometryScopeRunner {
         return results;
     }
 
-    private Optional<GeometryEngine.Input> select(AttributeSymbol declaration, DatasetRuleContext.Occurrence occurrence,
+    private void collect(AttributeSymbol declaration, DatasetRuleContext.Occurrence occurrence,
+                         TransferValue.Structured owner, ValidationSession.ValuePath path,
+                         boolean[] missing, List<GeometryEngine.Input> inputs) {
+        dataset.visit();
+        var object = dataset.plan.object(owner.type());
+        var target = object.field(declaration.id());
+        if (target != null && area(target.values().getFirst().type())) {
+            select(occurrence, owner, path, target, missing).ifPresent(inputs::add);
+        }
+        if (declaration.header().owner().flatMap(dataset.plan::symbol)
+                .filter(symbol -> symbol.kind() == SymbolKind.STRUCTURE).isEmpty()) {
+            return;
+        }
+        for (var entry : owner.values().entrySet()) {
+            dataset.visit();
+            var slotPath = new ValidationSession.ValuePath(path, new DataLocation.Slot(entry.getKey()));
+            collectValue(declaration, occurrence, entry.getValue(), slotPath, missing, inputs);
+        }
+    }
+
+    private void collectValue(AttributeSymbol declaration, DatasetRuleContext.Occurrence occurrence,
+                              TransferValue value, ValidationSession.ValuePath path,
+                              boolean[] missing, List<GeometryEngine.Input> inputs) {
+        if (value instanceof TransferValue.Structured child) {
+            collect(declaration, occurrence, child, path, missing, inputs);
+        } else if (value instanceof TransferValue.Repeated repeated) {
+            for (int i = 0; i < repeated.values().size(); i++) {
+                dataset.visit();
+                collectValue(declaration, occurrence, repeated.values().get(i),
+                        new ValidationSession.ValuePath(path, new DataLocation.Index(i + 1)), missing, inputs);
+            }
+        }
+    }
+
+    private Optional<GeometryEngine.Input> select(DatasetRuleContext.Occurrence occurrence, TransferValue.Structured owner,
+                                                  ValidationSession.ValuePath path, ObjectValidationPlan.FieldRule field,
                                                   boolean[] missing) {
-        if (!occurrence.selected() || occurrence.input().descriptor().role() != InputRole.PRIMARY) {
-            return Optional.empty();
-        }
-        var object = dataset.plan.object(occurrence.object().type());
-        var field = object.field(declaration.id());
-        if (field == null || !area(field.values().getFirst().type())) {
-            return Optional.empty();
-        }
         var slot = field.slot();
         var type = (GeometryType) field.values().getFirst().type();
         var basket = ValidationSession.BasketContext.of(occurrence.basket(), dataset.plan);
-        var value = occurrence.object().data().value(slot.symbol());
-        if (value.isEmpty() && field.derived()) {
+        var value = owner.value(slot.symbol());
+        if (value.isEmpty() && field.derived() && path != null) {
+            missing[0] = true;
+        } else if (value.isEmpty() && field.derived()) {
             var derived = dataset.geometryDerivation(occurrence, slot.attribute());
             if (derived instanceof EvaluationResult.Known known) {
                 value = Optional.of(known.value());
@@ -104,7 +139,8 @@ final class GeometryScopeRunner {
         }
         var vertex = type.vertexDomain().map(id -> GeometryParameters.coordinate(dataset.plan, basket, id));
         return Optional.of(new GeometryEngine.Input(geometry, type,
-                occurrence.location(List.of(new DataLocation.Slot(slot.symbol()))), slot.attribute().languageVersion(),
+                occurrence.location(ValidationSession.ValuePath.steps(new ValidationSession.ValuePath(path,
+                        new DataLocation.Slot(slot.symbol())))), slot.attribute().languageVersion(),
                 GeometryParameters.quantum(vertex.orElse(null)),
                 GeometryParameters.overlap(type, id -> GeometryParameters.coordinate(dataset.plan, basket, id)),
                 occurrence.partial(), vertex.map(guru.interlis.model.CoordinateType::id)));

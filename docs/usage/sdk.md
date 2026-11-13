@@ -181,3 +181,7 @@ Die unveröffentlichte API 0.10 umfasst auch die neue Record-Komponente
 `ValidationDiagnostic.relatedData()` für den zweiten Datenort paarweiser
 Geometriebefunde. Record-Patterns für `ValidationDiagnostic` müssen
 die zusätzliche Komponente aufnehmen.
+
+`GeometryEngine.Input.coordinateDomain()` gehört zur selben
+unveröffentlichten API 0.10. Der gebundene Koordinatentyp dient dem
+Vergleich der Koordinatenkontexte einer AREA-Menge.

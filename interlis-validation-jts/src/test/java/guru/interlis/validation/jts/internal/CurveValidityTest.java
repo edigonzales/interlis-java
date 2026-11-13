@@ -119,6 +119,15 @@ class CurveValidityTest {
                 .equals(finding.relatedData().orElseThrow().tid())));
     }
 
+    @Test
+    void matchesDecimalSharedBoundariesIndependentlyOfObjectAndRingStartOrder() {
+        var first = new Surface(ring("2600000,0", "2600000.1,0", "2600000.1,1", "2600000,1", "2600000,0"), List.of());
+        var second = new Surface(ring("2600000.5,0", "2600000.5,1", "2600000.1,1",
+                "2600000.1,0", "2600000.5,0"), List.of());
+        assertEquals(VALID, coverage(true, true, first, second).status());
+        assertEquals(VALID, coverage(true, true, second, first).status());
+    }
+
     private static Outcome coverage(boolean complete, boolean gaps, Surface... surfaces) {
         var type = new GeometryType(new TypeId("test-area"), new Origin.PredefinedOrigin(LanguageVersion.ILI24, "area"),
                 GeometryKind.AREA, List.of(), Optional.empty(), Optional.empty(), false, true, Optional.empty());

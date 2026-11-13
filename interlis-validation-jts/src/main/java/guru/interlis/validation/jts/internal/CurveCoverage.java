@@ -54,7 +54,7 @@ final class CurveCoverage {
                         throw new ValidationLimitException("Geometry coverage exceeds its prepared component budget");
                     }
                 }, findingSink);
-                var adapted = new TransferGeometryAdapter(input, limited).read();
+                var adapted = new TransferGeometryAdapter(input, limited, x, y).read();
                 var state = new CurveValidity(input, new GeometryEngine.Control(control.visit(), ignored -> {})).check(adapted);
                 if (state == INVALID) {
                     status = INVALID;
@@ -73,23 +73,14 @@ final class CurveCoverage {
                     x = adapted.originX();
                     y = adapted.originY();
                 }
-                double dx = adapted.originX().subtract(x).doubleValue();
-                double dy = adapted.originY().subtract(y).doubleValue();
-                if (!Double.isFinite(dx) || !Double.isFinite(dy)) {
-                    return NUMERICALLY_UNDETERMINED;
-                }
                 for (var surface : adapted.surfaces()) {
-                    var translated = shift(surface, dx, dy);
-                    if (translated == null) {
-                        return NUMERICALLY_UNDETERMINED;
-                    }
                     var bounds = new Envelope();
-                    for (var segment : CurveValidity.flat(translated.shell())) {
+                    for (var segment : CurveValidity.flat(surface.shell())) {
                         bounds.expandToInclude(segment.curve().envelope());
                     }
                     if (!bounds.isNull()) {
                         index.insert(bounds, faces.size());
-                        faces.add(new Face(provenance(input), translated, bounds));
+                        faces.add(new Face(provenance(input), surface, bounds));
                     }
                 }
             }
@@ -228,55 +219,4 @@ final class CurveCoverage {
                 : new Key(segment.start(), segment.end(), null, 0, 0);
     }
 
-    private static Surface shift(Surface surface, double dx, double dy) {
-        var shell = shift(surface.shell(), dx, dy);
-        if (shell == null) {
-            return null;
-        }
-        var holes = new ArrayList<Ring>();
-        for (var hole : surface.holes()) {
-            var shifted = shift(hole, dx, dy);
-            if (shifted == null) {
-                return null;
-            }
-            holes.add(shifted);
-        }
-        return new Surface(shell, List.copyOf(holes));
-    }
-
-    private static Ring shift(Ring ring, double dx, double dy) {
-        var parts = new ArrayList<Part>();
-        for (var part : ring.parts()) {
-            var segments = new ArrayList<Segment>();
-            for (var segment : part.segments()) {
-                var curve = segment.curve();
-                var start = shift(curve.start(), dx, dy);
-                var end = shift(curve.end(), dx, dy);
-                if (start.equals(end) || !finite(start) || !finite(end)) {
-                    return null;
-                }
-                CurveSegment shifted;
-                if (curve instanceof CircularArc arc) {
-                    var center = shift(arc.center(), dx, dy);
-                    if (!finite(center) || start.equals(center) || end.equals(center)) {
-                        return null;
-                    }
-                    shifted = new CircularArc(start, end, center, arc.radius(), arc.sweep());
-                } else {
-                    shifted = new CurveSegment.Straight(start, end);
-                }
-                segments.add(new Segment(shifted, segment.path()));
-            }
-            parts.add(new Part(shift(part.start(), dx, dy), List.copyOf(segments), part.path()));
-        }
-        return new Ring(List.copyOf(parts), ring.path());
-    }
-
-    private static CurveSegment.Point shift(CurveSegment.Point point, double dx, double dy) {
-        return new CurveSegment.Point(point.x() + dx, point.y() + dy);
-    }
-
-    private static boolean finite(CurveSegment.Point point) {
-        return Double.isFinite(point.x()) && Double.isFinite(point.y());
-    }
 }
