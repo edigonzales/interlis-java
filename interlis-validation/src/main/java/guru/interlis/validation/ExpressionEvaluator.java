@@ -320,8 +320,8 @@ final class ExpressionEvaluator {
                 if (data == null) {
                     return new UndefinedByData(false, frame.row().orElseThrow().nullBases().contains(base.base()));
                 }
-                frame = frame.withCurrent(data);
-                current = value(data, false);
+                frame = frame.forBase(data);
+                current = value(data.value(), false);
                 continue;
             }
             if (step instanceof PathStep.AssociationAccessStep || step instanceof PathStep.AssociationSourceStep

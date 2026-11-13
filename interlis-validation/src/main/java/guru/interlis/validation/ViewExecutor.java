@@ -209,7 +209,9 @@ final class ViewExecutor {
         if (virtual != null) {
             open(virtual, parent -> {
                 var values = new LinkedHashMap<>(parent.bases());
-                values.put(baseId, materialize(virtual, parent));
+                var data = new TransferValue.Structured(dataset.plan.ref(parent.view()), Map.of());
+                values.put(baseId, new ViewRow.Base(data, parent.origins().getFirst(), parent.parents(),
+                        java.util.Optional.of(parent)));
                 consumer.accept(new ViewRow(view.view().id(), values, parent.origins()));
             }, undecided, depth + 1);
             return;
@@ -217,8 +219,8 @@ final class ViewExecutor {
         dataset.forObjects(occurrence -> {
             if (occurrence.input().descriptor().role() == InputRole.PRIMARY
                     && dataset.target(dataset.plan.ref(base.target()), occurrence)) {
-                var data = occurrence.object().data();
-                var values = new LinkedHashMap<SymbolId, TransferValue.Structured>();
+                var data = new ViewRow.Base(occurrence.object().data(), occurrence);
+                var values = new LinkedHashMap<SymbolId, ViewRow.Base>();
                 values.put(baseId, data);
                 for (var ancestor : view.inheritance()) {
                     for (var extension : ancestor.baseExtensions()) {
@@ -361,7 +363,7 @@ final class ViewExecutor {
                 var data = java.nio.ByteBuffer.wrap(entry.orElseThrow().value());
                 var count = data.getLong();
                 var representative = dataset.occurrence(new ObjectHandle(data.getLong()));
-                consumer.accept(new ViewRow(view.view().id(), Map.of(aggregate.base(), representative.object().data()),
+                consumer.accept(new ViewRow(view.view().id(), Map.of(aggregate.base(), new ViewRow.Base(representative.object().data(), representative)),
                         List.of(representative), List.of(), OptionalLong.of(count)));
             }
         }
@@ -371,9 +373,9 @@ final class ViewExecutor {
                          java.util.function.BiConsumer<ViewRow, EvaluationResult> undecided, int depth) {
         var path = dataset.plan.boundPath(inspection.path()).orElseThrow();
         base(view, inspection.base(), row -> {
-            var origin = row.origins().getFirst();
-            inspectPath(row, inspection.base(), row.bases().get(inspection.base()), path.path().steps(),
-                    0, List.of(), frame(row).withCurrent(origin.object().data()), consumer, undecided);
+            var bound = row.bases().get(inspection.base());
+            inspectPath(row, inspection.base(), bound.value(), path.path().steps(),
+                    0, List.of(), frame(row).forBase(bound), consumer, undecided);
         }, undecided, depth);
     }
 
@@ -391,7 +393,8 @@ final class ViewExecutor {
             }
         } else if (current instanceof TransferValue.Structured structure) {
             if (position == steps.size()) {
-                consumer.accept(new ViewRow(row.view(), Map.of(base, structure), row.origins(), parents, OptionalLong.empty()));
+                consumer.accept(new ViewRow(row.view(), Map.of(base, new ViewRow.Base(structure, row.bases().get(base).origin(),
+                        List.copyOf(parents), java.util.Optional.empty())), row.origins(), parents, OptionalLong.empty()));
             } else if (steps.get(position) instanceof guru.interlis.model.PathStep.AttributeStep attribute) {
                 var result = ExpressionEvaluator.attribute(frame.withCurrent(structure), structure, attribute.target());
                 if (result instanceof EvaluationResult.Known known) {
@@ -408,21 +411,6 @@ final class ViewExecutor {
                 undecided.accept(row, EvaluationResult.Unsupported.INSTANCE);
             }
         }
-    }
-
-    private TransferValue.Structured materialize(ViewPlan view, ViewRow row) {
-        var result = new LinkedHashMap<guru.interlis.model.SymbolRef, TransferValue>();
-        var frame = frame(row);
-        for (var attribute : view.attributes()) {
-            var computed = DerivedValueResolver.resolve(attribute, frame);
-            if (computed instanceof EvaluationResult.Known known) {
-                result.put(dataset.plan.ref(attribute.id()), known.value());
-            } else if (computed instanceof EvaluationResult.KnownNumber number) {
-                number.value().decimal().ifPresent(value -> result.put(dataset.plan.ref(attribute.id()),
-                        new TransferValue.NumberValue(value.toString(), value)));
-            }
-        }
-        return new TransferValue.Structured(dataset.plan.ref(view.view().id()), result);
     }
 
     private EvaluationFrame frame(ViewRow row) {

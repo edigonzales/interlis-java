@@ -45,8 +45,15 @@ record EvaluationFrame(ValidationPlan plan, TransferValue current, boolean parti
     }
 
     EvaluationFrame withDataset(DatasetPathContext context) {
-        return new EvaluationFrame(plan, current, partial, visit, objectCount, cancellation,
+        return new EvaluationFrame(plan, current, context.occurrence().partial(), visit, objectCount, cancellation,
                 activeDerivations, Optional.of(context), List.of(), populations, row);
+    }
+
+    EvaluationFrame forBase(ViewRow.Base base) {
+        var context = dataset.map(path -> new DatasetPathContext(path.dataset(), base.origin()));
+        return new EvaluationFrame(plan, base.value(), base.origin().partial(), visit,
+                base.row().map(ViewRow::groupSize).orElse(OptionalLong.empty()), cancellation,
+                activeDerivations, context, base.parents(), populations, base.row());
     }
 
     EvaluationFrame withPopulations(java.util.function.BiFunction<guru.interlis.model.ObjectArgumentType, Boolean, RuntimeObjectSet> sets) {

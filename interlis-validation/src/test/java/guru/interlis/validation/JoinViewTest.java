@@ -9,6 +9,37 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class JoinViewTest {
     @Test
+    void navigatesRelationshipsFromTheSecondSelfJoinAlias() {
+        var plan = plan("""
+                CLASS Item = number: 0..10; END Item;
+                CLASS Group = number: 0..10; END Group;
+                ASSOCIATION Membership =
+                  group -- {1} Group;
+                  items -- {0..*} Item;
+                END Membership;
+                VIEW Pairs JOIN OF a~Item,b~Item;
+                  WHERE a->number < b->number;
+                  =
+                    MANDATORY CONSTRAINT b->group->number == 1;
+                END Pairs;
+                """);
+        var first = "<Item i:tid='one'><number>1</number><group i:ref='g1'/></Item>";
+        var second = "<Item i:tid='two'><number>2</number><group i:ref='g2'/></Item>";
+        var groups = """
+                <Group i:tid='g1'><number>1</number></Group>
+                <Group i:tid='g2'><number>2</number></Group>
+                """;
+        for (var items : List.of(first + second, second + first)) {
+            var report = validate(plan, List.of("Item", "Group"),
+                    primary("p", basket("basket", items + groups)));
+            assertEquals(1, report.detectedViolations(), report.examples().toString());
+            var diagnostic = report.examples().getFirst();
+            assertEquals(ValidationCode.MANDATORY_CONSTRAINT_FALSE, diagnostic.code());
+            assertEquals("one", diagnostic.data().tid().orElseThrow().value());
+        }
+    }
+
+    @Test
     void selfJoinRetainsBothBoundRoles() {
         var plan = plan("""
                 CLASS Item = number: 0..10; END Item;
