@@ -84,6 +84,9 @@ final class ExpressionEvaluator {
             var parameter = plan.bindings().parameters().get(id);
             return parameter == null ? MissingContext.PARAMETER : value(parameter, false);
         }
+        if (plan.symbol(expression.target()).orElseThrow() instanceof guru.interlis.model.AttributeSymbol) {
+            return Unsupported.INSTANCE;
+        }
         return new Known(new TransferValue.ClassName(plan.qualifiedName(expression.target())));
     }
 

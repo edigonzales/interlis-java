@@ -96,7 +96,7 @@ class EmptySetTest {
         assertEquals(List.of("0"), report.examples().getFirst().arguments());
     }
     @Test
-    void leavesOtherSetFunctionsExplicitlyUnsupported() {
+    void reportsAreaFunctionUnavailableWithoutGeometryEngine() {
         var plan = plan("""
                 DOMAIN Point = COORD 0.000..100.000, 0.000..100.000;
                 CLASS Item =
