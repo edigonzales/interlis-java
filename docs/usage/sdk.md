@@ -185,3 +185,25 @@ die zusätzliche Komponente aufnehmen.
 `GeometryEngine.Input.coordinateDomain()` gehört zur selben
 unveröffentlichten API 0.10. Der gebundene Koordinatentyp dient dem
 Vergleich der Koordinatenkontexte einer AREA-Menge.
+
+Für JVM-Läufe kann der Host das optionale Artefakt
+`guru.interlis:interlis-validation-jts` mit
+`RuntimeBindings.empty().withGeometry(JtsGeometryEngine.standard())`
+einbinden. Es verwendet LocationTech JTS 1.20.0. Die Module
+`guru.interlis.validation` und `guru.interlis.transfer` benötigen JTS
+nur, wenn der Host diese Implementierung auswählt.
+
+Die Engine prüft Standardgeraden und Kreisbögen in kartesischer
+XY-Projektion. Sie unterstützt analytische zweidimensionale Längen
+und Flächen in den Koordinateneinheiten beziehungsweise deren Quadrat.
+Die dritte Achse bleibt als Transferwert erhalten und unterliegt weiterhin
+der Werteprüfung. Die Engine unterstützt keine 3D-Messungen,
+geodätischen Messungen oder CRS-Transformationen. Nicht vergleichbare
+Koordinatentypen bleiben in einer gemeinsamen AREA-Prüfung ungeprüft.
+Benutzerdefinierte Linienformen und der netzweite Vergleich von
+LINEATTR-Werten sind ausserhalb dieses Profils.
+
+Die Schlussprüfung einer AREA-Menge begrenzt die Vorbereitung auf
+600’000 Komponentenbesuche und den Vergleich auf 1’000’000 indizierte
+Flächenpaare. Datensatz- und Abbruchbudgets gelten zusätzlich.
+Die JVM-Topologie ist vom lokalen WasmGC-Validator getrennt.

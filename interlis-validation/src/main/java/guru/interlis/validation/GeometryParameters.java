@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 final class GeometryParameters {
-    private static final BigDecimal ROOT_TWO = BigDecimal.TWO.sqrt(MathContext.DECIMAL128);
+    private static final BigDecimal ROOT_TWO = new BigDecimal("1.414213562373095048801688724209698");
 
     private GeometryParameters() {}
 

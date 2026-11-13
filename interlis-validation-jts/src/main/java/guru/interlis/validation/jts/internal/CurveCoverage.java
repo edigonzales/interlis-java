@@ -17,7 +17,8 @@ import static guru.interlis.validation.GeometryEngine.Check.*;
 import static guru.interlis.validation.jts.internal.TransferGeometryAdapter.*;
 
 final class CurveCoverage {
-    private static final int MAX_SEGMENTS = 200_000;
+    private static final int MAX_COMPONENT_VISITS = 600_000;
+    private static final int MAX_FACE_PAIRS = 1_000_000;
 
     private record Face(GeometryEngine.Input source, Surface surface, Envelope bounds) {}
     private record Boundary(GeometryEngine.Input source, Segment segment) {}
@@ -50,7 +51,7 @@ final class CurveCoverage {
                 final var findingSink = control.findings();
                 var limited = new GeometryEngine.Control(() -> {
                     control.visit().run();
-                    if (++count[0] > MAX_SEGMENTS * 3) {
+                    if (++count[0] > MAX_COMPONENT_VISITS) {
                         throw new ValidationLimitException("Geometry coverage exceeds its prepared component budget");
                     }
                 }, findingSink);
@@ -88,6 +89,7 @@ final class CurveCoverage {
         if (status == INVALID) {
             return INVALID;
         }
+        int pairs = 0;
         for (int i = 0; i < faces.size(); i++) {
             var first = faces.get(i);
             for (Object candidate : index.query(first.bounds())) {
@@ -95,6 +97,9 @@ final class CurveCoverage {
                 int j = (Integer) candidate;
                 if (j <= i) {
                     continue;
+                }
+                if (++pairs > MAX_FACE_PAIRS) {
+                    throw new ValidationLimitException("Geometry coverage exceeds its face pair budget");
                 }
                 var second = faces.get(j);
                 var validity = new CurveValidity(second.source(), control);
