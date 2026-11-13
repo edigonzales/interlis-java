@@ -9,6 +9,26 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ProjectionViewTest {
     @Test
+    void keepsUnavailableDerivedValuesAcrossProjectionBoundaries() {
+        var plan = plan("""
+                FUNCTION label(value: TEXT): TEXT;
+                CLASS Item = name: TEXT; END Item;
+                VIEW SourceView PROJECTION OF item~Item; =
+                  computed := label(item->name);
+                END SourceView;
+                VIEW Result PROJECTION OF renamed~SourceView; =
+                  MANDATORY CONSTRAINT DEFINED(renamed->computed);
+                END Result;
+                """);
+        var report = validate(plan, List.of("Item"), primary("p", basket("basket",
+                "<Item i:tid='item'><name>value</name></Item>")));
+        assertEquals(0, report.detectedViolations(), report.examples().toString());
+        assertEquals(1, report.coverage().constraints().getFirst().occurrences());
+        assertEquals(ValidationCoverage.ConstraintStatus.UNSUPPORTED_VALUE,
+                report.coverage().constraints().getFirst().status());
+    }
+
+    @Test
     void validatesSelectedVirtualRowsAndReportsRealOrigin() {
         var plan = plan("""
                 CLASS Item = amount: 0..10; END Item;

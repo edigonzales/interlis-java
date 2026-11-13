@@ -25,6 +25,35 @@ class ExistenceTest {
     private static final String SUBJECT = "<Subject i:tid='sub'><code>1.00</code></Subject>";
 
     @Test
+    void findsSubclassWitnessesInAPoolWithStandaloneAssociations() {
+        var plan = plan("""
+                CLASS Target = code: 0.00..20.00; END Target;
+                CLASS Child EXTENDS Target = END Child;
+                CLASS Subject =
+                  code: 0.00..20.00;
+                  EXISTENCE CONSTRAINT code REQUIRED IN Target:code;
+                END Subject;
+                ASSOCIATION Link =
+                  left -- {0..*} Target;
+                  right -- {0..*} Target;
+                  code: 0.00..20.00;
+                END Link;
+                """);
+        var link = "<Link><left i:ref='witness'/><right i:ref='witness'/><code>1.00</code></Link>";
+        var child = "<Child i:tid='witness'><code>%s</code></Child>";
+        for (var code : List.of("1.0", "2.00")) {
+            var witness = child.formatted(code);
+            for (var pool : List.of(witness + link, link + witness)) {
+                var report = validate(plan, List.of("Target"), primary("p", basket("data", SUBJECT + pool)));
+                assertEquals(code.equals("1.0") ? 0 : 1, report.detectedViolations(), report.examples().toString());
+                if (!report.examples().isEmpty()) {
+                    assertEquals(ValidationCode.EXISTENCE_TARGET_MISSING, report.examples().getFirst().code());
+                }
+            }
+        }
+    }
+
+    @Test
     void acceptsAReferenceWitnessFromEitherAlternativeRegardlessOfInputOrder() {
         var plan = plan(MODEL);
         var witness = reference("reference", basket("refBasket", "<Other i:tid='ref'><code>1.0</code></Other>"));
