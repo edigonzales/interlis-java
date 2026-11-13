@@ -43,6 +43,19 @@ class Xtf24TranslationTest {
             """;
 
     @Test
+    void readsCanonicalPrefixedElementsWithOriginalAndTranslationInThePlan() {
+        var plan = plan(SOURCE, "Original", "French");
+        var prefixed = TRANSFER.replace("xmlns=", "xmlns:o=")
+                .replace("<Left", "<o:Left").replace("</Left", "</o:Left");
+        var events = read(plan, prefixed);
+        var header = (StartTransfer) events.getFirst();
+        assertEquals("Original", plan.model(header.models().getFirst().model()).orElseThrow().name().declared().last());
+        var basket = (StartBasket) events.get(1);
+        assertEquals("Left", plan.topic(basket.topic()).orElseThrow().name().declared().last());
+        assertEquals(events, read(plan, write(plan, events)));
+    }
+
+    @Test
     void usesOriginalWireNamesAndDomainNamesWithOneTranslatedRoot() {
         var plan = plan(SOURCE, "French");
         var events = read(plan, TRANSFER);

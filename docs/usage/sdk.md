@@ -104,7 +104,7 @@ ausgegeben werden. Ein erschöpfender Switch über `ValidationCode`
 berücksichtigt auch `SET_CONSTRAINT_FALSE` und
 `PLAUSIBILITY_CONSTRAINT_FALSE`.
 
-Ein geschlossener Klassen-Extent oder tatsächlich gelieferter leerer Basket
+Ein geschlossener Lieferbestand oder tatsächlich gelieferter leerer Basket
 kann einen SET-Befund mit null Kandidaten und einer Auswertung erzeugen.
 Für einen nicht gelieferten Basket weist die Coverage null Scopes aus.
 Prozentbedingungen vergleichen Zähler und Nenner exakt. Die Argumente eines
@@ -162,3 +162,9 @@ dieselbe Instanz. `DatasetOptions.defaults()` prüft den gelieferten Bestand,
 `DatasetScope.PARTIAL_DATASET` lässt Aussagen über fehlende Populationen offen.
 Die öffentliche Auswahl und Deklaration einzelner Extents entfällt.
 `ValidationReport.datasetScope()` gibt den vereinbarten Laufumfang an.
+
+
+API 0.9 liefert die XTF-Reader und -Writer gemeinsam als
+`guru.interlis:interlis-xtf` im Modul `guru.interlis.xtf`.
+Die Java-Packages `guru.interlis.xtf23` und `guru.interlis.xtf24` bleiben erhalten.
+Dokumentationsprojektion und Renderer kommen aus `interlis-projection`.

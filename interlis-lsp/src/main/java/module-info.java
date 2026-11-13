@@ -5,7 +5,6 @@ module guru.interlis.lsp {
     requires transitive guru.interlis.projection;
     requires transitive guru.interlis.model;
     requires guru.interlis.repository;
-    requires guru.interlis.documentation;
     requires transitive org.eclipse.lsp4j;
     requires org.eclipse.lsp4j.jsonrpc;
     requires transitive com.google.gson;

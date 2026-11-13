@@ -1,15 +1,15 @@
 # Transfer als Java-Bibliothek
 
 `interlis-transfer` projiziert einen unveränderlichen `CompiledSchema` in einen
-`TransferPlan`. `interlis-xtf23` und `interlis-xtf24` bieten objektweise Reader und
+`TransferPlan`. `interlis-xtf` bietet objektweise Reader und
 Writer für die jeweiligen FULL-Profile. Die Laufzeitclosure eines XML-Adapters
 enthält nur das Modell, den Transferkern und den Adapter sowie JDK-Module.
 Compiler, LSP und Browser nehmen den XML-Adapter über diese Ergänzung nicht auf.
 
 ## XTF 2.4 verwenden
 
-Das Maven-Artefakt heisst `guru.interlis:interlis-xtf24`, das JPMS-Modul
-`guru.interlis.xtf24`. Es exportiert `guru.interlis.xtf24` und macht den
+Das Maven-Artefakt heisst `guru.interlis:interlis-xtf`, das JPMS-Modul
+`guru.interlis.xtf`. Es exportiert `guru.interlis.xtf23` und `guru.interlis.xtf24` und macht den
 Transferkern transitiv lesbar. Der Compiler wird nur zum Erstellen des Schemas
 benötigt. Die [SDK-Anleitung](sdk.md) beschreibt die Kompilierung.
 
