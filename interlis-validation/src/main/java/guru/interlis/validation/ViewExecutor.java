@@ -59,6 +59,12 @@ final class ViewExecutor {
                     report.recordViewConstraint(row, declaration, result);
                 }
             }, 0);
+            for (var rule : view.constraints()) {
+                var ordinal = uniqueOrdinals.get(rule.id());
+                if (ordinal != null) {
+                    reportUniqueGroups(rule, ordinal, report);
+                }
+            }
         }
     }
 
@@ -69,7 +75,7 @@ final class ViewExecutor {
             var condition = dataset.program(unique.where().orElseThrow()).map(program -> program.evaluate(frame))
                     .orElse(EvaluationResult.Unsupported.INSTANCE);
             if (!isTrue(condition)) {
-                report.recordViewUnique(row, declaration, unknown(condition) ? gap(condition) : status, false);
+                report.recordViewUnique(row, declaration, unknown(condition) ? gap(condition) : status);
                 return;
             }
         }
@@ -79,25 +85,52 @@ final class ViewExecutor {
         for (var expression : unique.keys()) {
             var program = dataset.program(expression);
             if (program.isEmpty()) {
-                report.recordViewUnique(row, declaration, ValidationCoverage.ConstraintStatus.UNSUPPORTED_EXPRESSION, false);
+                report.recordViewUnique(row, declaration, ValidationCoverage.ConstraintStatus.UNSUPPORTED_EXPRESSION);
                 return;
             }
             var value = program.orElseThrow().evaluate(frame);
             if (value instanceof EvaluationResult.UndefinedByData) {
-                report.recordViewUnique(row, declaration, status, false);
+                report.recordViewUnique(row, declaration, status);
                 return;
             }
             var type = dataset.plan.effectiveType(program.orElseThrow().expression().typeId()).orElseThrow();
             if (!(semantics.key(value, type) instanceof ValueSemantics.Known key)) {
-                report.recordViewUnique(row, declaration, gap(value), false);
+                report.recordViewUnique(row, declaration, gap(value));
                 return;
             }
             keys.add(key.key());
         }
         long scope = unique.basket() ? origin.stored().basket() : 0;
         var key = dataset.indexKey((byte) 9, ordinal, scope, semantics.tuple(keys));
-        var duplicate = dataset.temporary.putIfAbsent(key, new byte[0]).isPresent();
-        report.recordViewUnique(row, declaration, status, duplicate);
+        long handle = origin.handle().ordinal();
+        var group = dataset.temporary.get(key).map(java.nio.ByteBuffer::wrap).map(DatasetUnique.Group::read)
+                .orElseGet(() -> new DatasetUnique.Group(0, handle, 0, handle));
+        var updated = new DatasetUnique.Group(Math.incrementExact(group.size()), group.first(),
+                group.size() == 1 ? handle : group.second(), group.selected());
+        dataset.temporary.put(key, updated.bytes());
+        report.recordViewUnique(row, declaration, status);
+    }
+
+    private void reportUniqueGroups(guru.interlis.model.ConstraintSymbol declaration, int ordinal,
+                                    ValidationSession report) {
+        var lower = java.nio.ByteBuffer.allocate(1 + Integer.BYTES).put((byte) 9).putInt(ordinal).array();
+        var upper = java.nio.ByteBuffer.allocate(1 + Integer.BYTES).put((byte) 9)
+                .putInt(Math.incrementExact(ordinal)).array();
+        try (var cursor = dataset.temporary.scan(lower, java.util.Optional.of(upper))) {
+            for (var next = cursor.next(); next.isPresent(); next = cursor.next()) {
+                dataset.visit();
+                var group = DatasetUnique.Group.read(java.nio.ByteBuffer.wrap(next.orElseThrow().value()));
+                if (group.size() < 2) {
+                    continue;
+                }
+                var first = dataset.occurrence(new ObjectHandle(group.first()));
+                var witness = dataset.occurrence(new ObjectHandle(group.second()));
+                var arguments = new java.util.ArrayList<>(witness.witness());
+                arguments.add(Long.toString(group.size()));
+                report.datasetViolation(declaration, ValidationCode.DATASET_UNIQUE_DUPLICATE,
+                        first.location(List.of()), arguments);
+            }
+        }
     }
 
     private static ValidationCoverage.ConstraintStatus gap(EvaluationResult result) {

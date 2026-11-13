@@ -183,7 +183,7 @@ final class DatasetUnique {
                            List<ExpressionProgram> fields, boolean supported) { }
 
 
-    private record Group(long size, long first, long second, long selected) {
+    record Group(long size, long first, long second, long selected) {
         static Group read(ByteBuffer value) {
             return new Group(value.getLong(), value.getLong(), value.getLong(), value.getLong());
         }

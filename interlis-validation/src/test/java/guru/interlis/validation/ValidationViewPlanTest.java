@@ -41,11 +41,13 @@ class ValidationViewPlanTest {
         var report = validate(plan, List.of("Item"), primary("p", basket("basket", """
                 <Item i:tid='first'><code>same</code></Item>
                 <Item i:tid='second'><code>same</code></Item>
+                <Item i:tid='third'><code>same</code></Item>
                 """)));
         assertEquals(1, report.detectedViolations());
         assertEquals(ValidationCode.DATASET_UNIQUE_DUPLICATE, report.examples().getFirst().code());
-        assertEquals("second", report.examples().getFirst().data().tid().orElseThrow().value());
-        assertEquals(2, report.coverage().constraints().getFirst().occurrences());
+        assertEquals("first", report.examples().getFirst().data().tid().orElseThrow().value());
+        assertEquals(List.of("p", "basket", "second", "3"), report.examples().getFirst().arguments());
+        assertEquals(3, report.coverage().constraints().getFirst().occurrences());
     }
 
     @Test

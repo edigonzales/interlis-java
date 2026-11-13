@@ -499,11 +499,8 @@ public final class ValidationSession implements AutoCloseable {
         }
     }
 
-    void recordViewUnique(ViewRow row, ConstraintSymbol declaration, ConstraintStatus status, boolean duplicate) {
+    void recordViewUnique(ViewRow row, ConstraintSymbol declaration, ConstraintStatus status) {
         countConstraint(plan.ref(row.view()), Optional.empty(), declaration, status);
-        if (duplicate) {
-            datasetViolation(declaration, DATASET_UNIQUE_DUPLICATE, row.origins().getFirst().location(List.of()), List.of());
-        }
     }
 
     void recordViewConstraint(ViewRow row, ConstraintSymbol declaration, EvaluationResult result) {
