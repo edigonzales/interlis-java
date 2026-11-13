@@ -24,18 +24,26 @@ final class GeometryRules {
     private final Findings findings;
     private final BiConsumer<TransferGeometry.Coordinate, List<DataLocation.GeometryComponent>> verticesFound;
     private boolean fullyChecked;
+    private final boolean checkRadiusSeparately;
 
     GeometryRules(CoordinateType vertices, List<String> forms, Runnable visit, Findings findings) {
-        this(vertices, forms, visit, findings, (coordinate, path) -> { });
+        this(vertices, forms, visit, findings, (coordinate, path) -> { }, false);
+    }
+
+    GeometryRules(CoordinateType vertices, List<String> forms, Runnable visit, Findings findings,
+                  boolean checkRadiusSeparately) {
+        this(vertices, forms, visit, findings, (coordinate, path) -> { }, checkRadiusSeparately);
     }
 
     private GeometryRules(CoordinateType vertices, List<String> forms, Runnable visit, Findings findings,
-                          BiConsumer<TransferGeometry.Coordinate, List<DataLocation.GeometryComponent>> verticesFound) {
+                          BiConsumer<TransferGeometry.Coordinate, List<DataLocation.GeometryComponent>> verticesFound,
+                          boolean checkRadiusSeparately) {
         this.vertices = vertices;
         this.forms = forms;
         this.visit = visit;
         this.findings = findings;
         this.verticesFound = verticesFound;
+        this.checkRadiusSeparately = checkRadiusSeparately;
         fullyChecked = vertices != null;
     }
 
@@ -52,7 +60,7 @@ final class GeometryRules {
 
     static void vertices(TransferGeometry geometry, List<String> forms, Runnable visit,
                          BiConsumer<TransferGeometry.Coordinate, List<DataLocation.GeometryComponent>> consumer) {
-        new GeometryRules(null, forms, visit, (code, path, arguments) -> { }, consumer).check(geometry);
+        new GeometryRules(null, forms, visit, (code, path, arguments) -> { }, consumer, false).check(geometry);
     }
 
     static boolean accepts(GeometryType type, TransferGeometry value, boolean incomplete) {
@@ -124,8 +132,8 @@ final class GeometryRules {
                     findings.report(SEGMENT_FORM_NOT_ALLOWED, segmentPath, List.of(expected));
                 }
                 if (segment instanceof TransferGeometry.Arc arc) {
-                    coordinate(arc.support(), at(segmentPath, SUPPORT, 0));
-                    if (arc.radius().isPresent()) {
+                    coordinate(arc.support(), at(segmentPath, SUPPORT, 0), 2);
+                    if (!checkRadiusSeparately && arc.radius().isPresent()) {
                         visit.run();
                         fullyChecked = false;
                     }
@@ -141,16 +149,20 @@ final class GeometryRules {
     }
 
     private void coordinate(TransferGeometry.Coordinate value, List<DataLocation.GeometryComponent> path) {
+        coordinate(value, path, vertices == null ? 0 : vertices.dimensions());
+    }
+
+    private void coordinate(TransferGeometry.Coordinate value, List<DataLocation.GeometryComponent> path, int dimensions) {
         visit.run();
         if (vertices == null) {
             return;
         }
-        if (value.ordinates().size() != vertices.dimensions()) {
+        if (value.ordinates().size() != dimensions || dimensions > vertices.dimensions()) {
             findings.report(COORDINATE_DIMENSION_MISMATCH, path,
-                    List.of(Integer.toString(value.ordinates().size()), Integer.toString(vertices.dimensions())));
+                    List.of(Integer.toString(value.ordinates().size()), Integer.toString(dimensions)));
             return;
         }
-        for (int i = 0; i < vertices.axes().size(); i++) {
+        for (int i = 0; i < dimensions; i++) {
             visit.run();
             var range = vertices.axes().get(i);
             if (range.minimum().isEmpty() || range.maximum().isEmpty()) {

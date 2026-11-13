@@ -54,7 +54,7 @@ class TransferGeometryAdapterTest {
         return new TransferGeometryAdapter(input, new GeometryEngine.Control(() -> {}, findings::add)).read();
     }
 
-    private static Coordinate point(String... xy) {
+    static Coordinate point(String... xy) {
         return new Coordinate(Arrays.stream(xy).map(x -> new NumberValue(x, new BigDecimal(x))).toList());
     }
 }

@@ -38,6 +38,11 @@ public record ValidationDiagnostic(ValidationCode code, Severity severity, DataL
             case COORDINATE_DIMENSION_MISMATCH -> "Coordinate has the wrong number of axes.";
             case SEGMENT_FORM_NOT_ALLOWED -> "Segment form is not allowed by the model.";
             case GEOMETRY_DEGENERATE_SEGMENT -> "Segment has coincident projected endpoints.";
+            case GEOMETRY_RING_NOT_CLOSED -> "Surface boundary is not closed and continuous.";
+            case GEOMETRY_SELF_INTERSECTION -> "Geometry contains an invalid segment intersection.";
+            case GEOMETRY_HOLE_OUTSIDE_SHELL -> "Surface hole is outside its allowed region.";
+            case GEOMETRY_INTERIOR_DISCONNECTED -> "Surface interior is disconnected.";
+            case GEOMETRY_AREA_OVERLAP -> "Surface interiors overlap.";
             case GEOMETRY_INVALID_ARC -> "Circular segment does not define a valid arc.";
             case MODEL_VALUE_NOT_ALLOWED -> "Model name is outside the allowed type or attribute path.";
             case MANDATORY_CONSTRAINT_FALSE -> "Mandatory constraint evaluated to false.";

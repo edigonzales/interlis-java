@@ -288,7 +288,7 @@ final class DatasetRuleContext {
             if (field.derived() && plan.derivedNeedsDataset(slot.symbol())) {
                 var result = DerivedValueResolver.resolve(field.slot().attribute(), frame);
                 report.recordDeferredDerived(occurrence, field, result, frame.effectiveType(field.values().getFirst()),
-                        current, at);
+                        current, at, this::visit);
             }
             current.value(slot).ifPresent(value ->
                     checkDeferredValue(report, occurrence, basket, current, frame, field, 0, value, at));

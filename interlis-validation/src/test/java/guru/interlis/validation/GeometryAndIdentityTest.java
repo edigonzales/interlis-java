@@ -21,7 +21,6 @@ import java.util.Optional;
 
 import static guru.interlis.validation.ValidationCode.*;
 import static guru.interlis.validation.ValidationPlannerTest.compile;
-import static guru.interlis.validation.ValidationPlannerTest.ready;
 import static guru.interlis.validation.ValidationPlannerTest.transfer;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -44,6 +43,53 @@ class GeometryAndIdentityTest {
             END T;
             END Checks.
             """;
+
+    @Test
+    void checksNestedGeometryOnceAfterLocalValuesPass() {
+        var calls = new java.util.ArrayList<GeometryEngine.Input>();
+        var engine = new GeometryEngine() {
+            public Check checkValue(Input input, Control control) {
+                calls.add(input);
+                var segment = new DataLocation.GeometryComponent(DataLocation.GeometryComponent.Kind.SEGMENT, 1);
+                control.findings().accept(new Finding(input.location(), List.of(segment), GEOMETRY_INVALID_ARC, "probe"));
+                return Check.INVALID;
+            }
+            public Measurement measure(Measure measure, Input input, Control control) {
+                throw new AssertionError();
+            }
+            public Check checkCoverage(Source source, CoveragePurpose purpose, Control control) {
+                throw new AssertionError();
+            }
+        };
+        var schema = compile(HEADER + """
+                DOMAIN Point = COORD 0.00..10.00, 0.00..10.00;
+                TOPIC T =
+                  STRUCTURE Detail =
+                    trace: POLYLINE WITH (STRAIGHTS, ARCS) VERTEX Point;
+                  END Detail;
+                  CLASS Item = detail: Detail; END Item;
+                END T;
+                END Checks.
+                """);
+        var fixture = new Fixture(schema, RuntimeBindings.empty().withGeometry(engine));
+        var item = fixture.ref("Checks", "T", "Item");
+        var detail = fixture.ref("Checks", "T", "Detail");
+        var trace = fixture.ref("Checks", "T", "Detail", "trace");
+        var slot = fixture.field("detail");
+        var line = new TransferGeometry.Polyline(List.of(new TransferGeometry.CurvePart(coord("0", "0"),
+                List.of(new TransferGeometry.Straight(coord("1", "1"))))));
+        var report = fixture.validate(item, Map.of(slot, new TransferValue.Structured(detail, Map.of(trace, line))));
+        assertEquals(List.of(GEOMETRY_INVALID_ARC), codes(report));
+        assertEquals(1, calls.size());
+        assertEquals(List.of(new DataLocation.Slot(slot), new DataLocation.Slot(trace)),
+                calls.getFirst().location().path());
+        assertEquals(new BigDecimal("0.01"), calls.getFirst().quantum().orElseThrow());
+        var bad = new TransferGeometry.Polyline(List.of(new TransferGeometry.CurvePart(coord("0", "0"),
+                List.of(new TransferGeometry.Straight(coord("11", "1"))))));
+        assertEquals(List.of(VALUE_OUT_OF_RANGE), codes(fixture.validate(item,
+                Map.of(slot, new TransferValue.Structured(detail, Map.of(trace, bad))))));
+        assertEquals(1, calls.size());
+    }
 
     @Test
     void resolvesInheritedGenericDomainsPerBasketAndSession() {
@@ -358,8 +404,13 @@ class GeometryAndIdentityTest {
         }
 
         Fixture(CompiledSchema schema) {
+            this(schema, RuntimeBindings.empty());
+        }
+
+        Fixture(CompiledSchema schema, RuntimeBindings bindings) {
             this.schema = schema;
-            plan = ready(schema, transfer(schema));
+            plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
+                    ValidationPlanner.plan(transfer(schema), ValidationProfile.LOCAL_ONLY, bindings)).plan();
         }
 
         SymbolRef ref(String... name) {
