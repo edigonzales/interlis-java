@@ -37,6 +37,8 @@ public record ValidationDiagnostic(ValidationCode code, Severity severity, DataL
             case REQUIRED_TID_MISSING -> "The required transfer identifier is absent.";
             case COORDINATE_DIMENSION_MISMATCH -> "Coordinate has the wrong number of axes.";
             case SEGMENT_FORM_NOT_ALLOWED -> "Segment form is not allowed by the model.";
+            case GEOMETRY_DEGENERATE_SEGMENT -> "Segment has coincident projected endpoints.";
+            case GEOMETRY_INVALID_ARC -> "Circular segment does not define a valid arc.";
             case MODEL_VALUE_NOT_ALLOWED -> "Model name is outside the allowed type or attribute path.";
             case MANDATORY_CONSTRAINT_FALSE -> "Mandatory constraint evaluated to false.";
             case DATASET_UNIQUE_DUPLICATE -> "Key duplicates another object in the comparison scope.";
