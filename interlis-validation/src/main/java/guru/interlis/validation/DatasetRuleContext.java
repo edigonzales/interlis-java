@@ -57,6 +57,16 @@ final class DatasetRuleContext {
         return closedDelivery && plan.transferPlan().object(root).isPresent();
     }
 
+    boolean geometryPopulationClosed() {
+        return closedDelivery;
+    }
+
+    EvaluationResult geometryDerivation(Occurrence occurrence, guru.interlis.model.AttributeSymbol attribute) {
+        var frame = new EvaluationFrame(plan, occurrence.object().data(), occurrence.partial(), this::visit,
+                java.util.OptionalLong.empty(), cancellation).withDataset(new DatasetPathContext(this, occurrence));
+        return DerivedValueResolver.resolve(attribute, frame);
+    }
+
     boolean selectsView(guru.interlis.model.ViewSymbol view) {
         return plan.subjects().selectsView(view);
     }
@@ -66,6 +76,27 @@ final class DatasetRuleContext {
         if (remainingWork-- == 0) {
             throw new ValidationLimitException("Dataset constraint work limit exceeded");
         }
+    }
+
+    GeometryEngine.Cursor geometryCursor(java.util.function.Function<Occurrence, Optional<GeometryEngine.Input>> select) {
+        var entries = objects.scan();
+        return new GeometryEngine.Cursor() {
+            @Override public Optional<GeometryEngine.Input> next() {
+                for (var entry = entries.next(); entry.isPresent(); entry = entries.next()) {
+                    visit();
+                    var value = entry.orElseThrow();
+                    var selected = select.apply(occurrence(DatasetObjectStore.handle(value), objects.decode(value)));
+                    if (selected.isPresent()) {
+                        return selected;
+                    }
+                }
+                return Optional.empty();
+            }
+
+            @Override public void close() {
+                entries.close();
+            }
+        };
     }
 
     void forObjects(Consumer<Occurrence> consumer) {

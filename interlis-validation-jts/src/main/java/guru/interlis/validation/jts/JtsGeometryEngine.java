@@ -23,6 +23,6 @@ public final class JtsGeometryEngine implements GeometryEngine {
     }
 
     @Override public Check checkCoverage(Source source, CoveragePurpose purpose, Control control) {
-        return Check.UNSUPPORTED;
+        return CurveChecks.coverage(source, purpose, control);
     }
 }

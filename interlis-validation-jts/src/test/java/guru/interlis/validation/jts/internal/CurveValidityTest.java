@@ -89,6 +89,67 @@ class CurveValidityTest {
                 check(outside, GeometryKind.POLYLINE, true, false).codes());
     }
 
+    @Test
+    void separatesCoverageFromGapsAndPartialDelivery() {
+        var shell = ring("0,0", "8,0", "8,8", "0,8", "0,0");
+        var hole = ring("2,2", "4,2", "4,4", "2,4", "2,2");
+        var donut = new Surface(shell, List.of(hole));
+        var filler = new Surface(hole, List.of());
+        var separate = new Surface(ring("10,0", "12,0", "12,2", "10,2", "10,0"), List.of());
+        assertEquals(VALID, coverage(true, false, donut).status());
+        assertEquals(List.of(GEOMETRY_GAP), coverage(true, true, donut).codes());
+        assertEquals(VALID, coverage(true, true, donut, filler, separate).status());
+        assertEquals(VALID, coverage(true, true).status());
+        assertEquals(MISSING_PARAMETERS, coverage(false, true, donut).status());
+        assertEquals(INVALID, coverage(false, true, donut, donut).status());
+        var open = new Surface(ring("0,0", "2,0", "2,2"), List.of());
+        assertEquals(INVALID, coverage(true, true, open, separate).status());
+    }
+
+    @Test
+    void requiresMatchingCoverageEdgesAndPreservesBothOccurrences() {
+        var first = new Surface(ring("0,0", "2,0", "2,2", "0,2", "0,0"), List.of());
+        var adjacent = new Surface(ring("2,0", "4,0", "4,2", "2,2", "2,0"), List.of());
+        var split = new Surface(ring("2,0", "4,0", "4,2", "2,2", "2,1", "2,0"), List.of());
+        assertEquals(VALID, coverage(true, true, first, adjacent).status());
+        var mismatch = coverage(true, false, first, split);
+        assertEquals(INVALID, mismatch.status());
+        assertTrue(mismatch.codes().contains(GEOMETRY_BOUNDARY_MISMATCH));
+        assertTrue(mismatch.findings().stream().allMatch(finding -> !finding.location().tid()
+                .equals(finding.relatedData().orElseThrow().tid())));
+    }
+
+    private static Outcome coverage(boolean complete, boolean gaps, Surface... surfaces) {
+        var type = new GeometryType(new TypeId("test-area"), new Origin.PredefinedOrigin(LanguageVersion.ILI24, "area"),
+                GeometryKind.AREA, List.of(), Optional.empty(), Optional.empty(), false, true, Optional.empty());
+        var source = new GeometryEngine.Source() {
+            public boolean complete() { return complete; }
+            public GeometryEngine.Cursor open() {
+                return new GeometryEngine.Cursor() {
+                    private int index;
+                    public void close() {}
+                    public Optional<GeometryEngine.Input> next() {
+                        if (index == surfaces.length) {
+                            return Optional.empty();
+                        }
+                        var tid = new guru.interlis.transfer.TransferIdentity.TransferId(Integer.toString(index),
+                                guru.interlis.transfer.TransferIdentity.IdOrigin.SOURCE);
+                        var location = new DataLocation(Optional.empty(),
+                                new BasketId("basket", guru.interlis.transfer.TransferIdentity.IdOrigin.SOURCE),
+                                Optional.of(tid), Optional.empty(), Optional.empty(), List.of());
+                        return Optional.of(new GeometryEngine.Input(surfaces[index++], type, location, LanguageVersion.ILI24,
+                                Optional.of(new BigDecimal("0.001")), Optional.of(new BigDecimal("0.001")), false));
+                    }
+                };
+            }
+        };
+        var findings = new ArrayList<GeometryEngine.Finding>();
+        var status = JtsGeometryEngine.standard().checkCoverage(source,
+                gaps ? GeometryEngine.CoveragePurpose.AREA_WITHOUT_GAPS : GeometryEngine.CoveragePurpose.AREA,
+                new GeometryEngine.Control(() -> {}, findings::add));
+        return new Outcome(status, List.copyOf(findings));
+    }
+
     private record Outcome(GeometryEngine.Check status, List<GeometryEngine.Finding> findings) {
         List<ValidationCode> codes() {
             return findings.stream().map(GeometryEngine.Finding::code).toList();

@@ -9,4 +9,9 @@ public final class CurveChecks {
         var value = new TransferGeometryAdapter(input, control).read();
         return new CurveValidity(input, control).check(value);
     }
+
+    public static GeometryEngine.Check coverage(GeometryEngine.Source source, GeometryEngine.CoveragePurpose purpose,
+                                                GeometryEngine.Control control) {
+        return CurveCoverage.check(source, purpose, control);
+    }
 }

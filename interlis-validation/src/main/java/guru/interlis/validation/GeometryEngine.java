@@ -20,7 +20,8 @@ public interface GeometryEngine {
 
     /** A value with its effective model, exact coordinate quantum and resolved overlap in coordinate units. */
     record Input(TransferGeometry value, GeometryType type, DataLocation location, LanguageVersion language,
-                 Optional<BigDecimal> quantum, Optional<BigDecimal> overlap, boolean partial) {
+                 Optional<BigDecimal> quantum, Optional<BigDecimal> overlap, boolean partial,
+                 Optional<guru.interlis.model.TypeId> coordinateDomain) {
         public Input {
             Objects.requireNonNull(value, "value");
             Objects.requireNonNull(type, "type");
@@ -28,6 +29,11 @@ public interface GeometryEngine {
             Objects.requireNonNull(language, "language");
             Objects.requireNonNull(quantum, "quantum");
             Objects.requireNonNull(overlap, "overlap");
+            Objects.requireNonNull(coordinateDomain, "coordinateDomain");
+        }
+        public Input(TransferGeometry value, GeometryType type, DataLocation location, LanguageVersion language,
+                     Optional<BigDecimal> quantum, Optional<BigDecimal> overlap, boolean partial) {
+            this(value, type, location, language, quantum, overlap, partial, Optional.empty());
         }
     }
 

@@ -250,7 +250,8 @@ public final class DatasetValidationSession implements AutoCloseable {
                     completeDelivery, cancellation);
             context.checkDeferredConstraints(local);
             new ViewExecutor(context).check(local);
-            var coverage = checkDatasetRules(context);
+            var coverage = new ArrayList<>(checkDatasetRules(context));
+            coverage.addAll(new GeometryScopeRunner(context).check(local));
             cancellation.throwIfCancellationRequested();
             storage.checkpoint();
             var report = local.finishDataset(coverage, options.scope());

@@ -48,6 +48,7 @@ public record ValidationDiagnostic(ValidationCode code, Severity severity, DataL
             case GEOMETRY_SELF_INTERSECTION -> "Geometry contains an invalid segment intersection.";
             case GEOMETRY_HOLE_OUTSIDE_SHELL -> "Surface hole is outside its allowed region.";
             case GEOMETRY_INTERIOR_DISCONNECTED -> "Surface interior is disconnected.";
+            case GEOMETRY_GAP -> "Area coverage has a bounded uncovered region.";
             case GEOMETRY_BOUNDARY_MISMATCH -> "Surface components have an incompatible shared boundary.";
             case GEOMETRY_AREA_OVERLAP -> "Surface interiors overlap.";
             case GEOMETRY_INVALID_ARC -> "Circular segment does not define a valid arc.";

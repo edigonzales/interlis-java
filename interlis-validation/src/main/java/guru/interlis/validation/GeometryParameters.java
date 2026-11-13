@@ -3,6 +3,7 @@ package guru.interlis.validation;
 import guru.interlis.model.CoordinateType;
 import guru.interlis.model.DecimalLiteral;
 import guru.interlis.model.GeometryType;
+import guru.interlis.model.DomainSymbol;
 import guru.interlis.model.SymbolId;
 
 import java.math.BigDecimal;
@@ -14,6 +15,13 @@ final class GeometryParameters {
     private static final BigDecimal ROOT_TWO = BigDecimal.TWO.sqrt(MathContext.DECIMAL128);
 
     private GeometryParameters() {}
+
+    static CoordinateType coordinate(ValidationPlan plan, ValidationSession.BasketContext basket, SymbolId id) {
+        var symbol = plan.symbol(id).orElse(null);
+        var type = symbol instanceof DomainSymbol domain && domain.generic()
+                ? Optional.ofNullable(basket.domains().get(id)).flatMap(plan::domainType) : plan.domainType(id);
+        return type.filter(CoordinateType.class::isInstance).map(CoordinateType.class::cast).orElse(null);
+    }
 
     static Optional<BigDecimal> quantum(CoordinateType type) {
         if (type == null || type.dimensions() < 2) {

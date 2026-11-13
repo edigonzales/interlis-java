@@ -23,11 +23,15 @@ import static guru.interlis.validation.jts.internal.TransferGeometryAdapter.*;
 final class CurveValidity {
     private final GeometryEngine.Input input;
     private final GeometryEngine.Control control;
+    private GeometryEngine.Input relatedSource;
+    private Optional<java.math.BigDecimal> overlap;
     private GeometryEngine.Check status = VALID;
 
     CurveValidity(GeometryEngine.Input input, GeometryEngine.Control control) {
         this.input = input;
         this.control = control;
+        this.relatedSource = input;
+        this.overlap = input.overlap();
     }
 
     GeometryEngine.Check check(Result value) {
@@ -89,7 +93,7 @@ final class CurveValidity {
             var hole = segments.get(i);
             for (int j = 0; j < i; j++) {
                 var other = segments.get(j);
-                var contacts = boundaryContacts(other, hole, GEOMETRY_SELF_INTERSECTION);
+                var contacts = boundaryContacts(other, hole, GEOMETRY_SELF_INTERSECTION, false, false);
                 int first = root(connected, j);
                 int second = root(connected, i);
                 if (contacts.size() > 1 || !contacts.isEmpty() && first == second) {
@@ -202,7 +206,8 @@ final class CurveValidity {
         }
     }
 
-    private HashSet<Point> boundaryContacts(List<Segment> a, List<Segment> b, ValidationCode code) {
+    private HashSet<Point> boundaryContacts(List<Segment> a, List<Segment> b, ValidationCode code,
+                                            boolean commonEdgeAllowed, boolean sameInteriorSide) {
         var index = new STRtree();
         for (Segment segment : a) {
             control.visit().run();
@@ -223,6 +228,26 @@ final class CurveValidity {
                     if (hit.kind() == CurveIntersections.Kind.CONTACT) {
                         allowed.add(hit.point());
                         contacts.add(hit.point());
+                    }
+                }
+                if (commonEdgeAllowed) {
+                    var aCurve = left.curve();
+                    var bCurve = right.curve();
+                    boolean same = aCurve.equals(bCurve);
+                    boolean reverse = aCurve.equals(bCurve.reversed());
+                    if (same || reverse) {
+                        if (same == sameInteriorSide) {
+                            invalid(right.path(), left.path(), GEOMETRY_AREA_OVERLAP,
+                                    "Faces have interior on the same side of a shared boundary");
+                        }
+                        continue;
+                    }
+                    for (var hit : result.hits()) {
+                        if (hit.kind() == CurveIntersections.Kind.CONTACT
+                                && !(endpoint(aCurve, hit.point()) && endpoint(bCurve, hit.point()))) {
+                            invalid(right.path(), left.path(), GEOMETRY_BOUNDARY_MISMATCH,
+                                    "Shared boundaries have different support positions");
+                        }
                     }
                 }
                 if (conflicts(left.curve(), right.curve(), result.hits(), allowed)) {
@@ -256,7 +281,7 @@ final class CurveValidity {
         if (shared == null || !(a instanceof CircularArc || b instanceof CircularArc)) {
             return true;
         }
-        if (input.overlap().isEmpty()) {
+        if (overlap.isEmpty()) {
             if (status == VALID) {
                 status = MISSING_PARAMETERS;
             }
@@ -268,7 +293,7 @@ final class CurveValidity {
             uncertain();
             return false;
         }
-        return height > input.overlap().orElseThrow().doubleValue();
+        return height > overlap.orElseThrow().doubleValue();
     }
 
     private static boolean endpoint(CurveSegment segment, Point point) {
@@ -293,12 +318,33 @@ final class CurveValidity {
         control.visit().run();
         for (Ring a : rings(first)) {
             for (Ring b : rings(second)) {
-                boundaryContacts(flat(a), flat(b), GEOMETRY_AREA_OVERLAP);
+                boundaryContacts(flat(a), flat(b), GEOMETRY_AREA_OVERLAP, false, false);
             }
         }
         if (status != INVALID && (within(first, second) || within(second, first))) {
             invalid(second.shell().path(), first.shell().path(), GEOMETRY_AREA_OVERLAP, "Surface interiors overlap");
         }
+    }
+
+    GeometryEngine.Check coveragePair(Surface first, GeometryEngine.Input firstSource, Surface second,
+                                      Optional<java.math.BigDecimal> tolerance) {
+        relatedSource = firstSource;
+        overlap = tolerance;
+        var left = rings(first);
+        var right = rings(second);
+        for (int i = 0; i < left.size(); i++) {
+            var a = flat(left.get(i));
+            for (int j = 0; j < right.size(); j++) {
+                control.visit().run();
+                var b = flat(right.get(j));
+                boolean sameSide = (signedArea(a) > 0 ^ i > 0) == (signedArea(b) > 0 ^ j > 0);
+                boundaryContacts(a, b, GEOMETRY_AREA_OVERLAP, true, sameSide);
+            }
+        }
+        if (status != INVALID && (within(first, second) || within(second, first))) {
+            invalid(second.shell().path(), first.shell().path(), GEOMETRY_AREA_OVERLAP, "Surface interiors overlap");
+        }
+        return status;
     }
 
     private boolean within(Surface container, Surface other) {
@@ -452,13 +498,13 @@ final class CurveValidity {
 
     private void invalid(List<GeometryComponent> path, List<GeometryComponent> related,
                          ValidationCode code, String detail) {
-        var location = input.location();
+        var location = relatedSource.location();
         var steps = new ArrayList<>(location.path());
         steps.addAll(related);
         var other = new DataLocation(location.source(), location.basket(), location.tid(), location.oid(),
                 location.objectType(), steps);
         status = INVALID;
-        control.findings().accept(new GeometryEngine.Finding(location, path, code, detail, Optional.of(other)));
+        control.findings().accept(new GeometryEngine.Finding(input.location(), path, code, detail, Optional.of(other)));
     }
 
     private void invalid(List<GeometryComponent> path, ValidationCode code, String detail) {

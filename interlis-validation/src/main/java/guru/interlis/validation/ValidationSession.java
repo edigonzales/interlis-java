@@ -662,6 +662,19 @@ public final class ValidationSession implements AutoCloseable {
         }
     }
 
+    void geometryFinding(AttributeSymbol attribute, GeometryEngine.Finding finding) {
+        if (!retainExample()) {
+            return;
+        }
+        var data = finding.location();
+        var path = new ArrayList<>(data.path());
+        path.addAll(finding.path());
+        examples.add(new ValidationDiagnostic(finding.code(), Severity.ERROR,
+                new DataLocation(data.source(), data.basket(), data.tid(), data.oid(), data.objectType(), path),
+                ruleLocation(plan.ref(attribute.id()), attribute.origin()), List.of(finding.detail()),
+                finding.relatedData()));
+    }
+
     private void checkTopology(GeometryType type, TransferGeometry value, DataLocation location, AttributeSymbol attribute,
                                SlotKey key, boolean partial, java.util.function.Function<SymbolId, CoordinateType> coordinates,
                                Runnable visit) {
@@ -673,17 +686,7 @@ public final class ValidationSession implements AutoCloseable {
         var input = new GeometryEngine.Input(value, type, location, attribute.languageVersion(),
                 GeometryParameters.quantum(type.vertexDomain().map(coordinates).orElse(null)),
                 GeometryParameters.overlap(type, coordinates), partial);
-        var control = new GeometryEngine.Control(visit, finding -> {
-            var steps = new ArrayList<>(finding.location().path());
-            steps.addAll(finding.path());
-            var data = finding.location();
-            if (retainExample()) {
-                examples.add(new ValidationDiagnostic(finding.code(), Severity.ERROR,
-                        new DataLocation(data.source(), data.basket(), data.tid(), data.oid(), data.objectType(), steps),
-                        ruleLocation(plan.ref(attribute.id()), attribute.origin()), List.of(finding.detail()),
-                        finding.relatedData()));
-            }
-        });
+        var control = new GeometryEngine.Control(visit, finding -> geometryFinding(attribute, finding));
         switch (engine.orElseThrow().checkValue(input, control)) {
             case VALID, INVALID -> checked.merge(key, 1L, Math::addExact);
             case MISSING_PARAMETERS -> (partial ? incomplete : missingRuntime).merge(key, 1L, Math::addExact);
@@ -696,10 +699,7 @@ public final class ValidationSession implements AutoCloseable {
     }
 
     private CoordinateType effectiveCoordinate(SymbolId id, BasketContext context) {
-        var symbol = plan.symbol(id).orElse(null);
-        var type = symbol instanceof guru.interlis.model.DomainSymbol domain && domain.generic()
-                ? Optional.ofNullable(context.domains().get(id)).flatMap(plan::domainType) : plan.domainType(id);
-        return type.filter(CoordinateType.class::isInstance).map(CoordinateType.class::cast).orElse(null);
+        return GeometryParameters.coordinate(plan, context, id);
     }
 
     private void checkBasketIdentity() {
