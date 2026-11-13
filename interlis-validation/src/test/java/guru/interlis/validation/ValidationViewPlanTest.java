@@ -88,4 +88,24 @@ class ValidationViewPlanTest {
         assertEquals(List.of("p", "basket", "r2", "4"), finding.arguments());
         assertEquals(4, report.coverage().constraints().getFirst().occurrences());
     }
+    @Test
+    void distinguishesDuplicateInspectionRowsFromTheSameOwner() {
+        var plan = plan("""
+                STRUCTURE Part = code: TEXT; END Part;
+                CLASS Item = parts: BAG OF Part; END Item;
+                VIEW Keys INSPECTION OF part~Item->parts; =
+                  code := part->code;
+                  UNIQUE code;
+                END Keys;
+                """);
+        var part = "<parts><Part><code>same</code></Part></parts>";
+        var report = validate(plan, List.of("Item"), primary("p", basket("basket",
+                "<Item i:tid='owner'>" + part.repeat(3) + "</Item>")));
+        assertEquals(1, report.detectedViolations());
+        var finding = report.examples().getFirst();
+        assertEquals(ValidationCode.DATASET_UNIQUE_DUPLICATE, finding.code());
+        assertEquals("owner", finding.data().tid().orElseThrow().value());
+        assertEquals(List.of("p", "basket", "owner", "3", "1", "2"), finding.arguments());
+        assertEquals(3, report.coverage().constraints().getFirst().occurrences());
+    }
 }

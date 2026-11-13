@@ -87,7 +87,12 @@ und `DatasetRuleCoverage.Outcome` müssen die neuen Fälle behandeln.
 
 `DATASET_UNIQUE_DUPLICATE` erscheint einmal pro Dublettengruppe mit
 ausgewähltem Subjekt. Die Argumente enthalten Eingabe, Basket und Kennung
-eines weiteren Gruppenmitglieds sowie die Gruppengrösse. Globale
+eines weiteren Gruppenmitglieds sowie die Gruppengrösse. Teilen zwei
+virtuelle Zeilen denselben Datenort, folgen als fünftes und sechstes Argument
+die einsbasierten Zeilennummern von Subjekt und Zeuge in der
+Auswertungsreihenfolge der Sicht. Die Zeilennummern gelten nur für den
+jeweiligen Validierungslauf. Diese optionale Erweiterung erhält die ersten
+vier Argumente und die SDK-API-Version 0.8. Globale
 Vergleiche ohne geschlossene Extent-Deklaration belegen nur den verfügbaren
 Bestand. `EXISTENCE_TARGET_MISSING` setzt voraus, dass sämtliche relevanten
 Zielalternativen geschlossen und prüfbar sind. Eine beobachtete Übereinstimmung

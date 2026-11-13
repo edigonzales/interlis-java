@@ -5,6 +5,7 @@ import guru.interlis.model.SymbolId;
 import guru.interlis.model.ViewSymbol;
 import guru.interlis.transfer.TransferValue;
 
+import java.nio.ByteBuffer;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,9 @@ final class ViewExecutor {
                     uniqueOrdinals.put(rule.id(), ++uniqueRun);
                 }
             }
+            var rowOrdinal = new long[1];
             open(view, row -> {
+                long ordinal = ++rowOrdinal[0];
                 var frame = frame(row);
                 for (var attribute : view.attributes()) {
                     if (!attribute.derivations().isEmpty()) {
@@ -49,7 +52,7 @@ final class ViewExecutor {
                         report.recordViewConstraint(row, rule, result);
                     } else if (rule.definition() instanceof guru.interlis.model.UniquenessConstraint unique
                             && uniqueOrdinals.containsKey(rule.id())) {
-                        checkUnique(row, frame, rule, unique, uniqueOrdinals.get(rule.id()), report);
+                        checkUnique(row, frame, rule, unique, uniqueOrdinals.get(rule.id()), ordinal, report);
                     } else {
                         report.recordViewConstraint(row, rule, EvaluationResult.Unsupported.INSTANCE);
                     }
@@ -69,7 +72,8 @@ final class ViewExecutor {
     }
 
     private void checkUnique(ViewRow row, EvaluationFrame frame, guru.interlis.model.ConstraintSymbol declaration,
-                             guru.interlis.model.UniquenessConstraint unique, int ordinal, ValidationSession report) {
+                             guru.interlis.model.UniquenessConstraint unique, int ordinal, long rowOrdinal,
+                             ValidationSession report) {
         var status = ValidationCoverage.ConstraintStatus.CHECKED;
         if (unique.where().isPresent()) {
             var condition = dataset.program(unique.where().orElseThrow()).map(program -> program.evaluate(frame))
@@ -103,16 +107,20 @@ final class ViewExecutor {
         long scope = unique.basket() ? origin.stored().basket() : 0;
         var key = dataset.indexKey((byte) 9, ordinal, scope, semantics.tuple(keys));
         long handle = origin.handle().ordinal();
-        var group = dataset.temporary.get(key).map(java.nio.ByteBuffer::wrap).map(DatasetUnique.Group::read)
-                .orElseGet(() -> new DatasetUnique.Group(0, handle, 0, handle));
-        long witness = group.second();
-        if (group.size() > 0 && (witness == 0 || witness == group.first())) {
-            long subject = group.first();
-            witness = row.origins().stream().mapToLong(candidate -> candidate.handle().ordinal())
-                    .filter(candidate -> candidate != subject).findFirst().orElse(handle);
+        var group = dataset.temporary.get(key).map(ViewUniqueGroup::read)
+                .orElseGet(() -> new ViewUniqueGroup(0, handle, rowOrdinal, 0, 0));
+        long witness = group.witness();
+        long witnessRow = group.witnessRow();
+        if (group.size() > 0 && (witness == 0 || witness == group.subject())) {
+            long distinct = row.origins().stream().mapToLong(candidate -> candidate.handle().ordinal())
+                    .filter(candidate -> candidate != group.subject()).findFirst().orElse(0);
+            if (distinct != 0 || witness == 0) {
+                witness = distinct == 0 ? handle : distinct;
+                witnessRow = rowOrdinal;
+            }
         }
-        var updated = new DatasetUnique.Group(Math.incrementExact(group.size()), group.first(),
-                witness, group.selected());
+        var updated = new ViewUniqueGroup(Math.incrementExact(group.size()), group.subject(), group.subjectRow(),
+                witness, witnessRow);
         dataset.temporary.put(key, updated.bytes());
         report.recordViewUnique(row, declaration, status);
     }
@@ -125,17 +133,33 @@ final class ViewExecutor {
         try (var cursor = dataset.temporary.scan(lower, java.util.Optional.of(upper))) {
             for (var next = cursor.next(); next.isPresent(); next = cursor.next()) {
                 dataset.visit();
-                var group = DatasetUnique.Group.read(java.nio.ByteBuffer.wrap(next.orElseThrow().value()));
+                var group = ViewUniqueGroup.read(next.orElseThrow().value());
                 if (group.size() < 2) {
                     continue;
                 }
-                var first = dataset.occurrence(new ObjectHandle(group.first()));
-                var witness = dataset.occurrence(new ObjectHandle(group.second()));
+                var first = dataset.occurrence(new ObjectHandle(group.subject()));
+                var witness = dataset.occurrence(new ObjectHandle(group.witness()));
                 var arguments = new java.util.ArrayList<>(witness.witness());
                 arguments.add(Long.toString(group.size()));
+                if (group.subject() == group.witness()) {
+                    arguments.add(Long.toString(group.subjectRow()));
+                    arguments.add(Long.toString(group.witnessRow()));
+                }
                 report.datasetViolation(declaration, ValidationCode.DATASET_UNIQUE_DUPLICATE,
                         first.location(List.of()), arguments);
             }
+        }
+    }
+
+    private record ViewUniqueGroup(long size, long subject, long subjectRow, long witness, long witnessRow) {
+        static ViewUniqueGroup read(byte[] bytes) {
+            var value = ByteBuffer.wrap(bytes);
+            return new ViewUniqueGroup(value.getLong(), value.getLong(), value.getLong(), value.getLong(), value.getLong());
+        }
+
+        byte[] bytes() {
+            return ByteBuffer.allocate(5 * Long.BYTES)
+                    .putLong(size).putLong(subject).putLong(subjectRow).putLong(witness).putLong(witnessRow).array();
         }
     }
 
