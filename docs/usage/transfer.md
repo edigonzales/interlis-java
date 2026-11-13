@@ -153,7 +153,7 @@ Laufzeitlücken; normativ undefinierte Ausdrücke bleiben davon unterscheidbar.
 Globale und basketweite Eindeutigkeit, `EXISTENCE`, `SET CONSTRAINT`,
 Prozent-Plausibilität, referenzielle Zielprüfung und Geometrietopologie
 gehören nicht zum Profil. Nicht unterstützte Ausdrücke und Werte wie externe
-Funktionen, `UNIQUE` mit `WHERE`, kundenspezifisches `FORMAT` und Bogenradius
+Funktionen ohne Hostbindung, `UNIQUE` mit lokalem `WHERE` und Bogenradius
 werden als ungeprüft ausgewiesen.
 
 Der Bericht zählt alle erkannten Verstösse und behält standardmässig höchstens
@@ -200,11 +200,18 @@ Speicherfehler vor einem Bericht.
 
 Das Profil prüft aufgelöste Referenzen, Rollen- und Linkkardinalitäten,
 Positionen geordneter Rollen und Kompositionen. Es prüft globale und
-basketbezogene `UNIQUE`-Regeln mit ausführbarem lokalem `WHERE` sowie
+basketbezogene `UNIQUE`-Regeln mit ausführbarem `WHERE` sowie
 `EXISTENCE` für unterstützte Skalare, Strukturwerte, Koordinaten und
-Stützpunkte von Standardlinien und Flächenrändern. `SET` unterstützt
-`INTERLIS.objectCount(ALL)` mit lokaler Filterung und booleschen Vergleichen.
+Stützpunkte von Standardlinien und Flächenrändern. Die Ausdruckslaufzeit
+unterstützt gebundene Referenz- und Assoziationspfade, abgeleitete Werte,
+nichtgeometrische Standardfunktionen und explizite Hostbindungen.
+`SET` kann kontextgebundenes und explizites `ALL` zählen.
 Prozentbedingungen verwenden einen exakten Vergleich.
+
+Virtuelle Sichten verarbeiten Projektion, Selektion, Union, Join,
+Gruppierung und nichtgeometrische Strukturinspektion. Gruppengrössen
+sind über `elementCount(AGGREGATES)` verfügbar. Materialisierte Sichten
+haben keinen XTF-Ausgabepfad in diesem Profil.
 
 Standardmässig sind globale Extents offen. Ein erfolgreicher Zeuge oder
 eine beobachtete Dublette ist bereits im verfügbaren Umfang aussagekräftig.
@@ -213,6 +220,6 @@ relevanten Extents mit `ExtentDeclarations` schliessen. Die Aspekte
 `OBJECT_MEMBERSHIP`, `ATTRIBUTE_VALUES` und `RELATION_MEMBERSHIP` sind
 getrennt. `DatasetRuleCoverage` unterscheidet die Basis der Vollständigkeit
 und den Ausgang der Regel. Die Coverage weist offene Kontexte und Grenzen
-wie fremde Ausdruckspfade, Geometrietopologie, Hostfunktionen und Sichten
-aus. Die Auswahl über `SubjectSelection` bestimmt die zu prüfenden
+wie Geometrietopologie, fehlende Hostbindungen und unvollständige
+Bestände aus. Die Auswahl über `SubjectSelection` bestimmt die zu prüfenden
 Subjekte. Sie erbringt keinen Vollständigkeitsnachweis.
