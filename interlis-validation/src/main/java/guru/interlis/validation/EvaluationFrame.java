@@ -54,6 +54,11 @@ record EvaluationFrame(ValidationPlan plan, TransferValue current, boolean parti
                 activeDerivations, dataset, parents, sets, row);
     }
 
+    EvaluationFrame withParents(List<TransferValue.Structured> ancestry) {
+        return new EvaluationFrame(plan, current, partial, visit, objectCount, cancellation, activeDerivations,
+                dataset, ancestry, populations, row);
+    }
+
     EvaluationFrame withRow(ViewRow currentRow) {
         return new EvaluationFrame(plan, current, partial, visit, objectCount, cancellation, activeDerivations,
                 dataset, parents, populations, Optional.of(currentRow));

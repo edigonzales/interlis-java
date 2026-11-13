@@ -175,6 +175,9 @@ public final class ValidationPlanner {
             var views = profile == ValidationProfile.DATASET ? ViewPlanner.compile(graph) : Map.<SymbolId, ViewPlan>of();
             if (profile == ValidationProfile.DATASET) {
                 for (var view : views.values()) {
+                    if (view.formation() instanceof guru.interlis.model.ViewSymbol.Aggregation aggregation) {
+                        aggregation.equal().forEach(this::datasetExpression);
+                    }
                     view.inheritance().forEach(ancestor -> ancestor.selections().forEach(this::datasetExpression));
                     for (var constraint : view.constraints()) {
                         if (constraint.definition() instanceof MandatoryConstraint mandatory) {

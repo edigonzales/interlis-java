@@ -87,7 +87,7 @@ final class DatasetRuleTestSupport {
         }
     }
 
-    private static TransferReader reader(ValidationPlan plan, String baskets) {
+    static TransferReader reader(ValidationPlan plan, String baskets) {
         boolean ili23 = plan.transferPlan().model(plan.rootModels().getFirst()).orElseThrow().languageVersion()
                 == LanguageVersion.ILI23;
         var xtf = (ili23 ? """

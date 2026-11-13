@@ -8,9 +8,15 @@ import java.util.Map;
 
 /** Virtual row identity comes from its view and ordered real occurrences. */
 record ViewRow(SymbolId view, Map<SymbolId, TransferValue.Structured> bases,
-               List<DatasetRuleContext.Occurrence> origins) {
+               List<DatasetRuleContext.Occurrence> origins, List<TransferValue.Structured> parents,
+               java.util.OptionalLong groupSize) {
+    ViewRow(SymbolId view, Map<SymbolId, TransferValue.Structured> bases, List<DatasetRuleContext.Occurrence> origins) {
+        this(view, bases, origins, List.of(), java.util.OptionalLong.empty());
+    }
+
     ViewRow {
         bases = Map.copyOf(bases);
         origins = List.copyOf(origins);
+        parents = List.copyOf(parents);
     }
 }

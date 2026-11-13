@@ -87,6 +87,14 @@ final class ExpressionEvaluator {
         var plan = frame.plan();
         var function = (FunctionSymbol) call.targetFunction().flatMap(plan::symbol).orElseThrow();
         var standard = StandardFunctions.bind(function).orElse(null);
+        if (standard == StandardFunctions.ELEMENT_COUNT && frame.row().isPresent()
+                && frame.row().orElseThrow().groupSize().isPresent()
+                && program.nodes().get(call.children().getFirst()) instanceof PathExpression path
+                && path.path().steps().getLast() instanceof PathStep.AttributeStep step
+                && plan.symbol(step.target()).filter(symbol -> symbol.name().value().equals("AGGREGATES")).isPresent()) {
+            frame.visit().run();
+            return StandardFunctions.count(frame.row().orElseThrow().groupSize().orElseThrow());
+        }
         if (standard == StandardFunctions.OBJECT_COUNT
                 && program.nodes().get(call.children().getFirst()) instanceof ObjectSetExpression set) {
             frame.visit().run();

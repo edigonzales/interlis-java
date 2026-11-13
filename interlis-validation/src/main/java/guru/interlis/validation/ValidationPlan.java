@@ -103,6 +103,11 @@ public final class ValidationPlan {
         return datasetRules.stream().map(DatasetRulePlan::key).toList();
     }
 
+    Optional<guru.interlis.model.PathExpression> boundPath(ExpressionId id) {
+        return graph.expression(id).filter(guru.interlis.model.PathExpression.class::isInstance)
+                .map(guru.interlis.model.PathExpression.class::cast);
+    }
+
     Map<SymbolId, ViewPlan> views() {
         return views;
     }

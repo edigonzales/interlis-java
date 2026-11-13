@@ -13,6 +13,7 @@ import java.util.function.Consumer;
 
 final class ViewExecutor {
     private final DatasetRuleContext dataset;
+    private int groupRun;
 
     ViewExecutor(DatasetRuleContext dataset) {
         this.dataset = dataset;
@@ -75,7 +76,14 @@ final class ViewExecutor {
         switch (view.formation()) {
             case ViewSymbol.Projection projection -> base(view, projection.base(), selected, undecided, depth);
             case ViewSymbol.Union union -> union.bases().forEach(base -> base(view, base, selected, undecided, depth));
-            default -> { }
+            case ViewSymbol.Join join -> join(view, join, 0, new ViewRow(view.view().id(), Map.of(), List.of()),
+                    selected, undecided, depth);
+            case ViewSymbol.Aggregation aggregate -> aggregate(view, aggregate, selected, undecided, depth);
+            case ViewSymbol.Inspection inspection -> {
+                if (!inspection.area()) {
+                    inspect(view, inspection, selected, undecided, depth);
+                }
+            }
         }
     }
 
@@ -115,6 +123,128 @@ final class ViewExecutor {
         });
     }
 
+    private void join(ViewPlan view, ViewSymbol.Join join, int position, ViewRow prefix, Consumer<ViewRow> consumer,
+                      java.util.function.BiConsumer<ViewRow, EvaluationResult> undecided, int depth) {
+        dataset.visit();
+        if (position > 128) {
+            throw new ValidationLimitException("Join arity exceeds the validation depth budget");
+        }
+        if (position == join.bases().size()) {
+            consumer.accept(prefix);
+            return;
+        }
+        var base = join.bases().get(position);
+        var binding = (ViewSymbol.Base) dataset.plan.symbol(base).orElseThrow();
+        var matched = new boolean[1];
+        base(view, base, next -> {
+            matched[0] = true;
+            var values = new LinkedHashMap<>(prefix.bases());
+            values.putAll(next.bases());
+            var origins = new java.util.ArrayList<>(prefix.origins());
+            origins.addAll(next.origins());
+            join(view, join, position + 1, new ViewRow(view.view().id(), values, origins), consumer, undecided, depth);
+        }, undecided, depth);
+        if (!matched[0] && binding.orNull() && !prefix.origins().isEmpty()) {
+            if (dataset.populationClosed(dataset.plan.ref(binding.target()))) {
+                join(view, join, position + 1, prefix, consumer, undecided, depth);
+            } else {
+                undecided.accept(prefix, EvaluationResult.MissingContext.POPULATION);
+            }
+        }
+    }
+
+    private void aggregate(ViewPlan view, ViewSymbol.Aggregation aggregate, Consumer<ViewRow> consumer,
+                           java.util.function.BiConsumer<ViewRow, EvaluationResult> undecided, int depth) {
+        int run = ++groupRun;
+        var prefix = java.nio.ByteBuffer.allocate(1 + Integer.BYTES).put((byte) 8).putInt(run).array();
+        var upper = java.nio.ByteBuffer.allocate(1 + Integer.BYTES).put((byte) 8).putInt(run + 1).array();
+        base(view, aggregate.base(), row -> {
+            var origin = row.origins().getFirst();
+            var semantics = dataset.semantics(origin);
+            var keys = new java.util.ArrayList<CanonicalKey>();
+            for (var id : aggregate.equal()) {
+                var program = dataset.program(id);
+                if (program.isEmpty()) {
+                    undecided.accept(row, EvaluationResult.Unsupported.INSTANCE);
+                    return;
+                }
+                var expression = program.orElseThrow();
+                var result = expression.evaluate(frame(row));
+                if (result instanceof EvaluationResult.UndefinedByData) {
+                    keys.add(new CanonicalKey(new byte[0]));
+                    continue;
+                }
+                var type = dataset.plan.effectiveType(expression.expression().typeId()).orElseThrow();
+                if (!(semantics.key(result, type) instanceof ValueSemantics.Known key)) {
+                    undecided.accept(row, result instanceof EvaluationResult.MissingContext
+                            ? result : EvaluationResult.Unsupported.INSTANCE);
+                    return;
+                }
+                keys.add(key.key());
+            }
+            var encoded = semantics.tuple(keys).bytes();
+            var key = java.nio.ByteBuffer.allocate(prefix.length + encoded.length).put(prefix).put(encoded).array();
+            var old = dataset.keys.get(key).map(java.nio.ByteBuffer::wrap);
+            long count = old.map(java.nio.ByteBuffer::getLong).orElse(0L);
+            long representative = old.map(java.nio.ByteBuffer::getLong).orElse(origin.handle().ordinal());
+            dataset.keys.put(key, java.nio.ByteBuffer.allocate(2 * Long.BYTES).putLong(Math.addExact(count, 1))
+                    .putLong(representative).array());
+        }, undecided, depth);
+        try (var cursor = dataset.keys.scan(prefix, java.util.Optional.of(upper))) {
+            for (var entry = cursor.next(); entry.isPresent(); entry = cursor.next()) {
+                dataset.visit();
+                var data = java.nio.ByteBuffer.wrap(entry.orElseThrow().value());
+                var count = data.getLong();
+                var representative = dataset.occurrence(new ObjectHandle(data.getLong()));
+                consumer.accept(new ViewRow(view.view().id(), Map.of(aggregate.base(), representative.object().data()),
+                        List.of(representative), List.of(), OptionalLong.of(count)));
+            }
+        }
+    }
+
+    private void inspect(ViewPlan view, ViewSymbol.Inspection inspection, Consumer<ViewRow> consumer,
+                         java.util.function.BiConsumer<ViewRow, EvaluationResult> undecided, int depth) {
+        var path = dataset.plan.boundPath(inspection.path()).orElseThrow();
+        base(view, inspection.base(), row -> {
+            var origin = row.origins().getFirst();
+            inspectPath(row, inspection.base(), row.bases().get(inspection.base()), path.path().steps(),
+                    0, List.of(), frame(row).withCurrent(origin.object().data()), consumer, undecided);
+        }, undecided, depth);
+    }
+
+    private void inspectPath(ViewRow row, SymbolId base, TransferValue current, List<guru.interlis.model.PathStep> steps,
+                             int position, List<TransferValue.Structured> parents, EvaluationFrame frame,
+                             Consumer<ViewRow> consumer,
+                             java.util.function.BiConsumer<ViewRow, EvaluationResult> undecided) {
+        dataset.visit();
+        if (position > 128 || parents.size() > 128) {
+            throw new ValidationLimitException("Inspection path exceeds the validation depth budget");
+        }
+        if (current instanceof TransferValue.Repeated repeated) {
+            for (var member : repeated.values()) {
+                inspectPath(row, base, member, steps, position, parents, frame, consumer, undecided);
+            }
+        } else if (current instanceof TransferValue.Structured structure) {
+            if (position == steps.size()) {
+                consumer.accept(new ViewRow(row.view(), Map.of(base, structure), row.origins(), parents, OptionalLong.empty()));
+            } else if (steps.get(position) instanceof guru.interlis.model.PathStep.AttributeStep attribute) {
+                var result = ExpressionEvaluator.attribute(frame.withCurrent(structure), structure, attribute.target());
+                if (result instanceof EvaluationResult.Known known) {
+                    var next = new java.util.ArrayList<>(parents);
+                    next.add(structure);
+                    inspectPath(row, base, known.value(), steps, position + 1, next, frame, consumer, undecided);
+                } else if (!(result instanceof EvaluationResult.UndefinedByData)) {
+                    undecided.accept(row, result);
+                }
+            } else if (steps.get(position) instanceof guru.interlis.model.PathStep.ThisStep
+                    || steps.get(position) instanceof guru.interlis.model.PathStep.ViewBaseStep) {
+                inspectPath(row, base, current, steps, position + 1, parents, frame, consumer, undecided);
+            } else {
+                undecided.accept(row, EvaluationResult.Unsupported.INSTANCE);
+            }
+        }
+    }
+
     private TransferValue.Structured materialize(ViewPlan view, ViewRow row) {
         var result = new LinkedHashMap<guru.interlis.model.SymbolRef, TransferValue>();
         var frame = frame(row);
@@ -134,6 +264,7 @@ final class ViewExecutor {
         var origin = row.origins().getFirst();
         var data = new TransferValue.Structured(dataset.plan.ref(row.view()), Map.of());
         return new EvaluationFrame(dataset.plan, data, origin.partial(), dataset::visit, OptionalLong.empty(),
-                dataset.cancellation()).withDataset(new DatasetPathContext(dataset, origin)).withRow(row);
+                dataset.cancellation()).withDataset(new DatasetPathContext(dataset, origin)).withRow(row)
+                .withParents(row.parents());
     }
 }
