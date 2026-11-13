@@ -47,8 +47,10 @@ class CurveValidityTest {
         assertEquals(List.of(GEOMETRY_INTERIOR_DISCONNECTED),
                 check(new Surface(shell, List.of(cut)), GeometryKind.SURFACE, true, false).codes());
         var outside = ring("9,0", "10,0", "10,2", "9,2", "9,0");
-        assertEquals(List.of(GEOMETRY_HOLE_OUTSIDE_SHELL),
-                check(new Surface(shell, List.of(outside)), GeometryKind.SURFACE, true, false).codes());
+        var outcome = check(new Surface(shell, List.of(outside)), GeometryKind.SURFACE, true, false);
+        assertEquals(List.of(GEOMETRY_HOLE_OUTSIDE_SHELL), outcome.codes());
+        assertEquals(1, ((DataLocation.GeometryComponent) outcome.findings().getFirst()
+                .relatedData().orElseThrow().path().getLast()).position());
     }
 
     @Test
@@ -62,7 +64,14 @@ class CurveValidityTest {
         assertEquals(VALID, check(new Surface(circle, List.of(hole)), GeometryKind.SURFACE, true, false).status());
         var first = new Surface(ring("0,0", "2,0", "2,2", "0,2", "0,0"), List.of());
         var second = new Surface(ring("2,0", "4,0", "4,2", "2,2", "2,0"), List.of());
-        assertEquals(INVALID, check(new MultiSurface(List.of(first, second)), GeometryKind.MULTISURFACE, true, false).status());
+        var adjacent = check(new MultiSurface(List.of(first, second)), GeometryKind.MULTISURFACE, true, false);
+        assertEquals(INVALID, adjacent.status());
+        assertEquals(List.of(GEOMETRY_BOUNDARY_MISMATCH), adjacent.codes());
+        assertTrue(adjacent.findings().getFirst().relatedData().isPresent());
+        var crossing = new Surface(ring("1,-1", "3,-1", "3,1", "1,1", "1,-1"), List.of());
+        var intersecting = check(new MultiSurface(List.of(first, crossing)), GeometryKind.MULTISURFACE, true, false);
+        assertEquals(List.of(GEOMETRY_AREA_OVERLAP, GEOMETRY_AREA_OVERLAP), intersecting.codes());
+        assertTrue(intersecting.findings().stream().allMatch(f -> f.relatedData().isPresent()));
     }
 
     @Test
@@ -80,7 +89,11 @@ class CurveValidityTest {
                 check(outside, GeometryKind.POLYLINE, true, false).codes());
     }
 
-    private record Outcome(GeometryEngine.Check status, List<ValidationCode> codes) {}
+    private record Outcome(GeometryEngine.Check status, List<GeometryEngine.Finding> findings) {
+        List<ValidationCode> codes() {
+            return findings.stream().map(GeometryEngine.Finding::code).toList();
+        }
+    }
 
     private static Outcome check(TransferGeometry value, GeometryKind kind, boolean simple, boolean partial) {
         var type = new GeometryType(new TypeId("test"), new Origin.PredefinedOrigin(LanguageVersion.ILI24, "test"),
@@ -89,9 +102,9 @@ class CurveValidityTest {
                 Optional.empty(), Optional.empty(), List.of());
         var input = new GeometryEngine.Input(value, type, location, LanguageVersion.ILI24,
                 Optional.of(new BigDecimal("0.001")), Optional.of(new BigDecimal("0.001")), partial);
-        var codes = new ArrayList<ValidationCode>();
-        var control = new GeometryEngine.Control(() -> {}, finding -> codes.add(finding.code()));
-        return new Outcome(JtsGeometryEngine.standard().checkValue(input, control), List.copyOf(codes));
+        var findings = new ArrayList<GeometryEngine.Finding>();
+        var control = new GeometryEngine.Control(() -> {}, findings::add);
+        return new Outcome(JtsGeometryEngine.standard().checkValue(input, control), List.copyOf(findings));
     }
 
     private static Ring ring(String... points) {

@@ -243,7 +243,7 @@ public final class ValidationSession implements AutoCloseable {
         var key = new SlotKey(owner, slot, TOPOLOGY);
         if (!(result instanceof EvaluationResult.Known known && known.value() instanceof TransferGeometry value)) {
             if (!(result instanceof EvaluationResult.UndefinedByData)) {
-                missingRuntime.merge(key, 1L, Math::addExact);
+                (result instanceof EvaluationResult.Unsupported ? unsupported : missingRuntime).merge(key, 1L, Math::addExact);
             }
             return;
         }

@@ -80,11 +80,6 @@ final class CurveValidity {
         if (status != VALID) {
             return;
         }
-        if (segments.stream().flatMap(List::stream).noneMatch(segment -> segment.curve() instanceof CircularArc)) {
-            checkLinearSurface(surface, segments);
-            return;
-        }
-
         // A cycle of boundary contacts cuts off part of the surface interior.
         int[] connected = new int[rings.size()];
         for (int i = 0; i < connected.length; i++) {
@@ -110,6 +105,10 @@ final class CurveValidity {
                     invalid(rings.get(i).path(), rings.get(j).path(), GEOMETRY_HOLE_OUTSIDE_SHELL, "Holes are nested");
                 }
             }
+        }
+        if (status == VALID && segments.stream().flatMap(List::stream)
+                .noneMatch(segment -> segment.curve() instanceof CircularArc)) {
+            checkLinearSurface(surface, segments);
         }
     }
 
@@ -227,7 +226,10 @@ final class CurveValidity {
                     }
                 }
                 if (conflicts(left.curve(), right.curve(), result.hits(), allowed)) {
-                    invalid(right.path(), left.path(), code, "Surface boundaries cross or share a segment");
+                    var finding = code == GEOMETRY_AREA_OVERLAP
+                            && result.hits().stream().anyMatch(hit -> hit.kind() == CurveIntersections.Kind.OVERLAP)
+                            ? GEOMETRY_BOUNDARY_MISMATCH : code;
+                    invalid(right.path(), left.path(), finding, "Surface boundaries cross or share a segment");
                 }
             }
         }
@@ -294,7 +296,7 @@ final class CurveValidity {
                 boundaryContacts(flat(a), flat(b), GEOMETRY_AREA_OVERLAP);
             }
         }
-        if (within(first, second) || within(second, first)) {
+        if (status != INVALID && (within(first, second) || within(second, first))) {
             invalid(second.shell().path(), first.shell().path(), GEOMETRY_AREA_OVERLAP, "Surface interiors overlap");
         }
     }

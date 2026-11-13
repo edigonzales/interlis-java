@@ -176,3 +176,8 @@ neutralen Vertrags `GeometryEngine` explizit. Der Vertrag verwendet gebundene
 Geometriewerte, aufgelöste Modellparameter, Datenorte und ein Arbeitsbudget.
 Die vorhandenen lokalen Werteregelprüfungen benötigen keine Engine. Eine
 Geometrieoperation ohne erforderliche Engine oder Parameter bleibt ungeprüft.
+
+Die unveröffentlichte API 0.10 umfasst auch die neue Record-Komponente
+`ValidationDiagnostic.relatedData()` für den zweiten Datenort paarweiser
+Geometriebefunde. Record-Patterns für `ValidationDiagnostic` müssen
+die zusätzliche Komponente aufnehmen.
