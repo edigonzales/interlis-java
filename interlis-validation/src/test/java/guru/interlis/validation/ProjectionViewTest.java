@@ -9,6 +9,34 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ProjectionViewTest {
     @Test
+    void followsAReferenceComputedByAnAliasedProjection() {
+        var plan = plan("""
+                CLASS Target = amount: 0..10; END Target;
+                STRUCTURE Link = target: REFERENCE TO Target; END Link;
+                CLASS Item = link: Link; END Item;
+                VIEW SourceView PROJECTION OF renamed~Item; =
+                  computed := renamed->link->target;
+                END SourceView;
+                VIEW Result PROJECTION OF src~SourceView; =
+                  MANDATORY CONSTRAINT DEFINED(src->computed->amount);
+                END Result;
+                """);
+        for (var target : List.of(
+                "<Target i:tid='target'><amount>5</amount></Target>",
+                "<Target i:tid='target'/>", "")) {
+            var report = validate(plan, List.of("Item", "Target"), primary("p", basket("basket", """
+                    <Item i:tid='item'><link><Link><target i:ref='target'/></Link></link></Item>
+                    """ + target)));
+            var falseConstraints = report.examples().stream()
+                    .filter(diagnostic -> diagnostic.code() == ValidationCode.MANDATORY_CONSTRAINT_FALSE).count();
+            assertEquals(target.contains("<amount>") || target.isEmpty() ? 0 : 1, falseConstraints,
+                    report.examples().toString());
+            assertEquals(target.isEmpty() ? ValidationCoverage.ConstraintStatus.MISSING_RUNTIME_CONTEXT
+                    : ValidationCoverage.ConstraintStatus.CHECKED, report.coverage().constraints().getFirst().status());
+        }
+    }
+
+    @Test
     void keepsUnavailableDerivedValuesAcrossProjectionBoundaries() {
         var plan = plan("""
                 FUNCTION label(value: TEXT): TEXT;

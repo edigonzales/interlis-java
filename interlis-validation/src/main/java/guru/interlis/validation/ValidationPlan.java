@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /** Immutable and shareable rules for one checked schema revision. */
 public final class ValidationPlan {
@@ -33,6 +34,8 @@ public final class ValidationPlan {
     private final Map<SymbolRef, ObjectValidationPlan> objects;
     private final Map<ExpressionId, Optional<ExpressionProgram>> expressions;
     private final boolean relationPaths;
+    private final Set<ExpressionId> deferredExpressions;
+    private final Set<SymbolId> deferredAttributes;
     private final Map<SymbolId, ViewPlan> views;
     private final List<UncheckedRuleInfo> uncheckedRules;
     private final ValidationProfile profile;
@@ -55,6 +58,18 @@ public final class ValidationPlan {
         this.expressions = Map.copyOf(expressions);
         this.relationPaths = this.expressions.values().stream().flatMap(Optional::stream)
                 .anyMatch(program -> program.requirements().relationPathRequired());
+        var deferred = new java.util.HashSet<ExpressionId>();
+        var attributes = new java.util.HashSet<SymbolId>();
+        if (profile == ValidationProfile.DATASET) {
+            this.expressions.values().stream().flatMap(Optional::stream)
+                    .filter(program -> requiresDataset(program, new java.util.HashSet<>()))
+                    .forEach(program -> deferred.add(program.root()));
+            graph.symbols().stream().filter(AttributeSymbol.class::isInstance).map(Symbol::id)
+                    .filter(id -> attributeDependsOnDataset(id, new java.util.HashSet<>()))
+                    .forEach(attributes::add);
+        }
+        this.deferredExpressions = Set.copyOf(deferred);
+        this.deferredAttributes = Set.copyOf(attributes);
         this.profile = profile;
         this.bindings = bindings;
         this.datasetRules = List.copyOf(datasetRules);
@@ -233,11 +248,11 @@ public final class ValidationPlan {
     }
 
     boolean hasDeferredPaths() {
-        return expressions.values().stream().flatMap(Optional::stream).anyMatch(this::requiresDataset);
+        return !deferredExpressions.isEmpty();
     }
 
     boolean requiresDataset(ExpressionProgram program) {
-        return requiresDataset(program, new java.util.HashSet<>());
+        return deferredExpressions.contains(program.root());
     }
 
     private boolean requiresDataset(ExpressionProgram program, java.util.Set<ExpressionId> seen) {
@@ -255,7 +270,7 @@ public final class ValidationPlan {
     }
 
     boolean derivedNeedsDataset(SymbolId attribute) {
-        return attributeDependsOnDataset(attribute, new java.util.HashSet<>());
+        return deferredAttributes.contains(attribute);
     }
 
     private boolean attributeDependsOnDataset(SymbolId target, java.util.Set<ExpressionId> seen) {

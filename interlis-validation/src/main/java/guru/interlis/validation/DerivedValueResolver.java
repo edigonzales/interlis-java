@@ -56,7 +56,9 @@ final class DerivedValueResolver {
             if (program.isEmpty()) {
                 return EvaluationResult.Unsupported.INSTANCE;
             }
-            var candidate = program.orElseThrow().evaluate(frame);
+            var expression = program.orElseThrow();
+            var candidate = frame.plan().valueType(attribute.id()).orElse(null) instanceof guru.interlis.model.ReferenceType
+                    ? new ExpressionEvaluator(expression).evaluateKey(frame) : expression.evaluate(frame);
             if (!(candidate instanceof UndefinedByData)) {
                 return candidate;
             }

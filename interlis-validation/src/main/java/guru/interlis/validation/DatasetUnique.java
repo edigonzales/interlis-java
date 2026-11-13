@@ -130,7 +130,10 @@ final class DatasetUnique {
         ValueSemantics.Gap issue = null;
         for (var field : fields) {
             var type = context.valueType(field, occurrence);
-            switch (semantics.key(context.evaluateKey(field, occurrence), type)) {
+            var result = context.evaluateKey(field, occurrence);
+            var keySemantics = result instanceof EvaluationResult.Known known && known.referenceOrigin().isPresent()
+                    ? context.semantics(known.referenceOrigin().orElseThrow().occurrence()) : semantics;
+            switch (keySemantics.key(result, type)) {
                 case ValueSemantics.Gap.UNDEFINED -> { counts.evaluations++; return; }
                 case ValueSemantics.Gap gap -> issue = gap;
                 case ValueSemantics.Known known -> parts.add(known.key());

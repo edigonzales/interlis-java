@@ -9,6 +9,27 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class AggregationViewTest {
     @Test
+    void retainsTheComputedBaseOfAnAggregation() {
+        var plan = plan("""
+                CLASS Item = key: 0..10; END Item;
+                VIEW Keys PROJECTION OF item~Item; =
+                  computed := item->key + 1;
+                END Keys;
+                VIEW Grouped AGGREGATION OF keys~Keys EQUAL (keys->computed); =
+                  MANDATORY CONSTRAINT keys->computed == 2 AND INTERLIS.elementCount(AGGREGATES) == 2;
+                END Grouped;
+                """);
+        var report = validate(plan, List.of("Item"), primary("p", basket("basket", """
+                <Item i:tid='first'><key>1</key></Item>
+                <Item i:tid='second'><key>1</key></Item>
+                <Item i:tid='wrong'><key>2</key></Item>
+                """)));
+        assertEquals(1, report.detectedViolations(), report.examples().toString());
+        assertEquals("wrong", report.examples().getFirst().data().tid().orElseThrow().value());
+        assertEquals(2, report.coverage().constraints().getFirst().occurrences());
+    }
+
+    @Test
     void groupsByExactKeysAndCountsAMultiObjectGroup() {
         var plan = plan("""
                 CLASS Item = key: 0.0..10.0; END Item;

@@ -376,12 +376,13 @@ final class ExpressionEvaluator {
                     && read.value() instanceof TransferValue.Reference reference
                     && frame.plan().valueType(attribute.target()).orElse(null) instanceof ReferenceType type) {
                 if (terminalIdentity && step == expression.path().steps().getLast()) {
-                    return current;
+                    return new Known(reference, read.referenceOrigin().or(frame::dataset));
                 }
-                if (frame.dataset().isEmpty()) {
+                var origin = read.referenceOrigin().or(frame::dataset);
+                if (origin.isEmpty()) {
                     return MissingContext.DATASET_REFERENCE;
                 }
-                var dataset = frame.dataset().orElseThrow();
+                var dataset = origin.orElseThrow();
                 var resolved = dataset.resolve(reference, type);
                 if (resolved instanceof ReferenceResolver.Found found) {
                     var target = dataset.target(found.target());

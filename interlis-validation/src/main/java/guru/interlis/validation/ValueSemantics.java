@@ -66,7 +66,10 @@ final class ValueSemantics {
             case EvaluationResult.UndefinedByData ignored -> Gap.UNDEFINED;
             case EvaluationResult.BlockedByViolation ignored -> Gap.INVALID_VALUE;
             case EvaluationResult.MissingContext ignored -> Gap.MISSING_CONTEXT;
-            case EvaluationResult.Unsupported _, EvaluationResult.KnownNumber _, EvaluationResult.KnownObjects _ -> Gap.UNSUPPORTED;
+            case EvaluationResult.KnownNumber number -> number.value().decimal()
+                    .<Result>map(value -> encode(new TransferValue.NumberValue(value.toString(), value), type, 0))
+                    .orElse(Gap.UNSUPPORTED);
+            case EvaluationResult.Unsupported _, EvaluationResult.KnownObjects _ -> Gap.UNSUPPORTED;
             case EvaluationResult.Known known -> encode(known.value(), type, 0);
         };
     }
