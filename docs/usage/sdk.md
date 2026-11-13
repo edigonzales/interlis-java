@@ -34,7 +34,7 @@ mit SDK 0.4 eingeführt.
 | Vertrag | Wert | Bedeutung |
 |---|---|---|
 | Werkzeug und Artefakte | `0.2.0-SNAPSHOT` | Entwicklungsstand der ausgelieferten Module |
-| Öffentliche Java-API | `0.9` | Öffentliche Packages und Typen von `guru.interlis` |
+| Öffentliche Java-API | `0.10` | Öffentliche Packages und Typen von `guru.interlis` |
 | Diagnosekatalog | `interlis-diagnostics/v4` | Stabile Diagnosecodes und typisierte Argumente |
 | Bridge | `interlis.compiler/1.0` | Nachrichtenhülle, Ergebnisse und Abfragen |
 | Quellformatierung | `2.0` | Formatierungsoptionen und Ergebnisvertrag |
@@ -154,7 +154,7 @@ ausgewertet. Befunde an Sichtbedingungen enthalten den Modellort der
 Bedingung und den Datenort der zugrunde liegenden Lieferung.
 
 
-### Validator und Datensatzlauf (API 0.9)
+### Validator und Datensatzlauf
 
 `ValidationPlanner.plan(transferPlan, profile, bindings)` verwendet die
 ursprüngliche Schemainstanz des Transferplans. Datensatz-Reader verwenden

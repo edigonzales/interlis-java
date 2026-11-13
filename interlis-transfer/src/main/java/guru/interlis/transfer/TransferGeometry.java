@@ -109,6 +109,22 @@ public sealed interface TransferGeometry extends TransferValue
         }
     }
 
+    /** The interpretation of a supplied radius, independent of its validity. */
+    enum RadiusConvention {
+        /** Positive denotes clockwise traversal, negative denotes counterclockwise traversal. */
+        SIGNED_CLOCKWISE,
+        /** A positive magnitude with the arc selected by its intermediate position. */
+        POSITIVE_SELECTED_BY_SUPPORT
+    }
+
+    /** Exact supplied radius in coordinate units and its non-null interpretation. */
+    record ArcRadius(NumberValue sourceValue, RadiusConvention convention) {
+        public ArcRadius {
+            Objects.requireNonNull(sourceValue, "sourceValue");
+            Objects.requireNonNull(convention, "convention");
+        }
+    }
+
     /** A straight or circular segment within a curve part. */
     sealed interface Segment permits Straight, Arc {
         /** Returns the exact end position with its supplied dimension. */
@@ -124,10 +140,10 @@ public sealed interface TransferGeometry extends TransferValue
 
     /**
      * A circular segment with a two-dimensional intermediate position and a
-     * two- or three-dimensional end. An optional numeric radius retains its
-     * supplied sign, including the direction encoded by an INTERLIS 2.3 radius.
+     * two- or three-dimensional end. The optional radius preserves the supplied
+     * number and the convention of its source encoding.
      */
-    record Arc(Coordinate support, Coordinate end, Optional<NumberValue> radius) implements Segment {
+    record Arc(Coordinate support, Coordinate end, Optional<ArcRadius> radius) implements Segment {
         public Arc {
             Objects.requireNonNull(support, "support");
             Objects.requireNonNull(end, "end");

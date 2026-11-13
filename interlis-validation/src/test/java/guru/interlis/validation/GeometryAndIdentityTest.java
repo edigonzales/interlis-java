@@ -189,7 +189,7 @@ class GeometryAndIdentityTest {
                 List.of(new TransferGeometry.Straight(coord("11", "1"))))));
         var arc = new TransferGeometry.Polyline(List.of(new TransferGeometry.CurvePart(from, List.of(
                 new TransferGeometry.Arc(coord("0.0001", "0.98765"), coord("1", "1"),
-                        Optional.of(number("-3.50")))))));
+                        Optional.of(new TransferGeometry.ArcRadius(number("-3.50"), TransferGeometry.RadiusConvention.SIGNED_CLOCKWISE)))))));
         var values = Map.<SymbolRef, TransferValue>of(
                 fixture.field("point"), coord("0", "0", "0"),
                 fixture.field("many"), new TransferGeometry.MultiCoordinate(List.of(

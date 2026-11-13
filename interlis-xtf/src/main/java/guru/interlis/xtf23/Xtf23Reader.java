@@ -629,7 +629,7 @@ public final class Xtf23Reader extends TransferReader {
         attributes(false);
         var end = readPosition("C", dimensions);
         var support = readPosition("A", 2);
-        Optional<TransferValue.NumberValue> radius = Optional.empty();
+        Optional<TransferGeometry.ArcRadius> radius = Optional.empty();
         int token = xml.nextTag();
         if (is(START_ELEMENT, token, "R")) {
             attributes(false);
@@ -637,7 +637,7 @@ public final class Xtf23Reader extends TransferReader {
             if (value.exactValue().signum() == 0) {
                 throw xml.error(INVALID_WIRE, "XTF ARC radius must be nonzero");
             }
-            radius = Optional.of(value);
+            radius = Optional.of(new TransferGeometry.ArcRadius(value, TransferGeometry.RadiusConvention.SIGNED_CLOCKWISE));
             token = xml.nextTag();
         }
         require(END_ELEMENT, token, "ARC");

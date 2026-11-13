@@ -88,12 +88,10 @@ class Xtf24GeometryTest {
         var value = assertInstanceOf(Arc.class, line.parts().getFirst().segments().getLast());
         assertEquals(List.of("1.11000", "2.000"), lexemes(value.support()));
         assertEquals(List.of("2.01", "3.002"), lexemes(value.end()));
-        assertEquals(new NumberValue("0.00", new BigDecimal("0.00")), value.radius().orElseThrow());
-        var xml = parsed(write(plan, events));
-        var encoded = (Element) xml.getElementsByTagNameNS(GEOM, "arc").item(0);
-        assertEquals(List.of("c1", "c2", "a1", "a2", "r"), children(encoded).stream().map(Element::getLocalName).toList());
-        assertEquals("0.00", children(encoded).getLast().getTextContent());
-        assertEquals(events, read(plan, write(plan, events)));
+        assertEquals(new NumberValue("0.00", new BigDecimal("0.00")), value.radius().orElseThrow().sourceValue());
+        assertEquals(RadiusConvention.POSITIVE_SELECTED_BY_SUPPORT, value.radius().orElseThrow().convention());
+        assertEquals(Xtf24Exception.Reason.UNSUPPORTED,
+                assertThrows(Xtf24Exception.class, () -> write(plan, events)).reason());
 
         for (String radius : List.of("<g:r>+2.001e-1</g:r>", "")) {
             var other = read(plan, transfer("<line>" + line(point("0", "0"),
@@ -106,7 +104,7 @@ class Xtf24GeometryTest {
         var negative = read(plan, transfer("<line>" + line(point("0", "0"), arc.replace("0.00</g:r>", "-2.00</g:r>"))
                 + "</line>", false));
         var negativeArc = (Arc) ((Polyline) field(negative, "line")).parts().getFirst().segments().getFirst();
-        assertEquals("-2.00", negativeArc.radius().orElseThrow().lexeme());
+        assertEquals("-2.00", negativeArc.radius().orElseThrow().sourceValue().lexeme());
         assertEquals(Xtf24Exception.Reason.UNSUPPORTED,
                 assertThrows(Xtf24Exception.class, () -> write(plan, negative)).reason());
     }

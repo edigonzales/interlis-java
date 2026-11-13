@@ -21,6 +21,7 @@ Die zugehörigen POMs beschreiben die konkreten Abhängigkeiten und Scopes.
 | `interlis-projection` | compiler, model | Diagramm-DTOs, Dokumentationsprojektion und Rendering |
 | `interlis-transfer` | model | Formatunabhängige Transferpläne, Objektwerte und Streaming-Protokoll |
 | `interlis-validation` | model, transfer | Revisionsgebundener Regelplan sowie lokale und datensatzweite Validierung neutraler Transferereignisse |
+| `interlis-validation-jts` | validation, JTS | Optionales JVM-Modul für analytische Geometrieoperationen |
 | `interlis-validation-mvstore` | validation, H2 MVStore | Optionaler JVM-Speicher für einen Datensatzlauf |
 | `interlis-xtf` | transfer, model | XML-Adapter für XTF 2.3 und 2.4 |
 | `interlis-compiler-cli` | compiler, model, repository, workspace, projection | CLI, Prozessgrenzen, Präsentation und Ausgabe |
@@ -28,7 +29,7 @@ Die zugehörigen POMs beschreiben die konkreten Abhängigkeiten und Scopes.
 | `interlis-lsp` | workspace, compiler, projection, model, repository | LSP-/Editorhost, Scheduling und Ausgaben |
 | `interlis-wasm-bridge` | workspace, compiler, projection, model | Gemeinsames JSON-Protokoll und Sitzungen |
 
-Alle dreizehn JVM-Module werden über denselben Builder erzeugt. Die
+Alle vierzehn JVM-Module werden über denselben Builder erzeugt. Die
 jeweils ausgewählten JPMS-Closures stehen im
 [Buildvertrag](development/build.md). TeaVM und Web Image verwenden dieselben
 JVM-Laufzeit-JARs aus dem Jenesis-Inventar des aktuellen Checkouts. Der Browserharness prüft den Compiler und zeigt Diagramm-DTOs.

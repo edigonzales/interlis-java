@@ -1,6 +1,8 @@
 package guru.interlis.transfer;
 
 import guru.interlis.transfer.TransferGeometry.Arc;
+import guru.interlis.transfer.TransferGeometry.ArcRadius;
+import guru.interlis.transfer.TransferGeometry.RadiusConvention;
 import guru.interlis.transfer.TransferGeometry.Coordinate;
 import guru.interlis.transfer.TransferGeometry.CurvePart;
 import guru.interlis.transfer.TransferGeometry.MultiCoordinate;
@@ -45,7 +47,7 @@ class TransferGeometryValueTest {
         var support = coordinate("3.00000000001", "1.00000000001");
         var arcEnd = coordinate("2", "2", "3.00");
         var segments = new ArrayList<Segment>(List.of(new Straight(straightEnd),
-                new Arc(support, arcEnd, Optional.of(number("-1.000")))));
+                new Arc(support, arcEnd, Optional.of(new ArcRadius(number("-1.000"), RadiusConvention.SIGNED_CLOCKWISE)))));
         var part = new CurvePart(start, segments);
         segments.clear();
         var next = new CurvePart(coordinate("5", "5", "6.00"), List.of());
@@ -55,14 +57,14 @@ class TransferGeometryValueTest {
 
         assertEquals(List.of(part, next), line.parts());
         assertEquals(start, part.start());
-        assertEquals(List.of(new Straight(straightEnd), new Arc(support, arcEnd, Optional.of(number("-1.000")))),
+        assertEquals(List.of(new Straight(straightEnd), new Arc(support, arcEnd, Optional.of(new ArcRadius(number("-1.000"), RadiusConvention.SIGNED_CLOCKWISE)))),
                 part.segments());
         var arc = (Arc) part.segments().get(1);
         assertEquals(support, arc.support());
         assertEquals(arcEnd, arc.end());
-        assertEquals("-1.000", arc.radius().orElseThrow().lexeme());
-        assertEquals(new BigDecimal("-1.000"), arc.radius().orElseThrow().exactValue());
-        assertEquals(Optional.of(number("1.000")), new Arc(support, arcEnd, Optional.of(number("1.000"))).radius());
+        assertEquals("-1.000", arc.radius().orElseThrow().sourceValue().lexeme());
+        assertEquals(new BigDecimal("-1.000"), arc.radius().orElseThrow().sourceValue().exactValue());
+        assertEquals(Optional.of(new ArcRadius(number("1.000"), RadiusConvention.SIGNED_CLOCKWISE)), new Arc(support, arcEnd, Optional.of(new ArcRadius(number("1.000"), RadiusConvention.SIGNED_CLOCKWISE))).radius());
         assertEquals(Optional.empty(), new Arc(support, arcEnd, Optional.empty()).radius());
         assertEquals(List.of(), next.segments());
         assertThrows(UnsupportedOperationException.class, () -> part.segments().clear());
@@ -143,7 +145,7 @@ class TransferGeometryValueTest {
         assertThrows(IllegalArgumentException.class, () -> coordinate("0"));
         assertThrows(IllegalArgumentException.class, () -> coordinate("0", "0", "1", "1"));
         assertThrows(IllegalArgumentException.class, () -> new Arc(xyz, xy, Optional.empty()));
-        assertEquals(Optional.of(number("0.00")), new Arc(xy, xyz, Optional.of(number("0.00"))).radius());
+        assertEquals(Optional.of(new ArcRadius(number("0.00"), RadiusConvention.SIGNED_CLOCKWISE)), new Arc(xy, xyz, Optional.of(new ArcRadius(number("0.00"), RadiusConvention.SIGNED_CLOCKWISE))).radius());
         var straight = new Straight(xyz);
         var arc = new Arc(xy, xyz, Optional.empty());
         assertEquals(List.of(straight, arc), new CurvePart(xy, List.of(straight, arc)).segments());
