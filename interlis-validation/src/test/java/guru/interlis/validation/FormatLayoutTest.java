@@ -38,7 +38,8 @@ class FormatLayoutTest {
         assertTrue(good.examples().isEmpty(), good.examples().toString());
         assertTrue(good.coverage().unsupportedValues().isEmpty());
         assertEquals(ValidationCoverage.ConstraintStatus.CHECKED, good.coverage().constraints().getFirst().status());
-        for (var bad : List.of("9-3#1.00", "10-1#1.00", "20-8#1.00", "11-3#1.0", "11-3#10.00", "11/3#1.00")) {
+        for (var bad : List.of("9-3#1.00", "10-1#1.00", "20-8#1.00", "11-3#1.0", "11-3#10.00", "11/3#1.00",
+                "010-3#1.00", "+10-3#1.00", "11-3#01.00")) {
             var report = validate(plan, List.of("Item"), primary("p", basket(version, "fail", bad)));
             assertEquals(List.of(ValidationCode.INVALID_FORMATTED_VALUE),
                     report.examples().stream().map(ValidationDiagnostic::code).toList(), bad);

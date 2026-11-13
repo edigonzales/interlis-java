@@ -75,6 +75,7 @@ final class NumericSemantics {
     }
 
     private static final Rational ZERO = Rational.decimal(BigDecimal.ZERO);
+    private static final Rational ONE = Rational.decimal(BigDecimal.ONE);
     private static final Number PI = interval("PI", "3.14159265358979323846264338327950288419716939937510");
     private static final Number LNBASE = interval("LNBASE", "2.71828182845904523536028747135266249775724709369995");
 
@@ -94,6 +95,12 @@ final class NumericSemantics {
     }
 
     static Number add(Number left, Number right) {
+        if (is(left, ZERO)) {
+            return right;
+        }
+        if (is(right, ZERO)) {
+            return left;
+        }
         return new Number(left.lower.add(right.lower), left.upper.add(right.upper), "");
     }
 
@@ -106,6 +113,12 @@ final class NumericSemantics {
     }
 
     static Number multiply(Number left, Number right) {
+        if (is(left, ONE)) {
+            return right;
+        }
+        if (is(right, ONE)) {
+            return left;
+        }
         var first = left.lower.multiply(right.lower);
         var lower = first;
         var upper = first;
@@ -127,6 +140,9 @@ final class NumericSemantics {
         }
         if (denominator.lower.compareTo(ZERO) <= 0 && denominator.upper.compareTo(ZERO) >= 0) {
             throw precisionLimit();
+        }
+        if (is(denominator, ONE)) {
+            return Optional.of(numerator);
         }
         if (sameConstant(numerator, denominator)) {
             return Optional.of(Number.exact(BigDecimal.ONE));
@@ -156,6 +172,10 @@ final class NumericSemantics {
             return false;
         }
         throw precisionLimit();
+    }
+
+    private static boolean is(Number number, Rational value) {
+        return number.exact() && number.lower.equals(value);
     }
 
     private static boolean sameConstant(Number left, Number right) {

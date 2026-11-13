@@ -22,7 +22,9 @@ class NumericEvaluationTest {
                   MANDATORY CONSTRAINT Negation: (0 - amount) < 0;
                   MANDATORY CONSTRAINT Zero: (1/divisor) == UNDEFINED;
                   MANDATORY CONSTRAINT Constants: (PI > 3.14159265358979323846) AND
-                      (LNBASE < 2.71828182845904523537) AND ((PI/PI) == 1);
+                      (LNBASE < 2.71828182845904523537) AND ((PI/PI) == 1) AND
+                      ((PI * 1) == PI) AND ((LNBASE + 0) == LNBASE) AND
+                      ((PI / 1) == PI) AND ((LNBASE - 0) == LNBASE);
                 END Item;
                 """);
         var report = validate(plan, List.of("Item"), primary("p", basket("b", """

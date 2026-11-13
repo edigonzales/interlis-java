@@ -45,7 +45,7 @@ final class FormatRules {
         if (text.length() > MAX_TEXT_LENGTH) {
             throw new ValidationLimitException("Formatted value exceeds the validation length limit");
         }
-        var values = new FormattedValues(symbol -> plan.valueType(symbol).orElse(null), visit);
+        var values = new FormattedValues(symbol -> plan.valueType(symbol).orElse(null), visit, true);
         try {
             var parsed = values.parse(type, text, true);
             parsed.ifPresent(parts -> parts.forEach(ScalarRules::requireNumericBudget));

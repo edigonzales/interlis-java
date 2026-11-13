@@ -12,9 +12,17 @@ public final class FormattedValues {
     private static final String NUMBER = "[+-]?[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?";
     private final Function<SymbolId, TypeDescriptor> typeOf;
     private final Runnable checkWork;
+    private final boolean canonicalTransferLayout;
 
     public FormattedValues(Function<SymbolId, TypeDescriptor> typeOf, Runnable checkWork) {
-        this.typeOf = Objects.requireNonNull(typeOf); this.checkWork = Objects.requireNonNull(checkWork);
+        this(typeOf, checkWork, false);
+    }
+
+    public FormattedValues(Function<SymbolId, TypeDescriptor> typeOf, Runnable checkWork,
+                           boolean canonicalTransferLayout) {
+        this.typeOf = Objects.requireNonNull(typeOf);
+        this.checkWork = Objects.requireNonNull(checkWork);
+        this.canonicalTransferLayout = canonicalTransferLayout;
     }
 
     /** Effective lexicographic component interval, including nested and inherited
@@ -129,7 +137,7 @@ public final class FormattedValues {
                     } else {
                         var attribute = typeOf.apply(part.attribute().orElseThrow());
                         if (!(attribute instanceof NumericType n)) return Optional.empty();
-                        var value = numeric(n.range(), part.width(), field);
+                        var value = numeric(n.range(), part.width(), field, type.predefined().isEmpty());
                         if (value.isEmpty()) return Optional.empty();
                         values.add(value.orElseThrow());
                     }
@@ -189,14 +197,27 @@ public final class FormattedValues {
         } finally { active.remove(type.id()); }
     }
 
-    private Optional<BigDecimal> numeric(NumericRange range, Optional<BigInteger> width, String text) {
+    private Optional<BigDecimal> numeric(NumericRange range, Optional<BigInteger> width, String text, boolean customLayout) {
         checkWork.run();
         int exponentAt = Math.max(text.indexOf('e'), text.indexOf('E'));
         String mantissa = exponentAt < 0 ? text : text.substring(0, exponentAt);
         int dot = mantissa.indexOf('.'); int sign = mantissa.startsWith("-") || mantissa.startsWith("+") ? 1 : 0;
         int integerDigits = (dot < 0 ? mantissa.length() : dot) - sign;
         int fraction = dot < 0 ? 0 : mantissa.length() - dot - 1;
-        if (width.filter(w -> w.compareTo(BigInteger.valueOf(integerDigits)) > 0).isPresent()) return Optional.empty();
+        if (width.filter(w -> w.compareTo(BigInteger.valueOf(integerDigits)) > 0).isPresent()) {
+            return Optional.empty();
+        }
+        if (canonicalTransferLayout && customLayout) {
+            int significantDigits = integerDigits;
+            while (significantDigits > 1 && mantissa.charAt(sign + integerDigits - significantDigits) == '0') {
+                checkWork.run();
+                significantDigits--;
+            }
+            var requiredDigits = width.orElse(BigInteger.ONE).max(BigInteger.valueOf(significantDigits));
+            if (mantissa.startsWith("+") || requiredDigits.compareTo(BigInteger.valueOf(integerDigits)) != 0) {
+                return Optional.empty();
+            }
+        }
         // Abstract components have no precision yet. Their lexical bounds still
         // constrain the mathematical value; specialization supplies precision.
         if (range.minimum().isEmpty() || range.maximum().isEmpty()) {
