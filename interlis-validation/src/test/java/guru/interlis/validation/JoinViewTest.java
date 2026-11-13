@@ -9,6 +9,57 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class JoinViewTest {
     @Test
+    void navigatesSecondAliasAcrossBasketsWithDifferentGenericBindings() {
+        var schema = ValidationPlannerTest.compile("""
+                INTERLIS 2.4;
+                MODEL Checks (en) AT "https://example.org/checks" VERSION "1" =
+                  DOMAIN G (GENERIC) = COORD NUMERIC, NUMERIC;
+                    A = COORD 0.0..100.0, 0.0..100.0;
+                    B = COORD 200.00..300.00, 200.00..300.00;
+                  CONTEXT Choice = G = A OR B;
+                  TOPIC Data =
+                    DEFERRED GENERICS G;
+                    CLASS Group = number: 0..10; END Group;
+                    STRUCTURE Link = group: REFERENCE TO (EXTERNAL) Group; END Link;
+                    CLASS Item = number: 0..10; point: G; link: Link; END Item;
+                    VIEW Pairs JOIN OF a~Item,b~Item;
+                      WHERE a->number < b->number;
+                      =
+                        MANDATORY CONSTRAINT b->link->group->number == b->number;
+                    END Pairs;
+                  END Data;
+                END Checks.
+                """);
+        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(
+                schema, ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
+        var first = """
+                <Data i:bid="first" i:domains="Checks.G=Checks.A">
+                  <Item i:tid="one"><number>1</number><point><g:coord><g:c1>5.0</g:c1><g:c2>5.0</g:c2></g:coord></point>
+                    <link><Link><group i:ref="g1"/></Link></link></Item>
+                  <Group i:tid="g1"><number>1</number></Group>
+                </Data>
+                """;
+        var second = """
+                <Data i:bid="second" i:domains="Checks.G=Checks.B">
+                  <Item i:tid="two"><number>2</number><point><g:coord><g:c1>205.00</g:c1><g:c2>205.00</g:c2></g:coord></point>
+                    <link><Link><group i:ref="g2"/></Link></link></Item>
+                  <Group i:tid="g2"><number>%d</number></Group>
+                </Data>
+                """;
+        for (int target : List.of(2, 3)) {
+            var last = second.formatted(target);
+            for (var baskets : List.of(first + last, last + first)) {
+                var report = validate(plan, List.of("Item", "Group"), primary("p", baskets));
+                assertEquals(target == 2 ? List.of() : List.of(ValidationCode.MANDATORY_CONSTRAINT_FALSE),
+                        report.examples().stream().map(ValidationDiagnostic::code).toList());
+                assertEquals(1, report.coverage().constraints().getFirst().occurrences());
+                assertEquals(ValidationCoverage.ConstraintStatus.CHECKED,
+                        report.coverage().constraints().getFirst().status());
+            }
+        }
+    }
+
+    @Test
     void navigatesRelationshipsFromTheSecondSelfJoinAlias() {
         var plan = plan("""
                 CLASS Item = number: 0..10; END Item;

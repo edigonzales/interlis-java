@@ -9,6 +9,35 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class DatasetPathTest {
     @Test
+    void countsManyRelationshipTargetsAndBlocksWhenAnEndpointIsMissing() {
+        var plan = plan("""
+                CLASS Parent = END Parent;
+                CLASS Item = END Item;
+                ASSOCIATION Link =
+                  parent -- {0..*} Parent;
+                  items -- {0..*} Item;
+                END Link;
+                CONSTRAINTS OF Parent =
+                  MANDATORY CONSTRAINT INTERLIS.objectCount(items) == 300;
+                END;
+                """);
+        var data = new StringBuilder("<Parent i:tid='parent'/>");
+        for (int i = 0; i < 300; i++) {
+            data.append("<Item i:tid='item").append(i).append("'/>")
+                    .append("<Link><parent i:ref='parent'/><items i:ref='item").append(i).append("'/></Link>");
+        }
+        var valid = validate(plan, List.of("Parent", "Item"), primary("p", basket("basket", data.toString())));
+        assertTrue(valid.examples().isEmpty(), valid.examples().toString());
+        assertEquals(ValidationCoverage.ConstraintStatus.CHECKED, valid.coverage().constraints().getFirst().status());
+        data.append("<Link><parent i:ref='parent'/><items i:ref='missing'/></Link>");
+        var broken = validate(plan, List.of("Parent", "Item"), primary("p", basket("basket", data.toString())));
+        assertEquals(List.of(ValidationCode.REFERENCE_TARGET_MISSING),
+                broken.examples().stream().map(ValidationDiagnostic::code).toList());
+        assertEquals(ValidationCoverage.ConstraintStatus.INCOMPLETE_CONTEXT,
+                broken.coverage().constraints().getFirst().status());
+    }
+
+    @Test
     void checksDeferredConstraintsOnEachStructureOccurrence() {
         var plan = plan("""
                 CLASS Target = amount: 0..100; END Target;
