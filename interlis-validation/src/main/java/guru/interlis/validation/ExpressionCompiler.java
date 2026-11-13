@@ -173,7 +173,8 @@ final class ExpressionCompiler {
         }
 
         private boolean pathStep(PathStep step) {
-            if (step instanceof PathStep.ThisStep || step instanceof PathStep.IndexStep || step instanceof PathStep.ParentStep) {
+            if (step instanceof PathStep.ThisStep || step instanceof PathStep.IndexStep || step instanceof PathStep.ParentStep
+                    || step instanceof PathStep.InspectionStep inspection && inspection.kind() == PathStep.InspectionKind.PARENT) {
                 return true;
             }
             if (step instanceof PathStep.RoleStep || step instanceof PathStep.AssociationAccessStep

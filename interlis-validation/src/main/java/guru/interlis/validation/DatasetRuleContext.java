@@ -259,13 +259,8 @@ final class DatasetRuleContext {
                 }
                 var attribute = field.slot().attribute();
                 var result = DerivedValueResolver.resolve(attribute, frame);
-                var supplied = occurrence.object().data().value(field.slot().symbol());
-                if (supplied.isPresent() && (result instanceof EvaluationResult.Known
-                        || result instanceof EvaluationResult.KnownNumber || result instanceof EvaluationResult.UndefinedByData)
-                        && !DerivedValueResolver.matches(result, supplied.orElseThrow(), field.values().getFirst().type())) {
-                    report.datasetViolation(attribute, ValidationCode.DERIVED_VALUE_MISMATCH,
-                            occurrence.location(List.of(new DataLocation.Slot(field.slot().symbol()))), List.of());
-                }
+                var type = frame.effectiveType(field.values().getFirst());
+                report.recordDeferredDerived(occurrence, field, result, type);
             }
             for (var declaration : object.constraints()) {
                 if (declaration.definition() instanceof guru.interlis.model.MandatoryConstraint mandatory) {

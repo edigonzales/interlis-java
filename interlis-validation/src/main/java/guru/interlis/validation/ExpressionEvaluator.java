@@ -317,7 +317,8 @@ final class ExpressionEvaluator {
                 current = value(object, false);
                 continue;
             }
-            if (step instanceof PathStep.ParentStep) {
+            if (step instanceof PathStep.ParentStep
+                    || step instanceof PathStep.InspectionStep inspection && inspection.kind() == PathStep.InspectionKind.PARENT) {
                 if (frame.parents().isEmpty()) {
                     return MissingContext.STRUCTURE_PARENT;
                 }
@@ -326,7 +327,7 @@ final class ExpressionEvaluator {
                 continue;
             }
             current = switch (step) {
-                case PathStep.ThisStep _ -> value(context.current(), false);
+                case PathStep.ThisStep _ -> value(frame.current(), false);
                 case PathStep.AttributeStep attribute -> attribute(frame, known.value(), attribute.target());
                 case PathStep.IndexStep index -> index(known.value(), index.index(),
                         frame.plan().effectiveType(index.resultType()).map(type -> type.kind() == TypeKind.TEXT).orElse(false));
@@ -408,10 +409,11 @@ final class ExpressionEvaluator {
         if (field.derived()) {
             return DerivedValueResolver.resolve(field.slot().attribute(), context.withCurrent(object));
         }
-        if (found.isEmpty() && context.partial() && field.values().getFirst().type().kind() == TypeKind.GEOMETRY) {
+        var effective = context.effectiveType(field.values().getFirst());
+        if (found.isEmpty() && context.partial() && effective.kind() == TypeKind.GEOMETRY) {
             return MissingContext.ATTRIBUTE_VALUE;
         }
-        return found.map(item -> value(item, field.values().getFirst().type().kind() == TypeKind.TEXT))
+        return found.map(item -> value(item, effective.kind() == TypeKind.TEXT))
                 .orElseGet(() -> new UndefinedByData(false));
     }
 

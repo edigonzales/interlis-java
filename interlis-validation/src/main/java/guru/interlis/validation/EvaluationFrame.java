@@ -19,6 +19,11 @@ record EvaluationFrame(ValidationPlan plan, TransferValue current, boolean parti
         this(plan, current, partial, visit, count, cancellation, Set.of(), Optional.empty(), List.of());
     }
 
+    guru.interlis.model.TypeDescriptor effectiveType(ObjectValidationPlan.ValueRules rules) {
+        return rules.genericDomain().flatMap(generic -> dataset.flatMap(path -> Optional.ofNullable(path.domains().get(generic))))
+                .flatMap(plan::domainType).orElse(rules.type());
+    }
+
     EvaluationFrame withCurrent(TransferValue value) {
         return new EvaluationFrame(plan, value, partial, visit, objectCount, cancellation, activeDerivations, dataset, parents);
     }

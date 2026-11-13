@@ -472,6 +472,26 @@ public final class ValidationSession implements AutoCloseable {
         recordConstraint(root, owner, slot, declaration, path, result, null);
     }
 
+    void recordDeferredDerived(DatasetRuleContext.Occurrence occurrence, ObjectValidationPlan.FieldRule field,
+                               EvaluationResult result, TypeDescriptor effectiveType) {
+        var attribute = field.slot().attribute();
+        var location = occurrence.location(List.of(new DataLocation.Slot(field.slot().symbol())));
+        var supplied = occurrence.object().data().value(field.slot().symbol());
+        var key = new SlotKey(occurrence.object().type(), field.slot().symbol(), VALUE_RANGE);
+        switch (result) {
+            case EvaluationResult.Known _, EvaluationResult.KnownNumber _, EvaluationResult.UndefinedByData _ -> {
+                checked.merge(key, 1L, Math::addExact);
+                if (supplied.isPresent() && !DerivedValueResolver.matches(result, supplied.orElseThrow(), effectiveType)) {
+                    datasetViolation(attribute, DERIVED_VALUE_MISMATCH, location, List.of());
+                } else if (result instanceof EvaluationResult.UndefinedByData && field.values().getFirst().required()) {
+                    datasetViolation(attribute, REQUIRED_VALUE_UNDEFINED, location, List.of());
+                }
+            }
+            case EvaluationResult.Unsupported _ -> unsupported.merge(key, 1L, Math::addExact);
+            default -> missingRuntime.merge(key, 1L, Math::addExact);
+        }
+    }
+
     void recordDatasetConstraint(DatasetRuleContext.Occurrence occurrence, ConstraintSymbol declaration,
                                  EvaluationResult result) {
         recordConstraint(occurrence.object(), occurrence.object().type(), Optional.empty(), declaration,
@@ -776,7 +796,7 @@ public final class ValidationSession implements AutoCloseable {
         }
     }
 
-    private record BasketContext(TransferEvent.StartBasket start, List<TopicDescriptor> topics,
+    record BasketContext(TransferEvent.StartBasket start, List<TopicDescriptor> topics,
                                  Map<SymbolId, SymbolId> domains, Set<SymbolId> topicScope) {
         static BasketContext of(TransferEvent.StartBasket event, ValidationPlan plan) {
             var topic = topic(plan, event.topic());

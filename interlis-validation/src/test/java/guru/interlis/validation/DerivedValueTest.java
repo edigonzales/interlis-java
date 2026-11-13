@@ -30,4 +30,34 @@ class DerivedValueTest {
         assertEquals(ValidationCoverage.ConstraintStatus.CHECKED, report.coverage().constraints().getFirst().status());
         assertEquals(2, report.coverage().constraints().getFirst().occurrences());
     }
+    @Test
+    void exposesDeferredMissingParameterAndActiveCyclesInCoverage() {
+        var schema = ValidationPlannerTest.compile("""
+                INTERLIS 2.4;
+                MODEL Checks (en) AT "https://example.org/checks" VERSION "1" =
+                  PARAMETER factor: 1..10;
+                  TOPIC Data =
+                    CLASS Node =
+                      amount: 0..100;
+                      peer: REFERENCE TO (EXTERNAL) Node;
+                      mirror: MANDATORY 0..1000 := peer->amount * PARAMETER factor;
+                      first (TRANSIENT): 0..100 := second;
+                      second (TRANSIENT): 0..100 := first;
+                      MANDATORY CONSTRAINT first == amount;
+                    END Node;
+                  END Data;
+                END Checks.
+                """);
+        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(schema,
+                ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
+        var report = validate(plan, List.of("Node"), primary("p",
+                basket("first", "<Node i:tid='a'><amount>5</amount><peer i:ref='b'/></Node>")
+                        + basket("second", "<Node i:tid='b'><amount>7</amount><peer i:ref='a'/></Node>")));
+        assertTrue(report.examples().isEmpty(), report.examples().toString());
+        assertEquals(2, report.coverage().missingRuntimeContext().stream()
+                .filter(count -> count.family() == ValidationCoverage.RuleFamily.VALUE_RANGE)
+                .mapToLong(ValidationCoverage.RuleCount::occurrences).sum());
+        assertEquals(ValidationCoverage.ConstraintStatus.MISSING_RUNTIME_CONTEXT,
+                report.coverage().constraints().getFirst().status());
+    }
 }

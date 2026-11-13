@@ -8,6 +8,10 @@ record DatasetPathContext(DatasetRuleContext dataset, DatasetRuleContext.Occurre
         return dataset.resolve(occurrence, reference, type);
     }
 
+    java.util.Map<guru.interlis.model.SymbolId, guru.interlis.model.SymbolId> domains() {
+        return ValidationSession.BasketContext.of(occurrence.basket(), dataset.plan).domains();
+    }
+
     DatasetPathContext target(ObjectHandle handle) {
         return new DatasetPathContext(dataset, dataset.occurrence(handle));
     }

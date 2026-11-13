@@ -59,4 +59,86 @@ class DatasetPathTest {
         assertTrue(report.coverage().constraints().stream()
                 .allMatch(rule -> rule.status() == ValidationCoverage.ConstraintStatus.CHECKED));
     }
+    @Test
+    void evaluatesBoundParentAgainstTheSuppliedStructureStack() {
+        var schema = ValidationPlannerTest.compile("""
+                INTERLIS 2.4;
+                MODEL Checks (en) AT "https://example.org/checks" VERSION "1" =
+                  TOPIC Data =
+                    STRUCTURE Child = value: TEXT; END Child;
+                    CLASS Parent = label: TEXT; children: BAG OF Child; END Parent;
+                    VIEW Expanded INSPECTION OF child~Parent->children; =
+                      parentLabel := PARENT->label;
+                    END Expanded;
+                  END Data;
+                END Checks.
+                """);
+        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(schema,
+                ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
+        var declaration = schema.semanticGraph().symbols().stream()
+                .filter(guru.interlis.model.AttributeSymbol.class::isInstance)
+                .map(guru.interlis.model.AttributeSymbol.class::cast)
+                .filter(attribute -> attribute.name().value().equals("parentLabel")).findFirst().orElseThrow();
+        var parentType = type(plan, "Parent");
+        var label = plan.object(parentType).fields().getFirst().slot().symbol();
+        var parent = new guru.interlis.transfer.TransferValue.Structured(parentType,
+                java.util.Map.of(label, new guru.interlis.transfer.TransferValue.Text("parent")));
+        var child = new guru.interlis.transfer.TransferValue.Structured(type(plan, "Child"), java.util.Map.of());
+        var frame = new EvaluationFrame(plan, parent, false, () -> { }).descend(parent, child);
+        var graph = schema.semanticGraph();
+        var program = ExpressionCompiler.compile(graph, new guru.interlis.model.query.TypeRelations(graph),
+                declaration.derivations().getFirst()).orElseThrow();
+        assertEquals(new EvaluationResult.Known(new guru.interlis.transfer.TransferValue.Text("parent")),
+                program.evaluate(frame));
+    }
+    @Test
+    void readsExactPositionsForTheOrderedRelationshipIndex() {
+        try (var storage = new InMemoryValidationStorage(100, 100_000)) {
+            var index = new RelationPaths(storage.table(StorageArea.TEMPORARY));
+            var from = new ObjectHandle(1);
+            var source = new guru.interlis.model.SymbolId("source");
+            var target = new guru.interlis.model.SymbolId("target");
+            index.observe(from, source, target, new ObjectHandle(2), new ObjectHandle(1),
+                    java.util.Optional.of(new java.math.BigInteger("18446744073709551619")));
+            index.observe(from, source, target, new ObjectHandle(3), new ObjectHandle(2),
+                    java.util.Optional.of(java.math.BigInteger.ONE));
+            assertEquals(List.of(new ObjectHandle(3), new ObjectHandle(2)),
+                    index.targets(from, source, target, () -> { }));
+        }
+    }
+    @Test
+    void switchesGenericBindingsWithTheTargetOccurrence() {
+        var schema = ValidationPlannerTest.compile("""
+                INTERLIS 2.4;
+                MODEL Checks (en) AT "https://example.org/checks" VERSION "1" =
+                  DOMAIN G (GENERIC) = COORD NUMERIC, NUMERIC;
+                    A = COORD 0.0..100.0, 0.0..100.0;
+                    B = COORD 0.00..100.00, 0.00..100.00;
+                  CONTEXT Choice = G = A OR B;
+                  TOPIC Data =
+                    DEFERRED GENERICS G;
+                    CLASS Node = point: G; END Node;
+                  END Data;
+                END Checks.
+                """);
+        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(schema,
+                ValidationPlannerTest.transfer(schema), ValidationProfile.DATASET)).plan();
+        var root = type(plan, "Node");
+        var topic = plan.transferPlan().object(root).orElseThrow().topic().orElseThrow();
+        var generic = schema.queries().findQualifiedName(guru.interlis.model.QualifiedName.of("Checks", "G")).getFirst();
+        var first = schema.queries().findQualifiedName(guru.interlis.model.QualifiedName.of("Checks", "A")).getFirst();
+        var second = schema.queries().findQualifiedName(guru.interlis.model.QualifiedName.of("Checks", "B")).getFirst();
+        var basketA = new guru.interlis.transfer.TransferEvent.StartBasket(
+                new guru.interlis.transfer.TransferIdentity.BasketId("first", guru.interlis.transfer.TransferIdentity.IdOrigin.SOURCE),
+                topic, List.of(), guru.interlis.transfer.TransferEvent.BasketKind.FULL,
+                guru.interlis.transfer.TransferEvent.Consistency.COMPLETE, java.util.Optional.empty(),
+                java.util.Optional.empty(), java.util.Optional.empty(), List.of(new guru.interlis.transfer.TransferEvent.DomainBinding(generic, first)));
+        var basketB = new guru.interlis.transfer.TransferEvent.StartBasket(
+                new guru.interlis.transfer.TransferIdentity.BasketId("second", guru.interlis.transfer.TransferIdentity.IdOrigin.SOURCE),
+                topic, List.of(), guru.interlis.transfer.TransferEvent.BasketKind.FULL,
+                guru.interlis.transfer.TransferEvent.Consistency.COMPLETE, java.util.Optional.empty(),
+                java.util.Optional.empty(), java.util.Optional.empty(), List.of(new guru.interlis.transfer.TransferEvent.DomainBinding(generic, second)));
+        assertEquals(first.symbol(), ValidationSession.BasketContext.of(basketA, plan).domains().get(generic.symbol()));
+        assertEquals(second.symbol(), ValidationSession.BasketContext.of(basketB, plan).domains().get(generic.symbol()));
+    }
 }
