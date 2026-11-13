@@ -168,3 +168,11 @@ API 0.9 liefert die XTF-Reader und -Writer gemeinsam als
 `guru.interlis:interlis-xtf` im Modul `guru.interlis.xtf`.
 Die Java-Packages `guru.interlis.xtf23` und `guru.interlis.xtf24` bleiben erhalten.
 Dokumentationsprojektion und Renderer kommen aus `interlis-projection`.
+
+### Optionale Geometrieoperationen
+
+`RuntimeBindings.withGeometry(engine)` bindet eine Host-Implementierung des
+neutralen Vertrags `GeometryEngine` explizit. Der Vertrag verwendet gebundene
+Geometriewerte, aufgelöste Modellparameter, Datenorte und ein Arbeitsbudget.
+Die vorhandenen lokalen Werteregelprüfungen benötigen keine Engine. Eine
+Geometrieoperation ohne erforderliche Engine oder Parameter bleibt ungeprüft.
