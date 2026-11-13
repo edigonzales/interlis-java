@@ -93,18 +93,26 @@ final class ViewExecutor {
         }
         dataset.forObjects(occurrence -> {
             if (occurrence.input().descriptor().role() == InputRole.PRIMARY
-                    && dataset.target(dataset.plan.ref(base.target()), occurrence)
-                    && matchesExtensions(view, baseId, occurrence)) {
-                consumer.accept(new ViewRow(view.view().id(), Map.of(baseId, occurrence.object().data()), List.of(occurrence)));
+                    && dataset.target(dataset.plan.ref(base.target()), occurrence)) {
+                var data = occurrence.object().data();
+                var values = new LinkedHashMap<SymbolId, TransferValue.Structured>();
+                values.put(baseId, data);
+                for (var ancestor : view.inheritance()) {
+                    for (var extension : ancestor.baseExtensions()) {
+                        if (!extension.base().equals(baseId)) {
+                            continue;
+                        }
+                        for (var id : extension.extensions()) {
+                            var alias = (ViewSymbol.Base) dataset.plan.symbol(id).orElseThrow();
+                            if (dataset.target(dataset.plan.ref(alias.target()), occurrence)) {
+                                values.put(id, data);
+                            }
+                        }
+                    }
+                }
+                consumer.accept(new ViewRow(view.view().id(), values, List.of(occurrence)));
             }
         });
-    }
-
-    private boolean matchesExtensions(ViewPlan view, SymbolId baseId, DatasetRuleContext.Occurrence occurrence) {
-        return view.inheritance().stream().flatMap(ancestor -> ancestor.baseExtensions().stream())
-                .filter(extension -> extension.base().equals(baseId))
-                .allMatch(extension -> extension.extensions().stream()
-                        .anyMatch(target -> dataset.target(dataset.plan.ref(target), occurrence)));
     }
 
     private TransferValue.Structured materialize(ViewPlan view, ViewRow row) {
