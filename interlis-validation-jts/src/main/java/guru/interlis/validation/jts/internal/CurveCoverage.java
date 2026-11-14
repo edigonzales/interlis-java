@@ -63,7 +63,8 @@ final class CurveCoverage {
                     continue;
                 }
                 var adapted = new TransferGeometryAdapter(input, limited, origin).read();
-                var state = new CurveValidity(input, new GeometryEngine.Control(control.visit(), ignored -> {})).check(adapted);
+                var validity = new CurveValidity(input, new GeometryEngine.Control(control.visit(), ignored -> {}));
+                var state = validity.check(adapted);
                 if (state != VALID) {
                     status = combine(status, state);
                     continue;
@@ -73,7 +74,7 @@ final class CurveCoverage {
                     status = combine(status, UNSUPPORTED);
                     continue;
                 }
-                for (var surface : adapted.surfaces()) {
+                for (var surface : validity.checkedSurfaces()) {
                     var bounds = new Envelope();
                     for (var segment : CurveValidity.flat(surface.shell())) {
                         control.visit().run();

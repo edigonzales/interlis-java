@@ -126,6 +126,34 @@ final class SuiteValidationTest {
     }
 
     @Test
+    void originalEmbeddedAssociationChecksUniqueAcrossOwners() throws Exception {
+        var output = Files.createDirectory(directory.resolve("embedded-unique"));
+        assertEquals(0, runOriginalTests(".*ConstraintTest\\.RKo_T09a", output));
+        var diagnostics = Files.readString(output.resolve("stdout"));
+        assertTrue(diagnostics.contains("RKo.T09a.xtf DATA DATASET_UNIQUE_DUPLICATE"), diagnostics);
+        assertTrue(diagnostics.contains("RKo.T09a.xtf EOF objects=3 violations=1"), diagnostics);
+    }
+
+    @Test
+    void knownDeviationKeepsTheNativeFailureAndOnlyAppliesToSelectedCases() throws Exception {
+        var output = Files.createDirectory(directory.resolve("known"));
+        assertEquals(0, runOriginalTests(".*AttributeTest\\.RAt_T09e", output));
+        assertTrue(Files.readString(output.resolve("summary.txt")).contains("Known deviations: 1"));
+        assertTrue(Files.readString(output.resolve("TEST-junit-vintage.xml")).contains("<failure"));
+    }
+
+    @Test
+    void comparesTheFixtureFailureKindAndCompleteEvidence() {
+        var expected = new SuiteJUnit.Deviation("case.xtf", java.util.List.of("VALUE_OUT_OF_RANGE"), "reason");
+        var actual = new SuiteValidation.Observation("case.xtf", expected.evidence(), false);
+        assertTrue(expected.matches(actual, new AssertionError()));
+        assertFalse(expected.matches(actual, null));
+        assertFalse(expected.matches(actual, new IllegalStateException()));
+        assertFalse(expected.matches(new SuiteValidation.Observation("case.xtf",
+                java.util.List.of("REQUIRED_VALUE_MISSING"), false), new AssertionError()));
+    }
+
+    @Test
     void anEmptyTestSelectionFails() throws Exception {
         var output = Files.createDirectory(directory.resolve("empty"));
         assertEquals(1, runOriginalTests(".*NoSuchOriginalTest", output));
@@ -141,12 +169,52 @@ final class SuiteValidationTest {
         assertFalse(report.contains("<skipped"), report);
     }
 
+    @Test
+    void unexpectedFailureFailsTheRunner() throws Exception {
+        var baseline = Files.writeString(directory.resolve("empty.tsv"), "");
+        var output = Files.createDirectory(directory.resolve("unexpected"));
+        assertEquals(1, runOriginalTests(".*RAt_T09e", output, baseline));
+        var summary = Files.readString(output.resolve("summary.txt"));
+        assertTrue(summary.contains("Known deviations: 0"), summary);
+        assertTrue(summary.contains("RAt_T09e"), summary);
+    }
+
+    @Test
+    void previouslyFailingCaseThatNowPassesFailsTheRunner() throws Exception {
+        var baseline = Files.writeString(directory.resolve("stale.tsv"),
+                "ch.interlis.testsuite.ConstraintTest.RKo_T09a\tRKo.T09a.xtf\tDATASET_UNIQUE_DUPLICATE\tStale probe\n");
+        var output = Files.createDirectory(directory.resolve("stale"));
+        assertEquals(1, runOriginalTests(".*RKo_T09a", output, baseline));
+        var summary = Files.readString(output.resolve("summary.txt"));
+        assertTrue(summary.contains("observed SUCCESSFUL"), summary);
+    }
+
+    @Test
+    void missingSuiteDirectoryFailsTheCommand() throws Exception {
+        var log = directory.resolve("missing.log");
+        var process = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "build/interlis/ValidatorConformanceRun.java", "--suite-dir",
+                directory.resolve("missing-suite").toString()).redirectErrorStream(true).redirectOutput(log.toFile()).start();
+        try {
+            assertTrue(process.waitFor(90, java.util.concurrent.TimeUnit.SECONDS), "Suite command timed out");
+            assertEquals(1, process.exitValue());
+            assertTrue(Files.readString(log).contains("NoSuchFileException"));
+        } finally {
+            if (process.isAlive()) process.destroyForcibly();
+        }
+    }
+
     private int runOriginalTests(String filter, Path output) throws Exception {
+        return runOriginalTests(filter, output,
+                Path.of("build/interlis/validator-conformance/deviations.tsv").toAbsolutePath());
+    }
+
+    private int runOriginalTests(String filter, Path output, Path baseline) throws Exception {
         var suite = Path.of(System.getProperty("suite.directory"));
         var javaExecutable = Path.of(System.getProperty("java.home"), "bin", "java");
         var process = new ProcessBuilder(javaExecutable.toString(), "-Dvendor=interlis-java", "-cp",
                 System.getProperty("java.class.path"), SuiteJUnit.class.getName(),
-                System.getProperty("suite.classes"), filter, output.toString())
+                System.getProperty("suite.classes"), filter, output.toString(), baseline.toString())
                 .directory(suite.resolve("routine").toFile())
                 .redirectOutput(output.resolve("stdout").toFile())
                 .redirectError(output.resolve("stderr").toFile()).start();

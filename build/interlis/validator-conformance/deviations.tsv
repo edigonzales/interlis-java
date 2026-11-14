@@ -1,0 +1,16 @@
+# Original JUnit method	Fixture	Exact validation evidence (- for no findings)	Reason
+ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T16a	RSU.T16a.xtf	-	Fixture expects a dangle and self-intersection. Both the native validator and ilivalidator 1.15.1 accept the delivered boundary.
+ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T18a	RSU.T18a.xtf	UNSUPPORTED_EXPRESSION:INTERLIS_ext.areAreas2	Model-declared legacy host function INTERLIS_ext.areAreas2 requires a runtime binding for its TEXT path.
+ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T18b	RSU.T18b.xtf	UNSUPPORTED_EXPRESSION:INTERLIS_ext.areAreas2	Model-declared legacy host function INTERLIS_ext.areAreas2 requires a runtime binding for its TEXT path.
+ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T18c	RSU.T18c.xtf	UNSUPPORTED_EXPRESSION:INTERLIS_ext.areAreas2	Model-declared legacy host function INTERLIS_ext.areAreas2 requires a runtime binding for its TEXT path.
+ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T18d	RSU.T18d.xtf	UNSUPPORTED_EXPRESSION:INTERLIS_ext.areAreas2	Model-declared legacy host function INTERLIS_ext.areAreas2 requires a runtime binding for its TEXT path.
+ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T18e	RSU.T18e.xtf	UNSUPPORTED_EXPRESSION:INTERLIS_ext.areAreas2	Model-declared legacy host function INTERLIS_ext.areAreas2 requires a runtime binding for its TEXT path.
+ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T19a	RSU.T19a.xtf	UNSUPPORTED:INTERLIS_ext.areAreas3	Model-declared legacy host function INTERLIS_ext.areAreas3 requires a runtime binding for its TEXT path.
+ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T19b	RSU.T19b.xtf	UNSUPPORTED:INTERLIS_ext.areAreas3	Model-declared legacy host function INTERLIS_ext.areAreas3 requires a runtime binding for its TEXT path.
+ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T19c	RSU.T19c.xtf	UNSUPPORTED:INTERLIS_ext.areAreas3	Model-declared legacy host function INTERLIS_ext.areAreas3 requires a runtime binding for its TEXT path.
+ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T19d	RSU.T19d.xtf	UNSUPPORTED:INTERLIS_ext.areAreas3	Model-declared legacy host function INTERLIS_ext.areAreas3 requires a runtime binding for its TEXT path.
+ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T19e	RSU.T19e.xtf	UNSUPPORTED:INTERLIS_ext.areAreas3	Model-declared legacy host function INTERLIS_ext.areAreas3 requires a runtime binding for its TEXT path.
+ch.interlis.testsuite.PolylineAttributeTest.RPO_T02c	RPO.T02c.xtf	GEOMETRY_SELF_INTERSECTION,GEOMETRY_SELF_INTERSECTION,GEOMETRY_SELF_INTERSECTION,GEOMETRY_SELF_INTERSECTION	The two traversals at the repeated vertex alternate around the vertex, producing a self-crossing under INTERLIS 2.3 §2.8.12.
+ch.interlis.testsuite.AttributeTest.RAt_T09e	RAt.T09e.xtf	VALUE_OUT_OF_RANGE	10000.01 exceeds the declared upper bound 10000.0 before rounding (INTERLIS 2.3 §3.3.11.4).
+ch.interlis.testsuite.AttributeTest.RAt_T11a	RAt.T11a.xtf	-	The FULL transfer has no OIDSPACES. The basket identifier is transfer-local (INTERLIS 2.3 §3.3.4.1 and §3.3.7).
+ch.interlis.testsuite.AttributeTest.RAt_T11b	RAt.T11b.xtf	-	The FULL transfer has no OIDSPACES. The object identifier is transfer-local (INTERLIS 2.3 §3.3.4.1 and §3.3.7).

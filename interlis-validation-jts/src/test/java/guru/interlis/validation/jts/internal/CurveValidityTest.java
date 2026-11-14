@@ -37,6 +37,17 @@ class CurveValidityTest {
     }
 
     @Test
+    void acceptsAnEnclaveTouchingTheShellInOneBoundaryWalk() {
+        var walk = ring("0,0", "0,4", "2,3", "2,5", "0,4", "0,8", "8,8", "8,0", "0,0");
+        var surface = new Surface(walk, List.of());
+        assertEquals(VALID, check(surface, GeometryKind.SURFACE, true, false).status());
+        assertEquals(new GeometryEngine.Measurement.Value(62),
+                JtsGeometryEngine.standard().measure(GeometryEngine.Measure.AREA,
+                        input(surface, GeometryKind.SURFACE, true, false),
+                        new GeometryEngine.Control(() -> {}, finding -> fail(finding.toString()))));
+    }
+
+    @Test
     void rejectsEmptyCompleteLinesAndDoesNotMeasureThemAsZero() {
         for (var empty : List.of(new Polyline(List.of()), line("0,0"))) {
             assertEquals(List.of(GEOMETRY_DEGENERATE_SEGMENT),

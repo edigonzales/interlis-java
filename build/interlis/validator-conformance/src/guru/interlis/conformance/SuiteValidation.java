@@ -5,6 +5,10 @@ import guru.interlis.compiler.CompilerEngines;
 import guru.interlis.compiler.ModelSelector;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.source.SourceId;
+import guru.interlis.model.ConstraintSymbol;
+import guru.interlis.model.FunctionCallExpression;
+import guru.interlis.model.MandatoryConstraint;
+import guru.interlis.model.SetConstraint;
 import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TransferReader;
@@ -45,6 +49,21 @@ public final class SuiteValidation {
             "RoadsExt", List.of("RoadsExt.ili", "Roads.ili"),
             "areAreas_ext", List.of("areAreas_ext.ili", "INTERLIS_ext.ili", "CHBase_Part1_GEOMETRY_V1.ili",
                     "CoordSys-20151124.ili", "Units-20120220.ili"));
+
+    record Observation(String fixture, List<String> evidence, boolean incomplete) { }
+
+    private static final ThreadLocal<List<Observation>> observations = new ThreadLocal<>();
+
+    static void observe(List<Observation> sink) {
+        if (sink == null) observations.remove();
+        else observations.set(sink);
+    }
+
+    static final class UnfinishedValidation extends IllegalStateException {
+        UnfinishedValidation(String detail) {
+            super(detail);
+        }
+    }
 
     private SuiteValidation() { }
 
@@ -112,16 +131,49 @@ public final class SuiteValidation {
             case CHECKED, UNDEFINED_BY_DATA -> false;
             default -> true;
         }).toList();
-        if (!applicableUnchecked.isEmpty() || !ruleGaps.isEmpty() || !constraintGaps.isEmpty() || !coverage.unsupportedValues().isEmpty()
-                || !coverage.missingRuntimeContext().isEmpty() || !coverage.incompleteContext().isEmpty()) {
+        boolean otherGaps = !constraintGaps.isEmpty() || !coverage.unsupportedValues().isEmpty()
+                || !coverage.missingRuntimeContext().isEmpty() || !coverage.incompleteContext().isEmpty();
+        boolean incomplete = !applicableUnchecked.isEmpty() || !ruleGaps.isEmpty() || otherGaps;
+        if (observations.get() != null) {
+            var transfer = plans.transfer();
+            var evidence = new java.util.ArrayList<String>();
+            report.examples().forEach(diagnostic -> evidence.add(diagnostic.code().name()));
+            if (report.detectedViolations() != report.examples().size()) evidence.add("OMITTED_DIAGNOSTICS");
+            applicableUnchecked.forEach(rule -> evidence.add(rule.reason() + ":"
+                    + calledFunction(transfer, rule.constraint())));
+            ruleGaps.forEach(rule -> evidence.add(rule.outcome() + ":"
+                    + calledFunction(transfer, rule.rule().declaration())));
+            if (otherGaps) evidence.add("OTHER_COVERAGE_GAPS");
+            observations.get().add(new Observation(fixture, List.copyOf(evidence), incomplete));
+        }
+        if (incomplete) {
             var detail = "Uncompleted validation in " + fixture + ": " + applicableUnchecked + " " + ruleGaps + " " + constraintGaps
                     + " " + coverage.unsupportedValues() + " " + coverage.missingRuntimeContext()
                     + " " + coverage.incompleteContext();
             System.out.println(detail);
-            if (report.detectedViolations() == 0) throw new IllegalStateException(detail);
+            if (report.detectedViolations() == 0) throw new UnfinishedValidation(detail);
         }
         System.out.println(fixture + " EOF objects=" + report.inspectedObjects() + " violations=" + report.detectedViolations());
         return report.detectedViolations() == 0;
+    }
+
+    private static String calledFunction(TransferPlan transfer, guru.interlis.model.SymbolRef reference) {
+        var graph = transfer.schema().semanticGraph();
+        if (graph.symbol(reference.symbol()).orElseThrow() instanceof ConstraintSymbol constraint) {
+            var condition = switch (constraint.definition()) {
+                case MandatoryConstraint mandatory -> mandatory.condition();
+                case SetConstraint set -> set.condition();
+                default -> null;
+            };
+            if (condition != null && graph.expression(condition).orElseThrow() instanceof FunctionCallExpression call
+                    && call.targetFunction().isPresent()) {
+                var function = graph.symbol(call.targetFunction().orElseThrow()).orElseThrow();
+                return function.header().owner().stream().flatMap(owner -> graph.symbol(owner).stream())
+                        .map(owner -> owner.header().name().toString() + "." + function.header().name())
+                        .findFirst().orElse("");
+            }
+        }
+        return "";
     }
 
     private static void collectUnchecked(TransferValue value, List<UncheckedRuleInfo> rules,

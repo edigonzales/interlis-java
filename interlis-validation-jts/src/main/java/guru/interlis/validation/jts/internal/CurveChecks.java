@@ -16,7 +16,8 @@ public final class CurveChecks {
         if (value.threeDimensional()) {
             return new GeometryEngine.Measurement.Unavailable(GeometryEngine.Check.UNSUPPORTED);
         }
-        var checked = new CurveValidity(input, control).check(value);
+        var validity = new CurveValidity(input, control);
+        var checked = validity.check(value);
         if (checked != GeometryEngine.Check.VALID) {
             return new GeometryEngine.Measurement.Unavailable(checked);
         }
@@ -39,7 +40,7 @@ public final class CurveChecks {
                         || input.value() instanceof guru.interlis.transfer.TransferGeometry.MultiSurface)) {
                     return new GeometryEngine.Measurement.Unavailable(GeometryEngine.Check.UNSUPPORTED);
                 }
-                for (var surface : value.surfaces()) {
+                for (var surface : validity.checkedSurfaces()) {
                     control.visit().run();
                     double area = Math.abs(CurveValidity.signedArea(CurveValidity.flat(surface.shell())));
                     for (var hole : surface.holes()) {

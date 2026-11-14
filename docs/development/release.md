@@ -25,7 +25,9 @@ bewertet die Kompatibilität anhand der Verträge und ihrer Verbraucher.
 Der [Workflow](../../.github/workflows/compiler-platforms.yml) verwendet Java
 25.0.3. Unter Linux führt `java build/jenesis/Make.java` die regulären
 JVM-Tests aus. `java build/interlis/ConformanceRun.java` prüft die gepinnte
-Codeberg-Suite für INTERLIS 2.3 und 2.4.
+Codeberg-Suite für INTERLIS 2.3 und 2.4. Danach prüft der Linux-Job
+die [swisstopo-Validator-Suite für XTF 2.3](testing.md#swisstopo-validator-konformität)
+und sichert die nativen Berichte.
 Linux und Windows verwenden `java build/interlis/ExistingJvmDistribution.java check`
 für die installierten SDK-, CLI- und LSP-Prozesse. Das Kommando
 `java build/interlis/ExistingJvmDistribution.java compiler` erstellt und prüft

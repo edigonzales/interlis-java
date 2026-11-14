@@ -93,7 +93,8 @@ public final class ValidatorConformanceRun {
 
         var result = DistributionChecks.run(routine, List.of(DistributionChecks.javaTool("java"),
                 "-Dvendor=interlis-java", "-cp", suiteClasspath,
-                "guru.interlis.conformance.SuiteJUnit", classes.toString(), filter, output.toString()),
+                "guru.interlis.conformance.SuiteJUnit", classes.toString(), filter, output.toString(),
+                root.resolve("build/interlis/validator-conformance/deviations.tsv").toString()),
                 Map.of(), Duration.ofMinutes(10));
         Files.writeString(output.resolve("runner.stdout"), result.stdout());
         Files.writeString(output.resolve("runner.stderr"), result.stderr());

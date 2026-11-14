@@ -79,30 +79,35 @@ Die [Freigabeprüfung](release.md) beschreibt die Auslieferungsprüfungen.
 Die Klasse `GebaeudeRegister` darf den Namen ihres Topics tragen.
 Der Compiler akzeptiert diese Modellierung in 2.3 und 2.4 gemäss
 [Entscheidung 09](../contracts/norm-decisions.md#decision-09).
-Der Runner verwendet die unveränderten Originalmodelle und XTF-Dateien.
-Beim Upstream-Stand `f307111` laufen alle 223 Originaltests ohne
-Namensraumblockade. Der aktuelle Stand besteht 205 Tests.
+Der Runner verwendet die unveränderten Originaltests, Modelle und XTF-Dateien.
+Die Suite prüft INTERLIS 2.3 und XTF 2.3.
+Der Linux-Job klont den Upstream-Zweig `master` einmal und startet den
+vollständigen Lauf nach Codeberg. Lokal lässt sich derselbe Runner mit
+einem vorhandenen Suite-Checkout aufrufen.
 
-Die Regressionen für behälterübergreifende XTF-2.3-Referenzen
-(`RBe.T01b/d`), fehlende Rollen eigenständiger Links
-(`RRiO.T03d`, `RBk.T03c`), leeren Beziehungszugang in `DEFINED`
-(`RKo.T11b`) und Randkontakt ohne gemeinsamen Stützpunkt
-(`RSU.T03a/b`) prüfen die Originaldateien und die konkreten Diagnosecodes.
+```bash
+java build/interlis/ValidatorConformanceRun.java --suite-dir ../suite-interlis
+java build/interlis/ValidatorConformanceRun.java --suite-dir ../suite-interlis \
+  --filter '.*ConstraintTest\.RKo_T09a'
+```
 
-Folgende Fälle bleiben offen:
+Die native JUnit-XML-Datei, die Adapter-Reports und `summary.txt` liegen
+unter `target/jenesis-jvm/validator-conformance/run-*/`. Die
+[Abweichungsliste](../../build/interlis/validator-conformance/deviations.tsv)
+dokumentiert den erwarteten Befund jedes betroffenen Originaltests.
+Ein neuer Fehler, eine technische Störung, ein abweichender Befund oder
+ein inzwischen bestandener Baselinefall beendet den Runner mit Fehler.
 
-- `RKo.T09a`: UNIQUE über die Rollenpfade einer eingebetteten Beziehung.
-- `RSU.T05a/b`: ein Randzug mit Berührpunkt, der Aussenrand und
-  Enklave als zusammenhängende Folge kodiert (INTERLIS 2.3 §2.8.13.1).
-- `RSU.T16a`: erwarteter Geometriebefund für den gelieferten Kurvenrand.
-- `RSU.T18a–e`, `RSU.T19a–e`: ungeprüfte Hostfunktionen
-  `INTERLIS_ext.areAreas2` und `areAreas3`.
-- `RPO.T02c`: Selbstberührung an einem wiederholten Stützpunkt.
-- `RAt.T09e`: die Suite erwartet Abrundung vor der Bereichsentscheidung.
-  Der Validator vergleicht den gelieferten Wert exakt (§3.3.11.4).
+Am Upstream-Stand `f307111` bestehen 208 von 223 Originaltests.
+`RKo.T09a` prüft UNIQUE über Rollenpfade eingebetteter Beziehungen.
+`RSU.T05a/b` prüfen Aussenrand und berührende Enklave in einem Randzug
+(INTERLIS 2.3 §2.8.13.1, Figur 22).
 
-Bei `RAt.T11a/b` erwartet die Originalsuite, dass transferlokale
-`BID` und `TID` ohne `OIDSPACES` als stabile UUIDs geprüft werden.
-Für XTF 2.3 FULL unterscheidet der Validator zwischen Transfer-ID
-und stabiler OID. Die Suite bleibt bis zur Klärung der verbleibenden
-Abweichungen ausserhalb des verbindlichen Linux-CI-Jobs.
+Bei zehn Fällen fehlt die Laufzeitbindung der Legacy-Funktionen
+`INTERLIS_ext.areAreas2/3` mit TEXT-Pfaden. Bei `RSU.T16a` akzeptieren
+der native Validator und ilivalidator 1.15.1 den gelieferten Kurvenrand,
+für den das Original einen Fehler erwartet. `RPO.T02c` kreuzt seinen
+eigenen Weg in einem wiederholten Stützpunkt (§2.8.12).
+`RAt.T09e` überschreitet die deklarierte Obergrenze vor dem Runden
+(§3.3.11.4). `RAt.T11a/b` liefern transferlokale BID/TID in XTF 2.3 FULL
+ohne OIDSPACES (§3.3.4.1 und §3.3.7).
