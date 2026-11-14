@@ -177,6 +177,7 @@ final class CompilationRun {
                 SyntaxSnapshot reused = reuse.previousSyntax().get(id);
                 SyntaxSnapshot snapshot;
                 if (reused != null
+                        && reused.source().id().equals(id)
                         && reused.source().revision().equals(source.revision())
                         && reused.source().contentFingerprint().equals(source.contentFingerprint())
                         && reused.options().equals(new ParseOptions(mode, java.util.Optional.empty(),
