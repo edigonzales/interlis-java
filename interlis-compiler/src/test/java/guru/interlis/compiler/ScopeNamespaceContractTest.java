@@ -56,7 +56,7 @@ class ScopeNamespaceContractTest {
     @Test void localTypesCannotShadowOuterTypesOrUnmarkedInheritedTypes() {
         for(String version:List.of("2.3","2.4"))for(String body:List.of(
                 "DOMAIN X=TEXT;TOPIC T=CLASS X=END X;END T;",
-                "TOPIC T=CLASS T=END T;END T;",
+                "TOPIC T=CLASS U=END U;END T;TOPIC U=END U;",
                 "UNIT X;TOPIC T=DOMAIN X=TEXT;END T;",
                 "TOPIC Base=STRUCTURE S=END S;END Base;TOPIC Child EXTENDS Base=STRUCTURE S=END S;END Child;")) {
             var out=assertInstanceOf(CompilationOutcome.Rejected.class,CompilerEngines.create().compile(request(version,body),CancellationToken.none()),version+body);
@@ -64,6 +64,50 @@ class ScopeNamespaceContractTest {
             assertTrue(out.analysis().diagnostics().stream().anyMatch(d->d.code().value().equals("ILI-SEM-0010")&&(d.arguments().toString().contains("SCOPE_OUTER_TYPE_NAME")||d.arguments().toString().contains("SCOPE_INHERITED_TYPE_NAME"))),out.analysis().diagnostics().toString());
         }
     }
+    @Test
+    void duplicateClassesAndTopicsStillConflictInTheirDeclaringScope() {
+        for (var version : List.of("2.3", "2.4")) {
+            for (var body : List.of(
+                    "TOPIC T = CLASS T = END T; CLASS T = END T; END T;",
+                    "TOPIC T = END T; TOPIC T = END T;")) {
+                var result = assertInstanceOf(CompilationOutcome.Rejected.class, CompilerEngines.create()
+                        .compile(request(version, body), CancellationToken.none()));
+                assertTrue(result.analysis().requestDiagnostics().stream().anyMatch(diagnostic ->
+                        diagnostic.code().value().equals("ILI-SEM-0010")
+                                && diagnostic.arguments().toString().contains("SCOPE_TYPE_NAME_UNIQUE")));
+            }
+        }
+    }
+
+    @Test
+    void classMayShareItsOwnTopicName() {
+        for (var version : List.of("2.3", "2.4")) {
+            var result = CompilerEngines.create().compile(request(version, """
+                    TOPIC Building =
+                      CLASS Building = END Building;
+                      CLASS Special EXTENDS Building = END Special;
+                    END Building;
+                    TOPIC Other =
+                      DEPENDS ON Building;
+                    END Other;
+                    """), CancellationToken.none());
+            var schema = assertInstanceOf(CompilationOutcome.Succeeded.class, result,
+                    () -> result instanceof CompilationOutcome.Rejected rejected
+                            ? rejected.analysis().diagnostics().toString() : result.toString()).schema();
+            var queries = schema.queries();
+            var topic = queries.findQualifiedName(guru.interlis.model.QualifiedName.of("F", "Building")).getFirst();
+            var building = queries.findQualifiedName(guru.interlis.model.QualifiedName.of("F", "Building", "Building")).getFirst();
+            var special = queries.findQualifiedName(guru.interlis.model.QualifiedName.of("F", "Building", "Special")).getFirst();
+            var other = queries.findQualifiedName(guru.interlis.model.QualifiedName.of("F", "Other")).getFirst();
+            assertEquals(Optional.of(building.symbol()),
+                    assertInstanceOf(guru.interlis.model.ClassSymbol.class,
+                            queries.symbol(special).known().orElseThrow()).baseType());
+            assertEquals(List.of(topic.symbol()),
+                    assertInstanceOf(guru.interlis.model.TopicSymbol.class,
+                            queries.symbol(other).known().orElseThrow()).dependencies());
+        }
+    }
+
     @Test void qualifiedOuterReferencesAndExplicitInheritedExtensionsKeepTheirActualTargets() {
         for(String version:List.of("2.3","2.4")) {
             var out=assertInstanceOf(CompilationOutcome.Succeeded.class,CompilerEngines.create().compile(request(version,"DOMAIN X=TEXT;TOPIC Base=STRUCTURE S=value:F.X;END S;END Base;TOPIC Child EXTENDS Base=STRUCTURE S(EXTENDED)=other:BOOLEAN;END S;END Child;"),CancellationToken.none()));

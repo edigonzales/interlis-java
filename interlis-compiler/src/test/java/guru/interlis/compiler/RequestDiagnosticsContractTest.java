@@ -216,7 +216,7 @@ class RequestDiagnosticsContractTest {
     @Test void namespaceConflictsCarryTheActualRevisionBoundDeclaration() {
         for (int shift : List.of(0, 2)) {
             var source = new SourceText(new SourceId("memory:/🦊.ili"), new SourceRevision(shift + 7),
-                    "!! 🦊\r\n".repeat(shift) + "INTERLIS 2.4;\r\n" + model("F", "TOPIC Office =\r\n CLASS Office = END Office; END Office;"));
+                    "!! 🦊\r\n".repeat(shift) + "INTERLIS 2.4;\r\n" + model("F", "DOMAIN Office = TEXT;\r\n TOPIC Records = CLASS Office = END Office; END Records;"));
             var a = analysis(CompilerEngines.create().compile(input("F", List.of(source), WarningPolicy.ALLOW_WARNINGS), TOKEN));
             var d = a.requestDiagnostics().stream().filter(x -> x.code().value().equals("ILI-SEM-0010")).findFirst().orElseThrow();
             assertTrue(d.arguments().toString().contains("SCOPE_OUTER_TYPE_NAME"));
