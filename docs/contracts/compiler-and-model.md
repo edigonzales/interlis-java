@@ -21,7 +21,7 @@ Ein Mapkey muss der `SourceText.id()` entsprechen. Pro Quelle ist genau eine Rev
 
 `ImportBinding`, `ImportSite`, `ImportResolution`, `ModelLocation` und `ResolutionProblem` sind in [Repositoryvertrag](repositories.md) definiert. Eine Bindung nennt die originale Importstelle und eine Zielquelle/-revision/-deklaration oder einen expliziten ungelösten Zustand. Der Compiler verifiziert diese Angaben gegen die tatsächlich geparsten Modellköpfe. Der Name der tatsächlich adressierten Modelldeklaration muss mit dem Namen an der geparsten Importstelle übereinstimmen.
 
-Der übergebene `ResolutionFingerprint` ist Resolverprovenienz und kein alleiniger Beweis der Identität des SourceSet. `CompilationFingerprinter.fingerprint(request)` berechnet zusätzlich selbst aus den tatsächlich vorliegenden Quellen, ihren exakten Textfingerprints/Revisionen, Rootselektoren, Importstellen/-zielen/-zuständen, Optionen, Sprach-/Grammatikständen und relevantem Resolverstand die tatsächliche Eingabeidentität. Kanonische Längenpräfixierung und stabile Reihenfolgen verhindern uneindeutige Verkettungen. Ein Aufrufer kann durch Wiederverwendung desselben behaupteten Resolverhashs bei geändertem Text oder Ziel keine alte Compileranalyse gültig machen.
+Der übergebene `ResolutionFingerprint` ist Resolverprovenienz und kein alleiniger Beweis der Identität des SourceSet. `CompilationFingerprinter.fingerprint(request)` berechnet zusätzlich selbst aus den tatsächlich vorliegenden Quellen, ihren exakten Textfingerprints/Revisionen, Rootselektoren und Resolverentscheidungen, Importstellen/-zielen/-zuständen, Optionen, Sprach-/Grammatikständen und relevantem Resolverstand die tatsächliche Eingabeidentität. Kanonische Längenpräfixierung und stabile Reihenfolgen verhindern uneindeutige Verkettungen. Ein Aufrufer kann durch Wiederverwendung desselben behaupteten Resolverhashs bei geändertem Text oder Ziel keine alte Compileranalyse gültig machen.
 
 Nicht gefundene, mehrdeutige oder technisch blockierte Imports bleiben Daten im SourceSet. Die Syntax und die erreichbaren Teile können trotzdem analysiert werden. Ob daraus `Rejected` oder eine technisch blockierte Aufbereitung im Host entsteht, legt der Resolververtrag fest; ein vollständiger erfolgreicher Compile darf bei fehlender Pflichtabhängigkeit niemals entstehen.
 
@@ -134,6 +134,10 @@ Ungültige Java-Argumente werden vor dem Start per Exception zurückgewiesen. `F
 ### `AnalysisSnapshot` und Coverage
 
 Die Snapshotklasse ist unveränderlich. `diagnostics()` enthält alle kanonischen Diagnosen, auch aufgrund einer gemeinsamen Ursache in einer UI nicht angezeigte Folgefehler. `requestDiagnostics()` ist der immutable, kanonisch geordnete Teilbestand derselben Werte/IDs für exakt die Roots, Optionen, Quellrevisionen und den Fingerprint dieses Snapshots. Die interne Auswahl erfolgt einmal vor dem Gate; Gate und Compileverbraucher verwenden diesen Teilbestand. Der öffentliche Konstruktor verlangt beide Listen ausdrücklich und verwirft Teilbestände, die keine geordnete Teilfolge sind. Die Darstellung wird in09 projiziert; das Gate darf keine darstellungsgefilterte Liste verwenden.
+
+Der Konstruktor prüft, dass Syntax, Quellrevisionsliste und Inhaltsfingerprints
+dieselben Quellen beschreiben. Für jeden Syntaxsnapshot müssen ID, Revision
+und Inhalt mit den Angaben des Analysesnapshots übereinstimmen.
 
 `AnalysisCoverage` enthält Einträge pro benötigter Deklaration/Modell/Phase. `CoverageStatus` unterscheidet `COMPLETE`, `BLOCKED_BY_ERROR`, `NOT_IMPLEMENTED`, `NOT_REQUESTED`, `CANCELLED` und `BUDGET_EXCEEDED`. Syntax und Semantik können in unterschiedlichen Zuständen sein. Ein leerer Eintrag ist keine implizite Vollständigkeit. Für jede ausgewählte Rootclosure muss das Gate das explizite Abschlussprädikat `isCompleteFor(ClosureSelection)` prüfen können.
 

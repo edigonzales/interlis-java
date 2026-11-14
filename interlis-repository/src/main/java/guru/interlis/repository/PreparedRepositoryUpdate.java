@@ -27,6 +27,7 @@ public final class PreparedRepositoryUpdate {
         this.lock = Objects.requireNonNull(lock, "lock"); this.trace = List.copyOf(trace);
     }
     public WorkspaceRevision expectedRevision() { return expectedRevision; }
+    /** Returns the immutable ordered list of full-text inserts for absent sources. */
     public List<SourceUpdate> sources() { return sources; }
     public WorkspaceConfiguration configuration() { return configuration; }
     public ResolutionLock lock() { return lock; }

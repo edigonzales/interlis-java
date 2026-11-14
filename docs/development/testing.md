@@ -31,7 +31,9 @@ prüfen tatsächliche Schreibverbote des Betriebssystems.
   `target/jenesis-jvm/validator-conformance/`. Der Lauf deckt derzeit
   Modell- und Transferblockaden auf und ist noch nicht Teil der CI.
 - Die [Buildanleitung](build.md#portable-backends) zeigt die Node-Smokes für die
-  erzeugten JS-/WasmGC-Artefakte und `browserSmoke` für die Browserintegration.
+  erzeugten JS-/WasmGC-Artefakte. Der Portable-CI-Job führt `browserSmoke`
+  und `validationBrowserSmoke` mit Chromium aus. Die Validatorprobe
+  kompiliert ihr Modell und prüft neutrale Transferwerte im WasmGC-Artefakt.
 
 ## Testinhalte
 

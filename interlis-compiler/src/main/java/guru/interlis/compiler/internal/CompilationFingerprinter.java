@@ -8,7 +8,7 @@ import java.util.*;
 /** Canonical field identity of actual input; no record/debug strings or claimed resolver certificate. */
 public final class CompilationFingerprinter {
     public CompilationFingerprint fingerprint(CompilationRequest request, AnalysisReuse reuse) {
-        var b = new StringBuilder("compilation-v3");
+        var b = new StringBuilder("compilation-v4");
         field(b, Fingerprints.COMPILER_VERSION); field(b, Fingerprints.GRAMMAR_VERSION);
         field(b, request.options().fingerprint());
         count(b, request.roots().size());
@@ -17,6 +17,17 @@ public final class CompilationFingerprinter {
             case ModelSelector.ByName name -> {
                 field(b, "name"); field(b, name.modelName()); optional(b, name.modelVersion());
                 optional(b, name.sourceHint().map(SourceId::value));
+                switch (request.sources().rootResolutions().get(name)) {
+                    case null -> field(b, "compiler");
+                    case RootResolution.Missing ignored -> field(b, "missing");
+                    case RootResolution.Resolved resolved -> {
+                        field(b, "resolved"); location(b, resolved.target());
+                    }
+                    case RootResolution.Ambiguous ambiguous -> {
+                        field(b, "ambiguous"); count(b, ambiguous.candidates().size());
+                        ambiguous.candidates().forEach(candidate -> location(b, candidate));
+                    }
+                }
             }
         }
         var ids = request.sources().sources().keySet().stream().sorted(Comparator.comparing(SourceId::value)).toList();
@@ -35,7 +46,7 @@ public final class CompilationFingerprinter {
         count(b, request.sources().resolutionDiagnostics().size());
         request.sources().resolutionDiagnostics().forEach(d -> diagnostic(b, d));
         field(b, request.sources().fingerprint().value());
-        return new CompilationFingerprint("SHA-256/compilation-v3", Hex.encode(Sha256.digestUtf16(b.toString())));
+        return new CompilationFingerprint("SHA-256/compilation-v4", Hex.encode(Sha256.digestUtf16(b.toString())));
     }
 
     private String bindingKey(ImportBinding binding) {

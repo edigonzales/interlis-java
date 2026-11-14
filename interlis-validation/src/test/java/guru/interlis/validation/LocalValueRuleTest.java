@@ -78,7 +78,7 @@ class LocalValueRuleTest {
                 Map.entry(Optional.<TransferValue>empty(), REQUIRED_VALUE_MISSING),
                 Map.entry(Optional.<TransferValue>of(TransferValue.Undefined.INSTANCE), REQUIRED_VALUE_UNDEFINED),
                 Map.entry(Optional.<TransferValue>of(new TransferValue.Text("")), REQUIRED_VALUE_UNDEFINED))) {
-            Map<SymbolRef, TransferValue> data = new java.util.HashMap<>(Map.of(bounded, validList));
+            Map<SymbolRef, TransferValue> data = new java.util.HashMap<>(Map.of(bounded, validList, field("copied"), new TransferValue.Text("ok")));
             entry.getKey().ifPresent(value -> data.put(code, value));
             var report = validate(Consistency.INCOMPLETE, Consistency.INCOMPLETE, data);
             assertEquals(List.of(entry.getValue()), codes(report));
@@ -156,7 +156,8 @@ class LocalValueRuleTest {
 
     @Test
     void omitsOnlyUncertainGeometricAbsenceInIncompleteTransfer() {
-        var data = Map.<SymbolRef, TransferValue>of(code, new TransferValue.Text("ok"), bounded, validList);
+        var data = Map.<SymbolRef, TransferValue>of(code, new TransferValue.Text("ok"), bounded, validList,
+                field("copied"), new TransferValue.Text("ok"));
         var complete = validate(Consistency.COMPLETE, Consistency.COMPLETE, data);
         assertEquals(List.of(REQUIRED_VALUE_MISSING), codes(complete));
         assertEquals(trace, complete.examples().getFirst().rule().declaration());

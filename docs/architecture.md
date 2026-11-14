@@ -49,6 +49,7 @@ ist eine separate Aufgabe; dekodierbare Verstösse bleiben als Transferwerte erh
 neutrale Transferereignisse. Der Plan ist unveränderlich. Die lokale Sitzung
 hält Basketkontext, Zähler und begrenzte Diagnosebeispiele. Die
 Datensatzsitzung verwendet einen vom Host bereitgestellten Byte-Speicher.
+Der Regelplan verweist auf die Revision des gebundenen Schemas.
 Die Laufzeitabhängigkeiten des Validators bleiben Modell und Transferkern.
 Der Host kann `interlis-validation-mvstore` für dateigestützte Prüfungen
 wählen. Dieses Modul besitzt die temporären Dateien und bindet H2 MVStore.
@@ -118,8 +119,11 @@ Im LSP-Host verwaltet `LspDocumentRegistry` die akzeptierten Dokumentstände
 und `LspFileIdentityRegistry` die vom Dateisystem bestätigten Identitäten.
 `LspInputReadiness` ordnet Dokumentoperationen und Anfragen während laufender
 Dateiaufnahmen. `AnalysisScheduler` serialisiert Zustandsänderungen auf der
-Owner-Queue und führt Compilerarbeit auf unveränderlichen Captures ausserhalb
-der Queue aus. Diagnosen werden aus einer akzeptierten Quellsicht veröffentlicht.
+Owner-Queue. Sie bindet Wurzeln und Konfiguration an die Workspace-Revision.
+Die Worker erstellen daraus den Capture, parsen und lösen Modelle auf.
+Die Owner-Queue übernimmt Repository-Updates und Analyseergebnisse nur für
+den erwarteten Stand. Diagnosen werden aus einer akzeptierten Quellsicht
+veröffentlicht.
 
 Laufbeobachtung und Abbruch gelten pro Operation. Ein interner Fehler erzeugt
 einen eigenen Ergebniszustand. Projektoren weisen ihre Fähigkeiten explizit

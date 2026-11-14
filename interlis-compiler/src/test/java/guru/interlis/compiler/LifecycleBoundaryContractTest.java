@@ -159,6 +159,48 @@ class LifecycleBoundaryContractTest {
         assertEquals(outcome.reason(), completion.reason());
     }
 
+    @Test void syntaxBudgetsIncludeAllSourcesAndCachedSyntax() {
+        var first = CompilerTestSupport.source("memory:/a.ili",
+                "INTERLIS 2.4; MODEL A AT \"x\" VERSION \"1\" = TOPIC T = CLASS C = END C; END T; END A.");
+        var second = CompilerTestSupport.source("memory:/b.ili",
+                "INTERLIS 2.4; MODEL B AT \"x\" VERSION \"1\" = TOPIC T = CLASS C = END C; END T; END B.");
+        var token = CancellationToken.none();
+        var defaults = CompilerOptions.defaults();
+        var parser = guru.interlis.syntax.SyntaxServices.create();
+        var standard = guru.interlis.syntax.ParseOptions.defaults(guru.interlis.syntax.ParseMode.STRICT);
+        var single = parser.parse(first, standard, token);
+        long nodes = single.usage().orElseThrow().nodes();
+        long tokens = single.tokens().size();
+        var b = defaults.budget();
+        var roots = List.<ModelSelector>of(new ModelSelector.BySource(first.id()), new ModelSelector.BySource(second.id()));
+        for (boolean limitNodes : List.of(true, false)) {
+            for (boolean exact : List.of(true, false)) {
+                var limits = new AnalysisBudget(b.maxSourceUtf16Length(), b.maxTotalSourceUtf16Length(),
+                        limitNodes ? b.maxTokens() : 2 * tokens - (exact ? 0 : 1),
+                        limitNodes ? 2 * nodes - (exact ? 0 : 1) : b.maxSyntaxNodes(),
+                        b.maxRecoveryEvents(), b.maxParseRuleDepth(), b.maxSemanticWorkUnits(), b.maxDiagnostics(),
+                        b.maxNumericLiteralDigits(), b.maxAbsoluteDecimalExponent());
+                var options = new CompilerOptions(defaults.semanticProfile(), defaults.allowedLanguages(),
+                        defaults.warningPolicy(), limits, defaults.overlays());
+                var request = new CompilationRequest(roots,
+                        SourceSet.of(Map.of(first.id(), first, second.id(), second)), options);
+                var parseOptions = new guru.interlis.syntax.ParseOptions(
+                        guru.interlis.syntax.ParseMode.STRICT, Optional.empty(), limits);
+                var reuse = new AnalysisReuse(Optional.empty(), Map.of(first.id(), parser.parse(first, parseOptions, token),
+                        second.id(), parser.parse(second, parseOptions, token)));
+                for (var hints : List.of(AnalysisReuse.none(), reuse)) {
+                    var outcome = CompilerEngines.create().compile(request, hints, token);
+                    if (exact) {
+                        assertInstanceOf(CompilationOutcome.Succeeded.class, outcome);
+                    } else {
+                        var cancelled = assertInstanceOf(CompilationOutcome.Cancelled.class, outcome);
+                        assertEquals(CancellationReason.RESOURCE_LIMIT, cancelled.reason());
+                    }
+                }
+            }
+        }
+    }
+
     @Test void syntaxNodeRecoveryAndTokenBudgetsRemainResourceCancellationRatherThanLanguageErrors() {
         var b=AnalysisBudget.defaults();
         for(String resource:List.of("maxSyntaxNodes","maxRecoveryEvents","maxTokens")) {

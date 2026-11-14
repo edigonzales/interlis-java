@@ -34,7 +34,6 @@ und die Compilerressourcen einschliesslich der Grammatik im Source-JAR.
 | `java build/interlis/ExistingJvmDistribution.java sdk` | Modulare CLI-/LSP-Launcher und SDK-ZIP |
 | `java build/interlis/ExistingJvmDistribution.java check` | SDK-Auslieferung und installierte CLI-/LSP-/SDK-Prozesse prüfen |
 | `java build/interlis/ModulePathContract.java` | SDK-Beispiel mit XTF und Validator auf Modulpfad und Klassenpfad ausführen |
-| `java build/interlis/CompilerRuntimeCheck.java` | Laufzeitclosure des Compilers prüfen |
 | `java build/interlis/GuiRuntime.java run\| runtime\| package` | Desktop starten, Java-Laufzeitimage bauen oder macOS-App auf Apple Silicon paketieren |
 | `java build/interlis/GuiRuntime.java check PROFILE` | GUI-Probe `shell`, `compile`, `diagnostics`, `dependencies`, `repositories`, `lifecycle` oder `packaged` |
 | `java build/interlis/EditorBundleRun.java` | Geprüftes Core-Bundle (Manifestversion 4) mit Server, Wire-Verträgen und Lizenzen |

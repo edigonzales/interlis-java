@@ -10,6 +10,13 @@ import guru.interlis.model.ExtensionContext;
 import guru.interlis.model.NotAnalyzedReason;
 import guru.interlis.model.NumericType;
 import guru.interlis.model.RelationDecision;
+import guru.interlis.model.AssociationSymbol;
+import guru.interlis.model.ClassSymbol;
+import guru.interlis.model.SnapshotMismatchException;
+import guru.interlis.model.StructureSymbol;
+import guru.interlis.model.Symbol;
+import guru.interlis.model.SymbolId;
+import guru.interlis.model.SymbolRef;
 import guru.interlis.model.SemanticGraph;
 import guru.interlis.model.TextType;
 import guru.interlis.model.TypeDescriptor;
@@ -19,6 +26,8 @@ import guru.interlis.model.TypeRelation;
 import guru.interlis.model.UnitRelation;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Objects;
@@ -141,12 +150,44 @@ public final class TypeRelations {
                 .map(guru.interlis.model.UnitSymbol.class::cast).orElse(null);
     }
 
+    /**
+     * Returns the immutable base-to-derived lineage of a class, structure or
+     * association, including predefined declarations and the supplied object.
+     * @throws SnapshotMismatchException if the reference belongs to another snapshot
+     * @throws IllegalArgumentException for an unknown object or incomplete or cyclic lineage
+     */
+    public List<SymbolRef> objectLineage(SymbolRef object) {
+        if (!graph.snapshotId().equals(object.snapshot())) {
+            throw new SnapshotMismatchException(graph.snapshotId(), object.snapshot());
+        }
+        var lineage = new ArrayList<SymbolRef>();
+        var seen = new HashSet<SymbolId>();
+        for (var current = Optional.of(object.symbol()); current.isPresent();) {
+            var id = current.orElseThrow();
+            if (!seen.add(id)) {
+                throw new IllegalArgumentException("cyclic object lineage: " + object);
+            }
+            current = objectBase(graph.symbol(id).orElseThrow(
+                    () -> new IllegalArgumentException("unknown object declaration: " + id)));
+            lineage.add(new SymbolRef(graph.snapshotId(), id));
+        }
+        return List.copyOf(lineage.reversed());
+    }
+
+    private static Optional<SymbolId> objectBase(Symbol symbol) {
+        return switch (symbol) {
+            case ClassSymbol type -> type.baseType();
+            case StructureSymbol type -> type.baseType();
+            case AssociationSymbol type -> type.baseAssociation();
+            default -> throw new IllegalArgumentException("expected object declaration: " + symbol.id());
+        };
+    }
+
     private guru.interlis.model.SymbolId declarationBase(guru.interlis.model.SymbolId id) {
-        return switch(graph.symbol(id).orElse(null)) {
+        var symbol = graph.symbol(id).orElse(null);
+        return switch(symbol) {
             case guru.interlis.model.DomainSymbol x -> x.baseDomain().orElse(null);
-            case guru.interlis.model.ClassSymbol x -> x.baseType().orElse(null);
-            case guru.interlis.model.StructureSymbol x -> x.baseType().orElse(null);
-            case guru.interlis.model.AssociationSymbol x -> x.baseAssociation().orElse(null);
+            case ClassSymbol _, StructureSymbol _, AssociationSymbol _ -> objectBase(symbol).orElse(null);
             case guru.interlis.model.ViewSymbol x -> x.baseView().orElse(null);
             case guru.interlis.model.AttributeSymbol x -> x.owner().map(this::declarationBase)
                     .map(parent->graph.effectiveMembers(parent).stream().map(guru.interlis.model.EffectiveMember::declaredSymbol)

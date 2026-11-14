@@ -21,6 +21,13 @@ Fehlerpfad. `LifecycleBoundaryContractTest` prüft tiefe gültige und
 wiederholt fehlerhafte Quellen, alle drei Grenzen, Fragmente und einen
 erfolgreichen Folgelauf.
 
+Bei mehreren Quellen verwenden Compiler und Workspace ein gemeinsames
+Syntaxbudget für Tokens, Syntaxknoten und Recoveryereignisse. Tokens
+werden beim Lesen in den Tokenstrom gezählt, Syntaxknoten beim Erzeugen.
+Ein wiederverwendeter Snapshot belastet das Budget mit den beim Parsen
+gemessenen Einheiten. Snapshots ohne diese Angabe werden neu geparst.
+Die Regeltiefe gilt für die jeweils aktiven Regeln einer Quelle.
+
 <a id="quelltexttypen-in-interlis-model"></a>
 ## Quelltexttypen in `interlis-model`
 

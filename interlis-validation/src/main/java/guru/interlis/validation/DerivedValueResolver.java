@@ -28,7 +28,7 @@ final class DerivedValueResolver {
         var number = switch (expected) {
             case EvaluationResult.KnownNumber value -> value.value();
             case EvaluationResult.Known known when known.value() instanceof TransferValue.NumberValue value ->
-                    NumericSemantics.Number.exact(value.exactValue());
+                    new NumericSemantics.Number(value.exactValue());
             default -> null;
         };
         if (number != null && supplied instanceof TransferValue.NumberValue delivered && type instanceof NumericType numeric) {
@@ -40,7 +40,7 @@ final class DerivedValueResolver {
                         Math.subtractExact(precision.fractionalDigits(), precision.exponent()));
             }
             return NumericSemantics.compare(guru.interlis.model.BinaryOperator.EQ,
-                    number, NumericSemantics.Number.exact(delivered.exactValue()));
+                    number, new NumericSemantics.Number(delivered.exactValue()));
         }
         return expected instanceof EvaluationResult.Known known && known.value().equals(supplied);
     }

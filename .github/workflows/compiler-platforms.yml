@@ -85,7 +85,8 @@ jobs:
           ./gradlew "-PnodeExecutable=$(command -v node)" \
             :interlis-wasm-teavm:teavmJsTest :interlis-wasm-teavm:teavmWasmTest \
             :interlis-wasm-teavm:browserClientTest \
-            :interlis-wasm-teavm:browserSmoke
+            :interlis-wasm-teavm:browserSmoke \
+            :interlis-wasm-teavm:validationBrowserSmoke
 
   windows:
     name: JVM and distribution (windows-x64)

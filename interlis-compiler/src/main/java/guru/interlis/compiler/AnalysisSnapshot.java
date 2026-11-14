@@ -63,6 +63,14 @@ public final class AnalysisSnapshot {
                 Objects.requireNonNull(sourceRevisions, "sourceRevisions"));
         this.syntaxSnapshots = Map.copyOf(
                 Objects.requireNonNull(syntaxSnapshots, "syntaxSnapshots"));
+        if (!this.sourceRevisions.keySet().equals(this.syntaxSnapshots.keySet())) {
+            throw new IllegalArgumentException("syntax sources do not match analysis sources");
+        }
+        this.syntaxSnapshots.forEach((id, syntax) -> {
+            if (!id.equals(syntax.source().id()) || !this.sourceRevisions.get(id).equals(syntax.source().revision())) {
+                throw new IllegalArgumentException("syntax does not match analysis source revision: " + id);
+            }
+        });
         this.diagnostics = java.util.List.copyOf(Objects.requireNonNull(diagnostics, "diagnostics"));
         this.requestDiagnostics = java.util.List.copyOf(Objects.requireNonNull(requestDiagnostics, "requestDiagnostics"));
         int next = 0;
@@ -75,6 +83,14 @@ public final class AnalysisSnapshot {
         this.coverage = Objects.requireNonNull(coverage, "coverage");
         this.fingerprint = Objects.requireNonNull(fingerprint, "fingerprint");
         this.provenance = Objects.requireNonNull(provenance, "provenance");
+        if (!this.sourceRevisions.keySet().equals(provenance.sourceFingerprints().keySet())) {
+            throw new IllegalArgumentException("fingerprint sources do not match analysis sources");
+        }
+        this.syntaxSnapshots.forEach((id, syntax) -> {
+            if (!syntax.source().contentFingerprint().equals(provenance.sourceFingerprints().get(id))) {
+                throw new IllegalArgumentException("syntax does not match analysis source fingerprint: " + id);
+            }
+        });
     }
 
     /** Returns the immutable snapshot identity. */

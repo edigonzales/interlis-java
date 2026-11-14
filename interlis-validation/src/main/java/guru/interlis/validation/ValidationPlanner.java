@@ -1,8 +1,6 @@
 package guru.interlis.validation;
 
-import guru.interlis.model.AssociationSymbol;
 import guru.interlis.model.AttributeSymbol;
-import guru.interlis.model.ClassSymbol;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.ConstraintDefinition;
 import guru.interlis.model.ConstraintSymbol;
@@ -20,7 +18,6 @@ import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.PlausibilityConstraint;
 import guru.interlis.model.SemanticGraph;
 import guru.interlis.model.SetConstraint;
-import guru.interlis.model.StructureSymbol;
 import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
@@ -313,18 +310,9 @@ public final class ValidationPlanner {
         }
 
         private Set<SymbolId> ancestry(ObjectDescriptor object) {
-            Set<SymbolId> types = new HashSet<>();
-            var current = Optional.of(object.symbol().symbol());
-            while (current.isPresent() && types.add(current.orElseThrow())) {
-                var ref = new SymbolRef(transfer.snapshotId(), current.orElseThrow());
-                current = switch (graph.symbol(ref.symbol()).orElseThrow(() -> missing(ref, "Missing base object"))) {
-                    case ClassSymbol clazz -> clazz.baseType();
-                    case StructureSymbol structure -> structure.baseType();
-                    case AssociationSymbol association -> association.baseAssociation();
-                    default -> throw missing(ref, "Invalid object ancestry");
-                };
-            }
-            return types;
+            var ancestry = new HashSet<SymbolId>();
+            types.objectLineage(object.symbol()).forEach(ref -> ancestry.add(ref.symbol()));
+            return ancestry;
         }
 
         private List<ConstraintSymbol> rules(ObjectDescriptor object, Optional<SymbolRef> slot, int depth,

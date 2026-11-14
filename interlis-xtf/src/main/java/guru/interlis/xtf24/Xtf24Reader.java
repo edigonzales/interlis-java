@@ -130,10 +130,7 @@ public final class Xtf24Reader extends TransferReader {
         if (declaredNames.isEmpty()) {
             throw input.error(INVALID_WIRE, "XTF header needs at least one model");
         }
-        var explicitTranslations = declaredNames.stream().flatMap(name -> names.translatedModel(name).stream())
-                .map(names::modelName).collect(java.util.stream.Collectors.toSet());
-        for (var name : declaredNames) {
-            var model = names.model(name, explicitTranslations.contains(name));
+        for (var model : names.models(declaredNames)) {
             if (!declared.add(model.symbol())) {
                 throw input.error(INVALID_WIRE, "Repeated header model");
             }

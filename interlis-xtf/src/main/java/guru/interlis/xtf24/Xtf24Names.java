@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static guru.interlis.xtf24.Xtf24Exception.Reason.INVALID_WIRE;
@@ -125,7 +126,19 @@ final class Xtf24Names {
         return model(name, false);
     }
 
-    ModelDescriptor model(String name, boolean explicitOriginal) {
+    List<ModelDescriptor> models(Iterable<String> wireNames) {
+        var explicitTranslations = new HashSet<String>();
+        for (String name : wireNames) {
+            translatedModel(name).map(this::modelName).ifPresent(explicitTranslations::add);
+        }
+        var models = new ArrayList<ModelDescriptor>();
+        for (String name : wireNames) {
+            models.add(model(name, explicitTranslations.contains(name)));
+        }
+        return List.copyOf(models);
+    }
+
+    private ModelDescriptor model(String name, boolean explicitOriginal) {
         var translation = translatedModel(name);
         if (translation.isPresent()) {
             return translation.orElseThrow();
@@ -139,7 +152,7 @@ final class Xtf24Names {
         return unique(new QName("", name), originals);
     }
 
-    java.util.Optional<ModelDescriptor> translatedModel(String name) {
+    private Optional<ModelDescriptor> translatedModel(String name) {
         return plan.models().stream()
                 .filter(model -> !model.symbol().equals(model.name().canonical()))
                 .filter(model -> model.name().declared().last().equals(name)).findFirst();
@@ -179,8 +192,12 @@ final class Xtf24Names {
     }
 
     ObjectDescriptor object(QName name, Set<SymbolRef> availableTypes) {
-        return unique(name, objects.getOrDefault(name, List.of()).stream()
-                .filter(object -> availableTypes.contains(object.symbol())).toList());
+        return unique(name, objectCandidates(name, availableTypes));
+    }
+
+    List<ObjectDescriptor> objectCandidates(QName name, Set<SymbolRef> availableTypes) {
+        return objects.getOrDefault(name, List.of()).stream()
+                .filter(object -> availableTypes.contains(object.symbol())).toList();
     }
 
     private QName declarationName(SymbolRef canonical) {
@@ -203,7 +220,7 @@ final class Xtf24Names {
         return new SymbolRef(context.snapshot(), symbol.id());
     }
 
-    private static <T> T unique(QName name, List<T> candidates) {
+    static <T> T unique(QName name, List<T> candidates) {
         if (candidates.size() != 1) {
             throw failure(INVALID_WIRE, "Expected one declaration for " + name + ", found " + candidates.size());
         }

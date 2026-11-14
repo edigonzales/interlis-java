@@ -11,7 +11,7 @@ import java.util.Optional;
 import static guru.interlis.validation.EvaluationResult.*;
 
 final class UnitConversions {
-    private static final NumericSemantics.Number ONE = NumericSemantics.Number.exact(BigDecimal.ONE);
+    private static final NumericSemantics.Number ONE = new NumericSemantics.Number(BigDecimal.ONE);
 
     private UnitConversions() { }
 
@@ -56,7 +56,7 @@ final class UnitConversions {
             for (var term : unit.conversionFactors()) {
                 frame.visit().run();
                 var number = term.kind() == UnitSymbol.ConstantKind.DECIMAL
-                        ? NumericSemantics.Number.exact(term.decimal().orElseThrow().exactValue())
+                        ? new NumericSemantics.Number(term.decimal().orElseThrow().exactValue())
                         : NumericSemantics.constant(term.kind().name());
                 factor = apply(factor, number, term.operator());
             }

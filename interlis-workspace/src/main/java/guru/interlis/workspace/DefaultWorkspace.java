@@ -275,17 +275,16 @@ final class DefaultWorkspace implements Workspace {
         }
         var options = new guru.interlis.syntax.ParseOptions(mode, Optional.empty(), budget);
         Map<SourceId, guru.interlis.syntax.SyntaxSnapshot> parsed = new LinkedHashMap<>();
-        for (SourceText text : capturedSources.values()) {
-            token.throwIfCancellationRequested();
-            var syntax = cached.get(text.id());
-            if (syntax != null && syntax.source().revision().equals(text.revision())
-                    && syntax.source().text().equals(text.text()) && syntax.options().equals(options)) {
-                synchronized (this) { syntaxReuses++; }
-            } else {
-                synchronized (this) { parses++; }
-                syntax = guru.interlis.syntax.SyntaxServices.create().parse(text, options, token);
+        var batch = guru.interlis.syntax.SyntaxServices.batch(options, token);
+        var ordered = capturedSources.values().stream()
+                .sorted(Comparator.comparing(text -> text.id().value())).toList();
+        for (SourceText text : ordered) {
+            var previousSyntax = cached.get(text.id());
+            var syntax = batch.prepare(text, previousSyntax);
+            synchronized (this) {
+                if (syntax == previousSyntax) syntaxReuses++;
+                else parses++;
             }
-            if(syntax.coverage().budgetExceeded()) throw new OperationCancelledException(CancellationReason.RESOURCE_LIMIT);
             parsed.put(text.id(), syntax);
         }
         SourceInventory inventory = new SourceInventory(capturedRevision, capturedSources,
@@ -308,24 +307,12 @@ final class DefaultWorkspace implements Workspace {
             var diagnostics = new java.util.ArrayList<>(original.resolutionDiagnostics());
             diagnostics.addAll(capturedConfiguration.resolutionDiagnostics());
             var enriched = guru.interlis.compiler.SourceSet.of(original.sources(), original.imports(),
-                    diagnostics, original.fingerprint(), original.translations());
+                    diagnostics, original.fingerprint(), original.translations(), original.rootResolutions());
             closure = closure.complete() ? new ResolvedClosure(enriched, closure.trace(), closure.dependencies(), closure.rootLocations())
                     : new IncompleteClosure(enriched, closure.pendingFetches(), closure.trace(), closure.dependencies(),
                             closure.negativeDependencies(), closure.rootLocations());
         }
-        List<guru.interlis.compiler.ModelSelector> concreteRoots = request.roots().stream().map(root -> {
-            if (root instanceof guru.interlis.compiler.ModelSelector.ByName name) {
-                var candidates = capturedConfiguration.resolutionPolicy().select(name, inventory.headers());
-                if (candidates.size() == 1) {
-                    var chosen = candidates.getFirst();
-                    return (guru.interlis.compiler.ModelSelector) new guru.interlis.compiler.ModelSelector.ByName(
-                            chosen.modelName(), Optional.of(chosen.modelVersion()), Optional.of(chosen.source()));
-                }
-                return (guru.interlis.compiler.ModelSelector) capturedConfiguration.resolutionPolicy().qualify(name);
-            }
-            return root;
-        }).toList();
-        CompilationRequest compilationRequest = new CompilationRequest(concreteRoots,
+        CompilationRequest compilationRequest = new CompilationRequest(request.roots(),
                 closure.sourceSet(), capturedConfiguration.compilerOptions());
         // The resolver and engine consume the exact same parse. Retention is committed
         // only by acceptAnalysis, so a late capture cannot poison reuse state.
@@ -371,18 +358,9 @@ final class DefaultWorkspace implements Workspace {
         if (!analysis.sourceRevisions().equals(expected)) {
             throw new IllegalArgumentException("analysis source revisions do not match capture");
         }
-        if (!analysis.provenance().optionsFingerprint()
-                .equals(configuration.compilerOptions().fingerprint())) {
-            throw new IllegalArgumentException("analysis options do not match configuration");
+        if (!capture.request().provenance().equals(analysis.provenance())) {
+            throw new IllegalArgumentException("analysis provenance does not match capture");
         }
-        capture.request().sources().sources().forEach((id, text) -> {
-            var syntax = analysis.syntaxSnapshot(id);
-            if (syntax.isEmpty()
-                    || !syntax.get().source().contentFingerprint()
-                    .equals(text.contentFingerprint())) {
-                throw new IllegalArgumentException("analysis source content does not match capture");
-            }
-        });
     }
 
     @Override

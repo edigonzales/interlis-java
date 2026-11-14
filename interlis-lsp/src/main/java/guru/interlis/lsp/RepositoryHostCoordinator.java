@@ -34,8 +34,11 @@ final class RepositoryHostCoordinator implements AutoCloseable {
         loader=new CoalescingSourceLoader(access.loader());
     }
     boolean needsResolution(WorkspaceCapture capture) {
-        return !capture.resolution().complete() || !settings.options().modelPins().isEmpty()
-                || !settings.options().sourcePins().isEmpty() || settings.options().lock().isPresent();
+        return !capture.resolution().complete() || verifiesLoadedSources();
+    }
+    boolean verifiesLoadedSources() {
+        var options = settings.options();
+        return !options.modelPins().isEmpty() || !options.sourcePins().isEmpty() || options.lock().isPresent();
     }
     CompletableFuture<RepositoryResolutionOutcome> resolve(Workspace owner,WorkspaceCapture capture,
             WorkspaceConfiguration configuration,CancellationToken token) {

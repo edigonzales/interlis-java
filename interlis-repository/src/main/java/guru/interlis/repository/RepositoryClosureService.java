@@ -399,20 +399,7 @@ public final class RepositoryClosureService {
             Map<String, ModelPin> pins, Map<SourceId, ContentDigest> sourcePins, Optional<ResolutionLock> lock, Map<String, List<ModelPin>> selected) {
         var locations = new ArrayList<ModelLocation>();
         capture.resolution().dependencies().forEach(d -> locations.addAll(d.candidates()));
-        for (var root : capture.request().roots()) {
-            if (root instanceof ModelSelector.BySource bySource) {
-                var syntax = capture.reuse().previousSyntax().get(bySource.source());
-                if (syntax != null) for (var model : syntax.root().models())
-                    locations.add(new ModelLocation(syntax.source().id(), syntax.source().revision(), model.name(), Optional.of(model.modelVersion()), model.range().startOffset()));
-                continue;
-            }
-            var byName = (ModelSelector.ByName) root;
-            for (var syntax : capture.reuse().previousSyntax().values()) for (var model : syntax.root().models()) {
-                if (model.name().equals(byName.modelName()) && byName.sourceHint().filter(id -> !id.equals(syntax.source().id())).isEmpty()
-                        && byName.modelVersion().filter(v -> !v.equals(model.modelVersion())).isEmpty())
-                    locations.add(new ModelLocation(syntax.source().id(), syntax.source().revision(), model.name(), Optional.of(model.modelVersion()), model.range().startOffset()));
-            }
-        }
+        locations.addAll(capture.resolution().rootLocations());
         for (var location : locations) {
             boolean remote = remoteSources.contains(location.source()) || lock.map(l -> l.models().containsKey(location.modelName())).orElse(false);
             var text = capture.request().sources().sources().get(location.source());

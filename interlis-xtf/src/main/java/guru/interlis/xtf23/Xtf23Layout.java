@@ -12,6 +12,7 @@ import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeRef;
+import guru.interlis.model.query.TypeRelations;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.RoleSlot;
@@ -47,10 +48,12 @@ final class Xtf23Layout {
             .thenComparingInt(field -> field.slot().member().position());
 
     private final TransferPlan plan;
+    private final TypeRelations types;
     private final Map<SymbolRef, Embedded> embedded;
 
     Xtf23Layout(TransferPlan plan) {
         this.plan = plan;
+        this.types = new TypeRelations(plan.schema().semanticGraph());
         var result = new HashMap<SymbolRef, Embedded>();
         for (var descriptor : plan.objects()) {
             if (descriptor.kind() == SymbolKind.ASSOCIATION && descriptor.transferable()) {
@@ -124,8 +127,8 @@ final class Xtf23Layout {
     }
 
     boolean matchesRoots(ObjectDescriptor descriptor, List<SymbolId> allowed) {
-        return allowed.isEmpty() || ancestors(descriptor).stream()
-                .anyMatch(base -> allowed.contains(base.symbol().symbol()));
+        return allowed.isEmpty() || types.objectLineage(descriptor.symbol()).stream()
+                .anyMatch(base -> allowed.contains(base.symbol()));
     }
 
     TypeDescriptor type(TypeRef ref) {
@@ -212,12 +215,7 @@ final class Xtf23Layout {
     }
 
     private List<ObjectDescriptor> ancestors(ObjectDescriptor descriptor) {
-        var hierarchy = new ArrayList<ObjectDescriptor>();
-        hierarchy.add(descriptor);
-        while (descriptor.baseType().isPresent()) {
-            descriptor = plan.object(descriptor.baseType().orElseThrow()).orElseThrow();
-            hierarchy.add(descriptor);
-        }
-        return hierarchy.reversed();
+        return types.objectLineage(descriptor.symbol()).stream()
+                .map(plan::object).flatMap(Optional::stream).toList();
     }
 }

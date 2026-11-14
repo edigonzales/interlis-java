@@ -47,6 +47,11 @@ und Schemahandles gehören zu ihrer Sitzung und Generation. Sie werden
 weder persistiert noch zwischen Clients übertragen.
 
 
+API 0.10 erhält additive Zugänge für Resolverentscheidungen, Modellvererbung
+und gemeinsam budgetierte Syntax. Die bisherigen Konstruktoren und
+Factory-Signaturen bleiben gültig. Die Budget- und Snapshotprüfungen
+setzen die bereits dokumentierten Invarianten durch.
+
 API 0.4 ergänzt bei `TransferValue.XmlFragment` die unveränderliche
 `namespaceBindings()`-Map. Sie erhält auch den Namespacekontext textueller
 QNames ausserhalb von Kindelementen. Der Einargument-Konstruktor erzeugt eine
@@ -200,6 +205,12 @@ Die dritte Achse bleibt als Transferwert erhalten und unterliegt weiterhin
 der Werteprüfung. Die Engine unterstützt keine 3D-Messungen,
 geodätischen Messungen oder CRS-Transformationen. Nicht vergleichbare
 Koordinatentypen bleiben in einer gemeinsamen AREA-Prüfung ungeprüft.
+Die AREA-Prüfung vergleicht gemeinsame Kanten anhand exakter Transferwerte.
+Für die numerischen Kurvenoperationen verwendet sie näherungsweise
+Gleitkommazahlen und einen gemeinsamen, von der Objektreihenfolge unabhängigen
+Koordinatenursprung. Wenn eine verschobene Dezimalkoordinate beim Umwandeln
+in Double und zurück ihren Wert verliert, bleibt die betroffene Schlussprüfung
+unbestimmt.
 Benutzerdefinierte Linienformen und der netzweite Vergleich von
 LINEATTR-Werten sind ausserhalb dieses Profils.
 

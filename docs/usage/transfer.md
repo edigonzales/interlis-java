@@ -45,7 +45,12 @@ beobachtet. Ein blockierender Host-Stream braucht hostseitige Timeouts.
 XTF 2.4 FULL verwendet die normativen INTERLIS- und Geometrienamespaces,
 Modell-XMLNS und Originalnamen übersetzter Modelle. Der Reader akzeptiert beliebige
 Präfixe. Die Headerdeklarationen behalten ihre Reihenfolge und Herkunft.
-Deklarierte Modelle decken ihre gerichtete Importclosure ab. Pro Basket werden
+Deklarierte Modelle decken ihre gerichtete Importclosure ab. Teilen sich ein
+Original und seine Übersetzungen einen Basketnamen, wählt der Reader das
+Original, sofern es vom Header abgedeckt ist. Bei kollidierenden Strukturnamen
+bestimmen der Attributtyp, das umgebende Modell und dessen Importe die Auflösung. Der Writer
+weist Werte zurück, deren Wire-Name eine andere Deklaration auswählen würde.
+Pro Basket werden
 generische Domains mit expliziten vollqualifizierten `generic=concrete`-Paaren
 gebunden. Ein Basket beeinflusst die Bindungen des folgenden Baskets nicht.
 
@@ -56,6 +61,11 @@ Mehrfachgeometrien sowie Standardkreisbögen sind unterstützt. INCOMPLETE erlau
 die vorgesehenen Mehrfachdarstellungen einfacher Linien und Flächen.
 BLACKBOX BINARY und XML werden begrenzt verarbeitet. XML-Fragmente behalten den
 Namespacekontext, einschliesslich Bindungen für QName-Textwerte.
+
+Beide XTF-Codecs lesen die Vererbung aus dem gebundenen Modell. Die
+Transferdeskriptoren liefern das Wire-Layout der übertragbaren Deklarationen.
+Eine vordefinierte Basisklasse wie `INTERLIS.REFSYSTEM` braucht deshalb
+keinen eigenen Transferdeskriptor.
 
 Die Codecs prüfen XML-/Protokollsyntax, Dekodierbarkeit, Reihenfolge und
 Ressourcenlimits. Modellbereiche, Pflichtwerte, Kardinalitäten, Zielobjektexistenz,
@@ -153,10 +163,13 @@ Topics.
 ergaben. `coverage()` zeigt geplante, aber nicht ausgeführte Regeln und
 Laufzeitlücken; normativ undefinierte Ausdrücke bleiben davon unterscheidbar.
 Globale und basketweite Eindeutigkeit, `EXISTENCE`, `SET CONSTRAINT`,
-Prozent-Plausibilität, referenzielle Zielprüfung und Geometrietopologie
-gehören nicht zum Profil. Nicht unterstützte Ausdrücke und Werte wie externe
-Funktionen ohne Hostbindung, `UNIQUE` mit lokalem `WHERE` und Bogenradius
-werden als ungeprüft ausgewiesen.
+Prozent-Plausibilität und referenzielle Zielprüfung benötigen das
+Datensatzprofil. Mit dem optionalen Modul `interlis-validation-jts` und
+einer gebundenen Geometrieengine prüft `LOCAL_ONLY` auch die Topologie
+einzelner Geometriewerte, einschliesslich Standardkreisbögen mit Radius.
+Ohne Engine zeigt die Coverage die ausstehende Topologieprüfung. Externe
+Funktionen ohne Hostbindung und `UNIQUE` mit lokalem `WHERE` werden
+ebenfalls als ungeprüft ausgewiesen.
 
 Der Bericht zählt alle erkannten Verstösse und behält standardmässig höchstens
 200 Beispiele mit Datenpfad und Modellherkunft. Die Standardbudgets pro Objekt
@@ -209,6 +222,15 @@ unterstützt gebundene Referenz- und Assoziationspfade, abgeleitete Werte,
 nichtgeometrische Standardfunktionen und explizite Hostbindungen.
 `SET` kann kontextgebundenes und explizites `ALL` zählen.
 Prozentbedingungen verwenden einen exakten Vergleich.
+
+Bei vollständigen Transfers muss ein obligatorisches, nichttransientes
+Attribut auch dann geliefert werden, wenn es berechenbar ist. Der Validator
+prüft gelieferte Werte und vergleicht sie mit der verfügbaren Ableitung.
+Ein fehlender Lieferwert wird im Transferobjekt nicht ergänzt. Wenn die
+Ableitung einen Wert liefert, greifen dafür die fachlichen Wertregeln,
+einschliesslich bei nachgelagerter Referenzauflösung. Ein fachlich
+undefiniertes obligatorisches Ergebnis wird als Pflichtverletzung erfasst.
+Fehlender Laufzeitkontext bleibt als Prüflücke sichtbar.
 
 Virtuelle Sichten verarbeiten Projektion, Selektion, Union, Join,
 Gruppierung und nichtgeometrische Strukturinspektion. Gruppengrössen

@@ -36,6 +36,37 @@ final class Xtf23WriterRoundTripTest {
     }
 
     @Test
+    void roundTripsClassWithPredefinedBaseOutsideTheTransferPlan() {
+        var transfer = compileInline("Checks", """
+                INTERLIS 2.3;
+                REFSYSTEM MODEL Checks AT "https://example.org" VERSION "1" =
+                  TOPIC T =
+                    CLASS Datum EXTENDS INTERLIS.REFSYSTEM = label : TEXT; END Datum;
+                  END T;
+                END Checks.
+                """);
+        assertTrue(transfer.objects().stream().noneMatch(type -> type.name().declared().last().equals("REFSYSTEM")));
+        var xml = document("<MODELS><MODEL NAME=\"Checks\" VERSION=\"1\" URI=\"https://example.org\"/></MODELS>", """
+                <Checks.T BID="b">
+                  <Checks.T.Datum TID="datum"><label>example</label></Checks.T.Datum>
+                </Checks.T>
+                """);
+        List<TransferEvent> events;
+        try (var reader = new Xtf23Reader(transfer, input(xml))) {
+            events = readAll(reader);
+        }
+        var datum = assertInstanceOf(ObjectEvent.class, events.get(2)).object();
+        assertEquals(List.of(new Text("example")), List.copyOf(datum.data().values().values()));
+        var bytes = new ByteArrayOutputStream();
+        try (var writer = new Xtf23Writer(transfer, bytes)) {
+            events.forEach(writer::write);
+        }
+        try (var reader = new Xtf23Reader(transfer, new ByteArrayInputStream(bytes.toByteArray()))) {
+            assertEquals(events, readAll(reader));
+        }
+    }
+
+    @Test
     void writesNeutralEventsInModelOrderAndEscapesXml() {
         var item = type("Item");
         var detail = type("Detail");

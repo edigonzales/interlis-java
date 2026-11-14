@@ -104,7 +104,6 @@ public final class ArtifactContracts {
             long started=System.nanoTime();
             rejects(()->ExistingJvmDistribution.main(new String[]{"sdk"}),"distribution lock reentry");
             rejects(()->ModulePathContract.main(new String[0]),"module check lock reentry");
-            rejects(()->CompilerRuntimeCheck.main(new String[0]),"runtime check lock reentry");
             rejects(()->GuiRuntime.main(new String[]{"runtime"}),"GUI lock reentry");
             rejects(()->EditorBundleRun.main(new String[0]),"editor producer lock reentry");
             check(java.time.Duration.ofNanos(System.nanoTime()-started).toSeconds()<5);

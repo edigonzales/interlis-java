@@ -12,6 +12,31 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class Xtf24InheritanceTest {
     @Test
+    void roundTripsClassWithPredefinedBaseOutsideTheTransferPlan() {
+        var plan = plan("""
+                INTERLIS 2.4;
+                REFSYSTEM MODEL Checks AT "https://example.org" VERSION "1" =
+                  XMLNS "urn:checks";
+                  TOPIC T =
+                    CLASS Datum EXTENDS INTERLIS.REFSYSTEM = label : TEXT; END Datum;
+                  END T;
+                END Checks.
+                """, "Checks");
+        assertTrue(plan.objects().stream().noneMatch(type -> type.name().declared().last().equals("REFSYSTEM")));
+        var events = read(plan, """
+                <i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns:m="urn:checks">
+                  <i:headersection><i:models><i:model>Checks</i:model></i:models></i:headersection>
+                  <i:datasection><m:T i:bid="b">
+                    <m:Datum i:tid="datum"><m:label>example</m:label></m:Datum>
+                  </m:T></i:datasection>
+                </i:transfer>
+                """);
+        var datum = assertInstanceOf(ObjectEvent.class, events.get(2)).object();
+        assertEquals(java.util.List.of(new Text("example")), java.util.List.copyOf(datum.data().values().values()));
+        assertEquals(events, read(plan, write(plan, events)));
+    }
+
+    @Test
     void placesInheritedEmbeddingBeforeDerivedAttributesWithDeclaringNamespaces() {
         var plan = plan("""
                 INTERLIS 2.4;

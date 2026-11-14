@@ -101,7 +101,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /** Thin LSP adapter over Workspace and LanguageQueries. */
 final class InterlisTextDocumentService implements TextDocumentService {
     private final Workspace workspace;
-    private final ExternalSourceRegistry externalSources=new ExternalSourceRegistry();
+    private final ExternalSourceRegistry externalSources;
     private guru.interlis.workspace.WorkspaceConfiguration userConfiguration;
     private RepositorySettings repositorySettings=RepositorySettings.defaults();
     private guru.interlis.diagnostics.DiagnosticLanguage localeLanguage=guru.interlis.diagnostics.DiagnosticLanguage.EN;
@@ -131,12 +131,13 @@ final class InterlisTextDocumentService implements TextDocumentService {
     void requestGuard(Runnable guard) { requestGuard=Objects.requireNonNull(guard); }
 
     InterlisTextDocumentService(Workspace workspace, guru.interlis.compiler.CompilerEngine engine,
-                                guru.interlis.compiler.CompilerServices services) {
+                                guru.interlis.compiler.CompilerServices services, ExternalSourceRegistry externalSources) {
         this.workspace = Objects.requireNonNull(workspace, "workspace");
+        this.externalSources = Objects.requireNonNull(externalSources, "externalSources");
         this.userConfiguration=workspace.configuration();
         scheduler = new AnalysisScheduler(workspace, engine, services, this::accepted,
                 message -> operations.accept(message));
-        scheduler.repositorySources(this::repositoryResolved, id -> !externalSources.contains(id));
+        scheduler.repositorySources(this::applyRepositoryUpdate, id -> !externalSources.contains(id));
         readiness = new LspInputReadiness(documents::generation, scheduler::completeOnOwner, this::operation);
     }
 
@@ -1293,22 +1294,38 @@ final class InterlisTextDocumentService implements TextDocumentService {
         };
     }
 
-    private void repositoryResolved(RepositoryResolutionOutcome.Prepared prepared) {
+    private void applyRepositoryUpdate(guru.interlis.repository.PreparedRepositoryUpdate update) {
+        var texts = new LinkedHashMap<SourceId, String>();
+        for (var source : update.sources()) {
+            // Repository updates supply complete texts for absent sources.
+            texts.put(source.source(), ((SourceChange.Replace) source.change()).text());
+        }
+        long limit = update.configuration().compilerOptions().budget().maxTotalSourceUtf16Length();
+        var prefixes = externalSources.prepare(texts, limit);
+        var applied = update.apply(workspace);
+
         var retired = new LinkedHashSet<String>();
-        for (var update : prepared.update().sources()) {
-            workspace.source(update.source()).ifPresent(source -> registerReadonlySource(source, retired));
+        for (var receipt : applied.updates()) {
+            var id = receipt.source();
+            var installed = workspace.source(id).orElseThrow();
+            if (externalSources.install(installed, prefixes.get(id))) {
+                retireReadonlySource(id, retired);
+            }
         }
         retired.forEach(this::clearDocumentDiagnostics);
     }
 
     private void registerReadonlySource(SourceText source, Set<String> retired) {
-        var previous = externalSources.currentUri(source.id());
-        externalSources.register(source, workspace.configuration().compilerOptions().budget().maxTotalSourceUtf16Length());
-        if (previous.isPresent() && !previous.equals(externalSources.currentUri(source.id()))) {
-            retired.addAll(documents.removeSources(source.id()::equals));
-            var publication = publishedClosed.remove(source.id());
-            if (publication != null) retired.add(publication.uri());
+        long limit = workspace.configuration().compilerOptions().budget().maxTotalSourceUtf16Length();
+        if (externalSources.register(source, limit)) {
+            retireReadonlySource(source.id(), retired);
         }
+    }
+
+    private void retireReadonlySource(SourceId id, Set<String> retired) {
+        retired.addAll(documents.removeSources(id::equals));
+        var publication = publishedClosed.remove(id);
+        if (publication != null) retired.add(publication.uri());
     }
 
     CompletableFuture<SourceContent> sourceContent(SourceContentParams params) {

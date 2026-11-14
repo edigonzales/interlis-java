@@ -319,13 +319,22 @@ final class DatasetRuleContext {
             visit();
             var slot = field.slot().symbol();
             var at = new ValuePath(path, new DataLocation.Slot(slot));
-            if (field.derived() && plan.derivedNeedsDataset(slot.symbol())) {
+            var value = current.value(slot);
+            if (field.derived() && (value.isEmpty() || plan.derivedNeedsDataset(slot.symbol()))) {
                 var result = DerivedValueResolver.resolve(field.slot().attribute(), frame);
-                report.recordDeferredDerived(occurrence, field, result, frame.effectiveType(field.values().getFirst()),
-                        current, at, this::visit);
+                if (plan.derivedNeedsDataset(slot.symbol())) {
+                    var computed = report.checkDeferredDerivation(occurrence, field, result, basket, current, at, frame);
+                    value = value.or(() -> computed);
+                } else if (value.isEmpty()) {
+                    value = switch (result) {
+                        case EvaluationResult.Known known -> Optional.of(known.value());
+                        case EvaluationResult.KnownNumber number -> Optional.of(number.value().asValue());
+                        default -> Optional.empty();
+                    };
+                }
             }
-            current.value(slot).ifPresent(value ->
-                    checkDeferredValue(report, occurrence, basket, current, frame, field, 0, value, at));
+            value.ifPresent(actual ->
+                    checkDeferredValue(report, occurrence, basket, current, frame, field, 0, actual, at));
         }
     }
 

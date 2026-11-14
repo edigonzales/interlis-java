@@ -5,6 +5,7 @@ import guru.interlis.compiler.ImportResolution;
 import guru.interlis.compiler.ImportSite;
 import guru.interlis.compiler.ModelLocation;
 import guru.interlis.compiler.ModelSelector;
+import guru.interlis.compiler.RootResolution;
 import guru.interlis.gui.application.CompileResult;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.repository.RepositorySearchStep;
@@ -130,17 +131,26 @@ public final class DependencySnapshot {
         var roots = new ArrayList<Root>();
         Set<ModelLocation> displayed = new HashSet<>();
         for (ModelSelector selector : capture.request().roots()) {
-            var chosen = closure.rootLocations().stream().filter(location -> matches(selector, location)).toList();
+            var decision = selector instanceof ModelSelector.ByName named
+                    ? capture.request().sources().rootResolutions().get(named) : null;
+            var chosen = switch (decision) {
+                case RootResolution.Resolved resolved -> List.of(resolved.target());
+                case RootResolution.Missing ignored -> List.<ModelLocation>of();
+                case RootResolution.Ambiguous ignored -> List.<ModelLocation>of();
+                case null -> closure.rootLocations().stream().filter(location -> matches(selector, location)).toList();
+            };
             if (chosen.isEmpty()) {
-                var problem = closure.negativeDependencies().stream().filter(dep -> dep.importSites().isEmpty()
-                        && dep.selector().equals(selector)).findFirst();
                 String name = switch (selector) {
                     case ModelSelector.ByName(var model, var version, var source) -> model;
                     case ModelSelector.BySource(var source) -> DiagnosticPresenter.shortSource(source);
                 };
-                roots.add(new Root(name, Optional.empty(), problem.map(dep -> dep.kind() == ResolutionDependency.Kind.AMBIGUOUS
-                        ? Status.AMBIGUOUS : Status.MISSING).orElse(Status.NOT_AVAILABLE),
-                        problem.map(ResolutionDependency::candidates).orElse(List.of())));
+                var status = switch (decision) {
+                    case RootResolution.Missing ignored -> Status.MISSING;
+                    case RootResolution.Ambiguous ignored -> Status.AMBIGUOUS;
+                    case null, default -> Status.NOT_AVAILABLE;
+                };
+                roots.add(new Root(name, Optional.empty(), status,
+                        decision instanceof RootResolution.Ambiguous ambiguous ? ambiguous.candidates() : List.of()));
             } else {
                 for (var location : chosen) {
                     if (displayed.add(location)) {

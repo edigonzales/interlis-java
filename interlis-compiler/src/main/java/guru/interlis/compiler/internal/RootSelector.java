@@ -1,7 +1,9 @@
 package guru.interlis.compiler.internal;
 
+import guru.interlis.compiler.ModelLocation;
 import guru.interlis.compiler.ModelSelector;
 import guru.interlis.compiler.RejectionReason;
+import guru.interlis.compiler.RootResolution;
 import guru.interlis.diagnostics.DiagnosticArgument;
 import guru.interlis.diagnostics.DiagnosticCode;
 import guru.interlis.diagnostics.DiagnosticDraft;
@@ -12,11 +14,14 @@ import guru.interlis.diagnostics.Severity;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /** Resolves explicit root selectors against the parsed model index. */
 final class RootSelector {
-    RootSelection select(List<ModelSelector> selectors, ModelIndex index,
+    RootSelection select(List<ModelSelector> selectors, Map<ModelSelector.ByName, RootResolution> resolvedRoots,
+                         ModelIndex index,
                          DiagnosticCollector collector) {
         List<ModelDecl> roots = new ArrayList<>();
         List<DiagnosticId> diagnostics = new ArrayList<>();
@@ -38,12 +43,20 @@ final class RootSelector {
                     }
                 }
                 case ModelSelector.ByName byName -> {
-                    List<ModelDecl> candidates = index.byName(byName.modelName()).stream()
-                            .filter(m -> byName.modelVersion().isEmpty()
-                                    || byName.modelVersion().get().equals(m.version()))
-                            .filter(m -> byName.sourceHint().isEmpty()
-                                    || byName.sourceHint().get().equals(m.sourceId()))
-                            .toList();
+                    var resolution = resolvedRoots.get(byName);
+                    List<ModelDecl> candidates = switch (resolution) {
+                        case null -> index.byName(byName.modelName()).stream()
+                                .filter(model -> matches(byName, model)).toList();
+                        case RootResolution.Missing ignored -> List.of();
+                        case RootResolution.Resolved resolved ->
+                                atLocation(byName, resolved.target(), index).stream().toList();
+                        case RootResolution.Ambiguous ambiguous -> {
+                            var declarations = ambiguous.candidates().stream()
+                                    .flatMap(location -> atLocation(byName, location, index).stream()).toList();
+                            // Never promote an ambiguous selection if a candidate cannot be verified.
+                            yield declarations.size() == ambiguous.candidates().size() ? declarations : List.of();
+                        }
+                    };
                     if (candidates.isEmpty()) {
                         DiagnosticId id = collector.emit(DiagnosticDraft.of(
                                         new DiagnosticCode("ILI-RES-0001"), Severity.ERROR,
@@ -71,5 +84,18 @@ final class RootSelector {
         }
         LinkedHashSet<ModelDecl> unique = new LinkedHashSet<>(roots);
         return new RootSelection(List.copyOf(unique), diagnostics, reasons);
+    }
+
+    private static Optional<ModelDecl> atLocation(ModelSelector.ByName selector, ModelLocation location, ModelIndex index) {
+        return index.atLocation(location.source(), location.revision().value(), location.declarationOffset())
+                .filter(model -> model.name().equals(location.modelName())
+                        && location.modelVersion().map(model.version()::equals).orElse(false)
+                        && matches(selector, model));
+    }
+
+    private static boolean matches(ModelSelector.ByName selector, ModelDecl model) {
+        return selector.modelName().equals(model.name())
+                && selector.modelVersion().map(model.version()::equals).orElse(true)
+                && selector.sourceHint().map(model.sourceId()::equals).orElse(true);
     }
 }

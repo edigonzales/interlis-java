@@ -37,6 +37,26 @@ class ApiInvariantTest {
     }
 
     @Test
+    void analysisSnapshotRejectsSyntaxFromAnotherSourceOrRevision() {
+        var request = new CompilationRequest(List.of(new ModelSelector.BySource(SOURCE.id())),
+                SourceSet.of(Map.of(SOURCE.id(), SOURCE)), CompilerOptions.defaults());
+        var token = CancellationToken.none();
+        var analysis = CompilerEngines.create().analyze(request, token);
+        var parser = guru.interlis.syntax.SyntaxServices.create();
+        var options = guru.interlis.syntax.ParseOptions.defaults(guru.interlis.syntax.ParseMode.EDITOR);
+        for (var wrong : List.of(
+                new SourceText(new SourceId("memory:/different.ili"), SOURCE.revision(), SOURCE.text()),
+                new SourceText(SOURCE.id(), new SourceRevision(2), SOURCE.text()),
+                new SourceText(SOURCE.id(), SOURCE.revision(), SOURCE.text() + "\n"))) {
+            var syntax = parser.parse(wrong, options, token);
+            assertThrows(IllegalArgumentException.class, () -> new AnalysisSnapshot(analysis.snapshotId(),
+                    analysis.semanticGraph(), analysis.sourceRevisions(), Map.of(SOURCE.id(), syntax),
+                    analysis.diagnostics(), analysis.requestDiagnostics(), analysis.coverage(), analysis.fingerprint(),
+                    analysis.provenance()));
+        }
+    }
+
+    @Test
     void analysisSnapshotRejectsMismatchedGraphSnapshot() {
         CompilationRequest request = new CompilationRequest(
                 List.of(new ModelSelector.ByName("Inv", Optional.empty(), Optional.empty())),

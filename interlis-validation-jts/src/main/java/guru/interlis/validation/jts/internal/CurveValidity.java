@@ -1,5 +1,6 @@
 package guru.interlis.validation.jts.internal;
 
+import guru.interlis.transfer.TransferGeometry.Coordinate;
 import guru.interlis.validation.DataLocation;
 import guru.interlis.validation.DataLocation.GeometryComponent;
 import guru.interlis.validation.GeometryEngine;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static guru.interlis.validation.GeometryEngine.Check.*;
 import static guru.interlis.validation.ValidationCode.*;
@@ -47,7 +49,7 @@ final class CurveValidity {
             if (input.type().withoutOverlaps()) {
                 var segments = part.segments();
                 boolean loop = !segments.isEmpty()
-                        && part.start().equals(segments.getLast().curve().end());
+                        && part.start().equals(segments.getLast().edge().end());
                 selfIntersections(segments, loop);
             }
         }
@@ -73,6 +75,14 @@ final class CurveValidity {
                 return;
             }
             segments.add(boundary);
+        }
+        if (segments.stream().flatMap(List::stream).noneMatch(segment -> segment.curve() instanceof CircularArc)) {
+            checkLinearSurface(surface, segments);
+            return;
+        }
+        for (int i = 0; i < rings.size(); i++) {
+            var ring = rings.get(i);
+            var boundary = segments.get(i);
             selfIntersections(boundary, true);
             double area = signedArea(boundary);
             if (!Double.isFinite(area)) {
@@ -93,7 +103,7 @@ final class CurveValidity {
             var hole = segments.get(i);
             for (int j = 0; j < i; j++) {
                 var other = segments.get(j);
-                var contacts = boundaryContacts(other, hole, GEOMETRY_SELF_INTERSECTION, false, false);
+                var contacts = boundaryContacts(other, hole, GEOMETRY_SELF_INTERSECTION, null, false);
                 int first = root(connected, j);
                 int second = root(connected, i);
                 if (contacts.size() > 1 || !contacts.isEmpty() && first == second) {
@@ -109,10 +119,6 @@ final class CurveValidity {
                     invalid(rings.get(i).path(), rings.get(j).path(), GEOMETRY_HOLE_OUTSIDE_SHELL, "Holes are nested");
                 }
             }
-        }
-        if (status == VALID && segments.stream().flatMap(List::stream)
-                .noneMatch(segment -> segment.curve() instanceof CircularArc)) {
-            checkLinearSurface(surface, segments);
         }
     }
 
@@ -135,41 +141,77 @@ final class CurveValidity {
                 case TopologyValidationError.HOLE_OUTSIDE_SHELL, TopologyValidationError.NESTED_HOLES ->
                         GEOMETRY_HOLE_OUTSIDE_SHELL;
                 case TopologyValidationError.DISCONNECTED_INTERIOR -> GEOMETRY_INTERIOR_DISCONNECTED;
+                case TopologyValidationError.TOO_FEW_POINTS -> GEOMETRY_DEGENERATE_SEGMENT;
                 default -> GEOMETRY_SELF_INTERSECTION;
             };
-            var at = surface.shell().path();
-            if (error.getCoordinate() != null) {
-                for (var boundary : boundaries) {
-                    for (var segment : boundary) {
-                        control.visit().run();
-                        var hit = error.getCoordinate();
-                        if (segment.curve().envelope().covers(hit)) {
-                            at = segment.path();
-                        }
+            var hit = error.getCoordinate();
+            var intersector = new org.locationtech.jts.algorithm.RobustLineIntersector();
+            List<GeometryComponent> first = null;
+            List<GeometryComponent> second = null;
+            var sourceRings = rings(surface);
+            for (int ring = 0; hit != null && ring < boundaries.size(); ring++) {
+                var boundary = boundaries.get(ring);
+                for (int index = 0; index < boundary.size(); index++) {
+                    control.visit().run();
+                    var segment = boundary.get(index);
+                    intersector.computeIntersection(hit, segment.curve().start().coordinate(),
+                            segment.curve().end().coordinate());
+                    if (!intersector.hasIntersection()) {
+                        continue;
+                    }
+                    var ringPath = sourceRings.get(ring).path();
+                    if (first == null) {
+                        first = code == GEOMETRY_SELF_INTERSECTION ? segment.path() : ringPath;
+                    } else if (code == GEOMETRY_INTERIOR_DISCONNECTED && !first.equals(ringPath)) {
+                        second = ringPath;
                     }
                 }
             }
-            invalid(at, code, error.getMessage());
+            if (code == GEOMETRY_SELF_INTERSECTION && hit != null) {
+                // JTS supplies the error point, which can also lie at adjacent segments.
+                // A single witness avoids attributing the error to an unverified pair.
+                invalid(first == null ? surface.shell().path() : first, code, error.getMessage());
+            } else if (error.getErrorType() == TopologyValidationError.HOLE_OUTSIDE_SHELL && first != null) {
+                invalid(first, surface.shell().path(), code, error.getMessage());
+            } else if (second != null) {
+                invalid(first, second, code, error.getMessage());
+            } else {
+                invalid(first == null ? surface.shell().path() : first, code, error.getMessage());
+            }
         }
     }
 
     private List<Segment> closed(Ring ring) {
         var boundary = new ArrayList<Segment>();
-        Point end = null;
+        Coordinate end = null;
         for (Part part : ring.parts()) {
             control.visit().run();
-            if (part.segments().isEmpty() || end != null && !end.equals(part.start())) {
+            if (part.segments().isEmpty() || end != null && !sameDeliveredPosition(end, part.first())) {
                 invalid(part.path(), GEOMETRY_RING_NOT_CLOSED, "Ring parts do not form a continuous boundary");
                 return List.of();
             }
             boundary.addAll(part.segments());
-            end = part.segments().getLast().curve().end();
+            end = part.last();
         }
-        if (boundary.isEmpty() || !boundary.getFirst().curve().start().equals(end)) {
+        if (boundary.isEmpty() || !sameDeliveredPosition(ring.parts().getFirst().first(), end)) {
             invalid(ring.path(), GEOMETRY_RING_NOT_CLOSED, "Ring is open");
             return List.of();
         }
         return boundary;
+    }
+
+    private static boolean sameDeliveredPosition(Coordinate first, Coordinate second) {
+        var left = first.ordinates();
+        var right = second.ordinates();
+        if (left.size() != right.size()) {
+            return false;
+        }
+        for (int i = 0; i < left.size(); i++) {
+            if (left.get(i).exactValue().compareTo(right.get(i).exactValue()) != 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void selfIntersections(List<Segment> segments, boolean closed) {
@@ -207,7 +249,7 @@ final class CurveValidity {
     }
 
     private HashSet<Point> boundaryContacts(List<Segment> a, List<Segment> b, ValidationCode code,
-                                            boolean commonEdgeAllowed, boolean sameInteriorSide) {
+                                            Set<Edge> shared, boolean sameInteriorSide) {
         var index = new STRtree();
         for (Segment segment : a) {
             control.visit().run();
@@ -219,6 +261,18 @@ final class CurveValidity {
             for (Object candidate : index.query(right.curve().envelope())) {
                 control.visit().run();
                 var left = (Segment) candidate;
+                if (shared != null) {
+                    boolean same = left.edge().equals(right.edge());
+                    if (same || left.edge().equals(right.edge().reversed())) {
+                        if (same == sameInteriorSide) {
+                            invalid(right.path(), left.path(), GEOMETRY_AREA_OVERLAP,
+                                    "Faces have interior on the same side of a shared boundary");
+                        }
+                        shared.add(left.edge());
+                        shared.add(right.edge());
+                        continue;
+                    }
+                }
                 var result = CurveIntersections.between(left.curve(), right.curve());
                 if (result.undetermined()) {
                     uncertain();
@@ -230,18 +284,9 @@ final class CurveValidity {
                         contacts.add(hit.point());
                     }
                 }
-                if (commonEdgeAllowed) {
+                if (shared != null) {
                     var aCurve = left.curve();
                     var bCurve = right.curve();
-                    boolean same = aCurve.equals(bCurve);
-                    boolean reverse = aCurve.equals(bCurve.reversed());
-                    if (same || reverse) {
-                        if (same == sameInteriorSide) {
-                            invalid(right.path(), left.path(), GEOMETRY_AREA_OVERLAP,
-                                    "Faces have interior on the same side of a shared boundary");
-                        }
-                        continue;
-                    }
                     for (var hit : result.hits()) {
                         if (hit.kind() == CurveIntersections.Kind.CONTACT
                                 && !(endpoint(aCurve, hit.point()) && endpoint(bCurve, hit.point()))) {
@@ -318,10 +363,10 @@ final class CurveValidity {
         control.visit().run();
         for (Ring a : rings(first)) {
             for (Ring b : rings(second)) {
-                boundaryContacts(flat(a), flat(b), GEOMETRY_AREA_OVERLAP, false, false);
+                boundaryContacts(flat(a), flat(b), GEOMETRY_AREA_OVERLAP, null, false);
             }
         }
-        if (status != INVALID && (within(first, second) || within(second, first))) {
+        if (status != INVALID && (within(first, second, Set.of()) || within(second, first, Set.of()))) {
             invalid(second.shell().path(), first.shell().path(), GEOMETRY_AREA_OVERLAP, "Surface interiors overlap");
         }
     }
@@ -332,25 +377,30 @@ final class CurveValidity {
         overlap = tolerance;
         var left = rings(first);
         var right = rings(second);
+        var shared = new HashSet<Edge>();
         for (int i = 0; i < left.size(); i++) {
             var a = flat(left.get(i));
             for (int j = 0; j < right.size(); j++) {
                 control.visit().run();
                 var b = flat(right.get(j));
                 boolean sameSide = (signedArea(a) > 0 ^ i > 0) == (signedArea(b) > 0 ^ j > 0);
-                boundaryContacts(a, b, GEOMETRY_AREA_OVERLAP, true, sameSide);
+                boundaryContacts(a, b, GEOMETRY_AREA_OVERLAP, shared, sameSide);
             }
         }
-        if (status != INVALID && (within(first, second) || within(second, first))) {
+        if (status != INVALID && (within(first, second, shared) || within(second, first, shared))) {
             invalid(second.shell().path(), first.shell().path(), GEOMETRY_AREA_OVERLAP, "Surface interiors overlap");
         }
         return status;
     }
 
-    private boolean within(Surface container, Surface other) {
+    private boolean within(Surface container, Surface other, Set<Edge> shared) {
         var shell = flat(container.shell());
         var holes = container.holes().stream().map(CurveValidity::flat).toList();
         for (var segment : flat(other.shell())) {
+            control.visit().run();
+            if (shared.contains(segment.edge())) {
+                continue;
+            }
             var point = midpoint(segment.curve());
             if (locate(shell, point) == Position.INSIDE
                     && holes.stream().noneMatch(hole -> locate(hole, point) != Position.OUTSIDE)) {

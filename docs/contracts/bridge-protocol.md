@@ -112,10 +112,10 @@ Alle sitzungsgebundenen Antworten enthalten die sessionId. Queryantworten enthal
 | `reasons` | Nichtleeres, kanonisch sortiertes Array ohne Duplikate aus `SOURCE_ERRORS`, `WARNINGS_REJECTED`, `MISSING_INPUT`, `AMBIGUOUS_INPUT`, `ENVIRONMENT_FAILURE`, `INCOMPLETE_SUPPORT`. |
 | `diagnosticIds` | Geordnete IDs der relevanten kanonischen Diagnosen des gelieferten Snapshots. |
 | `requestedRoots` | Ursprüngliche ModelSelectorDto-Liste des öffentlichen Compile-Aufrufs, ohne Ergänzung oder Umformung. |
-| `resolvedRoots` | ModelSelectorDto-Liste aus `RejectionSummary.requestedRoots`: die vom Workspace für den Engine-Aufruf konkretisierten Selektoren, einschliesslich aufgelöster Version/Quellenhinweise. |
+| `resolvedRoots` | ModelSelectorDto-Liste in der Reihenfolge der Gate-Summary. Eindeutig aufgelöste Namensselektoren enthalten Version und Quelle aus der Resolverentscheidung. Bei fehlender oder mehrdeutiger Auflösung ergänzt die Sitzung die konfigurierten Einschränkungen, soweit sie im Selektor fehlen. |
 | `unsupportedFeatureIds` | Stabile Feature-IDs der blockierenden noch nicht implementierten Spracheigenschaften; andernfalls leeres Array. |
 
-Beide Wurzellisten sind strukturierte DTOs (`byName` mit optionalen `modelVersion`/`sourceHint` beziehungsweise `bySource` mit `source`), keine Java-Strings. `resolvedRoots` erhält die unveränderte Wurzelliste der Gate-Summary; `requestedRoots` erhält zusätzlich die Eingangsmetadaten des öffentlichen Aufrufs. Der Adapter trifft dafür keine fachliche Gateentscheidung.
+Beide Wurzellisten sind strukturierte DTOs (`byName` mit optionalen `modelVersion`/`sourceHint` beziehungsweise `bySource` mit `source`), keine Java-Strings. `requestedRoots` erhält die Eingangsmetadaten des öffentlichen Aufrufs. Für `resolvedRoots` verwendet der Adapter die Resolverentscheidungen aus dem Capture desselben Compilerlaufs.
 
 Diese Summary wird ausschliesslich vom CompilationGate erzeugt und ist auf die angeforderte Wurzelhülle bezogen. Die Bridge und der Client dürfen Gründe weder aus globalen Diagnosen noch aus lokalisierten Meldungstexten neu berechnen. Insbesondere bleiben ein Modellfehler, wegen Policy abgelehnte Warnungen, fehlende Quellen, Umgebungsfehler und unvollständige Compilerunterstützung unterscheidbar. Eine protokolltechnisch erfolgreiche `compile`-Operation kann deshalb `status: ok` und zugleich `outcome: rejected` tragen.
 

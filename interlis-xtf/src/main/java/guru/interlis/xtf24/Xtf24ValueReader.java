@@ -4,6 +4,7 @@ import guru.interlis.model.CollectionType;
 import guru.interlis.model.BlackboxType;
 import guru.interlis.transfer.TransferEvent.Consistency;
 import guru.interlis.model.ReferenceType;
+import guru.interlis.model.StructureValueType;
 import guru.interlis.transfer.RoleSlot;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.model.TypeDescriptor;
@@ -98,12 +99,12 @@ final class Xtf24ValueReader {
                 var element = layout.type(new TypeRef(attribute.symbol().snapshot(), collection.elementType()), concreteTypes);
                 var items = new ArrayList<TransferValue>();
                 do {
-                    items.add(readValue(element, concreteTypes, structureTypes, activeTypes));
+                    items.add(readValue(element, object.model(), concreteTypes, structureTypes, activeTypes));
                     event = input.nextTag();
                 } while (event == START_ELEMENT && input.cursor().getName().equals(name));
                 values.put(attribute.symbol(), new Repeated(collection.collectionKind(), items));
             } else {
-                values.put(attribute.symbol(), readValue(type, concreteTypes, structureTypes, activeTypes));
+                values.put(attribute.symbol(), readValue(type, object.model(), concreteTypes, structureTypes, activeTypes));
                 event = input.nextTag();
             }
         }
@@ -165,7 +166,7 @@ final class Xtf24ValueReader {
         return new Structured(association.symbol(), values);
     }
 
-    private TransferValue readValue(TypeDescriptor type, Map<SymbolRef, TypeRef> concreteTypes,
+    private TransferValue readValue(TypeDescriptor type, SymbolRef containingModel, Map<SymbolRef, TypeRef> concreteTypes,
                                     Set<SymbolRef> structureTypes, Set<SymbolRef> activeTypes) throws XMLStreamException {
         if (type instanceof ReferenceType reference) {
             return readReference(reference.external(), false, layout.stableTargets(reference.targetRoots()));
@@ -180,7 +181,8 @@ final class Xtf24ValueReader {
                 if (input.nextTag() != START_ELEMENT) {
                     throw input.error(INVALID_WIRE, "Expected one structure element");
                 }
-                var structure = layout.names().object(input.cursor().getName(), structureTypes);
+                var structure = layout.structure(input.cursor().getName(), structureTypes,
+                        (StructureValueType) type, containingModel);
                 if (input.cursor().getAttributeCount() != 0) {
                     throw input.error(UNSUPPORTED, "Unexpected attribute on XTF structure");
                 }

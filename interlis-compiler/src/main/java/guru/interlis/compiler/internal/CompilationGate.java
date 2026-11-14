@@ -85,7 +85,7 @@ final class CompilationGate {
                 .allMatch(snapshot -> snapshot.root().models().isEmpty()
                         && snapshot.source().text().trim()
                         .matches("INTERLIS\\s+2\\.[34]\\s*;?"));
-        if (roots.roots().isEmpty() && !onlyEmptyDocuments) {
+        if (roots.roots().isEmpty() && roots.reasons().isEmpty() && !onlyEmptyDocuments) {
             reasons.add(RejectionReason.MISSING_INPUT);
         }
         if (strictSyntax && !closure.sources().isEmpty()) {

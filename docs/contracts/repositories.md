@@ -28,6 +28,13 @@ Folgende Typen liegen unter `guru.interlis.compiler`, damit compiler unabhängig
 
 `BySource` wählt alle Originalmodelle einer expliziten Datei. Ein fehlerhafter Dateikopf darf dadurch nicht unsichtbar werden. `ByName` wählt einen Modellnamen mit optionaler exakter Modellversion und Quellenhinweis. Das Builtin-Modell INTERLIS stammt aus der passenden compilerinternen Sprachfassung und wird nicht unbemerkt aus einem Repository überschrieben.
 
+Für `ByName` übergibt der Workspace die ursprüngliche Anfrage und in
+`SourceSet.rootResolutions()` die Entscheidung des Resolvers. `Resolved`
+nennt die exakte Deklaration. `Missing` und `Ambiguous` bleiben bis zur
+Gate-Entscheidung erhalten. Die Engine verifiziert genannte Deklarationen
+an der eigenen Syntax. Direkte Compileraufrufe ohne Resolverentscheidung
+lösen den Selektor aus den mitgelieferten Quellen auf.
+
 <a id="reiner-resolver-im-workspace"></a>
 ## Reiner Resolver im Workspace
 
@@ -203,7 +210,7 @@ Namensfallback. Eine geprüfte Originalbindung importiert keinen Namensraum;
 dieselbe Identität erreicht `ModelTranslation.sourceTarget` und die gemeinsame
 Korrespondenzprüfung. Unaufgelöste/mehrdeutige Originale behalten ihre bisherigen
 Diagnosen. `CompilationRequest.fingerprint()` nutzt dieselbe kanonische
-Compileridentität wie die Engine (`compilation-v3`, einschliesslich tatsächlicher
+Compileridentität wie die Engine (`compilation-v4`, einschliesslich tatsächlicher
 Originalbindungen, unabhängig von Parsemodus/Wiederverwendung).
 
 `RepositoryClosureService(SourceLoader,ContentStore).resolve(Workspace,

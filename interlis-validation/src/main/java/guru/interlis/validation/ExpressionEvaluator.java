@@ -29,6 +29,7 @@ import guru.interlis.transfer.TransferValue;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Optional;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.OptionalInt;
@@ -175,12 +176,7 @@ final class ExpressionEvaluator {
             } else if (result instanceof UndefinedByData && standard == null) {
                 args.add(TransferValue.Undefined.INSTANCE);
             } else if (result instanceof KnownNumber numeric) {
-                var decimal = numeric.value().decimal();
-                if (decimal.isEmpty()) {
-                    return Unsupported.INSTANCE;
-                }
-                var value = decimal.orElseThrow();
-                args.add(new TransferValue.NumberValue(value.toString(), value));
+                args.add(numeric.value().asValue());
             } else {
                 return result;
             }
@@ -354,7 +350,7 @@ final class ExpressionEvaluator {
         return switch (result) {
             case KnownNumber known -> known.value();
             case Known known when known.value() instanceof TransferValue.NumberValue decimal ->
-                    NumericSemantics.Number.exact(decimal.exactValue());
+                    new NumericSemantics.Number(decimal.exactValue());
             default -> null;
         };
     }
@@ -564,6 +560,14 @@ final class ExpressionEvaluator {
         var effective = context.effectiveType(field.values().getFirst());
         if (found.isEmpty() && context.partial() && effective.kind() == TypeKind.GEOMETRY) {
             return MissingContext.ATTRIBUTE_VALUE;
+        }
+        if (found.filter(item -> item != TransferValue.Undefined.INSTANCE
+                && ValueFamilies.match(effective, item) == ValueFamilies.Match.NO).isPresent()) {
+            var path = List.<DataLocation.Step>of(new DataLocation.Slot(field.slot().symbol()));
+            var location = context.dataset().map(dataset -> dataset.occurrence().location(path))
+                    .orElseGet(() -> new DataLocation(Optional.empty(), Optional.empty(), Optional.empty(),
+                            Optional.empty(), Optional.of(object.type()), path));
+            return new BlockedByViolation(location);
         }
         return found.map(item -> value(item, effective.kind() == TypeKind.TEXT))
                 .orElseGet(() -> new UndefinedByData(false));

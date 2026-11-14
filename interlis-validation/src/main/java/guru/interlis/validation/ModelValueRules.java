@@ -92,15 +92,7 @@ final class ModelValueRules {
         if (roots.isEmpty()) {
             return true;
         }
-        var current = type;
-        for (;;) {
-            if (roots.contains(current.symbol().symbol()) || roots.contains(current.name().canonical().symbol())) {
-                return true;
-            }
-            if (current.baseType().isEmpty()) {
-                return false;
-            }
-            current = plan.transferPlan().object(current.baseType().orElseThrow()).orElseThrow();
-        }
+        return plan.typeRelations().objectLineage(type.symbol()).stream().anyMatch(ref ->
+                roots.contains(ref.symbol()) || roots.contains(plan.canonical(ref.symbol())));
     }
 }

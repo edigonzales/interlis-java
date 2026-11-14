@@ -64,6 +64,19 @@ test('Chromium compiles a model and validates neutral data in WasmGC', {timeout:
         result: 'FAILED_CHECKED_SCOPE', violations: 1, diagnostics: [{code, path: fieldPath}]
       });
     }
+    const withNumericConstraints = model.replace('END Item;', [
+      'MANDATORY CONSTRAINT (PI * 2) == (PI * 2);',
+      'MANDATORY CONSTRAINT (PI * 2) == (PI + PI);',
+      'MANDATORY CONSTRAINT (LNBASE * 2) == (LNBASE + LNBASE);',
+      'END Item;'
+    ].join(' '));
+    assert.deepEqual(await validate(withNumericConstraints, '20.00'),
+      {result: 'PASSED_CHECKED_SCOPE', violations: 0, diagnostics: []});
+    const falseComparison = withNumericConstraints.replace('(PI + PI)', '(PI + PI + 1)');
+    assert.deepEqual(await validate(falseComparison, '20.00'), {
+      result: 'FAILED_CHECKED_SCOPE', violations: 1,
+      diagnostics: [{code: 'MANDATORY_CONSTRAINT_FALSE', path: []}]
+    });
     const invalid = await validate(model.replace('CLASS Item', 'CLASS = Item'), '20.00');
     assert.equal(invalid.result, 'COMPILATION_REJECTED');
     assert.ok(invalid.diagnostics.some(code => code.startsWith('ILI-SYN-')));
