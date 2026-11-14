@@ -9,6 +9,7 @@ import org.eclipse.lsp4j.DidChangeConfigurationParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams;
 import org.eclipse.lsp4j.DocumentFormattingParams;
+import org.eclipse.lsp4j.DocumentSymbolParams;
 import org.eclipse.lsp4j.FileChangeType;
 import org.eclipse.lsp4j.FileEvent;
 import org.eclipse.lsp4j.FormattingOptions;
@@ -26,6 +27,8 @@ import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextDocumentItem;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.WorkspaceEdit;
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException;
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -36,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -211,6 +215,9 @@ class LspFeatureTest {
         InterlisTextDocumentService documents = server.textDocumentsForTest();
         documents.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(URI, "interlis",
                 1, MODEL)));
+        var outline = documents.documentSymbol(new DocumentSymbolParams(new TextDocumentIdentifier(URI)))
+                .get(2, TimeUnit.SECONDS);
+        assertFalse(outline.isEmpty());
         var sourceId = new guru.interlis.source.SourceId(URI);
         var current = server.workspaceForTest().source(sourceId).orElseThrow();
         server.workspaceForTest().update(new guru.interlis.workspace.SourceUpdate(sourceId,
@@ -221,8 +228,8 @@ class LspFeatureTest {
                 ExecutionException.class, () -> documents.rename(new RenameParams(
                         new TextDocumentIdentifier(URI), new Position(3, 10), "Beta"))
                         .get(2, TimeUnit.SECONDS));
-        assertTrue(failure.getCause().getMessage().contains("CONTENT_MODIFIED"),
-                failure.getCause().getMessage());
+        var response = assertInstanceOf(ResponseErrorException.class, failure.getCause());
+        assertEquals(ResponseErrorCode.ContentModified.getValue(), response.getResponseError().getCode());
         server.shutdown().get(2, TimeUnit.SECONDS);
     }
 
