@@ -135,6 +135,10 @@ Ungültige Java-Argumente werden vor dem Start per Exception zurückgewiesen. `F
 
 Die Snapshotklasse ist unveränderlich. `diagnostics()` enthält alle kanonischen Diagnosen, auch aufgrund einer gemeinsamen Ursache in einer UI nicht angezeigte Folgefehler. `requestDiagnostics()` ist der immutable, kanonisch geordnete Teilbestand derselben Werte/IDs für exakt die Roots, Optionen, Quellrevisionen und den Fingerprint dieses Snapshots. Die interne Auswahl erfolgt einmal vor dem Gate; Gate und Compileverbraucher verwenden diesen Teilbestand. Der öffentliche Konstruktor verlangt beide Listen ausdrücklich und verwirft Teilbestände, die keine geordnete Teilfolge sind. Die Darstellung wird in09 projiziert; das Gate darf keine darstellungsgefilterte Liste verwenden.
 
+Der Konstruktor prüft, dass Syntax, Quellrevisionsliste und Inhaltsfingerprints
+dieselben Quellen beschreiben. Für jeden Syntaxsnapshot müssen ID, Revision
+und Inhalt mit den Angaben des Analysesnapshots übereinstimmen.
+
 `AnalysisCoverage` enthält Einträge pro benötigter Deklaration/Modell/Phase. `CoverageStatus` unterscheidet `COMPLETE`, `BLOCKED_BY_ERROR`, `NOT_IMPLEMENTED`, `NOT_REQUESTED`, `CANCELLED` und `BUDGET_EXCEEDED`. Syntax und Semantik können in unterschiedlichen Zuständen sein. Ein leerer Eintrag ist keine implizite Vollständigkeit. Für jede ausgewählte Rootclosure muss das Gate das explizite Abschlussprädikat `isCompleteFor(ClosureSelection)` prüfen können.
 
 Coverage und Diagnostik erfüllen unterschiedliche Aufgaben: Eine fehlende Implementierung bleibt auch dann blockierend, wenn der Diagnosecollector sein Ausgabelimit erreicht hat. Umgekehrt dürfen bekannte reine Warnungen einen vollständig geprüften Status besitzen. Jeder Fehler muss eine nachvollziehbare Zuordnung zu Source-/Symbol-/Globalbedingungen erhalten; unzuordenbare Eingabefehler werden konservativ als relevant behandelt.

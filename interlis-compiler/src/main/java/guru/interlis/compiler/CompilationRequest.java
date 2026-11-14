@@ -1,5 +1,9 @@
 package guru.interlis.compiler;
 
+import guru.interlis.source.ContentFingerprint;
+import guru.interlis.source.SourceId;
+
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -21,6 +25,16 @@ public record CompilationRequest(List<ModelSelector> roots, SourceSet sources,
         Objects.requireNonNull(sources, "sources");
         Objects.requireNonNull(options, "options");
     }
+    /** Returns the expected provenance of an analysis produced from this request. */
+    public AnalysisProvenance provenance() {
+        var sourceFingerprints = new LinkedHashMap<SourceId, ContentFingerprint>();
+        sources.sources().forEach((id, text) -> sourceFingerprints.put(id, text.contentFingerprint()));
+        return new AnalysisProvenance(
+                guru.interlis.compiler.internal.Fingerprints.COMPILER_VERSION,
+                guru.interlis.compiler.internal.Fingerprints.GRAMMAR_VERSION,
+                options.semanticProfile().value(), sources.fingerprint().value(), options.fingerprint(), sourceFingerprints);
+    }
+
     /**
      * Returns the canonical identity of actual roots, texts, import bindings,
      * resolver provenance and options, independent of reuse or parse mode.

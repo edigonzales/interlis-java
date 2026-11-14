@@ -4,6 +4,7 @@ import guru.interlis.compiler.AnalysisBudget;
 import guru.interlis.compiler.internal.AnalysisBudgetExceededException;
 import guru.interlis.compiler.internal.DiagnosticCollector;
 import guru.interlis.compiler.internal.Fingerprints;
+import guru.interlis.compiler.internal.SyntaxWork;
 import guru.interlis.diagnostics.Diagnostic;
 import guru.interlis.diagnostics.DiagnosticArgument;
 import guru.interlis.diagnostics.DiagnosticCatalog;
@@ -44,6 +45,7 @@ import org.antlr.v4.runtime.Token;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /** ANTLR-backed syntax service; all ANTLR objects stay internal. */
 public final class AntlrSyntaxService implements SyntaxService {
@@ -63,14 +65,19 @@ public final class AntlrSyntaxService implements SyntaxService {
 
     private SyntaxSnapshot parse(SourceText source, ParseOptions options,
                                  CancellationToken cancellation, FormatStructure structure) {
-        try { return parseDocument(source,options,cancellation,structure); }
+        try { return parseDocument(source, options, cancellation, structure, new SyntaxWork(options.budget(), cancellation)); }
         catch(AnalysisBudgetExceededException limit) {
             throw new guru.interlis.execution.OperationCancelledException(guru.interlis.execution.CancellationReason.RESOURCE_LIMIT);
         }
     }
 
+    public SyntaxSnapshot parseDocument(SourceText source, ParseOptions options,
+                                        CancellationToken cancellation, SyntaxWork work) {
+        return parseDocument(source, options, cancellation, null, work);
+    }
+
     private SyntaxSnapshot parseDocument(SourceText source, ParseOptions options,
-                                         CancellationToken cancellation, FormatStructure structure) {
+                                         CancellationToken cancellation, FormatStructure structure, SyntaxWork work) {
         Objects.requireNonNull(source, "source");
         Objects.requireNonNull(options, "options");
         Objects.requireNonNull(cancellation, "cancellation");
@@ -109,13 +116,13 @@ public final class AntlrSyntaxService implements SyntaxService {
         }
 
         var charStream = CharStreams.fromString(source.text());
-        InterlisLexer lexer = new InterlisLexer(charStream);
+        InterlisLexer lexer = boundedLexer(charStream, work);
         lexer.removeErrorListeners();
         var lexerListener = new CollectingLexerErrorListener(source, offsets, collector);
         lexer.addErrorListener(lexerListener);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         tokens.fill();
-        if(tokens.size()>budget.maxTokens())throw new AnalysisBudgetExceededException("maxTokens",budget.maxTokens());
+
 
         LanguageVersion profileVersion = effectiveDetection.version().orElse(LanguageVersion.ILI23);
         checkTokenProfile(tokens,profileVersion,offsets,collector);
@@ -136,7 +143,8 @@ public final class AntlrSyntaxService implements SyntaxService {
         parser.removeErrorListeners();
         var parserListener = new CollectingParserErrorListener(offsets, collector);
         parser.addErrorListener(parserListener);
-        var parseBudget=new ParseBudget(budget,cancellation);
+        int recoveriesBefore = work.recoveries();
+        var parseBudget = new ParseBudget(budget, cancellation, work);
         parser.addParseListener(parseBudget);parser.addErrorListener(parseBudget);
 
         InterlisParser.Interlis2defContext tree = null;
@@ -161,7 +169,8 @@ public final class AntlrSyntaxService implements SyntaxService {
             }
         }
         LanguageVersion language = effectiveDetection.version().orElse(LanguageVersion.ILI23);
-        SyntaxTreeBuilder builder = new SyntaxTreeBuilder(source, offsets, tokens, language, options.budget());
+        long nodesBefore = work.nodes();
+        SyntaxTreeBuilder builder = new SyntaxTreeBuilder(source, offsets, tokens, language, budget, work);
         DocumentSyntax document;
         if(parseLimit!=null) {
             document=new DocumentSyntax(new SyntaxNodeId("syntax-0"),source.range(source.length(),source.length()),List.of());
@@ -190,7 +199,18 @@ public final class AntlrSyntaxService implements SyntaxService {
         }
         return new SyntaxSnapshot(source, options, effectiveDetection, document,
                 buildTokens(source, offsets, tokens), buildTrivia(source, offsets, tokens),
-                diagnostics, coverage, fingerprint(source, options, effectiveDetection), metadata);
+                diagnostics, coverage, fingerprint(source, options, effectiveDetection), metadata,
+                Optional.of(new SyntaxSnapshot.Usage(work.nodes() - nodesBefore, work.recoveries() - recoveriesBefore)));
+    }
+
+    private static InterlisLexer boundedLexer(org.antlr.v4.runtime.CharStream input, SyntaxWork work) {
+        return new InterlisLexer(input) {
+            @Override
+            public Token nextToken() {
+                work.token();
+                return super.nextToken();
+            }
+        };
     }
 
     private static void collectVersionViolations(SyntaxTreeBuilder builder, LanguageVersion language,
@@ -348,20 +368,26 @@ public final class AntlrSyntaxService implements SyntaxService {
     private FragmentSnapshot parseMappedFragment(SourceText source,SourceRange fragment,FragmentKind kind,
             LanguageVersion languageVersion,CancellationToken cancellation,String fragmentText,java.util.function.IntUnaryOperator originalOffset) {
         cancellation.throwIfCancellationRequested();
-        DiagnosticCollector collector = new DiagnosticCollector(CATALOG,
-                AnalysisBudget.defaults().maxDiagnostics());
+        var limits = AnalysisBudget.defaults();
+        var work = new SyntaxWork(limits, cancellation);
+        DiagnosticCollector collector = new DiagnosticCollector(CATALOG, limits.maxDiagnostics());
         AntlrOffsetMap offsets = new AntlrOffsetMap(source,fragmentText,originalOffset);
         var charStream = CharStreams.fromString(fragmentText);
-        InterlisLexer lexer = new InterlisLexer(charStream);
+        InterlisLexer lexer = boundedLexer(charStream, work);
         lexer.removeErrorListeners();
         lexer.addErrorListener(new CollectingLexerErrorListener(source,offsets,collector));
         CommonTokenStream fragmentTokens=new CommonTokenStream(lexer);
-        fragmentTokens.fill();
+        try {
+            fragmentTokens.fill();
+        } catch (AnalysisBudgetExceededException limit) {
+            var root = failedFragment(fragment, kind, collector, limit);
+            return new FragmentSnapshot(source, kind, fragment, root, false, collector.freeze(), languageVersion);
+        }
         checkTokenProfile(fragmentTokens,languageVersion,offsets,collector);
         InterlisParser parser = new InterlisParser(fragmentTokens);
         parser.removeErrorListeners();
         parser.addErrorListener(new CollectingParserErrorListener(offsets, collector));
-        var fragmentBudget=new ParseBudget(AnalysisBudget.defaults(),cancellation);
+        var fragmentBudget=new ParseBudget(limits, cancellation, work);
         parser.addParseListener(fragmentBudget);parser.addErrorListener(fragmentBudget);
         org.antlr.v4.runtime.ParserRuleContext context;
         AnalysisBudgetExceededException fragmentLimit=null;
@@ -387,16 +413,11 @@ public final class AntlrSyntaxService implements SyntaxService {
             }
         }
         SyntaxTreeBuilder builder = new SyntaxTreeBuilder(source, offsets, fragmentTokens,
-                languageVersion, AnalysisBudget.defaults());
+                languageVersion, limits, work);
         guru.interlis.syntax.SyntaxNode root;
-        if(fragmentLimit!=null) {
-            collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-INF-0002"),Severity.ERROR,Phase.INFRASTRUCTURE,"diagnostic.limit")
-                    .argument(new DiagnosticArgument.TextArgument("resource",fragmentLimit.resource()))
-                    .argument(new DiagnosticArgument.IntegerArgument("limit",java.math.BigInteger.valueOf(fragmentLimit.limit()))));
-            root=kind==FragmentKind.ATTRIBUTE_DECLARATION
-                    ? new guru.interlis.syntax.UnsupportedDeclarationSyntax(new SyntaxNodeId("fragment-root"),fragment,"RESOURCE_LIMIT",fragmentLimit.resource())
-                    : new guru.interlis.syntax.UnsupportedExpressionSyntax(new SyntaxNodeId("fragment-root"),fragment,"RESOURCE_LIMIT",fragmentLimit.resource());
-            consumed=false;
+        if (fragmentLimit != null) {
+            root = failedFragment(fragment, kind, collector, fragmentLimit);
+            consumed = false;
         } else if (context == null) {
             SourceRange range = fragment;
             collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SYN-0002"),
@@ -423,18 +444,25 @@ public final class AntlrSyntaxService implements SyntaxService {
                         (InterlisParser.AttributeDefContext) context);
             };
         }
-        catch(AnalysisBudgetExceededException limit) {
-            collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-INF-0002"),Severity.ERROR,Phase.INFRASTRUCTURE,"diagnostic.limit")
-                    .argument(new DiagnosticArgument.TextArgument("resource",limit.resource()))
-                    .argument(new DiagnosticArgument.IntegerArgument("limit",java.math.BigInteger.valueOf(limit.limit()))));
-            root=kind==FragmentKind.ATTRIBUTE_DECLARATION
-                    ? new guru.interlis.syntax.UnsupportedDeclarationSyntax(new SyntaxNodeId("fragment-root"),fragment,"RESOURCE_LIMIT",limit.resource())
-                    : new guru.interlis.syntax.UnsupportedExpressionSyntax(new SyntaxNodeId("fragment-root"),fragment,"RESOURCE_LIMIT",limit.resource());
-            consumed=false;
+        catch (AnalysisBudgetExceededException limit) {
+            root = failedFragment(fragment, kind, collector, limit);
+            consumed = false;
         }
         collectVersionViolations(builder, languageVersion, collector);
         return new FragmentSnapshot(source, kind, fragment, root, consumed,
                 collector.freeze(), languageVersion);
+    }
+
+    private static guru.interlis.syntax.SyntaxNode failedFragment(SourceRange fragment, FragmentKind kind,
+            DiagnosticCollector collector, AnalysisBudgetExceededException limit) {
+        collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-INF-0002"), Severity.ERROR,
+                        Phase.INFRASTRUCTURE, "diagnostic.limit")
+                .argument(new DiagnosticArgument.TextArgument("resource", limit.resource()))
+                .argument(new DiagnosticArgument.IntegerArgument("limit", java.math.BigInteger.valueOf(limit.limit()))));
+        var id = new SyntaxNodeId("fragment-root");
+        return kind == FragmentKind.ATTRIBUTE_DECLARATION
+                ? new guru.interlis.syntax.UnsupportedDeclarationSyntax(id, fragment, "RESOURCE_LIMIT", limit.resource())
+                : new guru.interlis.syntax.UnsupportedExpressionSyntax(id, fragment, "RESOURCE_LIMIT", limit.resource());
     }
 
     private static void checkTokenProfile(CommonTokenStream tokens,LanguageVersion language,AntlrOffsetMap offsets,DiagnosticCollector collector) {

@@ -127,6 +127,28 @@ class ResolutionBoundaryContractTest {
         }
     }
 
+    @Test void captureRejectsAnalysisThatClaimsDifferentGrammarProvenance() {
+        var engine = CompilerEngines.create();
+        var token = CancellationToken.none();
+        try (var workspace = Workspaces.create(engine, WorkspaceConfiguration.defaults())) {
+            var id = new SourceId("memory:/provenance.ili");
+            WorkspaceTestSupport.add(workspace, id.value(),
+                    "INTERLIS 2.4; MODEL Root AT \"x\" VERSION \"1\" = END Root.");
+            var capture = workspace.capture(new AnalysisRequest(workspace.currentRevision(),
+                    List.of(new ModelSelector.BySource(id))), token);
+            var own = engine.analyze(capture.request(), capture.reuse(), token);
+            var current = own.provenance();
+            var foreign = new AnalysisProvenance(current.compilerVersion(), "other grammar", current.semanticProfile(),
+                    current.resolverFingerprint(), current.optionsFingerprint(), current.sourceFingerprints());
+            var supplied = new AnalysisSnapshot(own.snapshotId(), own.semanticGraph(), own.sourceRevisions(),
+                    own.syntaxSnapshots(), own.diagnostics(), own.requestDiagnostics(), own.coverage(),
+                    own.fingerprint(), foreign);
+            assertThrows(IllegalArgumentException.class, () -> workspace.acceptAnalysis(capture, supplied));
+            assertEquals(0, workspace.metrics().acceptedAnalyses());
+            assertEquals(AnalysisAcceptance.ACCEPTED, workspace.acceptAnalysis(capture, own));
+        }
+    }
+
     @Test void selectedOriginalIdentityIsPreservedAcrossOverlayAndSourceTranslations() {
         for (boolean external : List.of(true, false)) {
             var d=CompilerOptions.defaults();

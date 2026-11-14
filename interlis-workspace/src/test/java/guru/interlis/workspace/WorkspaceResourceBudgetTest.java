@@ -10,6 +10,41 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** SYN-009/INC-018: early and partial syntax limits never masquerade as missing models. */
 class WorkspaceResourceBudgetTest {
+    @Test void captureSharesTheNodeBudgetAndChargesCachedSources() {
+        var defaults = CompilerOptions.defaults();
+        var a = "INTERLIS 2.4; MODEL A AT \"x\" VERSION \"1\" = TOPIC T = CLASS C = END C; END T; END A.";
+        var b = a.replace("MODEL A", "MODEL B").replace("END A.", "END B.");
+        var first = new SourceText(new SourceId("memory:/a.ili"), new SourceRevision(1), a);
+        var second = new SourceId("memory:/b.ili");
+        var token = CancellationToken.none();
+        long nodes = SyntaxServices.create().parse(first, ParseOptions.defaults(ParseMode.EDITOR), token)
+                .usage().orElseThrow().nodes();
+        var limits = defaults.budget();
+        var budget = new AnalysisBudget(limits.maxSourceUtf16Length(), limits.maxTotalSourceUtf16Length(),
+                limits.maxTokens(), nodes, limits.maxRecoveryEvents(), limits.maxParseRuleDepth(),
+                limits.maxSemanticWorkUnits(), limits.maxDiagnostics(), limits.maxNumericLiteralDigits(),
+                limits.maxAbsoluteDecimalExponent());
+        var options = new CompilerOptions(defaults.semanticProfile(), defaults.allowedLanguages(),
+                defaults.warningPolicy(), budget, defaults.overlays());
+        var base = WorkspaceConfiguration.defaults();
+        var config = new WorkspaceConfiguration(options, base.resolutionPolicy(), base.resolverCatalog(), base.cacheLimits());
+        for (boolean warm : List.of(true, false)) {
+            try (var workspace = Workspaces.create(CompilerEngines.create(), config)) {
+                WorkspaceTestSupport.add(workspace, first.id().value(), a);
+                var roots = List.<ModelSelector>of(new ModelSelector.BySource(first.id()));
+                if (warm) {
+                    workspace.analyze(new AnalysisRequest(workspace.currentRevision(), roots), token);
+                }
+                WorkspaceTestSupport.add(workspace, second.value(), b);
+                var request = new AnalysisRequest(workspace.currentRevision(), roots);
+                var cancelled = assertThrows(OperationCancelledException.class, () -> workspace.capture(request, token));
+                assertEquals(CancellationReason.RESOURCE_LIMIT, cancelled.reason());
+                assertEquals(warm ? 1 : 0, workspace.metrics().acceptedAnalyses());
+                assertEquals(warm ? 1 : 0, workspace.metrics().syntaxReuses());
+            }
+        }
+    }
+
     @Test void tokenAndPartialParseBudgetsCancelWithoutCommittingReuseAndTheSessionRecovers() {
         String text="INTERLIS 2.4;MODEL F AT \"x\" VERSION \"1\"=DOMAIN D=TEXT;END F.";
         var defaults=CompilerOptions.defaults();

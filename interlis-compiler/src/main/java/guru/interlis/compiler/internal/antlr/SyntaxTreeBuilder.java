@@ -100,6 +100,7 @@ final class SyntaxTreeBuilder {
     private final CommonTokenStream tokenStream;
     private final LanguageVersion language;
     private final guru.interlis.compiler.AnalysisBudget budget;
+    private final guru.interlis.compiler.internal.SyntaxWork work;
     private long nodeCounter;
     private final Set<String> unsupportedFeatures = new LinkedHashSet<>();
     private final List<SourceRange> recoveredRanges = new ArrayList<>();
@@ -117,12 +118,14 @@ final class SyntaxTreeBuilder {
     }
 
     SyntaxTreeBuilder(SourceText source, AntlrOffsetMap offsets,
-                      CommonTokenStream tokenStream, LanguageVersion language, guru.interlis.compiler.AnalysisBudget budget) {
+                      CommonTokenStream tokenStream, LanguageVersion language,
+                      guru.interlis.compiler.AnalysisBudget budget, guru.interlis.compiler.internal.SyntaxWork work) {
         this.source = Objects.requireNonNull(source, "source");
         this.offsets = Objects.requireNonNull(offsets, "offsets");
         this.tokenStream = Objects.requireNonNull(tokenStream, "tokenStream");
         this.language = Objects.requireNonNull(language, "language");
-        this.budget=Objects.requireNonNull(budget,"budget");
+        this.budget = Objects.requireNonNull(budget, "budget");
+        this.work = Objects.requireNonNull(work, "work");
     }
 
     Set<String> unsupportedFeatures() {
@@ -1892,8 +1895,8 @@ final class SyntaxTreeBuilder {
     }
 
     private SyntaxNodeId nextId() {
-        if(++nodeCounter>budget.maxSyntaxNodes())throw new guru.interlis.compiler.internal.AnalysisBudgetExceededException("maxSyntaxNodes",budget.maxSyntaxNodes());
-        return new SyntaxNodeId("syntax-" + nodeCounter);
+        work.node();
+        return new SyntaxNodeId("syntax-" + (++nodeCounter));
     }
 
     private SourceRange range(ParserRuleContext context) {

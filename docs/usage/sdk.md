@@ -47,6 +47,11 @@ und Schemahandles gehören zu ihrer Sitzung und Generation. Sie werden
 weder persistiert noch zwischen Clients übertragen.
 
 
+API 0.10 erhält additive Zugänge für Resolverentscheidungen, Modellvererbung
+und gemeinsam budgetierte Syntax. Die bisherigen Konstruktoren und
+Factory-Signaturen bleiben gültig. Die Budget- und Snapshotprüfungen
+setzen die bereits dokumentierten Invarianten durch.
+
 API 0.4 ergänzt bei `TransferValue.XmlFragment` die unveränderliche
 `namespaceBindings()`-Map. Sie erhält auch den Namespacekontext textueller
 QNames ausserhalb von Kindelementen. Der Einargument-Konstruktor erzeugt eine
