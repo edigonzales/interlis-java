@@ -77,8 +77,22 @@ public final class ValidatorConformanceRun {
         Files.writeString(output.resolve("javac.stderr"), compilation.stderr());
         compilation.requireExit(0);
 
+        Path adapterTests = Files.createDirectory(output.resolve("adapter-tests"));
+        Path adapterTest = root.resolve("build/interlis/validator-conformance/test/guru/interlis/conformance/SuiteValidationTest.java");
+        String suiteClasspath = classpath + File.pathSeparator + classes;
+        DistributionChecks.run(root, List.of(DistributionChecks.javaTool("javac"), "-encoding", "UTF-8",
+                "-cp", suiteClasspath, "-d", adapterTests.toString(), adapterTest.toString())).requireExit(0);
+        var probes = DistributionChecks.run(root, List.of(DistributionChecks.javaTool("java"),
+                "-cp", suiteClasspath + File.pathSeparator + adapterTests,
+                "org.junit.platform.console.ConsoleLauncher", "execute", "--disable-ansi-colors",
+                "--fail-if-no-tests", "--reports-dir", output.resolve("adapter-reports").toString(),
+                "--select-class", "guru.interlis.conformance.SuiteValidationTest"));
+        Files.writeString(output.resolve("adapter.stdout"), probes.stdout());
+        Files.writeString(output.resolve("adapter.stderr"), probes.stderr());
+        probes.requireExit(0);
+
         var result = DistributionChecks.run(routine, List.of(DistributionChecks.javaTool("java"),
-                "-Dvendor=interlis-java", "-cp", classpath + File.pathSeparator + classes,
+                "-Dvendor=interlis-java", "-cp", suiteClasspath,
                 "guru.interlis.conformance.SuiteJUnit", classes.toString(), filter, output.toString()),
                 Map.of(), Duration.ofMinutes(10));
         Files.writeString(output.resolve("runner.stdout"), result.stdout());

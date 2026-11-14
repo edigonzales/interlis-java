@@ -22,6 +22,14 @@ prüfen tatsächliche Schreibverbote des Betriebssystems.
   Die [Erwartungen](../../testdata/conformance/normative/expectations.json)
   und [Baseline](../../testdata/conformance/baseline.json) halten die begründeten Abweichungen fest.
   Native Reports liegen unter `target/jenesis-jvm/conformance/`.
+- Der lokale Validator-Konformitätslauf verwendet einen separaten Checkout von
+  [suite-interlis](https://github.com/geostandards-ch/suite-interlis).
+  `java build/interlis/ValidatorConformanceRun.java --suite-dir ../suite-interlis`
+  führt die Originaltests aus. `--filter '.*\.XmlTest\.RXW_T02a'` wählt
+  eine Methode. Der reguläre Ausdruck muss auf den vollständigen Java-Namen
+  `Paket.Klasse.Methode` passen. Berichte liegen unter
+  `target/jenesis-jvm/validator-conformance/`. Der Lauf deckt derzeit
+  Modell- und Transferblockaden auf und ist noch nicht Teil der CI.
 - Die [Buildanleitung](build.md#portable-backends) zeigt die Node-Smokes für die
   erzeugten JS-/WasmGC-Artefakte und `browserSmoke` für die Browserintegration.
 

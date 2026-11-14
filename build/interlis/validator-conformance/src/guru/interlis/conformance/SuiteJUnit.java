@@ -41,7 +41,7 @@ public final class SuiteJUnit {
             results.printFailuresTo(writer, 5);
         }
         if (!Files.isRegularFile(output.resolve("TEST-junit-vintage.xml"))
-                || results.getTestsFoundCount() == 0 || results.getTestsAbortedCount() != 0
+                || results.getTestsStartedCount() == 0 || results.getTestsAbortedCount() != 0
                 || results.getTotalFailureCount() != 0) {
             System.exit(1);
         }
