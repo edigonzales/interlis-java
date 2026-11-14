@@ -29,6 +29,7 @@ import guru.interlis.transfer.TransferValue;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Optional;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.OptionalInt;
@@ -559,6 +560,14 @@ final class ExpressionEvaluator {
         var effective = context.effectiveType(field.values().getFirst());
         if (found.isEmpty() && context.partial() && effective.kind() == TypeKind.GEOMETRY) {
             return MissingContext.ATTRIBUTE_VALUE;
+        }
+        if (found.filter(item -> item != TransferValue.Undefined.INSTANCE
+                && ValueFamilies.match(effective, item) == ValueFamilies.Match.NO).isPresent()) {
+            var path = List.<DataLocation.Step>of(new DataLocation.Slot(field.slot().symbol()));
+            var location = context.dataset().map(dataset -> dataset.occurrence().location(path))
+                    .orElseGet(() -> new DataLocation(Optional.empty(), Optional.empty(), Optional.empty(),
+                            Optional.empty(), Optional.of(object.type()), path));
+            return new BlockedByViolation(location);
         }
         return found.map(item -> value(item, effective.kind() == TypeKind.TEXT))
                 .orElseGet(() -> new UndefinedByData(false));

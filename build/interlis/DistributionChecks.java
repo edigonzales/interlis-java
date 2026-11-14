@@ -2,10 +2,15 @@ package build.interlis;
 
 import build.jenesis.Json;
 import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsServer;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.security.KeyStore;
 import java.util.*;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -110,8 +115,33 @@ final class DistributionChecks {
         format.requireExit(0);
         require(format.stderr().isEmpty() && format.stdout().contains("Grüezi 😀"), "CLI output must remain UTF-8");
 
+        checkRepository(folder, launcher, HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0),
+                "http", Map.of());
+
+        // A private fixture exercises the shipped launcher with an explicit HTTPS trust store.
+        Path store = folder.resolve("localhost.p12");
+        String password = "interlis-distribution-test";
+        run(folder, List.of(javaTool("keytool"), "-genkeypair", "-alias", "localhost",
+                "-keyalg", "EC", "-dname", "CN=localhost", "-ext", "SAN=ip:127.0.0.1",
+                "-validity", "2", "-storetype", "PKCS12", "-keystore", store.toString(),
+                "-storepass", password, "-noprompt")).requireExit(0);
+        var keys = KeyStore.getInstance("PKCS12");
+        try (var input = Files.newInputStream(store)) {
+            keys.load(input, password.toCharArray());
+        }
+        var managers = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        managers.init(keys, password.toCharArray());
+        var context = SSLContext.getInstance("TLS");
+        context.init(managers.getKeyManagers(), null, null);
+        var https = HttpsServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        https.setHttpsConfigurator(new HttpsConfigurator(context));
+        checkRepository(folder, launcher, https, "https", Map.of("JAVA_OPTS",
+                "\"-Djavax.net.ssl.trustStore=" + store + "\" -Djavax.net.ssl.trustStorePassword=" + password));
+    }
+
+    private static void checkRepository(Path folder, Path launcher, HttpServer server,
+                                        String scheme, Map<String, String> environment) throws Exception {
         var requests = new java.util.concurrent.atomic.AtomicInteger();
-        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/", exchange -> {
             requests.incrementAndGet();
             String text = exchange.getRequestURI().getPath().equals("/ilimodels.xml")
@@ -124,10 +154,11 @@ final class DistributionChecks {
         });
         server.start();
         try {
-            var repository = run(folder, List.of(cli, "check", "--repository",
-                    "http://127.0.0.1:" + server.getAddress().getPort() + "/", "--root", "Remote"));
+            var repository = run(folder, List.of(launcher.toString(), "check", "--repository",
+                    scheme + "://127.0.0.1:" + server.getAddress().getPort() + "/", "--root", "Remote"),
+                    environment);
             repository.requireExit(0);
-            require(repository.stderr().isEmpty() && requests.get() >= 2, "Expected real HTTP repository resolution");
+            require(repository.stderr().isEmpty() && requests.get() >= 2, "Expected real repository resolution over " + scheme);
         } finally { server.stop(0); }
     }
 

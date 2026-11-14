@@ -1,5 +1,6 @@
 package guru.interlis.validation.jts.internal;
 
+import guru.interlis.transfer.TransferGeometry.Coordinate;
 import guru.interlis.validation.DataLocation;
 import guru.interlis.validation.DataLocation.GeometryComponent;
 import guru.interlis.validation.GeometryEngine;
@@ -74,6 +75,14 @@ final class CurveValidity {
                 return;
             }
             segments.add(boundary);
+        }
+        if (segments.stream().flatMap(List::stream).noneMatch(segment -> segment.curve() instanceof CircularArc)) {
+            checkLinearSurface(surface, segments);
+            return;
+        }
+        for (int i = 0; i < rings.size(); i++) {
+            var ring = rings.get(i);
+            var boundary = segments.get(i);
             selfIntersections(boundary, true);
             double area = signedArea(boundary);
             if (!Double.isFinite(area)) {
@@ -111,10 +120,6 @@ final class CurveValidity {
                 }
             }
         }
-        if (status == VALID && segments.stream().flatMap(List::stream)
-                .noneMatch(segment -> segment.curve() instanceof CircularArc)) {
-            checkLinearSurface(surface, segments);
-        }
     }
 
     private void checkLinearSurface(Surface surface, List<List<Segment>> boundaries) {
@@ -136,41 +141,77 @@ final class CurveValidity {
                 case TopologyValidationError.HOLE_OUTSIDE_SHELL, TopologyValidationError.NESTED_HOLES ->
                         GEOMETRY_HOLE_OUTSIDE_SHELL;
                 case TopologyValidationError.DISCONNECTED_INTERIOR -> GEOMETRY_INTERIOR_DISCONNECTED;
+                case TopologyValidationError.TOO_FEW_POINTS -> GEOMETRY_DEGENERATE_SEGMENT;
                 default -> GEOMETRY_SELF_INTERSECTION;
             };
-            var at = surface.shell().path();
-            if (error.getCoordinate() != null) {
-                for (var boundary : boundaries) {
-                    for (var segment : boundary) {
-                        control.visit().run();
-                        var hit = error.getCoordinate();
-                        if (segment.curve().envelope().covers(hit)) {
-                            at = segment.path();
-                        }
+            var hit = error.getCoordinate();
+            var intersector = new org.locationtech.jts.algorithm.RobustLineIntersector();
+            List<GeometryComponent> first = null;
+            List<GeometryComponent> second = null;
+            var sourceRings = rings(surface);
+            for (int ring = 0; hit != null && ring < boundaries.size(); ring++) {
+                var boundary = boundaries.get(ring);
+                for (int index = 0; index < boundary.size(); index++) {
+                    control.visit().run();
+                    var segment = boundary.get(index);
+                    intersector.computeIntersection(hit, segment.curve().start().coordinate(),
+                            segment.curve().end().coordinate());
+                    if (!intersector.hasIntersection()) {
+                        continue;
+                    }
+                    var ringPath = sourceRings.get(ring).path();
+                    if (first == null) {
+                        first = code == GEOMETRY_SELF_INTERSECTION ? segment.path() : ringPath;
+                    } else if (code == GEOMETRY_INTERIOR_DISCONNECTED && !first.equals(ringPath)) {
+                        second = ringPath;
                     }
                 }
             }
-            invalid(at, code, error.getMessage());
+            if (code == GEOMETRY_SELF_INTERSECTION && hit != null) {
+                // JTS supplies the error point, which can also lie at adjacent segments.
+                // A single witness avoids attributing the error to an unverified pair.
+                invalid(first == null ? surface.shell().path() : first, code, error.getMessage());
+            } else if (error.getErrorType() == TopologyValidationError.HOLE_OUTSIDE_SHELL && first != null) {
+                invalid(first, surface.shell().path(), code, error.getMessage());
+            } else if (second != null) {
+                invalid(first, second, code, error.getMessage());
+            } else {
+                invalid(first == null ? surface.shell().path() : first, code, error.getMessage());
+            }
         }
     }
 
     private List<Segment> closed(Ring ring) {
         var boundary = new ArrayList<Segment>();
-        TransferGeometryAdapter.Position end = null;
+        Coordinate end = null;
         for (Part part : ring.parts()) {
             control.visit().run();
-            if (part.segments().isEmpty() || end != null && !end.equals(part.start())) {
+            if (part.segments().isEmpty() || end != null && !sameDeliveredPosition(end, part.first())) {
                 invalid(part.path(), GEOMETRY_RING_NOT_CLOSED, "Ring parts do not form a continuous boundary");
                 return List.of();
             }
             boundary.addAll(part.segments());
-            end = part.segments().getLast().edge().end();
+            end = part.last();
         }
-        if (boundary.isEmpty() || !boundary.getFirst().edge().start().equals(end)) {
+        if (boundary.isEmpty() || !sameDeliveredPosition(ring.parts().getFirst().first(), end)) {
             invalid(ring.path(), GEOMETRY_RING_NOT_CLOSED, "Ring is open");
             return List.of();
         }
         return boundary;
+    }
+
+    private static boolean sameDeliveredPosition(Coordinate first, Coordinate second) {
+        var left = first.ordinates();
+        var right = second.ordinates();
+        if (left.size() != right.size()) {
+            return false;
+        }
+        for (int i = 0; i < left.size(); i++) {
+            if (left.get(i).exactValue().compareTo(right.get(i).exactValue()) != 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void selfIntersections(List<Segment> segments, boolean closed) {

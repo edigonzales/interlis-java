@@ -163,10 +163,13 @@ Topics.
 ergaben. `coverage()` zeigt geplante, aber nicht ausgeführte Regeln und
 Laufzeitlücken; normativ undefinierte Ausdrücke bleiben davon unterscheidbar.
 Globale und basketweite Eindeutigkeit, `EXISTENCE`, `SET CONSTRAINT`,
-Prozent-Plausibilität, referenzielle Zielprüfung und Geometrietopologie
-gehören nicht zum Profil. Nicht unterstützte Ausdrücke und Werte wie externe
-Funktionen ohne Hostbindung, `UNIQUE` mit lokalem `WHERE` und Bogenradius
-werden als ungeprüft ausgewiesen.
+Prozent-Plausibilität und referenzielle Zielprüfung benötigen das
+Datensatzprofil. Mit dem optionalen Modul `interlis-validation-jts` und
+einer gebundenen Geometrieengine prüft `LOCAL_ONLY` auch die Topologie
+einzelner Geometriewerte, einschliesslich Standardkreisbögen mit Radius.
+Ohne Engine zeigt die Coverage die ausstehende Topologieprüfung. Externe
+Funktionen ohne Hostbindung und `UNIQUE` mit lokalem `WHERE` werden
+ebenfalls als ungeprüft ausgewiesen.
 
 Der Bericht zählt alle erkannten Verstösse und behält standardmässig höchstens
 200 Beispiele mit Datenpfad und Modellherkunft. Die Standardbudgets pro Objekt
@@ -219,6 +222,15 @@ unterstützt gebundene Referenz- und Assoziationspfade, abgeleitete Werte,
 nichtgeometrische Standardfunktionen und explizite Hostbindungen.
 `SET` kann kontextgebundenes und explizites `ALL` zählen.
 Prozentbedingungen verwenden einen exakten Vergleich.
+
+Bei vollständigen Transfers muss ein obligatorisches, nichttransientes
+Attribut auch dann geliefert werden, wenn es berechenbar ist. Der Validator
+prüft gelieferte Werte und vergleicht sie mit der verfügbaren Ableitung.
+Ein fehlender Lieferwert wird im Transferobjekt nicht ergänzt. Wenn die
+Ableitung einen Wert liefert, greifen dafür die fachlichen Wertregeln,
+einschliesslich bei nachgelagerter Referenzauflösung. Ein fachlich
+undefiniertes obligatorisches Ergebnis wird als Pflichtverletzung erfasst.
+Fehlender Laufzeitkontext bleibt als Prüflücke sichtbar.
 
 Virtuelle Sichten verarbeiten Projektion, Selektion, Union, Join,
 Gruppierung und nichtgeometrische Strukturinspektion. Gruppengrössen
