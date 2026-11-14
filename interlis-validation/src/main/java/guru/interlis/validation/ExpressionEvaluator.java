@@ -68,7 +68,8 @@ final class ExpressionEvaluator {
             case FunctionCallExpression call -> function(call, context);
             case SymbolValueExpression symbol -> symbolValue(symbol, context);
             case DefinedExpression defined -> switch (evaluate(defined.operand(), context)) {
-                case Known _, KnownNumber _, KnownObjects _ -> bool(true);
+                case Known _, KnownNumber _ -> bool(true);
+                case KnownObjects objects -> bool(!objects.firstTwo().get().isEmpty());
                 case UndefinedByData _ -> bool(false);
                 case EvaluationResult result -> result;
             };

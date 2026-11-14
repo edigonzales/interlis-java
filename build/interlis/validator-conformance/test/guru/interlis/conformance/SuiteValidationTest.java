@@ -91,6 +91,41 @@ final class SuiteValidationTest {
     }
 
     @Test
+    void originalCrossBasketReferencesRequireAnExplicitBasketId() throws Exception {
+        var output = Files.createDirectory(directory.resolve("cross-basket"));
+        assertEquals(0, runOriginalTests(".*AssociationTest\\.RBe_T01[bd]", output));
+        var diagnostics = Files.readString(output.resolve("stdout"));
+        assertTrue(diagnostics.contains("RBe.T01b.xtf DATA REFERENCE_TARGET_BASKET"), diagnostics);
+        assertTrue(diagnostics.contains("RBe.T01d.xtf DATA REFERENCE_TARGET_BASKET"), diagnostics);
+    }
+
+    @Test
+    void originalStandaloneLinksRequireTheirEndpoints() throws Exception {
+        var output = Files.createDirectory(directory.resolve("endpoints"));
+        assertEquals(0, runOriginalTests(".*(RRiO_T03d|RBk_T03c)", output));
+        var diagnostics = Files.readString(output.resolve("stdout"));
+        assertTrue(diagnostics.contains("RRiO.T03d.xtf DATA REQUIRED_VALUE_MISSING"), diagnostics);
+        assertTrue(diagnostics.contains("RBk.T03c.xtf DATA REQUIRED_VALUE_MISSING"), diagnostics);
+    }
+
+    @Test
+    void originalDefinedConstraintRejectsAnEmptyAssociationAccess() throws Exception {
+        var output = Files.createDirectory(directory.resolve("defined"));
+        assertEquals(0, runOriginalTests(".*ConstraintTest\\.RKo_T11b", output));
+        var diagnostics = Files.readString(output.resolve("stdout"));
+        assertTrue(diagnostics.contains("RKo.T11b.xtf DATA MANDATORY_CONSTRAINT_FALSE"), diagnostics);
+    }
+
+    @Test
+    void originalAreaAndSurfaceRejectContactInsideAnUnsplitEdge() throws Exception {
+        var output = Files.createDirectory(directory.resolve("ring-contact"));
+        assertEquals(0, runOriginalTests(".*SurfaceAreaAttributeTest\\.RSU_T03[ab]", output));
+        var diagnostics = Files.readString(output.resolve("stdout"));
+        assertTrue(diagnostics.contains("RSU.T03a.xtf DATA GEOMETRY_SELF_INTERSECTION"), diagnostics);
+        assertTrue(diagnostics.contains("RSU.T03b.xtf DATA GEOMETRY_SELF_INTERSECTION"), diagnostics);
+    }
+
+    @Test
     void anEmptyTestSelectionFails() throws Exception {
         var output = Files.createDirectory(directory.resolve("empty"));
         assertEquals(1, runOriginalTests(".*NoSuchOriginalTest", output));

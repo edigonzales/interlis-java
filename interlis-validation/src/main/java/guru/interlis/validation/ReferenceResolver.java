@@ -1,5 +1,6 @@
 package guru.interlis.validation;
 
+import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.QualifiedName;
 import guru.interlis.model.SymbolId;
 import guru.interlis.transfer.TransferIdentity.ObjectOid;
@@ -50,7 +51,10 @@ final class ReferenceResolver {
             return new InvalidTarget(handle, Reason.TYPE);
         }
         boolean sameBasket = source.input() == target.input() && source.ordinal() == target.basket();
-        if ((!sameBasket && (!external || descriptor.topic().filter(topic -> !topicReachable(sourceBasket, topic)).isPresent()))
+        var sourceTopic = plan.transferPlan().topic(sourceBasket.topic()).orElseThrow();
+        boolean missingBasketId = !sameBasket && reference.targetBasket().isEmpty()
+                && plan.transferPlan().model(sourceTopic.model()).orElseThrow().languageVersion() == LanguageVersion.ILI23;
+        if (missingBasketId || (!sameBasket && (!external || descriptor.topic().filter(topic -> !topicReachable(sourceBasket, topic)).isPresent()))
                 || reference.targetBasket()
                 .filter(basket -> !basket.value().equals(object.identity().currentBasket().value())).isPresent()) {
             return new InvalidTarget(handle, Reason.BASKET);

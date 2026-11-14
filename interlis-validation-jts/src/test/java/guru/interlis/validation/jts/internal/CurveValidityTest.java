@@ -81,7 +81,7 @@ class CurveValidityTest {
 
     @Test
     void distinguishesInteriorContactFromDisconnectedInteriorAndOutsideHole() {
-        var shell = ring("0,0", "8,0", "8,8", "0,8", "0,0");
+        var shell = ring("0,0", "8,0", "8,4", "8,8", "0,8", "0,4", "0,0");
         var tangent = ring("0,4", "2,3", "2,5", "0,4");
         assertEquals(VALID, check(new Surface(shell, List.of(tangent)), GeometryKind.SURFACE, true, false).status());
         var cut = ring("0,4", "4,3", "8,4", "4,5", "0,4");

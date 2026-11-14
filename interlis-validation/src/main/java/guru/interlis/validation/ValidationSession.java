@@ -308,11 +308,11 @@ public final class ValidationSession implements AutoCloseable {
                 stack.push(children.orElseThrow());
             }
         }
-        checkRoles(object, objectPlan, budget);
+        checkRoles(object, objectPlan, delete || partial, budget);
         checkObjectConstraints(object, objectPlan, object.data(), null, delete, partial, basket, budget);
     }
 
-    private void checkRoles(TransferObject object, ObjectValidationPlan objectPlan, ObjectBudget budget) {
+    private void checkRoles(TransferObject object, ObjectValidationPlan objectPlan, boolean incomplete, ObjectBudget budget) {
         for (var slot : objectPlan.descriptor().slots()) {
             if (!(slot instanceof RoleSlot role)) {
                 continue;
@@ -320,6 +320,12 @@ public final class ValidationSession implements AutoCloseable {
             budget.consume();
             var value = object.value(role.symbol());
             if (value.isEmpty() || value.orElseThrow() == TransferValue.Undefined.INSTANCE) {
+                if (!incomplete && plan.transferPlan().model(objectPlan.descriptor().model()).orElseThrow()
+                        .languageVersion() == guru.interlis.model.LanguageVersion.ILI23) {
+                    checked.merge(new SlotKey(object.type(), role.symbol(), DEFINED_VALUE), 1L, Math::addExact);
+                    violation(object, new ValuePath(null, new DataLocation.Slot(role.symbol())), role.role(),
+                            value.isEmpty() ? REQUIRED_VALUE_MISSING : REQUIRED_VALUE_UNDEFINED, List.of());
+                }
                 continue;
             }
             checked.merge(new SlotKey(object.type(), role.symbol(), VALUE_FAMILY), 1L, Math::addExact);

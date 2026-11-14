@@ -136,6 +136,9 @@ final class CurveValidity {
         var polygon = factory.createPolygon(rings.getFirst(), rings.subList(1, rings.size())
                 .toArray(org.locationtech.jts.geom.LinearRing[]::new));
         var error = new IsValidOp(polygon).getValidationError();
+        if (error == null && boundaries.size() > 1) {
+            checkRingContactVertices(boundaries);
+        }
         if (error != null) {
             var code = switch (error.getErrorType()) {
                 case TopologyValidationError.HOLE_OUTSIDE_SHELL, TopologyValidationError.NESTED_HOLES ->
@@ -177,6 +180,38 @@ final class CurveValidity {
                 invalid(first, second, code, error.getMessage());
             } else {
                 invalid(first == null ? surface.shell().path() : first, code, error.getMessage());
+            }
+        }
+    }
+
+    private void checkRingContactVertices(List<List<Segment>> boundaries) {
+        record RingSegment(int ring, Segment segment) { }
+        var index = new STRtree();
+        for (int ring = 0; ring < boundaries.size(); ring++) {
+            for (var segment : boundaries.get(ring)) {
+                control.visit().run();
+                index.insert(segment.curve().envelope(), new RingSegment(ring, segment));
+            }
+        }
+        var intersector = new org.locationtech.jts.algorithm.RobustLineIntersector();
+        for (int ring = 0; ring < boundaries.size(); ring++) {
+            for (var segment : boundaries.get(ring)) {
+                control.visit().run();
+                var vertex = segment.curve().start();
+                for (var candidate : index.query(new org.locationtech.jts.geom.Envelope(vertex.coordinate()))) {
+                    control.visit().run();
+                    var other = (RingSegment) candidate;
+                    if (ring == other.ring() || endpoint(other.segment().curve(), vertex)) {
+                        continue;
+                    }
+                    intersector.computeIntersection(vertex.coordinate(), other.segment().curve().start().coordinate(),
+                            other.segment().curve().end().coordinate());
+                    if (intersector.hasIntersection()) {
+                        invalid(segment.path(), other.segment().path(), GEOMETRY_SELF_INTERSECTION,
+                                "Polygon rings may touch only at a vertex of both rings");
+                        return;
+                    }
+                }
             }
         }
     }

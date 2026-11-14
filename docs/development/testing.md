@@ -81,7 +81,25 @@ Der Compiler akzeptiert diese Modellierung in 2.3 und 2.4 gemäss
 [Entscheidung 09](../contracts/norm-decisions.md#decision-09).
 Der Runner verwendet die unveränderten Originalmodelle und XTF-Dateien.
 Beim Upstream-Stand `f307111` laufen alle 223 Originaltests ohne
-Namensraumblockade. 198 bestehen, 25 schlagen fehl.
+Namensraumblockade. Der aktuelle Stand besteht 205 Tests.
+
+Die Regressionen für behälterübergreifende XTF-2.3-Referenzen
+(`RBe.T01b/d`), fehlende Rollen eigenständiger Links
+(`RRiO.T03d`, `RBk.T03c`), leeren Beziehungszugang in `DEFINED`
+(`RKo.T11b`) und Randkontakt ohne gemeinsamen Stützpunkt
+(`RSU.T03a/b`) prüfen die Originaldateien und die konkreten Diagnosecodes.
+
+Folgende Fälle bleiben offen:
+
+- `RKo.T09a`: UNIQUE über die Rollenpfade einer eingebetteten Beziehung.
+- `RSU.T05a/b`: ein Randzug mit Berührpunkt, der Aussenrand und
+  Enklave als zusammenhängende Folge kodiert (INTERLIS 2.3 §2.8.13.1).
+- `RSU.T16a`: erwarteter Geometriebefund für den gelieferten Kurvenrand.
+- `RSU.T18a–e`, `RSU.T19a–e`: ungeprüfte Hostfunktionen
+  `INTERLIS_ext.areAreas2` und `areAreas3`.
+- `RPO.T02c`: Selbstberührung an einem wiederholten Stützpunkt.
+- `RAt.T09e`: die Suite erwartet Abrundung vor der Bereichsentscheidung.
+  Der Validator vergleicht den gelieferten Wert exakt (§3.3.11.4).
 
 Bei `RAt.T11a/b` erwartet die Originalsuite, dass transferlokale
 `BID` und `TID` ohne `OIDSPACES` als stabile UUIDs geprüft werden.
