@@ -118,8 +118,11 @@ Im LSP-Host verwaltet `LspDocumentRegistry` die akzeptierten Dokumentstände
 und `LspFileIdentityRegistry` die vom Dateisystem bestätigten Identitäten.
 `LspInputReadiness` ordnet Dokumentoperationen und Anfragen während laufender
 Dateiaufnahmen. `AnalysisScheduler` serialisiert Zustandsänderungen auf der
-Owner-Queue und führt Compilerarbeit auf unveränderlichen Captures ausserhalb
-der Queue aus. Diagnosen werden aus einer akzeptierten Quellsicht veröffentlicht.
+Owner-Queue. Sie bindet Wurzeln und Konfiguration an die Workspace-Revision.
+Die Worker erstellen daraus den Capture, parsen und lösen Modelle auf.
+Die Owner-Queue übernimmt Repository-Updates und Analyseergebnisse nur für
+den erwarteten Stand. Diagnosen werden aus einer akzeptierten Quellsicht
+veröffentlicht.
 
 Laufbeobachtung und Abbruch gelten pro Operation. Ein interner Fehler erzeugt
 einen eigenen Ergebniszustand. Projektoren weisen ihre Fähigkeiten explizit

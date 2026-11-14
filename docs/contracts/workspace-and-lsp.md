@@ -150,7 +150,7 @@ Die vollen Workspace-Overloads `analyze(request, context, token)` und `compile(r
 <a id="bedingte-übernahme-einer-abgetrennten-analyse"></a>
 ### Bedingte Übernahme einer abgetrennten Analyse
 
-`acceptAnalysis(capture, analysis)` ist eine kurze, serialisierte Workspace-Mutation auf derselben Ownerqueue wie `update`, `configure` und `capture`. Die rechenintensive Enginearbeit findet vorher ausserhalb dieser Queue statt. Die Methode startet keine neue Auflösung, keine Parse-/Semantikrunde und keine I/O. Sie prüft vorhandene unveränderliche Fingerprints und Herkunftsdaten und übernimmt geeignete Wiederverwendungsdaten atomar.
+`acceptAnalysis(capture, analysis)` ist eine kurze, serialisierte Workspace-Mutation auf derselben Ownerqueue wie `update` und `configure`. Capture und Enginearbeit können vorher ausserhalb dieser Queue laufen. Die Methode startet keine neue Auflösung, keine Parse-/Semantikrunde und keine I/O. Sie prüft vorhandene unveränderliche Fingerprints und Herkunftsdaten und übernimmt geeignete Wiederverwendungsdaten atomar.
 
 Der verbindliche Ablauf lautet:
 
@@ -393,8 +393,12 @@ für dieselbe kanonische Quellidentität auf, auch bei gewechselter Client-URI.
 Ein weiterhin gültiger anderer offener Client behält dagegen seine Autorität.
 
 Der Editorhost benutzt eine begrenzte Ownerqueue, zwei Analyseplätze und
-höchstens einen neuesten ausstehenden Capture. Explizite Compiles laufen
-abgetrennt und besitzen eigene Abbruchtoken/Laufkontexte. Auch Anfragen,
+höchstens einen neuesten ausstehenden Analyseauftrag. Auf der Ownerqueue
+werden Wurzeln, Revision und Konfiguration gebunden. Ein Worker erstellt
+den Capture für diese Revision, einschliesslich Parsing und Modellauflösung.
+Nach einem akzeptierten Repository-Update erstellt der Worker den Capture
+für die neue Revision. Explizite Compiles verwenden denselben Ablauf mit
+eigenen Abbruchtoken und Laufkontexten. Auch Anfragen,
 einschliesslich Formatierung und Diagrammprojektion, laufen nach kurzem Capture
 einer unveränderlichen Hostsicht auf zwei begrenzten Sprachquery-Workern.
 Antworten prüfen beim Rückweg Generation, Revision und Konfiguration erneut.
@@ -444,7 +448,7 @@ Eine konfigurierbare kurze Entprellzeit darf auf wiederholte Hintergrunddiagnost
 
 Der Scheduler verwirft supersedierte ausstehende Hintergrundläufe. Laufende Arbeiten werden nach Möglichkeit abgebrochen. JVM-Parallelität wird begrenzt; virtuelle Threads können für Host-I/O nützlich sein, ersetzen aber kein CPU-Budget für Parser und Semantik. Die portable Workspace-API erhält keine Thread-/Future-Pflicht.
 
-Der LSP-Server verwendet ausdrücklich den abgetrennten Ablauf: auf der Ownerqueue `capture(request, token)` erstellen, danach `CompilerEngine.analyze(capture.request(), capture.reuse(), context, token)` auf dem begrenzten Analyseexecutor ausführen und schliesslich auf der Ownerqueue `acceptAnalysis(capture, analysis)` aufrufen. Nur ein angenommener, zur aktuellen Dokumentgeneration passender Stand geht an DiagnosticPublisher und Diagrammverbraucher. Quellupdates bleiben während der Engineberechnung bearbeitbar. Der Host hält keinen Workspace-Lock über den Engineaufruf und ruft nicht den synchronen Komfortpfad auf der Dokument-Notification-Queue auf. Abbruch- und interne Fehlerwege überspringen den vollständigen Commit; sie dürfen einen jüngeren erfolgreichen Stand nicht verdrängen.
+Auf der Ownerqueue erfasst der LSP-Server den revisionsgebundenen Auftrag. Der begrenzte Analyseexecutor führt `capture(request, token)` und `CompilerEngine.analyze(capture.request(), capture.reuse(), context, token)` aus. Die Ownerqueue prüft anschliessend die Übernahme mit `acceptAnalysis(capture, analysis)`. Nur ein angenommener, zur aktuellen Dokumentgeneration passender Stand geht an DiagnosticPublisher und Diagrammverbraucher. Quellupdates bleiben während der Engineberechnung bearbeitbar. Der Host hält keinen Workspace-Lock über den Engineaufruf und ruft nicht den synchronen Komfortpfad auf der Dokument-Notification-Queue auf. Abbruch- und interne Fehlerwege überspringen den vollständigen Commit; sie dürfen einen jüngeren erfolgreichen Stand nicht verdrängen.
 
 Bei ungültigen Client-Änderungsbereichen darf der Server nicht raten und nachfolgende Deltas auf falschen Text anwenden. Er markiert den Dokumentzustand als unsynchronisiert, meldet den konkreten Fehler über den Betriebskanal und verlangt im eigenen Clientadapter eine vollständige Resynchronisation. Es wird keine nicht standardisierte LSP-Methode ohne passende Clientimplementierung erfunden. Bis zur Resynchronisation werden schreibende Sprachoperationen abgelehnt.
 
