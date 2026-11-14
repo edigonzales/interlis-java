@@ -86,17 +86,17 @@ class XtfValidationIntegrationTest {
         try (var reader = new Xtf23Reader(transfer, new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)))) {
             var report = LocalValidator.validate(plan, reader, OPTIONS, RUN);
             var findings = report.examples();
-            assertEquals(List.of(REQUIRED_OID_MISSING, VALUE_OUT_OF_RANGE, INVALID_OID),
+            assertEquals(List.of(VALUE_OUT_OF_RANGE, INVALID_OID),
                     findings.stream().map(ValidationDiagnostic::code).toList());
-            assertEquals(3, report.detectedViolations());
-            assertEquals(List.of("b1", "b1", "bid:abcd"),
+            assertEquals(2, report.detectedViolations());
+            assertEquals(List.of("b1", "bid:abcd"),
                     findings.stream().map(d -> d.data().basket().orElseThrow().value()).toList());
             var basketDomain = schema.queries().findQualifiedName(QualifiedName.of("Checks", "ShortId")).getFirst();
             var objectDomain = schema.queries().findQualifiedName(QualifiedName.of("Checks", "ObjectId")).getFirst();
-            assertEquals(List.of(basketDomain, objectDomain, basketDomain),
+            assertEquals(List.of(objectDomain, basketDomain),
                     findings.stream().map(d -> d.rule().declaration()).toList());
-            assertTrue(findings.getFirst().data().objectType().isEmpty());
-            assertEquals("ids:21", findings.get(1).data().tid().orElseThrow().value());
+            assertTrue(findings.getLast().data().objectType().isEmpty());
+            assertEquals("ids:21", findings.getFirst().data().tid().orElseThrow().value());
         }
     }
 

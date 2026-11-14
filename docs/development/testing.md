@@ -28,8 +28,11 @@ prüfen tatsächliche Schreibverbote des Betriebssystems.
   führt die Originaltests aus. `--filter '.*\.XmlTest\.RXW_T02a'` wählt
   eine Methode. Der reguläre Ausdruck muss auf den vollständigen Java-Namen
   `Paket.Klasse.Methode` passen. Berichte liegen unter
-  `target/jenesis-jvm/validator-conformance/`. Der Lauf deckt derzeit
-  Modell- und Transferblockaden auf und ist noch nicht Teil der CI.
+  `target/jenesis-jvm/validator-conformance/`. Die Originaltests verwenden den Herstellerwert `interlis-java`. Technische
+  Fehler, leere Auswahl und nicht erfüllte Originalassertionen schlagen fehl.
+  Die Suite ist noch nicht Teil der CI. Das Originalmodell `TestSuite.ili`
+  kollidiert in der Closure am Topic- und Klassennamen `GebaeudeRegister`
+  (Entscheidung 09). Der Runner weist dies als Modellfehler aus.
 - Die [Buildanleitung](build.md#portable-backends) zeigt die Node-Smokes für die
   erzeugten JS-/WasmGC-Artefakte. Der Portable-CI-Job führt `browserSmoke`
   und `validationBrowserSmoke` mit Chromium aus. Die Validatorprobe

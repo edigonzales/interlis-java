@@ -232,9 +232,6 @@ public final class Xtf23Reader extends TransferReader {
             if (!version.equals(model.modelVersion())) {
                 throw xml.error(INVALID_WIRE, "XTF version conflicts with model " + name);
             }
-            if (!issuer.equals(symbol.issuer())) {
-                throw xml.error(INVALID_WIRE, "XTF issuer conflicts with model " + name);
-            }
             if (!declared.add(model.symbol())) {
                 throw xml.error(INVALID_WIRE, "Repeated XTF model declaration " + name);
             }

@@ -25,6 +25,17 @@ final class Xtf23HeaderTest {
     }
 
     @Test
+    void preservesTheHeaderIssuerWithoutUsingItForModelBinding() {
+        var xml = document(MODELS.replace("https://", "http://"), "");
+        try (var reader = new Xtf23Reader(plan, input(xml))) {
+            var start = assertInstanceOf(TransferEvent.StartTransfer.class, reader.readNext(TOKEN).orElseThrow());
+            var declaration = start.models().getFirst();
+            assertEquals(Optional.of("http://example.invalid/iox-reference"), declaration.issuer());
+            assertEquals("Reference23", plan.model(declaration.model()).orElseThrow().name().declared().toString());
+        }
+    }
+
+    @Test
     void readsHeaderAndFirstObjectFromPinnedIoxFixture() throws IOException {
         var source = new SourceId("memory:/identity.xtf");
         try (var input = Files.newInputStream(fixture("identity.xtf"));
@@ -95,7 +106,7 @@ final class Xtf23HeaderTest {
                 document("<MODELS/>", ""),
                 valid.replace("Reference23", "Unknown"),
                 valid.replace("2026-11-06", "2026-10-06"),
-                valid.replace("https://example.invalid/iox-reference", "https://example.invalid/other"),
+                valid.replace(" URI=\"https://example.invalid/iox-reference\"", ""),
                 valid.replace("</MODELS>", MODELS.substring(MODELS.indexOf("<MODEL "), MODELS.indexOf("</MODELS>"))
                         + "</MODELS>"),
                 valid.replace("<DATASECTION>", "<UNKNOWN>"), valid.substring(PROLOG.length()))) {

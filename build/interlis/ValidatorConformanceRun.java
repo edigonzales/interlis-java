@@ -83,7 +83,7 @@ public final class ValidatorConformanceRun {
         DistributionChecks.run(root, List.of(DistributionChecks.javaTool("javac"), "-encoding", "UTF-8",
                 "-cp", suiteClasspath, "-d", adapterTests.toString(), adapterTest.toString())).requireExit(0);
         var probes = DistributionChecks.run(root, List.of(DistributionChecks.javaTool("java"),
-                "-cp", suiteClasspath + File.pathSeparator + adapterTests,
+                "-Dsuite.directory=" + routine.getParent(), "-Dsuite.classes=" + classes, "-cp", suiteClasspath + File.pathSeparator + adapterTests,
                 "org.junit.platform.console.ConsoleLauncher", "execute", "--disable-ansi-colors",
                 "--fail-if-no-tests", "--reports-dir", output.resolve("adapter-reports").toString(),
                 "--select-class", "guru.interlis.conformance.SuiteValidationTest"));

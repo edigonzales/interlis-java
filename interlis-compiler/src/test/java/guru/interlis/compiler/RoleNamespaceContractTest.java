@@ -49,7 +49,7 @@ class RoleNamespaceContractTest {
                 MODEL F AT "https://example.org" VERSION "1" =
                   TOPIC Base =
                     OID AS INTERLIS.UUIDOID;
-                    CLASS Address = END Address;
+                    CLASS Address = remoteParcel: TEXT; END Address;
                     CLASS Parcel = END Parcel;
                     ASSOCIATION Local = address -- Address; parcel -- Parcel; END Local;
                   END Base;
@@ -58,7 +58,7 @@ class RoleNamespaceContractTest {
                     CLASS Plot = END Plot;
                     ASSOCIATION Remote =
                       address (EXTERNAL) -- Base.Address;
-                      parcel -- Plot;
+                      remoteParcel -- Plot;
                     END Remote;
                   END Extension;
                 END F.

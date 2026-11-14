@@ -154,6 +154,15 @@ lokale `MANDATORY CONSTRAINT`- und Domain-Ausdrücke sowie `UNIQUE (LOCAL)`
 mit direkten, typisierten Schlüsseln aus Text, Zahlen, Aufzählungen,
 Ausrichtungen oder BOOLEAN aus. Der Index gilt pro Besitzer.
 
+Im XTF-2.3-Header bleibt `MODEL URI` als übertragene Metadatenangabe
+erhalten. Der Reader bindet das Modell über Name und Version an den
+übergebenen Plan. Eine abweichende URI ändert diese Bindung nicht.
+
+Für XTF 2.3 FULL genügen transfereindeutige BID und TID. Ohne
+`OIDSPACES` sind sie auch in UUID-Form keine stabilen OIDs. Gelieferte
+stabile OIDs werden gegen ihre Domäne geprüft. INITIAL und UPDATE
+benötigen stabile Identifikatoren.
+
 Bei XTF 2.3 gelten für die Basket-OID auch die Domänen zusätzlicher Topics
 aus `TOPICS`. Eine gemeinsam geerbte Domäne wird pro Basket einmal geprüft.
 Objekt-OIDs folgen der wirksamen Regel der Klasse oder ihres deklarierenden

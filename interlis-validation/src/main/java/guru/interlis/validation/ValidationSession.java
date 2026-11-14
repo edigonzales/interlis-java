@@ -756,7 +756,8 @@ public final class ValidationSession implements AutoCloseable {
         var checkedDomains = new HashSet<SymbolId>();
         for (var topic : basket.topics()) {
             for (var rule : topic.oidRules()) {
-                if (rule.basket() && rule.domain().filter(checkedDomains::add).isPresent()) {
+                if (rule.basket() && rule.domain().filter(checkedDomains::add).isPresent()
+                        && (event.stableOid().isPresent() || requiresStableOid(topic.model()))) {
                     identity(rule, topic.symbol(), event.stableOid(), data);
                 }
             }
@@ -773,8 +774,10 @@ public final class ValidationSession implements AutoCloseable {
         var id = object.identity();
         if (rule.isPresent() && rule.orElseThrow().domain().isPresent()) {
             var data = location(object, List.of());
-            identity(rule.orElseThrow(), object.type(), id.oid().map(oid -> oid.value()), data);
-            if (id.oid().isPresent() && id.tid().isEmpty()) {
+            if (id.oid().isPresent() || requiresStableOid(descriptor.model())) {
+                identity(rule.orElseThrow(), object.type(), id.oid().map(oid -> oid.value()), data);
+            }
+            if (id.tid().isEmpty() && (id.oid().isPresent() || !requiresStableOid(descriptor.model()))) {
                 diagnostic(REQUIRED_TID_MISSING, data, ruleLocation(object.type(), rule.orElseThrow().origin()), List.of());
             }
         } else if (rule.isEmpty() && descriptor.modifiers().contains(Modifier.OID) && id.tid().isEmpty()) {
@@ -782,6 +785,12 @@ public final class ValidationSession implements AutoCloseable {
             diagnostic(REQUIRED_TID_MISSING, location(object, List.of()),
                     ruleLocation(object.type(), declaration.origin()), List.of());
         }
+    }
+
+    private boolean requiresStableOid(SymbolRef model) {
+        return basket.start().kind() != TransferEvent.BasketKind.FULL
+                || plan.transferPlan().model(model).orElseThrow().languageVersion()
+                        != guru.interlis.model.LanguageVersion.ILI23;
     }
 
     private void identity(OidRule rule, SymbolRef owner, Optional<String> value, DataLocation data) {

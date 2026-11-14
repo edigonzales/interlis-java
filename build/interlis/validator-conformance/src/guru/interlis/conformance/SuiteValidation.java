@@ -91,10 +91,6 @@ public final class SuiteValidation {
             if (e.getSuppressed().length != 0) throw e;
             return switch (e.reason()) {
                 case MALFORMED_XML, UNSAFE_XML, INVALID_WIRE, DUPLICATE_ID -> {
-                    if (e.getMessage().startsWith("XTF issuer conflicts with model ")) {
-                        // This prevents the suite from reaching the data checks on the original model.
-                        throw e;
-                    }
                     System.out.println(input.getFileName() + " WIRE " + e.reason() + " " + e.getMessage());
                     yield false;
                 }
