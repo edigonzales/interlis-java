@@ -34,7 +34,12 @@ class ResolutionBoundaryContractTest {
                     "INTERLIS 2.4; MODEL Dep AT \"https://example.org\" VERSION \"99\"=DOMAIN D=TEXT*99;END Dep.")));
             var roots = List.<ModelSelector>of(new ModelSelector.ByName("Dep", Optional.empty(), Optional.empty()));
             var capture = w.capture(new AnalysisRequest(w.currentRevision(), roots));
-            assertTrue(capture.resolution().complete()); assertEquals(chosen, capture.request().roots().getFirst());
+            assertTrue(capture.resolution().complete());
+            assertEquals(roots, capture.request().roots());
+            var binding = assertInstanceOf(RootResolution.Resolved.class,
+                    capture.request().sources().rootResolutions().get(roots.getFirst()));
+            assertEquals(chosen.sourceHint().orElseThrow(), binding.target().source());
+            assertEquals(chosen.modelVersion(), binding.target().modelVersion());
             var out = w.compile(new WorkspaceCompileRequest(w.currentRevision(), roots), CancellationToken.none());
             var ok = assertInstanceOf(CompilationOutcome.Succeeded.class, out);
             assertTrue(ok.schema().semanticGraph().symbols().stream().filter(x -> x instanceof guru.interlis.model.ModelSymbol)
@@ -44,7 +49,37 @@ class ResolutionBoundaryContractTest {
             assertEquals(policy.fingerprint(), new ResolutionPolicy(true, new TreeMap<>(policy.modelSelections()),
                     new LinkedHashMap<>(policy.sourcePriorities())).fingerprint());
             var impossible = new ModelSelector.ByName("Dep", Optional.of("99"), Optional.empty());
-            assertFalse(w.capture(new AnalysisRequest(w.currentRevision(), List.of(impossible))).resolution().complete());
+            var conflicting = w.capture(new AnalysisRequest(w.currentRevision(), List.of(impossible)));
+            assertFalse(conflicting.resolution().complete());
+            assertInstanceOf(RootResolution.Missing.class, conflicting.request().sources().rootResolutions().get(impossible));
+            var rejected = assertInstanceOf(CompilationOutcome.Rejected.class,
+                    w.compile(new WorkspaceCompileRequest(w.currentRevision(), List.of(impossible)), CancellationToken.none()));
+            assertEquals(Set.of(RejectionReason.MISSING_INPUT), rejected.rejection().reasons());
+            assertEquals(List.of(impossible), rejected.rejection().requestedRoots());
+        }
+    }
+
+    @Test void compilerUsesOnlyTheResolversBestRankedCandidates() {
+        var first = new SourceId("memory:/one.ili");
+        var second = new SourceId("memory:/two.ili");
+        var lower = new SourceId("memory:/three.ili");
+        var options = CompilerOptions.defaults();
+        var config = new WorkspaceConfiguration(options, new ResolutionPolicy(true, Map.of(),
+                Map.of(first, 0, second, 0, lower, 1)), ResolverCatalog.empty(), CacheLimits.defaults());
+        var named = new ModelSelector.ByName("Root", Optional.empty(), Optional.empty());
+        try (var workspace = Workspaces.create(CompilerEngines.create(), config)) {
+            for (var id : List.of(first, second, lower)) {
+                workspace.update(new SourceUpdate(id, new SourceExpectation.Absent(), new SourceChange.Replace(
+                        "INTERLIS 2.4; MODEL Root AT \"x\" VERSION \"1\" = END Root.")));
+            }
+            var outcome = assertInstanceOf(CompilationOutcome.Rejected.class, workspace.compile(
+                    new WorkspaceCompileRequest(workspace.currentRevision(), List.of(named)), CancellationToken.none()));
+            assertEquals(Set.of(RejectionReason.AMBIGUOUS_INPUT), outcome.rejection().reasons());
+            var diagnosis = outcome.analysis().requestDiagnostics().stream()
+                    .filter(d -> d.code().value().equals("ILI-RES-0002")).findFirst().orElseThrow();
+            var candidates = (guru.interlis.diagnostics.DiagnosticArgument.IdentifierListArgument)
+                    diagnosis.arguments().stream().filter(a -> a.name().equals("candidates")).findFirst().orElseThrow();
+            assertEquals(List.of(first.value(), second.value()), candidates.values());
         }
     }
 
@@ -89,6 +124,28 @@ class ResolutionBoundaryContractTest {
             assertThrows(IllegalArgumentException.class,()->w.acceptAnalysis(capture,analysis));
             var own=CompilerEngines.create().analyze(capture.request(),CancellationToken.none());
             assertEquals(AnalysisAcceptance.ACCEPTED,w.acceptAnalysis(capture,own));
+        }
+    }
+
+    @Test void captureRejectsAnalysisThatClaimsDifferentGrammarProvenance() {
+        var engine = CompilerEngines.create();
+        var token = CancellationToken.none();
+        try (var workspace = Workspaces.create(engine, WorkspaceConfiguration.defaults())) {
+            var id = new SourceId("memory:/provenance.ili");
+            WorkspaceTestSupport.add(workspace, id.value(),
+                    "INTERLIS 2.4; MODEL Root AT \"x\" VERSION \"1\" = END Root.");
+            var capture = workspace.capture(new AnalysisRequest(workspace.currentRevision(),
+                    List.of(new ModelSelector.BySource(id))), token);
+            var own = engine.analyze(capture.request(), capture.reuse(), token);
+            var current = own.provenance();
+            var foreign = new AnalysisProvenance(current.compilerVersion(), "other grammar", current.semanticProfile(),
+                    current.resolverFingerprint(), current.optionsFingerprint(), current.sourceFingerprints());
+            var supplied = new AnalysisSnapshot(own.snapshotId(), own.semanticGraph(), own.sourceRevisions(),
+                    own.syntaxSnapshots(), own.diagnostics(), own.requestDiagnostics(), own.coverage(),
+                    own.fingerprint(), foreign);
+            assertThrows(IllegalArgumentException.class, () -> workspace.acceptAnalysis(capture, supplied));
+            assertEquals(0, workspace.metrics().acceptedAnalyses());
+            assertEquals(AnalysisAcceptance.ACCEPTED, workspace.acceptAnalysis(capture, own));
         }
     }
 

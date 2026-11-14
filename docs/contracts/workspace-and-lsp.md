@@ -402,6 +402,10 @@ eigenen Abbruchtoken und Laufkontexten. Auch Anfragen,
 einschliesslich Formatierung und Diagrammprojektion, laufen nach kurzem Capture
 einer unveränderlichen Hostsicht auf zwei begrenzten Sprachquery-Workern.
 Antworten prüfen beim Rückweg Generation, Revision und Konfiguration erneut.
+Bei Repository-Updates bereitet die Ownerqueue vor der Workspace-Mutation
+die readonly Handles für den gesamten Batch vor. Ein Kapazitätsfehler
+verwirft den Batch. Nach erfolgreicher Übernahme erhalten die Handles die
+vom Workspace zugeteilten Revisionen.
 Datei-I/O und ausstehende Compiles sind begrenzt; Überlast erhält einen
 kontrollierten Fehler. Dateimeldungen für offene Dokumente überschreiben
 keinen Clienttext. Ausstehende relevante Datei-I/O wird vor einer Sprachabfrage

@@ -62,6 +62,11 @@ die vorgesehenen Mehrfachdarstellungen einfacher Linien und Flächen.
 BLACKBOX BINARY und XML werden begrenzt verarbeitet. XML-Fragmente behalten den
 Namespacekontext, einschliesslich Bindungen für QName-Textwerte.
 
+Beide XTF-Codecs lesen die Vererbung aus dem gebundenen Modell. Die
+Transferdeskriptoren liefern das Wire-Layout der übertragbaren Deklarationen.
+Eine vordefinierte Basisklasse wie `INTERLIS.REFSYSTEM` braucht deshalb
+keinen eigenen Transferdeskriptor.
+
 Die Codecs prüfen XML-/Protokollsyntax, Dekodierbarkeit, Reihenfolge und
 Ressourcenlimits. Modellbereiche, Pflichtwerte, Kardinalitäten, Zielobjektexistenz,
 Strukturzuweisbarkeit und Geometrietopologie gehören zur separaten Datenvalidierung.

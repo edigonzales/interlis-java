@@ -43,8 +43,13 @@ public final class InterlisLanguageServer implements InterlisLanguageServerApi, 
     /** Uses an explicit reentrant engine and run services for detached background work. */
     public InterlisLanguageServer(Workspace workspace, guru.interlis.compiler.CompilerEngine engine,
                                  guru.interlis.compiler.CompilerServices services) {
+        this(workspace, engine, services, new ExternalSourceRegistry());
+    }
+
+    InterlisLanguageServer(Workspace workspace, guru.interlis.compiler.CompilerEngine engine,
+                           guru.interlis.compiler.CompilerServices services, ExternalSourceRegistry externalSources) {
         this.workspace = Objects.requireNonNull(workspace, "workspace");
-        this.textDocuments = new InterlisTextDocumentService(workspace, engine, services);
+        this.textDocuments = new InterlisTextDocumentService(workspace, engine, services, externalSources);
         this.workspaceService = new InterlisWorkspaceService(workspace, textDocuments);
         textDocuments.requestGuard(this::requireReady);
         workspaceService.requestGuard(this::requireReady);

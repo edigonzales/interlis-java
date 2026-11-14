@@ -1,6 +1,5 @@
 package guru.interlis.compiler.internal;
 
-import guru.interlis.compiler.AnalysisProvenance;
 import guru.interlis.compiler.AnalysisReuse;
 import guru.interlis.compiler.AnalysisSnapshot;
 import guru.interlis.compiler.CompilationFingerprint;
@@ -10,13 +9,11 @@ import guru.interlis.compiler.SourceSet;
 import guru.interlis.diagnostics.Diagnostic;
 import guru.interlis.diagnostics.DiagnosticId;
 import guru.interlis.diagnostics.Phase;
-import guru.interlis.execution.CancellationReason;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
 import guru.interlis.execution.PhaseStatus;
 import guru.interlis.execution.RunLifecycle;
 import guru.interlis.model.SnapshotId;
-import guru.interlis.source.ContentFingerprint;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceText;
 import guru.interlis.syntax.ParseMode;
@@ -66,7 +63,7 @@ final class CompilationRun {
         try {
             token.throwIfCancellationRequested();
             RootSelector rootSelector = new RootSelector();
-            roots = rootSelector.select(request.roots(), modelIndex, collector);
+            roots = rootSelector.select(request.roots(), sourceSet.rootResolutions(), modelIndex, collector);
             ImportBinder importBinder = new ImportBinder();
             closure = importBinder.bind(roots.roots(), modelIndex, sourceSet, collector,overlays);
             if (roots.roots().isEmpty()) {
@@ -127,13 +124,9 @@ final class CompilationRun {
         var requestDiagnostics = RequestDiagnosticSelector.select(diagnostics, closure, roots, syntaxSources, token);
         var coverage = AnalysisCoverageBuilder.build(closure, syntaxSources, syntax, requestDiagnostics,
                 resolutionDiagnostics, graphResult, token);
-        AnalysisProvenance provenance = new AnalysisProvenance(Fingerprints.COMPILER_VERSION,
-                Fingerprints.GRAMMAR_VERSION, Fingerprints.SEMANTIC_PROFILE,
-                sourceSet.fingerprint().value(), request.options().fingerprint(),
-                sourceFingerprints(sourceSet));
         AnalysisSnapshot analysis = new AnalysisSnapshot(snapshotId, graphResult.graph(),
                 revisions(sourceSet), syntax, diagnostics, requestDiagnostics, coverage,
-                fingerprint, provenance);
+                fingerprint, request.provenance());
         return new RunOutput(analysis, closure, roots, graphResult);
     }
 
@@ -171,32 +164,12 @@ final class CompilationRun {
             token.throwIfCancellationRequested();
             List<SourceId> ids = new ArrayList<>(sourceSet.sources().keySet());
             ids.sort(Comparator.comparing(SourceId::value));
+            var options = new ParseOptions(mode, java.util.Optional.empty(), request.options().budget());
+            var batch = SyntaxServices.batch(options, token);
             for (SourceId id : ids) {
-                token.throwIfCancellationRequested();
-                SourceText source = sourceSet.sources().get(id);
-                SyntaxSnapshot reused = reuse.previousSyntax().get(id);
-                SyntaxSnapshot snapshot;
-                if (reused != null
-                        && reused.source().id().equals(id)
-                        && reused.source().revision().equals(source.revision())
-                        && reused.source().contentFingerprint().equals(source.contentFingerprint())
-                        && reused.options().equals(new ParseOptions(mode, java.util.Optional.empty(),
-                                request.options().budget()))) {
-                    snapshot = reused;
-                } else {
-                    snapshot = SyntaxServices.create().parse(source,
-                            new ParseOptions(mode, java.util.Optional.empty(),
-                                    request.options().budget()), token);
-                }
-                if (snapshot.coverage().budgetExceeded())
-                    throw new OperationCancelledException(CancellationReason.RESOURCE_LIMIT);
+                var snapshot = batch.prepare(sourceSet.sources().get(id), reuse.previousSyntax().get(id));
                 syntax.put(id, snapshot);
                 collector.importAll(snapshot.diagnostics());
-            }
-            long tokenCount = syntax.values().stream().mapToLong(s -> s.tokens().size()).sum();
-            if (tokenCount > request.options().budget().maxTokens()) {
-                throw new AnalysisBudgetExceededException("maxTokens",
-                        request.options().budget().maxTokens());
             }
             status = PhaseStatus.SUCCEEDED;
         } catch (OperationCancelledException | AnalysisBudgetExceededException cancelled) {
@@ -205,12 +178,6 @@ final class CompilationRun {
         } finally {
             phase.finish(status);
         }
-    }
-
-    private Map<SourceId, ContentFingerprint> sourceFingerprints(SourceSet sourceSet) {
-        Map<SourceId, ContentFingerprint> result = new LinkedHashMap<>();
-        sourceSet.sources().forEach((id, text) -> result.put(id, text.contentFingerprint()));
-        return result;
     }
 
     private Map<SourceId, guru.interlis.source.SourceRevision> revisions(SourceSet sourceSet) {

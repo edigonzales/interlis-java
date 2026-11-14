@@ -2,6 +2,7 @@ package guru.interlis.lsp;
 
 import guru.interlis.compiler.*;
 import guru.interlis.execution.*;
+import guru.interlis.repository.PreparedRepositoryUpdate;
 import guru.interlis.repository.RepositoryResolutionOutcome;
 import guru.interlis.workspace.*;
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException;
@@ -21,7 +22,7 @@ import java.util.function.*;
 final class AnalysisScheduler implements AutoCloseable {
     private final Workspace workspace;
     private final RepositoryHostCoordinator repositories;
-    private Consumer<RepositoryResolutionOutcome.Prepared> repositoryPrepared = ignored -> { };
+    private Consumer<PreparedRepositoryUpdate> applyRepositoryUpdate;
     private Predicate<guru.interlis.source.SourceId> localSource=ignored -> true;
     private final CompilerEngine engine;
     private final CompilerServices services;
@@ -53,6 +54,7 @@ final class AnalysisScheduler implements AutoCloseable {
                       BiConsumer<AnalysisSnapshot, Optional<RepositoryResolutionOutcome.Rejected>> accepted,
                       Consumer<String> operations) {
         this.workspace = Objects.requireNonNull(workspace);
+        this.applyRepositoryUpdate = update -> update.apply(workspace);
         this.engine = Objects.requireNonNull(engine);
         this.services = Objects.requireNonNull(services);
         this.accepted = Objects.requireNonNull(accepted);
@@ -61,8 +63,11 @@ final class AnalysisScheduler implements AutoCloseable {
     }
 
     void repositorySettings(RepositorySettings settings) { requireOwner(); repositories.reconfigure(settings); }
-    void repositorySources(Consumer<RepositoryResolutionOutcome.Prepared> listener,
-                           Predicate<guru.interlis.source.SourceId> local) { repositoryPrepared=listener;localSource=local; }
+    void repositorySources(Consumer<PreparedRepositoryUpdate> apply,
+                           Predicate<guru.interlis.source.SourceId> local) {
+        applyRepositoryUpdate = apply;
+        localSource = local;
+    }
 
     /** Short ordered host action; never waits for a compiler worker. */
     <T> T onOwner(Supplier<T> action) {
@@ -266,8 +271,7 @@ final class AnalysisScheduler implements AutoCloseable {
                 runCompile(result, initialGeneration, initial, null, token);
             }
             case RepositoryResolutionOutcome.Prepared success -> {
-                success.update().apply(workspace);
-                repositoryPrepared.accept(success);
+                applyRepositoryUpdate.accept(success.update());
                 var request = new AnalysisRequest(workspace.currentRevision(), roots);
                 runCompile(result, initialGeneration, initial, request, token);
             }
@@ -374,8 +378,7 @@ final class AnalysisScheduler implements AutoCloseable {
                     analyze(job, capture, null);
                 }
                 case RepositoryResolutionOutcome.Prepared prepared -> {
-                    prepared.update().apply(workspace);
-                    repositoryPrepared.accept(prepared);
+                    applyRepositoryUpdate.accept(prepared.update());
                     analyze(job, capture, new AnalysisRequest(workspace.currentRevision(), job.request.roots()));
                 }
             }

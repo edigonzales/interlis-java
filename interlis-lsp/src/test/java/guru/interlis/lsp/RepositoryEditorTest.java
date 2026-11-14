@@ -57,6 +57,50 @@ class RepositoryEditorTest {
     CompileReport compile(InterlisLanguageServer s,String uri,int version) throws Exception { return s.compileModel(new CompileModelParams("current",new VersionedTextDocumentIdentifier(uri,version),null,null)).get(10,TimeUnit.SECONDS); }
 
 
+    @Test void repositoryBatchAndConfigurationStayUnchangedWhenOnlyOneHandleFits() throws Exception {
+        String base = serve();
+        var engine = CompilerEngines.create();
+        var workspace = Workspaces.create(engine, WorkspaceConfiguration.defaults());
+        var handles = new ExternalSourceRegistry(1);
+        var server = new InterlisLanguageServer(workspace, engine, CompilerServices.defaults(), handles);
+        var init = new InitializeParams();
+        init.setInitializationOptions(Map.of("repositories", List.of(base),
+                "cacheDirectory", directory.resolve("batch-cache").toString()));
+        server.initialize(init).get(5, TimeUnit.SECONDS);
+        try {
+            var configuration = workspace.configuration();
+            var dep = new SourceId(base + "Dep.ili");
+            var transitive = new SourceId(base + "Base.ili");
+            open(server, URI, 1, ROOT);
+            var docs = server.textDocumentsForTest();
+            var outline = new DocumentSymbolParams(new TextDocumentIdentifier(URI));
+            for (var request : List.<java.util.function.Supplier<CompletableFuture<?>>>of(
+                    () -> docs.documentSymbol(outline), docs::compileWorkspace)) {
+                var failure = assertThrows(ExecutionException.class,
+                        () -> request.get().get(10, TimeUnit.SECONDS));
+                var response = assertInstanceOf(ResponseErrorException.class, failure.getCause());
+                assertEquals(ResponseErrorCode.RequestFailed.getValue(), response.getResponseError().getCode());
+                assertTrue(response.getMessage().contains("readonly source registry limit"));
+                assertEquals(Set.of(new SourceId(URI)), workspace.state().sourceRevisions().keySet());
+                assertEquals(configuration, workspace.configuration());
+                assertFalse(handles.contains(dep));
+                assertFalse(handles.contains(transitive));
+            }
+            // A smaller request now succeeds using exactly the capacity the rejected batch left intact.
+            String updated = ROOT.replace("IMPORTS Dep;", "IMPORTS Base;").replace("Dep.Value", "Base.Count");
+            server.getTextDocumentService().didChange(new DidChangeTextDocumentParams(
+                    new VersionedTextDocumentIdentifier(URI, 2), List.of(new TextDocumentContentChangeEvent(updated))));
+            var target = definitions(server, URI, 3, ROOT.split("\n")[3].indexOf("Value")).getFirst();
+            assertTrue(target.getUri().startsWith("interlis-source:/"));
+            String revision = Long.toString(workspace.source(transitive).orElseThrow().revision().value());
+            assertEquals(BASE, server.sourceContent(new SourceContentParams(target.getUri(), revision))
+                    .get(5, TimeUnit.SECONDS).text());
+            assertFalse(handles.contains(dep));
+        } finally {
+            server.shutdown().get(5, TimeUnit.SECONDS);
+        }
+    }
+
     @Test void repeatedIdenticalConfigurationDoesNotCancelInitialRepositoryAnalysis() throws Exception {
         String base = serve();
         indexEntered = new CountDownLatch(1);

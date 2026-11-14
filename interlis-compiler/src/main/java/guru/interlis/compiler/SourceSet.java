@@ -16,14 +16,17 @@ public final class SourceSet {
     private final List<Diagnostic> resolutionDiagnostics;
     private final ResolutionFingerprint fingerprint;
     private final List<TranslationBinding> translations;
+    private final Map<ModelSelector.ByName, RootResolution> rootResolutions;
 
     private SourceSet(Map<SourceId, SourceText> sources, List<ImportBinding> imports,
-                      List<Diagnostic> resolutionDiagnostics, ResolutionFingerprint fingerprint, List<TranslationBinding> translations) {
+                      List<Diagnostic> resolutionDiagnostics, ResolutionFingerprint fingerprint,
+                      List<TranslationBinding> translations, Map<ModelSelector.ByName, RootResolution> rootResolutions) {
         this.sources = Map.copyOf(sources);
         this.imports = List.copyOf(imports);
         this.resolutionDiagnostics = List.copyOf(resolutionDiagnostics);
         this.fingerprint = fingerprint;
         this.translations = List.copyOf(translations);
+        this.rootResolutions = Map.copyOf(rootResolutions);
     }
 
     public static SourceSet of(Map<SourceId, SourceText> sources, List<ImportBinding> imports,
@@ -36,6 +39,17 @@ public final class SourceSet {
     public static SourceSet of(Map<SourceId, SourceText> sources, List<ImportBinding> imports,
                                List<Diagnostic> resolutionDiagnostics, ResolutionFingerprint fingerprint,
                                List<TranslationBinding> translations) {
+        return of(sources, imports, resolutionDiagnostics, fingerprint, translations, Map.of());
+    }
+
+    /**
+     * Copies inputs and named root decisions. A selector without an entry is resolved
+     * directly against the supplied syntax by the compiler. Keys and values are non-null.
+     */
+    public static SourceSet of(Map<SourceId, SourceText> sources, List<ImportBinding> imports,
+                               List<Diagnostic> resolutionDiagnostics, ResolutionFingerprint fingerprint,
+                               List<TranslationBinding> translations,
+                               Map<ModelSelector.ByName, RootResolution> rootResolutions) {
         Objects.requireNonNull(sources, "sources");
         Map<SourceId, SourceText> copy = new LinkedHashMap<>();
         for (Map.Entry<SourceId, SourceText> entry : sources.entrySet()) {
@@ -48,8 +62,11 @@ public final class SourceSet {
         }
         return new SourceSet(copy, Objects.requireNonNull(imports, "imports"),
                 Objects.requireNonNull(resolutionDiagnostics, "resolutionDiagnostics"),
-                Objects.requireNonNull(fingerprint, "fingerprint"), Objects.requireNonNull(translations, "translations"));
+                Objects.requireNonNull(fingerprint, "fingerprint"), Objects.requireNonNull(translations, "translations"), rootResolutions);
     }
+
+    /** Returns immutable named root decisions keyed by the original selectors, without ordering. */
+    public Map<ModelSelector.ByName, RootResolution> rootResolutions() { return rootResolutions; }
 
     /** Returns the immutable resolver selections for source/configured translation originals. */
     public List<TranslationBinding> translations() { return translations; }
