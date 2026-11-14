@@ -292,15 +292,16 @@ class StaleAnalysisSchedulingTest {
 
     @Test void anObsoleteCompilerCannotBlockNotificationsOrPublishAfterANewerGeneration() throws Exception {
         var entered = new CountDownLatch(1); var release = new CountDownLatch(1);
-        var cancellations = new AtomicBoolean(); var analysisCalls = new AtomicInteger();
+        var observedCancellation = new CompletableFuture<CancellationReason>();
+        var analysisCalls = new AtomicInteger();
         CompilerEngine realEngine = CompilerEngines.create();
         Workspace realWorkspace = Workspaces.create(realEngine, WorkspaceConfiguration.defaults());
         InvocationHandler delay = (proxy, method, args) -> {
             if (method.getName().equals("analyze") && analysisCalls.incrementAndGet() == 1) {
                 entered.countDown();
                 assertTrue(release.await(5, TimeUnit.SECONDS));
-                for (Object argument : args) if (argument instanceof CancellationToken token)
-                    cancellations.set(token.isCancellationRequested());
+                var token = (CancellationToken) args[args.length - 1];
+                observedCancellation.complete(token.isCancellationRequested() ? token.reason() : null);
             }
             try { return method.invoke(proxy instanceof Workspace ? realWorkspace : realEngine, args); }
             catch (InvocationTargetException failed) { throw failed.getCause(); }
@@ -332,10 +333,9 @@ class StaleAnalysisSchedulingTest {
             var current = publications.poll(5, TimeUnit.SECONDS);
             assertNotNull(current); assertEquals(2, current.getVersion());
             release.countDown();
-            // An explicit query provides an owner-queue barrier after the latest result.
+            assertEquals(CancellationReason.SUPERSEDED, observedCancellation.get(5, TimeUnit.SECONDS));
             server.getTextDocumentService().documentSymbol(new DocumentSymbolParams(new TextDocumentIdentifier(URI)))
                     .get(5, TimeUnit.SECONDS);
-            assertTrue(cancellations.get());
             assertTrue(publications.stream().allMatch(value -> value.getVersion() == 2));
         } finally {
             release.countDown(); notifications.shutdownNow(); server.shutdown().get(5, TimeUnit.SECONDS);
