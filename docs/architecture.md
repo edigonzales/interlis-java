@@ -49,6 +49,7 @@ ist eine separate Aufgabe; dekodierbare Verstösse bleiben als Transferwerte erh
 neutrale Transferereignisse. Der Plan ist unveränderlich. Die lokale Sitzung
 hält Basketkontext, Zähler und begrenzte Diagnosebeispiele. Die
 Datensatzsitzung verwendet einen vom Host bereitgestellten Byte-Speicher.
+Der Regelplan verweist auf die Revision des gebundenen Schemas.
 Die Laufzeitabhängigkeiten des Validators bleiben Modell und Transferkern.
 Der Host kann `interlis-validation-mvstore` für dateigestützte Prüfungen
 wählen. Dieses Modul besitzt die temporären Dateien und bindet H2 MVStore.

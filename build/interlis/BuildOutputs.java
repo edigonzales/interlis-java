@@ -10,7 +10,7 @@ public final class BuildOutputs {
     private static final Map<String, List<String>> SCOPES = Map.of(
             "jvm", List.of("target/jenesis-jvm/reports",
                     "target/jenesis-jvm/tools", "target/jenesis-jvm/delivery",
-                    "target/jenesis-jvm/conformance", "target/jenesis-jvm/module-checks", "target/jenesis-jvm/runtime-checks",
+                    "target/jenesis-jvm/conformance", "target/jenesis-jvm/module-checks",
                     "target/jenesis-jvm/gui", "target/jenesis-jvm/build-revisions"),
             "editor", List.of("target/jenesis-jvm/editor-bundles", "target/jenesis-jvm/editor-runs",
                     "target/jenesis-jvm/reports/editor-bundle.json"));

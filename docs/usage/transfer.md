@@ -163,10 +163,13 @@ Topics.
 ergaben. `coverage()` zeigt geplante, aber nicht ausgeführte Regeln und
 Laufzeitlücken; normativ undefinierte Ausdrücke bleiben davon unterscheidbar.
 Globale und basketweite Eindeutigkeit, `EXISTENCE`, `SET CONSTRAINT`,
-Prozent-Plausibilität, referenzielle Zielprüfung und Geometrietopologie
-gehören nicht zum Profil. Nicht unterstützte Ausdrücke und Werte wie externe
-Funktionen ohne Hostbindung, `UNIQUE` mit lokalem `WHERE` und Bogenradius
-werden als ungeprüft ausgewiesen.
+Prozent-Plausibilität und referenzielle Zielprüfung benötigen das
+Datensatzprofil. Mit dem optionalen Modul `interlis-validation-jts` und
+einer gebundenen Geometrieengine prüft `LOCAL_ONLY` auch die Topologie
+einzelner Geometriewerte, einschliesslich Standardkreisbögen mit Radius.
+Ohne Engine zeigt die Coverage die ausstehende Topologieprüfung. Externe
+Funktionen ohne Hostbindung und `UNIQUE` mit lokalem `WHERE` werden
+ebenfalls als ungeprüft ausgewiesen.
 
 Der Bericht zählt alle erkannten Verstösse und behält standardmässig höchstens
 200 Beispiele mit Datenpfad und Modellherkunft. Die Standardbudgets pro Objekt
