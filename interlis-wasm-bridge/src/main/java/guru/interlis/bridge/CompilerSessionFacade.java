@@ -6,6 +6,7 @@ import guru.interlis.compiler.CompilationRequest;
 import guru.interlis.compiler.CompilerEngine;
 import guru.interlis.compiler.CompilerOptions;
 import guru.interlis.compiler.ModelSelector;
+import guru.interlis.compiler.RootResolution;
 import guru.interlis.compiler.SemanticProfileId;
 import guru.interlis.compiler.SemanticOverlays;
 import guru.interlis.compiler.WarningPolicy;
@@ -18,6 +19,7 @@ import guru.interlis.compiler.query.LanguageQueries;
 import guru.interlis.diagnostics.Diagnostic;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
+import guru.interlis.execution.RunContextFactory;
 import guru.interlis.model.CompiledSchema;
 import guru.interlis.model.NamePrefix;
 import guru.interlis.model.SymbolRef;
@@ -59,6 +61,7 @@ import java.util.Set;
 final class CompilerSessionFacade {
     private final CompilerEngine engine;
     private final Workspace workspace;
+    private final RunContextFactory runContexts = RunContextFactory.defaults();
     private final Map<String, AnalysisSnapshot> snapshots = new LinkedHashMap<>();
     private final Map<String, CompiledSchema> schemas = new LinkedHashMap<>();
     private final LanguageQueries queries = LanguageQueries.create();
@@ -152,9 +155,10 @@ final class CompilerSessionFacade {
         long expected = BridgeCodec.longValue(params.members().get("expectedWorkspaceRevision"),
                 "expectedWorkspaceRevision");
         List<ModelSelector> roots = roots(params);
-        CompilationOutcome outcome = workspace.compile(new WorkspaceCompileRequest(
+        var compilation = workspace.compileCaptured(new WorkspaceCompileRequest(
                 new guru.interlis.workspace.WorkspaceRevision(expected), roots),
-                CancellationToken.none());
+                runContexts.createRoot(), CancellationToken.none());
+        CompilationOutcome outcome = compilation.outcome();
         Map<String, JsonValue> result = new LinkedHashMap<>();
         switch (outcome) {
             case CompilationOutcome.Succeeded succeeded -> {
@@ -173,7 +177,7 @@ final class CompilerSessionFacade {
                 result.put("snapshotId", JsonValues.string(
                         rejected.analysis().snapshotId().value()));
                 result.put("diagnostics", diagnostics(rejected.analysis()));
-                result.put("rejection", rejection(rejected,roots));
+                result.put("rejection", rejection(rejected, roots, compilation.capture()));
             }
             case CompilationOutcome.Cancelled cancelled -> {
                 result.put("outcome", JsonValues.string("cancelled"));
@@ -399,15 +403,28 @@ final class CompilerSessionFacade {
         return JsonValues.array(diagnostics);
     }
 
-    private JsonValue.JsonObject rejection(CompilationOutcome.Rejected rejected,List<ModelSelector> requestedRoots) {
+    private JsonValue.JsonObject rejection(CompilationOutcome.Rejected rejected, List<ModelSelector> requestedRoots,
+                                           Optional<WorkspaceCapture> capture) {
         var summary = rejected.rejection();
+        var decisions = capture.map(value -> value.request().sources().rootResolutions()).orElseGet(Map::of);
+        var policy = workspace.configuration().resolutionPolicy();
+        List<ModelSelector> resolvedRoots = summary.requestedRoots().stream().<ModelSelector>map(selector -> {
+            if (selector instanceof ModelSelector.ByName named) {
+                if (decisions.get(named) instanceof RootResolution.Resolved resolved) {
+                    var target = resolved.target();
+                    return new ModelSelector.ByName(target.modelName(), target.modelVersion(), Optional.of(target.source()));
+                }
+                return policy.qualify(named);
+            }
+            return selector;
+        }).toList();
         return JsonValues.object(
                 "reasons", JsonValues.strings(summary.reasons().stream().map(Enum::name).sorted().toList()),
                 "diagnosticIds", JsonValues.strings(summary.diagnosticIds().stream()
                         .map(id -> id.value()).toList()),
                 "requestedRoots", JsonValues.array(requestedRoots.stream()
                         .map(CompilerSessionFacade::selector).map(value -> (JsonValue)value).toList()),
-                "resolvedRoots", JsonValues.array(summary.requestedRoots().stream()
+                "resolvedRoots", JsonValues.array(resolvedRoots.stream()
                         .map(CompilerSessionFacade::selector).map(value -> (JsonValue)value).toList()),
                 "unsupportedFeatureIds", JsonValues.strings(summary.unsupportedFeatureIds()));
     }
