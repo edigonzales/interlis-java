@@ -31,6 +31,20 @@ class GeometryExpressionIntegrationTest {
             + "</g:exterior><g:interior>" + ring(1, 1, 2, 2) + "</g:interior></g:surface>";
 
     @Test
+    void rejectsStartOnlyPolylineAtTheXtf24WireBoundary() {
+        var error = assertThrows(guru.interlis.xtf24.Xtf24Exception.class, () -> validate24("""
+                CLASS Item =
+                  edge: POLYLINE WITH (STRAIGHTS) VERTEX Point;
+                END Item;
+                """, """
+                <Item i:tid="line"><edge><g:polyline>
+                  <g:coord><g:c1>0</g:c1><g:c2>0</g:c2></g:coord>
+                </g:polyline></edge></Item>
+                """, true));
+        assertTrue(error.getMessage().contains("Polyline needs a start and at least one segment"));
+    }
+
+    @Test
     void measuresAnExplicitArcThroughAComputedGeometryAndRenamedViewBase() {
         var model = """
                 CLASS Item =
