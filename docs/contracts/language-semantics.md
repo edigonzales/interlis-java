@@ -1376,7 +1376,7 @@ globalen Diagnosearten bleiben im gemeinsamen Gate ohne erfundene Modellstelle
 relevant; spätere Lieferung eines Originals erlaubt erneute normale Bindung.
 
 `CompilationRequest.fingerprint()` verwendet dieselbe feldweise kanonische
-Compileridentität wie die Engine (compilation-v3). Roots, Importstellen/-resultate/
+Compileridentität wie die Engine (compilation-v4). Roots, Importstellen/-resultate/
 -probleme, TranslationBindings und sämtliche ResolutionDiagnostics werden mit
 Längen, Listenanzahlen und Optionalmarkern serialisiert. Record-/Listen-
 `toString()` ist kein Identitätsformat; verschachtelte SourceIds und Versionswerte

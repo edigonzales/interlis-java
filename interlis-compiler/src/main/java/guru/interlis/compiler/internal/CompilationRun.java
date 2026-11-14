@@ -66,7 +66,7 @@ final class CompilationRun {
         try {
             token.throwIfCancellationRequested();
             RootSelector rootSelector = new RootSelector();
-            roots = rootSelector.select(request.roots(), modelIndex, collector);
+            roots = rootSelector.select(request.roots(), sourceSet.rootResolutions(), modelIndex, collector);
             ImportBinder importBinder = new ImportBinder();
             closure = importBinder.bind(roots.roots(), modelIndex, sourceSet, collector,overlays);
             if (roots.roots().isEmpty()) {

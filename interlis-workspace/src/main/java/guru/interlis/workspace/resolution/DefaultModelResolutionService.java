@@ -5,6 +5,7 @@ import guru.interlis.compiler.ImportResolution;
 import guru.interlis.compiler.ImportSite;
 import guru.interlis.compiler.ModelLocation;
 import guru.interlis.compiler.ModelSelector;
+import guru.interlis.compiler.RootResolution;
 import guru.interlis.compiler.ResolutionProblem;
 import guru.interlis.compiler.ResolutionReason;
 import guru.interlis.compiler.SourceSet;
@@ -52,7 +53,8 @@ public final class DefaultModelResolutionService implements ModelResolutionServi
         try {
             cancellation.throwIfCancellationRequested();
             Work work = new Work(request.budget().maxSemanticWorkUnits(), cancellation);
-            List<ModelHeader> roots = selectRoots(request, inventory, work);
+            Set<ModelHeader> roots = new LinkedHashSet<>();
+            Map<ModelSelector.ByName, RootResolution> rootResolutions = new LinkedHashMap<>();
             List<String> trace = new ArrayList<>();
             List<ResolutionDependency> dependencies = new ArrayList<>();
             List<ResolutionDependency> negative = new ArrayList<>();
@@ -64,9 +66,14 @@ public final class DefaultModelResolutionService implements ModelResolutionServi
                 if (root instanceof ModelSelector.ByName name) {
                     var query = request.policy().qualify(name);
                     var found = request.policy().select(name, inventory.headers());
-                    if (found.size() != 1) {
-                        var dependency = new ResolutionDependency(query, List.of(),
-                                found.stream().map(DefaultModelResolutionService::location).toList(),
+                    if (found.size() == 1) {
+                        roots.add(found.getFirst());
+                        rootResolutions.put(name, new RootResolution.Resolved(location(found.getFirst())));
+                    } else {
+                        var candidates = found.stream().map(DefaultModelResolutionService::location).toList();
+                        rootResolutions.put(name, candidates.isEmpty() ? new RootResolution.Missing()
+                                : new RootResolution.Ambiguous(candidates));
+                        var dependency = new ResolutionDependency(query, List.of(), candidates,
                                 found.isEmpty() ? ResolutionDependency.Kind.NEGATIVE : ResolutionDependency.Kind.AMBIGUOUS,
                                 inventory.fingerprint());
                         negative.add(dependency);
@@ -74,10 +81,13 @@ public final class DefaultModelResolutionService implements ModelResolutionServi
                                 query.sourceHint().map(v -> List.of(v.value())).orElse(List.of()),
                                 found.isEmpty() ? "root not found" : "root is ambiguous", List.of()));
                     }
-                } else if (root instanceof ModelSelector.BySource source
-                        && !inventory.sources().containsKey(source.source())) {
-                    pending.add(new PendingSourceRequest("", Optional.empty(), List.of(source.source().value()),
-                            "root source not found", List.of()));
+                } else if (root instanceof ModelSelector.BySource source) {
+                    if (!inventory.sources().containsKey(source.source())) {
+                        pending.add(new PendingSourceRequest("", Optional.empty(), List.of(source.source().value()),
+                                "root source not found", List.of()));
+                    }
+                    inventory.headers().stream().filter(header -> header.source().equals(source.source()))
+                            .forEach(roots::add);
                 }
             }
             Set<ModelHeader> selected = new LinkedHashSet<>(roots);
@@ -176,7 +186,7 @@ public final class DefaultModelResolutionService implements ModelResolutionServi
             dependencies.addAll(negative);
             Map<SourceId, SourceText> sources = new LinkedHashMap<>(inventory.sources());
             SourceSet sourceSet = SourceSet.of(sources, bindings, List.of(),
-                    resolutionFingerprint(request, inventory), translations);
+                    resolutionFingerprint(request, inventory), translations, rootResolutions);
             var rootLocations = roots.stream().map(DefaultModelResolutionService::location).distinct().toList();
             if (pending.isEmpty() && !roots.isEmpty()) {
                 return new ResolutionOutcome.Prepared(new ResolvedClosure(sourceSet,
@@ -220,19 +230,6 @@ public final class DefaultModelResolutionService implements ModelResolutionServi
      */
     private static synchronized long nextFailure() {
         return ++failures;
-    }
-
-    private List<ModelHeader> selectRoots(ResolutionRequest request, SourceInventory inventory, Work work) {
-        List<ModelHeader> roots = new ArrayList<>();
-        for (ModelSelector selector : request.roots()) {
-            work.scan(inventory.headers().size());
-            switch (selector) {
-                case ModelSelector.BySource source -> roots.addAll(inventory.headers().stream()
-                        .filter(h -> h.source().equals(source.source())).toList());
-                case ModelSelector.ByName name -> roots.addAll(request.policy().select(name, inventory.headers()));
-            }
-        }
-        return roots.stream().distinct().toList();
     }
 
     private static guru.interlis.compiler.ResolutionFingerprint resolutionFingerprint(ResolutionRequest request, SourceInventory inventory) {

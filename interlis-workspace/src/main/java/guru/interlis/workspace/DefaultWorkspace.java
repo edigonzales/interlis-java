@@ -308,24 +308,12 @@ final class DefaultWorkspace implements Workspace {
             var diagnostics = new java.util.ArrayList<>(original.resolutionDiagnostics());
             diagnostics.addAll(capturedConfiguration.resolutionDiagnostics());
             var enriched = guru.interlis.compiler.SourceSet.of(original.sources(), original.imports(),
-                    diagnostics, original.fingerprint(), original.translations());
+                    diagnostics, original.fingerprint(), original.translations(), original.rootResolutions());
             closure = closure.complete() ? new ResolvedClosure(enriched, closure.trace(), closure.dependencies(), closure.rootLocations())
                     : new IncompleteClosure(enriched, closure.pendingFetches(), closure.trace(), closure.dependencies(),
                             closure.negativeDependencies(), closure.rootLocations());
         }
-        List<guru.interlis.compiler.ModelSelector> concreteRoots = request.roots().stream().map(root -> {
-            if (root instanceof guru.interlis.compiler.ModelSelector.ByName name) {
-                var candidates = capturedConfiguration.resolutionPolicy().select(name, inventory.headers());
-                if (candidates.size() == 1) {
-                    var chosen = candidates.getFirst();
-                    return (guru.interlis.compiler.ModelSelector) new guru.interlis.compiler.ModelSelector.ByName(
-                            chosen.modelName(), Optional.of(chosen.modelVersion()), Optional.of(chosen.source()));
-                }
-                return (guru.interlis.compiler.ModelSelector) capturedConfiguration.resolutionPolicy().qualify(name);
-            }
-            return root;
-        }).toList();
-        CompilationRequest compilationRequest = new CompilationRequest(concreteRoots,
+        CompilationRequest compilationRequest = new CompilationRequest(request.roots(),
                 closure.sourceSet(), capturedConfiguration.compilerOptions());
         // The resolver and engine consume the exact same parse. Retention is committed
         // only by acceptAnalysis, so a late capture cannot poison reuse state.
