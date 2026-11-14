@@ -136,7 +136,7 @@ final class DistributionChecks {
         var https = HttpsServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         https.setHttpsConfigurator(new HttpsConfigurator(context));
         checkRepository(folder, launcher, https, "https", Map.of("JAVA_OPTS",
-                "-Djavax.net.ssl.trustStore=localhost.p12 -Djavax.net.ssl.trustStorePassword=" + password));
+                "\"-Djavax.net.ssl.trustStore=" + store + "\" -Djavax.net.ssl.trustStorePassword=" + password));
     }
 
     private static void checkRepository(Path folder, Path launcher, HttpServer server,
