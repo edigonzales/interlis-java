@@ -28,6 +28,37 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class CurveValidityTest {
     @Test
+    void rejectsEmptyCompleteLinesAndDoesNotMeasureThemAsZero() {
+        for (var empty : List.of(new Polyline(List.of()), line("0,0"))) {
+            assertEquals(List.of(GEOMETRY_DEGENERATE_SEGMENT),
+                    check(empty, GeometryKind.POLYLINE, false, false).codes());
+            assertEquals(MISSING_PARAMETERS, check(empty, GeometryKind.POLYLINE, false, true).status());
+            var findings = new ArrayList<GeometryEngine.Finding>();
+            assertEquals(new GeometryEngine.Measurement.Unavailable(INVALID),
+                    JtsGeometryEngine.standard().measure(GeometryEngine.Measure.LENGTH,
+                            input(empty, GeometryKind.POLYLINE, false, false),
+                            new GeometryEngine.Control(() -> {}, findings::add)));
+        }
+        assertEquals(VALID, check(line("0,0", "1,1"), GeometryKind.POLYLINE, false, false).status());
+    }
+
+    @Test
+    void checksDeliveredHeightsAtRingClosureAndPartJunctions() {
+        var first = line("0,0,0", "10,0,0", "10,10,0");
+        var closed = line("10.0,10.00,0.0", "0,10,0", "0.0,0,0.00");
+        var wrongEnd = line("10,10,0", "0,10,0", "0,0,5");
+        var wrongJunction = line("10,10,5", "0,10,0", "0,0,0");
+        assertEquals(VALID, check(new Surface(new Ring(List.of(first, closed)), List.of()),
+                GeometryKind.SURFACE, true, false).status());
+        for (var second : List.of(wrongEnd, wrongJunction)) {
+            assertEquals(List.of(GEOMETRY_RING_NOT_CLOSED),
+                    check(new Surface(new Ring(List.of(first, second)), List.of()),
+                            GeometryKind.SURFACE, true, false).codes());
+        }
+        assertEquals(VALID, check(wrongEnd, GeometryKind.POLYLINE, true, false).status());
+    }
+
+    @Test
     void allowsOpenLinesAndChecksCrossingsOnlyWhenRequired() {
         var line = line("0,0", "4,4", "0,4", "4,0");
         assertEquals(VALID, check(line, GeometryKind.POLYLINE, false, false).status());
@@ -274,15 +305,19 @@ class CurveValidityTest {
     }
 
     private static Outcome check(TransferGeometry value, GeometryKind kind, boolean simple, boolean partial) {
+        var input = input(value, kind, simple, partial);
+        var findings = new ArrayList<GeometryEngine.Finding>();
+        var control = new GeometryEngine.Control(() -> {}, findings::add);
+        return new Outcome(JtsGeometryEngine.standard().checkValue(input, control), List.copyOf(findings));
+    }
+
+    private static GeometryEngine.Input input(TransferGeometry value, GeometryKind kind, boolean simple, boolean partial) {
         var type = new GeometryType(new TypeId("test"), new Origin.PredefinedOrigin(LanguageVersion.ILI24, "test"),
                 kind, List.of(), Optional.empty(), Optional.empty(), false, simple, Optional.empty());
         var location = new DataLocation(Optional.empty(), Optional.<BasketId>empty(), Optional.empty(),
                 Optional.empty(), Optional.empty(), List.of());
-        var input = new GeometryEngine.Input(value, type, location, LanguageVersion.ILI24,
+        return new GeometryEngine.Input(value, type, location, LanguageVersion.ILI24,
                 Optional.of(new BigDecimal("0.001")), Optional.of(new BigDecimal("0.001")), partial);
-        var findings = new ArrayList<GeometryEngine.Finding>();
-        var control = new GeometryEngine.Control(() -> {}, findings::add);
-        return new Outcome(JtsGeometryEngine.standard().checkValue(input, control), List.copyOf(findings));
     }
 
     private static Ring ring(String... points) {

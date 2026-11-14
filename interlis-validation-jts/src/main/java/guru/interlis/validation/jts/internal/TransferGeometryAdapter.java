@@ -40,7 +40,8 @@ final class TransferGeometryAdapter {
         }
     }
 
-    record Part(Position start, List<Segment> segments, List<GeometryComponent> path) {}
+    record Part(Position start, TransferGeometry.Coordinate first, TransferGeometry.Coordinate last,
+                List<Segment> segments, List<GeometryComponent> path) {}
     record Ring(List<Part> parts, List<GeometryComponent> path) {}
     record Surface(Ring shell, List<Ring> holes) {}
     record Result(GeometryEngine.Check check, List<Part> lines, List<Surface> surfaces, boolean threeDimensional) {}
@@ -139,6 +140,9 @@ final class TransferGeometryAdapter {
 
     private void line(TransferGeometry.Polyline value, List<GeometryComponent> path, List<Part> parts) {
         control.visit().run();
+        if (value.parts().isEmpty() && !input.partial()) {
+            invalid(path, ValidationCode.GEOMETRY_DEGENERATE_SEGMENT, "Line has no parts");
+        }
         for (int i = 0; i < value.parts().size(); i++) {
             var part = value.parts().get(i);
             var partPath = at(path, PART, i);
@@ -169,7 +173,8 @@ final class TransferGeometryAdapter {
                 previous = end;
                 previousExact = endExact;
             }
-            parts.add(new Part(start, List.copyOf(segments), partPath));
+            var end = part.segments().isEmpty() ? part.start() : part.segments().getLast().end();
+            parts.add(new Part(start, part.start(), end, List.copyOf(segments), partPath));
         }
     }
 
