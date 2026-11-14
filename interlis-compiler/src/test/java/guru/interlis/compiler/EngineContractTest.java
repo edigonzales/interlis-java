@@ -11,6 +11,9 @@ import guru.interlis.model.CompiledSchema;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
+import guru.interlis.syntax.ParseMode;
+import guru.interlis.syntax.ParseOptions;
+import guru.interlis.syntax.SyntaxServices;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -102,6 +105,27 @@ class EngineContractTest {
         assertEquals(schemaSymbols(fresh.schema()), schemaSymbols(reused.schema()));
         assertEquals(fresh.analysis().diagnostics().stream().map(Diagnostic::code).toList(),
                 reused.analysis().diagnostics().stream().map(Diagnostic::code).toList());
+    }
+
+    @Test
+    void syntaxReuseRequiresMatchingSourceIdentity() {
+        var source = CompilerTestSupport.source("memory:/contract.ili", MODEL);
+        var otherSource = CompilerTestSupport.source("memory:/copy.ili", MODEL);
+        var token = CancellationToken.none();
+        var otherSyntax = SyntaxServices.create().parse(otherSource,
+                ParseOptions.defaults(ParseMode.STRICT), token);
+        var request = new CompilationRequest(List.of(new ModelSelector.BySource(source.id())),
+                SourceSet.of(Map.of(source.id(), source)), CompilerOptions.defaults());
+        var engine = CompilerEngines.create();
+        var reuse = new AnalysisReuse(Optional.empty(), Map.of(source.id(), otherSyntax));
+
+        var fresh = assertInstanceOf(CompilationOutcome.Succeeded.class, engine.compile(request, token));
+        var reused = assertInstanceOf(CompilationOutcome.Succeeded.class, engine.compile(request, reuse, token));
+
+        assertEquals(schemaSymbols(fresh.schema()), schemaSymbols(reused.schema()));
+        var syntax = reused.analysis().syntaxSnapshot(source.id()).orElseThrow();
+        assertEquals(source.id(), syntax.root().range().source());
+        assertEquals(source.revision(), syntax.root().range().revision());
     }
 
     private static java.util.List<String> schemaSymbols(CompiledSchema schema) {

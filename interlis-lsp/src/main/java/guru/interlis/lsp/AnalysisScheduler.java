@@ -106,18 +106,10 @@ final class AnalysisScheduler implements AutoCloseable {
     void schedule() {
         requireOwner();
         invalidate();
-        if (workspace.state().sourceRevisions().isEmpty()) return;
-        var roots = workspace.state().sourceRevisions().keySet().stream()
-                .filter(localSource).<ModelSelector>map(ModelSelector.BySource::new).toList();
-        if(roots.isEmpty()) return;
-        WorkspaceCapture capture;
-        try { capture=workspace.capture(new AnalysisRequest(workspace.currentRevision(), roots)); }
-        catch(OperationCancelledException cancelled) {
-            captureFailure=error(ResponseErrorCode.RequestCancelled,"analysis capture cancelled: "+cancelled.reason());
-            try { operations.accept("Analysis unavailable: "+cancelled.reason()); } catch(RuntimeException unavailable) { }
-            return;
-        }
-        var job = new Job(generation, capture);
+        var state = workspace.state();
+        var roots = localRoots(state);
+        if (roots.isEmpty()) return;
+        var job = new Job(generation, new AnalysisRequest(state.revision(), roots), workspace.configuration());
         if (running.size() < 2) launch(job);
         else pending = job;
     }
@@ -135,10 +127,6 @@ final class AnalysisScheduler implements AutoCloseable {
             } else {
                 if (!analysisScheduled()) {
                     schedule();
-                    if (captureFailure != null) {
-                        result.completeExceptionally(captureFailure);
-                        return;
-                    }
                     if (!analysisScheduled()) {
                         result.completeExceptionally(changed());
                         return;
@@ -190,130 +178,260 @@ final class AnalysisScheduler implements AutoCloseable {
         return result;
     }
 
-    /** Independent compile request, captured on owner and executed with its own cancellable context. */
+    /** Independent compile request with a pinned revision and its own cancellation context. */
     CompletableFuture<CompilationOutcome> compile() { return compileRoots(null); }
 
-    CompletableFuture<CompilationOutcome> compileRoots(List<ModelSelector> selection) { return compileRoots(selection,() -> { }); }
+    CompletableFuture<CompilationOutcome> compileRoots(List<ModelSelector> selection) { return compileRoots(selection, () -> { }); }
 
-    CompletableFuture<CompilationOutcome> compileRoots(List<ModelSelector> selection,Runnable validate) {
-        var result=new CompletableFuture<CompilationOutcome>();
+    CompletableFuture<CompilationOutcome> compileRoots(List<ModelSelector> selection, Runnable validate) {
+        var result = new CompletableFuture<CompilationOutcome>();
         enqueue(() -> {
             if (result.isDone()) return;
             validate.run();
-            var roots=selection==null?workspace.state().sourceRevisions().keySet().stream().filter(localSource)
-                    .<ModelSelector>map(ModelSelector.BySource::new).toList():List.copyOf(selection);
-            if(roots.isEmpty()) { result.completeExceptionally(error(ResponseErrorCode.InvalidParams,"workspace has no local roots to compile"));return; }
-            var initial=workspace.capture(new AnalysisRequest(workspace.currentRevision(),roots));
-            long initialGeneration=generation;
+            var state = workspace.state();
+            var roots = selection == null ? localRoots(state) : List.copyOf(selection);
+            if (roots.isEmpty()) {
+                result.completeExceptionally(error(ResponseErrorCode.InvalidParams, "workspace has no local roots to compile"));
+                return;
+            }
+            var request = new AnalysisRequest(state.revision(), roots);
+            var configuration = workspace.configuration();
+            boolean verifiesLoadedSources = repositories.verifiesLoadedSources();
+            long initialGeneration = generation;
             compiles.add(result);
-            result.whenComplete((v,f) -> enqueue(() -> compiles.remove(result),null));
-            CancellationToken token=new CancellationToken() {
-                public boolean isCancellationRequested() { return closing.get() || result.isCancelled() || generation!=initialGeneration; }
-                public CancellationReason reason() { return closing.get()?CancellationReason.HOST_SHUTDOWN:
-                        generation!=initialGeneration?CancellationReason.SUPERSEDED:CancellationReason.USER_REQUESTED; }
+            result.whenComplete((value, failure) -> completeOnOwner(() -> compiles.remove(result)));
+            CancellationToken token = new CancellationToken() {
+                public boolean isCancellationRequested() {
+                    return closing.get() || result.isCancelled() || generation != initialGeneration;
+                }
+                public CancellationReason reason() {
+                    return closing.get() ? CancellationReason.HOST_SHUTDOWN
+                            : generation != initialGeneration ? CancellationReason.SUPERSEDED : CancellationReason.USER_REQUESTED;
+                }
             };
-            var preparation=!repositories.needsResolution(initial)?CompletableFuture.<RepositoryResolutionOutcome>completedFuture(null):repositories.resolve(workspace,initial,workspace.configuration(),token);
-            preparation.whenComplete((prepared,failure) -> enqueue(() -> {
-                if(result.isDone()) return;
-                if(failure!=null) { result.completeExceptionally(LspFailures.response(failure,operations));return; }
-                if(initialGeneration!=generation || !workspace.currentRevision().equals(initial.workspaceRevision())) { result.completeExceptionally(changed());return; }
-                if(prepared instanceof RepositoryResolutionOutcome.Cancelled cancelled) {
-                    result.complete(new CompilationOutcome.Cancelled(Optional.empty(),cancelled.reason()));return;
-                }
-                if(prepared instanceof RepositoryResolutionOutcome.Stale) { result.completeExceptionally(changed());return; }
-                if(prepared instanceof RepositoryResolutionOutcome.Rejected rejected) {
-                    // A purely local ambiguity already belongs to this exact capture.
-                    // Preserve the existing compile gate's AMBIGUOUS_INPUT outcome.
-                    boolean localAmbiguity=rejected.problems().stream().allMatch(p -> p.reason()==guru.interlis.repository.RepositoryProblem.Reason.AMBIGUOUS)
-                            && rejected.sources().keySet().stream().allMatch(initial.request().sources().sources()::containsKey);
-                    if(!localAmbiguity) { result.completeExceptionally(error(ResponseErrorCode.RequestFailed,"repository closure rejected: "+rejected.problems().stream().map(p -> p.loadReason().map(Enum::name).orElse(p.reason().name())).distinct().toList()));return; }
-                }
-                if(prepared instanceof RepositoryResolutionOutcome.Prepared success) {
-                    success.update().apply(workspace);repositoryPrepared.accept(success);
-                }
-                var capture=workspace.capture(new AnalysisRequest(workspace.currentRevision(),roots),token);
-                try { compiler.execute(() -> {
-                    CompilationOutcome value;
-                    try { value=Objects.requireNonNull(engine.compile(capture.request(),capture.reuse(),services.runContexts().createRoot(),token)); }
-                    catch(OperationCancelledException cancelled) { value=new CompilationOutcome.Cancelled(Optional.empty(),cancelled.reason()); }
-                    catch(RuntimeException problem) { result.completeExceptionally(LspFailures.response(problem,operations));return; }
-                    var outcome=value;
+            try {
+                compiler.execute(() -> {
+                    if (result.isDone()) return;
+                    final WorkspaceCapture initial;
+                    try {
+                        initial = capture(request, token);
+                    } catch (RuntimeException failure) {
+                        result.completeExceptionally(LspFailures.response(failure, operations));
+                        return;
+                    }
+                    if (initial.resolution().complete() && !verifiesLoadedSources) {
+                        compileCaptured(result, initialGeneration, initial, initial.workspaceRevision(), token);
+                        return;
+                    }
                     enqueue(() -> {
                         if (result.isDone()) return;
-                        if(initialGeneration!=generation || !workspace.currentRevision().equals(capture.workspaceRevision())) { result.completeExceptionally(changed());return; }
-                        if(outcome instanceof CompilationOutcome.Succeeded success) workspace.acceptAnalysis(capture,success.analysis());
-                        else if(outcome instanceof CompilationOutcome.Rejected rejected) workspace.acceptAnalysis(capture,rejected.analysis());
-                        result.complete(outcome);
-                        if(!capture.workspaceRevision().equals(initial.workspaceRevision())) schedule();
-                    },result);
-                }); } catch(RejectedExecutionException full) { result.completeExceptionally(error(ResponseErrorCode.RequestFailed,"compiler queue is full or closed")); }
-            },result));
-        },result);
+                        requireCurrent(initialGeneration, initial.workspaceRevision());
+                        repositories.resolve(workspace, initial, configuration, token)
+                                .whenComplete((prepared, problem) -> enqueue(() -> completeCompilePreparation(
+                                        result, initialGeneration, initial, roots, token, prepared, problem), result));
+                    }, result);
+                });
+            } catch (RejectedExecutionException full) {
+                result.completeExceptionally(compileQueueFull());
+            }
+        }, result);
         return result;
+    }
+
+    private void completeCompilePreparation(CompletableFuture<CompilationOutcome> result, long initialGeneration,
+            WorkspaceCapture initial, List<ModelSelector> roots, CancellationToken token,
+            RepositoryResolutionOutcome prepared, Throwable failure) {
+        if (result.isDone()) return;
+        if (failure != null) {
+            result.completeExceptionally(LspFailures.response(failure, operations));
+            return;
+        }
+        requireCurrent(initialGeneration, initial.workspaceRevision());
+        switch (prepared) {
+            case RepositoryResolutionOutcome.Cancelled cancelled -> {
+                result.complete(new CompilationOutcome.Cancelled(Optional.empty(), cancelled.reason()));
+                return;
+            }
+            case RepositoryResolutionOutcome.Stale stale -> throw changed();
+            case RepositoryResolutionOutcome.Rejected rejected -> {
+                // Keep the compile gate's AMBIGUOUS_INPUT outcome for purely local ambiguities.
+                boolean localAmbiguity = rejected.problems().stream().allMatch(
+                        problem -> problem.reason() == guru.interlis.repository.RepositoryProblem.Reason.AMBIGUOUS)
+                        && rejected.sources().keySet().stream().allMatch(initial.request().sources().sources()::containsKey);
+                if (!localAmbiguity) {
+                    throw error(ResponseErrorCode.RequestFailed, "repository closure rejected: "
+                            + rejected.problems().stream().map(problem -> problem.loadReason().map(Enum::name)
+                                    .orElse(problem.reason().name())).distinct().toList());
+                }
+                runCompile(result, initialGeneration, initial, null, token);
+            }
+            case RepositoryResolutionOutcome.Prepared success -> {
+                success.update().apply(workspace);
+                repositoryPrepared.accept(success);
+                var request = new AnalysisRequest(workspace.currentRevision(), roots);
+                runCompile(result, initialGeneration, initial, request, token);
+            }
+        }
+    }
+
+    private void runCompile(CompletableFuture<CompilationOutcome> result, long initialGeneration,
+            WorkspaceCapture initial, AnalysisRequest updatedRequest, CancellationToken token) {
+        try {
+            compiler.execute(() -> {
+                if (result.isDone()) return;
+                final WorkspaceCapture prepared;
+                try {
+                    prepared = updatedRequest == null ? initial : capture(updatedRequest, token);
+                } catch (RuntimeException failure) {
+                    result.completeExceptionally(LspFailures.response(failure, operations));
+                    return;
+                }
+                compileCaptured(result, initialGeneration, prepared, initial.workspaceRevision(), token);
+            });
+        } catch (RejectedExecutionException full) {
+            result.completeExceptionally(compileQueueFull());
+        }
+    }
+
+    private void compileCaptured(CompletableFuture<CompilationOutcome> result, long initialGeneration,
+            WorkspaceCapture capture, WorkspaceRevision initialRevision, CancellationToken token) {
+        if (result.isDone()) return;
+        CompilationOutcome value;
+        try {
+            token.throwIfCancellationRequested();
+            value = Objects.requireNonNull(engine.compile(capture.request(), capture.reuse(),
+                    services.runContexts().createRoot(), token));
+        } catch (OperationCancelledException cancelled) {
+            value = new CompilationOutcome.Cancelled(Optional.empty(), cancelled.reason());
+        } catch (RuntimeException failure) {
+            result.completeExceptionally(LspFailures.response(failure, operations));
+            return;
+        }
+        var outcome = value;
+        enqueue(() -> {
+            if (result.isDone()) return;
+            requireCurrent(initialGeneration, capture.workspaceRevision());
+            if (outcome instanceof CompilationOutcome.Succeeded success) {
+                workspace.acceptAnalysis(capture, success.analysis());
+            } else if (outcome instanceof CompilationOutcome.Rejected rejected) {
+                workspace.acceptAnalysis(capture, rejected.analysis());
+            }
+            result.complete(outcome);
+            if (!capture.workspaceRevision().equals(initialRevision)) schedule();
+        }, result);
+    }
+
+    private List<ModelSelector> localRoots(WorkspaceState state) {
+        return state.sourceRevisions().keySet().stream()
+                .filter(localSource).<ModelSelector>map(ModelSelector.BySource::new).toList();
+    }
+
+    private void requireCurrent(long expectedGeneration, WorkspaceRevision revision) {
+        if (generation != expectedGeneration || !workspace.currentRevision().equals(revision)) throw changed();
+    }
+
+    private WorkspaceCapture capture(AnalysisRequest request, CancellationToken token) {
+        token.throwIfCancellationRequested();
+        return workspace.capture(request, token);
     }
 
     private void launch(Job job) {
         running.add(job);
-        if(!repositories.needsResolution(job.capture)) { analyze(job);return; }
-        repositories.resolve(workspace,job.capture,workspace.configuration(),job.token()).whenComplete((outcome,failure) -> {
-            if(closed) return;
-            enqueue(() -> {
-                if(job.generation!=generation || job.cancelled.get()) { finish(job,null,new OperationCancelledException(CancellationReason.SUPERSEDED)); return; }
-                if(failure!=null) { finish(job,null,LspFailures.response(failure,operations)); return; }
-                if(outcome instanceof RepositoryResolutionOutcome.Cancelled cancelled) {
-                    finish(job,null,new OperationCancelledException(cancelled.reason()));return;
-                }
-                if(outcome instanceof RepositoryResolutionOutcome.Prepared prepared) {
-                    try { prepared.update().apply(workspace); }
-                    catch(UpdateRejectedException stale) { finish(job,null,changed());return; }
-                    repositoryPrepared.accept(prepared);
-                    job.capture=workspace.capture(new AnalysisRequest(workspace.currentRevision(),job.capture.request().roots()),job.token());
-                } else if (outcome instanceof RepositoryResolutionOutcome.Rejected rejected) {
+        CompletableFuture.supplyAsync(() -> capture(job.request, job.token), workers)
+                .whenComplete((capture, failure) -> enqueue(() -> {
+                    if (failure != null) {
+                        finish(job, null, null, failure);
+                        return;
+                    }
+                    try {
+                        requireCurrent(job.generation, capture.workspaceRevision());
+                        if (!repositories.needsResolution(capture)) {
+                            analyze(job, capture, null);
+                            return;
+                        }
+                        repositories.resolve(workspace, capture, job.configuration, job.token)
+                                .whenComplete((outcome, problem) -> enqueue(
+                                        () -> completeAnalysisPreparation(job, capture, outcome, problem), null));
+                    } catch (RuntimeException problem) {
+                        finish(job, null, null, problem);
+                    }
+                }, null));
+    }
+
+    private void completeAnalysisPreparation(Job job, WorkspaceCapture capture,
+            RepositoryResolutionOutcome outcome, Throwable failure) {
+        if (failure != null) {
+            finish(job, null, null, failure);
+            return;
+        }
+        try {
+            requireCurrent(job.generation, capture.workspaceRevision());
+            switch (outcome) {
+                case RepositoryResolutionOutcome.Cancelled cancelled -> throw new OperationCancelledException(cancelled.reason());
+                case RepositoryResolutionOutcome.Stale stale -> throw changed();
+                case RepositoryResolutionOutcome.Rejected rejected -> {
                     job.repositoryFailure = Optional.of(rejected);
+                    analyze(job, capture, null);
                 }
-                analyze(job);
-            },null);
-        });
+                case RepositoryResolutionOutcome.Prepared prepared -> {
+                    prepared.update().apply(workspace);
+                    repositoryPrepared.accept(prepared);
+                    analyze(job, capture, new AnalysisRequest(workspace.currentRevision(), job.request.roots()));
+                }
+            }
+        } catch (RuntimeException problem) {
+            finish(job, null, null, problem);
+        }
     }
 
-    private void analyze(Job job) {
+    private void analyze(Job job, WorkspaceCapture initial, AnalysisRequest updatedRequest) {
         workers.execute(() -> {
-            AnalysisSnapshot analysis = null;
-            RuntimeException failure = null;
+            WorkspaceCapture prepared;
+            AnalysisSnapshot analysis;
             try {
-                analysis = engine.analyze(job.capture.request(), job.capture.reuse(),
-                        services.runContexts().createRoot(), job.token());
-            } catch (RuntimeException failed) { failure = failed; }
-            var completed = analysis; var problem = failure;
-            if (!closed) enqueue(() -> finish(job, completed, problem), null);
+                prepared = updatedRequest == null ? initial : capture(updatedRequest, job.token);
+                analysis = engine.analyze(prepared.request(), prepared.reuse(),
+                        services.runContexts().createRoot(), job.token);
+            } catch (RuntimeException failure) {
+                enqueue(() -> finish(job, null, null, failure), null);
+                return;
+            }
+            enqueue(() -> finish(job, prepared, analysis, null), null);
         });
     }
 
-    private void finish(Job job, AnalysisSnapshot analysis, Throwable failure) {
+    private void finish(Job job, WorkspaceCapture capture, AnalysisSnapshot analysis, Throwable failure) {
         requireOwner();
         running.remove(job);
-        if (job.generation == generation && !job.cancelled.get()) {
-            if (failure == null && workspace.acceptAnalysis(job.capture, analysis) == AnalysisAcceptance.ACCEPTED) {
+        try {
+            if (job.generation != generation || job.cancelled.get()) return;
+            if (failure == null && workspace.acceptAnalysis(capture, analysis) == AnalysisAcceptance.ACCEPTED) {
                 current = true;
-                acceptedRevision = job.capture.workspaceRevision();
+                acceptedRevision = capture.workspaceRevision();
                 accepted.accept(analysis, job.repositoryFailure);
                 for (var query : List.copyOf(queries)) invoke(query);
                 queries.clear();
             } else {
-                var error = failure instanceof OperationCancelledException cancelled
-                        ? error(ResponseErrorCode.RequestCancelled, "analysis cancelled: "+cancelled.reason())
-                        : failure instanceof ResponseErrorException expected ? expected : failure == null ? changed() : internal(failure);
-                if(failure instanceof OperationCancelledException cancelled) {
-                    captureFailure=error;
-                    try { operations.accept("Analysis unavailable: "+cancelled.reason()); } catch(RuntimeException unavailable) { }
+                var cause = failure instanceof CompletionException completed ? completed.getCause() : failure;
+                var response = cause == null ? changed() : LspFailures.response(cause, operations);
+                if (cause instanceof OperationCancelledException cancelled) {
+                    captureFailure = (ResponseErrorException) response;
+                    try { operations.accept("Analysis unavailable: " + cancelled.reason()); } catch (RuntimeException unavailable) { }
                 }
-                for (var query : List.copyOf(queries)) query.result.completeExceptionally(error);
+                for (var query : List.copyOf(queries)) query.result.completeExceptionally(response);
                 queries.clear();
             }
+        } finally {
+            if (pending != null && running.size() < 2) {
+                Job next = pending;
+                pending = null;
+                launch(next);
+            }
         }
-        if (pending != null && running.size() < 2) {
-            Job next = pending; pending = null; launch(next);
-        }
+    }
+
+    private static ResponseErrorException compileQueueFull() {
+        return error(ResponseErrorCode.RequestFailed, "compiler queue is full or closed");
     }
 
     private <T> void invoke(PendingQuery<T> query) {
@@ -431,14 +549,22 @@ final class AnalysisScheduler implements AutoCloseable {
     private record PendingQuery<T>(long generation, Function<CancellationToken, CompletableFuture<T>> action,
                                    CompletableFuture<T> result) { }
     private final class Job {
-        final long generation; WorkspaceCapture capture; final AtomicBoolean cancelled = new AtomicBoolean();
+        final long generation;
+        final AnalysisRequest request;
+        final WorkspaceConfiguration configuration;
+        final AtomicBoolean cancelled = new AtomicBoolean();
         Optional<RepositoryResolutionOutcome.Rejected> repositoryFailure = Optional.empty();
-        Job(long generation, WorkspaceCapture capture) { this.generation = generation; this.capture = capture; }
-        CancellationToken token() {
-            return new CancellationToken() {
-                public boolean isCancellationRequested() { return cancelled.get() || closing.get(); }
-                public CancellationReason reason() { return closing.get() ? CancellationReason.HOST_SHUTDOWN : CancellationReason.SUPERSEDED; }
-            };
+        final CancellationToken token = new CancellationToken() {
+            public boolean isCancellationRequested() { return cancelled.get() || closing.get(); }
+            public CancellationReason reason() {
+                return closing.get() ? CancellationReason.HOST_SHUTDOWN : CancellationReason.SUPERSEDED;
+            }
+        };
+
+        Job(long generation, AnalysisRequest request, WorkspaceConfiguration configuration) {
+            this.generation = generation;
+            this.request = request;
+            this.configuration = configuration;
         }
     }
 }

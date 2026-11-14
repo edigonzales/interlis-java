@@ -157,17 +157,151 @@ class StaleAnalysisSchedulingTest {
         }
     }
 
+    @Test void stalledBackgroundCaptureLeavesOwnerFreeAndCannotPublishAnObsoleteRevision() throws Exception {
+        var engine = CompilerEngines.create();
+        var workspace = Workspaces.create(engine, WorkspaceConfiguration.defaults());
+        var id = new SourceId(URI);
+        var captureEntered = new CountDownLatch(1);
+        var releaseCapture = new CountDownLatch(1);
+        var captureFinished = new CountDownLatch(1);
+        var cancellation = new AtomicReference<CancellationReason>();
+        var firstCapture = new AtomicBoolean(true);
+        var publications = new LinkedBlockingQueue<AnalysisSnapshot>();
+        var notifications = Executors.newSingleThreadExecutor();
+        var delayed = captureHook(workspace, (request, token) -> {
+            var captured = workspace.capture(request, token);
+            if (firstCapture.compareAndSet(true, false)) {
+                captureEntered.countDown();
+                try {
+                    assertTrue(releaseCapture.await(5, TimeUnit.SECONDS));
+                    if (token.isCancellationRequested()) cancellation.set(token.reason());
+                } finally {
+                    captureFinished.countDown();
+                }
+            }
+            return captured;
+        });
+        try (workspace; var scheduler = new AnalysisScheduler(delayed, engine, CompilerServices.defaults(),
+                (analysis, failure) -> publications.add(analysis), ignored -> { })) {
+            try {
+                var open = notifications.submit(() -> scheduler.onOwner(() -> {
+                    workspace.update(new SourceUpdate(id, new SourceExpectation.Absent(),
+                            new SourceChange.Replace(TEXT)));
+                    scheduler.schedule();
+                    return null;
+                }));
+                assertTrue(captureEntered.await(5, TimeUnit.SECONDS));
+                open.get(1, TimeUnit.SECONDS);
+                var revision = notifications.submit(() -> scheduler.onOwner(() -> {
+                    var source = workspace.source(id).orElseThrow();
+                    workspace.update(new SourceUpdate(id, new SourceExpectation.At(source.revision()),
+                            new SourceChange.Replace(TEXT + "\n!! newest")));
+                    scheduler.schedule();
+                    return workspace.source(id).orElseThrow().revision();
+                })).get(1, TimeUnit.SECONDS);
+                var current = publications.poll(5, TimeUnit.SECONDS);
+                assertNotNull(current);
+                assertEquals(revision, current.sourceRevisions().get(id));
+
+                releaseCapture.countDown();
+                assertTrue(captureFinished.await(5, TimeUnit.SECONDS));
+                assertEquals(CancellationReason.SUPERSEDED, cancellation.get());
+                assertEquals(1, workspace.metrics().acceptedAnalyses());
+            } finally {
+                releaseCapture.countDown();
+                notifications.shutdownNow();
+            }
+        }
+    }
+
+    @Test void stalledCompileCaptureCanBeCancelledByAnEditBeforeCompilerStarts() throws Exception {
+        var engine = CompilerEngines.create();
+        var workspace = Workspaces.create(engine, WorkspaceConfiguration.defaults());
+        var id = new SourceId(URI);
+        var captureEntered = new CountDownLatch(1);
+        var releaseCapture = new CountDownLatch(1);
+        var captureFinished = new CountDownLatch(1);
+        var cancellation = new AtomicReference<CancellationReason>();
+        var firstCapture = new AtomicBoolean(true);
+        var compileCalls = new AtomicInteger();
+        var notifications = Executors.newSingleThreadExecutor();
+        var delayed = captureHook(workspace, (request, token) -> {
+            if (firstCapture.compareAndSet(true, false)) {
+                captureEntered.countDown();
+                try {
+                    assertTrue(releaseCapture.await(5, TimeUnit.SECONDS));
+                    if (token.isCancellationRequested()) cancellation.set(token.reason());
+                } finally {
+                    captureFinished.countDown();
+                }
+            }
+            return workspace.capture(request, token);
+        });
+        var observedEngine = (CompilerEngine) Proxy.newProxyInstance(CompilerEngine.class.getClassLoader(),
+                new Class<?>[]{CompilerEngine.class}, (proxy, method, args) -> {
+                    if (method.getName().equals("compile")) compileCalls.incrementAndGet();
+                    try { return method.invoke(engine, args); }
+                    catch (InvocationTargetException failed) { throw failed.getCause(); }
+                });
+        try (workspace; var scheduler = new AnalysisScheduler(delayed, observedEngine, CompilerServices.defaults(),
+                (analysis, failure) -> { }, ignored -> { })) {
+            try {
+                scheduler.onOwner(() -> workspace.update(new SourceUpdate(id, new SourceExpectation.Absent(),
+                        new SourceChange.Replace(TEXT))));
+                var obsolete = scheduler.compile();
+                assertTrue(captureEntered.await(5, TimeUnit.SECONDS));
+                notifications.submit(() -> scheduler.onOwner(() -> {
+                    var source = workspace.source(id).orElseThrow();
+                    workspace.update(new SourceUpdate(id, new SourceExpectation.At(source.revision()),
+                            new SourceChange.Replace(TEXT + "\n!! newest")));
+                    scheduler.schedule();
+                    return null;
+                })).get(1, TimeUnit.SECONDS);
+                assertRequestFailure(obsolete, ResponseErrorCode.ContentModified);
+
+                releaseCapture.countDown();
+                assertTrue(captureFinished.await(5, TimeUnit.SECONDS));
+                assertEquals(CancellationReason.SUPERSEDED, cancellation.get());
+                var current = assertInstanceOf(CompilationOutcome.Succeeded.class,
+                        scheduler.compile().get(5, TimeUnit.SECONDS));
+                assertEquals(workspace.source(id).orElseThrow().revision(), current.analysis().sourceRevisions().get(id));
+                assertEquals(1, compileCalls.get());
+            } finally {
+                releaseCapture.countDown();
+                notifications.shutdownNow();
+            }
+        }
+    }
+
+    @FunctionalInterface
+    private interface CaptureHook {
+        WorkspaceCapture capture(AnalysisRequest request, CancellationToken token) throws InterruptedException;
+    }
+
+    private static Workspace captureHook(Workspace workspace, CaptureHook hook) {
+        return (Workspace) Proxy.newProxyInstance(Workspace.class.getClassLoader(), new Class<?>[]{Workspace.class},
+                (proxy, method, args) -> {
+                    if (method.getName().equals("capture")) {
+                        var token = args.length == 2 ? (CancellationToken) args[1] : CancellationToken.none();
+                        return hook.capture((AnalysisRequest) args[0], token);
+                    }
+                    try { return method.invoke(workspace, args); }
+                    catch (InvocationTargetException failed) { throw failed.getCause(); }
+                });
+    }
+
     @Test void anObsoleteCompilerCannotBlockNotificationsOrPublishAfterANewerGeneration() throws Exception {
         var entered = new CountDownLatch(1); var release = new CountDownLatch(1);
-        var cancellations = new AtomicBoolean(); var analysisCalls = new AtomicInteger();
+        var observedCancellation = new CompletableFuture<CancellationReason>();
+        var analysisCalls = new AtomicInteger();
         CompilerEngine realEngine = CompilerEngines.create();
         Workspace realWorkspace = Workspaces.create(realEngine, WorkspaceConfiguration.defaults());
         InvocationHandler delay = (proxy, method, args) -> {
             if (method.getName().equals("analyze") && analysisCalls.incrementAndGet() == 1) {
                 entered.countDown();
                 assertTrue(release.await(5, TimeUnit.SECONDS));
-                for (Object argument : args) if (argument instanceof CancellationToken token)
-                    cancellations.set(token.isCancellationRequested());
+                var token = (CancellationToken) args[args.length - 1];
+                observedCancellation.complete(token.isCancellationRequested() ? token.reason() : null);
             }
             try { return method.invoke(proxy instanceof Workspace ? realWorkspace : realEngine, args); }
             catch (InvocationTargetException failed) { throw failed.getCause(); }
@@ -199,10 +333,9 @@ class StaleAnalysisSchedulingTest {
             var current = publications.poll(5, TimeUnit.SECONDS);
             assertNotNull(current); assertEquals(2, current.getVersion());
             release.countDown();
-            // An explicit query provides an owner-queue barrier after the latest result.
+            assertEquals(CancellationReason.SUPERSEDED, observedCancellation.get(5, TimeUnit.SECONDS));
             server.getTextDocumentService().documentSymbol(new DocumentSymbolParams(new TextDocumentIdentifier(URI)))
                     .get(5, TimeUnit.SECONDS);
-            assertTrue(cancellations.get());
             assertTrue(publications.stream().allMatch(value -> value.getVersion() == 2));
         } finally {
             release.countDown(); notifications.shutdownNow(); server.shutdown().get(5, TimeUnit.SECONDS);

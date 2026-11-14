@@ -4,6 +4,7 @@ import guru.interlis.model.CardinalityUpper;
 import guru.interlis.model.DomainReferenceType;
 import guru.interlis.model.DomainSymbol;
 import guru.interlis.model.Modifier;
+import guru.interlis.model.StructureValueType;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
@@ -144,6 +145,41 @@ final class Xtf24Layout {
     boolean matchesRoots(ObjectDescriptor descriptor, List<SymbolId> allowed) {
         return allowed.isEmpty() || ancestors(descriptor).stream()
                 .anyMatch(base -> allowed.contains(base.symbol().symbol()));
+    }
+
+    ObjectDescriptor structure(QName name, Set<SymbolRef> availableTypes, StructureValueType type,
+                               SymbolRef containingModel) {
+        var candidates = names.objectCandidates(name, availableTypes);
+        if (candidates.size() > 1) {
+            // Bound roots can distinguish translations of the same wire name.
+            // Keep decodable values when none of those translations is assignable.
+            var roots = type.targetRoots();
+            var matching = candidates.stream().filter(candidate -> matchesRoots(candidate, roots)).toList();
+            if (!matching.isEmpty()) {
+                candidates = matching;
+            }
+        }
+        if (candidates.size() > 1) {
+            var local = candidates.stream().filter(candidate -> candidate.model().equals(containingModel)).toList();
+            if (!local.isEmpty()) {
+                candidates = local;
+            }
+        }
+        if (candidates.size() > 1) {
+            var imports = plan.modelImportClosure(Set.of(containingModel));
+            var imported = candidates.stream().filter(candidate -> imports.contains(candidate.model())).toList();
+            if (!imported.isEmpty()) {
+                candidates = imported;
+            }
+        }
+        if (candidates.size() > 1) {
+            var original = candidates.stream()
+                    .filter(candidate -> candidate.symbol().equals(candidate.name().canonical())).findFirst();
+            if (original.isPresent()) {
+                return original.orElseThrow();
+            }
+        }
+        return Xtf24Names.unique(name, candidates);
     }
 
     TypeDescriptor type(TypeRef ref, Map<SymbolRef, TypeRef> concreteTypes) {

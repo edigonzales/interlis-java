@@ -7,6 +7,7 @@ import guru.interlis.model.Origin;
 import guru.interlis.model.TypeId;
 import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TransferGeometry.*;
+import guru.interlis.transfer.TransferValue;
 import guru.interlis.transfer.TransferIdentity.BasketId;
 import guru.interlis.validation.DataLocation;
 import guru.interlis.validation.GeometryEngine;
@@ -128,7 +129,83 @@ class CurveValidityTest {
         assertEquals(VALID, coverage(true, true, second, first).status());
     }
 
+    @Test
+    void matchesReversedSharedArcsInEitherOrderAndCancelsTheirGapEdges() {
+        var first = curvedFace("4,5", "1,4", "1,6", "4,5");
+        var adjacent = curvedFace("1.0,6.0", "1,4", "4,5", "5,5", "5,1", "-1,1", "-1,6", "1,6");
+        var overlapping = curvedFace("1,6", "1,4", "4,5", "5,0", "-2,0", "-2,10", "0,10", "1,6");
+        for (boolean reversed : List.of(false, true)) {
+            var pair = reversed ? new Surface[]{adjacent, first} : new Surface[]{first, adjacent};
+            var joined = coverage(true, true, pair);
+            assertEquals(VALID, joined.status(), joined.findings().toString());
+            assertTrue(joined.findings().isEmpty());
+            pair = reversed ? new Surface[]{overlapping, first} : new Surface[]{first, overlapping};
+            assertTrue(coverage(true, false, pair).codes().contains(GEOMETRY_AREA_OVERLAP));
+        }
+    }
+
+    @Test
+    void matchesAnExplicitRadiusThatExactlyFitsTheOpposingImplicitArc() {
+        var cap = curvedFace("-2,0", "0,2", "2,0", "-2,0");
+        var radius = new ArcRadius(new TransferValue.NumberValue("2.0", new BigDecimal("2.0")),
+                RadiusConvention.POSITIVE_SELECTED_BY_SUPPORT);
+        var surrounding = curvedFace(Optional.of(radius), "2,0", "0,2", "-2,0", "-2,3", "2,3", "2,0");
+        for (var pair : List.of(new Surface[]{cap, surrounding}, new Surface[]{surrounding, cap})) {
+            var result = coverage(true, true, pair);
+            assertEquals(VALID, result.status(), result.findings().toString());
+            assertTrue(result.findings().isEmpty());
+        }
+    }
+
+    @Test
+    void reportsUnresolvedWhenDistinctBoundariesCollapseInTheCommonProjection() {
+        var unit = new Surface(ring("0,0", "1,0", "1,1", "0,1", "0,0"), List.of());
+        var east = new Surface(ring("2,0", "3,0", "3,1", "2,1", "2,0"), List.of());
+        var distant = new Surface(ring("-100000000000000000000,0", "-100000000000000000000,2",
+                "-99999999999999999990,2", "-99999999999999999990,0", "-100000000000000000000,0"), List.of());
+        for (var sequence : List.of(new Surface[]{unit, east, distant}, new Surface[]{distant, east, unit})) {
+            var result = coverage(true, false, sequence);
+            assertEquals(NUMERICALLY_UNDETERMINED, result.status());
+            assertTrue(result.findings().isEmpty());
+        }
+        assertEquals(VALID, coverage(true, false, unit, east).status());
+    }
+
+    @Test
+    void drawsNoInteriorConclusionsFromPartialFaces() {
+        var lower = new Surface(ring("0,-1", "2,-1", "2,0", "0,0", "0,-1"), List.of());
+        var upper = new Surface(ring("0,0", "2,0", "2,1", "0,1", "0,0"), List.of());
+        var partial = new Surface(ring("0,0", "2,0"), List.of());
+        assertEquals(VALID, coverage(true, false, lower, upper).status());
+        for (var sequence : List.of(List.of(lower, partial), List.of(partial, lower))) {
+            var result = coverage(false, false, sequence, Optional.of(partial));
+            assertEquals(MISSING_PARAMETERS, result.status());
+            assertTrue(result.findings().isEmpty());
+        }
+        assertTrue(coverage(false, false, List.of(lower, partial, lower), Optional.of(partial))
+                .codes().contains(GEOMETRY_AREA_OVERLAP));
+    }
+
+    private static Surface curvedFace(String start, String support, String end, String... vertices) {
+        return curvedFace(Optional.empty(), start, support, end, vertices);
+    }
+
+    private static Surface curvedFace(Optional<ArcRadius> radius, String start, String support, String end,
+                                      String... vertices) {
+        var segments = new ArrayList<Segment>();
+        segments.add(new Arc(point(support.split(",")), point(end.split(",")), radius));
+        for (var vertex : vertices) {
+            segments.add(new Straight(point(vertex.split(","))));
+        }
+        return new Surface(new Ring(List.of(new Polyline(List.of(
+                new CurvePart(point(start.split(",")), segments))))), List.of());
+    }
+
     private static Outcome coverage(boolean complete, boolean gaps, Surface... surfaces) {
+        return coverage(complete, gaps, List.of(surfaces), Optional.empty());
+    }
+
+    private static Outcome coverage(boolean complete, boolean gaps, List<Surface> surfaces, Optional<Surface> partial) {
         var type = new GeometryType(new TypeId("test-area"), new Origin.PredefinedOrigin(LanguageVersion.ILI24, "area"),
                 GeometryKind.AREA, List.of(), Optional.empty(), Optional.empty(), false, true, Optional.empty());
         var source = new GeometryEngine.Source() {
@@ -138,7 +215,7 @@ class CurveValidityTest {
                     private int index;
                     public void close() {}
                     public Optional<GeometryEngine.Input> next() {
-                        if (index == surfaces.length) {
+                        if (index == surfaces.size()) {
                             return Optional.empty();
                         }
                         var tid = new guru.interlis.transfer.TransferIdentity.TransferId(Integer.toString(index),
@@ -146,8 +223,10 @@ class CurveValidityTest {
                         var location = new DataLocation(Optional.empty(),
                                 new BasketId("basket", guru.interlis.transfer.TransferIdentity.IdOrigin.SOURCE),
                                 Optional.of(tid), Optional.empty(), Optional.empty(), List.of());
-                        return Optional.of(new GeometryEngine.Input(surfaces[index++], type, location, LanguageVersion.ILI24,
-                                Optional.of(new BigDecimal("0.001")), Optional.of(new BigDecimal("0.001")), false));
+                        var surface = surfaces.get(index++);
+                        return Optional.of(new GeometryEngine.Input(surface, type, location, LanguageVersion.ILI24,
+                                Optional.of(new BigDecimal("0.001")), Optional.of(new BigDecimal("0.001")),
+                                partial.filter(surface::equals).isPresent()));
                     }
                 };
             }

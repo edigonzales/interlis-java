@@ -4,6 +4,7 @@ import guru.interlis.model.CollectionType;
 import guru.interlis.model.BlackboxType;
 import guru.interlis.transfer.TransferEvent.Consistency;
 import guru.interlis.model.ReferenceType;
+import guru.interlis.model.StructureValueType;
 import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.TransferValue.Reference;
 import guru.interlis.model.SymbolRef;
@@ -89,10 +90,10 @@ final class Xtf24ValueWriter {
                 }
                 var element = layout.type(new TypeRef(plan.snapshotId(), collection.elementType()), concreteTypes);
                 for (var item : repeated.values()) {
-                    writeValue(field.name(), element, item, concreteTypes, structureTypes, activeTypes);
+                    writeValue(field.name(), element, item, object.model(), concreteTypes, structureTypes, activeTypes);
                 }
             } else {
-                writeValue(field.name(), type, value, concreteTypes, structureTypes, activeTypes);
+                writeValue(field.name(), type, value, object.model(), concreteTypes, structureTypes, activeTypes);
             }
             written++;
         }
@@ -134,7 +135,7 @@ final class Xtf24ValueWriter {
         output.end();
     }
 
-    private void writeValue(QName name, TypeDescriptor type, TransferValue value,
+    private void writeValue(QName name, TypeDescriptor type, TransferValue value, SymbolRef containingModel,
                             Map<SymbolRef, TypeRef> concreteTypes, Set<SymbolRef> structureTypes,
                             Set<SymbolRef> activeTypes) throws XMLStreamException {
         if (value == TransferValue.Undefined.INSTANCE) {
@@ -151,13 +152,18 @@ final class Xtf24ValueWriter {
         } else if (type instanceof ReferenceType reference) {
             references.write(output, Xtf24Scalars.require(value, Reference.class), reference.external(), false,
                     layout.stableTargets(reference.targetRoots()));
-        } else if (type.kind() == guru.interlis.model.TypeKind.STRUCTURE_VALUE) {
+        } else if (type instanceof StructureValueType structuredType) {
             var structured = Xtf24Scalars.require(value, Structured.class);
             if (!structureTypes.contains(structured.type())) {
                 throw Xtf24Wire.failure(INVALID_WIRE, "Unknown or abstract XTF structure type");
             }
             var structure = plan.object(structured.type()).orElseThrow();
-            output.start(layout.names().objectName(structure));
+            var structureName = layout.names().objectName(structure);
+            var decoded = layout.structure(structureName, structureTypes, structuredType, containingModel);
+            if (!decoded.symbol().equals(structured.type())) {
+                throw Xtf24Wire.failure(UNSUPPORTED, "XTF structure name would select a different translation");
+            }
+            output.start(structureName);
             write(structure, structured, concreteTypes, structureTypes, activeTypes);
             output.end();
         } else {

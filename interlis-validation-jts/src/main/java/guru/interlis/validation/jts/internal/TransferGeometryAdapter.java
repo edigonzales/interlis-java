@@ -13,30 +13,90 @@ import static guru.interlis.validation.DataLocation.GeometryComponent.Kind.*;
 import static guru.interlis.validation.GeometryEngine.Check.*;
 
 final class TransferGeometryAdapter {
-    record Segment(CurveSegment curve, List<GeometryComponent> path) {}
-    record Part(CurveSegment.Point start, List<Segment> segments, List<GeometryComponent> path) {}
+    record Position(BigDecimal x, BigDecimal y) {
+        Position {
+            x = x.stripTrailingZeros();
+            y = y.stripTrailingZeros();
+        }
+
+        Position(TransferGeometry.Coordinate coordinate) {
+            this(coordinate.ordinates().get(0).exactValue(), coordinate.ordinates().get(1).exactValue());
+        }
+
+        Position minimum(Position other) {
+            return new Position(x.min(other.x), y.min(other.y));
+        }
+    }
+
+    record Edge(Position start, Position end, Position support, BigDecimal radius) {
+        Edge reversed() {
+            return new Edge(end, start, support, radius);
+        }
+    }
+
+    record Segment(CurveSegment curve, List<GeometryComponent> path, Edge edge) {
+        Segment reversed() {
+            return new Segment(curve.reversed(), path, edge.reversed());
+        }
+    }
+
+    record Part(Position start, List<Segment> segments, List<GeometryComponent> path) {}
     record Ring(List<Part> parts, List<GeometryComponent> path) {}
     record Surface(Ring shell, List<Ring> holes) {}
-    record Result(GeometryEngine.Check check, List<Part> lines, List<Surface> surfaces, boolean threeDimensional,
-                  BigDecimal originX, BigDecimal originY) {}
+    record Result(GeometryEngine.Check check, List<Part> lines, List<Surface> surfaces, boolean threeDimensional) {}
 
     private final GeometryEngine.Input input;
     private final GeometryEngine.Control control;
-    private BigDecimal originX;
-    private BigDecimal originY;
+    private final boolean coverage;
+    private Position origin;
     private boolean threeDimensional;
     private GeometryEngine.Check check = VALID;
 
     TransferGeometryAdapter(GeometryEngine.Input input, GeometryEngine.Control control) {
-        this.input = input;
-        this.control = control;
+        this(input, control, null);
     }
 
-    TransferGeometryAdapter(GeometryEngine.Input input, GeometryEngine.Control control,
-                            BigDecimal originX, BigDecimal originY) {
-        this(input, control);
-        this.originX = originX;
-        this.originY = originY;
+    TransferGeometryAdapter(GeometryEngine.Input input, GeometryEngine.Control control, Position coverageOrigin) {
+        this.input = input;
+        this.control = control;
+        this.origin = coverageOrigin;
+        this.coverage = coverageOrigin != null;
+    }
+
+    static Position coverageOrigin(TransferGeometry geometry, Position minimum, Runnable visit) {
+        var surfaces = switch (geometry) {
+            case TransferGeometry.Surface surface -> List.of(surface);
+            case TransferGeometry.MultiSurface multi -> multi.surfaces();
+            default -> List.<TransferGeometry.Surface>of();
+        };
+        for (var surface : surfaces) {
+            minimum = ringOrigin(surface.shell(), minimum, visit);
+            for (var hole : surface.holes()) {
+                minimum = ringOrigin(hole, minimum, visit);
+            }
+        }
+        return minimum;
+    }
+
+    private static Position ringOrigin(TransferGeometry.Ring ring, Position minimum, Runnable visit) {
+        for (var line : ring.lines()) {
+            for (var part : line.parts()) {
+                minimum = include(minimum, part.start(), visit);
+                for (var segment : part.segments()) {
+                    minimum = include(minimum, segment.end(), visit);
+                    if (segment instanceof TransferGeometry.Arc arc) {
+                        minimum = include(minimum, arc.support(), visit);
+                    }
+                }
+            }
+        }
+        return minimum;
+    }
+
+    private static Position include(Position minimum, TransferGeometry.Coordinate coordinate, Runnable visit) {
+        visit.run();
+        var position = new Position(coordinate);
+        return minimum == null ? position : minimum.minimum(position);
     }
 
     Result read() {
@@ -57,8 +117,7 @@ final class TransferGeometryAdapter {
             }
             default -> check = UNSUPPORTED;
         }
-        return new Result(check, List.copyOf(lines), List.copyOf(surfaces), threeDimensional, originX == null ? BigDecimal.ZERO : originX,
-                originY == null ? BigDecimal.ZERO : originY);
+        return new Result(check, List.copyOf(lines), List.copyOf(surfaces), threeDimensional);
     }
 
     private Surface surface(TransferGeometry.Surface value, List<GeometryComponent> path) {
@@ -83,45 +142,46 @@ final class TransferGeometryAdapter {
         for (int i = 0; i < value.parts().size(); i++) {
             var part = value.parts().get(i);
             var partPath = at(path, PART, i);
-            var start = point(part.start());
-            var previous = start;
-            var previousExact = part.start();
+            var start = new Position(part.start());
+            var previous = project(start, part.start());
+            var previousExact = start;
             var segments = new ArrayList<Segment>();
             for (int j = 0; j < part.segments().size(); j++) {
                 control.visit().run();
                 var segment = part.segments().get(j);
-                var end = point(segment.end());
+                var endExact = new Position(segment.end());
+                var end = project(endExact, segment.end());
                 var segmentPath = at(partPath, SEGMENT, j);
-                if (previous.equals(end)) {
-                    if (sameXY(previousExact, segment.end())) {
-                        invalid(segmentPath, ValidationCode.GEOMETRY_DEGENERATE_SEGMENT,
-                                "Coincident projected endpoints");
-                    } else {
-                        unavailable(NUMERICALLY_UNDETERMINED);
-                    }
-                } else if (finite(previous) && finite(end)) {
+                if (previousExact.equals(endExact)) {
+                    invalid(segmentPath, ValidationCode.GEOMETRY_DEGENERATE_SEGMENT,
+                            "Coincident projected endpoints");
+                } else if (previous != null && end != null && previous.equals(end)) {
+                    unavailable(NUMERICALLY_UNDETERMINED);
+                } else if (previous != null && end != null) {
                     switch (segment) {
                         case TransferGeometry.Straight ignored ->
-                            segments.add(new Segment(new CurveSegment.Straight(previous, end), segmentPath));
+                            segments.add(new Segment(new CurveSegment.Straight(previous, end), segmentPath,
+                                    new Edge(previousExact, endExact, null, null)));
                         case TransferGeometry.Arc arc ->
-                            arc(previousExact, previous, arc, end, segmentPath, segments);
+                            arc(previousExact, endExact, previous, end, arc, segmentPath, segments);
                     }
                 }
                 previous = end;
-                previousExact = segment.end();
+                previousExact = endExact;
             }
             parts.add(new Part(start, List.copyOf(segments), partPath));
         }
     }
 
-    private void arc(TransferGeometry.Coordinate previousExact, CurveSegment.Point start, TransferGeometry.Arc value,
-                     CurveSegment.Point end, List<GeometryComponent> path, List<Segment> segments) {
-        var support = point(value.support());
-        if (!finite(support)) {
+    private void arc(Position startExact, Position endExact, CurveSegment.Point start, CurveSegment.Point end,
+                     TransferGeometry.Arc value, List<GeometryComponent> path, List<Segment> segments) {
+        var supportExact = new Position(value.support());
+        var support = project(supportExact, value.support());
+        if (support == null) {
             return;
         }
-        if (support.equals(start) && !sameXY(value.support(), previousExact)
-                || support.equals(end) && !sameXY(value.support(), value.end())) {
+        if (support.equals(start) && !supportExact.equals(startExact)
+                || support.equals(end) && !supportExact.equals(endExact)) {
             unavailable(NUMERICALLY_UNDETERMINED);
             return;
         }
@@ -139,31 +199,51 @@ final class TransferGeometryAdapter {
             }
         }
         switch (CircularArc.build(start, support, end, value.radius(), tolerance)) {
-            case CircularArc.Construction.Built built -> segments.add(new Segment(built.arc(), path));
+            case CircularArc.Construction.Built built -> {
+                var radius = value.radius().map(supplied -> supplied.sourceValue().exactValue().abs()).orElse(null);
+                if (radius != null && inferredRadiusEquals(startExact, supportExact, endExact, radius)) {
+                    radius = null;
+                }
+                segments.add(new Segment(built.arc(), path, new Edge(startExact, endExact, supportExact,
+                        radius == null ? null : radius.stripTrailingZeros())));
+            }
             case CircularArc.Construction.Invalid error -> invalid(path, ValidationCode.GEOMETRY_INVALID_ARC, error.detail());
             case CircularArc.Construction.Undetermined ignored -> unavailable(NUMERICALLY_UNDETERMINED);
         }
     }
 
-    private CurveSegment.Point point(TransferGeometry.Coordinate coordinate) {
-        control.visit().run();
-        var x = coordinate.ordinates().get(0).exactValue();
-        var y = coordinate.ordinates().get(1).exactValue();
-        threeDimensional |= coordinate.ordinates().size() == 3;
-        if (originX == null) {
-            originX = x;
-            originY = y;
-        }
-        var point = new CurveSegment.Point(x.subtract(originX).doubleValue(), y.subtract(originY).doubleValue());
-        if (!finite(point)) {
-            unavailable(NUMERICALLY_UNDETERMINED);
-        }
-        return point;
+    private static boolean inferredRadiusEquals(Position start, Position support, Position end, BigDecimal radius) {
+        var sx = support.x().subtract(start.x());
+        var sy = support.y().subtract(start.y());
+        var ex = end.x().subtract(start.x());
+        var ey = end.y().subtract(start.y());
+        var twiceArea = sx.multiply(ey).subtract(sy.multiply(ex));
+        // The square of abc = 4A times the circumradius avoids a square root or a division.
+        return twiceArea.signum() != 0
+                && squaredLength(sx, sy).multiply(squaredLength(ex, ey))
+                .multiply(squaredLength(ex.subtract(sx), ey.subtract(sy)))
+                .compareTo(radius.pow(2).multiply(twiceArea.pow(2)).multiply(BigDecimal.valueOf(4))) == 0;
     }
 
-    private static boolean sameXY(TransferGeometry.Coordinate a, TransferGeometry.Coordinate b) {
-        return a.ordinates().get(0).exactValue().compareTo(b.ordinates().get(0).exactValue()) == 0
-                && a.ordinates().get(1).exactValue().compareTo(b.ordinates().get(1).exactValue()) == 0;
+    private static BigDecimal squaredLength(BigDecimal x, BigDecimal y) {
+        return x.pow(2).add(y.pow(2));
+    }
+
+    private CurveSegment.Point project(Position position, TransferGeometry.Coordinate coordinate) {
+        control.visit().run();
+        threeDimensional |= coordinate.ordinates().size() == 3;
+        if (origin == null) {
+            origin = position;
+        }
+        var dx = position.x().subtract(origin.x());
+        var dy = position.y().subtract(origin.y());
+        var point = new CurveSegment.Point(dx.doubleValue(), dy.doubleValue());
+        if (!finite(point) || coverage && (BigDecimal.valueOf(point.x()).compareTo(dx) != 0
+                || BigDecimal.valueOf(point.y()).compareTo(dy) != 0)) {
+            unavailable(NUMERICALLY_UNDETERMINED);
+            return null;
+        }
+        return point;
     }
 
     private static boolean finite(CurveSegment.Point point) {
