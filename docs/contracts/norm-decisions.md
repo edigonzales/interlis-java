@@ -30,18 +30,27 @@ Compiler-, Reuse- und Diagrammtests laden die Modellquellen direkt.
 | <a id="decision-14"></a>**Überlappungstoleranz `0.0001` bei drei Koordinatennachkommastellen, 2.3** | [2.3 §2.8.12.2, S.50][ref-norm23-p50]: Toleranz muss grösser null sein; hier keine Präzisionsuntergrenze. [2.4 §3.8.12.2, S.64][ref-norm24-p64] fordert dagegen bei expliziter Toleranz dieselbe numerische Stellenzahl wie bei den Stützpunktkoordinaten. | Lehnt das geprüfte 2.3-Original ab. | Akzeptiert es; Null bleibt verboten. **versionsbezogene Normauslegung behalten.** Die 2.4-Regel wird nicht auf 2.3 übertragen. |
 | <a id="decision-23"></a>**Referenzen und Beziehungen auf Klassenziele mit `NO OID`, 2.4** | [§3.5.3, S.36][ref-norm24-p36] verbietet Referenzen und Beziehungen auf Klassen mit effektivem `NO OID`. [§§4.3.7–4.3.9, S.104–106][ref-norm24-p104] unterscheiden transferweit eindeutige TIDs bei FULL von global eindeutigen OIDs bei INITIAL und UPDATE. [§4.3.11.16, S.112][ref-norm24-p112] nutzt dieselbe Referenzcodierung für Referenzattribute. | Akzeptiert die Originale, darunter `RoadsExgm2ien`. | **Bestandskompatibilität für FULL.** Rollen und Referenzattribute dürfen Klassen ohne stabile Objekt-OID auch über Behältergrenzen hinweg referenzieren. Die Originale `Roads` und `CoordSys` zeigen Assoziationen ohne Ziel-OID. Die Transfergemeinschaft legt die stabile Identität und den Einsatz inkrementeller Transfers fest. Der Compiler bewahrt die OID-Regeln, prüft die erforderlichen Topic-Deklarationen und verlangt weiterhin eine eigene Identität für Assoziationen als Referenzziel. |
 
-## Numerische Datenauswertung (P4.6)
+## Numerische Datenauswertung
 
-INTERLIS 2.4 §3.13 S.82 nennt IEEE-754 für Ausdrücke mit voller
-Genauigkeit und verweist die Rundung an §2.8. Der Validator interpretiert
-diese Vorgabe als Verzicht auf Zwischenrundung. Er rechnet Dezimalwerte
-einschliesslich nichtterminierender Quotienten als exakte rationale Werte,
-vergleicht PI und LNBASE anhand nach aussen begrenzter Intervalle und meldet
-eine verbleibende Unentscheidbarkeit als technischen Ressourcenfehler.
-Die Entscheidung ist ein bewusstes Auslegungsprofil für Datenvalidierung.
-Eine erzwungene IEEE-754-Gleitkommadarstellung würde zum Beispiel
-`(1/3)*3 == 1` von der gewählten binären oder dezimalen Präzision abhängig
-machen. [INTERLIS-Referenzhandbücher][norm24]
+INTERLIS 2.4 §3.13 S.82 nennt IEEE-754 für Ausdrücke mit voller Genauigkeit
+und verweist für Rundung auf §2.8. Die allgemeine Ausdrucksarithmetik ist
+eine Neuerung von 2.4. Numerische Literale und Transferwerte bleiben in
+beiden Sprachfassungen exakte Dezimalwerte.
+
+Der Validator verwendet endliche Dezimalwerte. Addition, Subtraktion,
+Negation, Multiplikation und terminierende Division bleiben innerhalb des
+Grössenbudgets exakt. PI und LNBASE sowie nichtterminierende Quotienten
+werden auf 50 signifikante Stellen mit HALF_EVEN gerundet. Das übernimmt
+die bisher für Konstanten verfügbare Grössenordnung der Präzision und
+liefert für Berechnung, Vergleich, Schlüssel und Funktionsargumente
+denselben Wert. Die vorhandenen Grenzen für Dezimalskala und Koeffizient
+führen zu einem technischen Fehler. Es gibt keinen Unterlauf auf null.
+
+Damit ist `0.1 + 0.2 == 0.3` wahr, während `(1/3)*3 == 1` und
+`PI == 3.141592653589793` falsch sind. Binary64, wie es iox-ili verwendet,
+liefert für diese drei Einzelrechnungen falsch, wahr und wahr. Die
+Attributrundung folgt weiterhin dem deklarierten Raster nach §2.8.
+[INTERLIS-Referenzhandbuch][norm24]
 
 ## Weitere historische Fälle: ausdrücklich der Norm folgen
 

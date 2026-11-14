@@ -175,12 +175,7 @@ final class ExpressionEvaluator {
             } else if (result instanceof UndefinedByData && standard == null) {
                 args.add(TransferValue.Undefined.INSTANCE);
             } else if (result instanceof KnownNumber numeric) {
-                var decimal = numeric.value().decimal();
-                if (decimal.isEmpty()) {
-                    return Unsupported.INSTANCE;
-                }
-                var value = decimal.orElseThrow();
-                args.add(new TransferValue.NumberValue(value.toString(), value));
+                args.add(numeric.value().asValue());
             } else {
                 return result;
             }
@@ -354,7 +349,7 @@ final class ExpressionEvaluator {
         return switch (result) {
             case KnownNumber known -> known.value();
             case Known known when known.value() instanceof TransferValue.NumberValue decimal ->
-                    NumericSemantics.Number.exact(decimal.exactValue());
+                    new NumericSemantics.Number(decimal.exactValue());
             default -> null;
         };
     }

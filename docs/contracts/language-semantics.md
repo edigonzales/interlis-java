@@ -1394,16 +1394,12 @@ INTERLIS 2.4 (§ 3.13). [INTERLIS-Referenzhandbücher](https://www.interlis.ch/d
 | Auswertung | Präzision und Ergebnis |
 | --- | --- |
 | Literale, Transferwerte und Bereichsgrenzen | Dezimalzahlen einschliesslich Exponenten exakt lesen. Das Originallexem und seine Präzisionsherkunft erhalten. Einen gelieferten Wert vor der Bereichsprüfung weder runden noch kürzen. |
-| Addition, Subtraktion, Negation, Multiplikation und Division | Endliche Dezimalzahlen als exakte rationale Zahlen verarbeiten. Ein nichtterminierender Quotient behält Zähler und Nenner. Division durch null ergibt fachlich undefiniert (INTERLIS 2.4 § 3.12). Grössen- und Arbeitsgrenzen führen zu einem technischen Ressourcenfehler. |
-| Endvergleich | Gebundene kompatible Grössen exakt vergleichen. Bei Intervallen für irrationale Konstanten muss das Vergleichsergebnis für das ganze Intervall gelten. Verbleibende Unsicherheit nach Ausschöpfung des Präzisionsbudgets ist eine technische Grenze. |
-| PI und LNBASE | Mathematische Konstanten mit nach aussen begrenzten rationalen Intervallen auswerten. Die Startgrenzen sind für PI `[3.14159265358979323846, 3.14159265358979323847]` und für LNBASE `[2.71828182845904523536, 2.71828182845904523537]`. Die Laufzeit verwendet bereits die auf 50 Nachkommastellen verfeinerten Intervalle. Dieselbe Konstante bei kompatibler Einheit ist mit sich selbst gleich. |
-| Einheitenumrechnung | Die explizit gebundene Umrechnung verwenden. Rationale Faktoren und Offsets exakt anwenden. Symbolische Faktoren verwenden dieselbe Konstantensemantik. Benötigt eine externe Umrechnung einen Dienst, ist dessen Fehlen fehlender Auswertungskontext. |
+| Addition, Subtraktion, Negation, Multiplikation und Division | Endliche Dezimalwerte exakt verarbeiten. Nichtterminierende Quotienten auf 50 signifikante Stellen (HALF_EVEN) runden. Division durch null ergibt fachlich undefiniert. Grössen- und Arbeitsgrenzen führen zu einem technischen Ressourcenfehler. |
+| Endvergleich | Gebundene kompatible Grössen nach ihrem Dezimalwert vergleichen. |
+| PI und LNBASE | Dezimalwerte mit 50 signifikanten Stellen (HALF_EVEN) verwenden. |
+| Einheitenumrechnung | Die explizit gebundene Umrechnung mit derselben Numerik wie in Ausdrücken verwenden. Benötigt eine externe Umrechnung einen Dienst, ist dessen Fehlen fehlender Auswertungskontext. |
 | Vergleich eines gelieferten abgeleiteten Werts | Bei einem deklarierten Dezimalraster nach INTERLIS 2.4 § 2.8 die beiden angrenzenden Rasterwerte zulassen. Bei einem exakten Rastertreffer fallen beide zusammen. Das Raster folgt aus Exponent minus Nachkommastellen der deklarierten Präzision. Statisch berechnete Typgrenzen mit `PrecisionOrigin.COMPUTED` liefern kein Raster. |
 
-Die Intervalle verwenden die Dezimalentwicklungen aus dem
-[NIST Digital Library of Mathematical Functions § 3.12](https://dlmf.nist.gov/3.12)
-mit den dort referenzierten Fortsetzungen [PI](https://oeis.org/A000796)
-und [LNBASE](https://oeis.org/A001113).
-Eine Intervalloperation erhält beide Schranken. Ein Vergleich mit einer
-Schranke ist erst entschieden, wenn das Ergebnis trotz der verbleibenden
-Unsicherheit feststeht. Im Ausdruck selbst wird kein Transferraster angewendet.
+Die Konstanten verwenden die Dezimalentwicklungen aus der
+[NIST Digital Library of Mathematical Functions § 3.12](https://dlmf.nist.gov/3.12).
+Im Ausdruck selbst wird kein Transferraster angewendet.
