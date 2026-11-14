@@ -310,13 +310,9 @@ public final class ValidationPlanner {
         }
 
         private Set<SymbolId> ancestry(ObjectDescriptor object) {
-            Set<SymbolId> types = new HashSet<>();
-            var current = object;
-            while (types.add(current.symbol().symbol()) && current.baseType().isPresent()) {
-                var base = current.baseType().orElseThrow();
-                current = transfer.object(base).orElseThrow(() -> missing(base, "Missing base object"));
-            }
-            return types;
+            var ancestry = new HashSet<SymbolId>();
+            types.objectLineage(object.symbol()).forEach(ref -> ancestry.add(ref.symbol()));
+            return ancestry;
         }
 
         private List<ConstraintSymbol> rules(ObjectDescriptor object, Optional<SymbolRef> slot, int depth,
