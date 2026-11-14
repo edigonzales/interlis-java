@@ -40,10 +40,17 @@ Browser-/Worker-Integration. Er prüft auch die Client-, Worker- und Diagrammtes
 Für eine Browserveröffentlichung werden die zugesagten Browser mit den
 tatsächlichen Browserartefakten geprüft.
 
-Ein Push auf `main` kann nach erfolgreichen Pflichtjobs ein Compiler-ZIP
-unter `guru.interlis:interlis-compiler-bindist` im
-[Snapshot-Repository](https://jars.interlis.guru/snapshots) publizieren. Das
-Paket enthält POSIX- und Windows-Launcher und setzt Java 25 voraus. Der
-Publisher übernimmt das geprüfte ZIP und seine Prüfsumme aus demselben
-Workflow und prüft nach dem Upload die heruntergeladenen Bytes. Die
-Publikationsrechte gehören zum Environment `compiler-snapshots`.
+## Veröffentlichung
+
+Compiler-Artefakte werden ausschliesslich als Snapshots über die CI auf
+`main` veröffentlicht. Dafür werden keine GitHub-Releases oder Versionstags
+erstellt.
+
+Nach einem Push auf `main` und erfolgreichen Pflichtjobs veröffentlicht der
+Workflow das geprüfte Compiler-ZIP unter
+`guru.interlis:interlis-compiler-bindist` im
+[Snapshot-Repository](https://jars.interlis.guru/snapshots). Das Paket enthält
+POSIX- und Windows-Launcher und setzt Java 25 voraus. Der Publisher übernimmt
+das ZIP und seine Prüfsumme aus demselben Workflow und prüft nach dem Upload
+die heruntergeladenen Bytes. Die Publikationsrechte gehören zum Environment
+`compiler-snapshots`.
