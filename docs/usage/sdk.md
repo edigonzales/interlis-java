@@ -34,7 +34,7 @@ mit SDK 0.4 eingeführt.
 | Vertrag | Wert | Bedeutung |
 |---|---|---|
 | Werkzeug und Artefakte | `0.2.0-SNAPSHOT` | Entwicklungsstand der ausgelieferten Module |
-| Öffentliche Java-API | `0.9` | Öffentliche Packages und Typen von `guru.interlis` |
+| Öffentliche Java-API | `0.10` | Öffentliche Packages und Typen von `guru.interlis` |
 | Diagnosekatalog | `interlis-diagnostics/v4` | Stabile Diagnosecodes und typisierte Argumente |
 | Bridge | `interlis.compiler/1.0` | Nachrichtenhülle, Ergebnisse und Abfragen |
 | Quellformatierung | `2.0` | Formatierungsoptionen und Ergebnisvertrag |
@@ -154,7 +154,7 @@ ausgewertet. Befunde an Sichtbedingungen enthalten den Modellort der
 Bedingung und den Datenort der zugrunde liegenden Lieferung.
 
 
-### Validator und Datensatzlauf (API 0.9)
+### Validator und Datensatzlauf
 
 `ValidationPlanner.plan(transferPlan, profile, bindings)` verwendet die
 ursprüngliche Schemainstanz des Transferplans. Datensatz-Reader verwenden
@@ -168,3 +168,42 @@ API 0.9 liefert die XTF-Reader und -Writer gemeinsam als
 `guru.interlis:interlis-xtf` im Modul `guru.interlis.xtf`.
 Die Java-Packages `guru.interlis.xtf23` und `guru.interlis.xtf24` bleiben erhalten.
 Dokumentationsprojektion und Renderer kommen aus `interlis-projection`.
+
+### Optionale Geometrieoperationen
+
+`RuntimeBindings.withGeometry(engine)` bindet eine Host-Implementierung des
+neutralen Vertrags `GeometryEngine` explizit. Der Vertrag verwendet gebundene
+Geometriewerte, aufgelöste Modellparameter, Datenorte und ein Arbeitsbudget.
+Die vorhandenen lokalen Werteregelprüfungen benötigen keine Engine. Eine
+Geometrieoperation ohne erforderliche Engine oder Parameter bleibt ungeprüft.
+
+Die unveröffentlichte API 0.10 umfasst auch die neue Record-Komponente
+`ValidationDiagnostic.relatedData()` für den zweiten Datenort paarweiser
+Geometriebefunde. Record-Patterns für `ValidationDiagnostic` müssen
+die zusätzliche Komponente aufnehmen.
+
+`GeometryEngine.Input.coordinateDomain()` gehört zur selben
+unveröffentlichten API 0.10. Der gebundene Koordinatentyp dient dem
+Vergleich der Koordinatenkontexte einer AREA-Menge.
+
+Für JVM-Läufe kann der Host das optionale Artefakt
+`guru.interlis:interlis-validation-jts` mit
+`RuntimeBindings.empty().withGeometry(JtsGeometryEngine.standard())`
+einbinden. Es verwendet LocationTech JTS 1.20.0. Die Module
+`guru.interlis.validation` und `guru.interlis.transfer` benötigen JTS
+nur, wenn der Host diese Implementierung auswählt.
+
+Die Engine prüft Standardgeraden und Kreisbögen in kartesischer
+XY-Projektion. Sie unterstützt analytische zweidimensionale Längen
+und Flächen in den Koordinateneinheiten beziehungsweise deren Quadrat.
+Die dritte Achse bleibt als Transferwert erhalten und unterliegt weiterhin
+der Werteprüfung. Die Engine unterstützt keine 3D-Messungen,
+geodätischen Messungen oder CRS-Transformationen. Nicht vergleichbare
+Koordinatentypen bleiben in einer gemeinsamen AREA-Prüfung ungeprüft.
+Benutzerdefinierte Linienformen und der netzweite Vergleich von
+LINEATTR-Werten sind ausserhalb dieses Profils.
+
+Die Schlussprüfung einer AREA-Menge begrenzt die Vorbereitung auf
+600’000 Komponentenbesuche und den Vergleich auf 1’000’000 indizierte
+Flächenpaare. Datensatz- und Abbruchbudgets gelten zusätzlich.
+Die JVM-Topologie ist vom lokalen WasmGC-Validator getrennt.

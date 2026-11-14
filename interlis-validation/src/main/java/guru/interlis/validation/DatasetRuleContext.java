@@ -57,6 +57,16 @@ final class DatasetRuleContext {
         return closedDelivery && plan.transferPlan().object(root).isPresent();
     }
 
+    boolean geometryPopulationClosed() {
+        return closedDelivery;
+    }
+
+    EvaluationResult geometryDerivation(Occurrence occurrence, guru.interlis.model.AttributeSymbol attribute) {
+        var frame = new EvaluationFrame(plan, occurrence.object().data(), occurrence.partial(), this::visit,
+                java.util.OptionalLong.empty(), cancellation).withDataset(new DatasetPathContext(this, occurrence));
+        return DerivedValueResolver.resolve(attribute, frame);
+    }
+
     boolean selectsView(guru.interlis.model.ViewSymbol view) {
         return plan.subjects().selectsView(view);
     }
@@ -66,6 +76,30 @@ final class DatasetRuleContext {
         if (remainingWork-- == 0) {
             throw new ValidationLimitException("Dataset constraint work limit exceeded");
         }
+    }
+
+    GeometryEngine.Cursor geometryCursor(java.util.function.Function<Occurrence, List<GeometryEngine.Input>> select) {
+        var entries = objects.scan();
+        return new GeometryEngine.Cursor() {
+            private java.util.Iterator<GeometryEngine.Input> values = java.util.Collections.emptyIterator();
+
+            @Override public Optional<GeometryEngine.Input> next() {
+                while (!values.hasNext()) {
+                    var entry = entries.next();
+                    if (entry.isEmpty()) {
+                        return Optional.empty();
+                    }
+                    visit();
+                    var value = entry.orElseThrow();
+                    values = select.apply(occurrence(DatasetObjectStore.handle(value), objects.decode(value))).iterator();
+                }
+                return Optional.of(values.next());
+            }
+
+            @Override public void close() {
+                entries.close();
+            }
+        };
     }
 
     void forObjects(Consumer<Occurrence> consumer) {
@@ -288,7 +322,7 @@ final class DatasetRuleContext {
             if (field.derived() && plan.derivedNeedsDataset(slot.symbol())) {
                 var result = DerivedValueResolver.resolve(field.slot().attribute(), frame);
                 report.recordDeferredDerived(occurrence, field, result, frame.effectiveType(field.values().getFirst()),
-                        current, at);
+                        current, at, this::visit);
             }
             current.value(slot).ifPresent(value ->
                     checkDeferredValue(report, occurrence, basket, current, frame, field, 0, value, at));

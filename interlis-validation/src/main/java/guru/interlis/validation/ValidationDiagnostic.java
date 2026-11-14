@@ -7,13 +7,19 @@ import java.util.Objects;
 
 /** A local violation, with separate data and model provenance. */
 public record ValidationDiagnostic(ValidationCode code, Severity severity, DataLocation data,
-                                   RuleLocation rule, List<String> arguments) {
+                                   RuleLocation rule, List<String> arguments, java.util.Optional<DataLocation> relatedData) {
     public ValidationDiagnostic {
         Objects.requireNonNull(code, "code");
         Objects.requireNonNull(severity, "severity");
         Objects.requireNonNull(data, "data");
         Objects.requireNonNull(rule, "rule");
         arguments = List.copyOf(arguments);
+        Objects.requireNonNull(relatedData, "relatedData");
+    }
+
+    public ValidationDiagnostic(ValidationCode code, Severity severity, DataLocation data,
+                                RuleLocation rule, List<String> arguments) {
+        this(code, severity, data, rule, arguments, java.util.Optional.empty());
     }
 
     /** English fallback message for presentation. */
@@ -37,6 +43,15 @@ public record ValidationDiagnostic(ValidationCode code, Severity severity, DataL
             case REQUIRED_TID_MISSING -> "The required transfer identifier is absent.";
             case COORDINATE_DIMENSION_MISMATCH -> "Coordinate has the wrong number of axes.";
             case SEGMENT_FORM_NOT_ALLOWED -> "Segment form is not allowed by the model.";
+            case GEOMETRY_DEGENERATE_SEGMENT -> "Segment has coincident projected endpoints.";
+            case GEOMETRY_RING_NOT_CLOSED -> "Surface boundary is not closed and continuous.";
+            case GEOMETRY_SELF_INTERSECTION -> "Geometry contains an invalid segment intersection.";
+            case GEOMETRY_HOLE_OUTSIDE_SHELL -> "Surface hole is outside its allowed region.";
+            case GEOMETRY_INTERIOR_DISCONNECTED -> "Surface interior is disconnected.";
+            case GEOMETRY_GAP -> "Area coverage has a bounded uncovered region.";
+            case GEOMETRY_BOUNDARY_MISMATCH -> "Surface components have an incompatible shared boundary.";
+            case GEOMETRY_AREA_OVERLAP -> "Surface interiors overlap.";
+            case GEOMETRY_INVALID_ARC -> "Circular segment does not define a valid arc.";
             case MODEL_VALUE_NOT_ALLOWED -> "Model name is outside the allowed type or attribute path.";
             case MANDATORY_CONSTRAINT_FALSE -> "Mandatory constraint evaluated to false.";
             case DATASET_UNIQUE_DUPLICATE -> "Key duplicates another object in the comparison scope.";

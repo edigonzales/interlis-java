@@ -174,3 +174,27 @@ lokalen Prüfumfangs.
 [ref-norm24-p31]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=31
 [ref-norm24-p104]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=104
 [ref-norm24-p112]: https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=112
+
+### Topologie und Bogenradius
+
+XTF-2.3-Radien kodieren die Umlaufrichtung im Vorzeichen (positiv im
+Uhrzeigersinn, 2.3 §3.3.11.12). In XTF 2.4 muss der Radius positiv
+sein und der Zwischenpunkt wählt den Bogen (2.4 §3.8.12.2 und
+§4.3.11.14). Die neutrale Darstellung bewahrt Zahl und Konvention.
+Der XTF-2.4-Reader erhält numerisch dekodierbare nichtpositive Radien.
+Die Engine bewertet sie fachlich als ungültig, und der Writer weist
+sie zurück. Ein verwendbarer Bogen bleibt auch bei kleiner Pfeilhöhe
+analytisch. Die Werteprüfung bewahrt den ursprünglichen Transferwert.
+
+AREA-Prüfungen verwenden die wirksame Attributdeklaration und
+vergleichbare Koordinatentypen. Restflächen sind zulässig. Die
+WithoutGaps-Varianten prüfen begrenzte unbelegte Regionen innerhalb
+einer abgeschlossenen Auswahl. Bei den Standardfunktionen gilt für
+Vergleiche in einer heterogenen Menge die grösste wirksame
+Überlappungstoleranz ausgewählter Halter nach ilivalidator 1.15.1.
+Jeder Einzelwert behält seine eigene Toleranz.
+
+Der Kurvenpfad verwendet mathematische Kreisprimitive und JTS-Primitive
+für Orientierung, Kreismittelpunkt, Geradenschnitt und räumliche Indizes.
+Die iox-ili-1.24.6-Quellen und die jeweiligen Fixes dienten als
+Vergleich. Aus iox-ili wurde kein Quellcode übernommen.

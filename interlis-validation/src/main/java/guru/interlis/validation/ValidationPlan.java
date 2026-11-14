@@ -291,6 +291,10 @@ public final class ValidationPlan {
         return false;
     }
 
+    Optional<guru.interlis.model.TypedExpression> expressionNode(ExpressionId id) {
+        return graph.expression(id);
+    }
+
     ExpressionProgram expression(ExpressionId root) {
         return datasetExpression(root).orElseThrow();
     }

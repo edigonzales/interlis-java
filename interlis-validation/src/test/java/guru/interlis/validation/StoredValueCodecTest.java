@@ -34,7 +34,7 @@ class StoredValueCodecTest {
         var number = new NumberValue("1.000E+2", new BigDecimal("100.0"));
         var point = new Coordinate(List.of(number, number));
         var curve = new Polyline(List.of(new CurvePart(point, List.of(new Straight(point),
-                new Arc(point, point, Optional.of(number))))), Optional.of(undefined));
+                new Arc(point, point, Optional.of(new ArcRadius(number, RadiusConvention.POSITIVE_SELECTED_BY_SUPPORT)))))), Optional.of(undefined));
         var surface = new Surface(new Ring(List.of(curve)), List.of(new Ring(List.of(curve))));
         var fields = new LinkedHashMap<SymbolRef, TransferValue>();
         fields.put(slot, Undefined.INSTANCE);

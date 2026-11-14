@@ -69,10 +69,11 @@ final class Xtf23GeometryTest {
             assertEquals(List.of("2.0100", "3.002", "5.4321"), lexemes(negative.end()));
             assertEquals(List.of("1.11000", "2.000"), lexemes(negative.support()));
             assertEquals(new TransferValue.NumberValue("-9.12345678901234567890", new BigDecimal("-9.12345678901234567890")),
-                    negative.radius().orElseThrow());
+                    negative.radius().orElseThrow().sourceValue());
+            assertEquals(RadiusConvention.SIGNED_CLOCKWISE, negative.radius().orElseThrow().convention());
             var positive = assertInstanceOf(Arc.class, part.segments().get(1));
-            assertEquals("+8.5e-1", positive.radius().orElseThrow().lexeme());
-            assertEquals(new BigDecimal("0.85"), positive.radius().orElseThrow().exactValue());
+            assertEquals("+8.5e-1", positive.radius().orElseThrow().sourceValue().lexeme());
+            assertEquals(new BigDecimal("0.85"), positive.radius().orElseThrow().sourceValue().exactValue());
             assertEquals(List.of("4.0", "5.0", "7.0"), lexemes(assertInstanceOf(Straight.class,
                     part.segments().getLast()).end()));
         }
@@ -159,7 +160,7 @@ final class Xtf23GeometryTest {
             var part = original.parts().getFirst();
             var originalArc = (Arc) part.segments().getFirst();
             var zero = new Arc(originalArc.support(), originalArc.end(),
-                    java.util.Optional.of(new TransferValue.NumberValue("0", BigDecimal.ZERO)));
+                    java.util.Optional.of(new ArcRadius(new TransferValue.NumberValue("0", BigDecimal.ZERO), RadiusConvention.SIGNED_CLOCKWISE)));
             var changed = new Polyline(List.of(new CurvePart(part.start(), List.of(zero))));
             var values = new java.util.LinkedHashMap<>(object.data().values());
             values.replaceAll((slot, value) -> changed);

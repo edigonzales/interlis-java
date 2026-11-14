@@ -199,9 +199,9 @@ final class Xtf24GeometryCodec {
             input.nextTag();
             var a2 = number("a2");
             input.nextTag();
-            Optional<NumberValue> radius = Optional.empty();
+            Optional<ArcRadius> radius = Optional.empty();
             if (at(START_ELEMENT, "r")) {
-                radius = Optional.of(number("r"));
+                radius = Optional.of(new ArcRadius(number("r"), RadiusConvention.POSITIVE_SELECTED_BY_SUPPORT));
                 input.nextTag();
             }
             require(END_ELEMENT, "arc");
@@ -323,14 +323,15 @@ final class Xtf24GeometryCodec {
                 switch (segment) {
                     case Straight straight -> geometry(straight.end());
                     case Arc arc -> {
-                        if (arc.radius().filter(radius -> radius.exactValue().signum() < 0).isPresent()) {
-                            throw Xtf24Wire.failure(UNSUPPORTED, "Negative radius has an ambiguous 2.3 signed-direction convention");
+                        if (arc.radius().filter(radius -> radius.convention() != RadiusConvention.POSITIVE_SELECTED_BY_SUPPORT
+                                || radius.sourceValue().exactValue().signum() <= 0).isPresent()) {
+                            throw Xtf24Wire.failure(UNSUPPORTED, "XTF 2.4 requires a positive radius selected by the intermediate position");
                         }
                         output.start(geom("arc"));
                         position(arc.end(), "c");
                         position(arc.support(), "a");
                         if (arc.radius().isPresent()) {
-                            number("r", arc.radius().orElseThrow());
+                            number("r", arc.radius().orElseThrow().sourceValue());
                         }
                         output.end();
                     }

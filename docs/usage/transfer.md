@@ -99,7 +99,9 @@ und der Anzahl eindeutiger IDs. Auch bei einer direkten Reader-Writer-Pipeline
 existieren die Identitätsindizes beider Instanzen. Die Limits sind Ressourcenbudgets
 und liefern keine feste Heap-Kapazitätsgarantie.
 
-Der [Java-SDK-Vertrag](sdk.md#getrennte-versionen) ist Version 0.9.
+Der [Java-SDK-Vertrag](sdk.md#getrennte-versionen) ist Version 0.10. `TransferGeometry.Arc` speichert einen gelieferten
+Radius als `ArcRadius` mit exaktem Wert und Kodierungskonvention. Die
+Writer verlangen bei vorhandenem Radius die Konvention ihres Formats.
 `TransferValue.XmlFragment` erhält neben `xml` den Namespacekontext in
 `namespaceBindings`. Der Einargumentkonstruktor bleibt verfügbar.
 

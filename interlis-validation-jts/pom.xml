@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>guru.interlis</groupId><artifactId>interlis-java</artifactId><version>0.2.0-SNAPSHOT</version></parent>
+  <artifactId>interlis-validation-jts</artifactId>
+  <dependencies>
+    <dependency><groupId>guru.interlis</groupId><artifactId>interlis-validation</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>org.locationtech.jts</groupId><artifactId>jts-core</artifactId><version>1.20.0</version></dependency>
+    <dependency><groupId>guru.interlis</groupId><artifactId>interlis-compiler</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>guru.interlis</groupId><artifactId>interlis-xtf</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-launcher</artifactId><scope>test</scope></dependency>
+  </dependencies>
+  <!--jenesis.pin
+  maven/org.apiguardian/apiguardian-api/pom 1.1.2 SHA-256/32355081d109095c3d5d374d5a43b4f4c1b75d549e983ef50723e2772e5302a0
+  maven/org.junit.jupiter/junit-jupiter-api/pom 5.11.4 SHA-256/512d23ff39c76665a1a3645526230bcf889bd49884304f7febe047b018eeb339
+  maven/org.junit.jupiter/junit-jupiter-engine/pom 5.11.4 SHA-256/b0a323b0d03444441d13d4630b40db5ef84160d2c2f585d4d646dc3882f99207
+  maven/org.junit.jupiter/junit-jupiter-params/pom 5.11.4 SHA-256/8c359bbea07c64a6acdd8c1e13b4f77058b2432b35e86e9a95ddc63249a0ad54
+  maven/org.junit.jupiter/junit-jupiter/pom 5.11.4 SHA-256/a862df11ee539982efcb141d9c0ade7037bba0265d0b589d5fb84db0d212f1d9
+  maven/org.junit.platform/junit-platform-commons/pom 1.11.4 SHA-256/cd12d2b7c242f165548ed9c9406160dcedb6080925b47cf731e0fdae5fb4bce2
+  maven/org.junit.platform/junit-platform-console/pom 1.11.4 SHA-256/496d8b270b4d6c7a8b163326a42df7278f923540da3e6713780adf79aa0e79ca
+  maven/org.junit.platform/junit-platform-engine/pom 1.11.4 SHA-256/943471579984212fbe69d03edec7c2ff4fbab1888be0b80c265ea70869fd8abd
+  maven/org.junit.platform/junit-platform-launcher/pom 1.11.4 SHA-256/b67cd53802e06aa82aa5966e99fb42917d220457849e5c080c8360753ed67c31
+  maven/org.junit.platform/junit-platform-reporting/pom 1.11.4 SHA-256/9496915d0a8a194b9ad9408c8ed307785339124bad7a40a9f44e425051c95601
+  maven/org.junit/junit-bom/pom 5.11.4 SHA-256/19d4b747b204805325b6334553296f986562277a4ac1cb5e593a5e4c4f5e4115
+  maven/org.locationtech.jts/jts-core/pom 1.20.0 SHA-256/aaab506d3942149d5466c7ea3ea154cc3ea50c06bb39a533799dd9c7ff8b2146
+  maven/org.locationtech.jts/jts-modules/pom 1.20.0 SHA-256/f34df5400723db218058f218433fce1f5e7af032d5c7093d801d6a9f16a3f13d
+  maven/org.locationtech.jts/jts/pom 1.20.0 SHA-256/51eb3e453709c2f8d982ebe18c99da72a0aa42bff94a9fe77a76ba1e4a75225a
+  maven/org.opentest4j/opentest4j/pom 1.3.0 SHA-256/9bf7cffc410f3e8372c2522578df9ca56d9d43bd937e30948706c232a943b355
+  maven/org.sonatype.oss/oss-parent/pom 9 SHA-256/fb40265f982548212ff82e362e59732b2187ec6f0d80182885c14ef1f982827a
+  org.apiguardian/apiguardian-api 1.1.2 SHA-256/b509448ac506d607319f182537f0b35d71007582ec741832a1f111e5b5b70b38
+  org.junit.jupiter/junit-jupiter 5.11.4 SHA-256/aa880e4afba87d447357e4c1fc098c5cb1d200cb9403496c00d3b35a5bd0e8db
+  org.junit.jupiter/junit-jupiter-api 5.11.4 SHA-256/ab83ef9e51ac4597d59d26b4b58812129550e2f579a404c8af7d09f5ce5b4293
+  org.junit.jupiter/junit-jupiter-engine 5.11.4 SHA-256/cdf8ac59f3fad774ca738ad03890950eeb91833ef0e8908753177edd26f1581c
+  org.junit.jupiter/junit-jupiter-params 5.11.4 SHA-256/02a6e015de7ce94ac7f256e7fa05b8091dea861fe79a555a7993313d0f6c7d96
+  org.junit.platform/junit-platform-commons 1.11.4 SHA-256/9edd969b0d0670c54105bc91ae79bd1c6f503e12115faba82073b84c86bbc334
+  org.junit.platform/junit-platform-console 1.11.4 SHA-256/a9c3309cdfded3542200de85da6cb274864439d6b02ba80bb45ecc8e0bdf1be7
+  org.junit.platform/junit-platform-engine 1.11.4 SHA-256/b1dd998f64f9acadc15966d9cd3d08074662677b3e390f0a38fcbf0bb4c72330
+  org.junit.platform/junit-platform-launcher 1.11.4 SHA-256/d7430bd029e7fcced53ee445e4d2d1a8a1e043ea4c4df43b6335a857f79761ae
+  org.junit.platform/junit-platform-reporting 1.11.4 SHA-256/df6896109bfaef4de8d2fa9e3371a6176936d1a45a6c0e7fd8f7e6dd6f4c5597
+  org.locationtech.jts/jts-core 1.20.0 SHA-256/6a783d8f9dba3d3cf7265435f134402f63c05838aa6cbcc4297ad3a5b2842baf
+  org.opentest4j/opentest4j 1.3.0 SHA-256/48e2df636cab6563ced64dcdff8abb2355627cb236ef0bf37598682ddf742f1b
+  maven/org.antlr/antlr4-master/pom 4.13.2 SHA-256/0adda026685873f651360178bffc446ceee4833081739e3ae9d6e8f07e8d902a
+  org.antlr/antlr4-runtime 4.13.2 SHA-256/dd3e8a13a2d669bf84fb8d834de35ce4875f27157698d206241ec8488aadcaf7
+  maven/org.antlr/antlr4-runtime/pom 4.13.2 SHA-256/03ce07a2796c511b0c94dc14fd86ccdd6e3828c57967ad2383de304e0d11ba79
+  -->
+</project>

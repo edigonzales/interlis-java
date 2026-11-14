@@ -18,7 +18,7 @@ import static guru.interlis.validation.EvaluationResult.*;
 
 enum StandardFunctions {
     LENGTH, TRIM, OBJECT_COUNT, ELEMENT_COUNT, MY_CLASS, IS_SUB_CLASS, IS_OF_CLASS,
-    IS_ENUM_SUB_VALUE, IN_ENUM_RANGE, CONVERT_UNIT;
+    IS_ENUM_SUB_VALUE, IN_ENUM_RANGE, CONVERT_UNIT, GEOMETRY_LENGTH, GEOMETRY_AREA, AREAS, AREAS_WITHOUT_GAPS;
 
     static Optional<StandardFunctions> bind(FunctionSymbol symbol) {
         if (!(symbol.origin() instanceof Origin.PredefinedOrigin predefined)) {
@@ -35,6 +35,10 @@ enum StandardFunctions {
             case "INTERLIS.isEnumSubVal" -> IS_ENUM_SUB_VALUE;
             case "INTERLIS.inEnumRange" -> IN_ENUM_RANGE;
             case "INTERLIS.convertUnit" -> CONVERT_UNIT;
+            case "INTERLIS.length", "INTERLIS.multilength" -> GEOMETRY_LENGTH;
+            case "INTERLIS.surface", "INTERLIS.multisurface" -> GEOMETRY_AREA;
+            case "INTERLIS.areAreas", "INTERLIS.areAreas2", "INTERLIS.areAreas3" -> AREAS;
+            case "INTERLIS.areAreasWithoutGaps", "INTERLIS.areAreasWithoutGaps2" -> AREAS_WITHOUT_GAPS;
             default -> null;
         });
     }
@@ -60,7 +64,7 @@ enum StandardFunctions {
                 yield ExpressionEvaluator.bool(child.size() > parent.size() && under(child, parent));
             }
             case IN_ENUM_RANGE -> inRange(enumeration, path(first), path(arguments.get(1)), path(arguments.get(2)));
-            case OBJECT_COUNT, CONVERT_UNIT -> throw new IllegalStateException("Function requires bound expression arguments");
+            case OBJECT_COUNT, CONVERT_UNIT, GEOMETRY_LENGTH, GEOMETRY_AREA, AREAS, AREAS_WITHOUT_GAPS -> throw new IllegalStateException("Function requires bound expression arguments");
         };
     }
 
@@ -75,7 +79,7 @@ enum StandardFunctions {
             case IS_SUB_CLASS -> first instanceof TransferValue.ClassName
                     && values.get(1) instanceof TransferValue.ClassName;
             case IS_ENUM_SUB_VALUE, IN_ENUM_RANGE -> values.stream().allMatch(TransferValue.Enumeration.class::isInstance);
-            case OBJECT_COUNT, CONVERT_UNIT -> false;
+            case OBJECT_COUNT, CONVERT_UNIT, GEOMETRY_LENGTH, GEOMETRY_AREA, AREAS, AREAS_WITHOUT_GAPS -> false;
         };
     }
 

@@ -309,7 +309,10 @@ final class StoredValueCodec {
                         write(out, segment.end(), depth + 1);
                         if (segment instanceof Arc arc) {
                             write(out, arc.support(), depth + 1);
-                            optional(out, arc.radius(), x -> write(out, x, depth + 1));
+                            optional(out, arc.radius(), radius -> {
+                                text(out, radius.convention().name());
+                                write(out, radius.sourceValue(), depth + 1);
+                            });
                         }
                     });
                 });
@@ -369,7 +372,10 @@ final class StoredValueCodec {
                     boolean arc = in.readBoolean();
                     var end = (Coordinate) read(in, depth + 1);
                     return arc ? new Arc((Coordinate) read(in, depth + 1), end,
-                            optional(in, () -> (NumberValue) read(in, depth + 1))) : new Straight(end);
+                            optional(in, () -> {
+                                var convention = RadiusConvention.valueOf(text(in));
+                                return new ArcRadius((NumberValue) read(in, depth + 1), convention);
+                            })) : new Straight(end);
                 }));
             }), optional(in, () -> (Structured) read(in, depth + 1)));
             case 16 -> new MultiPolyline(list(in, () -> (Polyline) read(in, depth + 1)));

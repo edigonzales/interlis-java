@@ -87,7 +87,7 @@ class Xtf24LibraryConsumerTest {
         assertEquals(2, ((MultiPolyline) field(reference, item, "traces")).lines().size());
         assertEquals(2, ((MultiSurface) field(reference, item, "shapes")).surfaces().size());
         var arc = (Arc) ((Polyline) field(reference, item, "trace")).parts().getFirst().segments().getFirst();
-        assertEquals("1.00", arc.radius().orElseThrow().lexeme());
+        assertEquals("1.00", arc.radius().orElseThrow().sourceValue().lexeme());
         assertEquals(List.of("1.00", "1.00"), arc.support().ordinates().stream().map(NumberValue::lexeme).toList());
         var document = parsed(geometry.output());
         var multi = (Element) document.getElementsByTagNameNS("http://www.interlis.ch/geometry/1.0", "multipolyline").item(0);

@@ -128,7 +128,8 @@ final class ExpressionCompiler {
                 case FunctionCallExpression call -> function(call);
                 case SymbolValueExpression value -> graph.symbol(value.target()).filter(symbol ->
                         symbol instanceof ParameterSymbol || symbol instanceof ClassSymbol
-                                || symbol instanceof StructureSymbol).isPresent();
+                                || symbol instanceof StructureSymbol || symbol instanceof guru.interlis.model.AttributeSymbol
+                                && effective(value.typeId()).orElse(null) instanceof guru.interlis.model.AttributePathType).isPresent();
                 case DefinedExpression _ -> true;
                 case UnaryExpression unary -> switch (unary.operator()) {
                     case NOT -> family(expression(unary.operand())) == Family.BOOLEAN;
@@ -156,7 +157,11 @@ final class ExpressionCompiler {
             if (!(call.targetFunction().flatMap(graph::symbol).orElse(null) instanceof FunctionSymbol function)) {
                 return false;
             }
-            if (StandardFunctions.bind(function).orElse(null) == StandardFunctions.OBJECT_COUNT) {
+            var standard = StandardFunctions.bind(function).orElse(null);
+            if (standard == StandardFunctions.AREAS || standard == StandardFunctions.AREAS_WITHOUT_GAPS) {
+                populationRequired = true;
+            }
+            if (standard == StandardFunctions.OBJECT_COUNT) {
                 populationRequired |= call.children().stream().map(this::expression)
                         .anyMatch(ObjectSetExpression.class::isInstance);
             }

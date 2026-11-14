@@ -6,4 +6,8 @@ import java.util.OptionalLong;
 @FunctionalInterface
 interface RuntimeObjectSet {
     OptionalLong count();
+
+    default java.util.Optional<GeometryEngine.Source> geometries(GeometrySelection paths) {
+        return java.util.Optional.empty();
+    }
 }

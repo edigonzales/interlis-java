@@ -63,7 +63,7 @@ final class DatasetAggregate {
         var result = new DatasetScopeCounts.Coverage();
         scopes.forScopes((ordinal, scope) -> {
             context.visit();
-            result.add(supported ? evaluateSet(ordinal, scope, basket, condition.orElseThrow())
+            result.add(supported ? evaluateSet(ordinal, scope, basket, condition.orElseThrow(), where)
                     : setCoverage(scope, basket, UNSUPPORTED, 0, 0));
         });
         var reports = result.reports();
@@ -103,13 +103,51 @@ final class DatasetAggregate {
     }
 
     private DatasetRuleCoverage evaluateSet(long ordinal, Scope population, boolean basket,
-                                            ExpressionProgram condition) {
+                                            ExpressionProgram condition, java.util.Optional<ExpressionProgram> where) {
         var count = complete(population) ? OptionalLong.of(population.counts().candidates) : OptionalLong.empty();
         var result = condition.evaluate(new EvaluationFrame(context.plan, TransferValue.Undefined.INSTANCE,
                 !complete(population), context::visit,
                 condition.requirements().populationRequired() ? count : OptionalLong.empty(), context.cancellation())
-                .withPopulations((type, explicit) -> () -> explicit
-                        ? context.countPopulation(ordinal, type) : count));
+                .withPopulations((type, explicit) -> new RuntimeObjectSet() {
+                    @Override public OptionalLong count() {
+                        return explicit ? context.countPopulation(ordinal, type) : count;
+                    }
+
+                    @Override public java.util.Optional<GeometryEngine.Source> geometries(GeometrySelection paths) {
+                        var incomplete = new boolean[]{!complete(population)};
+                        var roots = type.restrictions().isEmpty() ? type.base().stream().toList() : type.restrictions();
+                        return java.util.Optional.of(new GeometryEngine.Source() {
+                            @Override public boolean complete() {
+                                return !incomplete[0];
+                            }
+
+                            @Override public GeometryEngine.Cursor open() {
+                                return context.geometryCursor(occurrence -> {
+                                    if (occurrence.input().descriptor().role() != InputRole.PRIMARY || !occurrence.selected()
+                                            || ordinal != 0 && occurrence.stored().basket() != ordinal
+                                            || (explicit ? !roots.isEmpty() && roots.stream().noneMatch(root ->
+                                                    context.target(context.plan.ref(root), occurrence)) : !applicable(occurrence))) {
+                                        return List.of();
+                                    }
+                                    if (!explicit && where.isPresent()) {
+                                        var result = context.evaluate(where.orElseThrow(), occurrence);
+                                        if (!(result instanceof EvaluationResult.Known known
+                                                && known.value() instanceof TransferValue.BooleanValue value)) {
+                                            if (!(result instanceof EvaluationResult.UndefinedByData)) {
+                                                incomplete[0] = true;
+                                            }
+                                            return List.of();
+                                        }
+                                        if (!value.value()) {
+                                            return List.of();
+                                        }
+                                    }
+                                    return paths.from(context, occurrence, incomplete);
+                                });
+                            }
+                        });
+                    }
+                }));
         if (result instanceof EvaluationResult.Known known && known.value() instanceof TransferValue.BooleanValue value) {
             if (!value.value()) {
                 report.datasetViolation(rule.declaration(), ValidationCode.SET_CONSTRAINT_FALSE,

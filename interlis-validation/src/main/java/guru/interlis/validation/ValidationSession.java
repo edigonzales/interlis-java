@@ -2,6 +2,7 @@ package guru.interlis.validation;
 
 import guru.interlis.diagnostics.Severity;
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.CardinalityUpper;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.CoordinateType;
@@ -215,11 +216,47 @@ public final class ValidationSession implements AutoCloseable {
                 baskets, objects, violations, examples,
                 new ValidationCoverage(counts(checked), plan.uncheckedRules(), counts(incomplete),
                         counts(missingRuntime), counts(unsupported),
-                        plan.profile() == ValidationProfile.LOCAL_ONLY ? List.of(REFERENTIAL_INTEGRITY, TOPOLOGY) : List.of(TOPOLOGY),
+                        unavailableFamilies(),
                         constraintCounts(), datasetCoverage), scope);
         clear();
         state = State.FINISHED;
         return report;
+    }
+
+    private List<ValidationCoverage.RuleFamily> unavailableFamilies() {
+        var families = new ArrayList<ValidationCoverage.RuleFamily>();
+        if (plan.profile() == ValidationProfile.LOCAL_ONLY) {
+            families.add(REFERENTIAL_INTEGRITY);
+        }
+        if (plan.bindings().geometry().isEmpty()) {
+            families.add(TOPOLOGY);
+        }
+        return families;
+    }
+
+    void recordViewGeometry(ViewRow row, AttributeSymbol attribute, EvaluationResult result, Runnable visit) {
+        if (!(plan.effectiveType(attribute.declaredType()).orElse(null) instanceof GeometryType type)) {
+            return;
+        }
+        var owner = plan.ref(row.view());
+        var slot = plan.ref(attribute.id());
+        var key = new SlotKey(owner, slot, TOPOLOGY);
+        if (!(result instanceof EvaluationResult.Known known && known.value() instanceof TransferGeometry value)) {
+            if (!(result instanceof EvaluationResult.UndefinedByData)) {
+                (result instanceof EvaluationResult.Unsupported ? unsupported : missingRuntime).merge(key, 1L, Math::addExact);
+            }
+            return;
+        }
+        var origin = row.origins().getFirst();
+        var location = origin.location(List.of(new DataLocation.Slot(slot)));
+        var context = BasketContext.of(origin.basket(), plan);
+        var contexts = row.origins().stream().map(other -> BasketContext.of(other.basket(), plan)).toList();
+        checkTopology(type, value, location, attribute, key, row.origins().stream().anyMatch(DatasetRuleContext.Occurrence::partial),
+                id -> {
+                    var coordinate = effectiveCoordinate(id, context);
+                    return contexts.stream().allMatch(other -> Objects.equals(coordinate, effectiveCoordinate(id, other)))
+                            ? coordinate : null;
+                }, visit);
     }
 
     /** Releases session state. Repeated close calls are harmless. */
@@ -318,6 +355,10 @@ public final class ValidationSession implements AutoCloseable {
                 var derived = DerivedValueResolver.resolve(attribute, frame);
                 if (derived instanceof EvaluationResult.Known || derived instanceof EvaluationResult.KnownNumber
                         || derived instanceof EvaluationResult.UndefinedByData) {
+                    if (value.isEmpty() && derived instanceof EvaluationResult.Known known
+                            && known.value() instanceof TransferGeometry geometry && rules.type() instanceof GeometryType) {
+                        geometry(object, pending, rules.type(), geometry, partial, true, budget);
+                    }
                     if (value.isPresent() && (actual == TransferValue.Undefined.INSTANCE
                             || ValueFamilies.match(rules.type(), actual) == ValueFamilies.Match.YES)
                             && !DerivedValueResolver.matches(derived, actual, rules.type())) {
@@ -478,11 +519,17 @@ public final class ValidationSession implements AutoCloseable {
 
     void recordDeferredDerived(DatasetRuleContext.Occurrence occurrence, ObjectValidationPlan.FieldRule field,
                                EvaluationResult result, TypeDescriptor effectiveType,
-                               TransferValue.Structured current, ValuePath path) {
+                               TransferValue.Structured current, ValuePath path, Runnable visit) {
         var attribute = field.slot().attribute();
         var location = occurrence.location(ValuePath.steps(path));
         var supplied = current.value(field.slot().symbol());
         var key = new SlotKey(current.type(), field.slot().symbol(), VALUE_RANGE);
+        if (supplied.isEmpty() && result instanceof EvaluationResult.Known known
+                && known.value() instanceof TransferGeometry value && effectiveType instanceof GeometryType type) {
+            var basket = BasketContext.of(occurrence.basket(), plan);
+            checkTopology(type, value, location, attribute, new SlotKey(current.type(), field.slot().symbol(), TOPOLOGY),
+                    occurrence.partial(), id -> effectiveCoordinate(id, basket), visit);
+        }
         switch (result) {
             case EvaluationResult.Known _, EvaluationResult.KnownNumber _, EvaluationResult.UndefinedByData _ -> {
                 checked.merge(key, 1L, Math::addExact);
@@ -586,29 +633,73 @@ public final class ValidationSession implements AutoCloseable {
                         List.of(geometry.geometryKind().name(), value.getClass().getSimpleName()));
                 return;
             }
-            vertices = geometry.vertexDomain().flatMap(id -> {
-                var symbol = plan.symbol(id).orElse(null);
-                if (symbol instanceof guru.interlis.model.DomainSymbol domain && domain.generic()) {
-                    return concreteDomain(id);
-                }
-                return plan.domainType(id);
-            }).filter(CoordinateType.class::isInstance).map(CoordinateType.class::cast).orElse(null);
+            vertices = geometry.vertexDomain().map(this::effectiveCoordinate).orElse(null);
             forms = GeometryRules.forms(plan, geometry);
         } else {
             return;
         }
+        long before = violations;
         var rules = new GeometryRules(vertices, forms, budget::consume, (code, suffix, arguments) -> {
             var path = pending.path();
             for (var step : suffix) {
                 path = new ValuePath(path, step);
             }
             violation(object, path, pending.field().slot().attribute(), code, arguments);
-        });
+        }, plan.bindings().geometry().isPresent());
         if (rules.check(value)) {
             count(checked, pending, GEOMETRY_VALUES);
         } else if (concrete) {
             count(vertices == null ? missingRuntime : unsupported, pending, GEOMETRY_VALUES);
         }
+        if (type instanceof GeometryType geometry) {
+            if (before != violations || vertices == null || !GeometryRules.standardForms(forms)) {
+                count(vertices == null ? missingRuntime : unsupported, pending, TOPOLOGY);
+                return;
+            }
+            checkTopology(geometry, value, location(object, ValuePath.steps(pending.path())),
+                    pending.field().slot().attribute(), new SlotKey(pending.owner(), pending.field().slot().symbol(), TOPOLOGY),
+                    partial, this::effectiveCoordinate, budget::consume);
+        }
+    }
+
+    void geometryFinding(AttributeSymbol attribute, GeometryEngine.Finding finding) {
+        if (!retainExample()) {
+            return;
+        }
+        var data = finding.location();
+        var path = new ArrayList<>(data.path());
+        path.addAll(finding.path());
+        examples.add(new ValidationDiagnostic(finding.code(), Severity.ERROR,
+                new DataLocation(data.source(), data.basket(), data.tid(), data.oid(), data.objectType(), path),
+                ruleLocation(plan.ref(attribute.id()), attribute.origin()), List.of(finding.detail()),
+                finding.relatedData()));
+    }
+
+    private void checkTopology(GeometryType type, TransferGeometry value, DataLocation location, AttributeSymbol attribute,
+                               SlotKey key, boolean partial, java.util.function.Function<SymbolId, CoordinateType> coordinates,
+                               Runnable visit) {
+        var engine = plan.bindings().geometry();
+        if (engine.isEmpty() || !GeometryRules.standardForms(GeometryRules.forms(plan, type))) {
+            unsupported.merge(key, 1L, Math::addExact);
+            return;
+        }
+        var input = new GeometryEngine.Input(value, type, location, attribute.languageVersion(),
+                GeometryParameters.quantum(type.vertexDomain().map(coordinates).orElse(null)),
+                GeometryParameters.overlap(type, coordinates), partial);
+        var control = new GeometryEngine.Control(visit, finding -> geometryFinding(attribute, finding));
+        switch (engine.orElseThrow().checkValue(input, control)) {
+            case VALID, INVALID -> checked.merge(key, 1L, Math::addExact);
+            case MISSING_PARAMETERS -> (partial ? incomplete : missingRuntime).merge(key, 1L, Math::addExact);
+            case UNSUPPORTED, NUMERICALLY_UNDETERMINED -> unsupported.merge(key, 1L, Math::addExact);
+        }
+    }
+
+    private CoordinateType effectiveCoordinate(SymbolId id) {
+        return effectiveCoordinate(id, basket);
+    }
+
+    private CoordinateType effectiveCoordinate(SymbolId id, BasketContext context) {
+        return GeometryParameters.coordinate(plan, context, id);
     }
 
     private void checkBasketIdentity() {
