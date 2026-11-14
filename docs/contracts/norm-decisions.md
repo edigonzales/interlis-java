@@ -55,7 +55,7 @@ Attributrundung folgt weiterhin dem deklarierten Raster nach §2.8.
 ## Kontinuität von Flächenrändern
 
 INTERLIS 2.3 §2.8.12.1 und §3.3.11.14 sowie INTERLIS 2.4
-§3.8.12.1 und §4.3.11 verlangen übereinstimmende Endpunkte beim
+§3.8.12.1 und §4.3.11.15 verlangen übereinstimmende Endpunkte beim
 Zusammensetzen und Schliessen der Randlinien. Der Validator vergleicht
 alle gelieferten Ordinaten numerisch. Flächentopologie und gemeinsame
 AREA-Kanten werden weiterhin in der Lageprojektion beurteilt.

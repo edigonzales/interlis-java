@@ -144,27 +144,39 @@ final class CurveValidity {
                 case TopologyValidationError.TOO_FEW_POINTS -> GEOMETRY_DEGENERATE_SEGMENT;
                 default -> GEOMETRY_SELF_INTERSECTION;
             };
-            var locations = new ArrayList<List<GeometryComponent>>();
             var hit = error.getCoordinate();
-            if (hit != null) {
-                var intersector = new org.locationtech.jts.algorithm.RobustLineIntersector();
-                for (var boundary : boundaries) {
-                    for (var segment : boundary) {
-                        control.visit().run();
-                        intersector.computeIntersection(hit, segment.curve().start().coordinate(),
-                                segment.curve().end().coordinate());
-                        if (intersector.hasIntersection() && locations.size() < 2) {
-                            locations.add(segment.path());
-                        }
+            var intersector = new org.locationtech.jts.algorithm.RobustLineIntersector();
+            List<GeometryComponent> first = null;
+            List<GeometryComponent> second = null;
+            var sourceRings = rings(surface);
+            for (int ring = 0; hit != null && ring < boundaries.size(); ring++) {
+                var boundary = boundaries.get(ring);
+                for (int index = 0; index < boundary.size(); index++) {
+                    control.visit().run();
+                    var segment = boundary.get(index);
+                    intersector.computeIntersection(hit, segment.curve().start().coordinate(),
+                            segment.curve().end().coordinate());
+                    if (!intersector.hasIntersection()) {
+                        continue;
+                    }
+                    var ringPath = sourceRings.get(ring).path();
+                    if (first == null) {
+                        first = code == GEOMETRY_SELF_INTERSECTION ? segment.path() : ringPath;
+                    } else if (code == GEOMETRY_INTERIOR_DISCONNECTED && !first.equals(ringPath)) {
+                        second = ringPath;
                     }
                 }
             }
-            if (error.getErrorType() == TopologyValidationError.HOLE_OUTSIDE_SHELL && !locations.isEmpty()) {
-                invalid(locations.getFirst(), surface.shell().path(), code, error.getMessage());
-            } else if (locations.size() == 2 && code == GEOMETRY_SELF_INTERSECTION) {
-                invalid(locations.getFirst(), locations.getLast(), code, error.getMessage());
+            if (code == GEOMETRY_SELF_INTERSECTION && hit != null) {
+                // JTS supplies the error point, which can also lie at adjacent segments.
+                // A single witness avoids attributing the error to an unverified pair.
+                invalid(first == null ? surface.shell().path() : first, code, error.getMessage());
+            } else if (error.getErrorType() == TopologyValidationError.HOLE_OUTSIDE_SHELL && first != null) {
+                invalid(first, surface.shell().path(), code, error.getMessage());
+            } else if (second != null) {
+                invalid(first, second, code, error.getMessage());
             } else {
-                invalid(locations.isEmpty() ? surface.shell().path() : locations.getFirst(), code, error.getMessage());
+                invalid(first == null ? surface.shell().path() : first, code, error.getMessage());
             }
         }
     }

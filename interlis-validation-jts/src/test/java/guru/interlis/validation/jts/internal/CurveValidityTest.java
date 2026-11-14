@@ -28,6 +28,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class CurveValidityTest {
     @Test
+    void doesNotBlameAdjacentSegmentsForARepeatedBoundaryVertex() {
+        var shell = ring("0,0", "4,0", "4,4", "2,2", "0,4", "0,2", "2,2", "0,0");
+        var outcome = check(new Surface(shell, List.of()), GeometryKind.SURFACE, true, false);
+        assertEquals(INVALID, outcome.status());
+        assertEquals(List.of(GEOMETRY_SELF_INTERSECTION), outcome.codes());
+        assertTrue(outcome.findings().getFirst().relatedData().isEmpty());
+    }
+
+    @Test
     void rejectsEmptyCompleteLinesAndDoesNotMeasureThemAsZero() {
         for (var empty : List.of(new Polyline(List.of()), line("0,0"))) {
             assertEquals(List.of(GEOMETRY_DEGENERATE_SEGMENT),
