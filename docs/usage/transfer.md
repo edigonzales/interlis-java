@@ -45,7 +45,12 @@ beobachtet. Ein blockierender Host-Stream braucht hostseitige Timeouts.
 XTF 2.4 FULL verwendet die normativen INTERLIS- und Geometrienamespaces,
 Modell-XMLNS und Originalnamen übersetzter Modelle. Der Reader akzeptiert beliebige
 Präfixe. Die Headerdeklarationen behalten ihre Reihenfolge und Herkunft.
-Deklarierte Modelle decken ihre gerichtete Importclosure ab. Pro Basket werden
+Deklarierte Modelle decken ihre gerichtete Importclosure ab. Teilen sich ein
+Original und seine Übersetzungen einen Basketnamen, wählt der Reader das
+Original, sofern es vom Header abgedeckt ist. Bei kollidierenden Strukturnamen
+bestimmen der Attributtyp, das umgebende Modell und dessen Importe die Auflösung. Der Writer
+weist Werte zurück, deren Wire-Name eine andere Deklaration auswählen würde.
+Pro Basket werden
 generische Domains mit expliziten vollqualifizierten `generic=concrete`-Paaren
 gebunden. Ein Basket beeinflusst die Bindungen des folgenden Baskets nicht.
 

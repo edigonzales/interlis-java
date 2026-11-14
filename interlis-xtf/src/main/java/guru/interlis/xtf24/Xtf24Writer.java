@@ -41,6 +41,7 @@ public final class Xtf24Writer extends TransferWriter {
     private final Xtf24ValueWriter values;
     private final Xtf24Domains domains;
     private final Xtf24IdentityScope identities;
+    private Set<SymbolRef> coveredModels = Set.of();
     private Set<SymbolRef> activeTypes = Set.of();
     private Set<SymbolRef> structureTypes = Set.of();
     private Map<SymbolRef, TypeRef> concreteTypes = Map.of();
@@ -104,15 +105,23 @@ public final class Xtf24Writer extends TransferWriter {
         long remaining = limits.maxObjectCodeUnits() - start.sender().orElse("").length()
                 - start.comment().orElse("").length();
         var declared = start.models().stream().map(ModelDeclaration::model).collect(Collectors.toSet());
+        var canonicalModels = new HashSet<SymbolRef>();
+        var sharedCanonicalModels = new HashSet<SymbolRef>();
+        for (var modelRef : declared) {
+            var canonical = plan.model(modelRef).orElseThrow().name().canonical();
+            if (!canonicalModels.add(canonical)) {
+                sharedCanonicalModels.add(canonical);
+            }
+        }
         for (var declaration : start.models()) {
             if (declaration.modelVersion().isPresent() || declaration.issuer().isPresent()) {
                 throw Xtf24Wire.failure(UNSUPPORTED, "XTF 2.4 has no model version or issuer header field");
             }
             var model = plan.model(declaration.model()).orElseThrow();
             String canonical = names.modelName(model);
-            boolean originalAlsoDeclared = declared.contains(model.name().canonical());
+            boolean sharedCanonical = sharedCanonicalModels.contains(model.name().canonical());
             String name = !model.symbol().equals(model.name().canonical())
-                    && (originalAlsoDeclared || !names.model(canonical).symbol().equals(model.symbol()))
+                    && (sharedCanonical || !names.model(canonical).symbol().equals(model.symbol()))
                     ? model.name().declared().last() : canonical;
             if (name.length() > limits.maxIdentifierCodeUnits()) {
                 throw Xtf24Wire.failure(LIMIT_EXCEEDED, "Header model name is too long");
@@ -126,8 +135,14 @@ public final class Xtf24Writer extends TransferWriter {
                 throw Xtf24Wire.failure(LIMIT_EXCEEDED, "XTF header exceeds its aggregate text limit");
             }
         }
-        structureTypes = names.structureTypes(plan.modelImportClosure(start.models().stream()
-                .map(ModelDeclaration::model).collect(Collectors.toSet())));
+        var decodedModels = names.models(modelNames);
+        for (int index = 0; index < decodedModels.size(); index++) {
+            if (!decodedModels.get(index).symbol().equals(start.models().get(index).model())) {
+                throw Xtf24Wire.failure(UNSUPPORTED, "XTF header model name would select a different translation");
+            }
+        }
+        coveredModels = plan.modelImportClosure(declared);
+        structureTypes = names.structureTypes(coveredModels);
         output.open();
         output.start(ili("transfer"));
         output.start(ili("headersection"));
@@ -157,6 +172,10 @@ public final class Xtf24Writer extends TransferWriter {
             throw Xtf24Wire.failure(UNSUPPORTED, "Basket consistency is outside the XTF 2.4 profile");
         }
         var topic = plan.topic(start.topic()).orElseThrow();
+        var topicName = names.topicName(topic);
+        if (!names.topic(topicName, coveredModels).symbol().equals(start.topic())) {
+            throw Xtf24Wire.failure(UNSUPPORTED, "XTF basket name would select a different translation");
+        }
         boolean stable = topic.oidRules().stream().anyMatch(rule -> rule.basket());
         String bid = start.id().value();
         if (start.stableOid().filter(oid -> !stable || !oid.equals(bid)).isPresent()) {
@@ -166,7 +185,7 @@ public final class Xtf24Writer extends TransferWriter {
         activeTypes = Set.copyOf(topic.objectTypes());
         values.basketConsistency(start.consistency());
         identities.add(bid);
-        output.start(names.topicName(topic));
+        output.start(topicName);
         output.attribute(ili("bid"), bid);
         if (start.consistency() == Consistency.INCOMPLETE) {
             output.attribute(ili("consistency"), "INCOMPLETE");
@@ -220,6 +239,7 @@ public final class Xtf24Writer extends TransferWriter {
     protected void release() {
         identities.clear();
         values.basketConsistency(Consistency.COMPLETE);
+        coveredModels = Set.of();
         activeTypes = Set.of();
         structureTypes = Set.of();
         concreteTypes = Map.of();
