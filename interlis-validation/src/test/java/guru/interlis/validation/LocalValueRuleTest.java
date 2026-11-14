@@ -81,7 +81,7 @@ class LocalValueRuleTest {
             Map<SymbolRef, TransferValue> data = new java.util.HashMap<>(Map.of(bounded, validList, field("copied"), new TransferValue.Text("ok")));
             entry.getKey().ifPresent(value -> data.put(code, value));
             var report = validate(Consistency.INCOMPLETE, Consistency.INCOMPLETE, data);
-            assertEquals(List.of(entry.getValue(), REQUIRED_VALUE_UNDEFINED), codes(report));
+            assertEquals(List.of(entry.getValue()), codes(report));
             assertEquals(ref("Checks", "ShortLabel"), report.examples().getFirst().rule().declaration());
         }
         var space = validate(Consistency.INCOMPLETE, Consistency.INCOMPLETE,
@@ -113,7 +113,7 @@ class LocalValueRuleTest {
                 code, new TransferValue.BooleanValue(true),
                 comment, validList,
                 bounded, new TransferValue.Repeated(CollectionKind.LIST, List.of(wrong, absent))));
-        assertEquals(List.of(TYPE_MISMATCH, TYPE_MISMATCH, TYPE_MISMATCH, STRUCTURE_TYPE_MISMATCH, REQUIRED_VALUE_MISSING), codes(report));
+        assertEquals(List.of(TYPE_MISMATCH, TYPE_MISMATCH, STRUCTURE_TYPE_MISMATCH, REQUIRED_VALUE_MISSING), codes(report));
         assertEquals(List.of(new DataLocation.Slot(bounded), new DataLocation.Index(2), new DataLocation.Slot(note)),
                 report.examples().getLast().data().path());
     }

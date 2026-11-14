@@ -9,6 +9,27 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class DerivedValueTest {
     @Test
+    void leavesUndefinedDerivationsOpenForIncompleteBaskets() {
+        var plan = plan("""
+                CLASS Item =
+                  source: 0..10;
+                  peer: REFERENCE TO (EXTERNAL) Item;
+                  localMirror: MANDATORY 0..10 := source;
+                  deferredMirror: MANDATORY 0..10 := peer->source;
+                END Item;
+                """);
+        var input = basket("basket", """
+                <Item i:tid="a"><peer i:ref="b"/><localMirror>3</localMirror><deferredMirror>3</deferredMirror></Item>
+                <Item i:tid="b"><peer i:ref="a"/></Item>
+                """).replace("i:bid=", "i:consistency=\"INCOMPLETE\" i:bid=");
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", input));
+        assertEquals(0, report.detectedViolations(), report.examples().toString());
+        assertEquals(4, report.coverage().incompleteContext().stream()
+                .filter(count -> count.family() == ValidationCoverage.RuleFamily.VALUE_RANGE)
+                .mapToLong(ValidationCoverage.RuleCount::occurrences).sum());
+    }
+
+    @Test
     void checksSuppliedAndDerivedValuesForDistinctViolations() {
         var plan = plan("""
                 CLASS Item =

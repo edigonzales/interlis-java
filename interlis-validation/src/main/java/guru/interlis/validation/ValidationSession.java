@@ -551,9 +551,13 @@ public final class ValidationSession implements AutoCloseable {
             return Optional.empty();
         }
         boolean undefined = isUndefined(computed, type);
+        if (undefined && partial) {
+            incomplete.merge(key, 1L, Math::addExact);
+            return Optional.empty();
+        }
         if (undefined && rules.required()) {
             // A missing or undefined supplied value already has its own presence finding.
-            if (supplied.filter(value -> !isUndefined(value, type)).isPresent() || supplied.isEmpty() && partial) {
+            if (supplied.filter(value -> !isUndefined(value, type)).isPresent()) {
                 datasetViolation(rules.requiredDeclaration().orElseThrow(), REQUIRED_VALUE_UNDEFINED, location, List.of());
             }
         } else if (supplied.filter(value -> isUndefined(value, type)
