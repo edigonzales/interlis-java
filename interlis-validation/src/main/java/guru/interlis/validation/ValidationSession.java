@@ -278,7 +278,7 @@ public final class ValidationSession implements AutoCloseable {
         checkObjectIdentity(object, objectPlan);
         var budget = new ObjectBudget(cancellation, checkValueBudget(object, cancellation));
         var stack = new ArrayDeque<Iterator<PendingValue>>();
-        stack.push(fields(objectPlan, object.data(), null));
+        stack.push(fields(objectPlan, object.data(), null, List.of()));
         boolean delete = event.operation().orElse(null) == TransferEvent.Operation.DELETE;
         boolean partial = event.consistency() == TransferEvent.Consistency.INCOMPLETE
                 || basket.start().consistency() == TransferEvent.Consistency.INCOMPLETE;
@@ -289,8 +289,8 @@ public final class ValidationSession implements AutoCloseable {
                 if (association != null && association.descriptor().kind() == SymbolKind.ASSOCIATION) {
                     budget.consume();
                     var path = new ValuePath(null, new DataLocation.Slot(entry.getKey()));
-                    checkObjectConstraints(object, association, payload, path, delete, partial, budget);
-                    stack.push(fields(association, payload, path));
+                    checkObjectConstraints(object, association, payload, path, delete, partial, basket, budget);
+                    stack.push(fields(association, payload, path, List.of(object.data())));
                 }
             }
         }
@@ -309,7 +309,7 @@ public final class ValidationSession implements AutoCloseable {
             }
         }
         checkRoles(object, objectPlan, budget);
-        checkObjectConstraints(object, objectPlan, object.data(), null, delete, partial, budget);
+        checkObjectConstraints(object, objectPlan, object.data(), null, delete, partial, basket, budget);
     }
 
     private void checkRoles(TransferObject object, ObjectValidationPlan objectPlan, ObjectBudget budget) {
@@ -330,14 +330,43 @@ public final class ValidationSession implements AutoCloseable {
         }
     }
 
-    private Iterator<PendingValue> fields(ObjectValidationPlan object, TransferValue.Structured value, ValuePath parent) {
+    private Iterator<PendingValue> fields(ObjectValidationPlan object, TransferValue.Structured value,
+                                          ValuePath parent, List<TransferValue.Structured> ancestors) {
         return object.fields().stream().map(field -> new PendingValue(object.descriptor().symbol(), field, 0,
                 value.value(field.slot().symbol()), value,
-                new ValuePath(parent, new DataLocation.Slot(field.slot().symbol())))).iterator();
+                new ValuePath(parent, new DataLocation.Slot(field.slot().symbol())), ancestors)).iterator();
     }
 
     private Optional<Iterator<PendingValue>> check(TransferObject object, PendingValue pending, boolean delete,
                                                    boolean partial, ObjectBudget budget) {
+        var field = pending.field();
+        var rules = field.values().get(pending.depth());
+        var children = checkValue(object, pending, delete, partial, basket, budget);
+        if (pending.depth() != 0 || !field.derived() || delete
+                || plan.profile() == ValidationProfile.DATASET && plan.derivedNeedsDataset(field.slot().symbol().symbol())) {
+            return children;
+        }
+        var frame = new EvaluationFrame(plan, pending.container(), partial, budget::consume,
+                java.util.OptionalLong.empty(), budget.cancellation).withParents(pending.ancestors());
+        var result = DerivedValueResolver.resolve(field.slot().attribute(), frame);
+        var computed = checkDerivation(pending, result, effectiveType(rules, basket), partial,
+                location(object, ValuePath.steps(pending.path())));
+        return pending.value().isPresent() ? children
+                : checkComputed(object, pending, computed, partial, basket, budget);
+    }
+
+    private Optional<Iterator<PendingValue>> checkComputed(TransferObject object, PendingValue pending,
+                                                           Optional<TransferValue> computed, boolean partial,
+                                                           BasketContext context, ObjectBudget budget) {
+        if (computed.isEmpty()) {
+            return Optional.empty();
+        }
+        var value = pending.withValue(computed);
+        return checkValue(object, value, false, partial, context, budget);
+    }
+
+    private Optional<Iterator<PendingValue>> checkValue(TransferObject object, PendingValue pending, boolean delete,
+                                                        boolean partial, BasketContext context, ObjectBudget budget) {
         var field = pending.field();
         var rules = field.values().get(pending.depth());
         var value = pending.value();
@@ -345,33 +374,8 @@ public final class ValidationSession implements AutoCloseable {
         int textLength = rules.type().kind() == TypeKind.TEXT && actual instanceof TransferValue.Text text
                 ? ScalarRules.textLength(text.value()) : -1;
         boolean undefined = actual == TransferValue.Undefined.INSTANCE || textLength == 0;
-        boolean uncertain = value.isEmpty() && (delete || (partial && rules.type().kind() == TypeKind.GEOMETRY));
-        if (pending.depth() == 0 && field.derived()) {
-            var attribute = field.slot().attribute();
-            boolean deferred = plan.profile() == ValidationProfile.DATASET && plan.derivedNeedsDataset(attribute.id());
-            if (!deferred && !delete) {
-                var frame = new EvaluationFrame(plan, pending.container(), partial, budget::consume,
-                        java.util.OptionalLong.empty(), budget.cancellation);
-                var derived = DerivedValueResolver.resolve(attribute, frame);
-                if (derived instanceof EvaluationResult.Known || derived instanceof EvaluationResult.KnownNumber
-                        || derived instanceof EvaluationResult.UndefinedByData) {
-                    if (value.isEmpty() && derived instanceof EvaluationResult.Known known
-                            && known.value() instanceof TransferGeometry geometry && rules.type() instanceof GeometryType) {
-                        geometry(object, pending, rules.type(), geometry, partial, true, budget);
-                    }
-                    if (value.isPresent() && (actual == TransferValue.Undefined.INSTANCE
-                            || ValueFamilies.match(rules.type(), actual) == ValueFamilies.Match.YES)
-                            && !DerivedValueResolver.matches(derived, actual, rules.type())) {
-                        violation(object, pending, attribute, DERIVED_VALUE_MISMATCH, List.of());
-                    }
-                } else if (value.isEmpty()) {
-                    count(missingRuntime, pending, VALUE_RANGE);
-                }
-            }
-            if (value.isEmpty()) {
-                return Optional.empty();
-            }
-        }
+        boolean uncertain = value.isEmpty() && (delete || partial
+                && (field.derived() || rules.type().kind() == TypeKind.GEOMETRY));
         if (rules.required()) {
             count(uncertain ? incomplete : checked, pending, DEFINED_VALUE);
             if (undefined && !uncertain) {
@@ -390,7 +394,7 @@ public final class ValidationSession implements AutoCloseable {
             }
             return Optional.empty();
         }
-        var concreteDomain = rules.genericDomain().map(basket.domains()::get);
+        var concreteDomain = rules.genericDomain().map(context.domains()::get);
         var type = rules.genericDomain().isPresent() ? concreteDomain.flatMap(plan::domainType) : Optional.of(rules.type());
         if (type.isEmpty()) {
             count(missingRuntime, pending, GEOMETRY_VALUES);
@@ -425,7 +429,7 @@ public final class ValidationSession implements AutoCloseable {
             }
         }
         if (actual instanceof TransferGeometry geometry) {
-            geometry(object, pending, effective, geometry, partial, type.isPresent(), budget);
+            geometry(object, pending, effective, geometry, partial, type.isPresent(), context, budget);
             return Optional.empty();
         }
         if (effective instanceof OidType oid && actual instanceof TransferValue.Oid valueOid) {
@@ -461,7 +465,7 @@ public final class ValidationSession implements AutoCloseable {
             return Optional.of(java.util.stream.IntStream.range(0, repeated.values().size()).mapToObj(index ->
                     new PendingValue(pending.owner(), field, pending.depth() + 1,
                             Optional.of(repeated.values().get(index)), pending.container(),
-                            new ValuePath(pending.path(), new DataLocation.Index(index + 1)))).iterator());
+                            new ValuePath(pending.path(), new DataLocation.Index(index + 1)), pending.ancestors())).iterator());
         }
         if (rules.type() instanceof StructureValueType structure && actual instanceof TransferValue.Structured data) {
             count(checked, pending, STRUCTURE);
@@ -469,8 +473,10 @@ public final class ValidationSession implements AutoCloseable {
             if (child == null || !plan.assignable(structure, child)) {
                 violation(object, pending, field.slot().attribute(), STRUCTURE_TYPE_MISMATCH, List.of());
             } else {
-                checkObjectConstraints(object, child, data, pending.path(), false, partial, budget);
-                return Optional.of(fields(child, data, pending.path()));
+                checkObjectConstraints(object, child, data, pending.path(), false, partial, context, budget);
+                var ancestors = new ArrayList<>(pending.ancestors());
+                ancestors.add(pending.container());
+                return Optional.of(fields(child, data, pending.path(), List.copyOf(ancestors)));
             }
         }
         return Optional.empty();
@@ -478,9 +484,9 @@ public final class ValidationSession implements AutoCloseable {
 
     private void checkObjectConstraints(TransferObject root, ObjectValidationPlan objectPlan,
                                         TransferValue.Structured current, ValuePath path,
-                                        boolean incomplete, boolean partial, ObjectBudget budget) {
+                                        boolean incomplete, boolean partial, BasketContext context, ObjectBudget budget) {
         for (var declaration : objectPlan.constraints()) {
-            if (!ruleApplies(plan, declaration, basket.topicScope())) {
+            if (!ruleApplies(plan, declaration, context.topicScope())) {
                 continue;
             }
             if (declaration.definition() instanceof MandatoryConstraint mandatory) {
@@ -517,31 +523,78 @@ public final class ValidationSession implements AutoCloseable {
         recordConstraint(root, owner, slot, declaration, path, result, null);
     }
 
-    void recordDeferredDerived(DatasetRuleContext.Occurrence occurrence, ObjectValidationPlan.FieldRule field,
-                               EvaluationResult result, TypeDescriptor effectiveType,
-                               TransferValue.Structured current, ValuePath path, Runnable visit) {
-        var attribute = field.slot().attribute();
-        var location = occurrence.location(ValuePath.steps(path));
-        var supplied = current.value(field.slot().symbol());
-        var key = new SlotKey(current.type(), field.slot().symbol(), VALUE_RANGE);
-        if (supplied.isEmpty() && result instanceof EvaluationResult.Known known
-                && known.value() instanceof TransferGeometry value && effectiveType instanceof GeometryType type) {
-            var basket = BasketContext.of(occurrence.basket(), plan);
-            checkTopology(type, value, location, attribute, new SlotKey(current.type(), field.slot().symbol(), TOPOLOGY),
-                    occurrence.partial(), id -> effectiveCoordinate(id, basket), visit);
-        }
-        switch (result) {
-            case EvaluationResult.Known _, EvaluationResult.KnownNumber _, EvaluationResult.UndefinedByData _ -> {
-                checked.merge(key, 1L, Math::addExact);
-                if (supplied.isPresent() && !DerivedValueResolver.matches(result, supplied.orElseThrow(), effectiveType)) {
-                    datasetViolation(attribute, DERIVED_VALUE_MISMATCH, location, List.of());
-                } else if (result instanceof EvaluationResult.UndefinedByData && field.values().getFirst().required()) {
-                    datasetViolation(attribute, REQUIRED_VALUE_UNDEFINED, location, List.of());
-                }
+    private TypeDescriptor effectiveType(ObjectValidationPlan.ValueRules rules, BasketContext context) {
+        return rules.genericDomain().map(context.domains()::get).flatMap(plan::domainType).orElse(rules.type());
+    }
+
+    private Optional<TransferValue> checkDerivation(PendingValue pending, EvaluationResult result,
+                                                    TypeDescriptor type, boolean partial, DataLocation location) {
+        var slot = pending.field().slot();
+        var rules = pending.field().values().getFirst();
+        var supplied = pending.value();
+        var key = new SlotKey(pending.owner(), slot.symbol(), VALUE_RANGE);
+        var computed = switch (result) {
+            case EvaluationResult.Known known -> known.value();
+            case EvaluationResult.KnownNumber number -> number.value().asValue();
+            case EvaluationResult.UndefinedByData ignored -> TransferValue.Undefined.INSTANCE;
+            case EvaluationResult.BlockedByViolation ignored -> null;
+            case EvaluationResult.Unsupported _, EvaluationResult.KnownObjects _ -> {
+                unsupported.merge(key, 1L, Math::addExact);
+                yield null;
             }
-            case EvaluationResult.Unsupported _ -> unsupported.merge(key, 1L, Math::addExact);
-            default -> missingRuntime.merge(key, 1L, Math::addExact);
+            case EvaluationResult.MissingContext ignored -> {
+                missingRuntime.merge(key, 1L, Math::addExact);
+                yield null;
+            }
+        };
+        if (computed == null) {
+            return Optional.empty();
         }
+        boolean undefined = isUndefined(computed, type);
+        if (undefined && rules.required()) {
+            // A missing or undefined supplied value already has its own presence finding.
+            if (supplied.filter(value -> !isUndefined(value, type)).isPresent() || supplied.isEmpty() && partial) {
+                datasetViolation(rules.requiredDeclaration().orElseThrow(), REQUIRED_VALUE_UNDEFINED, location, List.of());
+            }
+        } else if (supplied.filter(value -> isUndefined(value, type)
+                        ? !rules.required() && !undefined
+                        : ValueFamilies.match(type, value) == ValueFamilies.Match.YES
+                                && (undefined || !DerivedValueResolver.matches(result, value, type))).isPresent()) {
+            datasetViolation(slot.attribute(), DERIVED_VALUE_MISMATCH, location, List.of());
+        }
+        return undefined ? Optional.empty() : Optional.of(computed);
+    }
+
+    private static boolean isUndefined(TransferValue value, TypeDescriptor type) {
+        return value == TransferValue.Undefined.INSTANCE
+                || type.kind() == TypeKind.TEXT && value instanceof TransferValue.Text text && text.value().isEmpty();
+    }
+
+    Optional<TransferValue> checkDeferredDerivation(DatasetRuleContext.Occurrence occurrence,
+                                                    ObjectValidationPlan.FieldRule field, EvaluationResult result,
+                                                    BasketContext context, TransferValue.Structured current,
+                                                    ValuePath path, EvaluationFrame frame) {
+        var pending = new PendingValue(current.type(), field, 0, current.value(field.slot().symbol()), current, path, frame.parents());
+        var computed = checkDerivation(pending, result, effectiveType(field.values().getFirst(), context),
+                occurrence.partial(), occurrence.location(ValuePath.steps(path)));
+        if (pending.value().isPresent() || computed.isEmpty()) {
+            return Optional.empty();
+        }
+        var budget = new ObjectBudget(frame.cancellation(), 0, frame.visit());
+        var stack = new ArrayDeque<Iterator<PendingValue>>();
+        checkComputed(occurrence.object(), pending, computed, occurrence.partial(), context, budget)
+                .ifPresent(stack::push);
+        while (!stack.isEmpty()) {
+            var iterator = stack.peek();
+            if (iterator.hasNext()) {
+                budget.consume();
+                checkValue(occurrence.object(), iterator.next(), false, occurrence.partial(), context, budget)
+                        .ifPresent(stack::push);
+            } else {
+                stack.pop();
+            }
+        }
+        return computed;
     }
 
     void recordUnavailableView(ViewPlan view) {
@@ -610,13 +663,8 @@ public final class ValidationSession implements AutoCloseable {
         }).toList();
     }
 
-    private Optional<TypeDescriptor> concreteDomain(SymbolId generic) {
-        var concrete = basket.domains().get(generic);
-        return concrete == null ? Optional.empty() : plan.domainType(concrete);
-    }
-
     private void geometry(TransferObject object, PendingValue pending, TypeDescriptor type,
-                          TransferGeometry value, boolean partial, boolean concrete, ObjectBudget budget) {
+                          TransferGeometry value, boolean partial, boolean concrete, BasketContext context, ObjectBudget budget) {
         final CoordinateType vertices;
         final List<String> forms;
         if (type instanceof CoordinateType coordinate) {
@@ -633,7 +681,7 @@ public final class ValidationSession implements AutoCloseable {
                         List.of(geometry.geometryKind().name(), value.getClass().getSimpleName()));
                 return;
             }
-            vertices = geometry.vertexDomain().map(this::effectiveCoordinate).orElse(null);
+            vertices = geometry.vertexDomain().map(id -> effectiveCoordinate(id, context)).orElse(null);
             forms = GeometryRules.forms(plan, geometry);
         } else {
             return;
@@ -658,7 +706,7 @@ public final class ValidationSession implements AutoCloseable {
             }
             checkTopology(geometry, value, location(object, ValuePath.steps(pending.path())),
                     pending.field().slot().attribute(), new SlotKey(pending.owner(), pending.field().slot().symbol(), TOPOLOGY),
-                    partial, this::effectiveCoordinate, budget::consume);
+                    partial, id -> effectiveCoordinate(id, context), budget::consume);
         }
     }
 
@@ -692,10 +740,6 @@ public final class ValidationSession implements AutoCloseable {
             case MISSING_PARAMETERS -> (partial ? incomplete : missingRuntime).merge(key, 1L, Math::addExact);
             case UNSUPPORTED, NUMERICALLY_UNDETERMINED -> unsupported.merge(key, 1L, Math::addExact);
         }
-    }
-
-    private CoordinateType effectiveCoordinate(SymbolId id) {
-        return effectiveCoordinate(id, basket);
     }
 
     private CoordinateType effectiveCoordinate(SymbolId id, BasketContext context) {
@@ -897,20 +941,32 @@ public final class ValidationSession implements AutoCloseable {
     }
 
     private record PendingValue(SymbolRef owner, ObjectValidationPlan.FieldRule field, int depth,
-                                Optional<TransferValue> value, TransferValue.Structured container, ValuePath path) { }
+                                Optional<TransferValue> value, TransferValue.Structured container, ValuePath path,
+                                List<TransferValue.Structured> ancestors) {
+        PendingValue withValue(Optional<TransferValue> replacement) {
+            return new PendingValue(owner, field, depth, replacement, container, path, ancestors);
+        }
+    }
 
     private final class ObjectBudget {
         private final CancellationToken cancellation;
         private long visited;
+        private final Runnable datasetVisit;
 
         private ObjectBudget(CancellationToken cancellation, long visited) {
+            this(cancellation, visited, () -> {});
+        }
+
+        private ObjectBudget(CancellationToken cancellation, long visited, Runnable datasetVisit) {
             this.cancellation = cancellation;
             this.visited = visited;
+            this.datasetVisit = datasetVisit;
         }
 
         void consume() {
             cancellation.throwIfCancellationRequested();
             visited = visit(visited);
+            datasetVisit.run();
         }
     }
 

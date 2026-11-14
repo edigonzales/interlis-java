@@ -220,6 +220,15 @@ nichtgeometrische Standardfunktionen und explizite Hostbindungen.
 `SET` kann kontextgebundenes und explizites `ALL` zählen.
 Prozentbedingungen verwenden einen exakten Vergleich.
 
+Bei vollständigen Transfers muss ein obligatorisches, nichttransientes
+Attribut auch dann geliefert werden, wenn es berechenbar ist. Der Validator
+prüft gelieferte Werte und vergleicht sie mit der verfügbaren Ableitung.
+Ein fehlender Lieferwert wird im Transferobjekt nicht ergänzt. Wenn die
+Ableitung einen Wert liefert, greifen dafür die fachlichen Wertregeln,
+einschliesslich bei nachgelagerter Referenzauflösung. Ein fachlich
+undefiniertes obligatorisches Ergebnis wird als Pflichtverletzung erfasst.
+Fehlender Laufzeitkontext bleibt als Prüflücke sichtbar.
+
 Virtuelle Sichten verarbeiten Projektion, Selektion, Union, Join,
 Gruppierung und nichtgeometrische Strukturinspektion. Gruppengrössen
 sind über `elementCount(AGGREGATES)` verfügbar. Materialisierte Sichten
