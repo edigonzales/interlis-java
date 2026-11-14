@@ -25,7 +25,7 @@ public final class LocalValidationProbeEntryPoint {
     @JSExport
     public static String validateExample(String modelText, String amountLexeme, String label, boolean includeLabel) {
         var source = new SourceText(new SourceId("memory:/Probe.ili"), new SourceRevision(1), modelText);
-        var request = new CompilationRequest(List.of(new ModelSelector.ByName("Probe", Optional.empty(), Optional.empty())),
+        var request = new CompilationRequest(List.of(new ModelSelector.BySource(source.id())),
                 SourceSet.of(Map.of(source.id(), source)), CompilerOptions.defaults());
         var token = CancellationToken.none();
         var compiled = CompilerEngines.create().compile(request, token);

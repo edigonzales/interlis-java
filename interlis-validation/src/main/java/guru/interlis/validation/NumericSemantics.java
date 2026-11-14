@@ -19,8 +19,6 @@ final class NumericSemantics {
     record Number(BigDecimal decimal) {
         Number {
             ScalarRules.requireNumericBudget(decimal);
-            decimal = decimal.stripTrailingZeros();
-            ScalarRules.requireNumericBudget(decimal);
         }
 
         TransferValue.NumberValue asValue() {

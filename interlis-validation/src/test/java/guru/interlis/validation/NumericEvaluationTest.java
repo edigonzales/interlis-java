@@ -76,7 +76,8 @@ class NumericEvaluationTest {
                 number("9007199254740993")));
         assertFalse(NumericSemantics.compare(BinaryOperator.EQ, NumericSemantics.constant("PI"),
                 number("3.141592653589793")));
-        assertEquals(number("0"), NumericSemantics.negate(number("-0.000")));
+        assertTrue(NumericSemantics.compare(BinaryOperator.EQ, number("0"),
+                NumericSemantics.negate(number("-0.000"))));
         assertTrue(NumericSemantics.divide(number("1"), number("-0")).isEmpty());
         assertThrows(ValidationLimitException.class, () -> NumericSemantics.multiply(number("1e10000"), number("1e10000")));
     }
