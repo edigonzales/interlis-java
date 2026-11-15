@@ -52,6 +52,24 @@ liefert für diese drei Einzelrechnungen falsch, wahr und wahr. Die
 Attributrundung folgt weiterhin dem deklarierten Raster nach §2.8.
 [INTERLIS-Referenzhandbuch][norm24]
 
+## Gemeinsame Segmentendpunkte bei Linienzügen
+
+Das Referenzhandbuch definiert einfache Linienzüge über die Injektivität
+ihrer Abbildung. Für `WITHOUT OVERLAPS` folgt der Validator in INTERLIS 2.3
+und 2.4 der Kompatibilitätsregel der swisstopo-Suite und von ilivalidator
+1.15.1. Beide akzeptieren `RPO.T02c`, dessen Kreuzungspunkt in beiden
+Durchgängen als Segmentendpunkt vorliegt.
+[INTERLIS 2.3, § 2.8.12](https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf#page=48) ·
+[INTERLIS 2.4, § 3.8.12](https://geostandards-ch.github.io/doc_refhb24/#_geometrie_des_linienzugs) ·
+[Originalfall](https://github.com/geostandards-ch/suite-interlis/blob/f30711184d2374feacb81c5742382d35597164ca/doc/de/attribute.adoc#L358)
+
+Die JTS-Engine wendet die Regel in der XY-Projektion eines einzelnen
+Linienzugs an. Ein Kontakt zählt nur dann als gemeinsamer Stützpunkt,
+wenn er an einem vorhandenen Endpunkt beider Segmente liegt. Für
+Schnitte im Segmentinneren und Überlagerungen gelten die Konfliktprüfung
+und die definierte Bogenüberlappungstoleranz. Flächenränder verwenden
+die Flächentopologie.
+
 ## Kontinuität von Flächenrändern
 
 INTERLIS 2.3 §2.8.12.1 und §3.3.11.14 sowie INTERLIS 2.4

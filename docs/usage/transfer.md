@@ -191,6 +191,14 @@ Prozent-Plausibilität und referenzielle Zielprüfung benötigen das
 Datensatzprofil. Mit dem optionalen Modul `interlis-validation-jts` und
 einer gebundenen Geometrieengine prüft `LOCAL_ONLY` auch die Topologie
 einzelner Geometriewerte, einschliesslich Standardkreisbögen mit Radius.
+Bei `WITHOUT OVERLAPS` erlaubt die JTS-Engine für INTERLIS 2.3 und 2.4
+Kontakte an gemeinsamen Segmentendpunkten eines Linienzugs. Der Punkt
+muss in beiden Durchgängen als Stützpunkt vorliegen. Für Schnitte im
+Segmentinneren gilt die bestehende Prüfung einschliesslich der Toleranz
+für bestimmte Bogenüberschneidungen. Flächenränder haben eigene
+Topologieregeln. Die [Normauslegung](../contracts/norm-decisions.md#gemeinsame-segmentendpunkte-bei-linienzügen)
+dokumentiert die Kompatibilitätsentscheidung.
+
 Ohne Engine zeigt die Coverage die ausstehende Topologieprüfung. Externe
 Funktionen ohne Hostbindung und `UNIQUE` mit lokalem `WHERE` werden
 ebenfalls als ungeprüft ausgewiesen.

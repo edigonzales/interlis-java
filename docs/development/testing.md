@@ -97,16 +97,20 @@ dokumentiert den erwarteten Befund jedes betroffenen Originaltests.
 Ein neuer Fehler, eine technische Störung, ein abweichender Befund oder
 ein inzwischen bestandener Baselinefall beendet den Runner mit Fehler.
 
-Am Upstream-Stand `f307111` bestehen 211 von 223 Originaltests.
+Am Upstream-Stand `f307111` bestehen 212 von 223 Originaltests.
 `RKo.T09a` prüft UNIQUE über Rollenpfade eingebetteter Beziehungen.
 `RSU.T05a/b` prüfen Aussenrand und berührende Enklave in einem Randzug
 (INTERLIS 2.3 §2.8.13.1, Figur 22).
+`RPO.T02a/b` prüfen unzulässige Überlagerungen und Schnitte im
+Segmentinneren. Bei `RPO.T02c` ist die Kreuzung zulässig, weil beide
+Durchgänge dort einen Segmentendpunkt haben. Die
+[Normauslegung](../contracts/norm-decisions.md#gemeinsame-segmentendpunkte-bei-linienzügen)
+dokumentiert diese Kompatibilitätsregel.
 
 Bei zehn Fällen fehlt die Laufzeitbindung der Legacy-Funktionen
 `INTERLIS_ext.areAreas2/3` mit TEXT-Pfaden. Bei `RSU.T16a` akzeptieren
 der native Validator und ilivalidator 1.15.1 den gelieferten Kurvenrand,
-für den das Original einen Fehler erwartet. `RPO.T02c` kreuzt seinen
-eigenen Weg in einem wiederholten Stützpunkt (§2.8.12).
+für den das Original einen Fehler erwartet.
 Die [Abweichungen im Detail](swisstopo-suite-deviations.md)
 beschreiben die Originalerwartungen und die beobachteten Befunde.
 
