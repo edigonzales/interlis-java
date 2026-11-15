@@ -13,6 +13,7 @@ import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.MandatoryConstraint;
 import guru.interlis.model.GeometryType;
 import guru.interlis.model.Modifier;
+import guru.interlis.model.OidKind;
 import guru.interlis.model.OidRule;
 import guru.interlis.model.RoleSymbol;
 import guru.interlis.model.TopicSymbol;
@@ -30,6 +31,8 @@ import guru.interlis.model.SymbolRef;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRange;
 import guru.interlis.transfer.TransferEvent;
+import guru.interlis.transfer.TransferIdentity.IdOrigin;
+import guru.interlis.transfer.TransferIdentity.TransferId;
 import guru.interlis.transfer.TransferObject;
 import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TopicDescriptor;
@@ -760,11 +763,11 @@ public final class ValidationSession implements AutoCloseable {
         var event = basket.start();
         var data = new DataLocation(source, event.id(), Optional.empty(), Optional.empty(), Optional.empty(), List.of());
         var checkedDomains = new HashSet<SymbolId>();
+        var bid = event.id().origin() == IdOrigin.SOURCE ? Optional.of(event.id().value()) : Optional.<String>empty();
         for (var topic : basket.topics()) {
             for (var rule : topic.oidRules()) {
-                if (rule.basket() && rule.domain().filter(checkedDomains::add).isPresent()
-                        && (event.stableOid().isPresent() || requiresStableOid(topic.model()))) {
-                    identity(rule, topic.symbol(), event.stableOid(), data);
+                if (rule.basket() && rule.domain().filter(checkedDomains::add).isPresent()) {
+                    identity(rule, topic.symbol(), event.stableOid(), bid, requiresStableOid(topic.model()), data);
                 }
             }
         }
@@ -780,10 +783,10 @@ public final class ValidationSession implements AutoCloseable {
         var id = object.identity();
         if (rule.isPresent() && rule.orElseThrow().domain().isPresent()) {
             var data = location(object, List.of());
-            if (id.oid().isPresent() || requiresStableOid(descriptor.model())) {
-                identity(rule.orElseThrow(), object.type(), id.oid().map(oid -> oid.value()), data);
-            }
-            if (id.tid().isEmpty() && (id.oid().isPresent() || !requiresStableOid(descriptor.model()))) {
+            boolean stableRequired = requiresStableOid(descriptor.model());
+            var tid = id.tid().filter(value -> value.origin() == IdOrigin.SOURCE).map(TransferId::value);
+            identity(rule.orElseThrow(), object.type(), id.oid().map(oid -> oid.value()), tid, stableRequired, data);
+            if (id.tid().isEmpty() && (id.oid().isPresent() || !stableRequired)) {
                 diagnostic(REQUIRED_TID_MISSING, data, ruleLocation(object.type(), rule.orElseThrow().origin()), List.of());
             }
         } else if (rule.isEmpty() && descriptor.modifiers().contains(Modifier.OID) && id.tid().isEmpty()) {
@@ -796,18 +799,26 @@ public final class ValidationSession implements AutoCloseable {
     private boolean requiresStableOid(SymbolRef model) {
         return basket.start().kind() != TransferEvent.BasketKind.FULL
                 || plan.transferPlan().model(model).orElseThrow().languageVersion()
-                        != guru.interlis.model.LanguageVersion.ILI23;
+                        != LanguageVersion.ILI23;
     }
 
-    private void identity(OidRule rule, SymbolRef owner, Optional<String> value, DataLocation data) {
+    private void identity(OidRule rule, SymbolRef owner, Optional<String> stableOid,
+                          Optional<String> transferId, boolean stableRequired, DataLocation data) {
         var domain = plan.ref(rule.domain().orElseThrow());
+        var type = plan.domainType(domain.symbol()).orElse(null);
+        boolean local = stableOid.isEmpty() && !stableRequired;
+        if (local && (transferId.isEmpty() || !(type instanceof OidType oid && oid.oidKind() == OidKind.UUID))) {
+            return;
+        }
+        // A source ID can obey the model's UUID domain even when scoped to one transfer.
+        var value = local ? transferId : stableOid;
         var key = new SlotKey(owner, domain, IDENTITY);
         var location = ruleLocation(domain, rule.origin());
         if (value.isEmpty()) {
             checked.merge(key, 1L, Math::addExact);
             diagnostic(REQUIRED_OID_MISSING, data, location, List.of());
-        } else if (plan.domainType(domain.symbol()).orElse(null) instanceof OidType oid
-                && OidRules.check(plan, oid, value.orElseThrow(),
+        } else if (type instanceof OidType oid
+                && OidRules.check(plan, oid, value.orElseThrow(), local,
                     (code, arguments) -> diagnostic(code, data, location, arguments))) {
             checked.merge(key, 1L, Math::addExact);
         } else {
