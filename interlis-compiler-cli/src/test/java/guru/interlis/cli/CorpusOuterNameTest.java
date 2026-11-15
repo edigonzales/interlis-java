@@ -23,7 +23,7 @@ class CorpusOuterNameTest {
     @Test void originalMetadataRejectsOuterNameAndRenamedClassInheritsMembers() throws Exception {
         String model = "SO_AGI_Metadata_20230304";
         var original = reject(model, "FileFormat", 2442, 2544, 1135, 1145);
-        var schema = compileControl(model, "metadata", original);
+        var schema = compileControl(model, "metadata", original.analysis());
         var type = classSymbol(schema, model + ".FileFormats.PublishedFileFormat");
         var base = find(schema, model + ".FileFormat");
         assertInstanceOf(StructureSymbol.class, schema.semanticGraph().symbol(base).orElseThrow());
@@ -31,13 +31,18 @@ class CorpusOuterNameTest {
         assertMembers(schema, model + ".FileFormats.PublishedFileFormat", List.of("name", "abbreviation", "mimeType", "extension"));
     }
 
-    @Test void originalApplicantRejectsOuterNameAndRenamedClassKeepsMembers() throws Exception {
+    @Test void originalApplicantAcceptsNameOfItsTopicAndKeepsMembers() throws Exception {
         String model = "SO_AWJF_Gesuchsteller_20210202";
-        var original = reject(model, "Gesuchsteller", 734, 1238, 635, 648);
-        var schema = compileControl(model, "applicant", original);
-        String name = model + ".Gesuchsteller.Applicant";
+        var text = Files.readString(DATA.resolve("compiler/name-resolution/" + model + ".ili"));
+        var compiled = assertInstanceOf(CompilationOutcome.Succeeded.class,
+                CompilerEngines.create().compile(request(model, text, 1), CancellationToken.none()));
+        assertTrue(compiled.analysis().diagnostics().isEmpty());
+        var schema = compiled.schema();
+        String name = model + ".Gesuchsteller.Gesuchsteller";
+        var members = List.of("Gesuchsteller", "Forstrevier", "Forstkreis", "Abstufung_50_100", "Gesuchsnummer");
         assertEquals(Optional.empty(), classSymbol(schema, name).baseType());
-        assertMembers(schema, name, List.of("Gesuchsteller", "Forstrevier", "Forstkreis", "Abstufung_50_100", "Gesuchsnummer"));
+        assertMembers(schema, name, members);
+        assertMembers(compileControl(model, "applicant", compiled.analysis()), model + ".Gesuchsteller.Applicant", members);
     }
 
     private CompilationOutcome.Rejected reject(String model, String name,
@@ -88,13 +93,13 @@ class CorpusOuterNameTest {
         return rejected;
     }
 
-    private static CompiledSchema compileControl(String model, String fixture, CompilationOutcome.Rejected original)
+    private static CompiledSchema compileControl(String model, String fixture, AnalysisSnapshot original)
             throws IOException {
         String text = Files.readString(DATA.resolve("compiler/name-resolution/" + fixture + "-outer-name-control-2.3.ili"));
         var engine = CompilerEngines.create();
         var request = request(model, text, 2);
         var fresh = assertInstanceOf(CompilationOutcome.Succeeded.class, engine.compile(request, CancellationToken.none()));
-        var reuse = new AnalysisReuse(Optional.of(original.analysis()), original.analysis().syntaxSnapshots());
+        var reuse = new AnalysisReuse(Optional.of(original), original.syntaxSnapshots());
         var reused = assertInstanceOf(CompilationOutcome.Succeeded.class, engine.compile(request, reuse, CancellationToken.none()));
         assertEquals(fresh.analysis().diagnostics(), reused.analysis().diagnostics());
         return reused.schema();

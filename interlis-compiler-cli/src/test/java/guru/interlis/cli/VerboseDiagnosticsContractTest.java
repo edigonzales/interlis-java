@@ -38,7 +38,7 @@ class VerboseDiagnosticsContractTest {
                 + body + footer + " " + RUN_TIME + System.lineSeparator();
     }
     @Test void allDiagnosticCommandsDefaultToHeaderAndContextRestoresDetails() throws Exception {
-        Files.writeString(directory.resolve("conflict.ili"), "INTERLIS 2.4;\nMODEL F AT \"x\" VERSION \"1\" =\nTOPIC Office=\nCLASS Office=END Office;END Office;END F.");
+        Files.writeString(directory.resolve("conflict.ili"), "INTERLIS 2.4;\nMODEL F AT \"x\" VERSION \"1\" =\nDOMAIN Office=TEXT*20;\nTOPIC Contacts=\nCLASS Office=END Office;END Contacts;END F.");
         Files.writeString(directory.resolve("syntax.ili"), "INTERLIS 2.4;\nMODEL Syntax AT \"x\" VERSION \"1\" = TOPIC");
         for (String command : List.of("check", "compile", "analyze", "diagram", "format")) {
             String file = command.equals("format") ? "syntax.ili" : "conflict.ili";

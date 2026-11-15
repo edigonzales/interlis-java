@@ -53,27 +53,29 @@ class DiagnosticPresentationContractTest {
         assertTrue(run("check", "bad.ili").err.contains("cannot be resolved at this location"));
     }
 
-    @Test void unchangedOfficeOriginalIsRejectedAndSeparatePositiveControlPasses() throws Exception {
+    @Test void unchangedOfficeOriginalPassesWithTheSameNameAsItsTopic() throws Exception {
         var original = Path.of(System.getProperty("repo.root"), "testdata/cli-modernization/original/SO_AGI_DataCatalog_Base_20260529.ili");
         var bytes = Files.readAllBytes(original);
         assertEquals("fbb1bccc0e84795284f9fb1a3c0be9e6db516c3c4b8ae43ad2f856cf70948431", HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)));
         var en = run("check", "--diagnostic-context", original.toString()); var de = run("check", "--diagnostic-context", "--diagnostic-language", "de", original.toString());
-        assertEquals(1, en.result.exitCode()); assertEquals(en.result.diagnostics(), de.result.diagnostics());
-        assertTrue(en.err.contains("conflicts with a name in the enclosing namespace"), en.err);
-        assertTrue(de.err.contains("kollidiert")); assertTrue(de.err.contains("Hinweis:"));
-        assertTrue(en.err.contains(":272:9:"), en.err); assertTrue(en.err.contains(":279:5:"), en.err);
-        assertFalse(de.err.contains("SCOPE_")); assertFalse(en.err.contains("diagnostic."));
-        Files.writeString(directory.resolve("OfficeControl.ili"), "INTERLIS 2.4; MODEL Control AT \"x\" VERSION \"1\" = TOPIC Office = CLASS Contact = END Contact; END Office; END Control.");
-        assertEquals(0, run("check", "OfficeControl.ili").result.exitCode());
+        assertEquals(0, en.result.exitCode(), en.err);
+        assertEquals(0, de.result.exitCode(), de.err);
+        assertTrue(en.result.diagnostics().isEmpty());
+        assertTrue(de.result.diagnostics().isEmpty());
+        assertTrue(en.err.isEmpty(), en.err);
+        assertTrue(de.err.isEmpty(), de.err);
         assertArrayEquals(bytes, Files.readAllBytes(original));
     }
 
     @Test void jsonLanguageChangesOnlyPresentationAndIncludesActualRelatedLocations() throws Exception {
-        Files.writeString(directory.resolve("conflict.ili"), "!! 🦊\r\nINTERLIS 2.4;\r\nMODEL F AT \"x\" VERSION \"1\" = TOPIC Office =\r\nCLASS Office=END Office;END Office;END F.");
+        Files.writeString(directory.resolve("conflict.ili"), "!! 🦊\r\nINTERLIS 2.4;\r\nMODEL F AT \"x\" VERSION \"1\" = DOMAIN Office = TEXT*20; TOPIC Contacts =\r\nCLASS Office=END Office;END Contacts;END F.");
         var en = run("check", "--json", "conflict.ili"); var de = run("check", "--json", "--diagnostic-language", "de", "conflict.ili");
+        assertEquals(1, en.result.exitCode());
+        assertEquals(1, de.result.exitCode());
         assertTrue(en.err.isEmpty()); assertTrue(de.err.isEmpty());
         var a = JsonParser.parseString(en.out).getAsJsonObject(); var b = JsonParser.parseString(de.out).getAsJsonObject();
         var da = a.getAsJsonArray("diagnostics").get(0).getAsJsonObject(); var db = b.getAsJsonArray("diagnostics").get(0).getAsJsonObject();
+        assertEquals("ILI-SEM-0010", da.get("code").getAsString());
         assertNotEquals(da.get("message"), db.get("message"));
         assertEquals(1, da.getAsJsonArray("relatedLocations").size());
         stripPresentation(a); stripPresentation(b); assertEquals(a, b);
