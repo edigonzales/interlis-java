@@ -118,8 +118,6 @@ final class ScalarRules {
         var maximum = range.maximum().map(DecimalLiteral::exactValue);
         minimum.ifPresent(ScalarRules::requireNumericBudget);
         maximum.ifPresent(ScalarRules::requireNumericBudget);
-        // INTERLIS 2.3 §3.3.11.4 and 2.4 §4.3.11.4 permit higher transfer
-        // precision as long as the exact value stays within its range.
         if (minimum.filter(bound -> actual.compareTo(bound) < 0).isPresent()
                 || maximum.filter(bound -> actual.compareTo(bound) > 0).isPresent()) {
             report.accept(VALUE_OUT_OF_RANGE, List.of(example(actual), minimum.map(ScalarRules::example).orElse("*"),

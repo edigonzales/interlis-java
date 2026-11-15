@@ -90,9 +90,9 @@ public final class DatasetValidationSession implements AutoCloseable {
                 if (event instanceof TransferEvent.StartTransfer) {
                     inputState.namespaces = Map.copyOf(reader.stableIdentityNamespaces());
                 }
-                boolean selected = accept(inputOrdinal, input, inputState, event, cancellation);
-                if (checkLocal && selected) {
-                    local.accept(event, cancellation);
+                var selected = accept(inputOrdinal, input, inputState, event, cancellation);
+                if (checkLocal && selected.isPresent()) {
+                    local.acceptPrepared(selected.orElseThrow(), cancellation);
                 }
             }
             if (checkLocal) {
@@ -108,7 +108,7 @@ public final class DatasetValidationSession implements AutoCloseable {
         }
     }
 
-    private boolean accept(long input, InputDescriptor descriptor, InputState context, TransferEvent event,
+    private Optional<TransferEvent> accept(long input, InputDescriptor descriptor, InputState context, TransferEvent event,
                            CancellationToken cancellation) {
         return switch (event) {
             case TransferEvent.StartTransfer start -> {
@@ -122,7 +122,7 @@ public final class DatasetValidationSession implements AutoCloseable {
                     }
                 }
                 storage.table(StorageArea.METADATA).put(metadataKey((byte) 2, input), codec.encodeInput(descriptor, start, context.namespaces));
-                yield true;
+                yield Optional.of(event);
             }
             case TransferEvent.StartBasket start -> {
                 requireTopic(start.topic());
@@ -143,11 +143,12 @@ public final class DatasetValidationSession implements AutoCloseable {
                 }
                 completeDelivery &= start.consistency() == TransferEvent.Consistency.COMPLETE;
                 context.basket = start;
+                context.validationBasket = ValidationSession.BasketContext.of(start, plan);
                 context.basketOrdinal = ++baskets;
                 var metadata = storage.table(StorageArea.METADATA);
                 var encoded = codec.encodeBasket(input, start);
                 metadata.put(metadataKey((byte) 3, context.basketOrdinal), encoded);
-                yield true;
+                yield Optional.of(event);
             }
             case TransferEvent.ObjectEvent occurrence -> {
                 if (occurrence.operation().isPresent()) {
@@ -164,7 +165,8 @@ public final class DatasetValidationSession implements AutoCloseable {
                     throw new ValidationLimitException("Dataset object budget exceeded");
                 }
                 var handle = new ObjectHandle(++objects);
-                objectStore.add(handle, new BasketHandle(input, context.basketOrdinal), occurrence);
+                var prepared = NumericRounding.prepare(occurrence, plan, context.validationBasket, options.localOptions(), cancellation);
+                objectStore.add(handle, new BasketHandle(input, context.basketOrdinal), prepared);
                 object.identity().tid().ifPresent(tid -> identities.addTemporary(input, tid.value(), handle));
                 object.identity().oid().ifPresent(oid -> {
                     var key = StableIdentity.bind(context.namespaces, oid.value());
@@ -174,15 +176,17 @@ public final class DatasetValidationSession implements AutoCloseable {
                     completeDelivery = false;
                     storage.table(StorageArea.TEMPORARY).put(metadataKey((byte) 9, context.basketOrdinal), new byte[0]);
                 }
-                yield plan.subjects().selects(descriptor.role(), context.basket);
+                yield plan.subjects().selects(descriptor.role(), context.basket)
+                        ? Optional.of(prepared) : Optional.empty();
             }
             case TransferEvent.EndBasket ignored -> {
                 context.basket = null;
-                yield true;
+                context.validationBasket = null;
+                yield Optional.of(event);
             }
             case TransferEvent.EndTransfer ignored -> {
                 context.ended = true;
-                yield true;
+                yield Optional.of(event);
             }
         };
     }
@@ -343,6 +347,7 @@ public final class DatasetValidationSession implements AutoCloseable {
 
     private static final class InputState {
         private TransferEvent.StartBasket basket;
+        private ValidationSession.BasketContext validationBasket;
         private long basketOrdinal;
         private boolean ended;
         private Map<String, guru.interlis.model.QualifiedName> namespaces = Map.of();

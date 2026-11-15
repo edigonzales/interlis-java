@@ -97,7 +97,7 @@ dokumentiert den erwarteten Befund jedes betroffenen Originaltests.
 Ein neuer Fehler, eine technische Störung, ein abweichender Befund oder
 ein inzwischen bestandener Baselinefall beendet den Runner mit Fehler.
 
-Am Upstream-Stand `f307111` bestehen 210 von 223 Originaltests.
+Am Upstream-Stand `f307111` bestehen 211 von 223 Originaltests.
 `RKo.T09a` prüft UNIQUE über Rollenpfade eingebetteter Beziehungen.
 `RSU.T05a/b` prüfen Aussenrand und berührende Enklave in einem Randzug
 (INTERLIS 2.3 §2.8.13.1, Figur 22).
@@ -107,9 +107,9 @@ Bei zehn Fällen fehlt die Laufzeitbindung der Legacy-Funktionen
 der native Validator und ilivalidator 1.15.1 den gelieferten Kurvenrand,
 für den das Original einen Fehler erwartet. `RPO.T02c` kreuzt seinen
 eigenen Weg in einem wiederholten Stützpunkt (§2.8.12).
-`RAt.T09e` überschreitet die deklarierte Obergrenze vor dem Runden
-(§3.3.11.4). Die [Abweichungen im Detail](swisstopo-suite-deviations.md)
+Die [Abweichungen im Detail](swisstopo-suite-deviations.md)
 beschreiben die Originalerwartungen und die beobachteten Befunde.
 
-`RAt.T11a/b` prüfen, dass der Validator ungültige BID und TID bei einem
+`RAt.T09e/g` prüfen die numerische Bereichsprüfung nach Rundung auf
+die Modellpräzision. `RAt.T11a/b` prüfen, dass der Validator ungültige BID und TID bei einem
 wirksamen `UUIDOID`-Wertebereich auch in XTF 2.3 FULL ohne `OIDSPACES` meldet.

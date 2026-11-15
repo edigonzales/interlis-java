@@ -97,7 +97,7 @@ class ScalarRuleTest {
                 DOMAIN FloatRange = 0.10E-2 .. 0.99E2;
                 TOPIC T = CLASS Item = value : Narrow; scaled : FloatRange; END Item; END T;
                 END Checks.
-                """);
+                """, ValidationOptions.defaults().withNumericRounding(false));
         for (var value : List.of("-10.50", "100.25", "1.0", "1.00", "0", "-0", "0.1E1")) {
             assertEquals(List.of(), codes(fixture.validate(Map.of("value", number(value)))), value);
         }
@@ -192,7 +192,14 @@ class ScalarRuleTest {
         private final SymbolRef item;
         private final SymbolRef topic;
 
+        private final ValidationOptions options;
+
         Fixture(String source) {
+            this(source, ValidationOptions.defaults());
+        }
+
+        Fixture(String source, ValidationOptions options) {
+            this.options = options;
             schema = compile(source);
             plan = ready(schema, transfer(schema));
             topic = schema.queries().findQualifiedName(QualifiedName.of("Checks", "T")).getFirst();
@@ -210,7 +217,7 @@ class ScalarRuleTest {
             var basket = new TransferIdentity.BasketId("b", TransferIdentity.IdOrigin.SOURCE);
             var identity = new TransferIdentity(basket, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
             var object = new TransferObject(identity, new TransferValue.Structured(item, values));
-            try (var session = LocalValidator.session(plan, ValidationOptions.defaults())) {
+            try (var session = LocalValidator.session(plan, options)) {
                 session.accept(new TransferEvent.StartTransfer(Optional.empty(), Optional.empty(), Optional.empty(), List.of()), token);
                 session.accept(new TransferEvent.StartBasket(basket, topic, List.of(), TransferEvent.BasketKind.FULL,
                         TransferEvent.Consistency.COMPLETE, Optional.empty(), Optional.empty(), Optional.empty(), List.of()), token);

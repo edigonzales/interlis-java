@@ -158,6 +158,19 @@ Im XTF-2.3-Header bleibt `MODEL URI` als übertragene Metadatenangabe
 erhalten. Der Reader bindet das Modell über Name und Version an den
 übergebenen Plan. Eine abweichende URI ändert diese Bindung nicht.
 
+Bei INTERLIS 2.3 und 2.4 rundet der Validator gelieferte numerische Attribute und
+Koordinaten vor der Prüfung auf die im Modell deklarierte Genauigkeit.
+Halbwerte werden wie in ilivalidator zur grösseren Zahl gerundet.
+Kreisbogen-Zwischenpunkte (`a1`, `a2`) fliessen in beiden Sprachversionen
+mit der gelieferten Genauigkeit in die Prüfung ein. Das gilt auch bei
+explizit geliefertem Radius. Die Start- und Endkoordinaten werden bei
+aktivierter Rundung auf Modellpräzision gerundet.
+Bereichsprüfungen, Ausdrücke und Geometrieprüfungen verwenden die dadurch
+gebildete interne Wertsicht. Der Transfer-Reader liefert weiterhin die
+ursprünglichen Werte. `ValidationOptions.withNumericRounding(false)`
+schaltet die Rundung gelieferter Werte vor der Prüfung aus. Für das
+Datensatzprofil wird dieselbe lokale Option über `DatasetOptions` gesetzt.
+
 BID und TID müssen in XTF 2.3 FULL im Transfer eindeutig sein. Wenn die
 wirksame Regel für den Behälter oder das Objekt `INTERLIS.UUIDOID` vorgibt,
 prüft der Validator auch transferlokale Kennungen aus der Quelle auf
