@@ -57,7 +57,7 @@ final class CurveValidity {
                 var segments = part.segments();
                 boolean loop = !segments.isEmpty()
                         && part.start().equals(segments.getLast().edge().end());
-                selfIntersections(segments, loop);
+                selfIntersections(segments, loop, true);
             }
         }
         if (!input.partial()) {
@@ -89,7 +89,7 @@ final class CurveValidity {
         for (int i = 0; i < rings.size(); i++) {
             var ring = rings.get(i);
             var boundary = segments.get(i);
-            selfIntersections(boundary, true);
+            selfIntersections(boundary, true, false);
             double area = signedArea(boundary);
             if (!Double.isFinite(area)) {
                 uncertain();
@@ -316,7 +316,7 @@ final class CurveValidity {
         return true;
     }
 
-    private void selfIntersections(List<Segment> segments, boolean closed) {
+    private void selfIntersections(List<Segment> segments, boolean closed, boolean allowSharedEndpoints) {
         var index = new STRtree();
         for (int i = 0; i < segments.size(); i++) {
             control.visit().run();
@@ -334,6 +334,11 @@ final class CurveValidity {
                 var result = CurveIntersections.between(a.curve(), b.curve());
                 if (result.undetermined()) {
                     uncertain();
+                }
+                if (allowSharedEndpoints && result.hits().stream().allMatch(hit ->
+                        hit.kind() == CurveIntersections.Kind.CONTACT
+                                && endpoint(a.curve(), hit.point()) && endpoint(b.curve(), hit.point()))) {
+                    continue;
                 }
                 var allowed = new HashSet<Point>();
                 if (j == i + 1) {

@@ -130,6 +130,35 @@ class GeometryExpressionIntegrationTest {
     }
 
     @Test
+    void requiresSharedSegmentEndpointsAtPolylineCrossingsInBothXtfVersions() {
+        var declarations = """
+                CLASS Item =
+                  edge : POLYLINE WITH (STRAIGHTS) VERTEX Point WITHOUT OVERLAPS > 0.001;
+                END Item;
+                """;
+        var legacy = "<Checks.Data.Item TID='line'><edge><POLYLINE>"
+                + point23(0, 0) + point23(2, 2) + point23(4, 4) + point23(0, 4)
+                + "%s" + point23(4, 0) + "</POLYLINE></edge></Checks.Data.Item>";
+        var current = "<Item i:tid='line'><edge><g:polyline>"
+                + point(0, 0) + point(2, 2) + point(4, 4) + point(0, 4)
+                + "%s" + point(4, 0) + "</g:polyline></edge></Item>";
+        assertEquals(0, validate23(declarations, legacy.formatted(point23(2, 2))).detectedViolations());
+        assertEquals(0, validate24(declarations, current.formatted(point(2, 2)), true).detectedViolations());
+
+        for (var report : List.of(validate23(declarations, legacy.formatted("")),
+                validate24(declarations, current.formatted(""), true))) {
+            assertFalse(report.examples().isEmpty());
+            for (var finding : report.examples()) {
+                assertEquals(ValidationCode.GEOMETRY_SELF_INTERSECTION, finding.code());
+                assertEquals("line", finding.data().tid().orElseThrow().value());
+                assertEquals(new DataLocation.Slot(finding.rule().declaration()), finding.data().path().getFirst());
+                var segment = assertInstanceOf(DataLocation.GeometryComponent.class, finding.data().path().getLast());
+                assertEquals(DataLocation.GeometryComponent.Kind.SEGMENT, segment.kind());
+            }
+        }
+    }
+
+    @Test
     void rejectsStartOnlyPolylineAtTheXtf24WireBoundary() {
         var error = assertThrows(guru.interlis.xtf24.Xtf24Exception.class, () -> validate24("""
                 CLASS Item =
