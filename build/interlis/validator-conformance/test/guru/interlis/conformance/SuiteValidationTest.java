@@ -152,9 +152,19 @@ final class SuiteValidationTest {
     }
 
     @Test
+    void originalNumericRangeUsesModelPrecision() throws Exception {
+        var output = Files.createDirectory(directory.resolve("numeric-rounding"));
+        assertEquals(0, runOriginalTests(".*AttributeTest\\.RAt_T09[eg]", output));
+        var diagnostics = Files.readString(output.resolve("stdout"));
+        assertTrue(diagnostics.contains("RAt.T09e.xtf EOF objects=4 violations=0"), diagnostics);
+        assertTrue(diagnostics.lines().anyMatch(line -> line.startsWith("RAt.T09g.xtf DATA VALUE_OUT_OF_RANGE ")
+                && line.endsWith("[10000.1, 1.0, 10000.0]")), diagnostics);
+    }
+
+    @Test
     void knownDeviationKeepsTheNativeFailureAndOnlyAppliesToSelectedCases() throws Exception {
         var output = Files.createDirectory(directory.resolve("known"));
-        assertEquals(0, runOriginalTests(".*AttributeTest\\.RAt_T09e", output));
+        assertEquals(0, runOriginalTests(".*SurfaceAreaAttributeTest\\.RSU_T16a", output));
         assertTrue(Files.readString(output.resolve("summary.txt")).contains("Known deviations: 1"));
         assertTrue(Files.readString(output.resolve("TEST-junit-vintage.xml")).contains("<failure"));
     }
@@ -190,10 +200,10 @@ final class SuiteValidationTest {
     void unexpectedFailureFailsTheRunner() throws Exception {
         var baseline = Files.writeString(directory.resolve("empty.tsv"), "");
         var output = Files.createDirectory(directory.resolve("unexpected"));
-        assertEquals(1, runOriginalTests(".*RAt_T09e", output, baseline));
+        assertEquals(1, runOriginalTests(".*RSU_T16a", output, baseline));
         var summary = Files.readString(output.resolve("summary.txt"));
         assertTrue(summary.contains("Known deviations: 0"), summary);
-        assertTrue(summary.contains("RAt_T09e"), summary);
+        assertTrue(summary.contains("RSU_T16a"), summary);
     }
 
     @Test

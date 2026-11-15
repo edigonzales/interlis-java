@@ -31,6 +31,105 @@ class GeometryExpressionIntegrationTest {
             + "</g:exterior><g:interior>" + ring(1, 1, 2, 2) + "</g:interior></g:surface>";
 
     @Test
+    void roundsSuppliedScalarsAndCoordinatesBeforeRulesInBothXtfVersions() {
+        var declarations = """
+                CLASS Item =
+                  amount : 0.0 .. 10.0;
+                  negative : -1.0 .. 0.0;
+                  edge : POLYLINE WITH (STRAIGHTS) VERTEX Point;
+                  MANDATORY CONSTRAINT amount == 10.0 AND negative == -1.0;
+                  UNIQUE amount;
+                END Item;
+                """;
+        var legacy = """
+                <Checks.Data.Item TID="one"><amount>10.01</amount><negative>-1.05</negative>
+                  <edge><POLYLINE><COORD><C1>0</C1><C2>0</C2></COORD>
+                    <COORD><C1>10.0004</C1><C2>0</C2></COORD></POLYLINE></edge>
+                </Checks.Data.Item>
+                """;
+        var current = """
+                <Item i:tid="one"><amount>10.01</amount><negative>-1.05</negative>
+                  <edge><g:polyline><g:coord><g:c1>0</g:c1><g:c2>0</g:c2></g:coord>
+                    <g:coord><g:c1>10.0004</g:c1><g:c2>0</g:c2></g:coord></g:polyline></edge>
+                </Item>
+                """;
+        assertEquals(0, validate23(declarations, legacy).detectedViolations());
+        assertEquals(0, validate24(declarations, current, true).detectedViolations());
+
+        var exact = ValidationOptions.defaults().withNumericRounding(false);
+        assertEquals(3, validate23(declarations, legacy, exact).examples().stream()
+                .filter(finding -> finding.code() == ValidationCode.VALUE_OUT_OF_RANGE).count());
+        assertEquals(3, validate24(declarations, current, true, exact).examples().stream()
+                .filter(finding -> finding.code() == ValidationCode.VALUE_OUT_OF_RANGE).count());
+
+        assertEquals(List.of(ValidationCode.GEOMETRY_DEGENERATE_SEGMENT),
+                validate23(declarations, legacy.replace("10.0004", "0.0004")).examples().stream()
+                        .map(ValidationDiagnostic::code).toList());
+        assertEquals(List.of(ValidationCode.GEOMETRY_DEGENERATE_SEGMENT),
+                validate24(declarations, current.replace("10.0004", "0.0004"), true).examples().stream()
+                        .map(ValidationDiagnostic::code).toList());
+
+        assertEquals(List.of(ValidationCode.DATASET_UNIQUE_DUPLICATE),
+                validate24(declarations, current + current.replace("one", "two").replace("10.01", "10.02"), true)
+                        .examples().stream().map(ValidationDiagnostic::code).toList());
+    }
+
+    @Test
+    void preservesShallowArcIntermediatePointsInBothXtfVersions() {
+        var declarations = """
+                CLASS Item =
+                  edge : POLYLINE WITH (ARCS) VERTEX Point;
+                END Item;
+                """;
+        var legacy = """
+                <Checks.Data.Item TID="arc"><edge><POLYLINE>
+                  <COORD><C1>0</C1><C2>1</C2></COORD>
+                  <ARC><C1>10.0004</C1><C2>1</C2><A1>5</A1><A2>1.0004</A2></ARC>
+                </POLYLINE></edge></Checks.Data.Item>
+                """;
+        var current = """
+                <Item i:tid="arc"><edge><g:polyline>
+                  <g:coord><g:c1>0</g:c1><g:c2>1</g:c2></g:coord>
+                  <g:arc><g:c1>10.0004</g:c1><g:c2>1</g:c2><g:a1>5</g:a1><g:a2>1.0004</g:a2></g:arc>
+                </g:polyline></edge></Item>
+                """;
+        assertEquals(0, validate23(declarations, legacy).detectedViolations());
+        assertEquals(0, validate24(declarations, current, true).detectedViolations());
+
+        var exact = ValidationOptions.defaults().withNumericRounding(false);
+        assertEquals(List.of(ValidationCode.VALUE_OUT_OF_RANGE),
+                validate23(declarations, legacy, exact).examples().stream().map(ValidationDiagnostic::code).toList());
+        assertEquals(List.of(ValidationCode.VALUE_OUT_OF_RANGE),
+                validate24(declarations, current, true, exact).examples().stream().map(ValidationDiagnostic::code).toList());
+
+        assertEquals(List.of(ValidationCode.GEOMETRY_INVALID_ARC),
+                validate23(declarations, legacy.replace("1.0004", "1.0000")).examples().stream()
+                        .map(ValidationDiagnostic::code).toList());
+        assertEquals(List.of(ValidationCode.GEOMETRY_INVALID_ARC),
+                validate24(declarations, current.replace("1.0004", "1.0000"), true).examples().stream()
+                        .map(ValidationDiagnostic::code).toList());
+    }
+
+    @Test
+    void checksDeliveredIntermediatePointAgainstTheXtf24Radius() {
+        var declarations = """
+                CLASS Item =
+                  edge : POLYLINE WITH (ARCS) VERTEX Point;
+                END Item;
+                """;
+        var contents = """
+                <Item i:tid="arc"><edge><g:polyline>
+                  <g:coord><g:c1>0</g:c1><g:c2>1</g:c2></g:coord>
+                  <g:arc><g:c1>4</g:c1><g:c2>1</g:c2><g:a1>2</g:a1><g:a2>3.0006</g:a2><g:r>2</g:r></g:arc>
+                </g:polyline></edge></Item>
+                """;
+        assertEquals(0, validate24(declarations, contents, true).detectedViolations());
+        assertEquals(List.of(ValidationCode.GEOMETRY_INVALID_ARC),
+                validate24(declarations, contents.replace("3.0006", "3.001"), true).examples().stream()
+                        .map(ValidationDiagnostic::code).toList());
+    }
+
+    @Test
     void rejectsStartOnlyPolylineAtTheXtf24WireBoundary() {
         var error = assertThrows(guru.interlis.xtf24.Xtf24Exception.class, () -> validate24("""
                 CLASS Item =
@@ -162,6 +261,11 @@ class GeometryExpressionIntegrationTest {
     }
 
     private static ValidationReport validate24(String declarations, String contents, boolean engine) {
+        return validate24(declarations, contents, engine, ValidationOptions.defaults());
+    }
+
+    private static ValidationReport validate24(String declarations, String contents, boolean engine,
+                                               ValidationOptions options) {
         var xtf = """
                 <i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
                   xmlns="http://www.interlis.ch/xtf/2.4/Checks" xmlns:g="http://www.interlis.ch/geometry/1.0">
@@ -169,10 +273,14 @@ class GeometryExpressionIntegrationTest {
                   <i:datasection><Data i:bid="basket">%s</Data></i:datasection>
                 </i:transfer>
                 """.formatted(contents);
-        return validate("2.4", declarations, xtf, engine);
+        return validate("2.4", declarations, xtf, engine, options);
     }
 
     private static ValidationReport validate23(String declarations, String contents) {
+        return validate23(declarations, contents, ValidationOptions.defaults());
+    }
+
+    private static ValidationReport validate23(String declarations, String contents, ValidationOptions options) {
         var xtf = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
@@ -182,10 +290,11 @@ class GeometryExpressionIntegrationTest {
                   <DATASECTION><Checks.Data BID="basket">%s</Checks.Data></DATASECTION>
                 </TRANSFER>
                 """.formatted(contents);
-        return validate("2.3", declarations, xtf, true);
+        return validate("2.3", declarations, xtf, true, options);
     }
 
-    private static ValidationReport validate(String version, String declarations, String xtf, boolean engine) {
+    private static ValidationReport validate(String version, String declarations, String xtf, boolean engine,
+                                             ValidationOptions options) {
         var id = new SourceId("memory:/Checks.ili");
         var source = new SourceText(id, new SourceRevision(1), """
                 INTERLIS %s;
@@ -206,7 +315,7 @@ class GeometryExpressionIntegrationTest {
         var bytes = new ByteArrayInputStream(xtf.getBytes(StandardCharsets.UTF_8));
         try (var reader = version.equals("2.3") ? new Xtf23Reader(transfer, bytes) : new Xtf24Reader(transfer, bytes);
              var storage = new InMemoryValidationStorage(1000, 1_000_000);
-             var validation = DatasetValidator.session(plan, DatasetOptions.defaults(), storage)) {
+             var validation = DatasetValidator.session(plan, new DatasetOptions(options, DatasetLimits.defaults(), DatasetScope.SUPPLIED_DATASET), storage)) {
             validation.readInput(new InputDescriptor(new InputId("data"), InputRole.PRIMARY), reader, TOKEN);
             return validation.finish(TOKEN);
         }

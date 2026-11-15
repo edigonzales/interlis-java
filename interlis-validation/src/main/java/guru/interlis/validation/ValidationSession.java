@@ -92,6 +92,15 @@ public final class ValidationSession implements AutoCloseable {
      * @throws guru.interlis.execution.OperationCancelledException on cancellation
      */
     public void accept(TransferEvent event, CancellationToken cancellation) {
+        accept(event, cancellation, false);
+    }
+
+    /** Accepts dataset events whose supplied numbers already use the selected validation policy. */
+    void acceptPrepared(TransferEvent event, CancellationToken cancellation) {
+        accept(event, cancellation, true);
+    }
+
+    private void accept(TransferEvent event, CancellationToken cancellation, boolean prepared) {
         requireActive();
         try {
             Objects.requireNonNull(cancellation, "cancellation").throwIfCancellationRequested();
@@ -110,7 +119,8 @@ public final class ValidationSession implements AutoCloseable {
                 }
                 case TransferEvent.ObjectEvent object -> {
                     require(State.IN_BASKET);
-                    inspect(object, cancellation);
+                    inspect(prepared ? object : NumericRounding.prepare(object, plan, basket, options, cancellation),
+                            cancellation);
                     objects = Math.incrementExact(objects);
                 }
                 case TransferEvent.EndBasket end -> {
