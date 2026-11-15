@@ -158,10 +158,12 @@ Im XTF-2.3-Header bleibt `MODEL URI` als übertragene Metadatenangabe
 erhalten. Der Reader bindet das Modell über Name und Version an den
 übergebenen Plan. Eine abweichende URI ändert diese Bindung nicht.
 
-Für XTF 2.3 FULL genügen transfereindeutige BID und TID. Ohne
-`OIDSPACES` sind sie auch in UUID-Form keine stabilen OIDs. Gelieferte
-stabile OIDs werden gegen ihre Domäne geprüft. INITIAL und UPDATE
-benötigen stabile Identifikatoren.
+BID und TID müssen in XTF 2.3 FULL im Transfer eindeutig sein. Wenn die
+wirksame Regel für den Behälter oder das Objekt `INTERLIS.UUIDOID` vorgibt,
+prüft der Validator auch transferlokale Kennungen aus der Quelle auf
+UUID-Form. Das gilt auch ohne `OIDSPACES` und lässt Gross- und Kleinbuchstaben
+zu. Die Kennung bleibt transferlokal. Gelieferte stabile OIDs werden gegen
+ihre Domäne geprüft. INITIAL und UPDATE benötigen stabile Identifikatoren.
 
 Bei XTF 2.3 gelten für die Basket-OID auch die Domänen zusätzlicher Topics
 aus `TOPICS`. Eine gemeinsam geerbte Domäne wird pro Basket einmal geprüft.

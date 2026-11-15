@@ -30,9 +30,8 @@ prüfen tatsächliche Schreibverbote des Betriebssystems.
   `Paket.Klasse.Methode` passen. Berichte liegen unter
   `target/jenesis-jvm/validator-conformance/`. Die Originaltests verwenden
   den Herstellerwert `interlis-java`. Technische Fehler, eine leere Auswahl
-  und nicht erfüllte Originalassertionen lassen den Befehl fehlschlagen.
-  Die Suite ist noch nicht Teil der CI. Die verbleibenden Abweichungen
-  sind unten beschrieben.
+  und unerwartete Originalfehler lassen den Befehl fehlschlagen. Der Linux-Job
+  führt dieselbe Suite nach Codeberg aus.
 - Die [Buildanleitung](build.md#portable-backends) zeigt die Node-Smokes für die
   erzeugten JS-/WasmGC-Artefakte. Der Portable-CI-Job führt `browserSmoke`
   und `validationBrowserSmoke` mit Chromium aus. Die Validatorprobe
@@ -98,7 +97,7 @@ dokumentiert den erwarteten Befund jedes betroffenen Originaltests.
 Ein neuer Fehler, eine technische Störung, ein abweichender Befund oder
 ein inzwischen bestandener Baselinefall beendet den Runner mit Fehler.
 
-Am Upstream-Stand `f307111` bestehen 208 von 223 Originaltests.
+Am Upstream-Stand `f307111` bestehen 210 von 223 Originaltests.
 `RKo.T09a` prüft UNIQUE über Rollenpfade eingebetteter Beziehungen.
 `RSU.T05a/b` prüfen Aussenrand und berührende Enklave in einem Randzug
 (INTERLIS 2.3 §2.8.13.1, Figur 22).
@@ -109,5 +108,8 @@ der native Validator und ilivalidator 1.15.1 den gelieferten Kurvenrand,
 für den das Original einen Fehler erwartet. `RPO.T02c` kreuzt seinen
 eigenen Weg in einem wiederholten Stützpunkt (§2.8.12).
 `RAt.T09e` überschreitet die deklarierte Obergrenze vor dem Runden
-(§3.3.11.4). `RAt.T11a/b` liefern transferlokale BID/TID in XTF 2.3 FULL
-ohne OIDSPACES (§3.3.4.1 und §3.3.7).
+(§3.3.11.4). Die [Abweichungen im Detail](swisstopo-suite-deviations.md)
+beschreiben die Originalerwartungen und die beobachteten Befunde.
+
+`RAt.T11a/b` prüfen, dass der Validator ungültige BID und TID bei einem
+wirksamen `UUIDOID`-Wertebereich auch in XTF 2.3 FULL ohne `OIDSPACES` meldet.

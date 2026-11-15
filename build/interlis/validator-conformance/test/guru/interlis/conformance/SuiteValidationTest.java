@@ -34,10 +34,27 @@ final class SuiteValidationTest {
     }
 
     @Test
-    void validatesOriginalFullTransferWithTransferLocalIdentifiers() throws IOException {
+    void acceptsOriginalFullTransfersWithAndWithoutModelledUuidDomains() throws IOException {
         var suite = Path.of(System.getProperty("suite.directory"));
         assertTrue(SuiteValidation.validate(suite.resolve("data/RKA.T01a.xtf"),
                 suite.resolve("data/models"), CancellationToken.none()));
+        assertTrue(SuiteValidation.validate(suite.resolve("data/RAt.T11c.xtf"),
+                suite.resolve("data/models"), CancellationToken.none()));
+    }
+
+    @Test
+    void originalUuidViolationsIdentifyBasketAndObject() throws Exception {
+        var output = Files.createDirectory(directory.resolve("uuid"));
+        assertEquals(0, runOriginalTests(".*AttributeTest\\.RAt_T11[ab]", output));
+        var diagnostics = Files.readString(output.resolve("stdout"));
+        var basketFinding = diagnostics.lines().filter(line -> line.startsWith("RAt.T11a.xtf DATA INVALID_OID "))
+                .findFirst().orElseThrow(() -> new AssertionError(diagnostics));
+        assertTrue(basketFinding.contains("BasketId[value=c91766e-ff86-4d5a-8cbf-9fb5620a4ee4"), basketFinding);
+        assertTrue(basketFinding.contains("objectType=Optional.empty"), basketFinding);
+        var objectFinding = diagnostics.lines().filter(line -> line.startsWith("RAt.T11b.xtf DATA INVALID_OID "))
+                .findFirst().orElseThrow(() -> new AssertionError(diagnostics));
+        assertTrue(objectFinding.contains("TransferId[value=a33305d486-cf9b-11e7-abc4-cec278b6b50a"), objectFinding);
+        assertTrue(objectFinding.contains("oid=Optional.empty"), objectFinding);
     }
 
     @Test
