@@ -1,0 +1,25 @@
+# Abweichungen der swisstopo-Validatorsuite
+
+Stand: Produktcommit `d6cf261`, Originalsuite `f307111`. Der vollständige
+Lauf für INTERLIS 2.3 und XTF 2.3 ergab 208 bestandene Originaltests und
+15 bekannte Abweichungen. Alle 223 Originaltests wurden ausgeführt.
+Die Originaltests, Modelle und XTF-Dateien sind unverändert.
+
+| Originalfälle | Erwartung und beobachtetes Ergebnis | Begründung |
+| --- | --- | --- |
+| `RSU.T16a` | Die Suite erwartet ein freies Randende und eine Selbstüberschneidung. Der Validator akzeptiert den gelieferten Kurvenrand ohne Befund. | Auch ilivalidator 1.15.1 akzeptiert die Originaldatei. Der erwartete Befund war mit beiden Validatoren nicht reproduzierbar. Der Referenzvergleich allein entscheidet die Normfrage nicht. |
+| `RSU.T18a`, `RSU.T18b`, `RSU.T18c`, `RSU.T18d`, `RSU.T18e` | Die obligatorische Bedingung mit `INTERLIS_ext.areAreas2` bleibt ungeprüft. Der Runner beobachtet `UNSUPPORTED_EXPRESSION` für genau diese Funktion. | Das Originalmodell deklariert eine externe Legacy-Funktion mit dem TEXT-Pfad `Geom->Geom1->Geom2`. Für diese Funktion fehlt im verwendeten Validator eine Laufzeitbindung. |
+| `RSU.T19a`, `RSU.T19b`, `RSU.T19c`, `RSU.T19d`, `RSU.T19e` | Das `SET CONSTRAINT` mit `INTERLIS_ext.areAreas3` bleibt ungeprüft. Die Abdeckung meldet `UNSUPPORTED` für genau diese Funktion. | Auch hier fehlt die Laufzeitbindung für die externe Legacy-Funktion. Sie prüft mit `ALL` eine Objektmenge und verwendet denselben TEXT-Pfad. |
+| `RPO.T02c` | Die Suite erwartet einen gültigen Linienzug. Der Validator meldet viermal `GEOMETRY_SELF_INTERSECTION` am selben Stützpunkt. | Die vertikale und die diagonale Passage kreuzen sich am wiederholten Stützpunkt. Für den als `WITHOUT OVERLAPS` definierten Linienzug gilt das Selbstschnittverbot nach §2.8.12. Die vier Meldungen bezeichnen dieselbe Kreuzung. |
+| `RAt.T09e` | Die Suite akzeptiert `10000.01`. Der Validator meldet `VALUE_OUT_OF_RANGE`. | Die deklarierte Obergrenze beträgt `10000.0`. Nach §3.3.11.4 muss der gelieferte Wert innerhalb des Wertebereichs liegen. Der Vergleich erfolgt vor einer Rundung. |
+| `RAt.T11a` | Die Suite erwartet einen Fehler für eine `BID` ausserhalb der UUID-Domäne. Der Validator akzeptiert den Transfer. | Ohne `OIDSPACES` ist die `BID` in XTF 2.3 FULL ein transferlokaler Behälteridentifikator. §3.3.4.1 und §3.3.7 verlangen hier Eindeutigkeit im Transfer. |
+| `RAt.T11b` | Die Suite erwartet einen Fehler für eine `TID` ausserhalb der UUID-Domäne. Der Validator akzeptiert den Transfer. | Dieselben Regeln gelten für die transferlokale Objekt-ID `TID`. Stabile OIDs sind im Format für INITIAL und UPDATE erforderlich. |
+
+Die [Abweichungsliste des Runners](../../build/interlis/validator-conformance/deviations.tsv)
+enthält pro Originaltest die erwartete Beobachtung. Im nativen JUnit-Bericht
+bleiben die 15 Fälle als Fehler sichtbar. Der Runner scheitert bei neuen
+Fehlern, technischen Störungen, geänderten Befunden und inzwischen
+bestandenen Fällen mit noch vorhandenem Eintrag. Den lokalen Aufruf
+beschreibt die [Testanleitung](testing.md#swisstopo-validator-konformität).
+
+[INTERLIS-2.3-Referenzhandbuch](https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf)
