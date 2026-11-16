@@ -17,9 +17,13 @@ final class GeometryParameters {
     private GeometryParameters() {}
 
     static CoordinateType coordinate(ValidationPlan plan, ValidationSession.BasketContext basket, SymbolId id) {
+        return coordinate(plan, basket.domains(), id);
+    }
+
+    static CoordinateType coordinate(ValidationPlan plan, java.util.Map<SymbolId, SymbolId> domains, SymbolId id) {
         var symbol = plan.symbol(id).orElse(null);
         var type = symbol instanceof DomainSymbol domain && domain.generic()
-                ? Optional.ofNullable(basket.domains().get(id)).flatMap(plan::domainType) : plan.domainType(id);
+                ? Optional.ofNullable(domains.get(id)).flatMap(plan::domainType) : plan.domainType(id);
         return type.filter(CoordinateType.class::isInstance).map(CoordinateType.class::cast).orElse(null);
     }
 

@@ -229,6 +229,18 @@ Vergleiche in einer heterogenen Menge die grösste wirksame
 Überlappungstoleranz ausgewählter Halter nach ilivalidator 1.15.1.
 Jeder Einzelwert behält seine eigene Toleranz.
 
+Für die modell-deklarierten Funktionen `INTERLIS_ext.areAreas2/3`
+bindet der Compiler literale TEXT-Pfade an ihre Starttypen. Bei
+`SurfaceBag = UNDEFINED` bilden die Flächen des übergebenen Objekts
+bzw. der Objektmenge eine gemeinsame Prüfgruppe. Bei gesetztem
+`SurfaceBag` bildet jedes erreichte Strukturelement eine eigene Gruppe,
+wie in der Erweiterungsbeschreibung festgelegt. ilivalidator 1.15.1
+fasst im Standardmodus die Flächen in diesem zweiten Fall zusammen.
+Die Originalfälle `RSU.T18a–e` und `RSU.T19a–e` verwenden
+`SurfaceBag = UNDEFINED`.
+[Beschreibung von INTERLIS_ext](https://www.interlis.ch/download/interlis2/INTERLIS_ext_d.pdf) ·
+[Flächenprüfung in iox-ili 1.24.6](https://github.com/claeis/iox-ili/blob/31163d966981731ca7e82d9f80a10156bba34d7b/src/main/java/ch/interlis/iox_j/validator/Validator.java#L2623)
+
 Der Kurvenpfad verwendet mathematische Kreisprimitive und JTS-Primitive
 für Orientierung, Kreismittelpunkt, Geradenschnitt und räumliche Indizes.
 Die iox-ili-1.24.6-Quellen und die jeweiligen Fixes dienten als

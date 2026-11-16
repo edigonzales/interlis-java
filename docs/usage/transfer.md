@@ -199,6 +199,15 @@ für bestimmte Bogenüberschneidungen. Flächenränder haben eigene
 Topologieregeln. Die [Normauslegung](../contracts/norm-decisions.md#gemeinsame-segmentendpunkte-bei-linienzügen)
 dokumentiert die Kompatibilitätsentscheidung.
 
+Die Funktionen `INTERLIS_ext.areAreas2` und `INTERLIS_ext.areAreas3` des
+INTERLIS-2.3-Erweiterungsmodells sind mit der Geometrieengine für gebundene
+TEXT-Pfade verfügbar. Bei `SurfaceBag = UNDEFINED` prüft `areAreas2` die
+Flächen des Startobjekts und `areAreas3(ALL, …)` die Flächen der
+ausgewählten Objektmenge. Ein gesetzter `SurfaceBag`-Pfad bildet je
+erreichtem Strukturelement eine Prüfgruppe. Dynamische TEXT-Pfade
+lassen sich über eine explizite Hostbindung für Einzelobjektaufrufe
+auswerten. Dynamische TEXT-Pfade mit `ALL` erscheinen als ungeprüfte Bedingungen.
+
 Ohne Engine zeigt die Coverage die ausstehende Topologieprüfung. Externe
 Funktionen ohne Hostbindung und `UNIQUE` mit lokalem `WHERE` werden
 ebenfalls als ungeprüft ausgewiesen.

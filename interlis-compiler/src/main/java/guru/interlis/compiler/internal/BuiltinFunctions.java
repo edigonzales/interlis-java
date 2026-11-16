@@ -13,7 +13,7 @@ final class BuiltinFunctions {
     enum Value { TEXT, MTEXT, NUMERIC, BOOLEAN, CLASS_VALUE, ANYSTRUCTURE, OBJECT, OBJECTS, BAG,
         ENUM, ENUM_TREE, POLYLINE, MULTIPOLYLINE, SURFACE, MULTISURFACE, ATTRIBUTE }
 
-    enum Rule { SIMPLE, CONVERT_UNIT, AREAS_ATTRIBUTE, AREAS_TEXT }
+    enum Rule { SIMPLE, CONVERT_UNIT, AREAS_ATTRIBUTE, AREAS_TEXT, LEGACY_AREAS_TEXT }
 
     record Signature(String name, Value result, List<Value> arguments,
                      LanguageVersion since, Rule rule) {

@@ -5,6 +5,9 @@ import guru.interlis.execution.CancellationToken;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
+import guru.interlis.syntax.ParseMode;
+import guru.interlis.syntax.ParseOptions;
+import guru.interlis.syntax.SyntaxServices;
 import guru.interlis.transfer.TransferPlanner;
 import guru.interlis.transfer.TransferPlanningResult;
 import guru.interlis.validation.*;
@@ -29,6 +32,21 @@ class GeometryExpressionIntegrationTest {
     private static final String SQUARE = "<g:surface><g:exterior>" + ring(0, 0, 4, 4) + "</g:exterior></g:surface>";
     private static final String DONUT = "<g:surface><g:exterior>" + ring(0, 0, 4, 4)
             + "</g:exterior><g:interior>" + ring(1, 1, 2, 2) + "</g:interior></g:surface>";
+    private static final String LEGACY_AREA_MODEL = """
+            INTERLIS 2.3;
+            CONTRACTED TYPE MODEL INTERLIS_ext (en) AT "http://www.interlis.ch/models" VERSION "2016-05-30" =
+              FUNCTION areAreas2(Object: OBJECT OF ANYCLASS; SurfaceBag: TEXT; SurfaceAttr: TEXT): BOOLEAN;
+              FUNCTION areAreas3(Objects: OBJECTS OF ANYCLASS; SurfaceBag: TEXT; SurfaceAttr: TEXT): BOOLEAN;
+            END INTERLIS_ext.
+            """;
+    private static final String LEGACY_AREA_STRUCTURES = """
+            STRUCTURE Tile =
+              shape : SURFACE WITH (STRAIGHTS) VERTEX Point WITHOUT OVERLAPS > 0.001;
+            END Tile;
+            STRUCTURE Group =
+              tiles : BAG {0..*} OF Tile;
+            END Group;
+            """;
 
     @Test
     void roundsSuppliedScalarsAndCoordinatesBeforeRulesInBothXtfVersions() {
@@ -229,6 +247,78 @@ class GeometryExpressionIntegrationTest {
     }
 
     @Test
+    void checksLegacyAreasPerObjectOrAcrossTheSelectedSet() {
+        var item = LEGACY_AREA_STRUCTURES + """
+                CLASS Item =
+                  groups : LIST {0..*} OF Group;
+                  %s
+                END Item;
+                """;
+        var single = item.formatted("""
+                MANDATORY CONSTRAINT INTERLIS_ext.areAreas2(THIS,UNDEFINED,"groups->tiles->shape");
+                """);
+        var set = item.formatted("""
+                SET CONSTRAINT INTERLIS_ext.areAreas3(ALL,UNDEFINED,"groups->tiles->shape");
+                """);
+        var separateObjects = legacyItem("a", legacyGroup(tile23(0, 3))) + legacyItem("b", legacyGroup(tile23(2, 5)));
+        var withinObject = legacyItem("a", legacyGroup(tile23(0, 3), tile23(2, 5)));
+        var local = validateLegacyAreas(single, separateObjects, ValidationProfile.LOCAL_ONLY);
+        assertEquals(0, local.detectedViolations());
+        assertEquals(ValidationCoverage.ConstraintStatus.CHECKED, local.coverage().constraints().getFirst().status());
+        assertEquals(List.of(ValidationCode.MANDATORY_CONSTRAINT_FALSE),
+                codes(validateLegacyAreas(single, withinObject, ValidationProfile.LOCAL_ONLY)));
+        assertEquals(List.of(ValidationCode.SET_CONSTRAINT_FALSE),
+                codes(validateLegacyAreas(set, separateObjects, ValidationProfile.DATASET)));
+    }
+
+    @Test
+    void keepsLegacyAllNativeWhenAHostFunctionIsRegistered() {
+        var declarations = LEGACY_AREA_STRUCTURES + """
+                CLASS Item =
+                  groups : LIST {0..*} OF Group;
+                  SET CONSTRAINT INTERLIS_ext.areAreas3(ALL,UNDEFINED,"groups->tiles->shape");
+                END Item;
+                """;
+        var data = transfer23(legacyItem("a", legacyGroup(tile23(0, 3)))
+                + legacyItem("b", legacyGroup(tile23(2, 5))));
+        var report = validate("2.3", declarations, data, true, ValidationOptions.defaults(),
+                ValidationProfile.DATASET, true, true);
+        assertEquals(List.of(ValidationCode.SET_CONSTRAINT_FALSE), codes(report));
+        var dynamicPath = declarations.replace("\"groups->tiles->shape\"", "INTERLIS.trim(\"groups->tiles->shape\")");
+        var dynamic = validate("2.3", dynamicPath, data, true, ValidationOptions.defaults(),
+                ValidationProfile.DATASET, true, true);
+        assertEquals(DatasetRuleCoverage.Outcome.UNSUPPORTED, dynamic.coverage().datasetRules().getFirst().outcome());
+    }
+
+    @Test
+    void checksEachLegacySurfaceBagGroupSeparately() {
+        var item = LEGACY_AREA_STRUCTURES + """
+                CLASS Item =
+                  groups : LIST {0..*} OF Group;
+                  %s
+                END Item;
+                """;
+        var across = legacyItem("a", legacyGroup(tile23(0, 3)), legacyGroup(tile23(2, 5)), legacyGroup());
+        var within = legacyItem("a", legacyGroup(tile23(0, 3), tile23(2, 5)));
+        var single = item.formatted("""
+                MANDATORY CONSTRAINT INTERLIS_ext.areAreas2(THIS,"groups","tiles->shape");
+                """);
+        var set = item.formatted("""
+                SET CONSTRAINT INTERLIS_ext.areAreas3(ALL,"groups","tiles->shape");
+                """);
+        var local = validateLegacyAreas(single, across, ValidationProfile.LOCAL_ONLY);
+        assertEquals(0, local.detectedViolations());
+        assertEquals(ValidationCoverage.ConstraintStatus.CHECKED, local.coverage().constraints().getFirst().status());
+        assertEquals(List.of(ValidationCode.MANDATORY_CONSTRAINT_FALSE),
+                codes(validateLegacyAreas(single, within, ValidationProfile.LOCAL_ONLY)));
+        var dataset = validateLegacyAreas(set, across, ValidationProfile.DATASET);
+        assertEquals(0, dataset.detectedViolations());
+        assertEquals(DatasetRuleCoverage.Outcome.SATISFIED, dataset.coverage().datasetRules().getFirst().outcome());
+        assertEquals(List.of(ValidationCode.SET_CONSTRAINT_FALSE),
+                codes(validateLegacyAreas(set, within, ValidationProfile.DATASET)));
+    }
+
+    @Test
     void measuresCurvedSurfaceAndEveryMultiComponentInExpressions() {
         var halfDisc = "<g:surface><g:exterior>" + ARC.replace("</g:polyline>", point(0, 0) + "</g:polyline>")
                 + "</g:exterior></g:surface>";
@@ -310,7 +400,11 @@ class GeometryExpressionIntegrationTest {
     }
 
     private static ValidationReport validate23(String declarations, String contents, ValidationOptions options) {
-        var xtf = """
+        return validate("2.3", declarations, transfer23(contents), true, options);
+    }
+
+    private static String transfer23(String contents) {
+        return """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
                   <HEADERSECTION VERSION="2.3" SENDER="test"><MODELS>
@@ -319,35 +413,87 @@ class GeometryExpressionIntegrationTest {
                   <DATASECTION><Checks.Data BID="basket">%s</Checks.Data></DATASECTION>
                 </TRANSFER>
                 """.formatted(contents);
-        return validate("2.3", declarations, xtf, true, options);
+    }
+
+    private static ValidationReport validateLegacyAreas(String declarations, String contents, ValidationProfile profile) {
+        return validate("2.3", declarations, transfer23(contents), true, ValidationOptions.defaults(), profile, true, false);
     }
 
     private static ValidationReport validate(String version, String declarations, String xtf, boolean engine,
                                              ValidationOptions options) {
+        return validate(version, declarations, xtf, engine, options, ValidationProfile.DATASET, false, false);
+    }
+
+    private static ValidationReport validate(String version, String declarations, String xtf, boolean engine,
+                                             ValidationOptions options, ValidationProfile profile, boolean legacyAreas,
+                                             boolean hostAreaSet) {
         var id = new SourceId("memory:/Checks.ili");
         var source = new SourceText(id, new SourceRevision(1), """
-                INTERLIS %s;
+                %s
                 MODEL Checks (en) AT "https://example.org/checks" VERSION "1" =
-                  %s TOPIC Data = %s END Data;
+                  %s %s TOPIC Data = %s END Data;
                 END Checks.
-                """.formatted(version, DOMAIN, declarations));
+                """.formatted(legacyAreas ? LEGACY_AREA_MODEL : "INTERLIS " + version + ";",
+                legacyAreas ? "IMPORTS INTERLIS_ext;" : "", DOMAIN, declarations));
         var request = new CompilationRequest(List.of(new ModelSelector.ByName("Checks", Optional.empty(), Optional.empty())),
-                SourceSet.of(Map.of(id, source)), CompilerOptions.defaults());
+                legacyAreas ? withLegacyImport(source) : SourceSet.of(Map.of(id, source)), CompilerOptions.defaults());
         var compiled = CompilerEngines.create().compile(request, TOKEN);
         var schema = assertInstanceOf(CompilationOutcome.Succeeded.class, compiled,
                 () -> compiled instanceof CompilationOutcome.Rejected rejected
                         ? rejected.analysis().diagnostics().toString() : compiled.toString()).schema();
         var transfer = assertInstanceOf(TransferPlanningResult.Ready.class, TransferPlanner.plan(schema)).plan();
         var bindings = engine ? RuntimeBindings.empty().withGeometry(JtsGeometryEngine.standard()) : RuntimeBindings.empty();
-        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
-                ValidationPlanner.plan(transfer, ValidationProfile.DATASET, bindings)).plan();
-        var bytes = new ByteArrayInputStream(xtf.getBytes(StandardCharsets.UTF_8));
-        try (var reader = version.equals("2.3") ? new Xtf23Reader(transfer, bytes) : new Xtf24Reader(transfer, bytes);
-             var storage = new InMemoryValidationStorage(1000, 1_000_000);
-             var validation = DatasetValidator.session(plan, new DatasetOptions(options, DatasetLimits.defaults(), DatasetScope.SUPPLIED_DATASET), storage)) {
-            validation.readInput(new InputDescriptor(new InputId("data"), InputRole.PRIMARY), reader, TOKEN);
-            return validation.finish(TOKEN);
+        if (hostAreaSet) {
+            var function = schema.semanticGraph().symbols().stream()
+                    .filter(guru.interlis.model.FunctionSymbol.class::isInstance)
+                    .map(guru.interlis.model.FunctionSymbol.class::cast)
+                    .filter(symbol -> symbol.name().value().equals("areAreas3")).findFirst().orElseThrow();
+            var ref = new guru.interlis.model.SymbolRef(schema.semanticGraph().snapshotId(), function.id());
+            bindings = new RuntimeBindings(Map.of(), Map.of(ref, new FunctionBinding(function, "test", "1",
+                    (arguments, context, token) -> fail("ALL must use the native evaluator"))), bindings.geometry());
         }
+        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
+                ValidationPlanner.plan(transfer, profile, bindings)).plan();
+        var bytes = new ByteArrayInputStream(xtf.getBytes(StandardCharsets.UTF_8));
+        try (var reader = version.equals("2.3") ? new Xtf23Reader(transfer, bytes) : new Xtf24Reader(transfer, bytes)) {
+            if (profile == ValidationProfile.LOCAL_ONLY) {
+                return LocalValidator.validate(plan, reader, options, TOKEN);
+            }
+            try (var storage = new InMemoryValidationStorage(1000, 1_000_000);
+                 var validation = DatasetValidator.session(plan,
+                         new DatasetOptions(options, DatasetLimits.defaults(), DatasetScope.SUPPLIED_DATASET), storage)) {
+                validation.readInput(new InputDescriptor(new InputId("data"), InputRole.PRIMARY), reader, TOKEN);
+                return validation.finish(TOKEN);
+            }
+        }
+    }
+
+    private static List<ValidationCode> codes(ValidationReport report) {
+        return report.examples().stream().map(ValidationDiagnostic::code).toList();
+    }
+
+    private static SourceSet withLegacyImport(SourceText source) {
+        var models = SyntaxServices.create().parse(source, ParseOptions.defaults(ParseMode.EDITOR), TOKEN).root().models();
+        var extension = models.getFirst();
+        var importer = models.getLast();
+        var site = new ImportSite(importer.imports().getFirst().range(), importer.name(), extension.name());
+        var target = new ModelLocation(source.id(), source.revision(), extension.name(),
+                Optional.of(extension.modelVersion()), extension.range().startOffset());
+        return SourceSet.of(Map.of(source.id(), source),
+                List.of(new ImportBinding(site, new ImportResolution.Resolved(target))), List.of(), ResolutionFingerprint.none());
+    }
+
+    private static String legacyItem(String id, String... groups) {
+        return "<Checks.Data.Item TID='" + id + "'><groups>" + String.join("", groups) + "</groups></Checks.Data.Item>";
+    }
+
+    private static String legacyGroup(String... tiles) {
+        return "<Checks.Data.Group>" + (tiles.length == 0 ? "" : "<tiles>" + String.join("", tiles) + "</tiles>")
+                + "</Checks.Data.Group>";
+    }
+
+    private static String tile23(int x0, int x1) {
+        return "<Checks.Data.Tile>" + surface23(x0, x1) + "</Checks.Data.Tile>";
     }
 
     private static String item(String shape, boolean active) {
@@ -364,9 +510,13 @@ class GeometryExpressionIntegrationTest {
     }
 
     private static String object23(String id, int x0, int x1) {
-        return "<Checks.Data.Item TID='" + id + "'><shape><SURFACE><BOUNDARY><POLYLINE>"
+        return "<Checks.Data.Item TID='" + id + "'>" + surface23(x0, x1) + "</Checks.Data.Item>";
+    }
+
+    private static String surface23(int x0, int x1) {
+        return "<shape><SURFACE><BOUNDARY><POLYLINE>"
                 + point23(x0, 0) + point23(x1, 0) + point23(x1, 2) + point23(x0, 2) + point23(x0, 0)
-                + "</POLYLINE></BOUNDARY></SURFACE></shape></Checks.Data.Item>";
+                + "</POLYLINE></BOUNDARY></SURFACE></shape>";
     }
 
     private static String point23(int x, int y) {

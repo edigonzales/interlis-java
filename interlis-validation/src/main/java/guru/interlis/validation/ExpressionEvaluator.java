@@ -96,6 +96,11 @@ final class ExpressionEvaluator {
         var plan = frame.plan();
         var function = (FunctionSymbol) call.targetFunction().flatMap(plan::symbol).orElseThrow();
         var standard = StandardFunctions.bind(function).orElse(null);
+        var supplied = plan.bindings().functions().containsKey(plan.ref(plan.canonical(function.id())));
+        boolean legacyArea = !call.argumentPaths().isEmpty()
+                && (!supplied || program.nodes().get(call.children().getFirst()) instanceof ObjectSetExpression)
+                && guru.interlis.model.internal.LegacyAreaFunctions.matches(function,
+                function.owner().flatMap(plan::symbol).orElse(null), id -> plan.effectiveType(id).orElse(null));
         if (standard == StandardFunctions.GEOMETRY_LENGTH || standard == StandardFunctions.GEOMETRY_AREA) {
             var child = call.children().getFirst();
             var result = evaluate(child, frame);
@@ -109,32 +114,45 @@ final class ExpressionEvaluator {
             }
             return geometryMeasure(standard, geometry, geometryType, function, frame, known, program.nodes().get(child));
         }
-        if (standard == StandardFunctions.AREAS || standard == StandardFunctions.AREAS_WITHOUT_GAPS) {
+        if (legacyArea || standard == StandardFunctions.AREAS || standard == StandardFunctions.AREAS_WITHOUT_GAPS) {
             var engine = plan.bindings().geometry();
-            if (engine.isEmpty()) {
-                return Unsupported.INSTANCE;
-            }
-            if (!(program.nodes().get(call.children().getFirst()) instanceof ObjectSetExpression set)
-                    || !(plan.effectiveType(set.typeId()).orElse(null) instanceof ObjectArgumentType type)) {
-                return MissingContext.POPULATION;
-            }
             var paths = GeometrySelection.bind(call, plan);
-            if (paths.isEmpty()) {
+            if (engine.isEmpty() || paths.isEmpty()) {
                 return Unsupported.INSTANCE;
             }
-            var source = frame.populations().apply(type, set.explicitSelection()).geometries(paths.orElseThrow());
-            if (source.isEmpty()) {
+            var selection = paths.orElseThrow();
+            var geometry = engine.orElseThrow();
+            var control = new GeometryEngine.Control(frame.visit(), ignored -> {});
+            var first = call.children().getFirst();
+            if (program.nodes().get(first) instanceof ObjectSetExpression set
+                    && plan.effectiveType(set.typeId()).orElse(null) instanceof ObjectArgumentType type) {
+                var population = frame.populations().apply(type, set.explicitSelection());
+                if (legacyArea && !selection.holders().isEmpty()) {
+                    return areaResult(population.checkAreaGroups(selection, geometry, control), MissingContext.POPULATION);
+                }
+                var source = population.geometries(selection);
+                if (source.isEmpty()) {
+                    return MissingContext.POPULATION;
+                }
+                var purpose = standard == StandardFunctions.AREAS_WITHOUT_GAPS
+                        ? GeometryEngine.CoveragePurpose.AREA_WITHOUT_GAPS : GeometryEngine.CoveragePurpose.AREA;
+                return areaResult(geometry.checkCoverage(source.orElseThrow(), purpose, control), MissingContext.POPULATION);
+            }
+            if (!legacyArea) {
                 return MissingContext.POPULATION;
             }
-            var purpose = standard == StandardFunctions.AREAS ? GeometryEngine.CoveragePurpose.AREA
-                    : GeometryEngine.CoveragePurpose.AREA_WITHOUT_GAPS;
-            return switch (engine.orElseThrow().checkCoverage(source.orElseThrow(), purpose,
-                    new GeometryEngine.Control(frame.visit(), ignored -> {}))) {
-                case VALID -> bool(true);
-                case INVALID -> bool(false);
-                case MISSING_PARAMETERS -> MissingContext.POPULATION;
-                case UNSUPPORTED, NUMERICALLY_UNDETERMINED -> Unsupported.INSTANCE;
-            };
+            var root = evaluate(first, frame);
+            if (!(root instanceof Known known)) {
+                return root;
+            }
+            if (!(known.value() instanceof TransferValue.Structured)) {
+                return Unsupported.INSTANCE;
+            }
+            var start = frame.withCurrent(known.value());
+            if (known.referenceOrigin().isPresent()) {
+                start = start.withDataset(known.referenceOrigin().orElseThrow());
+            }
+            return areaResult(selection.check(start, geometry, control), MissingContext.ATTRIBUTE_VALUE);
         }
         if (standard == StandardFunctions.ELEMENT_COUNT && frame.row().isPresent()
                 && frame.row().orElseThrow().groupSize().isPresent()
@@ -162,8 +180,7 @@ final class ExpressionEvaluator {
             var target = (NumericType) plan.effectiveType(call.typeId()).orElseThrow();
             return UnitConversions.convert(frame, source.range().unit(), target.range().unit(), amount);
         }
-        if (standard == null && !plan.bindings().functions().containsKey(
-                new SymbolRef(plan.snapshotId(), plan.canonical(function.id())))) {
+        if (standard == null && !supplied) {
             return Unsupported.INSTANCE;
         }
         var args = new ArrayList<TransferValue>(call.children().size());
@@ -190,6 +207,15 @@ final class ExpressionEvaluator {
         }
         var firstType = plan.effectiveType(program.nodes().get(call.children().getFirst()).typeId()).orElseThrow();
         return standard.evaluate(args, frame, firstType instanceof EnumerationType enumeration ? enumeration : null);
+    }
+
+    private static EvaluationResult areaResult(GeometryEngine.Check check, MissingContext missing) {
+        return switch (check) {
+            case VALID -> bool(true);
+            case INVALID -> bool(false);
+            case MISSING_PARAMETERS -> missing;
+            case UNSUPPORTED, NUMERICALLY_UNDETERMINED -> Unsupported.INSTANCE;
+        };
     }
 
     private EvaluationResult geometryMeasure(StandardFunctions standard, TransferGeometry value,
