@@ -205,7 +205,8 @@ TEXT-Pfade verfügbar. Bei `SurfaceBag = UNDEFINED` prüft `areAreas2` die
 Flächen des Startobjekts und `areAreas3(ALL, …)` die Flächen der
 ausgewählten Objektmenge. Ein gesetzter `SurfaceBag`-Pfad bildet je
 erreichtem Strukturelement eine Prüfgruppe. Dynamische TEXT-Pfade
-erfordern eine explizite Funktionsbindung des Hosts.
+lassen sich über eine explizite Hostbindung für Einzelobjektaufrufe
+auswerten. Dynamische TEXT-Pfade mit `ALL` erscheinen als ungeprüfte Bedingungen.
 
 Ohne Engine zeigt die Coverage die ausstehende Topologieprüfung. Externe
 Funktionen ohne Hostbindung und `UNIQUE` mit lokalem `WHERE` werden

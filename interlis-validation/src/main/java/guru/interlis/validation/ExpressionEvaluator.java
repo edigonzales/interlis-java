@@ -97,7 +97,8 @@ final class ExpressionEvaluator {
         var function = (FunctionSymbol) call.targetFunction().flatMap(plan::symbol).orElseThrow();
         var standard = StandardFunctions.bind(function).orElse(null);
         var supplied = plan.bindings().functions().containsKey(plan.ref(plan.canonical(function.id())));
-        boolean legacyArea = !supplied && !call.argumentPaths().isEmpty()
+        boolean legacyArea = !call.argumentPaths().isEmpty()
+                && (!supplied || program.nodes().get(call.children().getFirst()) instanceof ObjectSetExpression)
                 && guru.interlis.model.internal.LegacyAreaFunctions.matches(function,
                 function.owner().flatMap(plan::symbol).orElse(null), id -> plan.effectiveType(id).orElse(null));
         if (standard == StandardFunctions.GEOMETRY_LENGTH || standard == StandardFunctions.GEOMETRY_AREA) {

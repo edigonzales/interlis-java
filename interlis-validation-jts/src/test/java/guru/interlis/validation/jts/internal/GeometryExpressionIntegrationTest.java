@@ -272,6 +272,22 @@ class GeometryExpressionIntegrationTest {
     }
 
     @Test
+    void keepsLegacyAllNativeWhenAHostFunctionIsRegistered() {
+        var declarations = LEGACY_AREA_STRUCTURES + """
+                CLASS Item =
+                  groups : LIST {0..*} OF Group;
+                  path : TEXT;
+                  SET CONSTRAINT INTERLIS_ext.areAreas3(ALL,UNDEFINED,"groups->tiles->shape");
+                END Item;
+                """;
+        var data = transfer23(legacyItem("a", legacyGroup(tile23(0, 3)))
+                + legacyItem("b", legacyGroup(tile23(2, 5))));
+        var report = validate("2.3", declarations, data, true, ValidationOptions.defaults(),
+                ValidationProfile.DATASET, true, true);
+        assertEquals(List.of(ValidationCode.SET_CONSTRAINT_FALSE), codes(report));
+    }
+
+    @Test
     void checksEachLegacySurfaceBagGroupSeparately() {
         var item = LEGACY_AREA_STRUCTURES + """
                 CLASS Item =
@@ -397,16 +413,17 @@ class GeometryExpressionIntegrationTest {
     }
 
     private static ValidationReport validateLegacyAreas(String declarations, String contents, ValidationProfile profile) {
-        return validate("2.3", declarations, transfer23(contents), true, ValidationOptions.defaults(), profile, true);
+        return validate("2.3", declarations, transfer23(contents), true, ValidationOptions.defaults(), profile, true, false);
     }
 
     private static ValidationReport validate(String version, String declarations, String xtf, boolean engine,
                                              ValidationOptions options) {
-        return validate(version, declarations, xtf, engine, options, ValidationProfile.DATASET, false);
+        return validate(version, declarations, xtf, engine, options, ValidationProfile.DATASET, false, false);
     }
 
     private static ValidationReport validate(String version, String declarations, String xtf, boolean engine,
-                                             ValidationOptions options, ValidationProfile profile, boolean legacyAreas) {
+                                             ValidationOptions options, ValidationProfile profile, boolean legacyAreas,
+                                             boolean hostAreaSet) {
         var id = new SourceId("memory:/Checks.ili");
         var source = new SourceText(id, new SourceRevision(1), """
                 %s
@@ -423,6 +440,15 @@ class GeometryExpressionIntegrationTest {
                         ? rejected.analysis().diagnostics().toString() : compiled.toString()).schema();
         var transfer = assertInstanceOf(TransferPlanningResult.Ready.class, TransferPlanner.plan(schema)).plan();
         var bindings = engine ? RuntimeBindings.empty().withGeometry(JtsGeometryEngine.standard()) : RuntimeBindings.empty();
+        if (hostAreaSet) {
+            var function = schema.semanticGraph().symbols().stream()
+                    .filter(guru.interlis.model.FunctionSymbol.class::isInstance)
+                    .map(guru.interlis.model.FunctionSymbol.class::cast)
+                    .filter(symbol -> symbol.name().value().equals("areAreas3")).findFirst().orElseThrow();
+            var ref = new guru.interlis.model.SymbolRef(schema.semanticGraph().snapshotId(), function.id());
+            bindings = new RuntimeBindings(Map.of(), Map.of(ref, new FunctionBinding(function, "test", "1",
+                    (arguments, context, token) -> fail("ALL must use the native evaluator"))), bindings.geometry());
+        }
         var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
                 ValidationPlanner.plan(transfer, profile, bindings)).plan();
         var bytes = new ByteArrayInputStream(xtf.getBytes(StandardCharsets.UTF_8));

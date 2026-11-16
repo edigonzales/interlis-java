@@ -159,14 +159,16 @@ final class ExpressionCompiler {
             }
             var standard = StandardFunctions.bind(function).orElse(null);
             boolean supplied = hostFunction.test(function.id());
-            boolean legacyArea = !supplied && !call.argumentPaths().isEmpty()
-                    && guru.interlis.model.internal.LegacyAreaFunctions.matches(function,
+            boolean legacyArea = guru.interlis.model.internal.LegacyAreaFunctions.matches(function,
                     function.header().owner().flatMap(graph::symbol).orElse(null), id -> effective(id).orElse(null));
             if (standard == StandardFunctions.AREAS || standard == StandardFunctions.AREAS_WITHOUT_GAPS) {
                 populationRequired = true;
             }
-            if (legacyArea) {
-                populationRequired |= expression(call.children().getFirst()) instanceof ObjectSetExpression;
+            boolean setArgument = !call.children().isEmpty()
+                    && expression(call.children().getFirst()) instanceof ObjectSetExpression;
+            boolean nativeArea = legacyArea && (!supplied || setArgument) && !call.argumentPaths().isEmpty();
+            if (nativeArea) {
+                populationRequired |= setArgument;
                 for (var path : call.argumentPaths().values()) {
                     var binding = path.binding();
                     if (binding.isEmpty() || !visit(binding.orElseThrow(), depth + 1)) {
@@ -179,7 +181,7 @@ final class ExpressionCompiler {
                         .anyMatch(ObjectSetExpression.class::isInstance);
             }
             return function.origin() instanceof Origin.PredefinedOrigin
-                    ? standard != null : supplied || legacyArea;
+                    ? standard != null : nativeArea || supplied && !(legacyArea && setArgument);
         }
 
         private TypedExpression expression(ExpressionId id) {
