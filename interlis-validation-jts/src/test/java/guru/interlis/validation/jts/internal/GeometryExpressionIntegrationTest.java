@@ -276,7 +276,6 @@ class GeometryExpressionIntegrationTest {
         var declarations = LEGACY_AREA_STRUCTURES + """
                 CLASS Item =
                   groups : LIST {0..*} OF Group;
-                  path : TEXT;
                   SET CONSTRAINT INTERLIS_ext.areAreas3(ALL,UNDEFINED,"groups->tiles->shape");
                 END Item;
                 """;
@@ -285,6 +284,10 @@ class GeometryExpressionIntegrationTest {
         var report = validate("2.3", declarations, data, true, ValidationOptions.defaults(),
                 ValidationProfile.DATASET, true, true);
         assertEquals(List.of(ValidationCode.SET_CONSTRAINT_FALSE), codes(report));
+        var dynamicPath = declarations.replace("\"groups->tiles->shape\"", "INTERLIS.trim(\"groups->tiles->shape\")");
+        var dynamic = validate("2.3", dynamicPath, data, true, ValidationOptions.defaults(),
+                ValidationProfile.DATASET, true, true);
+        assertEquals(DatasetRuleCoverage.Outcome.UNSUPPORTED, dynamic.coverage().datasetRules().getFirst().outcome());
     }
 
     @Test
