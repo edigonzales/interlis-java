@@ -1,12 +1,2 @@
 # Original JUnit method	Fixture	Exact validation evidence (- for no findings)	Reason
 ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T16a	RSU.T16a.xtf	-	Fixture expects a dangle and self-intersection. Both the native validator and ilivalidator 1.15.1 accept the delivered boundary.
-ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T18a	RSU.T18a.xtf	UNSUPPORTED_EXPRESSION:INTERLIS_ext.areAreas2	Model-declared legacy host function INTERLIS_ext.areAreas2 requires a runtime binding for its TEXT path.
-ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T18b	RSU.T18b.xtf	UNSUPPORTED_EXPRESSION:INTERLIS_ext.areAreas2	Model-declared legacy host function INTERLIS_ext.areAreas2 requires a runtime binding for its TEXT path.
-ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T18c	RSU.T18c.xtf	UNSUPPORTED_EXPRESSION:INTERLIS_ext.areAreas2	Model-declared legacy host function INTERLIS_ext.areAreas2 requires a runtime binding for its TEXT path.
-ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T18d	RSU.T18d.xtf	UNSUPPORTED_EXPRESSION:INTERLIS_ext.areAreas2	Model-declared legacy host function INTERLIS_ext.areAreas2 requires a runtime binding for its TEXT path.
-ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T18e	RSU.T18e.xtf	UNSUPPORTED_EXPRESSION:INTERLIS_ext.areAreas2	Model-declared legacy host function INTERLIS_ext.areAreas2 requires a runtime binding for its TEXT path.
-ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T19a	RSU.T19a.xtf	UNSUPPORTED:INTERLIS_ext.areAreas3	Model-declared legacy host function INTERLIS_ext.areAreas3 requires a runtime binding for its TEXT path.
-ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T19b	RSU.T19b.xtf	UNSUPPORTED:INTERLIS_ext.areAreas3	Model-declared legacy host function INTERLIS_ext.areAreas3 requires a runtime binding for its TEXT path.
-ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T19c	RSU.T19c.xtf	UNSUPPORTED:INTERLIS_ext.areAreas3	Model-declared legacy host function INTERLIS_ext.areAreas3 requires a runtime binding for its TEXT path.
-ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T19d	RSU.T19d.xtf	UNSUPPORTED:INTERLIS_ext.areAreas3	Model-declared legacy host function INTERLIS_ext.areAreas3 requires a runtime binding for its TEXT path.
-ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T19e	RSU.T19e.xtf	UNSUPPORTED:INTERLIS_ext.areAreas3	Model-declared legacy host function INTERLIS_ext.areAreas3 requires a runtime binding for its TEXT path.

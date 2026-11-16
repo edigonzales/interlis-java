@@ -125,7 +125,7 @@ final class ExpressionCompiler {
                 case ConstantExpression constant -> constant(constant);
                 case PathExpression path -> path.path().steps().stream().allMatch(this::pathStep);
                 case ObjectSetExpression set -> objectSet(set);
-                case FunctionCallExpression call -> function(call);
+                case FunctionCallExpression call -> function(call, depth);
                 case SymbolValueExpression value -> graph.symbol(value.target()).filter(symbol ->
                         symbol instanceof ParameterSymbol || symbol instanceof ClassSymbol
                                 || symbol instanceof StructureSymbol || symbol instanceof guru.interlis.model.AttributeSymbol
@@ -153,20 +153,33 @@ final class ExpressionCompiler {
                     && argument.objects();
         }
 
-        private boolean function(FunctionCallExpression call) {
+        private boolean function(FunctionCallExpression call, int depth) {
             if (!(call.targetFunction().flatMap(graph::symbol).orElse(null) instanceof FunctionSymbol function)) {
                 return false;
             }
             var standard = StandardFunctions.bind(function).orElse(null);
+            boolean supplied = hostFunction.test(function.id());
+            boolean legacyArea = !supplied && !call.argumentPaths().isEmpty()
+                    && guru.interlis.model.internal.LegacyAreaFunctions.matches(function,
+                    function.header().owner().flatMap(graph::symbol).orElse(null), id -> effective(id).orElse(null));
             if (standard == StandardFunctions.AREAS || standard == StandardFunctions.AREAS_WITHOUT_GAPS) {
                 populationRequired = true;
+            }
+            if (legacyArea) {
+                populationRequired |= expression(call.children().getFirst()) instanceof ObjectSetExpression;
+                for (var path : call.argumentPaths().values()) {
+                    var binding = path.binding();
+                    if (binding.isEmpty() || !visit(binding.orElseThrow(), depth + 1)) {
+                        return false;
+                    }
+                }
             }
             if (standard == StandardFunctions.OBJECT_COUNT) {
                 populationRequired |= call.children().stream().map(this::expression)
                         .anyMatch(ObjectSetExpression.class::isInstance);
             }
             return function.origin() instanceof Origin.PredefinedOrigin
-                    ? StandardFunctions.bind(function).isPresent() : hostFunction.test(function.id());
+                    ? standard != null : supplied || legacyArea;
         }
 
         private TypedExpression expression(ExpressionId id) {

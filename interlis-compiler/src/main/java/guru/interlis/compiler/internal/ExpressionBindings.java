@@ -527,12 +527,18 @@ final class ExpressionBindings {
                 }
             }
         }
-        if (!error) error = functions.bind(function,arguments,index.byId(owner).orElseThrow(),syntax.range(),BuiltinFunctions.Rule.SIMPLE).error();
+        var bound = FunctionBindings.Result.empty();
+        if (!error) {
+            var rule = functions.legacyAreaPaths(function, arguments) ? BuiltinFunctions.Rule.LEGACY_AREAS_TEXT
+                    : BuiltinFunctions.Rule.SIMPLE;
+            bound = functions.bind(function,arguments,index.byId(owner).orElseThrow(),syntax.range(),rule);
+            error = bound.error();
+        }
         if (!error) type=functions.returnType(function,arguments,syntax.range());
         state.defineExpression(new guru.interlis.model.FunctionCallExpression(id, type,
                 error ? guru.interlis.model.ExpressionTypeState.ERROR
                         : guru.interlis.model.ExpressionTypeState.RESOLVED,
-                syntax.range(), children, syntax.functionName().text(), target,Map.of()));
+                syntax.range(), children, syntax.functionName().text(), target,bound.paths()));
         return new ExpressionResult(id, type, error);
     }
 

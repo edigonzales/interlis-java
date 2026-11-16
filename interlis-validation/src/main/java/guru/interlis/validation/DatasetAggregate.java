@@ -109,43 +109,59 @@ final class DatasetAggregate {
                 !complete(population), context::visit,
                 condition.requirements().populationRequired() ? count : OptionalLong.empty(), context.cancellation())
                 .withPopulations((type, explicit) -> new RuntimeObjectSet() {
+                    private final List<guru.interlis.model.SymbolId> roots =
+                            type.restrictions().isEmpty() ? type.base().stream().toList() : type.restrictions();
+
                     @Override public OptionalLong count() {
                         return explicit ? context.countPopulation(ordinal, type) : count;
                     }
 
                     @Override public java.util.Optional<GeometryEngine.Source> geometries(GeometrySelection paths) {
                         var incomplete = new boolean[]{!complete(population)};
-                        var roots = type.restrictions().isEmpty() ? type.base().stream().toList() : type.restrictions();
                         return java.util.Optional.of(new GeometryEngine.Source() {
                             @Override public boolean complete() {
                                 return !incomplete[0];
                             }
 
                             @Override public GeometryEngine.Cursor open() {
-                                return context.geometryCursor(occurrence -> {
-                                    if (occurrence.input().descriptor().role() != InputRole.PRIMARY || !occurrence.selected()
-                                            || ordinal != 0 && occurrence.stored().basket() != ordinal
-                                            || (explicit ? !roots.isEmpty() && roots.stream().noneMatch(root ->
-                                                    context.target(context.plan.ref(root), occurrence)) : !applicable(occurrence))) {
-                                        return List.of();
-                                    }
-                                    if (!explicit && where.isPresent()) {
-                                        var result = context.evaluate(where.orElseThrow(), occurrence);
-                                        if (!(result instanceof EvaluationResult.Known known
-                                                && known.value() instanceof TransferValue.BooleanValue value)) {
-                                            if (!(result instanceof EvaluationResult.UndefinedByData)) {
-                                                incomplete[0] = true;
-                                            }
-                                            return List.of();
-                                        }
-                                        if (!value.value()) {
-                                            return List.of();
-                                        }
-                                    }
-                                    return paths.from(context, occurrence, incomplete);
-                                });
+                                return context.geometryCursor(occurrence -> selects(occurrence, incomplete)
+                                        ? paths.from(context, occurrence, incomplete) : List.of());
                             }
                         });
+                    }
+
+                    @Override public GeometryEngine.Check checkAreaGroups(GeometrySelection paths, GeometryEngine engine,
+                                                                          GeometryEngine.Control control) {
+                        var incomplete = new boolean[]{!complete(population)};
+                        var check = new GeometryEngine.Check[]{GeometryEngine.Check.VALID};
+                        context.forObjects(occurrence -> {
+                            if (check[0] != GeometryEngine.Check.INVALID && selects(occurrence, incomplete)) {
+                                check[0] = GeometrySelection.combine(check[0], paths.check(context, occurrence, engine, control));
+                            }
+                        });
+                        return GeometrySelection.combine(check[0], incomplete[0]
+                                ? GeometryEngine.Check.MISSING_PARAMETERS : GeometryEngine.Check.VALID);
+                    }
+
+                    private boolean selects(DatasetRuleContext.Occurrence occurrence, boolean[] incomplete) {
+                        if (occurrence.input().descriptor().role() != InputRole.PRIMARY || !occurrence.selected()
+                                || ordinal != 0 && occurrence.stored().basket() != ordinal
+                                || (explicit ? !roots.isEmpty() && roots.stream().noneMatch(root ->
+                                        context.target(context.plan.ref(root), occurrence)) : !applicable(occurrence))) {
+                            return false;
+                        }
+                        if (explicit || where.isEmpty()) {
+                            return true;
+                        }
+                        var filter = context.evaluate(where.orElseThrow(), occurrence);
+                        if (filter instanceof EvaluationResult.Known known
+                                && known.value() instanceof TransferValue.BooleanValue value) {
+                            return value.value();
+                        }
+                        if (!(filter instanceof EvaluationResult.UndefinedByData)) {
+                            incomplete[0] = true;
+                        }
+                        return false;
                     }
                 }));
         if (result instanceof EvaluationResult.Known known && known.value() instanceof TransferValue.BooleanValue value) {

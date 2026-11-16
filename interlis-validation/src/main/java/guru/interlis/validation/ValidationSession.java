@@ -366,7 +366,8 @@ public final class ValidationSession implements AutoCloseable {
             return children;
         }
         var frame = new EvaluationFrame(plan, pending.container(), partial, budget::consume,
-                java.util.OptionalLong.empty(), budget.cancellation).withParents(pending.ancestors());
+                java.util.OptionalLong.empty(), budget.cancellation).withParents(pending.ancestors())
+                .withLocalGeometry(location(object, ValuePath.steps(pending.path().parent())), basket.domains());
         var result = DerivedValueResolver.resolve(field.slot().attribute(), frame);
         var computed = checkDerivation(pending, result, effectiveType(rules, basket), partial,
                 location(object, ValuePath.steps(pending.path())));
@@ -538,7 +539,8 @@ public final class ValidationSession implements AutoCloseable {
             return;
         }
         var result = plan.expression(expression).evaluate(new EvaluationFrame(plan, current, partial, budget::consume,
-                java.util.OptionalLong.empty(), budget.cancellation));
+                java.util.OptionalLong.empty(), budget.cancellation)
+                .withLocalGeometry(location(root, ValuePath.steps(path)), basket.domains()));
         recordConstraint(root, owner, slot, declaration, path, result, null);
     }
 

@@ -1,19 +1,17 @@
 # Abweichungen der swisstopo-Validatorsuite
 
 Stand der Originalsuite ist `f307111`. Der vollständige
-Lauf für INTERLIS 2.3 und XTF 2.3 ergab 212 bestandene Originaltests und
-11 bekannte Abweichungen. Alle 223 Originaltests wurden ausgeführt.
+Lauf für INTERLIS 2.3 und XTF 2.3 ergab 222 bestandene Originaltests und
+eine bekannte Abweichung. Alle 223 Originaltests wurden ausgeführt.
 Die Originaltests, Modelle und XTF-Dateien sind unverändert.
 
 | Originalfälle | Erwartung und beobachtetes Ergebnis | Begründung |
 | --- | --- | --- |
 | `RSU.T16a` | Die Suite erwartet ein freies Randende und eine Selbstüberschneidung. Unser Validator und ilivalidator 1.15.1 akzeptieren den Originalfall. | Abweichung der Suite-Erwartung. Der Rand ist geschlossen und die geometrische Nachrechnung ergibt keinen Selbstschnitt. Siehe [Geometrie von `RSU.T16a`](#geometrie-von-rsut16a). |
-| `RSU.T18a`, `RSU.T18b`, `RSU.T18c`, `RSU.T18d`, `RSU.T18e` | Die obligatorische Bedingung mit `INTERLIS_ext.areAreas2` bleibt ungeprüft. Der Runner beobachtet `UNSUPPORTED_EXPRESSION` für genau diese Funktion. | Das Originalmodell deklariert eine externe Legacy-Funktion mit dem TEXT-Pfad `Geom->Geom1->Geom2`. Für diese Funktion fehlt im verwendeten Validator eine Laufzeitbindung. |
-| `RSU.T19a`, `RSU.T19b`, `RSU.T19c`, `RSU.T19d`, `RSU.T19e` | Das `SET CONSTRAINT` mit `INTERLIS_ext.areAreas3` bleibt ungeprüft. Die Abdeckung meldet `UNSUPPORTED` für genau diese Funktion. | Auch hier fehlt die Laufzeitbindung für die externe Legacy-Funktion. Sie prüft mit `ALL` eine Objektmenge und verwendet denselben TEXT-Pfad. |
 
 Die [Abweichungsliste des Runners](../../build/interlis/validator-conformance/deviations.tsv)
 enthält pro Originaltest die erwartete Beobachtung. Im nativen JUnit-Bericht
-bleiben die 11 Fälle als Fehler sichtbar. Der Runner scheitert bei neuen
+bleibt dieser Fall als Fehler sichtbar. Der Runner scheitert bei neuen
 Fehlern, technischen Störungen, geänderten Befunden und inzwischen
 bestandenen Fällen mit noch vorhandenem Eintrag. Den lokalen Aufruf
 beschreibt die [Testanleitung](testing.md#swisstopo-validator-konformität).
