@@ -16,6 +16,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,6 +35,7 @@ public final class DatasetValidationSession implements AutoCloseable {
     private final IdentityIndex identities;
     private final ValidationSession local;
     private final Map<InputId, Long> inputs = new HashMap<>();
+    private final LinkedHashSet<SymbolRef> primaryTopics;
     private State state = State.OPEN;
     private long baskets;
     private long objects;
@@ -53,6 +55,7 @@ public final class DatasetValidationSession implements AutoCloseable {
         this.objectStore = new DatasetObjectStore(storage, codec);
         this.identities = new IdentityIndex(storage);
         this.local = new ValidationSession(plan, options.localOptions());
+        this.primaryTopics = new LinkedHashSet<>(plan.subjects().rootTopics());
     }
 
     /** Reads one input through EOF. Any failure makes the session terminal. */
@@ -140,6 +143,10 @@ public final class DatasetValidationSession implements AutoCloseable {
                 }
                 if (baskets == options.limits().maxBaskets()) {
                     throw new ValidationLimitException("Dataset basket budget exceeded");
+                }
+                if (plan.subjects().selects(descriptor.role(), start)) {
+                    primaryTopics.add(start.topic());
+                    primaryTopics.addAll(start.additionalTopics());
                 }
                 completeDelivery &= start.consistency() == TransferEvent.Consistency.COMPLETE;
                 context.basket = start;
@@ -251,7 +258,7 @@ public final class DatasetValidationSession implements AutoCloseable {
             new DatasetReferences(plan, storage, codec, objectStore, identities, options, completeDelivery, local).check(cancellation);
             new RelationCardinalities(plan, storage, codec, objectStore, identities, options, completeDelivery, local).check(cancellation);
             var context = new DatasetRuleContext(plan, storage, codec, objectStore, identities, options,
-                    completeDelivery, cancellation);
+                    completeDelivery, List.copyOf(primaryTopics), cancellation);
             context.checkDeferredConstraints(local);
             new ViewExecutor(context).check(local);
             var coverage = new ArrayList<>(checkDatasetRules(context));
@@ -261,6 +268,7 @@ public final class DatasetValidationSession implements AutoCloseable {
             var report = local.finishDataset(coverage, options.scope());
             cancellation.throwIfCancellationRequested();
             inputs.clear();
+            primaryTopics.clear();
             state = State.FINISHED;
             return report;
         } catch (RuntimeException failure) {
@@ -334,6 +342,7 @@ public final class DatasetValidationSession implements AutoCloseable {
 
     private void fail() {
         inputs.clear();
+        primaryTopics.clear();
         local.close();
         state = State.FAILED;
     }
@@ -341,6 +350,7 @@ public final class DatasetValidationSession implements AutoCloseable {
     @Override
     public void close() {
         inputs.clear();
+        primaryTopics.clear();
         local.close();
         state = State.CLOSED;
     }

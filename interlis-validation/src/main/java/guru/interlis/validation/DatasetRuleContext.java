@@ -34,12 +34,13 @@ final class DatasetRuleContext {
     private final ReferenceResolver resolver;
     private final DatasetOptions options;
     private final boolean closedDelivery;
+    private final List<SymbolRef> primaryTopics;
     private final CancellationToken cancellation;
     private long remainingWork;
 
     DatasetRuleContext(ValidationPlan plan, ValidationStorage storage, StoredValueCodec codec,
                        DatasetObjectStore objects, IdentityIndex identities, DatasetOptions options,
-                       boolean completeDelivery, CancellationToken cancellation) {
+                       boolean completeDelivery, List<SymbolRef> primaryTopics, CancellationToken cancellation) {
         this.plan = plan;
         this.keys = storage.table(StorageArea.RULE_KEYS);
         this.temporary = storage.table(StorageArea.TEMPORARY);
@@ -49,6 +50,7 @@ final class DatasetRuleContext {
         this.resolver = new ReferenceResolver(plan, identities, objects);
         this.options = options;
         this.closedDelivery = completeDelivery && options.scope() == DatasetScope.SUPPLIED_DATASET;
+        this.primaryTopics = primaryTopics;
         this.cancellation = cancellation;
         this.remainingWork = options.limits().maxConstraintWork();
     }
@@ -131,10 +133,9 @@ final class DatasetRuleContext {
 
     void initializeScopes(DatasetRulePlan rule, boolean basketRule,
                           BiConsumer<Long, DatasetScopeStore.Completeness> consumer) {
-        var root = rule.key().applicationRoot();
         if (!basketRule) {
-            boolean selected = plan.transferPlan().topics().stream()
-                    .anyMatch(topic -> selectsPopulation(rule, List.of(topic.symbol())));
+            // A reference model can extend a primary topic without contributing a primary population.
+            boolean selected = primaryTopics.stream().anyMatch(topic -> selectsPopulation(rule, List.of(topic)));
             if (selected) {
                 consumer.accept(0L, closedDelivery ? DatasetScopeStore.Completeness.CLOSED_DELIVERY
                         : DatasetScopeStore.Completeness.OPEN);

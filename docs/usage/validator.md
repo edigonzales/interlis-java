@@ -36,8 +36,9 @@ zur Verfügung.
 
 Wiederholtes `--model NAME` bestimmt die primären Modellwurzeln. Standardmässig
 stammen sie aus den primären Transferheadern. Alle Dateien werden gegen
-dieselbe kompilierte Modell-Closure geprüft. XTF-Header und Modellzuordnung
-werden weiterhin geprüft. `--` beendet die Optionserkennung.
+dieselbe kompilierte Modell-Closure geprüft. Mit expliziter Modellwahl muss
+jeder Primärheader ein passendes Modell deklarieren. Ein Primärbasket ausserhalb
+der gewählten Topics wird abgelehnt. `--` beendet die Optionserkennung.
 
 ## Prüfumfang und Speicher
 
@@ -79,7 +80,7 @@ und `format` (`xtf23` oder `xtf24`). Bei einem Datenlauf erscheint
 `scope` als `supplied-dataset` oder `partial-dataset`.
 `completed` bestätigt das Erreichen des Dateiendes aller Eingaben, den
 Datensatzabschluss und das Schliessen der Ressourcen. Nach abgeschlossenem
-Datenlauf folgen `objects`, `violations`, `diagnosticsTruncated`,
+Datenlauf folgen `objects` (geprüfte Primärobjekte), `violations`, `diagnosticsTruncated`,
 `diagnostics` und `unchecked`. Ein Diagnosebeispiel enthält den Code und die
 Meldung sowie bei Datenbefunden `location`, `ruleLocation` und
 `relatedLocations`. Vor dem Datensatzabschluss meldet das Kommando die

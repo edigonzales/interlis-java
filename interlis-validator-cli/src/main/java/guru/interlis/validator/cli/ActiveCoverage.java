@@ -31,15 +31,24 @@ final class ActiveCoverage {
         this.planned = validation.uncheckedRules();
     }
 
-    TransferReader observe(TransferReader reader, TransferPlan plan, InputRole role) {
+    TransferReader observe(TransferReader reader, TransferPlan plan, InputRole role,
+                           boolean explicitPrimary) {
+        boolean requirePrimary = role == InputRole.PRIMARY && explicitPrimary;
         return new TransferReader(plan) {
             private boolean selected;
 
             @Override protected Optional<TransferEvent> readEvent(CancellationToken token) {
                 var event = reader.readNext(token);
+                if (requirePrimary && event.orElse(null) instanceof TransferEvent.StartTransfer transfer
+                        && transfer.models().stream().noneMatch(model -> validation.selectsPrimaryModel(model.model()))) {
+                    throw new PrimaryModelMismatch("No declared transfer model matches the requested primary models");
+                }
                 if (event.orElse(null) instanceof TransferEvent.StartBasket basket) {
-                    selected = role == InputRole.PRIMARY && !planned.isEmpty() && validation.selectsPrimaryBasket(basket);
-                } else if (selected && event.orElse(null) instanceof TransferEvent.ObjectEvent object) {
+                    selected = role == InputRole.PRIMARY && validation.selectsPrimaryBasket(basket);
+                    if (requirePrimary && !selected) {
+                        throw new PrimaryModelMismatch("Basket is outside the requested primary models");
+                    }
+                } else if (selected && !planned.isEmpty() && event.orElse(null) instanceof TransferEvent.ObjectEvent object) {
                     collect(object.object().data(), token);
                 }
                 return event;
@@ -51,6 +60,12 @@ final class ActiveCoverage {
 
             @Override protected void release() { }
         };
+    }
+
+    static final class PrimaryModelMismatch extends IllegalArgumentException {
+        PrimaryModelMismatch(String message) {
+            super(message);
+        }
     }
 
     private void collect(TransferValue value, CancellationToken token) {

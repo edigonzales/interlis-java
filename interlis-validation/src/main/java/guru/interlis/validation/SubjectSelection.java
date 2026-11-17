@@ -4,6 +4,8 @@ import guru.interlis.model.SymbolRef;
 import guru.interlis.model.ViewSymbol;
 import guru.interlis.transfer.TransferEvent;
 
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -15,7 +17,12 @@ final class SubjectSelection {
         this.plan = plan;
         this.topics = plan.rootModels().stream()
                 .flatMap(model -> plan.transferPlan().model(model).orElseThrow().topics().stream())
-                .collect(Collectors.toUnmodifiableSet());
+                .collect(Collectors.collectingAndThen(Collectors.toCollection(LinkedHashSet::new),
+                        Collections::unmodifiableSet));
+    }
+
+    Set<SymbolRef> rootTopics() {
+        return topics;
     }
 
     boolean selects(InputRole role, TransferEvent.StartBasket basket) {

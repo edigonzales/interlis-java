@@ -278,6 +278,55 @@ class ValidatorCommandTest {
     }
 
     @Test
+    void anExtensionUsedOnlyAsReferenceCreatesNoEmptySetPopulation() throws Exception {
+        model(directory, "2.3", "");
+        write("Extra.ili", """
+                INTERLIS 2.3;
+                MODEL Extra AT "https://example.org/checks" VERSION "1" =
+                  IMPORTS Checks;
+                  TOPIC Lists EXTENDS Checks.Data =
+                    CLASS Witness =
+                      SET CONSTRAINT INTERLIS.objectCount(ALL) > 0;
+                    END Witness;
+                  END Lists;
+                END Extra.
+                """);
+        write("primary.xtf", legacy("<name>ok</name>"));
+        var extended = legacy("").replace("NAME=\"Checks\"", "NAME=\"Extra\"")
+                .replace("Checks.Data.Item", "Extra.Lists.Witness").replace("Checks.Data", "Extra.Lists");
+        write("reference.xtf", extended);
+        var referenced = run("--offline", "--json", "primary.xtf", "--refdata", "reference.xtf");
+        assertEquals(0, referenced.exit(), referenced.output());
+        assertEquals(1, referenced.json().get("objects").getAsLong());
+
+        write("extended-primary.xtf", extended.replaceFirst("(?s)<Extra.Lists.Witness.*?</Extra.Lists.Witness>", ""));
+        var delivered = run("--offline", "--json", "--model", "Checks",
+                "primary.xtf", "extended-primary.xtf", "--refdata", "reference.xtf");
+        assertEquals(1, delivered.exit(), delivered.output());
+        assertTrue(delivered.output().contains("SET_CONSTRAINT_FALSE"), delivered.output());
+    }
+
+    @Test
+    void anExplicitPrimaryModelCannotPassAnUnrelatedTransferLoadedForReference() throws Exception {
+        model(directory, "2.3", "");
+        write("Other.ili", Files.readString(directory.resolve("Checks.ili")).replace("MODEL Checks", "MODEL Other")
+                .replace("END Checks.", "END Other."));
+        var foreign = legacy("<name>too many characters</name>").replace("NAME=\"Checks\"", "NAME=\"Other\"")
+                .replace("Checks.Data", "Other.Data");
+        write("foreign-primary.xtf", foreign);
+        write("reference.xtf", foreign);
+        var mismatched = run("--json", "--offline", "--model", "Checks", "foreign-primary.xtf",
+                "--refdata", "reference.xtf");
+        assertFailed(mismatched, 1, "transfer");
+        assertTrue(mismatched.output().contains("PRIMARY_MODEL_MISMATCH"), mismatched.output());
+
+        write("checks.xtf", legacy("<name>ok</name>"));
+        var matched = run("--json", "--offline", "--model", "Checks", "checks.xtf", "--refdata", "reference.xtf");
+        assertEquals(0, matched.exit(), matched.output());
+        assertEquals(1, matched.json().get("objects").getAsLong());
+    }
+
+    @Test
     void reportsEarlyAndOperationalFailuresWithoutACompletedResult() throws Exception {
         model(directory, "2.3", "");
         write("bad.xtf", legacy("<name>too many characters</name>"));

@@ -57,6 +57,9 @@ final class ValidatorCommand {
             return output.failure(code, output.phase, List.of(cancelled.reason().name()));
         } catch (XtfHeaderProbe.InvalidHeader invalid) {
             return output.failure(1, "header", List.of(invalid.getMessage()), "INVALID_WIRE");
+        } catch (ActiveCoverage.PrimaryModelMismatch mismatch) {
+            return output.failure(mismatch.getSuppressed().length == 0 ? 1 : 3,
+                    "transfer", List.of(mismatch.getMessage()), "PRIMARY_MODEL_MISMATCH");
         } catch (Xtf23Exception invalid) {
             return wireFailure(invalid.reason().name(), invalid, output);
         } catch (Xtf24Exception invalid) {
@@ -110,7 +113,7 @@ final class ValidatorCommand {
             output.phase = "transfer";
             for (var input : inputs) {
                 output.currentInput = input.path();
-                read(input, transfer, run, coverage, token);
+                read(input, transfer, run, coverage, !options.models().isEmpty(), token);
             }
             output.currentInput = null;
             output.phase = "validation";
@@ -151,13 +154,13 @@ final class ValidatorCommand {
     }
 
     private static void read(ValidationInput input, TransferPlan transfer, DatasetValidationSession run,
-                             ActiveCoverage coverage, CancellationToken token) throws IOException {
+                             ActiveCoverage coverage, boolean explicitPrimary, CancellationToken token) throws IOException {
         var source = new SourceId(input.path().toUri().toString());
         try (var stream = Files.newInputStream(input.path());
              var reader = input.header().xtf23()
                      ? new Xtf23Reader(transfer, stream, Optional.of(source))
                      : new Xtf24Reader(transfer, stream, Optional.of(source));
-             var observed = coverage.observe(reader, transfer, input.role())) {
+             var observed = coverage.observe(reader, transfer, input.role(), explicitPrimary)) {
             run.readInput(new InputDescriptor(new InputId(source.value()), input.role()), observed, token);
         }
     }

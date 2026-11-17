@@ -104,6 +104,16 @@ public final class ValidationPlan {
         return subjects.selects(InputRole.PRIMARY, basket);
     }
 
+    /**
+     * Returns whether the non-null model belongs to the primary roots or
+     * contributes a topic extending a selected topic. The reference must
+     * belong to this plan's schema snapshot.
+     */
+    public boolean selectsPrimaryModel(SymbolRef model) {
+        return transferPlan.model(model).filter(descriptor -> rootModels.contains(model)
+                || descriptor.topics().stream().anyMatch(subjects::selectsTopic)).isPresent();
+    }
+
     SubjectSelection subjects() {
         return subjects;
     }
