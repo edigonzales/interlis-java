@@ -16,6 +16,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,10 +35,30 @@ public final class DatasetValidationSession implements AutoCloseable {
     private final IdentityIndex identities;
     private final ValidationSession local;
     private final Map<InputId, Long> inputs = new HashMap<>();
+    private final LinkedHashSet<SymbolRef> primaryTopics;
     private State state = State.OPEN;
     private long baskets;
     private long objects;
     private boolean primary;
+    private Findings terminalFindings;
+
+    /** Violations observed so far, with immutable, bounded diagnostic examples. */
+    public record Findings(long detectedViolations, List<ValidationDiagnostic> examples) {
+        public Findings {
+            examples = List.copyOf(examples);
+            if (detectedViolations < examples.size()) throw new IllegalArgumentException("Inconsistent findings");
+        }
+    }
+
+    /**
+     * Returns findings from the checks already executed, including after a failed read or finish.
+     * The count may be a lower bound until finish succeeds. This is not a completed report.
+     * @throws IllegalStateException if this session has been closed
+     */
+    public Findings findings() {
+        if (state == State.CLOSED) throw new IllegalStateException("Dataset session is closed");
+        return terminalFindings == null ? local.findings() : terminalFindings;
+    }
 
     DatasetValidationSession(ValidationPlan plan, DatasetOptions options, ValidationStorage storage) {
         this.plan = plan;
@@ -53,6 +74,7 @@ public final class DatasetValidationSession implements AutoCloseable {
         this.objectStore = new DatasetObjectStore(storage, codec);
         this.identities = new IdentityIndex(storage);
         this.local = new ValidationSession(plan, options.localOptions());
+        this.primaryTopics = new LinkedHashSet<>(plan.subjects().rootTopics());
     }
 
     /** Reads one input through EOF. Any failure makes the session terminal. */
@@ -140,6 +162,10 @@ public final class DatasetValidationSession implements AutoCloseable {
                 }
                 if (baskets == options.limits().maxBaskets()) {
                     throw new ValidationLimitException("Dataset basket budget exceeded");
+                }
+                if (plan.subjects().selects(descriptor.role(), start)) {
+                    primaryTopics.add(start.topic());
+                    primaryTopics.addAll(start.additionalTopics());
                 }
                 completeDelivery &= start.consistency() == TransferEvent.Consistency.COMPLETE;
                 context.basket = start;
@@ -251,7 +277,7 @@ public final class DatasetValidationSession implements AutoCloseable {
             new DatasetReferences(plan, storage, codec, objectStore, identities, options, completeDelivery, local).check(cancellation);
             new RelationCardinalities(plan, storage, codec, objectStore, identities, options, completeDelivery, local).check(cancellation);
             var context = new DatasetRuleContext(plan, storage, codec, objectStore, identities, options,
-                    completeDelivery, cancellation);
+                    completeDelivery, List.copyOf(primaryTopics), cancellation);
             context.checkDeferredConstraints(local);
             new ViewExecutor(context).check(local);
             var coverage = new ArrayList<>(checkDatasetRules(context));
@@ -259,8 +285,10 @@ public final class DatasetValidationSession implements AutoCloseable {
             cancellation.throwIfCancellationRequested();
             storage.checkpoint();
             var report = local.finishDataset(coverage, options.scope());
+            terminalFindings = new Findings(report.detectedViolations(), report.examples());
             cancellation.throwIfCancellationRequested();
             inputs.clear();
+            primaryTopics.clear();
             state = State.FINISHED;
             return report;
         } catch (RuntimeException failure) {
@@ -333,14 +361,18 @@ public final class DatasetValidationSession implements AutoCloseable {
     }
 
     private void fail() {
+        if (terminalFindings == null) terminalFindings = local.findings();
         inputs.clear();
+        primaryTopics.clear();
         local.close();
         state = State.FAILED;
     }
 
     @Override
     public void close() {
+        terminalFindings = null;
         inputs.clear();
+        primaryTopics.clear();
         local.close();
         state = State.CLOSED;
     }

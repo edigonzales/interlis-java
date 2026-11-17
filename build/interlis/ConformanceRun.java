@@ -27,7 +27,7 @@ public final class ConformanceRun {
         Path cache = override == null ? Path.of(System.getProperty("user.home"), ".cache/interlis-java/conformance")
                 : Path.of(override).toAbsolutePath();
         Files.createDirectories(cache);
-        Path archive = cache.resolve("suite-" + pin.getProperty("commit") + ".tar.gz");
+        Path archive = cache.resolve("suite-" + pin.getProperty("commit") + "-" + pin.getProperty("sha256") + ".tar.gz");
         if (Files.notExists(archive)) {
             Path temporary = Files.createTempFile(cache, "suite-", ".part");
             try {

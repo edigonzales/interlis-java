@@ -34,22 +34,7 @@ final class DistributionChecks {
         boolean windows = System.getProperty("os.name").startsWith("Windows");
         Path folder = Files.createTempDirectory("interlis SDK ä ");
         try {
-            try (var zip = new ZipFile(archive.toFile())) {
-                var paths = new HashSet<Path>();
-                for (var entry : zip.stream().toList()) {
-                    Path target = folder.resolve(entry.getName()).normalize();
-                    require(!entry.getName().contains("\\") && target.startsWith(folder)
-                            && !target.equals(folder) && paths.add(target), "Unsafe or duplicate ZIP entry " + entry.getName());
-                    if (!windows) continue;
-                    if (entry.isDirectory()) Files.createDirectories(target);
-                    else {
-                        Files.createDirectories(target.getParent());
-                        try (var input = zip.getInputStream(entry)) { Files.copy(input, target); }
-                    }
-                }
-            }
-            if (!windows) run(folder, List.of("unzip", "-q", archive.toString())).requireExit(0);
-
+            extractArchive(archive, folder);
             Path cli = folder.resolve("cli");
             verifyInstallation(delivery.resolve("compiler"), cli);
             Path launcher = ExistingJvmDistribution.launcher(cli, "interlis-compiler");
@@ -88,6 +73,25 @@ final class DistributionChecks {
                 for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) Files.deleteIfExists(path);
             }
         }
+    }
+
+    static void extractArchive(Path archive, Path folder) throws Exception {
+        boolean windows = System.getProperty("os.name").startsWith("Windows");
+        try (var zip = new ZipFile(archive.toFile())) {
+            var paths = new HashSet<Path>();
+            for (var entry : zip.stream().toList()) {
+                Path target = folder.resolve(entry.getName()).normalize();
+                require(!entry.getName().contains("\\") && target.startsWith(folder)
+                        && !target.equals(folder) && paths.add(target), "Unsafe or duplicate ZIP entry " + entry.getName());
+                if (!windows) continue;
+                if (entry.isDirectory()) Files.createDirectories(target);
+                else {
+                    Files.createDirectories(target.getParent());
+                    try (var input = zip.getInputStream(entry)) { Files.copy(input, target); }
+                }
+            }
+        }
+        if (!windows) run(folder, List.of("unzip", "-q", archive.toString())).requireExit(0);
     }
 
     private static void checkCli(Path root, Path folder, Path launcher) throws Exception {

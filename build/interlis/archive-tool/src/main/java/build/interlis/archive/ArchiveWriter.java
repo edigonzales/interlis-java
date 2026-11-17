@@ -18,7 +18,11 @@ public final class ArchiveWriter {
                 if(Files.isSymbolicLink(file))throw new IllegalArgumentException("Symlink in SDK staging: "+file);
                 boolean directory=Files.isDirectory(file);String name=root.relativize(file).toString().replace('\\','/')+(directory?"/":"");
                 var entry=new ZipArchiveEntry(name);entry.setTimeLocal(LocalDateTime.of(1980,2,1,0,0));
-                boolean launcher=name.equals("cli/bin/interlis-compiler")||name.equals("cli/bin/interlis-compiler.bat");
+                boolean launcher = switch (name) {
+                    case "cli/bin/interlis-compiler", "cli/bin/interlis-compiler.bat",
+                            "interlis-validator/bin/interlis-validator", "interlis-validator/bin/interlis-validator.bat" -> true;
+                    default -> false;
+                };
                 entry.setUnixMode((directory?040000:0100000)|(directory||launcher?0755:0644));
                 zip.putArchiveEntry(entry);if(!directory)Files.copy(file,zip);zip.closeArchiveEntry();
             }

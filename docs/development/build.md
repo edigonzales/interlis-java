@@ -1,6 +1,6 @@
 # Build und Toolchains
 
-Jenesis 0.18.1 erzeugt die vierzehn JVM-Module mit Java 25 ohne Preview. Die POMs
+Jenesis 0.18.1 erzeugt die fünfzehn JVM-Module mit Java 25 ohne Preview. Die POMs
 definieren Group, Artifact, Version, Scopes und Pins. Die [Jenesis-Quellen](../../build/jenesis) liegen im Repository.
 Der gepinnte
 Gradle-Wrapper baut ausschliesslich TeaVM und GraalVM Web Image.
@@ -30,6 +30,7 @@ und die Compilerressourcen einschliesslich der Grammatik im Source-JAR.
 |---|---|
 | `java -Djenesis.test.skip=true build/jenesis/Make.java stage` | JVM-Produkte und Staging ohne Testausführung |
 | `java build/interlis/ConformanceRun.java` | Gepinnte Codeberg-Suite für INTERLIS 2.3 und 2.4 |
+| `java build/interlis/ExistingJvmDistribution.java validator` | Validator-ZIP mit Unix- und Windows-Launcher und Prüfung des entpackten Pakets |
 | `java build/interlis/ExistingJvmDistribution.java compiler` | Compiler-ZIP, Prüfung des entpackten Launchers und SHA256SUMS |
 | `java build/interlis/ExistingJvmDistribution.java sdk` | Modulare CLI-/LSP-Launcher und SDK-ZIP |
 | `java build/interlis/ExistingJvmDistribution.java check` | SDK-Auslieferung und installierte CLI-/LSP-/SDK-Prozesse prüfen |

@@ -1,7 +1,6 @@
 package guru.interlis.conformance;
 
 import ch.interlis.testsuite.util.TestUtil;
-import guru.interlis.execution.CancellationToken;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -37,9 +36,9 @@ final class SuiteValidationTest {
     void acceptsOriginalFullTransfersWithAndWithoutModelledUuidDomains() throws IOException {
         var suite = Path.of(System.getProperty("suite.directory"));
         assertTrue(SuiteValidation.validate(suite.resolve("data/RKA.T01a.xtf"),
-                suite.resolve("data/models"), CancellationToken.none()));
+                suite.resolve("data/models")));
         assertTrue(SuiteValidation.validate(suite.resolve("data/RAt.T11c.xtf"),
-                suite.resolve("data/models"), CancellationToken.none()));
+                suite.resolve("data/models")));
     }
 
     @Test
@@ -49,12 +48,12 @@ final class SuiteValidationTest {
         var diagnostics = Files.readString(output.resolve("stdout"));
         var basketFinding = diagnostics.lines().filter(line -> line.startsWith("RAt.T11a.xtf DATA INVALID_OID "))
                 .findFirst().orElseThrow(() -> new AssertionError(diagnostics));
-        assertTrue(basketFinding.contains("BasketId[value=c91766e-ff86-4d5a-8cbf-9fb5620a4ee4"), basketFinding);
-        assertTrue(basketFinding.contains("objectType=Optional.empty"), basketFinding);
+        assertTrue(basketFinding.contains("\"bid\":\"c91766e-ff86-4d5a-8cbf-9fb5620a4ee4\""), basketFinding);
+        assertTrue(!basketFinding.contains("objectType"), basketFinding);
         var objectFinding = diagnostics.lines().filter(line -> line.startsWith("RAt.T11b.xtf DATA INVALID_OID "))
                 .findFirst().orElseThrow(() -> new AssertionError(diagnostics));
-        assertTrue(objectFinding.contains("TransferId[value=a33305d486-cf9b-11e7-abc4-cec278b6b50a"), objectFinding);
-        assertTrue(objectFinding.contains("oid=Optional.empty"), objectFinding);
+        assertTrue(objectFinding.contains("\"tid\":\"a33305d486-cf9b-11e7-abc4-cec278b6b50a\""), objectFinding);
+        assertTrue(!objectFinding.contains("\"oid\""), objectFinding);
     }
 
     @Test
@@ -96,7 +95,7 @@ final class SuiteValidationTest {
     @Test
     void doesNotReturnFalseForTechnicalErrors() {
         assertThrows(IOException.class, () -> SuiteValidation.validate(
-                directory.resolve("missing.xtf"), directory, CancellationToken.none()));
+                directory.resolve("missing.xtf"), directory));
         assertThrows(IllegalArgumentException.class, () -> TestUtil.runJob("unknown", "missing.xtf"));
     }
 
@@ -158,7 +157,7 @@ final class SuiteValidationTest {
         var diagnostics = Files.readString(output.resolve("stdout"));
         assertTrue(diagnostics.contains("RAt.T09e.xtf EOF objects=4 violations=0"), diagnostics);
         assertTrue(diagnostics.lines().anyMatch(line -> line.startsWith("RAt.T09g.xtf DATA VALUE_OUT_OF_RANGE ")
-                && line.endsWith("[10000.1, 1.0, 10000.0]")), diagnostics);
+                && line.contains("\"arguments\":[\"10000.1\",\"1.0\",\"10000.0\"]")), diagnostics);
     }
 
     @Test
@@ -217,6 +216,19 @@ final class SuiteValidationTest {
     }
 
     @Test
+    void processErrorsCannotSatisfyNegativeOriginalTests() {
+        var wrongPhase = """
+                {"tool":"interlis-validator","exitCode":1,"status":"rejected","completed":false,
+                 "phase":"compilation","diagnostics":[{"code":"INVALID_WIRE"}]}
+                """;
+        assertThrows(IOException.class, () -> SuiteValidation.qualify("x.xtf", 1, wrongPhase, ""));
+        assertThrows(IOException.class, () -> SuiteValidation.qualify("x.xtf", 1, "", "crashed"));
+        assertThrows(IOException.class, () -> SuiteValidation.qualify("x.xtf", 1, wrongPhase + " {}", ""));
+        assertThrows(IOException.class, () -> SuiteValidation.qualify("x.xtf", 3,
+                wrongPhase.replace("compilation", "transfer"), ""));
+    }
+
+    @Test
     void missingSuiteDirectoryFailsTheCommand() throws Exception {
         var log = directory.resolve("missing.log");
         var process = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", "java").toString(),
@@ -239,14 +251,14 @@ final class SuiteValidationTest {
     private int runOriginalTests(String filter, Path output, Path baseline) throws Exception {
         var suite = Path.of(System.getProperty("suite.directory"));
         var javaExecutable = Path.of(System.getProperty("java.home"), "bin", "java");
-        var process = new ProcessBuilder(javaExecutable.toString(), "-Dvendor=interlis-java", "-cp",
+        var process = new ProcessBuilder(javaExecutable.toString(), "-Dvendor=interlis-java", "-Dsuite.validator=" + System.getProperty("suite.validator"), "-cp",
                 System.getProperty("java.class.path"), SuiteJUnit.class.getName(),
                 System.getProperty("suite.classes"), filter, output.toString(), baseline.toString())
                 .directory(suite.resolve("routine").toFile())
                 .redirectOutput(output.resolve("stdout").toFile())
                 .redirectError(output.resolve("stderr").toFile()).start();
         try {
-            assertTrue(process.waitFor(10, java.util.concurrent.TimeUnit.SECONDS), "Original tests timed out");
+            assertTrue(process.waitFor(45, java.util.concurrent.TimeUnit.SECONDS), "Original tests timed out");
             return process.exitValue();
         } finally {
             if (process.isAlive()) process.destroyForcibly();
@@ -255,7 +267,7 @@ final class SuiteValidationTest {
 
     private boolean validate(String xml) throws IOException {
         var path = Files.writeString(directory.resolve("delivery.xtf"), xml);
-        return SuiteValidation.validate(path, directory, CancellationToken.none());
+        return SuiteValidation.validate(path, directory);
     }
 
     private static String transfer(String type, String label) {

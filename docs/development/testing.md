@@ -18,6 +18,8 @@ prüfen tatsächliche Schreibverbote des Betriebssystems.
 - `java build/interlis/ExistingJvmDistribution.java check` prüft installierte CLI, SDK und LSP.
   Der LSP-Prozesscheck benötigt Node.
 - `java build/interlis/ConformanceRun.java` führt die gepinnte Codeberg-Suite aus.
+  Der Runner lädt denselben Suite-Commit aus dem GitHub-Spiegel und prüft
+  die SHA-256 des Archivs vor dem Entpacken.
   `--filter '^ili23\.Class23Test\.classComplete$'` prüft einen gezielten Fall.
   Die [Erwartungen](../../testdata/conformance/normative/expectations.json)
   und [Baseline](../../testdata/conformance/baseline.json) halten die begründeten Abweichungen fest.
@@ -31,7 +33,7 @@ prüfen tatsächliche Schreibverbote des Betriebssystems.
   `target/jenesis-jvm/validator-conformance/`. Die Originaltests verwenden
   den Herstellerwert `interlis-java`. Technische Fehler, eine leere Auswahl
   und unerwartete Originalfehler lassen den Befehl fehlschlagen. Der Linux-Job
-  führt dieselbe Suite nach Codeberg aus.
+  führt dieselbe Suite vor Codeberg aus.
 - Die [Buildanleitung](build.md#portable-backends) zeigt die Node-Smokes für die
   erzeugten JS-/WasmGC-Artefakte. Der Portable-CI-Job führt `browserSmoke`
   und `validationBrowserSmoke` mit Chromium aus. Die Validatorprobe
@@ -79,9 +81,15 @@ Die Klasse `GebaeudeRegister` darf den Namen ihres Topics tragen.
 Der Compiler akzeptiert diese Modellierung in 2.3 und 2.4 gemäss
 [Entscheidung 09](../contracts/norm-decisions.md#decision-09).
 Der Runner verwendet die unveränderten Originaltests, Modelle und XTF-Dateien.
-Die Suite prüft INTERLIS 2.3 und XTF 2.3.
+Die Suite prüft INTERLIS 2.3 und XTF 2.3 über den Launcher aus dem entpackten
+Validator-ZIP. Der Runner baut das ZIP bei Bedarf selbst. Mit
+`--validator-zip PATH` prüft er ein bereits gebautes Paket. Sein Testadapter
+wertet Exitcode und JSON aus. Modell- und Prozessfehler zählen als Fehler
+des Laufs. Bei `RHE.T05a/b` und `RSU.T17a/d` gibt der Adapter die vorhandenen
+Suite-Modelle explizit an, damit der XTF-Reader den falschen Namen oder die
+abweichende Version im gelieferten Header diagnostiziert.
 Der Linux-Job klont den Upstream-Zweig `master` einmal und startet den
-vollständigen Lauf nach Codeberg. Lokal lässt sich derselbe Runner mit
+vollständigen Lauf vor der Codeberg-Suite. Lokal lässt sich derselbe Runner mit
 einem vorhandenen Suite-Checkout aufrufen.
 
 ```bash

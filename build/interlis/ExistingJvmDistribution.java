@@ -7,19 +7,20 @@ import java.util.*;
 /** Existing CLI/LSP/SDK forms; products always come from the current Jenesis invocation. */
 public final class ExistingJvmDistribution {
     public static void main(String[] args) throws Exception {
-        if (args.length != 1) throw new IllegalArgumentException("Expected sdk, check or compiler");
+        if (args.length != 1) throw new IllegalArgumentException("Expected sdk, check, compiler or validator");
         Path root = Path.of("").toAbsolutePath().normalize();
         try (var lease = JvmBuildLock.acquire(root)) {
             switch (args[0]) {
                 case "sdk" -> generate(root);
                 case "check" -> run(root);
                 case "compiler" -> packageCompiler(root);
-                default -> throw new IllegalArgumentException("Expected sdk, check or compiler");
+                case "validator" -> System.out.println(packageValidator(root));
+                default -> throw new IllegalArgumentException("Expected sdk, check, compiler or validator");
             }
         }
     }
 
-    private enum Delivery { SDK, CHECKED_SDK, COMPILER }
+    private enum Delivery { SDK, CHECKED_SDK, COMPILER, VALIDATOR }
 
     public static void run(Path root) throws Exception {
         replace(root, Delivery.CHECKED_SDK);
@@ -35,14 +36,21 @@ public final class ExistingJvmDistribution {
     }
 
     private static Path replace(Path root, Delivery kind) throws Exception {
-        var outcome = JenesisBridge.artifacts(root, "+interlis-compiler-cli", "+interlis-lsp");
-        Path delivery = JvmBuildInputs.requireOutputRoot(root, "target/jenesis-jvm/delivery");
+        return replace(root, kind, "target/jenesis-jvm/delivery");
+    }
+
+    private static Path replace(Path root, Delivery kind, String destination) throws Exception {
+        var outcome = kind == Delivery.VALIDATOR
+                ? JenesisBridge.artifacts(root, "+interlis-validator-cli")
+                : JenesisBridge.artifacts(root, "+interlis-compiler-cli", "+interlis-lsp");
+        Path delivery = JvmBuildInputs.requireOutputRoot(root, destination);
         Path work = Files.createTempDirectory(delivery.getParent(), "delivery-");
         Path next = work.resolve("next");
         Path previous = work.resolve("previous");
         boolean cleanup = true;
         try {
-            generateAt(root, outcome, next);
+            if (kind == Delivery.VALIDATOR) packageValidatorAt(root, outcome, next);
+            else generateAt(root, outcome, next);
             if (kind == Delivery.CHECKED_SDK) DistributionChecks.check(root, next);
             if (kind == Delivery.COMPILER) packageCompilerAt(root, next);
             if (Files.exists(delivery)) Files.move(delivery, previous);
@@ -63,6 +71,86 @@ public final class ExistingJvmDistribution {
             if (cleanup) {
                 BuildOutputs.deleteTree(work, Set.of());
             }
+        }
+    }
+
+    static Path packageValidator(Path root) throws Exception {
+        return replace(root, Delivery.VALIDATOR, "target/jenesis-jvm/validator-delivery")
+                .resolve("interlis-validator-" + JvmBuildInputs.projectVersion(root) + ".zip");
+    }
+
+    private static void packageValidatorAt(Path root, JenesisBridge.BuildOutcome outcome, Path delivery) throws Exception {
+        Path staging = Files.createDirectories(delivery.resolve("staging"));
+        Path installed = staging.resolve("interlis-validator");
+        installProduct(root, outcome, installed, "interlis-validator-cli", "interlis-validator",
+                "guru.interlis.validator.cli.Main");
+        Files.copy(root.resolve("LICENSE"), installed.resolve("LICENSE"));
+        copyTree(root.resolve("build/interlis/validator-licenses"), installed.resolve("licenses"));
+        Files.writeString(installed.resolve("README.txt"), """
+                INTERLIS Validator
+                Requires Java 25. Set JAVA_HOME or make java available on PATH.
+
+                macOS/Linux: ./bin/interlis-validator --help
+                Windows:     bin\\interlis-validator.bat --help
+
+                Supports XTF 2.3 and 2.4. Use --json for a machine-readable result.
+                See https://github.com/edigonzales/interlis-java/blob/main/docs/usage/validator.md
+                """);
+        Path archive = delivery.resolve("interlis-validator-" + JvmBuildInputs.projectVersion(root) + ".zip");
+        archive(root, staging, archive);
+        BuildOutputs.deleteTree(staging, Set.of());
+        checkValidatorArchive(root, archive);
+    }
+
+    private static void checkValidatorArchive(Path root, Path archive) throws Exception {
+        Path folder = Files.createTempDirectory("interlis validator ä ");
+        try {
+            DistributionChecks.extractArchive(archive, folder);
+            Path installed = folder.resolve("interlis-validator");
+            Path cwd = Files.createDirectory(folder.resolve("data files"));
+            var launcher = launcher(installed, "interlis-validator").toString();
+            var version = DistributionChecks.run(cwd, List.of(launcher, "--version", "--json"));
+            version.requireExit(0);
+            var info = (Map<?, ?>) Json.parse(version.stdout());
+            if (!version.stderr().isEmpty() || !"interlis-validator".equals(info.get("tool"))
+                    || !JvmBuildInputs.projectVersion(root).equals(info.get("version"))) {
+                throw new IllegalStateException("Wrong installed validator version");
+            }
+            Files.writeString(cwd.resolve("Smoke.ili"), """
+                    INTERLIS 2.3;
+                    MODEL Smoke AT "https://example.org" VERSION "1" =
+                      TOPIC Data = CLASS Item = label : MANDATORY TEXT*3; END Item; END Data;
+                    END Smoke.
+                    """);
+            String xtf = """
+                    <?xml version="1.0" encoding="UTF-8"?>
+                    <TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+                      <HEADERSECTION VERSION="2.3" SENDER="smoke"><MODELS>
+                        <MODEL NAME="Smoke" VERSION="1" URI="https://example.org"/>
+                      </MODELS></HEADERSECTION>
+                      <DATASECTION><Smoke.Data BID="b"><Smoke.Data.Item TID="i">
+                        <label>%s</label>
+                      </Smoke.Data.Item></Smoke.Data></DATASECTION>
+                    </TRANSFER>
+                    """;
+            Files.writeString(cwd.resolve("reference data.xtf"), xtf.formatted("reference"));
+            for (String value : List.of("ok", "long")) {
+                String file = "-Daten ä " + value + ".xtf";
+                Files.writeString(cwd.resolve(file), xtf.formatted(value));
+                var result = DistributionChecks.run(cwd, List.of(launcher, "--offline", "--json", "--repository", ".",
+                        "--refdata", "reference data.xtf", "--", file));
+                int expected = value.equals("ok") ? 0 : 1;
+                result.requireExit(expected);
+                var report = (Map<?, ?>) Json.parse(result.stdout());
+                if (!Boolean.TRUE.equals(report.get("completed"))
+                        || !Double.valueOf(expected).equals(report.get("exitCode"))
+                        || !Double.valueOf(1).equals(report.get("objects"))
+                        || expected == 1 && !result.stdout().contains("TEXT_TOO_LONG")) {
+                    throw new IllegalStateException("Unexpected installed validator report: " + result.stdout());
+                }
+            }
+        } finally {
+            BuildOutputs.deleteTree(folder, Set.of());
         }
     }
 
@@ -93,21 +181,10 @@ public final class ExistingJvmDistribution {
         JvmBuildInputs.requireOutputRoot(root, root.relativize(delivery).toString());
         Files.createDirectories(delivery);
         for(var item:Map.of("compiler","interlis-compiler-cli","lsp","interlis-lsp").entrySet()) {
-            Path distribution=delivery.resolve(item.getKey());Files.createDirectories(distribution.resolve("lib"));Files.createDirectories(distribution.resolve("bin"));
-            for (var artifact : ModuleArtifacts.runtime(root, item.getValue(), outcome)) {
-                Files.copy(artifact.file(), distribution.resolve("lib").resolve(artifact.fileName()));
-            }
-            String name=item.getKey().equals("compiler")?"interlis-compiler":"interlis-lsp";
-            String module=ModulePathContract.name(item.getValue());
-            var result=JenesisBridge.moduleResult(outcome,item.getValue());
-            if(!result.explicitDescriptor()||!result.moduleName().orElseThrow().equals(module))throw new IllegalStateException("Distribution requires its explicit product module");
-            String main=item.getKey().equals("compiler")?"guru.interlis.cli.Main":"guru.interlis.lsp.Main";
-            for(String suffix:List.of("",".bat")) {
-                String template=Files.readString(root.resolve("build/interlis/templates/"+name+suffix));
-                if(!template.contains("--module "+module+"/"+main)||!template.contains("--module-path")||template.contains("@CLASSPATH@")||template.contains("ALL-MODULE-PATH")||template.contains("ALL-DEFAULT")||template.contains("--patch-module")||java.util.regex.Pattern.compile("(?m)^[ \t]*set[ \t]*$").matcher(template).find())throw new IllegalStateException("Unexpected modular launcher template");
-                Path launcher=distribution.resolve("bin/"+name+suffix);Files.writeString(launcher,template);
-                if(!launcher.toFile().setExecutable(true,false))throw new IllegalStateException("Cannot set launcher permission");
-            }
+            boolean compiler = item.getKey().equals("compiler");
+            installProduct(root, outcome, delivery.resolve(item.getKey()), item.getValue(),
+                    compiler ? "interlis-compiler" : "interlis-lsp",
+                    compiler ? "guru.interlis.cli.Main" : "guru.interlis.lsp.Main");
         }
         var version = DistributionChecks.run(root,
                 List.of(launcher(delivery.resolve("compiler"), "interlis-compiler").toString(), "version", "--json"));
@@ -125,6 +202,32 @@ public final class ExistingJvmDistribution {
         Files.createDirectories(staging.resolve("version"));
         Files.copy(manifest, staging.resolve("version/version-manifest.json"));
         archive(root, staging, delivery.resolve("sdk.zip"));
+    }
+
+    private static void installProduct(Path root, JenesisBridge.BuildOutcome outcome, Path distribution,
+                                       String project, String name, String main) throws Exception {
+        Files.createDirectories(distribution.resolve("lib"));
+        Files.createDirectories(distribution.resolve("bin"));
+        for (var artifact : ModuleArtifacts.runtime(root, project, outcome)) {
+            Files.copy(artifact.file(), distribution.resolve("lib").resolve(artifact.fileName()));
+        }
+        String module = ModulePathContract.name(project);
+        var result = JenesisBridge.moduleResult(outcome, project);
+        if (!result.explicitDescriptor() || !result.moduleName().orElseThrow().equals(module)) {
+            throw new IllegalStateException("Distribution requires its explicit product module");
+        }
+        for (String suffix : List.of("", ".bat")) {
+            String template = Files.readString(root.resolve("build/interlis/templates/" + name + suffix));
+            if (!template.contains("--module " + module + "/" + main) || !template.contains("--module-path")
+                    || template.contains("@CLASSPATH@") || template.contains("ALL-MODULE-PATH")
+                    || template.contains("ALL-DEFAULT") || template.contains("--patch-module")
+                    || java.util.regex.Pattern.compile("(?m)^[ \t]*set[ \t]*$").matcher(template).find()) {
+                throw new IllegalStateException("Unexpected modular launcher template");
+            }
+            Path launcher = distribution.resolve("bin").resolve(name + suffix);
+            Files.writeString(launcher, template);
+            if (!launcher.toFile().setExecutable(true, false)) throw new IllegalStateException("Cannot set launcher permission");
+        }
     }
 
     static Path launcher(Path distribution, String name) {

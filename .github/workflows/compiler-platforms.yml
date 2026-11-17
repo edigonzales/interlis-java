@@ -24,16 +24,19 @@ jobs:
         run: java build/jenesis/Make.java
       - name: Check installed SDK, CLI and LSP
         run: java build/interlis/ExistingJvmDistribution.java check
-      - name: Run pinned Codeberg suite
-        run: java build/interlis/ConformanceRun.java
+      - name: Package and smoke-test the validator ZIP
+        run: java build/interlis/ExistingJvmDistribution.java validator
       - name: Run upstream swisstopo validator suite
         shell: bash
         run: |
           git clone --depth 1 --branch master https://github.com/geostandards-ch/suite-interlis.git "$RUNNER_TEMP/suite-interlis"
           git -C "$RUNNER_TEMP/suite-interlis" rev-parse HEAD
-          java build/interlis/ValidatorConformanceRun.java --suite-dir "$RUNNER_TEMP/suite-interlis"
+          java build/interlis/ValidatorConformanceRun.java --suite-dir "$RUNNER_TEMP/suite-interlis" \
+            --validator-zip target/jenesis-jvm/validator-delivery/interlis-validator-*.zip
       - name: Package and smoke-test the compiler ZIP
         run: java build/interlis/ExistingJvmDistribution.java compiler
+      - name: Run pinned Codeberg suite
+        run: java build/interlis/ConformanceRun.java
       - name: Retain native JVM and conformance reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -120,6 +123,10 @@ jobs:
         run: java '-Djenesis.test.filter=.*(FileSourceLoaderTest|HttpSourceLoaderTest|HttpRedirectFailureTest|HttpNetworkPolicyTest|HttpIdentityCacheTest)' build/jenesis/Make.java +interlis-repository
       - name: Check installed SDK, CLI and LSP
         run: java build/interlis/ExistingJvmDistribution.java check
+      - name: Check validator CLI integration
+        run: java build/jenesis/Make.java +interlis-validator-cli
+      - name: Package and smoke-test the validator ZIP
+        run: java build/interlis/ExistingJvmDistribution.java validator
       - name: Package and smoke-test the compiler ZIP
         run: java build/interlis/ExistingJvmDistribution.java compiler
       - name: Retain native JVM reports
