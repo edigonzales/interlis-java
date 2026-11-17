@@ -154,6 +154,30 @@ lokale `MANDATORY CONSTRAINT`- und Domain-Ausdrücke sowie `UNIQUE (LOCAL)`
 mit direkten, typisierten Schlüsseln aus Text, Zahlen, Aufzählungen,
 Ausrichtungen oder BOOLEAN aus. Der Index gilt pro Besitzer.
 
+Im XTF-2.3-Header bleibt `MODEL URI` als übertragene Metadatenangabe
+erhalten. Der Reader bindet das Modell über Name und Version an den
+übergebenen Plan. Eine abweichende URI ändert diese Bindung nicht.
+
+Bei INTERLIS 2.3 und 2.4 rundet der Validator gelieferte numerische Attribute und
+Koordinaten vor der Prüfung auf die im Modell deklarierte Genauigkeit.
+Halbwerte werden wie in ilivalidator zur grösseren Zahl gerundet.
+Kreisbogen-Zwischenpunkte (`a1`, `a2`) fliessen in beiden Sprachversionen
+mit der gelieferten Genauigkeit in die Prüfung ein. Das gilt auch bei
+explizit geliefertem Radius. Die Start- und Endkoordinaten werden bei
+aktivierter Rundung auf Modellpräzision gerundet.
+Bereichsprüfungen, Ausdrücke und Geometrieprüfungen verwenden die dadurch
+gebildete interne Wertsicht. Der Transfer-Reader liefert weiterhin die
+ursprünglichen Werte. `ValidationOptions.withNumericRounding(false)`
+schaltet die Rundung gelieferter Werte vor der Prüfung aus. Für das
+Datensatzprofil wird dieselbe lokale Option über `DatasetOptions` gesetzt.
+
+BID und TID müssen in XTF 2.3 FULL im Transfer eindeutig sein. Wenn die
+wirksame Regel für den Behälter oder das Objekt `INTERLIS.UUIDOID` vorgibt,
+prüft der Validator auch transferlokale Kennungen aus der Quelle auf
+UUID-Form. Das gilt auch ohne `OIDSPACES` und lässt Gross- und Kleinbuchstaben
+zu. Die Kennung bleibt transferlokal. Gelieferte stabile OIDs werden gegen
+ihre Domäne geprüft. INITIAL und UPDATE benötigen stabile Identifikatoren.
+
 Bei XTF 2.3 gelten für die Basket-OID auch die Domänen zusätzlicher Topics
 aus `TOPICS`. Eine gemeinsam geerbte Domäne wird pro Basket einmal geprüft.
 Objekt-OIDs folgen der wirksamen Regel der Klasse oder ihres deklarierenden
@@ -167,6 +191,23 @@ Prozent-Plausibilität und referenzielle Zielprüfung benötigen das
 Datensatzprofil. Mit dem optionalen Modul `interlis-validation-jts` und
 einer gebundenen Geometrieengine prüft `LOCAL_ONLY` auch die Topologie
 einzelner Geometriewerte, einschliesslich Standardkreisbögen mit Radius.
+Bei `WITHOUT OVERLAPS` erlaubt die JTS-Engine für INTERLIS 2.3 und 2.4
+Kontakte an gemeinsamen Segmentendpunkten eines Linienzugs. Der Punkt
+muss in beiden Durchgängen als Stützpunkt vorliegen. Für Schnitte im
+Segmentinneren gilt die bestehende Prüfung einschliesslich der Toleranz
+für bestimmte Bogenüberschneidungen. Flächenränder haben eigene
+Topologieregeln. Die [Normauslegung](../contracts/norm-decisions.md#gemeinsame-segmentendpunkte-bei-linienzügen)
+dokumentiert die Kompatibilitätsentscheidung.
+
+Die Funktionen `INTERLIS_ext.areAreas2` und `INTERLIS_ext.areAreas3` des
+INTERLIS-2.3-Erweiterungsmodells sind mit der Geometrieengine für gebundene
+TEXT-Pfade verfügbar. Bei `SurfaceBag = UNDEFINED` prüft `areAreas2` die
+Flächen des Startobjekts und `areAreas3(ALL, …)` die Flächen der
+ausgewählten Objektmenge. Ein gesetzter `SurfaceBag`-Pfad bildet je
+erreichtem Strukturelement eine Prüfgruppe. Dynamische TEXT-Pfade
+lassen sich über eine explizite Hostbindung für Einzelobjektaufrufe
+auswerten. Dynamische TEXT-Pfade mit `ALL` erscheinen als ungeprüfte Bedingungen.
+
 Ohne Engine zeigt die Coverage die ausstehende Topologieprüfung. Externe
 Funktionen ohne Hostbindung und `UNIQUE` mit lokalem `WHERE` werden
 ebenfalls als ungeprüft ausgewiesen.

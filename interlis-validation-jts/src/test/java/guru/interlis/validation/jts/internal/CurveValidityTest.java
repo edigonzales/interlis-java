@@ -37,6 +37,17 @@ class CurveValidityTest {
     }
 
     @Test
+    void acceptsAnEnclaveTouchingTheShellInOneBoundaryWalk() {
+        var walk = ring("0,0", "0,4", "2,3", "2,5", "0,4", "0,8", "8,8", "8,0", "0,0");
+        var surface = new Surface(walk, List.of());
+        assertEquals(VALID, check(surface, GeometryKind.SURFACE, true, false).status());
+        assertEquals(new GeometryEngine.Measurement.Value(62),
+                JtsGeometryEngine.standard().measure(GeometryEngine.Measure.AREA,
+                        input(surface, GeometryKind.SURFACE, true, false),
+                        new GeometryEngine.Control(() -> {}, finding -> fail(finding.toString()))));
+    }
+
+    @Test
     void rejectsEmptyCompleteLinesAndDoesNotMeasureThemAsZero() {
         for (var empty : List.of(new Polyline(List.of()), line("0,0"))) {
             assertEquals(List.of(GEOMETRY_DEGENERATE_SEGMENT),
@@ -80,8 +91,43 @@ class CurveValidityTest {
     }
 
     @Test
+    void acceptsSharedArcAndStraightEndpointsOnlyInLineTopology() {
+        var start = point("-2", "0");
+        var crossing = point("0", "0");
+        var end = point("2", "-2");
+        List<Segment> segments = List.of(
+                new Arc(point("-1", "-1"), crossing, Optional.empty()),
+                new Straight(point("2", "2")),
+                new Straight(point("-2", "2")),
+                new Straight(crossing),
+                new Straight(end));
+        var open = new Polyline(List.of(new CurvePart(start, segments)));
+        assertEquals(VALID, check(open, GeometryKind.POLYLINE, true, false).status());
+        assertEquals(VALID, check(new MultiPolyline(List.of(open, line("5,0", "6,0"))),
+                GeometryKind.MULTIPOLYLINE, true, false).status());
+
+        var closedSegments = new ArrayList<>(segments);
+        closedSegments.add(new Straight(point("-3", "-3")));
+        closedSegments.add(new Straight(point("-3", "0")));
+        closedSegments.add(new Straight(start));
+        var closed = new Polyline(List.of(new CurvePart(start, closedSegments)));
+        assertEquals(VALID, check(closed, GeometryKind.POLYLINE, true, false).status());
+        var surface = new Surface(new Ring(List.of(closed)), List.of());
+        var outcome = check(surface, GeometryKind.SURFACE, true, false);
+        assertEquals(INVALID, outcome.status());
+        assertTrue(outcome.codes().contains(GEOMETRY_SELF_INTERSECTION));
+    }
+
+    @Test
+    void rejectsOverlappingSegmentsEvenWhenBothEndpointsAreShared() {
+        var outcome = check(line("0,0", "4,0", "0,0"), GeometryKind.POLYLINE, true, false);
+        assertEquals(INVALID, outcome.status());
+        assertEquals(List.of(GEOMETRY_SELF_INTERSECTION), outcome.codes());
+    }
+
+    @Test
     void distinguishesInteriorContactFromDisconnectedInteriorAndOutsideHole() {
-        var shell = ring("0,0", "8,0", "8,8", "0,8", "0,0");
+        var shell = ring("0,0", "8,0", "8,4", "8,8", "0,8", "0,4", "0,0");
         var tangent = ring("0,4", "2,3", "2,5", "0,4");
         assertEquals(VALID, check(new Surface(shell, List.of(tangent)), GeometryKind.SURFACE, true, false).status());
         var cut = ring("0,4", "4,3", "8,4", "4,5", "0,4");
@@ -119,15 +165,21 @@ class CurveValidityTest {
     void acceptsOnlyOverlapWithSharedVertexWithinSagittaTolerance() {
         var start = point("-1", "0");
         var end = point("1", "0");
+        var closeToArc = point("0.99", "1");
+        var arc = new Arc(point("0", "1"), end, Optional.empty());
         var arcThenLine = new Polyline(List.of(new CurvePart(start, List.of(
-                new Arc(point("0", "1"), end, Optional.empty()),
-                new Straight(point("0.99", "1"))))));
+                arc, new Straight(closeToArc)))));
         assertEquals(VALID, check(arcThenLine, GeometryKind.POLYLINE, true, false).status());
         var outside = new Polyline(List.of(new CurvePart(start, List.of(
-                new Arc(point("0", "1"), end, Optional.empty()),
-                new Straight(point("0.8", "1"))))));
+                arc, new Straight(point("0.8", "1"))))));
         assertEquals(List.of(GEOMETRY_SELF_INTERSECTION),
                 check(outside, GeometryKind.POLYLINE, true, false).codes());
+
+        var nonAdjacent = new Polyline(List.of(new CurvePart(start, List.of(arc,
+                new Straight(point("2", "0")), new Straight(point("2", "1")),
+                new Straight(closeToArc), new Straight(end)))));
+        assertEquals(List.of(GEOMETRY_SELF_INTERSECTION),
+                check(nonAdjacent, GeometryKind.POLYLINE, true, false).codes());
     }
 
     @Test

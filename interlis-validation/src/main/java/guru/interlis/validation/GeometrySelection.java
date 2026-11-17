@@ -13,6 +13,9 @@ import guru.interlis.validation.ValidationSession.ValuePath;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
+
+import static guru.interlis.validation.GeometryEngine.Check.*;
 
 record GeometrySelection(List<SymbolId> holders, List<SymbolId> values) {
     static Optional<GeometrySelection> bind(FunctionCallExpression call, ValidationPlan plan) {
@@ -49,16 +52,70 @@ record GeometrySelection(List<SymbolId> holders, List<SymbolId> values) {
     }
 
     List<GeometryEngine.Input> from(DatasetRuleContext dataset, DatasetRuleContext.Occurrence origin, boolean[] missing) {
-        var root = origin.object().data();
-        var frame = new EvaluationFrame(dataset.plan, root, origin.partial(), dataset::visit,
-                java.util.OptionalLong.empty(), dataset.cancellation()).withDataset(new DatasetPathContext(dataset, origin));
+        var frame = frame(dataset, origin);
         var output = new ArrayList<GeometryEngine.Input>();
-        walk(0, root, null, frame, origin, missing, output);
+        walk(0, frame.current(), null, frame, missing, output::add, null);
         return output;
     }
 
+    GeometryEngine.Check check(DatasetRuleContext dataset, DatasetRuleContext.Occurrence origin,
+                               GeometryEngine engine, GeometryEngine.Control control) {
+        return check(frame(dataset, origin), engine, control);
+    }
+
+    private static EvaluationFrame frame(DatasetRuleContext dataset, DatasetRuleContext.Occurrence origin) {
+        return new EvaluationFrame(dataset.plan, origin.object().data(), origin.partial(), dataset::visit,
+                java.util.OptionalLong.empty(), dataset.cancellation()).withDataset(new DatasetPathContext(dataset, origin));
+    }
+
+    GeometryEngine.Check check(EvaluationFrame frame, GeometryEngine engine, GeometryEngine.Control control) {
+        var missing = new boolean[] {frame.partial()};
+        if (holders.isEmpty()) {
+            var inputs = new ArrayList<GeometryEngine.Input>();
+            walk(0, frame.current(), null, frame, missing, inputs::add, null);
+            return check(engine, control, inputs, !missing[0]);
+        }
+        var result = new GeometryEngine.Check[] {VALID};
+        walk(0, frame.current(), null, frame, missing, null,
+                (inputs, complete) -> result[0] = combine(result[0], check(engine, control, inputs, complete)));
+        return combine(result[0], missing[0] ? MISSING_PARAMETERS : VALID);
+    }
+
+    private static GeometryEngine.Check check(GeometryEngine engine, GeometryEngine.Control control,
+                                              List<GeometryEngine.Input> inputs, boolean complete) {
+        return engine.checkCoverage(new GeometryEngine.Source() {
+            @Override public boolean complete() {
+                return complete;
+            }
+
+            @Override public GeometryEngine.Cursor open() {
+                var iterator = inputs.iterator();
+                return new GeometryEngine.Cursor() {
+                    @Override public Optional<GeometryEngine.Input> next() {
+                        return iterator.hasNext() ? Optional.of(iterator.next()) : Optional.empty();
+                    }
+
+                    @Override public void close() { }
+                };
+            }
+        }, GeometryEngine.CoveragePurpose.AREA, control);
+    }
+
+    static GeometryEngine.Check combine(GeometryEngine.Check left, GeometryEngine.Check right) {
+        if (left == INVALID || right == INVALID) return INVALID;
+        if (left == NUMERICALLY_UNDETERMINED || right == NUMERICALLY_UNDETERMINED) return NUMERICALLY_UNDETERMINED;
+        if (left == UNSUPPORTED || right == UNSUPPORTED) return UNSUPPORTED;
+        if (left == MISSING_PARAMETERS || right == MISSING_PARAMETERS) return MISSING_PARAMETERS;
+        return VALID;
+    }
+
+    @FunctionalInterface
+    private interface GroupSelection {
+        void accept(List<GeometryEngine.Input> inputs, boolean complete);
+    }
+
     private void walk(int index, TransferValue value, ValuePath path, EvaluationFrame frame,
-                      DatasetRuleContext.Occurrence origin, boolean[] missing, List<GeometryEngine.Input> output) {
+                      boolean[] missing, Consumer<GeometryEngine.Input> output, GroupSelection groups) {
         frame.visit().run();
         int total = holders.size() + values.size();
         if (index >= total) {
@@ -67,12 +124,19 @@ record GeometrySelection(List<SymbolId> holders, List<SymbolId> values) {
         if (value instanceof TransferValue.Repeated repeated) {
             for (int i = 0; i < repeated.values().size(); i++) {
                 walk(index, repeated.values().get(i), new ValuePath(path, new DataLocation.Index(i + 1)),
-                        frame, origin, missing, output);
+                        frame, missing, output, groups);
             }
             return;
         }
         if (!(value instanceof TransferValue.Structured owner)) {
             missing[0] = true;
+            return;
+        }
+        if (groups != null && index == holders.size()) {
+            var inputs = new ArrayList<GeometryEngine.Input>();
+            var groupMissing = new boolean[] {frame.partial()};
+            walk(index, owner, path, frame, groupMissing, inputs::add, null);
+            groups.accept(inputs, !groupMissing[0]);
             return;
         }
         var target = index < holders.size() ? holders.get(index) : values.get(index - holders.size());
@@ -98,14 +162,14 @@ record GeometrySelection(List<SymbolId> holders, List<SymbolId> values) {
                 missing[0] = true;
                 return;
             }
-            var context = ValidationSession.BasketContext.of(origin.basket(), frame.plan());
-            var vertex = type.vertexDomain().map(id -> GeometryParameters.coordinate(frame.plan(), context, id));
-            output.add(new GeometryEngine.Input(geometry, type, origin.location(ValuePath.steps(at)),
+            var domains = frame.domains();
+            var vertex = type.vertexDomain().map(id -> GeometryParameters.coordinate(frame.plan(), domains, id));
+            output.accept(new GeometryEngine.Input(geometry, type, frame.geometryLocation(ValuePath.steps(at)),
                     field.slot().attribute().languageVersion(), GeometryParameters.quantum(vertex.orElse(null)),
-                    GeometryParameters.overlap(type, id -> GeometryParameters.coordinate(frame.plan(), context, id)),
-                    origin.partial(), vertex.map(guru.interlis.model.CoordinateType::id)));
+                    GeometryParameters.overlap(type, id -> GeometryParameters.coordinate(frame.plan(), domains, id)),
+                    frame.partial(), vertex.map(guru.interlis.model.CoordinateType::id)));
             return;
         }
-        walk(index + 1, known.value(), at, frame.descend(owner, known.value()), origin, missing, output);
+        walk(index + 1, known.value(), at, frame.descend(owner, known.value()), missing, output, groups);
     }
 }

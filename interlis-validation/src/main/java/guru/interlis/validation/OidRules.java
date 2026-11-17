@@ -14,12 +14,18 @@ final class OidRules {
     private static final Pattern TEXT = Pattern.compile("[A-Za-z0-9_][A-Za-z0-9_.-]*");
     private static final Pattern STANDARD = Pattern.compile("[A-Za-z][A-Za-z0-9]{15}");
     private static final Pattern UUID = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}");
+    private static final Pattern UUID_IGNORE_CASE = Pattern.compile(UUID.pattern(), Pattern.CASE_INSENSITIVE);
     private static final Pattern DECIMAL = Pattern.compile("[+-]?[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?");
 
     private OidRules() { }
 
     /** Returns false when no concrete OID domain is available to interpret the identifier. */
     static boolean check(ValidationPlan plan, OidType type, String identifier,
+                         BiConsumer<ValidationCode, List<String>> report) {
+        return check(plan, type, identifier, false, report);
+    }
+
+    static boolean check(ValidationPlan plan, OidType type, String identifier, boolean ignoreUuidCase,
                          BiConsumer<ValidationCode, List<String>> report) {
         if (identifier.length() > 4096) {
             throw new ValidationLimitException("OID exceeds the local identifier budget");
@@ -30,7 +36,7 @@ final class OidRules {
                 return false;
             }
             case UUID -> {
-                if (!UUID.matcher(value).matches()) {
+                if (!(ignoreUuidCase ? UUID_IGNORE_CASE : UUID).matcher(value).matches()) {
                     invalid(report);
                 }
             }

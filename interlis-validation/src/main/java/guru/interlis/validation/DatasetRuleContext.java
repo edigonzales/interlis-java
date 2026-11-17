@@ -217,7 +217,11 @@ final class DatasetRuleContext {
     }
 
     boolean candidate(DatasetRulePlan rule, Occurrence occurrence) {
-        if (!rule.candidateTypes().contains(occurrence.object().type())) {
+        return candidate(rule, occurrence, occurrence.object().type());
+    }
+
+    boolean candidate(DatasetRulePlan rule, Occurrence occurrence, SymbolRef type) {
+        if (!rule.candidateTypes().contains(type)) {
             return false;
         }
         return rule.declaration().target().isEmpty()
@@ -264,12 +268,6 @@ final class DatasetRuleContext {
         return program.evaluate(new EvaluationFrame(plan, occurrence.object().data(),
                 occurrence.partial(), this::visit, java.util.OptionalLong.empty(), cancellation)
                 .withDataset(new DatasetPathContext(this, occurrence)));
-    }
-
-    EvaluationResult evaluateKey(ExpressionProgram program, Occurrence occurrence) {
-        var frame = new EvaluationFrame(plan, occurrence.object().data(), occurrence.partial(), this::visit,
-                java.util.OptionalLong.empty(), cancellation).withDataset(new DatasetPathContext(this, occurrence));
-        return new ExpressionEvaluator(program).evaluateKey(frame);
     }
 
     void checkDeferredConstraints(ValidationSession report) {
@@ -409,15 +407,19 @@ final class DatasetRuleContext {
     }
 
     TypeDescriptor valueType(ExpressionProgram program, Occurrence occurrence) {
+        return valueType(program, occurrence.object().data());
+    }
+
+    TypeDescriptor valueType(ExpressionProgram program, TransferValue root) {
         var declared = plan.effectiveType(program.expression().typeId()).orElse(null);
         if (!(program.expression() instanceof PathExpression path)) {
             return declared;
         }
-        TransferValue current = occurrence.object().data();
+        TransferValue current = root;
         ObjectValidationPlan.FieldRule field = null;
         for (var step : path.path().steps()) {
             if (step instanceof PathStep.ThisStep) {
-                current = occurrence.object().data();
+                current = root;
                 continue;
             }
             if (!(step instanceof PathStep.AttributeStep attribute)

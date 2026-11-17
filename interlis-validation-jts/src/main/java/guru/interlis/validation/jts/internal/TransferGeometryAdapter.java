@@ -42,7 +42,7 @@ final class TransferGeometryAdapter {
 
     record Part(Position start, TransferGeometry.Coordinate first, TransferGeometry.Coordinate last,
                 List<Segment> segments, List<GeometryComponent> path) {}
-    record Ring(List<Part> parts, List<GeometryComponent> path) {}
+    record Ring(List<Part> parts, List<GeometryComponent> path, List<Segment> segments) {}
     record Surface(Ring shell, List<Ring> holes) {}
     record Result(GeometryEngine.Check check, List<Part> lines, List<Surface> surfaces, boolean threeDimensional) {}
 
@@ -135,7 +135,7 @@ final class TransferGeometryAdapter {
         for (int i = 0; i < value.lines().size(); i++) {
             line(value.lines().get(i), at(path, LINE, i), parts);
         }
-        return new Ring(List.copyOf(parts), path);
+        return new Ring(List.copyOf(parts), path, parts.stream().flatMap(part -> part.segments().stream()).toList());
     }
 
     private void line(TransferGeometry.Polyline value, List<GeometryComponent> path, List<Part> parts) {

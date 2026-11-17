@@ -1,0 +1,2 @@
+# Original JUnit method	Fixture	Exact validation evidence (- for no findings)	Reason
+ch.interlis.testsuite.SurfaceAreaAttributeTest.RSU_T16a	RSU.T16a.xtf	-	Fixture expects a dangle and self-intersection. Both the native validator and ilivalidator 1.15.1 accept the delivered boundary.

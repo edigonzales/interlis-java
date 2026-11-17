@@ -22,6 +22,16 @@ prüfen tatsächliche Schreibverbote des Betriebssystems.
   Die [Erwartungen](../../testdata/conformance/normative/expectations.json)
   und [Baseline](../../testdata/conformance/baseline.json) halten die begründeten Abweichungen fest.
   Native Reports liegen unter `target/jenesis-jvm/conformance/`.
+- Der lokale Validator-Konformitätslauf verwendet einen separaten Checkout von
+  [suite-interlis](https://github.com/geostandards-ch/suite-interlis).
+  `java build/interlis/ValidatorConformanceRun.java --suite-dir ../suite-interlis`
+  führt die Originaltests aus. `--filter '.*\.XmlTest\.RXW_T02a'` wählt
+  eine Methode. Der reguläre Ausdruck muss auf den vollständigen Java-Namen
+  `Paket.Klasse.Methode` passen. Berichte liegen unter
+  `target/jenesis-jvm/validator-conformance/`. Die Originaltests verwenden
+  den Herstellerwert `interlis-java`. Technische Fehler, eine leere Auswahl
+  und unerwartete Originalfehler lassen den Befehl fehlschlagen. Der Linux-Job
+  führt dieselbe Suite nach Codeberg aus.
 - Die [Buildanleitung](build.md#portable-backends) zeigt die Node-Smokes für die
   erzeugten JS-/WasmGC-Artefakte. Der Portable-CI-Job führt `browserSmoke`
   und `validationBrowserSmoke` mit Chromium aus. Die Validatorprobe
@@ -62,3 +72,52 @@ reproduzierbare Seeds sowie explizite Grenzen für Exits und Skips.
 JUnit-XML und Prozesslogs liegen in den Buildausgaben. Halte für eine Prüfung
 Toolchain, Plattform, relevante Eingaben, Commit, Befehle, Exits und Skips fest.
 Die [Freigabeprüfung](release.md) beschreibt die Auslieferungsprüfungen.
+
+## swisstopo-Validator-Konformität
+
+Die Klasse `GebaeudeRegister` darf den Namen ihres Topics tragen.
+Der Compiler akzeptiert diese Modellierung in 2.3 und 2.4 gemäss
+[Entscheidung 09](../contracts/norm-decisions.md#decision-09).
+Der Runner verwendet die unveränderten Originaltests, Modelle und XTF-Dateien.
+Die Suite prüft INTERLIS 2.3 und XTF 2.3.
+Der Linux-Job klont den Upstream-Zweig `master` einmal und startet den
+vollständigen Lauf nach Codeberg. Lokal lässt sich derselbe Runner mit
+einem vorhandenen Suite-Checkout aufrufen.
+
+```bash
+java build/interlis/ValidatorConformanceRun.java --suite-dir ../suite-interlis
+java build/interlis/ValidatorConformanceRun.java --suite-dir ../suite-interlis \
+  --filter '.*ConstraintTest\.RKo_T09a'
+```
+
+Die native JUnit-XML-Datei, die Adapter-Reports und `summary.txt` liegen
+unter `target/jenesis-jvm/validator-conformance/run-*/`. Die
+[Abweichungsliste](../../build/interlis/validator-conformance/deviations.tsv)
+dokumentiert den erwarteten Befund jedes betroffenen Originaltests.
+Ein neuer Fehler, eine technische Störung, ein abweichender Befund oder
+ein inzwischen bestandener Baselinefall beendet den Runner mit Fehler.
+
+Am Upstream-Stand `f307111` bestehen 222 von 223 Originaltests.
+`RKo.T09a` prüft UNIQUE über Rollenpfade eingebetteter Beziehungen.
+`RSU.T05a/b` prüfen Aussenrand und berührende Enklave in einem Randzug
+(INTERLIS 2.3 §2.8.13.1, Figur 22).
+`RPO.T02a/b` prüfen unzulässige Überlagerungen und Schnitte im
+Segmentinneren. Bei `RPO.T02c` ist die Kreuzung zulässig, weil beide
+Durchgänge dort einen Segmentendpunkt haben. Die
+[Normauslegung](../contracts/norm-decisions.md#gemeinsame-segmentendpunkte-bei-linienzügen)
+dokumentiert diese Kompatibilitätsregel.
+
+`RSU.T18a–e` prüfen `INTERLIS_ext.areAreas2` pro Objekt und `RSU.T19a–e`
+prüfen `INTERLIS_ext.areAreas3` über eine Objektmenge. Beide Reihen
+verwenden den TEXT-Pfad `Geom->Geom1->Geom2`. `T18d` und `T19e` sind
+die positiven Originalfälle. ilivalidator 1.15.1 bestätigt die zehn Erwartungen.
+
+Bei `RSU.T16a` akzeptieren
+der native Validator und ilivalidator 1.15.1 den gelieferten Kurvenrand,
+für den das Original einen Fehler erwartet.
+Die [Abweichungen im Detail](swisstopo-suite-deviations.md)
+beschreiben die Originalerwartungen und die beobachteten Befunde.
+
+`RAt.T09e/g` prüfen die numerische Bereichsprüfung nach Rundung auf
+die Modellpräzision. `RAt.T11a/b` prüfen, dass der Validator ungültige BID und TID bei einem
+wirksamen `UUIDOID`-Wertebereich auch in XTF 2.3 FULL ohne `OIDSPACES` meldet.

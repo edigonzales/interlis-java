@@ -1316,7 +1316,10 @@ verwenden im Topic dieselbe geerbte Mitgliedersuche wie lokale qualifizierte
 Typbindungen. Lokale Deklarationen gehen geerbten vor; Topicnamen selbst
 werden im umgebenden Modell aufgelöst, weil Topics keine Topics enthalten.
 Geerbte Assoziationsbasen bleiben ursprüngliche Deklarationen, ihre Teilnehmer
-werden im aktuellen Topic kontextualisiert. Die Quelle selbst deklarierter
+werden im aktuellen Topic kontextualisiert. Ein EXTERNAL-Rollenende fügt
+der dort adressierten Klasse gemäss INTERLIS 2.3 §2.7.5 keinen
+Beziehungszugang hinzu. Die Kollisionsprüfung für Beziehungszugänge
+berücksichtigt deshalb dieses Ende nicht. Die Quelle selbst deklarierter
 LineCoord-Attribute benötigt ABSTRACT; eine spätere Inspektionskonkretisierung
 ist keine Ausnahme vom Quellvertrag ([Modellvertrag](compiler-and-model.md)). Import-/Translations-Closures
 behalten tatsächliche Korrespondenzen und geordnete Generic-/Metadaten-/Linienformziele.

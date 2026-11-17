@@ -395,8 +395,13 @@ final class InheritanceBindings {
                     .map(state::symbol).filter(RoleSymbol.class::isInstance)
                     .map(RoleSymbol.class::cast).toList();
             if (roles.size() == 2) {
-                roles.get(0).targetRoots().forEach(t -> addRoleNamespace(roleNamesByTarget, t, roles.get(1)));
-                roles.get(1).targetRoots().forEach(t -> addRoleNamespace(roleNamesByTarget, t, roles.get(0)));
+                // §2.7.5: an EXTERNAL end does not give its class an association access.
+                if (!roles.get(0).external()) {
+                    roles.get(0).targetRoots().forEach(t -> addRoleNamespace(roleNamesByTarget, t, roles.get(1)));
+                }
+                if (!roles.get(1).external()) {
+                    roles.get(1).targetRoots().forEach(t -> addRoleNamespace(roleNamesByTarget, t, roles.get(0)));
+                }
             }
         }
         for (ClassSymbol classSymbol : state.symbolsInBuildOrder().stream()

@@ -13,6 +13,7 @@ import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.MandatoryConstraint;
 import guru.interlis.model.GeometryType;
 import guru.interlis.model.Modifier;
+import guru.interlis.model.OidKind;
 import guru.interlis.model.OidRule;
 import guru.interlis.model.RoleSymbol;
 import guru.interlis.model.TopicSymbol;
@@ -30,6 +31,8 @@ import guru.interlis.model.SymbolRef;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRange;
 import guru.interlis.transfer.TransferEvent;
+import guru.interlis.transfer.TransferIdentity.IdOrigin;
+import guru.interlis.transfer.TransferIdentity.TransferId;
 import guru.interlis.transfer.TransferObject;
 import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TopicDescriptor;
@@ -89,6 +92,15 @@ public final class ValidationSession implements AutoCloseable {
      * @throws guru.interlis.execution.OperationCancelledException on cancellation
      */
     public void accept(TransferEvent event, CancellationToken cancellation) {
+        accept(event, cancellation, false);
+    }
+
+    /** Accepts dataset events whose supplied numbers already use the selected validation policy. */
+    void acceptPrepared(TransferEvent event, CancellationToken cancellation) {
+        accept(event, cancellation, true);
+    }
+
+    private void accept(TransferEvent event, CancellationToken cancellation, boolean prepared) {
         requireActive();
         try {
             Objects.requireNonNull(cancellation, "cancellation").throwIfCancellationRequested();
@@ -107,7 +119,8 @@ public final class ValidationSession implements AutoCloseable {
                 }
                 case TransferEvent.ObjectEvent object -> {
                     require(State.IN_BASKET);
-                    inspect(object, cancellation);
+                    inspect(prepared ? object : NumericRounding.prepare(object, plan, basket, options, cancellation),
+                            cancellation);
                     objects = Math.incrementExact(objects);
                 }
                 case TransferEvent.EndBasket end -> {
@@ -308,11 +321,11 @@ public final class ValidationSession implements AutoCloseable {
                 stack.push(children.orElseThrow());
             }
         }
-        checkRoles(object, objectPlan, budget);
+        checkRoles(object, objectPlan, delete || partial, budget);
         checkObjectConstraints(object, objectPlan, object.data(), null, delete, partial, basket, budget);
     }
 
-    private void checkRoles(TransferObject object, ObjectValidationPlan objectPlan, ObjectBudget budget) {
+    private void checkRoles(TransferObject object, ObjectValidationPlan objectPlan, boolean incomplete, ObjectBudget budget) {
         for (var slot : objectPlan.descriptor().slots()) {
             if (!(slot instanceof RoleSlot role)) {
                 continue;
@@ -320,6 +333,12 @@ public final class ValidationSession implements AutoCloseable {
             budget.consume();
             var value = object.value(role.symbol());
             if (value.isEmpty() || value.orElseThrow() == TransferValue.Undefined.INSTANCE) {
+                if (!incomplete && plan.transferPlan().model(objectPlan.descriptor().model()).orElseThrow()
+                        .languageVersion() == guru.interlis.model.LanguageVersion.ILI23) {
+                    checked.merge(new SlotKey(object.type(), role.symbol(), DEFINED_VALUE), 1L, Math::addExact);
+                    violation(object, new ValuePath(null, new DataLocation.Slot(role.symbol())), role.role(),
+                            value.isEmpty() ? REQUIRED_VALUE_MISSING : REQUIRED_VALUE_UNDEFINED, List.of());
+                }
                 continue;
             }
             checked.merge(new SlotKey(object.type(), role.symbol(), VALUE_FAMILY), 1L, Math::addExact);
@@ -347,7 +366,8 @@ public final class ValidationSession implements AutoCloseable {
             return children;
         }
         var frame = new EvaluationFrame(plan, pending.container(), partial, budget::consume,
-                java.util.OptionalLong.empty(), budget.cancellation).withParents(pending.ancestors());
+                java.util.OptionalLong.empty(), budget.cancellation).withParents(pending.ancestors())
+                .withLocalGeometry(location(object, ValuePath.steps(pending.path().parent())), basket.domains());
         var result = DerivedValueResolver.resolve(field.slot().attribute(), frame);
         var computed = checkDerivation(pending, result, effectiveType(rules, basket), partial,
                 location(object, ValuePath.steps(pending.path())));
@@ -519,7 +539,8 @@ public final class ValidationSession implements AutoCloseable {
             return;
         }
         var result = plan.expression(expression).evaluate(new EvaluationFrame(plan, current, partial, budget::consume,
-                java.util.OptionalLong.empty(), budget.cancellation));
+                java.util.OptionalLong.empty(), budget.cancellation)
+                .withLocalGeometry(location(root, ValuePath.steps(path)), basket.domains()));
         recordConstraint(root, owner, slot, declaration, path, result, null);
     }
 
@@ -754,10 +775,11 @@ public final class ValidationSession implements AutoCloseable {
         var event = basket.start();
         var data = new DataLocation(source, event.id(), Optional.empty(), Optional.empty(), Optional.empty(), List.of());
         var checkedDomains = new HashSet<SymbolId>();
+        var bid = event.id().origin() == IdOrigin.SOURCE ? Optional.of(event.id().value()) : Optional.<String>empty();
         for (var topic : basket.topics()) {
             for (var rule : topic.oidRules()) {
                 if (rule.basket() && rule.domain().filter(checkedDomains::add).isPresent()) {
-                    identity(rule, topic.symbol(), event.stableOid(), data);
+                    identity(rule, topic.symbol(), event.stableOid(), bid, requiresStableOid(topic.model()), data);
                 }
             }
         }
@@ -773,8 +795,10 @@ public final class ValidationSession implements AutoCloseable {
         var id = object.identity();
         if (rule.isPresent() && rule.orElseThrow().domain().isPresent()) {
             var data = location(object, List.of());
-            identity(rule.orElseThrow(), object.type(), id.oid().map(oid -> oid.value()), data);
-            if (id.oid().isPresent() && id.tid().isEmpty()) {
+            boolean stableRequired = requiresStableOid(descriptor.model());
+            var tid = id.tid().filter(value -> value.origin() == IdOrigin.SOURCE).map(TransferId::value);
+            identity(rule.orElseThrow(), object.type(), id.oid().map(oid -> oid.value()), tid, stableRequired, data);
+            if (id.tid().isEmpty() && (id.oid().isPresent() || !stableRequired)) {
                 diagnostic(REQUIRED_TID_MISSING, data, ruleLocation(object.type(), rule.orElseThrow().origin()), List.of());
             }
         } else if (rule.isEmpty() && descriptor.modifiers().contains(Modifier.OID) && id.tid().isEmpty()) {
@@ -784,15 +808,29 @@ public final class ValidationSession implements AutoCloseable {
         }
     }
 
-    private void identity(OidRule rule, SymbolRef owner, Optional<String> value, DataLocation data) {
+    private boolean requiresStableOid(SymbolRef model) {
+        return basket.start().kind() != TransferEvent.BasketKind.FULL
+                || plan.transferPlan().model(model).orElseThrow().languageVersion()
+                        != LanguageVersion.ILI23;
+    }
+
+    private void identity(OidRule rule, SymbolRef owner, Optional<String> stableOid,
+                          Optional<String> transferId, boolean stableRequired, DataLocation data) {
         var domain = plan.ref(rule.domain().orElseThrow());
+        var type = plan.domainType(domain.symbol()).orElse(null);
+        boolean local = stableOid.isEmpty() && !stableRequired;
+        if (local && (transferId.isEmpty() || !(type instanceof OidType oid && oid.oidKind() == OidKind.UUID))) {
+            return;
+        }
+        // A source ID can obey the model's UUID domain even when scoped to one transfer.
+        var value = local ? transferId : stableOid;
         var key = new SlotKey(owner, domain, IDENTITY);
         var location = ruleLocation(domain, rule.origin());
         if (value.isEmpty()) {
             checked.merge(key, 1L, Math::addExact);
             diagnostic(REQUIRED_OID_MISSING, data, location, List.of());
-        } else if (plan.domainType(domain.symbol()).orElse(null) instanceof OidType oid
-                && OidRules.check(plan, oid, value.orElseThrow(),
+        } else if (type instanceof OidType oid
+                && OidRules.check(plan, oid, value.orElseThrow(), local,
                     (code, arguments) -> diagnostic(code, data, location, arguments))) {
             checked.merge(key, 1L, Math::addExact);
         } else {

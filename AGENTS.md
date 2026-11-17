@@ -72,8 +72,8 @@ nicht nochmals, was die Buildwerkzeuge bereits können.**
   `.xtf` vor. Kurze lokale Quelltexte und Parameterisierung im Test sind erlaubt.
 - Keine separaten JSON-/YAML-/XML-/Properties-Testregistrierungen, Norm-Test-
   Mappings, generierten Testpläne oder künstlichen Coverage-Inventare. Keine
-  gleichwertige Ersatzregistry in Java. Einzige fachliche Ausnahme ist die
-  externe Codeberg-Conformance-Suite mit ihren eng begründeten Abweichungen.
+  gleichwertige Ersatzregistry in Java. Fachliche Ausnahmen sind eng begründete Abweichungen in den
+  externen Konformitätssuites von Codeberg und swisstopo.
 - JSON als Produktprotokoll, fachliches Golden, Abhängigkeits-Lock oder notwendiges
   Buildmanifest ist kein Testkatalog. Produkt- und Buildintegrität bleiben erhalten.
 - Sprachsemantik und öffentliche Schemaergebnisse werden umfassend auf der JVM

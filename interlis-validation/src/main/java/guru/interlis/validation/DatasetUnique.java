@@ -1,6 +1,7 @@
 package guru.interlis.validation;
 
 import guru.interlis.model.SymbolRef;
+import guru.interlis.model.SymbolKind;
 import guru.interlis.model.UniquenessConstraint;
 import guru.interlis.validation.DatasetScopeStore.Scope;
 import guru.interlis.transfer.TransferEvent;
@@ -26,10 +27,12 @@ final class DatasetUnique {
     private final List<Binding> bindings;
     private final int ordinal;
     private final DatasetScopeStore scopes;
+    private final RelationProjector relations;
 
     DatasetUnique(DatasetRuleContext context, ValidationSession report, List<DatasetRulePlan> equivalents,
                   int ordinal) {
         this.context = context;
+        this.relations = new RelationProjector(context.plan);
         this.report = report;
         this.rule = equivalents.getFirst();
         this.basket = ((UniquenessConstraint) rule.declaration().definition()).basket();
@@ -53,9 +56,15 @@ final class DatasetUnique {
         this.bindings = List.copyOf(bindings);
     }
 
-    private Optional<Binding> binding(DatasetRuleContext.Occurrence occurrence) {
-        return byType.getOrDefault(occurrence.object().type(), List.of()).stream()
-                .filter(binding -> context.candidate(binding.rule(), occurrence)).findFirst();
+    private Optional<Binding> binding(DatasetRuleContext.Occurrence occurrence, SymbolRef type) {
+        return byType.getOrDefault(type, List.of()).stream()
+                .filter(binding -> context.candidate(binding.rule(), occurrence, type)).findFirst();
+    }
+
+    private Optional<RelationProjector.Link> embedded(DatasetRuleContext.Occurrence occurrence,
+                                                       SymbolRef slot, TransferValue value) {
+        return relations.embedded(occurrence.handle(),
+                context.plan.object(occurrence.object().type()).descriptor(), slot, value, occurrence.basket());
     }
 
     List<DatasetRuleCoverage> check() {
@@ -71,27 +80,39 @@ final class DatasetUnique {
                 }
             });
         }
+        boolean hasAssociation = byType.keySet().stream().anyMatch(type ->
+                context.plan.object(type).descriptor().kind() == SymbolKind.ASSOCIATION);
         context.forObjects(occurrence -> {
-            var found = binding(occurrence);
-            if (found.isEmpty()) {
+            var root = occurrence.object().data();
+            var frame = new EvaluationFrame(context.plan, root, occurrence.partial(), context::visit,
+                    java.util.OptionalLong.empty(), context.cancellation())
+                    .withDataset(new DatasetPathContext(context, occurrence));
+            binding(occurrence, root.type()).ifPresent(binding ->
+                    inspect(occurrence, frame, -1, globalComplete, binding));
+            if (!hasAssociation) {
                 return;
             }
-            var binding = found.orElseThrow();
-            long scopeId = basket ? occurrence.stored().basket() : 0;
-            var scope = scopes.get(scopeId).orElseGet(() -> new Scope(
-                    basket ? occurrence.basket().consistency() == TransferEvent.Consistency.COMPLETE
-                            ? CLOSED_BY_TRANSFER : OPEN : globalComplete ? CLOSED_DELIVERY : OPEN,
-                    new DatasetScopeCounts()));
-            var counts = scope.counts();
-            counts.candidates++;
-            counts.selected |= occurrence.selected();
-            if (!binding.supported()) {
-                counts.unsupported++;
-                counts.undecided++;
-            } else {
-                observe(occurrence, scopeId, counts, binding.where(), binding.fields());
+            int field = 0;
+            for (var entry : root.values().entrySet()) {
+                context.visit();
+                int index = field++;
+                embedded(occurrence, entry.getKey(), entry.getValue()).ifPresent(link ->
+                        binding(occurrence, link.association()).ifPresent(binding -> {
+                            var payload = switch (entry.getValue()) {
+                                case TransferValue.Structured structure -> structure;
+                                default -> {
+                                    var values = new LinkedHashMap<SymbolRef, TransferValue>();
+                                    for (var endpoint : link.endpoints()) {
+                                        endpoint.reference().ifPresent(ref -> values.put(endpoint.role(), ref));
+                                    }
+                                    yield new TransferValue.Structured(link.association(), values);
+                                }
+                            };
+                            var path = new DatasetPathContext(context, occurrence, payload, link);
+                            inspect(occurrence, frame.withDataset(path).descend(root, payload),
+                                    index, globalComplete, binding);
+                        }));
             }
-            scopes.put(scopeId, scope);
         });
         reportDuplicates();
         var coverage = new DatasetScopeCounts.Coverage();
@@ -104,10 +125,29 @@ final class DatasetUnique {
                 DatasetRuleCoverage.Outcome.NOT_APPLICABLE, 0, 0, 0, 0, 0)) : reports;
     }
 
-    private void observe(DatasetRuleContext.Occurrence occurrence, long scope, DatasetScopeCounts counts,
+    private void inspect(DatasetRuleContext.Occurrence occurrence, EvaluationFrame frame, int field,
+                         boolean globalComplete, Binding binding) {
+        long scopeId = basket ? occurrence.stored().basket() : 0;
+        var scope = scopes.get(scopeId).orElseGet(() -> new Scope(
+                basket ? occurrence.basket().consistency() == TransferEvent.Consistency.COMPLETE
+                        ? CLOSED_BY_TRANSFER : OPEN : globalComplete ? CLOSED_DELIVERY : OPEN,
+                new DatasetScopeCounts()));
+        var counts = scope.counts();
+        counts.candidates++;
+        counts.selected |= occurrence.selected();
+        if (!binding.supported()) {
+            counts.unsupported++;
+            counts.undecided++;
+        } else {
+            observe(occurrence, frame, field, scopeId, counts, binding.where(), binding.fields());
+        }
+        scopes.put(scopeId, scope);
+    }
+
+    private void observe(DatasetRuleContext.Occurrence occurrence, EvaluationFrame frame, int slotIndex, long scope, DatasetScopeCounts counts,
                          Optional<ExpressionProgram> where, List<ExpressionProgram> fields) {
         if (where.isPresent()) {
-            var filter = context.evaluate(where.orElseThrow(), occurrence);
+            var filter = where.orElseThrow().evaluate(frame);
             switch (filter) {
                 case EvaluationResult.UndefinedByData ignored -> { counts.evaluations++; return; }
                 case EvaluationResult.Known known when known.value() instanceof TransferValue.BooleanValue bool -> {
@@ -129,8 +169,8 @@ final class DatasetUnique {
         var parts = new ArrayList<CanonicalKey>();
         ValueSemantics.Gap issue = null;
         for (var field : fields) {
-            var type = context.valueType(field, occurrence);
-            var result = context.evaluateKey(field, occurrence);
+            var type = context.valueType(field, frame.current());
+            var result = new ExpressionEvaluator(field).evaluateKey(frame);
             var keySemantics = result instanceof EvaluationResult.Known known && known.referenceOrigin().isPresent()
                     ? context.semantics(known.referenceOrigin().orElseThrow().occurrence()) : semantics;
             switch (keySemantics.key(result, type)) {
@@ -150,9 +190,10 @@ final class DatasetUnique {
         var key = context.indexKey(TAG, ordinal, scope, semantics.tuple(parts));
         long handle = occurrence.handle().ordinal();
         var value = context.keys.get(key).map(ByteBuffer::wrap);
-        var group = value.map(Group::read).orElse(new Group(0, handle, 0, 0));
+        var group = value.map(Group::read).orElse(new Group(0, handle, 0, 0, -1));
+        boolean select = group.selected() == 0 && occurrence.selected();
         var updated = new Group(group.size() + 1, group.first(), group.size() == 1 ? handle : group.second(),
-                group.selected() == 0 && occurrence.selected() ? handle : group.selected());
+                select ? handle : group.selected(), select ? slotIndex : group.selectedSlot());
         context.keys.put(key, updated.bytes());
     }
 
@@ -176,8 +217,16 @@ final class DatasetUnique {
                 var scopeData = scopes.get(scope).orElseThrow();
                 scopeData.counts().violations++;
                 scopes.put(scope, scopeData);
-                report.datasetViolation(binding(selected).orElseThrow().rule().declaration(), ValidationCode.DATASET_UNIQUE_DUPLICATE,
-                        selected.location(List.of()), arguments);
+                var type = selected.object().type();
+                List<DataLocation.Step> path = List.of();
+                if (group.selectedSlot() >= 0) {
+                    var field = selected.object().data().values().entrySet().stream()
+                            .skip(group.selectedSlot()).findFirst().orElseThrow();
+                    type = embedded(selected, field.getKey(), field.getValue()).orElseThrow().association();
+                    path = List.of(new DataLocation.Slot(field.getKey()));
+                }
+                report.datasetViolation(binding(selected, type).orElseThrow().rule().declaration(),
+                        ValidationCode.DATASET_UNIQUE_DUPLICATE, selected.location(path), arguments);
             }
         }
     }
@@ -186,13 +235,13 @@ final class DatasetUnique {
                            List<ExpressionProgram> fields, boolean supported) { }
 
 
-    private record Group(long size, long first, long second, long selected) {
+    private record Group(long size, long first, long second, long selected, int selectedSlot) {
         static Group read(ByteBuffer value) {
-            return new Group(value.getLong(), value.getLong(), value.getLong(), value.getLong());
+            return new Group(value.getLong(), value.getLong(), value.getLong(), value.getLong(), value.getInt());
         }
 
         byte[] bytes() {
-            return ByteBuffer.allocate(4 * Long.BYTES).putLong(size).putLong(first).putLong(second).putLong(selected).array();
+            return ByteBuffer.allocate(4 * Long.BYTES + Integer.BYTES).putLong(size).putLong(first).putLong(second).putLong(selected).putInt(selectedSlot).array();
         }
     }
 }

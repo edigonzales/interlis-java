@@ -90,4 +90,60 @@ class AreaFunctionContractTest {
         var g=ok("2.4","FUNCTION objects(flag:BOOLEAN):OBJECTS OF ANYCLASS;TOPIC T=CLASS C=SET CONSTRAINT INTERLIS.areAreas2(F.objects(#true),UNDEFINED,\"surface\");END C;END T;");
         var path=call(g,"areAreas2").argumentPaths().get(2);assertEquals(0,path.rootArgument());assertTrue(path.binding().isEmpty());assertEquals("surface",path.steps().getFirst().name());assertInstanceOf(GeometryType.class,g.type(path.expectedType()).orElseThrow());
     }
+
+    @Test
+    void bindsLiteralLegacyPathsAgainstTheResolvedExtensionDeclaration() {
+        var result = legacy("http://www.interlis.ch/models", "\"geometry\",\"surfaces->surface\"");
+        var graph = assertInstanceOf(CompilationOutcome.Succeeded.class, result,
+                () -> result instanceof CompilationOutcome.Rejected rejected
+                        ? rejected.analysis().diagnostics().toString() : result.toString()).schema().semanticGraph();
+        var invocation = call(graph, "areAreas2");
+        assertEquals(0, invocation.argumentPaths().get(1).rootArgument());
+        assertEquals(1, invocation.argumentPaths().get(2).rootArgument());
+        assertEquals(List.of("surfaces", "surface"), invocation.argumentPaths().get(2).steps().stream()
+                .map(FunctionCallExpression.ArgumentPathStep::name).toList());
+        var function = assertInstanceOf(FunctionSymbol.class, graph.symbol(invocation.targetFunction().orElseThrow()).orElseThrow());
+        assertInstanceOf(Origin.DeclaredOrigin.class, function.origin());
+        for (var path : invocation.argumentPaths().values()) {
+            assertInstanceOf(PathExpression.class, graph.expression(path.binding().orElseThrow()).orElseThrow());
+        }
+
+        var bad = assertInstanceOf(CompilationOutcome.Rejected.class,
+                legacy("http://www.interlis.ch/models", "\"geometry\",\"surfaces->text\""));
+        assertTrue(bad.analysis().diagnostics().toString().contains("FUNCTION_PATH_TYPE"));
+
+        for (var plainCall : List.of(
+                legacy("http://www.interlis.ch/models", "UNDEFINED,path"),
+                legacy("https://example.org", "\"geometry\",\"surfaces->text\""))) {
+            var plain = assertInstanceOf(CompilationOutcome.Succeeded.class, plainCall).schema().semanticGraph();
+            assertTrue(call(plain, "areAreas2").argumentPaths().isEmpty());
+        }
+    }
+
+    private static CompilationOutcome legacy(String issuer, String arguments) {
+        var extension = source("memory:/INTERLIS_ext.ili", """
+                INTERLIS 2.3;
+                CONTRACTED TYPE MODEL INTERLIS_ext AT "%s" VERSION "2016-05-30" =
+                  FUNCTION areAreas2(Object: OBJECT OF ANYCLASS; SurfaceBag: TEXT; SurfaceAttr: TEXT): BOOLEAN;
+                END INTERLIS_ext.
+                """.formatted(issuer));
+        var model = source("memory:/F.ili", """
+                INTERLIS 2.3;
+                MODEL F AT "https://example.org" VERSION "1" =
+                  IMPORTS INTERLIS_ext;
+                  %s
+                  TOPIC T =
+                    %s
+                    CLASS C =
+                      geometry : Holder;
+                      path : TEXT;
+                      MANDATORY CONSTRAINT INTERLIS_ext.areAreas2(THIS,%s);
+                    END C;
+                  END T;
+                END F.
+                """.formatted(GEOMETRY, STRUCTURES, arguments));
+        var resolved = binding(parse(model), "INTERLIS_ext", extension, parse(extension));
+        return CompilerEngines.create().compile(request(List.of("F"), Map.of(model.id(), model, extension.id(), extension),
+                List.of(resolved), CompilerOptions.defaults()), CancellationToken.none());
+    }
 }

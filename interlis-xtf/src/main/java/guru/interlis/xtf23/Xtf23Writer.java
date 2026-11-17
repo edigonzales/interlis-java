@@ -165,9 +165,6 @@ public final class Xtf23Writer extends TransferWriter {
             }
             String version = required(declaration.modelVersion(), "MODEL VERSION");
             String issuer = required(declaration.issuer(), "MODEL URI");
-            if (!issuer.equals(symbol.issuer())) {
-                throw error(INVALID_WIRE, "XTF declaration conflicts with model " + model.name().declared());
-            }
             xml.start("MODEL");
             xml.attribute("NAME", model.name().declared().toString());
             xml.attribute("VERSION", version);

@@ -8,10 +8,12 @@ import guru.interlis.validation.ValidationCode;
 import org.locationtech.jts.algorithm.Orientation;
 import org.locationtech.jts.index.strtree.STRtree;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LinearRing;
 import org.locationtech.jts.operation.valid.IsValidOp;
 import org.locationtech.jts.operation.valid.TopologyValidationError;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +30,11 @@ final class CurveValidity {
     private GeometryEngine.Input relatedSource;
     private Optional<java.math.BigDecimal> overlap;
     private GeometryEngine.Check status = VALID;
+    private final List<Surface> checkedSurfaces = new ArrayList<>();
+
+    List<Surface> checkedSurfaces() {
+        return checkedSurfaces;
+    }
 
     CurveValidity(GeometryEngine.Input input, GeometryEngine.Control control) {
         this.input = input;
@@ -50,40 +57,39 @@ final class CurveValidity {
                 var segments = part.segments();
                 boolean loop = !segments.isEmpty()
                         && part.start().equals(segments.getLast().edge().end());
-                selfIntersections(segments, loop);
+                selfIntersections(segments, loop, true);
             }
         }
         if (!input.partial()) {
             for (Surface surface : value.surfaces()) {
-                surface(surface);
+                checkedSurfaces.add(surface(surface));
             }
             for (int i = 0; i < value.surfaces().size(); i++) {
                 for (int j = 0; j < i; j++) {
-                    compareSurfaces(value.surfaces().get(j), value.surfaces().get(i));
+                    compareSurfaces(checkedSurfaces.get(j), checkedSurfaces.get(i));
                 }
             }
         }
         return input.partial() && status == VALID ? MISSING_PARAMETERS : status;
     }
 
-    private void surface(Surface surface) {
+    private Surface surface(Surface surface) {
         var rings = rings(surface);
         var segments = new ArrayList<List<Segment>>();
         for (Ring ring : rings) {
             var boundary = closed(ring);
             if (boundary.isEmpty()) {
-                return;
+                return surface;
             }
             segments.add(boundary);
         }
         if (segments.stream().flatMap(List::stream).noneMatch(segment -> segment.curve() instanceof CircularArc)) {
-            checkLinearSurface(surface, segments);
-            return;
+            return checkLinearSurface(surface, segments);
         }
         for (int i = 0; i < rings.size(); i++) {
             var ring = rings.get(i);
             var boundary = segments.get(i);
-            selfIntersections(boundary, true);
+            selfIntersections(boundary, true, false);
             double area = signedArea(boundary);
             if (!Double.isFinite(area)) {
                 uncertain();
@@ -92,7 +98,7 @@ final class CurveValidity {
             }
         }
         if (status != VALID) {
-            return;
+            return surface;
         }
         // A cycle of boundary contacts cuts off part of the surface interior.
         int[] connected = new int[rings.size()];
@@ -120,22 +126,36 @@ final class CurveValidity {
                 }
             }
         }
+        return surface;
     }
 
-    private void checkLinearSurface(Surface surface, List<List<Segment>> boundaries) {
+    private Surface checkLinearSurface(Surface surface, List<List<Segment>> boundaries) {
         var factory = new GeometryFactory();
-        var rings = boundaries.stream().map(boundary -> {
-            var points = new org.locationtech.jts.geom.Coordinate[boundary.size() + 1];
-            for (int i = 0; i < boundary.size(); i++) {
-                control.visit().run();
-                points[i] = boundary.get(i).curve().start().coordinate();
+        var error = linearPolygonError(factory, boundaries);
+        if (error != null && error.getErrorType() == TopologyValidationError.RING_SELF_INTERSECTION) {
+            // INTERLIS allows a shell and its touching holes to be transferred as one walk.
+            var cycles = new ArrayList<List<Segment>>();
+            for (var boundary : boundaries) {
+                var split = splitLinearRing(boundary);
+                if (split.stream().anyMatch(cycle -> cycle.size() < 3)) {
+                    break;
+                }
+                cycles.addAll(split);
             }
-            points[points.length - 1] = boundary.getLast().curve().end().coordinate();
-            return factory.createLinearRing(points);
-        }).toList();
-        var polygon = factory.createPolygon(rings.getFirst(), rings.subList(1, rings.size())
-                .toArray(org.locationtech.jts.geom.LinearRing[]::new));
-        var error = new IsValidOp(polygon).getValidationError();
+            if (cycles.stream().mapToLong(List::size).sum()
+                    == boundaries.stream().mapToLong(List::size).sum()
+                    && cycles.size() > boundaries.size()
+                    && linearPolygonError(factory, cycles) == null) {
+                checkRingContactVertices(cycles);
+                var normalized = cycles.stream().map(cycle -> new Ring(List.of(), cycle.getFirst().path().stream()
+                        .takeWhile(component -> component.kind() != GeometryComponent.Kind.LINE).toList(), cycle))
+                        .toList();
+                return new Surface(normalized.getFirst(), normalized.subList(1, normalized.size()));
+            }
+        }
+        if (error == null && boundaries.size() > 1) {
+            checkRingContactVertices(boundaries);
+        }
         if (error != null) {
             var code = switch (error.getErrorType()) {
                 case TopologyValidationError.HOLE_OUTSIDE_SHELL, TopologyValidationError.NESTED_HOLES ->
@@ -179,6 +199,88 @@ final class CurveValidity {
                 invalid(first == null ? surface.shell().path() : first, code, error.getMessage());
             }
         }
+        return surface;
+    }
+
+    private TopologyValidationError linearPolygonError(GeometryFactory factory, List<List<Segment>> boundaries) {
+        var rings = boundaries.stream().map(boundary -> {
+            var points = new org.locationtech.jts.geom.Coordinate[boundary.size() + 1];
+            for (int i = 0; i < boundary.size(); i++) {
+                control.visit().run();
+                points[i] = boundary.get(i).curve().start().coordinate();
+            }
+            points[points.length - 1] = boundary.getLast().curve().end().coordinate();
+            return factory.createLinearRing(points);
+        }).toList();
+        return new IsValidOp(factory.createPolygon(rings.getFirst(),
+                rings.subList(1, rings.size()).toArray(LinearRing[]::new))).getValidationError();
+    }
+
+    private List<List<Segment>> splitLinearRing(List<Segment> boundary) {
+        var cycles = new ArrayList<List<Segment>>();
+        var open = new ArrayList<Segment>();
+        var positions = new HashMap<TransferGeometryAdapter.Position, Integer>();
+        for (var segment : boundary) {
+            control.visit().run();
+            positions.put(segment.edge().start(), open.size());
+            open.add(segment);
+            var start = positions.get(segment.edge().end());
+            if (start != null) {
+                var cycle = open.subList(start, open.size());
+                cycles.add(List.copyOf(cycle));
+                for (var edge : cycle) {
+                    positions.remove(edge.edge().start());
+                }
+                cycle.clear();
+            }
+        }
+        // The cycle enclosing all others has the largest unsigned area. JTS checks containment.
+        int largest = 0;
+        double largestArea = 0;
+        for (int i = 0; i < cycles.size(); i++) {
+            control.visit().run();
+            double area = Math.abs(signedArea(cycles.get(i)));
+            if (area > largestArea) {
+                largest = i;
+                largestArea = area;
+            }
+        }
+        if (largest != 0) {
+            java.util.Collections.swap(cycles, 0, largest);
+        }
+        return cycles;
+    }
+
+    private void checkRingContactVertices(List<List<Segment>> boundaries) {
+        record RingSegment(int ring, Segment segment) { }
+        var index = new STRtree();
+        for (int ring = 0; ring < boundaries.size(); ring++) {
+            for (var segment : boundaries.get(ring)) {
+                control.visit().run();
+                index.insert(segment.curve().envelope(), new RingSegment(ring, segment));
+            }
+        }
+        var intersector = new org.locationtech.jts.algorithm.RobustLineIntersector();
+        for (int ring = 0; ring < boundaries.size(); ring++) {
+            for (var segment : boundaries.get(ring)) {
+                control.visit().run();
+                var vertex = segment.curve().start();
+                for (var candidate : index.query(new org.locationtech.jts.geom.Envelope(vertex.coordinate()))) {
+                    control.visit().run();
+                    var other = (RingSegment) candidate;
+                    if (ring == other.ring() || endpoint(other.segment().curve(), vertex)) {
+                        continue;
+                    }
+                    intersector.computeIntersection(vertex.coordinate(), other.segment().curve().start().coordinate(),
+                            other.segment().curve().end().coordinate());
+                    if (intersector.hasIntersection()) {
+                        invalid(segment.path(), other.segment().path(), GEOMETRY_SELF_INTERSECTION,
+                                "Polygon rings may touch only at a vertex of both rings");
+                        return;
+                    }
+                }
+            }
+        }
     }
 
     private List<Segment> closed(Ring ring) {
@@ -214,7 +316,7 @@ final class CurveValidity {
         return true;
     }
 
-    private void selfIntersections(List<Segment> segments, boolean closed) {
+    private void selfIntersections(List<Segment> segments, boolean closed, boolean allowSharedEndpoints) {
         var index = new STRtree();
         for (int i = 0; i < segments.size(); i++) {
             control.visit().run();
@@ -232,6 +334,11 @@ final class CurveValidity {
                 var result = CurveIntersections.between(a.curve(), b.curve());
                 if (result.undetermined()) {
                     uncertain();
+                }
+                if (allowSharedEndpoints && result.hits().stream().allMatch(hit ->
+                        hit.kind() == CurveIntersections.Kind.CONTACT
+                                && endpoint(a.curve(), hit.point()) && endpoint(b.curve(), hit.point()))) {
+                    continue;
                 }
                 var allowed = new HashSet<Point>();
                 if (j == i + 1) {
@@ -418,7 +525,7 @@ final class CurveValidity {
     }
 
     static List<Segment> flat(Ring ring) {
-        return ring.parts().stream().flatMap(part -> part.segments().stream()).toList();
+        return ring.segments();
     }
 
     private Position location(List<Segment> container, List<Segment> other, HashSet<Point> contacts) {

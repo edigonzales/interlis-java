@@ -86,17 +86,68 @@ class XtfValidationIntegrationTest {
         try (var reader = new Xtf23Reader(transfer, new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)))) {
             var report = LocalValidator.validate(plan, reader, OPTIONS, RUN);
             var findings = report.examples();
-            assertEquals(List.of(REQUIRED_OID_MISSING, VALUE_OUT_OF_RANGE, INVALID_OID),
+            assertEquals(List.of(VALUE_OUT_OF_RANGE, INVALID_OID),
                     findings.stream().map(ValidationDiagnostic::code).toList());
-            assertEquals(3, report.detectedViolations());
-            assertEquals(List.of("b1", "b1", "bid:abcd"),
+            assertEquals(2, report.detectedViolations());
+            assertEquals(List.of("b1", "bid:abcd"),
                     findings.stream().map(d -> d.data().basket().orElseThrow().value()).toList());
             var basketDomain = schema.queries().findQualifiedName(QualifiedName.of("Checks", "ShortId")).getFirst();
             var objectDomain = schema.queries().findQualifiedName(QualifiedName.of("Checks", "ObjectId")).getFirst();
-            assertEquals(List.of(basketDomain, objectDomain, basketDomain),
+            assertEquals(List.of(objectDomain, basketDomain),
                     findings.stream().map(d -> d.rule().declaration()).toList());
+            assertTrue(findings.getLast().data().objectType().isEmpty());
+            assertEquals("ids:21", findings.getFirst().data().tid().orElseThrow().value());
+        }
+    }
+
+    @Test
+    void checksInheritedUuidDomainsInFullXtf23WithoutOidSpaces() {
+        var schema = compile("""
+                INTERLIS 2.3;
+                CONTRACTED MODEL Checks (en) AT "https://example.org/checks" VERSION "1" =
+                  TOPIC Base =
+                    BASKET OID AS INTERLIS.UUIDOID;
+                    OID AS INTERLIS.UUIDOID;
+                    CLASS Item = END Item;
+                  END Base;
+                  TOPIC Extended EXTENDS Base = END Extended;
+                END Checks.
+                """);
+        var transfer = transfer(schema);
+        var plan = ready(schema, transfer);
+        var input = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+                  <HEADERSECTION VERSION="2.3" SENDER="test">
+                    <MODELS><MODEL NAME="Checks" VERSION="1" URI="https://example.org/checks"/></MODELS>
+                  </HEADERSECTION>
+                  <DATASECTION>
+                    <Checks.Extended BID="%s">
+                      <Checks.Base.Item TID="%s"/>
+                    </Checks.Extended>
+                  </DATASECTION>
+                </TRANSFER>
+                """;
+        var valid = input.formatted("C09B1740-5C5A-48EA-B095-938D1C946974",
+                "e3e99bf0-5db5-445c-a375-5ae7dc6accE2");
+        try (var reader = new Xtf23Reader(transfer, new ByteArrayInputStream(valid.getBytes(StandardCharsets.UTF_8)))) {
+            var report = LocalValidator.validate(plan, reader, OPTIONS, RUN);
+            assertEquals(1, report.inspectedObjects());
+            assertEquals(0, report.detectedViolations());
+        }
+
+        var malformed = input.formatted("invalid-bid", "invalid-tid");
+        try (var reader = new Xtf23Reader(transfer, new ByteArrayInputStream(malformed.getBytes(StandardCharsets.UTF_8)))) {
+            var report = LocalValidator.validate(plan, reader, OPTIONS, RUN);
+            var findings = report.examples();
+            assertEquals(2, report.detectedViolations());
+            assertEquals(List.of(INVALID_OID, INVALID_OID), findings.stream().map(ValidationDiagnostic::code).toList());
+            var uuid = schema.queries().findQualifiedName(QualifiedName.of("INTERLIS", "UUIDOID")).getFirst();
+            assertTrue(findings.stream().allMatch(finding -> finding.rule().declaration().equals(uuid)));
+            assertEquals("invalid-bid", findings.getFirst().data().basket().orElseThrow().value());
             assertTrue(findings.getFirst().data().objectType().isEmpty());
-            assertEquals("ids:21", findings.get(1).data().tid().orElseThrow().value());
+            assertEquals("invalid-tid", findings.getLast().data().tid().orElseThrow().value());
+            assertTrue(findings.getLast().data().oid().isEmpty());
         }
     }
 

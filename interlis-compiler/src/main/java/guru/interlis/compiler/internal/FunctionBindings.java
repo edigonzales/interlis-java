@@ -120,6 +120,16 @@ final class FunctionBindings {
         return ownerRoots(attribute.owner(),function,arguments,new HashSet<>());
     }
 
+    boolean legacyAreaPaths(FunctionSymbol function, List<ExpressionBindings.ExpressionResult> arguments) {
+        var owner = function.owner().flatMap(index::byId).map(DeclInfo::syntax).orElse(null);
+        return owner instanceof guru.interlis.syntax.ModelSyntax model
+                && guru.interlis.model.internal.LegacyAreaFunctions.isModel(model.name(), model.modelKind(),
+                        model.languageVersion(), model.issuer())
+                && guru.interlis.model.internal.LegacyAreaFunctions.matchesSignature(function, typeBindings::effectiveDescriptor)
+                && (undefined(arguments.get(1)) || state.expression(arguments.get(1).id()) instanceof LiteralExpression)
+                && (undefined(arguments.get(2)) || state.expression(arguments.get(2).id()) instanceof LiteralExpression);
+    }
+
     Result bind(FunctionSymbol function,List<ExpressionBindings.ExpressionResult> arguments,DeclInfo owner,
             SourceRange range,BuiltinFunctions.Rule rule) {
         boolean error=false;
@@ -133,14 +143,15 @@ final class FunctionBindings {
             if(undefinedValue && function.parameters().get(i).mandatory()) {
                 error=true;diagnostics.emitRule(owner,"MANDATORY function parameter excludes undefined","FUNCTION_ARGUMENT_MANDATORY",state.expression(actual.id()).range());continue;
             }
-            boolean areas=rule==BuiltinFunctions.Rule.AREAS_ATTRIBUTE || rule==BuiltinFunctions.Rule.AREAS_TEXT;
+            boolean textAreas=rule==BuiltinFunctions.Rule.AREAS_TEXT || rule==BuiltinFunctions.Rule.LEGACY_AREAS_TEXT;
+            boolean areas=rule==BuiltinFunctions.Rule.AREAS_ATTRIBUTE || textAreas;
             if(areas && i==1 && undefined(actual))continue;
             if(formal instanceof AttributePathType attribute) {
                 if(undefinedValue)continue;
                 var roots=argumentRoots(attribute,i,function,arguments,rule);
                 boolean valid=attributeMatches(actual.typeId(),attribute,roots,function,arguments);
                 if(!valid) { error=true;diagnostics.emitRule(owner,"attribute argument has an incompatible owner or value type","FUNCTION_ATTRIBUTE",state.expression(actual.id()).range()); }
-            } else if(rule==BuiltinFunctions.Rule.AREAS_TEXT && i>0) {
+            } else if(textAreas && i>0) {
                 int root=i==1 || undefined(arguments.get(1))?0:1;
                 var value=state.expression(actual.id());
                 if(!(value instanceof LiteralExpression literal) || literal.textValue().isEmpty()) {
@@ -159,7 +170,15 @@ final class FunctionBindings {
                     if(scope==null) {error=true;diagnostics.emitRule(owner,"path roots have no common object context","FUNCTION_PATH_OWNER",literal.range());continue;}
                     var bound=pathBindings.valuePath(path,owner.id(),scope);binding=Optional.of(bound.id());
                     if(bound.error())error=true;
-                    else if(!assign(bound.typeId(),expected)) {error=true;diagnostics.emitRule(owner,"area path has an incompatible value type","FUNCTION_PATH_TYPE",literal.range());}
+                    else {
+                        if (rule == BuiltinFunctions.Rule.LEGACY_AREAS_TEXT && i == 1
+                                && typeBindings.effectiveDescriptor(bound.typeId()) instanceof StructureValueType) {
+                            expected = ((CollectionType) typeBindings.effectiveDescriptor(expected)).elementType();
+                        }
+                        if (!assign(bound.typeId(), expected)) {
+                            error=true;diagnostics.emitRule(owner,"area path has an incompatible value type","FUNCTION_PATH_TYPE",literal.range());
+                        }
+                    }
                 }
                 var steps=path.segments().stream().map(s->new FunctionCallExpression.ArgumentPathStep(s.name().text(),s.range(),s.associationAccess(),
                         s.associationQualifier().map(n->new QualifiedName(n.segments().stream().map(s2->s2.text()).toList())),s.index())).toList();

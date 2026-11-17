@@ -229,8 +229,8 @@ public final class Xtf23Reader extends TransferReader {
             if (symbol.translation().isPresent()) {
                 throw xml.error(UNSUPPORTED, "Translated models require an XTF ALIAS table");
             }
-            if (!version.equals(model.modelVersion()) || !issuer.equals(symbol.issuer())) {
-                throw xml.error(INVALID_WIRE, "XTF declaration conflicts with model " + name);
+            if (!version.equals(model.modelVersion())) {
+                throw xml.error(INVALID_WIRE, "XTF version conflicts with model " + name);
             }
             if (!declared.add(model.symbol())) {
                 throw xml.error(INVALID_WIRE, "Repeated XTF model declaration " + name);

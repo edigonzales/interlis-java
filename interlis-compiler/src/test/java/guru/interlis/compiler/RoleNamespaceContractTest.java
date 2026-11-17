@@ -42,4 +42,31 @@ class RoleNamespaceContractTest {
             assertTrue(collision.analysis().diagnostics().stream().anyMatch(d->d.arguments().toString().contains("ROLE_NAMESPACE_CONFLICT")));
         }
     }
+    @Test
+    void externalRoleDoesNotAddANameToTheOtherTopicsClass() {
+        var source = CompilerTestSupport.source("memory:/external-role.ili", """
+                INTERLIS 2.3;
+                MODEL F AT "https://example.org" VERSION "1" =
+                  TOPIC Base =
+                    OID AS INTERLIS.UUIDOID;
+                    CLASS Address = remoteParcel: TEXT; END Address;
+                    CLASS Parcel = END Parcel;
+                    ASSOCIATION Local = address -- Address; parcel -- Parcel; END Local;
+                  END Base;
+                  TOPIC Extension =
+                    DEPENDS ON Base;
+                    CLASS Plot = END Plot;
+                    ASSOCIATION Remote =
+                      address (EXTERNAL) -- Base.Address;
+                      remoteParcel -- Plot;
+                    END Remote;
+                  END Extension;
+                END F.
+                """);
+        var result = CompilerEngines.create().compile(CompilerTestSupport.request(List.of("F"),
+                Map.of(source.id(), source), List.of(), CompilerOptions.defaults()), CancellationToken.none());
+        assertInstanceOf(CompilationOutcome.Succeeded.class, result,
+                () -> result instanceof CompilationOutcome.Rejected rejected
+                        ? rejected.analysis().diagnostics().toString() : result.toString());
+    }
 }

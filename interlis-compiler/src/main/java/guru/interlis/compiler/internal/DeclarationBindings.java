@@ -141,7 +141,9 @@ final class DeclarationBindings {
             while (outer.isPresent()) {
                 work.checkpoint();
                 var prior = names.getOrDefault(outer.orElseThrow(), Map.of()).get(declaration.name());
-                if (prior != null) {
+                // A class may share the name of its own topic.
+                if (prior != null && !(declaration.kind() == SymbolKind.CLASS
+                        && prior.kind() == SymbolKind.TOPIC && prior.id().equals(owner))) {
                     emitNamespaceRule(declaration, prior,
                             "local type names must not shadow an enclosing type name", "SCOPE_OUTER_TYPE_NAME");
                     break;

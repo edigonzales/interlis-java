@@ -116,6 +116,23 @@ class ValidationPlannerTest {
         assertEquals(3, rules.stream().distinct().count());
     }
 
+    @Test
+    void plansTransferableClassWithPredefinedReferenceSystemAncestors() {
+        var schema = compile("""
+                INTERLIS 2.3;
+                REFSYSTEM MODEL Checks AT "https://example.org" VERSION "1" =
+                  TOPIC T =
+                    CLASS Datum EXTENDS INTERLIS.REFSYSTEM = END Datum;
+                  END T;
+                END Checks.
+                """);
+        var transfer = transfer(schema);
+        var datum = schema.queries().findQualifiedName(QualifiedName.of("Checks", "T", "Datum")).getFirst();
+        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
+                ValidationPlanner.plan(transfer, ValidationProfile.DATASET)).plan();
+        assertNotNull(plan.object(datum));
+    }
+
     static ValidationPlan ready(CompiledSchema schema, TransferPlan transfer) {
         return assertInstanceOf(ValidationPlanningResult.Ready.class, ValidationPlanner.plan(transfer)).plan();
     }
