@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "suiteCommit": "88576ffc4cd491dd72d2375eb897ea9f3f55d2c3",
-  "suiteSha256": "6a80b7e8faf4bdfda8561478cbf1f5538fc959e743e3ccfc158ae23b7c9337fe",
+  "suiteSha256": "b97a84191f367abc29607c8c27e85ca5b7ee9a005fed6a75a2c7c6f1aae1fd94",
   "cases": [
     {
       "testId": "ili23.Class23Test.classComplete",
