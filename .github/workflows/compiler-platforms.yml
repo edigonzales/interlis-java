@@ -33,10 +33,11 @@ jobs:
           git -C "$RUNNER_TEMP/suite-interlis" rev-parse HEAD
           java build/interlis/ValidatorConformanceRun.java --suite-dir "$RUNNER_TEMP/suite-interlis" \
             --validator-zip target/jenesis-jvm/validator-delivery/interlis-validator-*.zip
-      - name: Package and smoke-test the compiler ZIP
-        run: java build/interlis/ExistingJvmDistribution.java compiler
       - name: Run pinned Codeberg suite
         run: java build/interlis/ConformanceRun.java
+      # Codeberg regenerates the shared SDK delivery directory.
+      - name: Package and smoke-test the compiler ZIP
+        run: java build/interlis/ExistingJvmDistribution.java compiler
       - name: Retain native JVM and conformance reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
