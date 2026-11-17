@@ -84,7 +84,8 @@ final class ModelPreparation {
         }
         List<ModelSelector> roots = closureNames.stream()
                 .<ModelSelector>map(name -> new ModelSelector.ByName(name,
-                        declarations.getOrDefault(name, Optional.empty()), Optional.empty()))
+                        options.models().contains(name) ? Optional.empty() : declarations.getOrDefault(name, Optional.empty()),
+                        Optional.empty()))
                 .toList();
         directories.add(DEFAULT_REPOSITORY);
         var locations = options.repositories().isEmpty() ? List.copyOf(directories) : options.repositories();

@@ -79,7 +79,13 @@ Die Klasse `GebaeudeRegister` darf den Namen ihres Topics tragen.
 Der Compiler akzeptiert diese Modellierung in 2.3 und 2.4 gemäss
 [Entscheidung 09](../contracts/norm-decisions.md#decision-09).
 Der Runner verwendet die unveränderten Originaltests, Modelle und XTF-Dateien.
-Die Suite prüft INTERLIS 2.3 und XTF 2.3.
+Die Suite prüft INTERLIS 2.3 und XTF 2.3 über den Launcher aus dem entpackten
+Validator-ZIP. Der Runner baut das ZIP bei Bedarf selbst. Mit
+`--validator-zip PATH` prüft er ein bereits gebautes Paket. Sein Testadapter
+wertet Exitcode und JSON aus. Modell- und Prozessfehler zählen als Fehler
+des Laufs. Bei `RHE.T05a/b` und `RSU.T17a/d` gibt der Adapter die vorhandenen
+Suite-Modelle explizit an, damit der XTF-Reader den falschen Namen oder die
+abweichende Version im gelieferten Header diagnostiziert.
 Der Linux-Job klont den Upstream-Zweig `master` einmal und startet den
 vollständigen Lauf nach Codeberg. Lokal lässt sich derselbe Runner mit
 einem vorhandenen Suite-Checkout aufrufen.

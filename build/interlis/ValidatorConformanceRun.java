@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -17,11 +16,20 @@ import java.util.stream.Collectors;
 /** Builds and runs the original swisstopo JUnit tests against the JVM products. */
 public final class ValidatorConformanceRun {
     public static void main(String[] args) throws Exception {
-        if ((args.length != 2 && args.length != 4) || !args[0].equals("--suite-dir")
-                || args[1].isBlank() || args.length == 4 && (!args[2].equals("--filter") || args[3].isBlank())) {
-            throw new IllegalArgumentException("Expected --suite-dir PATH [--filter REGEX]");
+        if (args.length < 2 || args.length > 6 || args.length % 2 != 0 || !args[0].equals("--suite-dir")) {
+            throw new IllegalArgumentException("Expected --suite-dir PATH [--validator-zip ZIP] [--filter REGEX]");
         }
-        String filter = args.length == 4 ? Pattern.compile(args[3]).pattern() : ".*";
+        String filter = ".*";
+        Path suppliedZip = null;
+        var seen = new LinkedHashSet<String>();
+        for (int i = 2; i < args.length; i += 2) {
+            if (!seen.add(args[i]) || args[i + 1].isBlank()) throw new IllegalArgumentException("Invalid option " + args[i]);
+            switch (args[i]) {
+                case "--filter" -> filter = Pattern.compile(args[i + 1]).pattern();
+                case "--validator-zip" -> suppliedZip = Path.of(args[i + 1]).toRealPath();
+                default -> throw new IllegalArgumentException("Unknown option " + args[i]);
+            }
+        }
         Path root = Path.of("").toAbsolutePath();
         Path suite = Path.of(args[1]).toRealPath();
         Path routine = suite.resolve("routine");
@@ -31,11 +39,19 @@ public final class ValidatorConformanceRun {
             throw new IllegalArgumentException("Expected suite test sources and model directory in " + suite);
         }
         try (var lease = JvmBuildLock.acquire(root)) {
-            run(root, routine, originals, filter);
+            Path zip = suppliedZip == null ? ExistingJvmDistribution.packageValidator(root) : suppliedZip;
+            Path installation = Files.createTempDirectory("interlis suite validator ");
+            try {
+                DistributionChecks.extractArchive(zip, installation);
+                Path launcher = ExistingJvmDistribution.launcher(installation.resolve("interlis-validator"), "interlis-validator");
+                run(root, routine, originals, filter, launcher);
+            } finally {
+                BuildOutputs.deleteTree(installation, java.util.Set.of());
+            }
         }
     }
 
-    private static void run(Path root, Path routine, Path originals, String filter) throws Exception {
+    private static void run(Path root, Path routine, Path originals, String filter, Path launcher) throws Exception {
         var sources = new ArrayList<String>();
         try (var files = Files.walk(originals)) {
             files.filter(p -> p.toString().endsWith(".java")).sorted().map(Path::toString).forEach(sources::add);
@@ -44,27 +60,16 @@ public final class ValidatorConformanceRun {
         try (var files = Files.walk(root.resolve("build/interlis/validator-conformance/src"))) {
             files.filter(p -> p.toString().endsWith(".java")).sorted().map(Path::toString).forEach(sources::add);
         }
-        var products = List.of("interlis-workspace", "interlis-xtf", "interlis-validation-jts");
-        var build = JenesisBridge.artifacts(root, products.stream().map(p -> "+" + p).toArray(String[]::new));
-        // Multiple product closures can contain different copies of the same artifact.
-        var jars = new LinkedHashMap<String, Path>();
-        for (var product : products) {
-            for (var artifact : ModuleArtifacts.runtime(root, product, build)) {
-                jars.putIfAbsent(artifact.coordinates(), artifact.file());
-            }
-        }
         var resolver = new Jpx(PathPlacement.CLASS_PATH);
         var testJars = new LinkedHashSet<Path>();
         for (String coordinate : List.of("org.junit.platform:junit-platform-console-standalone@1.11.4",
-                "org.slf4j:slf4j-simple@2.0.18")) {
+                "org.slf4j:slf4j-simple@2.0.18", "com.google.code.gson:gson@2.14.0")) {
             var installation = resolver.install(coordinate);
             for (String entry : installation.properties().getProperty("classpath").split(",")) {
                 testJars.add(installation.folder().resolve(entry));
             }
         }
-        var paths = new LinkedHashSet<>(jars.values());
-        paths.addAll(testJars);
-        var classpath = paths.stream().map(Path::toString).collect(Collectors.joining(File.pathSeparator));
+        var classpath = testJars.stream().map(Path::toString).collect(Collectors.joining(File.pathSeparator));
         Path output = Files.createTempDirectory(Files.createDirectories(JvmBuildInputs.requireOutputRoot(
                 root, "target/jenesis-jvm/validator-conformance")), "run-");
         System.out.println("Validator conformance reports: " + output);
@@ -83,7 +88,7 @@ public final class ValidatorConformanceRun {
         DistributionChecks.run(root, List.of(DistributionChecks.javaTool("javac"), "-encoding", "UTF-8",
                 "-cp", suiteClasspath, "-d", adapterTests.toString(), adapterTest.toString())).requireExit(0);
         var probes = DistributionChecks.run(root, List.of(DistributionChecks.javaTool("java"),
-                "-Dsuite.directory=" + routine.getParent(), "-Dsuite.classes=" + classes, "-cp", suiteClasspath + File.pathSeparator + adapterTests,
+                "-Dsuite.validator=" + launcher, "-Dsuite.directory=" + routine.getParent(), "-Dsuite.classes=" + classes, "-cp", suiteClasspath + File.pathSeparator + adapterTests,
                 "org.junit.platform.console.ConsoleLauncher", "execute", "--disable-ansi-colors",
                 "--fail-if-no-tests", "--reports-dir", output.resolve("adapter-reports").toString(),
                 "--select-class", "guru.interlis.conformance.SuiteValidationTest"));
@@ -92,10 +97,10 @@ public final class ValidatorConformanceRun {
         probes.requireExit(0);
 
         var result = DistributionChecks.run(routine, List.of(DistributionChecks.javaTool("java"),
-                "-Dvendor=interlis-java", "-cp", suiteClasspath,
+                "-Dvendor=interlis-java", "-Dsuite.validator=" + launcher, "-cp", suiteClasspath,
                 "guru.interlis.conformance.SuiteJUnit", classes.toString(), filter, output.toString(),
                 root.resolve("build/interlis/validator-conformance/deviations.tsv").toString()),
-                Map.of(), Duration.ofMinutes(10));
+                Map.of(), Duration.ofMinutes(20));
         Files.writeString(output.resolve("runner.stdout"), result.stdout());
         Files.writeString(output.resolve("runner.stderr"), result.stderr());
         if (result.exit() != 0) {

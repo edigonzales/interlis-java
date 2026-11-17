@@ -1,0 +1,20 @@
+# NOTICE
+
+This project is based on the INTERLIS 2.4 language specification:
+
+[eCH-0031 INTERLIS 2 – Manuel de référence Version 2.1.0 (2024)](https://www.ech.ch/fr/ech/ech-0031/2.1.0)
+
+A web-based AsciiDoc/HTML version of the reference manual is available at:
+
+https://github.com/geostandards-ch/doc_refhb24
+
+This repository contains an independent ANTLR4 grammar implementation
+derived from the INTERLIS 2.4 specification.
+
+The original INTERLIS grammar is defined using a WSN-based notation.
+It has been translated into ANTLR4 syntax and adapted to comply with
+ANTLR4 grammar requirements and parser generation constraints.
+
+The ANTLR4 grammar contained in this repository is not an official
+eCH grammar implementation and may differ from the original WSN-based
+grammar representation.

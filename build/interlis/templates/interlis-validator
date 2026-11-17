@@ -1,0 +1,9 @@
+#!/bin/sh
+# SPDX-License-Identifier: Apache-2.0
+APP_HOME=$(CDPATH='' cd -P "$(dirname "$0")/.." && pwd) || exit 3
+if [ -n "$JAVA_HOME" ]; then
+    java_command="$JAVA_HOME/bin/java"
+else
+    java_command=java
+fi
+exec "$java_command" --module-path "$APP_HOME/lib" --module guru.interlis.validator.cli/guru.interlis.validator.cli.Main "$@"

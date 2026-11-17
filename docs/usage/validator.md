@@ -4,17 +4,24 @@ Der JVM-Validator prüft XTF 2.3 und 2.4 mit der bestehenden Datensatz- und
 JTS-Geometrieprüfung. Er erkennt das Format am XML-Header. Die Dateiendung ist
 frei. Die [Transferverträge](transfer.md) beschreiben die unterstützten Daten.
 
-Der Modulbuild benötigt Java 25 und läuft mit Jenesis.
+## Installation
+
+Der Paketbau benötigt Java 25 und verwendet Jenesis.
 
 ```sh
-java build/jenesis/Make.java +interlis-validator-cli
+java build/interlis/ExistingJvmDistribution.java validator
 ```
 
-Mit den Runtime-JARs auf dem Modulpfad lautet der Aufruf beispielsweise
+Das ZIP `interlis-validator-<version>.zip` liegt unter
+`target/jenesis-jvm/validator-delivery/`. Nach dem Entpacken ist der Einstieg
+`interlis-validator/bin/interlis-validator` auf macOS und Linux und
+`interlis-validator\bin\interlis-validator.bat` auf Windows. Java 25 muss über
+`JAVA_HOME` oder `PATH` verfügbar sein. Der Launcher verwendet die JARs aus
+`lib/` neben seinem eigenen `bin/`-Verzeichnis. Relative Eingabepfade beziehen
+sich auf das aktuelle Arbeitsverzeichnis.
 
 ```sh
-java --module-path <JAR-Verzeichnis> \
-  --module guru.interlis.validator.cli/guru.interlis.validator.cli.Main \
+/path/to/interlis-validator/bin/interlis-validator \
   --offline daten-a.xtf daten-b.xtf --refdata katalog.xtf --json
 ```
 
@@ -37,7 +44,10 @@ zur Verfügung.
 Wiederholtes `--model NAME` bestimmt die primären Modellwurzeln. Standardmässig
 stammen sie aus den primären Transferheadern. Alle Dateien werden gegen
 dieselbe kompilierte Modell-Closure geprüft. Mit expliziter Modellwahl muss
-jeder Primärheader ein passendes Modell deklarieren. Ein Primärbasket ausserhalb
+jeder Primärheader ein passendes Modell deklarieren. Die explizit gewählten
+Modelle folgen der normalen Versionswahl des Repositorys. Der Reader prüft
+die im XTF-2.3-Header gelieferte Version gegen das ausgewählte Modell.
+Ein Primärbasket ausserhalb
 der gewählten Topics wird abgelehnt. `--` beendet die Optionserkennung.
 
 ## Prüfumfang und Speicher
@@ -82,7 +92,7 @@ und `format` (`xtf23` oder `xtf24`). Bei einem Datenlauf erscheint
 Datensatzabschluss und das Schliessen der Ressourcen. Nach abgeschlossenem
 Datenlauf folgen `objects` (geprüfte Primärobjekte), `violations`, `diagnosticsTruncated`,
 `diagnostics` und `unchecked`. Ein Diagnosebeispiel enthält den Code und die
-Meldung sowie bei Datenbefunden `location`, `ruleLocation` und
+Meldung sowie bei Datenbefunden `arguments`, `location`, `ruleLocation` und
 `relatedLocations`. Vor dem Datensatzabschluss meldet das Kommando die
 betroffene Phase und die bis dahin verfügbaren Diagnosen. Ist `completed`
 false, zählt `violations` nur die bis zur Unterbrechung beobachteten

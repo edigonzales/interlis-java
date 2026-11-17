@@ -161,6 +161,9 @@ final class ValidationOutput {
         var result = new JsonObject();
         result.addProperty("code", diagnostic.code().name());
         result.addProperty("message", diagnostic.message());
+        var arguments = new JsonArray();
+        diagnostic.arguments().forEach(arguments::add);
+        result.add("arguments", arguments);
         result.add("location", jsonLocation(diagnostic.data(), graph));
         var rule = new JsonObject();
         rule.addProperty("declaration", name(diagnostic.rule().declaration(), graph));
