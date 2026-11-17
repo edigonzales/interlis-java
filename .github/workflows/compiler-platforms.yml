@@ -24,8 +24,6 @@ jobs:
         run: java build/jenesis/Make.java
       - name: Check installed SDK, CLI and LSP
         run: java build/interlis/ExistingJvmDistribution.java check
-      - name: Run pinned Codeberg suite
-        run: java build/interlis/ConformanceRun.java
       - name: Package and smoke-test the validator ZIP
         run: java build/interlis/ExistingJvmDistribution.java validator
       - name: Run upstream swisstopo validator suite
@@ -37,6 +35,8 @@ jobs:
             --validator-zip target/jenesis-jvm/validator-delivery/interlis-validator-*.zip
       - name: Package and smoke-test the compiler ZIP
         run: java build/interlis/ExistingJvmDistribution.java compiler
+      - name: Run pinned Codeberg suite
+        run: java build/interlis/ConformanceRun.java
       - name: Retain native JVM and conformance reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
