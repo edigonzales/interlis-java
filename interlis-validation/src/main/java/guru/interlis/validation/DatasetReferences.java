@@ -89,12 +89,16 @@ final class DatasetReferences {
         var input = readInput(stored.input());
         var other = readInput(original.input());
         var object = stored.event().object();
-        var id = object.identity();
-        var data = new DataLocation(id.source().or(() -> input.header().source()), id.currentBasket(),
-                id.tid(), id.oid(), Optional.of(object.type()), List.of());
-        report.identityConflict(object, data,
+        report.identityConflict(object, identityLocation(object, input),
                 List.of(other.descriptor().id().value(), original.event().object().identity().currentBasket().value(),
-                        input.descriptor().id().value(), id.currentBasket().value()));
+                        input.descriptor().id().value(), object.identity().currentBasket().value()),
+                identityLocation(original.event().object(), other));
+    }
+
+    private static DataLocation identityLocation(TransferObject object, StoredValueCodec.StoredInput input) {
+        var id = object.identity();
+        return new DataLocation(id.source().or(() -> input.header().source()), id.currentBasket(),
+                id.tid(), id.oid(), Optional.of(object.type()), List.of());
     }
 
     private StoredValueCodec.StoredInput readInput(long ordinal) {

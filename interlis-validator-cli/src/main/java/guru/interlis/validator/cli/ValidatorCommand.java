@@ -1,13 +1,16 @@
 package guru.interlis.validator.cli;
 
+import guru.interlis.execution.CancellationReason;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
-import guru.interlis.model.SemanticGraph;
 import guru.interlis.source.SourceId;
+import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferPlanner;
 import guru.interlis.transfer.TransferPlanningResult;
 import guru.interlis.validation.*;
 import guru.interlis.validation.jts.JtsGeometryEngine;
+import guru.interlis.validation.mvstore.MvStoreOptions;
+import guru.interlis.validation.mvstore.MvStoreValidationStorage;
 import guru.interlis.xtf23.Xtf23Exception;
 import guru.interlis.xtf23.Xtf23Reader;
 import guru.interlis.xtf24.Xtf24Exception;
@@ -17,141 +20,155 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 final class ValidatorCommand {
+    private static final long MEMORY_BYTES = 256L * 1024 * 1024;
+    private static final long DISK_BYTES = 4L * 1024 * 1024 * 1024;
+
     private ValidatorCommand() { }
 
     static int run(List<String> args, Path cwd, PrintWriter out, PrintWriter err, CancellationToken token) {
-        int code;
+        boolean json = args.stream().takeWhile(arg -> !arg.equals("--")).anyMatch("--json"::equals);
+        var output = new ValidationOutput(json, out, err);
         try {
-            code = execute(args, cwd, out, err, token);
+            ValidatorOptions options;
+            try {
+                options = ValidatorOptions.parse(args);
+            } catch (IllegalArgumentException invalid) {
+                if (!json) err.print(ValidatorOptions.usage());
+                throw new Failure(2, "options", invalid.getMessage());
+            }
+            if (options.has("--help")) {
+                err.print(ValidatorOptions.usage());
+                return output.flush(0);
+            }
+            if (options.has("--version")) return output.version();
+            output.maxDiagnostics = options.maxDiagnostics();
+            output.scope = options.has("--partial") ? DatasetScope.PARTIAL_DATASET : DatasetScope.SUPPLIED_DATASET;
+            return execute(options, cwd, output, err, token);
         } catch (Failure failure) {
-            for (var message : failure.messages) err.println(failure.phase + ": " + message);
-            code = failure.code;
+            return output.failure(failure.code, failure.phase, failure.messages);
         } catch (OperationCancelledException cancelled) {
-            err.println("Validation cancelled.");
-            code = 4;
+            int code = cancelled.reason() == CancellationReason.RESOURCE_LIMIT ? 3 : 4;
+            return output.failure(code, output.phase, List.of(cancelled.reason().name()));
         } catch (XtfHeaderProbe.InvalidHeader invalid) {
-            err.println("header: INVALID_WIRE " + invalid.getMessage());
-            code = 1;
+            return output.failure(1, "header", List.of(invalid.getMessage()), "INVALID_WIRE");
         } catch (Xtf23Exception invalid) {
-            code = wireFailure(invalid.reason().name(), invalid, err);
+            return wireFailure(invalid.reason().name(), invalid, output);
         } catch (Xtf24Exception invalid) {
-            code = wireFailure(invalid.reason().name(), invalid, err);
+            return wireFailure(invalid.reason().name(), invalid, output);
         } catch (IOException | RuntimeException failure) {
-            err.println("Operational failure: " + failure.getClass().getSimpleName() + ": " + failure.getMessage());
-            code = 3;
+            return output.failure(3, output.phase,
+                    List.of(failure.getClass().getSimpleName() + ": " + failure.getMessage()));
         }
-        out.flush();
-        err.flush();
-        return out.checkError() || err.checkError() ? 3 : code;
     }
 
-    private static int execute(List<String> args, Path cwd, PrintWriter out, PrintWriter err, CancellationToken token)
+    private static int execute(ValidatorOptions options, Path cwd, ValidationOutput output,
+                               PrintWriter err, CancellationToken token)
             throws Failure, IOException, XtfHeaderProbe.InvalidHeader {
-        ValidatorOptions options;
-        try {
-            options = ValidatorOptions.parse(args);
-        } catch (IllegalArgumentException invalid) {
-            err.print(ValidatorOptions.usage());
-            throw new Failure(2, "options", invalid.getMessage());
-        }
-        if (options.has("--help")) {
-            err.print(ValidatorOptions.usage());
-            return 0;
-        }
-        if (options.has("--version")) {
-            var module = Main.class.getModule().getDescriptor();
-            err.println("interlis-validator " + (module == null ? "development"
-                    : module.rawVersion().orElse("development")));
-            return 0;
-        }
+        output.phase = "input";
         token.throwIfCancellationRequested();
-        var input = cwd.resolve(options.input()).normalize().toAbsolutePath();
-        if (!Files.isRegularFile(input)) throw new Failure(3, "input", "Not a regular file: " + input);
-        var header = XtfHeaderProbe.inspect(input, token);
-        if (options.has("--verbose")) err.println("Preparing " + input + " as XTF " + (header.xtf23() ? "2.3" : "2.4"));
-        var schema = ModelPreparation.prepare(options, input, cwd, header, token);
+        var inputs = output.inputs;
+        var paths = new HashSet<Path>();
+        probe(options.primary(), InputRole.PRIMARY, cwd, paths, output, token);
+        probe(options.reference(), InputRole.REFERENCE, cwd, paths, output, token);
+        if (options.has("--verbose")) {
+            inputs.forEach(input -> err.println("Preparing " + input.path() + " as " + input.format()));
+        }
+        output.phase = "model resolution";
+        var models = ModelPreparation.prepare(options, inputs, cwd, token);
+        var schema = models.schema();
+        output.phase = "transfer planning";
         var transfer = switch (TransferPlanner.plan(schema)) {
             case TransferPlanningResult.Ready ready -> ready.plan();
             case TransferPlanningResult.Unsupported unsupported ->
-                    throw new Failure(5, "transfer planning", unsupported.issues().toString());
+                    throw new Failure(5, output.phase, unsupported.issues().toString());
         };
+        output.phase = "validation planning";
+        var primary = transfer.models().stream()
+                .filter(model -> models.primaryModels().contains(model.name().declared().toString()))
+                .map(model -> model.symbol()).toList();
         var bindings = RuntimeBindings.empty().withGeometry(JtsGeometryEngine.standard());
-        var plan = switch (ValidationPlanner.plan(transfer, ValidationProfile.DATASET, bindings)) {
+        var plan = switch (ValidationPlanner.plan(transfer, ValidationProfile.DATASET, bindings, primary)) {
             case ValidationPlanningResult.Ready ready -> ready.plan();
             case ValidationPlanningResult.Rejected rejected ->
-                    throw new Failure(5, "validation planning", rejected.problems().toString());
+                    throw new Failure(5, output.phase, rejected.problems().toString());
         };
-        var source = Optional.of(new SourceId(input.toUri().toString()));
-        var coverage = new ActiveCoverage(plan.uncheckedRules());
+        var defaults = ValidationOptions.defaults();
+        var local = new ValidationOptions(options.maxDiagnostics(), defaults.maxNestedDepth(),
+                defaults.maxValuesPerObject(), defaults.numericRounding());
+        var dataset = new DatasetOptions(local, DatasetLimits.defaults(), output.scope);
+        var coverage = new ActiveCoverage(plan);
         ValidationReport report;
-        try (var stream = Files.newInputStream(input);
-             var reader = header.xtf23() ? new Xtf23Reader(transfer, stream, source) : new Xtf24Reader(transfer, stream, source);
-             var storage = new InMemoryValidationStorage(1_000_000, 256L * 1024 * 1024);
-             var run = DatasetValidator.session(plan, DatasetOptions.defaults(), storage);
-             var observed = coverage.observe(reader, transfer)) {
-            run.readInput(new InputDescriptor(new InputId(source.orElseThrow().value()), InputRole.PRIMARY), observed, token);
-            report = run.finish(token);
-        }
-        report.examples().forEach(diagnostic -> render(diagnostic, schema.semanticGraph(), err));
-        var gaps = coverage.gaps(report.coverage());
-        gaps.forEach(gap -> err.println("Unchecked: " + gap));
-        err.println("Objects checked: " + report.inspectedObjects() + ", violations: " + report.detectedViolations()
-                + ", diagnostic examples: " + report.examples().size());
-        if (report.detectedViolations() > 0) {
-            err.println(gaps.isEmpty() ? "Rejected supplied dataset." : "Rejected supplied dataset with incomplete checks.");
-            return 1;
-        }
-        if (!gaps.isEmpty()) {
-            err.println("Validation is incomplete.");
-            return 5;
-        }
-        err.println("No violations found in the supplied dataset.");
-        return 0;
-    }
-
-    private static void render(ValidationDiagnostic diagnostic, SemanticGraph graph, PrintWriter err) {
-        var data = diagnostic.data();
-        var rule = diagnostic.rule();
-        err.println(diagnostic.code() + " " + diagnostic.message() + location(data, graph)
-                + " | model rule " + name(rule.declaration(), graph)
-                + rule.range().map(range -> " at " + range.source().value() + ":" + range.startOffset()).orElse("")
-                + diagnostic.relatedData().map(other -> " | related:" + location(other, graph)).orElse(""));
-    }
-
-    private static String location(DataLocation location, SemanticGraph graph) {
-        var value = new StringBuilder();
-        location.source().ifPresent(source -> value.append(" ").append(source.value()));
-        location.basket().ifPresent(basket -> value.append(" BID=").append(basket.value()));
-        location.tid().ifPresent(tid -> value.append(" TID=").append(tid.value()));
-        location.oid().ifPresent(oid -> value.append(" OID=").append(oid.value()));
-        location.objectType().ifPresent(type -> value.append(" ").append(name(type, graph)));
-        for (var step : location.path()) {
-            switch (step) {
-                case DataLocation.Slot slot -> value.append("/").append(name(slot.symbol(), graph));
-                case DataLocation.Index index -> value.append("[").append(index.position()).append("]");
-                case DataLocation.GeometryComponent geometry ->
-                        value.append("/").append(geometry.kind()).append("[").append(geometry.position()).append("]");
+        output.phase = "storage";
+        try (var storage = openStorage(options, cwd);
+             var run = DatasetValidator.session(plan, dataset, storage)) {
+            output.phase = "transfer";
+            for (var input : inputs) {
+                output.currentInput = input.path();
+                read(input, transfer, run, coverage, token);
             }
+            output.currentInput = null;
+            output.phase = "validation";
+            report = run.finish(token);
+            output.phase = "cleanup";
         }
-        return value.toString();
+        token.throwIfCancellationRequested();
+        output.phase = "validation";
+        return output.report(report, coverage.gaps(report.coverage(), output.scope), schema.semanticGraph());
     }
 
-    private static String name(guru.interlis.model.SymbolRef ref, SemanticGraph graph) {
-        return graph.symbol(ref.symbol()).map(symbol -> symbol.name().value()).orElse(ref.symbol().value());
+    private static void probe(List<Path> supplied, InputRole role, Path cwd, Set<Path> paths,
+                              ValidationOutput output, CancellationToken token)
+            throws Failure, IOException, XtfHeaderProbe.InvalidHeader {
+        for (var file : supplied) {
+            token.throwIfCancellationRequested();
+            output.phase = "input";
+            var path = cwd.resolve(file).normalize().toAbsolutePath();
+            output.currentInput = path;
+            if (!Files.isRegularFile(path)) throw new Failure(3, "input", "Not a regular file: " + path);
+            if (!paths.add(path.toRealPath())) throw new Failure(2, "options", "Repeated input file: " + path);
+            if (paths.size() > DatasetLimits.defaults().maxInputs()) {
+                throw new Failure(3, "input", "Dataset input budget exceeded");
+            }
+            output.phase = "header";
+            var input = new ValidationInput(path, role, XtfHeaderProbe.inspect(path, token));
+            output.inputs.add(input);
+            output.currentInput = null;
+        }
     }
 
-    private static int wireFailure(String reason, RuntimeException failure, PrintWriter err) {
-        err.println("transfer: " + reason + " " + failure.getMessage());
-        if (failure.getSuppressed().length > 0) return 3;
-        return switch (reason) {
+    private static ValidationStorage openStorage(ValidatorOptions options, Path cwd) {
+        return switch (options.storage()) {
+            case MEMORY -> new InMemoryValidationStorage(1_000_000, MEMORY_BYTES);
+            case MVSTORE -> MvStoreValidationStorage.open(options.tempDir().map(cwd::resolve)
+                    .orElseGet(() -> Path.of(System.getProperty("java.io.tmpdir"))), MvStoreOptions.defaults(DISK_BYTES));
+        };
+    }
+
+    private static void read(ValidationInput input, TransferPlan transfer, DatasetValidationSession run,
+                             ActiveCoverage coverage, CancellationToken token) throws IOException {
+        var source = new SourceId(input.path().toUri().toString());
+        try (var stream = Files.newInputStream(input.path());
+             var reader = input.header().xtf23()
+                     ? new Xtf23Reader(transfer, stream, Optional.of(source))
+                     : new Xtf24Reader(transfer, stream, Optional.of(source));
+             var observed = coverage.observe(reader, transfer, input.role())) {
+            run.readInput(new InputDescriptor(new InputId(source.value()), input.role()), observed, token);
+        }
+    }
+
+    private static int wireFailure(String reason, RuntimeException failure, ValidationOutput output) {
+        int code = failure.getSuppressed().length > 0 ? 3 : switch (reason) {
             case "MALFORMED_XML", "UNSAFE_XML", "INVALID_WIRE", "DUPLICATE_ID" -> 1;
             case "UNSUPPORTED" -> 5;
             default -> 3;
         };
+        return output.failure(code, "transfer", List.of(failure.getMessage()), reason);
     }
 
     static final class Failure extends Exception {

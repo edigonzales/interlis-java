@@ -1,10 +1,14 @@
 package guru.interlis.validator.cli;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import guru.interlis.execution.CancellationToken;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -159,6 +163,12 @@ class ValidatorCommandTest {
         assertEquals(5, result.exit(), result.error());
         assertTrue(result.error().contains("UNSUPPORTED_EXPRESSION"), result.error());
         assertFalse(result.error().contains("No violations"));
+        write("rejected.xtf", legacy("<name>too many characters</name>"));
+        var rejected = run("--json", "--offline", "rejected.xtf");
+        assertEquals(1, rejected.exit(), rejected.output());
+        assertTrue(rejected.json().get("completed").getAsBoolean());
+        assertEquals(1, rejected.json().get("violations").getAsLong());
+        assertTrue(rejected.json().getAsJsonArray("unchecked").size() > 0);
     }
 
     @Test
@@ -166,12 +176,193 @@ class ValidatorCommandTest {
         assertEquals(0, run("--help").exit());
         assertEquals(0, run("--version").exit());
         for (var arguments : List.of(List.of("--unknown"), List.of("--offline", "--offline", "file"),
-                List.of("--repository"), List.of("first", "second"), List.of("--model", "--offline", "file"))) {
+                List.of("--repository"), List.of("--refdata", "second"), List.of("--model", "--offline", "file"),
+                List.of("--temp-dir", ".", "file"), List.of("--max-diagnostics", "0", "file"),
+                List.of("--storage", "memory", "--storage", "mvstore", "file"))) {
             assertEquals(2, run(arguments.toArray(String[]::new)).exit(), arguments.toString());
         }
-        assertEquals(Path.of("-input.xtf"), ValidatorOptions.parse(List.of("--", "-input.xtf")).input());
+        assertEquals(List.of(Path.of("-input.xtf")), ValidatorOptions.parse(List.of("--", "-input.xtf")).primary());
         assertEquals(4, ValidatorCommand.run(List.of("missing.xtf"), directory,
                 new PrintWriter(new StringWriter()), new PrintWriter(new StringWriter()), () -> true));
+    }
+
+    @Test
+    void globalUniqueProducesTheSameBoundedJsonWithBothStores() throws Exception {
+        model(directory, "2.3", "UNIQUE name;");
+        write("first file.xtf", legacy("<name>alpha</name>").replace("BID=\"basket\"", "BID=\"first\""));
+        write("second.xtf", legacy("<name>alpha</name>").replace("BID=\"basket\"", "BID=\"second\""));
+        write("third.xtf", legacy("<name>beta</name>").replace("BID=\"basket\"", "BID=\"third\""));
+        write("fourth.xtf", legacy("<name>beta</name>").replace("BID=\"basket\"", "BID=\"fourth\""));
+        var passed = run("--offline", "--json", "--verbose", "first file.xtf");
+        assertEquals(0, passed.exit(), passed.error());
+        assertEquals("passed", passed.json().get("status").getAsString());
+        assertTrue(passed.error().contains("Preparing"));
+        assertEquals(1, passed.json().get("objects").getAsLong());
+        var args = List.of("--offline", "--json", "--max-diagnostics", "1", "first file.xtf", "second.xtf", "third.xtf", "fourth.xtf");
+        var memory = run(args.toArray(String[]::new));
+        var diskArgs = new java.util.ArrayList<>(args);
+        diskArgs.addAll(List.of("--storage", "mvstore", "--temp-dir", "."));
+        var disk = run(diskArgs.toArray(String[]::new));
+        assertEquals(1, memory.exit(), memory.error() + memory.output());
+        assertEquals(memory.exit(), disk.exit(), disk.error() + disk.output());
+        assertEquals(memory.json(), disk.json());
+        var json = memory.json();
+        assertEquals("rejected", json.get("status").getAsString());
+        assertTrue(json.get("completed").getAsBoolean());
+        assertEquals(4, json.get("objects").getAsLong());
+        assertEquals(2, json.get("violations").getAsLong());
+        assertTrue(json.get("diagnosticsTruncated").getAsBoolean());
+        var diagnostics = json.getAsJsonArray("diagnostics");
+        assertEquals(1, diagnostics.size());
+        var diagnostic = diagnostics.get(0).getAsJsonObject();
+        assertEquals("DATASET_UNIQUE_DUPLICATE", diagnostic.get("code").getAsString());
+        assertTrue(diagnostic.getAsJsonObject("location").get("source").getAsString().endsWith(".xtf"));
+        assertTrue(diagnostic.getAsJsonObject("ruleLocation").get("source").getAsString().endsWith(".ili"));
+        assertEquals(1, diagnostic.getAsJsonArray("relatedLocations").size());
+        assertNoRunDirectories();
+    }
+
+    @Test
+    void resolvesStableReferenceAcrossPrimaryAndReferenceFiles() throws Exception {
+        write("Checks.ili", """
+                INTERLIS 2.3;
+                MODEL Catalogue AT "https://example.org" VERSION "1" =
+                  DOMAIN Id = OID TEXT*20;
+                  TOPIC Lists =
+                    CLASS Target =
+                      OID AS Id;
+                      name : MANDATORY TEXT*2;
+                      SET CONSTRAINT INTERLIS.objectCount(ALL) > 0;
+                    END Target;
+                  END Lists;
+                END Catalogue.
+                MODEL Checks AT "https://example.org" VERSION "1" =
+                  IMPORTS Catalogue;
+                  TOPIC Data =
+                    DEPENDS ON Catalogue.Lists;
+                    STRUCTURE Pointer = peer: REFERENCE TO (EXTERNAL) Catalogue.Lists.Target; END Pointer;
+                    CLASS Item = link: Pointer; END Item;
+                  END Data;
+                END Checks.
+                """);
+        var primary = legacy("<link><Checks.Data.Pointer><peer REF=\"ids:target\" BID=\"target-basket\"/></Checks.Data.Pointer></link>")
+                .replace("</MODELS>", "</MODELS><OIDSPACES><OIDSPACE NAME=\"ids\" OIDDOMAIN=\"Catalogue.Id\"/></OIDSPACES>");
+        var target = legacy("<name>ok</name>").replace("NAME=\"Checks\"", "NAME=\"Catalogue\"")
+                .replace("Checks.Data.Item", "Catalogue.Lists.Target").replace("Checks.Data", "Catalogue.Lists")
+                .replace("TID=\"one\"", "TID=\"ids:target\"").replace("BID=\"basket\"", "BID=\"target-basket\"")
+                .replace("</MODELS>", "</MODELS><OIDSPACES><OIDSPACE NAME=\"ids\" OIDDOMAIN=\"Catalogue.Id\"/></OIDSPACES>");
+        write("source.xtf", primary);
+        write("target.xtf", target);
+        write("witness.xtf", target.replace("<name>ok</name>", "<name>invalid for primary</name>"));
+        var missing = run("--json", "--offline", "source.xtf");
+        assertEquals(1, missing.exit(), missing.output());
+        assertEquals("REFERENCE_TARGET_MISSING", missing.json().getAsJsonArray("diagnostics").get(0)
+                .getAsJsonObject().get("code").getAsString());
+        var partial = run("--json", "--offline", "--partial", "source.xtf");
+        assertEquals(5, partial.exit(), partial.output());
+        assertEquals("partial-dataset", partial.json().get("scope").getAsString());
+        assertTrue(partial.json().get("completed").getAsBoolean());
+        assertEquals(0, partial.json().get("violations").getAsLong());
+        assertTrue(partial.json().getAsJsonArray("unchecked").size() > 0);
+        var both = run("--json", "--offline", "source.xtf", "target.xtf");
+        assertEquals(0, both.exit(), both.output());
+        var witness = run("--json", "--offline", "source.xtf", "--refdata", "witness.xtf");
+        assertEquals(0, witness.exit(), witness.output());
+        assertEquals("reference", witness.json().getAsJsonArray("inputs").get(1).getAsJsonObject().get("role").getAsString());
+        var duplicated = run("--json", "--offline", "source.xtf", "target.xtf", "--refdata", "witness.xtf");
+        assertEquals(1, duplicated.exit(), duplicated.output());
+        assertTrue(duplicated.json().getAsJsonArray("diagnostics").asList().stream()
+                .map(d -> d.getAsJsonObject())
+                .anyMatch(d -> "AMBIGUOUS_OBJECT_IDENTITY".equals(d.get("code").getAsString())
+                        && !d.getAsJsonArray("relatedLocations").isEmpty()), duplicated.output());
+    }
+
+    @Test
+    void reportsEarlyAndOperationalFailuresWithoutACompletedResult() throws Exception {
+        model(directory, "2.3", "");
+        write("bad.xtf", legacy("<name>too many characters</name>"));
+        write("wrong.xtf", legacy("<name>ok</name>").replace("VERSION=\"1\"", "VERSION=\"2\""));
+        write("trailing.xtf", legacy("<name>ok</name>") + "<trailing/>");
+        write("limit.xtf", legacy("<name>" + "x".repeat(1_048_577) + "</name>"));
+        assertFailed(run("--json", "--offline", "bad.xtf", "wrong.xtf"), 1, "header");
+        assertFailed(run("--json", "--offline", "bad.xtf", "trailing.xtf",
+                "--storage", "mvstore", "--temp-dir", "."), 1, "transfer");
+        var resourceFailure = run("--json", "--offline", "bad.xtf", "limit.xtf",
+                "--storage", "mvstore", "--temp-dir", ".");
+        assertFailed(resourceFailure, 3, "transfer");
+        assertTrue(resourceFailure.output().contains("LIMIT_EXCEEDED"), resourceFailure.output());
+        assertFailed(run("--json", "--offline", "bad.xtf", "--refdata", "missing.xtf"), 3, "input");
+        assertFailed(run("--json", "--offline", "bad.xtf", "--storage", "mvstore",
+                "--temp-dir", "missing-directory"), 3, "storage");
+        assertFailed(run("--json", "--refdata", "bad.xtf"), 2, "options");
+        assertFailed(run("--json", "--offline", "wrong.xtf"), 3, "model resolution");
+        assertNoRunDirectories();
+        var version = run("--version", "--json");
+        assertEquals(0, version.exit());
+        assertEquals("interlis-validator", version.json().get("tool").getAsString());
+    }
+
+    @Test
+    void reportsAnUndeterminedSetRuleEvenWithNoCandidates() throws Exception {
+        model(directory, "2.3", "SET CONSTRAINT INTERLIS.objectCount(ALL) > 0;");
+        write("empty.xtf", legacy("").replaceFirst("(?s)<DATASECTION>.*?</DATASECTION>", "<DATASECTION/>"));
+        var supplied = run("--json", "--offline", "empty.xtf");
+        assertEquals(1, supplied.exit(), supplied.output());
+        assertTrue(supplied.output().contains("SET_CONSTRAINT_FALSE"), supplied.output());
+        var partial = run("--json", "--offline", "--partial", "empty.xtf");
+        assertEquals(5, partial.exit(), partial.output());
+        assertTrue(partial.json().get("completed").getAsBoolean());
+        assertEquals(0, partial.json().get("violations").getAsLong());
+        assertTrue(partial.output().contains("UNDETERMINED"), partial.output());
+    }
+
+    @Test
+    void cleansUpTheStoreOnCancellationDuringTransfer() throws Exception {
+        model(directory, "2.3", "");
+        write("ok.xtf", legacy("<name>ok</name>"));
+        var output = new StringWriter();
+        var errors = new StringWriter();
+        CancellationToken afterStorageOpened = () -> {
+            try (var files = Files.list(directory)) {
+                return files.anyMatch(path -> path.getFileName().toString().startsWith("interlis-validation-"));
+            } catch (IOException failure) {
+                throw new java.io.UncheckedIOException(failure);
+            }
+        };
+        int code = ValidatorCommand.run(List.of("--json", "--offline", "--storage", "mvstore",
+                "--temp-dir", ".", "ok.xtf"), directory, new PrintWriter(output), new PrintWriter(errors), afterStorageOpened);
+        assertFailed(new Result(code, output.toString(), errors.toString()), 4, "transfer");
+        assertNoRunDirectories();
+    }
+
+    @Test
+    void treatsBrokenJsonOutputAsAnOperationalFailure() throws Exception {
+        model(directory, "2.3", "");
+        write("ok.xtf", legacy("<name>ok</name>"));
+        var err = new StringWriter();
+        var broken = new Writer() {
+            @Override public void write(char[] chars, int offset, int length) throws IOException {
+                throw new IOException("broken");
+            }
+            @Override public void flush() throws IOException { throw new IOException("broken"); }
+            @Override public void close() { }
+        };
+        assertEquals(3, ValidatorCommand.run(List.of("--json", "--offline", "ok.xtf"),
+                directory, new PrintWriter(broken), new PrintWriter(err), CancellationToken.none()));
+        assertTrue(err.toString().contains("Output failure"));
+    }
+
+    private static void assertFailed(Result result, int code, String phase) {
+        assertEquals(code, result.exit(), result.output() + result.error());
+        assertEquals(code, result.json().get("exitCode").getAsInt());
+        assertEquals(phase, result.json().get("phase").getAsString());
+        assertFalse(result.json().get("completed").getAsBoolean());
+    }
+
+    private void assertNoRunDirectories() throws IOException {
+        try (var files = Files.list(directory)) {
+            assertTrue(files.noneMatch(path -> path.getFileName().toString().startsWith("interlis-validation-")));
+        }
     }
 
     private Result run(String... arguments) {
@@ -215,5 +406,7 @@ class ValidatorCommandTest {
                 """.formatted(fields);
     }
 
-    private record Result(int exit, String output, String error) { }
+    private record Result(int exit, String output, String error) {
+        JsonObject json() { return JsonParser.parseString(output).getAsJsonObject(); }
+    }
 }

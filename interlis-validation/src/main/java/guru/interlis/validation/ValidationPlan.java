@@ -19,6 +19,7 @@ import guru.interlis.model.TypeRef;
 import guru.interlis.model.query.TypeRelations;
 import guru.interlis.model.SnapshotId;
 import guru.interlis.model.SymbolRef;
+import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferPlan;
 import java.util.HashMap;
 import java.util.List;
@@ -93,6 +94,14 @@ public final class ValidationPlan {
             }
         }
         this.originalEnumerations = Map.copyOf(translatedTypes);
+    }
+
+    /**
+     * Returns whether the non-null basket belongs to the selected primary topics.
+     * The basket's topic references must belong to this plan's schema snapshot.
+     */
+    public boolean selectsPrimaryBasket(TransferEvent.StartBasket basket) {
+        return subjects.selects(InputRole.PRIMARY, basket);
     }
 
     SubjectSelection subjects() {

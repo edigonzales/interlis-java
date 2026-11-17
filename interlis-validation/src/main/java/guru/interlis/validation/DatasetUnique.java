@@ -226,7 +226,8 @@ final class DatasetUnique {
                     path = List.of(new DataLocation.Slot(field.getKey()));
                 }
                 report.datasetViolation(binding(selected, type).orElseThrow().rule().declaration(),
-                        ValidationCode.DATASET_UNIQUE_DUPLICATE, selected.location(path), arguments);
+                        ValidationCode.DATASET_UNIQUE_DUPLICATE, selected.location(path), arguments,
+                        witness.location(List.of()));
             }
         }
     }

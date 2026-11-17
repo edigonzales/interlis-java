@@ -47,6 +47,13 @@ und Schemahandles gehören zu ihrer Sitzung und Generation. Sie werden
 weder persistiert noch zwischen Clients übertragen.
 
 
+Die Validator-CLI kann dem bestehenden Datensatzplan primäre Modellwurzeln
+aus einer gemeinsamen Closure übergeben. Die bisherigen Aufrufe des
+`ValidationPlanner` verwenden weiterhin die Wurzeln des Schemas.
+Die neuen Methoden sind additive Erweiterungen der Java-API 0.10.
+Paarweise UNIQUE- und Identitätsbefunde füllen den vorhandenen zweiten
+Datenort von `ValidationDiagnostic` aus. Die Diagnosecodes bleiben gültig.
+
 API 0.10 erhält additive Zugänge für Resolverentscheidungen, Modellvererbung
 und gemeinsam budgetierte Syntax. Die bisherigen Konstruktoren und
 Factory-Signaturen bleiben gültig. Die Budget- und Snapshotprüfungen

@@ -53,7 +53,7 @@ final class XtfHeaderProbe {
     }
 
     private static Header inspect(XMLStreamReader reader, CancellationToken token)
-            throws XMLStreamException, InvalidHeader {
+            throws XMLStreamException, InvalidHeader, IOException {
         if (tag(reader, token) != START_ELEMENT) throw new InvalidHeader("Expected an XTF transfer");
         boolean legacy = named(reader, ILI23, "TRANSFER");
         if (!legacy && !named(reader, ILI24, "transfer")) throw new InvalidHeader("Expected XTF 2.3 or 2.4");
@@ -69,7 +69,7 @@ final class XtfHeaderProbe {
         var models = new LinkedHashMap<String, Optional<String>>();
         while (tag(reader, token) == START_ELEMENT) {
             if (!named(reader, namespace, modelTag)) throw new InvalidHeader("Expected " + modelTag);
-            if (models.size() == MAX_MODELS) throw new InvalidHeader("Too many header models");
+            if (models.size() == MAX_MODELS) throw new IOException("XTF header exceeds the model count limit");
             String name;
             Optional<String> version;
             if (legacy) {
@@ -81,7 +81,8 @@ final class XtfHeaderProbe {
                 name = modelText(reader, token);
                 version = Optional.empty();
             }
-            if (name.isBlank() || name.length() > MAX_NAME || models.putIfAbsent(name, version) != null) {
+            if (name.length() > MAX_NAME) throw new IOException("XTF header model name exceeds the length limit");
+            if (name.isBlank() || models.putIfAbsent(name, version) != null) {
                 throw new InvalidHeader("Invalid or repeated header model name");
             }
         }
@@ -92,14 +93,16 @@ final class XtfHeaderProbe {
     }
 
     private static String modelText(XMLStreamReader reader, CancellationToken token)
-            throws XMLStreamException, InvalidHeader {
+            throws XMLStreamException, InvalidHeader, IOException {
         var text = new StringBuilder();
         while (reader.hasNext()) {
             token.throwIfCancellationRequested();
             switch (reader.next()) {
                 case END_ELEMENT -> { return text.toString().trim(); }
                 case CHARACTERS, CDATA, SPACE -> {
-                    if (text.length() + reader.getTextLength() > MAX_NAME) throw new InvalidHeader("Header model name is too long");
+                    if (text.length() + reader.getTextLength() > MAX_NAME) {
+                        throw new IOException("XTF header model name exceeds the length limit");
+                    }
                     text.append(reader.getText());
                 }
                 case COMMENT, PROCESSING_INSTRUCTION -> { }

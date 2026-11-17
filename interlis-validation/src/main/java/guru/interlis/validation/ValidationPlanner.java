@@ -61,10 +61,24 @@ public final class ValidationPlanner {
     /** Projects a plan with immutable host values and function implementations. */
     public static ValidationPlanningResult plan(TransferPlan transferPlan,
                                                 ValidationProfile profile, RuntimeBindings bindings) {
+        return plan(transferPlan, profile, bindings, transferPlan.rootModels());
+    }
+
+    /**
+     * Projects rules with an explicit immutable list of primary model roots for subject selection.
+     * Other models in the same closure remain available for reference data. Each supplied
+     * root must be present in the transfer plan and belong to its schema revision.
+     */
+    public static ValidationPlanningResult plan(TransferPlan transferPlan, ValidationProfile profile,
+                                                RuntimeBindings bindings, List<SymbolRef> primaryModels) {
         Objects.requireNonNull(bindings, "bindings");
         Objects.requireNonNull(profile, "profile");
-        var schema = Objects.requireNonNull(transferPlan, "transferPlan").schema();
-        var projection = new Projection(schema.semanticGraph(), transferPlan, profile, schema.rootModels(), bindings);
+        var roots = List.copyOf(primaryModels);
+        if (roots.stream().anyMatch(root -> transferPlan.model(root).isEmpty())) {
+            throw new IllegalArgumentException("Expected primary model roots in the transfer plan");
+        }
+        var schema = transferPlan.schema();
+        var projection = new Projection(schema.semanticGraph(), transferPlan, profile, roots, bindings);
         try {
             return new ValidationPlanningResult.Ready(projection.build());
         } catch (MissingModelInformation missing) {

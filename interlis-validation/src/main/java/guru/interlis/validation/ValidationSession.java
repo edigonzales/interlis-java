@@ -199,10 +199,16 @@ public final class ValidationSession implements AutoCloseable {
         diagnostic(code, data, ruleLocation(plan.ref(declaration.id()), declaration.origin()), arguments);
     }
 
-    void identityConflict(TransferObject object, DataLocation data, List<String> origins) {
+    void datasetViolation(Symbol declaration, ValidationCode code, DataLocation data,
+                          List<String> arguments, DataLocation related) {
+        diagnostic(code, data, ruleLocation(plan.ref(declaration.id()), declaration.origin()),
+                arguments, Optional.of(related));
+    }
+
+    void identityConflict(TransferObject object, DataLocation data, List<String> origins, DataLocation related) {
         var declaration = plan.symbol(object.type().symbol()).orElseThrow();
         diagnostic(AMBIGUOUS_OBJECT_IDENTITY, data,
-                ruleLocation(object.type(), declaration.origin()), origins);
+                ruleLocation(object.type(), declaration.origin()), origins, Optional.of(related));
     }
 
     void referenceResult(TransferObject object, Symbol slot, DataLocation data, ReferenceResolver.Result result) {
@@ -903,8 +909,13 @@ public final class ValidationSession implements AutoCloseable {
     }
 
     private void diagnostic(ValidationCode code, DataLocation data, RuleLocation rule, List<String> arguments) {
+        diagnostic(code, data, rule, arguments, Optional.empty());
+    }
+
+    private void diagnostic(ValidationCode code, DataLocation data, RuleLocation rule, List<String> arguments,
+                            Optional<DataLocation> related) {
         if (retainExample()) {
-            examples.add(new ValidationDiagnostic(code, Severity.ERROR, data, rule, arguments));
+            examples.add(new ValidationDiagnostic(code, Severity.ERROR, data, rule, arguments, related));
         }
     }
 

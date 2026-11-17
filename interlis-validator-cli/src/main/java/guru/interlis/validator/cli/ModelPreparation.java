@@ -25,6 +25,7 @@ import guru.interlis.repository.RepositoryResolutionOutcome;
 import guru.interlis.repository.RepositoryResolveOptions;
 import guru.interlis.repository.RepositorySource;
 import guru.interlis.repository.SourceLocator;
+import guru.interlis.validation.InputRole;
 import guru.interlis.workspace.AnalysisRequest;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRevision;
@@ -44,6 +45,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Map;
 import java.util.List;
 import java.util.Locale;
@@ -53,16 +57,37 @@ final class ModelPreparation {
 
     private ModelPreparation() { }
 
-    static CompiledSchema prepare(ValidatorOptions options, Path input, Path cwd,
-                                  XtfHeaderProbe.Header header, CancellationToken token)
-            throws ValidatorCommand.Failure {
-        var models = options.models().isEmpty() ? header.models().keySet() : options.models();
-        List<ModelSelector> roots = models.stream().distinct()
+    record Prepared(CompiledSchema schema, List<String> primaryModels) { }
+
+    static Prepared prepare(ValidatorOptions options, List<ValidationInput> inputs, Path cwd,
+                            CancellationToken token) throws ValidatorCommand.Failure {
+        var declarations = new LinkedHashMap<String, Optional<String>>();
+        var primary = new LinkedHashSet<>(options.models());
+        var directories = new LinkedHashSet<String>();
+        for (var input : inputs) {
+            token.throwIfCancellationRequested();
+            directories.add(input.path().getParent().toString());
+            for (var entry : input.header().models().entrySet()) {
+                var previous = declarations.putIfAbsent(entry.getKey(), entry.getValue());
+                if (previous != null && previous.isPresent() && entry.getValue().isPresent()
+                        && !previous.equals(entry.getValue())) {
+                    throw new ValidatorCommand.Failure(1, "header",
+                            "Conflicting model versions for " + entry.getKey() + " at " + input.path());
+                }
+                if (previous != null && previous.isEmpty()) declarations.put(entry.getKey(), entry.getValue());
+                if (options.models().isEmpty() && input.role() == InputRole.PRIMARY) primary.add(entry.getKey());
+            }
+        }
+        var closureNames = new LinkedHashSet<>(primary);
+        for (var input : inputs) {
+            if (input.role() == InputRole.REFERENCE) closureNames.addAll(input.header().models().keySet());
+        }
+        List<ModelSelector> roots = closureNames.stream()
                 .<ModelSelector>map(name -> new ModelSelector.ByName(name,
-                        header.models().getOrDefault(name, java.util.Optional.empty()), java.util.Optional.empty()))
+                        declarations.getOrDefault(name, Optional.empty()), Optional.empty()))
                 .toList();
-        var locations = options.repositories().isEmpty()
-                ? List.of(input.getParent().toString(), DEFAULT_REPOSITORY) : options.repositories();
+        directories.add(DEFAULT_REPOSITORY);
+        var locations = options.repositories().isEmpty() ? List.copyOf(directories) : options.repositories();
         var policy = FetchPolicy.defaults();
         try (var workspace = Workspaces.create(CompilerEngines.create(), WorkspaceConfiguration.defaults())) {
             var access = HostRepositories.create(cwd,
@@ -87,7 +112,7 @@ final class ModelPreparation {
                         throw new ValidatorCommand.Failure(3, "model resolution", "Model sources changed during resolution");
             }
             return switch (workspace.compile(new WorkspaceCompileRequest(workspace.currentRevision(), roots), token)) {
-                case CompilationOutcome.Succeeded compiled -> compiled.schema();
+                case CompilationOutcome.Succeeded compiled -> new Prepared(compiled.schema(), List.copyOf(primary));
                 case CompilationOutcome.Cancelled cancelled -> throw new OperationCancelledException(cancelled.reason());
                 case CompilationOutcome.Failed failed -> throw new ValidatorCommand.Failure(3, "compilation",
                         failed.error().code().value() + " " + failed.failureId().value());

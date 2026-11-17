@@ -11,10 +11,20 @@
     <dependency><groupId>guru.interlis</groupId><artifactId>interlis-xtf</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>guru.interlis</groupId><artifactId>interlis-validation</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>guru.interlis</groupId><artifactId>interlis-validation-jts</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>guru.interlis</groupId><artifactId>interlis-validation-mvstore</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>com.google.code.gson</groupId><artifactId>gson</artifactId></dependency>
     <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency>
     <dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-launcher</artifactId><scope>test</scope></dependency>
   </dependencies>
   <!--jenesis.pin
+  com.google.code.gson/gson 2.14.0 SHA-256/2cbd119bf1961c28788310963dc80ba65f58cdeec1dd139c8bdb1240faa2c36f
+  maven/com.google.code.gson/gson-parent/pom 2.14.0 SHA-256/82b0f6694c5758ab8bb07e05630208d50f589d4b5e04fd0a046d59cdf7ba3d1d
+  maven/com.google.code.gson/gson/pom 2.14.0 SHA-256/1fa0122c0e3733192642861c36be4c6f799a795327a23bdd2922691b6e9ba480
+  com.google.errorprone/error_prone_annotations 2.48.0 SHA-256/b49c5c958316ed67a09c699dda9aa749caf434d51d863dea599ef36a49b9c855
+  maven/com.google.errorprone/error_prone_annotations/pom 2.48.0 SHA-256/189e09ad0489c325e90daaa9d5c8f406330602fa366609bca07cbcdad03ab9da
+  maven/com.google.errorprone/error_prone_parent/pom 2.48.0 SHA-256/b33fa8a45c9f1794a5008c0b2d83a84eb28b5d0117a6d156f003f9f09be7410f
+  com.h2database/h2-mvstore 2.4.240 SHA-256/28d9ead5bc525a66b0da0e35bc56d64c5ecaba5e9be864f917d503180f12d47c
+  maven/com.h2database/h2-mvstore/pom 2.4.240 SHA-256/fe7a0d96c19d6539ae4a3b5edb50beadcd42eb69bd4936582bdbfc4c4aff479d
   maven/org.apiguardian/apiguardian-api/pom 1.1.2 SHA-256/32355081d109095c3d5d374d5a43b4f4c1b75d549e983ef50723e2772e5302a0
   maven/org.junit.jupiter/junit-jupiter-api/pom 5.11.4 SHA-256/512d23ff39c76665a1a3645526230bcf889bd49884304f7febe047b018eeb339
   maven/org.junit.jupiter/junit-jupiter-engine/pom 5.11.4 SHA-256/b0a323b0d03444441d13d4630b40db5ef84160d2c2f585d4d646dc3882f99207
