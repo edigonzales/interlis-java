@@ -110,14 +110,19 @@ final class ValidatorCommand {
         output.phase = "storage";
         try (var storage = openStorage(options, cwd);
              var run = DatasetValidator.session(plan, dataset, storage)) {
-            output.phase = "transfer";
-            for (var input : inputs) {
-                output.currentInput = input.path();
-                read(input, transfer, run, coverage, !options.models().isEmpty(), token);
+            output.graph = schema.semanticGraph();
+            try {
+                output.phase = "transfer";
+                for (var input : inputs) {
+                    output.currentInput = input.path();
+                    read(input, transfer, run, coverage, !options.models().isEmpty(), token);
+                }
+                output.currentInput = null;
+                output.phase = "validation";
+                report = run.finish(token);
+            } finally {
+                output.provisional = run.findings();
             }
-            output.currentInput = null;
-            output.phase = "validation";
-            report = run.finish(token);
             output.phase = "cleanup";
         }
         token.throwIfCancellationRequested();

@@ -334,12 +334,17 @@ class ValidatorCommandTest {
         write("trailing.xtf", legacy("<name>ok</name>") + "<trailing/>");
         write("limit.xtf", legacy("<name>" + "x".repeat(1_048_577) + "</name>"));
         assertFailed(run("--json", "--offline", "bad.xtf", "wrong.xtf"), 1, "header");
-        assertFailed(run("--json", "--offline", "bad.xtf", "trailing.xtf",
-                "--storage", "mvstore", "--temp-dir", "."), 1, "transfer");
+        var malformed = run("--json", "--offline", "bad.xtf", "trailing.xtf",
+                "--storage", "mvstore", "--temp-dir", ".");
+        assertFailed(malformed, 1, "transfer");
+        assertTrue(malformed.output().contains("MALFORMED_XML"), malformed.output());
+        assertTrue(malformed.output().contains("TEXT_TOO_LONG"), malformed.output());
         var resourceFailure = run("--json", "--offline", "bad.xtf", "limit.xtf",
                 "--storage", "mvstore", "--temp-dir", ".");
         assertFailed(resourceFailure, 3, "transfer");
         assertTrue(resourceFailure.output().contains("LIMIT_EXCEEDED"), resourceFailure.output());
+        assertTrue(resourceFailure.output().contains("TEXT_TOO_LONG"), resourceFailure.output());
+        assertEquals(1, resourceFailure.json().get("violations").getAsLong());
         assertFailed(run("--json", "--offline", "bad.xtf", "--refdata", "missing.xtf"), 3, "input");
         assertFailed(run("--json", "--offline", "bad.xtf", "--storage", "mvstore",
                 "--temp-dir", "missing-directory"), 3, "storage");
@@ -349,6 +354,30 @@ class ValidatorCommandTest {
         var version = run("--version", "--json");
         assertEquals(0, version.exit());
         assertEquals("interlis-validator", version.json().get("tool").getAsString());
+    }
+
+    @Test
+    void aLaterUnsupportedBasketDoesNotEraseProvenViolations() throws Exception {
+        model(directory, "2.3", "");
+        write("bad.xtf", legacy("<name>too many characters</name>"));
+        write("incremental.xtf", legacy("<name>ok</name>").replace("BID=\"basket\"", "BID=\"next\" KIND=\"INITIAL\""));
+        var unsupported = run("--offline", "--json", "incremental.xtf");
+        assertFailed(unsupported, 5, "transfer");
+        assertEquals(0, unsupported.json().get("violations").getAsLong());
+        assertTrue(unsupported.output().contains("UNSUPPORTED"), unsupported.output());
+
+        var rejected = run("--offline", "--json", "bad.xtf", "incremental.xtf");
+        assertFailed(rejected, 1, "transfer");
+        assertEquals("rejected", rejected.json().get("status").getAsString());
+        assertEquals(1, rejected.json().get("violations").getAsLong());
+        assertTrue(rejected.output().contains("UNSUPPORTED") && rejected.output().contains("TEXT_TOO_LONG"),
+                rejected.output());
+
+        var capped = run("--offline", "--json", "--max-diagnostics", "1", "bad.xtf", "incremental.xtf");
+        assertFailed(capped, 1, "transfer");
+        assertEquals(1, capped.json().get("violations").getAsLong());
+        assertEquals(1, capped.json().getAsJsonArray("diagnostics").size());
+        assertTrue(capped.json().get("diagnosticsTruncated").getAsBoolean());
     }
 
     @Test

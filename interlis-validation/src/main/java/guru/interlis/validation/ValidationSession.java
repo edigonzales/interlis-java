@@ -137,7 +137,9 @@ public final class ValidationSession implements AutoCloseable {
                 }
             }
         } catch (RuntimeException failure) {
-            clear();
+            clearContext();
+            // The dataset owner snapshots bounded findings before closing this session.
+            if (!prepared) examples.clear();
             state = State.FAILED;
             throw failure;
         }
@@ -228,6 +230,10 @@ public final class ValidationSession implements AutoCloseable {
             case ReferenceResolver.Ambiguous ambiguous -> diagnostic(AMBIGUOUS_OBJECT_IDENTITY, data, rule,
                     List.of(Long.toString(ambiguous.first().ordinal()), Long.toString(ambiguous.second().ordinal())));
         }
+    }
+
+    DatasetValidationSession.Findings findings() {
+        return new DatasetValidationSession.Findings(violations, examples);
     }
 
     private ValidationReport completedReport(List<DatasetRuleCoverage> datasetCoverage, Optional<DatasetScope> scope) {
@@ -958,9 +964,13 @@ public final class ValidationSession implements AutoCloseable {
     }
 
     private void clear() {
+        clearContext();
+        examples.clear();
+    }
+
+    private void clearContext() {
         basket = null;
         source = Optional.empty();
-        examples.clear();
         checked.clear();
         incomplete.clear();
         missingRuntime.clear();

@@ -6,6 +6,7 @@ import guru.interlis.model.SemanticGraph;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.validation.DataLocation;
 import guru.interlis.validation.DatasetScope;
+import guru.interlis.validation.DatasetValidationSession;
 import guru.interlis.validation.ValidationDiagnostic;
 import guru.interlis.validation.ValidationOptions;
 import guru.interlis.validation.ValidationReport;
@@ -25,6 +26,8 @@ final class ValidationOutput {
     DatasetScope scope;
     String phase = "options";
     Path currentInput;
+    SemanticGraph graph;
+    DatasetValidationSession.Findings provisional;
     int maxDiagnostics = ValidationOptions.defaults().maxDiagnosticExamples();
 
     ValidationOutput(boolean json, PrintWriter out, PrintWriter err) {
@@ -44,7 +47,9 @@ final class ValidationOutput {
     }
 
     int failure(int code, String phase, List<String> messages, String diagnosticCode) {
-        var result = base(code, phase, false);
+        long violations = provisional == null ? 0 : provisional.detectedViolations();
+        int resultCode = code == 5 && violations > 0 ? 1 : code;
+        var result = base(resultCode, phase, false);
         var errors = new JsonArray();
         for (var message : messages.stream().limit(maxDiagnostics).toList()) {
             var error = new JsonObject();
@@ -55,12 +60,22 @@ final class ValidationOutput {
             if (!json) err.println(phase + ": " + (diagnosticCode == null ? "" : diagnosticCode + " ")
                     + message + (currentInput == null ? "" : " | " + currentInput));
         }
-        result.add("diagnostics", errors);
-        result.addProperty("diagnosticsTruncated", messages.size() > maxDiagnostics);
-        if (!json && messages.size() > maxDiagnostics) {
-            err.println((messages.size() - maxDiagnostics) + " further diagnostic examples omitted.");
+        long total = messages.size() + violations;
+        int shown = errors.size();
+        if (provisional != null) {
+            result.addProperty("violations", violations);
+            var examples = provisional.examples().stream().limit(maxDiagnostics - shown).toList();
+            for (var diagnostic : examples) {
+                if (json) errors.add(jsonDiagnostic(diagnostic, graph));
+                else render(diagnostic, graph);
+            }
+            shown += examples.size();
+            if (!json && violations > 0) err.println("Violations observed before interruption: " + violations);
         }
-        return write(code, result);
+        result.add("diagnostics", errors);
+        result.addProperty("diagnosticsTruncated", total > shown);
+        if (!json && total > shown) err.println((total - shown) + " further diagnostic examples omitted.");
+        return write(resultCode, result);
     }
 
     int report(ValidationReport report, List<String> gaps, SemanticGraph graph) {

@@ -84,7 +84,9 @@ Datenlauf folgen `objects` (geprüfte Primärobjekte), `violations`, `diagnostic
 `diagnostics` und `unchecked`. Ein Diagnosebeispiel enthält den Code und die
 Meldung sowie bei Datenbefunden `location`, `ruleLocation` und
 `relatedLocations`. Vor dem Datensatzabschluss meldet das Kommando die
-betroffene Phase und die bis dahin verfügbaren Diagnosen. Die Versionsabfrage
+betroffene Phase und die bis dahin verfügbaren Diagnosen. Ist `completed`
+false, zählt `violations` nur die bis zur Unterbrechung beobachteten
+Verletzungen. Die Versionsabfrage
 verwendet den Status `ok` und die Phase `version`.
 
 Bei nachgewiesenen Verletzungen und zugleich offenen Regeln gilt Exitcode 1.
