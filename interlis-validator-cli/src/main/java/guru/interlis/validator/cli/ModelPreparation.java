@@ -1,5 +1,6 @@
 package guru.interlis.validator.cli;
 
+import guru.interlis.compiler.AnalysisBudget;
 import guru.interlis.compiler.CompilationOutcome;
 import guru.interlis.compiler.CompilerEngines;
 import guru.interlis.compiler.ModelSelector;
@@ -7,11 +8,16 @@ import guru.interlis.compiler.RejectionReason;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
 import guru.interlis.model.CompiledSchema;
+import guru.interlis.model.LanguageVersion;
 import guru.interlis.repository.FetchPolicy;
-import guru.interlis.repository.FileSourceLoader;
+import guru.interlis.repository.ContentDigest;
+import guru.interlis.repository.LoadedSource;
+import guru.interlis.repository.SourceLoader;
+import guru.interlis.repository.SourceLoadException;
 import guru.interlis.repository.HostRepositories;
 import guru.interlis.repository.RepositoryBase;
 import guru.interlis.repository.RepositoryCacheConfiguration;
+import guru.interlis.repository.RepositoryCacheRequest;
 import guru.interlis.repository.RepositoryConfig;
 import guru.interlis.repository.RepositoryClosureService;
 import guru.interlis.repository.RepositoryProblem;
@@ -20,20 +26,25 @@ import guru.interlis.repository.RepositoryResolveOptions;
 import guru.interlis.repository.RepositorySource;
 import guru.interlis.repository.SourceLocator;
 import guru.interlis.workspace.AnalysisRequest;
-import guru.interlis.workspace.SourceChange;
-import guru.interlis.workspace.SourceExpectation;
-import guru.interlis.workspace.SourceUpdate;
-import guru.interlis.workspace.Workspace;
+import guru.interlis.source.SourceId;
+import guru.interlis.source.SourceRevision;
+import guru.interlis.source.SourceText;
+import guru.interlis.syntax.ParseMode;
+import guru.interlis.syntax.ParseOptions;
+import guru.interlis.syntax.SyntaxServices;
 import guru.interlis.workspace.WorkspaceCompileRequest;
 import guru.interlis.workspace.WorkspaceConfiguration;
 import guru.interlis.workspace.Workspaces;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Locale;
 
@@ -44,7 +55,7 @@ final class ModelPreparation {
 
     static CompiledSchema prepare(ValidatorOptions options, Path input, Path cwd,
                                   XtfHeaderProbe.Header header, CancellationToken token)
-            throws IOException, ValidatorCommand.Failure {
+            throws ValidatorCommand.Failure {
         var models = options.models().isEmpty() ? header.models().keySet() : options.models();
         List<ModelSelector> roots = models.stream().distinct()
                 .<ModelSelector>map(name -> new ModelSelector.ByName(name,
@@ -54,18 +65,13 @@ final class ModelPreparation {
                 ? List.of(input.getParent().toString(), DEFAULT_REPOSITORY) : options.repositories();
         var policy = FetchPolicy.defaults();
         try (var workspace = Workspaces.create(CompilerEngines.create(), WorkspaceConfiguration.defaults())) {
-            var repositories = configure(locations, cwd, workspace, policy, token);
-            var access = HostRepositories.create(cwd, RepositoryCacheConfiguration.disabled(), ignored -> { });
-            var service = access.closureService();
-            if (options.has("--offline")) {
-                var offline = new FetchPolicy(true, policy.maxBytes(), policy.connectTimeout(),
-                        policy.readTimeout(), policy.requestTimeout());
-                // Offline in the CLI prohibits HTTP transfers, while local model files remain readable.
-                service = new RepositoryClosureService((locator, limits, cancellation) ->
-                        locator.location().startsWith("file:")
-                                ? access.loader().load(locator, limits, cancellation)
-                                : access.loader().loadCached(locator, offline, cancellation), access.contentStore());
-            }
+            var access = HostRepositories.create(cwd,
+                    RepositoryCacheConfiguration.defaults(Path.of(System.getProperty("user.home"))), ignored -> { });
+            var offline = new FetchPolicy(true, policy.maxBytes(), policy.connectTimeout(),
+                    policy.readTimeout(), policy.requestTimeout());
+            var loader = new LocalDirectories(access.loader(), options.has("--offline") ? offline : policy);
+            var repositories = configure(locations, cwd, token);
+            var service = new RepositoryClosureService(loader, access.contentStore());
             var result = service.resolve(workspace, new AnalysisRequest(workspace.currentRevision(), roots),
                     RepositoryResolveOptions.defaults(new RepositoryConfig(repositories, policy)), token);
             switch (result) {
@@ -100,15 +106,9 @@ final class ModelPreparation {
         }
     }
 
-    private static List<RepositorySource> configure(List<String> locations, Path cwd, Workspace workspace,
-                                                     FetchPolicy policy, CancellationToken token)
-            throws IOException, ValidatorCommand.Failure {
+    private static List<RepositorySource> configure(List<String> locations, Path cwd, CancellationToken token)
+            throws ValidatorCommand.Failure {
         var indexed = new ArrayList<RepositorySource>();
-        var loaded = new HashSet<guru.interlis.source.SourceId>();
-        var loader = new FileSourceLoader(cwd);
-        var budget = workspace.configuration().compilerOptions().budget();
-        long entriesRemaining = budget.maxSemanticWorkUnits();
-        long sourceUnits = 0;
         for (var location : locations) {
             token.throwIfCancellationRequested();
             URI uri;
@@ -122,35 +122,6 @@ final class ModelPreparation {
             } catch (IllegalArgumentException invalid) {
                 throw new ValidatorCommand.Failure(2, "options", "Invalid repository location");
             }
-            if ("file".equalsIgnoreCase(uri.getScheme())) {
-                var path = Path.of(uri);
-                if (Files.isDirectory(path) && Files.notExists(path.resolve("ilimodels.xml"))) {
-                    try (var entries = Files.list(path)) {
-                        var candidates = new ArrayList<Path>();
-                        for (var iterator = entries.iterator(); iterator.hasNext();) {
-                            token.throwIfCancellationRequested();
-                            if (--entriesRemaining < 0) throw new IOException("Model directory scan exceeds the work limit");
-                            var candidate = iterator.next();
-                            if (candidate.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".ili")
-                                    && Files.isRegularFile(candidate)) candidates.add(candidate);
-                        }
-                        for (var candidate : candidates.stream().sorted().toList()) {
-                            token.throwIfCancellationRequested();
-                            var source = loader.load(new SourceLocator(candidate.toUri().toString()), policy, token);
-                            if (loaded.add(source.sourceId())) {
-                                sourceUnits += source.text().length();
-                                if (source.text().length() > budget.maxSourceUtf16Length()
-                                        || sourceUnits > budget.maxTotalSourceUtf16Length()) {
-                                    throw new IOException("Local model sources exceed the compiler source limit");
-                                }
-                                workspace.update(new SourceUpdate(source.sourceId(), new SourceExpectation.Absent(),
-                                        new SourceChange.Replace(source.text())));
-                            }
-                        }
-                    }
-                    continue;
-                }
-            }
             if (uri.getPath().toLowerCase(Locale.ROOT).endsWith(".xml")) {
                 indexed.add(new RepositorySource(new RepositoryBase(uri.resolve(".")), new SourceLocator(uri.toString())));
             } else {
@@ -161,4 +132,98 @@ final class ModelPreparation {
         }
         return List.copyOf(indexed);
     }
+
+    /** Presents a loose directory as an in-memory index at its normal lookup position. */
+    private static final class LocalDirectories implements SourceLoader {
+        private final SourceLoader delegate;
+        private final FetchPolicy remotePolicy;
+        private final Map<SourceLocator, LoadedSource> indexes = new HashMap<>();
+        private final Map<SourceLocator, LoadedSource> files = new HashMap<>();
+        private final AnalysisBudget budget = AnalysisBudget.defaults();
+        private long scanRemaining = budget.maxSemanticWorkUnits();
+        private long sourceUnits;
+
+        LocalDirectories(SourceLoader delegate, FetchPolicy remotePolicy) {
+            this.delegate = delegate;
+            this.remotePolicy = remotePolicy;
+        }
+
+        @Override
+        public LoadedSource load(SourceLocator locator, FetchPolicy limits, CancellationToken token) {
+            return load(locator, limits, RepositoryCacheRequest.metadata(), token);
+        }
+
+        @Override
+        public LoadedSource load(SourceLocator locator, FetchPolicy limits,
+                                 RepositoryCacheRequest request, CancellationToken token) {
+            token.throwIfCancellationRequested();
+            if (!locator.location().startsWith("file:")) {
+                return remotePolicy.offline() ? delegate.loadCached(locator, remotePolicy, token)
+                        : delegate.load(locator, limits, request, token);
+            }
+            var path = Path.of(URI.create(locator.location()));
+            if (path.getFileName() != null && path.getFileName().toString().equals("ilimodels.xml") && Files.notExists(path)
+                    && Files.isDirectory(path.getParent())) {
+                return indexes.computeIfAbsent(locator, key -> index(key, path.getParent(), limits, token));
+            }
+            var cached = files.get(locator);
+            return cached == null ? delegate.load(locator, limits, request, token) : cached;
+        }
+
+        private LoadedSource index(SourceLocator locator, Path directory, FetchPolicy limits, CancellationToken token) {
+            var candidates = new ArrayList<Path>();
+            try (var entries = Files.list(directory)) {
+                for (var it = entries.iterator(); it.hasNext();) {
+                    token.throwIfCancellationRequested();
+                    if (--scanRemaining < 0) throw tooLarge();
+                    var file = it.next();
+                    if (file.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".ili")
+                            && Files.isRegularFile(file)) candidates.add(file);
+                }
+            } catch (IOException | UncheckedIOException failure) {
+                throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE, "Cannot scan local model directory", failure);
+            }
+            var parser = SyntaxServices.create();
+            var xml = new StringBuilder("<RepositoryIndex>");
+            var parseOptions = ParseOptions.defaults(ParseMode.STRICT);
+            for (var file : candidates.stream().sorted().toList()) {
+                token.throwIfCancellationRequested();
+                var sourceLocator = new SourceLocator(file.toUri().toString());
+                var source = files.computeIfAbsent(sourceLocator, key -> {
+                    var loaded = delegate.load(key, limits, token);
+                    sourceUnits += loaded.text().length();
+                    if (loaded.text().length() > budget.maxSourceUtf16Length()
+                            || sourceUnits > budget.maxTotalSourceUtf16Length()) throw tooLarge();
+                    return loaded;
+                });
+                var syntax = parser.parse(new SourceText(source.sourceId(), new SourceRevision(0), source.text()),
+                        parseOptions, token);
+                for (var model : syntax.root().models()) {
+                    if (model.name().isBlank() || model.modelVersion().isBlank()) continue;
+                    xml.append("<ModelMetadata><Name>").append(xmlText(model.name()))
+                            .append("</Name><SchemaLanguage>")
+                            .append(model.languageVersion() == LanguageVersion.ILI23 ? "ili2_3" : "ili2_4")
+                            .append("</SchemaLanguage><File>")
+                            .append(xmlText(directory.toUri().relativize(file.toUri()).toASCIIString()))
+                            .append("</File><Version>").append(xmlText(model.modelVersion()))
+                            .append("</Version></ModelMetadata>");
+                    if (xml.length() > limits.maxBytes()) throw tooLarge();
+                }
+            }
+            var text = xml.append("</RepositoryIndex>").toString();
+            var bytes = text.getBytes(StandardCharsets.UTF_8);
+            if (bytes.length > limits.maxBytes()) throw tooLarge();
+            return new LoadedSource(new SourceId(locator.location()), text, ContentDigest.sha256(bytes).value(), "http-no-store");
+        }
+
+        private static SourceLoadException tooLarge() {
+            return new SourceLoadException(SourceLoadException.Reason.TOO_LARGE,
+                    "Local model directory exceeds the source budget", null);
+        }
+
+        private static String xmlText(String text) {
+            return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+        }
+    }
+
 }

@@ -47,6 +47,33 @@ class ValidatorCommandTest {
     }
 
     @Test
+    void usesRepositoryOrderForLooseAndIndexedModels() throws Exception {
+        var wide = Files.createDirectory(directory.resolve("wide"));
+        var narrow = Files.createDirectory(directory.resolve("narrow"));
+        model(wide, "2.3", "");
+        model(narrow, "2.3", "");
+        var file = narrow.resolve("Checks.ili");
+        Files.writeString(file, Files.readString(file).replace("TEXT*8", "TEXT*4"));
+        write("input.xtf", legacy("<name>abcde</name>"));
+        assertRepositoryOrder();
+        Files.writeString(narrow.resolve("ilimodels.xml"), """
+                <RepositoryIndex><ModelMetadata>
+                  <Name>Checks</Name><SchemaLanguage>ili2_3</SchemaLanguage>
+                  <File>Checks.ili</File><Version>1</Version>
+                </ModelMetadata></RepositoryIndex>
+                """);
+        assertRepositoryOrder();
+    }
+
+    private void assertRepositoryOrder() {
+        var firstWide = run("--offline", "--repository", "wide", "--repository", "narrow", "input.xtf");
+        assertEquals(0, firstWide.exit(), firstWide.error());
+        var firstNarrow = run("--offline", "--repository", "narrow", "--repository", "wide", "input.xtf");
+        assertEquals(1, firstNarrow.exit(), firstNarrow.error());
+        assertTrue(firstNarrow.error().contains("TEXT_TOO_LONG"), firstNarrow.error());
+    }
+
+    @Test
     void reportsADataViolationAtTheObjectAndItsModelRule() throws Exception {
         model(directory, "2.3", "");
         write("bad.xtf", legacy("<name>too many characters</name>"));

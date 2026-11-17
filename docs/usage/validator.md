@@ -18,8 +18,10 @@ Die separaten Launcher und das entpackbare ZIP folgen mit der Auslieferung.
 Ohne weitere Optionen sucht der Befehl Modelle neben der Datenlieferung
 und im Standardrepository `https://models.interlis.ch/`.
 `--repository LOCATION` ersetzt diese Auswahl und kann mehrfach verwendet
-werden. Ein lokales Verzeichnis ohne Index wird direkt nach `.ili`-Dateien
-durchsucht. `--offline` unterbindet HTTP-Zugriffe.
+werden. Die Suche folgt der angegebenen Reihenfolge. Ein lokales Verzeichnis
+ohne Index wird direkt nach `.ili`-Dateien durchsucht. Mit `--offline` stehen
+lokale Quellen und passende Einträge im Standardcache `~/.interlis-cache`
+zur Verfügung.
 Mit `--model NAME` lassen sich die primären Modellroots vorgeben.
 XTF-Header und Modellzuordnung werden weiterhin geprüft.
 
