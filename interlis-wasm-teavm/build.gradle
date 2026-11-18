@@ -103,6 +103,7 @@ tasks.register('browserSmoke', Exec) {
     dependsOn 'prepareBrowserHarness'
     workingDir = projectDir
     environment 'INTERLIS_BROWSER_CHECK', '0'
+    doFirst { environment 'INTERLIS_CLI_VERSION_MANIFEST', cliVersionManifest.get().absolutePath }
     commandLine nodeExecutable.get(), '--test', 'test/browser-smoke.test.cjs'
 }
 
@@ -112,6 +113,7 @@ tasks.register('browserCheck', Exec) {
     dependsOn 'prepareBrowserHarness'
     workingDir = projectDir
     environment 'INTERLIS_BROWSER_CHECK', '1'
+    doFirst { environment 'INTERLIS_CLI_VERSION_MANIFEST', cliVersionManifest.get().absolutePath }
     commandLine nodeExecutable.get(), '--test', 'test/browser-smoke.test.cjs'
 }
 

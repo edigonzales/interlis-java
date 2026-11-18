@@ -11,7 +11,7 @@ tasks.register('compilerZip', Zip) {
     archiveBaseName = 'interlis-compiler-bindist'
     destinationDirectory = layout.buildDirectory.dir('distributions/compiler')
     into('cli') { from compilerInstall }
-    filesMatching('cli/bin/interlis-compiler') { permissions { unix('rwxr-xr-x') } }
+    filesMatching('**/bin/interlis-compiler') { permissions { unix('rwxr-xr-x') } }
     from 'LICENSE'
     from 'packaging/compiler'
 }
@@ -20,7 +20,7 @@ tasks.register('sdkZip', Zip) {
     archiveFileName = 'sdk.zip'
     destinationDirectory = layout.buildDirectory.dir('distributions/sdk')
     into('cli') { from compilerInstall }
-    filesMatching('cli/bin/interlis-compiler') { permissions { unix('rwxr-xr-x') } }
+    filesMatching('**/bin/interlis-compiler') { permissions { unix('rwxr-xr-x') } }
     into('examples/sdk') { from 'examples/sdk' }
     into('version') { from compilerVersion }
 }
