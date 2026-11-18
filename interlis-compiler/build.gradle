@@ -18,3 +18,8 @@ tasks.named('generateGrammarSource') {
 javaModuleTesting.whitebox(testing.suites.test) {
     requires.add('org.junit.jupiter.params')
 }
+
+tasks.named('test') {
+    // The deep domain and cycle regressions retain several large analysis graphs.
+    maxHeapSize = '1536m'
+}

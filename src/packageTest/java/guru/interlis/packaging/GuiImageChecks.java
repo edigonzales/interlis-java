@@ -1,6 +1,7 @@
 package guru.interlis.packaging;
 
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.io.CleanupMode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -19,7 +20,7 @@ final class GuiImageChecks {
     private static final String APP_NAME = "INTERLIS Compiler";
     private static final Path JDK = Path.of(System.getProperty("java.home"));
 
-    @TempDir Path output;
+    @TempDir(cleanup = CleanupMode.ON_SUCCESS) Path output;
 
     @Test
     @Tag("gui-shell")
@@ -213,7 +214,8 @@ final class GuiImageChecks {
             child.destroyForcibly().waitFor();
         }
         if (!finished || child.exitValue() != 0) {
-            throw new IllegalStateException(role + " failed. See " + run);
+            throw new IllegalStateException(role + (finished ? " exited " + child.exitValue() : " timed out")
+                    + ": " + Files.readString(run.resolve(role + ".stderr")) + "\nSee " + run);
         }
     }
 
