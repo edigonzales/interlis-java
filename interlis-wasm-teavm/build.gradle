@@ -19,6 +19,11 @@ tasks.matching { it.name in ['generateWasmGC', 'generateJavaScript'] }.configure
     outOfProcess = true
 }
 
+tasks.named('generateWasmGC') {
+    // Register allocation for the compiler exhausts the default daemon heap.
+    processMemory = 1536
+}
+
 teavm {
     all {
         mainClass = 'guru.interlis.wasm.teavm.TeaVmEntryPoint'
@@ -141,6 +146,7 @@ def validationWasm = tasks.register('buildValidationProbeWasm', org.teavm.gradle
     outputDir.set(layout.buildDirectory.dir('validation-probe').map { it.asFile })
     targetFileName.set('local-validation.wasm')
     outOfProcess.set(true)
+    processMemory.set(compiler.flatMap { it.processMemory })
 }
 
 tasks.register('validationBrowserSmoke', Exec) {
