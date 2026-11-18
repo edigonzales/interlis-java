@@ -1,0 +1,8 @@
+dependencies {
+    api project(':interlis-workspace')
+    api project(':interlis-model')
+}
+
+javaModuleTesting.whitebox(testing.suites.test) {
+    requires.add('jdk.httpserver')
+}

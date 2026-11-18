@@ -1,0 +1,11 @@
+dependencies {
+    api project(':interlis-validation')
+    implementation 'com.h2database:h2-mvstore:2.4.240'
+    testImplementation project(':interlis-compiler')
+    testImplementation project(':interlis-xtf')
+}
+
+javaModuleTesting.whitebox(testing.suites.test) {
+    requires.add('guru.interlis.compiler')
+    requires.add('guru.interlis.xtf')
+}

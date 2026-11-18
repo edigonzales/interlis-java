@@ -1,0 +1,6 @@
+dependencies {
+    implementation project(':interlis-workspace')
+    implementation project(':interlis-compiler')
+    implementation project(':interlis-projection')
+    implementation project(':interlis-model')
+}

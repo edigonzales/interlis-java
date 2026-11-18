@@ -6,12 +6,8 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,29 +27,23 @@ class ArchitectureBoundaryTest {
     @Test
     void publicModelAndCompilerApiDoNotLeakForbiddenTypes() throws Exception {
         List<String> violations = new ArrayList<>();
-        for (Path root : List.of(classesOf(CompiledSchema.class),
-                classesOf(CompilerEngine.class))) {
-            try (Stream<Path> files = Files.walk(root)) {
-                for (Path file : files.filter(path -> path.toString().endsWith(".class"))
-                        .filter(path -> !path.getFileName().toString().contains("$"))
-                        .toList()) {
-                    String relative = root.relativize(file).toString()
-                            .replace('/', '.').replace('\\', '.');
-                    String name = relative.substring(0, relative.length() - ".class".length());
-                    if (name.contains(".internal.") || name.endsWith(".internal")) {
-                        continue;
+        for (Module module : List.of(CompiledSchema.class.getModule(), CompilerEngine.class.getModule())) {
+            var reference = module.getLayer().configuration().findModule(module.getName()).orElseThrow().reference();
+            var exports = module.getDescriptor().exports().stream()
+                    .filter(export -> !export.isQualified())
+                    .map(java.lang.module.ModuleDescriptor.Exports::source)
+                    .collect(java.util.stream.Collectors.toSet());
+            try (var reader = reference.open(); var entries = reader.list()) {
+                var apiClasses = entries.filter(entry -> entry.endsWith(".class") && entry.contains("/"))
+                        .map(entry -> entry.substring(0, entry.length() - ".class".length()).replace('/', '.'))
+                        .filter(name -> exports.contains(name.substring(0, name.lastIndexOf('.'))))
+                        .toList();
+                assertTrue(!apiClasses.isEmpty(), () -> "No exported classes in " + module.getName());
+                for (String name : apiClasses) {
+                    Class<?> type = Class.forName(module, name);
+                    if (java.lang.reflect.Modifier.isPublic(type.getModifiers())) {
+                        inspect(type, violations);
                     }
-                    Class<?> type;
-                    try {
-                        type = Class.forName(name, false,
-                                ArchitectureBoundaryTest.class.getClassLoader());
-                    } catch (ClassNotFoundException | LinkageError ignored) {
-                        continue;
-                    }
-                    if (!java.lang.reflect.Modifier.isPublic(type.getModifiers())) {
-                        continue;
-                    }
-                    inspect(type, violations);
                 }
             }
         }
@@ -97,8 +87,4 @@ class ArchitectureBoundaryTest {
         }
     }
 
-    private static Path classesOf(Class<?> type) throws Exception {
-        URL location = type.getProtectionDomain().getCodeSource().getLocation();
-        return Path.of(location.toURI());
-    }
 }

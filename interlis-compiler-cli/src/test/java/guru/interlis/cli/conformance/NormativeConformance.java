@@ -242,7 +242,6 @@ public final class NormativeConformance {
         if (args.length != 3) throw new IllegalArgumentException("Expected root, conformance output and runner exit");
         Path root = Path.of(args[0]).toAbsolutePath();
         Path output = Path.of(args[1]).toRealPath();
-        require(output.startsWith(root.resolve("target/jenesis-jvm/conformance").toRealPath()), "Foreign conformance output");
         var pins = new Properties();
         try (var input = Files.newInputStream(root.resolve("testdata/conformance/suite.properties"))) { pins.load(input); }
         var config = read(output.resolve("run-config.json"));

@@ -1,10 +1,30 @@
-plugins { id 'base' }
+plugins {
+    id 'java'
+    id 'maven-publish'
+    id 'org.gradlex.java-module-testing' version '1.8.1' apply false
+    id 'org.gradlex.extra-java-module-info' version '1.14.2' apply false
+}
 
-// Gradle owns only the two backend adapters. Root build/ contains versioned sources.
-tasks.named('clean', Delete) { setDelete([]); dependsOn ':interlis-wasm-teavm:clean', ':interlis-wasm-webimage:clean' }
-apply from: 'gradle/jvm-inputs.gradle'
-def productVersion = new groovy.xml.XmlSlurper(false, false).parse(file('pom.xml')).version.text()
-allprojects { group = 'guru.interlis'; version = productVersion }
+allprojects {
+    group = 'guru.interlis'
+    version = '0.2.0-SNAPSHOT'
+}
+
+configure(subprojects.findAll { it.file('src/main/java/module-info.java').isFile() }) {
+    apply plugin: 'java-library'
+    apply plugin: 'org.gradlex.java-module-testing'
+    apply from: rootProject.file('gradle/java-conventions.gradle')
+    javaModuleTesting.whitebox(testing.suites.test) {
+        requires.add('org.junit.jupiter.api')
+    }
+
+    if (name in ['interlis-model', 'interlis-compiler', 'interlis-compiler-cli',
+                 'interlis-lsp', 'interlis-projection', 'interlis-transfer', 'interlis-xtf']) {
+        tasks.named('test') { inputs.dir(rootProject.file('testdata')).withPathSensitivity(PathSensitivity.RELATIVE) }
+    }
+
+    testing.suites.test.useJUnitJupiter(libs.versions.junit.get())
+}
 
 def nodeExecutable = providers.gradleProperty('nodeExecutable').orElse('node')
 tasks.register('checkNodeRuntime') {
@@ -18,3 +38,6 @@ tasks.register('checkNodeRuntime') {
 subprojects { sub ->
     sub.plugins.withId('java') { rootProject.tasks.named('check') { dependsOn "${sub.path}:check" } }
 }
+
+apply from: 'gradle/distributions.gradle'
+apply from: 'gradle/conformance.gradle'

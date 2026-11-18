@@ -1,0 +1,4 @@
+dependencies {
+    api project(':interlis-compiler')
+    api project(':interlis-model')
+}

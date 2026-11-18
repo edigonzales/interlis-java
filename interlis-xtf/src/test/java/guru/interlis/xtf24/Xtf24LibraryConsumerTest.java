@@ -147,7 +147,7 @@ class Xtf24LibraryConsumerTest {
         assertFalse(output.closed);
         var immutable = List.copyOf(events);
         assertEquals(immutable, read(plan, output.toString(StandardCharsets.UTF_8)));
-        Path generated = Path.of(System.getProperty("repo.root"), "target", "jenesis-jvm", "xtf24-fixture-output");
+        Path generated = Path.of(System.getProperty("xtf24.fixture.output"));
         Files.createDirectories(generated);
         Files.write(generated.resolve(name + ".xtf"), output.toByteArray());
         return new Result(immutable, output.toByteArray());

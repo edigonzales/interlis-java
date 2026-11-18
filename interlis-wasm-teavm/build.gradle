@@ -3,11 +3,12 @@ plugins {
     id 'org.teavm' version '0.16.0'
 }
 apply from: rootProject.file('gradle/java-conventions.gradle')
-apply from: rootProject.file('gradle/backend-inputs.gradle')
+java { modularity.inferModulePath = false }
 
 def nodeExecutable = providers.gradleProperty('nodeExecutable').orElse('node')
 
 dependencies {
+    implementation project(':interlis-wasm-bridge')
     implementation teavm.libs.jso
     testImplementation platform(libs.junit.bom)
     testImplementation libs.junit.jupiter
@@ -32,20 +33,9 @@ teavm {
     }
 }
 
-def cliRuntime = files(rootProject.jenesisRuntime('interlis-compiler-cli'))
-def cliVersionManifest = layout.buildDirectory.file('version-manifest.json')
-def cliVersion = tasks.register('writeCliVersionManifest') {
-    inputs.files(cliRuntime).withNormalizer(ClasspathNormalizer)
-    outputs.file(cliVersionManifest)
-    doLast {
-        def version = providers.exec {
-            workingDir rootProject.projectDir
-            commandLine rootProject.jenesisJava, '-cp', cliRuntime.asPath,
-                    'guru.interlis.cli.Main', 'version', '--json'
-        }.standardOutput.asText.get()
-        cliVersionManifest.get().asFile.text = version
-    }
-}
+evaluationDependsOn(':interlis-compiler-cli')
+def cliVersion = project(':interlis-compiler-cli').tasks.named('writeVersionManifest')
+def cliVersionManifest = cliVersion.map { it.outputs.files.singleFile }
 
 tasks.register('prepareBrowserHarness', Sync) {
     group = 'verification'
@@ -64,7 +54,7 @@ tasks.register('prepareBrowserHarness', Sync) {
         providers.exec {
             workingDir rootProject.projectDir
             commandLine nodeExecutable.get(), rootProject.file('tools/release/browser-manifest.cjs'), layout.buildDirectory.dir('web').get().asFile,
-                    cliVersionManifest.get().asFile
+                    cliVersionManifest.get()
         }.result.get().assertNormalExitValue()
     }
 }
@@ -139,8 +129,8 @@ sourceSets {
     }
 }
 dependencies {
-    validationProbeImplementation files(rootProject.jenesisRuntime('interlis-validation'),
-            rootProject.jenesisRuntime('interlis-transfer'), rootProject.bridgeRuntime)
+    validationProbeImplementation project(':interlis-validation')
+    validationProbeImplementation project(':interlis-compiler')
 }
 def validationWasm = tasks.register('buildValidationProbeWasm', org.teavm.gradle.tasks.GenerateWasmGCTask) {
     def compiler = tasks.named('generateWasmGC', org.teavm.gradle.tasks.GenerateWasmGCTask)

@@ -1,0 +1,15 @@
+dependencies {
+    implementation project(':interlis-model')
+    api project(':interlis-transfer')
+    testImplementation project(':interlis-compiler')
+    testImplementation project(':interlis-xtf')
+}
+
+javaModuleTesting.whitebox(testing.suites.test) {
+    requires.add('guru.interlis.compiler')
+    requires.add('guru.interlis.xtf')
+}
+
+javaModuleTesting.whitebox(testing.suites.test) {
+    requires.add('org.junit.jupiter.params')
+}

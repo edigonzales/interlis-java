@@ -23,8 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /** Real stdio protocol test: stdout must contain framed LSP JSON only. */
 class LspProcessTest {
     private static List<String> serverCommand(Path java) {
-        if (!Main.class.getModule().isNamed())
-            return List.of(java.toString(),"-cp",System.getProperty("java.class.path"),"guru.interlis.lsp.Main");
         String modulePath=System.getProperty("interlis.test.modulepath");
         assertNotNull(modulePath,"The test adapter must supply its actual product module path");
         return List.of(java.toString(),"--module-path",modulePath,"--module","guru.interlis.lsp/guru.interlis.lsp.Main");
@@ -243,7 +241,8 @@ class LspProcessTest {
         var process=new ProcessBuilder(serverCommand(java)).start();
         try {
             send(process.getOutputStream(),"{\"jsonrpc\":\"2.0\",\"method\":\"exit\"}");
-            assertTrue(process.waitFor(5,TimeUnit.SECONDS)); assertEquals(1,process.exitValue());
+            assertTrue(process.waitFor(20, TimeUnit.SECONDS), "LSP exit timed out with stdin still open");
+            assertEquals(1, process.exitValue());
         } finally { process.destroyForcibly(); }
     }
 

@@ -20,24 +20,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '25.0.3'
-      - name: Build and test the JVM modules with Jenesis
-        run: java build/jenesis/Make.java
-      - name: Check installed SDK, CLI and LSP
-        run: java build/interlis/ExistingJvmDistribution.java check
-      - name: Package and smoke-test the validator ZIP
-        run: java build/interlis/ExistingJvmDistribution.java validator
+      - name: Build and check JVM modules and installed packages
+        run: ./gradlew check packageTest compilerZipChecksum editorBundle
       - name: Run upstream swisstopo validator suite
-        shell: bash
         run: |
           git clone --depth 1 --branch master https://github.com/geostandards-ch/suite-interlis.git "$RUNNER_TEMP/suite-interlis"
-          git -C "$RUNNER_TEMP/suite-interlis" rev-parse HEAD
-          java build/interlis/ValidatorConformanceRun.java --suite-dir "$RUNNER_TEMP/suite-interlis" \
-            --validator-zip target/jenesis-jvm/validator-delivery/interlis-validator-*.zip
+          ./gradlew swisstopoConformance "-PswisstopoSuiteDir=$RUNNER_TEMP/suite-interlis"
       - name: Run pinned Codeberg suite
-        run: java build/interlis/ConformanceRun.java
-      # Codeberg regenerates the shared SDK delivery directory.
-      - name: Package and smoke-test the compiler ZIP
-        run: java build/interlis/ExistingJvmDistribution.java compiler
+        run: ./gradlew codebergConformance
       - name: Retain native JVM and conformance reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -46,24 +36,19 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
           path: |
-            target/jenesis-jvm/engine/**/executed/output/reports/
-            target/jenesis-jvm/engine/**/executed~/supplement/
-            target/jenesis-jvm/engine/**/executed~/output/reports/
-            target/jenesis-jvm/conformance/run-*/report.json
-            target/jenesis-jvm/conformance/run-*/summary.json
-            target/jenesis-jvm/conformance/run-*/normative-assessment.json
-            target/jenesis-jvm/conformance/run-*/runner.*
-            target/jenesis-jvm/validator-conformance/run-*/TEST-*.xml
-            target/jenesis-jvm/validator-conformance/run-*/adapter-reports/TEST-*.xml
-            target/jenesis-jvm/validator-conformance/run-*/summary.txt
-            target/jenesis-jvm/validator-conformance/run-*/*.stdout
-            target/jenesis-jvm/validator-conformance/run-*/*.stderr
+            **/build/test-results/
+            build/conformance/codeberg/report.json
+            build/conformance/codeberg/summary.json
+            build/conformance/codeberg/normative-assessment.json
+            build/conformance/codeberg/runner.*
+            build/conformance/swisstopo/TEST-*.xml
+            build/conformance/swisstopo/summary.txt
       - name: Retain the verified compiler ZIP
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: compiler-bindist-${{ github.sha }}
-          path: target/jenesis-jvm/delivery/bindist/
+          path: build/distributions/compiler/
           if-no-files-found: error
           retention-days: 30
 
@@ -119,17 +104,11 @@ jobs:
           distribution: temurin
           java-version: '25.0.3'
       - name: Check CLI path and repository configuration
-        run: java '-Djenesis.test.filter=.*(CliApplicationTest|RepositoryNetworkConfigurationTest)' build/jenesis/Make.java +interlis-compiler-cli
+        run: .\gradlew.bat :interlis-compiler-cli:test --tests '*CliApplicationTest' --tests '*RepositoryNetworkConfigurationTest'
       - name: Check repository HTTP and filesystem integration
-        run: java '-Djenesis.test.filter=.*(FileSourceLoaderTest|HttpSourceLoaderTest|HttpRedirectFailureTest|HttpNetworkPolicyTest|HttpIdentityCacheTest)' build/jenesis/Make.java +interlis-repository
-      - name: Check installed SDK, CLI and LSP
-        run: java build/interlis/ExistingJvmDistribution.java check
-      - name: Check validator CLI integration
-        run: java build/jenesis/Make.java +interlis-validator-cli
-      - name: Package and smoke-test the validator ZIP
-        run: java build/interlis/ExistingJvmDistribution.java validator
-      - name: Package and smoke-test the compiler ZIP
-        run: java build/interlis/ExistingJvmDistribution.java compiler
+        run: .\gradlew.bat :interlis-repository:test --tests '*FileSourceLoaderTest' --tests '*HttpSourceLoaderTest' --tests '*HttpRedirectFailureTest' --tests '*HttpNetworkPolicyTest' --tests '*HttpIdentityCacheTest'
+      - name: Check validator CLI and installed packages
+        run: .\gradlew.bat :interlis-validator-cli:test packageTest
       - name: Retain native JVM reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -137,10 +116,7 @@ jobs:
           name: compiler-tests-windows-x64-${{ github.sha }}
           if-no-files-found: ignore
           retention-days: 30
-          path: |
-            target/jenesis-jvm/engine/**/executed/output/reports/
-            target/jenesis-jvm/engine/**/executed~/supplement/
-            target/jenesis-jvm/engine/**/executed~/output/reports/
+          path: '**/build/test-results/'
 
   publish:
     name: Publish compiler snapshot
@@ -161,9 +137,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '25.0.3'
-          server-id: compiler-snapshots
-          server-username: MAVEN_USERNAME
-          server-password: MAVEN_PASSWORD
       - name: Upload and verify the compiler snapshot
         shell: bash
         env:
@@ -175,4 +148,5 @@ jobs:
             echo "::error::Configure INTERLIS_MAVEN_USERNAME and INTERLIS_MAVEN_TOKEN as GitHub Actions secrets"
             exit 1
           fi
-          node tools/release/publish-compiler-bindist.cjs publication
+          ./gradlew publishCompilerSnapshotPublicationToCompilerSnapshotsRepository
+          node tools/release/verify-compiler-snapshot.cjs publication

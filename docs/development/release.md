@@ -23,24 +23,15 @@ bewertet die Kompatibilität anhand der Verträge und ihrer Verbraucher.
 ## Plattformen und Ablauf
 
 Der [Workflow](../../.github/workflows/compiler-platforms.yml) verwendet Java
-25.0.3. Unter Linux führt `java build/jenesis/Make.java` die regulären
-JVM-Tests aus. `java build/interlis/ConformanceRun.java` prüft die gepinnte
-Codeberg-Suite für INTERLIS 2.3 und 2.4. Danach prüft der Linux-Job
-die [swisstopo-Validator-Suite für XTF 2.3](testing.md#swisstopo-validator-konformität)
-und sichert die nativen Berichte.
-Linux und Windows verwenden `java build/interlis/ExistingJvmDistribution.java check`
-für die installierten SDK-, CLI- und LSP-Prozesse. Das Kommando
-`java build/interlis/ExistingJvmDistribution.java compiler` erstellt und prüft
-das entpackte Compiler-ZIP.
-Windows führt zusätzlich gezielte CLI- und Repositorytests für Pfade, Dateien
-und HTTP aus.
+25.0.3. Unter Linux führt er `./gradlew check packageTest compilerZipChecksum
+editorBundle` aus. Danach folgen die swisstopo- und Codeberg-Konformitätssuites.
+Windows führt gezielte CLI-, Repository- und Validator-Tests und dieselben
+Paketprüfungen aus. Beide Jobs sichern die nativen Gradle-JUnit-Berichte.
 
-Ein eigener Linux-Job ruft den Gradle-Wrapper direkt auf. Gradle bezieht die
-Laufzeitclosure von Jenesis ohne JVM-Testausführung und prüft das generierte
-TeaVM-JavaScript und WasmGC mit Node. Der Job startet Chromium für die
-Browser-/Worker-Integration. Er prüft auch die Client-, Worker- und Diagrammtests.
-Für eine Browserveröffentlichung werden die zugesagten Browser mit den
-tatsächlichen Browserartefakten geprüft.
+Der Portable-Job prüft die erzeugten TeaVM-JS- und WasmGC-Artefakte mit Node
+und Chromium. Dazu gehören Client, Worker, Diagrammprojektion und der
+Validator-WasmGC-Probe. Für eine Browserveröffentlichung werden die
+zugesagten Browser mit den tatsächlichen Browserartefakten geprüft.
 
 ## Veröffentlichung
 
@@ -52,7 +43,7 @@ Nach einem Push auf `main` und erfolgreichen Pflichtjobs veröffentlicht der
 Workflow das geprüfte Compiler-ZIP unter
 `guru.interlis:interlis-compiler-bindist` im
 [Snapshot-Repository](https://jars.interlis.guru/snapshots). Das Paket enthält
-POSIX- und Windows-Launcher und setzt Java 25 voraus. Der Publisher übernimmt
+POSIX- und Windows-Launcher und setzt Java 25 voraus. Gradle Maven Publish übernimmt
 das ZIP und seine Prüfsumme aus demselben Workflow und prüft nach dem Upload
 die heruntergeladenen Bytes. Die Publikationsrechte gehören zum Environment
 `compiler-snapshots`.

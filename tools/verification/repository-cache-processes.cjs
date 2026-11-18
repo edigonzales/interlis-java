@@ -2,9 +2,9 @@
 const fs = require('node:fs'), path = require('node:path'), http = require('node:http');
 const cp = require('node:child_process'), crypto = require('node:crypto'), assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '../..');
-const out = path.join(root, 'target/verification/repository-cache');
+const out = path.join(root, 'build/verification/repository-cache');
 fs.mkdirSync(out, {recursive: true});
-const launcher = path.resolve(process.argv[2] || path.join(root, 'target/jenesis-jvm/delivery/compiler/bin',
+const launcher = path.resolve(process.argv[2] || path.join(root, 'interlis-compiler-cli/build/install/interlis-compiler/bin',
     process.platform === 'win32' ? 'interlis-compiler.bat' : 'interlis-compiler'));
 const dir = fs.mkdtempSync(path.join(out, 'run-')), home = path.join(dir, 'home');
 fs.mkdirSync(home);

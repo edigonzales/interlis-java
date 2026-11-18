@@ -1,6 +1,6 @@
 # Exact CRLF/emoji source fixture for revision and navigation contract tests.
-# Preserve the existing Gradle Windows launcher bytes in the Jenesis templates.
-build/interlis/templates/*.bat -text whitespace=cr-at-eol
+# Preserve the existing Gradle Windows launcher bytes in the Windows templates.
+packaging/windows/*.bat -text whitespace=cr-at-eol
 # Preserve the IANA registry source bytes and its CRLF line endings.
 testdata/reference/character-sets/character-sets-2026-10-02.csv -text whitespace=cr-at-eol,-blank-at-eol
 # Preserve the published INTERLIS 2.4 regression model bytes.

@@ -10,7 +10,7 @@ Editortransport oder grafische Laufzeit.
 
 Die folgende Tabelle nennt direkte Projektabhängigkeiten aus den
 JPMS-Deskriptoren. Java-Pakete und Module verwenden die Basis `guru.interlis`.
-Die zugehörigen POMs beschreiben die konkreten Abhängigkeiten und Scopes.
+Die Gradle-Teilprojekte deklarieren die konkreten Abhängigkeiten und Scopes.
 
 | JVM-Modul | Direkte Projektabhängigkeiten | Zuständigkeit |
 |---|---|---|
@@ -30,16 +30,13 @@ Die zugehörigen POMs beschreiben die konkreten Abhängigkeiten und Scopes.
 | `interlis-lsp` | workspace, compiler, projection, model, repository | LSP-/Editorhost, Scheduling und Ausgaben |
 | `interlis-wasm-bridge` | workspace, compiler, projection, model | Gemeinsames JSON-Protokoll und Sitzungen |
 
-Alle fünfzehn JVM-Module werden über denselben Builder erzeugt. Die
-jeweils ausgewählten JPMS-Closures stehen im
-[Buildvertrag](development/build.md). TeaVM und Web Image verwenden dieselben
-JVM-Laufzeit-JARs aus dem Jenesis-Inventar des aktuellen Checkouts. Der Browserharness prüft den Compiler und zeigt Diagramm-DTOs.
+Gradle baut alle fünfzehn JVM-Module. TeaVM und Web Image beziehen ihre
+Laufzeitclosure aus direkten Gradle-Projektabhängigkeiten. Der Browserharness prüft den Compiler und zeigt Diagramm-DTOs.
 Der produktive Renderer liegt im Repository der VS-Code-Extension.
 
 Artefaktkoordinate, Dateiname und Modulname sind getrennte Identitäten.
 Die JVM-Deskriptoren bestimmen die tatsächlichen Packageexports.
-`guru.interlis.model.internal` ist ausschliesslich für das Compilermodul
-exportiert. Die Gson-Reflection ist für LSP-Datentypen qualifiziert geöffnet. ANTLR und interne
+`guru.interlis.model.internal` ist qualifiziert für Compiler und Validator exportiert. Die Gson-Reflection ist für LSP-Datentypen qualifiziert geöffnet. ANTLR und interne
 Compilerklassen bleiben in der Implementierung.
 
 Der Transferkern prüft die Integrität seiner neutralen Ereignisfolge.

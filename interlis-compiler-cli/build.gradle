@@ -1,0 +1,81 @@
+plugins {
+    id 'application'
+}
+
+application {
+    mainModule = 'guru.interlis.compiler.cli'
+    mainClass = 'guru.interlis.cli.Main'
+}
+
+dependencies {
+    api project(':interlis-compiler')
+    implementation project(':interlis-workspace')
+    api project(':interlis-repository')
+    implementation project(':interlis-projection')
+    api project(':interlis-model')
+    testImplementation 'com.google.code.gson:gson:2.14.0'
+}
+
+application { applicationName = 'interlis-compiler' }
+
+def revision = providers.exec {
+    workingDir rootProject.projectDir
+    commandLine 'git', 'rev-parse', '--verify', 'HEAD'
+    ignoreExitValue = true
+}.standardOutput.asText.map { it.trim() }
+def revisionFile = layout.buildDirectory.file('generated/revision/guru/interlis/cli/build-revision.txt')
+def writeRevision = tasks.register('writeBuildRevision') {
+    inputs.property 'revision', revision
+    outputs.file revisionFile
+    doLast {
+        def file = revisionFile.get().asFile
+        file.parentFile.mkdirs()
+        file.setText(revision.get(), 'US-ASCII')
+    }
+}
+tasks.named('processResources') {
+    dependsOn writeRevision
+    from layout.buildDirectory.dir('generated/revision')
+}
+
+def versionManifest = layout.buildDirectory.file('version/version-manifest.json')
+tasks.register('writeVersionManifest') {
+    def installed = tasks.named('installDist', Sync)
+    def windows = org.gradle.internal.os.OperatingSystem.current().windows
+    inputs.files installed
+    outputs.file versionManifest
+    doLast {
+        def launcher = new File(installed.get().destinationDir, "bin/interlis-compiler" + (windows ? '.bat' : ''))
+        def output = providers.exec {
+            commandLine([launcher.absolutePath, 'version', '--json'])
+        }.standardOutput.asText.get()
+        def file = versionManifest.get().asFile
+        file.parentFile.mkdirs()
+        file.setText(output, 'UTF-8')
+    }
+}
+
+distributions.main {
+    distributionBaseName = 'interlis-compiler'
+    contents {
+        from rootProject.file('LICENSE')
+        into('licenses') {
+            from rootProject.file('interlis-compiler/src/main/antlr/LICENSE')
+            from rootProject.file('interlis-compiler/src/main/antlr/NOTICE')
+        }
+    }
+}
+
+// Preserve the Windows argument and path handling of the installed launcher.
+tasks.named('startScripts') {
+    def template = rootProject.file('packaging/windows/interlis-compiler.bat')
+    inputs.file template
+    windowsStartScriptGenerator = { details, writer ->
+        writer.write(template.getText('UTF-8'))
+    } as org.gradle.jvm.application.scripts.ScriptGenerator
+}
+
+javaModuleTesting.whitebox(testing.suites.test) {
+    requires.add('com.google.gson')
+    requires.add('jdk.httpserver')
+}

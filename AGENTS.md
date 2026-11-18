@@ -46,24 +46,15 @@ liegen bei der Extension.
 
 ## Buildphilosophie
 
-**Jenesis macht Jenesis-Sachen. Gradle macht Gradle-Sachen. Wir implementieren
-nicht nochmals, was die Buildwerkzeuge bereits können.**
-
-- Nutze den offiziellen Einstieg von [Jenesis 0.18.1 mit Java 25](docs/development/build.md)
-  für JVM-Produkte. POMs definieren Koordinaten und Abhängigkeiten. Bevorzuge
-  native Buildschritte, Tests, Änderungserkennung und Caches sowie vorhandene
-  Konfigurations- und Erweiterungspunkte.
-- Der normale Build funktioniert nach einem frischen Checkout ohne manuelle
-  Vorkompilierung und verwendet Engine und unveränderte Ergebnisse automatisch
-  wieder. Quellen, Tests, Grammatik, Abhängigkeiten und Buildoptionen
-  invalidieren nur die betroffenen Schritte.
-- Der Gradle-Wrapper baut ausschliesslich die portablen Backends TeaVM und
-  GraalVM Web Image. Jenesis erzeugt die JVM-Produkte.
-- Zusätzliche Buildlogik braucht einen konkreten, nachgewiesenen Produktbedarf.
-  Keine eigene allgemeine Fingerprint-, Cache-, Artefaktbeglaubigungs- oder
-  Buildgraph-Infrastruktur. Entferne ersetzte Buildpfade und Kompatibilitätswrapper.
-- Erhalte notwendige Tests, aktuelle Produkte und öffentliche Produktverträge.
-  Behandle `build/jenesis/` als Quellen und verwende gezielte Clean-Sichten.
+- Nutze den [Gradle-Wrapper mit Java 25](docs/development/build.md) für
+  JVM-Produkte, Distributionen und portable Backends. Gradle-Teilprojekte
+  deklarieren ihre direkten Abhängigkeiten. JPMS-Deskriptoren definieren die
+  Modulgrenzen.
+- Ein frischer Checkout baut ohne lokale Projektartefakte. Verwende native
+  Gradle-Aufgaben, Testselektion, Änderungserkennung und Caches. Der reguläre
+  JVM-Check braucht weder externe Konformitätssuites noch Browser oder Desktop.
+- Zusätzliche Buildlogik braucht einen nachgewiesenen Produktbedarf.
+  Entferne ersetzte Aufrufer und Mechanismen. Buildausgaben liegen unter `build/`.
 
 ## Testphilosophie
 

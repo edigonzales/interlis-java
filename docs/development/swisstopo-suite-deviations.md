@@ -9,7 +9,7 @@ Die Originaltests, Modelle und XTF-Dateien sind unverändert.
 | --- | --- | --- |
 | `RSU.T16a` | Die Suite erwartet ein freies Randende und eine Selbstüberschneidung. Unser Validator und ilivalidator 1.15.1 akzeptieren den Originalfall. | Abweichung der Suite-Erwartung. Der Rand ist geschlossen und die geometrische Nachrechnung ergibt keinen Selbstschnitt. Siehe [Geometrie von `RSU.T16a`](#geometrie-von-rsut16a). |
 
-Die [Abweichungsliste des Runners](../../build/interlis/validator-conformance/deviations.tsv)
+Die [Abweichungsliste des Runners](../../testdata/conformance/swisstopo-deviations.tsv)
 enthält pro Originaltest die erwartete Beobachtung. Im nativen JUnit-Bericht
 bleibt dieser Fall als Fehler sichtbar. Der Runner scheitert bei neuen
 Fehlern, technischen Störungen, geänderten Befunden und inzwischen

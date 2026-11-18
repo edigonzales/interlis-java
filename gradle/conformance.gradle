@@ -1,0 +1,174 @@
+def java25 = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+
+def cli = project(':interlis-compiler-cli')
+def compiler = cli.tasks.named('installDist', Sync)
+def pinFile = file('testdata/conformance/suite.properties')
+def pin = new Properties()
+pinFile.withReader('UTF-8') { pin.load(it) }
+def archive = layout.buildDirectory.file("conformance/upstream/suite-${pin.commit}.tar.gz")
+def download = tasks.register('downloadCodebergSuite') {
+    inputs.file pinFile
+    outputs.file archive
+    doLast {
+        def file = archive.get().asFile
+        file.parentFile.mkdirs()
+        def url = URI.create(pin.url).toURL().openConnection()
+        url.connectTimeout = 60_000
+        url.readTimeout = 60_000
+        url.inputStream.withCloseable { input -> file.withOutputStream { it << input } }
+        def actual = java.util.HexFormat.of().formatHex(
+                java.security.MessageDigest.getInstance('SHA-256').digest(file.bytes))
+        if (actual != pin.sha256) {
+            file.delete()
+            throw new GradleException('Codeberg suite archive failed SHA-256 verification')
+        }
+    }
+}
+
+def suite = tasks.register('unpackCodebergSuite', Sync) {
+    from(download.map { tarTree(it.outputs.files.singleFile) })
+    into layout.buildDirectory.dir('conformance/upstream/source')
+    eachFile { relativePath = new RelativePath(relativePath.file, relativePath.segments.drop(1) as String[]) }
+    includeEmptyDirs = false
+}
+
+def codebergFilter = providers.gradleProperty('codebergFilter').orElse('^(ili23|ili24)\\.')
+def codebergOutput = layout.buildDirectory.dir('conformance/codeberg')
+def codebergRun = tasks.register('runCodebergSuite') {
+    dependsOn suite, compiler
+    timeout = java.time.Duration.ofMinutes(35)
+    doLast {
+        def output = codebergOutput.get().asFile
+        delete output
+        output.mkdirs()
+        def upstream = suite.get().destinationDir
+        def launcher = new File(compiler.get().destinationDir, 'bin/interlis-compiler')
+        def config = new File(output, 'run-config.json')
+        config.text = groovy.json.JsonOutput.toJson([
+            suite: new File(upstream, 'suite/test-cases.json').path, outputDirectory: output.path,
+            cacheDirectory: layout.buildDirectory.dir('conformance/upstream/fixtures').get().asFile.path,
+            timeoutSeconds: 60, parallelism: 4, xpassPolicy: 'fail', filter: codebergFilter.get(),
+            compilers: [[id: 'interlis-java', source: launcher.path, command: ['{compiler}', 'check', '{files}'],
+                         acceptedExitCodes: [0], rejectedExitCodes: [1],
+                         internalErrorPatterns: ['internal failure:', 'Exception in thread'],
+                         baseline: file('testdata/conformance/baseline.json').path]]
+        ])
+        def runner = new File(upstream, 'InterlisConformance.java')
+        def invocation = providers.exec {
+            executable java25.get().executablePath.asFile
+            args runner, 'run', '--config', config
+            environment 'JAVA_HOME', java25.get().metadata.installationPath.asFile.absolutePath
+            ignoreExitValue = true
+        }
+        int status = invocation.result.get().exitValue
+        new File(output, 'runner.stdout').setText(invocation.standardOutput.asText.get(), 'UTF-8')
+        new File(output, 'runner.stderr').setText(invocation.standardError.asText.get(), 'UTF-8')
+        if (!(status in [0, 1])) throw new GradleException("Codeberg runner exit ${status}; see ${output}")
+        new File(output, 'runner.exit').text = status
+    }
+}
+def assessment = cli.tasks.register('assessCodebergSuite', JavaExec) {
+    dependsOn codebergRun
+    javaLauncher = java25
+    classpath = cli.sourceSets.test.runtimeClasspath
+    mainClass = 'guru.interlis.cli.conformance.NormativeConformance'
+    doFirst {
+        def output = codebergOutput.get().asFile
+        args rootProject.projectDir, output, new File(output, 'runner.exit').text
+    }
+}
+tasks.register('codebergConformance') {
+    group = 'verification'
+    dependsOn assessment
+}
+
+def suitePath = providers.gradleProperty('swisstopoSuiteDir').map { file(it) }
+sourceSets {
+    swisstopoSuite {
+        if (suitePath.isPresent()) java.srcDir(suitePath.map { new File(it, 'routine/src/test/java') })
+    }
+    swisstopoTest {
+        compileClasspath += sourceSets.swisstopoSuite.output
+        runtimeClasspath += sourceSets.swisstopoSuite.output
+    }
+}
+configurations {
+    swisstopoTestImplementation.extendsFrom(swisstopoSuiteImplementation)
+    swisstopoTestRuntimeOnly.extendsFrom(swisstopoSuiteRuntimeOnly)
+}
+dependencies {
+    swisstopoSuiteImplementation platform(libs.junit.bom)
+    swisstopoSuiteImplementation libs.junit.platform.launcher
+    swisstopoSuiteImplementation 'org.junit.platform:junit-platform-reporting'
+    swisstopoSuiteImplementation 'junit:junit:4.13.2'
+    swisstopoSuiteImplementation 'org.slf4j:slf4j-api:2.0.18'
+    swisstopoSuiteImplementation 'com.google.code.gson:gson:2.14.0'
+    swisstopoSuiteRuntimeOnly 'org.junit.vintage:junit-vintage-engine'
+    swisstopoSuiteRuntimeOnly 'org.slf4j:slf4j-simple:2.0.18'
+    swisstopoTestImplementation libs.junit.jupiter
+}
+def checkSuite = tasks.register('checkSwisstopoSource') {
+    doLast {
+        if (!suitePath.isPresent() || !new File(suitePath.get(), 'data/models').isDirectory() ||
+                fileTree(new File(suitePath.get(), 'routine/src/test/java')).matching { include '**/*.java' }.isEmpty()) {
+            throw new GradleException('Set -PswisstopoSuiteDir to a suite-interlis checkout with original tests and models')
+        }
+        def sha = providers.exec {
+            workingDir suitePath.get()
+            commandLine 'git', 'rev-parse', 'HEAD'
+        }.standardOutput.asText.get().trim()
+        logger.lifecycle("swisstopo suite commit: ${sha}")
+    }
+}
+tasks.named('compileSwisstopoSuiteJava') { dependsOn checkSuite }
+def validatorZip = project(':interlis-validator-cli').tasks.named('distZip', Zip)
+def validator = tasks.register('unpackSwisstopoValidator', Sync) {
+    from(validatorZip.flatMap { it.archiveFile }.map { zipTree(it) })
+    into layout.buildDirectory.dir('conformance/swisstopo-install')
+    filesMatching('**/bin/interlis-validator') { permissions { unix('rwxr-xr-x') } }
+}
+def output = layout.buildDirectory.dir('conformance/swisstopo')
+def deviations = file('testdata/conformance/swisstopo-deviations.tsv')
+def validatorLauncher = validator.map {
+    new File(it.destinationDir, 'interlis-validator/bin/interlis-validator' +
+            (System.getProperty('os.name').startsWith('Windows') ? '.bat' : ''))
+}
+['swisstopoAdapterTest', 'swisstopoConformance'].each { taskName ->
+    tasks.register(taskName, Test) {
+        group = 'verification'
+        def originals = taskName == 'swisstopoConformance'
+        if (originals) dependsOn 'swisstopoAdapterTest'
+        dependsOn validator, checkSuite
+        useJUnitPlatform {
+            includeEngines 'junit-jupiter'
+            if (originals) includeTags 'swisstopo-originals'
+            else excludeTags 'swisstopo-originals'
+        }
+        javaLauncher = java25
+        testClassesDirs = sourceSets.swisstopoTest.output.classesDirs
+        classpath = sourceSets.swisstopoTest.runtimeClasspath
+        inputs.files validator, deviations
+        inputs.files suitePath.map { new File(it, 'data') }
+        systemProperty 'repo.root', projectDir.absolutePath
+        if (originals) {
+            timeout = java.time.Duration.ofMinutes(20)
+            systemProperty 'vendor', 'interlis-java'
+            systemProperty 'suite.filter', providers.gradleProperty('swisstopoFilter').getOrElse('.*')
+            systemProperty 'suite.deviations', deviations.absolutePath
+            systemProperty 'suite.output', output.get().asFile.absolutePath
+            outputs.dir output
+        }
+        doFirst {
+            systemProperty 'suite.validator', validatorLauncher.get().absolutePath
+            systemProperty 'suite.directory', suitePath.get().absolutePath
+            systemProperty 'suite.classes', sourceSets.swisstopoSuite.output.classesDirs.singleFile.absolutePath
+            if (originals) {
+                delete output
+                output.get().asFile.mkdirs()
+                workingDir new File(suitePath.get(), 'routine')
+            } else {
+                systemProperty 'suite.classpath', sourceSets.swisstopoSuite.runtimeClasspath.asPath
+            }
+        }
+    }
+}

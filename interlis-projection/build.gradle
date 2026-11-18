@@ -1,0 +1,8 @@
+dependencies {
+    api project(':interlis-compiler')
+    api project(':interlis-model')
+}
+
+javaModuleTesting.whitebox(testing.suites.test) {
+    requires.add('java.xml')
+}

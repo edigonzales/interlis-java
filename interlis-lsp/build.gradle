@@ -1,0 +1,49 @@
+plugins {
+    id 'application'
+    id 'org.gradlex.extra-java-module-info'
+}
+
+application {
+    mainModule = 'guru.interlis.lsp'
+    mainClass = 'guru.interlis.lsp.Main'
+}
+
+dependencies {
+    api project(':interlis-workspace')
+    implementation project(':interlis-repository')
+    api project(':interlis-compiler')
+    api project(':interlis-projection')
+    api project(':interlis-model')
+    api 'org.eclipse.lsp4j:org.eclipse.lsp4j:0.23.1'
+    api 'com.google.code.gson:gson:2.14.0'
+    implementation 'org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.23.1'
+}
+
+tasks.named('test') {
+    def modulePath = files(tasks.named('jar'), configurations.runtimeClasspath)
+    inputs.files(modulePath).withNormalizer(ClasspathNormalizer)
+    doFirst { systemProperty 'interlis.test.modulepath', modulePath.asPath }
+}
+
+distributions.main {
+    contents { from rootProject.file('LICENSE') }
+}
+
+// Preserve the Windows argument and path handling of the installed launcher.
+tasks.named('startScripts') {
+    def template = rootProject.file('packaging/windows/interlis-lsp.bat')
+    inputs.file template
+    windowsStartScriptGenerator = { details, writer ->
+        writer.write(template.getText('UTF-8'))
+    } as org.gradle.jvm.application.scripts.ScriptGenerator
+}
+
+javaModuleTesting.whitebox(testing.suites.test) {
+    requires.add('jdk.httpserver')
+}
+
+extraJavaModuleInfo {
+    failOnMissingModuleInfo = false
+    automaticModule('org.eclipse.lsp4j:org.eclipse.lsp4j', 'org.eclipse.lsp4j')
+    automaticModule('org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc', 'org.eclipse.lsp4j.jsonrpc')
+}
