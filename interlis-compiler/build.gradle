@@ -15,8 +15,6 @@ tasks.named('generateGrammarSource') {
     arguments += ['-package', 'guru.interlis.compiler.internal.antlr', '-visitor', '-no-listener']
 }
 
-tasks.named('sourcesJar') { from 'src/main/antlr' }
-
 javaModuleTesting.whitebox(testing.suites.test) {
     requires.add('org.junit.jupiter.params')
 }

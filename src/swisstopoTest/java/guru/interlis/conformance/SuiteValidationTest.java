@@ -228,6 +228,29 @@ final class SuiteValidationTest {
                 wrongPhase.replace("compilation", "transfer"), ""));
     }
 
+    @Test
+    void missingSuiteDirectoryFailsTheCommand() throws Exception {
+        var root = Path.of(System.getProperty("repo.root"));
+        var log = directory.resolve("missing.log");
+        var command = new java.util.ArrayList<String>();
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            command.addAll(java.util.List.of("cmd.exe", "/d", "/c", "gradlew.bat"));
+        } else {
+            command.add(root.resolve("gradlew").toString());
+        }
+        command.addAll(java.util.List.of("--offline", "--project-cache-dir", directory.resolve("gradle-cache").toString(),
+                "checkSwisstopoSource", "-PswisstopoSuiteDir=" + directory.resolve("missing-suite")));
+        var process = new ProcessBuilder(command).directory(root.toFile())
+                .redirectErrorStream(true).redirectOutput(log.toFile()).start();
+        try {
+            assertTrue(process.waitFor(90, java.util.concurrent.TimeUnit.SECONDS), "Suite command timed out");
+            assertEquals(1, process.exitValue());
+            assertTrue(Files.readString(log).contains("checkout with original tests and models"));
+        } finally {
+            if (process.isAlive()) process.destroyForcibly();
+        }
+    }
+
     private int runOriginalTests(String filter, Path output) throws Exception {
         return runOriginalTests(filter, output,
                 Path.of(System.getProperty("repo.root"), "testdata/conformance/swisstopo-deviations.tsv"));
