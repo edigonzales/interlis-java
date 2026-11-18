@@ -205,6 +205,17 @@ def gui = project(':interlis-compiler-gui')
 def guiRuntime = gui.tasks.named('guiRuntime')
 def guiApp = gui.tasks.named('guiApp')
 def guiInstall = gui.tasks.named('installDist', Sync)
+def windowProbe = tasks.register('compileMacGuiWindowProbe', Exec) {
+    def source = file('src/packageTest/native/quit-macos-gui.swift')
+    def executable = layout.buildDirectory.file('gui-probes/quit-macos-gui')
+    inputs.file source
+    outputs.file executable
+    timeout = java.time.Duration.ofMinutes(5)
+    doFirst {
+        executable.get().asFile.parentFile.mkdirs()
+        commandLine '/usr/bin/swiftc', source, '-o', executable.get().asFile
+    }
+}
 ['guiImageTest': 'gui-image', 'guiShellTest': 'gui-shell', 'guiAppTest': 'gui-app'].each { name, tag ->
     tasks.register(name, Test) {
         group = 'verification'
@@ -214,14 +225,17 @@ def guiInstall = gui.tasks.named('installDist', Sync)
         javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
         inputs.files guiRuntime, guiInstall
         if (tag != 'gui-image') dependsOn gui.tasks.named('testClasses')
-        if (tag == 'gui-app') inputs.files guiApp
+        if (tag == 'gui-app') inputs.files guiApp, windowProbe
         if (tag != 'gui-image') outputs.upToDateWhen { false }
         systemProperty 'repo.root', projectDir.absolutePath
         doFirst {
             systemProperty 'gui.runtime', guiRuntime.get().outputs.files.singleFile.absolutePath
             systemProperty 'gui.libs', new File(guiInstall.get().destinationDir, 'lib').absolutePath
             systemProperty 'gui.test.classes', gui.sourceSets.test.output.classesDirs.asPath
-            if (tag == 'gui-app') systemProperty 'gui.app', guiApp.get().outputs.files.singleFile.absolutePath
+            if (tag == 'gui-app') {
+                systemProperty 'gui.app', guiApp.get().outputs.files.singleFile.absolutePath
+                systemProperty 'gui.window.probe', windowProbe.get().outputs.files.singleFile.absolutePath
+            }
         }
     }
 }

@@ -71,14 +71,6 @@ final class GuiImageChecks {
         checkPackage(output, JDK, app);
     }
 
-    private static Path swiftProbe(Path output) throws Exception {
-        var probe = output.resolve("quit-macos-gui.swift");
-        try (var source = GuiImageChecks.class.getResourceAsStream("/quit-macos-gui.swift")) {
-            Files.copy(source, probe);
-        }
-        return probe;
-    }
-
     private static void checkPackage(Path run, Path jdk, Path app) throws Exception {
         Path outside = Files.createTempDirectory("INTERLIS GUI Smoke ").toRealPath();
         if (outside.startsWith(Path.of(System.getProperty("repo.root")).toRealPath())) {
@@ -149,8 +141,7 @@ final class GuiImageChecks {
                     || !observed.contains("os.arch=aarch64") || !observed.contains("user.dir=" + outside)) {
                 throw new IllegalStateException("Native app did not use the expected embedded runtime and working directory: " + observed);
             }
-            process(run, "native-window", outside, List.of("/usr/bin/swift", "-module-cache-path",
-                    outside.resolve("SwiftCache").toString(), swiftProbe(run).toString(),
+            process(run, "native-window", outside, List.of(System.getProperty("gui.window.probe"),
                     Long.toString(child.pid()), MODULE), Map.of());
             finished = child.waitFor(15, TimeUnit.SECONDS);
         } finally {
@@ -211,6 +202,7 @@ final class GuiImageChecks {
         var child = processBuilder(run, role, cwd, command, environment).start();
         boolean finished = child.waitFor(90, TimeUnit.SECONDS);
         if (!finished) {
+            child.descendants().forEach(ProcessHandle::destroyForcibly);
             child.destroyForcibly().waitFor();
         }
         if (!finished || child.exitValue() != 0) {
