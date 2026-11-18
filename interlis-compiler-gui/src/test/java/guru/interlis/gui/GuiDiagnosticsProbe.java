@@ -35,7 +35,8 @@ public final class GuiDiagnosticsProbe {
         Path dir = Files.createTempDirectory(cwd, "diagnostic-fixtures-");
         Path conflict = Files.writeString(dir.resolve("Zulu.ili"),
                 "!! ä 🦊\r\nINTERLIS 2.4;\r\nMODEL Conflict AT \"https://example.invalid\" VERSION \"1\" =\r\n"
-                + "  TOPIC Office =\r\n    CLASS Office = END Office;\r\n  END Office;\r\nEND Conflict.\r\n");
+                + "  TOPIC Office = END Office;\r\n"
+                + "  TOPIC Records =\r\n    CLASS Office = END Office;\r\n  END Records;\r\nEND Conflict.\r\n");
         Path other = Files.writeString(dir.resolve("Alpha.ili"),
                 "INTERLIS 2.4; MODEL Other AT \"https://example.invalid\" VERSION \"1\" = "
                 + "TOPIC T = CLASS C = value: Missing; END C; END T; END Other.");

@@ -101,8 +101,10 @@ tasks.register('guiProbe', Exec) {
         if (probe == null) throw new GradleException("Unknown GUI probe ${profile}; choose ${probes.keySet()}")
         def output = layout.buildDirectory.dir("gui/probes/${profile}").get().asFile
         output.mkdirs()
-        workingDir output
-        commandLine executable('java'), '-Djava.awt.headless=false', "-Dinterlis.gui.settingsDir=${output}",
+        def run = java.nio.file.Files.createTempDirectory(output.toPath(), 'run-').toFile()
+        workingDir run
+        commandLine executable('java'), '--enable-native-access=com.formdev.flatlaf',
+                '-Djava.awt.headless=false', "-Dinterlis.gui.settingsDir=${run}",
                 '--module-path', new File(install.get().destinationDir, 'lib'),
                 '--patch-module', "${guiModule.get()}=${sourceSets.test.output.classesDirs.asPath}",
                 '--module', "${guiModule.get()}/guru.interlis.gui.${probe}"
