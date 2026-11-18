@@ -16,7 +16,7 @@ node tools/verification/http-redirect-processes.cjs interlis-compiler-cli/build/
 Der LSP-Test verwendet den installierten Launcher und prüft Initialisierung,
 Shutdown und den Prozess-Exit. Die CLI-Prüfer betreiben einen lokalen HTTP-Server
 und speichern ihre isolierten Läufe unter `build/verification`. Unter Windows
-prüft `./gradlew packageTest` den installierten
+prüft `gradlew.bat packageTest` den installierten
 `.bat`-Launcher einschliesslich einer lokalen HTTP-Gegenstelle.
 
 ## Repositoryhygiene
@@ -26,5 +26,6 @@ node tools/verification/repository-hygiene.cjs
 node --test tools/verification/repository-hygiene.test.cjs
 ```
 
-Die Prüfung validiert aktive Markdown-Pfade, Anker und deklarierte Testinputs. Sie erkennt wieder eingeführte
-abgeschlossene Dokumentationsablagen und phasenbezogene Testklassennamen.
+Die Prüfung validiert aktive Markdown-Pfade und Anker. Sie erkennt wieder
+eingeführte abgeschlossene Dokumentationsablagen und phasenbezogene
+Testklassennamen.
