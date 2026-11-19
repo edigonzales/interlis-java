@@ -121,16 +121,11 @@ def checkSuite = tasks.register('checkSwisstopoSource') {
     }
 }
 tasks.named('compileSwisstopoSuiteJava') { dependsOn checkSuite }
-def validatorZip = project(':interlis-validator-cli').tasks.named('distZip', Zip)
-def validator = tasks.register('unpackSwisstopoValidator', Sync) {
-    from(validatorZip.flatMap { it.archiveFile }.map { zipTree(it) })
-    into layout.buildDirectory.dir('conformance/swisstopo-install')
-    filesMatching('**/bin/interlis-validator') { permissions { unix('rwxr-xr-x') } }
-}
+def validator = project(':interlis-validator-cli').tasks.named('installDist', Sync)
 def output = layout.buildDirectory.dir('conformance/swisstopo')
 def deviations = file('testdata/conformance/swisstopo-deviations.tsv')
 def validatorLauncher = validator.map {
-    new File(it.destinationDir, 'interlis-validator/bin/interlis-validator' +
+    new File(it.destinationDir, 'bin/interlis-validator' +
             (System.getProperty('os.name').startsWith('Windows') ? '.bat' : ''))
 }
 ['swisstopoAdapterTest', 'swisstopoConformance'].each { taskName ->

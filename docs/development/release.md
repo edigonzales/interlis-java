@@ -52,6 +52,7 @@ die heruntergeladenen Bytes. Die Publikationsrechte gehören zum Environment
 
 Das plattformunabhängige LSP-ZIP wird aus demselben Workflow unter
 `guru.interlis:interlis-lsp-distribution:0.2.0-SNAPSHOT@zip` veröffentlicht.
+Der Workflow vergleicht auch dieses heruntergeladene ZIP mit dem geprüften Input.
 Die unveränderten Editor-Protokoll- und Diagrammversionen stehen im Wire-Inhalt.
 Für einen lokalen Producer-/Consumer-Test verwende ein leeres temporäres
 Maven-Dateirepository.

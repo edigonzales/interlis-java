@@ -1,0 +1,14 @@
+Third-party components in the LSP distribution
+
+Eclipse LSP4J and LSP4J JSON-RPC 0.23.1 are distributed under Eclipse
+Public License 2.0. See EPL-2.0.txt. Corresponding sources:
+https://repo.maven.apache.org/maven2/org/eclipse/lsp4j/org.eclipse.lsp4j/0.23.1/org.eclipse.lsp4j-0.23.1-sources.jar
+https://repo.maven.apache.org/maven2/org/eclipse/lsp4j/org.eclipse.lsp4j.jsonrpc/0.23.1/org.eclipse.lsp4j.jsonrpc-0.23.1-sources.jar
+
+Gson 2.14.0 and Error Prone Annotations 2.48.0 are distributed under
+Apache License 2.0. See Apache-2.0.txt.
+Sources: https://github.com/google/gson/tree/gson-parent-2.14.0
+and https://github.com/google/error-prone/tree/v2.48.0.
+
+The ANTLR runtime uses BSD 3-Clause. See ANTLR-BSD-3-Clause.txt.
+Compiler grammar and Unicode data notices accompany the compiler.

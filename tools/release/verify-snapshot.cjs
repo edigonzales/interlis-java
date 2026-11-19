@@ -6,20 +6,22 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const snapshots = 'https://jars.interlis.guru/snapshots/';
-const artifactId = 'interlis-compiler-bindist';
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 
-const [bundle] = process.argv.slice(2);
-assert(bundle && process.argv.length === 3, 'Supply the verified compiler ZIP directory');
+const [artifactId, bundle] = process.argv.slice(2);
+const compiler = artifactId === 'interlis-compiler-bindist';
+assert((compiler || artifactId === 'interlis-lsp-distribution') && bundle && process.argv.length === 4,
+    'Supply the artifact ID and verified snapshot ZIP directory');
 const files = fs.readdirSync(bundle);
-const zip = files.find(name => /^interlis-compiler-bindist-\d+\.\d+\.\d+-SNAPSHOT\.zip$/.test(name));
-assert(zip && files.length === 2 && files.includes('SHA256SUMS'), 'Expected only the compiler snapshot ZIP and its checksum');
+const zip = files.find(name => new RegExp('^' + artifactId + '-\\d+\\.\\d+\\.\\d+-SNAPSHOT\\.zip$').test(name));
+assert(zip && files.length === (compiler ? 2 : 1), 'Expected only the verified snapshot files');
 const version = zip.slice(artifactId.length + 1, -4);
-const file = path.resolve(bundle, zip);
-const checksum = sha256(fs.readFileSync(file));
-assert(fs.readFileSync(path.join(bundle, 'SHA256SUMS'), 'utf8').trim() === checksum + '  ' + zip,
-    'Compiler ZIP checksum mismatch');
+const checksum = sha256(fs.readFileSync(path.resolve(bundle, zip)));
+if (compiler) {
+    assert(fs.readFileSync(path.join(bundle, 'SHA256SUMS'), 'utf8').trim() === checksum + '  ' + zip,
+        'Compiler ZIP checksum mismatch');
+}
 
 const base = new URL('guru/interlis/' + artifactId + '/' + version + '/', snapshots);
 function read(name) {
@@ -34,11 +36,11 @@ const zipEntries = entries.filter(([, entry]) => /<extension>\s*zip\s*<\/extensi
 const publishedVersion = zipEntries[0]?.[1].match(/<value>\s*([0-9.\-]+)\s*<\/value>/)?.[1];
 assert(zipEntries.length === 1 && publishedVersion?.startsWith(version.slice(0, -8)), 'Missing published ZIP version');
 const publishedName = artifactId + '-' + publishedVersion + '.zip';
-assert(sha256(read(publishedName)) === checksum, 'Published compiler ZIP checksum mismatch');
+assert(sha256(read(publishedName)) === checksum, 'Published ZIP checksum mismatch');
 const url = new URL(publishedName, base).href;
-console.log('Verified compiler snapshot: ' + url);
+console.log('Verified snapshot: ' + url);
 if (process.env.GITHUB_STEP_SUMMARY) {
     fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
-        'Compiler snapshot for `' + process.env.GITHUB_SHA + '`\n\n[' + publishedName + '](' + url
+        artifactId + ' snapshot for `' + process.env.GITHUB_SHA + '`\n\n[' + publishedName + '](' + url
         + ')\n\nSHA-256 `' + checksum + '`\n');
 }

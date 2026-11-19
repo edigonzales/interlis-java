@@ -39,7 +39,7 @@ final class DistributionChecks {
         try {
             extractArchive(Path.of(System.getProperty("compiler.app.zip")), folder);
             Path app = folder.resolve("interlis-compiler");
-            verifyBundledRuntime(app);
+            verifyBundledRuntime(app, "licenses/NOTICE");
             String launcher = launcher(app, "interlis-compiler").toString();
             Map<String, String> environment = withoutJava(folder);
             Files.copy(ROOT.resolve("testdata/models/base24.ili"), folder.resolve("-Gültig & [x]!.ili"));
@@ -62,7 +62,10 @@ final class DistributionChecks {
             extractArchive(Path.of(System.getProperty("lsp.zip")), folder);
             Path lsp = folder.resolve("interlis-lsp");
             require(Files.isRegularFile(lsp.resolve("LICENSE"))
-                    && Files.isRegularFile(lsp.resolve("licenses/NOTICE")), "Missing LSP licenses");
+                    && Files.isRegularFile(lsp.resolve("licenses/NOTICE"))
+                    && Files.isRegularFile(lsp.resolve("licenses/Apache-2.0.txt"))
+                    && Files.isRegularFile(lsp.resolve("licenses/EPL-2.0.txt"))
+                    && Files.isRegularFile(lsp.resolve("licenses/THIRD-PARTY.txt")), "Missing LSP licenses");
             require(Files.readString(lsp.resolve("types/editor-protocol.ts")).contains("'./diagram-document'")
                     && Files.isRegularFile(lsp.resolve("types/diagram-document.ts"))
                     && Files.isRegularFile(lsp.resolve("schemas/diagram-document-1.0.schema.json"))
@@ -87,12 +90,12 @@ final class DistributionChecks {
         checkValidatorArchive(Path.of(System.getProperty("validator.zip")));
     }
 
-    private static void verifyBundledRuntime(Path app) {
+    private static void verifyBundledRuntime(Path app, String notices) {
         boolean windows = System.getProperty("os.name").startsWith("Windows");
         Path java = app.resolve("runtime/bin/" + (windows ? "java.exe" : "java"));
         require(Files.isRegularFile(java) && (windows || Files.isExecutable(java)), "Missing bundled Java launcher");
         require(Files.isRegularFile(app.resolve("LICENSE"))
-                && Files.isRegularFile(app.resolve("licenses/NOTICE"))
+                && Files.isRegularFile(app.resolve(notices))
                 && Files.isRegularFile(app.resolve("runtime/legal/java.base/LICENSE")), "Missing application licenses");
     }
 
@@ -174,7 +177,7 @@ final class DistributionChecks {
             DistributionChecks.extractArchive(archive, folder);
             Path installed = folder.resolve("interlis-validator");
             Path cwd = Files.createDirectory(folder.resolve("data files"));
-            verifyBundledRuntime(installed);
+            verifyBundledRuntime(installed, "licenses/THIRD-PARTY.txt");
             Map<String, String> environment = withoutJava(folder);
             var launcher = launcher(installed, "interlis-validator").toString();
             var version = runBundled(cwd, List.of(launcher, "--version", "--json"), environment);

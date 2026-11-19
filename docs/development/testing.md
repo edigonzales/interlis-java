@@ -24,7 +24,7 @@ prüfen tatsächliche Schreibverbote des Betriebssystems.
   [Baseline](../../testdata/conformance/baseline.json) enthalten die fachlichen
   Abweichungen. Die Berichte liegen unter `build/conformance/codeberg/`.
 - `./gradlew swisstopoConformance -PswisstopoSuiteDir=../suite-interlis` prüft
-  die Originaltests gegen das entpackte Validator-ZIP. Gradle gibt den Commit
+  die Originaltests gegen die modulare Validator-Installation. Gradle gibt den Commit
   des Suite-Checkouts aus. Die Ergebnisse liegen unter
   `build/conformance/swisstopo/` und `build/test-results/swisstopoAdapterTest/`.
 - `./gradlew guiImageTest` prüft das GUI-Laufzeitimage. `guiShellTest` und

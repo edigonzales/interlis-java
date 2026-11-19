@@ -160,10 +160,12 @@ publishing {
             else artifact checkedLspZip
             pom.packaging = 'zip'
         }
-        compilerSnapshot(MavenPublication) {
-            artifactId = 'interlis-compiler-bindist'
-            artifact checkedZip.asFile
-            pom.packaging = 'zip'
+        if (!lspTestRepository.isPresent()) {
+            compilerSnapshot(MavenPublication) {
+                artifactId = 'interlis-compiler-bindist'
+                artifact checkedZip.asFile
+                pom.packaging = 'zip'
+            }
         }
     }
     repositories {
@@ -172,38 +174,36 @@ publishing {
                 name = 'lspTest'
                 url = file(lspTestRepository.get()).toURI()
             }
-        }
-        maven {
-            name = 'compilerSnapshots'
-            url = uri('https://jars.interlis.guru/snapshots/')
-            credentials {
-                username = providers.environmentVariable('MAVEN_USERNAME').orNull
-                password = providers.environmentVariable('MAVEN_PASSWORD').orNull
+        } else {
+            maven {
+                name = 'compilerSnapshots'
+                url = uri('https://jars.interlis.guru/snapshots/')
+                credentials {
+                    username = providers.environmentVariable('MAVEN_USERNAME').orNull
+                    password = providers.environmentVariable('MAVEN_PASSWORD').orNull
+                }
             }
         }
     }
 }
-tasks.named('publishCompilerSnapshotPublicationToCompilerSnapshotsRepository') {
-    doFirst {
-        def zip = checkedZip.asFile
-        def sums = new File(zip.parentFile, 'SHA256SUMS')
-        if (providers.environmentVariable('GITHUB_EVENT_NAME').orNull != 'push' ||
-                providers.environmentVariable('GITHUB_REF').orNull != 'refs/heads/main' ||
-                !project.version.endsWith('-SNAPSHOT')) {
-            throw new GradleException('Snapshot publication requires the main push workflow')
-        }
-        if (sums.getText('US-ASCII').trim() != sha256(zip.bytes) + '  ' + zip.name) {
-            throw new GradleException('Compiler snapshot differs from the verified workflow ZIP')
-        }
-    }
-}
 
-tasks.named('publishLspSnapshotPublicationToCompilerSnapshotsRepository') {
-    doFirst {
-        if (providers.environmentVariable('GITHUB_EVENT_NAME').orNull != 'push' ||
-                providers.environmentVariable('GITHUB_REF').orNull != 'refs/heads/main' ||
-                !project.version.endsWith('-SNAPSHOT') || lspTestRepository.isPresent()) {
-            throw new GradleException('LSP snapshot publication requires the main push workflow and its staged ZIP')
+if (!lspTestRepository.isPresent()) {
+    ['CompilerSnapshot', 'LspSnapshot'].each { snapshot ->
+        tasks.named("publish${snapshot}PublicationToCompilerSnapshotsRepository") {
+            doFirst {
+                if (providers.environmentVariable('GITHUB_EVENT_NAME').orNull != 'push' ||
+                        providers.environmentVariable('GITHUB_REF').orNull != 'refs/heads/main' ||
+                        !project.version.endsWith('-SNAPSHOT')) {
+                    throw new GradleException('Snapshot publication requires the main push workflow')
+                }
+                if (snapshot == 'CompilerSnapshot') {
+                    def zip = checkedZip.asFile
+                    def sums = new File(zip.parentFile, 'SHA256SUMS')
+                    if (sums.getText('US-ASCII').trim() != sha256(zip.bytes) + '  ' + zip.name) {
+                        throw new GradleException('Compiler snapshot differs from the verified workflow ZIP')
+                    }
+                }
+            }
         }
     }
 }

@@ -188,5 +188,6 @@ jobs:
             exit 1
           fi
           ./gradlew publishCompilerSnapshotPublicationToCompilerSnapshotsRepository
-          node tools/release/verify-compiler-snapshot.cjs publication/compiler
+          node tools/release/verify-snapshot.cjs interlis-compiler-bindist publication/compiler
           ./gradlew publishLspSnapshotPublicationToCompilerSnapshotsRepository
+          node tools/release/verify-snapshot.cjs interlis-lsp-distribution publication/lsp
