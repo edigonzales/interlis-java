@@ -23,10 +23,10 @@ die Buildausgaben.
 |---|---|
 | `:interlis-compiler-cli:installDist` | `interlis-compiler-cli/build/install/interlis-compiler/` |
 | `compilerZip compilerZipChecksum` | Compiler-ZIP und Prüfsumme unter `build/distributions/compiler/` |
-| `:interlis-validator-cli:distZip` | Validator-ZIP unter `interlis-validator-cli/build/distributions/` |
+| `compilerAppZip validatorAppZip` | Anwendungen mit Java-Laufzeit unter `build/distributions/apps/` |
 | `sdkZip` | `build/distributions/sdk/sdk.zip` mit CLI und SDK-Beispielen |
 | `:interlis-lsp:installDist` | Modularer Launcher unter `interlis-lsp/build/install/interlis-lsp/` |
-| `editorBundle` | LSP-Runtime, Wire-Verträge und Manifest v4 unter `build/editor-bundle/` |
+| `:interlis-lsp:distZip` | Plattformunabhängiges LSP-ZIP mit Modulpfad, Wire-Dateien und Lizenzen |
 | `packageTest` | Prozessprüfungen für Compiler, SDK, Validator und LSP. Benötigt Node für LSP. |
 | `:interlis-compiler-gui:run` | Modularer Desktop-Start |
 | `:interlis-compiler-gui:guiRuntime` | Verlinkte Laufzeit unter `interlis-compiler-gui/build/gui/runtime/` |

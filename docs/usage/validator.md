@@ -9,11 +9,11 @@ frei. Die [Transferverträge](transfer.md) beschreiben die unterstützten Daten.
 Der Paketbau benötigt ein Java-25-JDK.
 
 ```sh
-./gradlew :interlis-validator-cli:distZip
+./gradlew validatorAppZip
 ```
 
-Das ZIP `interlis-validator-<version>.zip` liegt unter
-`interlis-validator-cli/build/distributions/`. Nach dem Entpacken ist der Einstieg
+Das ZIP `interlis-validator-<version>-<plattform>.zip` liegt unter
+`build/distributions/apps/` und enthält Java 25. Nach dem Entpacken ist der Einstieg
 `interlis-validator/bin/interlis-validator` auf macOS und Linux und
 `interlis-validator\bin\interlis-validator.bat` auf Windows. Java 25 muss über
 `JAVA_HOME` oder `PATH` verfügbar sein. Der Launcher verwendet die JARs aus

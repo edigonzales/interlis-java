@@ -66,6 +66,9 @@ distributions.main {
     }
 }
 
+tasks.named('distZip') { enabled = false }
+tasks.named('distTar') { enabled = false }
+
 // Preserve the Windows argument and path handling of the installed launcher.
 tasks.named('startScripts') {
     def template = rootProject.file('packaging/windows/interlis-compiler.bat')
