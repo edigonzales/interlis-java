@@ -45,7 +45,7 @@ def jdk = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(
 [compiler: compilerInstall, validator: validatorInstall].each { product, install ->
     def appName = "interlis-${product}"
     def modules = ['java.net.http', 'java.xml', 'jdk.charsets', 'jdk.crypto.ec']
-    // MVStore's module descriptor requires SQL, including logging through java.sql.
+    // MVStore uses SQL classes through its automatic module.
     if (product == 'validator') modules.add('java.sql')
     def runtime = layout.buildDirectory.dir("runtime/${appName}")
     def image = tasks.register("${product}Runtime", Exec) {

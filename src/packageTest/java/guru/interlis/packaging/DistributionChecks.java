@@ -102,7 +102,7 @@ final class DistributionChecks {
         }
         Path tools = Files.createDirectory(folder.resolve("system tools"));
         // Gradle launchers need these POSIX tools; exclude the system's Java launcher.
-        for (String tool : List.of("ls", "uname", "sed", "tr", "xargs")) {
+        for (String tool : List.of("echo", "ls", "uname", "sed", "tr", "xargs")) {
             Path source = Path.of("/usr/bin", tool);
             Files.createSymbolicLink(tools.resolve(tool), Files.exists(source) ? source : Path.of("/bin", tool));
         }
@@ -182,7 +182,7 @@ final class DistributionChecks {
             var info = (Map<?, ?>) JSON.fromJson(version.stdout(), Map.class);
             if (!version.stderr().isEmpty() || !"interlis-validator".equals(info.get("tool"))
                     || !System.getProperty("product.version").equals(info.get("version"))) {
-                throw new IllegalStateException("Wrong installed validator version");
+                throw new IllegalStateException("Wrong installed validator version:\n" + version.stdout() + version.stderr());
             }
             Files.writeString(cwd.resolve("Smoke.ili"), """
                     INTERLIS 2.3;
