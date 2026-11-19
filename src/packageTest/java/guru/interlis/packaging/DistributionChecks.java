@@ -62,7 +62,9 @@ final class DistributionChecks {
             extractArchive(Path.of(System.getProperty("lsp.zip")), folder);
             Path lsp = folder.resolve("interlis-lsp");
             require(Files.isRegularFile(lsp.resolve("LICENSE"))
+                    && Files.isRegularFile(lsp.resolve("licenses/LICENSE"))
                     && Files.isRegularFile(lsp.resolve("licenses/NOTICE"))
+                    && Files.isRegularFile(lsp.resolve("licenses/UNICODE-LICENSE.txt"))
                     && Files.isRegularFile(lsp.resolve("licenses/Apache-2.0.txt"))
                     && Files.isRegularFile(lsp.resolve("licenses/EPL-2.0.txt"))
                     && Files.isRegularFile(lsp.resolve("licenses/THIRD-PARTY.txt")), "Missing LSP licenses");
@@ -95,6 +97,8 @@ final class DistributionChecks {
         Path java = app.resolve("runtime/bin/" + (windows ? "java.exe" : "java"));
         require(Files.isRegularFile(java) && (windows || Files.isExecutable(java)), "Missing bundled Java launcher");
         require(Files.isRegularFile(app.resolve("LICENSE"))
+                && Files.isRegularFile(app.resolve("licenses/LICENSE"))
+                && Files.isRegularFile(app.resolve("licenses/UNICODE-LICENSE.txt"))
                 && Files.isRegularFile(app.resolve(notices))
                 && Files.isRegularFile(app.resolve("runtime/legal/java.base/LICENSE")), "Missing application licenses");
     }

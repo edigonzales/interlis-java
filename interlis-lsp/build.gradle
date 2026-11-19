@@ -30,6 +30,8 @@ distributions.main {
     contents {
         from rootProject.file('LICENSE')
         into('licenses') {
+            from rootProject.file('interlis-compiler/src/main/antlr/LICENSE')
+            from rootProject.file('testdata/reference/unicode/17.0.0/UNICODE-LICENSE.txt')
             from rootProject.file('interlis-compiler/src/main/antlr/NOTICE')
             from rootProject.file('packaging/licenses')
             from rootProject.file('packaging/lsp/THIRD-PARTY.txt')

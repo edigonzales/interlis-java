@@ -27,6 +27,8 @@ distributions.main {
         from rootProject.file('LICENSE')
         from rootProject.file('packaging/validator')
         into('licenses') {
+            from rootProject.file('interlis-compiler/src/main/antlr/LICENSE')
+            from rootProject.file('testdata/reference/unicode/17.0.0/UNICODE-LICENSE.txt')
             from rootProject.file('packaging/licenses')
         }
     }

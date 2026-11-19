@@ -11,4 +11,5 @@ Sources: https://github.com/google/gson/tree/gson-parent-2.14.0
 and https://github.com/google/error-prone/tree/v2.48.0.
 
 The ANTLR runtime uses BSD 3-Clause. See ANTLR-BSD-3-Clause.txt.
-Compiler grammar and Unicode data notices accompany the compiler.
+The MIT license in LICENSE and NOTICE accompany the grammar derived from
+swisstopo. See UNICODE-LICENSE.txt for Unicode data.

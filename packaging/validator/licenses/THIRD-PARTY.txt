@@ -16,5 +16,5 @@ H2 MVStore 2.4.240 is distributed here under Mozilla Public License 2.0.
 See MPL-2.0.txt. The corresponding source is available at
 https://repo.maven.apache.org/maven2/com/h2database/h2-mvstore/2.4.240/h2-mvstore-2.4.240-sources.jar.
 
-The compiler JAR contains its Unicode data notice under META-INF/licenses.
-See Grammar-NOTICE.txt for the compiler grammar attribution.
+See UNICODE-LICENSE.txt for Unicode data. The MIT license in LICENSE and
+Grammar-NOTICE.txt accompany the grammar derived from swisstopo.
