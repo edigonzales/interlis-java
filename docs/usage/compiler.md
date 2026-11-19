@@ -12,8 +12,8 @@ aus. Baue den Compiler mit einem Java-25-JDK und speichere den Pfad zum
 Launcher für die weiteren Beispiele.
 
 ```sh
-java build/interlis/ExistingJvmDistribution.java sdk
-compiler=./target/jenesis-jvm/delivery/compiler/bin/interlis-compiler
+./gradlew :interlis-compiler-cli:installDist
+compiler=./interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler
 "$compiler" --help
 ```
 

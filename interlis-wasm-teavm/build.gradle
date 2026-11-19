@@ -3,11 +3,12 @@ plugins {
     id 'org.teavm' version '0.16.0'
 }
 apply from: rootProject.file('gradle/java-conventions.gradle')
-apply from: rootProject.file('gradle/backend-inputs.gradle')
+java { modularity.inferModulePath = false }
 
 def nodeExecutable = providers.gradleProperty('nodeExecutable').orElse('node')
 
 dependencies {
+    implementation project(':interlis-wasm-bridge')
     implementation teavm.libs.jso
     testImplementation platform(libs.junit.bom)
     testImplementation libs.junit.jupiter
@@ -16,6 +17,11 @@ dependencies {
 
 tasks.matching { it.name in ['generateWasmGC', 'generateJavaScript'] }.configureEach {
     outOfProcess = true
+}
+
+tasks.named('generateWasmGC') {
+    // Register allocation for the compiler exhausts the default daemon heap.
+    processMemory = 1536
 }
 
 teavm {
@@ -32,20 +38,9 @@ teavm {
     }
 }
 
-def cliRuntime = files(rootProject.jenesisRuntime('interlis-compiler-cli'))
-def cliVersionManifest = layout.buildDirectory.file('version-manifest.json')
-def cliVersion = tasks.register('writeCliVersionManifest') {
-    inputs.files(cliRuntime).withNormalizer(ClasspathNormalizer)
-    outputs.file(cliVersionManifest)
-    doLast {
-        def version = providers.exec {
-            workingDir rootProject.projectDir
-            commandLine rootProject.jenesisJava, '-cp', cliRuntime.asPath,
-                    'guru.interlis.cli.Main', 'version', '--json'
-        }.standardOutput.asText.get()
-        cliVersionManifest.get().asFile.text = version
-    }
-}
+evaluationDependsOn(':interlis-compiler-cli')
+def cliVersion = project(':interlis-compiler-cli').tasks.named('writeVersionManifest')
+def cliVersionManifest = cliVersion.map { it.outputs.files.singleFile }
 
 tasks.register('prepareBrowserHarness', Sync) {
     group = 'verification'
@@ -64,7 +59,7 @@ tasks.register('prepareBrowserHarness', Sync) {
         providers.exec {
             workingDir rootProject.projectDir
             commandLine nodeExecutable.get(), rootProject.file('tools/release/browser-manifest.cjs'), layout.buildDirectory.dir('web').get().asFile,
-                    cliVersionManifest.get().asFile
+                    cliVersionManifest.get()
         }.result.get().assertNormalExitValue()
     }
 }
@@ -108,6 +103,7 @@ tasks.register('browserSmoke', Exec) {
     dependsOn 'prepareBrowserHarness'
     workingDir = projectDir
     environment 'INTERLIS_BROWSER_CHECK', '0'
+    doFirst { environment 'INTERLIS_CLI_VERSION_MANIFEST', cliVersionManifest.get().absolutePath }
     commandLine nodeExecutable.get(), '--test', 'test/browser-smoke.test.cjs'
 }
 
@@ -117,6 +113,7 @@ tasks.register('browserCheck', Exec) {
     dependsOn 'prepareBrowserHarness'
     workingDir = projectDir
     environment 'INTERLIS_BROWSER_CHECK', '1'
+    doFirst { environment 'INTERLIS_CLI_VERSION_MANIFEST', cliVersionManifest.get().absolutePath }
     commandLine nodeExecutable.get(), '--test', 'test/browser-smoke.test.cjs'
 }
 
@@ -139,8 +136,8 @@ sourceSets {
     }
 }
 dependencies {
-    validationProbeImplementation files(rootProject.jenesisRuntime('interlis-validation'),
-            rootProject.jenesisRuntime('interlis-transfer'), rootProject.bridgeRuntime)
+    validationProbeImplementation project(':interlis-validation')
+    validationProbeImplementation project(':interlis-compiler')
 }
 def validationWasm = tasks.register('buildValidationProbeWasm', org.teavm.gradle.tasks.GenerateWasmGCTask) {
     def compiler = tasks.named('generateWasmGC', org.teavm.gradle.tasks.GenerateWasmGCTask)
@@ -151,6 +148,7 @@ def validationWasm = tasks.register('buildValidationProbeWasm', org.teavm.gradle
     outputDir.set(layout.buildDirectory.dir('validation-probe').map { it.asFile })
     targetFileName.set('local-validation.wasm')
     outOfProcess.set(true)
+    processMemory.set(compiler.flatMap { it.processMemory })
 }
 
 tasks.register('validationBrowserSmoke', Exec) {

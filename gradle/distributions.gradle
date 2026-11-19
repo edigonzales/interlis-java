@@ -1,0 +1,241 @@
+evaluationDependsOn(':interlis-compiler-cli')
+evaluationDependsOn(':interlis-lsp')
+
+def compiler = project(':interlis-compiler-cli')
+def compilerInstall = compiler.tasks.named('installDist', Sync)
+def compilerVersion = compiler.tasks.named('writeVersionManifest')
+def lsp = project(':interlis-lsp')
+def lspInstall = lsp.tasks.named('installDist', Sync)
+
+tasks.register('compilerZip', Zip) {
+    archiveBaseName = 'interlis-compiler-bindist'
+    destinationDirectory = layout.buildDirectory.dir('distributions/compiler')
+    into('cli') { from compilerInstall }
+    filesMatching('**/bin/interlis-compiler') { permissions { unix('rwxr-xr-x') } }
+    from 'LICENSE'
+    from 'packaging/compiler'
+}
+
+tasks.register('sdkZip', Zip) {
+    archiveFileName = 'sdk.zip'
+    destinationDirectory = layout.buildDirectory.dir('distributions/sdk')
+    into('cli') { from compilerInstall }
+    filesMatching('**/bin/interlis-compiler') { permissions { unix('rwxr-xr-x') } }
+    into('examples/sdk') { from 'examples/sdk' }
+    into('version') { from compilerVersion }
+}
+
+def editorSources = [
+    'types/editor-protocol.ts': 'interlis-lsp/src/main/typescript/editor-protocol.ts',
+    'types/diagram-document.ts': 'interlis-projection/src/main/typescript/diagram-document.ts',
+    'schemas/diagram-document-1.0.schema.json':
+        'interlis-projection/src/main/resources/guru/interlis/projection/diagram-document-1.0.schema.json',
+    'schemas/diagram-options-1.0.schema.json':
+        'interlis-wasm-bridge/src/main/resources/guru/interlis/bridge/diagram-options-1.0.schema.json',
+    'licenses/interlis-java.txt': 'LICENSE'
+]
+def git = { String... args ->
+    providers.exec { commandLine(['git'] + args.toList()) }.standardOutput.asText.map { it.trim() }
+}
+def commit = git('rev-parse', 'HEAD')
+def tree = git('rev-parse', 'HEAD^{tree}')
+def state = git('status', '--porcelain')
+def sha256 = { byte[] bytes ->
+    java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance('SHA-256').digest(bytes))
+}
+
+tasks.register('editorBundle', Sync) {
+    description = 'Stages the modular LSP and editor contracts for the VS Code extension.'
+    inputs.property 'coreCommit', commit
+    inputs.property 'coreTree', tree
+    inputs.property 'dirty', state.map { !it.isEmpty() }
+    inputs.property 'serverVersion', project.version
+    into layout.buildDirectory.dir('editor-bundle')
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+    into('server') {
+        from(lspInstall) { include 'lib/*.jar' }
+    }
+    editorSources.each { destination, source ->
+        String folder = destination.substring(0, destination.lastIndexOf('/'))
+        String name = destination.substring(destination.lastIndexOf('/') + 1)
+        into(folder) {
+            from(source) {
+                rename { name }
+                if (name == 'editor-protocol.ts') {
+                    filter { line -> line.replace("'../../../../interlis-projection/src/main/typescript/diagram-document'",
+                            "'./diagram-document'") }
+                }
+            }
+        }
+    }
+    doLast {
+        def bundle = destinationDir
+        def modules = [:]
+        def moduleNames = [] as Set
+        def paths = editorSources.keySet() + fileTree(bundle).matching {
+            include 'server/lib/*.jar'
+        }.files.collect { bundle.toPath().relativize(it.toPath()).join('/') }
+        def inventory = paths.sort().collect { relative ->
+            def file = new File(bundle, relative)
+            def hash = sha256(file.bytes)
+            if (relative.startsWith('server/lib/')) {
+                def found = java.lang.module.ModuleFinder.of(file.toPath()).findAll()
+                if (found.size() != 1) throw new GradleException("Expected one module in ${file.name}")
+                def descriptor = found.iterator().next().descriptor()
+                if (!moduleNames.add(descriptor.name()) || (file.name.startsWith('interlis-') && descriptor.isAutomatic())) {
+                    throw new GradleException("Invalid editor runtime module: ${descriptor.name()}")
+                }
+                modules[relative.substring(7)] = [name: descriptor.name(), explicit: !descriptor.isAutomatic(), sha256: hash]
+            }
+            [path: relative, sha256: hash, bytes: file.length()]
+        }
+        if (!moduleNames.contains('guru.interlis.lsp')) {
+            throw new GradleException('Editor bundle requires the LSP module')
+        }
+        def sourceHashes = editorSources.values().sort().collectEntries { [(it): sha256(file(it).bytes)] }
+        def manifest = [schemaVersion: 4, coreCommit: commit.get(), coreTree: tree.get(),
+                        dirty: !state.get().isEmpty(), editorProtocolVersion: 1, diagramDocumentVersion: '1.0',
+                        serverVersion: project.version, launch: [kind: 'module', moduleName: 'guru.interlis.lsp',
+                        mainClass: 'guru.interlis.lsp.Main'], editorSourceDigest:
+                        sha256(groovy.json.JsonOutput.toJson(sourceHashes).getBytes('UTF-8')),
+                        files: inventory, moduleInventory: modules]
+        new File(bundle, 'manifest.json').setText(groovy.json.JsonOutput.toJson(manifest) + '\n', 'UTF-8')
+    }
+}
+
+evaluationDependsOn(':interlis-validator-cli')
+def validator = project(':interlis-validator-cli')
+def validatorZip = validator.tasks.named('distZip', Zip)
+def compilerZip = tasks.named('compilerZip', Zip)
+def sdkZip = tasks.named('sdkZip', Zip)
+
+sourceSets { packageTest }
+configurations {
+    sdkExampleRuntime {
+        canBeConsumed = false
+        attributes { attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME)) }
+    }
+}
+dependencies {
+    sdkExampleRuntime project(':interlis-projection')
+    sdkExampleRuntime project(':interlis-xtf')
+    sdkExampleRuntime project(':interlis-validation')
+    packageTestImplementation platform(libs.junit.bom)
+    packageTestImplementation libs.junit.jupiter
+    packageTestImplementation 'com.google.code.gson:gson:2.14.0'
+    packageTestRuntimeOnly libs.junit.platform.launcher
+}
+tasks.named('compilePackageTestJava') { options.release = 25 }
+tasks.register('packageTest', Test) {
+    group = 'verification'
+    description = 'Runs the installed compiler, SDK, validator and LSP process checks.'
+    useJUnitPlatform()
+    testClassesDirs = sourceSets.packageTest.output.classesDirs
+    classpath = sourceSets.packageTest.runtimeClasspath
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+    inputs.files compilerZip, sdkZip, validatorZip, compilerInstall, lspInstall, configurations.sdkExampleRuntime,
+            file('tools/verification/lsp-lifecycle.cjs')
+    inputs.dir file('testdata/models')
+    inputs.dir file('examples/sdk')
+    systemProperty 'repo.root', projectDir.absolutePath
+    systemProperty 'product.version', project.version
+    systemProperty 'node.executable', providers.gradleProperty('nodeExecutable')
+            .orElse(providers.environmentVariable('INTERLIS_NODE')).orElse('node').get()
+    doFirst {
+        systemProperty 'compiler.zip', compilerZip.get().archiveFile.get().asFile.absolutePath
+        systemProperty 'sdk.zip', sdkZip.get().archiveFile.get().asFile.absolutePath
+        systemProperty 'validator.zip', validatorZip.get().archiveFile.get().asFile.absolutePath
+        systemProperty 'compiler.install', compilerInstall.get().destinationDir.absolutePath
+        systemProperty 'sdk.example.modulepath', configurations.sdkExampleRuntime.asPath
+        systemProperty 'lsp.install', lspInstall.get().destinationDir.absolutePath
+    }
+}
+
+def checksum = tasks.register('compilerZipChecksum') {
+    def archive = compilerZip.flatMap { it.archiveFile }
+    def sums = layout.buildDirectory.file('distributions/compiler/SHA256SUMS')
+    inputs.file archive
+    outputs.file sums
+    doLast {
+        def zip = archive.get().asFile
+        sums.get().asFile.setText(sha256(zip.bytes) + '  ' + zip.name + '\n', 'US-ASCII')
+    }
+}
+
+def checkedZip = layout.projectDirectory.file("publication/interlis-compiler-bindist-${version}.zip")
+publishing {
+    publications {
+        compilerSnapshot(MavenPublication) {
+            artifactId = 'interlis-compiler-bindist'
+            artifact checkedZip.asFile
+            pom.packaging = 'zip'
+        }
+    }
+    repositories {
+        maven {
+            name = 'compilerSnapshots'
+            url = uri('https://jars.interlis.guru/snapshots/')
+            credentials {
+                username = providers.environmentVariable('MAVEN_USERNAME').orNull
+                password = providers.environmentVariable('MAVEN_PASSWORD').orNull
+            }
+        }
+    }
+}
+tasks.named('publishCompilerSnapshotPublicationToCompilerSnapshotsRepository') {
+    doFirst {
+        def zip = checkedZip.asFile
+        def sums = new File(zip.parentFile, 'SHA256SUMS')
+        if (providers.environmentVariable('GITHUB_EVENT_NAME').orNull != 'push' ||
+                providers.environmentVariable('GITHUB_REF').orNull != 'refs/heads/main' ||
+                !project.version.endsWith('-SNAPSHOT')) {
+            throw new GradleException('Snapshot publication requires the main push workflow')
+        }
+        if (sums.getText('US-ASCII').trim() != sha256(zip.bytes) + '  ' + zip.name) {
+            throw new GradleException('Compiler snapshot differs from the verified workflow ZIP')
+        }
+    }
+}
+
+tasks.named('packageTest') {
+    useJUnitPlatform { excludeTags 'gui-image', 'gui-shell', 'gui-app' }
+}
+evaluationDependsOn(':interlis-compiler-gui')
+def gui = project(':interlis-compiler-gui')
+def guiRuntime = gui.tasks.named('guiRuntime')
+def guiApp = gui.tasks.named('guiApp')
+def guiInstall = gui.tasks.named('installDist', Sync)
+def windowProbe = tasks.register('compileMacGuiWindowProbe', Exec) {
+    def source = file('src/packageTest/native/quit-macos-gui.swift')
+    def executable = layout.buildDirectory.file('gui-probes/quit-macos-gui')
+    inputs.file source
+    outputs.file executable
+    timeout = java.time.Duration.ofMinutes(5)
+    doFirst {
+        executable.get().asFile.parentFile.mkdirs()
+        commandLine '/usr/bin/swiftc', source, '-o', executable.get().asFile
+    }
+}
+['guiImageTest': 'gui-image', 'guiShellTest': 'gui-shell', 'guiAppTest': 'gui-app'].each { name, tag ->
+    tasks.register(name, Test) {
+        group = 'verification'
+        useJUnitPlatform { includeTags tag }
+        testClassesDirs = sourceSets.packageTest.output.classesDirs
+        classpath = sourceSets.packageTest.runtimeClasspath
+        javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+        inputs.files guiRuntime, guiInstall
+        if (tag != 'gui-image') dependsOn gui.tasks.named('testClasses')
+        if (tag == 'gui-app') inputs.files guiApp, windowProbe
+        if (tag != 'gui-image') outputs.upToDateWhen { false }
+        systemProperty 'repo.root', projectDir.absolutePath
+        doFirst {
+            systemProperty 'gui.runtime', guiRuntime.get().outputs.files.singleFile.absolutePath
+            systemProperty 'gui.libs', new File(guiInstall.get().destinationDir, 'lib').absolutePath
+            systemProperty 'gui.test.classes', gui.sourceSets.test.output.classesDirs.asPath
+            if (tag == 'gui-app') {
+                systemProperty 'gui.app', guiApp.get().outputs.files.singleFile.absolutePath
+                systemProperty 'gui.window.probe', windowProbe.get().outputs.files.singleFile.absolutePath
+            }
+        }
+    }
+}

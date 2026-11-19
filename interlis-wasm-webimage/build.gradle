@@ -1,8 +1,9 @@
 plugins { id 'java-library' }
 apply from: rootProject.file('gradle/java-conventions.gradle')
-apply from: rootProject.file('gradle/backend-inputs.gradle')
+java { modularity.inferModulePath = false }
 
 dependencies {
+    implementation project(':interlis-wasm-bridge')
     testImplementation platform(libs.junit.bom)
     testImplementation libs.junit.jupiter
     testRuntimeOnly libs.junit.platform.launcher
@@ -20,6 +21,9 @@ tasks.register('compileWebImageProbe', JavaCompile) {
     group = 'verification'
     description = 'Compiles the Web Image bootstrap against the external GraalVM jmods.'
     source = fileTree('src/webImage/java')
+    javaCompiler = javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(25) }
+    inputs.property 'graalVmHome', graalHome
+    inputs.files graalHome.map { it ? file("${it}/jmods/org.graalvm.webimage.api.jmod") : [] }
     classpath = configurations.runtimeClasspath
     destinationDirectory = layout.buildDirectory.dir('classes/webImage')
     options.release = 25

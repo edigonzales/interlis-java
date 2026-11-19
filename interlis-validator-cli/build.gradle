@@ -1,0 +1,44 @@
+plugins {
+    id 'application'
+}
+
+application {
+    mainModule = 'guru.interlis.validator.cli'
+    mainClass = 'guru.interlis.validator.cli.Main'
+}
+
+dependencies {
+    implementation project(':interlis-compiler')
+    implementation project(':interlis-workspace')
+    implementation project(':interlis-repository')
+    implementation project(':interlis-transfer')
+    implementation project(':interlis-xtf')
+    implementation project(':interlis-validation')
+    implementation project(':interlis-validation-jts')
+    implementation project(':interlis-validation-mvstore')
+    implementation 'com.google.code.gson:gson:2.14.0'
+}
+
+application { applicationName = 'interlis-validator' }
+
+distributions.main {
+    distributionBaseName = 'interlis-validator'
+    contents {
+        from rootProject.file('LICENSE')
+        from rootProject.file('packaging/validator')
+    }
+}
+
+tasks.named('distZip') {
+    eachFile { path = path.replaceFirst('^[^/]+/', 'interlis-validator/') }
+    includeEmptyDirs = false
+}
+
+// Preserve the Windows argument and path handling of the installed launcher.
+tasks.named('startScripts') {
+    def template = rootProject.file('packaging/windows/interlis-validator.bat')
+    inputs.file template
+    windowsStartScriptGenerator = { details, writer ->
+        writer.write(template.getText('UTF-8'))
+    } as org.gradle.jvm.application.scripts.ScriptGenerator
+}

@@ -1,0 +1,112 @@
+plugins {
+    id 'application'
+}
+
+application {
+    mainModule = 'guru.interlis.compiler.gui'
+    mainClass = 'guru.interlis.gui.GuiMain'
+}
+
+dependencies {
+    implementation project(':interlis-model')
+    implementation project(':interlis-compiler')
+    implementation project(':interlis-workspace')
+    implementation project(':interlis-repository')
+    implementation 'com.formdev:flatlaf:3.7'
+}
+
+javaModuleTesting.whitebox(testing.suites.test) {
+    requires.add('jdk.httpserver')
+}
+
+apply plugin: 'org.gradlex.extra-java-module-info'
+extraJavaModuleInfo {
+    failOnMissingModuleInfo = false
+    // jlink requires a real descriptor for the otherwise automatic ANTLR module.
+    module('org.antlr:antlr4-runtime', 'org.antlr.antlr4.runtime') {
+        closeModule()
+        exportAllPackages()
+    }
+}
+application {
+    applicationDefaultJvmArgs = ['--enable-native-access=com.formdev.flatlaf']
+}
+
+def guiModule = application.mainModule
+def guiEntry = guiModule.map { it + '/guru.interlis.gui.GuiMain' }
+def jdk = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+def executable = { String name ->
+    def suffix = System.getProperty('os.name').startsWith('Windows') ? '.exe' : ''
+    jdk.get().metadata.installationPath.file('bin/' + name + suffix).asFile
+}
+def install = tasks.named('installDist', Sync)
+def runtime = layout.buildDirectory.dir('gui/runtime')
+
+def image = tasks.register('guiRuntime', Exec) {
+    group = 'distribution'
+    inputs.files install
+    inputs.property 'javaRuntime', jdk.map { it.metadata.javaRuntimeVersion }
+    outputs.dir runtime
+    doFirst {
+        delete runtime
+        runtime.get().asFile.parentFile.mkdirs()
+        def path = files(jdk.get().metadata.installationPath.dir('jmods'), new File(install.get().destinationDir, 'lib'))
+        commandLine executable('jlink'), '--module-path', path.asPath,
+                '--add-modules', guiModule.get() + ',jdk.crypto.ec', '--output', runtime.get().asFile
+    }
+}
+
+def notices = tasks.register('guiLicenses', Sync) {
+    def libs = install.map { fileTree(new File(it.destinationDir, 'lib')) }
+    from(rootProject.file('LICENSE')) { rename { 'INTERLIS.txt' } }
+    from(rootProject.file('interlis-compiler/src/main/antlr/LICENSE')) { rename { 'ANTLR.txt' } }
+    from(rootProject.file('interlis-compiler/src/main/antlr/NOTICE')) { rename { 'ANTLR-NOTICE.txt' } }
+    from(libs.map { jars ->
+        zipTree(jars.matching { include 'flatlaf-*.jar' }.singleFile)
+    }) {
+        include 'META-INF/LICENSE'
+        eachFile { path = 'FlatLaf.txt' }
+        includeEmptyDirs = false
+    }
+    into layout.buildDirectory.dir('gui/Licenses')
+}
+
+tasks.register('guiApp', Exec) {
+    group = 'distribution'
+    def output = layout.buildDirectory.dir('gui/macos-arm64')
+    inputs.files image, notices
+    outputs.dir output
+    doFirst {
+        if (!System.getProperty('os.name').startsWith('Mac') || System.getProperty('os.arch') != 'aarch64') {
+            throw new GradleException('The GUI app package requires macOS on ARM64')
+        }
+        delete output
+        commandLine executable('jpackage'), '--type', 'app-image', '--name', 'INTERLIS Compiler',
+                '--mac-package-name', 'INTERLIS', '--mac-package-identifier', guiModule.get(), '--app-version', '1',
+                '--module', guiEntry.get(), '--runtime-image', runtime.get().asFile, '--dest', output.get().asFile,
+                '--java-options', '--enable-native-access=com.formdev.flatlaf', '--app-content', notices.get().destinationDir
+    }
+}
+
+tasks.register('guiProbe', Exec) {
+    group = 'verification'
+    dependsOn install, tasks.named('testClasses')
+    timeout = java.time.Duration.ofSeconds(90)
+    doFirst {
+        def probes = [compile: 'GuiCompileProbe', diagnostics: 'GuiDiagnosticsProbe',
+                      dependencies: 'GuiDependenciesProbe', repositories: 'GuiRepositoriesProbe',
+                      lifecycle: 'GuiLifecycleProbe']
+        def profile = providers.gradleProperty('guiProbe').getOrElse('compile')
+        def probe = probes[profile]
+        if (probe == null) throw new GradleException("Unknown GUI probe ${profile}; choose ${probes.keySet()}")
+        def output = layout.buildDirectory.dir("gui/probes/${profile}").get().asFile
+        output.mkdirs()
+        def run = java.nio.file.Files.createTempDirectory(output.toPath(), 'run-').toFile()
+        workingDir run
+        commandLine executable('java'), '--enable-native-access=com.formdev.flatlaf',
+                '-Djava.awt.headless=false', "-Dinterlis.gui.settingsDir=${run}",
+                '--module-path', new File(install.get().destinationDir, 'lib'),
+                '--patch-module', "${guiModule.get()}=${sourceSets.test.output.classesDirs.asPath}",
+                '--module', "${guiModule.get()}/guru.interlis.gui.${probe}"
+    }
+}

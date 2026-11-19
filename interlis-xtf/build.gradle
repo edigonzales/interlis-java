@@ -1,0 +1,15 @@
+dependencies {
+    api project(':interlis-transfer')
+    implementation project(':interlis-model')
+    testImplementation project(':interlis-compiler')
+}
+
+tasks.named('test') {
+    def fixtures = layout.buildDirectory.dir('test-fixtures/xtf24')
+    systemProperty 'xtf24.fixture.output', fixtures.get().asFile.absolutePath
+    outputs.dir fixtures
+}
+
+javaModuleTesting.whitebox(testing.suites.test) {
+    requires.add('guru.interlis.compiler')
+}

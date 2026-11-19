@@ -15,6 +15,7 @@ tasks.withType(Test).configureEach {
     useJUnitPlatform()
     systemProperty 'file.encoding', 'UTF-8'
     systemProperty 'testdata.dir', rootProject.file('testdata').absolutePath
+    systemProperty 'repo.root', rootProject.projectDir.absolutePath
 }
 
 tasks.withType(Javadoc).configureEach {
@@ -26,4 +27,10 @@ tasks.withType(Javadoc).configureEach {
 tasks.withType(AbstractArchiveTask).configureEach {
     preserveFileTimestamps = false
     reproducibleFileOrder = true
+}
+
+tasks.named('compileJava') {
+    if (file('src/main/java/module-info.java').isFile()) {
+        options.javaModuleVersion = providers.provider { project.version.toString() }
+    }
 }

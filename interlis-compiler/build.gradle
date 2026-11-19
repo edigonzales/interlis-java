@@ -1,0 +1,25 @@
+plugins {
+    id 'antlr'
+}
+
+dependencies {
+    api project(':interlis-model')
+    implementation 'org.antlr:antlr4-runtime:4.13.2'
+    antlr 'org.antlr:antlr4:4.13.2'
+}
+
+// The generator and its dependencies belong to the ANTLR tool configuration only.
+configurations.api.setExtendsFrom(configurations.api.extendsFrom.findAll { it.name != 'antlr' })
+
+tasks.named('generateGrammarSource') {
+    arguments += ['-package', 'guru.interlis.compiler.internal.antlr', '-visitor', '-no-listener']
+}
+
+javaModuleTesting.whitebox(testing.suites.test) {
+    requires.add('org.junit.jupiter.params')
+}
+
+tasks.named('test') {
+    // The deep domain and cycle regressions retain several large analysis graphs.
+    maxHeapSize = '1536m'
+}

@@ -14,7 +14,9 @@ const browsers = process.env.INTERLIS_BROWSER_CHECK === '1' ? {chromium, firefox
 
 test('browser manifest describes the packaged compiler', async () => {
   const manifest = JSON.parse(await readFile(path.join(web, 'build-manifest.json'), 'utf8'));
-  const versions = JSON.parse(await readFile(path.join(web, '../version-manifest.json'), 'utf8'));
+  const cliManifest = process.env.INTERLIS_CLI_VERSION_MANIFEST
+      ?? path.resolve(__dirname, '../../interlis-compiler-cli/build/version/version-manifest.json');
+  const versions = JSON.parse(await readFile(cliManifest, 'utf8'));
   assert.equal(manifest.schemaVersion, '3.0');
   assert.equal(Object.hasOwn(manifest, 'toolchain'), false);
   assert.deepEqual(manifest.versions, versions);

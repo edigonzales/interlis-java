@@ -48,35 +48,24 @@ Die Oberfläche dient der Modellprüfung und Inspektion. Für Quellbearbeitung u
 
 ## Lokal bauen und prüfen
 
-Aus dem Repository mit einem Java-25-JDK ausführen. Der Builder ist
-Jenesis 0.18.1. Der Headful-Pakettest benötigt einen angemeldeten
-grafischen Desktop und die Swift-Kommandozeilenwerkzeuge von Apple
-für die Prüfung von Fenster und Quit.
+Mit einem Java-25-JDK kannst du die GUI starten, das Laufzeitimage erzeugen
+und auf macOS ARM64 die bestehende native App paketieren.
 
 ```sh
-java build/jenesis/Make.java +interlis-compiler-gui
-java build/interlis/GuiRuntime.java run
-java build/interlis/GuiRuntime.java runtime
-java build/interlis/GuiRuntime.java package
-java build/interlis/GuiRuntime.java check packaged
+./gradlew :interlis-compiler-gui:run
+./gradlew :interlis-compiler-gui:guiRuntime
+./gradlew :interlis-compiler-gui:guiApp
+./gradlew guiAppTest
 ```
 
-`GuiRuntime.java package` gibt den genauen Pfad zur App unter
-`target/jenesis-jvm/gui/<run-id>/macos-arm64/` aus. Dieser Befehl startet
-kein Fenster. Er verpackt das für die GUI erzeugte jlink-Image und
-schreibt das JAR- und Modulinventar neben die App. Die sichtbare
-macOS-Bundleversion ist `1`, da jpackage keine führende Null zulässt.
-Das Java-Projekt bleibt bei `0.2.0-SNAPSHOT`.
+Die App liegt unter `interlis-compiler-gui/build/gui/macos-arm64/`. Das
+jlink-Image enthält die tatsächliche GUI-Modulclosure. Gradlex ergänzt dafür
+den expliziten ANTLR-Deskriptor. Die App enthält unter `Contents/Licenses`
+die INTERLIS-, ANTLR- und FlatLaf-Lizenztexte. Die JDK-Lizenzen liegen in
+`Contents/runtime/Contents/Home/legal`. Die sichtbare macOS-Bundleversion ist
+`1`, da jpackage keine führende Null zulässt.
 
-`closure.json` enthält die verwendeten JARs und SHA-256-Digests.
-`modules.stdout` und `mac-modules.stdout` halten den tatsächlichen
-Modulbestand fest. Die Anwendungsclosure enthält die GUI, Modell,
-Compiler, Workspace und Repository sowie FlatLaf 3.7 und ANTLR 4.13.2.
-Die Pins stehen in der [Modul-POM](../../interlis-compiler-gui/pom.xml).
-Jenesis ergänzt für das gelinkte Image den expliziten ANTLR-Descriptor.
-Die App enthält unter `Contents/Licenses` die INTERLIS-, ANTLR- und
-FlatLaf-Lizenztexte. Die JDK-Lizenzen liegen in der Runtime unter
-`Contents/runtime/Contents/Home/legal`.
+Die Fensterprüfung benötigt einen angemeldeten Desktop und Swift.
 
 Das Paket verwendet eine lokale Ad-hoc-Signatur. Der Pakettest prüft auf
 macOS ARM64 Start, Java-Runtime, native FlatLaf-Bibliothek, die drei Tabs

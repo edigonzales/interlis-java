@@ -15,15 +15,14 @@ Transferweite Prüfungen und Datenbankabbildung sind
 Mit einem Java-25-JDK im Repository ausführen.
 
 ```sh
-java build/interlis/ExistingJvmDistribution.java sdk
-target/jenesis-jvm/delivery/compiler/bin/interlis-compiler check \
+./gradlew :interlis-compiler-cli:installDist
+interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler check \
   testdata/models/base24.ili testdata/models/survey24.ili
 ```
 
-Unter Windows heisst der Launcher `interlis-compiler.bat`. Der JVM-Build
-verwendet Jenesis 0.18.1. `java build/jenesis/Make.java` baut und prüft
-alle JVM-Module. Node.js 24.22.0 und der Gradle-Wrapper werden für
-die portablen Backends benötigt.
+Unter Windows verwende `gradlew.bat` und `interlis-compiler.bat`.
+`./gradlew check` baut und prüft die JVM-Module. Die portablen
+Backend-Prüfungen verwenden zusätzlich Node.js 24.22.0.
 
 - [Compiler-Anleitung](docs/usage/compiler.md), [CLI-Referenz](docs/usage/cli.md),
   [Java SDK](docs/usage/sdk.md), [Transfer](docs/usage/transfer.md), [LSP](docs/usage/lsp.md), [Desktop](docs/usage/desktop.md) und [Browser](docs/usage/browser.md)

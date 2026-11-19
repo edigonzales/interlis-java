@@ -2,13 +2,13 @@
 
 Die [Compiler-Anleitung](compiler.md) führt anhand von Beispielen in die Bedienung ein.
 
-`java build/interlis/ExistingJvmDistribution.java sdk` erzeugt den modularen
-Launcher unter `target/jenesis-jvm/delivery/compiler/bin`. Im entpackten
+`./gradlew :interlis-compiler-cli:installDist` erzeugt den modularen
+Launcher unter `interlis-compiler-cli/build/install/interlis-compiler/bin`. Im entpackten
 SDK liegt er unter `cli/bin`. Windows verwendet `interlis-compiler.bat`.
 `help` dokumentiert die verfügbaren Befehle und ihre Optionen.
 
 ```sh
-target/jenesis-jvm/delivery/compiler/bin/interlis-compiler check \
+interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler check \
   --root Survey --diagnostic-language de \
   testdata/models/base24.ili testdata/models/survey24.ili
 ```

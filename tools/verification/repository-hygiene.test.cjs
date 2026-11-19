@@ -23,7 +23,6 @@ test('current paths, encoded links and anchors are accepted',t=>{
     'docs/usage/intro.md':'[Relative](../Contract%20A.md#aktuell)\n[Heading](../Contract%20A.md#ökologie)\n\n```sh\n[Example](not-a-link.md)\n```\n',
     'docs/Contract A.md':'<a id="aktuell"></a>\n# Ökologie\n\nT.101-G2 is a character set.',
     'compiler/src/test/java/example/LanguageProfileContractTest.java':'',
-    'compiler/build.jenesis/test-inputs.properties':'input.0=docs/Contract A.md\n'
   });
   assert.equal(result.links,2);
   assert.deepEqual(result.errors,[]);
@@ -36,13 +35,11 @@ test('broken link, invalid encoding and missing explicit anchor fail',t=>{
   assert.match(result.errors[2],/invalid encoded link/);
 });
 
-test('retired docs, phase test names and missing declared inputs fail',t=>{
+test('retired docs and phase test names fail',t=>{
   const result=fixture(t,{
     'docs/archive/notes.md':'',
     'compiler/src/test/java/example/G2AClosureTest.java':'',
-    'compiler/build.jenesis/test-inputs.properties':'input.0=absent.ili\n'
   });
   assert.match(result.errors[0],/retired documentation/);
   assert.match(result.errors[1],/delivery phase/);
-  assert.match(result.errors[2],/missing or foreign input/);
 });

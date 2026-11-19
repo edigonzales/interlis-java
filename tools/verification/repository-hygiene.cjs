@@ -57,9 +57,6 @@ function verify(root, files = tracked(root)) {
       throw error;
     }
   };
-  const requireInput = (owner,relative) => {
-    if(path.isAbsolute(relative)||!existsInside(path.resolve(root,relative))) errors.push(owner+': missing or foreign input '+relative);
-  };
   for(const file of new Set(files)) {
     const [directory,component] = file.split('/');
     if(directory==='docs'&&retiredDocs.has(component)) errors.push(file+': retired documentation path');
@@ -69,10 +66,7 @@ function verify(root, files = tracked(root)) {
       continue;
     }
     if(file.endsWith('.md')) documents.set(file,markdownLines(fs.readFileSync(path.join(root,file),'utf8')));
-    if(path.basename(file)==='test-inputs.properties') {
-      const text=fs.readFileSync(path.join(root,file),'utf8');
-      for(const row of text.matchAll(/^input\.\d+=(.+)$/gm))requireInput(file,row[1].trim());
-    }
+
   }
 
   let links=0;
