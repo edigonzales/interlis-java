@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-/** Explicit protocol 1.0 request/response codec. */
+/** Request and response codec for the compiler bridge. */
 public final class BridgeCodec {
     public static final String PROTOCOL = VersionManifest.PROTOCOL_NAME;
     public static final String PROTOCOL_VERSION = VersionManifest.PROTOCOL_VERSION;

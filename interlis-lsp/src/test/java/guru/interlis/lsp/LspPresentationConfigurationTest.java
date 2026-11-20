@@ -89,7 +89,7 @@ class LspPresentationConfigurationTest {
             server.getWorkspaceService().didChangeConfiguration(new DidChangeConfigurationParams(JsonParser.parseString("""
                 {"interlis":{"warningPolicy":"REJECT_WARNINGS","allowedLanguages":["2.4"],
                   "resolutionPolicy":{"modelSelections":[{"modelName":"F","modelVersion":"1","sourceHint":"memory:/presentation.ili"}]},
-                  "cacheLimits":{"maxSyntaxEntries":0,"maxAnalysisEntries":0,"maxQueryEntries":0,"maxRetainedSourceUtf16Units":0}}}
+                  "cacheLimits":{"maxSyntaxEntries":0,"maxRetainedSourceUtf16Units":0}}}
                 """)));
             var config=server.workspaceForTest().configuration();
             assertEquals(WarningPolicy.REJECT_WARNINGS,config.compilerOptions().warningPolicy());

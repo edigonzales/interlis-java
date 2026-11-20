@@ -7,8 +7,8 @@ const hash=value=>createHash('sha256').update(value).digest('hex');
  const compiler=path.join(web,'interlis-compiler.wasm'),runtime=path.join(web,'interlis-compiler.wasm-runtime.js');
  const artifacts=Object.fromEntries([compiler,runtime].map(file=>[path.relative(root,file).split(path.sep).join('/'),hash(fs.readFileSync(file))]));
  require(runtime);const api=(await TeaVM.wasmGC.load(compiler)).exports;
- const capabilities=JSON.parse(api.handle(JSON.stringify({protocol:'interlis.compiler',protocolVersion:'1.0',requestId:'build-manifest',operation:'capabilities',params:{}})));
- if(capabilities.status!=='ok'||capabilities.protocolVersion!=='1.0')throw Error('cannot obtain actual compiled capabilities');
+ const capabilities=JSON.parse(api.handle(JSON.stringify({protocol:'interlis.compiler',protocolVersion:'2.0',requestId:'build-manifest',operation:'capabilities',params:{}})));
+ if(capabilities.status!=='ok'||capabilities.protocolVersion!=='2.0')throw Error('cannot obtain actual compiled capabilities');
  const walk=directory=>fs.readdirSync(directory,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(directory,e.name)):[path.join(directory,e.name)]);
  const resources={};for(const file of walk(web).sort()){const name=path.relative(web,file).split(path.sep).join('/');if(name==='build-manifest.json')continue;const bytes=fs.readFileSync(file);resources[name]={sha256:hash(bytes),bytes:bytes.length};}
  const versionPath=process.argv[3];

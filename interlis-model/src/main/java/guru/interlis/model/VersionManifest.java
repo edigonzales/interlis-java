@@ -31,7 +31,7 @@ public record VersionManifest(String toolVersion, String apiVersion,
     /** Current bridge protocol name. */
     public static final String PROTOCOL_NAME = "interlis.compiler";
     /** Current bridge protocol version. */
-    public static final String PROTOCOL_VERSION = "1.0";
+    public static final String PROTOCOL_VERSION = "2.0";
     /** Supported language profiles. */
     public static final String LANGUAGE_PROFILES = "2.3, 2.4";
     /** Current source-formatting contract version. */

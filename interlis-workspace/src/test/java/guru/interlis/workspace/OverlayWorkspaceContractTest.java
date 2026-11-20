@@ -45,7 +45,7 @@ class OverlayWorkspaceContractTest {
             var p=out.schema().semanticGraph().symbols().stream().filter(s->s.name().value().equals("P")).findFirst().orElseThrow();
             assertEquals("second",p.header().metaAttributes().values().get("label").text());
             assertEquals("first",old.semanticGraph().symbols().stream().filter(s->s.name().value().equals("P")).findFirst().orElseThrow().header().metaAttributes().values().get("label").text());
-            var c=config(second);w.configure(new WorkspaceConfiguration(c.compilerOptions(),c.resolutionPolicy(),c.resolverCatalog(),new CacheLimits(1,1,1,10000)),w.currentRevision());
+            var c=config(second);w.configure(new WorkspaceConfiguration(c.compilerOptions(),c.resolutionPolicy(),c.resolverCatalog(),new CacheLimits(1, 10000)),w.currentRevision());
             var repeated=assertInstanceOf(CompilationOutcome.Succeeded.class,w.compile(new WorkspaceCompileRequest(w.currentRevision(),ROOTS),TOKEN));
             assertEquals(out.schema().fingerprint(),repeated.schema().fingerprint());
         }

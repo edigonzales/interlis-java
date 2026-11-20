@@ -16,7 +16,7 @@ test('Web Image compiles Unicode sources and distinguishes source errors', {time
   const call = protocol({handle: globalThis.interlisCompilerHandle});
   const capabilities = call('capabilities');
   assert.equal(capabilities.status, 'ok');
-  assert.equal(capabilities.result.protocolVersion, '1.0');
+  assert.equal(capabilities.result.protocolVersion, '2.0');
   if (process.env.INTERLIS_PRODUCT_VERSION) assert.equal(capabilities.result.toolVersion, process.env.INTERLIS_PRODUCT_VERSION);
   const sourceId = 'memory:/probe.ili';
   const text = 'INTERLIS 2.4;\n!! ä😀\nMODEL Probe AT "x" VERSION "1" = TOPIC Data = CLASS Item = label: TEXT*20; END Item; END Data; END Probe.';

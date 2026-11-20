@@ -18,8 +18,7 @@ export interface ResolutionPolicyDto {
   readonly sourcePriorities?: readonly {readonly sourceId: string; readonly priority: number}[];
 }
 export interface CacheLimitsDto {
-  readonly maxSyntaxEntries?: number; readonly maxAnalysisEntries?: number;
-  readonly maxQueryEntries?: number; readonly maxRetainedSourceUtf16Units?: string;
+  readonly maxSyntaxEntries?: number; readonly maxRetainedSourceUtf16Units?: string;
 }
 export type OverlayTargetDto = string | {readonly name: string; readonly modelVersion?: string; readonly sourceHint?: string};
 export type OverlayDto = {readonly id: string; readonly priority: number; readonly target: OverlayTargetDto; readonly range?: SourceRangeDto} & (

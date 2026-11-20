@@ -40,16 +40,11 @@ import java.util.Set;
 public final class DefaultModelResolutionService implements ModelResolutionService {
     private static long failures;
     @Override
-    public ResolutionOutcome prepare(ResolutionRequest request, SourceProvider provider,
+    public ResolutionOutcome prepare(ResolutionRequest request, SourceInventory inventory,
                                      CancellationToken cancellation) {
         Objects.requireNonNull(request, "request");
-        Objects.requireNonNull(provider, "provider");
+        Objects.requireNonNull(inventory, "inventory");
         Objects.requireNonNull(cancellation, "cancellation");
-        SourceInventory inventory = Objects.requireNonNull(provider.snapshot(), "snapshot");
-        if (!request.expectedInventoryFingerprint().equals(inventory.fingerprint().value())) {
-            throw new StaleInputException(request.expectedInventoryFingerprint(),
-                    inventory.fingerprint().value());
-        }
         try {
             cancellation.throwIfCancellationRequested();
             Work work = new Work(request.budget().maxSemanticWorkUnits(), cancellation);

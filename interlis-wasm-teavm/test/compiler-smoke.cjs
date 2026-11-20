@@ -9,7 +9,7 @@ function protocol(api) {
   return (operation, params = {}, sessionId) => {
     const requestId = 'smoke-' + ++sequence;
     const response = JSON.parse(api.handle(JSON.stringify({
-      protocol: 'interlis.compiler', protocolVersion: '1.0', requestId, operation, params, sessionId
+      protocol: 'interlis.compiler', protocolVersion: '2.0', requestId, operation, params, sessionId
     })));
     assert.equal(response.requestId, requestId);
     return response;
@@ -47,7 +47,7 @@ function registerCompilerTests(load) {
 
   test('compiles, exposes exact decimal precision and recovers from source errors', () => {
     const capabilities = ok(call('capabilities'));
-    assert.equal(capabilities.protocolVersion, '1.0');
+    assert.equal(capabilities.protocolVersion, '2.0');
     assert.deepEqual(capabilities.languages, ['2.3', '2.4']);
     if (process.env.INTERLIS_PRODUCT_VERSION) assert.equal(capabilities.toolVersion, process.env.INTERLIS_PRODUCT_VERSION);
     const sourceId = 'memory:/precision.ili';

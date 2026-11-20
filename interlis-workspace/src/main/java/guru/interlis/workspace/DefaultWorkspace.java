@@ -22,12 +22,8 @@ import guru.interlis.workspace.resolution.ResolutionOutcome;
 import guru.interlis.workspace.resolution.ResolutionRequest;
 import guru.interlis.workspace.resolution.SourceInventory;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -154,7 +150,6 @@ final class DefaultWorkspace implements Workspace {
                 revisions.putAll(stagedRevisions);
                 tombstones.keySet().removeAll(staged.keySet());
                 revision = next;
-                invalidateLastAnalysis();
             }
             configuration = newConfiguration;
             enforceCacheLimits();
@@ -186,7 +181,6 @@ final class DefaultWorkspace implements Workspace {
             revisions.remove(id);
             tombstones.put(id, existing.revision());
             revision = nextWorkspaceRevision();
-            invalidateLastAnalysis();
             return new UpdateReceipt(id, Optional.of(existing.revision()), Optional.empty(),
                     previous, revision, true, List.of(InvalidationReason.SOURCE_REMOVED));
         } finally {
@@ -218,7 +212,6 @@ final class DefaultWorkspace implements Workspace {
             enforceCacheLimits();
             if (semanticChanged) {
                 revision = nextWorkspaceRevision();
-                invalidateLastAnalysis();
                 reasons.add(InvalidationReason.CONFIGURATION_CHANGED);
             } else if (anyChanged) {
                 reasons.add(InvalidationReason.CACHE_LIMIT_CHANGED);
@@ -291,7 +284,7 @@ final class DefaultWorkspace implements Workspace {
                 capturedConfiguration.resolverCatalog(), parsed);
         ResolutionOutcome outcome = new DefaultModelResolutionService().prepare(
                 new ResolutionRequest(request.roots(), capturedConfiguration.resolutionPolicy(),
-                        budget, inventory.fingerprint().value(),capturedConfiguration.compilerOptions().overlays()), () -> inventory, token);
+                        budget, capturedConfiguration.compilerOptions().overlays()), inventory, token);
         PreparedClosure closure;
         switch (outcome) {
             case ResolutionOutcome.Prepared prepared -> closure = prepared.closure();
@@ -306,7 +299,7 @@ final class DefaultWorkspace implements Workspace {
             var original = closure.sourceSet();
             var diagnostics = new java.util.ArrayList<>(original.resolutionDiagnostics());
             diagnostics.addAll(capturedConfiguration.resolutionDiagnostics());
-            var enriched = guru.interlis.compiler.SourceSet.of(original.sources(), original.imports(),
+            var enriched = SourceSet.of(original.sources(), original.imports(),
                     diagnostics, original.fingerprint(), original.translations(), original.rootResolutions());
             closure = closure.complete() ? new ResolvedClosure(enriched, closure.trace(), closure.dependencies(), closure.rootLocations())
                     : new IncompleteClosure(enriched, closure.pendingFetches(), closure.trace(), closure.dependencies(),
@@ -317,9 +310,7 @@ final class DefaultWorkspace implements Workspace {
         // The resolver and engine consume the exact same parse. Retention is committed
         // only by acceptAnalysis, so a late capture cannot poison reuse state.
         AnalysisReuse reuse = new AnalysisReuse(Optional.ofNullable(previous), parsed);
-        String fingerprint = inputFingerprint(inventory, request, compilationRequest);
-        return new WorkspaceCapture(capturedRevision, compilationRequest, reuse, closure,
-                new InputFingerprint("SHA-256/workspace-capture-v2", fingerprint), origin);
+        return new WorkspaceCapture(capturedRevision, compilationRequest, reuse, closure, origin);
     }
 
     @Override
@@ -468,7 +459,6 @@ final class DefaultWorkspace implements Workspace {
             revisions.putAll(stagedRevisions);
             tombstones.keySet().removeAll(staged.keySet());
             revision = next;
-            invalidateLastAnalysis();
         }
         return receipt;
     }
@@ -590,11 +580,6 @@ final class DefaultWorkspace implements Workspace {
         return new UpdateRejectedException(code, message, expected, observed);
     }
 
-    /**
-     * Returns the {@code invalidateLastAnalysis} value.
-     *
-     * @return the value
-     */
     private void enforceCacheLimits() {
         CacheLimits limits = configuration.cacheLimits();
         long retained = syntaxCache.values().stream().mapToLong(s -> s.source().length()).sum();
@@ -605,23 +590,12 @@ final class DefaultWorkspace implements Workspace {
             iterator.remove();
             evictions++;
         }
-        if (lastAnalysis != null && (limits.maxAnalysisEntries() == 0
+        // Keep the last analysis only while all its syntax fits the retention limits.
+        if (lastAnalysis != null && (limits.maxSyntaxEntries() == 0
                 || lastAnalysis.syntaxSnapshots().size() > syntaxCache.size())) {
             lastAnalysis = null;
             evictions++;
         }
-    }
-
-    private void invalidateLastAnalysis() {
-        // Keep lastAnalysis for identity reuse; it is never published as current.
-    }
-
-    private String inputFingerprint(SourceInventory inventory, AnalysisRequest request,
-                                    CompilationRequest compilationRequest) {
-        StringBuilder canonical = new StringBuilder("workspace-capture-v2");
-        for (String value : List.of(inventory.fingerprint().value(), compilationRequest.options().fingerprint(),
-                compilationRequest.sources().fingerprint().value())) canonical.append(value.length()).append(':').append(value);
-        return guru.interlis.source.Hex.encode(guru.interlis.source.Sha256.digestUtf16(canonical.toString()));
     }
 
     /**

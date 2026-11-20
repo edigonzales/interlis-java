@@ -34,8 +34,9 @@ final class WorkspaceConfigurationCodec {
         }
         var cache=defaults.cacheLimits();
         if(value.members().containsKey("cacheLimits")) {
-            var c=BridgeCodec.optionalObject(value,"cacheLimits").orElseThrow();keys(c,"maxSyntaxEntries","maxAnalysisEntries","maxQueryEntries","maxRetainedSourceUtf16Units");
-            cache=new CacheLimits(integer(c,"maxSyntaxEntries",cache.maxSyntaxEntries()),integer(c,"maxAnalysisEntries",cache.maxAnalysisEntries()),integer(c,"maxQueryEntries",cache.maxQueryEntries()),number(c,"maxRetainedSourceUtf16Units",cache.maxRetainedSourceUtf16Units()));
+            var c=BridgeCodec.optionalObject(value,"cacheLimits").orElseThrow();keys(c,"maxSyntaxEntries","maxRetainedSourceUtf16Units");
+            cache=new CacheLimits(integer(c,"maxSyntaxEntries",cache.maxSyntaxEntries()),
+                    number(c,"maxRetainedSourceUtf16Units",cache.maxRetainedSourceUtf16Units()));
         }
         var entries=new LinkedHashMap<String,String>();
         if(value.members().containsKey("resolverCatalog")) {

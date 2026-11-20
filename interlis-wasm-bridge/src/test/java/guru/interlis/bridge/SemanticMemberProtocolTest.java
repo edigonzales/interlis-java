@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SemanticMemberProtocolTest {
     private static JsonValue.JsonObject call(BridgeDispatcher bridge,String operation,String session,JsonValue.JsonObject params) {
-        var request=new LinkedHashMap<String,JsonValue>();request.put("protocol",JsonValues.string("interlis.compiler"));request.put("protocolVersion",JsonValues.string("1.0"));request.put("requestId",JsonValues.string("members"));request.put("operation",JsonValues.string(operation));if(session!=null)request.put("sessionId",JsonValues.string(session));request.put("params",params);
+        var request=new LinkedHashMap<String,JsonValue>();request.put("protocol",JsonValues.string("interlis.compiler"));request.put("protocolVersion",JsonValues.string("2.0"));request.put("requestId",JsonValues.string("members"));request.put("operation",JsonValues.string(operation));if(session!=null)request.put("sessionId",JsonValues.string(session));request.put("params",params);
         return (JsonValue.JsonObject)Json.parse(bridge.handle(Json.write(new JsonValue.JsonObject(request))));
     }
     private static JsonValue.JsonObject result(JsonValue.JsonObject response) {

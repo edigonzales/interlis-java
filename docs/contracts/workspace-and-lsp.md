@@ -25,7 +25,6 @@ Workspace und Adapter besitzen Versionen und Nebenläufigkeit explizit. Signatur
 | `WorkspaceCompilation` | `guru.interlis.workspace` | Ergebnis und strikter Capture desselben Compilerlaufs. |
 | `AnalysisAcceptance` | `guru.interlis.workspace` | `ACCEPTED` oder `STALE_NO_COMMIT` für die bedingte Übernahme eines abgeschlossenen Analyselaufs. |
 | `DependencyIndex` | `guru.interlis.workspace.internal` | Vorwärts- und Rückwärtsabhängigkeiten samt negativen Lookups. |
-| `AnalysisCache` | `guru.interlis.workspace.internal` | Begrenzte Wiederverwendung vollständiger, fingerprintgeprüfter Ergebnisse. |
 | `PublicationController` | JVM-/Browser-Hostadapter | Vergleicht Ergebnisstand mit aktuellem Dokumentstand vor Veröffentlichung. |
 | `LanguageQueries` | `guru.interlis.compiler.query` | Reine IDE-Abfragen auf einem expliziten `AnalysisSnapshot`. |
 
@@ -51,7 +50,7 @@ Die folgenden Signaturen bilden den verbindlichen API-Umfang. Imports und Implem
 
 `WorkspaceConfiguration` besitzt folgenden verbindlichen öffentlichen Konstruktor und Default-Einstieg. `ResolutionPolicy` und `ResolverCatalog` stammen aus `guru.interlis.workspace.resolution` gemäss [Repositoryvertrag](repositories.md).
 
-Die Implementierung ergänzt Nullprüfungen und defensive Übernahme unveränderlicher Policy-/Katalogwerte. Cachegrenzen sind nichtnegativ; 0 deaktiviert die jeweilige Cachekategorie. `maxRetainedSourceUtf16Units` begrenzt die konservativ aufsummierte Textmenge intern gehaltener Cacheeinträge. Gemeinsam referenzierter Text darf für diese einfache Zählung mehrfach gezählt werden. Ein zu grosser einzelner Eintrag wird nicht gecacht; seine fachliche Analyse kann trotzdem erfolgreich sein.
+Die Implementierung ergänzt Nullprüfungen und defensive Übernahme unveränderlicher Policy-/Katalogwerte. Die nichtnegativen Felder `maxSyntaxEntries` und `maxRetainedSourceUtf16Units` von `CacheLimits` begrenzen die Anzahl und aufsummierte Textlänge der behaltenen Syntaxsnapshots. Bei `maxSyntaxEntries=0` entfällt die Aufbewahrung nach der Analyse. Die letzte Analyse bleibt als Wiederverwendungshinweis verfügbar, solange ihre Syntaxsnapshots in die Grenzen passen. Auch bei Verdrängung bleibt die fachliche Analyse verwendbar.
 
 Die genannten Cachedefaults sind ausdrücklich anfängliche Betriebseinstellungen und keine gemessene Leistungs- oder Heapgarantie. Objektgraphen, laufende Berechnungen und vom Aufrufer gehaltene Snapshots sind zusätzliche Speicherverbraucher; AnalysisBudget und Browser-SessionLimits regeln ihre eigenen Grenzen. Eviction oder Abschalten eines Caches darf das fachliche Ergebnis nicht verändern.
 
@@ -59,7 +58,7 @@ Fachliche Konfiguration und reine Cachegrenzen erhalten getrennte Fingerprints. 
 
 Die öffentliche SDK-Fabrik lautet `Workspaces.create(CompilerEngine engine, WorkspaceConfiguration configuration) -> Workspace`. Sie prüft alle Argumente, erzeugt einen leeren Workspace mit Revision 0 und verwendet den reinen Standard-`ModelResolutionService` aus [Repositoryvertrag](repositories.md) auf eingefrorenen Inventaren. Sie führt keine Dateisuche und keinen Netzwerkzugriff aus. Die Engine erhält der Aufrufer beispielsweise aus `CompilerEngines.create()` gemäss [Compilervertrag](compiler-and-model.md). Resolver-/Cacheinjektion für Implementierungstests kann intern bleiben; ein zweites öffentliches Factorysystem ist ohne konkreten Verbraucher nicht anzulegen.
 
-`WorkspaceCapture` enthält `workspaceRevision`, `CompilationRequest`, `AnalysisReuse`, `PreparedClosure resolution` und einen vollständigen `InputFingerprint`. Es besitzt kopierte beziehungsweise unveränderlich geteilte Werte und keine Rückreferenz auf den lebenden Workspace. Es wird durch `Workspace.capture` oder den strikten Compilerlauf erzeugt und trägt intern eine sitzungslokale Herkunftskennung, damit `acceptAnalysis` einen Capture aus einem anderen Workspace zurückweisen kann. Diese Kennung ist kein öffentlich konstruierbares Compilerzertifikat. `PreparedClosure` liegt unter `guru.interlis.workspace.resolution`, ist der gemeinsame Untertyp von `ResolutionOutcome` für `ResolvedClosure` und `IncompleteClosure` und bietet `sourceSet()`, `pendingFetches()`, `trace()`, `dependencies()` sowie `negativeDependencies()`. Der Compiler nimmt keine Workspace-Typen entgegen. Der Host kann die enthaltenen Compilerwerte an die in [Compilervertrag](compiler-and-model.md) spezifizierten Engine-Overloads übergeben und für Beschaffung ausschliesslich `capture.resolution().pendingFetches()` verwenden.
+`WorkspaceCapture` enthält `workspaceRevision`, `CompilationRequest`, `AnalysisReuse` und `PreparedClosure resolution`. Es besitzt kopierte beziehungsweise unveränderlich geteilte Werte und keine Rückreferenz auf den lebenden Workspace. Es wird durch `Workspace.capture` oder den strikten Compilerlauf erzeugt und trägt intern eine sitzungslokale Herkunftskennung, damit `acceptAnalysis` einen Capture aus einem anderen Workspace zurückweisen kann. Diese Kennung ist kein öffentlich konstruierbares Compilerzertifikat. `PreparedClosure` liegt unter `guru.interlis.workspace.resolution`, ist der gemeinsame Untertyp von `ResolutionOutcome` für `ResolvedClosure` und `IncompleteClosure` und bietet `sourceSet()`, `pendingFetches()`, `trace()`, `dependencies()` sowie `negativeDependencies()`. Der Compiler nimmt keine Workspace-Typen entgegen. Der Host kann die enthaltenen Compilerwerte an die in [Compilervertrag](compiler-and-model.md) spezifizierten Engine-Overloads übergeben und für Beschaffung ausschliesslich `capture.resolution().pendingFetches()` verwenden.
 
 `capture.request().sources()` und `capture.resolution().sourceSet()` müssen denselben eingefrorenen Quellen-/Bindungsstand darstellen. Ein erfolgreich vollständig beschaffter Stand hat leere `pendingFetches()`. Eine IncompleteClosure bleibt als solche erkennbar, auch wenn ein fehlendes Modell mangels Locator derzeit gar keinen ausführbaren Downloadvorschlag besitzt. Die Bridge übernimmt diesen Bericht, statt Modellköpfe nochmals mit eigener Logik zu lesen.
 
@@ -79,10 +78,9 @@ Die öffentliche SDK-Fabrik lautet `Workspaces.create(CompilerEngine engine, Wor
 | `WorkspaceState` | WorkspaceRevision, unveränderliche Map SourceId→SourceRevision, fachlicher Konfigurationsfingerprint, Offen/Geschlossen-Zustand. |
 | `AnalysisRequest` | `WorkspaceRevision expectedWorkspaceRevision`, nichtleere `List<ModelSelector> roots`. Die Engine analysiert die erreichbare Wurzelhülle; ein noch nicht unterstützter Analyseumfang wird nicht als wirkungsloses Flag eingeführt. |
 | `WorkspaceCompileRequest` | `WorkspaceRevision expectedWorkspaceRevision`, nichtleere `List<ModelSelector> roots`; striktes Gate statt EDITOR-Akzeptanz. |
-| `WorkspaceCapture` | `WorkspaceRevision workspaceRevision`, `CompilationRequest request`, `AnalysisReuse reuse`, `PreparedClosure resolution`, `InputFingerprint fingerprint`. |
+| `WorkspaceCapture` | `WorkspaceRevision workspaceRevision`, `CompilationRequest request`, `AnalysisReuse reuse`, `PreparedClosure resolution`. |
 | `AnalysisAcceptance` | Enum `ACCEPTED`, `STALE_NO_COMMIT`; kein neues Analyse- oder Kompilierungsoutcome. |
 | `ConfigurationReceipt` | Alte/neue WorkspaceRevision, alter/neuer fachlicher Konfigurationsfingerprint, `boolean changed`, Invalidierungsgründe. |
-| `InputFingerprint` | Algorithmuskennung und kanonischer Digest aller Capture-Eingaben; vom Snapshot-/Handle-Namensraum getrennt. |
 | `WorkspaceMetrics` | Unveränderliche Zähler für Parses, Reuse, semantische Neuanalysen, Cacheeinträge/-Evictions und Abbrüche. Laufzeiten und verworfene Veröffentlichungen erfasst der zuständige Host-Observer beziehungsweise PublicationController. |
 
 `parses` zählt tatsächliche Parseraufrufe des Workspace, `syntaxReuses` tatsächlich
@@ -133,7 +131,7 @@ Das Ergebnis bleibt die Autorität für die Gateentscheidung.
 
 `capture(request)` delegiert mit einem Token, der nie einen externen Abbruch anfordert. Die konfigurierten Ressourcenbudgets bleiben trotzdem wirksam. `ResolutionCancelled` wird in `OperationCancelledException` mit gleichem Grund übersetzt; eine interne `ResolutionFailed`-Fehlfunktion in den internen Fehlerpfad mit FailureId. Keine der beiden Varianten erzeugt eine scheinbar normale WorkspaceCapture. Regulär fehlende, mehrdeutige oder technisch blockierte Eingaben bleiben dagegen PreparedClosure-/SourceSet-Daten.
 
-Die Modellauflösung arbeitet dabei auf einem unveränderlichen `SourceInventory` mit bereits vom Workspace vergebenen Revisionen. `SourceProvider.snapshot()` liefert ausschliesslich diesen eingefrorenen Bestand. `ModelResolutionService.prepare(...)` erzeugt daraus eine aufgelöste oder explizit unvollständige Closure samt möglichen `PendingSourceRequest`-Einträgen. Ein Repository-Host lädt fehlende `LoadedSource` ohne eigene Quellrevision und installiert deren Text durch `update` beziehungsweise `applyBatch`. Anschliessend werden Inventory und Closure neu gebildet. Ein alter Auflösungsstand darf nach einer Workspace-Änderung nicht mit neuen Quelltexten vermischt werden.
+Die Modellauflösung arbeitet dabei auf einem unveränderlichen `SourceInventory` mit bereits vom Workspace vergebenen Revisionen. `ModelResolutionService.prepare(...)` erzeugt daraus eine aufgelöste oder explizit unvollständige Closure samt möglichen `PendingSourceRequest`-Einträgen. Ein Repository-Host lädt fehlende `LoadedSource` ohne eigene Quellrevision und installiert deren Text durch `update` beziehungsweise `applyBatch`. Anschliessend werden Inventory und Closure neu gebildet. Ein alter Auflösungsstand darf nach einer Workspace-Änderung nicht mit neuen Quelltexten vermischt werden.
 
 `analyze(request, token)` erzeugt über den tokenfähigen Capturepfad eine solche Eingabe und analysiert sie mit `ParseMode.EDITOR`. Es liefert einen konsistenten, unveränderlichen `AnalysisSnapshot` oder wirft `OperationCancelledException`. Ein Source- oder Semantikfehler ist Teil der Diagnostik und keine Exception. Der direkte Aufruf übernimmt den regulär abgeschlossenen Analyselauf intern über denselben `acceptAnalysis`-Vertrag, der dem abgetrennten Hostablauf zur Verfügung steht.
 
@@ -155,9 +153,9 @@ Die vollen Workspace-Overloads `analyze(request, context, token)` und `compile(r
 Der verbindliche Ablauf lautet:
 
 1. Workspace muss offen sein. Capture und Analyse müssen nicht null sein; der Capture muss von dieser Workspaceinstanz stammen. Fremde Captures werden auch bei zufällig gleicher Revision zurückgewiesen.
-2. Die Analyse muss den im Capture enthaltenen Compilerrequest wiedergeben: dieselben Wurzelselektoren, Sprach-/Semantikoptionen, Overlays, eingefrorenen Quellrevisionen und Inhalte, Importbindungen sowie Grammatik-/Builtin-Fingerprints. Die Snapshotprovenienz und `CompilationFingerprint` werden gegen den nach [Compilervertrag](compiler-and-model.md) aus dem tatsächlichen `capture.request()` gebildeten Compilerfingerprint geprüft. Der umfassendere Workspace-`InputFingerprint` ist davon getrennt; ein unmittelbares `equals` zwischen diesen verschiedenen Trägertypen ist kein gültiger Vergleich.
+2. Die Analyse muss den im Capture enthaltenen Compilerrequest wiedergeben: dieselben Wurzelselektoren, Sprach-/Semantikoptionen, Overlays, eingefrorenen Quellrevisionen und Inhalte, Importbindungen sowie Grammatik-/Builtin-Fingerprints. Die Snapshotprovenienz und `CompilationFingerprint` werden gegen den nach [Compilervertrag](compiler-and-model.md) aus dem tatsächlichen `capture.request()` gebildeten Compilerfingerprint geprüft.
 3. Der Lauf muss regulär abgeschlossen sein und die Snapshotinvarianten aus [Modellvertrag](compiler-and-model.md) und [Compilervertrag](compiler-and-model.md) erfüllen. Quellfehler, nicht auflösbare Namen und ausdrücklich nicht implementierte Sprachmerkmale verhindern für sich genommen keinen Reuse. Ein durch Abbruch oder internen Fehler abgetrenntes Teilergebnis ist kein regulär abgeschlossener Analyselauf.
-4. Stimmen aktueller Workspace-Stand, sämtliche erfassten Quellrevisionen/Inhaltsfingerprints und die fachlichen Konfigurations-/Resolverfingerprints nicht mehr mit dem Capture überein, lautet das Ergebnis `STALE_NO_COMMIT`. Für die Übernahme genügt bereits eine andere WorkspaceRevision für diesen Ausgang. Kein alter Abhängigkeitsindex, Syntaxcache, Querycache oder letzter Analysezeiger wird übernommen.
+4. Stimmen aktueller Workspace-Stand, sämtliche erfassten Quellrevisionen/Inhaltsfingerprints und die fachlichen Konfigurations-/Resolverfingerprints nicht mehr mit dem Capture überein, lautet das Ergebnis `STALE_NO_COMMIT`. Für die Übernahme genügt bereits eine andere WorkspaceRevision für diesen Ausgang. Kein alter Abhängigkeitsindex, Syntaxcache oder letzter Analysezeiger wird übernommen.
 5. Bei aktuellem Stand werden die geeigneten Syntax-/Analyse-Reuse-Kandidaten und die vollständig erfassten positiven und negativen Abhängigkeiten gemeinsam installiert. Cachelimits dürfen Einträge dabei auslassen oder verdrängen. Das Ergebnis lautet `ACCEPTED`; SourceRevision und WorkspaceRevision bleiben unverändert.
 
 Ein zum Capture inkonsistenter Snapshot, ein fremder Capture und ein nicht regulär abgeschlossenes Teilergebnis sind API-Vertragsverletzungen und führen zu `IllegalArgumentException` mit konkreter Fehlerbeschreibung. Sie dürfen nicht als normale Veraltung kaschiert werden. Der geschlossene Workspace verwendet den bestehenden `WORKSPACE_CLOSED`-Pfad. Diese Prüfungen und die Entscheidung finden vor jeder Cachemutation statt. Der Commit besitzt keinen eigenen Cancel-Parameter: Nach der Annahme eines abgeschlossenen Ergebnisses darf kein halber Cache-/Abhängigkeitsstand sichtbar werden.
@@ -418,7 +416,7 @@ bei No-op-Text in der vollständigen Diagnostikersetzung.
 `workspace/didChangeConfiguration` akzeptiert ein Objekt `interlis` (oder das
 Objekt direkt) mit optionalen Feldern `warningPolicy` (`ALLOW_WARNINGS` oder
 `REJECT_WARNINGS`), `allowedLanguages` (`2.3`/`2.4`), `analysisBudget`,
-`cacheLimits` und `resolutionPolicy`. Budget-/Cachefelder entsprechen den
+`cacheLimits` und `resolutionPolicy`. `cacheLimits` akzeptiert `maxSyntaxEntries` und `maxRetainedSourceUtf16Units`. Budget-/Cachefelder entsprechen den
 gleichnamigen öffentlichen Records. Policy enthält `preferWorkspaceSource`,
 `modelSelections` als Array mit `modelName`, optional `modelVersion` und
 `sourceHint`, sowie `sourcePriorities` als Array mit `sourceId` und ganzzahligem
@@ -514,12 +512,10 @@ während eines Downloads nicht verloren. Alle Prüfungen erfolgen vor jeder
 Mutation, neue Quellrevisionen vergibt ausschliesslich der Workspace. Die
 bestehende Zweiparametervariante bleibt erhalten.
 
-Der Capture-Fingerprint (`workspace-capture-v2`) enthält die tatsächliche
-Resolveridentität einschliesslich Auswahlpolicy. `acceptAnalysis` prüft zusätzlich
-`capture.request().fingerprint()` gegen die echte CompilationFingerprint der
-Analyse. Gleiche Texte/Revisionen/Optionen mit anderer Root-/Import-/Originalbindung
-sind damit kein zulässiger Ersatz. Cacheänderungen bleiben semantisch neutral;
-veraltete Captures werden weiterhin über WorkspaceRevision abgewiesen.
+`acceptAnalysis` vergleicht den Fingerprint des eingefrorenen Compilerrequests
+mit dem der Analyse. Er bindet Quellrevisionen, Optionen und die tatsächliche
+Resolverauswahl. Cacheänderungen bleiben semantisch neutral. Eine andere
+WorkspaceRevision verhindert die Übernahme.
 
 <a id="editorhost-diagnoseprosa-repositoryquellen-und-rootcompile"></a>
 ## Editorhost: Diagnoseprosa, Repositoryquellen und Rootcompile

@@ -67,9 +67,9 @@ final class LspConfiguration {
         }
         var limits=previous.cacheLimits();
         if(root.has("cacheLimits")) {
-            var c=object(root.get("cacheLimits")); keys(c,"maxSyntaxEntries","maxAnalysisEntries","maxQueryEntries","maxRetainedSourceUtf16Units");
-            limits=new CacheLimits(integer(c,"maxSyntaxEntries",limits.maxSyntaxEntries()),integer(c,"maxAnalysisEntries",limits.maxAnalysisEntries()),
-                    integer(c,"maxQueryEntries",limits.maxQueryEntries()),number(c,"maxRetainedSourceUtf16Units",limits.maxRetainedSourceUtf16Units()));
+            var c=object(root.get("cacheLimits")); keys(c,"maxSyntaxEntries","maxRetainedSourceUtf16Units");
+            limits=new CacheLimits(integer(c,"maxSyntaxEntries",limits.maxSyntaxEntries()),
+                    number(c,"maxRetainedSourceUtf16Units",limits.maxRetainedSourceUtf16Units()));
         }
         return new WorkspaceConfiguration(new CompilerOptions(old.semanticProfile(),languages,warnings,budget,old.overlays()),policy,previous.resolverCatalog(),limits,previous.resolutionDiagnostics());
     }

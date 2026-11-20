@@ -273,7 +273,7 @@ class WorkspaceTest {
 
         var defaults = WorkspaceConfiguration.defaults();
         workspace.configure(new WorkspaceConfiguration(defaults.compilerOptions(),
-                defaults.resolutionPolicy(), defaults.resolverCatalog(), new CacheLimits(0, 0, 0, 0)),
+                defaults.resolutionPolicy(), defaults.resolverCatalog(), new CacheLimits(0, 0)),
                 workspace.currentRevision());
         assertEquals(0, workspace.metrics().cachedSyntaxEntries());
         assertEquals(0, workspace.metrics().cachedAnalysisEntries());

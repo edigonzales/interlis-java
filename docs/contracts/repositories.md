@@ -40,7 +40,10 @@ lösen den Selektor aus den mitgelieferten Quellen auf.
 
 Paket: `guru.interlis.workspace.resolution`.
 
-`SourceProvider.snapshot()` liefert ausschliesslich bereits vorhandene Daten. Es darf keine IO-Aktion verstecken. `SourceInventory` enthält eine feste `WorkspaceRevision`, unveränderliche `SourceText`-Werte, einen Kopfindex und einen eingefrorenen Resolverkatalog. Neue Texte erhalten ihre Revision über den Workspace; ein Provider darf keine Revision vergeben.
+`SourceInventory` enthält eine feste `WorkspaceRevision`, unveränderliche
+`SourceText`-Werte, einen Kopfindex und einen eingefrorenen Resolverkatalog.
+Der Workspace vergibt die Quellrevisionen. Der Resolver erhält den Bestand
+direkt und führt seine Berechnung ohne IO aus.
 
 Der Konstruktor von `SourceInventory` erfasst neben Revision,
 Quellen und Katalog eine `Map<SourceId, SyntaxSnapshot>` mit bereits geparsten
@@ -58,7 +61,7 @@ die Übernahme von Wiederverwendungsdaten bleibt an `acceptAnalysis` gebunden.
 | Klasse | Felder bzw. Methoden | Vertrag |
 |---|---|---|
 | `SourceInventory` | `workspaceRevision()`, `sources()`, `headers()`, `catalog()`, `fingerprint()` | defensive unveränderliche Sicht; Kopfindex nennt exakte Quellrevisionen |
-| `ResolutionRequest` | `roots()`, `policy()`, `budget()`, `expectedInventoryFingerprint()` | explizite Rootauswahl und Auswahlregeln |
+| `ResolutionRequest` | `roots()`, `policy()`, `budget()`, `overlays()` | explizite Rootauswahl und Auswahlregeln |
 | `ModelHeader` | Modellname, rohe Modellversion, Sprachversion, Deklarationsbereich, erkannte Imports, Kopfzustand | fehlertolerantes Indexergebnis; kein Semantikzertifikat |
 | `ModelCandidate` | Name/Version, logische Quelle, Herkunft, optionaler Inhaltsdigest, Prioritätsgruppe | vollständiger Provenienzbezug; lokale Verfügbarkeit gesondert |
 | `PendingSourceRequest` | gesuchtes Modell, mögliche Locator, Ursache, abhängig machende Importstellen | Vorschlag an Host, löst selbst nichts aus |
@@ -73,7 +76,7 @@ die Übernahme von Wiederverwendungsdaten bleibt an `acceptAnalysis` gebunden.
 <a id="prepare-vertrag"></a>
 ### prepare-Vertrag
 
-**Vorbedingungen:** nullfreie unveränderliche Eingaben, Fingerprint passt zum Inventar, mindestens eine Rootauswahl, positive sinnvolle Limits. **Nachbedingungen:** Die Methode mutiert weder Provider noch Workspace; Auswahl und Trace sind deterministisch. Ein vollständiges Ergebnis enthält jede benötigte Quelle genau einmal, aber alle benötigten Modelle einer Datei. **Fehler:** ungültige API-Eingaben führen zu gezielter Argument-/Stale-Input-Ausnahme; fehlende Modelle und Mehrdeutigkeit sind fachliche Resultate. **Abbruch:** zwischen Kandidatenlisten, Headeranalysen und Graphschritten prüfen; Teilresultate werden nur als abgebrochene/unvollständige Variante ausgegeben. **Besitz:** Resultate besitzen unveränderliche Daten; keine offenen Streams oder HTTP-Responses.
+**Vorbedingungen:** nullfreie unveränderliche Eingaben, mindestens eine Rootauswahl, positive sinnvolle Limits. **Nachbedingungen:** Auswahl und Trace sind deterministisch. Der Workspace bleibt unverändert. Ein vollständiges Ergebnis enthält jede benötigte Quelle genau einmal, aber alle benötigten Modelle einer Datei. **Fehler:** ungültige API-Eingaben führen zu gezielter Argumentausnahme; fehlende Modelle und Mehrdeutigkeit sind fachliche Resultate. **Abbruch:** zwischen Kandidatenlisten, Headeranalysen und Graphschritten prüfen; Teilresultate werden nur als abgebrochene/unvollständige Variante ausgegeben. **Besitz:** Resultate besitzen unveränderliche Daten; keine offenen Streams oder HTTP-Responses.
 
 <a id="interne-klassen"></a>
 ### Interne Klassen
