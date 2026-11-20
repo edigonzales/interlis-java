@@ -2,6 +2,10 @@ package guru.interlis.lsp;
 
 import com.google.gson.*;
 import guru.interlis.compiler.CompilerEngines;
+import guru.interlis.compiler.CompilerServices;
+import guru.interlis.execution.CancellationToken;
+import guru.interlis.projection.SourceAnchor;
+import guru.interlis.source.SourceId;
 import guru.interlis.workspace.*;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException;
@@ -30,6 +34,204 @@ class DiagramProtocolTest {
     }
     private void failure(ResponseErrorCode expected,Callable<?> action) {
         var failed=assertThrows(ExecutionException.class,()->action.call());assertEquals(expected.getValue(),assertInstanceOf(ResponseErrorException.class,failed.getCause()).getResponseError().getCode());
+    }
+
+    @Test void staleProjectionCannotRegisterOrEvictAnAnchor() throws Exception {
+        try (var fixture = new ScheduledDiagrams()) {
+            var oldest = fixture.fillRegistry().getFirst();
+            var pending = fixture.delay();
+            var discarded = pending.prepared().get(5, TimeUnit.SECONDS);
+            fixture.scheduler.onOwner(() -> {
+                var source = fixture.workspace.source(fixture.source).orElseThrow();
+                fixture.workspace.update(new SourceUpdate(fixture.source, new SourceExpectation.At(source.revision()),
+                        new SourceChange.Replace(SOURCE + "\r\n!! edit")));
+                fixture.scheduler.schedule();
+                return null;
+            });
+            pending.delivery().complete(discarded);
+            failure(ResponseErrorCode.ContentModified, () -> pending.response().get(5, TimeUnit.SECONDS));
+            // Use the captured context to distinguish a missing entry from a stale snapshot.
+            assertAll(() -> fixture.assertAbsent(discarded.response()),
+                    () -> assertEquals(fixture.source, fixture.navigate(oldest).nameRange().source()));
+        }
+    }
+
+    @Test void clientCancellationPropagatesToPendingDiagram() throws Exception {
+        try (var fixture = new ScheduledDiagrams()) {
+            var oldest = fixture.fillRegistry().getFirst();
+            var pending = fixture.delay();
+            var discarded = pending.prepared().get(5, TimeUnit.SECONDS);
+            fixture.scheduler.onOwner(() -> {
+                assertTrue(pending.response().cancel(false));
+                assertTrue(pending.delivery().isCancelled());
+                assertFalse(pending.delivery().complete(discarded));
+                return null;
+            });
+            assertThrows(CancellationException.class, pending.response()::join);
+            fixture.assertAbsent(discarded.response());
+            assertEquals(fixture.source, fixture.navigate(oldest).nameRange().source());
+        }
+    }
+
+    @Test void configurationChangePreventsPublication() throws Exception {
+        try (var fixture = new ScheduledDiagrams()) {
+            var pending = fixture.delay();
+            var discarded = pending.prepared().get(5, TimeUnit.SECONDS);
+            fixture.scheduler.onOwner(() -> {
+                var workspace = fixture.workspace;
+                var revision = workspace.currentRevision();
+                var config = workspace.configuration();
+                workspace.configure(new WorkspaceConfiguration(config.compilerOptions(), config.resolutionPolicy(),
+                        config.resolverCatalog(), new CacheLimits(0, 0)), revision);
+                assertEquals(revision, workspace.currentRevision());
+                assertTrue(pending.delivery().complete(discarded));
+                return null;
+            });
+            failure(ResponseErrorCode.ContentModified, () -> pending.response().get(5, TimeUnit.SECONDS));
+            fixture.assertAbsent(discarded.response());
+        }
+    }
+
+    @Test void ownerHonorsClientCancellationWhileItsCompletionCallbackRuns() throws Exception {
+        try (var fixture = new ScheduledDiagrams()) {
+            var pending = fixture.delay();
+            var discarded = pending.prepared().get(5, TimeUnit.SECONDS);
+            var clientCancelled = new CompletableFuture<Void>();
+            var finishCancellation = new CompletableFuture<Void>();
+            pending.response().whenComplete((response, failure) -> {
+                clientCancelled.complete(null);
+                finishCancellation.join();
+            });
+
+            CompletableFuture<Boolean> cancellation;
+            try {
+                cancellation = fixture.scheduler.onOwner(() -> {
+                    // Queue acceptance, then leave the client future cancelled with propagation blocked.
+                    assertTrue(pending.delivery().complete(discarded));
+                    var cancelling = CompletableFuture.supplyAsync(() -> pending.response().cancel(false));
+                    clientCancelled.orTimeout(5, TimeUnit.SECONDS).join();
+                    return cancelling;
+                });
+                fixture.scheduler.onOwner(() -> null);
+                assertTrue(pending.response().isCancelled());
+                fixture.assertAbsent(discarded.response());
+            } finally {
+                finishCancellation.complete(null);
+            }
+            assertTrue(cancellation.get(5, TimeUnit.SECONDS));
+        }
+    }
+
+    @Test void acceptedDiagramEvictsLeastRecentlyNavigatedEntry() throws Exception {
+        try (var fixture = new ScheduledDiagrams()) {
+            var published = fixture.fillRegistry();
+            assertEquals(fixture.source, fixture.navigate(published.getFirst()).nameRange().source());
+            var pending = fixture.delay();
+            var anchorOnCompletion = pending.response().thenApply(fixture::navigate);
+            assertTrue(pending.delivery().complete(pending.prepared().get(5, TimeUnit.SECONDS)));
+            assertEquals(fixture.source, anchorOnCompletion.get(5, TimeUnit.SECONDS).nameRange().source());
+            fixture.assertAbsent(published.get(1));
+            assertEquals(fixture.source, fixture.navigate(published.getFirst()).nameRange().source());
+            for (var retained : published.subList(2, 16)) {
+                assertEquals(fixture.source, fixture.navigate(retained).nameRange().source());
+            }
+        }
+    }
+
+    @Test void shutdownClearsPublishedAnchorsAndRejectsQueuedAcceptance() throws Exception {
+        try (var fixture = new ScheduledDiagrams()) {
+            var current = fixture.project();
+            var pending = fixture.delay();
+            var discarded = pending.prepared().get(5, TimeUnit.SECONDS);
+            var queuedAfterAcceptance = fixture.scheduler.onOwner(() -> {
+                assertTrue(pending.delivery().complete(discarded));
+                var queued = fixture.scheduler.requestNow(token -> CompletableFuture.completedFuture(null));
+                fixture.shutdown();
+                return queued;
+            });
+            failure(ResponseErrorCode.RequestCancelled, () -> pending.response().get(5, TimeUnit.SECONDS));
+            failure(ResponseErrorCode.RequestCancelled, () -> queuedAfterAcceptance.get(5, TimeUnit.SECONDS));
+            fixture.assertAbsent(current);
+            fixture.assertAbsent(discarded.response());
+        }
+    }
+
+    private record PendingDiagram(CompletableFuture<LspDiagramService.Prepared> prepared,
+                                  CompletableFuture<LspDiagramService.Prepared> delivery,
+                                  CompletableFuture<DiagramResponse> response) { }
+
+    private final class ScheduledDiagrams implements AutoCloseable {
+        final SourceId source = new SourceId(URI);
+        final Workspace workspace = Workspaces.create(CompilerEngines.create(), WorkspaceConfiguration.defaults());
+        final LspDiagramService diagrams = new LspDiagramService();
+        final CompletableFuture<LspDiagramService.Context> context = new CompletableFuture<>();
+        final AnalysisScheduler scheduler = new AnalysisScheduler(workspace, CompilerEngines.create(),
+                CompilerServices.defaults(), (analysis, repositoryFailure) -> context.complete(
+                        new LspDiagramService.Context(analysis, source, URI, 1,
+                                Long.toString(workspace.currentRevision().value()), Map.of(URI, 1))), ignored -> { });
+        final LspInputReadiness readiness = new LspInputReadiness(() -> 0, scheduler::completeOnOwner, ignored -> { });
+
+        ScheduledDiagrams() {
+            scheduler.onOwner(() -> {
+                workspace.update(new SourceUpdate(source, new SourceExpectation.Absent(), new SourceChange.Replace(SOURCE)));
+                scheduler.schedule();
+                return null;
+            });
+        }
+
+        private LspDiagramService.Prepared prepare(CancellationToken token) {
+            var request = new DiagramRequest(1, "scheduled", new VersionedTextDocumentIdentifier(URI, 1), List.of(), null);
+            return diagrams.prepare(request, context.join(), token);
+        }
+
+        DiagramResponse project() throws Exception {
+            return scheduler.requestNow(token -> scheduler.detached(token,
+                    () -> CompletableFuture.completedFuture(prepare(token))), () -> false, diagrams::publish)
+                    .get(5, TimeUnit.SECONDS);
+        }
+
+        List<DiagramResponse> fillRegistry() throws Exception {
+            var responses = new ArrayList<DiagramResponse>();
+            for (int i = 0; i < 16; i++) responses.add(project());
+            return responses;
+        }
+
+        PendingDiagram delay() {
+            var prepared = new CompletableFuture<LspDiagramService.Prepared>();
+            var delivery = new CompletableFuture<LspDiagramService.Prepared>();
+            var response = scheduler.onOwner(() -> readiness.awaitReady(clientDone -> scheduler.requestNow(token -> {
+                scheduler.detached(token, () -> CompletableFuture.completedFuture(prepare(token)))
+                        .whenComplete((diagram, failure) -> {
+                            if (failure == null) prepared.complete(diagram);
+                            else prepared.completeExceptionally(failure);
+                        });
+                return delivery;
+            }, clientDone, diagrams::publish)));
+            return new PendingDiagram(prepared, delivery, response);
+        }
+
+        SourceAnchor navigate(DiagramResponse response) {
+            var building = response.document().nodes().stream().filter(node -> node.label().equals("Building"))
+                    .findFirst().orElseThrow();
+            return diagrams.navigation(navigation(response, 1, building.id()), context.join());
+        }
+
+        void assertAbsent(DiagramResponse response) {
+            var error = assertThrows(ResponseErrorException.class, () -> navigate(response));
+            assertEquals(ResponseErrorCode.ContentModified.getValue(), error.getResponseError().getCode());
+        }
+
+        void shutdown() {
+            scheduler.close(() -> {
+                readiness.cancelPendingOnClose();
+                diagrams.close();
+            });
+        }
+
+        @Override public void close() {
+            shutdown();
+            workspace.close();
+        }
     }
     @Test void sourceSelectionUsesJavaSymbolsForDeclarationsUsesAndCurrentVersions() throws Exception {
         var server=server();try {

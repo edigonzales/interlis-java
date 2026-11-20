@@ -96,6 +96,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
+import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 
 /** Thin LSP adapter over Workspace and LanguageQueries. */
 final class InterlisTextDocumentService implements TextDocumentService {
@@ -160,7 +163,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     private CompletableFuture<guru.interlis.compiler.CompilationOutcome> compileWorkspace() {
         try { requestGuard.run(); } catch(ResponseErrorException invalid) { return CompletableFuture.failedFuture(invalid); }
-        return afterFiles(() -> {
+        return afterFiles(ignored -> {
             if (documents.needsResync()) return failed(ResponseErrorCode.ContentModified, "full document resynchronization is required");
             long generation = documents.generation();
             return scheduler.compileRoots(null, () -> requireInputGeneration(generation));
@@ -195,7 +198,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         });
         return LspFutures.compose(choosing,selection -> selection.roots().isEmpty()?CompletableFuture.completedFuture(
                 new CompileReport("selectionRequired",selection.choices(),CompileReport.Summary.empty())):
-                LspFutures.map(afterFiles(() -> scheduler.compileRoots(selection.roots(), () ->
+                LspFutures.map(afterFiles(ignored -> scheduler.compileRoots(selection.roots(), () ->
                         requireSelectedDocument(captured.textDocument(), selection.documentGeneration(), "compile document version changed"))),
                         this::compileReport,operations),operations);
     }
@@ -211,7 +214,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
             if(p.modelName()!=null){var matching=models.stream().filter(m->m.name().value().equals(p.modelName())&&(p.modelVersion()==null||m.modelVersion().equals(p.modelVersion()))).toList();if(matching.size()!=1)return failed(ResponseErrorCode.InvalidParams,"model selection is unavailable or ambiguous");roots=List.of(new guru.interlis.compiler.ModelSelector.ByName(p.modelName(),Optional.of(matching.getFirst().modelVersion()),Optional.of(state.sourceId())));}
             return CompletableFuture.completedFuture(new CompileSelection(roots,List.of(),view.documentGeneration()));
         });
-        return LspFutures.compose(selection, chosen -> LspFutures.compose(afterFiles(() -> scheduler.compileRoots(chosen.roots(), () ->
+        return LspFutures.compose(selection, chosen -> LspFutures.compose(afterFiles(ignored -> scheduler.compileRoots(chosen.roots(), () ->
                 requireSelectedDocument(p.textDocument(), chosen.documentGeneration(), "export source changed"))), outcome -> {
             if(!(outcome instanceof guru.interlis.compiler.CompilationOutcome.Succeeded success))return failed(outcome instanceof guru.interlis.compiler.CompilationOutcome.Cancelled?ResponseErrorCode.RequestCancelled:ResponseErrorCode.RequestFailed,"Documentation export requires a complete valid current model");
             return requestReady((view,token) -> {
@@ -260,16 +263,21 @@ final class InterlisTextDocumentService implements TextDocumentService {
         });
     }
 
-    private <T> CompletableFuture<T> requestReady(java.util.function.BiFunction<HostView,CancellationToken,CompletableFuture<T>> action) {
+    private <T> CompletableFuture<T> requestReady(BiFunction<HostView, CancellationToken, CompletableFuture<T>> action) {
+        return requestReady(action, Function.identity());
+    }
+
+    private <T, R> CompletableFuture<R> requestReady(
+            BiFunction<HostView, CancellationToken, CompletableFuture<T>> action, Function<T, R> accept) {
         try { requestGuard.run(); } catch(ResponseErrorException invalid) { return CompletableFuture.failedFuture(invalid); }
-        return afterFiles(() -> {
+        return afterFiles(clientDone -> {
             if (documents.needsResync()) return failed(ResponseErrorCode.ContentModified, "full document resynchronization is required");
             long generation = documents.generation();
             return scheduler.requestNow(token -> {
                 requireInputGeneration(generation);
                 HostView view = captureView();
                 return scheduler.detached(token, () -> action.apply(view, token));
-            });
+            }, clientDone, accept);
         });
     }
 
@@ -307,7 +315,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
                 externalSources.uris(),Long.toString(state.revision().value()),documents.generation());
     }
 
-    private <T> CompletableFuture<T> afterFiles(java.util.function.Supplier<CompletableFuture<T>> start) {
+    private <T> CompletableFuture<T> afterFiles(Function<BooleanSupplier, CompletableFuture<T>> start) {
         try {
             return scheduler.onOwner(() -> readiness.awaitReady(start));
         } catch (RuntimeException failure) {
@@ -1193,8 +1201,8 @@ final class InterlisTextDocumentService implements TextDocumentService {
         return requestReady((view,token)-> {
             var state=requireState(view,new Position(0,0),captured.textDocument());
             if(state.lspVersion()!=captured.textDocument().getVersion())return failed(ResponseErrorCode.ContentModified,"diagram document version changed");
-            return CompletableFuture.completedFuture(diagrams.project(captured,diagramContext(view,state,captured.textDocument().getUri()),token));
-        });
+            return CompletableFuture.completedFuture(diagrams.prepare(captured,diagramContext(view,state,captured.textDocument().getUri()),token));
+        }, diagrams::publish);
     }
 
     CompletableFuture<DiagramNavigation> diagramNavigate(DiagramNavigationParams params) {

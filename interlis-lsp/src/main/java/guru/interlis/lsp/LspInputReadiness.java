@@ -11,9 +11,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.LongSupplier;
-import java.util.function.Supplier;
 
 /** File admission and request ordering on the existing analysis owner queue. */
 final class LspInputReadiness {
@@ -102,7 +103,8 @@ final class LspInputReadiness {
         order(new DocumentOperation(action, null));
     }
 
-    <T> CompletableFuture<T> awaitReady(Supplier<CompletableFuture<T>> start) {
+    /** Supplies the client future's completion state even while cancellation is propagating. */
+    <T> CompletableFuture<T> awaitReady(Function<BooleanSupplier, CompletableFuture<T>> start) {
         if (closed) return CompletableFuture.failedFuture(shutdownFailure());
         requests.removeIf(CompletableFuture::isDone);
         if (requests.size() >= MAX_REQUESTS) {
@@ -217,13 +219,13 @@ final class LspInputReadiness {
     }
 
     private final class Request<T> extends CompletableFuture<T> {
-        private Supplier<CompletableFuture<T>> start;
+        private Function<BooleanSupplier, CompletableFuture<T>> start;
         private long generation;
         private boolean waitingForFiles;
         // Only the owner assigns the stage. A client can cancel it from any thread.
         private volatile CompletableFuture<T> active;
 
-        Request(Supplier<CompletableFuture<T>> start) {
+        Request(Function<BooleanSupplier, CompletableFuture<T>> start) {
             this.start = start;
         }
 
@@ -231,7 +233,7 @@ final class LspInputReadiness {
             var action = start;
             start = null;
             try {
-                var stage = Objects.requireNonNull(action.get());
+                var stage = Objects.requireNonNull(action.apply(this::isDone));
                 active = stage;
                 if (isDone()) stage.cancel(false);
                 else stage.whenComplete((value, failure) -> {
