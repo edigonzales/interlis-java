@@ -1,4 +1,4 @@
-/** Protocol 1.0 data. Revision and exact numerical payloads remain decimal strings. */
+/** Compiler bridge data. Revision and exact numerical payloads remain decimal strings. */
 import type {Revision, JsonValue, JsonObject, SourceRangeDto, SymbolRefDto, SourceAnchorDto} from '../../../../interlis-projection/src/main/typescript/diagram-document';
 export type {Revision, JsonValue, JsonObject, SourceRangeDto, SymbolRefDto, SourceAnchorDto} from '../../../../interlis-projection/src/main/typescript/diagram-document';
 export interface SessionLimits {
