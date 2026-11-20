@@ -111,10 +111,10 @@ Erhalt der Zieldatei bei einer beschädigten Rückverweiszuordnung.
 Bei eingebetteten 1:n-Assoziationen prüft sie die Rollenmetadaten, eine
 SQL-Namenskollision, Vorwärtsreferenzen, SQL `NULL` und den Rollback bei
 einem unauflösbaren Ziel. Bei n:m-Assoziationen prüft sie die physische
-Beziehungstabelle, anonyme Links, beide Rollenziele, Vorwärtsreferenzen und
-den Rollback bei einem fehlenden Ziel. Für 1:n mit Attributen prüft sie
-eingebettete Attributwerte, direkte Referenzen, fehlende Rollen und den
-Erhalt der Zieldatei bei mehreren Linkzeilen zum selben Objekt. Das
+Beziehungstabelle, anonyme Links, beide Rollenziele, Vorwärtsreferenzen,
+skalare Attribute je Zielpaar und den Rollback bei einem fehlenden Ziel.
+Für 1:n mit Attributen prüft sie eingebettete Attributwerte, direkte Referenzen,
+fehlende Rollen und den Erhalt der Zieldatei bei mehreren Linkzeilen zum Objekt. Das
 Originalwerkzeug lädt das Modell für das neue Schema aus der Datenbank.
 
 Die JUnit-Rohberichte stehen unter `interlis-db/build/test-results/dbInteropTest/`.

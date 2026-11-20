@@ -138,8 +138,13 @@ final class DbInteropTest {
             assertEmbeddedRoleCatalog(db, sql, model);
             assertAssociationCatalog(db, sql, model, "MarkerLink", Map.of("LinkedMarker", "marker", "LinkedHub", "hub"));
             assertAssociationCatalog(db, sql, model, "Review", Map.of("ReviewMarkers", "marker", "Witness", "hub"));
+            assertAssociationCatalog(db, sql, model, "AnnotatedLink",
+                    Map.of("ConsultedMarker", "marker", "ConsultedReport", "report"));
             assertTypeKind(db, sql, "review", "memo", "TEXT");
             assertTypeKind(db, sql, "review", "grade", "NUMERIC");
+            assertTypeKind(db, sql, "annotatedlink", "memo", "TEXT");
+            assertTypeKind(db, sql, "annotatedlink", "grade", "NUMERIC");
+            assertTypeKind(db, sql, "annotatedlink", "localdecision", "ENUM");
             assertTypeKind(db, sql, "parcel", "boundary", "AREA");
             if (version == 24) {
                 assertTypeKind(db, sql, "park", "coverage", "MULTISURFACE");
@@ -334,11 +339,13 @@ final class DbInteropTest {
     private static void assertCorruptRoleMappingRejected(TestDatabase db, Connection sql, String model, Path output)
             throws Exception {
         String mapping = db.table("t_ili2db_attrname");
-        for (String name : List.of("MarkerHub.Select", "MarkerLink.LinkedHub", "Review.Witness")) {
-            String role = model + ".Data." + name;
+        var roles = Map.of("MarkerHub.Select", "hub", "MarkerLink.LinkedHub", "hub", "Review.Witness", "hub",
+                "AnnotatedLink.ConsultedReport", "report");
+        for (var entry : roles.entrySet()) {
+            String role = model + ".Data." + entry.getKey();
             execute(sql, "update " + mapping + " set target='place' where iliname='" + role + "'");
             assertExportRejected(db, model, "legacy", output, role);
-            execute(sql, "update " + mapping + " set target='hub' where iliname='" + role + "'");
+            execute(sql, "update " + mapping + " set target='" + entry.getValue() + "' where iliname='" + role + "'");
         }
     }
 
@@ -463,6 +470,8 @@ final class DbInteropTest {
         assertStoredDataset(db, sql, version, "legacy", false);
         // The reference normalizes empty TEXT to NULL. Restore an actual empty SQL value to test our export.
         execute(sql, "update " + db.table("place") + " set aselect='' where t_ili_tid='legacy-place-2'");
+        execute(sql, "update " + db.table("annotatedlink") + " set memo='' where consultedmarker=(select t_id from "
+                + db.table("marker") + " where t_ili_tid='legacy-marker-2')");
         Path nativeOutput = work.resolve("native-export.xtf");
         assertCliSuccess(db, "export", model, "legacy", nativeOutput);
         assertTransfer(nativeOutput, version, "legacy", true);
@@ -476,6 +485,8 @@ final class DbInteropTest {
 
         assertMissingReferenceRollback(db, sql, model, version, fixture, "LinkedHub", "MarkerLink", "missing-link", 2);
         assertMissingReferenceRollback(db, sql, model, version, fixture, "Witness", "Review", "missing-review", 2);
+        assertMissingReferenceRollback(db, sql, model, version, fixture,
+                "ConsultedMarker", "AnnotatedLink", "missing-annotated-link", 2);
         if (db.postgis && modelDir.equals(STORED_MODELS)) assertPostgresIdDefault(db);
         Path tail = Files.writeString(work.resolve("tail.xtf"), fixture.replace("legacy-", "tail-"));
         reference.run(db, modelDir, "--import", "--importTid", "--importBid", "--dataset", "tail", tail.toString());
@@ -588,8 +599,8 @@ final class DbInteropTest {
                                                 String fixture, String role, String affectedObject, String dataset,
                                                 int existingDatasets) throws Exception {
         String ref = version == 24 ? "i:ref" : "REF";
-        String broken = fixture.replaceFirst("<" + role + " " + ref + "=\"legacy-hub-1\"",
-                "<" + role + " " + ref + "=\"unresolved-hub\"");
+        String roleStart = "<" + role + " " + ref + "=\"";
+        String broken = fixture.replaceFirst(roleStart + "legacy-[^\"]+", roleStart + "unresolved-target");
         Path input = Files.writeString(work.resolve(dataset + "-target.xtf"), broken.replace("legacy-", dataset + "-"));
         String counter = db.postgis ? "select last_value from " + db.table("t_ili2db_seq")
                 : "select T_LastUniqueId from T_KEY_OBJECT where T_Key='T_Id'";
@@ -597,9 +608,9 @@ final class DbInteropTest {
         var rejected = cli(db, "import", model, dataset, input, CancellationToken.none());
         assertEquals(1, rejected.code(), rejected::diagnostics);
         assertTrue(rejected.diagnostics().contains(affectedObject)
-                && rejected.diagnostics().contains("unresolved-hub"), rejected::diagnostics);
+                && rejected.diagnostics().contains("unresolved-target"), rejected::diagnostics);
         // PostgreSQL has allocated IDs for the dataset, first basket and all its rows, including both late Hubs.
-        long allocated = version == 24 ? 30 : 25;
+        long allocated = version == 24 ? 32 : 27;
         assertEquals(Long.toString(db.postgis ? before + allocated : before), scalar(sql, counter));
         assertNull(scalar(sql, "select datasetname from " + db.table("t_ili2db_dataset")
                 + " where datasetname='" + dataset + "'"));
@@ -733,7 +744,9 @@ final class DbInteropTest {
         assertStoredStructures(db, sql, dataset);
         assertStoredRoles(db, sql, dataset);
         assertStoredStandaloneLinks(db, sql, dataset);
-        assertStoredReviews(db, sql, dataset);
+        assertStoredAttributedLinks(db, sql, dataset, "review", "reviewmarkers", "witness", "hub", "reviewed", nativeImport);
+        assertStoredAttributedLinks(db, sql, dataset, "annotatedlink", "consultedmarker", "consultedreport", "report",
+                "confirmed", nativeImport);
         assertStoredRoutes(db, sql, dataset, nativeImport);
         assertStoredSurfaces(db, sql, dataset, "plot", "footprint", SURFACE_WITH_HOLE, CURVED_SURFACE, nativeImport);
         assertStoredSurfaces(db, sql, dataset, "parcel", "boundary", WEST_AREA, EAST_AREA, nativeImport);
@@ -811,25 +824,31 @@ final class DbInteropTest {
                 List.of(dataset + "-marker-1", dataset + "-hub-2"), List.of(dataset + "-marker-2", dataset + "-hub-1"));
     }
 
-    private static void assertStoredReviews(TestDatabase db, Connection sql, String dataset) throws SQLException {
+    private static void assertStoredAttributedLinks(TestDatabase db, Connection sql, String dataset, String association,
+                                                   String markerColumn, String targetColumn, String targetTable,
+                                                   String memo, boolean nativeImport) throws SQLException {
+        boolean annotated = association.equals("annotatedlink");
         String rows = """
-                select r.t_id, b.t_ili_tid, m.t_ili_tid, h.t_ili_tid, r.t_basket, m.t_basket, h.t_basket, r.memo, r.grade
-                from %s r join %s m on m.t_id=r.reviewmarkers join %s h on h.t_id=r.witness
+                select r.t_id, b.t_ili_tid, m.t_ili_tid, h.t_ili_tid, r.t_basket, m.t_basket, h.t_basket, r.memo, r.grade, %s
+                from %s r join %s m on m.t_id=r.%s join %s h on h.t_id=r.%s
                 join %s b on b.t_id=r.t_basket join %s d on d.t_id=b.dataset
                 where d.datasetname='%s' order by m.t_ili_tid
-                """.formatted(db.table("review"), db.table("marker"), db.table("hub"), db.table("t_ili2db_basket"),
-                db.table("t_ili2db_dataset"), dataset);
+                """.formatted(annotated ? "r.localdecision" : "null", db.table(association), db.table("marker"),
+                markerColumn, db.table(targetTable), targetColumn, db.table("t_ili2db_basket"), db.table("t_ili2db_dataset"),
+                dataset);
+        String emptyMemo = annotated && nativeImport ? "" : null;
         try (var statement = sql.createStatement(); var result = statement.executeQuery(rows)) {
             for (int index = 1; index <= 2; index++) {
                 assertTrue(result.next());
                 assertTrue(result.getLong(1) > 0);
                 assertEquals(dataset + "-basket-1", result.getString(2));
                 assertEquals(dataset + "-marker-" + index, result.getString(3));
-                assertEquals(dataset + "-hub-1", result.getString(4));
+                assertEquals(dataset + "-" + targetTable + "-1", result.getString(4));
                 assertEquals(result.getLong(5), result.getLong(6));
                 assertEquals(result.getLong(5), result.getLong(7));
-                assertEquals(index == 1 ? "reviewed" : null, result.getString(8));
+                assertEquals(index == 1 ? memo : emptyMemo, result.getString(8));
                 assertEquals(index == 1 ? "-3" : null, result.getString(9));
+                assertEquals(index == 1 && annotated ? "approved" : null, result.getString(10));
             }
             assertFalse(result.next());
         }
@@ -1045,8 +1064,9 @@ final class DbInteropTest {
         assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("hub")));
         assertEquals(Integer.toString(datasets * 3), scalar(sql, "select count(*) from " + db.table("markerlink")));
         assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("review")));
+        assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("annotatedlink")));
         var tables = new ArrayList<>(List.of("t_ili2db_dataset", "t_ili2db_basket", "place", "route", "plot", "parcel",
-                "report", "detail", "marker", "hub", "markerlink", "review"));
+                "report", "detail", "marker", "hub", "markerlink", "review", "annotatedlink"));
         if (version == 24) {
             assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table("link")));
             var collections = List.of("park", "district", "routegroup", "survey");
@@ -1057,7 +1077,7 @@ final class DbInteropTest {
             tables.addAll(collections);
         }
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 42 : 33)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 44 : 35)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
     }
 
@@ -1075,7 +1095,9 @@ final class DbInteropTest {
         Map<String, Set<String>> baskets = new HashMap<>();
         Map<String, Element> objects = new HashMap<>();
         var markerLinks = new HashSet<List<String>>();
+        var annotatedLinks = new HashSet<AnnotatedPair>();
         String markerLinkName = version == 24 ? "MarkerLink" : "DbInterop23.Data.MarkerLink";
+        String annotatedLinkName = version == 24 ? "AnnotatedLink" : "DbInterop23.Data.AnnotatedLink";
         for (Element basket : children(data)) {
             assertEquals(version == 24 ? "Data" : "DbInterop23.Data", basket.getLocalName());
             String bid = id(basket, version, "bid");
@@ -1088,12 +1110,21 @@ final class DbInteropTest {
                     assertTrue(markerLinks.add(transferredMarkerLink(object, version)));
                     continue;
                 }
+                if (object.getLocalName().equals(annotatedLinkName)) {
+                    assertEquals("", tid);
+                    assertEquals(dataset + "-basket-1", bid);
+                    assertTrue(annotatedLinks.add(transferredAnnotatedLink(object, version)));
+                    continue;
+                }
                 assertNull(objects.put(tid, object));
                 tids.add(tid);
             }
             assertNull(baskets.put(bid, tids));
         }
         assertEquals(expectedMarkerLinks(dataset), markerLinks);
+        assertEquals(Set.of(new AnnotatedPair(dataset + "-marker-1", dataset + "-report-1", "confirmed", "-3", "approved"),
+                new AnnotatedPair(dataset + "-marker-2", dataset + "-report-1", hasEmptyText ? "" : null, null, null)),
+                annotatedLinks);
         String first = dataset + "-place-1";
         String second = dataset + "-place-2";
         String third = dataset + "-place-3";
@@ -1199,6 +1230,18 @@ final class DbInteropTest {
         assertEquals("", id(marker, version, "bid"));
         assertEquals("", id(hub, version, "bid"));
         return List.of(id(marker, version, "ref"), id(hub, version, "ref"));
+    }
+
+    private static AnnotatedPair transferredAnnotatedLink(Element object, int version) {
+        var fields = children(object).stream().map(Element::getLocalName).toList();
+        var expectedFields = new ArrayList<>(List.of("ConsultedMarker", "ConsultedReport"));
+        for (String field : List.of("Memo", "Grade", "LocalDecision")) {
+            if (child(object, field) != null) expectedFields.add(field);
+        }
+        assertEquals(expectedFields, fields);
+        return new AnnotatedPair(id(child(object, "ConsultedMarker"), version, "ref"),
+                id(child(object, "ConsultedReport"), version, "ref"), text(object, "Memo"), text(object, "Grade"),
+                text(object, "LocalDecision"));
     }
 
     private static void assertTransferredRoles(Map<String, Element> objects, int version, String dataset) {
@@ -1367,6 +1410,7 @@ final class DbInteropTest {
 
     private record CurveComponent(int type, List<List<String>> vertices) { }
     private record DetailValue(String label, Boolean enabled, Integer quantity, String decision) { }
+    private record AnnotatedPair(String marker, String report, String memo, String grade, String decision) { }
 
     private static List<Element> children(Element parent) {
         var elements = new ArrayList<Element>();

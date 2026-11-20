@@ -334,9 +334,7 @@ final class DbMapping {
                                                               List<AssociationRole> roles) {
         var first = roles.getFirst();
         var second = roles.getLast();
-        boolean hasAttributes = !attributes(association).isEmpty();
         if (!first.single() && !second.single()) {
-            if (hasAttributes) throw unsupported("attributes on n:m association " + association.name().declared());
             return Optional.empty();
         }
         if (first.single() && second.single()) {
@@ -344,7 +342,8 @@ final class DbMapping {
         }
         var one = first.single() ? first : second;
         var many = first.single() ? second : first;
-        return Optional.of(new EmbeddedAssociation(association, name, many, one, hasAttributes));
+        boolean linkTable = association.slots().stream().anyMatch(AttributeSlot.class::isInstance);
+        return Optional.of(new EmbeddedAssociation(association, name, many, one, linkTable));
     }
 
     private static SymbolRef roleTarget(TransferPlan plan, ObjectDescriptor association, RoleSlot slot) {

@@ -77,6 +77,13 @@ MODEL DbInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
       Memo : TEXT*16;
       Grade : -8 .. 8;
     END Review;
+    ASSOCIATION AnnotatedLink =
+      ConsultedMarker -- {0..*} Marker;
+      ConsultedReport -- {0..*} Report;
+      Memo : TEXT*16;
+      Grade : -8 .. 8;
+      LocalDecision : (draft, approved);
+    END AnnotatedLink;
   END Data;
 
   TOPIC Naming =

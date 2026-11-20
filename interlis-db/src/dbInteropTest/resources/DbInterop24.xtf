@@ -156,6 +156,13 @@
       <MarkerLink><LinkedHub i:ref="legacy-hub-1"/><LinkedMarker i:ref="legacy-marker-1"/></MarkerLink>
       <MarkerLink><LinkedHub i:ref="legacy-hub-2"/><LinkedMarker i:ref="legacy-marker-1"/></MarkerLink>
       <MarkerLink><LinkedHub i:ref="legacy-hub-1"/><LinkedMarker i:ref="legacy-marker-2"/></MarkerLink>
+      <AnnotatedLink>
+        <ConsultedMarker i:ref="legacy-marker-1"/><ConsultedReport i:ref="legacy-report-1"/>
+        <Memo>confirmed</Memo><Grade>-3</Grade><LocalDecision>approved</LocalDecision>
+      </AnnotatedLink>
+      <AnnotatedLink>
+        <ConsultedMarker i:ref="legacy-marker-2"/><ConsultedReport i:ref="legacy-report-1"/><Memo></Memo>
+      </AnnotatedLink>
       <Marker i:tid="legacy-marker-1">
         <ASelect>first</ASelect><Select i:ref="legacy-hub-1"/>
         <Witness i:ref="legacy-hub-1"><Review><Memo>reviewed</Memo><Grade>-3</Grade></Review></Witness>

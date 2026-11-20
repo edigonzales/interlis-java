@@ -149,12 +149,16 @@ Eine leere Assoziationshülle mit Referenz wird wie die direkte Referenz
 importiert. SQL `NULL` ergibt beim Export eine ausgelassene Rolle.
 [ili2db-Beziehungsabbildung](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst#beziehungen)
 
-Bei n:m-Assoziationen ohne eigene Attribute speichert eine Beziehungstabelle
-beide Rollenspalten in Deklarationsreihenfolge. Ihre Zeilen erhalten eine
-gemeinsame SQL-ID und den Basket. `TRAFO` enthält `newClass`, `tableKind`
-enthält `ASSOCIATION` und `ATTRNAME` sowie `foreignKey` beschreiben beide
-Ziele. XTF überträgt die Links ohne TID. Beide Ziele werden am Basketende
-aufgelöst.
+Bei n:m-Assoziationen speichert eine Beziehungstabelle beide Rollenspalten
+in Deklarationsreihenfolge und danach die eigenen skalaren Attribute. Ihre
+Zeilen erhalten eine gemeinsame SQL-ID und den Basket. `TRAFO` enthält
+`newClass`, `tableKind` enthält `ASSOCIATION` und `ATTRNAME` sowie `foreignKey`
+beschreiben beide Ziele. XTF überträgt die Links ohne TID. Beide Ziele werden
+am Basketende aufgelöst.
+
+Beim XTF-2.3-Import mit ili2gpkg 5.5.2 wurden identische Zielpaare zweier
+anonymer Assoziationen derselben Beziehungstabelle zugeordnet. Die
+Mischfixtures verwenden für diese Assoziationen unterschiedliche Zieltypen.
 
 1:n-Assoziationen mit eigenen skalaren Attributen verwenden ebenfalls eine
 Beziehungstabelle. Im XTF bleibt die Rolle am Objekt der n-Seite. Eine
@@ -166,13 +170,12 @@ beim Export an der Rolle diagnostiziert.
 In 2.4 kann eine Klasse optionale
 `REFERENCE TO`-Attribute auf eine Klasse desselben Baskets haben. Baskets
 und Objekte verwenden Transferkennungen. Grenzen des Profils sind unter
-anderem Vererbung, verschachtelte Strukturen, eigene Attribute an
-n:m-Assoziationen, stabile OIDs, eigene Linienformen, GeoPackage-RTree beim
-Schreiben und Updates. Der gespeicherte Modelltext ist auf eine Million
-Zeichen begrenzt.
+anderem Vererbung, verschachtelte Strukturen, stabile OIDs, eigene
+Linienformen, GeoPackage-RTree beim Schreiben und Updates. Der gespeicherte
+Modelltext ist auf eine Million Zeichen begrenzt.
 
 Der Adapter unterscheidet SQL `NULL` und leeren Text. Die Referenzwerkzeuge
-5.5.1 können leeren Text beim Import zu SQL `NULL` normalisieren und im
+5.5.2 können leeren Text beim Import zu SQL `NULL` normalisieren und im
 XTF-Export auslassen. Beschädigte und nicht
 unterstützte Abbildungen werden diagnostiziert. Modellconstraints
 werden vom separaten Validator geprüft.
