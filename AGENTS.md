@@ -5,7 +5,7 @@
   [Verträge](docs/README.md) und [Modulgrenzen](docs/architecture.md).
   Veröffentlichungen und Arbeiten an Produktionssystemen brauchen einen
   konkreten Auftrag.
-- Veröffentliche Compiler-Artefakte ausschliesslich als Snapshots über die CI
+- Veröffentliche Compiler- und LSP-Artefakte ausschliesslich als Snapshots über die CI
   auf `main`. Erstelle dafür keine GitHub-Releases oder Versionstags. Der
   Ablauf steht in der [Freigabeprüfung](docs/development/release.md#veröffentlichung).
 - Unterstütze INTERLIS 2.3 und 2.4. ANTLR bleibt intern. Compiler und Modell
@@ -49,7 +49,10 @@ liegen bei der Extension.
 - Nutze den [Gradle-Wrapper mit Java 25](docs/development/build.md) für
   JVM-Produkte, Distributionen und portable Backends. Gradle-Teilprojekte
   deklarieren ihre direkten Abhängigkeiten. JPMS-Deskriptoren definieren die
-  Modulgrenzen.
+  Modulgrenzen. Der LSP wird als ein Maven-Distributions-ZIP ausgeliefert.
+  Die Plattform-ZIPs für Compiler und Validator enthalten je eine
+  jlink-Laufzeit. Das Compiler-Snapshot-ZIP und das SDK behalten ihren eigenen
+  Java-25-Einstieg.
 - Ein frischer Checkout baut ohne lokale Projektartefakte. Verwende native
   Gradle-Aufgaben, Testselektion, Änderungserkennung und Caches. Der reguläre
   JVM-Check braucht weder externe Konformitätssuites noch Browser oder Desktop.

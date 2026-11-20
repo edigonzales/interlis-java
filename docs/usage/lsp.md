@@ -13,8 +13,10 @@ Repositoryquellen sind im Editor lesbar und die Auflösung läuft über die
 explizite Hostkonfiguration. Die Diagnoseprosa kann auf Deutsch oder
 Englisch konfiguriert werden.
 
-`./gradlew editorBundle` erzeugt die explizite Übergabe für Editorclients.
-Das Paket enthält die benötigten Verträge und Produktartefakte mit
-Prüfsummen. Revisionstreue Editorbefehle können kompilieren, unveränderliche
+`./gradlew :interlis-lsp:distZip` erzeugt das Maven-Distributions-ZIP
+`guru.interlis:interlis-lsp-distribution:0.2.0-SNAPSHOT@zip`. Es enthält die
+LSP-Module unter `interlis-lsp/lib`, TypeScript-Verträge unter `types`, die
+JSON-Schemas unter `schemas` sowie die Lizenzen. Der Server startet mit Java
+25 und `--module-path interlis-lsp/lib --module guru.interlis.lsp/guru.interlis.lsp.Main`. Revisionstreue Editorbefehle können kompilieren, unveränderliche
 Diagramme abfragen und geprüfte Dokumentationsausgaben anfordern.
 Der gemeinsame Viewer behandelt Navigation und Layout in der UI.

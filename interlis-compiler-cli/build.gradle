@@ -62,9 +62,14 @@ distributions.main {
         into('licenses') {
             from rootProject.file('interlis-compiler/src/main/antlr/LICENSE')
             from rootProject.file('interlis-compiler/src/main/antlr/NOTICE')
+            from rootProject.file('packaging/licenses/ANTLR-BSD-3-Clause.txt')
+            from rootProject.file('testdata/reference/unicode/17.0.0/UNICODE-LICENSE.txt')
         }
     }
 }
+
+tasks.named('distZip') { enabled = false }
+tasks.named('distTar') { enabled = false }
 
 // Preserve the Windows argument and path handling of the installed launcher.
 tasks.named('startScripts') {

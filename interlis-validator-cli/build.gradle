@@ -26,13 +26,16 @@ distributions.main {
     contents {
         from rootProject.file('LICENSE')
         from rootProject.file('packaging/validator')
+        into('licenses') {
+            from rootProject.file('interlis-compiler/src/main/antlr/LICENSE')
+            from rootProject.file('testdata/reference/unicode/17.0.0/UNICODE-LICENSE.txt')
+            from rootProject.file('packaging/licenses')
+        }
     }
 }
 
-tasks.named('distZip') {
-    eachFile { path = path.replaceFirst('^[^/]+/', 'interlis-validator/') }
-    includeEmptyDirs = false
-}
+tasks.named('distZip') { enabled = false }
+tasks.named('distTar') { enabled = false }
 
 // Preserve the Windows argument and path handling of the installed launcher.
 tasks.named('startScripts') {

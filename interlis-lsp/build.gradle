@@ -4,6 +4,7 @@ plugins {
 }
 
 application {
+    applicationName = 'interlis-lsp'
     mainModule = 'guru.interlis.lsp'
     mainClass = 'guru.interlis.lsp.Main'
 }
@@ -26,7 +27,35 @@ tasks.named('test') {
 }
 
 distributions.main {
-    contents { from rootProject.file('LICENSE') }
+    contents {
+        from rootProject.file('LICENSE')
+        into('licenses') {
+            from rootProject.file('interlis-compiler/src/main/antlr/LICENSE')
+            from rootProject.file('testdata/reference/unicode/17.0.0/UNICODE-LICENSE.txt')
+            from rootProject.file('interlis-compiler/src/main/antlr/NOTICE')
+            from rootProject.file('packaging/licenses')
+            from rootProject.file('packaging/lsp/THIRD-PARTY.txt')
+        }
+        into('types') {
+            from('src/main/typescript/editor-protocol.ts') {
+                filter { line -> line.replace(
+                    "'../../../../interlis-projection/src/main/typescript/diagram-document'", "'./diagram-document'") }
+            }
+            from rootProject.file('interlis-projection/src/main/typescript/diagram-document.ts')
+        }
+        into('schemas') {
+            from rootProject.file('interlis-projection/src/main/resources/guru/interlis/projection/diagram-document-1.0.schema.json')
+            from rootProject.file('interlis-wasm-bridge/src/main/resources/guru/interlis/bridge/diagram-options-1.0.schema.json')
+        }
+    }
+}
+
+tasks.named('distTar') { enabled = false }
+
+tasks.named('distZip') {
+    archiveBaseName = 'interlis-lsp-distribution'
+    eachFile { path = path.replaceFirst('^[^/]+/', 'interlis-lsp/') }
+    includeEmptyDirs = false
 }
 
 // Preserve the Windows argument and path handling of the installed launcher.

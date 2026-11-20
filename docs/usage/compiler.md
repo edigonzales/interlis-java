@@ -7,6 +7,11 @@ bevor du es weitergibst oder als Grundlage für andere Werkzeuge verwendest.
 
 ## Starten
 
+Mit `./gradlew compilerAppZip` entsteht unter `build/distributions/apps/`
+das Compiler-ZIP für die Plattform des Buildrechners. Entpacke es und starte
+`interlis-compiler/bin/interlis-compiler` bzw. unter Windows die `.bat`-Datei.
+Dieses Paket enthält Java 25.
+
 Führe die Beispiele in einer Shell im Wurzelverzeichnis dieses Git-Repositories
 aus. Baue den Compiler mit einem Java-25-JDK und speichere den Pfad zum
 Launcher für die weiteren Beispiele.

@@ -34,15 +34,92 @@ final class DistributionChecks {
     }
 
     @Test
+    void bundledCompiler() throws Exception {
+        Path folder = Files.createTempDirectory("interlis compiler ä ");
+        try {
+            extractArchive(Path.of(System.getProperty("compiler.app.zip")), folder);
+            Path app = folder.resolve("interlis-compiler");
+            verifyBundledRuntime(app, "licenses/NOTICE");
+            String launcher = launcher(app, "interlis-compiler").toString();
+            Map<String, String> environment = withoutJava(folder);
+            Files.copy(ROOT.resolve("testdata/models/base24.ili"), folder.resolve("-Gültig & [x]!.ili"));
+            runBundled(folder, List.of(launcher, "check", "--offline", "--", "-Gültig & [x]!.ili"),
+                    environment).requireExit(0);
+            Files.copy(ROOT.resolve("testdata/models/broken24.ili"), folder.resolve("Ungültig.ili"));
+            Result broken = runBundled(folder, List.of(launcher, "check", "--json", "Ungültig.ili"), environment);
+            broken.requireExit(1);
+            require(broken.stdout().contains("SOURCE_ERRORS"), "Expected compiler source errors");
+            checkHttps(folder, Path.of(launcher), environment);
+        } finally {
+            deleteTree(folder);
+        }
+    }
+
+    @Test
     void installedLspLifecycle() throws Exception {
-        run(ROOT, List.of(System.getProperty("node.executable"),
-                ROOT.resolve("tools/verification/lsp-lifecycle.cjs").toString(),
-                System.getProperty("lsp.install"))).requireExit(0);
+        Path folder = Files.createTempDirectory("interlis LSP ä ");
+        try {
+            extractArchive(Path.of(System.getProperty("lsp.zip")), folder);
+            Path lsp = folder.resolve("interlis-lsp");
+            require(Files.isRegularFile(lsp.resolve("LICENSE"))
+                    && Files.isRegularFile(lsp.resolve("licenses/LICENSE"))
+                    && Files.isRegularFile(lsp.resolve("licenses/NOTICE"))
+                    && Files.isRegularFile(lsp.resolve("licenses/UNICODE-LICENSE.txt"))
+                    && Files.isRegularFile(lsp.resolve("licenses/Apache-2.0.txt"))
+                    && Files.isRegularFile(lsp.resolve("licenses/EPL-2.0.txt"))
+                    && Files.isRegularFile(lsp.resolve("licenses/THIRD-PARTY.txt")), "Missing LSP licenses");
+            require(Files.readString(lsp.resolve("types/editor-protocol.ts")).contains("'./diagram-document'")
+                    && Files.isRegularFile(lsp.resolve("types/diagram-document.ts"))
+                    && Files.isRegularFile(lsp.resolve("schemas/diagram-document-1.0.schema.json"))
+                    && Files.isRegularFile(lsp.resolve("schemas/diagram-options-1.0.schema.json")), "Missing editor contracts");
+            try (var jars = Files.list(lsp.resolve("lib"))) {
+                for (Path jar : jars.toList()) {
+                    String name = jar.getFileName().toString();
+                    require(!name.startsWith("junit-") && !name.matches("antlr4-[0-9].*") && !name.endsWith("-tests.jar"),
+                            "Unexpected LSP dependency: " + name);
+                }
+            }
+            require(!Files.exists(lsp.resolve("runtime")), "LSP ZIP must be platform-independent");
+            run(folder, List.of(System.getProperty("node.executable"),
+                    ROOT.resolve("tools/verification/lsp-lifecycle.cjs").toString(), lsp.toString())).requireExit(0);
+        } finally {
+            deleteTree(folder);
+        }
     }
 
     @Test
     void validatorDistribution() throws Exception {
         checkValidatorArchive(Path.of(System.getProperty("validator.zip")));
+    }
+
+    private static void verifyBundledRuntime(Path app, String notices) {
+        boolean windows = System.getProperty("os.name").startsWith("Windows");
+        Path java = app.resolve("runtime/bin/" + (windows ? "java.exe" : "java"));
+        require(Files.isRegularFile(java) && (windows || Files.isExecutable(java)), "Missing bundled Java launcher");
+        require(Files.isRegularFile(app.resolve("LICENSE"))
+                && Files.isRegularFile(app.resolve("licenses/LICENSE"))
+                && Files.isRegularFile(app.resolve("licenses/UNICODE-LICENSE.txt"))
+                && Files.isRegularFile(app.resolve(notices))
+                && Files.isRegularFile(app.resolve("runtime/legal/java.base/LICENSE")), "Missing application licenses");
+    }
+
+    private static Map<String, String> withoutJava(Path folder) throws IOException {
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            return Map.of("PATH", Path.of(System.getenv("SystemRoot"), "System32").toString());
+        }
+        Path tools = Files.createDirectory(folder.resolve("system tools"));
+        // Gradle launchers need these POSIX tools; exclude the system's Java launcher.
+        for (String tool : List.of("echo", "ls", "uname", "sed", "tr", "xargs")) {
+            Path source = Path.of("/usr/bin", tool);
+            Files.createSymbolicLink(tools.resolve(tool), Files.exists(source) ? source : Path.of("/bin", tool));
+        }
+        return Map.of("PATH", tools.toString());
+    }
+
+    private static void deleteTree(Path folder) throws IOException {
+        try (var paths = Files.walk(folder)) {
+            for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) Files.deleteIfExists(path);
+        }
     }
 
     static Path launcher(Path distribution, String name) {
@@ -94,9 +171,7 @@ final class DistributionChecks {
             consumer.requireExit(0);
             require(consumer.stdout().startsWith("SDK PASS ") && consumer.stderr().isEmpty(), "SDK consumer failed");
         } finally {
-            try (var paths = Files.walk(folder)) {
-                for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) Files.deleteIfExists(path);
-            }
+            deleteTree(folder);
         }
     }
 
@@ -106,13 +181,15 @@ final class DistributionChecks {
             DistributionChecks.extractArchive(archive, folder);
             Path installed = folder.resolve("interlis-validator");
             Path cwd = Files.createDirectory(folder.resolve("data files"));
+            verifyBundledRuntime(installed, "licenses/THIRD-PARTY.txt");
+            Map<String, String> environment = withoutJava(folder);
             var launcher = launcher(installed, "interlis-validator").toString();
-            var version = DistributionChecks.run(cwd, List.of(launcher, "--version", "--json"));
+            var version = runBundled(cwd, List.of(launcher, "--version", "--json"), environment);
             version.requireExit(0);
             var info = (Map<?, ?>) JSON.fromJson(version.stdout(), Map.class);
             if (!version.stderr().isEmpty() || !"interlis-validator".equals(info.get("tool"))
                     || !System.getProperty("product.version").equals(info.get("version"))) {
-                throw new IllegalStateException("Wrong installed validator version");
+                throw new IllegalStateException("Wrong installed validator version:\n" + version.stdout() + version.stderr());
             }
             Files.writeString(cwd.resolve("Smoke.ili"), """
                     INTERLIS 2.3;
@@ -135,8 +212,8 @@ final class DistributionChecks {
             for (String value : List.of("ok", "long")) {
                 String file = "-Daten ä " + value + ".xtf";
                 Files.writeString(cwd.resolve(file), xtf.formatted(value));
-                var result = DistributionChecks.run(cwd, List.of(launcher, "--offline", "--json", "--repository", ".",
-                        "--refdata", "reference data.xtf", "--", file));
+                var result = runBundled(cwd, List.of(launcher, "--offline", "--json", "--repository", ".",
+                        "--refdata", "reference data.xtf", "--", file), environment);
                 int expected = value.equals("ok") ? 0 : 1;
                 result.requireExit(expected);
                 var report = (Map<?, ?>) JSON.fromJson(result.stdout(), Map.class);
@@ -148,9 +225,7 @@ final class DistributionChecks {
                 }
             }
         } finally {
-            try (var paths = Files.walk(folder)) {
-                for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) Files.deleteIfExists(path);
-            }
+            deleteTree(folder);
         }
     }
 
@@ -199,9 +274,11 @@ final class DistributionChecks {
         require(format.stderr().isEmpty() && format.stdout().contains("Grüezi 😀"), "CLI output must remain UTF-8");
 
         checkRepository(folder, launcher, HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0),
-                "http", Map.of());
+                "http", Map.of(), false);
+    }
 
-        // A private fixture exercises the shipped launcher with an explicit HTTPS trust store.
+    private static void checkHttps(Path folder, Path launcher, Map<String, String> environment) throws Exception {
+        // A private fixture exercises the shipped runtime with an explicit HTTPS trust store.
         Path store = folder.resolve("localhost.p12");
         String password = "interlis-distribution-test";
         run(folder, List.of(javaTool("keytool"), "-genkeypair", "-alias", "localhost",
@@ -218,12 +295,13 @@ final class DistributionChecks {
         context.init(managers.getKeyManagers(), null, null);
         var https = HttpsServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         https.setHttpsConfigurator(new HttpsConfigurator(context));
-        checkRepository(folder, launcher, https, "https", Map.of("JAVA_OPTS",
-                "\"-Djavax.net.ssl.trustStore=" + store + "\" -Djavax.net.ssl.trustStorePassword=" + password));
+        var options = new HashMap<>(environment);
+        options.put("JAVA_OPTS", "\"-Djavax.net.ssl.trustStore=" + store + "\" -Djavax.net.ssl.trustStorePassword=" + password);
+        checkRepository(folder, launcher, https, "https", options, true);
     }
 
     private static void checkRepository(Path folder, Path launcher, HttpServer server,
-                                        String scheme, Map<String, String> environment) throws Exception {
+                                        String scheme, Map<String, String> environment, boolean bundled) throws Exception {
         var requests = new java.util.concurrent.atomic.AtomicInteger();
         server.createContext("/", exchange -> {
             requests.incrementAndGet();
@@ -239,7 +317,7 @@ final class DistributionChecks {
         try {
             var repository = run(folder, List.of(launcher.toString(), "check", "--repository",
                     scheme + "://127.0.0.1:" + server.getAddress().getPort() + "/", "--root", "Remote"),
-                    environment);
+                    environment, Duration.ofSeconds(90), bundled);
             repository.requireExit(0);
             require(repository.stderr().isEmpty() && requests.get() >= 2, "Expected real repository resolution over " + scheme);
         } finally { server.stop(0); }
@@ -295,13 +373,23 @@ final class DistributionChecks {
     }
 
     static Result run(Path cwd, List<String> command, Map<String, String> environment, Duration timeout) throws Exception {
+        return run(cwd, command, environment, timeout, false);
+    }
+
+    private static Result runBundled(Path cwd, List<String> command, Map<String, String> environment) throws Exception {
+        return run(cwd, command, environment, Duration.ofSeconds(90), true);
+    }
+
+    private static Result run(Path cwd, List<String> command, Map<String, String> environment,
+                              Duration timeout, boolean bundledJava) throws Exception {
         Path logs = Files.createTempDirectory("interlis-process-");
         Path stdout = logs.resolve("stdout"), stderr = logs.resolve("stderr");
         Process process = null;
         try {
             var builder = new ProcessBuilder(command).directory(cwd.toFile())
                     .redirectOutput(stdout.toFile()).redirectError(stderr.toFile());
-            builder.environment().put("JAVA_HOME", System.getProperty("java.home"));
+            if (bundledJava) builder.environment().remove("JAVA_HOME");
+            else builder.environment().put("JAVA_HOME", System.getProperty("java.home"));
             builder.environment().putAll(environment);
             if (command.getFirst().equals("/usr/bin/script")) builder.redirectInput(Path.of("/dev/null").toFile());
             process = builder.start();

@@ -4,7 +4,7 @@ ANTLR runtime 4.13.2 is distributed under the BSD 3-Clause License.
 See ANTLR-BSD-3-Clause.txt and https://github.com/antlr/antlr4/tree/4.13.2.
 
 Gson 2.14.0 and Error Prone Annotations 2.48.0 are distributed under
-Apache License 2.0. See the LICENSE at the top of the installation.
+Apache License 2.0. See Apache-2.0.txt.
 Sources are available at https://github.com/google/gson/tree/gson-parent-2.14.0
 and https://github.com/google/error-prone/tree/v2.48.0.
 
@@ -16,5 +16,5 @@ H2 MVStore 2.4.240 is distributed here under Mozilla Public License 2.0.
 See MPL-2.0.txt. The corresponding source is available at
 https://repo.maven.apache.org/maven2/com/h2database/h2-mvstore/2.4.240/h2-mvstore-2.4.240-sources.jar.
 
-The compiler JAR contains its Unicode data notice under META-INF/licenses.
-See Grammar-NOTICE.txt for the compiler grammar attribution.
+See UNICODE-LICENSE.txt for Unicode data. The MIT license in LICENSE and
+Grammar-NOTICE.txt accompany the grammar derived from swisstopo.

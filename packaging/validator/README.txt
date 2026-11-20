@@ -1,5 +1,5 @@
 INTERLIS Validator
-Requires Java 25. Set JAVA_HOME or make java available on PATH.
+The application ZIP includes its own Java 25 runtime.
 
 macOS/Linux: ./bin/interlis-validator --help
 Windows:     bin\interlis-validator.bat --help
