@@ -113,6 +113,24 @@ MODEL DbInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
       RightLink -- {0..1} PairRight;
       LeftLink -- {1} PairLeft;
     END Pairing;
+    CLASS Mast =
+      Caption : TEXT*32;
+    END Mast;
+    CLASS Tower EXTENDS Mast =
+      Height : 0 .. 99;
+    END Tower;
+    CLASS Relay EXTENDS Tower =
+      Online : BOOLEAN;
+    END Relay;
+    CLASS Beacon EXTENDS Mast =
+      Signal : (red, green);
+    END Beacon;
+    CLASS ServiceBase (ABSTRACT) =
+      ServiceCode : TEXT*12;
+    END ServiceBase;
+    CLASS ServiceUnit EXTENDS ServiceBase =
+      Label : TEXT*18;
+    END ServiceUnit;
   END Data;
 
   TOPIC Naming =

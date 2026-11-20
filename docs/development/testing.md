@@ -124,6 +124,10 @@ fehlende Rollen und den Erhalt der Zieldatei bei mehreren Linkzeilen zum Objekt.
 Bei 1:1-Assoziationen kehren die beiden Sprachfixtures die Deklarationsreihenfolge
 um. Die Tests prüfen die jeweilige Rollenspalte, deren SQL-Nullbarkeit und die
 gespeicherte Ziel-ID.
+Bei Klassenvererbung prüft die Suite konkrete und abstrakte Basisklassen,
+Geschwistertypen, mehrstufige Pfade, den Diskriminator und die gemeinsame ID
+der Teilzeilen. Beschädigte Daten und Vererbungsmetadaten müssen den
+Export abbrechen und eine vorhandene Zieldatei erhalten.
 Das Originalwerkzeug lädt das Modell für das neue Schema aus der Datenbank.
 
 Die JUnit-Rohberichte stehen unter `interlis-db/build/test-results/dbInteropTest/`.

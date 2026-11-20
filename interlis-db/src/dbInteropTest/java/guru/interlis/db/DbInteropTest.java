@@ -137,6 +137,7 @@ final class DbInteropTest {
                 "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056",
                 ili.toString());
         try (var sql = db.connect()) {
+            assertClassHierarchyCatalog(db, sql, model);
             assertStructureCatalog(db, sql, model, version);
             assertNestedStructureCatalog(db, sql, model);
             assertEmbeddedRoleCatalog(db, sql, model);
@@ -183,6 +184,8 @@ final class DbInteropTest {
             assertCorruptNestedStructureRejected(db, sql, model, nativeOutput);
             assertCorruptRoleMappingRejected(db, sql, model, nativeOutput);
             assertCorruptStructureTargetRejected(db, sql, model, nativeOutput);
+            assertCorruptClassHierarchyRejected(db, sql, model, nativeOutput);
+            assertClassHierarchyRollback(db, sql, model, version, fixture);
             assertAmbiguousReviewRejected(db, sql, model, nativeOutput);
             if (version == 24) {
                 assertEmptyCollectionRollback(db, sql, model, fixture, "multisurface", "Park.Coverage", "multisurface", 13);
@@ -393,6 +396,26 @@ final class DbInteropTest {
         assertNull(child(links.getLast(), "Destination"));
     }
 
+    private static void assertClassHierarchyCatalog(TestDatabase db, Connection sql, String model) throws SQLException {
+        String prefix = model + ".Data.";
+        String inheritance = db.table("t_ili2db_inheritance");
+        assertEquals(prefix + "Tower", scalar(sql, "select baseclass from " + inheritance
+                + " where thisclass='" + prefix + "Relay'"));
+        assertEquals(prefix + "ServiceBase", scalar(sql, "select baseclass from " + inheritance
+                + " where thisclass='" + prefix + "ServiceUnit'"));
+        String properties = db.table("t_ili2db_column_prop");
+        assertEquals("tower", scalar(sql, "select setting from " + properties
+                + " where tablename='arelay' and lower(columnname)='t_id' and tag='ch.ehi.ili2db.foreignKey'"));
+        assertEquals("[\"arelay\",\"beacon\",\"mast\",\"tower\"]", scalar(sql, "select setting from " + properties
+                + " where tablename='mast' and lower(columnname)='t_type' and tag='ch.ehi.ili2db.types'"));
+        assertEquals("[\"serviceunit\"]", scalar(sql, "select setting from " + properties
+                + " where tablename='servicebase' and lower(columnname)='t_type' and tag='ch.ehi.ili2db.types'"));
+        String columns = db.table("t_ili2db_attrname");
+        assertEquals("mast", scalar(sql, "select colowner from " + columns + " where iliname='" + prefix + "Mast.Caption'"));
+        assertEquals("tower", scalar(sql, "select colowner from " + columns + " where iliname='" + prefix + "Tower.Height'"));
+        assertEquals("arelay", scalar(sql, "select colowner from " + columns + " where iliname='" + prefix + "Relay.Online'"));
+    }
+
     private static void assertTypeKind(TestDatabase db, Connection sql, String table, String column, String kind)
             throws SQLException {
         assertEquals(kind, scalar(sql, "select setting from " + db.table("t_ili2db_column_prop")
@@ -537,6 +560,64 @@ final class DbInteropTest {
                 """.formatted(review, duplicateId, hub, review, marker));
         assertExportRejected(db, model, "legacy", output, "Review.Witness");
         execute(sql, "delete from " + review + " where t_id=" + duplicateId);
+    }
+
+    private static void assertCorruptClassHierarchyRejected(TestDatabase db, Connection sql, String model, Path output)
+            throws Exception {
+        String root = db.table("mast");
+        String relay = db.table("arelay");
+        String beacon = db.table("beacon");
+        String rootRow = " where t_ili_tid='legacy-relay'";
+        String id = scalar(sql, "select t_id from " + root + rootRow);
+        String basket = scalar(sql, "select t_basket from " + root + rootRow);
+        execute(sql, "update " + root + " set t_type='unknown'" + rootRow);
+        assertExportRejected(db, model, "legacy", output, "T_Type", "mast");
+        execute(sql, "update " + root + " set t_type='arelay'" + rootRow);
+
+        execute(sql, "delete from " + relay + " where t_id=" + id);
+        assertExportRejected(db, model, "legacy", output, "relay", "Relay");
+        execute(sql, "insert into " + relay + " (t_id,t_basket,aonline) values (" + id + "," + basket + ",false)");
+
+        execute(sql, "insert into " + beacon + " (t_id,t_basket) values (" + id + "," + basket + ")");
+        assertExportRejected(db, model, "legacy", output, "beacon", "Beacon");
+        execute(sql, "delete from " + beacon + " where t_id=" + id);
+
+        String inheritance = db.table("t_ili2db_inheritance");
+        String entry = " where thisclass='" + model + ".Data.Relay'";
+        execute(sql, "update " + inheritance + " set baseclass='" + model + ".Data.Mast'" + entry);
+        assertExportRejected(db, model, "legacy", output, "INHERITANCE", "Relay");
+        execute(sql, "update " + inheritance + " set baseclass='" + model + ".Data.Tower'" + entry);
+    }
+
+    private void assertClassHierarchyRollback(TestDatabase db, Connection sql, String model, int version, String fixture)
+            throws Exception {
+        String condition = "exists (select 1 from " + db.table("mast") + " m join " + db.table("tower")
+                + " t on t.t_id=m.t_id and t.t_basket=m.t_basket"
+                + " where m.t_id=new.t_id and m.t_ili_tid='class-fail-relay' and t.height=24)";
+        if (db.postgis) {
+            String function = db.table("reject_relay_import");
+            execute(sql, """
+                    create function %s() returns trigger language plpgsql as $$
+                    begin
+                        if %s then raise exception using errcode = 'P0054', message = 'rollback after parent fragments'; end if;
+                        return new;
+                    end;
+                    $$
+                    """.formatted(function, condition));
+            execute(sql, "create trigger reject_relay_import before insert on " + db.table("arelay")
+                    + " for each row execute function " + function + "()");
+        } else {
+            execute(sql, """
+                    create trigger reject_relay_import before insert on arelay when %s
+                    begin select raise(abort, 'rollback after parent fragments'); end
+                    """.formatted(condition));
+        }
+        Path input = Files.writeString(work.resolve("class-rollback.xtf"), fixture.replace("legacy-", "class-fail-"));
+        var rejected = cli(db, "import", model, "class-fail", input, CancellationToken.none());
+        assertEquals(1, rejected.code(), rejected::diagnostics);
+        assertTrue(rejected.diagnostics().contains(db.postgis ? "SQL code P0054" : "SQL code"), rejected::diagnostics);
+        assertNull(scalar(sql, "select t_id from " + db.table("mast") + " where t_ili_tid='class-fail-relay'"));
+        assertRows(db, sql, version, 3);
     }
 
     private static void assertExportRejected(TestDatabase db, String model, String dataset, Path output, String... diagnostics)
@@ -894,6 +975,48 @@ final class DbInteropTest {
                 : "X'475000100000080800%08X00000000'".formatted(wkbType);
     }
 
+    private static void assertStoredClassHierarchy(TestDatabase db, Connection sql, String dataset) throws SQLException {
+        String mast = db.table("mast");
+        String tower = db.table("tower");
+        String relay = db.table("arelay");
+        String beacon = db.table("beacon");
+        String basket = db.table("t_ili2db_basket");
+        String objects = """
+                select b.t_ili_tid, m.t_ili_tid, m.t_type, m.caption, t.height, r.aonline, f.asignal
+                from %s m join %s b on b.t_id=m.t_basket
+                left join %s t on t.t_id=m.t_id and t.t_basket=m.t_basket
+                left join %s r on r.t_id=m.t_id and r.t_basket=m.t_basket
+                left join %s f on f.t_id=m.t_id and f.t_basket=m.t_basket
+                where b.t_ili_tid='%s-basket-2' order by m.t_type
+                """.formatted(mast, basket, tower, relay, beacon, dataset);
+        try (var statement = sql.createStatement(); var rows = statement.executeQuery(objects)) {
+            for (var item : List.of(List.of("relay", "leaf"), List.of("beacon", "sibling"),
+                    List.of("mast", "base"), List.of("tower", "middle"))) {
+                String type = item.getFirst();
+                assertTrue(rows.next());
+                assertEquals(dataset + "-basket-2", rows.getString(1));
+                assertEquals(dataset + "-" + type, rows.getString(2));
+                assertEquals(type.equals("relay") ? "arelay" : type, rows.getString(3));
+                assertEquals(item.getLast(), rows.getString(4));
+                assertEquals(switch (type) { case "relay" -> "24"; case "tower" -> "12"; default -> null; },
+                        rows.getString(5));
+                if (type.equals("relay")) {
+                    assertFalse(rows.getBoolean(6));
+                    assertFalse(rows.wasNull());
+                } else {
+                    assertNull(rows.getObject(6));
+                }
+                assertEquals(type.equals("beacon") ? "green" : null, rows.getString(7));
+            }
+            assertFalse(rows.next());
+        }
+        String service = " from " + db.table("servicebase") + " b join " + db.table("serviceunit")
+                + " u on b.t_id=u.t_id and b.t_basket=u.t_basket join " + basket + " k on k.t_id=b.t_basket"
+                + " where b.t_ili_tid='" + dataset + "-serviceunit' and k.t_ili_tid='" + dataset + "-basket-2'"
+                + " and b.t_type='serviceunit' and b.servicecode='unit-1'";
+        assertEquals("active", scalar(sql, "select u.label" + service));
+    }
+
     private static void assertStoredDataset(TestDatabase db, Connection sql, int version, String dataset, boolean nativeImport)
             throws SQLException {
         String point = db.postgis ? "st_srid(p.ageometry)" : "p.ageometry";
@@ -926,6 +1049,7 @@ final class DbInteropTest {
             assertFalse(result.next());
         }
         assertSrs(db, sql, "place", "ageometry", srsId);
+        assertStoredClassHierarchy(db, sql, dataset);
         assertStoredStructures(db, sql, dataset);
         assertStoredNestedStructures(db, sql, dataset);
         assertStoredRoles(db, sql, dataset);
@@ -1352,6 +1476,12 @@ final class DbInteropTest {
         var tables = new ArrayList<>(List.of("t_ili2db_dataset", "t_ili2db_basket", "place", "route", "plot", "parcel",
                 "report", "detail", "marker", "hub", "markerlink", "review", "annotatedlink", "pairleft", "pairright", "linkdetail",
                 "nestedrecord", "nestedouter", "nestedinner", "nestedleaf"));
+        var hierarchyCounts = Map.of("mast", 4, "tower", 2, "arelay", 1, "beacon", 1, "servicebase", 1, "serviceunit", 1);
+        for (var entry : hierarchyCounts.entrySet()) {
+            assertEquals(Integer.toString(datasets * entry.getValue()),
+                    scalar(sql, "select count(*) from " + db.table(entry.getKey())), entry.getKey());
+        }
+        tables.addAll(hierarchyCounts.keySet());
         if (version == 24) {
             assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table("link")));
             var collections = List.of("park", "district", "routegroup", "survey");
@@ -1362,7 +1492,7 @@ final class DbInteropTest {
             tables.addAll(collections);
         }
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 63 : 54)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 68 : 59)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
     }
 
@@ -1439,6 +1569,10 @@ final class DbInteropTest {
                 secondBasket.add(dataset + "-" + table + "-2");
             }
         }
+        for (String name : List.of("mast", "tower", "relay", "beacon", "serviceunit")) {
+            secondBasket.add(dataset + "-" + name);
+        }
+        assertTransferredClassHierarchy(objects, version, dataset);
         assertEquals(Map.of(dataset + "-basket-1", firstBasket, dataset + "-basket-2", secondBasket), baskets);
         assertTransferredReports(objects.get(firstReport), objects.get(secondReport), version);
         assertTransferredNestedTree(objects.get(dataset + "-nested-1"), version, List.of("2", "3", "2"));
@@ -1572,6 +1706,27 @@ final class DbInteropTest {
         assertEquals(hub, id(second, version, "ref"));
         assertEquals(List.of(), children(second));
         assertNull(child(objects.get(dataset + "-marker-3"), "Witness"));
+    }
+
+    private static void assertTransferredClassHierarchy(Map<String, Element> objects, int version, String dataset) {
+        String prefix = version == 23 ? "DbInterop23.Data." : "";
+        assertClassFields(objects.get(dataset + "-mast"), prefix + "Mast", Map.of("Caption", "base"));
+        assertClassFields(objects.get(dataset + "-tower"), prefix + "Tower", Map.of("Caption", "middle", "Height", "12"));
+        assertClassFields(objects.get(dataset + "-relay"), prefix + "Relay",
+                Map.of("Caption", "leaf", "Height", "24", "Online", "false"));
+        assertClassFields(objects.get(dataset + "-beacon"), prefix + "Beacon", Map.of("Caption", "sibling", "Signal", "green"));
+        assertClassFields(objects.get(dataset + "-serviceunit"), prefix + "ServiceUnit",
+                Map.of("ServiceCode", "unit-1", "Label", "active"));
+    }
+
+    private static void assertClassFields(Element object, String name, Map<String, String> fields) {
+        assertNotNull(object, name);
+        assertEquals(name, object.getLocalName());
+        var actual = new HashMap<String, String>();
+        for (var child : children(object)) {
+            assertNull(actual.put(child.getLocalName(), child.getTextContent()));
+        }
+        assertEquals(fields, actual);
     }
 
     private static void assertTransferredPairing(Map<String, Element> objects, int version, String dataset) {

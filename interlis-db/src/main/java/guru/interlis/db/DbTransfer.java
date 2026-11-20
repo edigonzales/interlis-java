@@ -55,6 +55,7 @@ import static guru.interlis.db.Ili2dbLayout.T_BASKET;
 import static guru.interlis.db.Ili2dbLayout.T_ID;
 import static guru.interlis.db.Ili2dbLayout.T_ILI_TID;
 import static guru.interlis.db.Ili2dbLayout.T_SEQ;
+import static guru.interlis.db.Ili2dbLayout.T_TYPE;
 
 final class DbTransfer {
     // The object tag is at depth four. Each structure adds an attribute tag and its value tag.
@@ -69,6 +70,7 @@ final class DbTransfer {
                 .orElseThrow(() -> new DbException("Dataset does not exist: " + dataset));
         checkStructureOwners(db, mapping, datasetId, token);
         checkLinkOwners(db, mapping, datasetId, token);
+        checkHierarchyTopics(db, mapping, datasetId, token);
         var plan = mapping.plan();
         var modelRef = plan.rootModels().getFirst();
         var model = plan.model(modelRef).orElseThrow();
@@ -114,8 +116,10 @@ final class DbTransfer {
         writer.write(new TransferEvent.StartBasket(bid, topic.symbol(), List.of(), BasketKind.FULL,
                 Consistency.COMPLETE, Optional.empty(), Optional.empty(), Optional.empty(), List.of()), token);
         for (var table : mapping.tables()) {
-            if (table.object().transferable() && table.object().topic().orElseThrow().equals(topic.symbol())
-                    && !mapping.isEmbeddedLink(table)) {
+            if (table.subtype() || table.object().topic().filter(topic.symbol()::equals).isEmpty()) continue;
+            if (table.hasDiscriminator() && table.object().kind() == SymbolKind.CLASS) {
+                writeHierarchyObjects(db, mapping, table, basketId, bid, writer, token);
+            } else if (table.object().transferable() && !mapping.isEmbeddedLink(table)) {
                 writeObjects(db, mapping, table, basketId, bid, writer, token);
             }
         }
@@ -181,6 +185,158 @@ final class DbTransfer {
         }
     }
 
+    private static void writeHierarchyObjects(Database db, DbMapping mapping, Table root, long basketId,
+                                               BasketId bid, TransferWriter writer, CancellationToken token)
+            throws SQLException {
+        var family = mapping.hierarchy(root);
+        var concrete = family.stream().filter(part -> part.object().transferable())
+                .collect(Collectors.toMap(Table::name, Function.identity()));
+        var fields = new StringJoiner(", ").add("obj." + T_ID).add("obj." + T_ILI_TID).add("obj." + T_TYPE);
+        var from = new StringBuilder(db.table(root.name())).append(" obj");
+        appendColumns(db, mapping, root, "obj", fields, from);
+        String sql = "SELECT " + fields + " FROM " + from + " WHERE obj." + T_BASKET
+                + " = ? ORDER BY obj." + T_ID;
+        try (var fragments = new HierarchyRows(db, mapping, basketId, token);
+             var statement = db.connection().prepareStatement(sql)) {
+            fragments.open(root);
+            fetchInPages(db, statement);
+            statement.setLong(1, basketId);
+            try (var rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    token.throwIfCancellationRequested();
+                    long id = rows.getLong(1);
+                    String tid = identifier(rows.getString(2), "TID", root.name());
+                    String discriminator = rows.getString(3);
+                    var actual = concrete.get(discriminator);
+                    if (actual == null) {
+                        throw new DbException("Unknown or abstract T_Type " + discriminator + " in " + root.name()
+                                + " for T_Id " + id);
+                    }
+                    var values = readFields(db, rows, 4, root, tid);
+                    fragments.readFor(actual, id, tid, values);
+                    var identity = new TransferIdentity(bid, Optional.empty(), Optional.of(new TransferId(tid, IdOrigin.SOURCE)),
+                            Optional.empty(), Optional.empty());
+                    var object = new TransferObject(identity, new Structured(actual.object().symbol(), values));
+                    writer.write(new TransferEvent.ObjectEvent(object, Optional.empty(), Consistency.COMPLETE), token);
+                }
+                fragments.requireExhausted();
+            }
+        }
+    }
+
+    /** Moves each fragment cursor forward in the root's T_Id order and validates its membership. */
+    private static final class HierarchyRows implements AutoCloseable {
+        private final Database db;
+        private final DbMapping mapping;
+        private final long basketId;
+        private final CancellationToken token;
+        private final List<PreparedStatement> statements = new ArrayList<>();
+        private final Map<Table, Fragment> fragments = new LinkedHashMap<>();
+
+        HierarchyRows(Database db, DbMapping mapping, long basketId, CancellationToken token) {
+            this.db = db;
+            this.mapping = mapping;
+            this.basketId = basketId;
+            this.token = token;
+        }
+
+        void open(Table root) throws SQLException {
+            // A separate ordered query per subtype avoids a join of unbounded width for deep hierarchies.
+            for (var part : mapping.hierarchy(root)) {
+                if (!part.subtype()) continue;
+                token.throwIfCancellationRequested();
+                var fields = new StringJoiner(", ").add("part." + T_ID).add("part." + T_BASKET);
+                var from = new StringBuilder(db.table(part.name())).append(" part LEFT JOIN ")
+                        .append(db.table(root.name())).append(" root ON root.").append(T_ID)
+                        .append(" = part.").append(T_ID);
+                appendColumns(db, mapping, part, "part", fields, from);
+                String sql = "SELECT " + fields + " FROM " + from + " WHERE part." + T_BASKET
+                        + " = ? OR root." + T_BASKET + " = ? ORDER BY part." + T_ID;
+                var statement = db.connection().prepareStatement(sql);
+                statements.add(statement);
+                fetchInPages(db, statement);
+                statement.setLong(1, basketId);
+                statement.setLong(2, basketId);
+                fragments.put(part, new Fragment(part, statement.executeQuery()));
+            }
+        }
+
+        void readFor(Table actual, long id, String tid, Map<SymbolRef, TransferValue> values) throws SQLException {
+            for (var part : mapping.tableChain(actual.object().symbol())) {
+                if (part.subtype()) fragments.get(part).readFor(id, tid, values);
+            }
+        }
+
+        void requireExhausted() {
+            for (var fragment : fragments.values()) {
+                if (fragment.available) throw fragment.unexpected();
+            }
+        }
+
+        @Override
+        public void close() throws SQLException {
+            closeStatements(statements);
+        }
+
+        private final class Fragment {
+            private final Table table;
+            private final ResultSet rows;
+            private boolean available;
+            private long id;
+
+            Fragment(Table table, ResultSet rows) throws SQLException {
+                this.table = table;
+                this.rows = rows;
+                advance();
+            }
+
+            void readFor(long rootId, String tid, Map<SymbolRef, TransferValue> values) throws SQLException {
+                if (available && id < rootId) throw unexpected();
+                if (!available || id != rootId) {
+                    throw new DbException("Missing inheritance fragment in " + table.name() + " for T_Id " + rootId);
+                }
+                if (rows.getLong(2) != basketId) {
+                    throw new DbException("Inheritance fragment in " + table.name() + " belongs to a different basket"
+                            + " for T_Id " + rootId);
+                }
+                values.putAll(readFields(db, rows, 3, table, tid));
+                advance();
+            }
+
+            private void advance() throws SQLException {
+                token.throwIfCancellationRequested();
+                available = rows.next();
+                if (available) id = rows.getLong(1);
+            }
+
+            private DbException unexpected() {
+                return new DbException("Unexpected or orphan inheritance fragment in " + table.name() + " for T_Id " + id);
+            }
+        }
+    }
+
+    private static void checkHierarchyTopics(Database db, DbMapping mapping, long datasetId, CancellationToken token)
+            throws SQLException {
+        for (var table : mapping.tables()) {
+            if (table.object().kind() != SymbolKind.CLASS || (!table.hasDiscriminator() && !table.subtype())) continue;
+            token.throwIfCancellationRequested();
+            String sql = "SELECT obj." + T_ID + " FROM " + db.table(table.name()) + " obj JOIN "
+                    + db.technicalTable(BASKET) + " basket ON basket." + T_ID + " = obj." + T_BASKET
+                    + " WHERE basket.dataset = ? AND basket.topic <> ? LIMIT 1";
+            try (var statement = db.connection().prepareStatement(sql)) {
+                statement.setLong(1, datasetId);
+                statement.setString(2, table.object().topic().flatMap(mapping.plan()::topic).orElseThrow()
+                        .name().declared().toString());
+                try (var rows = statement.executeQuery()) {
+                    if (rows.next()) {
+                        throw new DbException("Inheritance row in " + table.name()
+                                + " belongs to a different topic for T_Id " + rows.getLong(1));
+                    }
+                }
+            }
+        }
+    }
+
     private static void appendColumns(Database db, DbMapping mapping, Table table, String alias,
                                       StringJoiner projections, StringBuilder from) {
         int refIndex = 0;
@@ -222,7 +378,7 @@ final class DbTransfer {
             var value = readValue(db, rows, index, column, ownerTid);
             if (value != null) {
                 values.put(column.slot().symbol(), value);
-            } else if (!table.hasTidColumn() && column.slot() instanceof RoleSlot) {
+            } else if (table.object().kind() == SymbolKind.ASSOCIATION && column.slot() instanceof RoleSlot) {
                 throw new DbException("Missing link endpoint at " + column.slot().name().declared());
             }
             index += projectionSize(column);
@@ -265,9 +421,7 @@ final class DbTransfer {
     private static void checkStructureOwners(Database db, DbMapping mapping, long datasetId,
                                              CancellationToken token) throws SQLException {
         for (var table : mapping.tables()) {
-            if (table.object().transferable()) {
-                continue;
-            }
+            if (table.object().kind() != SymbolKind.STRUCTURE) continue;
             token.throwIfCancellationRequested();
             var ownerCount = new StringJoiner(" + ").setEmptyValue("0");
             for (var composition : mapping.compositionsForChild(table.object().symbol())) {
@@ -704,7 +858,8 @@ final class DbTransfer {
             if (mapping.isEmbeddedLink(table)) {
                 throw new DbException("Expected an embedded association at " + table.object().name().declared());
             }
-            boolean hasTid = table.hasTidColumn();
+            var chain = mapping.tableChain(object.type());
+            boolean hasTid = chain.getFirst().hasTidColumn();
             var tid = identity.tid().filter(value -> value.origin() == IdOrigin.SOURCE).map(TransferId::value);
             if (hasTid && tid.isEmpty()) {
                 throw new DbException("Missing source TID");
@@ -714,32 +869,10 @@ final class DbTransfer {
             }
             long id = db.nextId();
             String context = tid.orElseGet(() -> table.object().name().declared() + " T_Id " + id);
-            var statement = insertStatement(table);
-            statement.setLong(1, id);
-            statement.setLong(2, basketId);
-            int index = 3;
-            if (hasTid) {
-                statement.setString(index++, tid.orElseThrow());
-            }
             int found = 0;
-            for (var column : table.columns()) {
-                var value = object.value(column.slot().symbol());
-                if (value.isPresent()) {
-                    found++;
-                }
-                var payload = value.filter(val -> val != Undefined.INSTANCE).orElse(null);
-                if (!hasTid && column.slot() instanceof RoleSlot && !(payload instanceof Reference)) {
-                    throw new DbException("Missing link endpoint at " + column.slot().name().declared());
-                }
-                if (hasTid && column.slot() instanceof RoleSlot role && payload instanceof Structured link) {
-                    var reference = link.value(role.symbol()).orElse(null);
-                    if (link.values().size() != 1 || !(reference instanceof Reference)
-                            || role.role().owner().filter(link.type().symbol()::equals).isEmpty()) {
-                        throw new DbException("Unsupported embedded association payload at " + role.name().declared());
-                    }
-                    payload = reference;
-                }
-                index = bindColumn(statement, index, table, column, id, context, identity.currentBasket(), payload);
+            for (var part : chain) {
+                token.throwIfCancellationRequested();
+                found += insertObjectRow(part, table.name(), object, id, context, tid);
             }
             var compositions = mapping.compositionsForParent(object.type());
             for (var composition : compositions) {
@@ -754,7 +887,6 @@ final class DbTransfer {
             if (found != object.data().values().size()) {
                 throw new DbException("Object " + context + " contains a field without a stored mapping");
             }
-            statement.executeUpdate();
             insertCompositions(object.data(), compositions, id, context, identity.currentBasket());
             for (var association : links) {
                 var value = object.value(association.role().symbol()).orElse(null);
@@ -765,6 +897,43 @@ final class DbTransfer {
             if (referenceTargets.contains(object.type())) {
                 objects.put(tid.orElseThrow(), new StoredObject(id, object.type()));
             }
+        }
+
+        private int insertObjectRow(Table table, String concreteName, TransferObject object, long id, String context,
+                                    Optional<String> tid) throws SQLException {
+            boolean anonymousLink = table.object().kind() == SymbolKind.ASSOCIATION;
+            var statement = insertStatement(table);
+            statement.setLong(1, id);
+            statement.setLong(2, basketId);
+            int index = 3;
+            if (table.hasDiscriminator()) {
+                statement.setString(index++, concreteName);
+            }
+            if (table.hasTidColumn()) {
+                statement.setString(index++, tid.orElseThrow());
+            }
+            int found = 0;
+            for (var column : table.columns()) {
+                var value = object.value(column.slot().symbol());
+                if (value.isPresent()) {
+                    found++;
+                }
+                var payload = value.filter(val -> val != Undefined.INSTANCE).orElse(null);
+                if (anonymousLink && column.slot() instanceof RoleSlot && !(payload instanceof Reference)) {
+                    throw new DbException("Missing link endpoint at " + column.slot().name().declared());
+                }
+                if (!anonymousLink && column.slot() instanceof RoleSlot role && payload instanceof Structured link) {
+                    var reference = link.value(role.symbol()).orElse(null);
+                    if (link.values().size() != 1 || !(reference instanceof Reference)
+                            || role.role().owner().filter(link.type().symbol()::equals).isEmpty()) {
+                        throw new DbException("Unsupported embedded association payload at " + role.name().declared());
+                    }
+                    payload = reference;
+                }
+                index = bindColumn(statement, index, table, column, id, context, object.identity().currentBasket(), payload);
+            }
+            statement.executeUpdate();
+            return found;
         }
 
         private void insertLink(EmbeddedAssociation association, long ownerId, String ownerTid,
@@ -883,6 +1052,10 @@ final class DbTransfer {
         private PreparedStatement prepareInsert(Table table, Composition composition) throws SQLException {
             var names = new StringJoiner(", ").add(T_ID).add(T_BASKET);
             var values = new StringJoiner(", ").add("?").add("?");
+            if (table.hasDiscriminator()) {
+                names.add(T_TYPE);
+                values.add("?");
+            }
             if (table.hasTidColumn()) {
                 names.add(T_ILI_TID);
                 values.add("?");

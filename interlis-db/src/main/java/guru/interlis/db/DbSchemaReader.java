@@ -18,6 +18,7 @@ import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.TransferPlan;
 
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -28,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static guru.interlis.db.DbMapping.unsupported;
@@ -36,6 +38,7 @@ import static guru.interlis.db.Ili2dbLayout.BASKET;
 import static guru.interlis.db.Ili2dbLayout.CLASSNAME;
 import static guru.interlis.db.Ili2dbLayout.DATASET;
 import static guru.interlis.db.Ili2dbLayout.EMBEDDED;
+import static guru.interlis.db.Ili2dbLayout.INHERITANCE;
 import static guru.interlis.db.Ili2dbLayout.INHERITANCE_TAG;
 import static guru.interlis.db.Ili2dbLayout.LV95;
 import static guru.interlis.db.Ili2dbLayout.MAX_MODEL_CHARACTERS;
@@ -44,12 +47,12 @@ import static guru.interlis.db.Ili2dbLayout.NEW_CLASS;
 import static guru.interlis.db.Ili2dbLayout.PREFIX;
 import static guru.interlis.db.Ili2dbLayout.SCHEMA_SENDER;
 import static guru.interlis.db.Ili2dbLayout.SETTINGS;
-import static guru.interlis.db.Ili2dbLayout.TECHNICAL_COLUMNS;
 import static guru.interlis.db.Ili2dbLayout.TRAFO;
 import static guru.interlis.db.Ili2dbLayout.T_BASKET;
 import static guru.interlis.db.Ili2dbLayout.T_ID;
 import static guru.interlis.db.Ili2dbLayout.T_ILI_TID;
 import static guru.interlis.db.Ili2dbLayout.T_SEQ;
+import static guru.interlis.db.Ili2dbLayout.T_TYPE;
 import static guru.interlis.db.Ili2dbLayout.foldedName;
 
 /** Binds a checked model to the mappings and physical catalog of an existing ili2db schema. */
@@ -74,6 +77,7 @@ final class DbSchemaReader {
         var classNames = readClassNames(db, prefix);
         var attrNames = readAttributeNames(db, prefix);
         var transformations = readTransformations(db, prefix);
+        var inheritance = readInheritance(db, prefix);
         var names = new HashMap<SymbolRef, String>();
         var usedNames = new HashSet<String>();
         var objects = new ArrayList<ObjectDescriptor>();
@@ -86,6 +90,11 @@ final class DbSchemaReader {
                 throw new DbException("Missing or inconsistent CLASSNAME/TRAFO mapping for " + path);
             }
             String transformation = transformations.remove(path);
+            String expectedBase = object.baseType().flatMap(plan::object)
+                    .map(base -> base.name().declared().toString()).orElse(null);
+            if (!inheritance.containsKey(path) || !Objects.equals(expectedBase, inheritance.remove(path))) {
+                throw new DbException("Missing or inconsistent INHERITANCE mapping for " + path);
+            }
             if (object.kind() == SymbolKind.ASSOCIATION) {
                 var roles = DbMapping.describeRoles(plan, object);
                 var embedded = DbMapping.embeddedAssociation(object, name, roles);
@@ -107,11 +116,12 @@ final class DbSchemaReader {
             objects.add(object);
             names.put(object.symbol(), name);
         }
-        if (!classNames.isEmpty() || !transformations.isEmpty()) {
-            throw new DbException("Extra CLASSNAME/TRAFO mappings for " + modelName);
+        if (!classNames.isEmpty() || !transformations.isEmpty() || !inheritance.isEmpty()) {
+            throw new DbException("Extra CLASSNAME/TRAFO/INHERITANCE mappings for " + modelName);
         }
         checkSystemTables(db);
-        var catalog = readCatalog(db, objects, names, token);
+        var bases = DbMapping.baseTables(plan);
+        var catalog = readCatalog(db, objects, names, bases, token);
         var tables = new ArrayList<Table>();
         var compositions = new ArrayList<Composition>();
         for (ObjectDescriptor object : objects) {
@@ -143,7 +153,7 @@ final class DbSchemaReader {
                 if (association.linkTable()) continue;
                 columns.add(bindRole(db, parent, attrNames, association.role(), association.target(), names));
             }
-            tables.add(new Table(object, parent.name(), columns));
+            tables.add(new Table(object, parent.name(), columns, hasDiscriminator(object, bases)));
         }
         for (var table : tables) {
             var physical = catalog.get(table.object().symbol());
@@ -155,8 +165,13 @@ final class DbSchemaReader {
         return new DbMapping(plan, source.version(), tables, compositions, associations);
     }
 
+    private static boolean hasDiscriminator(ObjectDescriptor object, Set<SymbolRef> bases) {
+        return object.baseType().isEmpty() && bases.contains(object.symbol());
+    }
+
     private static Map<SymbolRef, CatalogTable> readCatalog(Database db, List<ObjectDescriptor> objects,
-                                                           Map<SymbolRef, String> names, CancellationToken token)
+                                                           Map<SymbolRef, String> names, Set<SymbolRef> bases,
+                                                           CancellationToken token)
             throws SQLException {
         var result = new HashMap<SymbolRef, CatalogTable>();
         for (var object : objects) {
@@ -165,13 +180,18 @@ final class DbSchemaReader {
             var physical = physicalColumns(db, name);
             requireColumns(db, name, physical, Map.of(T_ID, Kind.REFERENCE, T_BASKET, Kind.REFERENCE));
             requireIdPrimaryKey(db, name);
-            var used = new HashSet<>(TECHNICAL_COLUMNS);
-            if (object.kind() == SymbolKind.ASSOCIATION) {
-                used.remove(T_ILI_TID);
-            } else {
+            var used = new HashSet<>(Set.of(T_ID, T_BASKET));
+            boolean subtype = object.baseType().isPresent();
+            if (!subtype && object.kind() != SymbolKind.ASSOCIATION) {
                 requireColumns(db, name, physical, Map.of(T_ILI_TID, Kind.TEXT));
+                used.add(T_ILI_TID);
             }
-            if (object.kind() == SymbolKind.STRUCTURE) {
+            if (hasDiscriminator(object, bases)) {
+                requireColumns(db, name, physical, Map.of(T_TYPE, Kind.TEXT));
+                requireDiscriminator(db, name);
+                used.add(T_TYPE);
+            }
+            if (!subtype && object.kind() == SymbolKind.STRUCTURE) {
                 requireColumns(db, name, physical, Map.of(T_SEQ, Kind.REFERENCE));
                 used.add(T_SEQ);
             }
@@ -306,10 +326,30 @@ final class DbSchemaReader {
         return result;
     }
 
+    private static Map<String, String> readInheritance(Database db, String prefix) throws SQLException {
+        String table = foldedName(INHERITANCE);
+        requireMetadataColumns(db, table, "thisclass", "baseclass");
+        var result = new HashMap<String, String>();
+        try (var stmt = scopedMetadata(db, table, "thisclass, baseclass", "thisclass", prefix);
+             var rows = stmt.executeQuery()) {
+            while (rows.next()) {
+                String path = required(rows, 1, "INHERITANCE.thisClass");
+                if (result.containsKey(path)) throw new DbException("Duplicate INHERITANCE mapping for " + path);
+                result.put(path, rows.getString(2));
+            }
+        }
+        return result;
+    }
+
     private static PreparedStatement scopedMetadata(Database db, String table, String columns, String prefix)
             throws SQLException {
+        return scopedMetadata(db, table, columns, "iliname", prefix);
+    }
+
+    private static PreparedStatement scopedMetadata(Database db, String table, String columns, String field,
+                                                     String prefix) throws SQLException {
         var stmt = db.connection().prepareStatement("SELECT " + columns + " FROM " + db.table(table)
-                + " WHERE substr(iliname, 1, ?) = ?");
+                + " WHERE substr(" + field + ", 1, ?) = ?");
         try {
             stmt.setInt(1, prefix.codePointCount(0, prefix.length()));
             stmt.setString(2, prefix);
@@ -401,6 +441,20 @@ final class DbSchemaReader {
 
     private static String searchPattern(String name, String escape) {
         return name.replace(escape, escape + escape).replace("_", escape + "_").replace("%", escape + "%");
+    }
+
+    private static void requireDiscriminator(Database db, String name) throws SQLException {
+        var metadata = db.connection().getMetaData();
+        String escape = metadata.getSearchStringEscape();
+        try (var columns = metadata.getColumns(db.connection().getCatalog(), searchPattern(db.schema(), escape),
+                searchPattern(name, escape), null)) {
+            while (columns.next()) {
+                if (!T_TYPE.equals(key(db, columns.getString("COLUMN_NAME")))) continue;
+                if (columns.getInt("NULLABLE") != DatabaseMetaData.columnNoNulls) break;
+                return;
+            }
+        }
+        throw new DbException("Expected non-null T_Type discriminator in " + name);
     }
 
     private static void requireIdPrimaryKey(Database db, String table) throws SQLException {

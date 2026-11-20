@@ -156,6 +156,11 @@
       <DbInterop23.Data.PairRight TID="legacy-pairright-1"><LeftLink REF="legacy-pairleft-1"/></DbInterop23.Data.PairRight>
       <DbInterop23.Data.PairLeft TID="legacy-pairleft-1"/>
       <DbInterop23.Data.PairLeft TID="legacy-pairleft-2"/>
+      <DbInterop23.Data.Mast TID="legacy-mast"><Caption>base</Caption></DbInterop23.Data.Mast>
+      <DbInterop23.Data.Tower TID="legacy-tower"><Caption>middle</Caption><Height>12</Height></DbInterop23.Data.Tower>
+      <DbInterop23.Data.Beacon TID="legacy-beacon"><Caption>sibling</Caption><Signal>green</Signal></DbInterop23.Data.Beacon>
+      <DbInterop23.Data.Relay TID="legacy-relay"><Caption>leaf</Caption><Height>24</Height><Online>false</Online></DbInterop23.Data.Relay>
+      <DbInterop23.Data.ServiceUnit TID="legacy-serviceunit"><ServiceCode>unit-1</ServiceCode><Label>active</Label></DbInterop23.Data.ServiceUnit>
     </DbInterop23.Data>
   </DATASECTION>
 </TRANSFER>

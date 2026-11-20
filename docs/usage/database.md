@@ -175,11 +175,23 @@ eigenen Spalten `NULL`, erscheint eine direkte Referenz. Ohne Linkzeile
 entfällt die Rolle. Mehrere Linkzeilen zum selben Objekt der n-Seite werden
 beim Export an der Rolle diagnostiziert.
 
+XTF 2.3 und 2.4 FULL unterstützen Klassenvererbung mit `--noSmartMapping`
+innerhalb eines Topics. Konkrete Klassen enthalten die unterstützten skalaren
+Attribute. Abstrakte Basisklassen können ihre Attribute an mehrere konkrete
+Nachfolger vererben. Pro Klasse entsteht eine Tabelle mit deren deklarierten
+Feldern. Ein Objekt belegt je eine Zeile in der Wurzeltabelle und in jeder
+Tabelle seines Vererbungspfads. Diese Zeilen teilen `T_Id` und `T_Basket`.
+Nur die Wurzel speichert die TID und den SQL-Tabellennamen der konkreten
+Klasse als `T_Type`. Beim Export entsteht daraus ein XTF-Objekt mit allen
+Feldern seines Pfads. Fehlende, unerwartete oder basketfremde Teilzeilen
+und unbekannte oder abstrakte Typen werden diagnostiziert.
+[ili2db-Vererbungsabbildung](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst#vererbung)
+
 In 2.4 kann eine Klasse optionale
 `REFERENCE TO`-Attribute auf eine Klasse desselben Baskets haben. Baskets
 und Objekte verwenden Transferkennungen. Grenzen des Profils sind unter
-anderem Vererbung, stabile OIDs, eigene Linienformen, GeoPackage-RTree
-beim Schreiben und Updates. Der gespeicherte
+anderem Strukturvererbung, stabile OIDs, eigene
+Linienformen, GeoPackage-RTree beim Schreiben und Updates. Der gespeicherte
 Modelltext ist auf eine Million Zeichen begrenzt.
 
 Der Adapter unterscheidet SQL `NULL` und leeren Text. Die Referenzwerkzeuge

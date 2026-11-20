@@ -222,6 +222,11 @@
       <PairLeft i:tid="legacy-pairleft-1"><RightLink i:ref="legacy-pairright-1"/></PairLeft>
       <PairLeft i:tid="legacy-pairleft-2"/>
       <PairRight i:tid="legacy-pairright-1"/>
+      <Mast i:tid="legacy-mast"><Caption>base</Caption></Mast>
+      <Tower i:tid="legacy-tower"><Caption>middle</Caption><Height>12</Height></Tower>
+      <Beacon i:tid="legacy-beacon"><Caption>sibling</Caption><Signal>green</Signal></Beacon>
+      <Relay i:tid="legacy-relay"><Caption>leaf</Caption><Height>24</Height><Online>false</Online></Relay>
+      <ServiceUnit i:tid="legacy-serviceunit"><ServiceCode>unit-1</ServiceCode><Label>active</Label></ServiceUnit>
     </Data>
   </i:datasection>
 </i:transfer>

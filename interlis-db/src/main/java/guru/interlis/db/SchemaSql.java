@@ -1,7 +1,7 @@
 package guru.interlis.db;
 
 import guru.interlis.execution.CancellationToken;
-import guru.interlis.model.SymbolKind;
+import guru.interlis.model.Modifier;
 import guru.interlis.model.TextType;
 
 import java.sql.Connection;
@@ -11,6 +11,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static guru.interlis.db.Database.quote;
 import static guru.interlis.db.Ili2dbLayout.ATTRNAME;
@@ -38,6 +39,7 @@ import static guru.interlis.db.Ili2dbLayout.SETTINGS;
 import static guru.interlis.db.Ili2dbLayout.TABLE_PROP;
 import static guru.interlis.db.Ili2dbLayout.TID_COLUMN;
 import static guru.interlis.db.Ili2dbLayout.TRAFO;
+import static guru.interlis.db.Ili2dbLayout.TYPE_COLUMN;
 
 /** DDL and parameterized ili2db metadata for the 5.5.2 profile. */
 final class SchemaSql {
@@ -111,12 +113,15 @@ final class SchemaSql {
         if (!dialect.gpkg()) commands.add("CREATE SEQUENCE " + dialect.table(SEQUENCE));
         for (var table : plan.mapping().tables()) {
             var columns = new ArrayList<String>();
-            columns.add(dialect.primaryId() + dialect.sequenceDefault());
+            columns.add(dialect.primaryId() + (table.subtype() ? "" : dialect.sequenceDefault()));
             columns.add(BASKET_COLUMN + " " + dialect.idType() + " NOT NULL");
+            if (table.hasDiscriminator()) {
+                columns.add(TYPE_COLUMN + " " + dialect.text(60) + " NOT NULL");
+            }
             if (table.hasTidColumn()) {
                 columns.add(TID_COLUMN + " " + dialect.text(200));
             }
-            if (table.object().kind() == SymbolKind.STRUCTURE) {
+            if (table.hasSequenceColumn()) {
                 columns.add(SEQ_COLUMN + " " + dialect.idType());
             }
             for (var column : table.columns()) {
@@ -191,9 +196,21 @@ final class SchemaSql {
                 token.throwIfCancellationRequested();
                 String name = table.object().name().declared().toString();
                 row(classes, name, table.name());
-                row(inheritance, name, null);
+                var base = table.object().baseType().map(plan.mapping()::table);
+                row(inheritance, name, base.map(value -> value.object().name().declared().toString()).orElse(null));
                 row(transformations, name, INHERITANCE_TAG, NEW_CLASS);
-                row(tableProps, table.name(), PREFIX + "tableKind", table.object().kind().name());
+                if (base.isPresent()) {
+                    row(colProps, table.name(), null, ID_COLUMN, PREFIX + "foreignKey",
+                            base.orElseThrow().name());
+                } else {
+                    row(tableProps, table.name(), PREFIX + "tableKind", table.object().kind().name());
+                }
+                if (table.hasDiscriminator()) {
+                    String types = plan.mapping().hierarchy(table).stream()
+                            .filter(type -> !type.object().modifiers().contains(Modifier.ABSTRACT))
+                            .map(DbMapping.Table::name).sorted().collect(Collectors.joining("\",\"", "[\"", "\"]"));
+                    row(colProps, table.name(), null, TYPE_COLUMN, PREFIX + "types", types);
+                }
                 String displayName = plan.displayName(table);
                 if (displayName != null) row(tableProps, table.name(), PREFIX + "dispName", displayName);
                 for (var column : table.columns()) {

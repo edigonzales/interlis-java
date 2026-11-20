@@ -46,16 +46,19 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static guru.interlis.db.Ili2dbLayout.LV95;
 import static guru.interlis.db.Ili2dbLayout.TECHNICAL_COLUMNS;
 import static guru.interlis.db.Ili2dbLayout.T_SEQ;
+import static guru.interlis.db.Ili2dbLayout.T_TYPE;
 import static guru.interlis.db.Ili2dbLayout.reservedTable;
 
 /** The SQL names and storage bindings for a checked transfer plan. */
@@ -114,7 +117,7 @@ final class DbMapping {
         }
     }
 
-    record Table(ObjectDescriptor object, String name, List<Column> columns) {
+    record Table(ObjectDescriptor object, String name, List<Column> columns, boolean hasDiscriminator) {
         Table {
             columns = List.copyOf(columns);
             if (columns.stream().filter(column -> column.kind().geometry()).count() > 1) {
@@ -122,9 +125,9 @@ final class DbMapping {
             }
         }
 
-        boolean hasTidColumn() {
-            return object.kind() != SymbolKind.ASSOCIATION;
-        }
+        boolean subtype() { return object.baseType().isPresent(); }
+        boolean hasTidColumn() { return !subtype() && object.kind() != SymbolKind.ASSOCIATION; }
+        boolean hasSequenceColumn() { return !subtype() && object.kind() == SymbolKind.STRUCTURE; }
 
         Column column(SymbolRef field) {
             return columns.stream().filter(column -> column.slot().symbol().equals(field)).findFirst().orElseThrow();
@@ -135,6 +138,8 @@ final class DbMapping {
     private final LanguageVersion version;
     private final List<Table> tables;
     private final Map<SymbolRef, Table> bySymbol;
+    private final Map<SymbolRef, List<Table>> chains;
+    private final Map<Table, List<Table>> hierarchies;
     private final List<Composition> compositions;
     private final Map<SymbolRef, List<Composition>> byParent;
     private final Map<SymbolRef, List<Composition>> byChild;
@@ -147,6 +152,21 @@ final class DbMapping {
         this.tables = List.copyOf(tables);
         bySymbol = this.tables.stream().collect(Collectors.toUnmodifiableMap(
                 table -> table.object().symbol(), Function.identity()));
+        var paths = new HashMap<SymbolRef, List<Table>>();
+        var families = new HashMap<Table, List<Table>>();
+        for (var table : this.tables) {
+            if (!table.subtype() && !table.hasDiscriminator()) continue;
+            var path = new ArrayDeque<Table>();
+            for (var part = table; part != null; part = part.object().baseType().map(this::table).orElse(null)) {
+                path.addFirst(part);
+            }
+            var chain = List.copyOf(path);
+            paths.put(table.object().symbol(), chain);
+            families.computeIfAbsent(chain.getFirst(), unused -> new ArrayList<>()).add(table);
+        }
+        chains = Map.copyOf(paths);
+        hierarchies = families.entrySet().stream().collect(Collectors.toUnmodifiableMap(
+                Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
         this.compositions = List.copyOf(compositions);
         byParent = indexCompositions(this.compositions, Composition::parent);
         byChild = indexCompositions(this.compositions, Composition::child);
@@ -191,13 +211,20 @@ final class DbMapping {
     List<Composition> compositionsForParent(SymbolRef parent) { return byParent.getOrDefault(parent, List.of()); }
     List<Composition> compositionsForChild(SymbolRef child) { return byChild.getOrDefault(child, List.of()); }
     List<EmbeddedAssociation> associations() { return associations; }
+    List<Table> tableChain(SymbolRef type) { return chains.getOrDefault(type, List.of(table(type))); }
+    Table rootTable(SymbolRef type) { return tableChain(type).getFirst(); }
+    List<Table> hierarchy(Table root) { return hierarchies.getOrDefault(root, List.of()); }
+
+    static Set<SymbolRef> baseTables(TransferPlan plan) {
+        return plan.objects().stream().flatMap(object -> object.baseType().stream()).collect(Collectors.toSet());
+    }
 
     List<EmbeddedAssociation> linkFields(SymbolRef owner) {
         return associationsForOwner(associations, owner).stream().filter(EmbeddedAssociation::linkTable).toList();
     }
 
     boolean isEmbeddedLink(Table table) {
-        return !table.hasTidColumn() && associations.stream().anyMatch(association -> association.linkTable()
+        return table.object().kind() == SymbolKind.ASSOCIATION && associations.stream().anyMatch(association -> association.linkTable()
                 && association.object().symbol().equals(table.object().symbol()));
     }
 
@@ -231,18 +258,20 @@ final class DbMapping {
             }
             names.put(object.symbol(), name);
         }
+        var bases = baseTables(plan);
         var tables = new ArrayList<Table>();
         var compositions = new ArrayList<Composition>();
         for (var object : plan.objects()) {
             token.throwIfCancellationRequested();
             String name = names.get(object.symbol());
             if (name == null) continue;
+            boolean discriminator = object.baseType().isEmpty() && bases.contains(object.symbol());
             var columns = new ArrayList<Column>();
             var roles = linkRoles.get(object.symbol());
             if (roles != null) {
                 for (var role : roles) {
                     String column = allocator.roleColumn(name, role.slot().name().declared().last());
-                    checkColumnName(role.slot(), column, false, gpkg);
+                    checkColumnName(role.slot(), column, false, false, gpkg);
                     columns.add(roleColumn(role.slot(), role.target(), column));
                 }
             }
@@ -252,12 +281,12 @@ final class DbMapping {
                         allocator.reverseColumn(names.get(child), name, attributeName));
                 if (composition.isPresent()) {
                     var edge = composition.get();
-                    checkColumnName(attribute, edge.ownerColumn(), true, gpkg);
+                    checkColumnName(attribute, edge.ownerColumn(), true, false, gpkg);
                     compositions.add(edge);
                     continue;
                 }
                 String column = allocator.column(name, attributeName);
-                checkColumnName(attribute, column, object.kind() == SymbolKind.STRUCTURE, gpkg);
+                checkColumnName(attribute, column, object.kind() == SymbolKind.STRUCTURE, discriminator, gpkg);
                 var binding = describeColumn(plan, object, attribute, column);
                 columns.add(binding.kind().geometry() ? binding.withSrsId(LV95) : binding);
             }
@@ -265,17 +294,19 @@ final class DbMapping {
                 if (association.linkTable()) continue;
                 var role = association.role();
                 String column = allocator.roleColumn(name, role.name().declared().last());
-                checkColumnName(role, column, false, gpkg);
+                checkColumnName(role, column, false, discriminator, gpkg);
                 columns.add(roleColumn(role, association.target(), column));
             }
-            tables.add(new Table(object, name, columns));
+            tables.add(new Table(object, name, columns, discriminator));
         }
         var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
         return new DbMapping(plan, version, tables, compositions, associations);
     }
 
-    private static void checkColumnName(TransferSlot slot, String column, boolean structure, boolean gpkg) {
-        if (TECHNICAL_COLUMNS.contains(column) || (structure && T_SEQ.equals(column))) {
+    private static void checkColumnName(TransferSlot slot, String column, boolean structure, boolean discriminator,
+                                        boolean gpkg) {
+        if (TECHNICAL_COLUMNS.contains(column) || (structure && T_SEQ.equals(column))
+                || (discriminator && T_TYPE.equals(column))) {
             String kind = slot instanceof RoleSlot ? "role " : "attribute ";
             throw unsupported(kind + slot.name().declared() + " maps to technical column " + column);
         }
@@ -319,14 +350,53 @@ final class DbMapping {
                 throw unsupported("topic " + topic.name().declared());
             }
         }
+        var bases = baseTables(plan);
+        var hierarchy = new HashSet<>(bases);
         for (var object : plan.objects()) {
+            if (object.baseType().isPresent()) hierarchy.add(object.symbol());
             boolean supported = switch (object.kind()) {
-                case CLASS, ASSOCIATION -> object.transferable();
-                case STRUCTURE -> !object.modifiers().contains(Modifier.ABSTRACT);
+                case CLASS -> object.topic().isPresent() && (object.transferable() || bases.contains(object.symbol()));
+                case ASSOCIATION -> object.transferable() && object.baseType().isEmpty();
+                case STRUCTURE -> object.baseType().isEmpty() && !bases.contains(object.symbol())
+                        && !object.modifiers().contains(Modifier.ABSTRACT);
                 default -> false;
             };
-            if (!supported || object.baseType().isPresent() || !object.oidRules().isEmpty()) {
+            if (!supported || !object.oidRules().isEmpty()) {
                 throw unsupported("class layout or identity rules for " + object.name().declared());
+            }
+        }
+        if (!hierarchy.isEmpty()) checkInheritance(plan, hierarchy);
+    }
+
+    private static void checkInheritance(TransferPlan plan, Set<SymbolRef> hierarchy) {
+        for (var object : plan.objects()) {
+            boolean inheritedLayout = hierarchy.contains(object.symbol());
+            if (inheritedLayout && object.baseType().isPresent()
+                    && plan.object(object.baseType().orElseThrow()).filter(base -> base.kind() == SymbolKind.CLASS
+                    && base.topic().equals(object.topic())).isEmpty()) {
+                throw unsupported("superclass outside the class topic at " + object.name().declared());
+            }
+            for (var slot : object.slots()) {
+                if (slot instanceof RoleSlot role && role.role().targets().stream()
+                        .anyMatch(target -> hierarchy.contains(new SymbolRef(plan.snapshotId(), target.base())))) {
+                    throw unsupported("association involving class inheritance at " + role.name().declared());
+                }
+                if (!(slot instanceof AttributeSlot attribute)) continue;
+                if (inheritedLayout && attribute.member().overridden()) {
+                    throw unsupported("extended attribute in class inheritance at " + attribute.name().declared());
+                }
+                if (attribute.attribute().transientAttribute()) continue;
+                if (inheritedLayout) {
+                    var column = describeColumn(plan, object, attribute, attribute.name().declared().last());
+                    if (column.kind().geometry() || column.kind() == Kind.REFERENCE) {
+                        throw unsupported("non-scalar attribute in class inheritance at " + attribute.name().declared());
+                    }
+                }
+                if (plan.type(attribute.effectiveType()).known().orElseThrow() instanceof ReferenceType reference
+                        && reference.target().isPresent()
+                        && hierarchy.contains(new SymbolRef(plan.snapshotId(), reference.target().orElseThrow()))) {
+                    throw unsupported("reference to class inheritance at " + attribute.name().declared());
+                }
             }
         }
     }
@@ -336,7 +406,10 @@ final class DbMapping {
         for (var slot : object.slots()) {
             if (object.kind() == SymbolKind.ASSOCIATION && slot instanceof RoleSlot) continue;
             if (!(slot instanceof AttributeSlot attribute)) throw unsupported(slot.name().declared().toString());
-            if (!attribute.attribute().transientAttribute()) attributes.add(attribute);
+            if (!attribute.attribute().transientAttribute()
+                    && attribute.member().inheritancePath().getFirst().equals(object.symbol().symbol())) {
+                attributes.add(attribute);
+            }
         }
         return attributes;
     }

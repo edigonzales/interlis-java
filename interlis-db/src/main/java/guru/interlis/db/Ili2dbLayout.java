@@ -32,10 +32,12 @@ final class Ili2dbLayout {
 
     static final String ID_COLUMN = "T_Id";
     static final String BASKET_COLUMN = "T_basket";
+    static final String TYPE_COLUMN = "T_Type";
     static final String TID_COLUMN = "T_Ili_Tid";
     static final String SEQ_COLUMN = "T_Seq";
     static final String T_ID = ID_COLUMN.toLowerCase(Locale.ROOT);
     static final String T_BASKET = BASKET_COLUMN.toLowerCase(Locale.ROOT);
+    static final String T_TYPE = TYPE_COLUMN.toLowerCase(Locale.ROOT);
     static final String T_ILI_TID = TID_COLUMN.toLowerCase(Locale.ROOT);
     static final String T_SEQ = SEQ_COLUMN.toLowerCase(Locale.ROOT);
 
