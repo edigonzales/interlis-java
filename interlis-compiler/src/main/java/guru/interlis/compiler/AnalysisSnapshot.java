@@ -33,6 +33,7 @@ public final class AnalysisSnapshot {
     private final AnalysisCoverage coverage;
     private final CompilationFingerprint fingerprint;
     private final AnalysisProvenance provenance;
+    private final boolean compilerProduced;
 
     /**
      * Creates an immutable analysis snapshot.
@@ -53,6 +54,25 @@ public final class AnalysisSnapshot {
                             java.util.List<Diagnostic> diagnostics, java.util.List<Diagnostic> requestDiagnostics,
                             AnalysisCoverage coverage,
                             CompilationFingerprint fingerprint, AnalysisProvenance provenance) {
+        this(snapshotId, semanticGraph, sourceRevisions, syntaxSnapshots, diagnostics, requestDiagnostics, coverage,
+                fingerprint, provenance, false);
+    }
+
+    static AnalysisSnapshot fromCompiler(SnapshotId snapshotId, SemanticGraph semanticGraph,
+                                        Map<SourceId, SourceRevision> sourceRevisions,
+                                        Map<SourceId, SyntaxSnapshot> syntaxSnapshots,
+                                        java.util.List<Diagnostic> diagnostics, java.util.List<Diagnostic> requestDiagnostics,
+                                        AnalysisCoverage coverage, CompilationFingerprint fingerprint, AnalysisProvenance provenance) {
+        return new AnalysisSnapshot(snapshotId, semanticGraph, sourceRevisions, syntaxSnapshots, diagnostics,
+                requestDiagnostics, coverage, fingerprint, provenance, true);
+    }
+
+    private AnalysisSnapshot(SnapshotId snapshotId, SemanticGraph semanticGraph,
+                             Map<SourceId, SourceRevision> sourceRevisions, Map<SourceId, SyntaxSnapshot> syntaxSnapshots,
+                             java.util.List<Diagnostic> diagnostics, java.util.List<Diagnostic> requestDiagnostics,
+                             AnalysisCoverage coverage, CompilationFingerprint fingerprint, AnalysisProvenance provenance,
+                             boolean compilerProduced) {
+        this.compilerProduced = compilerProduced;
         this.snapshotId = Objects.requireNonNull(snapshotId, "snapshotId");
         this.semanticGraph = Objects.requireNonNull(semanticGraph, "semanticGraph");
         if (!snapshotId.equals(semanticGraph.snapshotId())) {
@@ -91,6 +111,10 @@ public final class AnalysisSnapshot {
                 throw new IllegalArgumentException("syntax does not match analysis source fingerprint: " + id);
             }
         });
+    }
+
+    boolean compilerProduced() {
+        return compilerProduced;
     }
 
     /** Returns the immutable snapshot identity. */

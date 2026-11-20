@@ -18,7 +18,7 @@ public final class SyntaxBatch {
     private final ParseOptions options;
     private final CancellationToken cancellation;
     private final SyntaxWork work;
-    private final AntlrSyntaxService parser = new AntlrSyntaxService();
+    private final AntlrSyntaxService parser = SyntaxServices.parser();
 
     SyntaxBatch(ParseOptions options, CancellationToken cancellation) {
         this.options = Objects.requireNonNull(options, "options");
@@ -27,15 +27,15 @@ public final class SyntaxBatch {
     }
 
     /**
-     * Prepares the next non-null source, optionally using a snapshot of the exact
-     * same source and parse profile. The returned value is immutable.
+     * Prepares the next non-null source, optionally reusing a parser-produced
+     * snapshot of the exact same source and parse profile. The returned value is immutable.
      * @param previous reuse hint, or null
      * @throws OperationCancelledException if cancellation is requested or a limit is reached
      */
     public SyntaxSnapshot prepare(SourceText source, SyntaxSnapshot previous) {
         cancellation.throwIfCancellationRequested();
         try {
-            if (previous != null && source.equals(previous.source())
+            if (previous != null && previous.parserProduced() && source.equals(previous.source())
                     && previous.options().equals(options) && previous.usage().isPresent()
                     && !previous.coverage().budgetExceeded() && !previous.coverage().cancelled()) {
                 var usage = previous.usage().orElseThrow();

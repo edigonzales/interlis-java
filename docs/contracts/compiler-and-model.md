@@ -148,7 +148,12 @@ Auftragsrelevanz umfasst Roots, Imports, Übersetzungsoriginale und Overlayabhä
 <a id="analysisreuse"></a>
 ### `AnalysisReuse`
 
-Diese Eingabe ist eine unveränderliche Beschleunigungs- und Identitätshilfe. Sie wird nicht als bereits bestätigte Wahrheit akzeptiert. `ReusePlanner.plan(request,reuse)` prüft Text-, Quellen-/Revisions-, Grammatik-, Sprach-, Options-, Modus- und Abhängigkeitsfingerprints, bevor ein Ergebnis wiederverwendet wird. Nicht passende Einträge werden verworfen. Untereinander widersprüchliche vom API-Aufrufer selbst konstruierte Eingaben können als ungültige Argumente abgelehnt werden; ein normaler geänderter Text ist keine Exception.
+Diese unveränderliche Eingabe enthält Hinweise für Syntax- und Identitätswiederverwendung.
+Der Standardcompiler verwendet eigene frühere Analysen für Symbolidentitäten und
+eigene Syntaxresultate bei identischem Quelltext, identischer Revision und
+identischen Parseoptionen. Gemessener Syntaxaufwand belastet auch den neuen Lauf.
+Öffentlich konstruierte Snapshots bleiben als Daten verwendbar. Die Engine
+ignoriert sie als Wiederverwendungshinweise. Die Semantik wird im neuen Lauf gebunden.
 
 `IdentityReconciler` verwendet nachweislich unveränderte, eindeutige Deklarationsanker samt Scope/Art und Textstruktur. Eine Einfügung vor einer Deklaration darf deren Offset ändern, ohne zwingend ihre ID zu ändern. Ein Name allein reicht nicht. Bei Duplikaten oder unklarer Zuordnung werden neue IDs vergeben. Die Relation alter/neuer Identitäten kann als eigenes Delta an Projektionen gehen; sie darf keine falsche semantische Gleichsetzung erzeugen.
 

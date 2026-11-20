@@ -1,11 +1,13 @@
 package guru.interlis.syntax;
 
 import guru.interlis.diagnostics.Diagnostic;
+import guru.interlis.source.SourceRange;
 import guru.interlis.source.SourceText;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -24,13 +26,14 @@ public final class SyntaxSnapshot {
     private final SyntaxCoverage coverage;
     private final SyntaxFingerprint fingerprint;
     private final Optional<Usage> usage;
-    private final java.util.Map<guru.interlis.source.SourceRange,SourceMetadata> metadata;
+    private final Map<SourceRange, SourceMetadata> metadata;
+    private final boolean parserProduced;
 
     public SyntaxSnapshot(SourceText source, ParseOptions options, LanguageDetection language,
                           DocumentSyntax root, List<SyntaxToken> tokens,
                           List<TriviaSpan> trivia, List<Diagnostic> diagnostics,
                           SyntaxCoverage coverage, SyntaxFingerprint fingerprint,
-                          java.util.Map<guru.interlis.source.SourceRange,SourceMetadata> metadata) {
+                          Map<SourceRange, SourceMetadata> metadata) {
         this(source, options, language, root, tokens, trivia, diagnostics, coverage, fingerprint,
                 metadata, Optional.empty());
     }
@@ -39,7 +42,22 @@ public final class SyntaxSnapshot {
                           DocumentSyntax root, List<SyntaxToken> tokens,
                           List<TriviaSpan> trivia, List<Diagnostic> diagnostics,
                           SyntaxCoverage coverage, SyntaxFingerprint fingerprint,
-                          java.util.Map<guru.interlis.source.SourceRange,SourceMetadata> metadata, Optional<Usage> usage) {
+                          Map<SourceRange, SourceMetadata> metadata, Optional<Usage> usage) {
+        this(source, options, language, root, tokens, trivia, diagnostics, coverage, fingerprint, metadata, usage, false);
+    }
+
+    static SyntaxSnapshot fromParser(SourceText source, ParseOptions options, LanguageDetection language,
+                                     DocumentSyntax root, List<SyntaxToken> tokens, List<TriviaSpan> trivia,
+                                     List<Diagnostic> diagnostics, SyntaxCoverage coverage, SyntaxFingerprint fingerprint,
+                                     Map<SourceRange, SourceMetadata> metadata, Optional<Usage> usage) {
+        return new SyntaxSnapshot(source, options, language, root, tokens, trivia, diagnostics, coverage, fingerprint,
+                metadata, usage, true);
+    }
+
+    private SyntaxSnapshot(SourceText source, ParseOptions options, LanguageDetection language,
+                           DocumentSyntax root, List<SyntaxToken> tokens, List<TriviaSpan> trivia,
+                           List<Diagnostic> diagnostics, SyntaxCoverage coverage, SyntaxFingerprint fingerprint,
+                           Map<SourceRange, SourceMetadata> metadata, Optional<Usage> usage, boolean parserProduced) {
         this.source = Objects.requireNonNull(source, "source");
         this.options = Objects.requireNonNull(options, "options");
         this.language = Objects.requireNonNull(language, "language");
@@ -50,12 +68,17 @@ public final class SyntaxSnapshot {
         this.coverage = Objects.requireNonNull(coverage, "coverage");
         this.fingerprint = Objects.requireNonNull(fingerprint, "fingerprint");
         this.usage = Objects.requireNonNull(usage, "usage");
-        this.metadata=java.util.Map.copyOf(metadata);
-        for(var entry:this.metadata.entrySet()) {
+        this.parserProduced = parserProduced;
+        this.metadata = Map.copyOf(metadata);
+        for (var entry : this.metadata.entrySet()) {
             checkMetadataRange(entry.getKey());
             entry.getValue().attributes().forEach(value->checkMetadataRange(value.range()));
             entry.getValue().documentation().forEach(value->checkMetadataRange(value.range()));
         }
+    }
+
+    boolean parserProduced() {
+        return parserProduced;
     }
 
     /** Work measured by the parser for a completed source, in nodes and recovery events. */
@@ -71,7 +94,7 @@ public final class SyntaxSnapshot {
     public Optional<Usage> usage() { return usage; }
 
     /** Annotation groups keyed by the following token's original range. */
-    public java.util.Map<guru.interlis.source.SourceRange,SourceMetadata> metadata() { return metadata; }
+    public Map<SourceRange, SourceMetadata> metadata() { return metadata; }
 
     private void checkMetadataRange(guru.interlis.source.SourceRange range) {
         if(!range.source().equals(source.id()) || !range.revision().equals(source.revision()) || range.endOffset()>source.length())

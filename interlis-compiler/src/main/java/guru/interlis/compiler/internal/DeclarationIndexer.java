@@ -1,6 +1,6 @@
 package guru.interlis.compiler.internal;
 
-import guru.interlis.compiler.AnalysisReuse;
+import guru.interlis.compiler.AnalysisSnapshot;
 import guru.interlis.model.DerivationKind;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.Modifier;
@@ -60,8 +60,8 @@ final class DeclarationIndexer {
     private final Map<SymbolId, SymbolId> modelOf = new LinkedHashMap<>();
     private final List<IndexedDeclarations.ModelEntry> modelEntries = new ArrayList<>();
 
-    IndexedDeclarations index(List<SyntaxSnapshot> snapshots, AnalysisReuse reuse) {
-        preparePrevious(reuse);
+    IndexedDeclarations index(List<SyntaxSnapshot> snapshots, Optional<AnalysisSnapshot> previousAnalysis) {
+        preparePrevious(previousAnalysis);
         List<SyntaxSnapshot> sorted = new ArrayList<>(snapshots);
         sorted.sort(Comparator.comparing(s -> s.source().id().value()));
         for (SyntaxSnapshot snapshot : sorted) {
@@ -103,8 +103,8 @@ final class DeclarationIndexer {
                         && range.endOffset() <= node.range().endOffset()).findFirst();
     }
 
-    private void preparePrevious(AnalysisReuse reuse) {
-        reuse.previousAnalysis().ifPresent(analysis -> {
+    private void preparePrevious(Optional<AnalysisSnapshot> previousAnalysis) {
+        previousAnalysis.ifPresent(analysis -> {
             var graph=analysis.semanticGraph();
             var anchors=new HashMap<SymbolId,Anchor>();var counts=new HashMap<Anchor,Integer>();
             for(var symbol:graph.symbols())if(symbol.origin() instanceof Origin.DeclaredOrigin declared) {

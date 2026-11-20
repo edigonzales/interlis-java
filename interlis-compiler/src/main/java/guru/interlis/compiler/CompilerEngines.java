@@ -30,6 +30,6 @@ public final class CompilerEngines {
      */
     public static CompilerEngine create(CompilerServices services) {
         return new guru.interlis.compiler.internal.DefaultCompilerEngine(
-                Objects.requireNonNull(services, "services"));
+                Objects.requireNonNull(services, "services"), AnalysisSnapshot::fromCompiler, AnalysisSnapshot::compilerProduced);
     }
 }

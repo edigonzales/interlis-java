@@ -144,8 +144,9 @@ Die fachliche Anzahl-/Typprüfung der Argumente bleibt zusätzlich erforderlich.
 
 Der `SyntaxSnapshot`-Konstruktor nimmt `ParseOptions` anstelle
 eines einzelnen `ParseMode` entgegen. `mode()` ist die Sicht auf `options().mode()`.
-Wiederverwendung verlangt neben Quelle, Revision und Text dieselben Parseoptionen;
-ein früherer Lauf mit grösserem Budget darf ein später verlangtes Limit nicht umgehen.
+Wiederverwendung setzt einen im Syntaxdienst erstellten Snapshot sowie dieselbe
+Quelle, Revision, denselben Text und dieselben Parseoptionen voraus. Der neue
+Lauf berücksichtigt den gemessenen Aufwand des Snapshots im gemeinsamen Budget.
 
 <a id="eigene-knoten-tokens-und-trivia"></a>
 ### Eigene Knoten, Tokens und Trivia

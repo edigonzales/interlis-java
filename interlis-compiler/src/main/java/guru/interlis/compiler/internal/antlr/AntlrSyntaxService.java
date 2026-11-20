@@ -27,6 +27,7 @@ import guru.interlis.syntax.LanguageDetection;
 import guru.interlis.syntax.ParseOptions;
 import guru.interlis.syntax.SyntaxCoverage;
 import guru.interlis.syntax.SyntaxFingerprint;
+import guru.interlis.syntax.SourceMetadata;
 import guru.interlis.syntax.SyntaxNodeId;
 import guru.interlis.syntax.SyntaxService;
 import guru.interlis.syntax.SyntaxSnapshot;
@@ -44,12 +45,31 @@ import org.antlr.v4.runtime.Token;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
 /** ANTLR-backed syntax service; all ANTLR objects stay internal. */
 public final class AntlrSyntaxService implements SyntaxService {
     private static final DiagnosticCatalog CATALOG = DiagnosticCatalog.initial();
+
+    @FunctionalInterface
+    public interface SnapshotFactory {
+        SyntaxSnapshot create(SourceText source, ParseOptions options, LanguageDetection language, DocumentSyntax root,
+                              List<SyntaxToken> tokens, List<TriviaSpan> trivia, List<Diagnostic> diagnostics,
+                              SyntaxCoverage coverage, SyntaxFingerprint fingerprint, Map<SourceRange, SourceMetadata> metadata,
+                              Optional<SyntaxSnapshot.Usage> usage);
+    }
+
+    private final SnapshotFactory snapshotFactory;
+
+    public AntlrSyntaxService() {
+        this(SyntaxSnapshot::new);
+    }
+
+    public AntlrSyntaxService(SnapshotFactory snapshotFactory) {
+        this.snapshotFactory = Objects.requireNonNull(snapshotFactory, "snapshotFactory");
+    }
 
     @Override
     public SyntaxSnapshot parse(SourceText source, ParseOptions options,
@@ -194,7 +214,7 @@ public final class AntlrSyntaxService implements SyntaxService {
                 && diagnostics.stream().noneMatch(diagnostic -> diagnostic.severity() == Severity.ERROR)) {
             structure.index(tree, offsets, cancellation);
         }
-        return new SyntaxSnapshot(source, options, effectiveDetection, document,
+        return snapshotFactory.create(source, options, effectiveDetection, document,
                 buildTokens(source, offsets, tokens), buildTrivia(source, offsets, tokens),
                 diagnostics, coverage, fingerprint(source, options, effectiveDetection), metadata,
                 Optional.of(new SyntaxSnapshot.Usage(work.nodes() - nodesBefore, work.recoveries() - recoveriesBefore)));
