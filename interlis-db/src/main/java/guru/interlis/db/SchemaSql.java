@@ -210,6 +210,7 @@ final class SchemaSql {
             }
             for (var association : plan.mapping().associations()) {
                 token.throwIfCancellationRequested();
+                if (association.linkTable()) continue;
                 String name = association.object().name().declared().toString();
                 row(classes, name, association.name());
                 row(inheritance, name, null);

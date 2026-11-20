@@ -90,11 +90,14 @@ final class DbSchemaReader {
                 var roles = DbMapping.describeRoles(plan, object);
                 var embedded = DbMapping.embeddedAssociation(object, name, roles);
                 if (embedded.isPresent()) {
-                    if (!EMBEDDED.equals(transformation)) {
-                        throw new DbException("Missing or inconsistent CLASSNAME/TRAFO mapping for " + path);
+                    var association = embedded.orElseThrow();
+                    associations.add(association);
+                    if (!association.linkTable()) {
+                        if (!EMBEDDED.equals(transformation)) {
+                            throw new DbException("Missing or inconsistent CLASSNAME/TRAFO mapping for " + path);
+                        }
+                        continue;
                     }
-                    associations.add(embedded.orElseThrow());
-                    continue;
                 }
                 linkRoles.put(object.symbol(), roles);
             }
@@ -120,8 +123,6 @@ final class DbSchemaReader {
                 for (var role : roles) {
                     columns.add(bindRole(db, parent, attrNames, role.slot(), role.target(), names));
                 }
-                tables.add(new Table(object, parent.name(), columns));
-                continue;
             }
             for (var attr : DbMapping.attributes(object)) {
                 String path = attr.name().declared().toString();
@@ -139,6 +140,7 @@ final class DbSchemaReader {
                 }
             }
             for (var association : DbMapping.associationsForOwner(associations, object.symbol())) {
+                if (association.linkTable()) continue;
                 columns.add(bindRole(db, parent, attrNames, association.role(), association.target(), names));
             }
             tables.add(new Table(object, parent.name(), columns));

@@ -96,9 +96,11 @@
       <DbInterop23.Data.MarkerLink><LinkedMarker REF="legacy-marker-2"/><LinkedHub REF="legacy-hub-1"/></DbInterop23.Data.MarkerLink>
       <DbInterop23.Data.Marker TID="legacy-marker-1">
         <ASelect>first</ASelect><Select REF="legacy-hub-1"/>
+        <Witness REF="legacy-hub-1"><DbInterop23.Data.Review><Memo>reviewed</Memo><Grade>-3</Grade></DbInterop23.Data.Review></Witness>
       </DbInterop23.Data.Marker>
       <DbInterop23.Data.Marker TID="legacy-marker-2">
         <ASelect>second</ASelect><Select REF="legacy-hub-1"><DbInterop23.Data.MarkerHub/></Select>
+        <Witness REF="legacy-hub-1"/>
       </DbInterop23.Data.Marker>
       <DbInterop23.Data.Hub TID="legacy-hub-1"/>
       <DbInterop23.Data.Hub TID="legacy-hub-2"/>

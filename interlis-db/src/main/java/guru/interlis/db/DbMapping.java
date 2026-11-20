@@ -96,8 +96,13 @@ final class DbMapping {
     /** A structure-valued field stored through a reverse owner column on its child table. */
     record Composition(AttributeSlot slot, SymbolRef parent, SymbolRef child, String ownerColumn, boolean list) { }
 
-    /** A logical ili2db mapping whose only stored column is the role on the owner table. */
-    record EmbeddedAssociation(ObjectDescriptor object, String name, SymbolRef owner, SymbolRef target, RoleSlot role) { }
+    /** An association transferred as a field on an object at the owner end. */
+    record EmbeddedAssociation(ObjectDescriptor object, String name, AssociationRole ownerRole,
+                               AssociationRole targetRole, boolean linkTable) {
+        SymbolRef owner() { return ownerRole.target(); }
+        SymbolRef target() { return targetRole.target(); }
+        RoleSlot role() { return targetRole.slot(); }
+    }
 
     record AssociationRole(RoleSlot slot, SymbolRef target) {
         boolean single() {
@@ -115,6 +120,10 @@ final class DbMapping {
 
         boolean hasTidColumn() {
             return object.kind() != SymbolKind.ASSOCIATION;
+        }
+
+        Column column(SymbolRef field) {
+            return columns.stream().filter(column -> column.slot().symbol().equals(field)).findFirst().orElseThrow();
         }
     }
 
@@ -154,6 +163,15 @@ final class DbMapping {
     List<Composition> compositionsForChild(SymbolRef child) { return byChild.getOrDefault(child, List.of()); }
     List<EmbeddedAssociation> associations() { return associations; }
 
+    List<EmbeddedAssociation> linkFields(SymbolRef owner) {
+        return associationsForOwner(associations, owner).stream().filter(EmbeddedAssociation::linkTable).toList();
+    }
+
+    boolean isEmbeddedLink(Table table) {
+        return !table.hasTidColumn() && associations.stream().anyMatch(association -> association.linkTable()
+                && association.object().symbol().equals(table.object().symbol()));
+    }
+
     Table table(SymbolRef ref) {
         Table table = bySymbol.get(ref);
         if (table == null) throw new DbException("No table for transfer class " + ref);
@@ -178,7 +196,7 @@ final class DbMapping {
                 var embedded = embeddedAssociation(object, name, roles);
                 if (embedded.isPresent()) {
                     associations.add(embedded.orElseThrow());
-                    continue;
+                    if (!embedded.orElseThrow().linkTable()) continue;
                 }
                 linkRoles.put(object.symbol(), roles);
             }
@@ -198,8 +216,6 @@ final class DbMapping {
                     checkColumnName(role.slot(), column, false, gpkg);
                     columns.add(roleColumn(role.slot(), role.target(), column));
                 }
-                tables.add(new Table(object, name, columns));
-                continue;
             }
             for (var attribute : attributes(object)) {
                 String attributeName = attribute.name().declared().last();
@@ -217,6 +233,7 @@ final class DbMapping {
                 columns.add(binding.kind().geometry() ? binding.withSrsId(LV95) : binding);
             }
             for (var association : associationsForOwner(associations, object.symbol())) {
+                if (association.linkTable()) continue;
                 var role = association.role();
                 String column = allocator.roleColumn(name, role.name().declared().last());
                 checkColumnName(role, column, false, gpkg);
@@ -288,6 +305,7 @@ final class DbMapping {
     static List<AttributeSlot> attributes(ObjectDescriptor object) {
         var attributes = new ArrayList<AttributeSlot>();
         for (var slot : object.slots()) {
+            if (object.kind() == SymbolKind.ASSOCIATION && slot instanceof RoleSlot) continue;
             if (!(slot instanceof AttributeSlot attribute)) throw unsupported(slot.name().declared().toString());
             if (!attribute.attribute().transientAttribute()) attributes.add(attribute);
         }
@@ -296,13 +314,14 @@ final class DbMapping {
 
     static List<AssociationRole> describeRoles(TransferPlan plan, ObjectDescriptor association) {
         String feature = "association " + association.name().declared();
+        var roles = association.slots().stream().filter(RoleSlot.class::isInstance).map(RoleSlot.class::cast).toList();
         if (association.kind() != SymbolKind.ASSOCIATION || !association.transferable()
                 || association.baseType().isPresent() || !association.oidRules().isEmpty()
-                || association.modifiers().contains(Modifier.OID) || association.slots().size() != 2
-                || !(association.slots().getFirst() instanceof RoleSlot first)
-                || !(association.slots().getLast() instanceof RoleSlot second)) {
+                || association.modifiers().contains(Modifier.OID) || roles.size() != 2) {
             throw unsupported(feature);
         }
+        var first = roles.getFirst();
+        var second = roles.getLast();
         if (first.role().cardinality().upper().equals(CardinalityUpper.finite(0))
                 || second.role().cardinality().upper().equals(CardinalityUpper.finite(0))) {
             throw unsupported(feature + " requires both roles to admit a target");
@@ -315,7 +334,9 @@ final class DbMapping {
                                                               List<AssociationRole> roles) {
         var first = roles.getFirst();
         var second = roles.getLast();
+        boolean hasAttributes = !attributes(association).isEmpty();
         if (!first.single() && !second.single()) {
+            if (hasAttributes) throw unsupported("attributes on n:m association " + association.name().declared());
             return Optional.empty();
         }
         if (first.single() && second.single()) {
@@ -323,7 +344,7 @@ final class DbMapping {
         }
         var one = first.single() ? first : second;
         var many = first.single() ? second : first;
-        return Optional.of(new EmbeddedAssociation(association, name, many.target(), one.target(), one.slot()));
+        return Optional.of(new EmbeddedAssociation(association, name, many, one, hasAttributes));
     }
 
     private static SymbolRef roleTarget(TransferPlan plan, ObjectDescriptor association, RoleSlot slot) {
@@ -405,7 +426,8 @@ final class DbMapping {
                 throw unsupported("attribute " + path + " (" + type.kind() + ")");
             }
         };
-        if (object.kind() == SymbolKind.STRUCTURE && (kind.geometry() || kind == Kind.REFERENCE)) {
+        if ((object.kind() == SymbolKind.STRUCTURE || object.kind() == SymbolKind.ASSOCIATION)
+                && (kind.geometry() || kind == Kind.REFERENCE)) {
             throw unsupported("attribute " + path + " (" + type.kind() + ")");
         }
         Optional<SymbolRef> target = Optional.empty();

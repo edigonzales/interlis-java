@@ -46,5 +46,11 @@ MODEL DbInterop23 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
       LinkedMarker -- {0..*} Marker;
       LinkedHub -- {0..*} Hub;
     END MarkerLink;
+    ASSOCIATION Review =
+      Witness -- {0..1} Hub;
+      ReviewMarkers -- {0..*} Marker;
+      Memo : TEXT*16;
+      Grade : -8 .. 8;
+    END Review;
   END Data;
 END DbInterop23.

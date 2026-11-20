@@ -2,6 +2,7 @@ package guru.interlis.db;
 
 import guru.interlis.db.DbMapping.Column;
 import guru.interlis.db.DbMapping.Composition;
+import guru.interlis.db.DbMapping.EmbeddedAssociation;
 import guru.interlis.db.DbMapping.Table;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.CollectionKind;
@@ -64,6 +65,7 @@ final class DbTransfer {
         long datasetId = findDataset(db, dataset)
                 .orElseThrow(() -> new DbException("Dataset does not exist: " + dataset));
         checkStructureOwners(db, mapping, datasetId, token);
+        checkLinkOwners(db, mapping, datasetId, token);
         var plan = mapping.plan();
         var modelRef = plan.rootModels().getFirst();
         var model = plan.model(modelRef).orElseThrow();
@@ -109,7 +111,8 @@ final class DbTransfer {
         writer.write(new TransferEvent.StartBasket(bid, topic.symbol(), List.of(), BasketKind.FULL,
                 Consistency.COMPLETE, Optional.empty(), Optional.empty(), Optional.empty(), List.of()), token);
         for (var table : mapping.tables()) {
-            if (table.object().transferable() && table.object().topic().orElseThrow().equals(topic.symbol())) {
+            if (table.object().transferable() && table.object().topic().orElseThrow().equals(topic.symbol())
+                    && !mapping.isEmbeddedLink(table)) {
                 writeObjects(db, mapping, table, basketId, bid, writer, token);
             }
         }
@@ -124,22 +127,18 @@ final class DbTransfer {
         }
         var from = new StringBuilder(db.table(table.name())).append(" obj");
         String basketField = "obj." + T_BASKET;
-        int refIndex = 0;
-        for (var column : table.columns()) {
-            String field = "obj." + quote(column.name());
-            switch (column.kind()) {
-                case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE ->
-                        projections.add(db.geometryProjection(field, column.kind()));
-                case REFERENCE -> {
-                    String alias = "ref" + refIndex++;
-                    var target = mapping.table(column.target().orElseThrow());
-                    from.append(" LEFT JOIN ").append(db.table(target.name())).append(' ').append(alias)
-                            .append(" ON ").append(alias).append('.').append(T_ID).append(" = ").append(field)
-                            .append(" AND ").append(alias).append('.').append(T_BASKET).append(" = ").append(basketField);
-                    projections.add(field).add(alias + "." + T_ILI_TID);
-                }
-                default -> projections.add(field);
-            }
+        appendColumns(db, mapping, table, "obj", projections, from);
+        var links = mapping.linkFields(table.object().symbol());
+        for (int index = 0; index < links.size(); index++) {
+            var association = links.get(index);
+            var link = mapping.table(association.object().symbol());
+            String alias = "link" + index;
+            from.append(" LEFT JOIN ").append(db.table(link.name())).append(' ').append(alias)
+                    .append(" ON ").append(alias).append('.').append(linkOwnerColumn(link, association))
+                    .append(" = obj.").append(T_ID)
+                    .append(" AND ").append(alias).append('.').append(T_BASKET).append(" = ").append(basketField);
+            projections.add(alias + "." + T_ID);
+            appendColumns(db, mapping, link, alias, projections, from);
         }
         String sql = "SELECT " + projections + " FROM " + from
                 + " WHERE " + basketField + " = ? ORDER BY obj." + T_ID;
@@ -156,7 +155,19 @@ final class DbTransfer {
                     Optional<TransferId> tid = table.hasTidColumn()
                             ? Optional.of(new TransferId(identifier(rows.getString(2), "TID", table.name()), IdOrigin.SOURCE))
                             : Optional.empty();
-                    var values = readFields(db, rows, table.hasTidColumn() ? 3 : 2, table);
+                    int start = table.hasTidColumn() ? 3 : 2;
+                    var values = readFields(db, rows, start, table);
+                    int next = start + projectionSize(table);
+                    for (var association : links) {
+                        var link = mapping.table(association.object().symbol());
+                        if (rows.getObject(next) != null) {
+                            var fields = readFields(db, rows, next + 1, link);
+                            fields.remove(association.ownerRole().slot().symbol());
+                            var role = association.role().symbol();
+                            values.put(role, fields.size() == 1 ? fields.get(role) : new Structured(link.object().symbol(), fields));
+                        }
+                        next += 1 + projectionSize(link);
+                    }
                     structures.readFor(rows.getLong(1), values);
                     var identity = new TransferIdentity(bid, Optional.empty(), tid, Optional.empty(), Optional.empty());
                     var object = new TransferObject(identity, new Structured(table.object().symbol(), values));
@@ -165,6 +176,40 @@ final class DbTransfer {
                 structures.requireExhausted();
             }
         }
+    }
+
+    private static void appendColumns(Database db, DbMapping mapping, Table table, String alias,
+                                      StringJoiner projections, StringBuilder from) {
+        int refIndex = 0;
+        for (var column : table.columns()) {
+            String field = alias + "." + quote(column.name());
+            switch (column.kind()) {
+                case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE ->
+                        projections.add(db.geometryProjection(field, column.kind()));
+                case REFERENCE -> {
+                    String ref = alias + "ref" + refIndex++;
+                    var target = mapping.table(column.target().orElseThrow());
+                    from.append(" LEFT JOIN ").append(db.table(target.name())).append(' ').append(ref)
+                            .append(" ON ").append(ref).append('.').append(T_ID).append(" = ").append(field)
+                            .append(" AND ").append(ref).append('.').append(T_BASKET).append(" = ")
+                            .append(alias).append('.').append(T_BASKET);
+                    projections.add(field).add(ref + "." + T_ILI_TID);
+                }
+                default -> projections.add(field);
+            }
+        }
+    }
+
+    private static int projectionSize(Table table) {
+        return table.columns().stream().mapToInt(DbTransfer::projectionSize).sum();
+    }
+
+    private static int projectionSize(Column column) {
+        return column.kind() == DbMapping.Kind.REFERENCE ? 2 : 1;
+    }
+
+    private static String linkOwnerColumn(Table table, EmbeddedAssociation association) {
+        return quote(table.column(association.ownerRole().slot().symbol()).name());
     }
 
     private static Map<SymbolRef, TransferValue> readFields(Database db, ResultSet rows, int index, Table table)
@@ -177,9 +222,41 @@ final class DbTransfer {
             } else if (!table.hasTidColumn() && column.slot() instanceof RoleSlot) {
                 throw new DbException("Missing link endpoint at " + column.slot().name().declared());
             }
-            index += column.kind() == DbMapping.Kind.REFERENCE ? 2 : 1;
+            index += projectionSize(column);
         }
         return values;
+    }
+
+    private static void checkLinkOwners(Database db, DbMapping mapping, long datasetId,
+                                        CancellationToken token) throws SQLException {
+        for (var association : mapping.associations()) {
+            if (!association.linkTable()) continue;
+            token.throwIfCancellationRequested();
+            var link = mapping.table(association.object().symbol());
+            var parent = mapping.table(association.owner());
+            String owner = "link." + linkOwnerColumn(link, association);
+            String basket = db.technicalTable(BASKET);
+            String sql = "SELECT COUNT(*) FROM " + db.table(link.name()) + " link LEFT JOIN "
+                    + db.table(parent.name()) + " parent ON parent." + T_ID + " = " + owner
+                    + " LEFT JOIN " + basket + " lb ON lb." + T_ID + " = link." + T_BASKET
+                    + " LEFT JOIN " + basket + " pb ON pb." + T_ID + " = parent." + T_BASKET
+                    + " WHERE lb.dataset = ? OR pb.dataset = ? GROUP BY " + owner
+                    + " HAVING COUNT(*) > 1 OR MAX(CASE WHEN parent." + T_ID + " IS NULL OR lb." + T_ID
+                    + " IS NULL OR parent." + T_BASKET + " <> link." + T_BASKET
+                    + " OR lb.topic <> ? THEN 1 ELSE 0 END) > 0 LIMIT 1";
+            try (var statement = db.connection().prepareStatement(sql)) {
+                statement.setLong(1, datasetId);
+                statement.setLong(2, datasetId);
+                statement.setString(3, parent.object().topic().flatMap(mapping.plan()::topic).orElseThrow()
+                        .name().declared().toString());
+                try (var rows = statement.executeQuery()) {
+                    if (rows.next()) {
+                        String problem = rows.getLong(1) > 1 ? "Multiple link rows" : "Missing or inconsistent link owner";
+                        throw new DbException(problem + " at " + association.role().name().declared());
+                    }
+                }
+            }
+        }
     }
 
     private static void checkStructureOwners(Database db, DbMapping mapping, long datasetId,
@@ -548,6 +625,9 @@ final class DbTransfer {
                 throw new DbException("Unsupported object metadata for " + object.type());
             }
             var table = mapping.table(object.type());
+            if (mapping.isEmbeddedLink(table)) {
+                throw new DbException("Expected an embedded association at " + table.object().name().declared());
+            }
             boolean hasTid = table.hasTidColumn();
             var tid = identity.tid().filter(value -> value.origin() == IdOrigin.SOURCE).map(TransferId::value);
             if (hasTid && tid.isEmpty()) {
@@ -583,22 +663,17 @@ final class DbTransfer {
                     }
                     payload = reference;
                 }
-                if (column.kind() == DbMapping.Kind.REFERENCE && payload instanceof Reference reference) {
-                    var target = bindReference(table, column, id, context, identity.currentBasket(), reference);
-                    if (target == null) {
-                        statement.setNull(index++, Types.BIGINT);
-                    } else {
-                        statement.setLong(index++, target.id());
-                    }
-                } else {
-                    index = bindValue(statement, index, column, payload);
-                }
+                index = bindColumn(statement, index, table, column, id, context, identity.currentBasket(), payload);
             }
             var compositions = mapping.compositionsForParent(object.type());
             for (var composition : compositions) {
                 if (object.value(composition.slot().symbol()).isPresent()) {
                     found++;
                 }
+            }
+            var links = mapping.linkFields(object.type());
+            for (var association : links) {
+                if (object.value(association.role().symbol()).isPresent()) found++;
             }
             if (found != object.data().values().size()) {
                 throw new DbException("Object " + context + " contains a field without a stored mapping");
@@ -610,9 +685,51 @@ final class DbTransfer {
                     insertStructures(composition, id, value);
                 }
             }
+            for (var association : links) {
+                var value = object.value(association.role().symbol()).orElse(null);
+                if (value != null && value != Undefined.INSTANCE) {
+                    insertLink(association, id, context, identity.currentBasket(), value);
+                }
+            }
             if (referenceTargets.contains(object.type())) {
                 objects.put(tid.orElseThrow(), new StoredObject(id, object.type()));
             }
+        }
+
+        private void insertLink(EmbeddedAssociation association, long ownerId, String ownerTid,
+                                BasketId basket, TransferValue value) throws SQLException {
+            var table = mapping.table(association.object().symbol());
+            String context = ownerTid + "." + association.role().name().declared();
+            var role = association.role().symbol();
+            var fields = switch (value) {
+                case Reference reference -> Map.<SymbolRef, TransferValue>of(role, reference);
+                case Structured link when link.type().equals(association.object().symbol()) -> link.values();
+                default -> throw new DbException("Unsupported embedded association payload at " + context);
+            };
+            if (!(fields.get(role) instanceof Reference)) {
+                throw new DbException("Missing link endpoint at " + context);
+            }
+            long id = db.nextId();
+            var statement = insertStatement(table);
+            statement.setLong(1, id);
+            statement.setLong(2, basketId);
+            int index = 3;
+            int found = 0;
+            for (var column : table.columns()) {
+                var field = column.slot().symbol();
+                if (field.equals(association.ownerRole().slot().symbol())) {
+                    statement.setLong(index++, ownerId);
+                } else {
+                    var payload = fields.get(field);
+                    if (payload != null) found++;
+                    index = bindColumn(statement, index, table, column, id, context, basket,
+                            payload == Undefined.INSTANCE ? null : payload);
+                }
+            }
+            if (found != fields.size()) {
+                throw new DbException("Embedded association contains a field without a stored mapping at " + context);
+            }
+            statement.executeUpdate();
         }
 
         private void insertStructures(Composition composition, long ownerId, TransferValue value) throws SQLException {
@@ -715,6 +832,20 @@ final class DbTransfer {
                         throw new DbException("Unsupported value for " + column.slot().name().declared());
             }
             return index + 1;
+        }
+
+        private int bindColumn(PreparedStatement statement, int index, Table table, Column column, long id,
+                               String context, BasketId basket, TransferValue value) throws SQLException {
+            if (column.kind() == DbMapping.Kind.REFERENCE && value instanceof Reference reference) {
+                var target = bindReference(table, column, id, context, basket, reference);
+                if (target == null) {
+                    statement.setNull(index, Types.BIGINT);
+                } else {
+                    statement.setLong(index, target.id());
+                }
+                return index + 1;
+            }
+            return bindValue(statement, index, column, value);
         }
 
         private StoredObject bindReference(Table table, Column column, long id, String tid, BasketId basket,

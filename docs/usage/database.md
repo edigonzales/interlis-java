@@ -156,11 +156,18 @@ enthält `ASSOCIATION` und `ATTRNAME` sowie `foreignKey` beschreiben beide
 Ziele. XTF überträgt die Links ohne TID. Beide Ziele werden am Basketende
 aufgelöst.
 
+1:n-Assoziationen mit eigenen skalaren Attributen verwenden ebenfalls eine
+Beziehungstabelle. Im XTF bleibt die Rolle am Objekt der n-Seite. Eine
+Linkzeile mit Attributwerten ergibt eine eingebettete Assoziation. Sind alle
+eigenen Spalten `NULL`, erscheint eine direkte Referenz. Ohne Linkzeile
+entfällt die Rolle. Mehrere Linkzeilen zum selben Objekt der n-Seite werden
+beim Export an der Rolle diagnostiziert.
+
 In 2.4 kann eine Klasse optionale
 `REFERENCE TO`-Attribute auf eine Klasse desselben Baskets haben. Baskets
 und Objekte verwenden Transferkennungen. Grenzen des Profils sind unter
-anderem Vererbung, verschachtelte Strukturen, Assoziationen mit eigenen
-Attributen, stabile OIDs, eigene Linienformen, GeoPackage-RTree beim
+anderem Vererbung, verschachtelte Strukturen, eigene Attribute an
+n:m-Assoziationen, stabile OIDs, eigene Linienformen, GeoPackage-RTree beim
 Schreiben und Updates. Der gespeicherte Modelltext ist auf eine Million
 Zeichen begrenzt.
 
