@@ -113,7 +113,9 @@ final class SchemaSql {
             var columns = new ArrayList<String>();
             columns.add(dialect.primaryId() + dialect.sequenceDefault());
             columns.add(BASKET_COLUMN + " " + dialect.idType() + " NOT NULL");
-            columns.add(TID_COLUMN + " " + dialect.text(200));
+            if (table.hasTidColumn()) {
+                columns.add(TID_COLUMN + " " + dialect.text(200));
+            }
             if (table.object().kind() == SymbolKind.STRUCTURE) {
                 columns.add(SEQ_COLUMN + " " + dialect.idType());
             }

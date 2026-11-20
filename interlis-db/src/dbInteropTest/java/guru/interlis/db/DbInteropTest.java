@@ -136,6 +136,7 @@ final class DbInteropTest {
         try (var sql = db.connect()) {
             assertStructureCatalog(db, sql, model, version);
             assertEmbeddedRoleCatalog(db, sql, model);
+            assertStandaloneLinkCatalog(db, sql, model);
             assertTypeKind(db, sql, "parcel", "boundary", "AREA");
             if (version == 24) {
                 assertTypeKind(db, sql, "park", "coverage", "MULTISURFACE");
@@ -158,7 +159,8 @@ final class DbInteropTest {
             Path nativeOutput = exchangeDatasets(reference, db, sql, work.toString(), model, version, fixture);
             assertRollback(db, sql, model, version, fixture);
             assertStructureRollback(db, sql, model, version, fixture);
-            assertMissingRoleTargetRollback(db, sql, model, version, fixture);
+            assertMissingReferenceRollback(db, sql, model, version, fixture,
+                    "Select", "missing-role-marker-1", "missing-role", 3);
             assertExplicitRadiusRollback(db, sql, model, version, fixture);
             assertOpenSurfaceRollback(db, sql, model, version, fixture);
             assertCorruptStructureRejected(db, sql, model, nativeOutput);
@@ -216,6 +218,31 @@ final class DbInteropTest {
         assertEquals("hub", scalar(sql, "select setting from " + db.table("t_ili2db_column_prop")
                 + " where tablename='marker' and subtype is null and columnname='aselect1'"
                 + " and tag='ch.ehi.ili2db.foreignKey'"));
+    }
+
+    private static void assertStandaloneLinkCatalog(TestDatabase db, Connection sql, String model) throws SQLException {
+        String association = model + ".Data.MarkerLink";
+        assertEquals("markerlink", scalar(sql, "select sqlname from " + db.table("t_ili2db_classname")
+                + " where iliname='" + association + "'"));
+        assertEquals("ASSOCIATION", scalar(sql, "select setting from " + db.table("t_ili2db_table_prop")
+                + " where tablename='markerlink' and tag='ch.ehi.ili2db.tableKind'"));
+        assertEquals("newClass", scalar(sql, "select setting from " + db.table("t_ili2db_trafo")
+                + " where iliname='" + association + "' and tag='ch.ehi.ili2db.inheritance'"));
+        for (String endpoint : List.of("Marker", "Hub")) {
+            String target = endpoint.toLowerCase(Locale.ROOT);
+            String column = "linked" + target;
+            assertEquals("1", scalar(sql, "select count(*) from " + db.table("t_ili2db_attrname")
+                    + " where iliname='" + association + ".Linked" + endpoint + "' and sqlname='" + column
+                    + "' and colowner='markerlink' and target='" + target + "'"));
+            assertEquals(target, scalar(sql, "select setting from " + db.table("t_ili2db_column_prop")
+                    + " where tablename='markerlink' and subtype is null and columnname='" + column
+                    + "' and tag='ch.ehi.ili2db.foreignKey'"));
+        }
+        String identityColumn = db.postgis
+                ? "select column_name from information_schema.columns where table_schema='" + db.schema
+                        + "' and table_name='markerlink' and column_name='t_ili_tid'"
+                : "select name from pragma_table_info('markerlink') where lower(name)='t_ili_tid'";
+        assertNull(scalar(sql, identityColumn));
     }
 
     private static void assertTypeKind(TestDatabase db, Connection sql, String table, String column, String kind)
@@ -301,10 +328,12 @@ final class DbInteropTest {
     private static void assertCorruptRoleMappingRejected(TestDatabase db, Connection sql, String model, Path output)
             throws Exception {
         String mapping = db.table("t_ili2db_attrname");
-        String role = model + ".Data.MarkerHub.Select";
-        execute(sql, "update " + mapping + " set target='place' where iliname='" + role + "'");
-        assertExportRejected(db, model, "legacy", output, role);
-        execute(sql, "update " + mapping + " set target='hub' where iliname='" + role + "'");
+        for (String name : List.of("MarkerHub.Select", "MarkerLink.LinkedHub")) {
+            String role = model + ".Data." + name;
+            execute(sql, "update " + mapping + " set target='place' where iliname='" + role + "'");
+            assertExportRejected(db, model, "legacy", output, role);
+            execute(sql, "update " + mapping + " set target='hub' where iliname='" + role + "'");
+        }
     }
 
     private static void assertExportRejected(TestDatabase db, String model, String dataset, Path output, String... diagnostics)
@@ -424,6 +453,7 @@ final class DbInteropTest {
         reference.run(db, modelDir, "--export", "--exportTid", "--dataset", "native", legacyOutput.toString());
         assertTransfer(legacyOutput, version, "native", false);
 
+        assertMissingReferenceRollback(db, sql, model, version, fixture, "LinkedHub", "MarkerLink", "missing-link", 2);
         if (db.postgis && modelDir.equals(STORED_MODELS)) assertPostgresIdDefault(db);
         Path tail = Files.writeString(work.resolve("tail.xtf"), fixture.replace("legacy-", "tail-"));
         reference.run(db, modelDir, "--import", "--importTid", "--importBid", "--dataset", "tail", tail.toString());
@@ -532,24 +562,26 @@ final class DbInteropTest {
         assertRows(db, sql, version, 3);
     }
 
-    private void assertMissingRoleTargetRollback(TestDatabase db, Connection sql, String model, int version, String fixture)
-            throws Exception {
+    private void assertMissingReferenceRollback(TestDatabase db, Connection sql, String model, int version,
+                                                String fixture, String role, String affectedObject, String dataset,
+                                                int existingDatasets) throws Exception {
         String ref = version == 24 ? "i:ref" : "REF";
-        String broken = fixture.replaceFirst(ref + "=\"legacy-hub-1\"", ref + "=\"unresolved-hub\"");
-        Path input = Files.writeString(work.resolve("missing-role-target.xtf"), broken.replace("legacy-", "missing-role-"));
+        String broken = fixture.replaceFirst("<" + role + " " + ref + "=\"legacy-hub-1\"",
+                "<" + role + " " + ref + "=\"unresolved-hub\"");
+        Path input = Files.writeString(work.resolve(dataset + "-target.xtf"), broken.replace("legacy-", dataset + "-"));
         String counter = db.postgis ? "select last_value from " + db.table("t_ili2db_seq")
                 : "select T_LastUniqueId from T_KEY_OBJECT where T_Key='T_Id'";
         long before = Long.parseLong(scalar(sql, counter));
-        var rejected = cli(db, "import", model, "missing-role", input, CancellationToken.none());
+        var rejected = cli(db, "import", model, dataset, input, CancellationToken.none());
         assertEquals(1, rejected.code(), rejected::diagnostics);
-        assertTrue(rejected.diagnostics().contains("missing-role-marker-1")
+        assertTrue(rejected.diagnostics().contains(affectedObject)
                 && rejected.diagnostics().contains("unresolved-hub"), rejected::diagnostics);
-        // PostgreSQL has allocated IDs for the dataset, first basket and all its rows, including the late Hub.
-        long allocated = version == 24 ? 24 : 19;
+        // PostgreSQL has allocated IDs for the dataset, first basket and all its rows, including both late Hubs.
+        long allocated = version == 24 ? 28 : 23;
         assertEquals(Long.toString(db.postgis ? before + allocated : before), scalar(sql, counter));
         assertNull(scalar(sql, "select datasetname from " + db.table("t_ili2db_dataset")
-                + " where datasetname='missing-role'"));
-        assertRows(db, sql, version, 3);
+                + " where datasetname='" + dataset + "'"));
+        assertRows(db, sql, version, existingDatasets);
     }
 
     private void assertExplicitRadiusRollback(TestDatabase db, Connection sql, String model, int version, String fixture)
@@ -678,6 +710,7 @@ final class DbInteropTest {
         assertSrs(db, sql, "place", "ageometry", srsId);
         assertStoredStructures(db, sql, dataset);
         assertStoredRoles(db, sql, dataset);
+        assertStoredStandaloneLinks(db, sql, dataset);
         assertStoredRoutes(db, sql, dataset, nativeImport);
         assertStoredSurfaces(db, sql, dataset, "plot", "footprint", SURFACE_WITH_HOLE, CURVED_SURFACE, nativeImport);
         assertStoredSurfaces(db, sql, dataset, "parcel", "boundary", WEST_AREA, EAST_AREA, nativeImport);
@@ -727,6 +760,32 @@ final class DbInteropTest {
             }
             assertFalse(result.next());
         }
+    }
+
+    private static void assertStoredStandaloneLinks(TestDatabase db, Connection sql, String dataset) throws SQLException {
+        String rows = """
+                select l.t_id, b.t_ili_tid, m.t_ili_tid, h.t_ili_tid, l.t_basket, m.t_basket, h.t_basket
+                from %s l join %s m on m.t_id=l.linkedmarker join %s h on h.t_id=l.linkedhub
+                join %s b on b.t_id=l.t_basket join %s d on d.t_id=b.dataset
+                where d.datasetname='%s'
+                """.formatted(db.table("markerlink"), db.table("marker"), db.table("hub"), db.table("t_ili2db_basket"),
+                db.table("t_ili2db_dataset"), dataset);
+        var pairs = new HashSet<List<String>>();
+        try (var statement = sql.createStatement(); var result = statement.executeQuery(rows)) {
+            while (result.next()) {
+                assertTrue(result.getLong(1) > 0);
+                assertEquals(dataset + "-basket-1", result.getString(2));
+                assertEquals(result.getLong(5), result.getLong(6));
+                assertEquals(result.getLong(5), result.getLong(7));
+                assertTrue(pairs.add(List.of(result.getString(3), result.getString(4))));
+            }
+        }
+        assertEquals(expectedMarkerLinks(dataset), pairs);
+    }
+
+    private static Set<List<String>> expectedMarkerLinks(String dataset) {
+        return Set.of(List.of(dataset + "-marker-1", dataset + "-hub-1"),
+                List.of(dataset + "-marker-1", dataset + "-hub-2"), List.of(dataset + "-marker-2", dataset + "-hub-1"));
     }
 
     private static void assertStoredStructures(TestDatabase db, Connection sql, String dataset) throws SQLException {
@@ -936,9 +995,10 @@ final class DbInteropTest {
         assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("report")));
         assertEquals(Integer.toString(datasets * 5), scalar(sql, "select count(*) from " + db.table("detail")));
         assertEquals(Integer.toString(datasets * 3), scalar(sql, "select count(*) from " + db.table("marker")));
-        assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table("hub")));
+        assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("hub")));
+        assertEquals(Integer.toString(datasets * 3), scalar(sql, "select count(*) from " + db.table("markerlink")));
         var tables = new ArrayList<>(List.of("t_ili2db_dataset", "t_ili2db_basket", "place", "route", "plot", "parcel",
-                "report", "detail", "marker", "hub"));
+                "report", "detail", "marker", "hub", "markerlink"));
         if (version == 24) {
             assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table("link")));
             var collections = List.of("park", "district", "routegroup", "survey");
@@ -949,7 +1009,7 @@ final class DbInteropTest {
             tables.addAll(collections);
         }
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 36 : 27)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 40 : 31)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
     }
 
@@ -966,17 +1026,26 @@ final class DbInteropTest {
         var data = readDataSection(output, version);
         Map<String, Set<String>> baskets = new HashMap<>();
         Map<String, Element> objects = new HashMap<>();
+        var markerLinks = new HashSet<List<String>>();
+        String markerLinkName = version == 24 ? "MarkerLink" : "DbInterop23.Data.MarkerLink";
         for (Element basket : children(data)) {
             assertEquals(version == 24 ? "Data" : "DbInterop23.Data", basket.getLocalName());
             String bid = id(basket, version, "bid");
             var tids = new java.util.HashSet<String>();
             for (Element object : children(basket)) {
                 String tid = id(object, version, "tid");
+                if (object.getLocalName().equals(markerLinkName)) {
+                    assertEquals("", tid);
+                    assertEquals(dataset + "-basket-1", bid);
+                    assertTrue(markerLinks.add(transferredMarkerLink(object, version)));
+                    continue;
+                }
                 assertNull(objects.put(tid, object));
                 tids.add(tid);
             }
             assertNull(baskets.put(bid, tids));
         }
+        assertEquals(expectedMarkerLinks(dataset), markerLinks);
         String first = dataset + "-place-1";
         String second = dataset + "-place-2";
         String third = dataset + "-place-3";
@@ -994,7 +1063,8 @@ final class DbInteropTest {
         String firstReport = dataset + "-report-1";
         String secondReport = dataset + "-report-2";
         var firstBasket = new HashSet<>(Set.of(first, second, line, arcs, mixed, plotWithHole, curvedPlot,
-                westArea, eastArea, firstReport, dataset + "-marker-1", dataset + "-marker-2", dataset + "-hub-1"));
+                westArea, eastArea, firstReport, dataset + "-marker-1", dataset + "-marker-2", dataset + "-hub-1",
+                dataset + "-hub-2"));
         var secondBasket = new HashSet<>(Set.of(third, noLine, noSurface, noArea, secondReport, dataset + "-marker-3"));
         if (version == 24) {
             firstBasket.add(link);
@@ -1072,10 +1142,21 @@ final class DbInteropTest {
         }
     }
 
+    private static List<String> transferredMarkerLink(Element object, int version) {
+        var roles = children(object).stream().map(Element::getLocalName).toList();
+        assertEquals(version == 24 ? List.of("LinkedHub", "LinkedMarker") : List.of("LinkedMarker", "LinkedHub"), roles);
+        var marker = child(object, "LinkedMarker");
+        var hub = child(object, "LinkedHub");
+        assertEquals("", id(marker, version, "bid"));
+        assertEquals("", id(hub, version, "bid"));
+        return List.of(id(marker, version, "ref"), id(hub, version, "ref"));
+    }
+
     private static void assertTransferredRoles(Map<String, Element> objects, int version, String dataset) {
         String prefix = version == 23 ? "DbInterop23.Data." : "";
         String hub = dataset + "-hub-1";
         assertEquals(prefix + "Hub", objects.get(hub).getLocalName());
+        assertEquals(prefix + "Hub", objects.get(dataset + "-hub-2").getLocalName());
         for (int index = 0; index < MARKER_LABELS.size(); index++) {
             var marker = objects.get(dataset + "-marker-" + (index + 1));
             assertEquals(prefix + "Marker", marker.getLocalName());

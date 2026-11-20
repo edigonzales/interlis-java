@@ -153,6 +153,9 @@
           <Detail><Label>b</Label><Enabled>false</Enabled><Quantity>2</Quantity><Decision>draft</Decision></Detail>
         </Entries>
       </Report>
+      <MarkerLink><LinkedHub i:ref="legacy-hub-1"/><LinkedMarker i:ref="legacy-marker-1"/></MarkerLink>
+      <MarkerLink><LinkedHub i:ref="legacy-hub-2"/><LinkedMarker i:ref="legacy-marker-1"/></MarkerLink>
+      <MarkerLink><LinkedHub i:ref="legacy-hub-1"/><LinkedMarker i:ref="legacy-marker-2"/></MarkerLink>
       <Marker i:tid="legacy-marker-1">
         <ASelect>first</ASelect><Select i:ref="legacy-hub-1"/>
       </Marker>
@@ -160,6 +163,7 @@
         <ASelect>second</ASelect><Select i:ref="legacy-hub-1"><MarkerHub/></Select>
       </Marker>
       <Hub i:tid="legacy-hub-1"/>
+      <Hub i:tid="legacy-hub-2"/>
     </Data>
     <Data i:bid="legacy-basket-2">
       <Place i:tid="legacy-place-3"/>

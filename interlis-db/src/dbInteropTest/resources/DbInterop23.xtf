@@ -91,6 +91,9 @@
           <DbInterop23.Data.Detail><Label>b</Label><Enabled>false</Enabled><Quantity>2</Quantity><Decision>draft</Decision></DbInterop23.Data.Detail>
         </Entries>
       </DbInterop23.Data.Report>
+      <DbInterop23.Data.MarkerLink><LinkedMarker REF="legacy-marker-1"/><LinkedHub REF="legacy-hub-1"/></DbInterop23.Data.MarkerLink>
+      <DbInterop23.Data.MarkerLink><LinkedMarker REF="legacy-marker-1"/><LinkedHub REF="legacy-hub-2"/></DbInterop23.Data.MarkerLink>
+      <DbInterop23.Data.MarkerLink><LinkedMarker REF="legacy-marker-2"/><LinkedHub REF="legacy-hub-1"/></DbInterop23.Data.MarkerLink>
       <DbInterop23.Data.Marker TID="legacy-marker-1">
         <ASelect>first</ASelect><Select REF="legacy-hub-1"/>
       </DbInterop23.Data.Marker>
@@ -98,6 +101,7 @@
         <ASelect>second</ASelect><Select REF="legacy-hub-1"><DbInterop23.Data.MarkerHub/></Select>
       </DbInterop23.Data.Marker>
       <DbInterop23.Data.Hub TID="legacy-hub-1"/>
+      <DbInterop23.Data.Hub TID="legacy-hub-2"/>
     </DbInterop23.Data>
     <DbInterop23.Data BID="legacy-basket-2">
       <DbInterop23.Data.Place TID="legacy-place-3"/>

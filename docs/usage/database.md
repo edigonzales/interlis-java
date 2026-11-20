@@ -149,6 +149,13 @@ Eine leere Assoziationshülle mit Referenz wird wie die direkte Referenz
 importiert. SQL `NULL` ergibt beim Export eine ausgelassene Rolle.
 [ili2db-Beziehungsabbildung](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst#beziehungen)
 
+Bei n:m-Assoziationen ohne eigene Attribute speichert eine Beziehungstabelle
+beide Rollenspalten in Deklarationsreihenfolge. Ihre Zeilen erhalten eine
+gemeinsame SQL-ID und den Basket. `TRAFO` enthält `newClass`, `tableKind`
+enthält `ASSOCIATION` und `ATTRNAME` sowie `foreignKey` beschreiben beide
+Ziele. XTF überträgt die Links ohne TID. Beide Ziele werden am Basketende
+aufgelöst.
+
 In 2.4 kann eine Klasse optionale
 `REFERENCE TO`-Attribute auf eine Klasse desselben Baskets haben. Baskets
 und Objekte verwenden Transferkennungen. Grenzen des Profils sind unter

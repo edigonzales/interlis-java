@@ -67,6 +67,10 @@ MODEL DbInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
       Markers -- {0..*} Marker;
       Select -- {0..1} Hub;
     END MarkerHub;
+    ASSOCIATION MarkerLink =
+      LinkedHub -- {0..*} Hub;
+      LinkedMarker -- {0..*} Marker;
+    END MarkerLink;
   END Data;
 
   TOPIC Naming =

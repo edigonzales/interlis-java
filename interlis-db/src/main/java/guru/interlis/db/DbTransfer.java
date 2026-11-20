@@ -118,7 +118,10 @@ final class DbTransfer {
 
     private static void writeObjects(Database db, DbMapping mapping, Table table, long basketId, BasketId bid,
                                      TransferWriter writer, CancellationToken token) throws SQLException {
-        var projections = new StringJoiner(", ").add("obj." + T_ID).add("obj." + T_ILI_TID);
+        var projections = new StringJoiner(", ").add("obj." + T_ID);
+        if (table.hasTidColumn()) {
+            projections.add("obj." + T_ILI_TID);
+        }
         var from = new StringBuilder(db.table(table.name())).append(" obj");
         String basketField = "obj." + T_BASKET;
         int refIndex = 0;
@@ -150,11 +153,12 @@ final class DbTransfer {
             try (var rows = statement.executeQuery()) {
                 while (rows.next()) {
                     token.throwIfCancellationRequested();
-                    String tid = identifier(rows.getString(2), "TID", table.name());
-                    var values = readFields(db, rows, 3, table);
+                    Optional<TransferId> tid = table.hasTidColumn()
+                            ? Optional.of(new TransferId(identifier(rows.getString(2), "TID", table.name()), IdOrigin.SOURCE))
+                            : Optional.empty();
+                    var values = readFields(db, rows, table.hasTidColumn() ? 3 : 2, table);
                     structures.readFor(rows.getLong(1), values);
-                    var identity = new TransferIdentity(bid, Optional.empty(),
-                            Optional.of(new TransferId(tid, IdOrigin.SOURCE)), Optional.empty(), Optional.empty());
+                    var identity = new TransferIdentity(bid, Optional.empty(), tid, Optional.empty(), Optional.empty());
                     var object = new TransferObject(identity, new Structured(table.object().symbol(), values));
                     writer.write(new TransferEvent.ObjectEvent(object, Optional.empty(), Consistency.COMPLETE), token);
                 }
@@ -170,6 +174,8 @@ final class DbTransfer {
             var value = readValue(db, rows, index, column);
             if (value != null) {
                 values.put(column.slot().symbol(), value);
+            } else if (!table.hasTidColumn() && column.slot() instanceof RoleSlot) {
+                throw new DbException("Missing link endpoint at " + column.slot().name().declared());
             }
             index += column.kind() == DbMapping.Kind.REFERENCE ? 2 : 1;
         }
@@ -541,15 +547,24 @@ final class DbTransfer {
                     || identity.oid().isPresent() || identity.originalBasket().isPresent()) {
                 throw new DbException("Unsupported object metadata for " + object.type());
             }
-            String tid = identity.tid().filter(id -> id.origin() == IdOrigin.SOURCE).map(TransferId::value)
-                    .orElseThrow(() -> new DbException("Missing source TID"));
             var table = mapping.table(object.type());
+            boolean hasTid = table.hasTidColumn();
+            var tid = identity.tid().filter(value -> value.origin() == IdOrigin.SOURCE).map(TransferId::value);
+            if (hasTid && tid.isEmpty()) {
+                throw new DbException("Missing source TID");
+            }
+            if (!hasTid && identity.tid().isPresent()) {
+                throw new DbException("Unexpected TID for link " + table.object().name().declared());
+            }
             long id = db.nextId();
+            String context = tid.orElseGet(() -> table.object().name().declared() + " T_Id " + id);
             var statement = insertStatement(table);
             statement.setLong(1, id);
             statement.setLong(2, basketId);
-            statement.setString(3, tid);
-            int index = 4;
+            int index = 3;
+            if (hasTid) {
+                statement.setString(index++, tid.orElseThrow());
+            }
             int found = 0;
             for (var column : table.columns()) {
                 var value = object.value(column.slot().symbol());
@@ -557,7 +572,10 @@ final class DbTransfer {
                     found++;
                 }
                 var payload = value.filter(val -> val != Undefined.INSTANCE).orElse(null);
-                if (column.slot() instanceof RoleSlot role && payload instanceof Structured link) {
+                if (!hasTid && column.slot() instanceof RoleSlot && !(payload instanceof Reference)) {
+                    throw new DbException("Missing link endpoint at " + column.slot().name().declared());
+                }
+                if (hasTid && column.slot() instanceof RoleSlot role && payload instanceof Structured link) {
                     var reference = link.value(role.symbol()).orElse(null);
                     if (link.values().size() != 1 || !(reference instanceof Reference)
                             || role.role().owner().filter(link.type().symbol()::equals).isEmpty()) {
@@ -566,7 +584,7 @@ final class DbTransfer {
                     payload = reference;
                 }
                 if (column.kind() == DbMapping.Kind.REFERENCE && payload instanceof Reference reference) {
-                    var target = bindReference(table, column, id, tid, identity.currentBasket(), reference);
+                    var target = bindReference(table, column, id, context, identity.currentBasket(), reference);
                     if (target == null) {
                         statement.setNull(index++, Types.BIGINT);
                     } else {
@@ -583,7 +601,7 @@ final class DbTransfer {
                 }
             }
             if (found != object.data().values().size()) {
-                throw new DbException("Object " + tid + " contains a field without a stored mapping");
+                throw new DbException("Object " + context + " contains a field without a stored mapping");
             }
             statement.executeUpdate();
             for (var composition : compositions) {
@@ -593,7 +611,7 @@ final class DbTransfer {
                 }
             }
             if (referenceTargets.contains(object.type())) {
-                objects.put(tid, new StoredObject(id, object.type()));
+                objects.put(tid.orElseThrow(), new StoredObject(id, object.type()));
             }
         }
 
@@ -654,8 +672,12 @@ final class DbTransfer {
         }
 
         private PreparedStatement prepareInsert(Table table, Composition composition) throws SQLException {
-            var names = new StringJoiner(", ").add(T_ID).add(T_BASKET).add(T_ILI_TID);
-            var values = new StringJoiner(", ").add("?").add("?").add("?");
+            var names = new StringJoiner(", ").add(T_ID).add(T_BASKET);
+            var values = new StringJoiner(", ").add("?").add("?");
+            if (table.hasTidColumn()) {
+                names.add(T_ILI_TID);
+                values.add("?");
+            }
             if (composition != null) {
                 names.add(T_SEQ).add(quote(composition.ownerColumn()));
                 values.add("?").add("?");

@@ -1,5 +1,6 @@
 package guru.interlis.db;
 
+import guru.interlis.db.DbMapping.AssociationRole;
 import guru.interlis.db.DbMapping.Column;
 import guru.interlis.db.DbMapping.Composition;
 import guru.interlis.db.DbMapping.EmbeddedAssociation;
@@ -14,6 +15,7 @@ import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
+import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.TransferPlan;
 
 import java.sql.PreparedStatement;
@@ -76,20 +78,31 @@ final class DbSchemaReader {
         var usedNames = new HashSet<String>();
         var objects = new ArrayList<ObjectDescriptor>();
         var associations = new ArrayList<EmbeddedAssociation>();
+        var linkRoles = new HashMap<SymbolRef, List<AssociationRole>>();
         for (ObjectDescriptor object : plan.objects()) {
             String path = object.name().declared().toString();
             String name = classNames.remove(path);
-            boolean association = object.kind() == SymbolKind.ASSOCIATION;
-            String expected = association ? EMBEDDED : NEW_CLASS;
-            if (name == null || !expected.equals(transformations.remove(path)) || !usedNames.add(key(db, name))) {
+            if (name == null || !usedNames.add(key(db, name))) {
                 throw new DbException("Missing or inconsistent CLASSNAME/TRAFO mapping for " + path);
             }
-            if (association) {
-                associations.add(DbMapping.describeAssociation(plan, object, name));
-            } else {
-                objects.add(object);
-                names.put(object.symbol(), name);
+            String transformation = transformations.remove(path);
+            if (object.kind() == SymbolKind.ASSOCIATION) {
+                var roles = DbMapping.describeRoles(plan, object);
+                var embedded = DbMapping.embeddedAssociation(object, name, roles);
+                if (embedded.isPresent()) {
+                    if (!EMBEDDED.equals(transformation)) {
+                        throw new DbException("Missing or inconsistent CLASSNAME/TRAFO mapping for " + path);
+                    }
+                    associations.add(embedded.orElseThrow());
+                    continue;
+                }
+                linkRoles.put(object.symbol(), roles);
             }
+            if (!NEW_CLASS.equals(transformation)) {
+                throw new DbException("Missing or inconsistent CLASSNAME/TRAFO mapping for " + path);
+            }
+            objects.add(object);
+            names.put(object.symbol(), name);
         }
         if (!classNames.isEmpty() || !transformations.isEmpty()) {
             throw new DbException("Extra CLASSNAME/TRAFO mappings for " + modelName);
@@ -102,6 +115,14 @@ final class DbSchemaReader {
             token.throwIfCancellationRequested();
             var parent = catalog.get(object.symbol());
             var columns = new ArrayList<Column>();
+            var roles = linkRoles.get(object.symbol());
+            if (roles != null) {
+                for (var role : roles) {
+                    columns.add(bindRole(db, parent, attrNames, role.slot(), role.target(), names));
+                }
+                tables.add(new Table(object, parent.name(), columns));
+                continue;
+            }
             for (var attr : DbMapping.attributes(object)) {
                 String path = attr.name().declared().toString();
                 var mapping = takeAttributeName(attrNames, path);
@@ -118,12 +139,7 @@ final class DbSchemaReader {
                 }
             }
             for (var association : DbMapping.associationsForOwner(associations, object.symbol())) {
-                String path = association.role().name().declared().toString();
-                var mapping = takeAttributeName(attrNames, path);
-                useColumn(db, parent, mapping, path);
-                requireTarget(db, names.get(association.target()), mapping, path);
-                requireColumns(db, parent.name(), parent.columns(), Map.of(mapping.name(), Kind.REFERENCE));
-                columns.add(DbMapping.roleColumn(association, mapping.name()));
+                columns.add(bindRole(db, parent, attrNames, association.role(), association.target(), names));
             }
             tables.add(new Table(object, parent.name(), columns));
         }
@@ -145,10 +161,14 @@ final class DbSchemaReader {
             token.throwIfCancellationRequested();
             String name = names.get(object.symbol());
             var physical = physicalColumns(db, name);
-            requireColumns(db, name, physical, Map.of(
-                    T_ID, Kind.REFERENCE, T_BASKET, Kind.REFERENCE, T_ILI_TID, Kind.TEXT));
+            requireColumns(db, name, physical, Map.of(T_ID, Kind.REFERENCE, T_BASKET, Kind.REFERENCE));
             requireIdPrimaryKey(db, name);
             var used = new HashSet<>(TECHNICAL_COLUMNS);
+            if (object.kind() == SymbolKind.ASSOCIATION) {
+                used.remove(T_ILI_TID);
+            } else {
+                requireColumns(db, name, physical, Map.of(T_ILI_TID, Kind.TEXT));
+            }
             if (object.kind() == SymbolKind.STRUCTURE) {
                 requireColumns(db, name, physical, Map.of(T_SEQ, Kind.REFERENCE));
                 used.add(T_SEQ);
@@ -321,6 +341,16 @@ final class DbSchemaReader {
         if (!key(db, table.name()).equals(key(db, mapping.owner())) || !table.used().add(key(db, mapping.name()))) {
             throw new DbException("Missing or inconsistent ATTRNAME mapping for " + path);
         }
+    }
+
+    private static Column bindRole(Database db, CatalogTable table, Map<String, AttributeName> names,
+                                   RoleSlot role, SymbolRef target, Map<SymbolRef, String> tables) {
+        String path = role.name().declared().toString();
+        var mapping = takeAttributeName(names, path);
+        useColumn(db, table, mapping, path);
+        requireTarget(db, tables.get(target), mapping, path);
+        requireColumns(db, table.name(), table.columns(), Map.of(mapping.name(), Kind.REFERENCE));
+        return DbMapping.roleColumn(role, target, mapping.name());
     }
 
     private static AttributeName takeAttributeName(Map<String, AttributeName> names, String path) {
