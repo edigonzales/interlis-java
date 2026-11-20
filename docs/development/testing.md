@@ -73,6 +73,32 @@ JUnit-XML und Prozesslogs liegen in den Buildausgaben. Halte für eine Prüfung
 Toolchain, Plattform, relevante Eingaben, Commit, Befehle, Exits und Skips fest.
 Die [Freigabeprüfung](release.md) beschreibt die Auslieferungsprüfungen.
 
+## ili2db-Interoperabilität
+
+Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
+und ili2pg in Version 5.5.2. Der Task `:interlis-db:downloadIli2dbReferences`
+lädt beide ZIPs von `downloads.interlis.ch` nach
+`interlis-db/build/ili2db-reference/`. `dbInteropTest` ruft den Download-Task
+automatisch auf. Mit vorhandenen ZIPs und Gradle-Abhängigkeiten im lokalen
+Cache kann Gradle mit `--offline` laufen. Docker lädt fehlende Container-Images
+bei Bedarf separat.
+
+Für jeden PostgreSQL-Test startet und entfernt die Suite mit Testcontainers
+einen PostgreSQL-16-Container mit PostGIS 3.4 (`sogis/postgis:16-3.4`).
+Dazu muss Docker laufen. GeoPackage-Tests verwenden temporäre Dateien.
+
+```sh
+./gradlew :interlis-db:dbInteropTest
+```
+
+Die Auswahl `--tests '*DbInteropTest.geoPackage*'` läuft ohne Docker.
+Die Tests vergleichen vor dem ersten Datenimport den SQL-Katalog und die
+Metadaten der erzeugten Schemata. Sie prüfen XTF 2.3 und 2.4 in beiden
+Werkzeugrichtungen sowie einen weiteren Referenzimport nach dem neuen Import.
+Das Originalwerkzeug lädt das Modell für das neue Schema aus der Datenbank.
+
+Die JUnit-Rohberichte stehen unter `interlis-db/build/test-results/dbInteropTest/`.
+
 ## swisstopo-Validator-Konformität
 
 Die Klasse `GebaeudeRegister` darf den Namen ihres Topics tragen.

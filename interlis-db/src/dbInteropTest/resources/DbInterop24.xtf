@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
+    xmlns="http://www.interlis.ch/xtf/2.4/DbInterop24" xmlns:g="http://www.interlis.ch/geometry/1.0">
+  <i:headersection><i:models><i:model>DbInterop24</i:model></i:models><i:sender>interop fixture</i:sender></i:headersection>
+  <i:datasection>
+    <Data i:bid="legacy-basket-1">
+      <Link i:tid="legacy-link"><Target i:ref="legacy-place-1"/></Link>
+      <Place i:tid="legacy-place-1">
+        <Select>Brücke</Select><Active>true</Active><Count>-7</Count><Status>approved</Status>
+        <Geometry><g:coord><g:c1>2600000.125</g:c1><g:c2>1200000.375</g:c2></g:coord></Geometry>
+      </Place>
+      <Place i:tid="legacy-place-2"><Select></Select><Active>false</Active></Place>
+    </Data>
+    <Data i:bid="legacy-basket-2"><Place i:tid="legacy-place-3"/></Data>
+  </i:datasection>
+</i:transfer>

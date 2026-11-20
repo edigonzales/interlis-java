@@ -24,13 +24,14 @@ Die Gradle-Teilprojekte deklarieren die konkreten Abhängigkeiten und Scopes.
 | `interlis-validation-jts` | validation, JTS | Optionales JVM-Modul für analytische Geometrieoperationen |
 | `interlis-validation-mvstore` | validation, H2 MVStore | Optionaler JVM-Speicher für einen Datensatzlauf |
 | `interlis-xtf` | transfer, model | XML-Adapter für XTF 2.3 und 2.4 |
+| `interlis-db` | compiler, model, transfer, xtf | JVM-Host für Schemaerzeugung und Datenaustausch mit ili2db in GeoPackage und PostgreSQL/PostGIS |
 | `interlis-compiler-cli` | compiler, model, repository, workspace, projection | CLI, Prozessgrenzen, Präsentation und Ausgabe |
 | `interlis-validator-cli` | compiler, workspace, repository, transfer, xtf, validation, validation-jts, validation-mvstore, Gson | JVM-Host für Modellbeschaffung, XTF-Dateien und Validatorausgabe |
 | `interlis-compiler-gui` | model, compiler, workspace, repository | Desktop-Modellprüfung, Diagnosen, Abhängigkeiten und Repositoryexplorer |
 | `interlis-lsp` | workspace, compiler, projection, model, repository | LSP-/Editorhost, Scheduling und Ausgaben |
 | `interlis-wasm-bridge` | workspace, compiler, projection, model | Gemeinsames JSON-Protokoll und Sitzungen |
 
-Gradle baut alle fünfzehn JVM-Module. TeaVM und Web Image beziehen ihre
+Gradle baut die JVM-Module. TeaVM und Web Image beziehen ihre
 Laufzeitclosure aus direkten Gradle-Projektabhängigkeiten. Der Browserharness prüft den Compiler und zeigt Diagramm-DTOs.
 Der produktive Renderer liegt im Repository der VS-Code-Extension.
 
@@ -51,6 +52,12 @@ Der Regelplan verweist auf die Revision des gebundenen Schemas.
 Die Laufzeitabhängigkeiten des Validators bleiben Modell und Transferkern.
 Der Host kann `interlis-validation-mvstore` für dateigestützte Prüfungen
 wählen. Dieses Modul besitzt die temporären Dateien und bindet H2 MVStore.
+
+Der [Datenbankhost](usage/database.md) liest die in der Datenbank gespeicherten
+Modelltexte und Namensabbildungen. Für neue Schemata plant er die Zuordnung
+aus dem geprüften Modell vor dem Datenbankzugriff. Schemaerzeugung und
+Transfer verwenden dieselbe Tabellen- und Spaltenabbildung. JDBC,
+SQL-Erzeugung, ID-Vergabe und Geometriekodierung liegen im Hostmodul.
 
 ## Quellen, Identitäten und Zustände
 

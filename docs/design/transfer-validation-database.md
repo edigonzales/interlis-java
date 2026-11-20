@@ -1,6 +1,6 @@
 # Entwurf für Transfer, Validierung und Datenbanken
 
-Der formatunabhängige Transferkern steht in `interlis-transfer` für INTERLIS 2.3 und 2.4 zur Verfügung. `interlis-xtf` liest und schreibt XTF-2.3- und XTF-2.4-FULL-Transfers objektweise. Der implementierte Umfang und die Grenzen stehen in der [Transferanleitung](../usage/transfer.md). Lokale und datensatzweite Validierung stehen in `interlis-validation` zur Verfügung. Der optionale JVM-Speicher liegt in `interlis-validation-mvstore`. Weitere Formatadapter und die Datenbankabbildung bleiben Entwurfsthemen. Die Entwürfe beschreiben mögliche spätere Lösungen; sie sind weder implementierte Produktverträge noch Vorgaben für konkrete Java-Interfaces.
+Der formatunabhängige Transferkern steht in `interlis-transfer` für INTERLIS 2.3 und 2.4 zur Verfügung. `interlis-xtf` liest und schreibt XTF-2.3- und XTF-2.4-FULL-Transfers objektweise. Der implementierte Umfang und die Grenzen stehen in der [Transferanleitung](../usage/transfer.md). Lokale und datensatzweite Validierung stehen in `interlis-validation` zur Verfügung. Der optionale JVM-Speicher liegt in `interlis-validation-mvstore`. Das [Datenbankkommando](../usage/database.md) erstellt Schemata, importiert und exportiert im beschriebenen Referenzprofil. Die folgenden Entwürfe skizzieren zusätzliche Verbraucherfähigkeiten und mögliche Schnittstellen.
 
 Die Verantwortung wird entlang fachlicher Produkte geschnitten:
 
@@ -13,7 +13,7 @@ CompiledSchema + explizite Verbraucheroptionen
 
 Ein `CompiledSchema` bleibt ein unveränderliches, fachlich geprüftes Modell. Projektionen erzeugen weitere unveränderliche Pläne. Laufzeitdaten, Caches, Objektidentitäten, Datenbankverbindungen und Zwischenergebnisse einer Datenvalidierung gehören in laufgebundene Kontexte.
 
-`interlis-transfer` verwendet die öffentliche, snapshotgebundene Modellsicht. `interlis-validation` verwendet die Modellsicht und den neutralen Transferkern. `interlis-db` ist ein geplanter Verbraucher. Der Compiler stellt die Modellinformationen bereit und belegt sie mit Metamodell- und Projektionstests.
+`interlis-transfer` verwendet die öffentliche, snapshotgebundene Modellsicht. `interlis-validation` und `interlis-db` verwenden die Modellsicht und den neutralen Transferkern. Der Compiler stellt die Modellinformationen bereit und belegt sie mit Metamodell- und Projektionstests.
 
 <a id="gemeinsame-planverträge"></a>
 ## Gemeinsame Planverträge

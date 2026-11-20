@@ -16,6 +16,7 @@ include('interlis-wasm-teavm', 'interlis-wasm-webimage')
 include 'interlis-compiler',
         'interlis-compiler-cli',
         'interlis-compiler-gui',
+        'interlis-db',
         'interlis-lsp',
         'interlis-model',
         'interlis-projection',

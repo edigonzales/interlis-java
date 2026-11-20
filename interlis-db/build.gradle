@@ -1,0 +1,101 @@
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+
+plugins {
+    id 'application'
+}
+
+application {
+    mainModule = 'guru.interlis.db'
+    mainClass = 'guru.interlis.db.Main'
+    applicationDefaultJvmArgs = ['--enable-native-access=org.xerial.sqlitejdbc']
+}
+
+distributions.main {
+    contents {
+        from rootProject.file('LICENSE')
+        into('licenses') {
+            from rootProject.file('interlis-compiler/src/main/antlr/LICENSE')
+            from rootProject.file('testdata/reference/unicode/17.0.0/UNICODE-LICENSE.txt')
+            from rootProject.file('packaging/licenses/ANTLR-BSD-3-Clause.txt')
+        }
+    }
+}
+
+dependencies {
+    implementation project(':interlis-compiler')
+    implementation project(':interlis-model')
+    implementation project(':interlis-transfer')
+    implementation project(':interlis-xtf')
+    implementation 'org.xerial:sqlite-jdbc:3.53.2.0'
+    runtimeOnly 'org.postgresql:postgresql:42.7.14'
+}
+
+def ili2dbReferenceVersion = '5.5.2'
+def ili2dbReferenceDirectory = layout.buildDirectory.dir('ili2db-reference')
+def offline = gradle.startParameter.offline
+def downloadIli2dbReferences = tasks.register('downloadIli2dbReferences') {
+    group = 'verification'
+    description = 'Downloads the ili2pg and ili2gpkg reference distributions.'
+    def archives = ['ili2pg', 'ili2gpkg'].collectEntries { tool ->
+        def name = "${tool}-${ili2dbReferenceVersion}.zip".toString()
+        [(name): "https://downloads.interlis.ch/${tool}/${name}".toString()]
+    }
+    inputs.property('archiveUrls', archives)
+    outputs.files(archives.keySet().collect { name ->
+        ili2dbReferenceDirectory.map { it.file(name) }
+    })
+    doLast {
+        def directory = ili2dbReferenceDirectory.get().asFile.toPath()
+        archives.each { name, url ->
+            def archive = directory.resolve(name)
+            if (offline) {
+                if (!Files.isRegularFile(archive)) {
+                    throw new GradleException("Missing ${archive}. Run downloadIli2dbReferences without --offline.")
+                }
+                return
+            }
+            Files.createDirectories(directory)
+            def temporary = Files.createTempFile(directory, name, '.part')
+            try {
+                def connection = URI.create(url).toURL().openConnection()
+                connection.connectTimeout = 60_000
+                connection.readTimeout = 60_000
+                connection.inputStream.withCloseable { input ->
+                    Files.copy(input, temporary, StandardCopyOption.REPLACE_EXISTING)
+                }
+                Files.move(temporary, archive, StandardCopyOption.REPLACE_EXISTING)
+            } finally {
+                Files.deleteIfExists(temporary)
+            }
+        }
+    }
+}
+
+testing.suites {
+    dbInteropTest(JvmTestSuite) {
+        useJUnitJupiter(libs.versions.junit.get())
+        dependencies {
+            implementation project()
+            implementation 'org.testcontainers:testcontainers-postgresql:2.0.5'
+        }
+        targets.configureEach {
+            testTask.configure {
+                javaLauncher = javaToolchains.launcherFor(java.toolchain)
+                inputs.files(downloadIli2dbReferences).withPathSensitivity(PathSensitivity.NONE)
+                systemProperty 'ili2db.reference.version', ili2dbReferenceVersion
+                systemProperty 'ili2db.reference.dir', ili2dbReferenceDirectory.get().asFile.absolutePath
+                jvmArgs '--add-reads=guru.interlis.db=ALL-UNNAMED'
+            }
+        }
+    }
+}
+
+javaModuleTesting.whitebox(testing.suites.dbInteropTest) {
+    requires.add('org.junit.jupiter.api')
+    requires.add('java.xml')
+}
+
+tasks.named('compileDbInteropTestJava') {
+    options.compilerArgs += ['--add-reads=guru.interlis.db=ALL-UNNAMED']
+}

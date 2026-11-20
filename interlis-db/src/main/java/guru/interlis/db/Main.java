@@ -1,0 +1,214 @@
+package guru.interlis.db;
+
+import guru.interlis.execution.CancellationToken;
+import guru.interlis.execution.OperationCancelledException;
+import guru.interlis.transfer.TransferProtocolException;
+import guru.interlis.transfer.TransferReader;
+import guru.interlis.transfer.TransferWriter;
+import guru.interlis.xtf23.Xtf23Exception;
+import guru.interlis.xtf23.Xtf23Reader;
+import guru.interlis.xtf23.Xtf23Writer;
+import guru.interlis.xtf24.Xtf24Exception;
+import guru.interlis.xtf24.Xtf24Reader;
+import guru.interlis.xtf24.Xtf24Writer;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Set;
+
+import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
+public final class Main {
+    private static final String USAGE = """
+            Usage: interlis-db <export|import> --model NAME --dataset NAME
+                    (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
+                   interlis-db schemaimport --model NAME
+                    (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
+            Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.
+            """;
+
+    private Main() { }
+
+    public static void main(String[] args) {
+        System.exit(run(args, new PrintWriter(System.out, true, StandardCharsets.UTF_8),
+                new PrintWriter(System.err, true, StandardCharsets.UTF_8),
+                System.getenv("INTERLIS_DB_PASSWORD"), Thread.currentThread()::isInterrupted));
+    }
+
+    static int run(String[] args, PrintWriter out, PrintWriter err, String password, CancellationToken cancellation) {
+        if (args.length == 1 && args[0].equals("--help")) {
+            out.print(USAGE);
+            out.flush();
+            return 0;
+        }
+        Options options;
+        try {
+            options = Options.parse(args);
+        } catch (IllegalArgumentException failure) {
+            err.println(failure.getMessage());
+            err.print(USAGE);
+            err.flush();
+            return 2;
+        }
+        try {
+            cancellation.throwIfCancellationRequested();
+            options.checkPaths();
+            switch (options.command()) {
+                case IMPORT -> importData(options, password, cancellation);
+                case EXPORT -> exportData(options, password, cancellation);
+                case SCHEMAIMPORT -> createSchema(options, password, cancellation);
+            }
+            return 0;
+        } catch (OperationCancelledException failure) {
+            err.println(failure.getMessage());
+            return 130;
+        } catch (DbException | TransferProtocolException | Xtf23Exception | Xtf24Exception | IOException failure) {
+            err.println(failure.getMessage());
+            return 1;
+        } catch (SQLException failure) {
+            // Drivers can include connection properties and input data in their error messages.
+            String code = failure.getSQLState() == null ? Integer.toString(failure.getErrorCode()) : failure.getSQLState();
+            err.println("Database operation failed (SQL code " + code + ")");
+            return 1;
+        } finally {
+            err.flush();
+        }
+    }
+
+    private static void createSchema(Options options, String password, CancellationToken cancellation)
+            throws IOException, SQLException {
+        var plan = SchemaPlan.read(options.model(), options.file(), options.gpkg() != null, cancellation);
+        cancellation.throwIfCancellationRequested();
+        if (options.gpkg() != null) {
+            GeoPackageSchema.create(options.gpkg(), plan, cancellation);
+        } else {
+            try (var database = options.open(password)) {
+                cancellation.throwIfCancellationRequested();
+                SchemaSql.createPostgres(database, plan, cancellation);
+                cancellation.throwIfCancellationRequested();
+                database.commit();
+            }
+        }
+    }
+
+    private static void importData(Options options, String password, CancellationToken cancellation)
+            throws IOException, SQLException {
+        try (var database = options.open(password)) {
+            var mapping = DbSchemaReader.read(database, options.model(), cancellation);
+            try (var input = Files.newInputStream(options.file());
+                 TransferReader reader = switch (mapping.version()) {
+                     case ILI23 -> new Xtf23Reader(mapping.plan(), input);
+                     case ILI24 -> new Xtf24Reader(mapping.plan(), input);
+                 }) {
+                DbTransfer.importData(database, mapping, options.dataset(), reader, cancellation);
+            }
+            cancellation.throwIfCancellationRequested();
+            database.commit();
+        }
+    }
+
+    private static void exportData(Options options, String password, CancellationToken cancellation)
+            throws IOException, SQLException {
+        Path temporary = Files.createTempFile(options.file().getParent(), ".interlis-db-", ".xtf");
+        try {
+            try (var database = options.open(password)) {
+                var mapping = DbSchemaReader.read(database, options.model(), cancellation);
+                try (var output = Files.newOutputStream(temporary);
+                     TransferWriter writer = switch (mapping.version()) {
+                         case ILI23 -> new Xtf23Writer(mapping.plan(), output);
+                         case ILI24 -> new Xtf24Writer(mapping.plan(), output);
+                     }) {
+                    DbTransfer.exportData(database, mapping, options.dataset(), writer, cancellation);
+                }
+                database.commit();
+            }
+            cancellation.throwIfCancellationRequested();
+            Files.move(temporary, options.file(), ATOMIC_MOVE, REPLACE_EXISTING);
+        } finally {
+            Files.deleteIfExists(temporary);
+        }
+    }
+
+    private enum Command { IMPORT, EXPORT, SCHEMAIMPORT }
+
+    private record Options(Command command, String model, String dataset, Path file, Path gpkg,
+                           String pgUrl, String schema, String user) {
+        private static final Set<String> NAMES = Set.of("--model", "--dataset", "--gpkg", "--pg-url", "--schema", "--user");
+
+        static Options parse(String[] args) {
+            Command command = switch (args.length == 0 ? "" : args[0]) {
+                case "import" -> Command.IMPORT;
+                case "export" -> Command.EXPORT;
+                case "schemaimport" -> Command.SCHEMAIMPORT;
+                default -> throw new IllegalArgumentException("Expected import, export or schemaimport");
+            };
+            var flags = new HashMap<String, String>();
+            Path file = null;
+            for (int i = 1; i < args.length; i++) {
+                String arg = args[i];
+                if (arg.startsWith("--")) {
+                    if (!NAMES.contains(arg)) {
+                        throw new IllegalArgumentException("Unknown option " + arg);
+                    }
+                    if (++i == args.length || args[i].isBlank() || args[i].startsWith("--")) {
+                        throw new IllegalArgumentException("Missing value for " + arg);
+                    }
+                    if (flags.putIfAbsent(arg, args[i]) != null) {
+                        throw new IllegalArgumentException("Repeated option " + arg);
+                    }
+                } else {
+                    if (file != null || arg.isBlank()) {
+                        throw new IllegalArgumentException("Expected exactly one source or destination file");
+                    }
+                    file = Path.of(arg).toAbsolutePath().normalize();
+                }
+            }
+            String model = flags.get("--model");
+            String dataset = flags.get("--dataset");
+            if (command == Command.SCHEMAIMPORT) {
+                if (file == null || file.getParent() == null || model == null) {
+                    throw new IllegalArgumentException("An .ili path and --model are required");
+                }
+                if (dataset != null) throw new IllegalArgumentException("--dataset is only valid with import or export");
+            } else if (file == null || file.getParent() == null || model == null || dataset == null) {
+                throw new IllegalArgumentException("An XTF path, --model and --dataset are required");
+            }
+            String gpkgPath = flags.get("--gpkg");
+            String pgUrl = flags.get("--pg-url");
+            String schema = flags.get("--schema");
+            String user = flags.get("--user");
+            Path gpkg = gpkgPath == null ? null : Path.of(gpkgPath).toAbsolutePath().normalize();
+            if (gpkg != null) {
+                if (pgUrl != null || schema != null || user != null) {
+                    throw new IllegalArgumentException("Choose a single database with --gpkg or --pg-url");
+                }
+            } else if (pgUrl == null || !pgUrl.startsWith("jdbc:postgresql:") || schema == null || user == null) {
+                throw new IllegalArgumentException("PostgreSQL needs a JDBC PostgreSQL URL, --schema and --user");
+            }
+            return new Options(command, model, dataset, file, gpkg, pgUrl, schema, user);
+        }
+
+        void checkPaths() throws IOException {
+            if (gpkg != null && command != Command.SCHEMAIMPORT) {
+                if (!Files.isRegularFile(gpkg)) {
+                    throw new DbException("Expected an existing GeoPackage file");
+                }
+                if (file.equals(gpkg) || (Files.exists(file) && Files.isSameFile(file, gpkg))) {
+                    throw new DbException("The XTF and GeoPackage paths must identify different files");
+                }
+            }
+        }
+
+        Database open(String password) throws SQLException {
+            boolean writable = command != Command.EXPORT;
+            return gpkg == null ? Database.openPostgres(pgUrl, schema, user, password, writable)
+                    : Database.openGeoPackage(gpkg, writable);
+        }
+    }
+}

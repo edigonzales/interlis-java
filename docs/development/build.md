@@ -1,6 +1,6 @@
 # Build und Toolchains
 
-Der Gradle-Wrapper baut alle fünfzehn JVM-Module und die portablen Backends.
+Der Gradle-Wrapper baut die JVM-Module und die portablen Backends.
 Setze `JAVA_HOME` auf ein Java-25-JDK. Unter Windows verwende `gradlew.bat`.
 
 ```sh
@@ -22,6 +22,7 @@ die Buildausgaben.
 | Gradle-Aufgabe | Ausgabe oder Funktion |
 |---|---|
 | `:interlis-compiler-cli:installDist` | `interlis-compiler-cli/build/install/interlis-compiler/` |
+| `:interlis-db:installDist` | `interlis-db/build/install/interlis-db/` |
 | `compilerZip compilerZipChecksum` | Compiler-ZIP und Prüfsumme unter `build/distributions/compiler/` |
 | `compilerAppZip validatorAppZip` | Anwendungen mit Java-Laufzeit unter `build/distributions/apps/` |
 | `sdkZip` | `build/distributions/sdk/sdk.zip` mit CLI und SDK-Beispielen |

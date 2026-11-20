@@ -1,0 +1,35 @@
+INTERLIS 2.4;
+
+!!@ CRS=EPSG:21781
+MODEL DbInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20" =
+  DOMAIN
+    !!@ CRS=EPSG:02056
+    Position = COORD 2460000.000 .. 2870000.000, 1045000.000 .. 1310000.000;
+    Approval = (draft, approved);
+
+  TOPIC Data =
+    !!@ ili2db.dispName="Places"
+    CLASS Place =
+      !!@ ili2db.dispName="Label"
+      Select : TEXT*40;
+      Active : BOOLEAN;
+      Count : -100 .. 100;
+      Status : Approval;
+      Geometry : Position;
+    END Place;
+    CLASS Link =
+      Target : REFERENCE TO Place;
+    END Link;
+  END Data;
+
+  TOPIC Naming =
+    CLASS place =
+      Select : TEXT*40;
+      ASelect : TEXT*40;
+      LongAttributeNameWithAnUnusuallyLongMiddleSectionForTestingShorteningAboveTheLimit : TEXT;
+    END place;
+    CLASS LongClassNameWithAnUnusuallyLongMiddleSectionForTestingShorteningAboveTheLimit =
+      Number : 0 .. 5;
+    END LongClassNameWithAnUnusuallyLongMiddleSectionForTestingShorteningAboveTheLimit;
+  END Naming;
+END DbInterop24.

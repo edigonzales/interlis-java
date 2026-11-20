@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="interop fixture">
+    <MODELS>
+      <MODEL NAME="DbInterop23" VERSION="2026-11-20" URI="https://example.org/interlis/db"/>
+    </MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <DbInterop23.Data BID="legacy-basket-1">
+      <DbInterop23.Data.Place TID="legacy-place-1">
+        <Select>Brücke</Select><Active>true</Active><Count>-7</Count><Status>approved</Status>
+        <Geometry><COORD><C1>2600000.125</C1><C2>1200000.375</C2></COORD></Geometry>
+      </DbInterop23.Data.Place>
+      <DbInterop23.Data.Place TID="legacy-place-2"><Select></Select><Active>false</Active></DbInterop23.Data.Place>
+    </DbInterop23.Data>
+    <DbInterop23.Data BID="legacy-basket-2">
+      <DbInterop23.Data.Place TID="legacy-place-3"/>
+    </DbInterop23.Data>
+  </DATASECTION>
+</TRANSFER>

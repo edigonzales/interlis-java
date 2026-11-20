@@ -2,6 +2,7 @@
 
 - [Compiler-Anleitung](usage/compiler.md) und [CLI-Referenz](usage/cli.md).
 - [Validator-Kommando](usage/validator.md).
+- [Datenbankkommando für ili2db-kompatible Schemata](usage/database.md).
 - Bedienung und Einbettung über [SDK](usage/sdk.md), [Transfer](usage/transfer.md),
   [LSP](usage/lsp.md), [Desktop](usage/desktop.md) und [Browser](usage/browser.md).
 - [Architektur](architecture.md) und [Anforderungsregister](contracts/requirements.md).

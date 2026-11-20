@@ -61,6 +61,8 @@ liegen bei der Extension.
 
 ## Testphilosophie
 
+- Verwende Testcontainers für Tests mit Datenbankservern. Der reguläre
+  JVM-Check bleibt dienstfrei.
 - Halte Tests direkt und verständlich. Testfälle sind Java-/JUnit- oder
   JavaScript-/Node-Code; INTERLIS- und Transferfixtures liegen als `.ili` bzw.
   `.xtf` vor. Kurze lokale Quelltexte und Parameterisierung im Test sind erlaubt.
