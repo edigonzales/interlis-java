@@ -488,8 +488,9 @@ public final class RepositoryClosureService {
             var previous = seen.putIfAbsent(id, result);
             if (previous != null && !previous.byteSha256().equals(result.byteSha256())) reject(RepositoryProblem.Reason.CHANGED_SOURCE, "");
             if (!request.matchesExpectedMd5(bytes)) reject(RepositoryProblem.Reason.PIN_MISMATCH, "");
-            if (!policy.offline() && !result.origin().equals("http-no-store")
-                    && !(httpLoaderPersists && RoutingSourceLoader.isHttp(locator.location()))) {
+            boolean loaderPersists = httpLoaderPersists && RoutingSourceLoader.isHttp(locator.location());
+            if (!loaderPersists && !result.origin().equals("http-no-store")
+                    && (!policy.offline() || (expected == null && store.lookup(digest).isEmpty()))) {
                 store.put(new VerifiedContent(id, digest, bytes));
             }
             return result;

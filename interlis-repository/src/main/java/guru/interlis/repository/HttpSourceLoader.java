@@ -133,10 +133,10 @@ public final class HttpSourceLoader implements SourceLoader {
             requireIdentity(response);
             byte[] bytes=response.body();
             var loaded=decode(id,bytes,policy,reusable?"http":"http-no-store");
-            if (metadata!=null) {
+            if (metadata != null && request.matchesExpectedMd5(bytes)) {
                 if (!reusable) {
                     metadata.remove(id);
-                } else if (request.matchesExpectedMd5(bytes)) {
+                } else {
                     var digest=new ContentDigest("sha256",loaded.byteSha256());
                     if (store.publish(new VerifiedContent(id,digest,bytes))) {
                         metadata.put(id, digest, clock.instant());

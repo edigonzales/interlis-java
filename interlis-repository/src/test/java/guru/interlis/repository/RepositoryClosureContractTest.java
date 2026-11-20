@@ -127,6 +127,40 @@ class RepositoryClosureContractTest {
         }
     }
 
+    @Test void lockFromCustomOfflineLoaderReplaysFromSeparateContentStore() {
+        String base = "https://cached.example/";
+        var cached = loader(Map.of(base + "ilimodels.xml", index(entry("Dep", "1", "dep.ili")),
+                base + "dep.ili", model("Dep", "1", "DOMAIN D=TEXT;")));
+        var custom = new SourceLoader() {
+            @Override public LoadedSource load(SourceLocator locator, FetchPolicy policy, CancellationToken token) {
+                return fail("live loading must not run offline");
+            }
+
+            @Override public LoadedSource loadCached(SourceLocator locator, FetchPolicy policy, CancellationToken token) {
+                assertTrue(policy.offline());
+                return cached.load(locator, policy, token);
+            }
+        };
+        var archive = new InMemoryContentStore();
+        var policy = new FetchPolicy(true, 100_000, Duration.ofSeconds(1), Duration.ofSeconds(1), Optional.empty());
+        var repositories = new RepositoryConfig(List.of(source(base)), policy);
+        String root = model("Root", "1", "IMPORTS Dep;");
+        ResolutionLock lock;
+        try (var w = workspace(root)) {
+            lock = prepared(new RepositoryClosureService(custom, archive)
+                    .resolve(w, request(w), RepositoryResolveOptions.defaults(repositories), TOKEN)).lock();
+        }
+
+        SourceLoader unavailable = (locator, fetchPolicy, token) -> fail("lock replay must use the content store");
+        try (var w = workspace(root)) {
+            var options = new RepositoryResolveOptions(repositories, Map.of(), Map.of(), Optional.of(lock));
+            var replay = prepared(new RepositoryClosureService(unavailable, archive).resolve(w, request(w), options, TOKEN));
+            assertEquals(lock, replay.lock());
+            replay.apply(w);
+            compile(w, "Root");
+        }
+    }
+
     @Test void indexOrderResolvesDuplicateStartsAndExactPinsBindTheRealSelectedDefinition() {
         String base = "https://repo.example/";
         var contents = new HashMap<>(Map.of(base + "ilimodels.xml", index(entry("Dep", "1", "one.ili"), entry("Dep", "99", "other.ili")),

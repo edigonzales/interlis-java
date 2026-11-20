@@ -548,6 +548,8 @@ Der HTTP-Loader mit persistentem Cache veröffentlicht die Bytes eines HTTP-Down
 und danach den aktuellen URL-Verweis. Treffer lesen Cache und Archiv, ohne sie
 neu zu schreiben. Die Closure archiviert verifizierte Online-Ergebnisse nicht
 persistent verwalteter Loader und lokaler Quellen weiterhin für Locks.
+Liefert ein eigener Loader Offline-Bytes aus seinem getrennten Cache,
+ergänzt die Closure fehlende Digestobjekte im Lockarchiv.
 `HostRepositories.Access.closureService(SourceLoader)` behält diese
 Schreibzuständigkeit bei einem HTTP-delegierenden Loader bei.
 Der URL-Baum liegt unter `by-url`. Beispielsweise enthält

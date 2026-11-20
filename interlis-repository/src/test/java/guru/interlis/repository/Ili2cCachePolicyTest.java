@@ -156,8 +156,13 @@ class Ili2cCachePolicyTest {
         String wrong = fixture.model("Dep", "DOMAIN D=TEXT;");
         var model = new AtomicReference<>(original);
         String index = fixture.index("Dep").replace("</File>", "</File><md5>" + md5(original) + "</md5>");
-        String base = fixture.serve(exchange -> fixture.send(exchange,
-                exchange.getRequestURI().getPath().endsWith("/ilimodels.xml") ? index : model.get(), null));
+        String base = fixture.serve(exchange -> {
+            boolean indexRequest = exchange.getRequestURI().getPath().endsWith("/ilimodels.xml");
+            if (!indexRequest && privateResponse.get()) {
+                exchange.getResponseHeaders().set("Cache-Control", "no-store");
+            }
+            fixture.send(exchange, indexRequest ? index : model.get(), null);
+        });
         var first = assertInstanceOf(RepositoryResolutionOutcome.Prepared.class,
                 fixture.resolve(host(), List.of(base), false, Optional.empty()));
         var modelMetadata = fixture.metadata(base + "Dep.ili");
@@ -165,10 +170,13 @@ class Ili2cCachePolicyTest {
 
         now.set(now.get().plus(Duration.ofDays(8)));
         model.set(wrong);
-        var rejected = assertInstanceOf(RepositoryResolutionOutcome.Rejected.class,
-                fixture.resolve(host(), List.of(base), false, Optional.empty()));
-        assertEquals(RepositoryProblem.Reason.PIN_MISMATCH, rejected.problems().getFirst().reason());
-        assertArrayEquals(previous, Files.readAllBytes(modelMetadata));
+        for (boolean noStore : List.of(false, true)) {
+            privateResponse.set(noStore);
+            var rejected = assertInstanceOf(RepositoryResolutionOutcome.Rejected.class,
+                    fixture.resolve(host(), List.of(base), false, Optional.empty()));
+            assertEquals(RepositoryProblem.Reason.PIN_MISMATCH, rejected.problems().getFirst().reason());
+            assertArrayEquals(previous, Files.readAllBytes(modelMetadata));
+        }
         assertTrue(host().contentStore().lookup(ContentDigest.sha256(wrong.getBytes(java.nio.charset.StandardCharsets.UTF_8))).isEmpty());
 
         int before = fixture.requests.get();
