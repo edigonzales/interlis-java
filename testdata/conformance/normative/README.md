@@ -25,6 +25,7 @@ erklärt die Abweichungen im Kompilierausgang der externen Suite.
 - `attributeComplete`: CIRCULAR bei den zwei kontinuierlichen Unterteilungen ergänzen.
 - `Constraint23Test.setCstrt`: die individuellen booleschen Werte in die WHERE-Filter verschieben; die beiden übersetzten Hauptausdrücke prüfen objectCount(ALL).
 - `iliconversion_ConversionOfSETCONSTRAINT`: DEFINED(attr2) in den WHERE-Filter übernehmen; der Hauptausdruck prüft objectCount(ALL).
+- `uniqueCstrtLocal`: in beiden Übersetzungen `BAG OF` verwenden, sodass der lokale Schlüssel über eine Unterstruktursammlung definiert ist.
 
 Die letzten beiden Fassungen folgen dem ausdrücklich bestätigten SET-Kontextprofil.
 Die [Normauslegung](../../../docs/contracts/norm-decisions.md) erläutert die bestätigten Sprachentscheidungen.

@@ -68,7 +68,10 @@ tasks.register('codebergConformance') {
 
         // The CLI uses exit 1 for source rejection as well as operational problems.
         def report = new groovy.json.JsonSlurper().parse(new File(output, 'report.json'), 'UTF-8')
-        report.compilers[0].tests.findAll { it.classification == 'XFAIL' }.each { result ->
+        def tests = report.compilers[0].tests
+        if (tests.any { !(it.languageVersion in ['2.3', '2.4']) })
+            throw new GradleException('Codeberg selection must use INTERLIS 2.3 and 2.4 test cases')
+        tests.findAll { it.classification == 'XFAIL' }.each { result ->
             try {
                 def payload = new groovy.json.JsonSlurper().parseText(result.stdout)
                 def errors = payload.diagnostics.findAll { it.severity == 'ERROR' }
@@ -81,10 +84,10 @@ tasks.register('codebergConformance') {
                             errors.any { it.code.startsWith('ILI-SEM-') }
                     if (result.testId == 'ili23.Attribute10Test.attributeComplete') {
                         expected = result.exitCode == 1 &&
-                                payload.status.startsWith('rejected: RejectionSummary[reasons=[SOURCE_ERRORS') &&
-                                errors &&
-                                errors.every { it.code == 'ILI-SYN-0002' }
-                    } else if (result.testId == 'ili23.XSDMetaDataGenerator23Test.xsdmeta_null') {
+                                payload.status.startsWith('rejected: RejectionSummary[reasons=[SOURCE_ERRORS],') &&
+                                errors*.code == ['ILI-SYN-0002', 'ILI-SYN-0002']
+                    } else if (result.testId in ['ili23.XSDMetaDataGenerator23Test.xsdmeta_null',
+                                                 'ili23.MainRule23Test.mainRules_SyntaxIli23']) {
                         expected = result.exitCode == 1 &&
                                 payload.status.startsWith('rejected: RejectionSummary[reasons=[MISSING_INPUT],') &&
                                 errors*.code == ['ILI-RES-0001']

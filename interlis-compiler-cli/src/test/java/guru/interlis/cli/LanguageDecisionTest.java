@@ -151,6 +151,15 @@ class LanguageDecisionTest {
     }
 
     @Test
+    void localUniquenessRequiresACollectionInBothTranslations() {
+        Path source = original("uniqueCstrtLocal.ili");
+        String rule = "LOCAL uniqueness requires a collection of structures or line attributes/UNIQUE_LOCAL_PREFIX";
+        rejected(check(source), rule(source, 252, 258, "constraint@237", rule),
+                rule(source, 592, 598, "constraint@577", rule));
+        accepted(control("uniqueCstrtLocal-collections.ili"));
+    }
+
+    @Test
     void transientBooleanStillRequiresTheCorrectEnumLiteral() {
         Path source = original("attribute_GenerateXMLSchemaWithTransientAttribute.ili");
         rejected(check(source), mismatch(source, 186, 191, "#True", "BOOLEAN"));

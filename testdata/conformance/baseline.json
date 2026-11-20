@@ -86,6 +86,16 @@
       "testId": "ili23.XSDMetaDataGenerator23Test.xsdmeta_null",
       "reason": "Der Kopf ist eine gültige Beschreibungseinheit ohne Modelle. Ein Compile-Auftrag mit dieser Quelle als Root erfordert ein Modell (docs/contracts/compiler-and-model.md).",
       "actualOutcome": "rejected"
+    },
+    {
+      "testId": "ili23.MainRule23Test.mainRules_SyntaxIli23",
+      "reason": "Der Originalfall prüft die Syntax eines Kopfs ohne Modelle. Der Syntaxdienst akzeptiert ihn. Ein Compile-Auftrag mit dieser Quelle als Root meldet MISSING_INPUT (docs/contracts/compiler-and-model.md).",
+      "actualOutcome": "rejected"
+    },
+    {
+      "testId": "ili23.Constraint23Test.uniqueCstrtLocal",
+      "reason": "Beide Übersetzungen wenden UNIQUE (LOCAL) auf einen einzelnen Strukturwert an. Der Präfix muss zu einer Sammlung von Strukturelementen führen (INTERLIS 2.3 §2.12, S. 60).",
+      "actualOutcome": "rejected"
     }
   ]
 }
