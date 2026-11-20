@@ -55,7 +55,7 @@ final class CompilationRun {
         var resolutionDiagnostics = verifySourceSet(sourceSet, lifecycle);
         parseSources(sourceSet, mode, lifecycle);
         token.throwIfCancellationRequested();
-        IndexedDeclarations declarations = new DeclarationIndexer().index(syntax.values().stream().toList(), previousAnalysis);
+        IndexedDeclarations declarations = new DeclarationIndexer().index(List.copyOf(syntax.values()), previousAnalysis, token);
         var overlays = new OverlayBindings(declarations,request.options().overlays(),sourceSet.translations(),collector,token,request.options().budget());
         ModelIndex modelIndex = new ModelIndex(syntax.values().stream().toList());
         RootSelection roots;
