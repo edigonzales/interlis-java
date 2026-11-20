@@ -133,6 +133,8 @@ Polymorphe Ziele werden mit einer Zwischenklasse und einem konkreten
 Nachfahren aus derselben Hierarchie geprüft.
 Bei einer Blattklasse als Eigentümer prüft die Suite die Linknutzlast am
 Blatt und einen beschädigten Rückverweis auf ein Geschwisterobjekt.
+Attribuierte 1:1-Assoziationen werden mit beiden Deklarationsrichtungen
+und mit direkter, eingebetteter und fehlender Rolle geprüft.
 Bei 1:1-Assoziationen kehren die beiden Sprachfixtures die Deklarationsreihenfolge
 um. Die Tests prüfen die jeweilige Rollenspalte, deren SQL-Nullbarkeit und die
 gespeicherte Ziel-ID.

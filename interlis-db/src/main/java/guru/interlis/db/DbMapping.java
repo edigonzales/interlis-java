@@ -448,9 +448,6 @@ final class DbMapping {
             return Optional.empty();
         }
         boolean linkTable = association.slots().stream().anyMatch(AttributeSlot.class::isInstance);
-        if (linkTable && first.single() && second.single()) {
-            throw unsupported("1:1 association with attributes " + association.name().declared());
-        }
         // For 1:1, the second declared role's class owns the column for the first role.
         var target = first.single() ? first : second;
         var owner = first.single() ? second : first;

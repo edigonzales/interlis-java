@@ -200,6 +200,8 @@ final class DbInteropTest {
             assertAssociationCatalog(db, sql, model, "HierarchyNote", Map.of("RaisedAt", "mast", "SharedAt", "servicebase"));
             assertTypeKind(db, sql, "hierarchynote", "memo", "TEXT");
             assertTypeKind(db, sql, "hierarchynote", "severity", "ENUM");
+            assertAssociationCatalog(db, sql, model, "RatingTag",
+                    Map.of("TaggedUnit", "serviceunit", "TaggedForm", "ratingform"));
             assertAssociationCatalog(db, sql, model, "RelayReview",
                     Map.of("Recommended", "servicebase", "ReviewingRelays", "arelay"));
             assertAssociationCatalog(db, sql, model, "Rating", Map.of("Rated", "tower", "RatingForms", "ratingform"));
@@ -1641,6 +1643,7 @@ final class DbInteropTest {
         assertStoredPairing(db, sql, version, dataset);
         assertStoredStandaloneLinks(db, sql, dataset);
         assertStoredHierarchyLinks(db, sql, dataset);
+        assertStoredRatingTags(db, sql, version, dataset);
         assertStoredEmbeddedLink(db, sql, "relayreview", "reviewingrelays", "mast", dataset + "-relay",
                 "recommended", "servicebase", dataset + "-serviceunit", "accepted");
         assertStoredEmbeddedLink(db, sql, "rating", "ratingforms", "ratingform", dataset + "-ratingform-1",
@@ -1790,6 +1793,20 @@ final class DbInteropTest {
     private static Set<List<String>> expectedMarkerLinks(String dataset) {
         return Set.of(List.of(dataset + "-marker-1", dataset + "-hub-1"),
                 List.of(dataset + "-marker-1", dataset + "-hub-2"), List.of(dataset + "-marker-2", dataset + "-hub-1"));
+    }
+
+    private static void assertStoredRatingTags(TestDatabase db, Connection sql, int version, String dataset)
+            throws SQLException {
+        String owner = version == 23 ? "taggedform" : "taggedunit";
+        String target = version == 23 ? "taggedunit" : "taggedform";
+        String ownerRoot = version == 23 ? "ratingform" : "servicebase";
+        String targetRoot = version == 23 ? "servicebase" : "ratingform";
+        for (int index = 1; index <= 3; index++) {
+            String form = dataset + "-ratingform-" + index;
+            String unit = dataset + "-serviceunit" + (index == 1 ? "" : "-" + index);
+            assertStoredEmbeddedLink(db, sql, "ratingtag", owner, ownerRoot, version == 23 ? form : unit,
+                    target, targetRoot, index == 3 ? null : version == 23 ? unit : form, index == 1 ? "tagged" : null);
+        }
     }
 
     private static void assertStoredEmbeddedLink(TestDatabase db, Connection sql, String table, String ownerColumn,
@@ -2170,7 +2187,7 @@ final class DbInteropTest {
         var tables = new ArrayList<>(List.of("t_ili2db_dataset", "t_ili2db_basket", "place", "route", "plot", "parcel",
                 "report", "detail", "marker", "hub", "markerlink", "review", "annotatedlink", "pairleft", "pairright", "linkdetail",
                 "nestedrecord", "nestedouter", "nestedinner", "nestedleaf"));
-        var hierarchyCounts = Map.of("mast", 4, "tower", 2, "arelay", 1, "beacon", 1, "servicebase", 1, "serviceunit", 1);
+        var hierarchyCounts = Map.of("mast", 4, "tower", 2, "arelay", 1, "beacon", 1, "servicebase", 3, "serviceunit", 3);
         for (var entry : hierarchyCounts.entrySet()) {
             assertEquals(Integer.toString(datasets * entry.getValue()),
                     scalar(sql, "select count(*) from " + db.table(entry.getKey())), entry.getKey());
@@ -2210,11 +2227,13 @@ final class DbInteropTest {
         }
         assertTableRows(db, sql, "ratingform", datasets * 3);
         assertTableRows(db, sql, "rating", datasets * 2);
+        assertTableRows(db, sql, "ratingtag", datasets * 2);
+        tables.add("ratingtag");
         assertTableRows(db, sql, "relayreview", datasets);
         tables.add("relayreview");
         tables.addAll(List.of("ratingform", "rating"));
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 98 : 87)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 102 : 91)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
     }
 
@@ -2324,6 +2343,7 @@ final class DbInteropTest {
             secondBasket.add(dataset + "-" + name);
         }
         for (int index = 1; index <= 3; index++) secondBasket.add(dataset + "-ratingform-" + index);
+        secondBasket.addAll(List.of(dataset + "-serviceunit-2", dataset + "-serviceunit-3"));
         secondBasket.add(dataset + "-refcarrier");
         assertTransferredClassHierarchy(objects, version, dataset);
         secondBasket.add(dataset + "-ref-notebook");
@@ -2347,6 +2367,7 @@ final class DbInteropTest {
         assertEmbeddedLink(objects.get(dataset + "-relay"), "Recommended", dataset + "-serviceunit",
                 "RelayReview", version, "accepted");
         assertNull(child(objects.get(dataset + "-beacon"), "Recommended"));
+        assertTransferredRatingTags(objects, version, dataset);
         assertTransferredReviews(objects, version, dataset);
         assertTransferredPairing(objects, version, dataset);
 
@@ -2458,6 +2479,18 @@ final class DbInteropTest {
         }
     }
 
+    private static void assertTransferredRatingTags(Map<String, Element> objects, int version, String dataset) {
+        for (int index = 1; index <= 3; index++) {
+            String form = dataset + "-ratingform-" + index;
+            String unit = dataset + "-serviceunit" + (index == 1 ? "" : "-" + index);
+            String owner = version == 23 ? form : unit;
+            String target = index == 3 ? null : version == 23 ? unit : form;
+            assertEmbeddedLink(objects.get(owner), version == 23 ? "TaggedUnit" : "TaggedForm", target,
+                    "RatingTag", version, index == 1 ? "tagged" : null);
+            assertNull(child(objects.get(version == 23 ? unit : form), version == 23 ? "TaggedForm" : "TaggedUnit"));
+        }
+    }
+
     private static void assertEmbeddedLink(Element owner, String role, String targetTid, String association,
                                            int version, String memo) {
         var element = child(owner, role);
@@ -2533,7 +2566,7 @@ final class DbInteropTest {
         assertClassFields(objects.get(dataset + "-beacon"), prefix + "Beacon", Map.of("Caption", "sibling", "Signal", "green"));
         var serviceUnit = objects.get(dataset + "-serviceunit");
         assertClassFields(serviceUnit, prefix + "ServiceUnit", Map.of("ServiceCode", "unit-1", "Label", "active"),
-                "ServicePoint", "Supervisor", "PairedTower");
+                "ServicePoint", "Supervisor", "PairedTower", "TaggedForm");
         assertLocalReference(serviceUnit, "Supervisor", version, dataset + "-relay");
         if (version == 23) {
             assertLocalReference(relay, "PairedService", version, dataset + "-serviceunit");

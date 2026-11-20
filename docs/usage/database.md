@@ -194,15 +194,16 @@ Beim XTF-2.3-Import mit ili2gpkg 5.5.2 wurden identische Zielpaare zweier
 anonymer Assoziationen derselben Beziehungstabelle zugeordnet. Die
 Mischfixtures verwenden für diese Assoziationen unterschiedliche Zieltypen.
 
-1:n-Assoziationen mit eigenen skalaren Attributen verwenden ebenfalls eine
-Beziehungstabelle. Im XTF bleibt die Rolle am Objekt der n-Seite. Eine
+1:n- und 1:1-Assoziationen mit eigenen skalaren Attributen verwenden ebenfalls
+eine Beziehungstabelle. Im XTF erscheint die Rolle am Objekt der n-Seite
+bzw. der zweiten deklarierten Rolle. Eine
 Linkzeile mit Attributwerten ergibt eine eingebettete Assoziation. Sind alle
 eigenen Spalten `NULL`, erscheint eine direkte Referenz. Ohne Linkzeile
 entfällt die Rolle. Mehrere Linkzeilen zum selben Objekt der n-Seite werden
 beim Export an der Rolle diagnostiziert.
 Die 1-Seite darf eine Klasse in einer Vererbungshierarchie deklarieren.
 Der Export liest ihre TID aus der Wurzeltabelle. Die deklarierte Klasse
-auf der n-Seite darf auch eine konkrete Blattklasse sein. In diesem Fall
+auf der speichernden Seite darf auch eine konkrete Blattklasse sein. In diesem Fall
 bezieht sich der Rückverweis auf deren Tabellenfragment. Bei einem
 deklarierten Eigentümer mit Untertypen fragt der Referenzexport zusätzliche
 Rollenspalten ab, die das Referenzschema nicht enthält.

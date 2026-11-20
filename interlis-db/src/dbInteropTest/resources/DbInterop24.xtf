@@ -269,6 +269,7 @@
         <PairedTower i:ref="legacy-relay"/>
         <Supervisor i:ref="legacy-relay"/>
         <Label>active</Label>
+        <TaggedForm i:ref="legacy-ratingform-1"><RatingTag><Memo>tagged</Memo></RatingTag></TaggedForm>
       </ServiceUnit>
       <RatingForm i:tid="legacy-ratingform-1"><Rated i:ref="legacy-relay"><Rating><Memo>checked</Memo></Rating></Rated></RatingForm>
       <RatingForm i:tid="legacy-ratingform-2"><Rated i:ref="legacy-tower"/></RatingForm>
@@ -306,6 +307,8 @@
         </g:multicoord></Sites>
         <Recommended i:ref="legacy-serviceunit"><RelayReview><Memo>accepted</Memo></RelayReview></Recommended>
       </Relay>
+      <ServiceUnit i:tid="legacy-serviceunit-2"><Label>second</Label><TaggedForm i:ref="legacy-ratingform-2"/></ServiceUnit>
+      <ServiceUnit i:tid="legacy-serviceunit-3"><Label>third</Label></ServiceUnit>
     </Data>
   </i:datasection>
 </i:transfer>

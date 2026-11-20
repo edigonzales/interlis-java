@@ -195,8 +195,8 @@
         <Supervisor REF="legacy-relay"/>
         <Label>active</Label>
       </DbInterop23.Data.ServiceUnit>
-      <DbInterop23.Data.RatingForm TID="legacy-ratingform-1"><Rated REF="legacy-relay"><DbInterop23.Data.Rating><Memo>checked</Memo></DbInterop23.Data.Rating></Rated></DbInterop23.Data.RatingForm>
-      <DbInterop23.Data.RatingForm TID="legacy-ratingform-2"><Rated REF="legacy-tower"/></DbInterop23.Data.RatingForm>
+      <DbInterop23.Data.RatingForm TID="legacy-ratingform-1"><Rated REF="legacy-relay"><DbInterop23.Data.Rating><Memo>checked</Memo></DbInterop23.Data.Rating></Rated><TaggedUnit REF="legacy-serviceunit"><DbInterop23.Data.RatingTag><Memo>tagged</Memo></DbInterop23.Data.RatingTag></TaggedUnit></DbInterop23.Data.RatingForm>
+      <DbInterop23.Data.RatingForm TID="legacy-ratingform-2"><Rated REF="legacy-tower"/><TaggedUnit REF="legacy-serviceunit-2"/></DbInterop23.Data.RatingForm>
       <DbInterop23.Data.RatingForm TID="legacy-ratingform-3"/>
       <DbInterop23.Data.Mast TID="legacy-mast">
         <Caption>base</Caption>
@@ -228,6 +228,8 @@
         <Online>false</Online>
         <Recommended REF="legacy-serviceunit"><DbInterop23.Data.RelayReview><Memo>accepted</Memo></DbInterop23.Data.RelayReview></Recommended>
       </DbInterop23.Data.Relay>
+      <DbInterop23.Data.ServiceUnit TID="legacy-serviceunit-2"><Label>second</Label></DbInterop23.Data.ServiceUnit>
+      <DbInterop23.Data.ServiceUnit TID="legacy-serviceunit-3"><Label>third</Label></DbInterop23.Data.ServiceUnit>
     </DbInterop23.Data>
   </DATASECTION>
 </TRANSFER>

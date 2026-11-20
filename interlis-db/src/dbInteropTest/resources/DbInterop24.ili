@@ -224,6 +224,11 @@ MODEL DbInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
       ReviewingRelays -- {0..*} Relay;
       Memo : TEXT*16;
     END RelayReview;
+    ASSOCIATION RatingTag =
+      TaggedForm -- {0..1} RatingForm;
+      TaggedUnit -- {0..1} ServiceUnit;
+      Memo : TEXT*16;
+    END RatingTag;
   END Data;
 
   TOPIC Naming =
