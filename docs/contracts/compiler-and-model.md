@@ -326,7 +326,12 @@ Die Fachregeln dürfen ein gemeinsames Resultatformat verwenden, aber kein frei 
 8. Die konfigurierte Warnungspolitik ist erfüllt.
 9. Graphintegrität und Herkunft sind konsistent, und kein Abbruch wurde vor Publikation angefordert.
 
-Erst dann wird `DefaultCompiledSchema` erzeugt. `GateResult` ist eine interne sealed Ergebnishierarchie `Accepted(CompiledSchema)` beziehungsweise `Denied(List<GateBlocker>, RejectionSummary)`. Jeder Blocker besitzt Art, betroffene Closurestelle und Diagnose-/Coveragebezug. `CompilationGate` erzeugt daraus die öffentliche Zusammenfassung mit den ausschliesslich relevanten Gründen. Der Orchestrator übernimmt sie unverändert in `CompilationOutcome.Rejected`. Das Gate hängt keine neuen willkürlichen Folgefehler an, sondern benennt die bereits vorhandenen Gründe und ergänzt lediglich bisher fehlende erforderliche Abschlussdiagnostik.
+Beim strikten Compile erzeugt `CompilationGate` nach der Annahme das
+`DefaultCompiledSchema` und prüft den Abbruch vor der Übergabe. Bei `analyze`
+verwendet der Lauf die Entscheidung für seinen Abschlussstatus und liefert den
+Analysesnapshot. Das Gate fasst bei einer Ablehnung die für den Auftrag
+relevanten Gründe, Diagnosen und nicht unterstützten Features zusammen.
+Der Orchestrator übernimmt diese Zusammenfassung in `CompilationOutcome.Rejected`.
 
 Die ausgestellte Graph-/Querysicht ist auf die geprüfte Closure beschränkt, wie in05 festgelegt. Ein umfassender Analysesnapshot kann daneben unabhängige fehlerhafte Modelle besitzen. Das Gate darf diese nicht durch einen einfachen Verweis auf einen ungefilterten Gesamtgraphen als scheinbar geprüfte Schemainhalte ausgeben. Die Auswahl teilt unveränderliche Graphdaten und benötigt keine erneute fachliche Kompilierung.
 

@@ -25,7 +25,7 @@ final class CompilationOrchestrator {
         var previous = reuse.previousAnalysis().filter(compilerProduced);
         CompilationRun run = new CompilationRun(request, reuse.previousSyntax(), previous, snapshotFactory, token);
         RunOutput output = run.execute(mode, lifecycle);
-        GateResult gate = new CompilationGate().evaluate(output, request, mode == ParseMode.STRICT);
+        GateResult gate = new CompilationGate().evaluate(output, request, mode == ParseMode.STRICT, token);
         return new Result(output, gate);
     }
 

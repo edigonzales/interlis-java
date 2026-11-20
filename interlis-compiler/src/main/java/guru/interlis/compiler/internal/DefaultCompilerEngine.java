@@ -132,8 +132,8 @@ public final class DefaultCompilerEngine implements CompilerEngine {
             CompilationOrchestrator.Result result = orchestrator.run(request, reuse,
                     ParseMode.STRICT, cancellation, lifecycle);
             AnalysisSnapshot analysis = result.output().analysis();
-            if (result.gate().schema().isPresent()) {
-                var schema = result.gate().schema().get();
+            if (result.gate().accepted()) {
+                var schema = result.gate().schema().orElseThrow();
                 lifecycle.finish(new RunCompletion.Succeeded(
                         (int) analysis.diagnostics().stream()
                                 .filter(d -> d.severity() == Severity.ERROR).count(),
@@ -172,7 +172,7 @@ public final class DefaultCompilerEngine implements CompilerEngine {
         AnalysisSnapshot analysis = result.output().analysis();
         int errors = (int) analysis.diagnostics().stream()
                 .filter(d -> d.severity() == Severity.ERROR).count();
-        if (result.gate().schema().isPresent()) {
+        if (result.gate().accepted()) {
             return new RunCompletion.Succeeded(errors,
                     result.output().graphResult().roots().size(), true, false);
         }
