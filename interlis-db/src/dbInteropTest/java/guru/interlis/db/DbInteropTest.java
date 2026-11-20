@@ -200,6 +200,7 @@ final class DbInteropTest {
             assertAssociationCatalog(db, sql, model, "HierarchyNote", Map.of("RaisedAt", "mast", "SharedAt", "servicebase"));
             assertTypeKind(db, sql, "hierarchynote", "memo", "TEXT");
             assertTypeKind(db, sql, "hierarchynote", "severity", "ENUM");
+            assertAssociationCatalog(db, sql, model, "Rating", Map.of("Rated", "tower", "RatingForms", "ratingform"));
             assertTypeKind(db, sql, "review", "memo", "TEXT");
             assertTypeKind(db, sql, "review", "grade", "NUMERIC");
             assertTypeKind(db, sql, "annotatedlink", "memo", "TEXT");
@@ -246,6 +247,7 @@ final class DbInteropTest {
             assertCorruptInheritedOwnerRejected(db, sql, model, nativeOutput);
             assertClassHierarchyRollback(db, sql, model, version, fixture);
             assertUnresolvedHierarchyReferenceRollback(db, sql, model, version, fixture);
+            assertAmbiguousRatingRejected(db, sql, model, nativeOutput);
             assertAmbiguousReviewRejected(db, sql, model, nativeOutput);
             if (version == 24) {
                 assertEmptyCollectionRollback(db, sql, model, fixture, "multisurface", "Park.Coverage", "multisurface", 13);
@@ -903,6 +905,22 @@ final class DbInteropTest {
                 """.formatted(review, duplicateId, hub, review, marker));
         assertExportRejected(db, model, "legacy", output, "Review.Witness");
         execute(sql, "delete from " + review + " where t_id=" + duplicateId);
+    }
+
+    private static void assertAmbiguousRatingRejected(TestDatabase db, Connection sql, String model, Path output)
+            throws Exception {
+        String table = db.table("rating");
+        String id = scalar(sql, "select max(t_id)+1000 from " + table);
+        execute(sql, """
+                insert into %s (t_id, t_basket, rated, ratingforms)
+                select %s, r.t_basket, r.rated, r.ratingforms from %s r
+                join %s f on f.t_id=r.ratingforms where f.t_ili_tid='legacy-ratingform-1'
+                """.formatted(table, id, table, db.table("ratingform")));
+        try {
+            assertExportRejected(db, model, "legacy", output, "Multiple link rows at " + model + ".Data.Rating.Rated");
+        } finally {
+            execute(sql, "delete from " + table + " where t_id=" + id);
+        }
     }
 
     private static void assertWrongStructureBranchRejected(TestDatabase db, Connection sql, String model, Path output)
@@ -1605,6 +1623,12 @@ final class DbInteropTest {
         assertStoredPairing(db, sql, version, dataset);
         assertStoredStandaloneLinks(db, sql, dataset);
         assertStoredHierarchyLinks(db, sql, dataset);
+        assertStoredEmbeddedLink(db, sql, "rating", "ratingforms", "ratingform", dataset + "-ratingform-1",
+                "rated", "mast", dataset + "-relay", "checked");
+        assertStoredEmbeddedLink(db, sql, "rating", "ratingforms", "ratingform", dataset + "-ratingform-2",
+                "rated", "mast", dataset + "-tower", null);
+        assertStoredEmbeddedLink(db, sql, "rating", "ratingforms", "ratingform", dataset + "-ratingform-3",
+                "rated", "mast", null, null);
         assertStoredAttributedLinks(db, sql, dataset, "review", "reviewmarkers", "witness", "hub", "reviewed", nativeImport);
         assertStoredAttributedLinks(db, sql, dataset, "annotatedlink", "consultedmarker", "consultedreport", "report",
                 "confirmed", nativeImport);
@@ -1746,6 +1770,25 @@ final class DbInteropTest {
     private static Set<List<String>> expectedMarkerLinks(String dataset) {
         return Set.of(List.of(dataset + "-marker-1", dataset + "-hub-1"),
                 List.of(dataset + "-marker-1", dataset + "-hub-2"), List.of(dataset + "-marker-2", dataset + "-hub-1"));
+    }
+
+    private static void assertStoredEmbeddedLink(TestDatabase db, Connection sql, String table, String ownerColumn,
+                                                 String ownerRoot, String ownerTid, String targetColumn,
+                                                 String targetRoot, String targetTid, String memo) throws SQLException {
+        String query = """
+                select t.t_ili_tid, link.memo from %s link
+                join %s o on o.t_id=link.%s and o.t_basket=link.t_basket
+                left join %s t on t.t_id=link.%s and t.t_basket=link.t_basket
+                where o.t_ili_tid='%s'
+                """.formatted(db.table(table), db.table(ownerRoot), ownerColumn, db.table(targetRoot), targetColumn, ownerTid);
+        try (var statement = sql.createStatement(); var rows = statement.executeQuery(query)) {
+            if (targetTid != null) {
+                assertTrue(rows.next(), ownerTid);
+                assertEquals(targetTid, rows.getString(1));
+                assertEquals(memo, rows.getString(2));
+            }
+            assertFalse(rows.next(), ownerTid);
+        }
     }
 
     private static void assertStoredAttributedLinks(TestDatabase db, Connection sql, String dataset, String association,
@@ -2145,9 +2188,16 @@ final class DbInteropTest {
             assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table(table)));
             tables.add(table);
         }
+        assertTableRows(db, sql, "ratingform", datasets * 3);
+        assertTableRows(db, sql, "rating", datasets * 2);
+        tables.addAll(List.of("ratingform", "rating"));
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 92 : 81)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 97 : 86)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
+    }
+
+    private static void assertTableRows(TestDatabase db, Connection sql, String table, int count) throws SQLException {
+        assertEquals(Integer.toString(count), scalar(sql, "select count(*) from " + db.table(table)), table);
     }
 
     private static Element readDataSection(Path output, int version) throws Exception {
@@ -2251,6 +2301,7 @@ final class DbInteropTest {
         for (String name : List.of("mast", "tower", "relay", "beacon", "serviceunit")) {
             secondBasket.add(dataset + "-" + name);
         }
+        for (int index = 1; index <= 3; index++) secondBasket.add(dataset + "-ratingform-" + index);
         secondBasket.add(dataset + "-refcarrier");
         assertTransferredClassHierarchy(objects, version, dataset);
         secondBasket.add(dataset + "-ref-notebook");
@@ -2268,6 +2319,9 @@ final class DbInteropTest {
         assertTransferredPolymorphicTargets(objects.get(dataset + "-refcarrier"), version, dataset);
         assertTransferredStructureReferences(objects.get(secondReport), version, dataset);
         assertTransferredRoles(objects, version, dataset);
+        assertEmbeddedLink(objects.get(dataset + "-ratingform-1"), "Rated", dataset + "-relay", "Rating", version, "checked");
+        assertEmbeddedLink(objects.get(dataset + "-ratingform-2"), "Rated", dataset + "-tower", "Rating", version, null);
+        assertEmbeddedLink(objects.get(dataset + "-ratingform-3"), "Rated", null, "Rating", version, null);
         assertTransferredReviews(objects, version, dataset);
         assertTransferredPairing(objects, version, dataset);
 
@@ -2376,6 +2430,25 @@ final class DbInteropTest {
             } else {
                 assertNull(role);
             }
+        }
+    }
+
+    private static void assertEmbeddedLink(Element owner, String role, String targetTid, String association,
+                                           int version, String memo) {
+        var element = child(owner, role);
+        if (targetTid == null) {
+            assertNull(element, role);
+            return;
+        }
+        assertLocalReference(owner, role, version, targetTid);
+        if (memo == null) {
+            assertTrue(children(element).isEmpty(), role);
+        } else {
+            var payload = children(element);
+            assertEquals(1, payload.size());
+            String name = version == 23 ? "DbInterop23.Data." + association : association;
+            assertEquals(name, payload.getFirst().getLocalName());
+            assertEquals(memo, text(payload.getFirst(), "Memo"));
         }
     }
 

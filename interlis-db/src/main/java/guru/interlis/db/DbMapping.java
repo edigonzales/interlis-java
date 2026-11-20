@@ -265,7 +265,7 @@ final class DbMapping {
             }
             if (object.kind() == SymbolKind.ASSOCIATION) {
                 var roles = describeRoles(plan, object);
-                var embedded = embeddedAssociation(object, name, roles);
+                var embedded = embeddedAssociation(plan, object, name, roles);
                 if (embedded.isPresent()) {
                     associations.add(embedded.orElseThrow());
                     if (!embedded.orElseThrow().linkTable()) continue;
@@ -432,14 +432,8 @@ final class DbMapping {
                 || second.role().cardinality().upper().equals(CardinalityUpper.finite(0))) {
             throw unsupported(feature + " requires both roles to admit a target");
         }
-        var bindings = List.of(new AssociationRole(first, roleTarget(plan, association, first)),
+        return List.of(new AssociationRole(first, roleTarget(plan, association, first)),
                 new AssociationRole(second, roleTarget(plan, association, second)));
-        boolean embedded = bindings.stream().anyMatch(AssociationRole::single);
-        boolean hasAttributes = association.slots().stream().anyMatch(AttributeSlot.class::isInstance);
-        if (embedded && hasAttributes && bindings.stream().anyMatch(role -> hasClassHierarchy(plan, role.target()))) {
-            throw unsupported("association involving class inheritance at " + association.name().declared());
-        }
-        return bindings;
     }
 
     private static boolean hasClassHierarchy(TransferPlan plan, SymbolRef type) {
@@ -447,7 +441,7 @@ final class DbMapping {
                 || plan.objects().stream().anyMatch(object -> object.baseType().filter(type::equals).isPresent());
     }
 
-    static Optional<EmbeddedAssociation> embeddedAssociation(ObjectDescriptor association, String name,
+    static Optional<EmbeddedAssociation> embeddedAssociation(TransferPlan plan, ObjectDescriptor association, String name,
                                                               List<AssociationRole> roles) {
         var first = roles.getFirst();
         var second = roles.getLast();
@@ -461,6 +455,10 @@ final class DbMapping {
         // For 1:1, the second declared role's class owns the column for the first role.
         var target = first.single() ? first : second;
         var owner = first.single() ? second : first;
+        if (linkTable && hasClassHierarchy(plan, owner.target())) {
+            throw unsupported("embedded association with attributes on an owner in a class hierarchy at "
+                    + association.name().declared());
+        }
         return Optional.of(new EmbeddedAssociation(association, name, owner, target, linkTable));
     }
 

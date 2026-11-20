@@ -270,6 +270,9 @@
         <Supervisor i:ref="legacy-relay"/>
         <Label>active</Label>
       </ServiceUnit>
+      <RatingForm i:tid="legacy-ratingform-1"><Rated i:ref="legacy-relay"><Rating><Memo>checked</Memo></Rating></Rated></RatingForm>
+      <RatingForm i:tid="legacy-ratingform-2"><Rated i:ref="legacy-tower"/></RatingForm>
+      <RatingForm i:tid="legacy-ratingform-3"/>
       <Mast i:tid="legacy-mast">
         <Caption>base</Caption>
         <Notes>

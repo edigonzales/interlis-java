@@ -97,7 +97,7 @@ final class DbSchemaReader {
             }
             if (object.kind() == SymbolKind.ASSOCIATION) {
                 var roles = DbMapping.describeRoles(plan, object);
-                var embedded = DbMapping.embeddedAssociation(object, name, roles);
+                var embedded = DbMapping.embeddedAssociation(plan, object, name, roles);
                 if (embedded.isPresent()) {
                     var association = embedded.orElseThrow();
                     associations.add(association);

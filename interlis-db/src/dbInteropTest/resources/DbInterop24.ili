@@ -212,6 +212,13 @@ MODEL DbInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
     CLASS RefAssetLeaf EXTENDS RefAssetBranch =
       OwnTarget : REFERENCE TO Mast;
     END RefAssetLeaf;
+    CLASS RatingForm =
+    END RatingForm;
+    ASSOCIATION Rating =
+      Rated -- {0..1} Tower;
+      RatingForms -- {0..*} RatingForm;
+      Memo : TEXT*16;
+    END Rating;
   END Data;
 
   TOPIC Naming =

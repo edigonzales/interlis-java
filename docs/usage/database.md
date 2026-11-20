@@ -200,6 +200,9 @@ Linkzeile mit Attributwerten ergibt eine eingebettete Assoziation. Sind alle
 eigenen Spalten `NULL`, erscheint eine direkte Referenz. Ohne Linkzeile
 entfällt die Rolle. Mehrere Linkzeilen zum selben Objekt der n-Seite werden
 beim Export an der Rolle diagnostiziert.
+Die 1-Seite darf eine Klasse in einer Vererbungshierarchie deklarieren.
+Der Export liest ihre TID aus der Wurzeltabelle. Die deklarierte Klasse
+auf der n-Seite liegt ausserhalb einer Klassenhierarchie.
 
 XTF 2.3 und 2.4 FULL unterstützen Klassenvererbung mit `--noSmartMapping`
 innerhalb eines Topics. Abstrakte Basisklassen können ihre Attribute an

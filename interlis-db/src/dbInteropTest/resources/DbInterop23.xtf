@@ -195,6 +195,9 @@
         <Supervisor REF="legacy-relay"/>
         <Label>active</Label>
       </DbInterop23.Data.ServiceUnit>
+      <DbInterop23.Data.RatingForm TID="legacy-ratingform-1"><Rated REF="legacy-relay"><DbInterop23.Data.Rating><Memo>checked</Memo></DbInterop23.Data.Rating></Rated></DbInterop23.Data.RatingForm>
+      <DbInterop23.Data.RatingForm TID="legacy-ratingform-2"><Rated REF="legacy-tower"/></DbInterop23.Data.RatingForm>
+      <DbInterop23.Data.RatingForm TID="legacy-ratingform-3"/>
       <DbInterop23.Data.Mast TID="legacy-mast">
         <Caption>base</Caption>
         <Notes>

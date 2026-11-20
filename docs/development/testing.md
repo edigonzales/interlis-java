@@ -129,6 +129,8 @@ Ein Endpunkt aus einem Geschwisterzweig rollt den Datensatz zurück. Beim
 Export bleibt die bisherige Datei bei typ- oder basketfremden Zielen erhalten.
 Für 1:n mit Attributen prüft sie eingebettete Attributwerte, direkte Referenzen,
 fehlende Rollen und den Erhalt der Zieldatei bei mehreren Linkzeilen zum Objekt.
+Polymorphe Ziele werden mit einer Zwischenklasse und einem konkreten
+Nachfahren aus derselben Hierarchie geprüft.
 Bei 1:1-Assoziationen kehren die beiden Sprachfixtures die Deklarationsreihenfolge
 um. Die Tests prüfen die jeweilige Rollenspalte, deren SQL-Nullbarkeit und die
 gespeicherte Ziel-ID.
