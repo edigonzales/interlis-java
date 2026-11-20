@@ -81,12 +81,27 @@
           <COORD><C1>2602020.250</C1><C2>1202000.250</C2></COORD>
         </POLYLINE></BOUNDARY></SURFACE></Boundary>
       </DbInterop23.Data.Parcel>
+      <DbInterop23.Data.Report TID="legacy-report-1">
+        <Summary>
+          <DbInterop23.Data.Detail><Label>review</Label><Enabled>true</Enabled><Quantity>-3</Quantity><Decision>approved</Decision></DbInterop23.Data.Detail>
+        </Summary>
+        <Entries>
+          <DbInterop23.Data.Detail><Label>b</Label><Enabled>false</Enabled><Quantity>2</Quantity><Decision>draft</Decision></DbInterop23.Data.Detail>
+          <DbInterop23.Data.Detail><Label>a</Label><Quantity>-1</Quantity><Decision>approved</Decision></DbInterop23.Data.Detail>
+          <DbInterop23.Data.Detail><Label>b</Label><Enabled>false</Enabled><Quantity>2</Quantity><Decision>draft</Decision></DbInterop23.Data.Detail>
+        </Entries>
+      </DbInterop23.Data.Report>
     </DbInterop23.Data>
     <DbInterop23.Data BID="legacy-basket-2">
       <DbInterop23.Data.Place TID="legacy-place-3"/>
       <DbInterop23.Data.Route TID="legacy-route-2"/>
       <DbInterop23.Data.Plot TID="legacy-plot-3"/>
       <DbInterop23.Data.Parcel TID="legacy-parcel-3"/>
+      <DbInterop23.Data.Report TID="legacy-report-2">
+        <Entries>
+          <DbInterop23.Data.Detail><Label>later</Label></DbInterop23.Data.Detail>
+        </Entries>
+      </DbInterop23.Data.Report>
     </DbInterop23.Data>
   </DATASECTION>
 </TRANSFER>

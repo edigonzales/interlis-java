@@ -10,14 +10,18 @@ import guru.interlis.diagnostics.Severity;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
 import guru.interlis.model.CardinalityUpper;
+import guru.interlis.model.CollectionKind;
+import guru.interlis.model.CollectionType;
 import guru.interlis.model.CoordinateType;
 import guru.interlis.model.DomainSymbol;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.GeometryType;
 import guru.interlis.model.LanguageVersion;
+import guru.interlis.model.Modifier;
 import guru.interlis.model.NumericType;
 import guru.interlis.model.Origin;
 import guru.interlis.model.ReferenceType;
+import guru.interlis.model.StructureValueType;
 import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
@@ -36,6 +40,7 @@ import guru.interlis.transfer.TransferPlanningResult;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -45,6 +50,7 @@ import java.util.stream.Collectors;
 
 import static guru.interlis.db.Ili2dbLayout.LV95;
 import static guru.interlis.db.Ili2dbLayout.TECHNICAL_COLUMNS;
+import static guru.interlis.db.Ili2dbLayout.T_SEQ;
 import static guru.interlis.db.Ili2dbLayout.reservedTable;
 
 /** The SQL names and storage bindings for a checked transfer plan. */
@@ -75,6 +81,10 @@ final class DbMapping {
             return new Column(slot, name, kind, effectiveType, target, id);
         }
     }
+
+    /** A structure-valued field stored through a reverse owner column on its child table. */
+    record Composition(AttributeSlot slot, SymbolRef parent, SymbolRef child, String ownerColumn, boolean list) { }
+
     record Table(ObjectDescriptor object, String name, List<Column> columns) {
         Table {
             columns = List.copyOf(columns);
@@ -88,18 +98,33 @@ final class DbMapping {
     private final LanguageVersion version;
     private final List<Table> tables;
     private final Map<SymbolRef, Table> bySymbol;
+    private final List<Composition> compositions;
+    private final Map<SymbolRef, List<Composition>> byParent;
+    private final Map<SymbolRef, List<Composition>> byChild;
 
-    DbMapping(TransferPlan plan, LanguageVersion version, List<Table> tables) {
+    DbMapping(TransferPlan plan, LanguageVersion version, List<Table> tables, List<Composition> compositions) {
         this.plan = plan;
         this.version = version;
         this.tables = List.copyOf(tables);
         bySymbol = this.tables.stream().collect(Collectors.toUnmodifiableMap(
                 table -> table.object().symbol(), Function.identity()));
+        this.compositions = List.copyOf(compositions);
+        byParent = indexCompositions(this.compositions, Composition::parent);
+        byChild = indexCompositions(this.compositions, Composition::child);
+    }
+
+    private static Map<SymbolRef, List<Composition>> indexCompositions(List<Composition> compositions,
+                                                                       Function<Composition, SymbolRef> key) {
+        return Map.copyOf(compositions.stream().collect(Collectors.groupingBy(key,
+                Collectors.collectingAndThen(Collectors.toList(), List::copyOf))));
     }
 
     TransferPlan plan() { return plan; }
     LanguageVersion version() { return version; }
     List<Table> tables() { return tables; }
+    List<Composition> compositions() { return compositions; }
+    List<Composition> compositionsForParent(SymbolRef parent) { return byParent.getOrDefault(parent, List.of()); }
+    List<Composition> compositionsForChild(SymbolRef child) { return byChild.getOrDefault(child, List.of()); }
 
     Table table(SymbolRef ref) {
         Table table = bySymbol.get(ref);
@@ -110,30 +135,50 @@ final class DbMapping {
     static DbMapping planNew(String modelName, SourceText source, boolean gpkg, CancellationToken token) {
         TransferPlan plan = compile(modelName, source, "model file", token);
         var allocator = new SqlNames();
-        var tables = new ArrayList<Table>();
+        var names = new HashMap<SymbolRef, String>();
         for (var object : plan.objects()) {
             token.throwIfCancellationRequested();
-            var topic = plan.topic(object.topic().orElseThrow()).orElseThrow();
-            String name = allocator.table(modelName, topic.name().declared().last(), object.name().declared().last());
+            String topic = object.topic().flatMap(plan::topic).map(value -> value.name().declared().last()).orElse(null);
+            String name = allocator.table(modelName, topic, object.name().declared().last());
             if (reservedTable(name, gpkg)) {
-                throw unsupported("class " + object.name().declared() + " maps to technical table " + name);
+                throw unsupported("type " + object.name().declared() + " maps to technical table " + name);
             }
+            names.put(object.symbol(), name);
+        }
+        var tables = new ArrayList<Table>();
+        var compositions = new ArrayList<Composition>();
+        for (var object : plan.objects()) {
+            token.throwIfCancellationRequested();
+            String name = names.get(object.symbol());
             var columns = new ArrayList<Column>();
             for (var attribute : attributes(object)) {
-                String column = allocator.column(name, attribute.name().declared().last());
-                if (TECHNICAL_COLUMNS.contains(column)) {
-                    throw unsupported("attribute " + attribute.name().declared() + " maps to technical column " + column);
+                String attributeName = attribute.name().declared().last();
+                var composition = describeComposition(plan, object, attribute, child ->
+                        allocator.reverseColumn(names.get(child), name, attributeName));
+                if (composition.isPresent()) {
+                    var edge = composition.get();
+                    checkColumnName(attribute, edge.ownerColumn(), true, gpkg);
+                    compositions.add(edge);
+                    continue;
                 }
-                if (!gpkg && column.length() > 63) {
-                    throw unsupported("SQL name " + column + " exceeds the PostgreSQL limit at "
-                            + attribute.name().declared());
-                }
+                String column = allocator.column(name, attributeName);
+                checkColumnName(attribute, column, object.kind() == SymbolKind.STRUCTURE, gpkg);
                 var binding = describeColumn(plan, object, attribute, column);
                 columns.add(binding.kind().geometry() ? binding.withSrsId(LV95) : binding);
             }
             tables.add(new Table(object, name, columns));
         }
-        return new DbMapping(plan, plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion(), tables);
+        var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
+        return new DbMapping(plan, version, tables, compositions);
+    }
+
+    private static void checkColumnName(AttributeSlot attribute, String column, boolean structure, boolean gpkg) {
+        if (TECHNICAL_COLUMNS.contains(column) || (structure && T_SEQ.equals(column))) {
+            throw unsupported("attribute " + attribute.name().declared() + " maps to technical column " + column);
+        }
+        if (!gpkg && column.length() > 63) {
+            throw unsupported("SQL name " + column + " exceeds the PostgreSQL limit at " + attribute.name().declared());
+        }
     }
 
     static TransferPlan compile(String modelName, SourceText source, String description, CancellationToken token) {
@@ -161,7 +206,8 @@ final class DbMapping {
     }
 
     private static void checkModel(TransferPlan plan) {
-        if (plan.models().size() != 1 || plan.topics().isEmpty() || plan.objects().isEmpty()) {
+        if (plan.models().size() != 1 || plan.topics().isEmpty()
+                || plan.objects().stream().noneMatch(object -> object.kind() == SymbolKind.CLASS)) {
             throw unsupported("expected one standalone model containing classes in topics");
         }
         for (var topic : plan.topics()) {
@@ -171,8 +217,12 @@ final class DbMapping {
             }
         }
         for (var object : plan.objects()) {
-            if (object.kind() != SymbolKind.CLASS || !object.transferable() || object.baseType().isPresent()
-                    || !object.oidRules().isEmpty()) {
+            boolean supported = switch (object.kind()) {
+                case CLASS -> object.transferable();
+                case STRUCTURE -> !object.modifiers().contains(Modifier.ABSTRACT);
+                default -> false;
+            };
+            if (!supported || object.baseType().isPresent() || !object.oidRules().isEmpty()) {
                 throw unsupported("class layout or identity rules for " + object.name().declared());
             }
         }
@@ -185,6 +235,42 @@ final class DbMapping {
             if (!attribute.attribute().transientAttribute()) attributes.add(attribute);
         }
         return attributes;
+    }
+
+    static Optional<Composition> describeComposition(TransferPlan plan, ObjectDescriptor parent, AttributeSlot slot,
+                                                     String ownerColumn) {
+        return describeComposition(plan, parent, slot, child -> ownerColumn);
+    }
+
+    private static Optional<Composition> describeComposition(TransferPlan plan, ObjectDescriptor parent,
+                                                             AttributeSlot slot, Function<SymbolRef, String> ownerColumn) {
+        String path = slot.name().declared().toString();
+        var type = plan.type(slot.effectiveType()).known().orElseThrow(() -> unsupported(path));
+        if (!(type instanceof StructureValueType) && !(type instanceof CollectionType)) {
+            return Optional.empty();
+        }
+        String feature = "attribute " + path + " (" + type.kind() + ")";
+        if (parent.kind() != SymbolKind.CLASS) throw unsupported(feature);
+        boolean list = type instanceof CollectionType;
+        StructureValueType structure;
+        if (type instanceof CollectionType collection) {
+            if (collection.collectionKind() != CollectionKind.LIST
+                    || !(plan.type(new TypeRef(plan.snapshotId(), collection.elementType())).known().orElseThrow()
+                    instanceof StructureValueType element)) {
+                throw unsupported(feature);
+            }
+            structure = element;
+        } else {
+            if (!optional(slot)) throw unsupported(feature);
+            structure = (StructureValueType) type;
+        }
+        if (structure.target().isEmpty() || !structure.restrictions().isEmpty()) throw unsupported(feature);
+        var child = new SymbolRef(plan.snapshotId(), structure.target().orElseThrow());
+        if (plan.object(child).filter(object -> object.kind() == SymbolKind.STRUCTURE
+                && (object.topic().isEmpty() || object.topic().equals(parent.topic()))).isEmpty()) {
+            throw unsupported("structure outside the parent model or topic at " + path);
+        }
+        return Optional.of(new Composition(slot, parent.symbol(), child, ownerColumn.apply(child), list));
     }
 
     static Column describeColumn(TransferPlan plan, ObjectDescriptor object, AttributeSlot attr, String name) {
@@ -205,6 +291,9 @@ final class DbMapping {
                 throw unsupported("attribute " + path + " (" + type.kind() + ")");
             }
         };
+        if (object.kind() == SymbolKind.STRUCTURE && (kind.geometry() || kind == Kind.REFERENCE)) {
+            throw unsupported("attribute " + path + " (" + type.kind() + ")");
+        }
         Optional<SymbolRef> target = Optional.empty();
         if (type instanceof ReferenceType ref) {
             var symbol = new SymbolRef(plan.snapshotId(), ref.target().orElseThrow());

@@ -103,8 +103,12 @@ geteilten Randes. In 2.4 prüfen sie die geordneten Teile von
 Export leerer SQL-Sammlungen. Die Suite prüft den Import-Rollback bei
 einem expliziten Bogenradius, offenem Ring oder einer leeren XTF-Sammlung,
 den Erhalt der bisherigen XTF-Datei bei beschädigter Geometrie und einen
-weiteren Referenzimport nach dem neuen Import. Das Originalwerkzeug lädt
-das Modell für das neue Schema aus der Datenbank.
+weiteren Referenzimport nach dem neuen Import. In beiden Sprachversionen
+prüft sie auch optionale Einzelstrukturen und `LIST OF` mit demselben
+Strukturtyp, Rückverweisspalten, `T_Seq`, Listenreihenfolge und Duplikate.
+Sie löst einen Rollback nach geschriebenen Strukturzeilen aus und prüft den
+Erhalt der Zieldatei bei einer beschädigten Rückverweiszuordnung. Das
+Originalwerkzeug lädt das Modell für das neue Schema aus der Datenbank.
 
 Die JUnit-Rohberichte stehen unter `interlis-db/build/test-results/dbInteropTest/`.
 

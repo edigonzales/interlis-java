@@ -16,6 +16,8 @@ final class SqlNames {
     private static final int NAME_LENGTH = 60;
     private static final int MODEL_LENGTH = 14;
     private static final int TOPIC_LENGTH = 17;
+    private static final int REVERSE_LENGTH = NAME_LENGTH - 6;
+    private static final int REVERSE_PARENT_LENGTH = (REVERSE_LENGTH - 5) / 2 - 2;
     private static final Set<String> KEYWORDS = readKeywords();
 
     private final Set<String> tables = new HashSet<>();
@@ -26,7 +28,8 @@ final class SqlNames {
         if (tables.add(preferred)) {
             return preferred;
         }
-        String prefix = shorten(model, MODEL_LENGTH) + shorten(topic, TOPIC_LENGTH) + "_";
+        String prefix = (topic == null ? shorten(model, NAME_LENGTH / 2 - 2)
+                : shorten(model, MODEL_LENGTH) + shorten(topic, TOPIC_LENGTH)) + "_";
         String qualified = (prefix + shorten(className, NAME_LENGTH - prefix.length())).toLowerCase(Locale.ROOT);
         if (tables.add(qualified)) {
             return qualified;
@@ -45,8 +48,16 @@ final class SqlNames {
     }
 
     String column(String table, String attribute) {
+        return allocateColumn(table, preferred(attribute));
+    }
+
+    String reverseColumn(String child, String parent, String attribute) {
+        String prefix = shorten(parent, REVERSE_PARENT_LENGTH) + "_";
+        return allocateColumn(child, preferred(prefix + shorten(attribute, REVERSE_LENGTH - prefix.length())));
+    }
+
+    private String allocateColumn(String table, String base) {
         Set<String> used = columns.computeIfAbsent(table, ignored -> new HashSet<>());
-        String base = preferred(attribute);
         String candidate = base;
         for (int suffix = 1; !used.add(candidate); suffix++) {
             // Legacy column lookups use the full suffix. The backend checks its physical name limit.

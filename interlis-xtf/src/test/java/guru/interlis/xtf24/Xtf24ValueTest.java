@@ -56,6 +56,7 @@ class Xtf24ValueTest {
                       tags : BAG {0..1} OF TEXT;
                       order : LIST {0..2} OF 0..9;
                       detail : LIST {0..2} OF Detail;
+                      highlight : Detail;
                     END Item;
                   END Data;
                 END Values.
@@ -142,10 +143,31 @@ class Xtf24ValueTest {
     }
 
     @Test
+    void acceptsIli2dbGroupedStructureListItemsInOrder() throws Exception {
+        var separate = read(plan, document("""
+                <detail><Detail><label>b</label></Detail></detail>
+                <detail><Detail><label>a</label></Detail></detail>
+                <detail><Detail><label>b</label></Detail></detail>
+                """));
+        var grouped = read(plan, document("""
+                <detail>
+                  <Detail><label>b</label></Detail>
+                  <Detail><label>a</label></Detail>
+                  <Detail><label>b</label></Detail>
+                </detail>
+                """));
+        assertEquals(separate, grouped);
+        var written = item(write(plan, grouped));
+        assertEquals(List.of("b", "a", "b"), children(written).stream().map(Element::getTextContent).toList());
+        assertTrue(children(written).stream().allMatch(element ->
+                element.getLocalName().equals("detail") && children(element).size() == 1));
+    }
+
+    @Test
     void rejectsWireGrammarAndAmbiguousMultiplicity() {
         for (String fields : List.of("<enabled>maybe</enabled>", "<exact>twelve</exact>", "<choice>root..a</choice>",
                 "<title>x</title><title>y</title>", "<enabled>true</enabled><title>out of order</title>",
-                "<detail><Detail/><Detail/></detail>", "<className>single</className>",
+                "<highlight><Detail/><Detail/></highlight>", "<detail/>", "<className>single</className>",
                 "<oid>invalid/id</oid>", "<unexpected/>")) {
             assertEquals(Xtf24Exception.Reason.INVALID_WIRE,
                     assertThrows(Xtf24Exception.class, () -> read(plan, document(fields)), fields).reason());

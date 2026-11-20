@@ -62,6 +62,12 @@ die vorgesehenen Mehrfachdarstellungen einfacher Linien und Flächen.
 BLACKBOX BINARY und XML werden begrenzt verarbeitet. XML-Fragmente behalten den
 Namespacekontext, einschliesslich Bindungen für QName-Textwerte.
 
+Für `LIST OF` mit Strukturwerten akzeptiert der XTF-2.4-Leser auch mehrere
+Strukturelemente unter einem gemeinsamen Attribut-Tag, wie sie ili2db 5.5.2
+exportiert. Der Writer gibt für jedes Element einen eigenen Attribut-Tag aus.
+Diese kompatible Erweiterung der Leseakzeptanz verwendet die bestehende
+Transfer-API und deren Ressourcenlimits.
+
 Beide XTF-Codecs lesen die Vererbung aus dem gebundenen Modell. Die
 Transferdeskriptoren liefern das Wire-Layout der übertragbaren Deklarationen.
 Eine vordefinierte Basisklasse wie `INTERLIS.REFSYSTEM` braucht deshalb

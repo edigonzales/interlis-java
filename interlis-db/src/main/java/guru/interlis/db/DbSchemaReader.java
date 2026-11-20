@@ -1,10 +1,12 @@
 package guru.interlis.db;
 
 import guru.interlis.db.DbMapping.Column;
+import guru.interlis.db.DbMapping.Composition;
 import guru.interlis.db.DbMapping.Kind;
 import guru.interlis.db.DbMapping.Table;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.LanguageVersion;
+import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRevision;
@@ -41,12 +43,14 @@ import static guru.interlis.db.Ili2dbLayout.TRAFO;
 import static guru.interlis.db.Ili2dbLayout.T_BASKET;
 import static guru.interlis.db.Ili2dbLayout.T_ID;
 import static guru.interlis.db.Ili2dbLayout.T_ILI_TID;
+import static guru.interlis.db.Ili2dbLayout.T_SEQ;
 import static guru.interlis.db.Ili2dbLayout.foldedName;
 
 /** Binds a checked model to the mappings and physical catalog of an existing ili2db schema. */
 final class DbSchemaReader {
     private record StoredModel(LanguageVersion version, String content) { }
     private record AttributeName(String name, String owner, String target) { }
+    private record CatalogTable(String name, Map<String, String> columns, Set<String> used) { }
 
     private DbSchemaReader() { }
 
@@ -78,8 +82,46 @@ final class DbSchemaReader {
             throw new DbException("Extra CLASSNAME/TRAFO mappings for " + modelName);
         }
         checkSystemTables(db);
+        var catalog = readCatalog(db, plan, names, token);
         var tables = new ArrayList<Table>();
+        var compositions = new ArrayList<Composition>();
         for (ObjectDescriptor object : plan.objects()) {
+            token.throwIfCancellationRequested();
+            var parent = catalog.get(object.symbol());
+            var columns = new ArrayList<Column>();
+            for (var attr : DbMapping.attributes(object)) {
+                String path = attr.name().declared().toString();
+                var mapping = attrNames.remove(path);
+                if (mapping == null) throw new DbException("Missing or inconsistent ATTRNAME mapping for " + path);
+                var composition = DbMapping.describeComposition(plan, object, attr, mapping.name());
+                if (composition.isPresent()) {
+                    var binding = composition.orElseThrow();
+                    var child = catalog.get(binding.child());
+                    useColumn(db, child, mapping, path);
+                    requireTarget(db, parent.name(), mapping, path);
+                    requireColumns(db, child.name(), child.columns(), Map.of(binding.ownerColumn(), Kind.REFERENCE));
+                    compositions.add(binding);
+                } else {
+                    columns.add(bindColumn(db, plan, object, parent, names, attr, mapping, path));
+                }
+            }
+            tables.add(new Table(object, parent.name(), columns));
+        }
+        for (var table : tables) {
+            var physical = catalog.get(table.object().symbol());
+            if (!physical.columns().keySet().equals(physical.used())) {
+                throw new DbException("Unexpected physical columns in " + physical.name());
+            }
+        }
+        if (!attrNames.isEmpty()) throw new DbException("Extra ATTRNAME mappings for " + modelName);
+        return new DbMapping(plan, source.version(), tables, compositions);
+    }
+
+    private static Map<SymbolRef, CatalogTable> readCatalog(Database db, TransferPlan plan,
+                                                           Map<SymbolRef, String> names, CancellationToken token)
+            throws SQLException {
+        var result = new HashMap<SymbolRef, CatalogTable>();
+        for (var object : plan.objects()) {
             token.throwIfCancellationRequested();
             String name = names.get(object.symbol());
             var physical = physicalColumns(db, name);
@@ -87,17 +129,13 @@ final class DbSchemaReader {
                     T_ID, Kind.REFERENCE, T_BASKET, Kind.REFERENCE, T_ILI_TID, Kind.TEXT));
             requireIdPrimaryKey(db, name);
             var used = new HashSet<>(TECHNICAL_COLUMNS);
-            var columns = new ArrayList<Column>();
-            for (var attr : DbMapping.attributes(object)) {
-                columns.add(bindColumn(db, plan, object, name, names, attr, attrNames, physical, used));
+            if (object.kind() == SymbolKind.STRUCTURE) {
+                requireColumns(db, name, physical, Map.of(T_SEQ, Kind.REFERENCE));
+                used.add(T_SEQ);
             }
-            if (!physical.keySet().equals(used)) {
-                throw new DbException("Unexpected physical columns in " + name);
-            }
-            tables.add(new Table(object, name, columns));
+            result.put(object.symbol(), new CatalogTable(name, physical, used));
         }
-        if (!attrNames.isEmpty()) throw new DbException("Extra ATTRNAME mappings for " + modelName);
-        return new DbMapping(plan, source.version(), tables);
+        return result;
     }
 
     private static void checkSettings(Database db) throws SQLException {
@@ -243,27 +281,31 @@ final class DbSchemaReader {
         }
     }
 
-    private static Column bindColumn(Database db, TransferPlan plan, ObjectDescriptor object, String table,
-                                     Map<SymbolRef, String> tables, AttributeSlot attr,
-                                     Map<String, AttributeName> names, Map<String, String> physical, Set<String> used)
+    private static Column bindColumn(Database db, TransferPlan plan, ObjectDescriptor object, CatalogTable table,
+                                     Map<SymbolRef, String> tables, AttributeSlot attr, AttributeName mapping,
+                                     String path)
             throws SQLException {
-        String path = attr.name().declared().toString();
-        AttributeName mapping = names.remove(path);
-        if (mapping == null || !key(db, table).equals(key(db, mapping.owner()))
-                || !used.add(key(db, mapping.name()))) {
-            throw new DbException("Missing or inconsistent ATTRNAME mapping for " + path);
-        }
+        useColumn(db, table, mapping, path);
         var column = DbMapping.describeColumn(plan, object, attr, mapping.name());
         if (column.target().isPresent()) {
-            if (mapping.target() == null
-                    || !key(db, tables.get(column.target().orElseThrow())).equals(key(db, mapping.target()))) {
-                throw new DbException("Inconsistent ATTRNAME.target for " + path);
-            }
+            requireTarget(db, tables.get(column.target().orElseThrow()), mapping, path);
         } else if (mapping.target() != null) {
             throw new DbException("Unexpected ATTRNAME.target for " + path);
         }
-        requireColumns(db, table, physical, Map.of(column.name(), column.kind()));
-        return column.kind().geometry() ? column.withSrsId(db.geometrySrs(table, column)) : column;
+        requireColumns(db, table.name(), table.columns(), Map.of(column.name(), column.kind()));
+        return column.kind().geometry() ? column.withSrsId(db.geometrySrs(table.name(), column)) : column;
+    }
+
+    private static void useColumn(Database db, CatalogTable table, AttributeName mapping, String path) {
+        if (!key(db, table.name()).equals(key(db, mapping.owner())) || !table.used().add(key(db, mapping.name()))) {
+            throw new DbException("Missing or inconsistent ATTRNAME mapping for " + path);
+        }
+    }
+
+    private static void requireTarget(Database db, String expected, AttributeName mapping, String path) {
+        if (mapping.target() == null || !key(db, expected).equals(key(db, mapping.target()))) {
+            throw new DbException("Inconsistent ATTRNAME.target for " + path);
+        }
     }
 
     private static void checkSystemTables(Database db) throws SQLException {

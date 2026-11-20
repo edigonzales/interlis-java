@@ -143,6 +143,16 @@
           <g:coord><g:c1>2601100.125</g:c1><g:c2>1201100.750</g:c2></g:coord>
         </g:multicoord></Locations>
       </Survey>
+      <Report i:tid="legacy-report-1">
+        <Summary>
+          <Detail><Label>review</Label><Enabled>true</Enabled><Quantity>-3</Quantity><Decision>approved</Decision></Detail>
+        </Summary>
+        <Entries>
+          <Detail><Label>b</Label><Enabled>false</Enabled><Quantity>2</Quantity><Decision>draft</Decision></Detail>
+          <Detail><Label>a</Label><Quantity>-1</Quantity><Decision>approved</Decision></Detail>
+          <Detail><Label>b</Label><Enabled>false</Enabled><Quantity>2</Quantity><Decision>draft</Decision></Detail>
+        </Entries>
+      </Report>
     </Data>
     <Data i:bid="legacy-basket-2">
       <Place i:tid="legacy-place-3"/>
@@ -153,6 +163,11 @@
       <District i:tid="legacy-district-2"/>
       <RouteGroup i:tid="legacy-routegroup-2"/>
       <Survey i:tid="legacy-survey-2"/>
+      <Report i:tid="legacy-report-2">
+        <Entries>
+          <Detail><Label>later</Label></Detail>
+        </Entries>
+      </Report>
     </Data>
   </i:datasection>
 </i:transfer>

@@ -13,6 +13,13 @@ MODEL DbInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
     SurveyPositions = MULTICOORD 2460000.125 .. 2870000.750, 1045000.500 .. 1310000.250;
     Approval = (draft, approved);
 
+  STRUCTURE Detail =
+    Label : TEXT*16;
+    Enabled : BOOLEAN;
+    Quantity : -20 .. 20;
+    Decision : (draft, approved);
+  END Detail;
+
   TOPIC Data =
     !!@ ili2db.dispName="Places"
     CLASS Place =
@@ -47,6 +54,10 @@ MODEL DbInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
     CLASS Survey =
       Locations : SurveyPositions;
     END Survey;
+    CLASS Report =
+      Summary : Detail;
+      Entries : LIST {0..*} OF Detail;
+    END Report;
   END Data;
 
   TOPIC Naming =

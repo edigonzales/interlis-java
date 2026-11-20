@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/** Technical identifiers and constants shared by the flat ili2db profile. */
+/** Technical identifiers and constants shared by the ili2db profile. */
 final class Ili2dbLayout {
     static final String PREFIX = "ch.ehi.ili2db.";
     static final String SCHEMA_SENDER = "interlis-db/ili2db-5.5.2";
@@ -30,9 +30,11 @@ final class Ili2dbLayout {
     static final String ID_COLUMN = "T_Id";
     static final String BASKET_COLUMN = "T_basket";
     static final String TID_COLUMN = "T_Ili_Tid";
+    static final String SEQ_COLUMN = "T_Seq";
     static final String T_ID = ID_COLUMN.toLowerCase(Locale.ROOT);
     static final String T_BASKET = BASKET_COLUMN.toLowerCase(Locale.ROOT);
     static final String T_ILI_TID = TID_COLUMN.toLowerCase(Locale.ROOT);
+    static final String T_SEQ = SEQ_COLUMN.toLowerCase(Locale.ROOT);
 
     static final List<String> METADATA_TABLES = List.of(BASKET, DATASET, INHERITANCE, SETTINGS, TRAFO, MODEL,
             CLASSNAME, ATTRNAME, COLUMN_PROP, TABLE_PROP);

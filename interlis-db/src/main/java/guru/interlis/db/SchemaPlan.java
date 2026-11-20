@@ -78,6 +78,13 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
                 addProperties(properties, geometries, mapping, table, column);
             }
         }
+        for (var composition : mapping.compositions()) {
+            token.throwIfCancellationRequested();
+            var child = mapping.table(composition.child());
+            var parent = mapping.table(composition.parent());
+            properties.add(new ColumnProperty(child.name(), null, composition.ownerColumn(),
+                    Ili2dbLayout.PREFIX + "foreignKey", parent.name()));
+        }
         return new SchemaPlan(mapping, filename, modelNames, content, properties, geometries);
     }
 

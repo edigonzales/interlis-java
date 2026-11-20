@@ -1,6 +1,7 @@
 package guru.interlis.db;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.SymbolKind;
 import guru.interlis.model.TextType;
 
 import java.sql.Connection;
@@ -29,12 +30,13 @@ import static guru.interlis.db.Ili2dbLayout.MODEL_KEY;
 import static guru.interlis.db.Ili2dbLayout.PREFIX;
 import static guru.interlis.db.Ili2dbLayout.SCHEMA_SENDER;
 import static guru.interlis.db.Ili2dbLayout.SEQUENCE;
+import static guru.interlis.db.Ili2dbLayout.SEQ_COLUMN;
 import static guru.interlis.db.Ili2dbLayout.SETTINGS;
 import static guru.interlis.db.Ili2dbLayout.TABLE_PROP;
 import static guru.interlis.db.Ili2dbLayout.TID_COLUMN;
 import static guru.interlis.db.Ili2dbLayout.TRAFO;
 
-/** DDL and parameterized ili2db metadata for the flat 5.5.2 profile. */
+/** DDL and parameterized ili2db metadata for the 5.5.2 profile. */
 final class SchemaSql {
     private SchemaSql() { }
 
@@ -109,8 +111,14 @@ final class SchemaSql {
             columns.add(dialect.primaryId() + dialect.sequenceDefault());
             columns.add(BASKET_COLUMN + " " + dialect.idType() + " NOT NULL");
             columns.add(TID_COLUMN + " " + dialect.text(200));
+            if (table.object().kind() == SymbolKind.STRUCTURE) {
+                columns.add(SEQ_COLUMN + " " + dialect.idType());
+            }
             for (var column : table.columns()) {
                 columns.add(quote(column.name()) + " " + dialect.columnType(column));
+            }
+            for (var composition : plan.mapping().compositionsForChild(table.object().symbol())) {
+                columns.add(quote(composition.ownerColumn()) + " " + dialect.idType());
             }
             commands.add(dialect.create(table.name(), String.join(", ", columns)));
         }
@@ -180,13 +188,19 @@ final class SchemaSql {
                 row(classes, name, table.name());
                 row(inheritance, name, null);
                 row(transformations, name, PREFIX + "inheritance", "newClass");
-                row(tableProps, table.name(), PREFIX + "tableKind", "CLASS");
+                row(tableProps, table.name(), PREFIX + "tableKind", table.object().kind().name());
                 String displayName = plan.displayName(table);
                 if (displayName != null) row(tableProps, table.name(), PREFIX + "dispName", displayName);
                 for (var column : table.columns()) {
                     token.throwIfCancellationRequested();
                     String target = column.target().map(plan.mapping()::table).map(DbMapping.Table::name).orElse(null);
                     row(attributes, column.slot().name().declared().toString(), column.name(), table.name(), target);
+                }
+                for (var composition : plan.mapping().compositionsForChild(table.object().symbol())) {
+                    token.throwIfCancellationRequested();
+                    String parent = plan.mapping().table(composition.parent()).name();
+                    row(attributes, composition.slot().name().declared().toString(), composition.ownerColumn(),
+                            table.name(), parent);
                 }
             }
             for (var property : plan.columnProperties()) {

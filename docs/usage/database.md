@@ -122,11 +122,25 @@ schreibt beim Export die umgekehrte Reihenfolge. Der Werkzeugwechsel für
 diese Referenzausgabe erfolgt in der gemeinsamen Datenbank.
 [INTERLIS 2.4, Anhang C](https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=133)
 
+In XTF 2.3 und 2.4 FULL kann eine Klasse einen optionalen Struktureinzelwert
+und `LIST OF`-Attribute mit einem konkreten, flachen Strukturtyp aus dem
+Modell oder dem eigenen Topic enthalten. Strukturelemente verwenden die
+unterstützten skalaren Attributtypen. Jeder Strukturtyp hat eine Tabelle.
+Die gespeicherte `ATTRNAME`-Zuordnung benennt je Elternattribut eine
+Rückverweisspalte in dieser Tabelle. Die Strukturzeilen erhalten eigene
+SQL-IDs und den Basket des Elternobjekts. Ihre `T_Ili_Tid` bleibt beim
+Import `NULL`. Ein fehlender Wert belegt keine Zeile. `T_Seq` beginnt beim
+Import bei null und bestimmt beim Export die Listenreihenfolge. Gleiche
+Listenelemente bleiben erhalten. Verwaiste oder mehrdeutig zugeordnete
+Strukturzeilen und fehlende oder doppelte Listenpositionen werden beim
+Export diagnostiziert.
+[ili2db-Strukturabbildung](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst#strukturattribute)
+
 In 2.4 kann eine Klasse optionale
 `REFERENCE TO`-Attribute auf eine Klasse desselben Baskets haben. Baskets
 und Objekte verwenden Transferkennungen. Grenzen des Profils sind unter
-anderem Vererbung, Strukturen, Assoziationen, stabile OIDs, eigene Linienformen,
-GeoPackage-RTree beim Schreiben und Updates. Der gespeicherte
+anderem Vererbung, verschachtelte Strukturen, Assoziationen, stabile OIDs,
+eigene Linienformen, GeoPackage-RTree beim Schreiben und Updates. Der gespeicherte
 Modelltext ist auf eine Million Zeichen begrenzt.
 
 Der Adapter unterscheidet SQL `NULL` und leeren Text. Die Referenzwerkzeuge

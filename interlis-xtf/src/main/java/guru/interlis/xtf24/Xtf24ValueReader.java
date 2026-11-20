@@ -1,16 +1,17 @@
 package guru.interlis.xtf24;
 
-import guru.interlis.model.CollectionType;
 import guru.interlis.model.BlackboxType;
-import guru.interlis.transfer.TransferEvent.Consistency;
+import guru.interlis.model.CollectionKind;
+import guru.interlis.model.CollectionType;
 import guru.interlis.model.ReferenceType;
 import guru.interlis.model.StructureValueType;
-import guru.interlis.transfer.RoleSlot;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeRef;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
+import guru.interlis.transfer.RoleSlot;
+import guru.interlis.transfer.TransferEvent.Consistency;
 import guru.interlis.transfer.TransferValue;
 import guru.interlis.transfer.TransferValue.Repeated;
 import guru.interlis.transfer.TransferValue.Structured;
@@ -99,7 +100,11 @@ final class Xtf24ValueReader {
                 var element = layout.type(new TypeRef(attribute.symbol().snapshot(), collection.elementType()), concreteTypes);
                 var items = new ArrayList<TransferValue>();
                 do {
-                    items.add(readValue(element, object.model(), concreteTypes, structureTypes, activeTypes));
+                    if (collection.collectionKind() == CollectionKind.LIST && element instanceof StructureValueType structure) {
+                        readStructureList(items, structure, object.model(), concreteTypes, structureTypes, activeTypes);
+                    } else {
+                        items.add(readValue(element, object.model(), concreteTypes, structureTypes, activeTypes));
+                    }
                     event = input.nextTag();
                 } while (event == START_ELEMENT && input.cursor().getName().equals(name));
                 values.put(attribute.symbol(), new Repeated(collection.collectionKind(), items));
@@ -181,12 +186,7 @@ final class Xtf24ValueReader {
                 if (input.nextTag() != START_ELEMENT) {
                     throw input.error(INVALID_WIRE, "Expected one structure element");
                 }
-                var structure = layout.structure(input.cursor().getName(), structureTypes,
-                        (StructureValueType) type, containingModel);
-                if (input.cursor().getAttributeCount() != 0) {
-                    throw input.error(UNSUPPORTED, "Unexpected attribute on XTF structure");
-                }
-                var value = read(structure, concreteTypes, structureTypes, activeTypes);
+                var value = readStructure((StructureValueType) type, containingModel, concreteTypes, structureTypes, activeTypes);
                 if (input.nextTag() != END_ELEMENT) {
                     throw input.error(INVALID_WIRE, "Expected exactly one structure element");
                 }
@@ -196,5 +196,30 @@ final class Xtf24ValueReader {
                     Xtf24Scalars.read(type, input.text(), limits);
             default -> throw input.error(UNSUPPORTED, "XTF 2.4 value type " + type.kind());
         };
+    }
+
+    private void readStructureList(ArrayList<TransferValue> items, StructureValueType type, SymbolRef containingModel,
+                                   Map<SymbolRef, TypeRef> concreteTypes, Set<SymbolRef> structureTypes,
+                                   Set<SymbolRef> activeTypes) throws XMLStreamException {
+        if (input.cursor().getAttributeCount() != 0) {
+            throw input.error(UNSUPPORTED, "Unexpected attribute on XTF value element");
+        }
+        if (input.nextTag() != START_ELEMENT) {
+            throw input.error(INVALID_WIRE, "Expected a structure element in LIST");
+        }
+        // ili2db 5.5.2 can group the items under one attribute tag.
+        do {
+            items.add(readStructure(type, containingModel, concreteTypes, structureTypes, activeTypes));
+        } while (input.nextTag() == START_ELEMENT);
+    }
+
+    private Structured readStructure(StructureValueType type, SymbolRef containingModel,
+                                     Map<SymbolRef, TypeRef> concreteTypes, Set<SymbolRef> structureTypes,
+                                     Set<SymbolRef> activeTypes) throws XMLStreamException {
+        var structure = layout.structure(input.cursor().getName(), structureTypes, type, containingModel);
+        if (input.cursor().getAttributeCount() != 0) {
+            throw input.error(UNSUPPORTED, "Unexpected attribute on XTF structure");
+        }
+        return read(structure, concreteTypes, structureTypes, activeTypes);
     }
 }
