@@ -50,9 +50,8 @@ public final class InterlisLanguageServer implements InterlisLanguageServerApi, 
                            guru.interlis.compiler.CompilerServices services, ExternalSourceRegistry externalSources) {
         this.workspace = Objects.requireNonNull(workspace, "workspace");
         this.textDocuments = new InterlisTextDocumentService(workspace, engine, services, externalSources);
-        this.workspaceService = new InterlisWorkspaceService(workspace, textDocuments);
+        this.workspaceService = new InterlisWorkspaceService(textDocuments);
         textDocuments.requestGuard(this::requireReady);
-        workspaceService.requestGuard(this::requireReady);
     }
 
     private void requireReady() {
@@ -103,9 +102,6 @@ public final class InterlisLanguageServer implements InterlisLanguageServerApi, 
         CompletionOptions completion = new CompletionOptions();
         completion.setTriggerCharacters(List.of("."));
         ServerCapabilities capabilities = new ServerCapabilities();
-        capabilities.setExecuteCommandProvider(new org.eclipse.lsp4j.ExecuteCommandOptions(
-                List.of(InterlisWorkspaceService.DIAGRAM_COMMAND,
-                        InterlisWorkspaceService.COMPILE_COMMAND)));
         capabilities.setTextDocumentSync(sync);
         capabilities.setHoverProvider(true);
         capabilities.setDefinitionProvider(true);

@@ -67,6 +67,11 @@ Die Workspace-API übergibt `SourceInventory` direkt an den Resolver und
 und den Fingerprint des Compilerrequests. Bridge 2.0 verwendet dieselben
 beiden Cachegrenzen.
 
+Repository-Hosts erhalten Cachebeobachtungen als
+`RepositoryCacheObservation` und Suchschritte als `RepositorySearchStep`.
+Der Lauf-Lifecycle emittiert Ereignisschema 2 mit Start, Phasen,
+Cachebeobachtungen und typisiertem Abschluss.
+
 API 0.10 erhält additive Zugänge für Resolverentscheidungen, Modellvererbung
 und gemeinsam budgetierte Syntax. Die bisherigen Konstruktoren und
 Factory-Signaturen bleiben gültig. Die Budget- und Snapshotprüfungen

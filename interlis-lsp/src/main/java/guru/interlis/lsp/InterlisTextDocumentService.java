@@ -24,7 +24,6 @@ import guru.interlis.model.SymbolRef;
 import guru.interlis.model.query.QueryResult;
 import guru.interlis.projection.DiagramDocument;
 import guru.interlis.projection.DiagramInput;
-import guru.interlis.projection.DiagramJsonCodec;
 import guru.interlis.projection.DiagramOptions;
 import guru.interlis.projection.DiagramProjectionOutcome;
 import guru.interlis.projection.DiagramProjectors;
@@ -159,7 +158,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         retired.forEach(this::clearDocumentDiagnostics);
     }); }
 
-    CompletableFuture<guru.interlis.compiler.CompilationOutcome> compileWorkspace() {
+    private CompletableFuture<guru.interlis.compiler.CompilationOutcome> compileWorkspace() {
         try { requestGuard.run(); } catch(ResponseErrorException invalid) { return CompletableFuture.failedFuture(invalid); }
         return afterFiles(() -> {
             if (documents.needsResync()) return failed(ResponseErrorCode.ContentModified, "full document resynchronization is required");
@@ -1186,24 +1185,6 @@ final class InterlisTextDocumentService implements TextDocumentService {
             }
         }
         return data;
-    }
-
-    CompletableFuture<String> diagram(DiagramParams params) {
-        return requestReady((view, token) -> diagramNow(view, params, token));
-    }
-
-    private CompletableFuture<String> diagramNow(HostView view, DiagramParams params, CancellationToken token) {
-        Synchronized state = requireState(view, new Position(0, 0), new TextDocumentIdentifier(params.uri()));
-        if (params.snapshotId() != null
-                && !params.snapshotId().equals(state.analysis().snapshotId().value())) {
-            return CompletableFuture.failedFuture(new org.eclipse.lsp4j.jsonrpc.ResponseErrorException(
-                    new org.eclipse.lsp4j.jsonrpc.messages.ResponseError(
-                            org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.InvalidParams,
-                            "snapshotId is stale for the requested document", null)));
-        }
-        var request=new DiagramRequest(1,"legacy-command",new org.eclipse.lsp4j.VersionedTextDocumentIdentifier(params.uri(),state.lspVersion()),params.symbolIds(),null);
-        var response=diagrams.project(request,diagramContext(view,state,params.uri()),token);
-        return CompletableFuture.completedFuture(new DiagramJsonCodec().encode(response.document()));
     }
 
     CompletableFuture<DiagramResponse> diagramRequest(DiagramRequest params) {

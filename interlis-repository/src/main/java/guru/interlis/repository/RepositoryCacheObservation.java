@@ -3,6 +3,7 @@ package guru.interlis.repository;
 import guru.interlis.source.SourceId;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * Immutable host cache observation. The optional display address is stripped of
@@ -20,5 +21,13 @@ public record RepositoryCacheObservation(RepositoryCacheEvent event, Optional<St
     }
     public static RepositoryCacheObservation global(RepositoryCacheEvent event) {
         return new RepositoryCacheObservation(event, Optional.empty());
+    }
+
+    void publishTo(Consumer<RepositoryCacheObservation> observer) {
+        try {
+            observer.accept(this);
+        } catch (RuntimeException ignored) {
+            // Observation does not affect loading.
+        }
     }
 }

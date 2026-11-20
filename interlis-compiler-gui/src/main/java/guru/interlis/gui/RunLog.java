@@ -3,7 +3,6 @@ package guru.interlis.gui;
 import guru.interlis.diagnostics.DiagnosticMessageFormatter;
 import guru.interlis.execution.RunEvent;
 import guru.interlis.gui.application.CompileResult;
-import guru.interlis.repository.RepositorySearchStep;
 
 final class RunLog {
     private static final int MAX_REPOSITORY_STEPS = 128;
@@ -45,14 +44,7 @@ final class RunLog {
             case RunEvent.PhaseFinished(var header, var phase, var status, var duration, var units) ->
                     phase + " · " + status + " · " + units + " units";
             case RunEvent.CacheLookup(var header, var cache, var hit, var reason) -> safe(cache) + " · " + (hit ? "hit" : "miss");
-            case RunEvent.WorkspaceInvalidated(var header, var revision, var reason, var units) -> "Workspace invalidated · revision " + revision;
-            case RunEvent.SourceResolved(var header, var source, var strategy, var hit, var duration) ->
-                    "Source resolved · " + safe(RepositorySearchStep.safeUri(source));
-            case RunEvent.CancelRequested(var header, var reason, var adapter) -> "Cancellation requested · " + reason;
-            case RunEvent.InternalFailure(var header, var id, var exception, var detail) -> "Internal failure · " + safe(id.value());
             case RunEvent.Finished ignored -> "Finished";
-            case RunEvent.ObserverDegraded(var header, var sink, var failure, var discarded) ->
-                    "Observer degraded · " + discarded + " discarded";
         };
     }
 

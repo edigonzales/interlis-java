@@ -35,7 +35,7 @@ class LspPresentationConfigurationTest {
                 """))));
             for(var request:List.<java.util.function.Supplier<CompletableFuture<?>>>of(
                     ()->server.getTextDocumentService().documentSymbol(new DocumentSymbolParams(new TextDocumentIdentifier(URI))),
-                    ()->server.getWorkspaceService().executeCommand(new ExecuteCommandParams("interlis.compile",List.of())))) {
+                    ()->server.compileModel(new CompileModelParams("workspace", null, null, null)))) {
                 var failure=assertThrows(ExecutionException.class,()->request.get().get(5,TimeUnit.SECONDS));
                 var response=assertInstanceOf(org.eclipse.lsp4j.jsonrpc.ResponseErrorException.class,failure.getCause());
                 assertEquals(-32800,response.getResponseError().getCode()); assertTrue(response.getMessage().contains("RESOURCE_LIMIT")); assertNull(response.getResponseError().getData());

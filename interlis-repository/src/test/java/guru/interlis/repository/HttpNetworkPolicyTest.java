@@ -104,7 +104,7 @@ class HttpNetworkPolicyTest {
             exchange.getResponseHeaders().set("ETag", "\"strong\""); exchange.sendResponseHeaders(200, 0);
             exchange.getResponseBody().write('x'); exchange.getResponseBody().flush(); pause(1500); exchange.close();
         });
-        var access = HostRepositories.create(directory, RepositoryCacheConfiguration.at(directory.resolve("cache")), e -> {}, new RepositoryProxyConfiguration.Direct());
+        var access = HostRepositories.createObserved(directory, RepositoryCacheConfiguration.at(directory.resolve("cache")), e -> {}, new RepositoryProxyConfiguration.Direct());
         assertEquals(SourceLoadException.Reason.TIMEOUT, assertThrows(SourceLoadException.class,
                 () -> load(access.loader(), base, policy(200, null))).reason());
         var offline = new FetchPolicy(true, 1024, Duration.ofSeconds(2), Duration.ofSeconds(2), Optional.empty());

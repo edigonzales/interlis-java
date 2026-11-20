@@ -563,8 +563,7 @@ verfügbare Werte sind leere Strings/Listen. DiagnosticEntry enthält code,
 severity, lokalisierte message, uri und range (zwei UTF-16-Coordinate-Werte,
 bei globalen Diagnosen leer und uri leer). LspCompileMapper verwendet dafür
 allein `requestDiagnostics()` des Gateergebnisses. Unbeteiligte IDE-Problems
-werden nicht in den Rootreport kopiert. Die alten ExecuteCommand-Summarymaps
-bleiben für bestehende Verbraucher unverändert.
+werden nicht in den Rootreport kopiert.
 
 <a id="versionierte-readonly-diagramme-für-editorhosts"></a>
 ### Versionierte readonly Diagramme für Editorhosts
@@ -573,7 +572,7 @@ bleiben für bestehende Verbraucher unverändert.
 `interlis/diagramNavigate(DiagramNavigationParams)`. Protokollversion1 und
 DiagramDocument1.0 werden zusammen mit einer zufälligen `serverInstanceId`
 ausgehandelt. `diagram=true` bezeichnet die readonly Projektion, weiterhin gilt
-`semanticEditing=false`. Der ältere ExecuteCommand-Einstieg bleibt kompatibel.
+`semanticEditing=false`.
 
 DiagramRequest enthält Request-ID, genaue offene LSP-Dokumentversion, optionale
 opaque Symbol-IDs und streng validierte DiagramOptions1.0. Ohne Symbolauswahl

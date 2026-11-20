@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * Explicit JVM discovery loop over the shared syntax service and pure resolver.
@@ -21,22 +22,15 @@ import java.util.*;
 public final class RepositoryClosureService {
     private final SourceLoader loader;
     private final ContentStore store;
-    private final CacheObservations cacheObserver;
+    private final Consumer<RepositoryCacheObservation> cacheObserver;
 
     public RepositoryClosureService(SourceLoader loader, ContentStore store) {
         this(loader,store,event -> { });
     }
-    /** Observations are invocation-local and contain no source identifiers or credentials. */
-    public RepositoryClosureService(SourceLoader loader, ContentStore store, java.util.function.Consumer<RepositoryCacheEvent> cacheObserver) {
-        this(loader,store,CacheObservations.legacy(cacheObserver));
-    }
-    /** Detailed observations are sanitized, invocation-local and isolated from source semantics. */
-    public static RepositoryClosureService observed(SourceLoader loader, ContentStore store,
-            java.util.function.Consumer<RepositoryCacheObservation> observer) {
-        return new RepositoryClosureService(loader,store,CacheObservations.detailed(observer));
-    }
-    private RepositoryClosureService(SourceLoader loader,ContentStore store,CacheObservations cacheObserver) {
-        this.cacheObserver = cacheObserver;
+    /** Accepts a non-null observer for sanitized cache observations. Callback failures are isolated. */
+    public RepositoryClosureService(SourceLoader loader, ContentStore store,
+                                    Consumer<RepositoryCacheObservation> cacheObserver) {
+        this.cacheObserver = Objects.requireNonNull(cacheObserver, "cacheObserver");
         this.loader = Objects.requireNonNull(loader, "loader");
         this.store = Objects.requireNonNull(store, "store");
     }
@@ -55,8 +49,7 @@ public final class RepositoryClosureService {
     }
 
     /**
-     * Prepares the same closure while observing current search decisions. Reserved
-     * completion observations are not emitted by the age/MD5 policy. All inputs are non-null.
+     * Prepares the same closure while observing current search decisions. All inputs are non-null.
      * The observer belongs to this invocation, is called synchronously in occurrence
      * order and is never retained after return. RuntimeExceptions from observation
      * are ignored; cancellation remains controlled by {@code token}. Concurrent
@@ -66,7 +59,7 @@ public final class RepositoryClosureService {
      */
     public RepositoryResolutionOutcome resolve(Workspace workspace, AnalysisRequest request,
                                                RepositoryResolveOptions options,
-                                               java.util.function.Consumer<RepositoryResolutionObservation> observer,
+                                               Consumer<RepositorySearchStep> observer,
                                                CancellationToken token) {
         Objects.requireNonNull(observer, "observer");
         Objects.requireNonNull(workspace, "workspace"); Objects.requireNonNull(request, "request");
@@ -93,8 +86,8 @@ public final class RepositoryClosureService {
 
     private RepositoryResolutionOutcome resolveCaptured(Workspace workspace, WorkspaceCapture initial,
             WorkspaceConfiguration originalConfig, RepositoryResolveOptions options,
-            java.util.function.Consumer<RepositoryResolutionObservation> observer, CancellationToken token) {
-        java.util.function.Consumer<RepositoryResolutionObservation> safeObserver = event -> {
+            Consumer<RepositorySearchStep> observer, CancellationToken token) {
+        Consumer<RepositorySearchStep> safeObserver = event -> {
             try { observer.accept(event); } catch (RuntimeException ignored) { /* observation only */ }
         };
         Objects.requireNonNull(workspace, "workspace"); Objects.requireNonNull(initial, "initial");
@@ -409,7 +402,9 @@ public final class RepositoryClosureService {
                 } else {
                     try {
                         var hit = store.lookup(expected);
-                        cacheObserver.publish(hit.isPresent()?RepositoryCacheEvent.OFFLINE_HIT:RepositoryCacheEvent.OFFLINE_MISS,id);
+                        RepositoryCacheObservation.forSource(
+                                hit.isPresent() ? RepositoryCacheEvent.OFFLINE_HIT : RepositoryCacheEvent.OFFLINE_MISS, id)
+                                .publishTo(cacheObserver);
                         var cached = hit.orElseThrow(() -> new SourceLoadException(SourceLoadException.Reason.OFFLINE, "verified content unavailable offline", null));
                         byte[] bytes = cached.bytes();
                         if (!expected.matches(bytes)) reject(RepositoryProblem.Reason.PIN_MISMATCH, "");

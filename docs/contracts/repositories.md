@@ -389,8 +389,8 @@ oder neue Kettenentscheidung. Es akzeptiert keine zusätzlichen unbekannten
 Metadaten. Dadurch bleiben auch Locks erweiterter, bereits geladener
 Workspace-Closures in einem frischen Workspace reproduzierbar. Offline
 werden nur digestgeprüfte Cachetexte und eingefrorene Nichtverfügbarkeiten
-verwendet. Online werden gelesene Inhalte sowie beobachtete Nichtverfügbarkeiten
-am Ende erneut geprüft. Fehlende Cachebytes sind `OFFLINE`, kein stiller Miss.
+verwendet. Der Onlinepfad prüft die tatsächlich gelesenen Bytes beim Laden
+gegen die Lock-Digests. Fehlende Cachebytes führen zu `OFFLINE`.
 
 `maxSemanticWorkUnits`, `maxDiagnostics`, die kumulative Grenze
 `maxTotalSourceUtf16Length` und die bestehenden Fetchlimits begrenzen die
@@ -402,7 +402,7 @@ Abnahmen: `RepositorySearchContractTest`, `RepositoryParityIntegrationTest`,
 `RepositoryClosureContractTest`, `RepositoryDiagnosticsContractTest` und
 `repositoryReferenceCheck`. Ketten- und Indexreihenfolge im Host und Mehrdeutigkeit im reinen Workspace werden separat geprüft.
 
-`HostRepositories.create(workingDirectory, RepositoryCacheConfiguration, observer)`
+`HostRepositories.createObserved(workingDirectory, RepositoryCacheConfiguration, observer)`
 ist die explizite JVM-Komposition. `Access.loader()`, `contentStore()` und
 `closureService()` teilen Inhaltscache und den lauflokalen Beobachtungskanal.
 `RepositoryCacheConfiguration.defaults(home)` wählt `home/.interlis-cache`,
@@ -414,8 +414,7 @@ Offlineport: die Defaultmethode lehnt ohne Aufruf von `load` ab. Dadurch bleiben
 bestehende funktionale eigene Loader offline frei von impliziten Hostzugriffen.
 Nur cachefähige HTTP-Hosts überschreiben diesen Port; RoutingSourceLoader reicht
 HTTP(S) entsprechend weiter. Ein nicht-offline FetchPolicy ist ein API-Fehler.
-Die bisherigen expliziten Loader-/Store-/Closurekonstruktoren bleiben verfügbar;
-insbesondere aktiviert `new HttpSourceLoader()` keine persistente Speicherung.
+`new HttpSourceLoader()` verwendet ausschliesslich Speicher.
 
 Offline führt der Host denselben konfigurierten Suchpfad anhand der lokal
 verfügbaren Indexe aus. Optionale Site-Ausfälle bleiben Warnungen. Fehlt das
@@ -440,11 +439,10 @@ Optional<String> safeSource)` gehört zum JVM-Repositorymodul. Beide Komponenten
 sind nullfrei und immutable. Die Anzeigeadresse entfernt Benutzerinformationen,
 Query und Fragment vor Veröffentlichung; sie ist keine Loader- oder
 Cacheidentität. Globale Schreibprobleme dürfen ohne Quelle beobachtet werden.
-`HostRepositories.createObserved` und `RepositoryClosureService.observed` nehmen
-einen detaillierten Observer entgegen. Alte Enum-Callbacks/Konstruktoren und
-der Dreiparameterkonstruktor von Access bleiben über Adapter erhalten.
-Jeder tatsächliche Zugriff veröffentlicht sein Ereignis einmal je angeschlossener
-Schnittstelle. Observerfehler ändern die Beschaffung nicht; kein globaler Zustand.
+`HostRepositories.createObserved` und der Konstruktor von
+`RepositoryClosureService` können einen `Consumer<RepositoryCacheObservation>`
+erhalten. Jeder tatsächliche Zugriff veröffentlicht sein Ereignis einmal.
+Ein Observerfehler beeinflusst die Beschaffung nicht.
 HTTP- und beide Offlinepfade liefern bei jedem tatsächlichen Zugriff die
 angefragte Quelle. Optionale Sites, Pins und Locks behalten ihre Herkunft.
 
@@ -483,10 +481,10 @@ Produktionscode verändert weder Systemproperties noch globale Selector-/
 Authenticatorwerte. Eigene Authentisierung, PAC und Environmentinterpretation
 sind nicht Teil dieses Abschnitts; SystemDefault delegiert an die JVM.
 
-Neue öffentliche Einstiege: HttpSourceLoader(RepositoryProxyConfiguration),
-HostRepositories.create(Path,RepositoryCacheConfiguration,Consumer<RepositoryCacheEvent>,RepositoryProxyConfiguration)
-und createObserved mit Consumer<RepositoryCacheObservation> und demselben letzten
-Parameter. Bisherige Einstiege verwenden SystemDefault. Hostinstanzen besitzen
+`HttpSourceLoader(RepositoryProxyConfiguration)` und
+`HostRepositories.createObserved(Path, RepositoryCacheConfiguration,
+Consumer<RepositoryCacheObservation>, RepositoryProxyConfiguration)` übernehmen
+die explizite Proxywahl. Die Kurzformen verwenden SystemDefault. Hostinstanzen besitzen
 ihre Clients und Proxywahl; Konstruktion löst keine Netzwerkzugriffe aus.
 Offline lädt ausschliesslich verifizierte lokale Inhalte und kontaktiert keinen
 Proxy. FetchPolicy-Felder gehen in die deterministische Katalogrevision v4 ein;
@@ -517,9 +515,10 @@ vollständigen Quellen. `Vary` wählt keine Variante im Anwendungscache.
 Die Anzeige redigiert Benutzerinformationen, Query und Fragment, während
 die tatsächliche URL ihre Cacheidentität behält.
 
-Lookup erscheint vor dem Indexzugriff, Auswahl nach der konkreten Wahl.
-Hostbeobachter erhalten die Ereignisse synchron in der tatsächlichen
-Reihenfolge. Lockdaten spielen frühere Ereignisse nicht erneut ab.
+Der Aufrufer kann `RepositoryClosureService.resolve` einen
+`Consumer<RepositorySearchStep>` mitgeben. Er erhält neue Suchschritte
+synchron. Lookup erscheint vor dem Indexzugriff, Auswahl nach der konkreten
+Wahl. Beim Lock-Replay bleiben historische Suchschritte Provenienzdaten.
 Die Hostmeldungen teilen Darstellung und Redigierung mit der Diagnostik.
 Keine Beobachtung verändert Gate, Auswahl oder Abbruch.
 
@@ -548,7 +547,7 @@ Zeitpunkt des vollständigen Downloads. `metadata-v2` speichert atomar je URL.
 Alte Metadatenverzeichnisse bleiben ungenutzt. Defekte Einträge sind Cache-Misses.
 Keine Inhaltsbereinigung. Vary entscheidet nicht über den Anwendungscache;
 no-store bleibt ausgeschlossen, identity und Content-Coding-Prüfung bleiben.
-`FRESH_HIT` bezeichnet lokale Onlineverwendung. `NOT_MODIFIED`, `VerificationStarted` und `ILI-RES-0013` sind reserviert.
+`FRESH_HIT` bezeichnet lokale Onlineverwendung. Die Diagnosekennung `ILI-RES-0013` bleibt reserviert.
 Atomare Workspace-Revisionsprüfung und Gate bleiben erhalten; bereits während
 der normalen Beschaffung erkannte widersprüchliche Inhalte bleiben Fehler.
 Referenz: ili2c5.6.9, bf16026e83f2377153b2e818a4f3838f0a423722,

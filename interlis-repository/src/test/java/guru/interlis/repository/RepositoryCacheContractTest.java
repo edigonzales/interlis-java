@@ -38,8 +38,8 @@ class RepositoryCacheContractTest {
         try(var output=e.getResponseBody()) { output.write(bytes); }
     }
     HostRepositories.Access host() { return host(new ArrayList<>()); }
-    HostRepositories.Access host(List<RepositoryCacheEvent> events) {
-        return HostRepositories.create(directory,RepositoryCacheConfiguration.at(directory.resolve("cache")),events::add);
+    HostRepositories.Access host(List<RepositoryCacheObservation> events) {
+        return HostRepositories.createObserved(directory,RepositoryCacheConfiguration.at(directory.resolve("cache")),events::add);
     }
     LoadedSource load(HostRepositories.Access access,String url,FetchPolicy policy) { return access.loader().load(new SourceLocator(url),policy,RepositoryCacheRequest.metadata(),TOKEN); }
     Path metadata(String url) { return directory.resolve("cache/metadata-v2/"+ContentDigest.sha256(url.getBytes(StandardCharsets.UTF_8)).value()+".xml"); }
@@ -48,8 +48,8 @@ class RepositoryCacheContractTest {
         var text=new AtomicReference<>("INTERLIS 2.4;\r\n!! ä");var etag=new AtomicReference<>("\"one\"");
         String url=serve(e -> send(e,text.get(),etag.get()))+"file.ili?key=secret";
         var first=load(host(),url,ONLINE);assertEquals(1,bodies.get());
-        var events=new ArrayList<RepositoryCacheEvent>();assertEquals(first.text(),load(host(events),url,ONLINE).text());
-        assertEquals(1,requests.get());assertEquals(1,bodies.get());assertTrue(events.contains(RepositoryCacheEvent.FRESH_HIT));
+        var events=new ArrayList<RepositoryCacheObservation>();assertEquals(first.text(),load(host(events),url,ONLINE).text());
+        assertEquals(1,requests.get());assertEquals(1,bodies.get());assertTrue(events.stream().anyMatch(e -> e.event() == RepositoryCacheEvent.FRESH_HIT));
         text.set("new content");etag.set("\"two\"");host().loader().load(new SourceLocator(url),ONLINE,TOKEN);assertEquals(2,bodies.get());
         assertTrue(host().contentStore().lookup(new ContentDigest("sha256",first.byteSha256())).isPresent());
         int before=requests.get();assertEquals("new content",load(host(),url,OFFLINE).text());assertEquals(before,requests.get());
@@ -106,11 +106,11 @@ class RepositoryCacheContractTest {
 
     @Test void unavailableWritesWarnOnceDisabledCacheDoesNoDiskIOAndLimitsStillApply() throws Exception {
         String url=serve(e -> send(e,"some text","\"tag\""));
-        Files.writeString(directory.resolve("blocked"),"file");var events=new ArrayList<RepositoryCacheEvent>();
-        var access=HostRepositories.create(directory,RepositoryCacheConfiguration.at(directory.resolve("blocked")),events::add);
+        Files.writeString(directory.resolve("blocked"),"file");var events=new ArrayList<RepositoryCacheObservation>();
+        var access=HostRepositories.createObserved(directory,RepositoryCacheConfiguration.at(directory.resolve("blocked")),events::add);
         assertEquals("some text",load(access,url,ONLINE).text());load(access,url,ONLINE);
-        assertEquals(1,events.stream().filter(e -> e==RepositoryCacheEvent.WRITE_UNAVAILABLE).count());
-        var disabled=HostRepositories.create(directory,RepositoryCacheConfiguration.disabled(),event -> { });
+        assertEquals(1,events.stream().filter(e -> e.event()==RepositoryCacheEvent.WRITE_UNAVAILABLE).count());
+        var disabled=HostRepositories.createObserved(directory,RepositoryCacheConfiguration.disabled(),event -> { });
         load(disabled,url,ONLINE);assertFalse(Files.exists(directory.resolve("cache")));assertThrows(SourceLoadException.class,()->load(disabled,url,OFFLINE));
         load(host(),url,ONLINE);
         assertEquals(SourceLoadException.Reason.TOO_LARGE,assertThrows(SourceLoadException.class,()->load(host(),url,new FetchPolicy(true, 1, Duration.ofSeconds(2), Duration.ofSeconds(2), java.util.Optional.of(Duration.ofSeconds(2))))).reason());

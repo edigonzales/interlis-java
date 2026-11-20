@@ -48,12 +48,12 @@ class HttpRedirectFailureTest {
 
     @Test void badRedirectDoesNotPublishContentOrSuccessObservation() throws Exception {
         var location = new AtomicReference<>("http://["); String base = start(location);
-        var events = new ArrayList<RepositoryCacheEvent>();
-        var access = HostRepositories.create(directory, RepositoryCacheConfiguration.at(directory.resolve("cache")), events::add,
+        var events = new ArrayList<RepositoryCacheObservation>();
+        var access = HostRepositories.createObserved(directory, RepositoryCacheConfiguration.at(directory.resolve("cache")), events::add,
                 new RepositoryProxyConfiguration.Direct());
         assertEquals(SourceLoadException.Reason.IO_FAILURE,
                 assertThrows(SourceLoadException.class, () -> load(access.loader(), base + "/redirect", false)).reason());
-        assertFalse(events.contains(RepositoryCacheEvent.DOWNLOAD));
+        assertFalse(events.stream().anyMatch(e -> e.event() == RepositoryCacheEvent.DOWNLOAD));
         assertEquals(SourceLoadException.Reason.OFFLINE,
                 assertThrows(SourceLoadException.class, () -> load(access.loader(), base + "/redirect", true)).reason());
         location.set("/ok"); assertEquals("valid", load(access.loader(), base + "/redirect", false).text());

@@ -29,7 +29,7 @@ class RepositoryCacheRegressionTest {
     final AtomicBoolean changeAfterRead=new AtomicBoolean();
     final List<String> modelConditions=Collections.synchronizedList(new ArrayList<>());
     @AfterEach void stop() { if(server!=null)server.stop(0); }
-    HostRepositories.Access host() { return HostRepositories.create(directory,RepositoryCacheConfiguration.at(directory.resolve("cache")),event -> { }); }
+    HostRepositories.Access host() { return HostRepositories.createObserved(directory,RepositoryCacheConfiguration.at(directory.resolve("cache")),event -> { }); }
     void send(HttpExchange e,String text) throws IOException {
         byte[] bytes=text.getBytes(StandardCharsets.UTF_8);e.sendResponseHeaders(200,bytes.length);
         try(var output=e.getResponseBody()) { output.write(bytes); }
