@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -99,6 +100,26 @@ class ModelSelectorContractTest {
         assertTrue(rejected.analysis().requestDiagnostics().stream().anyMatch(diagnostic ->
                 diagnostic.code().value().equals("ILI-SYN-0005")
                         && diagnostic.primaryRange().orElseThrow().source().equals(damaged.id())));
+    }
+
+    @Test
+    void lexicalErrorsRejectDocumentsWithAndWithoutRecognizedModels() {
+        for (String document : List.of("INTERLIS 2.4;", TWO_MODELS)) {
+            var source = new SourceText(new SourceId("memory:/lexical.ili"), new SourceRevision(1), document + "😀");
+            var request = new CompilationRequest(List.of(new ModelSelector.BySource(source.id())),
+                    SourceSet.of(Map.of(source.id(), source)), CompilerOptions.defaults());
+            var rejected = assertInstanceOf(CompilationOutcome.Rejected.class,
+                    CompilerEngines.create().compile(request, CancellationToken.none()));
+            assertEquals(Set.of(RejectionReason.SOURCE_ERRORS), rejected.rejection().reasons());
+            var syntax = rejected.analysis().syntaxSnapshot(source.id()).orElseThrow();
+            assertTrue(syntax.consumedEntireInput());
+            assertTrue(syntax.coverage().parseComplete());
+            assertFalse(syntax.coverage().lexicallyComplete());
+            var diagnostics = rejected.analysis().requestDiagnostics();
+            assertEquals(List.of("ILI-SYN-0001"), diagnostics.stream().map(d -> d.code().value()).toList());
+            assertEquals(source.range(document.length(), source.text().length()),
+                    diagnostics.getFirst().primaryRange().orElseThrow());
+        }
     }
 
     private static SourceText source() {

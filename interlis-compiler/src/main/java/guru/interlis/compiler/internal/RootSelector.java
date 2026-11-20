@@ -10,7 +10,6 @@ import guru.interlis.diagnostics.DiagnosticDraft;
 import guru.interlis.diagnostics.DiagnosticId;
 import guru.interlis.diagnostics.Phase;
 import guru.interlis.diagnostics.Severity;
-import guru.interlis.syntax.DetectionState;
 import guru.interlis.syntax.SyntaxSnapshot;
 
 import java.util.ArrayList;
@@ -91,9 +90,7 @@ final class RootSelector {
     }
 
     private static boolean hasSourceErrors(SyntaxSnapshot snapshot) {
-        return snapshot.language().state() != DetectionState.DETECTED
-                || !snapshot.coverage().lexicallyComplete() || !snapshot.coverage().parseComplete()
-                || !snapshot.consumedEntireInput()
+        return !SyntaxCompleteness.isComplete(snapshot)
                 || snapshot.diagnostics().stream().anyMatch(diagnostic -> diagnostic.severity() == Severity.ERROR);
     }
 

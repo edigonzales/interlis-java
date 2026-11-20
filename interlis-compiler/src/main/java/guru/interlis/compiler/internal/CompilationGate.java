@@ -23,7 +23,6 @@ import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.source.ContentFingerprint;
 import guru.interlis.source.SourceId;
-import guru.interlis.syntax.SyntaxSnapshot;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -86,11 +85,7 @@ final class CompilationGate {
         }
         if (strictSyntax && !closure.sources().isEmpty()) {
             for (SourceId source : closure.sources()) {
-                Optional<SyntaxSnapshot> snapshot = analysis.syntaxSnapshot(source);
-                if (snapshot.isEmpty() || !snapshot.get().coverage().parseComplete()
-                        || !snapshot.get().consumedEntireInput()
-                        || snapshot.get().language().state()
-                        != guru.interlis.syntax.DetectionState.DETECTED) {
+                if (analysis.syntaxSnapshot(source).filter(SyntaxCompleteness::isComplete).isEmpty()) {
                     reasons.add(RejectionReason.SOURCE_ERRORS);
                 }
             }
