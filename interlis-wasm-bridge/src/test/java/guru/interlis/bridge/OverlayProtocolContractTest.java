@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class OverlayProtocolContractTest {
     private static JsonValue.JsonObject call(BridgeDispatcher bridge,String operation,String session,Map<String,JsonValue> params) {
-        var request=new LinkedHashMap<String,JsonValue>();request.put("protocol",JsonValues.string("interlis.compiler"));request.put("protocolVersion",JsonValues.string("1.0"));
+        var request=new LinkedHashMap<String,JsonValue>();request.put("protocol",JsonValues.string("interlis.compiler"));request.put("protocolVersion",JsonValues.string("2.0"));
         request.put("requestId",JsonValues.string("overlay"));request.put("operation",JsonValues.string(operation));if(session!=null)request.put("sessionId",JsonValues.string(session));request.put("params",new JsonValue.JsonObject(params));
         return (JsonValue.JsonObject)Json.parse(bridge.handle(Json.write(new JsonValue.JsonObject(request))));
     }

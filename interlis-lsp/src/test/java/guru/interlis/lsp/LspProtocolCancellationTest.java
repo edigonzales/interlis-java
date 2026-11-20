@@ -11,7 +11,6 @@ import guru.interlis.workspace.WorkspaceConfiguration;
 import guru.interlis.workspace.Workspaces;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
 import org.eclipse.lsp4j.DocumentSymbolParams;
-import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializedParams;
 import org.eclipse.lsp4j.MessageActionItem;
@@ -29,8 +28,6 @@ import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -97,20 +94,16 @@ class LspProtocolCancellationTest {
             endpoint.request("textDocument/documentSymbol", new DocumentSymbolParams(new TextDocumentIdentifier(uri)))
                     .get(5, TimeUnit.SECONDS);
 
-            var compile = endpoint.request("workspace/executeCommand",
-                    new ExecuteCommandParams("interlis.compile", List.of()));
+            var compile = endpoint.request("interlis/compile", new CompileModelParams("workspace", null, null, null));
             assertTrue(compileEntered.await(2, TimeUnit.SECONDS),
                     "compile request did not reach the workspace");
             compile.cancel(true);
             assertTrue(cancellationObserved.await(2, TimeUnit.SECONDS),
                     "compiler did not observe cancellation");
 
-            Object diagram = endpoint.request("workspace/executeCommand",
-                    new ExecuteCommandParams("interlis.diagram",
-                            List.<Object>of(Map.of("uri", uri))))
-                    .get(5, TimeUnit.SECONDS);
-            assertTrue(String.valueOf(diagram).contains("Building"),
-                    "session did not survive cancellation");
+            Object outline = endpoint.request("textDocument/documentSymbol",
+                    new DocumentSymbolParams(new TextDocumentIdentifier(uri))).get(5, TimeUnit.SECONDS);
+            assertTrue(String.valueOf(outline).contains("Building"), "session did not survive cancellation");
             endpoint.request("shutdown", null).get(5, TimeUnit.SECONDS);
             endpoint.notify("exit", null);
         } finally {

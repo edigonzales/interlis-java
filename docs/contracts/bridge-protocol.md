@@ -1,6 +1,6 @@
 # Compiler-Bridge und portabler Host
 
-Die gemeinsame Bridge bedient TeaVM und Web Image mit dem Protokoll `interlis.compiler/1.0`. Browser- und Buildanleitungen stehen in [Browserclient](../usage/browser.md) und [Build](../development/build.md).
+Die gemeinsame Bridge bedient TeaVM und Web Image mit dem Protokoll `interlis.compiler/2.0`. Browser- und Buildanleitungen stehen in [Browserclient](../usage/browser.md) und [Build](../development/build.md).
 
 <a id="gemeinsame-bridge-und-klassengrenzen"></a>
 ## Gemeinsame Bridge und Klassengrenzen
@@ -33,8 +33,8 @@ Ein fataler Runtime-Trap oder eine nicht mehr sicher behandelbare Speicherersch�
 
 Alle Operationen einer Sitzung werden serialisiert. Eine Runtime darf mehrere isolierte Sitzungen halten; das stellt keine Multicore-Ausführungsgarantie dar. Eine Sitzung darf keine referenzierten Javaobjekte einer anderen Sitzung akzeptieren.
 
-<a id="protokoll-interliscompiler-version-10"></a>
-## Protokoll `interlis.compiler` Version 1.0
+<a id="protokoll-interliscompiler-version-20"></a>
+## Protokoll `interlis.compiler` Version 2.0
 
 <a id="nachrichtenhülle"></a>
 ### Nachrichtenhülle
@@ -44,7 +44,7 @@ Eine Anfrage hat exakt diese Pflichtfelder und abhängig von der Operation eine 
 ```json
 {
   "protocol": "interlis.compiler",
-  "protocolVersion": "1.0",
+  "protocolVersion": "2.0",
   "requestId": "r-17",
   "sessionId": "s-4",
   "operation": "analyze",
@@ -63,7 +63,7 @@ Eine erfolgreiche Antwort:
 ```json
 {
   "protocol": "interlis.compiler",
-  "protocolVersion": "1.0",
+  "protocolVersion": "2.0",
   "requestId": "r-17",
   "sessionId": "s-4",
   "status": "ok",
@@ -83,7 +83,7 @@ Dieses kleine Antwortbeispiel illustriert die Hülle; eine echte partielle Analy
 
 Bei `status: "error"` steht anstelle von `result` ein Objekt `error` mit `code`, `messageKey`, getaggten Argumenten und optionalen strukturierten Details. Bei `status: "cancelled"` enthält `cancellation` einen Grund und den letztbekannten unveränderten Workspace-Stand. `null` wird nicht als unspezifischer Sammelwert für Fehler, fehlende Quelle und nicht analysierten Inhalt verwendet.
 
-`protocolVersion` wird getrennt von Tool-, Sprach-, Diagramm- und Datenbankprofilversionen geführt. Unbekannte Majorversionen werden abgelehnt. Innerhalb Major 1 dürfen additive optionale Antwortfelder ignoriert werden. Unbekannte Operationsnamen und unbekannte diskriminierende Varianten in Pflichtdaten werden als Fehler behandelt. JSON-Schemas und TypeScript-Typen sind neben den Java-DTOs zu pflegen; Vertragstests verhindern deren Auseinanderlaufen.
+`protocolVersion` wird getrennt von Tool-, Sprach-, Diagramm- und Datenbankprofilversionen geführt. Unbekannte Majorversionen werden abgelehnt. Innerhalb Major 2 dürfen additive optionale Antwortfelder ignoriert werden. Unbekannte Operationsnamen und unbekannte diskriminierende Varianten in Pflichtdaten werden als Fehler behandelt. JSON-Schemas und TypeScript-Typen sind neben den Java-DTOs zu pflegen; Vertragstests verhindern deren Auseinanderlaufen.
 
 <a id="operationen-und-methodenkontrakte"></a>
 ### Operationen und Methodenkontrakte
@@ -152,7 +152,7 @@ bleiben ungültig. Nach `dispose` gilt weiterhin der geschlossene Clientvertrag.
 ```json
 {
   "protocol": "interlis.compiler",
-  "protocolVersion": "1.0",
+  "protocolVersion": "2.0",
   "requestId": "r-18",
   "sessionId": "s-4",
   "operation": "updateSource",
@@ -244,7 +244,7 @@ interface RunOptions {
 }
 ```
 
-`BatchSourceUpdateDto` enthält `expectedWorkspaceRevision` und die SourceUpdateDto-Liste. `RemoveSourceDto` enthält SourceId und erwartete SourceRevision. `SetConfigurationDto` enthält die erwartete WorkspaceRevision und die vollständige neue WorkspaceConfigurationDto, einschliesslich Compileroptionen, ResolutionPolicy, eingefrorenem ResolverCatalog und CacheLimits aus [Workspace-Vertrag](workspace-and-lsp.md). Revisionen werden jeweils als Dezimalstrings kodiert. Der Client enthält keine Sprachregeln. Er besitzt eine Hostkopie der angenommenen Quelltexte und Konfiguration, damit eine verlorene Workerinstanz wiederhergestellt werden kann.
+`BatchSourceUpdateDto` enthält `expectedWorkspaceRevision` und die SourceUpdateDto-Liste. `RemoveSourceDto` enthält SourceId und erwartete SourceRevision. `SetConfigurationDto` enthält die erwartete WorkspaceRevision und die vollständige neue WorkspaceConfigurationDto, einschliesslich Compileroptionen, ResolutionPolicy, eingefrorenem ResolverCatalog und CacheLimits aus [Workspace-Vertrag](workspace-and-lsp.md). Bridge 2.0 akzeptiert unter `cacheLimits` die Felder `maxSyntaxEntries` und `maxRetainedSourceUtf16Units`. Revisionen werden jeweils als Dezimalstrings kodiert. Der Client enthält keine Sprachregeln. Er besitzt eine Hostkopie der angenommenen Quelltexte und Konfiguration, damit eine verlorene Workerinstanz wiederhergestellt werden kann.
 
 Ohne vorgegebene `requestId` erzeugt der Client eine innerhalb der Worker-Epoche eindeutige Kennung. Der Aufrufer kann entweder eine eigene Kennung vorgeben und `cancel(id)` benutzen oder über `AbortSignal` abbrechen. So bleibt Abbruch auch erreichbar, obwohl das öffentliche Resultat eine Promise ist. Ein bereits abgebrochenes Signal startet keine Berechnung.
 

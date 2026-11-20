@@ -24,9 +24,9 @@ class HttpIdentityCacheTest {
             fixture.send(e, "original", "\"one\"");
         }) + "model.ili";
         fixture.load(fixture.host(), url, ONLINE);
-        var events = new ArrayList<RepositoryCacheEvent>();
+        var events = new ArrayList<RepositoryCacheObservation>();
         assertEquals("original", fixture.load(fixture.host(events), url, ONLINE).text());
-        assertEquals(List.of(RepositoryCacheEvent.FRESH_HIT), events);
+        assertEquals(List.of(RepositoryCacheEvent.FRESH_HIT), events.stream().map(RepositoryCacheObservation::event).toList());
         assertEquals(List.of("identity"), encodings);
         assertEquals(1, fixture.bodies.get());
         int requests = fixture.requests.get();

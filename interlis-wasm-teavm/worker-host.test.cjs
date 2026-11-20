@@ -2,7 +2,7 @@ const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const {CompilerWorkerHost} = require('./build/worker-host.cjs');
 const flush = () => new Promise(resolve => setImmediate(resolve));
-const request = id => ({protocol:'interlis.compiler',protocolVersion:'1.0',requestId:id,operation:'capabilities',params:{}});
+const request = id => ({protocol:'interlis.compiler',protocolVersion:'2.0',requestId:id,operation:'capabilities',params:{}});
 const outcome = promise => promise.then(value=>({value}),error=>({error}));
 class Port {
   onmessage=null;onerror=null;sent=[];terminated=false;epoch=0;

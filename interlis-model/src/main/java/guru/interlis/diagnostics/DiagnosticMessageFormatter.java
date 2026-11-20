@@ -97,7 +97,6 @@ public final class DiagnosticMessageFormatter {
         return switch (event) {
             case "FRESH_HIT" -> de ? "Aus lokalem Cache geladen (innerhalb der Gültigkeitsfrist)"
                     : "Loaded from local cache (within freshness period)";
-            case "NOT_MODIFIED" -> de ? "Aus Cache geladen (HTTP 304)" : "Loaded from cache (HTTP 304)";
             case "OFFLINE_HIT" -> de ? "Offline aus Cache geladen" : "Loaded from cache offline";
             case "DOWNLOAD" -> de ? "Quelle heruntergeladen" : "Source downloaded";
             case "CACHE_MISS" -> de ? "Cache konnte nicht verwendet werden" : "Cache could not be used";

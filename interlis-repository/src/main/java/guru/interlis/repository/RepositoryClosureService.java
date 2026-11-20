@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * Explicit JVM discovery loop over the shared syntax service and pure resolver.
@@ -21,26 +22,21 @@ import java.util.*;
 public final class RepositoryClosureService {
     private final SourceLoader loader;
     private final ContentStore store;
-    private final CacheObservations cacheObserver;
+    private final Consumer<RepositoryCacheObservation> cacheObserver;
     private final boolean httpLoaderPersists;
 
     public RepositoryClosureService(SourceLoader loader, ContentStore store) {
         this(loader,store,event -> { });
     }
-    /** Observations are invocation-local and contain no source identifiers or credentials. */
-    public RepositoryClosureService(SourceLoader loader, ContentStore store, java.util.function.Consumer<RepositoryCacheEvent> cacheObserver) {
-        this(loader,store,CacheObservations.legacy(cacheObserver));
-    }
-    /** Detailed observations are sanitized, invocation-local and isolated from source semantics. */
-    public static RepositoryClosureService observed(SourceLoader loader, ContentStore store,
-            java.util.function.Consumer<RepositoryCacheObservation> observer) {
-        return new RepositoryClosureService(loader,store,CacheObservations.detailed(observer));
-    }
-    private RepositoryClosureService(SourceLoader loader,ContentStore store,CacheObservations cacheObserver) {
+    /** Accepts a non-null observer for sanitized cache observations. Callback failures are isolated. */
+    public RepositoryClosureService(SourceLoader loader, ContentStore store,
+                                    Consumer<RepositoryCacheObservation> cacheObserver) {
         this(loader, store, cacheObserver, RoutingSourceLoader.persistsHttpWith(loader, store));
     }
-    RepositoryClosureService(SourceLoader loader, ContentStore store, CacheObservations cacheObserver, boolean httpLoaderPersists) {
-        this.cacheObserver = cacheObserver;
+
+    RepositoryClosureService(SourceLoader loader, ContentStore store,
+                             Consumer<RepositoryCacheObservation> cacheObserver, boolean httpLoaderPersists) {
+        this.cacheObserver = Objects.requireNonNull(cacheObserver, "cacheObserver");
         this.loader = Objects.requireNonNull(loader, "loader");
         this.store = Objects.requireNonNull(store, "store");
         this.httpLoaderPersists = httpLoaderPersists;
@@ -60,8 +56,7 @@ public final class RepositoryClosureService {
     }
 
     /**
-     * Prepares the same closure while observing current search decisions. Reserved
-     * completion observations are not emitted by the age/MD5 policy. All inputs are non-null.
+     * Prepares the same closure while observing current search decisions. All inputs are non-null.
      * The observer belongs to this invocation, is called synchronously in occurrence
      * order and is never retained after return. RuntimeExceptions from observation
      * are ignored; cancellation remains controlled by {@code token}. Concurrent
@@ -71,7 +66,7 @@ public final class RepositoryClosureService {
      */
     public RepositoryResolutionOutcome resolve(Workspace workspace, AnalysisRequest request,
                                                RepositoryResolveOptions options,
-                                               java.util.function.Consumer<RepositoryResolutionObservation> observer,
+                                               Consumer<RepositorySearchStep> observer,
                                                CancellationToken token) {
         Objects.requireNonNull(observer, "observer");
         Objects.requireNonNull(workspace, "workspace"); Objects.requireNonNull(request, "request");
@@ -98,8 +93,8 @@ public final class RepositoryClosureService {
 
     private RepositoryResolutionOutcome resolveCaptured(Workspace workspace, WorkspaceCapture initial,
             WorkspaceConfiguration originalConfig, RepositoryResolveOptions options,
-            java.util.function.Consumer<RepositoryResolutionObservation> observer, CancellationToken token) {
-        java.util.function.Consumer<RepositoryResolutionObservation> safeObserver = event -> {
+            Consumer<RepositorySearchStep> observer, CancellationToken token) {
+        Consumer<RepositorySearchStep> safeObserver = event -> {
             try { observer.accept(event); } catch (RuntimeException ignored) { /* observation only */ }
         };
         Objects.requireNonNull(workspace, "workspace"); Objects.requireNonNull(initial, "initial");
@@ -136,10 +131,8 @@ public final class RepositoryClosureService {
             options.lock().ifPresent(lock -> lock.indexes().forEach((id, digest) -> addPin(bytePins, id, digest)));
             var verified = new VerifiedLoader(bytePins, options.lock(), options.repositories().fetchPolicy(), token,
                     originalConfig.compilerOptions().budget().maxTotalSourceUtf16Length());
-            boolean legacy = options.lock().map(l -> l.formatVersion() == 1).orElse(false);
             var search = new RepositorySearch(verified, options.repositories(), token,
                     originalConfig.compilerOptions().budget().maxSemanticWorkUnits(),originalConfig.compilerOptions().budget().maxDiagnostics(),safeObserver);
-            RepositoryCatalog catalog = null;
             LockedRepositoryCatalog lockedCatalog = null;
             var indexDigests = new LinkedHashMap<SourceId, ContentDigest>();
             options.lock().ifPresent(lock -> indexDigests.putAll(lock.indexes()));
@@ -147,11 +140,10 @@ public final class RepositoryClosureService {
                 if (key.startsWith("index:") && digest.matches("[0-9a-f]{64}"))
                     indexDigests.put(new SourceId(key.substring(6)), new ContentDigest("sha256", digest));
             });
-            var resolverCatalog = originalConfig.resolverCatalog();
             var added = new LinkedHashMap<SourceId, LoadedSource>();
             var selectedPins = new LinkedHashMap<String, List<ModelPin>>();
             var trace = new ArrayList<String>();
-            var configuration = configuration(originalConfig, selections, ranks, resolverCatalog);
+            var configuration = configuration(originalConfig, selections, ranks, originalConfig.resolverCatalog());
             try (var staging = Workspaces.create(CompilerEngines.create(), configuration)) {
                 for (var source : initial.request().sources().sources().values()) {
                     staging.update(update(source.id(), source.text()));
@@ -163,25 +155,20 @@ public final class RepositoryClosureService {
                         throw new OperationCancelledException(CancellationReason.RESOURCE_LIMIT);
                     var capture = staging.capture(new AnalysisRequest(staging.currentRevision(), initial.request().roots()), token);
                     failureSources.clear(); failureSources.putAll(capture.request().sources().sources()); failureSources.putAll(originalSources);
-                    failureSteps.clear(); failureSteps.addAll(options.lock().filter(l -> l.formatVersion()==2).map(ResolutionLock::steps).orElse(search.steps()));
+                    failureSteps.clear(); failureSteps.addAll(options.lock().map(ResolutionLock::steps).orElse(search.steps()));
                     if (capture.resolution().complete()) {
-                        if (!legacy) {
-                            // Existing workspace metadata remains part of the frozen provenance.
-                            // Complete already-loaded closures deliberately perform no IO.
-                            verified.seen.forEach((id, loaded) -> {
-                                if (!added.containsKey(id)) indexDigests.put(id,new ContentDigest("sha256",loaded.byteSha256()));
-                            });
-                            if (options.lock().isPresent() && !options.lock().orElseThrow().indexes().equals(indexDigests))
-                                reject(RepositoryProblem.Reason.LOCK_MISMATCH, failureModel);
-                            var entries = new TreeMap<String,String>();
-                            entries.put("repository-profile",ResolutionLock.ILI2C_PROFILE);
-                            indexDigests.forEach((id,digest) -> entries.put("index:"+id.value(),digest.value()));
-                            var warnings = new ArrayList<>(originalConfig.resolutionDiagnostics());
-                            warnings.addAll(RepositoryDiagnostics.warnings(options.lock().filter(l -> l.formatVersion()==2).map(ResolutionLock::steps).orElse(search.steps())));
-                            configuration = new WorkspaceConfiguration(originalConfig.compilerOptions(),
-                                    new ResolutionPolicy(originalConfig.resolutionPolicy().preferWorkspaceSource(), selections, ranks),
-                                    new ResolverCatalog(entries), originalConfig.cacheLimits(),warnings.stream().distinct().toList());
-                        }
+                        // Existing workspace metadata remains part of the frozen provenance.
+                        // Complete already-loaded closures deliberately perform no IO.
+                        verified.seen.forEach((id, loaded) -> {
+                            if (!added.containsKey(id)) indexDigests.put(id,new ContentDigest("sha256",loaded.byteSha256()));
+                        });
+                        if (options.lock().isPresent() && !options.lock().orElseThrow().indexes().equals(indexDigests))
+                            reject(RepositoryProblem.Reason.LOCK_MISMATCH, failureModel);
+                        var entries = new TreeMap<String,String>();
+                        entries.put("repository-profile",ResolutionLock.ILI2C_PROFILE);
+                        indexDigests.forEach((id,digest) -> entries.put("index:"+id.value(),digest.value()));
+                        var warnings = new ArrayList<>(originalConfig.resolutionDiagnostics());
+                        warnings.addAll(RepositoryDiagnostics.warnings(options.lock().map(ResolutionLock::steps).orElse(search.steps())));
                         recordSelected(capture, ranks.keySet(), pins, options.sourcePins(), options.lock(), selectedPins);
                         trace.addAll(capture.resolution().trace().decisions());
                         var previousLock = originalConfig.resolverCatalog().entries().get("repository-lock");
@@ -191,44 +178,20 @@ public final class RepositoryClosureService {
                         if(previous != null) {combinedSteps.addAll(previous.steps());combinedUnavailable.putAll(previous.unavailable());}
                         combinedSteps.addAll(search.steps());combinedUnavailable.putAll(search.unavailable());
                         combinedUnavailable.keySet().removeAll(indexDigests.keySet());
-                        var lock = legacy ? new ResolutionLock(selectedPins, indexDigests)
-                                : ResolutionLock.current(selectedPins,indexDigests,
-                                        options.lock().map(ResolutionLock::steps).orElse(combinedSteps),
-                                        options.lock().map(ResolutionLock::unavailable).orElse(combinedUnavailable));
-                        if (!legacy) {
-                            var entries = new TreeMap<>(configuration.resolverCatalog().entries());
-                            entries.put("repository-lock",new ResolutionLockCodec().encode(lock));
-                            configuration = new WorkspaceConfiguration(configuration.compilerOptions(),configuration.resolutionPolicy(),
-                                    new ResolverCatalog(entries),configuration.cacheLimits(),configuration.resolutionDiagnostics());
-                        }
-                        if (!legacy && options.lock().isPresent() && !lock.equals(options.lock().orElseThrow()))
+                        var lock = new ResolutionLock(selectedPins, indexDigests,
+                                options.lock().map(ResolutionLock::steps).orElse(combinedSteps),
+                                options.lock().map(ResolutionLock::unavailable).orElse(combinedUnavailable));
+                        entries.put("repository-lock",new ResolutionLockCodec().encode(lock));
+                        configuration = new WorkspaceConfiguration(originalConfig.compilerOptions(),
+                                new ResolutionPolicy(originalConfig.resolutionPolicy().preferWorkspaceSource(), selections, ranks),
+                                new ResolverCatalog(entries), originalConfig.cacheLimits(), warnings.stream().distinct().toList());
+                        if (options.lock().isPresent() && !lock.equals(options.lock().orElseThrow()))
                             reject(RepositoryProblem.Reason.LOCK_MISMATCH, failureModel);
                         var updates = added.values().stream().map(s -> update(s.sourceId(), s.text())).toList();
                         return new RepositoryResolutionOutcome.Prepared(new PreparedRepositoryUpdate(workspace, expected,
                                 updates, configuration, originalConfig.fullFingerprint(), lock, trace));
                     }
                     if (capture.resolution().pendingFetches().isEmpty()) reject(RepositoryProblem.Reason.INVALID_SOURCE, "");
-                    if (legacy && catalog == null) {
-                        catalog = new RepositoryClient(verified, new RepositoryIndexReader()).catalog(options.repositories(), token);
-                        if (!catalog.failures().isEmpty()) reject(RepositoryProblem.Reason.INDEX_FAILURE, "");
-                        indexDigests.clear();
-                        for (var source : options.repositories().sources()) {
-                            var id = new SourceId(source.indexLocator().location());
-                            var loaded = verified.seen.get(id);
-                            if (loaded == null) reject(RepositoryProblem.Reason.INDEX_FAILURE, "");
-                            if (options.lock().isPresent() && !options.lock().orElseThrow().indexes().containsKey(id))
-                                reject(RepositoryProblem.Reason.LOCK_MISMATCH, "");
-                            indexDigests.put(id, new ContentDigest("sha256", loaded.byteSha256()));
-                        }
-                        var entries = new TreeMap<String, String>();
-                        entries.put("repository-catalog", catalog.revision());
-                        indexDigests.forEach((id, digest) -> entries.put("index:" + id.value(), digest.value()));
-                        resolverCatalog = new ResolverCatalog(entries);
-                        configuration = configuration(originalConfig, selections, ranks, resolverCatalog);
-                        staging.configure(configuration, staging.currentRevision());
-                        continue;
-                    }
-                    RepositoryCatalog available = catalog;
                     boolean progress = false;
                     for (var pending : capture.resolution().pendingFetches()) {
                         token.throwIfCancellationRequested();
@@ -253,54 +216,36 @@ public final class RepositoryClosureService {
                         if (options.lock().isPresent() && !options.lock().orElseThrow().models().containsKey(query.modelName()))
                             reject(RepositoryProblem.Reason.LOCK_MISMATCH, query.modelName());
                         List<ModelCandidate> matching;
-                        if (legacy) {
-                            steps += available.candidates().size();
-                            if (steps > originalConfig.compilerOptions().budget().maxSemanticWorkUnits())
-                                throw new OperationCancelledException(CancellationReason.RESOURCE_LIMIT);
-                            matching = available.candidates().stream()
-                                    .filter(c -> c.metadata().name().equals(query.modelName()))
-                                    .filter(c -> query.modelVersion().filter(v -> !v.equals(c.metadata().version())).isEmpty())
-                                    .filter(c -> query.sourceHint().filter(id -> !id.value().equals(c.metadata().location().toString())).isEmpty())
-                                    .filter(c -> Set.of("ili2_3", "ili2_4").contains(c.metadata().schemaLanguage())).toList();
+                        Optional<guru.interlis.model.LanguageVersion> language = pending.importSites().stream().findFirst().flatMap(site -> {
+                            var syntax=capture.reuse().previousSyntax().get(site.nameRange().source());
+                            return syntax == null ? Optional.empty() : syntax.root().models().stream()
+                                    .filter(m -> m.name().equals(site.importingModel())).map(m -> m.languageVersion()).findFirst();
+                        });
+                        if (language.isEmpty()) {
+                            var languages = capture.reuse().previousSyntax().values().stream().flatMap(syntax -> syntax.root().models().stream())
+                                    .filter(m -> m.translationSource().filter(n -> n.text().equals(query.modelName())).isPresent())
+                                    .filter(m -> query.modelVersion().isEmpty() || m.translationVersion().equals(query.modelVersion()))
+                                    .map(m -> m.languageVersion()).distinct().toList();
+                            if (languages.size() == 1) language=Optional.of(languages.getFirst());
+                        }
+                        if(options.lock().isPresent()) {
+                            if(lockedCatalog==null) lockedCatalog=new LockedRepositoryCatalog(options.lock().orElseThrow(),options.repositories(),verified,token);
+                            matching=lockedCatalog.select(query,language,options.lock().orElseThrow());
+                            if(matching.isEmpty())reject(RepositoryProblem.Reason.LOCK_MISMATCH,query.modelName());
                         } else {
-                            Optional<guru.interlis.model.LanguageVersion> language = pending.importSites().stream().findFirst().flatMap(site -> {
-                                var syntax=capture.reuse().previousSyntax().get(site.nameRange().source());
-                                return syntax == null ? Optional.empty() : syntax.root().models().stream()
-                                        .filter(m -> m.name().equals(site.importingModel())).map(m -> m.languageVersion()).findFirst();
-                            });
-                            if (language.isEmpty()) {
-                                var languages = capture.reuse().previousSyntax().values().stream().flatMap(syntax -> syntax.root().models().stream())
-                                        .filter(m -> m.translationSource().filter(n -> n.text().equals(query.modelName())).isPresent())
-                                        .filter(m -> query.modelVersion().isEmpty() || m.translationVersion().equals(query.modelVersion()))
-                                        .map(m -> m.languageVersion()).distinct().toList();
-                                if (languages.size() == 1) language=Optional.of(languages.getFirst());
-                            }
-                            if(options.lock().filter(l -> l.formatVersion()==2).isPresent()) {
-                                if(lockedCatalog==null) lockedCatalog=new LockedRepositoryCatalog(options.lock().orElseThrow(),options.repositories(),verified,token);
-                                matching=lockedCatalog.select(query,language,options.lock().orElseThrow());
-                                if(matching.isEmpty())reject(RepositoryProblem.Reason.LOCK_MISMATCH,query.modelName());
-                            } else {
-                                try { matching = search.find(query,language).map(List::of).orElse(List.of()); }
-                                finally { failureSteps.clear();failureSteps.addAll(search.steps()); }
-                            }
+                            try { matching = search.find(query,language).map(List::of).orElse(List.of()); }
+                            finally { failureSteps.clear();failureSteps.addAll(search.steps()); }
                         }
                         if (matching.isEmpty()) {
-                            if (!legacy && search.hasIndexFailures()) reject(RepositoryProblem.Reason.INDEX_FAILURE,query.modelName());
+                            if (search.hasIndexFailures()) reject(RepositoryProblem.Reason.INDEX_FAILURE,query.modelName());
                             var unavailable = search.unavailableIndexes().values().stream().filter(r -> r != SourceLoadException.Reason.NOT_FOUND).findFirst();
-                            if (!legacy && unavailable.isPresent()) {
+                            if (unavailable.isPresent()) {
                                 var missing = search.unavailableIndexes().entrySet().stream().filter(e -> e.getValue()==unavailable.orElseThrow()).findFirst().orElseThrow();
                                 throw new Rejection(new RepositoryProblem(RepositoryProblem.Reason.LOAD_FAILURE,query.modelName(),List.of(),
                                         Optional.of(missing.getValue()),Optional.of(missing.getKey()),List.of()));
                             }
-                            boolean otherVersions = !legacy ? search.hasOtherVersion(query) : catalog.candidates().stream().anyMatch(c -> c.metadata().name().equals(query.modelName())
-                                    && query.sourceHint().filter(id -> !id.value().equals(c.metadata().location().toString())).isEmpty());
+                            boolean otherVersions = search.hasOtherVersion(query);
                             reject(otherVersions ? RepositoryProblem.Reason.VERSION_MISMATCH : RepositoryProblem.Reason.NOT_FOUND, query.modelName());
-                        }
-                        if (options.lock().isPresent()) {
-                            var allowed = options.lock().orElseThrow().models().get(query.modelName());
-                            matching = matching.stream().filter(c -> allowed.stream().anyMatch(p -> p.modelVersion().equals(c.metadata().version())
-                                    && p.source().value().equals(c.metadata().location().toString()))).toList();
-                            if (matching.isEmpty()) reject(RepositoryProblem.Reason.LOCK_MISMATCH, query.modelName());
                         }
                         int rank = matching.stream().mapToInt(ModelCandidate::priority).min().orElseThrow();
                         var winners = matching.stream().filter(c -> c.priority() == rank)
@@ -309,8 +254,6 @@ public final class RepositoryClosureService {
                                 query.modelName(), winners.stream().map(m -> new SourceId(m.location().toString())).distinct().toList(), Optional.empty(),Optional.empty(),winners));
                         var metadata = winners.getFirst();
                         var id = new SourceId(metadata.location().toString());
-                        if (options.lock().isPresent() && !options.lock().orElseThrow().models().containsKey(query.modelName()))
-                            reject(RepositoryProblem.Reason.LOCK_MISMATCH, query.modelName());
                         if (staging.source(id).isPresent()) {
                             // A saved download must never overwrite an open text at the same identity.
                             reject(RepositoryProblem.Reason.INVALID_SOURCE, query.modelName());
@@ -330,7 +273,7 @@ public final class RepositoryClosureService {
                             reject(RepositoryProblem.Reason.INVALID_SOURCE, metadata.name());
                         added.put(id, loaded);
                         ranks.put(id, rank);
-                        configuration = configuration(originalConfig, selections, ranks, resolverCatalog);
+                        configuration = configuration(originalConfig, selections, ranks, originalConfig.resolverCatalog());
                         staging.configure(configuration, staging.currentRevision());
                         trace.add("selected " + metadata.name() + " version " + metadata.version() + " priority " + rank);
                         progress = true;
@@ -445,7 +388,7 @@ public final class RepositoryClosureService {
             token.throwIfCancellationRequested();
             var id = new SourceId(locator.location());
             ContentDigest expected = pins.get(id);
-            if (lock.filter(l -> l.formatVersion() == 2).isPresent()) {
+            if (lock.isPresent()) {
                 var frozen=lock.orElseThrow();
                 var unavailable=frozen.unavailable().get(id);
                 if(unavailable!=null) throw new SourceLoadException(unavailable,"locked repository input unavailable",null);
@@ -459,7 +402,9 @@ public final class RepositoryClosureService {
                 } else {
                     try {
                         var hit = store.lookup(expected);
-                        cacheObserver.publish(hit.isPresent()?RepositoryCacheEvent.OFFLINE_HIT:RepositoryCacheEvent.OFFLINE_MISS,id);
+                        RepositoryCacheObservation.forSource(
+                                hit.isPresent() ? RepositoryCacheEvent.OFFLINE_HIT : RepositoryCacheEvent.OFFLINE_MISS, id)
+                                .publishTo(cacheObserver);
                         var cached = hit.orElseThrow(() -> new SourceLoadException(SourceLoadException.Reason.OFFLINE, "verified content unavailable offline", null));
                         byte[] bytes = cached.bytes();
                         if (!expected.matches(bytes)) reject(RepositoryProblem.Reason.PIN_MISMATCH, "");

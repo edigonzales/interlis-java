@@ -130,7 +130,7 @@ class BridgeDispatcherTest {
                                              String sessionId, Map<String, JsonValue> params) {
         Map<String, JsonValue> request = new LinkedHashMap<>();
         request.put("protocol", JsonValues.string("interlis.compiler"));
-        request.put("protocolVersion", JsonValues.string("1.0"));
+        request.put("protocolVersion", JsonValues.string("2.0"));
         request.put("requestId", JsonValues.string("r-" + operation));
         if (sessionId != null) {
             request.put("sessionId", JsonValues.string(sessionId));

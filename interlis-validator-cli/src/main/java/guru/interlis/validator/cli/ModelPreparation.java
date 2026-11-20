@@ -90,7 +90,7 @@ final class ModelPreparation {
         var locations = options.repositories().isEmpty() ? List.copyOf(directories) : options.repositories();
         var policy = FetchPolicy.defaults();
         try (var workspace = Workspaces.create(CompilerEngines.create(), WorkspaceConfiguration.defaults())) {
-            var access = HostRepositories.create(cwd,
+            var access = HostRepositories.createObserved(cwd,
                     RepositoryCacheConfiguration.defaults(Path.of(System.getProperty("user.home"))), ignored -> { });
             var offline = new FetchPolicy(true, policy.maxBytes(), policy.connectTimeout(),
                     policy.readTimeout(), policy.requestTimeout());

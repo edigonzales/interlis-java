@@ -20,30 +20,18 @@ public final class RepositoryResolutionRenderer {
      * warnings are left to their existing diagnostic owner, preventing duplicates.
      * Temporary INFO values never enter compiler results, snapshots or gate decisions.
      */
-    public Optional<String> render(RepositoryResolutionObservation observation, DiagnosticLanguage language,
+    public Optional<String> render(RepositorySearchStep step, DiagnosticLanguage language,
                                    boolean ansiEnabled) {
-        Objects.requireNonNull(observation, "observation");
+        Objects.requireNonNull(step, "step");
         Objects.requireNonNull(language, "language");
-        String code;
-        String key;
-        List<DiagnosticArgument> arguments;
-        switch (observation) {
-            case RepositoryResolutionObservation.SearchStep current -> {
-                var step = current.step();
-                if (step.warning()) return Optional.empty();
-                boolean lookup = step.kind() == RepositorySearchStep.Kind.LOOKUP;
-                code = lookup ? "ILI-RES-0011" : "ILI-RES-0012";
-                key = lookup ? "diagnostic.resolution.lookup" : "diagnostic.resolution.selected";
-                arguments = List.of(new DiagnosticArgument.IdentifierArgument("model", delimitedLocation(step.modelName())),
-                        new DiagnosticArgument.TextArgument(lookup ? "repository" : "detail",
-                                lookup ? delimitedLocation(step.repository().toString()) : selectedDetail(step.detail())));
-            }
-            case RepositoryResolutionObservation.VerificationStarted ignored -> {
-                code = "ILI-RES-0013";
-                key = "diagnostic.resolution.verification";
-                arguments = List.of();
-            }
-        }
+        if (step.warning()) return Optional.empty();
+        boolean lookup = step.kind() == RepositorySearchStep.Kind.LOOKUP;
+        String code = lookup ? "ILI-RES-0011" : "ILI-RES-0012";
+        String key = lookup ? "diagnostic.resolution.lookup" : "diagnostic.resolution.selected";
+        List<DiagnosticArgument> arguments = List.of(
+                new DiagnosticArgument.IdentifierArgument("model", delimitedLocation(step.modelName())),
+                new DiagnosticArgument.TextArgument(lookup ? "repository" : "detail",
+                        lookup ? delimitedLocation(step.repository().toString()) : selectedDetail(step.detail())));
         return Optional.of(renderInfo(code, key, arguments, language, ansiEnabled));
     }
 

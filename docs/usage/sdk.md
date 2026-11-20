@@ -34,9 +34,9 @@ mit SDK 0.4 eingeführt.
 | Vertrag | Wert | Bedeutung |
 |---|---|---|
 | Werkzeug und Artefakte | `0.2.0-SNAPSHOT` | Entwicklungsstand der ausgelieferten Module |
-| Öffentliche Java-API | `0.10` | Öffentliche Packages und Typen von `guru.interlis` |
+| Öffentliche Java-API | `0.11` | Öffentliche Packages und Typen von `guru.interlis` |
 | Diagnosekatalog | `interlis-diagnostics/v4` | Stabile Diagnosecodes und typisierte Argumente |
-| Bridge | `interlis.compiler/1.0` | Nachrichtenhülle, Ergebnisse und Abfragen |
+| Bridge | `interlis.compiler/2.0` | Nachrichtenhülle, Ergebnisse und Abfragen |
 | Quellformatierung | `2.0` | Formatierungsoptionen und Ergebnisvertrag |
 | Diagramm und Diagrammoptionen | `1.0` | Diagrammstruktur, Identitäten und Optionsschema |
 | Sprachprofile | INTERLIS 2.3 und 2.4 | [Geltende Sprachauslegung](../contracts/norm-decisions.md) |
@@ -56,6 +56,24 @@ Lese- oder Abschlussversuch bereit. Die neuen Methoden sind additive
 Erweiterungen der Java-API 0.10.
 Paarweise UNIQUE- und Identitätsbefunde füllen den vorhandenen zweiten
 Datenort von `ValidationDiagnostic` aus. Die Diagnosecodes bleiben gültig.
+
+API 0.11 verwendet für `ResolutionLock` den Konstruktor mit Modellpins,
+Indexdigests, Suchschritten und nicht verfügbaren Quellen. Der Codec liest
+und schreibt XML-Version 2.
+
+Die Workspace-API übergibt `SourceInventory` direkt an den Resolver und
+`CacheLimits` begrenzt die behaltenen Syntaxsnapshots und deren Textlänge.
+`WorkspaceCapture` bindet die Übernahme an Herkunft, Workspace-Revision
+und den Fingerprint des Compilerrequests. Bridge 2.0 verwendet dieselben
+beiden Cachegrenzen.
+
+Java-API 0.11 verwendet `HostRepositories.createObserved` und
+`RepositoryCacheObservation` für Cachebeobachtungen. Suchschritte werden
+direkt als `RepositorySearchStep` übergeben. Wenn ein Host den HTTP-Loader
+dekoriert, erhält `HostRepositories.Access.closureService(SourceLoader)`
+dessen Zuständigkeit für die Veröffentlichung im gemeinsamen Cache.
+Der Lauf-Lifecycle emittiert Ereignisschema 2 mit Start, Phasen,
+Cachebeobachtungen und typisiertem Abschluss.
 
 API 0.10 erhält additive Zugänge für Resolverentscheidungen, Modellvererbung
 und gemeinsam budgetierte Syntax. Die bisherigen Konstruktoren und

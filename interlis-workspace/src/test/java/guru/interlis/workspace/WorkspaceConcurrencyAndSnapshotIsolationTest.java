@@ -28,7 +28,7 @@ class WorkspaceConcurrencyAndSnapshotIsolationTest {
             var request=new AnalysisRequest(workspace.currentRevision(),ROOTS);var current=workspace.analyze(request,CancellationToken.none());assertEquals("99",maximum(current));
             var repeated=workspace.analyze(request,CancellationToken.none());assertEquals("99",maximum(repeated));assertEquals(current.fingerprint(),repeated.fingerprint());
             assertEquals("10",maximum(first));assertEquals("10",maximum(old));assertTrue(workspace.metrics().syntaxReuses()>0);
-            var configuration=workspace.configuration();workspace.configure(new WorkspaceConfiguration(configuration.compilerOptions(),configuration.resolutionPolicy(),configuration.resolverCatalog(),new CacheLimits(0,0,0,0)),workspace.currentRevision());
+            var configuration=workspace.configuration();workspace.configure(new WorkspaceConfiguration(configuration.compilerOptions(),configuration.resolutionPolicy(),configuration.resolverCatalog(),new CacheLimits(0, 0)),workspace.currentRevision());
             assertEquals(0,workspace.metrics().cachedSyntaxEntries());assertEquals(0,workspace.metrics().cachedAnalysisEntries());
             var uncached=workspace.analyze(new AnalysisRequest(workspace.currentRevision(),ROOTS),CancellationToken.none());assertEquals("99",maximum(uncached));
             assertEquals(current.fingerprint(),uncached.fingerprint());assertTrue(workspace.metrics().evictions()>0);

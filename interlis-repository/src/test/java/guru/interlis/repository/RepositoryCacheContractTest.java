@@ -40,8 +40,8 @@ class RepositoryCacheContractTest {
         try(var output=e.getResponseBody()) { output.write(bytes); }
     }
     HostRepositories.Access host() { return host(new ArrayList<>()); }
-    HostRepositories.Access host(List<RepositoryCacheEvent> events) {
-        return HostRepositories.create(directory,RepositoryCacheConfiguration.at(directory.resolve("cache")),events::add);
+    HostRepositories.Access host(List<RepositoryCacheObservation> events) {
+        return HostRepositories.createObserved(directory,RepositoryCacheConfiguration.at(directory.resolve("cache")),events::add);
     }
     LoadedSource load(HostRepositories.Access access,String url,FetchPolicy policy) { return access.loader().load(new SourceLocator(url),policy,RepositoryCacheRequest.metadata(),TOKEN); }
     Path metadata(String url) {
@@ -53,8 +53,8 @@ class RepositoryCacheContractTest {
         String url=serve(e -> send(e,text.get(),etag.get()))+"file.ili?key=secret";
         var first=load(host(),url,ONLINE);assertEquals(1,bodies.get());
         assertFalse(Files.readString(metadata(url)).contains("secret"));
-        var events=new ArrayList<RepositoryCacheEvent>();assertEquals(first.text(),load(host(events),url,ONLINE).text());
-        assertEquals(1,requests.get());assertEquals(1,bodies.get());assertTrue(events.contains(RepositoryCacheEvent.FRESH_HIT));
+        var events=new ArrayList<RepositoryCacheObservation>();assertEquals(first.text(),load(host(events),url,ONLINE).text());
+        assertEquals(1,requests.get());assertEquals(1,bodies.get());assertTrue(events.stream().anyMatch(e -> e.event() == RepositoryCacheEvent.FRESH_HIT));
         text.set("new content");etag.set("\"two\"");host().loader().load(new SourceLocator(url),ONLINE,TOKEN);assertEquals(2,bodies.get());
         assertTrue(host().contentStore().lookup(new ContentDigest("sha256",first.byteSha256())).isPresent());
         int before=requests.get();assertEquals("new content",load(host(),url,OFFLINE).text());assertEquals(before,requests.get());
@@ -127,11 +127,11 @@ class RepositoryCacheContractTest {
 
     @Test void unavailableWritesWarnOnceDisabledCacheDoesNoDiskIOAndLimitsStillApply() throws Exception {
         String url=serve(e -> send(e,"some text","\"tag\""));
-        Files.writeString(directory.resolve("blocked"),"file");var events=new ArrayList<RepositoryCacheEvent>();
-        var access=HostRepositories.create(directory,RepositoryCacheConfiguration.at(directory.resolve("blocked")),events::add);
+        Files.writeString(directory.resolve("blocked"),"file");var events=new ArrayList<RepositoryCacheObservation>();
+        var access=HostRepositories.createObserved(directory,RepositoryCacheConfiguration.at(directory.resolve("blocked")),events::add);
         assertEquals("some text",load(access,url,ONLINE).text());load(access,url,ONLINE);
-        assertEquals(1,events.stream().filter(e -> e==RepositoryCacheEvent.WRITE_UNAVAILABLE).count());
-        var disabled=HostRepositories.create(directory,RepositoryCacheConfiguration.disabled(),event -> { });
+        assertEquals(1,events.stream().filter(e -> e.event()==RepositoryCacheEvent.WRITE_UNAVAILABLE).count());
+        var disabled=HostRepositories.createObserved(directory,RepositoryCacheConfiguration.disabled(),event -> { });
         load(disabled,url,ONLINE);assertFalse(Files.exists(directory.resolve("cache")));assertThrows(SourceLoadException.class,()->load(disabled,url,OFFLINE));
         load(host(),url,ONLINE);
         assertEquals(SourceLoadException.Reason.TOO_LARGE,assertThrows(SourceLoadException.class,()->load(host(),url,new FetchPolicy(true, 1, Duration.ofSeconds(2), Duration.ofSeconds(2), java.util.Optional.of(Duration.ofSeconds(2))))).reason());
@@ -164,10 +164,14 @@ class RepositoryCacheContractTest {
     String model(String name,String imports) { return "INTERLIS 2.4; MODEL "+name+" AT \"https://example.org\" VERSION \"1\" = "+imports+" END "+name+"."; }
     String index(String name) { return "<TRANSFER><ModelMetadata><Name>"+name+"</Name><SchemaLanguage>ili2_4</SchemaLanguage><Version>1</Version><File>"+name+".ili</File></ModelMetadata></TRANSFER>"; }
     RepositoryResolutionOutcome resolve(HostRepositories.Access access,List<String> bases,boolean offline,Optional<ResolutionLock> lock) {
+        return resolve(access.closureService(), bases, offline, lock);
+    }
+
+    RepositoryResolutionOutcome resolve(RepositoryClosureService service, List<String> bases, boolean offline, Optional<ResolutionLock> lock) {
         try(var workspace=Workspaces.create(CompilerEngines.create(),WorkspaceConfiguration.defaults())) {
             workspace.update(new SourceUpdate(new SourceId("memory:/root.ili"),new SourceExpectation.Absent(),new SourceChange.Replace(model("Root","IMPORTS Dep;"))));
             var config=new RepositoryConfig(bases.stream().map(b->new RepositorySource(new RepositoryBase(URI.create(b)),new SourceLocator(b+"ilimodels.xml"))).toList(),offline?OFFLINE:ONLINE);
-            return access.closureService().resolve(workspace,new AnalysisRequest(workspace.currentRevision(),List.of(new ModelSelector.ByName("Root",Optional.empty(),Optional.empty()))),
+            return service.resolve(workspace,new AnalysisRequest(workspace.currentRevision(),List.of(new ModelSelector.ByName("Root",Optional.empty(),Optional.empty()))),
                     new RepositoryResolveOptions(config,Map.of(),Map.of(),lock),TOKEN);
         }
     }
@@ -217,12 +221,16 @@ class RepositoryCacheContractTest {
             modTimes.put(entry, Files.getLastModifiedTime(entry));
         }
 
+        var access = host();
+        var decorated = access.closureService(new RoutingSourceLoader(access.loader(), access.loader()));
         int before = requests.get();
-        for (boolean offline : List.of(false, true)) {
-            assertInstanceOf(RepositoryResolutionOutcome.Prepared.class, resolve(host(), List.of(base), offline, Optional.empty()));
-            assertEquals(before, requests.get());
-            for (var entry : modTimes.entrySet()) {
-                assertEquals(entry.getValue(), Files.getLastModifiedTime(entry.getKey()));
+        for (var service : List.of(access.closureService(), decorated)) {
+            for (boolean offline : List.of(false, true)) {
+                assertInstanceOf(RepositoryResolutionOutcome.Prepared.class, resolve(service, List.of(base), offline, Optional.empty()));
+                assertEquals(before, requests.get());
+                for (var entry : modTimes.entrySet()) {
+                    assertEquals(entry.getValue(), Files.getLastModifiedTime(entry.getKey()));
+                }
             }
         }
     }

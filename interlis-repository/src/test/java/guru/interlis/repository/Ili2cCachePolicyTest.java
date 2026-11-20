@@ -95,6 +95,16 @@ class Ili2cCachePolicyTest {
         assertEquals("original",host().loader().loadCached(new SourceLocator(url),OFFLINE,TOKEN).text());
     }
 
+    @Test void corruptMetadataIsAnOfflineMiss() throws Exception {
+        String url = serve();
+        load(url, RepositoryCacheRequest.metadata());
+        Files.writeString(fixture.metadata(url), "corrupt");
+        var failure = assertThrows(SourceLoadException.class,
+                () -> host().loader().loadCached(new SourceLocator(url), OFFLINE, TOKEN));
+        assertEquals(SourceLoadException.Reason.OFFLINE, failure.reason());
+        assertEquals(1, fixture.requests.get());
+    }
+
     @Test void oldUrlMappingsAreIgnoredAndExistingExactBytesRemainReadable() throws Exception {
         String url = serve();
         var loaded = load(url, RepositoryCacheRequest.metadata());
@@ -184,6 +194,18 @@ class Ili2cCachePolicyTest {
                 fixture.resolve(host(), List.of(base), true, Optional.empty()));
         assertEquals(first.update().lock(), offline.update().lock());
         assertEquals(before, fixture.requests.get());
+    }
+
+    @Test void noStoreInvalidatesPreviouslyCachedMetadata() throws Exception {
+        String url = serve();
+        load(url, RepositoryCacheRequest.metadata());
+        assertEquals("original", host().loader().loadCached(new SourceLocator(url), OFFLINE, TOKEN).text());
+        privateResponse.set(true);
+        load(url, RepositoryCacheRequest.unconditional());
+        assertFalse(Files.exists(fixture.metadata(url)));
+        var failure = assertThrows(SourceLoadException.class,
+                () -> host().loader().loadCached(new SourceLocator(url), OFFLINE, TOKEN));
+        assertEquals(SourceLoadException.Reason.OFFLINE, failure.reason());
     }
 
     @Test void requestValidationAndFunctionalLoaderCompatibility() {

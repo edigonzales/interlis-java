@@ -443,7 +443,7 @@ public final class DefaultCompilerCli implements CliApplication {
                         .orElseGet(RepositoryCacheConfiguration::disabled);
                 var access = HostRepositories.createObserved(environment.workingDirectory(), cacheConfiguration, observation -> {
                     var event=observation.event();
-                    invocation.lifecycle.cacheLookup("repository", event==RepositoryCacheEvent.FRESH_HIT || event==RepositoryCacheEvent.NOT_MODIFIED || event==RepositoryCacheEvent.OFFLINE_HIT,event.name());
+                    invocation.lifecycle.cacheLookup("repository", event==RepositoryCacheEvent.FRESH_HIT || event==RepositoryCacheEvent.OFFLINE_HIT,event.name());
                     if (logResolution) {
                         new RepositoryCacheRenderer().render(observation,invocation.language,invocation.ansiEnabled)
                                 .ifPresent(environment.err()::println);

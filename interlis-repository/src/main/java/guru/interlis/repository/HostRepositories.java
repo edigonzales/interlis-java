@@ -9,36 +9,27 @@ import java.util.function.Consumer;
 public final class HostRepositories {
     private HostRepositories() { }
     /** Loader/store share one cache. Constructors alone perform no filesystem IO. */
-    public record Access(SourceLoader loader, ContentStore contentStore, Consumer<RepositoryCacheEvent> observer,
+    public record Access(SourceLoader loader, ContentStore contentStore,
                          Consumer<RepositoryCacheObservation> observations) {
-        public Access(SourceLoader loader,ContentStore store,Consumer<RepositoryCacheEvent> observer) {
-            this(loader,store,observer,CacheObservations.legacy(observer));
+        public Access {
+            Objects.requireNonNull(loader, "loader");
+            Objects.requireNonNull(contentStore, "contentStore");
+            Objects.requireNonNull(observations, "observations");
         }
-        public Access { Objects.requireNonNull(loader); Objects.requireNonNull(contentStore); Objects.requireNonNull(observer); observations=CacheObservations.detailed(observations); }
-        public RepositoryClosureService closureService() { return closureService(loader); }
+        public RepositoryClosureService closureService() {
+            return closureService(loader);
+        }
 
         /**
          * Uses a non-null decorator that delegates HTTP requests to this access's loader.
          * The access retains ownership of HTTP cache publication and supplies the lock store.
          */
         public RepositoryClosureService closureService(SourceLoader decoratedLoader) {
-            return new RepositoryClosureService(decoratedLoader, contentStore, CacheObservations.detailed(observations),
+            return new RepositoryClosureService(decoratedLoader, contentStore, observations,
                     RoutingSourceLoader.persistsHttpWith(loader, contentStore));
         }
     }
-    /**
-     * Builds host adapters. Observations contain no URLs, headers or paths; callback
-     * failures never change loading. Persistent write failures are reported once per access.
-     */
-    public static Access create(Path workingDirectory, RepositoryCacheConfiguration configuration,
-                                Consumer<RepositoryCacheEvent> observer) {
-        return create(workingDirectory,configuration,observer,new RepositoryProxyConfiguration.SystemDefault());
-    }
-    /** Creates an invocation-local access using an explicit immutable proxy choice. */
-    public static Access create(Path workingDirectory, RepositoryCacheConfiguration configuration,
-                                Consumer<RepositoryCacheEvent> observer, RepositoryProxyConfiguration proxy) {
-        return createObserved(workingDirectory,configuration,CacheObservations.legacy(observer),proxy);
-    }
+
     /** Detailed invocation-local observations contain display-only sanitized source addresses. */
     public static Access createObserved(Path workingDirectory, RepositoryCacheConfiguration configuration,
                                         Consumer<RepositoryCacheObservation> observer) {
@@ -57,13 +48,17 @@ public final class HostRepositories {
     public static Access createObserved(Path workingDirectory, RepositoryCacheConfiguration configuration,
             Consumer<RepositoryCacheObservation> observer, RepositoryProxyConfiguration proxy, java.time.Clock clock) {
         Objects.requireNonNull(workingDirectory); Objects.requireNonNull(configuration); Objects.requireNonNull(proxy); Objects.requireNonNull(clock);
-        var safe = CacheObservations.detailed(observer);
+        Objects.requireNonNull(observer, "observer");
         var warned = new AtomicBoolean();
-        Runnable unavailable = () -> { if(warned.compareAndSet(false,true))safe.accept(RepositoryCacheObservation.global(RepositoryCacheEvent.WRITE_UNAVAILABLE)); };
-        var persistent=configuration.directory().map(p -> new DirectoryContentStore(p,16_777_216,unavailable));
-        ContentStore store=persistent.<ContentStore>map(value -> value).orElseGet(InMemoryContentStore::new);
-        var metadata=configuration.directory().map(p -> new DirectoryMetadataStore(p,unavailable)).orElse(null);
-        return new Access(new RoutingSourceLoader(new FileSourceLoader(workingDirectory),HttpSourceLoader.observed(persistent.orElse(null),metadata,safe,proxy,clock)),
-                store,event -> safe.accept(RepositoryCacheObservation.global(event)),safe);
+        Runnable unavailable = () -> {
+            if (warned.compareAndSet(false, true)) {
+                RepositoryCacheObservation.global(RepositoryCacheEvent.WRITE_UNAVAILABLE).publishTo(observer);
+            }
+        };
+        var persistent = configuration.directory().map(p -> new DirectoryContentStore(p, 16_777_216, unavailable));
+        ContentStore store = persistent.<ContentStore>map(value -> value).orElseGet(InMemoryContentStore::new);
+        var metadata = configuration.directory().map(p -> new DirectoryMetadataStore(p, unavailable)).orElse(null);
+        return new Access(new RoutingSourceLoader(new FileSourceLoader(workingDirectory),
+                new HttpSourceLoader(persistent.orElse(null), metadata, observer, proxy, clock)), store, observer);
     }
 }

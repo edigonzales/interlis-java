@@ -334,8 +334,8 @@ class ProjectRenameConsistencyTest {
 
             Files.delete(base);
             textDocuments.didClose(new DidCloseTextDocumentParams(new TextDocumentIdentifier(primaryUri)));
-            var result = server.getWorkspaceService().executeCommand(new ExecuteCommandParams("interlis.compile", List.of())).get(5, TimeUnit.SECONDS);
-            assertEquals("succeeded", ((Map<?, ?>) result).get("outcome"));
+            var result = server.compileModel(new CompileModelParams("workspace", null, null, null)).get(5, TimeUnit.SECONDS);
+            assertEquals("succeeded", result.outcome());
             assertEquals(Set.of(primary), workspace.state().sourceRevisions().keySet());
             assertEquals(BASE, workspace.source(primary).orElseThrow().text());
         } finally { server.shutdown().get(5, TimeUnit.SECONDS); }
@@ -460,9 +460,9 @@ class ProjectRenameConsistencyTest {
         try {
             ready(server,folder.resolve("Root.ili"));
             assertEquals(3,server.workspaceForTest().state().sourceRevisions().size());
-            var response=server.getWorkspaceService().executeCommand(new ExecuteCommandParams("interlis.compile",List.of())).get(5,TimeUnit.SECONDS);
-            assertEquals("rejected",((Map<?,?>)response).get("outcome"));
-            assertTrue(((List<?>)((Map<?,?>)response).get("reasons")).contains("AMBIGUOUS_INPUT"));
+            var response=server.compileModel(new CompileModelParams("workspace", null, null, null)).get(5,TimeUnit.SECONDS);
+            assertEquals("rejected",response.outcome());
+            assertTrue(response.summary().reasons().contains("AMBIGUOUS_INPUT"));
         } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
     }
 
@@ -567,7 +567,7 @@ class ProjectRenameConsistencyTest {
                 server.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(accepted,"interlis",3,ROOT)));
                 ready(server,Path.of(java.net.URI.create(accepted)));
                 assertEquals(2,server.workspaceForTest().state().sourceRevisions().size());
-                assertEquals("succeeded",((Map<?,?>)server.getWorkspaceService().executeCommand(new ExecuteCommandParams("interlis.compile",List.of())).get(5,TimeUnit.SECONDS)).get("outcome"));
+                assertEquals("succeeded",server.compileModel(new CompileModelParams("workspace", null, null, null)).get(5,TimeUnit.SECONDS).outcome());
                 assertEquals(2,server.getTextDocumentService().rename(new RenameParams(new TextDocumentIdentifier(accepted),cursor(),"Renamed")).get(5,TimeUnit.SECONDS).getChanges().size());
             } finally {server.shutdown().get(5,TimeUnit.SECONDS);}
         }
@@ -580,13 +580,13 @@ class ProjectRenameConsistencyTest {
         String uri="memory:/small-token-budget";
         try {
             assertDoesNotThrow(() -> server.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(uri,"interlis",1,BASE))));
-            var failure=assertThrows(ExecutionException.class,() -> server.getWorkspaceService().executeCommand(new ExecuteCommandParams("interlis.compile",List.of())).get(5,TimeUnit.SECONDS));
+            var failure=assertThrows(ExecutionException.class,() -> server.compileModel(new CompileModelParams("workspace", null, null, null)).get(5,TimeUnit.SECONDS));
             var response=assertInstanceOf(ResponseErrorException.class,failure.getCause());
             assertEquals(ResponseErrorCode.RequestCancelled.getValue(),response.getResponseError().getCode());
             assertTrue(response.getMessage().contains("RESOURCE_LIMIT"));assertNull(response.getResponseError().getData());
             server.getWorkspaceService().didChangeConfiguration(new DidChangeConfigurationParams(com.google.gson.JsonParser.parseString("{\"analysisBudget\":{\"maxTokens\":500000}}")));
             assertFalse(server.getTextDocumentService().documentSymbol(new DocumentSymbolParams(new TextDocumentIdentifier(uri))).get(5,TimeUnit.SECONDS).isEmpty());
-            assertEquals("succeeded",((Map<?,?>)server.getWorkspaceService().executeCommand(new ExecuteCommandParams("interlis.compile",List.of())).get(5,TimeUnit.SECONDS)).get("outcome"));
+            assertEquals("succeeded",server.compileModel(new CompileModelParams("workspace", null, null, null)).get(5,TimeUnit.SECONDS).outcome());
         } finally {server.shutdown().get(5,TimeUnit.SECONDS);}
     }
 

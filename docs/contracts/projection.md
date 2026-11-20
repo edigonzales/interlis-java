@@ -115,7 +115,10 @@ Kardinalitäten werden als `minimum`-Dezimalstring und `maximum` als getaggte Va
 7. CanonicalName, DisplayLabel und SymbolId sind getrennte Felder.
 8. Ein Budgetabbruch verändert Vollständigkeit und Hinweise; er verschwindet nicht hinter einer normalen erfolgreichen leeren Liste.
 
-Der `DiagramValidator.validate(document)` prüft diese DTO-Invarianten in Vertragstests und bei eingehenden externen Adaptern. Im Produktionspfad darf die eigene korrekt konstruierende Projektion eine günstigere Konsistenzprüfung verwenden, sofern die Invarianten durch Konstruktion abgesichert sind.
+Die Projektion sichert diese Invarianten beim Aufbau des Dokuments ab.
+Die Vertragstests prüfen die Struktur und die Snapshotbezüge zusätzlich mit
+einer lokalen Testhilfe. Der Diagrammadapter der Extension prüft eingehende
+Diagrammdokumente für die Darstellung.
 
 <a id="stabile-identitäten"></a>
 ### Stabile Identitäten
@@ -185,7 +188,6 @@ Ein fehlerhafter Attributtyp darf als unaufgelöstes Mitglied erscheinen. Die Pr
 | `CardinalityFormatter.format(cardinality)` | Exakte untere/obere Grenze; keine Float-Konversion; Unendlich nur aus expliziter Variante. |
 | `SourceAnchorFactory.forSymbol(input,symbol)` | Nur belegte Quellbereiche des aktuellen Snapshots; bei synthetischen Elementen Optional.empty. |
 | `DiagramJsonCodec.encode(document)` | Schema 1.0, deterministische Reihenfolge, exakte Zahlen, korrektes Escaping; keine Reflection-Pflicht. |
-| `DiagramValidator.validate(document)` | Alle Invarianten aus 3.2; klarer struktureller Fehlerbericht mit Element-ID. |
 | `MermaidRenderer.render(document,style)` | Erzeugt ausschliesslich Text; keine Shell-/Netzaufrufe; Capabilities prüfen und Labels escapen. |
 | `PlantUmlRenderer.render(document,style)` | Gleicher Fachumfang wie Projektion, deterministischer Text; keine automatische Übermittlung an einen öffentlichen Renderdienst. |
 

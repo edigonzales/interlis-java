@@ -28,8 +28,8 @@ final class RepositoryHostCoordinator implements AutoCloseable {
         }
         if(loader!=null)loader.cancelPending(CancellationReason.SUPERSEDED);
         settings=value;
-        access=HostRepositories.create(Path.of(System.getProperty("user.dir")),value.cache(),event -> {
-            if(event==RepositoryCacheEvent.WRITE_UNAVAILABLE) operations.accept("Repository cache is unavailable; downloaded sources remain usable for this session.");
+        access=HostRepositories.createObserved(Path.of(System.getProperty("user.dir")),value.cache(),event -> {
+            if(event.event()==RepositoryCacheEvent.WRITE_UNAVAILABLE) operations.accept("Repository cache is unavailable; downloaded sources remain usable for this session.");
         });
         loader=new CoalescingSourceLoader(access.loader());
     }

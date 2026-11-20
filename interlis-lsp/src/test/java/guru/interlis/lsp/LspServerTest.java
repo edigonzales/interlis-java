@@ -9,7 +9,6 @@ import guru.interlis.execution.OperationCancelledException;
 import guru.interlis.workspace.Workspace;
 import guru.interlis.workspace.WorkspaceConfiguration;
 import guru.interlis.workspace.Workspaces;
-import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.CompletionParams;
 import org.eclipse.lsp4j.DefinitionParams;
 import org.eclipse.lsp4j.DidChangeTextDocumentParams;
@@ -28,7 +27,6 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -166,19 +164,17 @@ class LspServerTest {
             server.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(
                     new TextDocumentItem(uri, "interlis", 1, MODEL)));
         awaitAnalysis(server, uri);
-            var service = (InterlisWorkspaceService) server.getWorkspaceService();
-            var compile = service.executeCommand(new ExecuteCommandParams(
-                    InterlisWorkspaceService.COMPILE_COMMAND, List.of()));
+            var compile = server.compileModel(new CompileModelParams("workspace", null, null, null));
             Thread.sleep(100);
             assertTrue(compile.cancel(true));
             Thread.sleep(100);
             assertTrue(cancellationObserved.get(), "compiler did not observe cancellation");
             assertTrue(compile.isCancelled());
 
-            String diagram = (String) service.executeCommand(new ExecuteCommandParams(
-                    InterlisWorkspaceService.DIAGRAM_COMMAND,
-                    List.<Object>of(Map.of("uri", uri)))).get(2, TimeUnit.SECONDS);
-            assertTrue(diagram.contains("Building"), diagram);
+            var diagram = server.diagram(new DiagramRequest(1, "after-cancellation",
+                    new VersionedTextDocumentIdentifier(uri, 1), List.of(), null))
+                    .get(2, TimeUnit.SECONDS);
+            assertTrue(diagram.document().nodes().stream().anyMatch(node -> node.label().equals("Building")));
         } finally {
             server.shutdown().join();
         }

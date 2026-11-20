@@ -125,7 +125,7 @@ public final class RunLifecycle {
 
     private void emit(java.util.function.Function<RunEvent.RunEventHeader, RunEvent> eventFactory) {
         RunEvent.RunEventHeader header = new RunEvent.RunEventHeader(
-                context.runId(), context.parentRunId(), ++sequence, 1,
+                context.runId(), context.parentRunId(), ++sequence, 2,
                 clock.wallTimeEpochMillis(), clock.monotonicNanos());
         RunEvent event = eventFactory.apply(header);
         try {

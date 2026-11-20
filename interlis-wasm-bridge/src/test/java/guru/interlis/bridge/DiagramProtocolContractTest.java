@@ -47,7 +47,7 @@ class DiagramProtocolContractTest {
         error(call("diagram",h.session(),JsonValues.object("schemaId",JsonValues.string(h.schema()),"options",JsonValues.object("schemaVersion",JsonValues.string("1.0"),"labelPolicy",JsonValues.string("TRANSLATED"),"translationModel",JsonValues.object("snapshot",JsonValues.string("foreign"),"symbol",JsonValues.string("unknown"))))),"SNAPSHOT_MISMATCH");
     }
     private JsonValue.JsonObject call(String operation,String session,JsonValue.JsonObject params){
-        var request=new LinkedHashMap<String,JsonValue>();request.put("protocol",JsonValues.string("interlis.compiler"));request.put("protocolVersion",JsonValues.string("1.0"));request.put("requestId",JsonValues.string("review-"+(++sequence)));request.put("operation",JsonValues.string(operation));request.put("params",params);if(session!=null)request.put("sessionId",JsonValues.string(session));
+        var request=new LinkedHashMap<String,JsonValue>();request.put("protocol",JsonValues.string("interlis.compiler"));request.put("protocolVersion",JsonValues.string("2.0"));request.put("requestId",JsonValues.string("review-"+(++sequence)));request.put("operation",JsonValues.string(operation));request.put("params",params);if(session!=null)request.put("sessionId",JsonValues.string(session));
         return BridgeCodec.object(Json.parse(bridge.handle(Json.write(new JsonValue.JsonObject(request)))));
     }
     private static JsonValue.JsonObject result(JsonValue.JsonObject value){assertEquals("ok",BridgeCodec.string(value,"status"),value::toString);return BridgeCodec.object(value.members().get("result"));}

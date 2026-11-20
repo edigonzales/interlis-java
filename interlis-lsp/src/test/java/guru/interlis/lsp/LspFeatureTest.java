@@ -247,7 +247,7 @@ class LspFeatureTest {
         String watchedUri = watched.toUri().toString();
         server.getWorkspaceService().didChangeWatchedFiles(new DidChangeWatchedFilesParams(
                 List.of(new FileEvent(watchedUri, FileChangeType.Changed))));
-        server.getWorkspaceService().executeCommand(new org.eclipse.lsp4j.ExecuteCommandParams("interlis.compile",List.of())).get(5,TimeUnit.SECONDS);
+        server.compileModel(new CompileModelParams("workspace", null, null, null)).get(5,TimeUnit.SECONDS);
         assertTrue(server.workspaceForTest().source(
                 new guru.interlis.source.SourceId(watchedUri)).isPresent());
         Files.delete(watched);
@@ -277,7 +277,7 @@ class LspFeatureTest {
             assertTrue(server.workspaceForTest().source(id).orElseThrow().text().contains("Unsaved"));
             documents.didClose(new org.eclipse.lsp4j.DidCloseTextDocumentParams(
                     new TextDocumentIdentifier(uri)));
-            server.getWorkspaceService().executeCommand(new org.eclipse.lsp4j.ExecuteCommandParams("interlis.compile",List.of())).get(5,TimeUnit.SECONDS);
+            server.compileModel(new CompileModelParams("workspace", null, null, null)).get(5,TimeUnit.SECONDS);
             assertEquals(MODEL, server.workspaceForTest().source(id).orElseThrow().text());
         } finally {
             server.shutdown().get(2, TimeUnit.SECONDS);

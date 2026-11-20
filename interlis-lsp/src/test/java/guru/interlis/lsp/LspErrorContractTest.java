@@ -9,7 +9,6 @@ import guru.interlis.workspace.Workspaces;
 import org.eclipse.lsp4j.ApplyWorkspaceEditParams;
 import org.eclipse.lsp4j.ApplyWorkspaceEditResponse;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
-import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializedParams;
 import org.eclipse.lsp4j.MessageActionItem;
@@ -24,7 +23,6 @@ import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.eclipse.lsp4j.jsonrpc.RemoteEndpoint;
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException;
 import org.eclipse.lsp4j.services.LanguageClient;
-import org.eclipse.lsp4j.services.LanguageServer;
 import org.junit.jupiter.api.Test;
 
 import java.io.PipedInputStream;
@@ -61,14 +59,6 @@ class LspErrorContractTest {
             org.junit.jupiter.api.Assertions.assertNull(response.getResponseError().getData()); assertTrue(!response.getMessage().contains("PRIVATE_FAILURE_DETAIL"));
         }
     }
-    @Test void malformedCommandsReturnInvalidParamsWithoutThrowableData() throws Exception {
-        try(var harness=new Harness(Workspaces.create(CompilerEngines.create(),WorkspaceConfiguration.defaults()))) {
-            for(var arguments:List.of(List.of(7),List.of(Map.of("uri",42)),List.of(Map.of("uri","memory:/x","symbolIds",List.of(3))),
-                    List.of(Map.of("uri","memory:/x"),Map.of("uri","memory:/y")))) {
-                assertEquals(-32602,harness.errorCode("workspace/executeCommand",new ExecuteCommandParams("interlis.diagram",new java.util.ArrayList<>(arguments))));
-            }
-        }
-    }
     @Test
     void protocolLanguageAndInternalFailuresAreDistinct() throws Exception {
         try (Harness harness = new Harness(Workspaces.create(
@@ -88,8 +78,7 @@ class LspErrorContractTest {
                       END Data;
                     END Broken.
                     """);
-            Object result = harness.compile();
-            assertTrue(String.valueOf(result).contains("rejected"), String.valueOf(result));
+            assertEquals("rejected", harness.compile().outcome());
         }
 
         CompilerEngine realEngine = CompilerEngines.create();
@@ -130,7 +119,7 @@ class LspErrorContractTest {
     private static final class Harness implements AutoCloseable {
         private final PipedOutputStream clientOut;
         private final PipedOutputStream serverOut;
-        private final Launcher<LanguageServer> clientLauncher;
+        private final Launcher<InterlisLanguageServerApi> clientLauncher;
         private final Launcher<LanguageClient> serverLauncher;
         private final RemoteEndpoint endpoint;
 
@@ -147,7 +136,8 @@ class LspErrorContractTest {
             serverLauncher = LSPLauncher.createServerLauncher(server, serverIn, serverOut);
             server.connect(serverLauncher.getRemoteProxy());
             serverLauncher.startListening();
-            clientLauncher = LSPLauncher.createClientLauncher(new Client(), clientIn, clientOut);
+            clientLauncher = new LSPLauncher.Builder<InterlisLanguageServerApi>().setLocalService(new Client())
+                    .setRemoteInterface(InterlisLanguageServerApi.class).setInput(clientIn).setOutput(clientOut).create();
             clientLauncher.startListening();
             endpoint = clientLauncher.getRemoteEndpoint();
             endpoint.request("initialize", new InitializeParams()).get(5, TimeUnit.SECONDS);
@@ -161,13 +151,12 @@ class LspErrorContractTest {
                     new org.eclipse.lsp4j.TextDocumentIdentifier("memory:/error.ct.ili"))).get(5, TimeUnit.SECONDS);
         }
 
-        Object compile() throws Exception {
+        CompileReport compile() throws Exception {
             return compileAsync().get(5, TimeUnit.SECONDS);
         }
 
-        CompletableFuture<Object> compileAsync() {
-            return endpoint.request("workspace/executeCommand",
-                    new ExecuteCommandParams("interlis.compile", List.of()));
+        CompletableFuture<CompileReport> compileAsync() {
+            return clientLauncher.getRemoteProxy().compileModel(new CompileModelParams("workspace", null, null, null));
         }
 
         int errorCode(String method, Object params) throws Exception {
