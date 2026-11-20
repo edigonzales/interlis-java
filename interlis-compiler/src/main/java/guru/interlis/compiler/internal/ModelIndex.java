@@ -10,7 +10,6 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -19,16 +18,18 @@ final class ModelIndex {
     private final List<ModelDecl> models;
     private final Map<String, List<ModelDecl>> byName;
     private final Map<SourceId, List<ModelDecl>> bySource;
-    private final Set<SourceId> knownSources;
+    private final Map<SourceId, SyntaxSnapshot> syntaxBySource;
 
     ModelIndex(List<SyntaxSnapshot> snapshots) {
         List<ModelDecl> all = new ArrayList<>();
         Map<String, List<ModelDecl>> names = new LinkedHashMap<>();
         Map<SourceId, List<ModelDecl>> sources = new LinkedHashMap<>();
+        Map<SourceId, SyntaxSnapshot> syntax = new LinkedHashMap<>();
         List<SyntaxSnapshot> sorted = new ArrayList<>(Objects.requireNonNull(snapshots, "snapshots"));
         sorted.sort(Comparator.comparing(s -> s.source().id().value()));
         for (SyntaxSnapshot snapshot : sorted) {
             SourceText source = snapshot.source();
+            syntax.put(source.id(), snapshot);
             for (ModelSyntax model : snapshot.root().models()) {
                 ModelDecl declaration = new ModelDecl(model, source);
                 all.add(declaration);
@@ -45,7 +46,7 @@ final class ModelIndex {
         Map<SourceId, List<ModelDecl>> frozenSources = new LinkedHashMap<>();
         sources.forEach((id, values) -> frozenSources.put(id, List.copyOf(values)));
         this.bySource = Map.copyOf(frozenSources);
-        this.knownSources = Set.copyOf(sorted.stream().map(snapshot -> snapshot.source().id()).toList());
+        this.syntaxBySource = Map.copyOf(syntax);
     }
 
     List<ModelDecl> all() {
@@ -56,8 +57,8 @@ final class ModelIndex {
         return byName.getOrDefault(name, List.of());
     }
 
-    boolean hasSource(SourceId source) {
-        return knownSources.contains(source);
+    Optional<SyntaxSnapshot> syntax(SourceId source) {
+        return Optional.ofNullable(syntaxBySource.get(source));
     }
 
     List<ModelDecl> bySource(SourceId source) {

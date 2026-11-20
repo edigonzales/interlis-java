@@ -82,7 +82,12 @@ tasks.register('codebergConformance') {
                     if (result.testId == 'ili23.Attribute10Test.attributeComplete') {
                         expected = result.exitCode == 1 &&
                                 payload.status.startsWith('rejected: RejectionSummary[reasons=[SOURCE_ERRORS') &&
-                                errors.any { it.code == 'ILI-SYN-0002' }
+                                errors &&
+                                errors.every { it.code == 'ILI-SYN-0002' }
+                    } else if (result.testId == 'ili23.XSDMetaDataGenerator23Test.xsdmeta_null') {
+                        expected = result.exitCode == 1 &&
+                                payload.status.startsWith('rejected: RejectionSummary[reasons=[MISSING_INPUT],') &&
+                                errors*.code == ['ILI-RES-0001']
                     }
                     expected = expected && payload.status.endsWith('unsupportedFeatureIds=[]]')
                 }

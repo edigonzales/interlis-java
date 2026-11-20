@@ -10,6 +10,8 @@ import guru.interlis.diagnostics.DiagnosticDraft;
 import guru.interlis.diagnostics.DiagnosticId;
 import guru.interlis.diagnostics.Phase;
 import guru.interlis.diagnostics.Severity;
+import guru.interlis.syntax.DetectionState;
+import guru.interlis.syntax.SyntaxSnapshot;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -30,7 +32,11 @@ final class RootSelector {
             switch (selector) {
                 case ModelSelector.BySource bySource -> {
                     List<ModelDecl> candidates = index.bySource(bySource.source());
-                    if (candidates.isEmpty() && !index.hasSource(bySource.source())) {
+                    if (!candidates.isEmpty()) {
+                        roots.addAll(candidates);
+                    } else if (index.syntax(bySource.source()).filter(RootSelector::hasSourceErrors).isPresent()) {
+                        reasons.add(RejectionReason.SOURCE_ERRORS);
+                    } else {
                         DiagnosticId id = collector.emit(DiagnosticDraft.of(
                                         new DiagnosticCode("ILI-RES-0001"), Severity.ERROR,
                                         Phase.SOURCE_RESOLUTION, "diagnostic.resolution.missing")
@@ -38,8 +44,6 @@ final class RootSelector {
                                         bySource.source().value())));
                         diagnostics.add(id);
                         reasons.add(RejectionReason.MISSING_INPUT);
-                    } else {
-                        roots.addAll(candidates);
                     }
                 }
                 case ModelSelector.ByName byName -> {
@@ -84,6 +88,13 @@ final class RootSelector {
         }
         LinkedHashSet<ModelDecl> unique = new LinkedHashSet<>(roots);
         return new RootSelection(List.copyOf(unique), diagnostics, reasons);
+    }
+
+    private static boolean hasSourceErrors(SyntaxSnapshot snapshot) {
+        return snapshot.language().state() != DetectionState.DETECTED
+                || !snapshot.coverage().lexicallyComplete() || !snapshot.coverage().parseComplete()
+                || !snapshot.consumedEntireInput()
+                || snapshot.diagnostics().stream().anyMatch(diagnostic -> diagnostic.severity() == Severity.ERROR);
     }
 
     private static Optional<ModelDecl> atLocation(ModelSelector.ByName selector, ModelLocation location, ModelIndex index) {
