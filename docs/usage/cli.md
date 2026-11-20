@@ -40,6 +40,13 @@ In `format --check` bezeichnet 1 auch einen Formatierungsbedarf.
 JSON-Ergebnis nach stdout. Textdiagnosen gehen nach stderr. Datenströme und
 Dateien bleiben UTF-8 und frei von automatisch eingefügten ANSI-Sequenzen.
 
+Bei einer Ablehnung durch das Compiler-Gate enthält das JSON-Ergebnis von
+`check` und `compile` zusätzlich das Objekt `rejection`. `reasons`
+enthält die stabilen Namen der Ablehnungsgründe, zum Beispiel `SOURCE_ERRORS`
+oder `MISSING_INPUT`. `unsupportedFeatureIds` enthält die IDs fehlender
+Sprachunterstützung und ist sonst leer. Das Objekt ergänzt die bestehende
+Antwort mit `status` und `diagnostics`.
+
 ## Diagnosen und Farbe
 
 `--diagnostic-language de|en` wählt die Diagnoseprosa. Default ist Englisch.

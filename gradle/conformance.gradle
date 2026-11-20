@@ -77,22 +77,22 @@ tasks.register('codebergConformance') {
                 def errors = payload.diagnostics.findAll { it.severity == 'ERROR' }
                 boolean expected
                 if (result.actualOutcome == 'accepted') {
-                    expected = result.exitCode == 0 && payload.status == 'ok' && payload.diagnostics.empty
+                    expected = result.exitCode == 0 && payload.status == 'ok' && payload.diagnostics.empty &&
+                            !payload.containsKey('rejection')
                 } else {
-                    expected = result.actualOutcome == 'rejected' && result.exitCode == 1 &&
-                            payload.status.startsWith('rejected: RejectionSummary[reasons=[SOURCE_ERRORS],') &&
-                            errors.any { it.code.startsWith('ILI-SEM-') }
+                    String reason = 'SOURCE_ERRORS'
+                    boolean expectedDiagnostics
                     if (result.testId == 'ili23.Attribute10Test.attributeComplete') {
-                        expected = result.exitCode == 1 &&
-                                payload.status.startsWith('rejected: RejectionSummary[reasons=[SOURCE_ERRORS],') &&
-                                errors*.code == ['ILI-SYN-0002', 'ILI-SYN-0002']
+                        expectedDiagnostics = errors*.code == ['ILI-SYN-0002', 'ILI-SYN-0002']
                     } else if (result.testId in ['ili23.XSDMetaDataGenerator23Test.xsdmeta_null',
                                                  'ili23.MainRule23Test.mainRules_SyntaxIli23']) {
-                        expected = result.exitCode == 1 &&
-                                payload.status.startsWith('rejected: RejectionSummary[reasons=[MISSING_INPUT],') &&
-                                errors*.code == ['ILI-RES-0001']
+                        reason = 'MISSING_INPUT'
+                        expectedDiagnostics = errors*.code == ['ILI-RES-0001']
+                    } else {
+                        expectedDiagnostics = errors.any { it.code.startsWith('ILI-SEM-') }
                     }
-                    expected = expected && payload.status.endsWith('unsupportedFeatureIds=[]]')
+                    expected = result.actualOutcome == 'rejected' && result.exitCode == 1 && expectedDiagnostics &&
+                            payload.rejection?.reasons == [reason] && payload.rejection?.unsupportedFeatureIds == []
                 }
                 if (!expected || result.timedOut || !result.stderr.empty)
                     throw new GradleException('unexpected compiler result')

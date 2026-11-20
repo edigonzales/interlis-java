@@ -1,5 +1,6 @@
 package guru.interlis.cli;
 
+import com.google.gson.JsonParser;
 import guru.interlis.execution.CancellationToken;
 import org.junit.jupiter.api.Test;
 
@@ -59,6 +60,31 @@ class CliApplicationTest {
         assertEquals(1, negative.result().exitCode());
         assertEquals(CliTermination.SOURCE_REJECTED, negative.result().termination());
         assertTrue(negative.err().contains("ILI-"));
+    }
+
+    @Test
+    void checkJsonReportsStructuredCompilerRejections() throws Exception {
+        Path headerOnly = tempDir.resolve("header.ili");
+        Files.writeString(headerOnly, "INTERLIS 2.4;");
+        Run sourceErrors = run("check", "--json", "--no-cache",
+                TESTDATA.resolve("models/broken24.ili").toString());
+        Run missingInput = run("check", "--json", "--no-cache", headerOnly.toString());
+        for (var entry : Map.of("SOURCE_ERRORS", sourceErrors, "MISSING_INPUT", missingInput).entrySet()) {
+            Run rejected = entry.getValue();
+            assertEquals(1, rejected.result().exitCode(), rejected.err());
+            var json = JsonParser.parseString(rejected.out()).getAsJsonObject();
+            var rejection = json.getAsJsonObject("rejection");
+            assertEquals(List.of(entry.getKey()), rejection.getAsJsonArray("reasons").asList().stream()
+                    .map(reason -> reason.getAsString()).toList());
+            assertTrue(rejection.getAsJsonArray("unsupportedFeatureIds").isEmpty());
+            assertFalse(json.getAsJsonArray("diagnostics").isEmpty());
+        }
+
+        Run accepted = run("check", "--json", "--no-cache", TESTDATA.resolve("models/base24.ili").toString());
+        assertEquals(0, accepted.result().exitCode(), accepted.err());
+        var json = JsonParser.parseString(accepted.out()).getAsJsonObject();
+        assertEquals("ok", json.get("status").getAsString());
+        assertFalse(json.has("rejection"));
     }
 
     @Test
