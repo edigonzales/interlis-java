@@ -110,7 +110,7 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
             case INTEGER -> "NUMERIC";
             case ENUMERATION -> "ENUM";
             case POINT -> "COORD";
-            case POLYLINE, SURFACE -> ((GeometryType) effective).geometryKind().name();
+            case POLYLINE, SURFACE, MULTISURFACE -> ((GeometryType) effective).geometryKind().name();
             case REFERENCE -> null;
         };
         if (typeKind != null) property(properties, table, null, column, "typeKind", typeKind);

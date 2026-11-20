@@ -33,6 +33,12 @@ MODEL DbInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
     CLASS Parcel =
       Boundary : AREA WITH (STRAIGHTS) VERTEX PlotPosition WITHOUT OVERLAPS > 0.001;
     END Parcel;
+    CLASS Park =
+      Coverage : MULTISURFACE WITH (STRAIGHTS, ARCS) VERTEX PlotPosition WITHOUT OVERLAPS > 0.001;
+    END Park;
+    CLASS District =
+      Coverage : MULTIAREA WITH (STRAIGHTS, ARCS) VERTEX PlotPosition WITHOUT OVERLAPS > 0.001;
+    END District;
   END Data;
 
   TOPIC Naming =

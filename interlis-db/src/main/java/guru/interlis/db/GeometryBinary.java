@@ -1,9 +1,11 @@
 package guru.interlis.db;
 
+import guru.interlis.db.DbMapping.Kind;
 import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TransferGeometry.Arc;
 import guru.interlis.transfer.TransferGeometry.Coordinate;
 import guru.interlis.transfer.TransferGeometry.CurvePart;
+import guru.interlis.transfer.TransferGeometry.MultiSurface;
 import guru.interlis.transfer.TransferGeometry.Polyline;
 import guru.interlis.transfer.TransferGeometry.Ring;
 import guru.interlis.transfer.TransferGeometry.Segment;
@@ -18,15 +20,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/** WKB and GeoPackageBinary for two-dimensional points, polylines and surfaces. */
+/** WKB and GeoPackageBinary for two-dimensional points, curves and surface collections. */
 final class GeometryBinary {
     private static final int MAX_VERTICES = 100_000;
 
     private static final int POINT = 1;
     private static final int LINESTRING = 2;
+    private static final int POLYGON = 3;
     private static final int CIRCULARSTRING = 8;
     private static final int COMPOUNDCURVE = 9;
     private static final int CURVEPOLYGON = 10;
+    private static final int MULTISURFACE = 12;
     private static final int TYPE_SIZE = 1 + Integer.BYTES;
     private static final int XY_SIZE = 2 * Double.BYTES;
     private static final int POINT_WKB_SIZE = TYPE_SIZE + XY_SIZE;
@@ -39,13 +43,14 @@ final class GeometryBinary {
     private GeometryBinary() { }
 
     private record CompoundCurve(CurvePart part, int components, int size, boolean hasArcs) { }
+    private record CurvePolygon(List<CompoundCurve> rings, int size) { }
 
     private static final class CoordinateBudget {
-        private final boolean surface;
+        private final Kind kind;
         private int remaining = MAX_VERTICES;
 
-        CoordinateBudget(boolean surface) {
-            this.surface = surface;
+        CoordinateBudget(Kind kind) {
+            this.kind = kind;
         }
 
         void consume(int count) {
@@ -56,46 +61,52 @@ final class GeometryBinary {
         }
 
         DbException exceeded() {
-            return new DbException(surface ? "A surface permits at most " + MAX_VERTICES + " stored XY pairs"
-                    : "A polyline requires 2 to " + MAX_VERTICES + " stored XY pairs");
+            return new DbException(switch (kind) {
+                case POLYLINE -> "A polyline requires 2 to " + MAX_VERTICES + " stored XY pairs";
+                case SURFACE -> "A surface permits at most " + MAX_VERTICES + " stored XY pairs";
+                case MULTISURFACE -> "A multisurface permits at most " + MAX_VERTICES + " stored XY pairs";
+                default -> throw new IllegalStateException("No coordinate budget for " + kind);
+            });
         }
     }
 
-    static int maxWkbSize(DbMapping.Kind kind) {
+    static int maxWkbSize(Kind kind) {
         return switch (kind) {
             case POINT -> POINT_WKB_SIZE;
             case POLYLINE -> CURVE_HEADER_SIZE * (1 + MAX_COMPONENTS) + MAX_VERTICES * XY_SIZE;
             // Each nonempty ring includes at least one component with two coordinates.
             case SURFACE -> CURVE_HEADER_SIZE * (1 + 2 * MAX_COMPONENTS) + MAX_VERTICES * XY_SIZE;
+            // Each child adds a header and includes at least one nonempty ring.
+            case MULTISURFACE -> CURVE_HEADER_SIZE * (1 + 3 * MAX_COMPONENTS) + MAX_VERTICES * XY_SIZE;
             default -> throw new IllegalArgumentException("Not a geometry kind: " + kind);
         };
     }
 
-    static int maxGeoPackageSize(DbMapping.Kind kind) {
+    static int maxGeoPackageSize(Kind kind) {
         return GPKG_PAYLOAD_OFFSET + maxWkbSize(kind);
     }
 
-    static TransferGeometry decode(byte[] bytes, boolean gpkg, int srsId, DbMapping.Kind kind) {
+    static TransferGeometry decode(byte[] bytes, boolean gpkg, int srsId, Kind kind) {
         var data = ByteBuffer.wrap(bytes);
-        if (gpkg) {
-            readGeoPackageHeader(data, srsId);
-        }
+        boolean empty = gpkg && readGeoPackageHeader(data, srsId, kind);
         return switch (kind) {
             case POINT -> readPoint(data);
             case POLYLINE -> readPolyline(data);
             case SURFACE -> readSurface(data);
+            case MULTISURFACE -> readMultiSurface(data, empty);
             default -> throw new IllegalArgumentException("Not a geometry kind: " + kind);
         };
     }
 
-    private static void readGeoPackageHeader(ByteBuffer data, int srsId) {
+    private static boolean readGeoPackageHeader(ByteBuffer data, int srsId, Kind kind) {
         if (data.remaining() < GPKG_HEADER_SIZE || data.get() != 'G' || data.get() != 'P' || data.get() != 0) {
             throw new DbException("Invalid GeoPackage geometry header");
         }
         int flags = Byte.toUnsignedInt(data.get());
-        int envelope = flags >> 1;
-        if (envelope > 1) {
-            throw new DbException("Expected a nonempty standard GeoPackage geometry with at most an XY envelope");
+        int envelope = (flags >>> 1) & 7;
+        boolean empty = (flags & 0x10) != 0;
+        if ((flags & 0xe0) != 0 || envelope > 1 || (empty && (kind != Kind.MULTISURFACE || envelope != 0))) {
+            throw new DbException("Unsupported GeoPackage geometry flags");
         }
         data.order(byteOrder(flags & 1));
         if (data.getInt() != srsId) {
@@ -107,6 +118,7 @@ final class GeometryBinary {
             }
             data.position(data.position() + XY_ENVELOPE_SIZE);
         }
+        return empty;
     }
 
     private static Coordinate readPoint(ByteBuffer data) {
@@ -123,7 +135,7 @@ final class GeometryBinary {
         if (readType(data) != COMPOUNDCURVE) {
             throw new DbException("Expected a 2D WKB COMPOUNDCURVE");
         }
-        var part = readCurve(data, COMPOUNDCURVE, new CoordinateBudget(false));
+        var part = readCurve(data, COMPOUNDCURVE, new CoordinateBudget(Kind.POLYLINE));
         if (data.hasRemaining()) {
             throw new DbException("Invalid WKB polyline size");
         }
@@ -134,24 +146,55 @@ final class GeometryBinary {
         if (readType(data) != CURVEPOLYGON) {
             throw new DbException("Expected a 2D WKB CURVEPOLYGON");
         }
-        int rings = readCount(data);
-        if (rings < 1 || rings > MAX_COMPONENTS) {
-            throw new DbException("Invalid WKB curve polygon ring count");
-        }
-        var budget = new CoordinateBudget(true);
-        var shell = readRing(data, budget);
-        var holes = new ArrayList<Ring>();
-        for (int index = 1; index < rings; index++) {
-            holes.add(readRing(data, budget));
-        }
+        var surface = readSurface(data, CURVEPOLYGON, new CoordinateBudget(Kind.SURFACE));
         if (data.hasRemaining()) {
             throw new DbException("Invalid WKB curve polygon size");
+        }
+        return surface;
+    }
+
+    private static MultiSurface readMultiSurface(ByteBuffer data, boolean empty) {
+        if (readType(data) != MULTISURFACE) {
+            throw new DbException("Expected a 2D WKB MULTISURFACE");
+        }
+        int count = readCount(data);
+        if (count < 0 || count > MAX_COMPONENTS) {
+            throw new DbException("Invalid WKB multisurface count");
+        }
+        if (empty && count != 0) {
+            throw new DbException("GeoPackage empty flag disagrees with WKB multisurface count");
+        }
+        var budget = new CoordinateBudget(Kind.MULTISURFACE);
+        var surfaces = new ArrayList<Surface>();
+        for (int index = 0; index < count; index++) {
+            int type = readType(data);
+            if (type != CURVEPOLYGON && type != POLYGON) {
+                throw new DbException("Expected a 2D WKB CURVEPOLYGON or POLYGON in a multisurface");
+            }
+            surfaces.add(readSurface(data, type, budget));
+        }
+        if (data.hasRemaining()) {
+            throw new DbException("Invalid WKB multisurface size");
+        }
+        return new MultiSurface(surfaces);
+    }
+
+    private static Surface readSurface(ByteBuffer data, int type, CoordinateBudget budget) {
+        int rings = readCount(data);
+        if (rings < 1 || rings > MAX_COMPONENTS) {
+            throw new DbException("Invalid WKB polygon ring count. A surface requires an exterior ring");
+        }
+        var shell = readRing(data, type, budget);
+        var holes = new ArrayList<Ring>();
+        for (int index = 1; index < rings; index++) {
+            holes.add(readRing(data, type, budget));
         }
         return new Surface(shell, holes);
     }
 
-    private static Ring readRing(ByteBuffer data, CoordinateBudget budget) {
-        var part = readCurve(data, readType(data), budget);
+    private static Ring readRing(ByteBuffer data, int surfaceType, CoordinateBudget budget) {
+        // A POLYGON ring uses the LINESTRING body without its byte order and type.
+        var part = readCurve(data, surfaceType == POLYGON ? LINESTRING : readType(data), budget);
         requireClosedRing(part);
         return new Ring(List.of(new Polyline(List.of(part))));
     }
@@ -221,11 +264,12 @@ final class GeometryBinary {
         return new Coordinate(List.of(number(data.getDouble()), number(data.getDouble())));
     }
 
-    static byte[] encode(TransferGeometry value, boolean gpkg, int srsId, DbMapping.Kind kind) {
+    static byte[] encode(TransferGeometry value, boolean gpkg, int srsId, Kind kind) {
         return switch (kind) {
             case POINT -> writePoint(value, gpkg, srsId);
             case POLYLINE -> writePolyline(value, gpkg, srsId);
             case SURFACE -> writeSurface(value, gpkg, srsId);
+            case MULTISURFACE -> writeMultiSurface(value, gpkg, srsId);
             default -> throw new IllegalArgumentException("Not a geometry kind: " + kind);
         };
     }
@@ -248,7 +292,7 @@ final class GeometryBinary {
         if (!(geometry instanceof Polyline line)) {
             throw new DbException("Expected a polyline with one part and no line attributes");
         }
-        var curve = planCurve(linePart(line), new CoordinateBudget(false));
+        var curve = planCurve(linePart(line), new CoordinateBudget(Kind.POLYLINE));
         // Arc extrema can lie outside the bounds of the stored XY pairs.
         boolean envelope = gpkg && !curve.hasArcs();
         var data = allocate(curve.size(), gpkg, srsId, envelope);
@@ -264,7 +308,36 @@ final class GeometryBinary {
         if (!(geometry instanceof Surface surface)) {
             throw new DbException("Expected a surface");
         }
-        var budget = new CoordinateBudget(true);
+        var polygon = planSurface(surface, new CoordinateBudget(Kind.SURFACE));
+        var data = allocate(polygon.size(), gpkg, srsId, false);
+        writeSurface(data, polygon);
+        return data.array();
+    }
+
+    private static byte[] writeMultiSurface(TransferGeometry geometry, boolean gpkg, int srsId) {
+        if (!(geometry instanceof MultiSurface multi)) {
+            throw new DbException("Expected a multisurface");
+        }
+        if (multi.surfaces().isEmpty()) {
+            throw new DbException("An empty multisurface cannot be imported");
+        }
+        var budget = new CoordinateBudget(Kind.MULTISURFACE);
+        var polygons = new ArrayList<CurvePolygon>();
+        int size = CURVE_HEADER_SIZE;
+        for (var surface : multi.surfaces()) {
+            var polygon = planSurface(surface, budget);
+            polygons.add(polygon);
+            size += polygon.size();
+        }
+        var data = allocate(size, gpkg, srsId, false);
+        data.put((byte) 0).putInt(MULTISURFACE).putInt(polygons.size());
+        for (var polygon : polygons) {
+            writeSurface(data, polygon);
+        }
+        return data.array();
+    }
+
+    private static CurvePolygon planSurface(Surface surface, CoordinateBudget budget) {
         var rings = new ArrayList<CompoundCurve>();
         int size = CURVE_HEADER_SIZE;
         var shell = planRing(surface.shell(), budget);
@@ -275,12 +348,14 @@ final class GeometryBinary {
             rings.add(ring);
             size += ring.size();
         }
-        var data = allocate(size, gpkg, srsId, false);
-        data.put((byte) 0).putInt(CURVEPOLYGON).putInt(rings.size());
-        for (var ring : rings) {
+        return new CurvePolygon(rings, size);
+    }
+
+    private static void writeSurface(ByteBuffer data, CurvePolygon polygon) {
+        data.put((byte) 0).putInt(CURVEPOLYGON).putInt(polygon.rings().size());
+        for (var ring : polygon.rings()) {
             writeCurve(data, ring);
         }
-        return data.array();
     }
 
     private static CompoundCurve planRing(Ring ring, CoordinateBudget budget) {

@@ -48,6 +48,7 @@ final class DbInteropTest {
     private static final int CIRCULARSTRING = 8;
     private static final int COMPOUNDCURVE = 9;
     private static final int CURVEPOLYGON = 10;
+    private static final int MULTISURFACE = 12;
     private static final List<CurveComponent> STRAIGHT_ROUTE = List.of(new CurveComponent(LINESTRING, List.of(
             List.of("2600123.125", "1200456.375"), List.of("2600345.250", "1200678.500"),
             List.of("2600567.625", "1200456.750"))));
@@ -121,19 +122,31 @@ final class DbInteropTest {
                 "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056",
                 ili.toString());
         try (var sql = db.connect()) {
-            assertEquals("AREA", scalar(sql, "select setting from " + db.table("t_ili2db_column_prop")
-                    + " where tablename='parcel' and columnname='boundary' and tag='ch.ehi.ili2db.typeKind'"));
+            assertTypeKind(db, sql, "parcel", "boundary", "AREA");
+            if (version == 24) {
+                assertTypeKind(db, sql, "park", "coverage", "MULTISURFACE");
+                assertTypeKind(db, sql, "district", "coverage", "MULTIAREA");
+            }
             var catalog = DbSchemaCatalog.read(sql, db.postgis, db.schema);
             if (!db.postgis) {
                 catalog = catalog.expectGeoPackageGeometryExtension("route", "trace", "COMPOUNDCURVE")
                         .expectGeoPackageGeometryExtension("plot", "footprint", "CURVEPOLYGON")
                         .expectGeoPackageGeometryExtension("parcel", "boundary", "CURVEPOLYGON");
+                if (version == 24) {
+                    catalog = catalog.expectGeoPackageGeometryExtension("park", "coverage", "MULTISURFACE")
+                            .expectGeoPackageGeometryExtension("district", "coverage", "MULTISURFACE");
+                }
             }
             assertSchemaCreation(reference, postgres, model, version, ili, fixture, catalog);
             Path nativeOutput = exchangeDatasets(reference, db, sql, work.toString(), model, version, fixture);
             assertRollback(db, sql, model, version, fixture);
             assertExplicitRadiusRollback(db, sql, model, version, fixture);
             assertOpenSurfaceRollback(db, sql, model, version, fixture);
+            if (version == 24) {
+                assertEmptyMultiSurfaceRollback(db, sql, model, fixture);
+                assertEmptyMultiSurfaceExport(db, sql, model);
+                assertCorruptMultiSurfaceRejected(db, sql, model, nativeOutput);
+            }
             assertCorruptGeometriesRejected(db, sql, model, nativeOutput);
             execute(sql, "update " + db.table("t_ili2db_attrname") + " set sqlname='missing_select'"
                     + " where iliname='" + model + ".Data.Place.Select'");
@@ -144,6 +157,12 @@ final class DbInteropTest {
                     corrupt::diagnostics);
             assertEquals(originalOutput, Files.readString(nativeOutput));
         }
+    }
+
+    private static void assertTypeKind(TestDatabase db, Connection sql, String table, String column, String kind)
+            throws SQLException {
+        assertEquals(kind, scalar(sql, "select setting from " + db.table("t_ili2db_column_prop")
+                + " where tablename='" + table + "' and columnname='" + column + "' and tag='ch.ehi.ili2db.typeKind'"));
     }
 
     private static void assertCorruptGeometriesRejected(TestDatabase db, Connection sql, String model, Path output)
@@ -160,6 +179,22 @@ final class DbInteropTest {
         execute(sql, "update " + db.table("plot") + " set footprint=" + corruptSurface
                 + " where t_ili_tid='native-plot-1'");
         assertExportRejected(db, model, "native", output, model + ".Data.Plot.Footprint");
+    }
+
+    private static void assertCorruptMultiSurfaceRejected(TestDatabase db, Connection sql, String model, Path output)
+            throws Exception {
+        String corrupt = db.postgis
+                ? "st_geomfromtext('MULTISURFACE(CURVEPOLYGON((0 0,10 0,0 10,0 0)),CURVEPOLYGON EMPTY)', 2056)"
+                : "X'4750000000000808000000000C00000001'";
+        String park = db.table("park");
+        String row = " where t_ili_tid='legacy-park-1'";
+        execute(sql, "update " + park + " set coverage=" + corrupt + row);
+        if (db.postgis) {
+            assertEquals("2", scalar(sql, "select st_numgeometries(coverage) from " + park + row));
+            assertEquals("true", scalar(sql, "select cast(st_isempty(st_geometryn(coverage, 2)) as text) from "
+                    + park + row));
+        }
+        assertExportRejected(db, model, "legacy", output, model + ".Data.Park.Coverage");
     }
 
     private static void assertExportRejected(TestDatabase db, String model, String dataset, Path output, String attribute)
@@ -265,7 +300,7 @@ final class DbInteropTest {
         Path legacyInput = Files.writeString(work.resolve("legacy.xtf"), fixture);
         reference.run(db, modelDir, "--import", "--importTid", "--importBid", "--dataset", "legacy",
                 legacyInput.toString());
-        assertStoredDataset(db, sql, "legacy", false);
+        assertStoredDataset(db, sql, version, "legacy", false);
         // The reference normalizes empty TEXT to NULL. Restore an actual empty SQL value to test our export.
         execute(sql, "update " + db.table("place") + " set aselect='' where t_ili_tid='legacy-place-2'");
         Path nativeOutput = work.resolve("native-export.xtf");
@@ -274,7 +309,7 @@ final class DbInteropTest {
 
         Path nativeInput = Files.writeString(work.resolve("native.xtf"), fixture.replace("legacy-", "native-"));
         assertCliSuccess(db, "import", model, "native", nativeInput);
-        assertStoredDataset(db, sql, "native", true);
+        assertStoredDataset(db, sql, version, "native", true);
         Path legacyOutput = work.resolve("legacy-export.xtf");
         reference.run(db, modelDir, "--export", "--exportTid", "--dataset", "native", legacyOutput.toString());
         assertTransfer(legacyOutput, version, "native", false);
@@ -282,7 +317,7 @@ final class DbInteropTest {
         if (db.postgis && modelDir.equals(STORED_MODELS)) assertPostgresIdDefault(db);
         Path tail = Files.writeString(work.resolve("tail.xtf"), fixture.replace("legacy-", "tail-"));
         reference.run(db, modelDir, "--import", "--importTid", "--importBid", "--dataset", "tail", tail.toString());
-        assertStoredDataset(db, sql, "tail", false);
+        assertStoredDataset(db, sql, version, "tail", false);
         assertRows(db, sql, version, 3);
         return nativeOutput;
     }
@@ -376,8 +411,9 @@ final class DbInteropTest {
             throws Exception {
         // Move only the closing position of the second plot, after the first plot and other objects.
         String x = "2601200.250";
-        int closing = fixture.lastIndexOf(x);
-        assertTrue(closing > fixture.indexOf(x));
+        int plot = fixture.indexOf("legacy-plot-2");
+        int closing = fixture.lastIndexOf(x, fixture.indexOf("</Footprint>", plot));
+        assertTrue(closing > fixture.indexOf(x, plot));
         String openRing = fixture.substring(0, closing) + "2601200.375" + fixture.substring(closing + x.length());
         Path input = Files.writeString(work.resolve("open-surface.xtf"), openRing.replace("legacy-", "open-"));
         String counter = db.postgis ? "select last_value from " + db.table("t_ili2db_seq")
@@ -394,7 +430,46 @@ final class DbInteropTest {
         assertRows(db, sql, version, 3);
     }
 
-    private static void assertStoredDataset(TestDatabase db, Connection sql, String dataset, boolean nativeImport)
+    private void assertEmptyMultiSurfaceRollback(TestDatabase db, Connection sql, String model, String fixture)
+            throws Exception {
+        int start = fixture.indexOf("<g:multisurface>");
+        String endTag = "</g:multisurface>";
+        int end = fixture.indexOf(endTag, start) + endTag.length();
+        String empty = fixture.substring(0, start) + "<g:multisurface/>" + fixture.substring(end);
+        Path input = Files.writeString(work.resolve("empty-multisurface.xtf"), empty.replace("legacy-", "empty-"));
+        String counter = db.postgis ? "select last_value from " + db.table("t_ili2db_seq")
+                : "select T_LastUniqueId from T_KEY_OBJECT where T_Key='T_Id'";
+        long before = Long.parseLong(scalar(sql, counter));
+        var rejected = cli(db, "import", model, "empty", input, CancellationToken.none());
+        assertEquals(1, rejected.code(), rejected::diagnostics);
+        assertTrue(rejected.diagnostics().contains(model + ".Data.Park.Coverage"), rejected::diagnostics);
+        assertTrue(rejected.diagnostics().contains("empty multisurface"), rejected::diagnostics);
+        // The Park follows the dataset, basket and ten other objects.
+        assertEquals(Long.toString(db.postgis ? before + 13 : before), scalar(sql, counter));
+        assertNull(scalar(sql, "select datasetname from " + db.table("t_ili2db_dataset") + " where datasetname='empty'"));
+        assertRows(db, sql, 24, 3);
+    }
+
+    private void assertEmptyMultiSurfaceExport(TestDatabase db, Connection sql, String model) throws Exception {
+        String empty = db.postgis ? "st_geomfromtext('MULTISURFACE EMPTY', 2056)"
+                : "X'4750001000000808000000000C00000000'";
+        for (String table : List.of("park", "district")) {
+            execute(sql, "update " + db.table(table) + " set coverage=" + empty
+                    + " where t_ili_tid='legacy-" + table + "-1'");
+        }
+        Path output = work.resolve("empty-multisurface-export.xtf");
+        assertCliSuccess(db, "export", model, "legacy", output);
+        var basket = children(readDataSection(output, 24)).stream()
+                .filter(element -> id(element, 24, "bid").equals("legacy-basket-1")).findFirst().orElseThrow();
+        for (String name : List.of("Park", "District")) {
+            var object = child(basket, name);
+            assertNotNull(object);
+            assertEquals("legacy-" + name.toLowerCase(Locale.ROOT) + "-1", id(object, 24, "tid"));
+            assertNull(child(object, "Coverage"));
+        }
+    }
+
+    private static void assertStoredDataset(TestDatabase db, Connection sql, int version, String dataset, boolean nativeImport)
             throws SQLException {
         String point = db.postgis ? "st_srid(p.ageometry)" : "p.ageometry";
         String rows = "select p.t_ili_tid, b.t_ili_tid, p.aselect, " + point + " from " + db.table("place") + " p"
@@ -429,15 +504,15 @@ final class DbInteropTest {
         assertStoredRoutes(db, sql, dataset, nativeImport);
         assertStoredSurfaces(db, sql, dataset, "plot", "footprint", SURFACE_WITH_HOLE, CURVED_SURFACE, nativeImport);
         assertStoredSurfaces(db, sql, dataset, "parcel", "boundary", WEST_AREA, EAST_AREA, nativeImport);
+        if (version == 24) {
+            assertStoredMultiSurface(db, sql, dataset, "park", nativeImport);
+            assertStoredMultiSurface(db, sql, dataset, "district", nativeImport);
+        }
     }
 
     private static void assertStoredRoutes(TestDatabase db, Connection sql, String dataset, boolean nativeImport)
             throws SQLException {
-        String geometry = db.postgis ? "st_asbinary(r.trace), st_srid(r.trace)" : "r.trace";
-        String rows = "select r.t_ili_tid, b.t_ili_tid, " + geometry + " from " + db.table("route") + " r"
-                + " join " + db.table("t_ili2db_basket") + " b on r.t_basket=b.t_id"
-                + " join " + db.table("t_ili2db_dataset") + " d on b.dataset=d.t_id"
-                + " where d.datasetname='" + dataset + "' order by r.t_ili_tid";
+        String rows = geometryRows(db, dataset, "route", "trace");
         int srsId;
         try (var statement = sql.createStatement(); var result = statement.executeQuery(rows)) {
             String firstBasket = dataset + "-basket-1";
@@ -467,12 +542,7 @@ final class DbInteropTest {
                                              List<List<CurveComponent>> firstRings,
                                              List<List<CurveComponent>> secondRings, boolean nativeImport)
             throws SQLException {
-        String field = "p." + column;
-        String geometry = db.postgis ? "st_asbinary(" + field + "), st_srid(" + field + ")" : field;
-        String rows = "select p.t_ili_tid, b.t_ili_tid, " + geometry + " from " + db.table(table) + " p"
-                + " join " + db.table("t_ili2db_basket") + " b on p.t_basket=b.t_id"
-                + " join " + db.table("t_ili2db_dataset") + " d on b.dataset=d.t_id"
-                + " where d.datasetname='" + dataset + "' order by p.t_ili_tid";
+        String rows = geometryRows(db, dataset, table, column);
         String tidPrefix = dataset + "-" + table;
         int srsId;
         try (var statement = sql.createStatement(); var result = statement.executeQuery(rows)) {
@@ -494,11 +564,47 @@ final class DbInteropTest {
         var geometry = readStoredGeometry(result, tid, bid);
         int srsId = db.postgis ? result.getInt(4) : readGeoPackageHeader(geometry);
         if (!db.postgis && nativeImport) assertEquals(8, geometry.position(), "Surface GeoPackage header length");
+        assertCurvePolygon(geometry, rings);
+        assertFalse(geometry.hasRemaining());
+        return srsId;
+    }
+
+    private static void assertStoredMultiSurface(TestDatabase db, Connection sql, String dataset, String table,
+                                                 boolean nativeImport) throws SQLException {
+        String rows = geometryRows(db, dataset, table, "coverage");
+        String tidPrefix = dataset + "-" + table;
+        int srsId;
+        try (var statement = sql.createStatement(); var result = statement.executeQuery(rows)) {
+            var geometry = readStoredGeometry(result, tidPrefix + "-1", dataset + "-basket-1");
+            srsId = db.postgis ? result.getInt(4) : readGeoPackageHeader(geometry);
+            if (!db.postgis && nativeImport) assertEquals(8, geometry.position(), "Multisurface GeoPackage header length");
+            assertEquals(MULTISURFACE, readWkbType(geometry));
+            assertEquals(2, geometry.getInt());
+            assertCurvePolygon(geometry, SURFACE_WITH_HOLE);
+            assertCurvePolygon(geometry, CURVED_SURFACE);
+            assertFalse(geometry.hasRemaining());
+            assertTrue(result.next());
+            assertEquals(tidPrefix + "-2", result.getString(1));
+            assertEquals(dataset + "-basket-2", result.getString(2));
+            assertNull(result.getBytes(3));
+            assertFalse(result.next());
+        }
+        assertSrs(db, sql, table, "coverage", srsId);
+    }
+
+    private static String geometryRows(TestDatabase db, String dataset, String table, String column) {
+        String field = "o." + column;
+        String geometry = db.postgis ? "st_asbinary(" + field + "), st_srid(" + field + ")" : field;
+        return "select o.t_ili_tid, b.t_ili_tid, " + geometry + " from " + db.table(table) + " o"
+                + " join " + db.table("t_ili2db_basket") + " b on o.t_basket=b.t_id"
+                + " join " + db.table("t_ili2db_dataset") + " d on b.dataset=d.t_id"
+                + " where d.datasetname='" + dataset + "' order by o.t_ili_tid";
+    }
+
+    private static void assertCurvePolygon(ByteBuffer geometry, List<List<CurveComponent>> rings) {
         assertEquals(CURVEPOLYGON, readWkbType(geometry));
         assertEquals(rings.size(), geometry.getInt());
         for (var ring : rings) assertCompoundCurve(geometry, ring);
-        assertFalse(geometry.hasRemaining());
-        return srsId;
     }
 
     private static ByteBuffer readStoredGeometry(ResultSet result, String tid, String bid) throws SQLException {
@@ -565,19 +671,27 @@ final class DbInteropTest {
         var tables = new ArrayList<>(List.of("t_ili2db_dataset", "t_ili2db_basket", "place", "route", "plot", "parcel"));
         if (version == 24) {
             assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table("link")));
-            tables.add("link");
+            for (String table : List.of("park", "district")) {
+                assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table(table)));
+            }
+            tables.addAll(List.of("link", "park", "district"));
         }
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 17 : 16)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 21 : 16)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
     }
 
-    private static void assertTransfer(Path output, int version, String dataset, boolean hasEmptyText) throws Exception {
+    private static Element readDataSection(Path output, int version) throws Exception {
         var factory = DocumentBuilderFactory.newDefaultNSInstance();
         factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         var document = factory.newDocumentBuilder().parse(output.toFile());
         var data = child(document.getDocumentElement(), version == 24 ? "datasection" : "DATASECTION");
         assertNotNull(data);
+        return data;
+    }
+
+    private static void assertTransfer(Path output, int version, String dataset, boolean hasEmptyText) throws Exception {
+        var data = readDataSection(output, version);
         Map<String, Set<String>> baskets = new HashMap<>();
         Map<String, Element> objects = new HashMap<>();
         for (Element basket : children(data)) {
@@ -607,9 +721,12 @@ final class DbInteropTest {
         String noArea = dataset + "-parcel-3";
         var firstBasket = new HashSet<>(Set.of(first, second, line, arcs, mixed, plotWithHole, curvedPlot,
                 westArea, eastArea));
-        if (version == 24) firstBasket.add(link);
-        assertEquals(Map.of(dataset + "-basket-1", firstBasket,
-                dataset + "-basket-2", Set.of(third, noLine, noSurface, noArea)), baskets);
+        var secondBasket = new HashSet<>(Set.of(third, noLine, noSurface, noArea));
+        if (version == 24) {
+            firstBasket.addAll(Set.of(link, dataset + "-park-1", dataset + "-district-1"));
+            secondBasket.addAll(Set.of(dataset + "-park-2", dataset + "-district-2"));
+        }
+        assertEquals(Map.of(dataset + "-basket-1", firstBasket, dataset + "-basket-2", secondBasket), baskets);
 
         String placeName = version == 24 ? "Place" : "DbInterop23.Data.Place";
         for (String tid : List.of(first, second, third)) {
@@ -658,6 +775,10 @@ final class DbInteropTest {
         assertNull(child(objects.get(noArea), "Boundary"));
         assertTransferSurface(child(objects.get(westArea), "Boundary"), version, WEST_AREA);
         assertTransferSurface(child(objects.get(eastArea), "Boundary"), version, EAST_AREA);
+        if (version == 24) {
+            assertTransferMultiSurface(objects, dataset, "Park");
+            assertTransferMultiSurface(objects, dataset, "District");
+        }
     }
 
     private static void assertTransferRoute(Element trace, int version, List<CurveComponent> components) {
@@ -669,6 +790,28 @@ final class DbInteropTest {
         assertNotNull(footprint);
         var surface = child(footprint, version == 24 ? "surface" : "SURFACE");
         assertNotNull(surface);
+        assertTransferRings(surface, version, rings);
+    }
+
+    private static void assertTransferMultiSurface(Map<String, Element> objects, String dataset, String name) {
+        String tidPrefix = dataset + "-" + name.toLowerCase(Locale.ROOT);
+        var populated = objects.get(tidPrefix + "-1");
+        var absent = objects.get(tidPrefix + "-2");
+        assertEquals(name, populated.getLocalName());
+        assertEquals(name, absent.getLocalName());
+        assertNull(child(absent, "Coverage"));
+        var coverage = child(populated, "Coverage");
+        assertNotNull(coverage);
+        var multi = child(coverage, "multisurface");
+        assertNotNull(multi);
+        assertEquals("http://www.interlis.ch/geometry/1.0", multi.getNamespaceURI());
+        var surfaces = children(multi);
+        assertEquals(List.of("surface", "surface"), surfaces.stream().map(Element::getLocalName).toList());
+        assertTransferRings(surfaces.getFirst(), 24, SURFACE_WITH_HOLE);
+        assertTransferRings(surfaces.getLast(), 24, CURVED_SURFACE);
+    }
+
+    private static void assertTransferRings(Element surface, int version, List<List<CurveComponent>> rings) {
         var boundaries = children(surface);
         assertEquals(rings.size(), boundaries.size());
         for (int index = 0; index < rings.size(); index++) {

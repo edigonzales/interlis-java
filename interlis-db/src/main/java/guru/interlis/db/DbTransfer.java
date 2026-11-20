@@ -119,7 +119,7 @@ final class DbTransfer {
         for (var column : table.columns()) {
             String field = "obj." + quote(column.name());
             switch (column.kind()) {
-                case POINT, POLYLINE, SURFACE -> projections.add(db.geometryProjection(field, column.kind()));
+                case POINT, POLYLINE, SURFACE, MULTISURFACE -> projections.add(db.geometryProjection(field, column.kind()));
                 case REFERENCE -> {
                     String alias = "ref" + refIndex++;
                     var target = mapping.table(column.target().orElseThrow());
@@ -160,7 +160,7 @@ final class DbTransfer {
 
     private static TransferValue readValue(Database db, ResultSet rows, int index, Column column) throws SQLException {
         return switch (column.kind()) {
-            case POINT, POLYLINE, SURFACE -> db.readGeometry(rows, index, column);
+            case POINT, POLYLINE, SURFACE, MULTISURFACE -> db.readGeometry(rows, index, column);
             case BOOLEAN -> readBoolean(db, rows, index, column);
             case INTEGER -> readInteger(rows.getString(index), column);
             case ENUMERATION -> readEnumeration(rows.getString(index), column);
@@ -417,7 +417,7 @@ final class DbTransfer {
                                 + column.slot().name().declared(), e);
                     }
                 }
-                case POINT, POLYLINE, SURFACE, REFERENCE ->
+                case POINT, POLYLINE, SURFACE, MULTISURFACE, REFERENCE ->
                         throw new DbException("Unsupported value for " + column.slot().name().declared());
             }
             return index + 1;

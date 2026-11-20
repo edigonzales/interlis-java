@@ -71,15 +71,20 @@ optionalen Innenringen. Linien und Flächenränder unterstützen
 `WITH (STRAIGHTS, ARCS)`. Wie bei ili2db 5.5.2 liegen Linien in
 `COMPOUNDCURVE`-Spalten und Flächen in `CURVEPOLYGON`-Spalten.
 Die Spaltenmetadaten weisen den Modelltyp `SURFACE` oder `AREA` aus.
+In XTF 2.4 FULL speichert eine `MULTISURFACE`-Spalte die geordneten
+Teilflächen eines `MULTISURFACE`- oder `MULTIAREA`-Attributs in derselben
+Objektzeile. `typeKind` weist den Modelltyp aus. Der Adapter schreibt jede
+Teilfläche als WKB `CURVEPOLYGON` und liest auch gerade `POLYGON`-Teilflächen.
 Jeder Ring wird als `COMPOUNDCURVE` geschrieben. Aufeinanderfolgende
 Geraden bilden eine `LINESTRING`-Komponente, aufeinanderfolgende Bögen
 eine `CIRCULARSTRING`-Komponente.
 
-Das Limit von 100’000 gespeicherten XY-Paaren gilt je Linie oder über alle
-Ringe einer Fläche zusammen. Es zählt Bogen-Zwischenpunkte sowie wiederholte
-Anschlusspunkte zwischen Komponenten. Neue GeoPackages registrieren je nach
-Spaltentyp `gpkg_geom_COMPOUNDCURVE` oder `gpkg_geom_CURVEPOLYGON`. Beim Lesen
-genügen der übereinstimmende Geometriekatalog und das passende Binärformat.
+Das Limit von 100’000 gespeicherten XY-Paaren gilt je Geometriewert über
+alle Teilflächen und Ringe hinweg. Bogen-Zwischenpunkte und wiederholte
+Anschlusspunkte zwischen Komponenten zählen mit. Neue GeoPackages registrieren je nach
+Spaltentyp `gpkg_geom_COMPOUNDCURVE`, `gpkg_geom_CURVEPOLYGON` oder
+`gpkg_geom_MULTISURFACE`. Beim Lesen genügen der übereinstimmende
+Geometriekatalog und das passende Binärformat.
 GeoPackage-Flächen und gebogene Linien verwenden den Standardheader ohne
 optionale XY-Ausdehnung.
 [GeoPackage-Geometrieerweiterung](https://www.geopackage.org/spec131/#extension_geometry_types)
@@ -93,6 +98,12 @@ XTF 2.3 und 2.4 je einen Linienzug pro Ring.
 Bei `AREA` im FULL-Transfer wird jedes Gebietsobjekt einzeln gespeichert.
 Gebietsübergreifende Prüfungen wie Überlappungen und die Übereinstimmung
 gemeinsamer Grenzsegmente führt der Validator aus.
+
+Ein fehlendes XTF-Attribut ergibt SQL `NULL`. Ein ausdrücklich leeres
+`<multisurface/>` wird beim Import am Attribut diagnostiziert und führt zum
+Rollback. Beim Export erscheint eine als `MULTISURFACE EMPTY` gespeicherte
+Geometrie als fehlendes Attribut. Eine leere Teilfläche führt zu einer
+Diagnose.
 
 Der XTF-Import erwartet bei einem Bogen Start-, Zwischen- und Endpunkt.
 Ein expliziter Radius (`R` in XTF 2.3 oder `r` in XTF 2.4) führt zu

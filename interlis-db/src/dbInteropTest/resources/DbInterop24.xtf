@@ -74,12 +74,62 @@
           <g:coord><g:c1>2602020.250</g:c1><g:c2>1202000.250</g:c2></g:coord>
         </g:polyline></g:exterior></g:surface></Boundary>
       </Parcel>
+      <Park i:tid="legacy-park-1">
+        <Coverage><g:multisurface>
+          <g:surface>
+            <g:exterior><g:polyline>
+              <g:coord><g:c1>2601000.125</g:c1><g:c2>1201000.375</g:c2></g:coord>
+              <g:coord><g:c1>2601040.250</g:c1><g:c2>1201000.375</g:c2></g:coord>
+              <g:coord><g:c1>2601040.250</g:c1><g:c2>1201040.500</g:c2></g:coord>
+              <g:coord><g:c1>2601000.125</g:c1><g:c2>1201040.500</g:c2></g:coord>
+              <g:coord><g:c1>2601000.125</g:c1><g:c2>1201000.375</g:c2></g:coord>
+            </g:polyline></g:exterior>
+            <g:interior><g:polyline>
+              <g:coord><g:c1>2601008.125</g:c1><g:c2>1201010.375</g:c2></g:coord>
+              <g:coord><g:c1>2601008.125</g:c1><g:c2>1201028.625</g:c2></g:coord>
+              <g:coord><g:c1>2601020.250</g:c1><g:c2>1201020.500</g:c2></g:coord>
+              <g:coord><g:c1>2601008.125</g:c1><g:c2>1201010.375</g:c2></g:coord>
+            </g:polyline></g:interior>
+          </g:surface>
+          <g:surface><g:exterior><g:polyline>
+            <g:coord><g:c1>2601200.250</g:c1><g:c2>1201200.625</g:c2></g:coord>
+            <g:arc><g:c1>2601220.250</g:c1><g:c2>1201200.625</g:c2><g:a1>2601210.250</g:a1><g:a2>1201190.625</g:a2></g:arc>
+            <g:coord><g:c1>2601200.250</g:c1><g:c2>1201200.625</g:c2></g:coord>
+          </g:polyline></g:exterior></g:surface>
+        </g:multisurface></Coverage>
+      </Park>
+      <District i:tid="legacy-district-1">
+        <Coverage><g:multisurface>
+          <g:surface>
+            <g:exterior><g:polyline>
+              <g:coord><g:c1>2601000.125</g:c1><g:c2>1201000.375</g:c2></g:coord>
+              <g:coord><g:c1>2601040.250</g:c1><g:c2>1201000.375</g:c2></g:coord>
+              <g:coord><g:c1>2601040.250</g:c1><g:c2>1201040.500</g:c2></g:coord>
+              <g:coord><g:c1>2601000.125</g:c1><g:c2>1201040.500</g:c2></g:coord>
+              <g:coord><g:c1>2601000.125</g:c1><g:c2>1201000.375</g:c2></g:coord>
+            </g:polyline></g:exterior>
+            <g:interior><g:polyline>
+              <g:coord><g:c1>2601008.125</g:c1><g:c2>1201010.375</g:c2></g:coord>
+              <g:coord><g:c1>2601008.125</g:c1><g:c2>1201028.625</g:c2></g:coord>
+              <g:coord><g:c1>2601020.250</g:c1><g:c2>1201020.500</g:c2></g:coord>
+              <g:coord><g:c1>2601008.125</g:c1><g:c2>1201010.375</g:c2></g:coord>
+            </g:polyline></g:interior>
+          </g:surface>
+          <g:surface><g:exterior><g:polyline>
+            <g:coord><g:c1>2601200.250</g:c1><g:c2>1201200.625</g:c2></g:coord>
+            <g:arc><g:c1>2601220.250</g:c1><g:c2>1201200.625</g:c2><g:a1>2601210.250</g:a1><g:a2>1201190.625</g:a2></g:arc>
+            <g:coord><g:c1>2601200.250</g:c1><g:c2>1201200.625</g:c2></g:coord>
+          </g:polyline></g:exterior></g:surface>
+        </g:multisurface></Coverage>
+      </District>
     </Data>
     <Data i:bid="legacy-basket-2">
       <Place i:tid="legacy-place-3"/>
       <Route i:tid="legacy-route-2"/>
       <Plot i:tid="legacy-plot-3"/>
       <Parcel i:tid="legacy-parcel-3"/>
+      <Park i:tid="legacy-park-2"/>
+      <District i:tid="legacy-district-2"/>
     </Data>
   </i:datasection>
 </i:transfer>

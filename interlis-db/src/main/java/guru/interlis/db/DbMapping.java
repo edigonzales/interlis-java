@@ -51,15 +51,16 @@ import static guru.interlis.db.Ili2dbLayout.reservedTable;
 /** The SQL names and storage bindings for a checked transfer plan. */
 final class DbMapping {
     enum Kind {
-        TEXT, BOOLEAN, INTEGER, ENUMERATION, POINT, POLYLINE, SURFACE, REFERENCE;
+        TEXT, BOOLEAN, INTEGER, ENUMERATION, POINT, POLYLINE, SURFACE, MULTISURFACE, REFERENCE;
 
-        boolean geometry() { return this == POINT || this == POLYLINE || this == SURFACE; }
+        boolean geometry() { return this == POINT || this == POLYLINE || this == SURFACE || this == MULTISURFACE; }
 
         String geometryType() {
             return switch (this) {
                 case POINT -> "POINT";
                 case POLYLINE -> "COMPOUNDCURVE";
                 case SURFACE -> "CURVEPOLYGON";
+                case MULTISURFACE -> "MULTISURFACE";
                 default -> throw new IllegalStateException("Expected a geometry kind: " + this);
             };
         }
@@ -192,8 +193,7 @@ final class DbMapping {
             case NumericType number when int32(number) -> Kind.INTEGER;
             case EnumerationType enumeration -> Kind.ENUMERATION;
             case CoordinateType point when xy(point) && optional(attr) -> Kind.POINT;
-            case GeometryType geometry when optional(attr) && supportedCurveGeometry(plan, geometry, path) ->
-                    geometry.geometryKind() == GeometryKind.POLYLINE ? Kind.POLYLINE : Kind.SURFACE;
+            case GeometryType geometry when optional(attr) -> curveGeometryKind(plan, geometry, path);
             case ReferenceType reference when !reference.external() && reference.target().isPresent()
                     && reference.restrictions().isEmpty() && optional(attr) -> Kind.REFERENCE;
             default -> {
@@ -216,27 +216,32 @@ final class DbMapping {
         return coordinate.dimensions() == 2 && !coordinate.multiCoordinate();
     }
 
-    private static boolean supportedCurveGeometry(TransferPlan plan, GeometryType geometry, String path) {
-        var kind = geometry.geometryKind();
-        if ((kind != GeometryKind.POLYLINE && kind != GeometryKind.SURFACE && kind != GeometryKind.AREA)
-                || geometry.lineAttributes().isPresent() || geometry.lineForms().isEmpty()
-                || geometry.vertexDomain().isEmpty()) {
-            return false;
+    private static Kind curveGeometryKind(TransferPlan plan, GeometryType geometry, String path) {
+        String feature = "attribute " + path + " (" + geometry.kind() + ")";
+        var geometryKind = geometry.geometryKind();
+        var kind = switch (geometryKind) {
+            case POLYLINE -> Kind.POLYLINE;
+            case SURFACE, AREA -> Kind.SURFACE;
+            case MULTISURFACE, MULTIAREA -> Kind.MULTISURFACE;
+            default -> throw unsupported(feature);
+        };
+        if (geometry.lineAttributes().isPresent() || geometry.lineForms().isEmpty() || geometry.vertexDomain().isEmpty()) {
+            throw unsupported(feature);
         }
         for (var id : geometry.lineForms()) {
             var form = plan.symbol(new SymbolRef(plan.snapshotId(), id)).known().orElseThrow();
             if (!(form.origin() instanceof Origin.PredefinedOrigin predefined)
                     || !(predefined.key().equals("INTERLIS.STRAIGHTS") || predefined.key().equals("INTERLIS.ARCS"))) {
-                return false;
+                throw unsupported(feature);
             }
         }
         var domain = vertexDomain(plan, geometry);
         var type = plan.type(new TypeRef(plan.snapshotId(), domain.typeId())).known().orElseThrow();
         if (domain.generic() || !(type instanceof CoordinateType coordinates) || !xy(coordinates)) {
-            return false;
+            throw unsupported(feature);
         }
-        validateGeometryCrs(plan, coordinates, domain, kind.name().toLowerCase(Locale.ROOT), path);
-        return true;
+        validateGeometryCrs(plan, coordinates, domain, geometryKind.name().toLowerCase(Locale.ROOT), path);
+        return kind;
     }
 
     static DomainSymbol vertexDomain(TransferPlan plan, GeometryType geometry) {

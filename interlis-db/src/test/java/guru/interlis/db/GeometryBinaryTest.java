@@ -4,6 +4,7 @@ import guru.interlis.transfer.TransferGeometry.Arc;
 import guru.interlis.transfer.TransferGeometry.ArcRadius;
 import guru.interlis.transfer.TransferGeometry.Coordinate;
 import guru.interlis.transfer.TransferGeometry.CurvePart;
+import guru.interlis.transfer.TransferGeometry.MultiSurface;
 import guru.interlis.transfer.TransferGeometry.Polyline;
 import guru.interlis.transfer.TransferGeometry.RadiusConvention;
 import guru.interlis.transfer.TransferGeometry.Ring;
@@ -22,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static guru.interlis.db.DbMapping.Kind.MULTISURFACE;
 import static guru.interlis.db.DbMapping.Kind.POINT;
 import static guru.interlis.db.DbMapping.Kind.POLYLINE;
 import static guru.interlis.db.DbMapping.Kind.SURFACE;
@@ -272,6 +274,107 @@ final class GeometryBinaryTest {
         var surface = new Surface(shell, List.of(hole));
         var write = assertThrows(DbException.class, () -> GeometryBinary.encode(surface, false, 2056, SURFACE));
         assertEquals(read.getMessage(), write.getMessage());
+    }
+
+    @Test
+    void writesMultiSurfaceChildrenAsCurvePolygonsInOrder() {
+        var multi = new MultiSurface(List.of(new Surface(square(), List.of()),
+                new Surface(circularHole(), List.of())));
+        byte[] bytes = GeometryBinary.encode(multi, true, 2056, MULTISURFACE);
+        var data = ByteBuffer.wrap(bytes);
+        assertEquals(0, data.get(3)); // A curved member precludes an XY envelope.
+        assertEquals(2056, data.getInt(4));
+        data.position(8);
+        assertEquals(0, data.get());
+        assertEquals(12, data.getInt());
+        assertEquals(2, data.getInt());
+        for (int ringType : new int[] {2, 8}) {
+            assertEquals(0, data.get());
+            assertEquals(10, data.getInt());
+            assertEquals(1, data.getInt());
+            assertCompoundRing(data, ringType, 5);
+        }
+        assertEquals(0, data.remaining());
+        assertEquals(multi, GeometryBinary.decode(bytes, true, 2056, MULTISURFACE));
+    }
+
+    @Test
+    void readsCurvePolygonAndPolygonChildrenWithIndependentByteOrders() {
+        // Each geometry token has an independent byte order. POLYGON rings use the order of their polygon.
+        byte[] bytes = ByteBuffer.allocate(200).order(ByteOrder.LITTLE_ENDIAN)
+                .put((byte) 1).putInt(12).putInt(2)
+                .order(ByteOrder.BIG_ENDIAN).put((byte) 0).putInt(10).putInt(1)
+                .order(ByteOrder.LITTLE_ENDIAN).put((byte) 1).putInt(8).putInt(5)
+                .putDouble(4.0).putDouble(5.0).putDouble(5.0).putDouble(4.0).putDouble(6.0).putDouble(5.0)
+                .putDouble(5.0).putDouble(6.0).putDouble(4.0).putDouble(5.0)
+                .put((byte) 1).putInt(3).putInt(1).putInt(5)
+                .putDouble(0.0).putDouble(0.0).putDouble(10.0).putDouble(0.0).putDouble(10.0).putDouble(10.0)
+                .putDouble(0.0).putDouble(10.0).putDouble(0.0).putDouble(0.0).array();
+        var multi = new MultiSurface(List.of(new Surface(circularHole(), List.of()),
+                new Surface(square(), List.of())));
+        assertEquals(multi, GeometryBinary.decode(bytes, false, 2056, MULTISURFACE));
+    }
+
+    @Test
+    void readsEmptyMultiSurfaceStorageAndRejectsAnEmptyTransferValue() {
+        var empty = new MultiSurface(List.of());
+        byte[] wkb = multiWkb();
+        assertEquals(empty, GeometryBinary.decode(wkb, false, 2056, MULTISURFACE));
+        for (int flags : new int[] {0, 2, 16}) {
+            assertEquals(empty, GeometryBinary.decode(geoPackage(wkb, flags), true, 2056, MULTISURFACE));
+        }
+        assertThrows(DbException.class, () -> GeometryBinary.encode(empty, true, 2056, MULTISURFACE));
+        assertThrows(DbException.class, () -> GeometryBinary.decode(geoPackage(wkb, 18), true, 2056, MULTISURFACE));
+        byte[] child = GeometryBinary.encode(new Surface(square(), List.of()), false, 2056, SURFACE);
+        assertThrows(DbException.class, () -> GeometryBinary.decode(
+                geoPackage(multiWkb(child), 16), true, 2056, MULTISURFACE));
+    }
+
+    @Test
+    void rejectsEmptyOrMalformedMultiSurfaceChildren() {
+        byte[] child = GeometryBinary.encode(new Surface(square(), List.of()), false, 2056, SURFACE);
+        byte[] valid = multiWkb(child, child);
+        assertThrows(DbException.class, () -> GeometryBinary.decode(
+                Arrays.copyOf(valid, valid.length - 1), false, 2056, MULTISURFACE));
+        assertThrows(DbException.class, () -> GeometryBinary.decode(
+                Arrays.copyOf(valid, valid.length + 1), false, 2056, MULTISURFACE));
+        for (int type : new int[] {3, 10, 7}) {
+            byte[] invalidChild = ByteBuffer.allocate(9).put((byte) 0).putInt(type).putInt(0).array();
+            assertThrows(DbException.class, () -> GeometryBinary.decode(
+                    multiWkb(child, invalidChild), false, 2056, MULTISURFACE));
+        }
+        var emptyChild = new Surface(new Ring(List.of(line(coordinate("0.0", "0.0")))), List.of());
+        assertThrows(DbException.class, () -> GeometryBinary.encode(
+                new MultiSurface(List.of(emptyChild)), false, 2056, MULTISURFACE));
+    }
+
+    @Test
+    void countsStoredCoordinatesAcrossAllMultiSurfaceChildren() {
+        var start = coordinate("4.0", "5.0");
+        var manyVertices = new CurvePart(start, Collections.nCopies(50_000, new Straight(start)));
+        var child = new Surface(new Ring(List.of(new Polyline(List.of(manyVertices)))), List.of());
+        byte[] childWkb = GeometryBinary.encode(child, false, 2056, SURFACE);
+        var read = assertThrows(DbException.class, () -> GeometryBinary.decode(
+                multiWkb(childWkb, childWkb), false, 2056, MULTISURFACE));
+        assertEquals("A multisurface permits at most 100000 stored XY pairs", read.getMessage());
+        var write = assertThrows(DbException.class, () -> GeometryBinary.encode(
+                new MultiSurface(List.of(child, child)), false, 2056, MULTISURFACE));
+        assertEquals(read.getMessage(), write.getMessage());
+    }
+
+    private static byte[] multiWkb(byte[]... children) {
+        int length = 9;
+        for (byte[] child : children) length += child.length;
+        var data = ByteBuffer.allocate(length).put((byte) 0).putInt(12).putInt(children.length);
+        for (byte[] child : children) data.put(child);
+        return data.array();
+    }
+
+    private static byte[] geoPackage(byte[] wkb, int flags) {
+        int headerSize = (flags & 2) == 0 ? 8 : 40;
+        var data = ByteBuffer.allocate(headerSize + wkb.length)
+                .put((byte) 'G').put((byte) 'P').put((byte) 0).put((byte) flags).putInt(2056);
+        return data.position(headerSize).put(wkb).array();
     }
 
     private static void assertCompoundRing(ByteBuffer data, int type, int vertices) {

@@ -3,6 +3,7 @@ package guru.interlis.db;
 import guru.interlis.db.DbMapping.Column;
 import guru.interlis.db.DbMapping.Kind;
 import guru.interlis.transfer.TransferGeometry;
+import guru.interlis.transfer.TransferGeometry.MultiSurface;
 import org.sqlite.SQLiteConfig;
 import org.sqlite.SQLiteOpenMode;
 
@@ -224,7 +225,12 @@ final class Database implements AutoCloseable {
     TransferGeometry readGeometry(ResultSet rows, int index, Column column) throws SQLException {
         byte[] bytes = rows.getBytes(index);
         try {
-            return bytes == null ? null : GeometryBinary.decode(bytes, gpkg(), column.srsId(), column.kind());
+            if (bytes == null) {
+                return null;
+            }
+            var geometry = GeometryBinary.decode(bytes, gpkg(), column.srsId(), column.kind());
+            // The reference exporter omits an attribute stored as MULTISURFACE EMPTY.
+            return geometry instanceof MultiSurface multi && multi.surfaces().isEmpty() ? null : geometry;
         } catch (DbException failure) {
             throw invalidGeometry(column, failure);
         }
