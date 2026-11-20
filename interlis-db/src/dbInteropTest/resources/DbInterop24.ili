@@ -84,6 +84,14 @@ MODEL DbInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
       Grade : -8 .. 8;
       LocalDecision : (draft, approved);
     END AnnotatedLink;
+    CLASS PairLeft =
+    END PairLeft;
+    CLASS PairRight =
+    END PairRight;
+    ASSOCIATION Pairing =
+      RightLink -- {0..1} PairRight;
+      LeftLink -- {1} PairLeft;
+    END Pairing;
   END Data;
 
   TOPIC Naming =

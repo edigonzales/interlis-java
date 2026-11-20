@@ -114,8 +114,11 @@ einem unauflösbaren Ziel. Bei n:m-Assoziationen prüft sie die physische
 Beziehungstabelle, anonyme Links, beide Rollenziele, Vorwärtsreferenzen,
 skalare Attribute je Zielpaar und den Rollback bei einem fehlenden Ziel.
 Für 1:n mit Attributen prüft sie eingebettete Attributwerte, direkte Referenzen,
-fehlende Rollen und den Erhalt der Zieldatei bei mehreren Linkzeilen zum Objekt. Das
-Originalwerkzeug lädt das Modell für das neue Schema aus der Datenbank.
+fehlende Rollen und den Erhalt der Zieldatei bei mehreren Linkzeilen zum Objekt.
+Bei 1:1-Assoziationen kehren die beiden Sprachfixtures die Deklarationsreihenfolge
+um. Die Tests prüfen die jeweilige Rollenspalte, deren SQL-Nullbarkeit und die
+gespeicherte Ziel-ID.
+Das Originalwerkzeug lädt das Modell für das neue Schema aus der Datenbank.
 
 Die JUnit-Rohberichte stehen unter `interlis-db/build/test-results/dbInteropTest/`.
 

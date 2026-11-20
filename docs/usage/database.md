@@ -136,11 +136,13 @@ Strukturzeilen und fehlende oder doppelte Listenpositionen werden beim
 Export diagnostiziert.
 [ili2db-Strukturabbildung](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst#strukturattribute)
 
-XTF 2.3 und 2.4 FULL unterstützen auch binäre 1:n-Assoziationen ohne eigene
-Attribute zwischen konkreten Klassen desselben Topics und Baskets. Beide
-Rollen verwenden `--` und sind lokal und ungeordnet. Die Rolle zur 1-Seite
-hat `{0..1}` oder `{1}`. Die n-Tabelle speichert die Ziel-ID in einer
-nullable Spalte.
+XTF 2.3 und 2.4 FULL unterstützen auch binäre 1:n- und 1:1-Assoziationen
+ohne eigene Attribute zwischen konkreten Klassen desselben Topics und Baskets.
+Beide Rollen verwenden `--` und sind lokal und ungeordnet. Bei 1:n hat die
+Rolle zur 1-Seite `{0..1}` oder `{1}`. Die Tabelle der n-Seite speichert die
+Ziel-ID. Bei 1:1 hat jede Rolle `{0..1}` oder `{1}`. Die Tabelle der zweiten
+deklarierten Rolle speichert die Ziel-ID der ersten Rolle. Die Rollenspalte
+erlaubt unter `--sqlEnableNull` SQL `NULL`.
 `CLASSNAME` und `INHERITANCE` führen die Assoziation, `TRAFO` kennzeichnet
 sie als `embedded` und `ATTRNAME` benennt Spalte und Ziel. Referenzen auf
 später gelieferte Zielobjekte werden am Basketende aufgelöst. Ein fehlendes

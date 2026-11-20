@@ -337,13 +337,14 @@ final class DbMapping {
         if (!first.single() && !second.single()) {
             return Optional.empty();
         }
-        if (first.single() && second.single()) {
-            throw unsupported("1:1 association " + association.name().declared());
-        }
-        var one = first.single() ? first : second;
-        var many = first.single() ? second : first;
         boolean linkTable = association.slots().stream().anyMatch(AttributeSlot.class::isInstance);
-        return Optional.of(new EmbeddedAssociation(association, name, many, one, linkTable));
+        if (linkTable && first.single() && second.single()) {
+            throw unsupported("1:1 association with attributes " + association.name().declared());
+        }
+        // For 1:1, the second declared role's class owns the column for the first role.
+        var target = first.single() ? first : second;
+        var owner = first.single() ? second : first;
+        return Optional.of(new EmbeddedAssociation(association, name, owner, target, linkTable));
     }
 
     private static SymbolRef roleTarget(TransferPlan plan, ObjectDescriptor association, RoleSlot slot) {

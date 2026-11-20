@@ -136,6 +136,7 @@ final class DbInteropTest {
         try (var sql = db.connect()) {
             assertStructureCatalog(db, sql, model, version);
             assertEmbeddedRoleCatalog(db, sql, model);
+            assertPairingCatalog(db, sql, model, version);
             assertAssociationCatalog(db, sql, model, "MarkerLink", Map.of("LinkedMarker", "marker", "LinkedHub", "hub"));
             assertAssociationCatalog(db, sql, model, "Review", Map.of("ReviewMarkers", "marker", "Witness", "hub"));
             assertAssociationCatalog(db, sql, model, "AnnotatedLink",
@@ -254,6 +255,37 @@ final class DbInteropTest {
                         + "' and table_name='" + table + "' and column_name='t_ili_tid'"
                 : "select name from pragma_table_info('" + table + "') where lower(name)='t_ili_tid'";
         assertNull(scalar(sql, identityColumn));
+    }
+
+    private static void assertPairingCatalog(TestDatabase db, Connection sql, String model, int version) throws SQLException {
+        String association = model + ".Data.Pairing";
+        String role = version == 23 ? "LeftLink" : "RightLink";
+        String inverse = version == 23 ? "RightLink" : "LeftLink";
+        String owner = version == 23 ? "pairright" : "pairleft";
+        String target = version == 23 ? "pairleft" : "pairright";
+        String column = role.toLowerCase(Locale.ROOT);
+        assertEquals("pairing", scalar(sql, "select sqlname from " + db.table("t_ili2db_classname")
+                + " where iliname='" + association + "'"));
+        assertEquals("embedded", scalar(sql, "select setting from " + db.table("t_ili2db_trafo")
+                + " where iliname='" + association + "' and tag='ch.ehi.ili2db.inheritance'"));
+        assertEquals("1", scalar(sql, "select count(*) from " + db.table("t_ili2db_inheritance")
+                + " where thisclass='" + association + "' and baseclass is null"));
+        String mapping = db.table("t_ili2db_attrname");
+        assertEquals("1", scalar(sql, "select count(*) from " + mapping + " where iliname='" + association + "."
+                + role + "' and sqlname='" + column + "' and colowner='" + owner + "' and target='" + target + "'"));
+        assertEquals("0", scalar(sql, "select count(*) from " + mapping + " where iliname='" + association + "." + inverse + "'"));
+        assertEquals(target, scalar(sql, "select setting from " + db.table("t_ili2db_column_prop")
+                + " where tablename='" + owner + "' and subtype is null and columnname='" + column + "'"
+                + " and tag='ch.ehi.ili2db.foreignKey'"));
+        String associationTable = db.postgis
+                ? "select count(*) from information_schema.tables where table_schema='" + db.schema + "' and table_name='pairing'"
+                : "select count(*) from sqlite_schema where type='table' and name='pairing'";
+        assertEquals("0", scalar(sql, associationTable));
+        String nullableColumn = db.postgis
+                ? "select count(*) from information_schema.columns where table_schema='" + db.schema
+                        + "' and table_name='" + owner + "' and column_name='" + column + "' and is_nullable='YES'"
+                : "select count(*) from pragma_table_info('" + owner + "') where name='" + column + "' and \"notnull\"=0";
+        assertEquals("1", scalar(sql, nullableColumn));
     }
 
     private static void assertTypeKind(TestDatabase db, Connection sql, String table, String column, String kind)
@@ -743,6 +775,7 @@ final class DbInteropTest {
         assertSrs(db, sql, "place", "ageometry", srsId);
         assertStoredStructures(db, sql, dataset);
         assertStoredRoles(db, sql, dataset);
+        assertStoredPairing(db, sql, version, dataset);
         assertStoredStandaloneLinks(db, sql, dataset);
         assertStoredAttributedLinks(db, sql, dataset, "review", "reviewmarkers", "witness", "hub", "reviewed", nativeImport);
         assertStoredAttributedLinks(db, sql, dataset, "annotatedlink", "consultedmarker", "consultedreport", "report",
@@ -817,6 +850,34 @@ final class DbInteropTest {
             }
         }
         assertEquals(expectedMarkerLinks(dataset), pairs);
+    }
+
+    private static void assertStoredPairing(TestDatabase db, Connection sql, int version, String dataset) throws SQLException {
+        String owner = version == 23 ? "pairright" : "pairleft";
+        String target = version == 23 ? "pairleft" : "pairright";
+        String column = version == 23 ? "leftlink" : "rightlink";
+        String rows = """
+                select o.t_ili_tid as owner_tid, o.%s as stored_id, t.t_id as target_id,
+                       t.t_ili_tid as target_tid, o.t_basket as owner_basket, t.t_basket as target_basket, b.t_ili_tid as bid
+                from %s o left join %s t on t.t_id=o.%s
+                join %s b on b.t_id=o.t_basket join %s d on d.t_id=b.dataset
+                where d.datasetname='%s' order by o.t_ili_tid
+                """.formatted(column, db.table(owner), db.table(target), column, db.table("t_ili2db_basket"),
+                db.table("t_ili2db_dataset"), dataset);
+        try (var statement = sql.createStatement(); var result = statement.executeQuery(rows)) {
+            assertTrue(result.next());
+            assertEquals(dataset + "-" + owner + "-1", result.getString("owner_tid"));
+            assertEquals(dataset + "-" + target + "-1", result.getString("target_tid"));
+            assertEquals(result.getLong("target_id"), result.getLong("stored_id"));
+            assertEquals(result.getLong("target_basket"), result.getLong("owner_basket"));
+            assertEquals(dataset + "-basket-2", result.getString("bid"));
+            if (version == 24) {
+                assertTrue(result.next());
+                assertEquals(dataset + "-pairleft-2", result.getString("owner_tid"));
+                assertNull(result.getObject("stored_id"));
+            }
+            assertFalse(result.next());
+        }
     }
 
     private static Set<List<String>> expectedMarkerLinks(String dataset) {
@@ -1065,8 +1126,10 @@ final class DbInteropTest {
         assertEquals(Integer.toString(datasets * 3), scalar(sql, "select count(*) from " + db.table("markerlink")));
         assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("review")));
         assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("annotatedlink")));
+        assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("pairleft")));
+        assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table("pairright")));
         var tables = new ArrayList<>(List.of("t_ili2db_dataset", "t_ili2db_basket", "place", "route", "plot", "parcel",
-                "report", "detail", "marker", "hub", "markerlink", "review", "annotatedlink"));
+                "report", "detail", "marker", "hub", "markerlink", "review", "annotatedlink", "pairleft", "pairright"));
         if (version == 24) {
             assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table("link")));
             var collections = List.of("park", "district", "routegroup", "survey");
@@ -1077,7 +1140,7 @@ final class DbInteropTest {
             tables.addAll(collections);
         }
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 44 : 35)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 47 : 38)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
     }
 
@@ -1144,7 +1207,8 @@ final class DbInteropTest {
         var firstBasket = new HashSet<>(Set.of(first, second, line, arcs, mixed, plotWithHole, curvedPlot,
                 westArea, eastArea, firstReport, dataset + "-marker-1", dataset + "-marker-2", dataset + "-hub-1",
                 dataset + "-hub-2"));
-        var secondBasket = new HashSet<>(Set.of(third, noLine, noSurface, noArea, secondReport, dataset + "-marker-3"));
+        var secondBasket = new HashSet<>(Set.of(third, noLine, noSurface, noArea, secondReport, dataset + "-marker-3",
+                dataset + "-pairleft-1", dataset + "-pairleft-2", dataset + "-pairright-1"));
         if (version == 24) {
             firstBasket.add(link);
             for (String table : List.of("park", "district", "routegroup", "survey")) {
@@ -1156,6 +1220,7 @@ final class DbInteropTest {
         assertTransferredReports(objects.get(firstReport), objects.get(secondReport), version);
         assertTransferredRoles(objects, version, dataset);
         assertTransferredReviews(objects, version, dataset);
+        assertTransferredPairing(objects, version, dataset);
 
         String placeName = version == 24 ? "Place" : "DbInterop23.Data.Place";
         for (String tid : List.of(first, second, third)) {
@@ -1281,6 +1346,27 @@ final class DbInteropTest {
         assertEquals(hub, id(second, version, "ref"));
         assertEquals(List.of(), children(second));
         assertNull(child(objects.get(dataset + "-marker-3"), "Witness"));
+    }
+
+    private static void assertTransferredPairing(Map<String, Element> objects, int version, String dataset) {
+        String prefix = version == 23 ? "DbInterop23.Data." : "";
+        String leftTid = dataset + "-pairleft-1";
+        String rightTid = dataset + "-pairright-1";
+        var left = objects.get(leftTid);
+        var leftWithoutPair = objects.get(dataset + "-pairleft-2");
+        var right = objects.get(rightTid);
+        assertEquals(prefix + "PairLeft", left.getLocalName());
+        assertEquals(prefix + "PairLeft", leftWithoutPair.getLocalName());
+        assertEquals(prefix + "PairRight", right.getLocalName());
+        assertTrue(children(leftWithoutPair).isEmpty());
+        var owner = version == 23 ? right : left;
+        var target = version == 23 ? left : right;
+        assertTrue(children(target).isEmpty());
+        var role = child(owner, version == 23 ? "LeftLink" : "RightLink");
+        assertNotNull(role);
+        assertEquals(version == 23 ? leftTid : rightTid, id(role, version, "ref"));
+        assertEquals("", id(role, version, "bid"));
+        assertTrue(children(role).isEmpty());
     }
 
     private static void assertTransferredReports(Element first, Element second, int version) {

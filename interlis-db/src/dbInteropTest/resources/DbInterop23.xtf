@@ -123,6 +123,9 @@
         </Entries>
       </DbInterop23.Data.Report>
       <DbInterop23.Data.Marker TID="legacy-marker-3"><ASelect>unlinked</ASelect></DbInterop23.Data.Marker>
+      <DbInterop23.Data.PairRight TID="legacy-pairright-1"><LeftLink REF="legacy-pairleft-1"/></DbInterop23.Data.PairRight>
+      <DbInterop23.Data.PairLeft TID="legacy-pairleft-1"/>
+      <DbInterop23.Data.PairLeft TID="legacy-pairleft-2"/>
     </DbInterop23.Data>
   </DATASECTION>
 </TRANSFER>

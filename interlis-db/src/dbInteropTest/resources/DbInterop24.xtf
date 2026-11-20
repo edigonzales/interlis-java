@@ -189,6 +189,9 @@
         </Entries>
       </Report>
       <Marker i:tid="legacy-marker-3"><ASelect>unlinked</ASelect></Marker>
+      <PairLeft i:tid="legacy-pairleft-1"><RightLink i:ref="legacy-pairright-1"/></PairLeft>
+      <PairLeft i:tid="legacy-pairleft-2"/>
+      <PairRight i:tid="legacy-pairright-1"/>
     </Data>
   </i:datasection>
 </i:transfer>
