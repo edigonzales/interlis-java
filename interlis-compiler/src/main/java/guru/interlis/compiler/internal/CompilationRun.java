@@ -1,6 +1,5 @@
 package guru.interlis.compiler.internal;
 
-import guru.interlis.compiler.AnalysisReuse;
 import guru.interlis.compiler.AnalysisSnapshot;
 import guru.interlis.compiler.CompilationFingerprint;
 import guru.interlis.compiler.CompilationRequest;
@@ -81,8 +80,7 @@ final class CompilationRun {
             indexPhase.finish(indexStatus);
         }
 
-        CompilationFingerprinter fingerprinter = new CompilationFingerprinter();
-        CompilationFingerprint fingerprint = fingerprinter.fingerprint(request, AnalysisReuse.none());
+        CompilationFingerprint fingerprint = request.fingerprint();
         SnapshotId snapshotId = new SnapshotId("snap-" + Fingerprints.sha256(fingerprint.value()+"|snapshot-v2|"+mode+"|"
                 +previousAnalysis.map(a->a.snapshotId().value()).orElse("none")));
         token.throwIfCancellationRequested();

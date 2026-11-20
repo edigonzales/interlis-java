@@ -317,7 +317,7 @@ final class DefaultWorkspace implements Workspace {
         // The resolver and engine consume the exact same parse. Retention is committed
         // only by acceptAnalysis, so a late capture cannot poison reuse state.
         AnalysisReuse reuse = new AnalysisReuse(Optional.ofNullable(previous), parsed);
-        String fingerprint = inputFingerprint(inventory, request, compilationRequest);
+        String fingerprint = inputFingerprint(inventory, compilationRequest);
         return new WorkspaceCapture(capturedRevision, compilationRequest, reuse, closure,
                 new InputFingerprint("SHA-256/workspace-capture-v2", fingerprint), origin);
     }
@@ -616,8 +616,7 @@ final class DefaultWorkspace implements Workspace {
         // Keep lastAnalysis for identity reuse; it is never published as current.
     }
 
-    private String inputFingerprint(SourceInventory inventory, AnalysisRequest request,
-                                    CompilationRequest compilationRequest) {
+    private String inputFingerprint(SourceInventory inventory, CompilationRequest compilationRequest) {
         StringBuilder canonical = new StringBuilder("workspace-capture-v2");
         for (String value : List.of(inventory.fingerprint().value(), compilationRequest.options().fingerprint(),
                 compilationRequest.sources().fingerprint().value())) canonical.append(value.length()).append(':').append(value);

@@ -19,11 +19,7 @@ public interface CompiledSchema {
      */
     SnapshotId snapshotId();
 
-    /**
-     * Returns the {@code fingerprint} value.
-     *
-     * @return the value
-     */
+    /** Fingerprint of the compilation inputs, which can include sources outside the selected closure. */
     SchemaFingerprint fingerprint();
 
     /**
