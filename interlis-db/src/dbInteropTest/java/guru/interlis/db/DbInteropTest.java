@@ -187,6 +187,7 @@ final class DbInteropTest {
             assertStructureCatalog(db, sql, model, version);
             assertNestedStructureCatalog(db, sql, model);
             assertEmbeddedRoleCatalog(db, sql, model);
+            assertHierarchyRoleCatalog(db, sql, model, version);
             assertStructureHierarchyCatalog(db, sql, model);
             assertStructureReferenceCatalog(db, sql, model);
             assertPolymorphicTargetCatalog(db, sql, model, version);
@@ -235,6 +236,7 @@ final class DbInteropTest {
             assertWrongStructureBranchRejected(db, sql, model, nativeOutput);
             assertCorruptStructureTargetRejected(db, sql, model, nativeOutput);
             assertCorruptPolymorphicTargetsRejected(db, sql, model, nativeOutput);
+            assertCorruptHierarchyRoleRejected(db, sql, model, nativeOutput);
             assertCorruptClassHierarchyRejected(db, sql, model, nativeOutput);
             assertCorruptInheritedOwnerRejected(db, sql, model, nativeOutput);
             assertClassHierarchyRollback(db, sql, model, version, fixture);
@@ -377,6 +379,73 @@ final class DbInteropTest {
         if (version == 24) {
             assertReferenceMapping(db, sql, model, "RefCarrier.DirectRoot", "refcarrier", "directroot", "servicebase");
             assertReferenceMapping(db, sql, model, "RefCarrier.DirectBranch", "refcarrier", "directbranch", "tower");
+        }
+    }
+
+    private static void assertHierarchyRoleCatalog(TestDatabase db, Connection sql, String model, int version)
+            throws SQLException {
+        assertReferenceMapping(db, sql, model, "HierarchyCrew.Supervisor", "servicebase", "supervisor", "tower");
+        assertReferenceMapping(db, sql, model, "MastMentoring.Mentor", "tower", "mentor", "mast");
+        if (version == 23) {
+            assertReferenceMapping(db, sql, model, "HierarchyPair.PairedService", "tower", "pairedservice", "servicebase");
+        } else {
+            assertReferenceMapping(db, sql, model, "HierarchyPair.PairedTower", "servicebase", "pairedtower", "tower");
+        }
+        for (String association : List.of("HierarchyCrew", "MastMentoring", "HierarchyPair")) {
+            assertEquals("embedded", scalar(sql, "select setting from " + db.table("t_ili2db_trafo")
+                    + " where iliname='" + model + ".Data." + association + "' and tag='ch.ehi.ili2db.inheritance'"));
+        }
+    }
+
+    private static void assertCorruptHierarchyRoleRejected(TestDatabase db, Connection sql, String model, Path output)
+            throws Exception {
+        String mast = db.table("mast");
+        String service = db.table("servicebase");
+        String row = " where t_ili_tid='legacy-serviceunit'";
+        String original = scalar(sql, "select supervisor from " + service + row);
+        try {
+            for (String tid : List.of("legacy-beacon", "native-relay")) {
+                execute(sql, "update " + service + " set supervisor=(select t_id from " + mast
+                        + " where t_ili_tid='" + tid + "')" + row);
+                assertExportRejected(db, model, "legacy", output, "HierarchyCrew.Supervisor");
+            }
+        } finally {
+            execute(sql, "update " + service + " set supervisor=" + original + row);
+        }
+    }
+
+    private void assertWrongHierarchyRoleRollback(TestDatabase db, Connection sql, String model, int version,
+                                                   String fixture) throws Exception {
+        String role = "<Supervisor " + (version == 24 ? "i:ref" : "REF") + "=";
+        String broken = fixture.replace(role + "\"legacy-relay\"", role + "\"legacy-beacon\"");
+        assertNotEquals(fixture, broken);
+        Path input = Files.writeString(work.resolve("wrong-role-branch.xtf"), broken.replace("legacy-", "wrong-role-branch-"));
+        var rejected = cli(db, "import", model, "wrong-role-branch", input, CancellationToken.none());
+        assertEquals(1, rejected.code(), rejected::diagnostics);
+        assertTrue(rejected.diagnostics().contains("HierarchyCrew.Supervisor")
+                && rejected.diagnostics().contains("wrong-role-branch-beacon"), rejected::diagnostics);
+        assertRows(db, sql, version, 2);
+    }
+
+    private static void assertStoredHierarchyRoles(TestDatabase db, Connection sql, int version, String dataset)
+            throws SQLException {
+        String tower = " from " + db.table("tower") + " t join " + db.table("mast")
+                + " m on m.t_id=t.t_id and m.t_basket=t.t_basket where m.t_ili_tid='" + dataset;
+        String relay = tower + "-relay'";
+        String empty = tower + "-tower'";
+        String service = " from " + db.table("servicebase") + " where t_ili_tid='" + dataset + "-serviceunit'";
+        String relayId = scalar(sql, "select t.t_id" + relay);
+        String serviceId = scalar(sql, "select t_id" + service);
+        assertNotNull(relayId);
+        assertNotNull(serviceId);
+        assertEquals(relayId, scalar(sql, "select supervisor" + service));
+        assertEquals(relayId, scalar(sql, "select t.mentor" + relay));
+        assertNull(scalar(sql, "select t.mentor" + empty));
+        if (version == 23) {
+            assertEquals(serviceId, scalar(sql, "select t.pairedservice" + relay));
+            assertNull(scalar(sql, "select t.pairedservice" + empty));
+        } else {
+            assertEquals(relayId, scalar(sql, "select pairedtower" + service));
         }
     }
 
@@ -1029,6 +1098,7 @@ final class DbInteropTest {
         assertMissingReferenceRollback(db, sql, model, version, fixture,
                 "ConsultedMarker", "AnnotatedLink", "missing-annotated-link", 2);
         assertWrongTargetBranchRollback(db, sql, model, version, fixture);
+        assertWrongHierarchyRoleRollback(db, sql, model, version, fixture);
         if (db.postgis && modelDir.equals(STORED_MODELS)) assertPostgresIdDefault(db);
         Path tail = Files.writeString(work.resolve("tail.xtf"), fixture.replace("legacy-", "tail-"));
         reference.run(db, modelDir, "--import", "--importTid", "--importBid", "--dataset", "tail", tail.toString());
@@ -1482,6 +1552,7 @@ final class DbInteropTest {
         }
         assertSrs(db, sql, "place", "ageometry", srsId);
         assertStoredClassHierarchy(db, sql, version, dataset);
+        assertStoredHierarchyRoles(db, sql, version, dataset);
         assertStoredHierarchyReferences(db, sql, version, dataset);
         assertStoredInheritedStructures(db, sql, dataset);
         assertStoredStructures(db, sql, dataset);
@@ -2227,7 +2298,8 @@ final class DbInteropTest {
         assertClassFields(mast, prefix + "Mast", Map.of("Caption", "base"), "Notes");
         assertClassFields(objects.get(dataset + "-tower"), prefix + "Tower", Map.of("Caption", "middle", "Height", "12"));
         assertClassFields(relay, prefix + "Relay", Map.of("Caption", "leaf", "Height", "24", "Online", "false"),
-                "Notes", "Supplement", "Center", "Alignment", "Sites");
+                "Notes", "Supplement", "Center", "Alignment", "Sites", "Mentor", "PairedService");
+        assertLocalReference(relay, "Mentor", version, dataset + "-relay");
         assertTransferClassPoint(relay, "Center", version, MAST_CENTER);
         assertTransferRoute(child(relay, "Alignment"), version, STRAIGHT_ROUTE);
         if (version == 24) {
@@ -2257,7 +2329,15 @@ final class DbInteropTest {
         assertClassFields(objects.get(dataset + "-beacon"), prefix + "Beacon", Map.of("Caption", "sibling", "Signal", "green"));
         var serviceUnit = objects.get(dataset + "-serviceunit");
         assertClassFields(serviceUnit, prefix + "ServiceUnit", Map.of("ServiceCode", "unit-1", "Label", "active"),
-                "ServicePoint");
+                "ServicePoint", "Supervisor", "PairedTower");
+        assertLocalReference(serviceUnit, "Supervisor", version, dataset + "-relay");
+        if (version == 23) {
+            assertLocalReference(relay, "PairedService", version, dataset + "-serviceunit");
+            assertNull(child(serviceUnit, "PairedTower"));
+        } else {
+            assertLocalReference(serviceUnit, "PairedTower", version, dataset + "-relay");
+            assertNull(child(relay, "PairedService"));
+        }
         assertTransferClassPoint(serviceUnit, "ServicePoint", version, SERVICE_POINT);
     }
 

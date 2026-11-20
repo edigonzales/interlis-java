@@ -128,6 +128,10 @@ fehlende Rollen und den Erhalt der Zieldatei bei mehreren Linkzeilen zum Objekt.
 Bei 1:1-Assoziationen kehren die beiden Sprachfixtures die Deklarationsreihenfolge
 um. Die Tests prüfen die jeweilige Rollenspalte, deren SQL-Nullbarkeit und die
 gespeicherte Ziel-ID.
+Für eingebettete 1:n- und 1:1-Assoziationen mit Hierarchie-Enden prüft die Suite
+die Rollenspalte auf der abstrakten Basis und auf einem Zwischenfragment,
+Referenzen am konkreten XTF-Objekt, Selbstbezüge und fehlende Werte. Ziele im
+falschen Zweig oder Basket werden diagnostiziert.
 Bei Klassenvererbung prüft die Suite konkrete und abstrakte Basisklassen,
 Geschwistertypen, mehrstufige Pfade, den Diskriminator und die gemeinsame ID
 der Teilzeilen. Beschädigte Daten und Vererbungsmetadaten müssen den

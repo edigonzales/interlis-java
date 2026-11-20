@@ -392,10 +392,6 @@ final class DbMapping {
                 throw unsupported("base type outside the current topic or of a different kind at " + object.name().declared());
             }
             for (var slot : object.slots()) {
-                if (slot instanceof RoleSlot role && role.role().targets().stream()
-                        .anyMatch(target -> hierarchy.contains(new SymbolRef(plan.snapshotId(), target.base())))) {
-                    throw unsupported("association involving class inheritance at " + role.name().declared());
-                }
                 if (!(slot instanceof AttributeSlot attribute) || !inheritedLayout) continue;
                 if (attribute.member().overridden()) {
                     throw unsupported("extended attribute in inheritance at " + attribute.name().declared());
@@ -436,8 +432,19 @@ final class DbMapping {
                 || second.role().cardinality().upper().equals(CardinalityUpper.finite(0))) {
             throw unsupported(feature + " requires both roles to admit a target");
         }
-        return List.of(new AssociationRole(first, roleTarget(plan, association, first)),
+        var bindings = List.of(new AssociationRole(first, roleTarget(plan, association, first)),
                 new AssociationRole(second, roleTarget(plan, association, second)));
+        boolean embedded = bindings.stream().anyMatch(AssociationRole::single);
+        boolean hasAttributes = association.slots().stream().anyMatch(AttributeSlot.class::isInstance);
+        if ((!embedded || hasAttributes) && bindings.stream().anyMatch(role -> hasClassHierarchy(plan, role.target()))) {
+            throw unsupported("association involving class inheritance at " + association.name().declared());
+        }
+        return bindings;
+    }
+
+    private static boolean hasClassHierarchy(TransferPlan plan, SymbolRef type) {
+        return plan.object(type).orElseThrow().baseType().isPresent()
+                || plan.objects().stream().anyMatch(object -> object.baseType().filter(type::equals).isPresent());
     }
 
     static Optional<EmbeddedAssociation> embeddedAssociation(ObjectDescriptor association, String name,
@@ -466,7 +473,7 @@ final class DbMapping {
             throw unsupported(feature);
         }
         var target = new SymbolRef(plan.snapshotId(), role.targets().getFirst().base());
-        if (plan.object(target).filter(object -> object.kind() == SymbolKind.CLASS && object.transferable()
+        if (plan.object(target).filter(object -> object.kind() == SymbolKind.CLASS
                 && object.topic().equals(association.topic())).isEmpty()) {
             throw unsupported(feature + " requires a class in the same topic");
         }

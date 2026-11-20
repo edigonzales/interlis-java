@@ -157,6 +157,18 @@ MODEL DbInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
     CLASS ServiceUnit EXTENDS ServiceBase =
       Label : TEXT*18;
     END ServiceUnit;
+    ASSOCIATION HierarchyCrew =
+      Supervisor -- {0..1} Tower;
+      Crewmember -- {0..*} ServiceBase;
+    END HierarchyCrew;
+    ASSOCIATION HierarchyPair =
+      PairedTower -- {0..1} Tower;
+      PairedService -- {0..1} ServiceBase;
+    END HierarchyPair;
+    ASSOCIATION MastMentoring =
+      Mentor -- {0..1} Mast;
+      Mentee -- {0..*} Tower;
+    END MastMentoring;
     STRUCTURE TargetPair =
       Label : TEXT*12;
       RootTarget : REFERENCE TO ServiceBase;

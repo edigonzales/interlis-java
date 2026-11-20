@@ -152,12 +152,21 @@ des deklarierten Zweigs, nennt die Diagnose das Elternattribut und den
 gespeicherten Typ.
 
 XTF 2.3 und 2.4 FULL unterstützen auch binäre 1:n- und 1:1-Assoziationen
-ohne eigene Attribute zwischen konkreten Klassen desselben Topics und Baskets.
+ohne eigene Attribute zwischen Klassen desselben Topics und Baskets.
 Beide Rollen verwenden `--` und sind lokal und ungeordnet. Bei 1:n hat die
 Rolle zur 1-Seite `{0..1}` oder `{1}`. Die Tabelle der n-Seite speichert die
 Ziel-ID. Bei 1:1 hat jede Rolle `{0..1}` oder `{1}`. Die Tabelle der zweiten
 deklarierten Rolle speichert die Ziel-ID der ersten Rolle. Die Rollenspalte
 erlaubt unter `--sqlEnableNull` SQL `NULL`.
+
+Rollen dürfen auf beiden Seiten Klassen in Vererbungshierarchien deklarieren,
+einschliesslich abstrakter Basisklassen. Die Rollenspalte liegt in der
+Tabelle der deklarierten Eigentümerklasse. Sie speichert die gemeinsame
+`T_Id` der Zielzeilen. Die Zielmetadaten benennen die Tabelle des deklarierten
+Zieltyps. Im XTF erscheint die Rolle am konkreten Eigentümerobjekt und
+verwendet die TID aus der Wurzeltabelle des Ziels. Auch Selbstbezüge innerhalb
+derselben Hierarchie sind möglich.
+
 `CLASSNAME` und `INHERITANCE` führen die Assoziation, `TRAFO` kennzeichnet
 sie als `embedded` und `ATTRNAME` benennt Spalte und Ziel. Referenzen auf
 später gelieferte Zielobjekte werden am Basketende aufgelöst. Ein fehlendes
@@ -224,8 +233,8 @@ Sprachversionen und für Klassenattribute in 2.4. Eine Vorwärtsreferenz
 aktualisiert die Zeile dieser Tabelle. Im XTF erscheint die Referenz am
 konkreten Strukturwert oder Klassenobjekt.
 
-Zum weiteren Ausbau gehören Assoziationsrollen mit Hierarchie-Enden sowie
-`EXTENDED`-Attribute. Weitere Grenzen sind stabile OIDs, eigene Linienformen,
+Zum weiteren Ausbau gehören weitere Assoziationsformen mit Hierarchie-Enden
+sowie `EXTENDED`-Attribute. Weitere Grenzen sind stabile OIDs, eigene Linienformen,
 GeoPackage-RTree beim Schreiben und Updates. Der gespeicherte Modelltext
 ist auf eine Million Zeichen begrenzt.
 

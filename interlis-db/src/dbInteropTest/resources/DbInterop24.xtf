@@ -260,6 +260,13 @@
         <OwnTarget i:ref="legacy-mast"/>
       </RefAssetLeaf>
       <RefAssetLeaf i:tid="legacy-ref-asset-2"><Label>empty</Label></RefAssetLeaf>
+      <ServiceUnit i:tid="legacy-serviceunit">
+        <ServiceCode>unit-1</ServiceCode>
+        <ServicePoint><g:coord><g:c1>2600100.250</g:c1><g:c2>1200100.625</g:c2></g:coord></ServicePoint>
+        <PairedTower i:ref="legacy-relay"/>
+        <Supervisor i:ref="legacy-relay"/>
+        <Label>active</Label>
+      </ServiceUnit>
       <Mast i:tid="legacy-mast">
         <Caption>base</Caption>
         <Notes>
@@ -285,17 +292,13 @@
           <g:coord><g:c1>2600345.250</g:c1><g:c2>1200678.500</g:c2></g:coord>
           <g:coord><g:c1>2600567.625</g:c1><g:c2>1200456.750</g:c2></g:coord>
         </g:polyline></Alignment>
+        <Mentor i:ref="legacy-relay"/>
         <Online>false</Online>
         <Sites><g:multicoord>
           <g:coord><g:c1>2601500.625</g:c1><g:c2>1201500.500</g:c2></g:coord>
           <g:coord><g:c1>2601100.125</g:c1><g:c2>1201100.750</g:c2></g:coord>
         </g:multicoord></Sites>
       </Relay>
-      <ServiceUnit i:tid="legacy-serviceunit">
-        <ServiceCode>unit-1</ServiceCode>
-        <ServicePoint><g:coord><g:c1>2600100.250</g:c1><g:c2>1200100.625</g:c2></g:coord></ServicePoint>
-        <Label>active</Label>
-      </ServiceUnit>
     </Data>
   </i:datasection>
 </i:transfer>
