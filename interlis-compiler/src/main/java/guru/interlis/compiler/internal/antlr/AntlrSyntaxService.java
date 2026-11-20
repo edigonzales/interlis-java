@@ -89,7 +89,13 @@ public final class AntlrSyntaxService implements SyntaxService {
         }
         DiagnosticCollector collector = new DiagnosticCollector(CATALOG, budget.maxDiagnostics());
         AntlrOffsetMap offsets = new AntlrOffsetMap(source);
-        LanguageDetection detection = new VersionHeaderScanner(source).detect();
+        var charStream = CharStreams.fromString(source.text());
+        InterlisLexer lexer = boundedLexer(charStream, work);
+        lexer.removeErrorListeners();
+        var lexerListener = new CollectingLexerErrorListener(source, offsets, collector);
+        lexer.addErrorListener(lexerListener);
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        LanguageDetection detection = detectHeader(tokens, offsets, lexerListener);
         LanguageDetection effectiveDetection = detection;
         if (detection.state() == DetectionState.ABSENT && options.expectedVersion().isPresent()) {
             effectiveDetection = new LanguageDetection(options.expectedVersion(),
@@ -115,17 +121,9 @@ public final class AntlrSyntaxService implements SyntaxService {
                             detection.rawVersion().orElse("<unknown>"))));
         }
 
-        var charStream = CharStreams.fromString(source.text());
-        InterlisLexer lexer = boundedLexer(charStream, work);
-        lexer.removeErrorListeners();
-        var lexerListener = new CollectingLexerErrorListener(source, offsets, collector);
-        lexer.addErrorListener(lexerListener);
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
         tokens.fill();
-
-
-        LanguageVersion profileVersion = effectiveDetection.version().orElse(LanguageVersion.ILI23);
-        checkTokenProfile(tokens,profileVersion,offsets,collector);
+        LanguageVersion language = effectiveDetection.version().orElse(LanguageVersion.ILI23);
+        checkTokenProfile(tokens, language, offsets, collector);
 
         InterlisParser parser = new InterlisParser(tokens);
         parser.setErrorHandler(new DefaultErrorStrategy() {
@@ -168,7 +166,6 @@ public final class AntlrSyntaxService implements SyntaxService {
                                 safeTokenText(next))));
             }
         }
-        LanguageVersion language = effectiveDetection.version().orElse(LanguageVersion.ILI23);
         long nodesBefore = work.nodes();
         SyntaxTreeBuilder builder = new SyntaxTreeBuilder(source, offsets, tokens, language, budget, work);
         DocumentSyntax document;
@@ -201,6 +198,32 @@ public final class AntlrSyntaxService implements SyntaxService {
                 buildTokens(source, offsets, tokens), buildTrivia(source, offsets, tokens),
                 diagnostics, coverage, fingerprint(source, options, effectiveDetection), metadata,
                 Optional.of(new SyntaxSnapshot.Usage(work.nodes() - nodesBefore, work.recoveries() - recoveriesBefore)));
+    }
+
+    private static LanguageDetection detectHeader(CommonTokenStream tokens, AntlrOffsetMap offsets,
+                                                  CollectingLexerErrorListener lexerListener) {
+        Token keyword = tokens.LT(1);
+        SourceRange keywordRange = offsets.tokenRange(keyword);
+        if (keyword.getType() != InterlisLexer.INTERLIS
+                || lexerListener.firstErrorOffset() < keywordRange.startOffset()) {
+            return LanguageDetection.absent();
+        }
+
+        Token number = tokens.LT(2);
+        if (number.getType() != InterlisLexer.DecimalNumber && number.getType() != InterlisLexer.PosNumber) {
+            return new LanguageDetection(Optional.empty(), Optional.of(keywordRange),
+                    DetectionState.UNSUPPORTED, Optional.empty());
+        }
+        Token end = tokens.LT(3);
+        SourceRange endRange = offsets.tokenRange(end);
+        boolean terminated = end.getType() == InterlisLexer.SEMI;
+        SourceRange header = offsets.source().range(keywordRange.startOffset(),
+                terminated ? endRange.endOffset() : endRange.startOffset());
+        String rawVersion = number.getText();
+        Optional<LanguageVersion> version = terminated && lexerListener.firstErrorOffset() >= header.endOffset()
+                ? LanguageVersion.fromLiteral(rawVersion) : Optional.empty();
+        return new LanguageDetection(version, Optional.of(header),
+                version.isPresent() ? DetectionState.DETECTED : DetectionState.UNSUPPORTED, Optional.of(rawVersion));
     }
 
     private static InterlisLexer boundedLexer(org.antlr.v4.runtime.CharStream input, SyntaxWork work) {

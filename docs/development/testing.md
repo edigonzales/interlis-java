@@ -12,8 +12,8 @@ Führe JVM-Tests mit einem normalen Benutzerkonto aus. Die Dateirechtetests
 prüfen tatsächliche Schreibverbote des Betriebssystems.
 
 - `./gradlew test` oder `./gradlew check` führt die regulären JVM-Tests aus.
-- `./gradlew :interlis-compiler:test --tests '*VersionScannerTest'` wählt eine
-  JUnit-Klasse. `--tests '*VersionScannerTest.detectsUnsupportedVersion'`
+- `./gradlew :interlis-compiler:test --tests '*SyntaxContractTest'` wählt eine
+  JUnit-Klasse. `--tests '*SyntaxContractTest.rejectsTrailingContentAndUnsupportedVersion'`
   wählt eine Methode.
 - `./gradlew packageTest` prüft die entpackten CLI- und SDK-Pakete, die
   SDK-Beispiele und den installierten LSP-Prozess. Der LSP-Check braucht Node.

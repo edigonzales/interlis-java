@@ -19,12 +19,17 @@ public final class CollectingLexerErrorListener extends BaseErrorListener {
     private final SourceText source;
     private final AntlrOffsetMap offsets;
     private final DiagnosticCollector collector;
+    private int firstErrorOffset = Integer.MAX_VALUE;
 
     public CollectingLexerErrorListener(SourceText source, AntlrOffsetMap offsets,
                                         DiagnosticCollector collector) {
         this.source = Objects.requireNonNull(source, "source");
         this.offsets = Objects.requireNonNull(offsets, "offsets");
         this.collector = Objects.requireNonNull(collector, "collector");
+    }
+
+    int firstErrorOffset() {
+        return firstErrorOffset;
     }
 
     @Override
@@ -39,6 +44,7 @@ public final class CollectingLexerErrorListener extends BaseErrorListener {
             int start=offsets.offsetAtLineColumn(line,charPositionInLine);
             range=source.range(start,Math.min(source.length(),start+1));
         }
+        firstErrorOffset = Math.min(firstErrorOffset, range.startOffset());
         String tokenText = offendingSymbol instanceof org.antlr.v4.runtime.Token token
                 ? token.getText() : "<lexer>";
         collector.emit(DiagnosticDraft.of(

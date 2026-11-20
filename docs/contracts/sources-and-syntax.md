@@ -268,8 +268,7 @@ Beide Modi arbeiten auf denselben versionsbezogenen gültigen Produktionen. Tole
 
 | Klasse | Verantwortlichkeit und zentrale Methode |
 |---|---|
-| `AntlrSyntaxService` | Implementiert `SyntaxService`; erzeugt pro Parseaufruf frische Lexer-/Parserzustände. |
-| `VersionHeaderScanner` | `detect(SourceText)`; begrenzte headerbezogene Erkennung mit Positionen, keine zweite Vollgrammatik. |
+| `AntlrSyntaxService` | Implementiert `SyntaxService`, erkennt den Sprachkopf aus den ersten sichtbaren Originaltokens und parst denselben Tokenstrom. |
 | `LanguageProfile` | Gepinnte erlaubte Tokens, Syntaxfähigkeiten und Versionsregeln; immutable. |
 | `VersionedTokenAdapter` | Versionsabhängige, quellbereichserhaltende Tokenanpassungen, sofern durch Sprachtests nötig. |
 | `CollectingLexerErrorListener` | Liefert `ILI-SYN-0001` nach Katalog09 und arbeitet ohne stderr. |
