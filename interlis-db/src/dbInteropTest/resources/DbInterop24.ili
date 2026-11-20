@@ -157,6 +157,16 @@ MODEL DbInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
     CLASS ServiceUnit EXTENDS ServiceBase =
       Label : TEXT*18;
     END ServiceUnit;
+    STRUCTURE TargetPair =
+      Label : TEXT*12;
+      RootTarget : REFERENCE TO ServiceBase;
+      BranchTarget : REFERENCE TO Tower;
+    END TargetPair;
+    CLASS RefCarrier =
+      DirectRoot : REFERENCE TO ServiceBase;
+      DirectBranch : REFERENCE TO Tower;
+      Pairs : LIST {0..*} OF TargetPair;
+    END RefCarrier;
   END Data;
 
   TOPIC Naming =

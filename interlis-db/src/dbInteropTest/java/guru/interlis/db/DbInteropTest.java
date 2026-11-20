@@ -108,9 +108,51 @@ final class DbInteropTest {
     @TempDir Path work;
 
     @Test void geoPackage23() throws Exception { exchange(23, null); }
-    @Test void geoPackage24() throws Exception { exchange(24, null); }
+    @Test void geoPackage24() throws Exception {
+        assertWidePolymorphicProjection();
+        exchange(24, null);
+    }
     @Test void postgis23() throws Exception { exchangeWithPostgis(23); }
     @Test void postgis24() throws Exception { exchangeWithPostgis(24); }
+
+    private void assertWidePolymorphicProjection() throws Exception {
+        var attributes = new StringBuilder();
+        var values = new StringBuilder();
+        // A source table plus two joins per field would exceed SQLite's 64-table limit.
+        for (int index = 0; index < 32; index++) {
+            attributes.append("    To").append(index).append(" : REFERENCE TO Target;\n");
+            values.append("<To").append(index).append(" i:ref=\"target\"/>");
+        }
+        Path model = Files.writeString(work.resolve("WideRefs.ili"), """
+                INTERLIS 2.4;
+                MODEL WideRefs (en) AT "https://example.org/interlis/db" VERSION "2026-11-20" =
+                  TOPIC Data =
+                    CLASS Base (ABSTRACT) = END Base;
+                    CLASS Target EXTENDS Base = END Target;
+                    CLASS Source =
+                %s    END Source;
+                  END Data;
+                END WideRefs.
+                """.formatted(attributes));
+        Path input = Files.writeString(work.resolve("wide-input.xtf"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="http://www.interlis.ch/xtf/2.4/WideRefs">
+                  <i:headersection><i:models><i:model>WideRefs</i:model></i:models><i:sender>interop fixture</i:sender></i:headersection>
+                  <i:datasection><Data i:bid="basket"><Source i:tid="source">%s</Source>
+                    <Target i:tid="target"/></Data></i:datasection>
+                </i:transfer>
+                """.formatted(values));
+        var db = new TestDatabase(null, "wide");
+        assertCliSuccess(db, "schemaimport", "WideRefs", null, model);
+        assertCliSuccess(db, "import", "WideRefs", "wide", input);
+        Path output = work.resolve("wide-output.xtf");
+        assertCliSuccess(db, "export", "WideRefs", "wide", output);
+        var source = child(children(readDataSection(output, 24)).getFirst(), "Source");
+        assertEquals(32, children(source).size());
+        for (int index = 0; index < 32; index++) {
+            assertLocalReference(source, "To" + index, 24, "target");
+        }
+    }
 
     private void exchangeWithPostgis(int version) throws Exception {
         var image = DockerImageName.parse("sogis/postgis:16-3.4").asCompatibleSubstituteFor("postgres");
@@ -146,6 +188,7 @@ final class DbInteropTest {
             assertEmbeddedRoleCatalog(db, sql, model);
             assertStructureHierarchyCatalog(db, sql, model);
             assertStructureReferenceCatalog(db, sql, model);
+            assertPolymorphicTargetCatalog(db, sql, model, version);
             assertPairingCatalog(db, sql, model, version);
             assertAssociationCatalog(db, sql, model, "MarkerLink", Map.of("LinkedMarker", "marker", "LinkedHub", "hub"));
             assertAssociationCatalog(db, sql, model, "Review", Map.of("ReviewMarkers", "marker", "Witness", "hub"));
@@ -190,6 +233,7 @@ final class DbInteropTest {
             assertCorruptRoleMappingRejected(db, sql, model, nativeOutput);
             assertWrongStructureBranchRejected(db, sql, model, nativeOutput);
             assertCorruptStructureTargetRejected(db, sql, model, nativeOutput);
+            assertCorruptPolymorphicTargetsRejected(db, sql, model, nativeOutput);
             assertCorruptClassHierarchyRejected(db, sql, model, nativeOutput);
             assertCorruptInheritedOwnerRejected(db, sql, model, nativeOutput);
             assertClassHierarchyRollback(db, sql, model, version, fixture);
@@ -322,6 +366,119 @@ final class DbInteropTest {
                         + "' and table_name='" + owner + "' and column_name='" + column + "' and is_nullable='YES'"
                 : "select count(*) from pragma_table_info('" + owner + "') where name='" + column + "' and \"notnull\"=0";
         assertEquals("1", scalar(sql, nullableColumn));
+    }
+
+    private static void assertPolymorphicTargetCatalog(TestDatabase db, Connection sql, String model, int version)
+            throws SQLException {
+        assertReferenceMapping(db, sql, model, "TargetPair.RootTarget", "targetpair", "roottarget", "servicebase");
+        assertReferenceMapping(db, sql, model, "TargetPair.BranchTarget", "targetpair", "branchtarget", "tower");
+        if (version == 24) {
+            assertReferenceMapping(db, sql, model, "RefCarrier.DirectRoot", "refcarrier", "directroot", "servicebase");
+            assertReferenceMapping(db, sql, model, "RefCarrier.DirectBranch", "refcarrier", "directbranch", "tower");
+        }
+    }
+
+    private static void assertReferenceMapping(TestDatabase db, Connection sql, String model, String attribute,
+                                               String owner, String column, String target) throws SQLException {
+        assertEquals("1", scalar(sql, "select count(*) from " + db.table("t_ili2db_attrname")
+                + " where iliname='" + model + ".Data." + attribute + "' and sqlname='" + column
+                + "' and colowner='" + owner + "' and target='" + target + "'"));
+        assertEquals(target, scalar(sql, "select setting from " + db.table("t_ili2db_column_prop")
+                + " where tablename='" + owner + "' and subtype is null and columnname='" + column
+                + "' and tag='ch.ehi.ili2db.foreignKey'"));
+    }
+
+    private static void assertCorruptPolymorphicTargetsRejected(TestDatabase db, Connection sql, String model, Path output)
+            throws Exception {
+        String table = db.table("targetpair");
+        String pair = " where label='forward' and refcarrier_pairs=(select t_id from " + db.table("refcarrier")
+                + " where t_ili_tid='legacy-refcarrier')";
+        String change = "update " + table + " set ";
+        String branch = scalar(sql, "select branchtarget from " + table + pair);
+        String root = scalar(sql, "select roottarget from " + table + pair);
+        String sibling = scalar(sql, "select t_id from " + db.table("mast") + " where t_ili_tid='legacy-beacon'");
+        String otherBasket = scalar(sql, "select t_id from " + db.table("servicebase") + " where t_ili_tid='native-serviceunit'");
+
+        execute(sql, change + "branchtarget=" + sibling + pair);
+        assertExportRejected(db, model, "legacy", output, "TargetPair.BranchTarget");
+        execute(sql, change + "branchtarget=" + branch + pair);
+        execute(sql, change + "roottarget=" + otherBasket + pair);
+        assertExportRejected(db, model, "legacy", output, "TargetPair.RootTarget");
+        execute(sql, change + "roottarget=" + root + pair);
+    }
+
+    private void assertWrongTargetBranchRollback(TestDatabase db, Connection sql, String model, int version,
+                                                 String fixture) throws Exception {
+        String ref = version == 24 ? "i:ref" : "REF";
+        String field = "<BranchTarget " + ref + "=";
+        String broken = fixture.replace(field + "\"legacy-relay\"", field + "\"legacy-beacon\"");
+        assertNotEquals(fixture, broken);
+        Path input = Files.writeString(work.resolve("wrong-branch.xtf"), broken.replace("legacy-", "wrong-branch-"));
+        var rejected = cli(db, "import", model, "wrong-branch", input, CancellationToken.none());
+        assertEquals(1, rejected.code(), rejected::diagnostics);
+        assertTrue(rejected.diagnostics().contains("TargetPair.BranchTarget")
+                && rejected.diagnostics().contains("wrong-branch-beacon"), rejected::diagnostics);
+        assertRows(db, sql, version, 2);
+    }
+
+    private static void assertStoredPolymorphicTargets(TestDatabase db, Connection sql, String dataset, int version)
+            throws SQLException {
+        String root = scalar(sql, "select t_id from " + db.table("servicebase") + " where t_ili_tid='" + dataset + "-serviceunit'");
+        String branch = scalar(sql, "select t.t_id from " + db.table("tower") + " t join " + db.table("mast")
+                + " m on m.t_id=t.t_id and m.t_basket=t.t_basket where m.t_ili_tid='" + dataset + "-relay'");
+        assertNotNull(root);
+        assertNotNull(branch);
+        String carrier = " where t_ili_tid='" + dataset + "-refcarrier'";
+        String rows = """
+                select p.label, p.roottarget, p.branchtarget, p.t_seq from %s p
+                join %s c on c.t_id=p.refcarrier_pairs and c.t_basket=p.t_basket
+                where c.t_ili_tid='%s-refcarrier' order by p.t_seq
+                """.formatted(db.table("targetpair"), db.table("refcarrier"), dataset);
+        try (var statement = sql.createStatement(); var result = statement.executeQuery(rows)) {
+            assertTrue(result.next());
+            assertEquals("forward", result.getString(1));
+            assertEquals(root, result.getString(2));
+            assertEquals(branch, result.getString(3));
+            assertEquals("0", result.getString(4));
+            assertTrue(result.next());
+            assertEquals("missing", result.getString(1));
+            assertNull(result.getObject(2));
+            assertNull(result.getObject(3));
+            assertEquals("1", result.getString(4));
+            assertFalse(result.next());
+        }
+        if (version == 24) {
+            assertEquals(root, scalar(sql, "select directroot from " + db.table("refcarrier") + carrier));
+            String tower = scalar(sql, "select t.t_id from " + db.table("tower") + " t join " + db.table("mast")
+                    + " m on m.t_id=t.t_id and m.t_basket=t.t_basket where m.t_ili_tid='" + dataset + "-tower'");
+            assertNotNull(tower);
+            assertEquals(tower, scalar(sql, "select directbranch from " + db.table("refcarrier") + carrier));
+        }
+    }
+
+    private static void assertTransferredPolymorphicTargets(Element carrier, int version, String dataset) {
+        String prefix = version == 23 ? "DbInterop23.Data." : "";
+        assertNotNull(carrier);
+        assertEquals(prefix + "RefCarrier", carrier.getLocalName());
+        var pairs = children(carrier).stream().filter(value -> value.getLocalName().equals("Pairs"))
+                .flatMap(value -> children(value).stream()).toList();
+        assertEquals(List.of(prefix + "TargetPair", prefix + "TargetPair"),
+                pairs.stream().map(Element::getLocalName).toList());
+        assertLocalReference(pairs.getFirst(), "RootTarget", version, dataset + "-serviceunit");
+        assertLocalReference(pairs.getFirst(), "BranchTarget", version, dataset + "-relay");
+        assertNull(child(pairs.getLast(), "RootTarget"));
+        assertNull(child(pairs.getLast(), "BranchTarget"));
+        if (version == 24) {
+            assertLocalReference(carrier, "DirectRoot", version, dataset + "-serviceunit");
+            assertLocalReference(carrier, "DirectBranch", version, dataset + "-tower");
+        }
+    }
+
+    private static void assertLocalReference(Element owner, String field, int version, String tid) {
+        var value = child(owner, field);
+        assertNotNull(value, field);
+        assertEquals(tid, id(value, version, "ref"));
+        assertEquals("", id(value, version, "bid"));
     }
 
     private static void assertStructureReferenceCatalog(TestDatabase db, Connection sql, String model)
@@ -836,6 +993,7 @@ final class DbInteropTest {
         assertMissingReferenceRollback(db, sql, model, version, fixture, "Witness", "Review", "missing-review", 2);
         assertMissingReferenceRollback(db, sql, model, version, fixture,
                 "ConsultedMarker", "AnnotatedLink", "missing-annotated-link", 2);
+        assertWrongTargetBranchRollback(db, sql, model, version, fixture);
         if (db.postgis && modelDir.equals(STORED_MODELS)) assertPostgresIdDefault(db);
         Path tail = Files.writeString(work.resolve("tail.xtf"), fixture.replace("legacy-", "tail-"));
         reference.run(db, modelDir, "--import", "--importTid", "--importBid", "--dataset", "tail", tail.toString());
@@ -1251,6 +1409,7 @@ final class DbInteropTest {
         assertStoredNestedStructures(db, sql, dataset);
         assertStoredRoles(db, sql, dataset);
         assertStoredStructureHierarchy(db, sql, dataset);
+        assertStoredPolymorphicTargets(db, sql, dataset, version);
         assertStoredStructureReferences(db, sql, dataset);
         assertStoredPairing(db, sql, version, dataset);
         assertStoredStandaloneLinks(db, sql, dataset);
@@ -1743,8 +1902,11 @@ final class DbInteropTest {
             tables.add("link");
             tables.addAll(collections);
         }
+        assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table("refcarrier")));
+        assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("targetpair")));
+        tables.addAll(List.of("refcarrier", "targetpair"));
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 82 : 73)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 85 : 76)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
     }
 
@@ -1824,6 +1986,7 @@ final class DbInteropTest {
         for (String name : List.of("mast", "tower", "relay", "beacon", "serviceunit")) {
             secondBasket.add(dataset + "-" + name);
         }
+        secondBasket.add(dataset + "-refcarrier");
         assertTransferredClassHierarchy(objects, version, dataset);
         assertEquals(Map.of(dataset + "-basket-1", firstBasket, dataset + "-basket-2", secondBasket), baskets);
         assertTransferredReports(objects.get(firstReport), objects.get(secondReport), version);
@@ -1831,6 +1994,7 @@ final class DbInteropTest {
         assertTrue(children(objects.get(dataset + "-nested-2")).isEmpty());
         assertTransferredStructureHierarchy(objects.get(dataset + "-typed-1"), version);
         assertTrue(children(objects.get(dataset + "-typed-2")).isEmpty());
+        assertTransferredPolymorphicTargets(objects.get(dataset + "-refcarrier"), version, dataset);
         assertTransferredStructureReferences(objects.get(secondReport), version, dataset);
         assertTransferredRoles(objects, version, dataset);
         assertTransferredReviews(objects, version, dataset);

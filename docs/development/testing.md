@@ -140,6 +140,11 @@ Bei Strukturvererbung prüft die Suite Einzelwerte, `LIST OF` und `BAG OF`,
 die konkreten XTF-Typen, die gemeinsame `T_Id` und den Basket der Teilzeilen
 sowie `T_Seq` und die Rückverweise auf der Strukturwurzel. Ein Typ ausserhalb
 des deklarierten Zweigs bricht den Export ab und erhält die bisherige Datei.
+Bei polymorphen Referenzen prüft die Suite die Metadaten für den
+deklarierten Zieltyp und die XTF-TID von konkreten Nachfolgern. Die
+Fixtures prüfen Vorwärtsreferenzen, SQL `NULL` sowie ungültige Typzweige
+und basketfremde Referenzen. Ein GeoPackage-Fall prüft den Export eines
+Objekts mit 32 polymorphen Referenzfeldern.
 Das Originalwerkzeug lädt das Modell für das neue Schema aus der Datenbank.
 
 Die JUnit-Rohberichte stehen unter `interlis-db/build/test-results/dbInteropTest/`.

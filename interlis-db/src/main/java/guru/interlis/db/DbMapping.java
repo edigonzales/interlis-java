@@ -215,6 +215,10 @@ final class DbMapping {
     List<EmbeddedAssociation> associations() { return associations; }
     List<Table> tableChain(SymbolRef type) { return chains.getOrDefault(type, List.of(table(type))); }
     Table rootTable(SymbolRef type) { return tableChain(type).getFirst(); }
+
+    boolean isAssignableTo(SymbolRef actual, SymbolRef declared) {
+        return tableChain(actual).stream().anyMatch(part -> part.object().symbol().equals(declared));
+    }
     List<Table> hierarchy(Table root) { return hierarchies.getOrDefault(root, List.of()); }
 
     Table concreteType(Table root, String discriminator, long id) {
@@ -405,11 +409,6 @@ final class DbMapping {
                     if (column.kind() == Kind.REFERENCE) {
                         throw unsupported("reference attribute in inheritance at " + attribute.name().declared());
                     }
-                }
-                if (type instanceof ReferenceType reference
-                        && reference.target().isPresent()
-                        && hierarchy.contains(new SymbolRef(plan.snapshotId(), reference.target().orElseThrow()))) {
-                    throw unsupported("reference to class inheritance at " + attribute.name().declared());
                 }
             }
         }

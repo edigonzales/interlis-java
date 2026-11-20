@@ -235,6 +235,13 @@
       <PairLeft i:tid="legacy-pairleft-1"><RightLink i:ref="legacy-pairright-1"/></PairLeft>
       <PairLeft i:tid="legacy-pairleft-2"/>
       <PairRight i:tid="legacy-pairright-1"/>
+      <RefCarrier i:tid="legacy-refcarrier">
+        <DirectRoot i:ref="legacy-serviceunit"/><DirectBranch i:ref="legacy-tower"/>
+        <Pairs>
+          <TargetPair><Label>forward</Label><RootTarget i:ref="legacy-serviceunit"/><BranchTarget i:ref="legacy-relay"/></TargetPair>
+          <TargetPair><Label>missing</Label></TargetPair>
+        </Pairs>
+      </RefCarrier>
       <Mast i:tid="legacy-mast">
         <Caption>base</Caption>
         <Notes>

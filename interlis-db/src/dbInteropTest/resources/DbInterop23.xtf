@@ -169,6 +169,12 @@
       <DbInterop23.Data.PairRight TID="legacy-pairright-1"><LeftLink REF="legacy-pairleft-1"/></DbInterop23.Data.PairRight>
       <DbInterop23.Data.PairLeft TID="legacy-pairleft-1"/>
       <DbInterop23.Data.PairLeft TID="legacy-pairleft-2"/>
+      <DbInterop23.Data.RefCarrier TID="legacy-refcarrier">
+        <Pairs>
+          <DbInterop23.Data.TargetPair><Label>forward</Label><RootTarget REF="legacy-serviceunit"/><BranchTarget REF="legacy-relay"/></DbInterop23.Data.TargetPair>
+          <DbInterop23.Data.TargetPair><Label>missing</Label></DbInterop23.Data.TargetPair>
+        </Pairs>
+      </DbInterop23.Data.RefCarrier>
       <DbInterop23.Data.Mast TID="legacy-mast">
         <Caption>base</Caption>
         <Notes>

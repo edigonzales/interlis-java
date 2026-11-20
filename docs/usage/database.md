@@ -208,11 +208,20 @@ Deklaration. Für ein neues Attribut einer Unterklasse ist dies deren eigene
 Tabelle. Die referenzierte Zeile muss zum gespeicherten Typ und Basket des
 Elternobjekts gehören.
 
-In 2.4 kann eine Klasse optionale
-`REFERENCE TO`-Attribute auf eine Klasse desselben Baskets haben. Referenzen
-und Assoziationsrollen sind hier auf Klassen ausserhalb von Hierarchien
-beschränkt. Weitere Grenzen sind `EXTENDED`-Attribute, stabile OIDs, eigene
-Linienformen, GeoPackage-RTree beim Schreiben und Updates. Der gespeicherte Modelltext
+Optionale lokale `REFERENCE TO`-Attribute in topic-lokalen Strukturen und
+in XTF 2.4 auch in Klassen können auf Klassenhierarchien desselben
+Topics und Baskets zielen. Die Referenzspalte liegt in der Quelltabelle
+und speichert die gemeinsame `T_Id` des Zielobjekts. `ATTRNAME.Target` und
+die Fremdschlüsselmetadaten nennen die physische Tabelle des deklarierten
+Zieltyps. Die XTF-TID stammt aus der Wurzeltabelle. Der tatsächliche
+Zieltyp muss dem deklarierten Typ entsprechen oder von ihm abgeleitet
+sein. Vorwärtsreferenzen werden am Basketende aufgelöst. Referenzattribute
+in Quellhierarchien und Assoziationsrollen mit Hierarchie-Enden folgen
+separat.
+[ili2db-Referenzabbildung](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/src/ch/ehi/ili2db/fromili/FromIliRecordConverter.java#L1040-L1068)
+
+Weitere Grenzen sind `EXTENDED`-Attribute, stabile OIDs, eigene Linienformen,
+GeoPackage-RTree beim Schreiben und Updates. Der gespeicherte Modelltext
 ist auf eine Million Zeichen begrenzt.
 
 Der Adapter unterscheidet SQL `NULL` und leeren Text. Die Referenzwerkzeuge
