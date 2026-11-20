@@ -227,7 +227,7 @@ defensiv kopiert, nullfrei und unveränderlich:
 | Typ | Inhalt / Ergebnis |
 |---|---|
 | `ModelPin` | Modellname, exakte rohe Version, kanonische SourceId, SHA-256 der Originalbytes; `selector()` liefert den passenden ByName-Selektor |
-| `ResolutionLock` | Map Modellname→unveränderliche Liste sämtlicher ausgewählter Versions-/Quellenpins und Map Index-SourceId→ContentDigest; zusätzliche benötigte Remoteabhängigkeiten sind beim Replay verboten |
+| `ResolutionLock` | Map Modellname→unveränderliche Liste sämtlicher ausgewählter Versions-/Quellenpins und Map Index-SourceId→ContentDigest, geordnete Suchschritte und nicht verfügbare Quellen mit Ladeursache; zusätzliche benötigte Remoteabhängigkeiten sind beim Replay verboten |
 | `RepositoryResolveOptions` | explizite RepositoryConfig, Modellpins, Quellen-/Indexpins und optionaler Lock |
 | `RepositoryResolutionOutcome.Prepared` | `PreparedRepositoryUpdate`; Beschaffung vollständig, kein Schema-/Sprachgültigkeitsnachweis |
 | `.Rejected` | nichtleere Liste typisierter `RepositoryProblem`-Werte; NOT_FOUND, AMBIGUOUS, VERSION_MISMATCH, INVALID_SOURCE, INDEX_FAILURE, LOAD_FAILURE, PIN_MISMATCH, LOCK_MISMATCH oder CHANGED_SOURCE; Ladeursache separat |
@@ -284,9 +284,10 @@ Prioritäten, Indexherkünfte, Fehler und die FetchPolicy.
 digestadressierter Cache. Fehler, übergrosse oder korrupte Einträge sind Misses;
 Treffer werden erneut gegen den Digest geprüft. Die Defaultgrenze ist 16 MiB pro
 Eintrag. `InMemoryContentStore` bleibt verfügbar. `ResolutionLockCodec.encode` /
-`decode` verwendet deterministisches UTF-8-XML `interlis-resolution-lock`, Version
-1 beziehungsweise 2; sortierte Indizes/Modelle, keine DTD/externen Entities, keine unbekannten Felder,
-doppelten vollständigen Modellidentitäten oder stillen Formatupgrades.
+`decode` verwendet deterministisches UTF-8-XML `interlis-resolution-lock` in
+Version 2. Der Codec sortiert Indizes und Modelle und weist DTDs, externe
+Entities, unbekannte Felder, doppelte Modellidentitäten und andere
+Lockversionen zurück.
 Verschiedene Versionen/Quellen desselben Namens bleiben getrennte Listeneinträge,
 kanonisch nach rohem Versionsstring und SourceId sortiert; dies ist keine Latest-Auswahl. Decode begrenzt die Eingabelänge
 auf 8 Mi UTF-16-Einheiten; Dateiadapter begrenzen zusätzlich gelesene Bytes.

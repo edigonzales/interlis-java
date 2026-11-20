@@ -105,6 +105,23 @@ class Ili2cCachePolicyTest {
         assertEquals(1, fixture.requests.get());
     }
 
+    @Test void versionOneMetadataIsIgnoredOffline() throws Exception {
+        String url = serve();
+        var loaded = load(url, RepositoryCacheRequest.metadata());
+        Path current = fixture.metadata(url);
+        Path old = directory.resolve("cache/metadata-v1").resolve(current.getFileName());
+        Files.createDirectories(old.getParent());
+        Files.writeString(old, """
+                <interlis-cache version="1" source="%s" response-source="%s" sha256="%s"/>
+                """.formatted(url, url, loaded.byteSha256()));
+        assertEquals("original", host().loader().loadCached(new SourceLocator(url), OFFLINE, TOKEN).text());
+        Files.delete(current);
+        var failure = assertThrows(SourceLoadException.class,
+                () -> host().loader().loadCached(new SourceLocator(url), OFFLINE, TOKEN));
+        assertEquals(SourceLoadException.Reason.OFFLINE, failure.reason());
+        assertEquals(1, fixture.requests.get());
+    }
+
     @Test void applicationCacheIgnoresVaryButHonorsNoStore() throws Exception {
         String base=serve();
         for (String field:List.of("Accept-Encoding","Accept-Language","*")) {
