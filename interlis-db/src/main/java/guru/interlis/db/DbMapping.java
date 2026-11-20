@@ -386,13 +386,14 @@ final class DbMapping {
                     throw unsupported("extended attribute in class inheritance at " + attribute.name().declared());
                 }
                 if (attribute.attribute().transientAttribute()) continue;
-                if (inheritedLayout) {
+                var type = plan.type(attribute.effectiveType()).known().orElseThrow();
+                if (inheritedLayout && !(type instanceof StructureValueType || type instanceof CollectionType)) {
                     var column = describeColumn(plan, object, attribute, attribute.name().declared().last());
                     if (column.kind().geometry() || column.kind() == Kind.REFERENCE) {
                         throw unsupported("non-scalar attribute in class inheritance at " + attribute.name().declared());
                     }
                 }
-                if (plan.type(attribute.effectiveType()).known().orElseThrow() instanceof ReferenceType reference
+                if (type instanceof ReferenceType reference
                         && reference.target().isPresent()
                         && hierarchy.contains(new SymbolRef(plan.snapshotId(), reference.target().orElseThrow()))) {
                     throw unsupported("reference to class inheritance at " + attribute.name().declared());

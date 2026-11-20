@@ -185,6 +185,7 @@ final class DbInteropTest {
             assertCorruptRoleMappingRejected(db, sql, model, nativeOutput);
             assertCorruptStructureTargetRejected(db, sql, model, nativeOutput);
             assertCorruptClassHierarchyRejected(db, sql, model, nativeOutput);
+            assertCorruptInheritedOwnerRejected(db, sql, model, nativeOutput);
             assertClassHierarchyRollback(db, sql, model, version, fixture);
             assertAmbiguousReviewRejected(db, sql, model, nativeOutput);
             if (version == 24) {
@@ -227,7 +228,8 @@ final class DbInteropTest {
 
     private static void assertNestedStructureCatalog(TestDatabase db, Connection sql, String model) throws SQLException {
         var childTables = Map.of("NestedRecord.Tree", "nestedouter", "NestedOuter.Items", "nestedinner",
-                "NestedInner.Main", "nestedleaf", "NestedInner.Values", "nestedleaf", "NestedInner.Extras", "nestedleaf");
+                "NestedInner.Main", "nestedleaf", "NestedInner.Values", "nestedleaf", "NestedInner.Extras", "nestedleaf",
+                "Mast.Notes", "nestedleaf", "Tower.Supplement", "nestedouter");
         for (var field : childTables.entrySet()) {
             String parent = field.getKey().substring(0, field.getKey().indexOf('.')).toLowerCase(Locale.ROOT);
             String column = field.getKey().replace('.', '_').toLowerCase(Locale.ROOT);
@@ -587,6 +589,22 @@ final class DbInteropTest {
         execute(sql, "update " + inheritance + " set baseclass='" + model + ".Data.Mast'" + entry);
         assertExportRejected(db, model, "legacy", output, "INHERITANCE", "Relay");
         execute(sql, "update " + inheritance + " set baseclass='" + model + ".Data.Tower'" + entry);
+    }
+
+    private static void assertCorruptInheritedOwnerRejected(TestDatabase db, Connection sql, String model, Path output)
+            throws Exception {
+        String mast = db.table("mast");
+        String outer = db.table("nestedouter");
+        String relayId = scalar(sql, "select t_id from " + mast + " where t_ili_tid='legacy-relay'");
+        String mastId = scalar(sql, "select t_id from " + mast + " where t_ili_tid='legacy-mast'");
+        assertNotNull(relayId);
+        assertNotNull(mastId);
+        execute(sql, "update " + outer + " set tower_supplement=" + mastId + " where tower_supplement=" + relayId);
+        try {
+            assertExportRejected(db, model, "legacy", output, "Orphan structure row", "Tower.Supplement");
+        } finally {
+            execute(sql, "update " + outer + " set tower_supplement=" + relayId + " where tower_supplement=" + mastId);
+        }
     }
 
     private void assertClassHierarchyRollback(TestDatabase db, Connection sql, String model, int version, String fixture)
@@ -1050,6 +1068,7 @@ final class DbInteropTest {
         }
         assertSrs(db, sql, "place", "ageometry", srsId);
         assertStoredClassHierarchy(db, sql, dataset);
+        assertStoredInheritedStructures(db, sql, dataset);
         assertStoredStructures(db, sql, dataset);
         assertStoredNestedStructures(db, sql, dataset);
         assertStoredRoles(db, sql, dataset);
@@ -1191,6 +1210,53 @@ final class DbInteropTest {
                 assertEquals(index == 1 && annotated ? "approved" : null, result.getString(10));
             }
             assertFalse(result.next());
+        }
+    }
+
+    private static void assertStoredInheritedStructures(TestDatabase db, Connection sql, String dataset)
+            throws SQLException {
+        String rootObjects = "('" + dataset + "-mast','" + dataset + "-relay','"
+                + dataset + "-tower','" + dataset + "-beacon')";
+        String notes = """
+                select m.t_ili_tid, m.t_basket, l.t_basket, l.t_seq, l.amount, l.t_ili_tid,
+                       l.nestedinner_main, l.nestedinner_values, l.nestedinner_extras
+                from %s l join %s m on m.t_id=l.mast_notes
+                where m.t_ili_tid in %s
+                order by m.t_ili_tid, l.t_seq
+                """.formatted(db.table("nestedleaf"), db.table("mast"), rootObjects);
+        try (var statement = sql.createStatement(); var rows = statement.executeQuery(notes)) {
+            for (var expected : List.of(List.of("mast", "0", "5"), List.of("mast", "1", "6"),
+                    List.of("relay", "0", "7"))) {
+                assertTrue(rows.next());
+                assertEquals(dataset + "-" + expected.get(0), rows.getString(1));
+                assertEquals(rows.getString(2), rows.getString(3));
+                assertEquals(expected.get(1), rows.getString(4));
+                assertEquals(expected.get(2), rows.getString(5));
+                for (int column = 6; column <= 9; column++) assertNull(rows.getString(column));
+            }
+            assertFalse(rows.next());
+        }
+
+        String supplement = """
+                select m.t_ili_tid, m.t_basket, t.t_basket, o.t_basket, i.t_basket, l.t_basket,
+                       o.t_seq, i.t_seq, l.t_seq, i.headline, l.amount,
+                       o.nestedrecord_tree, l.mast_notes, l.nestedinner_values, l.nestedinner_extras
+                from %s m join %s t on t.t_id=m.t_id
+                join %s o on o.tower_supplement=t.t_id
+                join %s i on i.nestedouter_items=o.t_id
+                join %s l on l.nestedinner_main=i.t_id
+                where m.t_ili_tid in %s
+                """.formatted(db.table("mast"), db.table("tower"), db.table("nestedouter"),
+                db.table("nestedinner"), db.table("nestedleaf"), rootObjects);
+        try (var statement = sql.createStatement(); var rows = statement.executeQuery(supplement)) {
+            assertTrue(rows.next());
+            assertEquals(dataset + "-relay", rows.getString(1));
+            for (int column = 3; column <= 6; column++) assertEquals(rows.getString(2), rows.getString(column));
+            for (int column = 7; column <= 9; column++) assertEquals("0", rows.getString(column));
+            assertEquals("inherited", rows.getString(10));
+            assertEquals("8", rows.getString(11));
+            for (int column = 12; column <= 15; column++) assertNull(rows.getString(column));
+            assertFalse(rows.next());
         }
     }
 
@@ -1460,7 +1526,7 @@ final class DbInteropTest {
         assertEquals(Integer.toString(datasets * 3), scalar(sql, "select count(*) from " + db.table("plot")));
         assertEquals(Integer.toString(datasets * 3), scalar(sql, "select count(*) from " + db.table("parcel")));
         assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("report")));
-        for (var count : Map.of("nestedrecord", 2, "nestedouter", 1, "nestedinner", 2, "nestedleaf", 6).entrySet()) {
+        for (var count : Map.of("nestedrecord", 2, "nestedouter", 2, "nestedinner", 3, "nestedleaf", 10).entrySet()) {
             assertEquals(Integer.toString(datasets * count.getValue()),
                     scalar(sql, "select count(*) from " + db.table(count.getKey())));
         }
@@ -1492,7 +1558,7 @@ final class DbInteropTest {
             tables.addAll(collections);
         }
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 68 : 59)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 74 : 65)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
     }
 
@@ -1710,23 +1776,47 @@ final class DbInteropTest {
 
     private static void assertTransferredClassHierarchy(Map<String, Element> objects, int version, String dataset) {
         String prefix = version == 23 ? "DbInterop23.Data." : "";
-        assertClassFields(objects.get(dataset + "-mast"), prefix + "Mast", Map.of("Caption", "base"));
+        var mast = objects.get(dataset + "-mast");
+        var relay = objects.get(dataset + "-relay");
+        assertClassFields(mast, prefix + "Mast", Map.of("Caption", "base"), "Notes");
         assertClassFields(objects.get(dataset + "-tower"), prefix + "Tower", Map.of("Caption", "middle", "Height", "12"));
-        assertClassFields(objects.get(dataset + "-relay"), prefix + "Relay",
-                Map.of("Caption", "leaf", "Height", "24", "Online", "false"));
+        assertClassFields(relay, prefix + "Relay", Map.of("Caption", "leaf", "Height", "24", "Online", "false"),
+                "Notes", "Supplement");
+        assertTransferredAmounts(mast, "Notes", version, prefix, List.of("5", "6"));
+        assertTransferredAmounts(relay, "Notes", version, prefix, List.of("7"));
+        var supplement = transferredStructures(relay, "Supplement");
+        assertEquals(List.of(prefix + "NestedOuter"), supplement.stream().map(Element::getLocalName).toList());
+        var items = transferredStructures(supplement.getFirst(), "Items");
+        assertEquals(List.of(prefix + "NestedInner"), items.stream().map(Element::getLocalName).toList());
+        var inner = items.getFirst();
+        assertEquals("inherited", text(inner, "Headline"));
+        assertTransferredAmounts(inner, "Main", version, prefix, List.of("8"));
+        assertNull(child(inner, "Values"));
+        assertNull(child(inner, "Extras"));
         assertClassFields(objects.get(dataset + "-beacon"), prefix + "Beacon", Map.of("Caption", "sibling", "Signal", "green"));
         assertClassFields(objects.get(dataset + "-serviceunit"), prefix + "ServiceUnit",
                 Map.of("ServiceCode", "unit-1", "Label", "active"));
     }
 
-    private static void assertClassFields(Element object, String name, Map<String, String> fields) {
+    private static void assertClassFields(Element object, String name, Map<String, String> fields, String... compositions) {
         assertNotNull(object, name);
         assertEquals(name, object.getLocalName());
+        var compositionNames = Set.of(compositions);
         var actual = new HashMap<String, String>();
         for (var child : children(object)) {
-            assertNull(actual.put(child.getLocalName(), child.getTextContent()));
+            if (!compositionNames.contains(child.getLocalName())) {
+                assertNull(actual.put(child.getLocalName(), child.getTextContent()));
+            }
         }
         assertEquals(fields, actual);
+    }
+
+    private static void assertTransferredAmounts(Element owner, String attribute, int version, String prefix,
+                                                  List<String> amounts) {
+        var leaves = transferredStructures(owner, attribute);
+        assertEquals(amounts, leaves.stream().map(leaf -> text(leaf, "Amount")).toList());
+        assertTrue(leaves.stream().allMatch(leaf -> leaf.getLocalName().equals(prefix + "NestedLeaf")
+                && id(leaf, version, "tid").isEmpty()));
     }
 
     private static void assertTransferredPairing(Map<String, Element> objects, int version, String dataset) {
@@ -1762,10 +1852,7 @@ final class DbInteropTest {
         assertEquals("empty", text(items.getLast(), "Headline"));
         for (var entry : List.of(Map.entry("Main", List.of("1")), Map.entry("Values", values),
                 Map.entry("Extras", List.of("4", "4")))) {
-            var leaves = transferredStructures(items.getFirst(), entry.getKey());
-            assertEquals(entry.getValue(), leaves.stream().map(leaf -> text(leaf, "Amount")).toList());
-            assertTrue(leaves.stream().allMatch(leaf -> leaf.getLocalName().equals(prefix + "NestedLeaf")
-                    && id(leaf, version, "tid").isEmpty()));
+            assertTransferredAmounts(items.getFirst(), entry.getKey(), version, prefix, entry.getValue());
             assertNull(child(items.getLast(), entry.getKey()));
         }
     }

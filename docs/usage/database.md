@@ -187,6 +187,13 @@ Feldern seines Pfads. Fehlende, unerwartete oder basketfremde Teilzeilen
 und unbekannte oder abstrakte Typen werden diagnostiziert.
 [ili2db-Vererbungsabbildung](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst#vererbung)
 
+Optionale Struktureinzelwerte, `LIST OF` und `BAG OF` können in einer
+Klassenhierarchie deklariert und geerbt werden. Die Rückverweisspalte
+und ihre Metadaten beziehen sich auf die Tabelle der ursprünglichen
+Deklaration. Für ein neues Attribut einer Unterklasse ist dies deren eigene
+Tabelle. Die referenzierte Zeile muss zum gespeicherten Typ und Basket des
+Elternobjekts gehören.
+
 In 2.4 kann eine Klasse optionale
 `REFERENCE TO`-Attribute auf eine Klasse desselben Baskets haben. Baskets
 und Objekte verwenden Transferkennungen. Grenzen des Profils sind unter

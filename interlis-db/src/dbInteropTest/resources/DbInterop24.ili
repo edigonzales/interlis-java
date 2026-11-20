@@ -115,9 +115,11 @@ MODEL DbInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
     END Pairing;
     CLASS Mast =
       Caption : TEXT*32;
+      Notes : LIST {0..*} OF NestedLeaf;
     END Mast;
     CLASS Tower EXTENDS Mast =
       Height : 0 .. 99;
+      Supplement : NestedOuter;
     END Tower;
     CLASS Relay EXTENDS Tower =
       Online : BOOLEAN;

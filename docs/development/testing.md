@@ -127,7 +127,11 @@ gespeicherte Ziel-ID.
 Bei Klassenvererbung prüft die Suite konkrete und abstrakte Basisklassen,
 Geschwistertypen, mehrstufige Pfade, den Diskriminator und die gemeinsame ID
 der Teilzeilen. Beschädigte Daten und Vererbungsmetadaten müssen den
-Export abbrechen und eine vorhandene Zieldatei erhalten.
+Export abbrechen und eine bestehende Zieldatei erhalten.
+Bei geerbten Strukturattributen prüft die Suite die Deklarationstabelle,
+Listenpositionen und verschachtelte Einzelwerte. Ein Rückverweis auf die
+ID eines Basisobjekts ohne die erforderliche Erweiterungszeile wird
+diagnostiziert.
 Das Originalwerkzeug lädt das Modell für das neue Schema aus der Datenbank.
 
 Die JUnit-Rohberichte stehen unter `interlis-db/build/test-results/dbInteropTest/`.

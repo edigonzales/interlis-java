@@ -197,8 +197,14 @@ final class DbTransfer {
         String sql = "SELECT " + fields + " FROM " + from + " WHERE obj." + T_BASKET
                 + " = ? ORDER BY obj." + T_ID;
         try (var fragments = new HierarchyRows(db, mapping, basketId, token);
+             var structures = new StructureRows(db, mapping, basketId, token);
              var statement = db.connection().prepareStatement(sql)) {
             fragments.open(root);
+            for (var part : family) {
+                for (var composition : mapping.compositionsForParent(part.object().symbol())) {
+                    structures.open(composition);
+                }
+            }
             fetchInPages(db, statement);
             statement.setLong(1, basketId);
             try (var rows = statement.executeQuery()) {
@@ -214,12 +220,14 @@ final class DbTransfer {
                     }
                     var values = readFields(db, rows, 4, root, tid);
                     fragments.readFor(actual, id, tid, values);
+                    structures.readFor(id, tid, values);
                     var identity = new TransferIdentity(bid, Optional.empty(), Optional.of(new TransferId(tid, IdOrigin.SOURCE)),
                             Optional.empty(), Optional.empty());
                     var object = new TransferObject(identity, new Structured(actual.object().symbol(), values));
                     writer.write(new TransferEvent.ObjectEvent(object, Optional.empty(), Consistency.COMPLETE), token);
                 }
                 fragments.requireExhausted();
+                structures.requireExhausted();
             }
         }
     }
@@ -445,11 +453,11 @@ final class DbTransfer {
                 }
             }
         }
-        // The cursors at the object level check their owners while streaming. Nested lookups
-        // need this check up front because an orphan can never be reached from a parent row.
+        // Nested lookups cannot reach orphans. Within class hierarchies, the owner must exist
+        // in the declaring table even though the root and its fragments share the same ID.
         for (var composition : mapping.compositions()) {
             var parent = mapping.table(composition.parent());
-            if (parent.object().kind() != SymbolKind.STRUCTURE) continue;
+            if (parent.object().kind() != SymbolKind.STRUCTURE && !parent.hasDiscriminator() && !parent.subtype()) continue;
             token.throwIfCancellationRequested();
             var child = mapping.table(composition.child());
             String owner = "child." + quote(composition.ownerColumn());
@@ -874,7 +882,8 @@ final class DbTransfer {
                 token.throwIfCancellationRequested();
                 found += insertObjectRow(part, table.name(), object, id, context, tid);
             }
-            var compositions = mapping.compositionsForParent(object.type());
+            var compositions = chain.stream()
+                    .flatMap(part -> mapping.compositionsForParent(part.object().symbol()).stream()).toList();
             for (var composition : compositions) {
                 if (object.value(composition.slot().symbol()).isPresent()) {
                     found++;
