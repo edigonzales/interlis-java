@@ -183,6 +183,7 @@ final class DbInteropTest {
         try (var sql = db.connect()) {
             assertClassHierarchyCatalog(db, sql, model);
             assertClassGeometryCatalog(db, sql, model, version);
+            assertReferenceSourceHierarchyCatalog(db, sql, model, version);
             assertStructureCatalog(db, sql, model, version);
             assertNestedStructureCatalog(db, sql, model);
             assertEmbeddedRoleCatalog(db, sql, model);
@@ -237,6 +238,7 @@ final class DbInteropTest {
             assertCorruptClassHierarchyRejected(db, sql, model, nativeOutput);
             assertCorruptInheritedOwnerRejected(db, sql, model, nativeOutput);
             assertClassHierarchyRollback(db, sql, model, version, fixture);
+            assertUnresolvedHierarchyReferenceRollback(db, sql, model, version, fixture);
             assertAmbiguousReviewRejected(db, sql, model, nativeOutput);
             if (version == 24) {
                 assertEmptyCollectionRollback(db, sql, model, fixture, "multisurface", "Park.Coverage", "multisurface", 13);
@@ -410,7 +412,7 @@ final class DbInteropTest {
     private void assertWrongTargetBranchRollback(TestDatabase db, Connection sql, String model, int version,
                                                  String fixture) throws Exception {
         String ref = version == 24 ? "i:ref" : "REF";
-        String field = "<BranchTarget " + ref + "=";
+        String field = "<RootTarget " + ref + "=\"legacy-serviceunit\"/><BranchTarget " + ref + "=";
         String broken = fixture.replace(field + "\"legacy-relay\"", field + "\"legacy-beacon\"");
         assertNotEquals(fixture, broken);
         Path input = Files.writeString(work.resolve("wrong-branch.xtf"), broken.replace("legacy-", "wrong-branch-"));
@@ -579,6 +581,22 @@ final class DbInteropTest {
         assertEquals("mast", scalar(sql, "select colowner from " + columns + " where iliname='" + prefix + "Mast.Caption'"));
         assertEquals("tower", scalar(sql, "select colowner from " + columns + " where iliname='" + prefix + "Tower.Height'"));
         assertEquals("arelay", scalar(sql, "select colowner from " + columns + " where iliname='" + prefix + "Relay.Online'"));
+    }
+
+    private static void assertReferenceSourceHierarchyCatalog(TestDatabase db, Connection sql, String model,
+                                                              int version) throws SQLException {
+        var sourceTypes = version == 24 ? List.of("RefNote", "RefAsset") : List.of("RefNote");
+        for (String source : sourceTypes) {
+            for (var field : List.of(List.of("Base", "RootTarget", "mast"),
+                    List.of("Branch", "BranchTarget", "tower"), List.of("Leaf", "OwnTarget", "mast"))) {
+                String declaredType = source + field.get(0);
+                String table = declaredType.toLowerCase(Locale.ROOT);
+                String attribute = field.get(1);
+                String column = attribute.toLowerCase(Locale.ROOT);
+                String target = field.get(2);
+                assertReferenceMapping(db, sql, model, declaredType + "." + attribute, table, column, target);
+            }
+        }
     }
 
     private static void assertStructureHierarchyCatalog(TestDatabase db, Connection sql, String model) throws SQLException {
@@ -837,6 +855,23 @@ final class DbInteropTest {
         } finally {
             execute(sql, "update " + outer + " set tower_supplement=" + relayId + " where tower_supplement=" + mastId);
         }
+    }
+
+    private void assertUnresolvedHierarchyReferenceRollback(TestDatabase db, Connection sql, String model,
+                                                             int version, String fixture) throws Exception {
+        String dataset = "unresolved-hierarchy-source";
+        String ref = version == 24 ? "i:ref" : "REF";
+        String noteReference = "            <BranchTarget " + ref + "=";
+        String broken = fixture.replace(noteReference + "\"legacy-relay\"", noteReference + "\"missing-branch-target\"");
+        assertNotEquals(fixture, broken);
+        Path input = Files.writeString(work.resolve(dataset + ".xtf"), broken.replace("legacy-", dataset + "-"));
+        var rejected = cli(db, "import", model, dataset, input, CancellationToken.none());
+        assertEquals(1, rejected.code(), rejected::diagnostics);
+        assertTrue(rejected.diagnostics().contains(model + ".Data.RefNoteBranch.BranchTarget")
+                && rejected.diagnostics().contains("missing-branch-target"), rejected::diagnostics);
+        assertNull(scalar(sql, "select t_id from " + db.table("refnotebook")
+                + " where t_ili_tid='" + dataset + "-ref-notebook'"));
+        assertRows(db, sql, version, 3);
     }
 
     private void assertClassHierarchyRollback(TestDatabase db, Connection sql, String model, int version, String fixture)
@@ -1226,6 +1261,49 @@ final class DbInteropTest {
                 : "X'475000100000080800%08X00000000'".formatted(wkbType);
     }
 
+    private static void assertStoredHierarchyReferences(TestDatabase db, Connection sql, int version, String dataset)
+            throws SQLException {
+        String notes = """
+                join %s book on book.t_id=src.refnotebook_entries and book.t_basket=src.t_basket
+                where book.t_ili_tid='%s-ref-notebook' order by src.t_seq
+                """.formatted(db.table("refnotebook"), dataset);
+        assertReferenceFragmentRows(db, sql, "refnote", dataset, notes);
+        if (version == 24) {
+            assertReferenceFragmentRows(db, sql, "refasset", dataset,
+                    " where src.t_ili_tid in ('" + dataset + "-ref-asset-1','" + dataset
+                            + "-ref-asset-2') order by src.t_ili_tid");
+        }
+    }
+
+    private static void assertReferenceFragmentRows(TestDatabase db, Connection sql, String prefix, String dataset,
+                                                    String selection) throws SQLException {
+        String mast = db.table("mast");
+        String query = """
+                select src.label, src.roottarget, branch.branchtarget, leaf.owntarget,
+                       root_target.t_ili_tid, branch_target.t_ili_tid, own_target.t_ili_tid
+                from %s src
+                join %s branch on branch.t_id=src.t_id and branch.t_basket=src.t_basket
+                join %s leaf on leaf.t_id=src.t_id and leaf.t_basket=src.t_basket
+                left join %s root_target on root_target.t_id=src.roottarget and root_target.t_basket=src.t_basket
+                left join %s branch_target on branch_target.t_id=branch.branchtarget and branch_target.t_basket=src.t_basket
+                left join %s own_target on own_target.t_id=leaf.owntarget and own_target.t_basket=src.t_basket
+                """.formatted(db.table(prefix + "base"), db.table(prefix + "branch"), db.table(prefix + "leaf"),
+                mast, mast, mast) + selection;
+        try (var statement = sql.createStatement(); var rows = statement.executeQuery(query)) {
+            assertTrue(rows.next());
+            assertEquals("populated", rows.getString(1));
+            assertEquals(dataset + "-beacon", rows.getString(5));
+            assertEquals(dataset + "-relay", rows.getString(6));
+            assertEquals(dataset + "-mast", rows.getString(7));
+            assertTrue(rows.next());
+            assertEquals("empty", rows.getString(1));
+            assertNull(rows.getObject(2));
+            assertNull(rows.getObject(3));
+            assertNull(rows.getObject(4));
+            assertFalse(rows.next());
+        }
+    }
+
     private static void assertStoredClassHierarchy(TestDatabase db, Connection sql, int version, String dataset)
             throws SQLException {
         String mast = db.table("mast");
@@ -1404,6 +1482,7 @@ final class DbInteropTest {
         }
         assertSrs(db, sql, "place", "ageometry", srsId);
         assertStoredClassHierarchy(db, sql, version, dataset);
+        assertStoredHierarchyReferences(db, sql, version, dataset);
         assertStoredInheritedStructures(db, sql, dataset);
         assertStoredStructures(db, sql, dataset);
         assertStoredNestedStructures(db, sql, dataset);
@@ -1893,8 +1972,17 @@ final class DbInteropTest {
                     scalar(sql, "select count(*) from " + db.table(entry.getKey())), entry.getKey());
         }
         tables.addAll(structureCounts.keySet());
+        for (var entry : Map.of("refnotebook", 1, "refnotebase", 2, "refnotebranch", 2, "refnoteleaf", 2).entrySet()) {
+            assertEquals(Integer.toString(datasets * entry.getValue()),
+                    scalar(sql, "select count(*) from " + db.table(entry.getKey())));
+            tables.add(entry.getKey());
+        }
         if (version == 24) {
             assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table("link")));
+            for (String table : List.of("refassetbase", "refassetbranch", "refassetleaf")) {
+                assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table(table)));
+                tables.add(table);
+            }
             var collections = List.of("park", "district", "routegroup", "survey");
             for (String table : collections) {
                 assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table(table)));
@@ -1906,7 +1994,7 @@ final class DbInteropTest {
         assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("targetpair")));
         tables.addAll(List.of("refcarrier", "targetpair"));
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 85 : 76)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 90 : 79)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
     }
 
@@ -1988,6 +2076,12 @@ final class DbInteropTest {
         }
         secondBasket.add(dataset + "-refcarrier");
         assertTransferredClassHierarchy(objects, version, dataset);
+        secondBasket.add(dataset + "-ref-notebook");
+        if (version == 24) {
+            secondBasket.add(dataset + "-ref-asset-1");
+            secondBasket.add(dataset + "-ref-asset-2");
+        }
+        assertTransferredHierarchyReferences(objects, version, dataset);
         assertEquals(Map.of(dataset + "-basket-1", firstBasket, dataset + "-basket-2", secondBasket), baskets);
         assertTransferredReports(objects.get(firstReport), objects.get(secondReport), version);
         assertTransferredNestedTree(objects.get(dataset + "-nested-1"), version, List.of("2", "3", "2"));
@@ -2165,6 +2259,34 @@ final class DbInteropTest {
         assertClassFields(serviceUnit, prefix + "ServiceUnit", Map.of("ServiceCode", "unit-1", "Label", "active"),
                 "ServicePoint");
         assertTransferClassPoint(serviceUnit, "ServicePoint", version, SERVICE_POINT);
+    }
+
+    private static void assertTransferredHierarchyReferences(Map<String, Element> objects, int version, String dataset) {
+        var book = objects.get(dataset + "-ref-notebook");
+        assertNotNull(book);
+        var entries = transferredStructures(book, "Entries");
+        String note = version == 23 ? "DbInterop23.Data.RefNoteLeaf" : "RefNoteLeaf";
+        assertEquals(List.of(note, note), entries.stream().map(Element::getLocalName).toList());
+        assertTrue(entries.stream().allMatch(entry -> id(entry, version, "tid").isEmpty()));
+        assertTransferredReferenceFields(entries.getFirst(), entries.getLast(), version, dataset);
+        if (version == 24) {
+            var populated = objects.get(dataset + "-ref-asset-1");
+            var empty = objects.get(dataset + "-ref-asset-2");
+            assertNotNull(populated);
+            assertNotNull(empty);
+            assertEquals("RefAssetLeaf", populated.getLocalName());
+            assertEquals("RefAssetLeaf", empty.getLocalName());
+            assertTransferredReferenceFields(populated, empty, version, dataset);
+        }
+    }
+
+    private static void assertTransferredReferenceFields(Element populated, Element empty, int version, String dataset) {
+        assertEquals("populated", text(populated, "Label"));
+        assertEquals("empty", text(empty, "Label"));
+        for (var field : Map.of("RootTarget", "beacon", "BranchTarget", "relay", "OwnTarget", "mast").entrySet()) {
+            assertLocalReference(populated, field.getKey(), version, dataset + "-" + field.getValue());
+            assertNull(child(empty, field.getKey()));
+        }
     }
 
     private static void assertTransferClassPoint(Element object, String attribute, int version, List<String> position) {

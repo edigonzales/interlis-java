@@ -139,5 +139,18 @@ MODEL DbInterop23 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
     CLASS RefCarrier =
       Pairs : LIST {0..*} OF TargetPair;
     END RefCarrier;
+    STRUCTURE RefNoteBase =
+      Label : TEXT*12;
+      RootTarget : REFERENCE TO Mast;
+    END RefNoteBase;
+    STRUCTURE RefNoteBranch EXTENDS RefNoteBase =
+      BranchTarget : REFERENCE TO Tower;
+    END RefNoteBranch;
+    STRUCTURE RefNoteLeaf EXTENDS RefNoteBranch =
+      OwnTarget : REFERENCE TO Mast;
+    END RefNoteLeaf;
+    CLASS RefNoteBook =
+      Entries : LIST {0..*} OF RefNoteBase;
+    END RefNoteBook;
   END Data;
 END DbInterop23.

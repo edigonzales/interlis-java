@@ -396,19 +396,14 @@ final class DbMapping {
                         .anyMatch(target -> hierarchy.contains(new SymbolRef(plan.snapshotId(), target.base())))) {
                     throw unsupported("association involving class inheritance at " + role.name().declared());
                 }
-                if (!(slot instanceof AttributeSlot attribute)) continue;
-                if (inheritedLayout && attribute.member().overridden()) {
+                if (!(slot instanceof AttributeSlot attribute) || !inheritedLayout) continue;
+                if (attribute.member().overridden()) {
                     throw unsupported("extended attribute in inheritance at " + attribute.name().declared());
                 }
-                if (attribute.attribute().transientAttribute()) continue;
+                if (object.kind() != SymbolKind.STRUCTURE || attribute.attribute().transientAttribute()) continue;
                 var type = plan.type(attribute.effectiveType()).known().orElseThrow();
-                boolean classComposition = object.kind() == SymbolKind.CLASS
-                        && (type instanceof StructureValueType || type instanceof CollectionType);
-                if (inheritedLayout && !classComposition) {
-                    var column = describeColumn(plan, object, attribute, attribute.name().declared().last());
-                    if (column.kind() == Kind.REFERENCE) {
-                        throw unsupported("reference attribute in inheritance at " + attribute.name().declared());
-                    }
+                if (type instanceof StructureValueType || type instanceof CollectionType) {
+                    throw unsupported("composition in structure inheritance at " + attribute.name().declared());
                 }
             }
         }

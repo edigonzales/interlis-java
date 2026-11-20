@@ -167,6 +167,29 @@ MODEL DbInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
       DirectBranch : REFERENCE TO Tower;
       Pairs : LIST {0..*} OF TargetPair;
     END RefCarrier;
+    STRUCTURE RefNoteBase =
+      Label : TEXT*12;
+      RootTarget : REFERENCE TO Mast;
+    END RefNoteBase;
+    STRUCTURE RefNoteBranch EXTENDS RefNoteBase =
+      BranchTarget : REFERENCE TO Tower;
+    END RefNoteBranch;
+    STRUCTURE RefNoteLeaf EXTENDS RefNoteBranch =
+      OwnTarget : REFERENCE TO Mast;
+    END RefNoteLeaf;
+    CLASS RefNoteBook =
+      Entries : LIST {0..*} OF RefNoteBase;
+    END RefNoteBook;
+    CLASS RefAssetBase =
+      Label : TEXT*12;
+      RootTarget : REFERENCE TO Mast;
+    END RefAssetBase;
+    CLASS RefAssetBranch EXTENDS RefAssetBase =
+      BranchTarget : REFERENCE TO Tower;
+    END RefAssetBranch;
+    CLASS RefAssetLeaf EXTENDS RefAssetBranch =
+      OwnTarget : REFERENCE TO Mast;
+    END RefAssetLeaf;
   END Data;
 
   TOPIC Naming =

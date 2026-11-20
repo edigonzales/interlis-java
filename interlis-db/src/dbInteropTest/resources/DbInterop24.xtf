@@ -242,6 +242,24 @@
           <TargetPair><Label>missing</Label></TargetPair>
         </Pairs>
       </RefCarrier>
+      <RefNoteBook i:tid="legacy-ref-notebook">
+        <Entries>
+          <RefNoteLeaf>
+            <Label>populated</Label>
+            <RootTarget i:ref="legacy-beacon"/>
+            <BranchTarget i:ref="legacy-relay"/>
+            <OwnTarget i:ref="legacy-mast"/>
+          </RefNoteLeaf>
+          <RefNoteLeaf><Label>empty</Label></RefNoteLeaf>
+        </Entries>
+      </RefNoteBook>
+      <RefAssetLeaf i:tid="legacy-ref-asset-1">
+        <Label>populated</Label>
+        <RootTarget i:ref="legacy-beacon"/>
+        <BranchTarget i:ref="legacy-relay"/>
+        <OwnTarget i:ref="legacy-mast"/>
+      </RefAssetLeaf>
+      <RefAssetLeaf i:tid="legacy-ref-asset-2"><Label>empty</Label></RefAssetLeaf>
       <Mast i:tid="legacy-mast">
         <Caption>base</Caption>
         <Notes>

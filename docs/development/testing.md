@@ -112,6 +112,10 @@ nach geschriebenen Enkelzeilen.
 Bei Strukturreferenzen prüft sie das bereits gespeicherte SQL-Ziel,
 Vorwärtsauflösung, fehlende Werte, Rollback bei fehlendem Ziel und
 eine Diagnose für ein basketfremdes Ziel beim Export.
+In Quellhierarchien prüft die Suite Referenzspalten auf der Wurzel, einer
+Zwischenstufe und dem Blatt. Die Vorwärtsauflösung muss die jeweilige
+Deklarationstabelle aktualisieren. Ein fehlendes Ziel rollt auch bereits
+geschriebene Erweiterungszeilen zurück.
 Sie löst einen Rollback nach geschriebenen Strukturzeilen aus und prüft den
 Erhalt der Zieldatei bei einer beschädigten Rückverweiszuordnung.
 Bei eingebetteten 1:n-Assoziationen prüft sie die Rollenmetadaten, eine

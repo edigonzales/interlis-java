@@ -175,6 +175,17 @@
           <DbInterop23.Data.TargetPair><Label>missing</Label></DbInterop23.Data.TargetPair>
         </Pairs>
       </DbInterop23.Data.RefCarrier>
+      <DbInterop23.Data.RefNoteBook TID="legacy-ref-notebook">
+        <Entries>
+          <DbInterop23.Data.RefNoteLeaf>
+            <Label>populated</Label>
+            <RootTarget REF="legacy-beacon"/>
+            <BranchTarget REF="legacy-relay"/>
+            <OwnTarget REF="legacy-mast"/>
+          </DbInterop23.Data.RefNoteLeaf>
+          <DbInterop23.Data.RefNoteLeaf><Label>empty</Label></DbInterop23.Data.RefNoteLeaf>
+        </Entries>
+      </DbInterop23.Data.RefNoteBook>
       <DbInterop23.Data.Mast TID="legacy-mast">
         <Caption>base</Caption>
         <Notes>
