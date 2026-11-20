@@ -235,6 +235,7 @@
       <PairLeft i:tid="legacy-pairleft-1"><RightLink i:ref="legacy-pairright-1"/></PairLeft>
       <PairLeft i:tid="legacy-pairleft-2"/>
       <PairRight i:tid="legacy-pairright-1"/>
+      <ServiceAggregation><GroupWhole i:ref="legacy-refcarrier"/><GroupPart i:ref="legacy-serviceunit"/></ServiceAggregation>
       <RefCarrier i:tid="legacy-refcarrier">
         <DirectRoot i:ref="legacy-serviceunit"/><DirectBranch i:ref="legacy-tower"/>
         <Pairs>
@@ -268,6 +269,7 @@
         <ServicePoint><g:coord><g:c1>2600100.250</g:c1><g:c2>1200100.625</g:c2></g:coord></ServicePoint>
         <PairedTower i:ref="legacy-relay"/>
         <Supervisor i:ref="legacy-relay"/>
+        <WholeMast i:ref="legacy-beacon"/>
         <Label>active</Label>
         <TaggedForm i:ref="legacy-ratingform-1"><RatingTag><Memo>tagged</Memo></RatingTag></TaggedForm>
       </ServiceUnit>

@@ -189,6 +189,14 @@ MODEL DbInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
       DirectBranch : REFERENCE TO Tower;
       Pairs : LIST {0..*} OF TargetPair;
     END RefCarrier;
+    ASSOCIATION ServiceAggregation =
+      GroupWhole -<> {0..*} RefCarrier;
+      GroupPart -- {0..*} ServiceBase;
+    END ServiceAggregation;
+    ASSOCIATION MastOwnership =
+      WholeMast -<#> {0..1} Mast;
+      ServicePart -- {0..*} ServiceBase;
+    END MastOwnership;
     STRUCTURE RefNoteBase =
       Label : TEXT*12;
       RootTarget : REFERENCE TO Mast;

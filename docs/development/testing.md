@@ -142,6 +142,8 @@ Für eingebettete 1:n- und 1:1-Assoziationen mit Hierarchie-Enden prüft die Sui
 die Rollenspalte auf der abstrakten Basis und auf einem Zwischenfragment,
 Referenzen am konkreten XTF-Objekt, Selbstbezüge und fehlende Werte. Ziele im
 falschen Zweig oder Basket werden diagnostiziert.
+Die Suite prüft ausserdem eine eigenständige Aggregation und eine eingebettete
+Komposition mit Hierarchie-Enden anhand ihrer SQL-Zuordnungen und XTF-Rollen.
 Bei Klassenvererbung prüft die Suite konkrete und abstrakte Basisklassen,
 Geschwistertypen, mehrstufige Pfade, den Diskriminator und die gemeinsame ID
 der Teilzeilen. Beschädigte Daten und Vererbungsmetadaten müssen den

@@ -175,6 +175,11 @@ Eine leere Assoziationshülle mit Referenz wird wie die direkte Referenz
 importiert. SQL `NULL` ergibt beim Export eine ausgelassene Rolle.
 [ili2db-Beziehungsabbildung](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst#beziehungen)
 
+Lokale binäre Aggregationen (`-<>`) und Kompositionen (`-<#>`) ohne eigene
+Attribute verwenden dieselbe Abbildung. Die Kardinalitäten bestimmen, ob die
+Rolle auf der Eigentümertabelle oder in einer Beziehungstabelle gespeichert
+wird. Die Rollen dürfen auch Klassen in Vererbungshierarchien deklarieren.
+
 Bei n:m-Assoziationen speichert eine Beziehungstabelle beide Rollenspalten
 in Deklarationsreihenfolge und danach die eigenen skalaren Attribute. Ihre
 Zeilen erhalten eine gemeinsame SQL-ID und den Basket. `TRAFO` enthält

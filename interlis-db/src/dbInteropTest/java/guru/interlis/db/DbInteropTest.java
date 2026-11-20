@@ -205,6 +205,11 @@ final class DbInteropTest {
             assertAssociationCatalog(db, sql, model, "RelayReview",
                     Map.of("Recommended", "servicebase", "ReviewingRelays", "arelay"));
             assertAssociationCatalog(db, sql, model, "Rating", Map.of("Rated", "tower", "RatingForms", "ratingform"));
+            assertAssociationCatalog(db, sql, model, "ServiceAggregation",
+                    Map.of("GroupWhole", "refcarrier", "GroupPart", "servicebase"));
+            assertReferenceMapping(db, sql, model, "MastOwnership.WholeMast", "servicebase", "wholemast", "mast");
+            assertEquals("embedded", scalar(sql, "select setting from " + db.table("t_ili2db_trafo")
+                    + " where iliname='" + model + ".Data.MastOwnership' and tag='ch.ehi.ili2db.inheritance'"));
             assertTypeKind(db, sql, "review", "memo", "TEXT");
             assertTypeKind(db, sql, "review", "grade", "NUMERIC");
             assertTypeKind(db, sql, "annotatedlink", "memo", "TEXT");
@@ -459,6 +464,25 @@ final class DbInteropTest {
         } else {
             assertEquals(relayId, scalar(sql, "select pairedtower" + service));
         }
+    }
+
+    private static void assertStoredAggregationAndComposition(TestDatabase db, Connection sql, String dataset)
+            throws SQLException {
+        String roles = """
+                from %s a
+                join %s r on r.t_id=a.groupwhole and r.t_basket=a.t_basket
+                join %s s on s.t_id=a.grouppart and s.t_basket=a.t_basket
+                join %s b on b.t_id=a.t_basket
+                where r.t_ili_tid='%s-refcarrier' and s.t_ili_tid='%s-serviceunit' and b.t_ili_tid='%s-basket-2'
+                """.formatted(db.table("serviceaggregation"), db.table("refcarrier"), db.table("servicebase"),
+                db.table("t_ili2db_basket"), dataset, dataset, dataset);
+        assertEquals("1", scalar(sql, "select count(*) " + roles));
+        String composition = """
+                select m.t_ili_tid from %s s
+                join %s m on m.t_id=s.wholemast and m.t_basket=s.t_basket
+                where s.t_ili_tid='%s-serviceunit'
+                """.formatted(db.table("servicebase"), db.table("mast"), dataset);
+        assertEquals(dataset + "-beacon", scalar(sql, composition));
     }
 
     private static void assertReferenceMapping(TestDatabase db, Connection sql, String model, String attribute,
@@ -1632,6 +1656,7 @@ final class DbInteropTest {
         assertSrs(db, sql, "place", "ageometry", srsId);
         assertStoredClassHierarchy(db, sql, version, dataset);
         assertStoredHierarchyRoles(db, sql, version, dataset);
+        assertStoredAggregationAndComposition(db, sql, dataset);
         assertStoredHierarchyReferences(db, sql, version, dataset);
         assertStoredInheritedStructures(db, sql, dataset);
         assertStoredStructures(db, sql, dataset);
@@ -2232,8 +2257,10 @@ final class DbInteropTest {
         assertTableRows(db, sql, "relayreview", datasets);
         tables.add("relayreview");
         tables.addAll(List.of("ratingform", "rating"));
+        assertTableRows(db, sql, "serviceaggregation", datasets);
+        tables.add("serviceaggregation");
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 102 : 91)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 103 : 92)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
     }
 
@@ -2260,6 +2287,8 @@ final class DbInteropTest {
         String hierarchyPrefix = version == 24 ? "" : "DbInterop23.Data.";
         var hierarchyLinks = new HashSet<String>();
         String annotatedLinkName = version == 24 ? "AnnotatedLink" : "DbInterop23.Data.AnnotatedLink";
+        String aggregationName = version == 24 ? "ServiceAggregation" : "DbInterop23.Data.ServiceAggregation";
+        int aggregations = 0;
         for (Element basket : children(data)) {
             assertEquals(version == 24 ? "Data" : "DbInterop23.Data", basket.getLocalName());
             String bid = id(basket, version, "bid");
@@ -2300,6 +2329,14 @@ final class DbInteropTest {
                     assertEquals("major", text(object, "Severity"));
                     continue;
                 }
+                if (object.getLocalName().equals(aggregationName)) {
+                    assertEquals("", tid);
+                    assertEquals(dataset + "-basket-2", bid);
+                    assertLocalReference(object, "GroupWhole", version, dataset + "-refcarrier");
+                    assertLocalReference(object, "GroupPart", version, dataset + "-serviceunit");
+                    aggregations++;
+                    continue;
+                }
                 assertNull(objects.put(tid, object));
                 tids.add(tid);
             }
@@ -2307,6 +2344,7 @@ final class DbInteropTest {
         }
         assertEquals(Set.of("HierarchyLink", "HierarchyNote"), hierarchyLinks);
         assertEquals(expectedMarkerLinks(dataset), markerLinks);
+        assertEquals(1, aggregations);
         assertEquals(Set.of(new AnnotatedPair(dataset + "-marker-1", dataset + "-report-1", "confirmed", "-3", "approved"),
                 new AnnotatedPair(dataset + "-marker-2", dataset + "-report-1", hasEmptyText ? "" : null, null, null)),
                 annotatedLinks);
@@ -2566,8 +2604,9 @@ final class DbInteropTest {
         assertClassFields(objects.get(dataset + "-beacon"), prefix + "Beacon", Map.of("Caption", "sibling", "Signal", "green"));
         var serviceUnit = objects.get(dataset + "-serviceunit");
         assertClassFields(serviceUnit, prefix + "ServiceUnit", Map.of("ServiceCode", "unit-1", "Label", "active"),
-                "ServicePoint", "Supervisor", "PairedTower", "TaggedForm");
+                "ServicePoint", "Supervisor", "PairedTower", "TaggedForm", "WholeMast");
         assertLocalReference(serviceUnit, "Supervisor", version, dataset + "-relay");
+        assertLocalReference(serviceUnit, "WholeMast", version, dataset + "-beacon");
         if (version == 23) {
             assertLocalReference(relay, "PairedService", version, dataset + "-serviceunit");
             assertNull(child(serviceUnit, "PairedTower"));

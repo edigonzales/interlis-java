@@ -432,6 +432,10 @@ final class DbMapping {
                 || second.role().cardinality().upper().equals(CardinalityUpper.finite(0))) {
             throw unsupported(feature + " requires both roles to admit a target");
         }
+        if (association.slots().stream().anyMatch(AttributeSlot.class::isInstance)
+                && roles.stream().anyMatch(role -> role.role().aggregation() != RoleAggregation.NONE)) {
+            throw unsupported("attributes on an aggregation or composition at " + association.name().declared());
+        }
         return List.of(new AssociationRole(first, roleTarget(plan, association, first)),
                 new AssociationRole(second, roleTarget(plan, association, second)));
     }
@@ -462,8 +466,7 @@ final class DbMapping {
         var role = slot.role();
         String feature = "role " + slot.name().declared();
         if (role.targets().size() != 1 || !role.targets().getFirst().restrictions().isEmpty()
-                || role.external() || role.ordered() || role.hiding() || role.derivation().isPresent()
-                || role.aggregation() != RoleAggregation.NONE) {
+                || role.external() || role.ordered() || role.hiding() || role.derivation().isPresent()) {
             throw unsupported(feature);
         }
         var target = new SymbolRef(plan.snapshotId(), role.targets().getFirst().base());

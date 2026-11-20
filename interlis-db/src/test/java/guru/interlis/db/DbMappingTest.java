@@ -14,6 +14,32 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class DbMappingTest {
     @Test
+    void rejectsOwnAttributesOnAggregationsAndCompositions() {
+        for (String version : List.of("2.3", "2.4")) {
+            for (String strength : List.of("-<>", "-<#>")) {
+                var source = new SourceText(new SourceId("test:/Ownership.ili"), new SourceRevision(1), """
+                        INTERLIS %s;
+                        MODEL Ownership (en) AT "https://example.org" VERSION "2026-11-20" =
+                          TOPIC Data =
+                            CLASS Parent = END Parent;
+                            CLASS Child = END Child;
+                            ASSOCIATION OwnershipLink =
+                              Whole %s {0..1} Parent;
+                              Part -- {0..*} Child;
+                              Note : TEXT*40;
+                            END OwnershipLink;
+                          END Data;
+                        END Ownership.
+                        """.formatted(version, strength));
+                var rejected = assertThrows(DbException.class,
+                        () -> DbMapping.planNew("Ownership", source, false, CancellationToken.none()));
+                assertTrue(rejected.getMessage().contains("attributes on an aggregation or composition at Ownership.Data.OwnershipLink"),
+                        rejected::getMessage);
+            }
+        }
+    }
+
+    @Test
     void rejectsCyclicStructureCompositionDuringPlanning() {
         for (String version : List.of("2.3", "2.4")) {
             var source = new SourceText(new SourceId("test:/Tree.ili"), new SourceRevision(1), """

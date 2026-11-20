@@ -169,6 +169,7 @@
       <DbInterop23.Data.PairRight TID="legacy-pairright-1"><LeftLink REF="legacy-pairleft-1"/></DbInterop23.Data.PairRight>
       <DbInterop23.Data.PairLeft TID="legacy-pairleft-1"/>
       <DbInterop23.Data.PairLeft TID="legacy-pairleft-2"/>
+      <DbInterop23.Data.ServiceAggregation><GroupWhole REF="legacy-refcarrier"/><GroupPart REF="legacy-serviceunit"/></DbInterop23.Data.ServiceAggregation>
       <DbInterop23.Data.RefCarrier TID="legacy-refcarrier">
         <Pairs>
           <DbInterop23.Data.TargetPair><Label>forward</Label><RootTarget REF="legacy-serviceunit"/><BranchTarget REF="legacy-relay"/></DbInterop23.Data.TargetPair>
@@ -193,6 +194,7 @@
         <ServiceCode>unit-1</ServiceCode>
         <ServicePoint><COORD><C1>2600100.250</C1><C2>1200100.625</C2></COORD></ServicePoint>
         <Supervisor REF="legacy-relay"/>
+        <WholeMast REF="legacy-beacon"/>
         <Label>active</Label>
       </DbInterop23.Data.ServiceUnit>
       <DbInterop23.Data.RatingForm TID="legacy-ratingform-1"><Rated REF="legacy-relay"><DbInterop23.Data.Rating><Memo>checked</Memo></DbInterop23.Data.Rating></Rated><TaggedUnit REF="legacy-serviceunit"><DbInterop23.Data.RatingTag><Memo>tagged</Memo></DbInterop23.Data.RatingTag></TaggedUnit></DbInterop23.Data.RatingForm>
