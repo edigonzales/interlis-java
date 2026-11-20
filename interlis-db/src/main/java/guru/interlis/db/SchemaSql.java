@@ -275,7 +275,7 @@ final class SchemaSql {
                 case INTEGER -> "INTEGER";
                 case ENUMERATION -> text(255);
                 case REFERENCE -> idType();
-                case POINT, POLYLINE, SURFACE, MULTISURFACE -> {
+                case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> {
                     String type = column.kind().geometryType();
                     yield gpkg ? type : postgisGeometryType + "(" + type + ", " + column.srsId() + ")";
                 }

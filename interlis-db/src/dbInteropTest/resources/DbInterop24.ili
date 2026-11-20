@@ -9,6 +9,8 @@ MODEL DbInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
     RoutePosition = COORD 2450000.500 .. 2880000.250, 1040000.125 .. 1320000.750;
     !!@ CRS=EPSG:02056
     PlotPosition = COORD 2440000.125 .. 2885000.750, 1035000.500 .. 1325000.250;
+    !!@ CRS=EPSG:02056
+    SurveyPositions = MULTICOORD 2460000.125 .. 2870000.750, 1045000.500 .. 1310000.250;
     Approval = (draft, approved);
 
   TOPIC Data =
@@ -39,6 +41,12 @@ MODEL DbInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
     CLASS District =
       Coverage : MULTIAREA WITH (STRAIGHTS, ARCS) VERTEX PlotPosition WITHOUT OVERLAPS > 0.001;
     END District;
+    CLASS RouteGroup =
+      Traces : MULTIPOLYLINE WITH (STRAIGHTS, ARCS) VERTEX RoutePosition;
+    END RouteGroup;
+    CLASS Survey =
+      Locations : SurveyPositions;
+    END Survey;
   END Data;
 
   TOPIC Naming =

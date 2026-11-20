@@ -110,7 +110,8 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
             case INTEGER -> "NUMERIC";
             case ENUMERATION -> "ENUM";
             case POINT -> "COORD";
-            case POLYLINE, SURFACE, MULTISURFACE -> ((GeometryType) effective).geometryKind().name();
+            case MULTIPOINT -> "MULTICOORD";
+            case POLYLINE, SURFACE, MULTICURVE, MULTISURFACE -> ((GeometryType) effective).geometryKind().name();
             case REFERENCE -> null;
         };
         if (typeKind != null) property(properties, table, null, column, "typeKind", typeKind);
@@ -148,9 +149,9 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
     private static GeometryColumn geometryColumn(List<ColumnProperty> properties, DbMapping mapping,
                                                  DbMapping.Table table, DbMapping.Column column) {
         CoordinateType coordinates;
-        if (column.effectiveType() instanceof CoordinateType point) {
-            validatePointCrs(mapping, column, point);
-            coordinates = point;
+        if (column.effectiveType() instanceof CoordinateType coordinateType) {
+            validateCoordinateCrs(mapping, column, coordinateType);
+            coordinates = coordinateType;
         } else {
             var domain = DbMapping.vertexDomain(mapping.plan(), (GeometryType) column.effectiveType());
             coordinates = (CoordinateType) type(mapping, new TypeRef(mapping.plan().snapshotId(), domain.typeId()));
@@ -167,7 +168,7 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
         return new GeometryColumn(column, minX, minY, maxX, maxY);
     }
 
-    private static void validatePointCrs(DbMapping mapping, DbMapping.Column column, CoordinateType point) {
+    private static void validateCoordinateCrs(DbMapping mapping, DbMapping.Column column, CoordinateType coordinates) {
         Symbol declaration = column.slot().attribute();
         if (declaredType(mapping, column) instanceof DomainReferenceType alias) {
             var domain = (DomainSymbol) symbol(mapping, new SymbolRef(mapping.plan().snapshotId(), alias.targetDomain()));
@@ -177,7 +178,9 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
             }
             declaration = domain;
         }
-        DbMapping.validateGeometryCrs(mapping.plan(), point, declaration, "point", column.slot().name().declared().toString());
+        String geometry = coordinates.multiCoordinate() ? "multipoint" : "point";
+        DbMapping.validateGeometryCrs(mapping.plan(), coordinates, declaration, geometry,
+                column.slot().name().declared().toString());
     }
 
     private static Double bound(List<ColumnProperty> properties, DbMapping.Table table, DbMapping.Column column,

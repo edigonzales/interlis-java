@@ -120,7 +120,7 @@ final class GeoPackageSchema {
                     registerFeature(feature, geometry, table.name(), spatial);
                     var kind = spatial.column().kind();
                     if (kind == DbMapping.Kind.POLYLINE || kind == DbMapping.Kind.SURFACE
-                            || kind == DbMapping.Kind.MULTISURFACE) {
+                            || kind == DbMapping.Kind.MULTICURVE || kind == DbMapping.Kind.MULTISURFACE) {
                         extension.setString(1, table.name());
                         extension.setString(2, spatial.column().name());
                         extension.setString(3, "gpkg_geom_" + kind.geometryType());

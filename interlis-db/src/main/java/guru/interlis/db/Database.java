@@ -3,6 +3,8 @@ package guru.interlis.db;
 import guru.interlis.db.DbMapping.Column;
 import guru.interlis.db.DbMapping.Kind;
 import guru.interlis.transfer.TransferGeometry;
+import guru.interlis.transfer.TransferGeometry.MultiCoordinate;
+import guru.interlis.transfer.TransferGeometry.MultiPolyline;
 import guru.interlis.transfer.TransferGeometry.MultiSurface;
 import org.sqlite.SQLiteConfig;
 import org.sqlite.SQLiteOpenMode;
@@ -229,8 +231,14 @@ final class Database implements AutoCloseable {
                 return null;
             }
             var geometry = GeometryBinary.decode(bytes, gpkg(), column.srsId(), column.kind());
-            // The reference exporter omits an attribute stored as MULTISURFACE EMPTY.
-            return geometry instanceof MultiSurface multi && multi.surfaces().isEmpty() ? null : geometry;
+            // The reference exporter omits attributes stored as empty collections.
+            boolean empty = switch (geometry) {
+                case MultiCoordinate multi -> multi.coordinates().isEmpty();
+                case MultiPolyline multi -> multi.lines().isEmpty();
+                case MultiSurface multi -> multi.surfaces().isEmpty();
+                default -> false;
+            };
+            return empty ? null : geometry;
         } catch (DbException failure) {
             throw invalidGeometry(column, failure);
         }

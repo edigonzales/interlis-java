@@ -122,6 +122,27 @@
           </g:polyline></g:exterior></g:surface>
         </g:multisurface></Coverage>
       </District>
+      <RouteGroup i:tid="legacy-routegroup-1">
+        <Traces><g:multipolyline>
+          <g:polyline>
+            <g:coord><g:c1>2600123.125</g:c1><g:c2>1200456.375</g:c2></g:coord>
+            <g:coord><g:c1>2600345.250</g:c1><g:c2>1200678.500</g:c2></g:coord>
+            <g:coord><g:c1>2600567.625</g:c1><g:c2>1200456.750</g:c2></g:coord>
+          </g:polyline>
+          <g:polyline>
+            <g:coord><g:c1>2600600.500</g:c1><g:c2>1200600.250</g:c2></g:coord>
+            <g:coord><g:c1>2600610.500</g:c1><g:c2>1200600.250</g:c2></g:coord>
+            <g:arc><g:c1>2600620.500</g:c1><g:c2>1200600.250</g:c2><g:a1>2600615.500</g:a1><g:a2>1200605.250</g:a2></g:arc>
+            <g:coord><g:c1>2600630.500</g:c1><g:c2>1200600.250</g:c2></g:coord>
+          </g:polyline>
+        </g:multipolyline></Traces>
+      </RouteGroup>
+      <Survey i:tid="legacy-survey-1">
+        <Locations><g:multicoord>
+          <g:coord><g:c1>2601500.625</g:c1><g:c2>1201500.500</g:c2></g:coord>
+          <g:coord><g:c1>2601100.125</g:c1><g:c2>1201100.750</g:c2></g:coord>
+        </g:multicoord></Locations>
+      </Survey>
     </Data>
     <Data i:bid="legacy-basket-2">
       <Place i:tid="legacy-place-3"/>
@@ -130,6 +151,8 @@
       <Parcel i:tid="legacy-parcel-3"/>
       <Park i:tid="legacy-park-2"/>
       <District i:tid="legacy-district-2"/>
+      <RouteGroup i:tid="legacy-routegroup-2"/>
+      <Survey i:tid="legacy-survey-2"/>
     </Data>
   </i:datasection>
 </i:transfer>

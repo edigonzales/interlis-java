@@ -98,13 +98,13 @@ Polylinien und Flächen werden separat geprüft. Die Tests vergleichen Punkte,
 gerade und gebogene Segmente, Aussen- und Innenringe, die gemeinsame Kante
 benachbarter `AREA`-Objekte, SRS und `NULL` für XTF 2.3 und 2.4 in beiden
 Werkzeugrichtungen. In 2.3 prüfen sie auch die Zusammenführung eines
-geteilten Randes. In 2.4 prüfen sie die geordneten Teilflächen von
-`MULTISURFACE` und `MULTIAREA` und den Export einer leeren SQL-Geometrie.
-Die Suite prüft den Import-Rollback bei einem expliziten Bogenradius, offenem
-Ring oder einer leeren `multisurface`, den Erhalt der bisherigen XTF-Datei
-bei beschädigter Geometrie und einen weiteren Referenzimport nach dem
-neuen Import. Das Originalwerkzeug lädt das Modell
-für das neue Schema aus der Datenbank.
+geteilten Randes. In 2.4 prüfen sie die geordneten Teile von
+`MULTICOORD`, `MULTIPOLYLINE`, `MULTISURFACE` und `MULTIAREA` sowie den
+Export leerer SQL-Sammlungen. Die Suite prüft den Import-Rollback bei
+einem expliziten Bogenradius, offenem Ring oder einer leeren XTF-Sammlung,
+den Erhalt der bisherigen XTF-Datei bei beschädigter Geometrie und einen
+weiteren Referenzimport nach dem neuen Import. Das Originalwerkzeug lädt
+das Modell für das neue Schema aus der Datenbank.
 
 Die JUnit-Rohberichte stehen unter `interlis-db/build/test-results/dbInteropTest/`.
 

@@ -13,7 +13,6 @@ import guru.interlis.model.CardinalityUpper;
 import guru.interlis.model.CoordinateType;
 import guru.interlis.model.DomainSymbol;
 import guru.interlis.model.EnumerationType;
-import guru.interlis.model.GeometryKind;
 import guru.interlis.model.GeometryType;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.NumericType;
@@ -51,15 +50,19 @@ import static guru.interlis.db.Ili2dbLayout.reservedTable;
 /** The SQL names and storage bindings for a checked transfer plan. */
 final class DbMapping {
     enum Kind {
-        TEXT, BOOLEAN, INTEGER, ENUMERATION, POINT, POLYLINE, SURFACE, MULTISURFACE, REFERENCE;
+        TEXT, BOOLEAN, INTEGER, ENUMERATION, POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE;
 
-        boolean geometry() { return this == POINT || this == POLYLINE || this == SURFACE || this == MULTISURFACE; }
+        boolean geometry() { return this == POINT || this == POLYLINE || this == SURFACE || collection(); }
+
+        boolean collection() { return this == MULTIPOINT || this == MULTICURVE || this == MULTISURFACE; }
 
         String geometryType() {
             return switch (this) {
                 case POINT -> "POINT";
                 case POLYLINE -> "COMPOUNDCURVE";
                 case SURFACE -> "CURVEPOLYGON";
+                case MULTIPOINT -> "MULTIPOINT";
+                case MULTICURVE -> "MULTICURVE";
                 case MULTISURFACE -> "MULTISURFACE";
                 default -> throw new IllegalStateException("Expected a geometry kind: " + this);
             };
@@ -192,7 +195,8 @@ final class DbMapping {
             case TextType text when text.textKind() == TextKind.TEXT || text.textKind() == TextKind.MTEXT -> Kind.TEXT;
             case NumericType number when int32(number) -> Kind.INTEGER;
             case EnumerationType enumeration -> Kind.ENUMERATION;
-            case CoordinateType point when xy(point) && optional(attr) -> Kind.POINT;
+            case CoordinateType coordinates when coordinates.dimensions() == 2 && optional(attr) ->
+                    coordinates.multiCoordinate() ? Kind.MULTIPOINT : Kind.POINT;
             case GeometryType geometry when optional(attr) -> curveGeometryKind(plan, geometry, path);
             case ReferenceType reference when !reference.external() && reference.target().isPresent()
                     && reference.restrictions().isEmpty() && optional(attr) -> Kind.REFERENCE;
@@ -212,18 +216,14 @@ final class DbMapping {
         return new Column(attr, name, kind, type, target, 0);
     }
 
-    private static boolean xy(CoordinateType coordinate) {
-        return coordinate.dimensions() == 2 && !coordinate.multiCoordinate();
-    }
-
     private static Kind curveGeometryKind(TransferPlan plan, GeometryType geometry, String path) {
         String feature = "attribute " + path + " (" + geometry.kind() + ")";
         var geometryKind = geometry.geometryKind();
         var kind = switch (geometryKind) {
             case POLYLINE -> Kind.POLYLINE;
+            case MULTIPOLYLINE -> Kind.MULTICURVE;
             case SURFACE, AREA -> Kind.SURFACE;
             case MULTISURFACE, MULTIAREA -> Kind.MULTISURFACE;
-            default -> throw unsupported(feature);
         };
         if (geometry.lineAttributes().isPresent() || geometry.lineForms().isEmpty() || geometry.vertexDomain().isEmpty()) {
             throw unsupported(feature);
@@ -237,7 +237,8 @@ final class DbMapping {
         }
         var domain = vertexDomain(plan, geometry);
         var type = plan.type(new TypeRef(plan.snapshotId(), domain.typeId())).known().orElseThrow();
-        if (domain.generic() || !(type instanceof CoordinateType coordinates) || !xy(coordinates)) {
+        if (domain.generic() || !(type instanceof CoordinateType coordinates)
+                || coordinates.dimensions() != 2 || coordinates.multiCoordinate()) {
             throw unsupported(feature);
         }
         validateGeometryCrs(plan, coordinates, domain, geometryKind.name().toLowerCase(Locale.ROOT), path);

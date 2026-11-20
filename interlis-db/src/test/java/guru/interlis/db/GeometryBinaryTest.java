@@ -1,9 +1,13 @@
 package guru.interlis.db;
 
+import guru.interlis.db.DbMapping.Kind;
+import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TransferGeometry.Arc;
 import guru.interlis.transfer.TransferGeometry.ArcRadius;
 import guru.interlis.transfer.TransferGeometry.Coordinate;
 import guru.interlis.transfer.TransferGeometry.CurvePart;
+import guru.interlis.transfer.TransferGeometry.MultiCoordinate;
+import guru.interlis.transfer.TransferGeometry.MultiPolyline;
 import guru.interlis.transfer.TransferGeometry.MultiSurface;
 import guru.interlis.transfer.TransferGeometry.Polyline;
 import guru.interlis.transfer.TransferGeometry.RadiusConvention;
@@ -23,10 +27,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static guru.interlis.db.DbMapping.Kind.MULTICURVE;
+import static guru.interlis.db.DbMapping.Kind.MULTIPOINT;
 import static guru.interlis.db.DbMapping.Kind.MULTISURFACE;
 import static guru.interlis.db.DbMapping.Kind.POINT;
 import static guru.interlis.db.DbMapping.Kind.POLYLINE;
 import static guru.interlis.db.DbMapping.Kind.SURFACE;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -316,32 +323,99 @@ final class GeometryBinaryTest {
     }
 
     @Test
-    void readsEmptyMultiSurfaceStorageAndRejectsAnEmptyTransferValue() {
-        var empty = new MultiSurface(List.of());
-        byte[] wkb = multiWkb();
-        assertEquals(empty, GeometryBinary.decode(wkb, false, 2056, MULTISURFACE));
-        for (int flags : new int[] {0, 2, 16}) {
-            assertEquals(empty, GeometryBinary.decode(geoPackage(wkb, flags), true, 2056, MULTISURFACE));
-        }
-        assertThrows(DbException.class, () -> GeometryBinary.encode(empty, true, 2056, MULTISURFACE));
-        assertThrows(DbException.class, () -> GeometryBinary.decode(geoPackage(wkb, 18), true, 2056, MULTISURFACE));
-        byte[] child = GeometryBinary.encode(new Surface(square(), List.of()), false, 2056, SURFACE);
+    void readsEmptyCollectionStorageAndRejectsEmptyTransferValues() {
+        assertEmptyCollection(new MultiCoordinate(List.of()), MULTIPOINT, 4,
+                pointWkb(ByteOrder.BIG_ENDIAN, 3.0, 5.0));
+        assertEmptyCollection(new MultiPolyline(List.of()), MULTICURVE, 11,
+                GeometryBinary.encode(polyline(), false, 2056, POLYLINE));
+        assertEmptyCollection(new MultiSurface(List.of()), MULTISURFACE, 12,
+                GeometryBinary.encode(new Surface(square(), List.of()), false, 2056, SURFACE));
+    }
+
+    @Test
+    void writesMultiPointChildrenInOrderAndReadsMixedByteOrders() {
+        var points = new MultiCoordinate(List.of(coordinate("3.0", "5.0"), coordinate("1.0", "6.0")));
+        byte[] first = pointWkb(ByteOrder.BIG_ENDIAN, 3.0, 5.0);
+        byte[] second = pointWkb(ByteOrder.BIG_ENDIAN, 1.0, 6.0);
+        byte[] canonical = geoPackage(multiWkb(4, first, second), 0);
+        assertArrayEquals(canonical, GeometryBinary.encode(points, true, 2056, MULTIPOINT));
+        assertEquals(points, GeometryBinary.decode(canonical, true, 2056, MULTIPOINT));
+
+        byte[] mixed = multiWkb(4, pointWkb(ByteOrder.LITTLE_ENDIAN, 3.0, 5.0), second);
+        assertEquals(points, GeometryBinary.decode(mixed, false, 2056, MULTIPOINT));
+        assertMalformedCollection(mixed, MULTIPOINT);
+        byte[] emptyPoint = pointWkb(ByteOrder.BIG_ENDIAN, Double.NaN, Double.NaN);
         assertThrows(DbException.class, () -> GeometryBinary.decode(
-                geoPackage(multiWkb(child), 16), true, 2056, MULTISURFACE));
+                multiWkb(4, first, emptyPoint), false, 2056, MULTIPOINT));
+        ByteBuffer.wrap(second).putInt(1, 2);
+        assertThrows(DbException.class, () -> GeometryBinary.decode(
+                multiWkb(4, first, second), false, 2056, MULTIPOINT));
+    }
+
+    @Test
+    void writesCompoundCurveChildrenAndReadsMixedLineStringChildren() {
+        var straight = polyline();
+        var curved = circularHole().lines().getFirst();
+        var lines = new MultiPolyline(List.of(straight, curved));
+        byte[] compoundStraight = GeometryBinary.encode(straight, false, 2056, POLYLINE);
+        byte[] compoundCurved = GeometryBinary.encode(curved, false, 2056, POLYLINE);
+        byte[] canonical = geoPackage(multiWkb(11, compoundStraight, compoundCurved), 0);
+        assertArrayEquals(canonical, GeometryBinary.encode(lines, true, 2056, MULTICURVE));
+        assertEquals(lines, GeometryBinary.decode(canonical, true, 2056, MULTICURVE));
+
+        byte[] directStraight = ByteBuffer.allocate(57).order(ByteOrder.LITTLE_ENDIAN)
+                .put((byte) 1).putInt(2).putInt(3)
+                .putDouble(2600000.25).putDouble(1200000.125)
+                .putDouble(2600002.5).putDouble(1200003.25)
+                .putDouble(2599999.5).putDouble(1200001.75).array();
+        byte[] mixed = multiWkb(11, directStraight, compoundCurved);
+        assertEquals(lines, GeometryBinary.decode(mixed, false, 2056, MULTICURVE));
+        assertMalformedCollection(mixed, MULTICURVE);
+
+        // The reference accepts a circular component in a compound curve, but rejects it as a direct member.
+        ByteBuffer.wrap(directStraight).order(ByteOrder.LITTLE_ENDIAN).putInt(1, 8);
+        assertThrows(DbException.class, () -> GeometryBinary.decode(
+                multiWkb(11, directStraight), false, 2056, MULTICURVE));
+        for (int type : new int[] {2, 9}) {
+            assertThrows(DbException.class, () -> GeometryBinary.decode(
+                    multiWkb(11, compoundCurved, wkbCount(type, 0)), false, 2056, MULTICURVE));
+        }
+        var emptyChild = new MultiPolyline(List.of(straight, new Polyline(List.of())));
+        assertThrows(DbException.class, () -> GeometryBinary.encode(emptyChild, false, 2056, MULTICURVE));
+    }
+
+    @Test
+    void boundsStoredPointsAndCurveMembersBeforeReadingChildren() {
+        assertInvalidCollectionCount(4, 100_001, MULTIPOINT);
+        assertInvalidCollectionCount(4, -1, MULTIPOINT);
+        assertInvalidCollectionCount(11, 50_001, MULTICURVE);
+        assertInvalidCollectionCount(11, -1, MULTICURVE);
+        var points = new MultiCoordinate(Collections.nCopies(100_001, coordinate("3.0", "5.0")));
+        var failure = assertThrows(DbException.class, () -> GeometryBinary.encode(points, false, 2056, MULTIPOINT));
+        assertEquals("A multipoint permits at most 100000 stored XY pairs", failure.getMessage());
+    }
+
+    @Test
+    void countsStoredCoordinatesAcrossAllMultiCurveChildren() {
+        var start = coordinate("4.0", "5.0");
+        var manyVertices = new CurvePart(start, Collections.nCopies(50_000, new Straight(start)));
+        var child = new Polyline(List.of(manyVertices));
+        byte[] childWkb = GeometryBinary.encode(child, false, 2056, POLYLINE);
+        var read = assertThrows(DbException.class, () -> GeometryBinary.decode(
+                multiWkb(11, childWkb, childWkb), false, 2056, MULTICURVE));
+        assertEquals("A multicurve permits at most 100000 stored XY pairs", read.getMessage());
+        var write = assertThrows(DbException.class, () -> GeometryBinary.encode(
+                new MultiPolyline(List.of(child, child)), false, 2056, MULTICURVE));
+        assertEquals(read.getMessage(), write.getMessage());
     }
 
     @Test
     void rejectsEmptyOrMalformedMultiSurfaceChildren() {
         byte[] child = GeometryBinary.encode(new Surface(square(), List.of()), false, 2056, SURFACE);
-        byte[] valid = multiWkb(child, child);
-        assertThrows(DbException.class, () -> GeometryBinary.decode(
-                Arrays.copyOf(valid, valid.length - 1), false, 2056, MULTISURFACE));
-        assertThrows(DbException.class, () -> GeometryBinary.decode(
-                Arrays.copyOf(valid, valid.length + 1), false, 2056, MULTISURFACE));
+        assertMalformedCollection(multiWkb(12, child, child), MULTISURFACE);
         for (int type : new int[] {3, 10, 7}) {
-            byte[] invalidChild = ByteBuffer.allocate(9).put((byte) 0).putInt(type).putInt(0).array();
             assertThrows(DbException.class, () -> GeometryBinary.decode(
-                    multiWkb(child, invalidChild), false, 2056, MULTISURFACE));
+                    multiWkb(12, child, wkbCount(type, 0)), false, 2056, MULTISURFACE));
         }
         var emptyChild = new Surface(new Ring(List.of(line(coordinate("0.0", "0.0")))), List.of());
         assertThrows(DbException.class, () -> GeometryBinary.encode(
@@ -355,17 +429,51 @@ final class GeometryBinaryTest {
         var child = new Surface(new Ring(List.of(new Polyline(List.of(manyVertices)))), List.of());
         byte[] childWkb = GeometryBinary.encode(child, false, 2056, SURFACE);
         var read = assertThrows(DbException.class, () -> GeometryBinary.decode(
-                multiWkb(childWkb, childWkb), false, 2056, MULTISURFACE));
+                multiWkb(12, childWkb, childWkb), false, 2056, MULTISURFACE));
         assertEquals("A multisurface permits at most 100000 stored XY pairs", read.getMessage());
         var write = assertThrows(DbException.class, () -> GeometryBinary.encode(
                 new MultiSurface(List.of(child, child)), false, 2056, MULTISURFACE));
         assertEquals(read.getMessage(), write.getMessage());
     }
 
-    private static byte[] multiWkb(byte[]... children) {
+    private static void assertEmptyCollection(TransferGeometry empty, Kind kind, int type, byte[] child) {
+        byte[] wkb = multiWkb(type);
+        assertEquals(empty, GeometryBinary.decode(wkb, false, 2056, kind));
+        for (int flags : new int[] {0, 2, 16}) {
+            assertEquals(empty, GeometryBinary.decode(geoPackage(wkb, flags), true, 2056, kind));
+        }
+        assertThrows(DbException.class, () -> GeometryBinary.encode(empty, true, 2056, kind));
+        assertThrows(DbException.class, () -> GeometryBinary.decode(geoPackage(wkb, 18), true, 2056, kind));
+        assertThrows(DbException.class, () -> GeometryBinary.decode(
+                geoPackage(multiWkb(type, child), 16), true, 2056, kind));
+    }
+
+    private static void assertInvalidCollectionCount(int type, int count, Kind kind) {
+        var error = assertThrows(DbException.class, () ->
+                GeometryBinary.decode(wkbCount(type, count), false, 2056, kind));
+        assertEquals("Invalid WKB " + kind.geometryType() + " count", error.getMessage());
+    }
+
+    private static void assertMalformedCollection(byte[] valid, Kind kind) {
+        assertThrows(DbException.class, () -> GeometryBinary.decode(
+                Arrays.copyOf(valid, valid.length - 1), false, 2056, kind));
+        assertThrows(DbException.class, () -> GeometryBinary.decode(
+                Arrays.copyOf(valid, valid.length + 1), false, 2056, kind));
+    }
+
+    private static byte[] pointWkb(ByteOrder order, double x, double y) {
+        return ByteBuffer.allocate(21).order(order).put((byte) (order == ByteOrder.LITTLE_ENDIAN ? 1 : 0))
+                .putInt(1).putDouble(x).putDouble(y).array();
+    }
+
+    private static byte[] wkbCount(int type, int count) {
+        return ByteBuffer.allocate(9).put((byte) 0).putInt(type).putInt(count).array();
+    }
+
+    private static byte[] multiWkb(int type, byte[]... children) {
         int length = 9;
         for (byte[] child : children) length += child.length;
-        var data = ByteBuffer.allocate(length).put((byte) 0).putInt(12).putInt(children.length);
+        var data = ByteBuffer.allocate(length).put((byte) 0).putInt(type).putInt(children.length);
         for (byte[] child : children) data.put(child);
         return data.array();
     }
