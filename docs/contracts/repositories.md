@@ -119,7 +119,6 @@ Paket `guru.interlis.repository`, Modul `interlis-repository`. Diese APIs dürfe
 | `HttpSourceLoader` | implementiert `load` | expliziter HTTP-Client, Timeout, Redirect-/Grössenlimits, Abbruch |
 | `RepositoryIndexReader` | `read(IndexPayload, RepositoryBase)` | standardkonforme Indexauswertung und sichere relative URI-Auflösung |
 | `ContentStore` | `lookup(ContentDigest)`, `put(VerifiedContent)` | Cache kann fehlen; Treffer nur bei passendem Digest, atomare Speicherung |
-| `RepositoryRefreshService` | `refresh(RepositoryConfig, previousState, token)` | neuer unveränderlicher Katalog mit Revision; keine Mutation laufender Analysen |
 
 `FetchPolicy` benennt `offline`, `maxBytes`, `connectTimeout`, `readTimeout` und optionalen `requestTimeout`. Die [HTTP-Netzwerkpolicy](#http-netzwerkpolicy-res-009-arch-005) legt die Defaults fest. Redirects sind auf fünf begrenzt; Cache und Proxy werden separat im Host konfiguriert. Der Kern kennt keine HTTP-Authentisierung. Tokens, Cookies oder signierte Querywerte dürfen weder zu DiagnosticArgument noch in öffentliche ResolutionTrace-Werte gelangen.
 
