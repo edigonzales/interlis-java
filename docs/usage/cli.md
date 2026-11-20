@@ -33,8 +33,8 @@ sind darin nicht erfasst. Ohne gültige eingebettete Revision entfällt die
 Git-Angabe. Die Textausgabe nennt zur Fehlersuche auch die laufende JVM
 und die Parserherkunft.
 
-Exitcodes sind 0 für den erfolgreichen Befehl, 1 für fachliche Ablehnung,
-2 für Bedienfehler, 3 für interne oder operationale Fehler und 4 für Abbruch.
+Exitcodes sind 0 für den erfolgreichen Befehl, 1 für fachliche Ablehnung
+oder Betriebsfehler, 2 für Bedienfehler, 3 für interne Fehler und 4 für Abbruch.
 In `format --check` bezeichnet 1 auch einen Formatierungsbedarf.
 `--json` schreibt bei den unterstützten Befehlen ein vollständiges
 JSON-Ergebnis nach stdout. Textdiagnosen gehen nach stderr. Datenströme und

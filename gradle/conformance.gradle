@@ -71,7 +71,7 @@ tasks.register('codebergConformance') {
         def tests = report.compilers[0].tests
         if (tests.any { !(it.languageVersion in ['2.3', '2.4']) })
             throw new GradleException('Codeberg selection must use INTERLIS 2.3 and 2.4 test cases')
-        tests.findAll { it.classification == 'XFAIL' }.each { result ->
+        tests.findAll { it.actualOutcome == 'rejected' || it.classification == 'XFAIL' }.each { result ->
             try {
                 def payload = new groovy.json.JsonSlurper().parseText(result.stdout)
                 def errors = payload.diagnostics.findAll { it.severity == 'ERROR' }
@@ -88,8 +88,10 @@ tasks.register('codebergConformance') {
                                                  'ili23.MainRule23Test.mainRules_SyntaxIli23']) {
                         reason = 'MISSING_INPUT'
                         expectedDiagnostics = errors*.code == ['ILI-RES-0001']
-                    } else {
+                    } else if (result.classification == 'XFAIL') {
                         expectedDiagnostics = errors.any { it.code.startsWith('ILI-SEM-') }
+                    } else {
+                        expectedDiagnostics = !errors.empty
                     }
                     expected = result.actualOutcome == 'rejected' && result.exitCode == 1 && expectedDiagnostics &&
                             payload.rejection?.reasons == [reason] && payload.rejection?.unsupportedFeatureIds == []
@@ -97,7 +99,7 @@ tasks.register('codebergConformance') {
                 if (!expected || result.timedOut || !result.stderr.empty)
                     throw new GradleException('unexpected compiler result')
             } catch (RuntimeException failure) {
-                throw new GradleException("Invalid Codeberg exception ${result.testId}; see ${output}", failure)
+                throw new GradleException("Invalid Codeberg result ${result.testId}; see ${output}", failure)
             }
         }
     }
