@@ -180,6 +180,8 @@
       <Hub i:tid="legacy-hub-2"/>
     </Data>
     <Data i:bid="legacy-basket-2">
+      <DispatchRecord><DispatchLeft i:ref="legacy-pairleft-1"/><DispatchLocation i:ref="legacy-place-3"/>
+        <DispatchMast i:ref="legacy-relay"/><Memo>dispatched</Memo><Severity>minor</Severity></DispatchRecord>
       <Route i:tid="legacy-route-2"/>
       <Plot i:tid="legacy-plot-3"/>
       <Parcel i:tid="legacy-parcel-3"/>

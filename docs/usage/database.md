@@ -195,6 +195,12 @@ der Wurzeltabelle. Beide Ziele müssen zum deklarierten Typzweig und zum
 Basket des Links gehören. Eigene skalare Attribute bleiben in der
 Linktabelle.
 
+Eigenständige Assoziationen können auch drei lokale, ungeordnete `--`-Rollen
+mit einer Obergrenze grösser als eins haben. Ihre Linktabelle speichert
+die drei Rollen in Deklarationsreihenfolge und danach die eigenen skalaren
+Attribute. Im XTF erscheint ein anonymer Link mit allen drei Referenzen.
+Für jedes Rollenende gilt dieselbe Typ- und Basketprüfung wie bei n:m.
+
 Beim XTF-2.3-Import mit ili2gpkg 5.5.2 wurden identische Zielpaare zweier
 anonymer Assoziationen derselben Beziehungstabelle zugeordnet. Die
 Mischfixtures verwenden für diese Assoziationen unterschiedliche Zieltypen.

@@ -423,21 +423,22 @@ final class DbMapping {
         var roles = association.slots().stream().filter(RoleSlot.class::isInstance).map(RoleSlot.class::cast).toList();
         if (association.kind() != SymbolKind.ASSOCIATION || !association.transferable()
                 || association.baseType().isPresent() || !association.oidRules().isEmpty()
-                || association.modifiers().contains(Modifier.OID) || roles.size() != 2) {
+                || association.modifiers().contains(Modifier.OID) || (roles.size() != 2 && roles.size() != 3)) {
             throw unsupported(feature);
         }
-        var first = roles.getFirst();
-        var second = roles.getLast();
-        if (first.role().cardinality().upper().equals(CardinalityUpper.finite(0))
-                || second.role().cardinality().upper().equals(CardinalityUpper.finite(0))) {
-            throw unsupported(feature + " requires both roles to admit a target");
+        if (roles.stream().anyMatch(role -> role.role().cardinality().upper().equals(CardinalityUpper.finite(0)))) {
+            throw unsupported(feature + " requires every role to admit a target");
+        }
+        if (roles.size() == 3 && roles.stream().anyMatch(role ->
+                role.role().aggregation() != RoleAggregation.NONE
+                        || role.role().cardinality().upper().equals(CardinalityUpper.finite(1)))) {
+            throw unsupported(feature + " requires three unordered -- roles with upper bounds greater than one");
         }
         if (association.slots().stream().anyMatch(AttributeSlot.class::isInstance)
                 && roles.stream().anyMatch(role -> role.role().aggregation() != RoleAggregation.NONE)) {
             throw unsupported("attributes on an aggregation or composition at " + association.name().declared());
         }
-        return List.of(new AssociationRole(first, roleTarget(plan, association, first)),
-                new AssociationRole(second, roleTarget(plan, association, second)));
+        return roles.stream().map(role -> new AssociationRole(role, roleTarget(plan, association, role))).toList();
     }
 
     private static boolean hasSubtypes(TransferPlan plan, SymbolRef type) {
@@ -446,6 +447,7 @@ final class DbMapping {
 
     static Optional<EmbeddedAssociation> embeddedAssociation(TransferPlan plan, ObjectDescriptor association, String name,
                                                               List<AssociationRole> roles) {
+        if (roles.size() != 2) return Optional.empty();
         var first = roles.getFirst();
         var second = roles.getLast();
         if (!first.single() && !second.single()) {

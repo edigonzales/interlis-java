@@ -127,6 +127,9 @@ Bei eigenständigen Links mit Hierarchie-Enden prüft sie polymorphe
 Vorwärtsreferenzen an beiden Rollen, die TIDs und die skalaren Werte.
 Ein Endpunkt aus einem Geschwisterzweig rollt den Datensatz zurück. Beim
 Export bleibt die bisherige Datei bei typ- oder basketfremden Zielen erhalten.
+Bei eigenständigen Links mit drei Rollen prüft die Suite die Spalten und
+die XTF-Reihenfolge aller Rollen sowie die skalaren Werte. Ein Ziel ausserhalb
+des deklarierten Zweigs der dritten Rolle führt zu Rollback oder Exportabbruch.
 Für 1:n mit Attributen prüft sie eingebettete Attributwerte, direkte Referenzen,
 fehlende Rollen und den Erhalt der Zieldatei bei mehreren Linkzeilen zum Objekt.
 Polymorphe Ziele werden mit einer Zwischenklasse und einem konkreten

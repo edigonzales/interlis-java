@@ -118,6 +118,8 @@
       <DbInterop23.Data.Hub TID="legacy-hub-2"/>
     </DbInterop23.Data>
     <DbInterop23.Data BID="legacy-basket-2">
+      <DbInterop23.Data.DispatchRecord><DispatchLeft REF="legacy-pairleft-1"/><DispatchLocation REF="legacy-place-3"/>
+        <DispatchMast REF="legacy-relay"/><Memo>dispatched</Memo><Severity>minor</Severity></DbInterop23.Data.DispatchRecord>
       <DbInterop23.Data.Route TID="legacy-route-2"/>
       <DbInterop23.Data.Plot TID="legacy-plot-3"/>
       <DbInterop23.Data.Parcel TID="legacy-parcel-3"/>
