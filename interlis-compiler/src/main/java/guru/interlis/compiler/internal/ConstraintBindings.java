@@ -212,7 +212,8 @@ final class ConstraintBindings {
             if (syntax.localPrefix().isPresent()) {
                 if (syntax.basket()) diagnostics.emitRule(decl, "UNIQUE cannot combine BASKET and LOCAL", "UNIQUE_KEY");
                 ExpressionResult prefix = constraintPath(syntax.localPrefix().orElseThrow(), decl, context, true);
-                SymbolId structure = structures.target(typeBindings.get().effectiveDescriptor(prefix.typeId()));
+                SymbolId structure = structures.localUniquenessTarget(
+                        typeBindings.get().effectiveDescriptor(prefix.typeId()), decl.language());
                 if (!prefix.error() && structure == null)
                     diagnostics.emitRule(decl, "LOCAL prefix must select a structure attribute", "UNIQUE_LOCAL_PREFIX");
                 for (var key : syntax.uniqueKeys()) {

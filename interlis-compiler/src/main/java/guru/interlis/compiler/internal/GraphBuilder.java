@@ -89,7 +89,7 @@ final class GraphBuilder {
         this.oid = new OidBindings(state, work, index, diagnostics, names, this::types, this::inheritance,
                 state::defineSymbol, state::replaceSymbol, scopeRoot);
         this.topics = new TopicBindings(state, work, index, diagnostics, this::inheritance, this::paths, oid,
-                effectiveDescriptor);
+                model -> generics().importedModels(model), effectiveDescriptor);
         this.inheritance = new InheritanceBindings(state, work, index, diagnostics, names, this::types, topics,
                 this::metadata, state::replaceSymbol, scopeRoot, ensureSymbol);
         this.generics = new GenericBindings(state, work, index, diagnostics, names, inheritance, this::metadata,
@@ -137,6 +137,7 @@ final class GraphBuilder {
     private ConstraintBindings constraints() { return constraints; }
     private DeclarationBindings declarations() { return declarations; }
     private ExpressionBindings expressions() { return expressions; }
+    private GenericBindings generics() { return generics; }
     private GraphicBuilder graphics() { return graphics; }
     private InheritanceBindings inheritance() { return inheritance; }
     private LineForms lines() { return lines; }

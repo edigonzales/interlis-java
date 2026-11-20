@@ -72,4 +72,28 @@ class SyntaxProfileSafetyTest {
             for(var type:result.analysis().semanticGraph().types())if(type instanceof ErrorType error)assertTrue(diagnostics.containsAll(error.diagnosticIds()));
         }
     }
+
+    @Test void typedAttributeDerivationsRequireOnlyTheOuterFactorIn23() {
+        String body = "FUNCTION same(value: BOOLEAN): BOOLEAN; "
+                + "TOPIC T = CLASS C = a: 0..10; b (TRANSIENT): BOOLEAN := %s; END C; END T;";
+        for (String expression : List.of("a == 1", "DEFINED(a)", "(#true)")) {
+            var request = input(text("2.3", body.formatted(expression)), CompilerOptions.defaults());
+            var result = assertInstanceOf(CompilationOutcome.Rejected.class,
+                    CompilerEngines.create().compile(request, TOKEN));
+            assertEquals(Set.of(RejectionReason.SOURCE_ERRORS), result.rejection().reasons());
+            var diagnostic = result.analysis().diagnostics().stream()
+                    .filter(d -> d.code().value().equals("ILI-SYN-0006")).findFirst().orElseThrow();
+            assertEquals(expression, request.sources().sources().values().iterator().next()
+                    .slice(diagnostic.primaryRange().orElseThrow()));
+            ok("2.4", body.formatted(expression));
+        }
+        for (String version : List.of("2.3", "2.4")) {
+            var graph = ok(version, body.formatted("same(a == 1)")).schema().semanticGraph();
+            var call = graph.expressions().stream().filter(FunctionCallExpression.class::isInstance)
+                    .map(FunctionCallExpression.class::cast).findFirst().orElseThrow();
+            assertEquals("same", graph.symbol(call.targetFunction().orElseThrow()).orElseThrow().name().value());
+            var comparison = assertInstanceOf(BinaryExpression.class, graph.expression(call.children().getFirst()).orElseThrow());
+            assertEquals(BinaryOperator.EQ, comparison.operator());
+        }
+    }
 }

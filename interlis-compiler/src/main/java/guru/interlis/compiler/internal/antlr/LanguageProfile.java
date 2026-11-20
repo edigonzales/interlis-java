@@ -17,6 +17,7 @@ public final class LanguageProfile {
         CONTEXT_DEFINITION("CONTEXT"),
         DOMAIN_CONSTRAINT("domain constraint"),
         ARITHMETIC("arithmetic expression"),
+        ATTRIBUTE_DERIVATION_EXPRESSION("expression in an attribute derivation"),
         IMPLICATION("implication"),
         NAMED_OR_BASKET_CONSTRAINT("named or basket constraint"),
         INLINE_ENUM_COLLECTION("inline enumeration collection"),

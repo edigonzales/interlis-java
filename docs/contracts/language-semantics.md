@@ -515,6 +515,16 @@ Strukturen dürfen keine effektiven abstrakten Attribute behalten. Normbezug:
 2.3 §2.5.3/2.6.4/2.14; 2.4 §3.5.3/3.6.4/3.14. Nicht gemeinsame Mitglieder von
 Alternativen sind über einen gemeinsamen Pfad nicht statisch ansprechbar.
 
+In 2.3 darf eine Klasse eine Struktur nur erweitern, wenn deren effektive
+Attribute weder direkt noch über Unterstrukturen Referenzattribute enthalten.
+Eine referenzhaltige Struktur als eingebettetes Attribut einer Klasse bleibt
+zulässig. 2.4 erlaubt auch die Erweiterung der Struktur zur Klasse.
+Bei einem nicht als ABSTRACT bezeichneten Referenzattribut mit explizitem
+Ziel oder Restriktionen muss eine zulässige konkrete Zielklasse oder
+Assoziation erreichbar sein. Dabei gelten die wirksamen Restriktionen und
+die Topic-/Modellgrenzen. Unbeschränktes ANYCLASS bleibt offen.
+Grundlage: 2.3 §2.6.3 und 2.4 §3.6.3.
+
 Inspektionen, Kontextualisierung, Übersetzungen, generische Verwendungen, Diagramm-
 labels und öffentliche Queries erhalten Grundziel und Restriktionen. Vorhandene
 Konstruktorverbraucher und Tests werden direkt angepasst. Relevante Vererbungs-
@@ -582,6 +592,11 @@ erwarteten Typ gebunden. Seit API 0.3 erscheinen Enum- und Boolean-Werte als
 `ConstantExpression`. BOOLEAN akzeptiert `#true` und `#false`. Ein konkreter
 benutzerdefinierter Enumtyp hat Vorrang vor der Boolean-Standardbindung.
 Polymorphe Funktionsargumente können symbolisch bleiben.
+
+Die Ableitung eines Attributs mit deklariertem Typ verlangt in 2.3 einen
+Faktor. Ein Funktionsaufruf bleibt ein Faktor und darf Ausdrücke als Argumente
+enthalten. 2.4 erlaubt auch einen Ausdruck als Ableitung. Grundlage:
+2.3 §2.6.1 und 2.4 §3.6.1.
 
 Für arithmetische Ausdrücke beschreibt der Compiler eigene numerische
 Ergebnistypen. Die begrenzte Herleitung umfasst exakt darstellbare kleine
@@ -707,6 +722,15 @@ konzeptionell globalen Geltungsbereich, auch über einen Transfer hinaus. BASKET
 begrenzt ihn in 2.4 ausdrücklich auf einen Behälter. Es gibt keine erfundene
 LOCAL-SET-Variante. Spätere Validierung berichtet ihre verfügbare Prüfmenge,
 ohne die fachliche Bedeutung von GLOBAL zu verkleinern.
+
+Der Präfix von `UNIQUE (LOCAL)` muss über eine BAG-/LIST-Sammlung führen.
+Bei SURFACE und AREA mit LINE ATTRIBUTES kann in 2.3 auch die gebundene
+Linienattributstruktur diese Sammlung liefern. Der Präfix behält seinen
+Geometrietyp und die Schlüsselpfade binden an die deklarierte
+Linienattributstruktur. Ein ausschliesslich aus einzelnen Strukturen
+bestehender Pfad ist unzulässig. Grundlage: 2.3 §2.12 und 2.4 §3.12.
+Der Validator weist Präfixformen ausserhalb seiner implementierten
+lokalen Auswertung weiterhin als ungeprüft aus.
 
 Für SET-Bedingungen in 2.3 und 2.4 gilt nach dem Nutzerentscheid vom 30.10.2026:
 Der Hauptausdruck besitzt kein einzelnes Kontextobjekt. Gewöhnliche Attribut-,

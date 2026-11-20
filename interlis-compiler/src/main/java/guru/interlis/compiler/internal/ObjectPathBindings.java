@@ -154,6 +154,7 @@ final class ObjectPathBindings {
         currentScope = contextualObject(currentScope, contextTopic);
         TypeId currentType = null;
         boolean error = false;
+        boolean hasLocalCollection = false;
         for (int i = 0; i < syntax.segments().size(); i++) {
             work.checkpoint();
             var segment = syntax.segments().get(i);
@@ -335,7 +336,7 @@ final class ObjectPathBindings {
                     steps.add(new guru.interlis.model.PathStep.IndexStep(selection, currentType, segment.range()));
                 }
                 if (localPrefix) {
-                    currentScope = structures.target(descriptor);
+                    currentScope = structures.localUniquenessTarget(descriptor, index.byId(owner).orElseThrow().language());
                     if (currentScope == null) {
                         DiagnosticId diagnostic = diagnostics.emitTypeMismatch(expressions.get().ownerSource(owner), name.range(),
                                 typeBindings.get().typeName(currentType), "structure attribute");
@@ -344,6 +345,7 @@ final class ObjectPathBindings {
                         error = true;
                         break;
                     }
+                    hasLocalCollection |= descriptor instanceof CollectionType || descriptor instanceof GeometryType;
                 } else if (descriptor instanceof CollectionType collection && !incomingMany
                         && (pathContext!=PathContext.VALUE || !isMany(collection.cardinality())) && i + 1 < syntax.segments().size()) {
                     currentScope = structures.target(collection);
@@ -378,6 +380,12 @@ final class ObjectPathBindings {
                     break;
                 }
             }
+        }
+        if (localPrefix && !error && !hasLocalCollection) {
+            diagnostics.emitRule(index.byId(owner).orElseThrow(),
+                    "LOCAL uniqueness requires a collection of structures or line attributes",
+                    "UNIQUE_LOCAL_PREFIX", syntax.range());
+            error = true;
         }
         if (currentType == null) {
             currentType = typeBindings.get().errorType(expressions.get().ownerSource(owner), syntax.range(), "PATH");

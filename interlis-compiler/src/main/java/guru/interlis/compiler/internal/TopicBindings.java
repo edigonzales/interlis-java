@@ -2,8 +2,11 @@ package guru.interlis.compiler.internal;
 
 import guru.interlis.model.AssociationSymbol;
 import guru.interlis.model.AttributeSymbol;
+import guru.interlis.model.ClassSymbol;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.EffectiveMember;
+import guru.interlis.model.Modifier;
+import guru.interlis.model.Origin;
 import guru.interlis.model.ReferenceType;
 import guru.interlis.model.RoleSymbol;
 import guru.interlis.model.StructureValueType;
@@ -30,6 +33,7 @@ final class TopicBindings {
     private final Supplier<InheritanceBindings> inheritance;
     private final Supplier<ObjectPathBindings> paths;
     private final OidBindings oid;
+    private final Function<SymbolId, Set<SymbolId>> visibleModels;
     private final Function<TypeId, TypeDescriptor> effectiveDescriptor;
 
     TopicBindings(SemanticGraphRead state,
@@ -39,6 +43,7 @@ final class TopicBindings {
                   Supplier<InheritanceBindings> inheritance,
                   Supplier<ObjectPathBindings> paths,
                   OidBindings oid,
+                  Function<SymbolId, Set<SymbolId>> visibleModels,
                   Function<TypeId, TypeDescriptor> effectiveDescriptor) {
         this.state = state;
         this.work = work;
@@ -47,6 +52,7 @@ final class TopicBindings {
         this.inheritance = inheritance;
         this.paths = paths;
         this.oid = oid;
+        this.visibleModels = visibleModels;
         this.effectiveDescriptor = effectiveDescriptor;
     }
 
@@ -152,6 +158,7 @@ final class TopicBindings {
                     Symbol declaration = state.symbol(member.declaredSymbol());
                     List<SymbolId> roots = List.of();
                     boolean external = false;
+                    boolean needsConcreteTarget = false;
                     if (declaration instanceof RoleSymbol role) {
                         roots = role.targetRoots(); external = role.external();
                     }
@@ -162,27 +169,76 @@ final class TopicBindings {
                         }
                         if (type instanceof StructureValueType structure) pending.addAll(structure.targetRoots());
                         if (type instanceof ReferenceType reference) {
-                            roots = reference.targetRoots(); external = reference.external();
+                            roots = reference.targetRoots();
+                            external = reference.external();
+                            needsConcreteTarget = !attribute.header().has(Modifier.ABSTRACT) && !roots.isEmpty();
                         }
                     }
                     DeclInfo site = declaration != null && declaration.header().owner().filter(owner.id()::equals).isPresent()
                             ? index.byId(declaration.id()).orElse(owner) : owner;
-                    for (SymbolId root : roots) {
+                    List<SymbolId> contextualRoots = roots.stream().map(root -> paths.get().contextualObject(root, topic)).toList();
+                    if (needsConcreteTarget && !hasConcreteTarget(contextualRoots, owner, topic, external)) {
+                        diagnostics.emitRule(site, "reference attribute requires a permitted concrete target",
+                                "REFERENCE_CONCRETE_TARGET");
+                    }
+                    for (SymbolId root : contextualRoots) {
                         work.checkpoint();
-                        Symbol target = state.symbol(paths.get().contextualObject(root, topic));
+                        Symbol target = state.symbol(root);
                         if (target == null || index.byId(target.id()).isEmpty()) continue; // ANYCLASS/unresolved: no invented OID.
                         validateReferenceScope(site, topic, target.id(), external,
                                 declaration instanceof RoleSymbol ? "ROLE_EXTERNAL" : "REFERENCE_EXTERNAL");
-                        if (target instanceof AssociationSymbol) {
-                            boolean identified = target.header().oidRules().isEmpty()
-                                    ? inheritance.get().baseChain(target.id()).stream().map(index::byId).flatMap(Optional::stream)
-                                        .anyMatch(d -> d.modifiers().contains(guru.interlis.model.Modifier.OID))
-                                    : target.header().oidRules().stream().anyMatch(r -> !r.basket() && oid.oidState(r) != 0);
-                            if (!identified) diagnostics.emitRule(site, "association target " + target.name().value() + " requires its own OID", "REFERENCE_ASSOCIATION_OID");
+                        if (target instanceof AssociationSymbol association && !hasAssociationOid(association)) {
+                            diagnostics.emitRule(site, "association target " + target.name().value() + " requires its own OID",
+                                    "REFERENCE_ASSOCIATION_OID");
                         }
                     }
                 }
             }
         }
+    }
+
+    private boolean hasConcreteTarget(List<SymbolId> roots, DeclInfo owner, SymbolId scope, boolean external) {
+        boolean unresolved = false;
+        for (SymbolId root : roots) {
+            work.checkpoint();
+            Symbol target = state.symbol(root);
+            if (target == null || target.origin() instanceof Origin.SyntheticOrigin) {
+                unresolved = true;
+            } else if (concreteObject(target)) {
+                // The ordinary reference scope and OID checks diagnose rejected roots.
+                return true;
+            }
+        }
+        if (unresolved) return true;
+
+        Set<SymbolId> models = visibleModels.apply(index.modelOfSymbol(owner.id()).orElseThrow());
+        List<SymbolId> dependencies = topicDependencies(scope);
+        for (Symbol candidate : state.symbolsInBuildOrder()) {
+            work.checkpoint();
+            if (!concreteObject(candidate) || candidate.origin() instanceof Origin.SyntheticOrigin) continue;
+            if (!(candidate.origin() instanceof Origin.PredefinedOrigin)
+                    && index.modelOfSymbol(candidate.id()).filter(models::contains).isEmpty()) continue;
+            SymbolId candidateScope = paths.get().scopeRoot(candidate.id());
+            if (state.symbol(scope) instanceof TopicSymbol && state.symbol(candidateScope) instanceof TopicSymbol
+                    && !isTopicSubtype(scope, candidateScope) && !(external && dependencies.contains(candidateScope))) continue;
+            if (candidate instanceof AssociationSymbol association && !hasAssociationOid(association)) continue;
+            for (SymbolId root : roots) {
+                work.checkpoint();
+                if (inheritance.get().targetSpecializes(candidate.id(), root)) return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasAssociationOid(AssociationSymbol association) {
+        return association.header().oidRules().isEmpty()
+                ? inheritance.get().baseChain(association.id()).stream().map(index::byId).flatMap(Optional::stream)
+                        .anyMatch(declaration -> declaration.modifiers().contains(Modifier.OID))
+                : association.header().oidRules().stream().anyMatch(rule -> !rule.basket() && oid.oidState(rule) != 0);
+    }
+
+    private static boolean concreteObject(Symbol symbol) {
+        return (symbol instanceof ClassSymbol || symbol instanceof AssociationSymbol)
+                && !symbol.header().has(Modifier.ABSTRACT);
     }
 }
