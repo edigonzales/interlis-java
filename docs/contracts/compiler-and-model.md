@@ -155,7 +155,13 @@ identischen Parseoptionen. Gemessener Syntaxaufwand belastet auch den neuen Lauf
 Öffentlich konstruierte Snapshots bleiben als Daten verwendbar. Die Engine
 ignoriert sie als Wiederverwendungshinweise. Die Semantik wird im neuen Lauf gebunden.
 
-`IdentityReconciler` verwendet nachweislich unveränderte, eindeutige Deklarationsanker samt Scope/Art und Textstruktur. Eine Einfügung vor einer Deklaration darf deren Offset ändern, ohne zwingend ihre ID zu ändern. Ein Name allein reicht nicht. Bei Duplikaten oder unklarer Zuordnung werden neue IDs vergeben. Die Relation alter/neuer Identitäten kann als eigenes Delta an Projektionen gehen; sie darf keine falsche semantische Gleichsetzung erzeugen.
+Der Deklarationsindex verwendet eindeutige Anker aus Quelle, Symbolart und
+qualifiziertem Namen. Für Constraints bilden der qualifizierte Name des
+Besitzers und der Constraintname den Namensanteil. Auch die Besitzerkette
+muss eindeutig zugeordnet sein. Eine Einfügung vor einer Deklaration kann
+deren Offset ändern und ihre ID bewahren. Bei Duplikaten oder unklarer
+Zuordnung werden neue IDs vergeben. Ein Delta für Projektionen muss den
+Unterschied zwischen ID-Wiederverwendung und semantischer Gleichheit wahren.
 
 Eine frische Kompilierung und eine wiederverwendende Kompilierung müssen fachlich gleich sein. Opaque IDs, Cachemetriken und Runmetadaten werden beim semantischen Vergleich normalisiert. Wenn dieselben Eingaben mit unterschiedlichen Wiederverwendungswegen verschiedene ID-Belegungen erzeugen, müssen Snapshotidentitäten dies unterscheiden. Ein Snapshotfingerprint darf deshalb nicht nur den Text hashieren und dadurch voneinander abweichende Handle-Räume als identisch ausgeben.
 

@@ -16,9 +16,14 @@ import guru.interlis.model.TopicSymbol;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeId;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -136,6 +141,12 @@ final class TopicBindings {
     }
 
     void validateReferenceTargets() {
+        Map<SymbolId, List<Symbol>> extensions = new HashMap<>();
+        for (Symbol symbol : state.symbolsInBuildOrder()) {
+            work.checkpoint();
+            SymbolId base = state.baseOf(symbol.id());
+            if (base != null) extensions.computeIfAbsent(base, ignored -> new ArrayList<>()).add(symbol);
+        }
         for (var entry : state.effectiveMembersInBuildOrder()) {
             work.checkpoint();
             SymbolId sourceOwner = entry.getKey();
@@ -177,7 +188,7 @@ final class TopicBindings {
                     DeclInfo site = declaration != null && declaration.header().owner().filter(owner.id()::equals).isPresent()
                             ? index.byId(declaration.id()).orElse(owner) : owner;
                     List<SymbolId> contextualRoots = roots.stream().map(root -> paths.get().contextualObject(root, topic)).toList();
-                    if (needsConcreteTarget && !hasConcreteTarget(contextualRoots, owner, topic, external)) {
+                    if (needsConcreteTarget && !hasConcreteTarget(contextualRoots, owner, topic, external, extensions)) {
                         diagnostics.emitRule(site, "reference attribute requires a permitted concrete target",
                                 "REFERENCE_CONCRETE_TARGET");
                     }
@@ -197,24 +208,35 @@ final class TopicBindings {
         }
     }
 
-    private boolean hasConcreteTarget(List<SymbolId> roots, DeclInfo owner, SymbolId scope, boolean external) {
-        boolean unresolved = false;
+    private boolean hasConcreteTarget(List<SymbolId> roots, DeclInfo owner, SymbolId scope, boolean external,
+                                      Map<SymbolId, List<Symbol>> extensions) {
+        var pending = new ArrayDeque<Iterator<Symbol>>();
         for (SymbolId root : roots) {
             work.checkpoint();
             Symbol target = state.symbol(root);
-            if (target == null || target.origin() instanceof Origin.SyntheticOrigin) {
-                unresolved = true;
-            } else if (concreteObject(target)) {
-                // The ordinary reference scope and OID checks diagnose rejected roots.
-                return true;
-            }
+            // Explicit ANYCLASS is a predefined concrete symbol. Other concrete or unresolved
+            // roots have their own binding, scope and OID checks.
+            if (target == null || target.origin() instanceof Origin.SyntheticOrigin || concreteObject(target)) return true;
+            List<Symbol> children = extensions.get(root);
+            if (children != null) pending.addLast(children.iterator());
         }
-        if (unresolved) return true;
+        if (pending.isEmpty()) return false;
 
         Set<SymbolId> models = visibleModels.apply(index.modelOfSymbol(owner.id()).orElseThrow());
-        List<SymbolId> dependencies = topicDependencies(scope);
-        for (Symbol candidate : state.symbolsInBuildOrder()) {
+        List<SymbolId> dependencies = external ? topicDependencies(scope) : List.of();
+        Set<SymbolId> seen = new HashSet<>();
+        while (!pending.isEmpty()) {
+            Iterator<Symbol> siblings = pending.getFirst();
+            if (!siblings.hasNext()) {
+                pending.removeFirst();
+                continue;
+            }
             work.checkpoint();
+            Symbol candidate = siblings.next();
+            if (!seen.add(candidate.id())) continue;
+            // A usable descendant may live in a different topic from its immediate base.
+            List<Symbol> children = extensions.get(candidate.id());
+            if (children != null) pending.addLast(children.iterator());
             if (!concreteObject(candidate) || candidate.origin() instanceof Origin.SyntheticOrigin) continue;
             if (!(candidate.origin() instanceof Origin.PredefinedOrigin)
                     && index.modelOfSymbol(candidate.id()).filter(models::contains).isEmpty()) continue;
@@ -222,10 +244,7 @@ final class TopicBindings {
             if (state.symbol(scope) instanceof TopicSymbol && state.symbol(candidateScope) instanceof TopicSymbol
                     && !isTopicSubtype(scope, candidateScope) && !(external && dependencies.contains(candidateScope))) continue;
             if (candidate instanceof AssociationSymbol association && !hasAssociationOid(association)) continue;
-            for (SymbolId root : roots) {
-                work.checkpoint();
-                if (inheritance.get().targetSpecializes(candidate.id(), root)) return true;
-            }
+            return true;
         }
         return false;
     }

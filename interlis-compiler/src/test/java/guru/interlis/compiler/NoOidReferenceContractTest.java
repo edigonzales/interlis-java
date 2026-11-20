@@ -273,4 +273,34 @@ class NoOidReferenceContractTest {
             assertEquals("INTERLIS.UUIDOID", assertInstanceOf(Origin.PredefinedOrigin.class, domain.origin()).key());
         }
     }
+
+    @Test void concreteReferenceSearchStaysWithinBudgetWithoutScanningOtherTopics() {
+        int size = 200;
+        StringBuilder body = new StringBuilder("TOPIC Padding =\n");
+        for (int i = 0; i < size; i++) body.append("CLASS Empty%s = END Empty%s;\n".formatted(i, i));
+        body.append("""
+                END Padding;
+                TOPIC T =
+                    CLASS Root (ABSTRACT) = END Root;
+                    CLASS Middle (ABSTRACT) EXTENDS Root = END Middle;
+                    CLASS Actual EXTENDS Middle = END Actual;
+                    STRUCTURE S =
+                """);
+        for (int i = 0; i < size; i++) body.append("ref%s: REFERENCE TO Root;\n".formatted(i));
+        body.append("END S; END T;");
+
+        var source = CompilerTestSupport.source("memory:/reference-budget.ili", model("2.4", body.toString()));
+        var defaults = CompilerOptions.defaults();
+        var options = new CompilerOptions(defaults.semanticProfile(), defaults.allowedLanguages(), defaults.warningPolicy(),
+                defaults.budget().withMaxSemanticWorkUnits(50_000), defaults.overlays());
+        var request = CompilerTestSupport.request(List.of("F"), Map.of(source.id(), source), List.of(), options);
+        var result = CompilerEngines.create().compile(request, CancellationToken.none());
+        var graph = assertInstanceOf(CompilationOutcome.Succeeded.class, result, result::toString).schema().semanticGraph();
+
+        var members = graph.effectiveMembers(named(graph, "S").id());
+        assertEquals(size, members.size());
+        var member = assertInstanceOf(AttributeSymbol.class, graph.symbol(members.getFirst().declaredSymbol()).orElseThrow());
+        var reference = assertInstanceOf(ReferenceType.class, graph.type(member.declaredType()).orElseThrow());
+        assertEquals(List.of(named(graph, "Root").id()), reference.targetRoots());
+    }
 }
