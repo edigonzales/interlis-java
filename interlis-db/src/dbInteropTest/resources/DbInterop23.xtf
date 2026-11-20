@@ -142,6 +142,19 @@
         </DbInterop23.Data.NestedOuter></Tree>
       </DbInterop23.Data.NestedRecord>
       <DbInterop23.Data.NestedRecord TID="legacy-nested-2"/>
+      <DbInterop23.Data.TypedRecord TID="legacy-typed-1">
+        <Main><DbInterop23.Data.CountNote><Label>main</Label><Amount>5</Amount></DbInterop23.Data.CountNote></Main>
+        <Values>
+          <DbInterop23.Data.NoteBase><Label>root</Label></DbInterop23.Data.NoteBase>
+          <DbInterop23.Data.CountNote><Label>count</Label><Amount>7</Amount></DbInterop23.Data.CountNote>
+          <DbInterop23.Data.FlagNote><Label>flag</Label><Enabled>true</Enabled></DbInterop23.Data.FlagNote>
+        </Values>
+        <Extras>
+          <DbInterop23.Data.NamedNote><Label>duplicate</Label><Code>ABC</Code></DbInterop23.Data.NamedNote>
+          <DbInterop23.Data.NamedNote><Label>duplicate</Label><Code>ABC</Code></DbInterop23.Data.NamedNote>
+        </Extras>
+      </DbInterop23.Data.TypedRecord>
+      <DbInterop23.Data.TypedRecord TID="legacy-typed-2"/>
       <DbInterop23.Data.Report TID="legacy-report-2">
         <Entries>
           <DbInterop23.Data.Detail><Label>later</Label></DbInterop23.Data.Detail>

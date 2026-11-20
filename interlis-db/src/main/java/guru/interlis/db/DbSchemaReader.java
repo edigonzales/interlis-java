@@ -140,7 +140,7 @@ final class DbSchemaReader {
                 var composition = DbMapping.describeComposition(plan, object, attr, mapping.name());
                 if (composition.isPresent()) {
                     var binding = composition.orElseThrow();
-                    var child = catalog.get(binding.child());
+                    var child = catalog.get(binding.childRoot());
                     useColumn(db, child, mapping, path);
                     requireTarget(db, parent.name(), mapping, path);
                     requireColumns(db, child.name(), child.columns(), Map.of(binding.ownerColumn(), Kind.REFERENCE));

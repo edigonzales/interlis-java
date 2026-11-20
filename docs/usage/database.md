@@ -123,8 +123,8 @@ diese Referenzausgabe erfolgt in der gemeinsamen Datenbank.
 [INTERLIS 2.4, Anhang C](https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=133)
 
 In XTF 2.3 und 2.4 FULL können Klassen und Strukturen optionale Strukturwerte
-sowie `LIST OF`- und `BAG OF`-Attribute mit einem konkreten Strukturtyp aus
-dem Modell oder dem eigenen Topic enthalten. Verschachtelungen sind azyklisch.
+sowie `LIST OF`- und `BAG OF`-Attribute mit einem Strukturtyp aus dem
+Modell oder dem eigenen Topic enthalten. Verschachtelungen sind azyklisch.
 Strukturelemente verwenden die unterstützten skalaren Attributtypen.
 Topic-lokale Strukturen können optionale `REFERENCE TO`-Attribute auf eine
 Klasse desselben Topics und Baskets enthalten. Vorwärtsreferenzen werden
@@ -141,6 +141,14 @@ bei `LIST OF` und `BAG OF` die Ausgabereihenfolge.
 Duplikate bleiben erhalten. Verwaiste oder mehrdeutig zugeordnete Strukturzeilen
 sowie fehlende oder doppelte Positionen werden beim Export diagnostiziert.
 [ili2db-Strukturabbildung](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst#strukturattribute)
+
+Strukturvererbung mit `--noSmartMapping` speichert die skalaren Attribute
+auf den Tabellen der jeweiligen Deklarationen. Alle Zeilen im Pfad teilen
+`T_Id` und `T_Basket`. Die Wurzeltabelle enthält `T_Type`, `T_Seq` und die
+Rückverweisspalten, auch für Attribute, die einen Untertyp deklarieren.
+Der Export schreibt den konkreten Strukturtyp. Liegt dieser ausserhalb
+des deklarierten Zweigs, nennt die Diagnose das Elternattribut und den
+gespeicherten Typ.
 
 XTF 2.3 und 2.4 FULL unterstützen auch binäre 1:n- und 1:1-Assoziationen
 ohne eigene Attribute zwischen konkreten Klassen desselben Topics und Baskets.
@@ -195,11 +203,12 @@ Tabelle. Die referenzierte Zeile muss zum gespeicherten Typ und Basket des
 Elternobjekts gehören.
 
 In 2.4 kann eine Klasse optionale
-`REFERENCE TO`-Attribute auf eine Klasse desselben Baskets haben. Baskets
-und Objekte verwenden Transferkennungen. Grenzen des Profils sind unter
-anderem Strukturvererbung, stabile OIDs, eigene
-Linienformen, GeoPackage-RTree beim Schreiben und Updates. Der gespeicherte
-Modelltext ist auf eine Million Zeichen begrenzt.
+`REFERENCE TO`-Attribute auf eine Klasse desselben Baskets haben. Referenzen
+und Assoziationsrollen sind hier auf Klassen ausserhalb von Hierarchien
+beschränkt. Geometrieattribute in Klassenhierarchien und `EXTENDED`-Attribute
+folgen separat. Weitere Grenzen sind stabile OIDs, eigene Linienformen,
+GeoPackage-RTree beim Schreiben und Updates. Der gespeicherte Modelltext
+ist auf eine Million Zeichen begrenzt.
 
 Der Adapter unterscheidet SQL `NULL` und leeren Text. Die Referenzwerkzeuge
 5.5.2 können leeren Text beim Import zu SQL `NULL` normalisieren und im

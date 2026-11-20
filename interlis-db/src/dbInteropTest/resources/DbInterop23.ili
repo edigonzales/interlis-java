@@ -48,6 +48,26 @@ MODEL DbInterop23 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
     CLASS NestedRecord =
       Tree : NestedOuter;
     END NestedRecord;
+    STRUCTURE NoteBase =
+      Label : TEXT*16;
+    END NoteBase;
+    STRUCTURE CountNote EXTENDS NoteBase =
+      Amount : 0 .. 10;
+    END CountNote;
+    STRUCTURE FlagNote EXTENDS NoteBase =
+      Enabled : BOOLEAN;
+    END FlagNote;
+    STRUCTURE NoteKind (ABSTRACT) =
+      Label : TEXT*16;
+    END NoteKind;
+    STRUCTURE NamedNote EXTENDS NoteKind =
+      Code : TEXT*8;
+    END NamedNote;
+    CLASS TypedRecord =
+      Main : CountNote;
+      Values : LIST {0..*} OF NoteBase;
+      Extras : BAG {0..*} OF NoteKind;
+    END TypedRecord;
     CLASS Report =
       Summary : Detail;
       Entries : LIST {0..*} OF Detail;

@@ -7,6 +7,7 @@ import guru.interlis.db.DbMapping.Table;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.ModelSymbol;
+import guru.interlis.model.Modifier;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.RoleSlot;
@@ -116,6 +117,9 @@ final class DbTransfer {
         writer.write(new TransferEvent.StartBasket(bid, topic.symbol(), List.of(), BasketKind.FULL,
                 Consistency.COMPLETE, Optional.empty(), Optional.empty(), Optional.empty(), List.of()), token);
         for (var table : mapping.tables()) {
+            if (table.hasDiscriminator() && table.object().kind() == SymbolKind.STRUCTURE) {
+                checkStructureHierarchy(db, mapping, table, basketId, token);
+            }
             if (table.subtype() || table.object().topic().filter(topic.symbol()::equals).isEmpty()) continue;
             if (table.hasDiscriminator() && table.object().kind() == SymbolKind.CLASS) {
                 writeHierarchyObjects(db, mapping, table, basketId, bid, writer, token);
@@ -188,9 +192,6 @@ final class DbTransfer {
     private static void writeHierarchyObjects(Database db, DbMapping mapping, Table root, long basketId,
                                                BasketId bid, TransferWriter writer, CancellationToken token)
             throws SQLException {
-        var family = mapping.hierarchy(root);
-        var concrete = family.stream().filter(part -> part.object().transferable())
-                .collect(Collectors.toMap(Table::name, Function.identity()));
         var fields = new StringJoiner(", ").add("obj." + T_ID).add("obj." + T_ILI_TID).add("obj." + T_TYPE);
         var from = new StringBuilder(db.table(root.name())).append(" obj");
         appendColumns(db, mapping, root, "obj", fields, from);
@@ -199,8 +200,8 @@ final class DbTransfer {
         try (var fragments = new HierarchyRows(db, mapping, basketId, token);
              var structures = new StructureRows(db, mapping, basketId, token);
              var statement = db.connection().prepareStatement(sql)) {
-            fragments.open(root);
-            for (var part : family) {
+            fragments.open(root, true);
+            for (var part : mapping.hierarchy(root)) {
                 for (var composition : mapping.compositionsForParent(part.object().symbol())) {
                     structures.open(composition);
                 }
@@ -212,12 +213,7 @@ final class DbTransfer {
                     token.throwIfCancellationRequested();
                     long id = rows.getLong(1);
                     String tid = identifier(rows.getString(2), "TID", root.name());
-                    String discriminator = rows.getString(3);
-                    var actual = concrete.get(discriminator);
-                    if (actual == null) {
-                        throw new DbException("Unknown or abstract T_Type " + discriminator + " in " + root.name()
-                                + " for T_Id " + id);
-                    }
+                    var actual = mapping.concreteType(root, rows.getString(3), id);
                     var values = readFields(db, rows, 4, root, tid);
                     fragments.readFor(actual, id, tid, values);
                     structures.readFor(id, tid, values);
@@ -228,6 +224,28 @@ final class DbTransfer {
                 }
                 fragments.requireExhausted();
                 structures.requireExhausted();
+            }
+        }
+    }
+
+    private static void checkStructureHierarchy(Database db, DbMapping mapping, Table root, long basketId,
+                                                CancellationToken token) throws SQLException {
+        // Composition cursors visit structures in owner and sequence order. Check the complete
+        // hierarchy in ID order first, including subtype fragments without reachable owners.
+        String sql = "SELECT " + T_ID + ", " + T_TYPE + " FROM " + db.table(root.name())
+                + " WHERE " + T_BASKET + " = ? ORDER BY " + T_ID;
+        try (var fragments = new HierarchyRows(db, mapping, basketId, token);
+             var statement = db.connection().prepareStatement(sql)) {
+            fragments.open(root, false);
+            fetchInPages(db, statement);
+            statement.setLong(1, basketId);
+            try (var rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    token.throwIfCancellationRequested();
+                    long id = rows.getLong(1);
+                    fragments.verifyFor(mapping.concreteType(root, rows.getString(2), id), id);
+                }
+                fragments.requireExhausted();
             }
         }
     }
@@ -248,7 +266,7 @@ final class DbTransfer {
             this.token = token;
         }
 
-        void open(Table root) throws SQLException {
+        void open(Table root, boolean includeFields) throws SQLException {
             // A separate ordered query per subtype avoids a join of unbounded width for deep hierarchies.
             for (var part : mapping.hierarchy(root)) {
                 if (!part.subtype()) continue;
@@ -257,7 +275,7 @@ final class DbTransfer {
                 var from = new StringBuilder(db.table(part.name())).append(" part LEFT JOIN ")
                         .append(db.table(root.name())).append(" root ON root.").append(T_ID)
                         .append(" = part.").append(T_ID);
-                appendColumns(db, mapping, part, "part", fields, from);
+                if (includeFields) appendColumns(db, mapping, part, "part", fields, from);
                 String sql = "SELECT " + fields + " FROM " + from + " WHERE part." + T_BASKET
                         + " = ? OR root." + T_BASKET + " = ? ORDER BY part." + T_ID;
                 var statement = db.connection().prepareStatement(sql);
@@ -272,6 +290,15 @@ final class DbTransfer {
         void readFor(Table actual, long id, String tid, Map<SymbolRef, TransferValue> values) throws SQLException {
             for (var part : mapping.tableChain(actual.object().symbol())) {
                 if (part.subtype()) fragments.get(part).readFor(id, tid, values);
+            }
+        }
+
+        void verifyFor(Table actual, long id) throws SQLException {
+            for (var part : mapping.tableChain(actual.object().symbol())) {
+                if (!part.subtype()) continue;
+                var fragment = fragments.get(part);
+                fragment.requireRow(id);
+                fragment.advance();
             }
         }
 
@@ -299,6 +326,12 @@ final class DbTransfer {
             }
 
             void readFor(long rootId, String tid, Map<SymbolRef, TransferValue> values) throws SQLException {
+                requireRow(rootId);
+                values.putAll(readFields(db, rows, 3, table, tid));
+                advance();
+            }
+
+            private void requireRow(long rootId) throws SQLException {
                 if (available && id < rootId) throw unexpected();
                 if (!available || id != rootId) {
                     throw new DbException("Missing inheritance fragment in " + table.name() + " for T_Id " + rootId);
@@ -307,8 +340,6 @@ final class DbTransfer {
                     throw new DbException("Inheritance fragment in " + table.name() + " belongs to a different basket"
                             + " for T_Id " + rootId);
                 }
-                values.putAll(readFields(db, rows, 3, table, tid));
-                advance();
             }
 
             private void advance() throws SQLException {
@@ -429,7 +460,7 @@ final class DbTransfer {
     private static void checkStructureOwners(Database db, DbMapping mapping, long datasetId,
                                              CancellationToken token) throws SQLException {
         for (var table : mapping.tables()) {
-            if (table.object().kind() != SymbolKind.STRUCTURE) continue;
+            if (!table.hasSequenceColumn()) continue;
             token.throwIfCancellationRequested();
             var ownerCount = new StringJoiner(" + ").setEmptyValue("0");
             for (var composition : mapping.compositionsForChild(table.object().symbol())) {
@@ -459,7 +490,7 @@ final class DbTransfer {
             var parent = mapping.table(composition.parent());
             if (parent.object().kind() != SymbolKind.STRUCTURE && !parent.hasDiscriminator() && !parent.subtype()) continue;
             token.throwIfCancellationRequested();
-            var child = mapping.table(composition.child());
+            var child = mapping.table(composition.childRoot());
             String owner = "child." + quote(composition.ownerColumn());
             String basket = db.technicalTable(BASKET);
             String sql = "SELECT parent." + T_ID + " FROM " + db.table(child.name()) + " child LEFT JOIN "
@@ -491,6 +522,7 @@ final class DbTransfer {
         private final List<PreparedStatement> statements = new ArrayList<>();
         private final List<StructureCursor> cursors = new ArrayList<>();
         private final Map<Composition, PreparedStatement> nestedStatements = new HashMap<>();
+        private final Map<Table, PreparedStatement> subtypeStatements = new HashMap<>();
 
         StructureRows(Database db, DbMapping mapping, long basketId, CancellationToken token) {
             this.db = db;
@@ -508,12 +540,13 @@ final class DbTransfer {
         }
 
         private PreparedStatement prepare(Composition composition, boolean streaming) throws SQLException {
-            var child = mapping.table(composition.child());
+            var child = mapping.table(composition.childRoot());
             String owner = "child." + quote(composition.ownerColumn());
             String sequence = "child." + T_SEQ;
             String basket = "child." + T_BASKET;
             String id = "child." + T_ID;
             var fields = new StringJoiner(", ").add(owner).add(sequence).add(basket).add(id);
+            if (child.hasDiscriminator()) fields.add("child." + T_TYPE);
             var from = new StringBuilder(db.table(child.name())).append(" child");
             String where;
             if (streaming) {
@@ -564,6 +597,29 @@ final class DbTransfer {
             }
         }
 
+        private void readSubtype(Table table, long id, String parentTid, Map<SymbolRef, TransferValue> values)
+                throws SQLException {
+            token.throwIfCancellationRequested();
+            var statement = subtypeStatements.get(table);
+            if (statement == null) {
+                var fields = new StringJoiner(", ").add("part." + T_ID);
+                var from = new StringBuilder(db.table(table.name())).append(" part");
+                appendColumns(db, mapping, table, "part", fields, from);
+                statement = db.connection().prepareStatement("SELECT " + fields + " FROM " + from
+                        + " WHERE part." + T_ID + " = ? AND part." + T_BASKET + " = ?");
+                statements.add(statement);
+                subtypeStatements.put(table, statement);
+            }
+            statement.setLong(1, id);
+            statement.setLong(2, basketId);
+            try (var rows = statement.executeQuery()) {
+                if (!rows.next()) {
+                    throw new DbException("Missing inheritance fragment in " + table.name() + " for T_Id " + id);
+                }
+                values.putAll(readFields(db, rows, 2, table, parentTid));
+            }
+        }
+
         void requireExhausted() {
             for (var cursor : cursors) {
                 if (cursor.available) {
@@ -585,7 +641,7 @@ final class DbTransfer {
             private long ownerId;
 
             StructureCursor(Composition composition, ResultSet rows) throws SQLException {
-                this.child = mapping.table(composition.child());
+                this.child = mapping.table(composition.childRoot());
                 this.composition = composition;
                 this.rows = rows;
                 advance();
@@ -623,10 +679,20 @@ final class DbTransfer {
             }
 
             private Structured readChild(String parentTid, int depth) throws SQLException {
-                var values = readFields(db, rows, 5, child, parentTid);
-                readNested(child.object().symbol(), integer(4, T_ID), parentTid, depth + 1, values);
+                long id = integer(4, T_ID);
+                var actual = child;
+                if (child.hasDiscriminator()) actual = mapping.concreteType(child, rows.getString(5), id);
+                var chain = mapping.tableChain(actual.object().symbol());
+                if (chain.stream().noneMatch(part -> part.object().symbol().equals(composition.child()))) {
+                    throw problem("Unexpected structure type " + actual.name());
+                }
+                var values = readFields(db, rows, child.hasDiscriminator() ? 6 : 5, child, parentTid);
+                for (var part : chain) {
+                    if (part.subtype()) readSubtype(part, id, parentTid, values);
+                }
+                readNested(actual.object().symbol(), id, parentTid, depth + 1, values);
                 advance();
-                return new Structured(child.object().symbol(), values);
+                return new Structured(actual.object().symbol(), values);
             }
 
             private void advance() throws SQLException {
@@ -1011,10 +1077,17 @@ final class DbTransfer {
         private void insertStructure(Composition composition, long ownerId, String ownerTid, BasketId basket,
                                      int sequence, TransferValue value) throws SQLException {
             token.throwIfCancellationRequested();
-            if (!(value instanceof Structured structure) || !structure.type().equals(composition.child())) {
+            if (!(value instanceof Structured structure)) {
                 throw new DbException("Cannot encode structure type at " + composition.slot().name().declared());
             }
-            var table = mapping.table(composition.child());
+            var actual = mapping.table(structure.type());
+            var chain = mapping.tableChain(structure.type());
+            if (actual.object().modifiers().contains(Modifier.ABSTRACT)
+                    || chain.stream().noneMatch(part -> part.object().symbol().equals(composition.child()))) {
+                throw new DbException("Cannot encode structure type " + actual.name() + " at "
+                        + composition.slot().name().declared());
+            }
+            var table = chain.getFirst();
             var statement = structureInserts.get(composition);
             if (statement == null) {
                 statement = prepareInsert(table, composition);
@@ -1023,19 +1096,21 @@ final class DbTransfer {
             long id = db.nextId();
             statement.setLong(1, id);
             statement.setLong(2, basketId);
-            statement.setNull(3, Types.VARCHAR);
-            statement.setInt(4, sequence);
-            statement.setLong(5, ownerId);
-            int index = 6;
-            int found = 0;
-            for (var column : table.columns()) {
-                var field = structure.value(column.slot().symbol());
-                if (field.isPresent()) {
-                    found++;
-                }
-                var payload = field.filter(item -> item != Undefined.INSTANCE).orElse(null);
-                String context = ownerTid + " at " + column.slot().name().declared();
-                index = bindColumn(statement, index, table, column, id, context, basket, payload);
+            int index = 3;
+            if (table.hasDiscriminator()) statement.setString(index++, actual.name());
+            statement.setNull(index++, Types.VARCHAR);
+            statement.setInt(index++, sequence);
+            statement.setLong(index++, ownerId);
+            int found = bindStructureFields(statement, index, table, structure, id, ownerTid, basket);
+            statement.executeUpdate();
+            for (var part : chain) {
+                if (!part.subtype()) continue;
+                token.throwIfCancellationRequested();
+                var fragment = insertStatement(part);
+                fragment.setLong(1, id);
+                fragment.setLong(2, basketId);
+                found += bindStructureFields(fragment, 3, part, structure, id, ownerTid, basket);
+                fragment.executeUpdate();
             }
             var compositions = mapping.compositionsForParent(structure.type());
             for (var nested : compositions) {
@@ -1045,8 +1120,20 @@ final class DbTransfer {
                 throw new DbException("Structure contains a field without a stored mapping at "
                         + composition.slot().name().declared());
             }
-            statement.executeUpdate();
             insertCompositions(structure, compositions, id, ownerTid, basket);
+        }
+
+        private int bindStructureFields(PreparedStatement statement, int index, Table table, Structured structure,
+                                        long id, String ownerTid, BasketId basket) throws SQLException {
+            int found = 0;
+            for (var column : table.columns()) {
+                var field = structure.value(column.slot().symbol());
+                if (field.isPresent()) found++;
+                var payload = field.filter(item -> item != Undefined.INSTANCE).orElse(null);
+                String context = ownerTid + " at " + column.slot().name().declared();
+                index = bindColumn(statement, index, table, column, id, context, basket, payload);
+            }
+            return found;
         }
 
         private PreparedStatement insertStatement(Table table) throws SQLException {

@@ -81,7 +81,7 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
         }
         for (var composition : mapping.compositions()) {
             token.throwIfCancellationRequested();
-            var child = mapping.table(composition.child());
+            var child = mapping.table(composition.childRoot());
             var parent = mapping.table(composition.parent());
             properties.add(new ColumnProperty(child.name(), null, composition.ownerColumn(),
                     Ili2dbLayout.PREFIX + "foreignKey", parent.name()));

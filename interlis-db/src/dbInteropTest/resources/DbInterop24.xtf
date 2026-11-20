@@ -208,6 +208,19 @@
         </NestedOuter></Tree>
       </NestedRecord>
       <NestedRecord i:tid="legacy-nested-2"/>
+      <TypedRecord i:tid="legacy-typed-1">
+        <Main><CountNote><Label>main</Label><Amount>5</Amount></CountNote></Main>
+        <Values>
+          <NoteBase><Label>root</Label></NoteBase>
+          <CountNote><Label>count</Label><Amount>7</Amount></CountNote>
+          <FlagNote><Label>flag</Label><Enabled>true</Enabled></FlagNote>
+        </Values>
+        <Extras>
+          <NamedNote><Label>duplicate</Label><Code>ABC</Code></NamedNote>
+          <NamedNote><Label>duplicate</Label><Code>ABC</Code></NamedNote>
+        </Extras>
+      </TypedRecord>
+      <TypedRecord i:tid="legacy-typed-2"/>
       <Report i:tid="legacy-report-2">
         <Entries>
           <Detail><Label>later</Label></Detail>

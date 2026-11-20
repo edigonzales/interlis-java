@@ -141,6 +141,7 @@ final class DbInteropTest {
             assertStructureCatalog(db, sql, model, version);
             assertNestedStructureCatalog(db, sql, model);
             assertEmbeddedRoleCatalog(db, sql, model);
+            assertStructureHierarchyCatalog(db, sql, model);
             assertStructureReferenceCatalog(db, sql, model);
             assertPairingCatalog(db, sql, model, version);
             assertAssociationCatalog(db, sql, model, "MarkerLink", Map.of("LinkedMarker", "marker", "LinkedHub", "hub"));
@@ -183,6 +184,7 @@ final class DbInteropTest {
             assertNestedSequenceOrder(db, sql, model, version);
             assertCorruptNestedStructureRejected(db, sql, model, nativeOutput);
             assertCorruptRoleMappingRejected(db, sql, model, nativeOutput);
+            assertWrongStructureBranchRejected(db, sql, model, nativeOutput);
             assertCorruptStructureTargetRejected(db, sql, model, nativeOutput);
             assertCorruptClassHierarchyRejected(db, sql, model, nativeOutput);
             assertCorruptInheritedOwnerRejected(db, sql, model, nativeOutput);
@@ -418,6 +420,24 @@ final class DbInteropTest {
         assertEquals("arelay", scalar(sql, "select colowner from " + columns + " where iliname='" + prefix + "Relay.Online'"));
     }
 
+    private static void assertStructureHierarchyCatalog(TestDatabase db, Connection sql, String model) throws SQLException {
+        String types = " from " + db.table("t_ili2db_column_prop")
+                + " where lower(columnname)='t_type' and tag='ch.ehi.ili2db.types' and tablename=";
+        assertEquals("[\"countnote\",\"flagnote\",\"notebase\"]", scalar(sql, "select setting" + types + "'notebase'"));
+        assertEquals("[\"namednote\"]", scalar(sql, "select setting" + types + "'notekind'"));
+        var roots = Map.of("Main", "notebase", "Values", "notebase", "Extras", "notekind");
+        for (var field : roots.entrySet()) {
+            String column = "typedrecord_" + field.getKey().toLowerCase(Locale.ROOT);
+            assertEquals("1", scalar(sql, "select count(*) from " + db.table("t_ili2db_attrname")
+                    + " where iliname='" + model + ".Data.TypedRecord." + field.getKey()
+                    + "' and sqlname='" + column + "' and colowner='" + field.getValue()
+                    + "' and target='typedrecord'"));
+            assertEquals("typedrecord", scalar(sql, "select setting from " + db.table("t_ili2db_column_prop")
+                    + " where tablename='" + field.getValue() + "' and columnname='" + column
+                    + "' and tag='ch.ehi.ili2db.foreignKey'"));
+        }
+    }
+
     private static void assertTypeKind(TestDatabase db, Connection sql, String table, String column, String kind)
             throws SQLException {
         assertEquals(kind, scalar(sql, "select setting from " + db.table("t_ili2db_column_prop")
@@ -562,6 +582,24 @@ final class DbInteropTest {
                 """.formatted(review, duplicateId, hub, review, marker));
         assertExportRejected(db, model, "legacy", output, "Review.Witness");
         execute(sql, "delete from " + review + " where t_id=" + duplicateId);
+    }
+
+    private static void assertWrongStructureBranchRejected(TestDatabase db, Connection sql, String model, Path output)
+            throws Exception {
+        String notes = db.table("notebase");
+        String owner = scalar(sql, "select t_id from " + db.table("typedrecord") + " where t_ili_tid='legacy-typed-1'");
+        String main = " where t_id=" + scalar(sql, "select t_id from " + notes + " where typedrecord_main=" + owner);
+        String sibling = " where t_id=" + scalar(sql, "select t_id from " + notes
+                + " where typedrecord_values=" + owner + " and t_type='flagnote'");
+        // Both rows retain valid SQL fragments, but Main is declared as CountNote.
+        execute(sql, "update " + notes + " set typedrecord_main=null, typedrecord_values=" + owner + ", t_seq=2" + main);
+        execute(sql, "update " + notes + " set typedrecord_values=null, typedrecord_main=" + owner + ", t_seq=0" + sibling);
+        try {
+            assertExportRejected(db, model, "legacy", output, "TypedRecord.Main", "flagnote");
+        } finally {
+            execute(sql, "update " + notes + " set typedrecord_main=null, typedrecord_values=" + owner + ", t_seq=2" + sibling);
+            execute(sql, "update " + notes + " set typedrecord_values=null, typedrecord_main=" + owner + ", t_seq=0" + main);
+        }
     }
 
     private static void assertCorruptClassHierarchyRejected(TestDatabase db, Connection sql, String model, Path output)
@@ -1035,6 +1073,63 @@ final class DbInteropTest {
         assertEquals("active", scalar(sql, "select u.label" + service));
     }
 
+    private static void assertStoredStructureHierarchy(TestDatabase db, Connection sql, String dataset) throws SQLException {
+        String rows = """
+                select n.t_id, n.t_type, n.t_seq, n.label, n.t_ili_tid, n.typedrecord_main, c.t_id as count_id,
+                       f.t_id as flag_id, c.amount, f.enabled, b.t_ili_tid as bid
+                from %s r join %s b on b.t_id=r.t_basket
+                join %s n on coalesce(n.typedrecord_main, n.typedrecord_values)=r.t_id and n.t_basket=r.t_basket
+                left join %s c on c.t_id=n.t_id and c.t_basket=n.t_basket
+                left join %s f on f.t_id=n.t_id and f.t_basket=n.t_basket
+                where r.t_ili_tid='%s-typed-1'
+                order by case when n.typedrecord_main is not null then 0 else 1 end, n.t_seq
+                """.formatted(db.table("typedrecord"), db.table("t_ili2db_basket"), db.table("notebase"),
+                db.table("countnote"), db.table("flagnote"), dataset);
+        try (var statement = sql.createStatement(); var result = statement.executeQuery(rows)) {
+            var types = List.of("countnote", "notebase", "countnote", "flagnote");
+            var labels = List.of("main", "root", "count", "flag");
+            for (int index = 0; index < types.size(); index++) {
+                assertTrue(result.next());
+                String type = types.get(index);
+                String id = result.getString("t_id");
+                assertEquals(dataset + "-basket-2", result.getString("bid"));
+                assertEquals(type, result.getString("t_type"));
+                assertEquals(labels.get(index), result.getString("label"));
+                assertNull(result.getString("t_ili_tid"));
+                assertEquals(Math.max(0, index - 1), result.getInt("t_seq"));
+                assertEquals(index == 0, result.getObject("typedrecord_main") != null);
+                assertEquals(type.equals("countnote") ? id : null, result.getString("count_id"));
+                assertEquals(type.equals("flagnote") ? id : null, result.getString("flag_id"));
+                assertEquals(index == 0 ? "5" : index == 2 ? "7" : null, result.getString("amount"));
+                if (index == 3) {
+                    assertTrue(result.getBoolean("enabled"));
+                    assertFalse(result.wasNull());
+                } else {
+                    assertNull(result.getObject("enabled"));
+                }
+            }
+            assertFalse(result.next());
+        }
+
+        String abstractRows = """
+                select k.t_type, k.t_seq, k.label, k.t_ili_tid, n.acode
+                from %s k join %s n on n.t_id=k.t_id and n.t_basket=k.t_basket
+                join %s r on r.t_id=k.typedrecord_extras and r.t_basket=k.t_basket
+                where r.t_ili_tid='%s-typed-1' order by k.t_seq
+                """.formatted(db.table("notekind"), db.table("namednote"), db.table("typedrecord"), dataset);
+        try (var statement = sql.createStatement(); var result = statement.executeQuery(abstractRows)) {
+            for (int sequence = 0; sequence < 2; sequence++) {
+                assertTrue(result.next());
+                assertEquals("namednote", result.getString("t_type"));
+                assertEquals(sequence, result.getInt("t_seq"));
+                assertEquals("duplicate", result.getString("label"));
+                assertNull(result.getString("t_ili_tid"));
+                assertEquals("ABC", result.getString("acode"));
+            }
+            assertFalse(result.next());
+        }
+    }
+
     private static void assertStoredDataset(TestDatabase db, Connection sql, int version, String dataset, boolean nativeImport)
             throws SQLException {
         String point = db.postgis ? "st_srid(p.ageometry)" : "p.ageometry";
@@ -1072,6 +1167,7 @@ final class DbInteropTest {
         assertStoredStructures(db, sql, dataset);
         assertStoredNestedStructures(db, sql, dataset);
         assertStoredRoles(db, sql, dataset);
+        assertStoredStructureHierarchy(db, sql, dataset);
         assertStoredStructureReferences(db, sql, dataset);
         assertStoredPairing(db, sql, version, dataset);
         assertStoredStandaloneLinks(db, sql, dataset);
@@ -1548,6 +1644,13 @@ final class DbInteropTest {
                     scalar(sql, "select count(*) from " + db.table(entry.getKey())), entry.getKey());
         }
         tables.addAll(hierarchyCounts.keySet());
+        var structureCounts = Map.of("typedrecord", 2, "notebase", 4, "countnote", 2,
+                "flagnote", 1, "notekind", 2, "namednote", 2);
+        for (var entry : structureCounts.entrySet()) {
+            assertEquals(Integer.toString(datasets * entry.getValue()),
+                    scalar(sql, "select count(*) from " + db.table(entry.getKey())), entry.getKey());
+        }
+        tables.addAll(structureCounts.keySet());
         if (version == 24) {
             assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table("link")));
             var collections = List.of("park", "district", "routegroup", "survey");
@@ -1558,7 +1661,7 @@ final class DbInteropTest {
             tables.addAll(collections);
         }
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 74 : 65)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 82 : 73)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
     }
 
@@ -1626,7 +1729,7 @@ final class DbInteropTest {
                 westArea, eastArea, firstReport, dataset + "-marker-1", dataset + "-marker-2", dataset + "-hub-1",
                 dataset + "-hub-2"));
         var secondBasket = new HashSet<>(Set.of(third, noLine, noSurface, noArea, secondReport, dataset + "-marker-3",
-                dataset + "-nested-1", dataset + "-nested-2",
+                dataset + "-nested-1", dataset + "-nested-2", dataset + "-typed-1", dataset + "-typed-2",
                 dataset + "-pairleft-1", dataset + "-pairleft-2", dataset + "-pairright-1"));
         if (version == 24) {
             firstBasket.add(link);
@@ -1643,6 +1746,8 @@ final class DbInteropTest {
         assertTransferredReports(objects.get(firstReport), objects.get(secondReport), version);
         assertTransferredNestedTree(objects.get(dataset + "-nested-1"), version, List.of("2", "3", "2"));
         assertTrue(children(objects.get(dataset + "-nested-2")).isEmpty());
+        assertTransferredStructureHierarchy(objects.get(dataset + "-typed-1"), version);
+        assertTrue(children(objects.get(dataset + "-typed-2")).isEmpty());
         assertTransferredStructureReferences(objects.get(secondReport), version, dataset);
         assertTransferredRoles(objects, version, dataset);
         assertTransferredReviews(objects, version, dataset);
@@ -1838,6 +1943,29 @@ final class DbInteropTest {
         assertEquals(version == 23 ? leftTid : rightTid, id(role, version, "ref"));
         assertEquals("", id(role, version, "bid"));
         assertTrue(children(role).isEmpty());
+    }
+
+    private static void assertTransferredStructureHierarchy(Element record, int version) {
+        String prefix = version == 23 ? "DbInterop23.Data." : "";
+        assertEquals(prefix + "TypedRecord", record.getLocalName());
+        var main = transferredStructures(record, "Main");
+        assertEquals(1, main.size());
+        assertClassFields(main.getFirst(), prefix + "CountNote", Map.of("Label", "main", "Amount", "5"));
+
+        var values = transferredStructures(record, "Values");
+        assertEquals(3, values.size());
+        assertClassFields(values.get(0), prefix + "NoteBase", Map.of("Label", "root"));
+        assertClassFields(values.get(1), prefix + "CountNote", Map.of("Label", "count", "Amount", "7"));
+        assertClassFields(values.get(2), prefix + "FlagNote", Map.of("Label", "flag", "Enabled", "true"));
+
+        var extras = transferredStructures(record, "Extras");
+        assertEquals(2, extras.size());
+        for (var duplicate : extras) {
+            assertClassFields(duplicate, prefix + "NamedNote", Map.of("Label", "duplicate", "Code", "ABC"));
+        }
+        for (var field : List.of(main, values, extras)) {
+            assertTrue(field.stream().allMatch(structure -> id(structure, version, "tid").isEmpty()));
+        }
     }
 
     private static void assertTransferredNestedTree(Element record, int version, List<String> values) {

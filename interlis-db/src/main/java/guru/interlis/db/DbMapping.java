@@ -97,11 +97,11 @@ final class DbMapping {
         }
     }
 
-    /** A structure-valued field stored through a reverse owner column on its child table.
+    /** A structure-valued field whose declared child type is stored in a physical hierarchy root.
      * An empty collection kind denotes a single structure value.
      */
-    record Composition(AttributeSlot slot, SymbolRef parent, SymbolRef child, String ownerColumn,
-                       Optional<CollectionKind> collectionKind) { }
+    record Composition(AttributeSlot slot, SymbolRef parent, SymbolRef child, SymbolRef childRoot,
+                       String ownerColumn, Optional<CollectionKind> collectionKind) { }
 
     /** An association transferred as a field on an object at the owner end. */
     record EmbeddedAssociation(ObjectDescriptor object, String name, AssociationRole ownerRole,
@@ -138,6 +138,7 @@ final class DbMapping {
     private final LanguageVersion version;
     private final List<Table> tables;
     private final Map<SymbolRef, Table> bySymbol;
+    private final Map<String, Table> byName;
     private final Map<SymbolRef, List<Table>> chains;
     private final Map<Table, List<Table>> hierarchies;
     private final List<Composition> compositions;
@@ -152,6 +153,7 @@ final class DbMapping {
         this.tables = List.copyOf(tables);
         bySymbol = this.tables.stream().collect(Collectors.toUnmodifiableMap(
                 table -> table.object().symbol(), Function.identity()));
+        byName = this.tables.stream().collect(Collectors.toUnmodifiableMap(Table::name, Function.identity()));
         var paths = new HashMap<SymbolRef, List<Table>>();
         var families = new HashMap<Table, List<Table>>();
         for (var table : this.tables) {
@@ -169,7 +171,7 @@ final class DbMapping {
                 Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
         this.compositions = List.copyOf(compositions);
         byParent = indexCompositions(this.compositions, Composition::parent);
-        byChild = indexCompositions(this.compositions, Composition::child);
+        byChild = indexCompositions(this.compositions, Composition::childRoot);
         checkCompositionCycles();
         this.associations = List.copyOf(associations);
     }
@@ -214,6 +216,16 @@ final class DbMapping {
     List<Table> tableChain(SymbolRef type) { return chains.getOrDefault(type, List.of(table(type))); }
     Table rootTable(SymbolRef type) { return tableChain(type).getFirst(); }
     List<Table> hierarchy(Table root) { return hierarchies.getOrDefault(root, List.of()); }
+
+    Table concreteType(Table root, String discriminator, long id) {
+        var actual = discriminator == null ? null : byName.get(discriminator);
+        if (actual == null || actual.object().modifiers().contains(Modifier.ABSTRACT)
+                || !rootTable(actual.object().symbol()).equals(root)) {
+            throw new DbException("Unknown or abstract T_Type " + discriminator + " in " + root.name()
+                    + " for T_Id " + id);
+        }
+        return actual;
+    }
 
     static Set<SymbolRef> baseTables(TransferPlan plan) {
         return plan.objects().stream().flatMap(object -> object.baseType().stream()).collect(Collectors.toSet());
@@ -281,7 +293,7 @@ final class DbMapping {
                         allocator.reverseColumn(names.get(child), name, attributeName));
                 if (composition.isPresent()) {
                     var edge = composition.get();
-                    checkColumnName(attribute, edge.ownerColumn(), true, false, gpkg);
+                    checkColumnName(attribute, edge.ownerColumn(), true, bases.contains(edge.childRoot()), gpkg);
                     compositions.add(edge);
                     continue;
                 }
@@ -357,8 +369,7 @@ final class DbMapping {
             boolean supported = switch (object.kind()) {
                 case CLASS -> object.topic().isPresent() && (object.transferable() || bases.contains(object.symbol()));
                 case ASSOCIATION -> object.transferable() && object.baseType().isEmpty();
-                case STRUCTURE -> object.baseType().isEmpty() && !bases.contains(object.symbol())
-                        && !object.modifiers().contains(Modifier.ABSTRACT);
+                case STRUCTURE -> !object.modifiers().contains(Modifier.ABSTRACT) || bases.contains(object.symbol());
                 default -> false;
             };
             if (!supported || !object.oidRules().isEmpty()) {
@@ -372,9 +383,9 @@ final class DbMapping {
         for (var object : plan.objects()) {
             boolean inheritedLayout = hierarchy.contains(object.symbol());
             if (inheritedLayout && object.baseType().isPresent()
-                    && plan.object(object.baseType().orElseThrow()).filter(base -> base.kind() == SymbolKind.CLASS
+                    && plan.object(object.baseType().orElseThrow()).filter(base -> base.kind() == object.kind()
                     && base.topic().equals(object.topic())).isEmpty()) {
-                throw unsupported("superclass outside the class topic at " + object.name().declared());
+                throw unsupported("base type outside the current topic or of a different kind at " + object.name().declared());
             }
             for (var slot : object.slots()) {
                 if (slot instanceof RoleSlot role && role.role().targets().stream()
@@ -383,14 +394,16 @@ final class DbMapping {
                 }
                 if (!(slot instanceof AttributeSlot attribute)) continue;
                 if (inheritedLayout && attribute.member().overridden()) {
-                    throw unsupported("extended attribute in class inheritance at " + attribute.name().declared());
+                    throw unsupported("extended attribute in inheritance at " + attribute.name().declared());
                 }
                 if (attribute.attribute().transientAttribute()) continue;
                 var type = plan.type(attribute.effectiveType()).known().orElseThrow();
-                if (inheritedLayout && !(type instanceof StructureValueType || type instanceof CollectionType)) {
+                boolean classComposition = object.kind() == SymbolKind.CLASS
+                        && (type instanceof StructureValueType || type instanceof CollectionType);
+                if (inheritedLayout && !classComposition) {
                     var column = describeColumn(plan, object, attribute, attribute.name().declared().last());
                     if (column.kind().geometry() || column.kind() == Kind.REFERENCE) {
-                        throw unsupported("non-scalar attribute in class inheritance at " + attribute.name().declared());
+                        throw unsupported("non-scalar attribute in inheritance at " + attribute.name().declared());
                     }
                 }
                 if (type instanceof ReferenceType reference
@@ -510,7 +523,11 @@ final class DbMapping {
                 && (object.topic().isEmpty() || object.topic().equals(parent.topic()))).isEmpty()) {
             throw unsupported("structure outside the parent model or topic at " + path);
         }
-        return Optional.of(new Composition(slot, parent.symbol(), child, ownerColumn.apply(child), collectionKind));
+        var root = plan.object(child).orElseThrow();
+        while (root.baseType().isPresent()) root = plan.object(root.baseType().orElseThrow()).orElseThrow();
+        var childRoot = root.symbol();
+        return Optional.of(new Composition(slot, parent.symbol(), child, childRoot, ownerColumn.apply(childRoot),
+                collectionKind));
     }
 
     static Column describeColumn(TransferPlan plan, ObjectDescriptor object, AttributeSlot attr, String name) {

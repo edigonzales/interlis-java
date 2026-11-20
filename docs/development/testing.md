@@ -132,6 +132,10 @@ Bei geerbten Strukturattributen prüft die Suite die Deklarationstabelle,
 Listenpositionen und verschachtelte Einzelwerte. Ein Rückverweis auf die
 ID eines Basisobjekts ohne die erforderliche Erweiterungszeile wird
 diagnostiziert.
+Bei Strukturvererbung prüft die Suite Einzelwerte, `LIST OF` und `BAG OF`,
+die konkreten XTF-Typen, die gemeinsame `T_Id` und den Basket der Teilzeilen
+sowie `T_Seq` und die Rückverweise auf der Strukturwurzel. Ein Typ ausserhalb
+des deklarierten Zweigs bricht den Export ab und erhält die bisherige Datei.
 Das Originalwerkzeug lädt das Modell für das neue Schema aus der Datenbank.
 
 Die JUnit-Rohberichte stehen unter `interlis-db/build/test-results/dbInteropTest/`.
