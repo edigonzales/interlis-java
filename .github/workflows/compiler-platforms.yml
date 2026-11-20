@@ -39,7 +39,6 @@ jobs:
             **/build/test-results/
             build/conformance/codeberg/report.json
             build/conformance/codeberg/summary.json
-            build/conformance/codeberg/normative-assessment.json
             build/conformance/codeberg/runner.*
             build/conformance/swisstopo/TEST-*.xml
             build/conformance/swisstopo/summary.txt

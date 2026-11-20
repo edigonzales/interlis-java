@@ -6,6 +6,81 @@
       "testId": "ili23.Attribute10Test.attributeComplete",
       "reason": "INTERLIS 1 transfer syntax (TRANSFER INTERLIS1/TABLE) is out of scope; see scope-decision-interlis1.md.",
       "actualOutcome": "rejected"
+    },
+    {
+      "testId": "ili23.Association23Test.association_AssociationAsTarget",
+      "reason": "Eine Assoziation als Rollenziel benötigt eine eigene OID. 2.7.1 (https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf)",
+      "actualOutcome": "rejected"
+    },
+    {
+      "testId": "ili23.Assoc23Test.assocComplete",
+      "reason": "Mehrere Links derselben Teilnehmer benötigen neben CARDINALITY eine eigene OID. 2.7.1 (https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf)",
+      "actualOutcome": "rejected"
+    },
+    {
+      "testId": "ili23.Role23Test.roleComplete",
+      "reason": "HIDING ist bei einer nicht versteckenden Geschwisterrolle für dieselbe Zielklasse unzulässig. 2.7.1 (https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf)",
+      "actualOutcome": "rejected"
+    },
+    {
+      "testId": "ili23.Expressions23Test.expressions_ParentPathElement",
+      "reason": "Ein abgeleiteter Wert muss in den Zielbereich passen; TEXT*20 ist nicht TEXT*10 zuweisbar. 2.6; 2.8.1 (https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf)",
+      "actualOutcome": "rejected"
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptBasicViewProjectionDef",
+      "reason": "Ein unbeschränktes TEXT-Funktionsergebnis ist nicht TEXT*80 zuweisbar. 2.6; 2.8.1 (https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf)",
+      "actualOutcome": "rejected"
+    },
+    {
+      "testId": "ili23.InterlisConversion23Test.iliconversion_CheckViewDefWithALLOF",
+      "reason": "Ein numerischer Wert ist keinem booleschen Attribut zuweisbar. 2.6; 2.8.10 (https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf)",
+      "actualOutcome": "rejected"
+    },
+    {
+      "testId": "ili23.Models23Test.models_DomainAndRuntimeParam_SameName",
+      "reason": "Laufzeitparameter sind in 2.3 nur innerhalb von CONTRACTED-Modellen zulässig; in 2.4 entfällt diese Pflicht. 2.11; 2.5.1 (https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf)",
+      "actualOutcome": "rejected"
+    },
+    {
+      "testId": "ili23.RuntimeParameter23Test.runtimeParameterComplete",
+      "reason": "Laufzeitparameter sind in 2.3 nur innerhalb von CONTRACTED-Modellen zulässig; in 2.4 entfällt diese Pflicht. 2.11; 2.5.1 (https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf)",
+      "actualOutcome": "rejected"
+    },
+    {
+      "testId": "ili23.Expressions23Test.expressions_ThisAreaThatArea",
+      "reason": "ALL OF ist für AREA-Inspektionen ausdrücklich unzulässig. Nach vollständiger Bindung der Geometrieinspektion verbleibt ausschliesslich VIEW_ALL_OF. Die positive Kontrolle entfernt nur diese Anweisung; THISAREA und THATAREA bleiben erhalten. 2.15, S. 69: ViewAttributes / ALL OF (https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf)",
+      "actualOutcome": "rejected"
+    },
+    {
+      "testId": "ili23.LineType23Test.overlapTooSmallFail",
+      "reason": "Die 2.3-Norm verlangt gleiche Einheiten, eine positive und unveränderliche Toleranz, nennt hier aber keine Präzisionsuntergrenze. Die explizite Stellenzahlregel in 2.4 wird nicht auf 2.3 übertragen. 2.8.12.2, S. 50 (https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf)",
+      "actualOutcome": "accepted"
+    },
+    {
+      "testId": "ili23.Attribute23Test.attributeComplete",
+      "reason": "CONTINUOUS SUBDIVISION requires a CIRCULAR numeric type; the original omits CIRCULAR on attrA6 and attrB6. 2.6.1 / 2.8.5 (https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf)",
+      "actualOutcome": "rejected"
+    },
+    {
+      "testId": "ili23.Constraint23Test.setCstrt",
+      "reason": "A SET condition has no individual object context; attribute values belong in its individual WHERE filter. This follows the explicitly approved SET context profile. 2.12 (https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf)",
+      "actualOutcome": "rejected"
+    },
+    {
+      "testId": "ili23.InterlisConversion23Test.iliconversion_ConversionOfSETCONSTRAINT",
+      "reason": "A SET condition has no individual object context; attribute values belong in its individual WHERE filter. This follows the explicitly approved SET context profile. 2.12 (https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf)",
+      "actualOutcome": "rejected"
+    },
+    {
+      "testId": "ili23.XMLGenerator23Test.attribute_GenerateXMLSchemaWithTransientAttribute",
+      "reason": "Die BOOLEAN-Aufzählung enthält true, aber kein True. Auch der Ausdruck eines transienten Attributs muss zum Attributtyp passen. 2.2.2, 2.6.1, 2.8.4 (https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf)",
+      "actualOutcome": "rejected"
+    },
+    {
+      "testId": "ili24.Refhb24Test.roadsExgm2ien",
+      "reason": "NamOri und der Signaturparameter Rotation verwenden separat deklarierte konkrete Gradeinheiten. Der gemeinsame Bezug auf INTERLIS.rad erlaubt die explizite Umrechnung mit convertUnit. 3.8.5, 3.14, 3.16 (https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf)",
+      "actualOutcome": "rejected"
     }
   ]
 }

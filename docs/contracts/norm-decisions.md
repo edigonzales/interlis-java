@@ -2,7 +2,9 @@
 
 Die massgeblichen Normausgaben sind [INTERLIS 2.3, 13. April 2006][norm23] und [INTERLIS 2.4, eCH-0031 V2.1.0, 24. April 2024][norm24]. Die Seiten verweisen direkt auf die jeweiligen Stellen. Beobachtetes Verhalten von ili2c 5.6.9 dient dem gezielten Vergleich. Der aktuelle Vertrag gilt nach Massgabe der ausdrücklich genannten Kompatibilitätsprofile.
 
-Die [Codeberg-Ausnahmen](../../testdata/conformance/normative/expectations.json) halten die fallbezogenen Kontrollen fest.
+Die [Codeberg-Baseline](../../testdata/conformance/baseline.json) begründet die
+Abweichungen beim Kompilierausgang. Die [JUnit-Tests](../../interlis-compiler-cli/src/test/java/guru/interlis/cli/LanguageDecisionTest.java)
+prüfen die zugehörigen Diagnosen und Modellvarianten.
 
 
 Die [Originalmodelle für Views und abgeleitete Assoziationen](../../testdata/conformance/views)

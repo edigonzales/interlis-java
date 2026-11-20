@@ -1301,7 +1301,9 @@ Dieser konkrete Fall ergänzt die bisherigen 18 unveränderten Bewertungen als
 SEMANTIC_CHECKING-Diagnosen sowie eine erfolgreiche Kontrollquelle, die nur
 die beiden Marker ergänzt. Das erfasst die Konsequenz der im bestätigten
 Profil ausdrücklich erhaltenen CIRCULAR-Regel; eine gesonderte ausdrückliche
-Nutzerfreigabe dieses einzelnen Fixture-Namens wird nicht behauptet. Die Suite-Klassifikation, Projektbewertung und Pins stehen im [Conformance-Profil](../../testdata/conformance/normative/expectations.json).
+Nutzerfreigabe dieses einzelnen Fixture-Namens wird nicht behauptet. Die
+[Baseline](../../testdata/conformance/baseline.json) enthält den Kompilierausgang.
+Der [Suite-Pin](../../testdata/conformance/suite.properties) bezeichnet den geprüften Upstream-Stand.
 
 Im freigegebenen Unterteilungsprofil ist eine fehlende deklarierte
 Umrechnungsroute von einem nachgewiesenen Dimensionswiderspruch zu unterscheiden.

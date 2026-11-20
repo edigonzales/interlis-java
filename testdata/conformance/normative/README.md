@@ -1,12 +1,10 @@
-# Positive Gegenproben für bewusst abweichende Referenzerwartungen
+# Originalmodelle und Gegenproben für dokumentierte Sprachentscheidungen
 
-Diese Dateien sind gezielt korrigierte Fassungen der in
-[expectations.json](expectations.json) genannten ili2c-Testfälle
-(Upstream `claeis/ili2c`, Commit `4ea207f388ef7d91b03d968cc1636f4de84e36ea`).
-Die Originaldateien, Suite-Erwartungen und Quellenpins werden nicht geändert.
-Die Herkunft jedes Falls, Original-/Kontrollhashes, Normstellen und exakten
-negativen Diagnosen stehen im Manifest. Die Gegenproben gehören zum normalen
-`./gradlew codebergConformance`; ihr Inhalt wird dabei nicht erneuert.
+Die [Originalmodelle](originals/) stammen unverändert aus
+[ili2c, Commit `4ea207f`](https://github.com/claeis/ili2c/tree/4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data).
+Die [JUnit-Tests](../../../interlis-compiler-cli/src/test/java/guru/interlis/cli/LanguageDecisionTest.java)
+laden Originale und Gegenproben direkt. Die [Codeberg-Baseline](../baseline.json)
+erklärt die Abweichungen im Kompilierausgang der externen Suite.
 
 Änderungen gegenüber den Originalen:
 

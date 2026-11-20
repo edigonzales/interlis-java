@@ -34,7 +34,8 @@ def suite = tasks.register('unpackCodebergSuite', Sync) {
 
 def codebergFilter = providers.gradleProperty('codebergFilter').orElse('^(ili23|ili24)\\.')
 def codebergOutput = layout.buildDirectory.dir('conformance/codeberg')
-def codebergRun = tasks.register('runCodebergSuite') {
+tasks.register('codebergConformance') {
+    group = 'verification'
     dependsOn suite, compiler
     timeout = java.time.Duration.ofMinutes(35)
     doLast {
@@ -48,7 +49,7 @@ def codebergRun = tasks.register('runCodebergSuite') {
             suite: new File(upstream, 'suite/test-cases.json').path, outputDirectory: output.path,
             cacheDirectory: layout.buildDirectory.dir('conformance/upstream/fixtures').get().asFile.path,
             timeoutSeconds: 60, parallelism: 4, xpassPolicy: 'fail', filter: codebergFilter.get(),
-            compilers: [[id: 'interlis-java', source: launcher.path, command: ['{compiler}', 'check', '{files}'],
+            compilers: [[id: 'interlis-java', source: launcher.path, command: ['{compiler}', 'check', '--json', '--no-cache', '{files}'],
                          acceptedExitCodes: [0], rejectedExitCodes: [1],
                          internalErrorPatterns: ['internal failure:', 'Exception in thread'],
                          baseline: file('testdata/conformance/baseline.json').path]]
@@ -63,23 +64,35 @@ def codebergRun = tasks.register('runCodebergSuite') {
         int status = invocation.result.get().exitValue
         new File(output, 'runner.stdout').setText(invocation.standardOutput.asText.get(), 'UTF-8')
         new File(output, 'runner.stderr').setText(invocation.standardError.asText.get(), 'UTF-8')
-        if (!(status in [0, 1])) throw new GradleException("Codeberg runner exit ${status}; see ${output}")
-        new File(output, 'runner.exit').text = status
+        if (status != 0) throw new GradleException("Codeberg runner exit ${status}; see ${output}")
+
+        // The CLI uses exit 1 for source rejection as well as operational problems.
+        def report = new groovy.json.JsonSlurper().parse(new File(output, 'report.json'), 'UTF-8')
+        report.compilers[0].tests.findAll { it.classification == 'XFAIL' }.each { result ->
+            try {
+                def payload = new groovy.json.JsonSlurper().parseText(result.stdout)
+                def errors = payload.diagnostics.findAll { it.severity == 'ERROR' }
+                boolean expected
+                if (result.actualOutcome == 'accepted') {
+                    expected = result.exitCode == 0 && payload.status == 'ok' && payload.diagnostics.empty
+                } else {
+                    expected = result.actualOutcome == 'rejected' && result.exitCode == 1 &&
+                            payload.status.startsWith('rejected: RejectionSummary[reasons=[SOURCE_ERRORS],') &&
+                            errors.any { it.code.startsWith('ILI-SEM-') }
+                    if (result.testId == 'ili23.Attribute10Test.attributeComplete') {
+                        expected = result.exitCode == 1 &&
+                                payload.status.startsWith('rejected: RejectionSummary[reasons=[SOURCE_ERRORS') &&
+                                errors.any { it.code == 'ILI-SYN-0002' }
+                    }
+                    expected = expected && payload.status.endsWith('unsupportedFeatureIds=[]]')
+                }
+                if (!expected || result.timedOut || !result.stderr.empty)
+                    throw new GradleException('unexpected compiler result')
+            } catch (RuntimeException failure) {
+                throw new GradleException("Invalid Codeberg exception ${result.testId}; see ${output}", failure)
+            }
+        }
     }
-}
-def assessment = cli.tasks.register('assessCodebergSuite', JavaExec) {
-    dependsOn codebergRun
-    javaLauncher = java25
-    classpath = cli.sourceSets.test.runtimeClasspath
-    mainClass = 'guru.interlis.cli.conformance.NormativeConformance'
-    doFirst {
-        def output = codebergOutput.get().asFile
-        args rootProject.projectDir, output, new File(output, 'runner.exit').text
-    }
-}
-tasks.register('codebergConformance') {
-    group = 'verification'
-    dependsOn assessment
 }
 
 def suitePath = providers.gradleProperty('swisstopoSuiteDir').map { file(it) }

@@ -20,9 +20,11 @@ prüfen tatsächliche Schreibverbote des Betriebssystems.
 - `./gradlew codebergConformance` prüft den gepinnten Codeberg-Stand für
   INTERLIS 2.3 und 2.4. Der Build prüft die SHA-256 des Archivs vom GitHub-Spiegel.
   `-PcodebergFilter='^ili23\.Class23Test\.classComplete$'` wählt einen Fall.
-  Die [Erwartungen](../../testdata/conformance/normative/expectations.json) und
-  [Baseline](../../testdata/conformance/baseline.json) enthalten die fachlichen
-  Abweichungen. Die Berichte liegen unter `build/conformance/codeberg/`.
+  Die [Baseline](../../testdata/conformance/baseline.json) enthält die fachlichen
+  Abweichungen. Der Runner speichert die Antwort jedes Originalfalls im nativen
+  Report. Die [direkten JVM-Tests](../../interlis-compiler-cli/src/test/java/guru/interlis/cli/LanguageDecisionTest.java)
+  prüfen die konkreten Diagnosen und Kontrollen. Die Berichte liegen unter
+  `build/conformance/codeberg/`.
 - `./gradlew swisstopoConformance -PswisstopoSuiteDir=../suite-interlis` prüft
   die Originaltests gegen die modulare Validator-Installation. Gradle gibt den Commit
   des Suite-Checkouts aus. Die Ergebnisse liegen unter
