@@ -123,17 +123,16 @@ diese Referenzausgabe erfolgt in der gemeinsamen Datenbank.
 [INTERLIS 2.4, Anhang C](https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=133)
 
 In XTF 2.3 und 2.4 FULL kann eine Klasse einen optionalen Struktureinzelwert
-und `LIST OF`-Attribute mit einem konkreten, flachen Strukturtyp aus dem
-Modell oder dem eigenen Topic enthalten. Strukturelemente verwenden die
-unterstützten skalaren Attributtypen. Jeder Strukturtyp hat eine Tabelle.
+und `LIST OF`- oder `BAG OF`-Attribute mit einem konkreten, flachen
+Strukturtyp aus dem Modell oder dem eigenen Topic enthalten. Strukturelemente
+verwenden die unterstützten skalaren Attributtypen. Jeder Strukturtyp hat eine Tabelle.
 Die gespeicherte `ATTRNAME`-Zuordnung benennt je Elternattribut eine
 Rückverweisspalte in dieser Tabelle. Die Strukturzeilen erhalten eigene
 SQL-IDs und den Basket des Elternobjekts. Ihre `T_Ili_Tid` bleibt beim
-Import `NULL`. Ein fehlender Wert belegt keine Zeile. `T_Seq` beginnt beim
-Import bei null und bestimmt beim Export die Listenreihenfolge. Gleiche
-Listenelemente bleiben erhalten. Verwaiste oder mehrdeutig zugeordnete
-Strukturzeilen und fehlende oder doppelte Listenpositionen werden beim
-Export diagnostiziert.
+Import `NULL`. Ein fehlender Wert belegt keine Zeile. Bei `LIST OF` und
+`BAG OF` beginnt `T_Seq` beim Import bei null und bestimmt die Ausgabereihenfolge.
+Duplikate bleiben erhalten. Verwaiste oder mehrdeutig zugeordnete Strukturzeilen
+sowie fehlende oder doppelte Positionen werden beim Export diagnostiziert.
 [ili2db-Strukturabbildung](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst#strukturattribute)
 
 XTF 2.3 und 2.4 FULL unterstützen auch binäre 1:n- und 1:1-Assoziationen

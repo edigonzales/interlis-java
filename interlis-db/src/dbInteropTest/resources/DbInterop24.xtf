@@ -152,6 +152,11 @@
           <Detail><Label>a</Label><Quantity>-1</Quantity><Decision>approved</Decision></Detail>
           <Detail><Label>b</Label><Enabled>false</Enabled><Quantity>2</Quantity><Decision>draft</Decision></Detail>
         </Entries>
+        <Observations>
+          <Detail><Label>x</Label><Enabled>true</Enabled></Detail>
+          <Detail><Label>r</Label><Quantity>7</Quantity><Decision>approved</Decision></Detail>
+          <Detail><Label>x</Label><Enabled>true</Enabled></Detail>
+        </Observations>
       </Report>
       <MarkerLink><LinkedHub i:ref="legacy-hub-1"/><LinkedMarker i:ref="legacy-marker-1"/></MarkerLink>
       <MarkerLink><LinkedHub i:ref="legacy-hub-2"/><LinkedMarker i:ref="legacy-marker-1"/></MarkerLink>

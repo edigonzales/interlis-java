@@ -90,6 +90,11 @@
           <DbInterop23.Data.Detail><Label>a</Label><Quantity>-1</Quantity><Decision>approved</Decision></DbInterop23.Data.Detail>
           <DbInterop23.Data.Detail><Label>b</Label><Enabled>false</Enabled><Quantity>2</Quantity><Decision>draft</Decision></DbInterop23.Data.Detail>
         </Entries>
+        <Observations>
+          <DbInterop23.Data.Detail><Label>x</Label><Enabled>true</Enabled></DbInterop23.Data.Detail>
+          <DbInterop23.Data.Detail><Label>r</Label><Quantity>7</Quantity><Decision>approved</Decision></DbInterop23.Data.Detail>
+          <DbInterop23.Data.Detail><Label>x</Label><Enabled>true</Enabled></DbInterop23.Data.Detail>
+        </Observations>
       </DbInterop23.Data.Report>
       <DbInterop23.Data.MarkerLink><LinkedMarker REF="legacy-marker-1"/><LinkedHub REF="legacy-hub-1"/></DbInterop23.Data.MarkerLink>
       <DbInterop23.Data.MarkerLink><LinkedMarker REF="legacy-marker-1"/><LinkedHub REF="legacy-hub-2"/></DbInterop23.Data.MarkerLink>

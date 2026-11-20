@@ -5,7 +5,6 @@ import guru.interlis.db.DbMapping.Composition;
 import guru.interlis.db.DbMapping.EmbeddedAssociation;
 import guru.interlis.db.DbMapping.Table;
 import guru.interlis.execution.CancellationToken;
-import guru.interlis.model.CollectionKind;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.SymbolRef;
@@ -367,7 +366,8 @@ final class DbTransfer {
                 if (ownerId < parentId) {
                     throw problem("Orphan structure row");
                 }
-                if (!composition.list()) {
+                var collectionKind = composition.collectionKind();
+                if (collectionKind.isEmpty()) {
                     var value = readChild();
                     if (available && ownerId == parentId) {
                         throw problem("Multiple rows for a single structure value");
@@ -384,7 +384,7 @@ final class DbTransfer {
                     items.add(readChild());
                     previous = sequence;
                 } while (available && ownerId == parentId);
-                return new Repeated(CollectionKind.LIST, items);
+                return new Repeated(collectionKind.orElseThrow(), items);
             }
 
             private Structured readChild() throws SQLException {
@@ -733,12 +733,14 @@ final class DbTransfer {
         }
 
         private void insertStructures(Composition composition, long ownerId, TransferValue value) throws SQLException {
-            if (composition.list()) {
-                if (!(value instanceof Repeated list) || list.kind() != CollectionKind.LIST) {
-                    throw new DbException("Expected a structure list at " + composition.slot().name().declared());
+            var collectionKind = composition.collectionKind();
+            if (collectionKind.isPresent()) {
+                var kind = collectionKind.orElseThrow();
+                if (!(value instanceof Repeated collection) || collection.kind() != kind) {
+                    throw new DbException("Expected a structure " + kind + " at " + composition.slot().name().declared());
                 }
                 int sequence = 0;
-                for (var child : list.values()) {
+                for (var child : collection.values()) {
                     insertStructure(composition, ownerId, sequence++, child);
                 }
             } else {

@@ -57,6 +57,7 @@ MODEL DbInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
     CLASS Report =
       Summary : Detail;
       Entries : LIST {0..*} OF Detail;
+      Observations : BAG {0..*} OF Detail;
     END Report;
     CLASS Marker =
       ASelect : TEXT*16;

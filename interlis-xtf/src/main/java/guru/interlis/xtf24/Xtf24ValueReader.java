@@ -1,7 +1,6 @@
 package guru.interlis.xtf24;
 
 import guru.interlis.model.BlackboxType;
-import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.ReferenceType;
 import guru.interlis.model.StructureValueType;
@@ -100,8 +99,8 @@ final class Xtf24ValueReader {
                 var element = layout.type(new TypeRef(attribute.symbol().snapshot(), collection.elementType()), concreteTypes);
                 var items = new ArrayList<TransferValue>();
                 do {
-                    if (collection.collectionKind() == CollectionKind.LIST && element instanceof StructureValueType structure) {
-                        readStructureList(items, structure, object.model(), concreteTypes, structureTypes, activeTypes);
+                    if (element instanceof StructureValueType structure) {
+                        readStructureCollection(items, structure, object.model(), concreteTypes, structureTypes, activeTypes);
                     } else {
                         items.add(readValue(element, object.model(), concreteTypes, structureTypes, activeTypes));
                     }
@@ -198,14 +197,14 @@ final class Xtf24ValueReader {
         };
     }
 
-    private void readStructureList(ArrayList<TransferValue> items, StructureValueType type, SymbolRef containingModel,
-                                   Map<SymbolRef, TypeRef> concreteTypes, Set<SymbolRef> structureTypes,
-                                   Set<SymbolRef> activeTypes) throws XMLStreamException {
+    private void readStructureCollection(ArrayList<TransferValue> items, StructureValueType type, SymbolRef containingModel,
+                                         Map<SymbolRef, TypeRef> concreteTypes, Set<SymbolRef> structureTypes,
+                                         Set<SymbolRef> activeTypes) throws XMLStreamException {
         if (input.cursor().getAttributeCount() != 0) {
             throw input.error(UNSUPPORTED, "Unexpected attribute on XTF value element");
         }
         if (input.nextTag() != START_ELEMENT) {
-            throw input.error(INVALID_WIRE, "Expected a structure element in LIST");
+            throw input.error(INVALID_WIRE, "Expected a structure element in collection");
         }
         // ili2db 5.5.2 can group the items under one attribute tag.
         do {

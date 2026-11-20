@@ -93,8 +93,11 @@ final class DbMapping {
         }
     }
 
-    /** A structure-valued field stored through a reverse owner column on its child table. */
-    record Composition(AttributeSlot slot, SymbolRef parent, SymbolRef child, String ownerColumn, boolean list) { }
+    /** A structure-valued field stored through a reverse owner column on its child table.
+     * An empty collection kind denotes a single structure value.
+     */
+    record Composition(AttributeSlot slot, SymbolRef parent, SymbolRef child, String ownerColumn,
+                       Optional<CollectionKind> collectionKind) { }
 
     /** An association transferred as a field on an object at the owner end. */
     record EmbeddedAssociation(ObjectDescriptor object, String name, AssociationRole ownerRole,
@@ -386,14 +389,14 @@ final class DbMapping {
         }
         String feature = "attribute " + path + " (" + type.kind() + ")";
         if (parent.kind() != SymbolKind.CLASS) throw unsupported(feature);
-        boolean list = type instanceof CollectionType;
+        Optional<CollectionKind> collectionKind = Optional.empty();
         StructureValueType structure;
         if (type instanceof CollectionType collection) {
-            if (collection.collectionKind() != CollectionKind.LIST
-                    || !(plan.type(new TypeRef(plan.snapshotId(), collection.elementType())).known().orElseThrow()
+            if (!(plan.type(new TypeRef(plan.snapshotId(), collection.elementType())).known().orElseThrow()
                     instanceof StructureValueType element)) {
                 throw unsupported(feature);
             }
+            collectionKind = Optional.of(collection.collectionKind());
             structure = element;
         } else {
             if (!optional(slot)) throw unsupported(feature);
@@ -405,7 +408,7 @@ final class DbMapping {
                 && (object.topic().isEmpty() || object.topic().equals(parent.topic()))).isEmpty()) {
             throw unsupported("structure outside the parent model or topic at " + path);
         }
-        return Optional.of(new Composition(slot, parent.symbol(), child, ownerColumn.apply(child), list));
+        return Optional.of(new Composition(slot, parent.symbol(), child, ownerColumn.apply(child), collectionKind));
     }
 
     static Column describeColumn(TransferPlan plan, ObjectDescriptor object, AttributeSlot attr, String name) {

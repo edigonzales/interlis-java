@@ -59,6 +59,9 @@ final class DbInteropTest {
     private static final DetailValue DRAFT_ENTRY = new DetailValue("b", false, 2, "draft");
     private static final List<DetailValue> ENTRIES = List.of(
             DRAFT_ENTRY, new DetailValue("a", null, -1, "approved"), DRAFT_ENTRY);
+    private static final DetailValue FIRST_OBSERVATION = new DetailValue("x", true, null, null);
+    private static final List<DetailValue> OBSERVATIONS = List.of(
+            FIRST_OBSERVATION, new DetailValue("r", null, 7, "approved"), FIRST_OBSERVATION);
     private static final DetailValue LATER_ENTRY = new DetailValue("later", null, null, null);
     private static final List<String> MARKER_LABELS = List.of("first", "second", "unlinked");
     private static final List<CurveComponent> STRAIGHT_ROUTE = List.of(new CurveComponent(LINESTRING, List.of(
@@ -202,7 +205,7 @@ final class DbInteropTest {
                 + " where iliname='" + structure + "'"));
         assertEquals("STRUCTURE", scalar(sql, "select setting from " + db.table("t_ili2db_table_prop")
                 + " where tablename='detail' and tag='ch.ehi.ili2db.tableKind'"));
-        for (String attribute : List.of("Summary", "Entries")) {
+        for (String attribute : List.of("Summary", "Entries", "Observations")) {
             String column = "report_" + attribute.toLowerCase(Locale.ROOT);
             assertEquals("1", scalar(sql, "select count(*) from " + db.table("t_ili2db_attrname")
                     + " where iliname='" + model + ".Data.Report." + attribute + "' and sqlname='" + column
@@ -593,13 +596,17 @@ final class DbInteropTest {
 
     private void assertStructureRollback(TestDatabase db, Connection sql, String model, int version, String fixture)
             throws Exception {
-        // Reject the second basket's child after the first basket's complete list has reached the database.
+        // Reject the second basket's child after both first-basket collections have reached the database.
         String condition = """
                 new.label='later' and exists (
                     select 1 from %s d join %s r on r.t_id=d.report_entries
                     where r.t_ili_tid='structure-fail-report-1' and d.t_seq=2 and d.label='b'
                 )
-                """.formatted(db.table("detail"), db.table("report"));
+                and exists (
+                    select 1 from %s d join %s r on r.t_id=d.report_observations
+                    where r.t_ili_tid='structure-fail-report-1' and d.t_seq=2 and d.label='x'
+                )
+                """.formatted(db.table("detail"), db.table("report"), db.table("detail"), db.table("report"));
         if (db.postgis) {
             String function = db.table("reject_detail_import");
             execute(sql, """
@@ -642,7 +649,7 @@ final class DbInteropTest {
         assertTrue(rejected.diagnostics().contains(affectedObject)
                 && rejected.diagnostics().contains("unresolved-target"), rejected::diagnostics);
         // PostgreSQL has allocated IDs for the dataset, first basket and all its rows, including both late Hubs.
-        long allocated = version == 24 ? 32 : 27;
+        long allocated = version == 24 ? 35 : 30;
         assertEquals(Long.toString(db.postgis ? before + allocated : before), scalar(sql, counter));
         assertNull(scalar(sql, "select datasetname from " + db.table("t_ili2db_dataset")
                 + " where datasetname='" + dataset + "'"));
@@ -918,12 +925,14 @@ final class DbInteropTest {
     private static void assertStoredStructures(TestDatabase db, Connection sql, String dataset) throws SQLException {
         String rows = """
                 select d.t_id as detail_id, d.t_basket as detail_basket, d.t_ili_tid as detail_tid, d.t_seq,
-                       d.report_summary, d.report_entries, d.label, d.enabled, d.quantity, d.decision,
+                       d.report_summary, d.report_entries, d.report_observations, d.label, d.enabled, d.quantity, d.decision,
                        r.t_id as report_id, r.t_basket as report_basket, r.t_ili_tid as report_tid, b.t_ili_tid as bid
-                from %s d join %s r on r.t_id=coalesce(d.report_summary, d.report_entries)
+                from %s d join %s r on r.t_id=coalesce(d.report_summary, d.report_entries, d.report_observations)
                 join %s b on b.t_id=r.t_basket join %s s on s.t_id=b.dataset
                 where s.datasetname='%s'
-                order by r.t_ili_tid, case when d.report_summary is null then 1 else 0 end, d.t_seq
+                order by r.t_ili_tid,
+                         case when d.report_summary is not null then 0 when d.report_entries is not null then 1 else 2 end,
+                         d.t_seq
                 """.formatted(db.table("detail"), db.table("report"), db.table("t_ili2db_basket"),
                 db.table("t_ili2db_dataset"), dataset);
         try (var statement = sql.createStatement(); var result = statement.executeQuery(rows)) {
@@ -932,6 +941,9 @@ final class DbInteropTest {
             assertStoredDetail(result, firstReport, firstBasket, "report_summary", 0, SUMMARY);
             for (int index = 0; index < ENTRIES.size(); index++) {
                 assertStoredDetail(result, firstReport, firstBasket, "report_entries", index, ENTRIES.get(index));
+            }
+            for (int index = 0; index < OBSERVATIONS.size(); index++) {
+                assertStoredDetail(result, firstReport, firstBasket, "report_observations", index, OBSERVATIONS.get(index));
             }
             assertStoredDetail(result, dataset + "-report-2", dataset + "-basket-2", "report_entries", 0, LATER_ENTRY);
             assertFalse(result.next());
@@ -947,7 +959,9 @@ final class DbInteropTest {
         assertEquals(tid, result.getString("report_tid"));
         assertEquals(bid, result.getString("bid"));
         assertEquals(result.getString("report_id"), result.getString(owner));
-        assertNull(result.getString(owner.equals("report_summary") ? "report_entries" : "report_summary"));
+        for (String column : List.of("report_summary", "report_entries", "report_observations")) {
+            if (!owner.equals(column)) assertNull(result.getString(column), column);
+        }
         assertEquals(Integer.toString(sequence), result.getString("t_seq"));
         boolean enabled = result.getBoolean("enabled");
         Boolean optionalEnabled = result.wasNull() ? null : enabled;
@@ -1120,7 +1134,7 @@ final class DbInteropTest {
         assertEquals(Integer.toString(datasets * 3), scalar(sql, "select count(*) from " + db.table("plot")));
         assertEquals(Integer.toString(datasets * 3), scalar(sql, "select count(*) from " + db.table("parcel")));
         assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("report")));
-        assertEquals(Integer.toString(datasets * 5), scalar(sql, "select count(*) from " + db.table("detail")));
+        assertEquals(Integer.toString(datasets * 8), scalar(sql, "select count(*) from " + db.table("detail")));
         assertEquals(Integer.toString(datasets * 3), scalar(sql, "select count(*) from " + db.table("marker")));
         assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("hub")));
         assertEquals(Integer.toString(datasets * 3), scalar(sql, "select count(*) from " + db.table("markerlink")));
@@ -1140,7 +1154,7 @@ final class DbInteropTest {
             tables.addAll(collections);
         }
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 47 : 38)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 50 : 41)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
     }
 
@@ -1378,13 +1392,16 @@ final class DbInteropTest {
         assertEquals(1, children(summary).size());
         assertTransferredDetail(children(summary).getFirst(), version, prefix + "Detail", SUMMARY);
         assertNull(child(second, "Summary"));
-        assertTransferredEntries(first, version, prefix + "Detail", ENTRIES);
-        assertTransferredEntries(second, version, prefix + "Detail", List.of(LATER_ENTRY));
+        assertTransferredStructures(first, "Entries", version, prefix + "Detail", ENTRIES);
+        assertTransferredStructures(second, "Entries", version, prefix + "Detail", List.of(LATER_ENTRY));
+        assertTransferredStructures(first, "Observations", version, prefix + "Detail", OBSERVATIONS);
+        assertNull(child(second, "Observations"));
     }
 
-    private static void assertTransferredEntries(Element report, int version, String detailName, List<DetailValue> expected) {
+    private static void assertTransferredStructures(Element report, String attribute, int version, String detailName,
+                                                    List<DetailValue> expected) {
         // The reference groups the children. The XTF 2.4 writer emits consecutive wrappers.
-        var entries = children(report).stream().filter(element -> element.getLocalName().equals("Entries"))
+        var entries = children(report).stream().filter(element -> element.getLocalName().equals(attribute))
                 .flatMap(element -> children(element).stream()).toList();
         assertEquals(expected.size(), entries.size());
         for (int index = 0; index < entries.size(); index++) {
