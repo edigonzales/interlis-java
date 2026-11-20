@@ -247,6 +247,7 @@
       <Relay i:tid="legacy-relay">
         <Caption>leaf</Caption>
         <Notes><NestedLeaf><Amount>7</Amount></NestedLeaf></Notes>
+        <Center><g:coord><g:c1>2600000.125</g:c1><g:c2>1200000.375</g:c2></g:coord></Center>
         <Height>24</Height>
         <Supplement><NestedOuter>
           <Items><NestedInner>
@@ -254,9 +255,22 @@
             <Main><NestedLeaf><Amount>8</Amount></NestedLeaf></Main>
           </NestedInner></Items>
         </NestedOuter></Supplement>
+        <Alignment><g:polyline>
+          <g:coord><g:c1>2600123.125</g:c1><g:c2>1200456.375</g:c2></g:coord>
+          <g:coord><g:c1>2600345.250</g:c1><g:c2>1200678.500</g:c2></g:coord>
+          <g:coord><g:c1>2600567.625</g:c1><g:c2>1200456.750</g:c2></g:coord>
+        </g:polyline></Alignment>
         <Online>false</Online>
+        <Sites><g:multicoord>
+          <g:coord><g:c1>2601500.625</g:c1><g:c2>1201500.500</g:c2></g:coord>
+          <g:coord><g:c1>2601100.125</g:c1><g:c2>1201100.750</g:c2></g:coord>
+        </g:multicoord></Sites>
       </Relay>
-      <ServiceUnit i:tid="legacy-serviceunit"><ServiceCode>unit-1</ServiceCode><Label>active</Label></ServiceUnit>
+      <ServiceUnit i:tid="legacy-serviceunit">
+        <ServiceCode>unit-1</ServiceCode>
+        <ServicePoint><g:coord><g:c1>2600100.250</g:c1><g:c2>1200100.625</g:c2></g:coord></ServicePoint>
+        <Label>active</Label>
+      </ServiceUnit>
     </Data>
   </i:datasection>
 </i:transfer>

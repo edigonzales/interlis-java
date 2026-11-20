@@ -61,9 +61,10 @@ benötigt die gespeicherten BID/TID und bewahrt sie beim Werkzeugwechsel.
 Ein Datensatz enthält mindestens einen Basket. Baskets ohne Objekte sind
 zulässig.
 
-Unterstützt sind flache Klassen eines eigenständigen Modells in
+Unterstützt sind Klassen eines eigenständigen Modells in
 INTERLIS 2.3 und 2.4 mit Text, Boolean, 32-Bit-Ganzzahlen und Aufzählungen als
-XTF-Code. Je Klasse ist eine optionale Geometriespalte in EPSG:2056 zulässig.
+XTF-Code. Je physischer Tabelle ist eine optionale Geometriespalte in
+EPSG:2056 zulässig.
 Sie speichert einen 2D-Punkt, eine zweidimensionale `POLYLINE` oder eine
 zweidimensionale Fläche (`SURFACE` oder `AREA`) mit einem Aussenring und
 optionalen Innenringen. Linien und Flächenränder unterstützen
@@ -184,9 +185,8 @@ entfällt die Rolle. Mehrere Linkzeilen zum selben Objekt der n-Seite werden
 beim Export an der Rolle diagnostiziert.
 
 XTF 2.3 und 2.4 FULL unterstützen Klassenvererbung mit `--noSmartMapping`
-innerhalb eines Topics. Konkrete Klassen enthalten die unterstützten skalaren
-Attribute. Abstrakte Basisklassen können ihre Attribute an mehrere konkrete
-Nachfolger vererben. Pro Klasse entsteht eine Tabelle mit deren deklarierten
+innerhalb eines Topics. Abstrakte Basisklassen können ihre Attribute an
+mehrere konkrete Nachfolger vererben. Pro Klasse entsteht eine Tabelle mit deren deklarierten
 Feldern. Ein Objekt belegt je eine Zeile in der Wurzeltabelle und in jeder
 Tabelle seines Vererbungspfads. Diese Zeilen teilen `T_Id` und `T_Basket`.
 Nur die Wurzel speichert die TID und den SQL-Tabellennamen der konkreten
@@ -194,6 +194,12 @@ Klasse als `T_Type`. Beim Export entsteht daraus ein XTF-Objekt mit allen
 Feldern seines Pfads. Fehlende, unerwartete oder basketfremde Teilzeilen
 und unbekannte oder abstrakte Typen werden diagnostiziert.
 [ili2db-Vererbungsabbildung](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst#vererbung)
+
+Eine Geometrie liegt in der Tabelle ihrer Deklaration. Ein Objekt kann
+je eine Geometrie aus mehreren Stufen seines Vererbungspfads enthalten.
+Der räumliche Katalog führt die Spalten auf ihren physischen Tabellen.
+GeoPackage registriert Tabellen mit eigener Geometriespalte als `features`
+und die übrigen Tabellen als `attributes`.
 
 Optionale Struktureinzelwerte, `LIST OF` und `BAG OF` können in einer
 Klassenhierarchie deklariert und geerbt werden. Die Rückverweisspalte
@@ -205,9 +211,8 @@ Elternobjekts gehören.
 In 2.4 kann eine Klasse optionale
 `REFERENCE TO`-Attribute auf eine Klasse desselben Baskets haben. Referenzen
 und Assoziationsrollen sind hier auf Klassen ausserhalb von Hierarchien
-beschränkt. Geometrieattribute in Klassenhierarchien und `EXTENDED`-Attribute
-folgen separat. Weitere Grenzen sind stabile OIDs, eigene Linienformen,
-GeoPackage-RTree beim Schreiben und Updates. Der gespeicherte Modelltext
+beschränkt. Weitere Grenzen sind `EXTENDED`-Attribute, stabile OIDs, eigene
+Linienformen, GeoPackage-RTree beim Schreiben und Updates. Der gespeicherte Modelltext
 ist auf eine Million Zeichen begrenzt.
 
 Der Adapter unterscheidet SQL `NULL` und leeren Text. Die Referenzwerkzeuge

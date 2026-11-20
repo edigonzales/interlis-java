@@ -402,8 +402,8 @@ final class DbMapping {
                         && (type instanceof StructureValueType || type instanceof CollectionType);
                 if (inheritedLayout && !classComposition) {
                     var column = describeColumn(plan, object, attribute, attribute.name().declared().last());
-                    if (column.kind().geometry() || column.kind() == Kind.REFERENCE) {
-                        throw unsupported("non-scalar attribute in inheritance at " + attribute.name().declared());
+                    if (column.kind() == Kind.REFERENCE) {
+                        throw unsupported("reference attribute in inheritance at " + attribute.name().declared());
                     }
                 }
                 if (type instanceof ReferenceType reference

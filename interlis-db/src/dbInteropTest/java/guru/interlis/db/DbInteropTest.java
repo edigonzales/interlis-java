@@ -53,6 +53,8 @@ final class DbInteropTest {
     private static final int CURVEPOLYGON = 10;
     private static final int MULTICURVE = 11;
     private static final int MULTISURFACE = 12;
+    private static final List<String> MAST_CENTER = List.of("2600000.125", "1200000.375");
+    private static final List<String> SERVICE_POINT = List.of("2600100.250", "1200100.625");
     private static final List<List<String>> SURVEY_POINTS = List.of(
             List.of("2601500.625", "1201500.500"), List.of("2601100.125", "1201100.750"));
     private static final DetailValue SUMMARY = new DetailValue("review", true, -3, "approved");
@@ -138,6 +140,7 @@ final class DbInteropTest {
                 ili.toString());
         try (var sql = db.connect()) {
             assertClassHierarchyCatalog(db, sql, model);
+            assertClassGeometryCatalog(db, sql, model, version);
             assertStructureCatalog(db, sql, model, version);
             assertNestedStructureCatalog(db, sql, model);
             assertEmbeddedRoleCatalog(db, sql, model);
@@ -163,6 +166,7 @@ final class DbInteropTest {
             var catalog = DbSchemaCatalog.read(sql, db.postgis, db.schema);
             if (!db.postgis) {
                 catalog = catalog.expectGeoPackageGeometryExtension("route", "trace", "COMPOUNDCURVE")
+                        .expectGeoPackageGeometryExtension("tower", "alignment", "COMPOUNDCURVE")
                         .expectGeoPackageGeometryExtension("plot", "footprint", "CURVEPOLYGON")
                         .expectGeoPackageGeometryExtension("parcel", "boundary", "CURVEPOLYGON");
                 if (version == 24) {
@@ -438,6 +442,28 @@ final class DbInteropTest {
         }
     }
 
+    private static void assertClassGeometryCatalog(TestDatabase db, Connection sql, String model, int version)
+            throws SQLException {
+        var owners = new HashMap<>(Map.of("Mast.Center", "mast", "Tower.Alignment", "tower",
+                "ServiceBase.ServicePoint", "servicebase"));
+        if (version == 24) owners.put("Relay.Sites", "arelay");
+        for (var entry : owners.entrySet()) {
+            String attribute = entry.getKey();
+            String table = entry.getValue();
+            String column = attribute.substring(attribute.indexOf('.') + 1).toLowerCase(Locale.ROOT);
+            assertEquals(column, scalar(sql, "select sqlname from " + db.table("t_ili2db_attrname")
+                    + " where iliname='" + model + ".Data." + attribute + "' and colowner='" + table + "'"));
+            if (!db.postgis) {
+                assertEquals("features", scalar(sql, "select data_type from gpkg_contents where table_name='" + table + "'"));
+            }
+        }
+        if (!db.postgis) {
+            for (String table : version == 24 ? List.of("serviceunit") : List.of("arelay", "serviceunit")) {
+                assertEquals("attributes", scalar(sql, "select data_type from gpkg_contents where table_name='" + table + "'"));
+            }
+        }
+    }
+
     private static void assertTypeKind(TestDatabase db, Connection sql, String table, String column, String kind)
             throws SQLException {
         assertEquals(kind, scalar(sql, "select setting from " + db.table("t_ili2db_column_prop")
@@ -451,6 +477,17 @@ final class DbInteropTest {
                 : "X'4750000200000808'";
         execute(sql, "update " + db.table("route") + " set trace=" + corruptLine + " where t_ili_tid='tail-route-1'");
         assertExportRejected(db, model, "tail", output, model + ".Data.Route.Trace");
+
+        String tower = db.table("tower");
+        String mast = db.table("mast");
+        String nativeRelay = " where t_id=(select t_id from " + mast + " where t_ili_tid='native-relay')";
+        execute(sql, "update " + tower + " set alignment=" + corruptLine + nativeRelay);
+        try {
+            assertExportRejected(db, model, "native", output, model + ".Data.Tower.Alignment");
+        } finally {
+            execute(sql, "update " + tower + " set alignment=(select t.alignment from " + tower
+                    + " t join " + mast + " m on m.t_id=t.t_id where m.t_ili_tid='legacy-relay')" + nativeRelay);
+        }
 
         String corruptSurface = db.postgis
                 ? "st_geomfromtext('CURVEPOLYGON EMPTY', 2056)"
@@ -1031,20 +1068,24 @@ final class DbInteropTest {
                 : "X'475000100000080800%08X00000000'".formatted(wkbType);
     }
 
-    private static void assertStoredClassHierarchy(TestDatabase db, Connection sql, String dataset) throws SQLException {
+    private static void assertStoredClassHierarchy(TestDatabase db, Connection sql, int version, String dataset)
+            throws SQLException {
         String mast = db.table("mast");
         String tower = db.table("tower");
         String relay = db.table("arelay");
         String beacon = db.table("beacon");
         String basket = db.table("t_ili2db_basket");
+        String sites = version == 24 ? ", " + geometryField(db, "r.sites") : "";
         String objects = """
-                select b.t_ili_tid, m.t_ili_tid, m.t_type, m.caption, t.height, r.aonline, f.asignal
+                select b.t_ili_tid, m.t_ili_tid, m.t_type, m.caption, t.height, r.aonline, f.asignal,
+                       %s, %s%s
                 from %s m join %s b on b.t_id=m.t_basket
                 left join %s t on t.t_id=m.t_id and t.t_basket=m.t_basket
                 left join %s r on r.t_id=m.t_id and r.t_basket=m.t_basket
                 left join %s f on f.t_id=m.t_id and f.t_basket=m.t_basket
                 where b.t_ili_tid='%s-basket-2' order by m.t_type
-                """.formatted(mast, basket, tower, relay, beacon, dataset);
+                """.formatted(geometryField(db, "m.center"), geometryField(db, "t.alignment"), sites,
+                mast, basket, tower, relay, beacon, dataset);
         try (var statement = sql.createStatement(); var rows = statement.executeQuery(objects)) {
             for (var item : List.of(List.of("relay", "leaf"), List.of("beacon", "sibling"),
                     List.of("mast", "base"), List.of("tower", "middle"))) {
@@ -1059,8 +1100,24 @@ final class DbInteropTest {
                 if (type.equals("relay")) {
                     assertFalse(rows.getBoolean(6));
                     assertFalse(rows.wasNull());
+                    assertStoredPoint(hierarchyGeometry(db, rows, "center"), MAST_CENTER);
+                    var alignment = hierarchyGeometry(db, rows, "alignment");
+                    assertCompoundCurve(alignment, STRAIGHT_ROUTE);
+                    assertFalse(alignment.hasRemaining());
+                    if (version == 24) {
+                        var locations = hierarchyGeometry(db, rows, "sites");
+                        assertEquals(MULTIPOINT, readWkbType(locations));
+                        assertEquals(SURVEY_POINTS.size(), locations.getInt());
+                        for (var point : SURVEY_POINTS) {
+                            assertEquals(POINT, readWkbType(locations));
+                            assertStoredPosition(locations, point);
+                        }
+                        assertFalse(locations.hasRemaining());
+                    }
                 } else {
                     assertNull(rows.getObject(6));
+                    assertNull(rows.getBytes("center"));
+                    assertNull(rows.getBytes("alignment"));
                 }
                 assertEquals(type.equals("beacon") ? "green" : null, rows.getString(7));
             }
@@ -1070,7 +1127,33 @@ final class DbInteropTest {
                 + " u on b.t_id=u.t_id and b.t_basket=u.t_basket join " + basket + " k on k.t_id=b.t_basket"
                 + " where b.t_ili_tid='" + dataset + "-serviceunit' and k.t_ili_tid='" + dataset + "-basket-2'"
                 + " and b.t_type='serviceunit' and b.servicecode='unit-1'";
-        assertEquals("active", scalar(sql, "select u.label" + service));
+        try (var statement = sql.createStatement(); var rows = statement.executeQuery("select u.label, "
+                + geometryField(db, "b.servicepoint") + service)) {
+            assertTrue(rows.next());
+            assertEquals("active", rows.getString(1));
+            assertStoredPoint(hierarchyGeometry(db, rows, "servicepoint"), SERVICE_POINT);
+            assertFalse(rows.next());
+        }
+    }
+
+    private static String geometryField(TestDatabase db, String field) {
+        if (!db.postgis) return field;
+        String name = field.substring(field.indexOf('.') + 1);
+        return "st_asbinary(" + field + ") as " + name + ", st_srid(" + field + ") as " + name + "_srid";
+    }
+
+    private static ByteBuffer hierarchyGeometry(TestDatabase db, ResultSet rows, String name) throws SQLException {
+        byte[] bytes = rows.getBytes(name);
+        assertNotNull(bytes, name);
+        var geometry = ByteBuffer.wrap(bytes);
+        assertEquals(2056, db.postgis ? rows.getInt(name + "_srid") : readGeoPackageHeader(geometry), name);
+        return geometry;
+    }
+
+    private static void assertStoredPoint(ByteBuffer geometry, List<String> position) {
+        assertEquals(POINT, readWkbType(geometry));
+        assertStoredPosition(geometry, position);
+        assertFalse(geometry.hasRemaining());
     }
 
     private static void assertStoredStructureHierarchy(TestDatabase db, Connection sql, String dataset) throws SQLException {
@@ -1162,7 +1245,7 @@ final class DbInteropTest {
             assertFalse(result.next());
         }
         assertSrs(db, sql, "place", "ageometry", srsId);
-        assertStoredClassHierarchy(db, sql, dataset);
+        assertStoredClassHierarchy(db, sql, version, dataset);
         assertStoredInheritedStructures(db, sql, dataset);
         assertStoredStructures(db, sql, dataset);
         assertStoredNestedStructures(db, sql, dataset);
@@ -1886,7 +1969,22 @@ final class DbInteropTest {
         assertClassFields(mast, prefix + "Mast", Map.of("Caption", "base"), "Notes");
         assertClassFields(objects.get(dataset + "-tower"), prefix + "Tower", Map.of("Caption", "middle", "Height", "12"));
         assertClassFields(relay, prefix + "Relay", Map.of("Caption", "leaf", "Height", "24", "Online", "false"),
-                "Notes", "Supplement");
+                "Notes", "Supplement", "Center", "Alignment", "Sites");
+        assertTransferClassPoint(relay, "Center", version, MAST_CENTER);
+        assertTransferRoute(child(relay, "Alignment"), version, STRAIGHT_ROUTE);
+        if (version == 24) {
+            var sites = child(relay, "Sites");
+            assertNotNull(sites);
+            var multicoord = child(sites, "multicoord");
+            assertNotNull(multicoord);
+            var points = children(multicoord);
+            assertEquals(List.of("coord", "coord"), points.stream().map(Element::getLocalName).toList());
+            for (int index = 0; index < points.size(); index++) {
+                assertTransferPosition(points.get(index), "c", SURVEY_POINTS.get(index));
+            }
+        } else {
+            assertNull(child(relay, "Sites"));
+        }
         assertTransferredAmounts(mast, "Notes", version, prefix, List.of("5", "6"));
         assertTransferredAmounts(relay, "Notes", version, prefix, List.of("7"));
         var supplement = transferredStructures(relay, "Supplement");
@@ -1899,17 +1997,27 @@ final class DbInteropTest {
         assertNull(child(inner, "Values"));
         assertNull(child(inner, "Extras"));
         assertClassFields(objects.get(dataset + "-beacon"), prefix + "Beacon", Map.of("Caption", "sibling", "Signal", "green"));
-        assertClassFields(objects.get(dataset + "-serviceunit"), prefix + "ServiceUnit",
-                Map.of("ServiceCode", "unit-1", "Label", "active"));
+        var serviceUnit = objects.get(dataset + "-serviceunit");
+        assertClassFields(serviceUnit, prefix + "ServiceUnit", Map.of("ServiceCode", "unit-1", "Label", "active"),
+                "ServicePoint");
+        assertTransferClassPoint(serviceUnit, "ServicePoint", version, SERVICE_POINT);
     }
 
-    private static void assertClassFields(Element object, String name, Map<String, String> fields, String... compositions) {
+    private static void assertTransferClassPoint(Element object, String attribute, int version, List<String> position) {
+        var value = child(object, attribute);
+        assertNotNull(value, attribute);
+        var point = child(value, version == 24 ? "coord" : "COORD");
+        assertNotNull(point, attribute);
+        assertTransferPosition(point, version == 24 ? "c" : "C", position);
+    }
+
+    private static void assertClassFields(Element object, String name, Map<String, String> fields, String... nestedFields) {
         assertNotNull(object, name);
         assertEquals(name, object.getLocalName());
-        var compositionNames = Set.of(compositions);
+        var nestedNames = Set.of(nestedFields);
         var actual = new HashMap<String, String>();
         for (var child : children(object)) {
-            if (!compositionNames.contains(child.getLocalName())) {
+            if (!nestedNames.contains(child.getLocalName())) {
                 assertNull(actual.put(child.getLocalName(), child.getTextContent()));
             }
         }

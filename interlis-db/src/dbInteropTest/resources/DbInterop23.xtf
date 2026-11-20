@@ -181,6 +181,7 @@
       <DbInterop23.Data.Relay TID="legacy-relay">
         <Caption>leaf</Caption>
         <Notes><DbInterop23.Data.NestedLeaf><Amount>7</Amount></DbInterop23.Data.NestedLeaf></Notes>
+        <Center><COORD><C1>2600000.125</C1><C2>1200000.375</C2></COORD></Center>
         <Height>24</Height>
         <Supplement><DbInterop23.Data.NestedOuter>
           <Items><DbInterop23.Data.NestedInner>
@@ -188,9 +189,18 @@
             <Main><DbInterop23.Data.NestedLeaf><Amount>8</Amount></DbInterop23.Data.NestedLeaf></Main>
           </DbInterop23.Data.NestedInner></Items>
         </DbInterop23.Data.NestedOuter></Supplement>
+        <Alignment><POLYLINE>
+          <COORD><C1>2600123.125</C1><C2>1200456.375</C2></COORD>
+          <COORD><C1>2600345.250</C1><C2>1200678.500</C2></COORD>
+          <COORD><C1>2600567.625</C1><C2>1200456.750</C2></COORD>
+        </POLYLINE></Alignment>
         <Online>false</Online>
       </DbInterop23.Data.Relay>
-      <DbInterop23.Data.ServiceUnit TID="legacy-serviceunit"><ServiceCode>unit-1</ServiceCode><Label>active</Label></DbInterop23.Data.ServiceUnit>
+      <DbInterop23.Data.ServiceUnit TID="legacy-serviceunit">
+        <ServiceCode>unit-1</ServiceCode>
+        <ServicePoint><COORD><C1>2600100.250</C1><C2>1200100.625</C2></COORD></ServicePoint>
+        <Label>active</Label>
+      </DbInterop23.Data.ServiceUnit>
     </DbInterop23.Data>
   </DATASECTION>
 </TRANSFER>
