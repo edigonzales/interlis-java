@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static guru.interlis.repository.RepositoryClosureContractTest.*;
 
-class RepositoryResolutionObservationTest {
+class RepositorySearchObservationTest {
     private static final String BASE = "https://example.org/repository/";
     private final Map<String, String> contents = new ConcurrentHashMap<>(Map.of(
             BASE + "ilimodels.xml", index(entry("Dep", "1", "dep.ili")),

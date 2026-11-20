@@ -67,8 +67,9 @@ Die Workspace-API übergibt `SourceInventory` direkt an den Resolver und
 und den Fingerprint des Compilerrequests. Bridge 2.0 verwendet dieselben
 beiden Cachegrenzen.
 
-Repository-Hosts erhalten Cachebeobachtungen als
-`RepositoryCacheObservation` und Suchschritte als `RepositorySearchStep`.
+Java-API 0.11 verwendet `HostRepositories.createObserved` und
+`RepositoryCacheObservation` für Cachebeobachtungen. Suchschritte werden
+direkt als `RepositorySearchStep` übergeben.
 Der Lauf-Lifecycle emittiert Ereignisschema 2 mit Start, Phasen,
 Cachebeobachtungen und typisiertem Abschluss.
 

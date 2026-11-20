@@ -113,6 +113,14 @@ class LspProcessTest {
             assertFalse(initialize.contains("executeCommandProvider"), initialize);
             assertTrue(initialize.contains("\"diagramSelection\":true"), initialize);
 
+            send(input, new Gson().toJson(Map.of(
+                    "jsonrpc", "2.0", "id", 3, "method", "workspace/executeCommand",
+                    "params", Map.of("command", "interlis.compile"))));
+            var commandError = com.google.gson.JsonParser.parseString(readResponse(output, 3))
+                    .getAsJsonObject().getAsJsonObject("error");
+            assertEquals(-32601, commandError.get("code").getAsInt(), commandError.toString());
+            assertTrue(!commandError.has("data") || commandError.get("data").isJsonNull(), commandError.toString());
+
             String uri = "memory:/lsp-process.ili";
             String model = """
                     INTERLIS 2.4;
