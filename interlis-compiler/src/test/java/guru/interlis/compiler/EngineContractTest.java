@@ -14,6 +14,7 @@ import guru.interlis.source.SourceText;
 import guru.interlis.syntax.ParseMode;
 import guru.interlis.syntax.ParseOptions;
 import guru.interlis.syntax.SyntaxServices;
+import guru.interlis.syntax.SyntaxSnapshot;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -103,6 +104,8 @@ class EngineContractTest {
                 CompilationOutcome.Succeeded.class,
                 engine.compile(request, reuse, CancellationToken.none()));
         assertEquals(schemaSymbols(fresh.schema()), schemaSymbols(reused.schema()));
+        assertSame(fresh.analysis().syntaxSnapshots().values().iterator().next(),
+                reused.analysis().syntaxSnapshots().values().iterator().next());
         assertEquals(fresh.analysis().diagnostics().stream().map(Diagnostic::code).toList(),
                 reused.analysis().diagnostics().stream().map(Diagnostic::code).toList());
     }
@@ -126,6 +129,29 @@ class EngineContractTest {
         var syntax = reused.analysis().syntaxSnapshot(source.id()).orElseThrow();
         assertEquals(source.id(), syntax.root().range().source());
         assertEquals(source.revision(), syntax.root().range().revision());
+    }
+
+    @Test
+    void constructedSyntaxWithMatchingSourceAndUsageIsParsedAgain() {
+        var engine = CompilerEngines.create();
+        var token = CancellationToken.none();
+        var validRequest = request(MODEL, CompilerOptions.defaults());
+        var valid = assertInstanceOf(CompilationOutcome.Succeeded.class, engine.compile(validRequest, token));
+        var original = valid.analysis().syntaxSnapshots().values().iterator().next();
+
+        var badRequest = request(MODEL + "unexpected", CompilerOptions.defaults());
+        var source = badRequest.sources().sources().get(original.source().id());
+        var constructed = new SyntaxSnapshot(source, original.options(), original.language(), original.root(),
+                original.tokens(), original.trivia(), original.diagnostics(), original.coverage(),
+                original.fingerprint(), original.metadata(), original.usage());
+
+        var reuse = new AnalysisReuse(Optional.empty(), Map.of(source.id(), constructed));
+        var fresh = assertInstanceOf(CompilationOutcome.Rejected.class, engine.compile(badRequest, token));
+        var reused = assertInstanceOf(CompilationOutcome.Rejected.class, engine.compile(badRequest, reuse, token));
+        assertEquals(java.util.Set.of(RejectionReason.SOURCE_ERRORS), reused.rejection().reasons());
+        assertEquals(fresh.analysis().requestDiagnostics(), reused.analysis().requestDiagnostics());
+        assertTrue(reused.analysis().requestDiagnostics().stream()
+                .anyMatch(diagnostic -> diagnostic.code().value().equals("ILI-SYN-0004")));
     }
 
     private static java.util.List<String> schemaSymbols(CompiledSchema schema) {

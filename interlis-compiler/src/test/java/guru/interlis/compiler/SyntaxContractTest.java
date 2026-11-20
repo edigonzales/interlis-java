@@ -1,9 +1,11 @@
 package guru.interlis.compiler;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.LanguageVersion;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
+import guru.interlis.syntax.DetectionState;
 import guru.interlis.syntax.ParseMode;
 import guru.interlis.syntax.ParseOptions;
 import guru.interlis.syntax.SyntaxService;
@@ -11,8 +13,13 @@ import guru.interlis.syntax.SyntaxServices;
 import guru.interlis.syntax.SyntaxSnapshot;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SyntaxContractTest {
@@ -39,6 +46,43 @@ class SyntaxContractTest {
                 == guru.interlis.syntax.TriviaKind.DOCUMENTATION_COMMENT));
         assertTrue(snapshot.tokens().stream().anyMatch(t -> t.kind()
                 == guru.interlis.syntax.TokenKind.EOF));
+    }
+
+    @Test
+    void detectsHeaderInTheTokenStreamAcrossComments() {
+        String prefix = "/* outer 😀 /* inner */ outer */\r\n";
+        for (var language : LanguageVersion.values()) {
+            String header = "INTERLIS /* version */ " + language.literal() + " !! semicolon\r\n;";
+            String members = language == LanguageVersion.ILI24
+                    ? "DOMAIN Point = MULTICOORD 0.000..1000.000, 0.000..1000.000;"
+                    : "DOMAIN Point = COORD 0.000..1000.000, 0.000..1000.000;";
+            var input = source(prefix + header + " MODEL M AT \"x\" VERSION \"1\" = " + members + " END M.");
+            for (var mode : ParseMode.values()) {
+                var snapshot = parse(input.text(), mode);
+                assertEquals(DetectionState.DETECTED, snapshot.language().state());
+                assertEquals(Optional.of(language), snapshot.language().version());
+                assertEquals(Optional.of(language.literal()), snapshot.language().rawVersion());
+                assertEquals(Optional.of(input.range(prefix.length(), prefix.length() + header.length())),
+                        snapshot.language().headerRange());
+                assertEquals(language, snapshot.root().models().getFirst().languageVersion());
+                assertEquals(input.text(), snapshot.reconstruct());
+                assertTrue(snapshot.diagnostics().isEmpty(), () -> snapshot.diagnostics().toString());
+            }
+            var request = new CompilationRequest(List.of(new ModelSelector.BySource(input.id())),
+                    SourceSet.of(Map.of(input.id(), input)), CompilerOptions.defaults());
+            var result = CompilerEngines.create().compile(request, CancellationToken.none());
+            var success = assertInstanceOf(CompilationOutcome.Succeeded.class, result, result::toString);
+            assertTrue(success.schema().semanticGraph().languageVersions().contains(language));
+        }
+    }
+
+    @Test
+    void invalidOriginalHeaderIsNotDetectedViaLexerRecovery() {
+        var malformed = parse("INTERLIS 😀 2.4; MODEL M AT \"x\" VERSION \"1\" = END M.", ParseMode.STRICT);
+        assertEquals(DetectionState.UNSUPPORTED, malformed.language().state());
+        assertEquals(Optional.of("2.4"), malformed.language().rawVersion());
+        assertTrue(malformed.diagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-SYN-0001")));
+        assertTrue(malformed.diagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-SYN-0005")));
     }
 
     @Test

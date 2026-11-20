@@ -1,5 +1,7 @@
 package guru.interlis.syntax;
 
+import guru.interlis.compiler.internal.antlr.AntlrSyntaxService;
+
 /** Public factory for the compiler's own syntax implementation. */
 public final class SyntaxServices {
     private SyntaxServices() {
@@ -16,6 +18,10 @@ public final class SyntaxServices {
      * @return the result
      */
     public static SyntaxService create() {
-        return new guru.interlis.compiler.internal.antlr.AntlrSyntaxService();
+        return parser();
+    }
+
+    static AntlrSyntaxService parser() {
+        return new AntlrSyntaxService(SyntaxSnapshot::fromParser);
     }
 }

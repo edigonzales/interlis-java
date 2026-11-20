@@ -10,10 +10,10 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Optional, fingerprint-checked reuse input; never accepted as truth.
+ * Optional reuse hints. The default compiler only reuses results it can identify as compiler-produced.
  *
- * @param previousAnalysis the {@code previousAnalysis} component
- * @param previousSyntax the {@code previousSyntax} component
+ * @param previousAnalysis previous compiler analysis used to reconcile symbol identities
+ * @param previousSyntax parser snapshots eligible for reuse with identical sources and parse options
  */
 public record AnalysisReuse(Optional<AnalysisSnapshot> previousAnalysis,
                             Map<SourceId, SyntaxSnapshot> previousSyntax) {

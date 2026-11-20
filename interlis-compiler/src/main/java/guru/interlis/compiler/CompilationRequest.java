@@ -41,6 +41,6 @@ public record CompilationRequest(List<ModelSelector> roots, SourceSet sources,
      * The claimed resolver digest alone is never used as a cache certificate.
      */
     public CompilationFingerprint fingerprint() {
-        return new guru.interlis.compiler.internal.CompilationFingerprinter().fingerprint(this, AnalysisReuse.none());
+        return guru.interlis.compiler.internal.CompilationFingerprinter.fingerprint(this);
     }
 }

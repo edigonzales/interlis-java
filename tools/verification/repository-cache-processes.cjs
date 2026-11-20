@@ -94,15 +94,15 @@ function ordered(row, miss = false) {
     mode = 'gzip';
     const compressed = await run('unexpected-compression', ['check', ...common, '--cache', path.join(dir, 'gzip-cache'), '--verbose'], 1);
     assert.ok(compressed.stderr.includes('ILI-RES-0003') && compressed.stderr.includes('input/output failure while loading'));
-    assert.ok(!fs.existsSync(path.join(dir, 'gzip-cache', 'metadata-v2'))); assert.ok(!compressed.stderr.includes('Source downloaded'));
+    assert.ok(!fs.existsSync(path.join(dir, 'gzip-cache', 'by-url'))); assert.ok(!compressed.stderr.includes('Source downloaded'));
     mode = 'identity';
     const color = await run('color-always', ['check', ...common, '--verbose', '--color', 'always']);
     assert.ok(color.stderr.startsWith('\x1b[36mINFO\x1b[0m')); assert.ok(color.stderr.includes('\x1b[90mILI-RES-0012\x1b[0m'));
     const plain = await run('color-never', ['check', ...common, '--verbose', '--color', 'never']);
     assert.ok(!plain.stderr.includes('\x1b')); ordered(plain);
     // Expire only the index: same model MD5 avoids a model download.
-    const metadataDir = path.join(home, '.interlis-cache', 'metadata-v2');
-    const indexEntry = path.join(metadataDir, crypto.createHash('sha256').update(base + 'ilimodels.xml').digest('hex') + '.xml');
+    const indexEntry = path.join(home, '.interlis-cache', 'by-url', 'http',
+        '127.0.0.1~p' + server.address().port, 'ilimodels.xml', '.current.xml');
     const expireIndex = () => fs.writeFileSync(indexEntry, fs.readFileSync(indexEntry, 'utf8').replace(/downloaded-at="[^"]+"/, 'downloaded-at="2000-01-01T00:00:00Z"'));
     expireIndex();
     const expired = await run('expired-index', ['check', ...common, '--verbose']);

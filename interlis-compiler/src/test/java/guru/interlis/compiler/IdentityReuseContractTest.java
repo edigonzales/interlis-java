@@ -38,6 +38,24 @@ class IdentityReuseContractTest {
         for(String name:List.of("F","F.E","F.E.red","F.E.green","F.E.blue","F.C","F.C.x"))assertEquals(ids(first,name),ids(second,name),name);
         assertEquals(3,ids(second,"F.E.red").size()+ids(second,"F.E.green").size()+ids(second,"F.E.blue").size());
     }
+    @Test
+    void constructedAnalysisCannotSupplyDeclarationIdentities() {
+        String declaration = "STRUCTURE C=a:TEXT;END C;";
+        var previous = analyze(declaration, 1, null);
+        var constructed = new AnalysisSnapshot(previous.snapshotId(), previous.semanticGraph(),
+                previous.sourceRevisions(), previous.syntaxSnapshots(), previous.diagnostics(),
+                previous.requestDiagnostics(), previous.coverage(), previous.fingerprint(), previous.provenance());
+
+        String changed = "!! an inserted comment\n" + declaration;
+        var fresh = analyze(changed, 2, null);
+        var copied = analyze(changed, 2, constructed);
+        var reused = analyze(changed, 2, previous);
+        assertEquals(fresh.snapshotId(), copied.snapshotId());
+        assertEquals(ids(fresh, "F.C"), ids(copied, "F.C"));
+        assertNotEquals(ids(previous, "F.C"), ids(copied, "F.C"));
+        assertEquals(ids(previous, "F.C"), ids(reused, "F.C"));
+    }
+
     @Test void deletionRecreationAndMovingToAnotherOwnerAllocateNewIdentities() {
         String declaration="STRUCTURE C=a:TEXT;END C;";
         var first=analyze(declaration,1,null);var deleted=analyze("",2,first);

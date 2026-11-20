@@ -5,9 +5,12 @@ import guru.interlis.diagnostics.*;
 import guru.interlis.source.*;
 import java.util.*;
 
-/** Canonical field identity of actual input; no record/debug strings or claimed resolver certificate. */
+/** Canonical identity of a compilation request and its captured resolution. */
 public final class CompilationFingerprinter {
-    public CompilationFingerprint fingerprint(CompilationRequest request, AnalysisReuse reuse) {
+    private CompilationFingerprinter() {
+    }
+
+    public static CompilationFingerprint fingerprint(CompilationRequest request) {
         var b = new StringBuilder("compilation-v4");
         field(b, Fingerprints.COMPILER_VERSION); field(b, Fingerprints.GRAMMAR_VERSION);
         field(b, request.options().fingerprint());
@@ -38,7 +41,7 @@ public final class CompilationFingerprinter {
             field(b, text.contentFingerprint().algorithm()); field(b, text.contentFingerprint().value());
         }
         count(b, request.sources().imports().size());
-        request.sources().imports().stream().map(this::bindingKey).sorted().forEach(value -> field(b, value));
+        request.sources().imports().stream().map(CompilationFingerprinter::bindingKey).sorted().forEach(value -> field(b, value));
         count(b, request.sources().translations().size());
         request.sources().translations().stream().map(binding -> {
             var key = new StringBuilder(); location(key, binding.translated()); location(key, binding.original()); return key.toString();
@@ -49,7 +52,7 @@ public final class CompilationFingerprinter {
         return new CompilationFingerprint("SHA-256/compilation-v4", Hex.encode(Sha256.digestUtf16(b.toString())));
     }
 
-    private String bindingKey(ImportBinding binding) {
+    private static String bindingKey(ImportBinding binding) {
         var b = new StringBuilder(); range(b, binding.site().nameRange());
         field(b, binding.site().importingModel()); field(b, binding.site().importedModel());
         switch (binding.resolution()) {

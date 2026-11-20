@@ -11,6 +11,7 @@ import guru.interlis.diagnostics.Diagnostic;
 import guru.interlis.diagnostics.DiagnosticId;
 import guru.interlis.diagnostics.Phase;
 import guru.interlis.diagnostics.Severity;
+import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.AnalysisCoverage;
 import guru.interlis.model.ClosureSelection;
 import guru.interlis.model.CompiledSchema;
@@ -22,7 +23,6 @@ import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.source.ContentFingerprint;
 import guru.interlis.source.SourceId;
-import guru.interlis.syntax.SyntaxSnapshot;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -36,7 +36,8 @@ import java.util.Set;
 
 /** Sole producer of a checked schema view. */
 final class CompilationGate {
-    GateResult evaluate(RunOutput output, CompilationRequest request, boolean strictSyntax) {
+    GateResult evaluate(RunOutput output, CompilationRequest request, boolean strictSyntax,
+                        CancellationToken cancellation) {
         AnalysisSnapshot analysis = output.analysis();
         Closure closure = output.closure();
         RootSelection roots = output.roots();
@@ -79,22 +80,12 @@ final class CompilationGate {
         if (!unsupported.isEmpty()) {
             reasons.add(RejectionReason.INCOMPLETE_SUPPORT);
         }
-        boolean onlyEmptyDocuments = roots.roots().isEmpty()
-                && !analysis.syntaxSnapshots().isEmpty()
-                && analysis.syntaxSnapshots().values().stream()
-                .allMatch(snapshot -> snapshot.root().models().isEmpty()
-                        && snapshot.source().text().trim()
-                        .matches("INTERLIS\\s+2\\.[34]\\s*;?"));
-        if (roots.roots().isEmpty() && roots.reasons().isEmpty() && !onlyEmptyDocuments) {
+        if (roots.roots().isEmpty() && reasons.isEmpty()) {
             reasons.add(RejectionReason.MISSING_INPUT);
         }
         if (strictSyntax && !closure.sources().isEmpty()) {
             for (SourceId source : closure.sources()) {
-                Optional<SyntaxSnapshot> snapshot = analysis.syntaxSnapshot(source);
-                if (snapshot.isEmpty() || !snapshot.get().coverage().parseComplete()
-                        || !snapshot.get().consumedEntireInput()
-                        || snapshot.get().language().state()
-                        != guru.interlis.syntax.DetectionState.DETECTED) {
+                if (analysis.syntaxSnapshot(source).filter(SyntaxCompleteness::isComplete).isEmpty()) {
                     reasons.add(RejectionReason.SOURCE_ERRORS);
                 }
             }
@@ -121,6 +112,17 @@ final class CompilationGate {
             RejectionSummary summary = new RejectionSummary(reasons, ids, request.roots(), features);
             return GateResult.denied(summary);
         }
+        cancellation.throwIfCancellationRequested();
+        if (!strictSyntax) {
+            return GateResult.acceptedAnalysis();
+        }
+        CompiledSchema schema = createSchema(output, request);
+        cancellation.throwIfCancellationRequested();
+        return GateResult.accepted(schema);
+    }
+
+    private static CompiledSchema createSchema(RunOutput output, CompilationRequest request) {
+        AnalysisSnapshot analysis = output.analysis();
         SemanticGraph subset = analysis.semanticGraph().subsetForModels(
                 new LinkedHashSet<>(output.graphResult().models()), output.graphResult().roots());
         SchemaFingerprint fingerprint = new SchemaFingerprint("SHA-256/schema-v2",
@@ -130,7 +132,7 @@ final class CompilationGate {
         List<SymbolRef> modelRefs = output.graphResult().models().stream()
                 .map(id -> new SymbolRef(analysis.snapshotId(), id)).toList();
         Map<SourceId, ContentFingerprint> sourceFingerprints = new LinkedHashMap<>();
-        for (SourceId source : closure.sources()) {
+        for (SourceId source : output.closure().sources()) {
             ContentFingerprint content = analysis.provenance().sourceFingerprints().get(source);
             if (content != null) {
                 sourceFingerprints.put(source, content);
@@ -142,9 +144,7 @@ final class CompilationGate {
                 Fingerprints.GRAMMAR_VERSION, Fingerprints.SEMANTIC_PROFILE, rootViews,
                 sourceFingerprints, request.sources().fingerprint().value(),
                 request.options().fingerprint());
-        CompiledSchema schema = new DefaultCompiledSchema(subset, fingerprint, rootRefs,
-                modelRefs, provenance);
-        return GateResult.accepted(schema);
+        return new DefaultCompiledSchema(subset, fingerprint, rootRefs, modelRefs, provenance);
     }
 
     private static SchemaProvenance.ModelSelectorView view(ModelSelector selector) {

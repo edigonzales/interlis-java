@@ -3,6 +3,7 @@ package guru.interlis.cli;
 import guru.interlis.compiler.CompilationOutcome;
 import guru.interlis.compiler.CompilerEngines;
 import guru.interlis.compiler.ModelSelector;
+import guru.interlis.compiler.RejectionSummary;
 import guru.interlis.diagnostics.Diagnostic;
 import guru.interlis.diagnostics.DiagnosticPresentation;
 import guru.interlis.diagnostics.DiagnosticDisplayPolicy;
@@ -61,6 +62,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 /** Default CLI implementation using the same CompilerEngine as the SDK. */
 public final class DefaultCompilerCli implements CliApplication {
@@ -801,6 +803,7 @@ public final class DefaultCompilerCli implements CliApplication {
         if (json) {
             environment.out().println("{\"status\":\"" + JsonDiagnosticWriter.escape(summary)
                     + "\",\"diagnostics\":" + new JsonDiagnosticWriter().write(diagnostics, invocation.language)
+                    + rejectionJson(invocation.rejection)
                     + new RepositoryReportWriter().json(invocation.resolutionLock,invocation.repositorySteps) + "}");
         } else {
             ConsoleDiagnosticRenderer renderer = new ConsoleDiagnosticRenderer();
@@ -808,6 +811,17 @@ public final class DefaultCompilerCli implements CliApplication {
                 environment.err().println(renderer.render(diagnostic, sources, invocation.language, diagnosticOptions(invocation)));
             }
         }
+    }
+
+    private static String rejectionJson(RejectionSummary rejection) {
+        if (rejection == null) return "";
+        return ",\"rejection\":{\"reasons\":" + jsonStrings(rejection.reasons().stream().map(Enum::name).toList())
+                + ",\"unsupportedFeatureIds\":" + jsonStrings(rejection.unsupportedFeatureIds()) + "}";
+    }
+
+    private static String jsonStrings(List<String> values) {
+        return values.stream().map(value -> "\"" + JsonDiagnosticWriter.escape(value) + "\"")
+                .collect(Collectors.joining(",", "[", "]"));
     }
 
     private static RenderOptions diagnosticOptions(Invocation invocation) {
@@ -856,7 +870,7 @@ public final class DefaultCompilerCli implements CliApplication {
         int rootCount;
         CancellationReason cancellation = CancellationReason.USER_REQUESTED;
         FailureId failureId;
-        guru.interlis.compiler.RejectionSummary rejection;
+        RejectionSummary rejection;
 
         Invocation(RunContext context) { this.context = context; }
 

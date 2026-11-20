@@ -44,7 +44,7 @@ final class RepositoryHostCoordinator implements AutoCloseable {
             WorkspaceConfiguration configuration,CancellationToken token) {
         var result=new CompletableFuture<RepositoryResolutionOutcome>();
         pending.add(result);result.whenComplete((value,failure) -> pending.remove(result));
-        var service=new RepositoryClosureService(loader,access.contentStore(),access.observations());var options=settings.options();
+        var service=access.closureService(loader);var options=settings.options();
         CancellationToken bounded=new CancellationToken() {
             public boolean isCancellationRequested() { return closed.get() || result.isCancelled() || token.isCancellationRequested(); }
             public CancellationReason reason() { return closed.get()?CancellationReason.HOST_SHUTDOWN:token.reason(); }

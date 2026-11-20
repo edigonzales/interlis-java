@@ -413,7 +413,7 @@ Offlineport: die Defaultmethode lehnt ohne Aufruf von `load` ab. Dadurch bleiben
 bestehende funktionale eigene Loader offline frei von impliziten Hostzugriffen.
 Nur cachefähige HTTP-Hosts überschreiben diesen Port; RoutingSourceLoader reicht
 HTTP(S) entsprechend weiter. Ein nicht-offline FetchPolicy ist ein API-Fehler.
-`new HttpSourceLoader()` verwendet ausschliesslich Speicher.
+`new HttpSourceLoader()` verwendet keinen persistenten Cache.
 
 Offline führt der Host denselben konfigurierten Suchpfad anhand der lokal
 verfügbaren Indexe aus. Optionale Site-Ausfälle bleiben Warnungen. Fehlt das
@@ -531,7 +531,9 @@ sind online unzuverlässig. Innerhalb der Frist wird vor Modellbeschaffung
 die vorhandene Datei digestgeprüft und gegen die optionale Index-MD5 verglichen.
 Fehlende/defekte/abgelaufene oder MD5-abweichende Inhalte werden vollständig
 geladen. Ohne MD5 entscheidet die Frist. Nach Download bleibt die veröffentlichte
-MD5 verbindlich; SHA256/Pins/Locks werden zusätzlich geprüft. HTTP lädt ohne Validator-Header. Ein 304 wird nicht als Cachetreffer verwendet. Die Auflösung führt auch mit Lock keine zweite Online-Abschlussprüfung aus.
+MD5 verbindlich. Bei einer Abweichung meldet die Auflösung einen Fehler und
+behält den bisherigen URL-Stand. SHA-256, Pins und Locks werden zusätzlich
+geprüft. HTTP lädt ohne Validator-Header. Ein 304 wird nicht als Cachetreffer verwendet. Die Auflösung führt auch mit Lock keine zweite Online-Abschlussprüfung aus.
 Onlinefehler bleiben Fehler, nur --offline verwendet alte verifizierte Inhalte.
 
 RepositoryCacheRequest(Duration maxAge,Optional<String> expectedMd5) ist immutable
@@ -541,11 +543,36 @@ mit Request vor CancellationToken; Default delegiert auf den bisherigen
 abstrakten Einstieg. Routing-/HTTP-/verifizierender Loader reichen den Request
 weiter, alle Repositoryverbraucher wählen Fristen explizit, ohne URL-Heuristik.
 HTTP ohne Request lädt online unbedingt. Uhr ist explizit injizierbar.
-RepositoryCacheMetadata(source,responseSource,digest,downloadedAt) enthält den
-Zeitpunkt des vollständigen Downloads. `metadata-v2` speichert atomar je URL.
-Alte Metadatenverzeichnisse bleiben ungenutzt. Defekte Einträge sind Cache-Misses.
-Keine Inhaltsbereinigung. Vary entscheidet nicht über den Anwendungscache;
-no-store bleibt ausgeschlossen, identity und Content-Coding-Prüfung bleiben.
+Der HTTP-Loader mit persistentem Cache veröffentlicht die Bytes eines HTTP-Downloads
+und danach den aktuellen URL-Verweis. Treffer lesen Cache und Archiv, ohne sie
+neu zu schreiben. Die Closure archiviert verifizierte Online-Ergebnisse nicht
+persistent verwalteter Loader und lokaler Quellen weiterhin für Locks.
+Liefert ein eigener Loader Offline-Bytes aus seinem getrennten Cache,
+ergänzt die Closure fehlende Digestobjekte im Lockarchiv.
+`HostRepositories.Access.closureService(SourceLoader)` behält diese
+Schreibzuständigkeit bei einem HTTP-delegierenden Loader bei.
+Der URL-Baum liegt unter `by-url`. Beispielsweise enthält
+`by-url/https/models.example.ch/transport/roads.ili/.current.xml`
+den URL-Schlüssel, den Inhaltsdigest und den Zeitpunkt des vollständigen
+Downloads. Jede URL-Komponente ist ein Verzeichnis. `~p` kennzeichnet einen
+expliziten Port, `~` vor einem Kleinbuchstaben einen ursprünglichen
+Grossbuchstaben. Adressen ausserhalb der portablen Abbildung, etwa solche
+mit Query, verwenden `by-url/_opaque/<URL-SHA-256>/.current.xml`. Ein fehlender,
+defekter oder unter einer fremden URL abgelegter Verweis ergibt einen Miss.
+Die exakten Originalbytes liegen weiterhin einmal pro Inhaltsdigest als Datei
+direkt im Cacheverzeichnis. Das gilt auch für `ilimodels.xml` und `ilisite.xml`.
+
+Das frühere URL-Metadatenformat in `metadata-v1` und `metadata-v2` ist
+abgelöst. Ein Online-Lauf baut die URL-Zuordnungen für die freie Offline-Suche
+neu auf und ist nach dem Formatwechsel Voraussetzung für freie Offline-URL-Abfragen.
+Bestehende Locks können ihre exakten Inhaltsbytes weiterhin direkt
+über den Digest laden, wenn diese vorhanden sind. Das interne Cacheformat 3
+ist unabhängig von Resolution-Lock V2. V2 ist das einzige unterstützte Lockformat.
+Bei passender MD5 entfernt eine gültige `no-store`-Antwort den bisherigen
+URL-Verweis. Bei abweichender MD5 bleibt der Verweis auch mit `no-store`
+erhalten. Für den Anwendungscache gelten weiterhin die Identity-Kodierung,
+die Content-Coding-Prüfung und die Aufbewahrung von Inhaltsobjekten.
+`Vary` beeinflusst die Wiederverwendung nicht.
 `FRESH_HIT` bezeichnet lokale Onlineverwendung. Die Diagnosekennung `ILI-RES-0013` bleibt reserviert.
 Atomare Workspace-Revisionsprüfung und Gate bleiben erhalten; bereits während
 der normalen Beschaffung erkannte widersprüchliche Inhalte bleiben Fehler.

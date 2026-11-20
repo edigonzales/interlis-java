@@ -10,7 +10,9 @@ import org.junit.jupiter.api.io.TempDir;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.nio.file.attribute.FileTime;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
@@ -42,12 +44,15 @@ class RepositoryCacheContractTest {
         return HostRepositories.createObserved(directory,RepositoryCacheConfiguration.at(directory.resolve("cache")),events::add);
     }
     LoadedSource load(HostRepositories.Access access,String url,FetchPolicy policy) { return access.loader().load(new SourceLocator(url),policy,RepositoryCacheRequest.metadata(),TOKEN); }
-    Path metadata(String url) { return directory.resolve("cache/metadata-v2/"+ContentDigest.sha256(url.getBytes(StandardCharsets.UTF_8)).value()+".xml"); }
+    Path metadata(String url) {
+        return directory.resolve("cache/by-url").resolve(RepositoryCachePath.key(new SourceId(url))).resolve(".current.xml");
+    }
 
     @Test void persistsRevalidatesAcrossInstancesAndOfflineNeverConnects() throws Exception {
         var text=new AtomicReference<>("INTERLIS 2.4;\r\n!! ä");var etag=new AtomicReference<>("\"one\"");
         String url=serve(e -> send(e,text.get(),etag.get()))+"file.ili?key=secret";
         var first=load(host(),url,ONLINE);assertEquals(1,bodies.get());
+        assertFalse(Files.readString(metadata(url)).contains("secret"));
         var events=new ArrayList<RepositoryCacheObservation>();assertEquals(first.text(),load(host(events),url,ONLINE).text());
         assertEquals(1,requests.get());assertEquals(1,bodies.get());assertTrue(events.stream().anyMatch(e -> e.event() == RepositoryCacheEvent.FRESH_HIT));
         text.set("new content");etag.set("\"two\"");host().loader().load(new SourceLocator(url),ONLINE,TOKEN);assertEquals(2,bodies.get());
@@ -73,7 +78,7 @@ class RepositoryCacheContractTest {
         Files.writeString(metadata(url),xml.replace("downloaded-at=\"", "unknown=\""));
         assertThrows(SourceLoadException.class,()->load(host(),url,OFFLINE));
         assertEquals("original",load(host(),url,ONLINE).text());assertEquals("",conditions.getLast());
-        Files.writeString(metadata(url),xml.replace("version=\"2\"","version=\"99\""));
+        Files.writeString(metadata(url),xml.replace("version=\"3\"","version=\"99\""));
         assertThrows(SourceLoadException.class,()->load(host(),url,OFFLINE));
     }
 
@@ -104,6 +109,22 @@ class RepositoryCacheContractTest {
         }
     }
 
+    @Test void urlLeavesCanContainChildUrlsAndCurrentEntriesRemainBoundToTheirSource() throws Exception {
+        String base = serve(exchange -> send(exchange, exchange.getRequestURI().getPath(), null));
+        String parent = base + "nested";
+        String child = parent + "/Model.ili";
+        assertEquals("/nested", load(host(), parent, ONLINE).text());
+        assertEquals("/nested/Model.ili", load(host(), child, ONLINE).text());
+        assertTrue(Files.isRegularFile(metadata(parent)));
+        assertTrue(Files.isRegularFile(metadata(child)));
+
+        Files.copy(metadata(child), metadata(parent), StandardCopyOption.REPLACE_EXISTING);
+        assertEquals(SourceLoadException.Reason.OFFLINE,
+                assertThrows(SourceLoadException.class, () -> load(host(), parent, OFFLINE)).reason());
+        assertEquals("/nested/Model.ili", load(host(), child, OFFLINE).text());
+        assertEquals(2, requests.get());
+    }
+
     @Test void unavailableWritesWarnOnceDisabledCacheDoesNoDiskIOAndLimitsStillApply() throws Exception {
         String url=serve(e -> send(e,"some text","\"tag\""));
         Files.writeString(directory.resolve("blocked"),"file");var events=new ArrayList<RepositoryCacheObservation>();
@@ -118,23 +139,39 @@ class RepositoryCacheContractTest {
     }
 
     @Test void parallelWritersPublishOnlyCompleteMatchingEntries() throws Exception {
-        String url=serve(e -> send(e,"shared bytes","\"tag\""));
-        try(var pool=Executors.newFixedThreadPool(4)) {
-            var futures=new ArrayList<Future<LoadedSource>>();
-            for(int i=0;i<12;i++)futures.add(pool.submit(()->load(host(),url,ONLINE)));
-            for(var future:futures)assertEquals("shared bytes",future.get(10,TimeUnit.SECONDS).text());
+        var sequence = new AtomicInteger();
+        String url = serve(e -> send(e, "version " + sequence.incrementAndGet(), null)) + "nested/Model.ili";
+        var downloaded = new HashSet<LoadedSource>();
+        try (var pool = Executors.newFixedThreadPool(4)) {
+            var futures = new ArrayList<Future<LoadedSource>>();
+            for (int i = 0; i < 12; i++) {
+                futures.add(pool.submit(() -> host().loader().load(new SourceLocator(url), ONLINE, TOKEN)));
+            }
+            for (var future : futures) downloaded.add(future.get(10, TimeUnit.SECONDS));
         }
-        assertEquals("shared bytes",load(host(),url,OFFLINE).text());
+        assertEquals(12, downloaded.size());
+        var offline = load(host(), url, OFFLINE);
+        assertTrue(downloaded.stream().anyMatch(source -> source.byteSha256().equals(offline.byteSha256())
+                && source.text().equals(offline.text())));
+        for (var source : downloaded) {
+            var digest = new ContentDigest("sha256", source.byteSha256());
+            assertArrayEquals(source.text().getBytes(StandardCharsets.UTF_8),
+                    host().contentStore().lookup(digest).orElseThrow().bytes());
+        }
         try(var files=Files.walk(directory.resolve("cache"))) { assertTrue(files.noneMatch(p->p.getFileName().toString().endsWith(".tmp"))); }
     }
 
     String model(String name,String imports) { return "INTERLIS 2.4; MODEL "+name+" AT \"https://example.org\" VERSION \"1\" = "+imports+" END "+name+"."; }
     String index(String name) { return "<TRANSFER><ModelMetadata><Name>"+name+"</Name><SchemaLanguage>ili2_4</SchemaLanguage><Version>1</Version><File>"+name+".ili</File></ModelMetadata></TRANSFER>"; }
     RepositoryResolutionOutcome resolve(HostRepositories.Access access,List<String> bases,boolean offline,Optional<ResolutionLock> lock) {
+        return resolve(access.closureService(), bases, offline, lock);
+    }
+
+    RepositoryResolutionOutcome resolve(RepositoryClosureService service, List<String> bases, boolean offline, Optional<ResolutionLock> lock) {
         try(var workspace=Workspaces.create(CompilerEngines.create(),WorkspaceConfiguration.defaults())) {
             workspace.update(new SourceUpdate(new SourceId("memory:/root.ili"),new SourceExpectation.Absent(),new SourceChange.Replace(model("Root","IMPORTS Dep;"))));
             var config=new RepositoryConfig(bases.stream().map(b->new RepositorySource(new RepositoryBase(URI.create(b)),new SourceLocator(b+"ilimodels.xml"))).toList(),offline?OFFLINE:ONLINE);
-            return access.closureService().resolve(workspace,new AnalysisRequest(workspace.currentRevision(),List.of(new ModelSelector.ByName("Root",Optional.empty(),Optional.empty()))),
+            return service.resolve(workspace,new AnalysisRequest(workspace.currentRevision(),List.of(new ModelSelector.ByName("Root",Optional.empty(),Optional.empty()))),
                     new RepositoryResolveOptions(config,Map.of(),Map.of(),lock),TOKEN);
         }
     }
@@ -167,6 +204,35 @@ class RepositoryCacheContractTest {
                 resolve(host(),List.of(base),true,Optional.of(first.update().lock()))).problems().getFirst();
         assertEquals(SourceLoadException.Reason.OFFLINE,missingIndex.loadReason().orElseThrow());
         assertEquals(base+"ilimodels.xml",missingIndex.source().orElseThrow().value());
+    }
+
+    @Test void freshAndOfflineClosureHitsDoNotRewriteCachedBytes() throws Exception {
+        String index = index("Dep");
+        String model = model("Dep", "");
+        String base = serve(exchange -> send(exchange,
+                exchange.getRequestURI().getPath().endsWith("/ilimodels.xml") ? index : model, null));
+        assertInstanceOf(RepositoryResolutionOutcome.Prepared.class, resolve(host(), List.of(base), false, Optional.empty()));
+
+        Path cache = directory.resolve("cache");
+        var modTimes = new LinkedHashMap<Path, FileTime>();
+        for (String body : List.of(index, model)) {
+            Path entry = cache.resolve(ContentDigest.sha256(body.getBytes(StandardCharsets.UTF_8)).value());
+            Files.setLastModifiedTime(entry, FileTime.from(Instant.parse("2000-01-01T00:00:00Z")));
+            modTimes.put(entry, Files.getLastModifiedTime(entry));
+        }
+
+        var access = host();
+        var decorated = access.closureService(new RoutingSourceLoader(access.loader(), access.loader()));
+        int before = requests.get();
+        for (var service : List.of(access.closureService(), decorated)) {
+            for (boolean offline : List.of(false, true)) {
+                assertInstanceOf(RepositoryResolutionOutcome.Prepared.class, resolve(service, List.of(base), offline, Optional.empty()));
+                assertEquals(before, requests.get());
+                for (var entry : modTimes.entrySet()) {
+                    assertEquals(entry.getValue(), Files.getLastModifiedTime(entry.getKey()));
+                }
+            }
+        }
     }
 
     @Test void closureNeverPersistsNoStoreModelBytes() throws Exception {

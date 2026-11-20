@@ -1,10 +1,8 @@
 package guru.interlis.compiler.internal;
 
-import guru.interlis.compiler.AnalysisReuse;
 import guru.interlis.compiler.AnalysisSnapshot;
 import guru.interlis.compiler.CompilationFingerprint;
 import guru.interlis.compiler.CompilationRequest;
-import guru.interlis.compiler.CompilerServices;
 import guru.interlis.compiler.SourceSet;
 import guru.interlis.diagnostics.Diagnostic;
 import guru.interlis.diagnostics.DiagnosticId;
@@ -27,21 +25,25 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /** One run-local compiler execution; mutable state is never published. */
 final class CompilationRun {
     private final CompilationRequest request;
-    private final AnalysisReuse reuse;
-    private final CompilerServices services;
+    private final Map<SourceId, SyntaxSnapshot> previousSyntax;
+    private final Optional<AnalysisSnapshot> previousAnalysis;
+    private final DefaultCompilerEngine.SnapshotFactory snapshotFactory;
     private final CancellationToken token;
     private final DiagnosticCollector collector;
     private final Map<SourceId, SyntaxSnapshot> syntax = new LinkedHashMap<>();
-    CompilationRun(CompilationRequest request, AnalysisReuse reuse, CompilerServices services,
+    CompilationRun(CompilationRequest request, Map<SourceId, SyntaxSnapshot> previousSyntax,
+                   Optional<AnalysisSnapshot> previousAnalysis, DefaultCompilerEngine.SnapshotFactory snapshotFactory,
                    CancellationToken token) {
         this.request = Objects.requireNonNull(request, "request");
-        this.reuse = Objects.requireNonNull(reuse, "reuse");
-        this.services = Objects.requireNonNull(services, "services");
+        this.previousSyntax = Objects.requireNonNull(previousSyntax, "previousSyntax");
+        this.previousAnalysis = Objects.requireNonNull(previousAnalysis, "previousAnalysis");
+        this.snapshotFactory = Objects.requireNonNull(snapshotFactory, "snapshotFactory");
         this.token = Objects.requireNonNull(token, "token");
         this.collector = new DiagnosticCollector(guru.interlis.diagnostics.DiagnosticCatalog.initial(),
                 request.options().budget().maxDiagnostics());
@@ -52,7 +54,7 @@ final class CompilationRun {
         var resolutionDiagnostics = verifySourceSet(sourceSet, lifecycle);
         parseSources(sourceSet, mode, lifecycle);
         token.throwIfCancellationRequested();
-        IndexedDeclarations declarations = new DeclarationIndexer().index(syntax.values().stream().toList(), reuse);
+        IndexedDeclarations declarations = new DeclarationIndexer().index(List.copyOf(syntax.values()), previousAnalysis, token);
         var overlays = new OverlayBindings(declarations,request.options().overlays(),sourceSet.translations(),collector,token,request.options().budget());
         ModelIndex modelIndex = new ModelIndex(syntax.values().stream().toList());
         RootSelection roots;
@@ -78,10 +80,9 @@ final class CompilationRun {
             indexPhase.finish(indexStatus);
         }
 
-        CompilationFingerprinter fingerprinter = new CompilationFingerprinter();
-        CompilationFingerprint fingerprint = fingerprinter.fingerprint(request, reuse);
+        CompilationFingerprint fingerprint = request.fingerprint();
         SnapshotId snapshotId = new SnapshotId("snap-" + Fingerprints.sha256(fingerprint.value()+"|snapshot-v2|"+mode+"|"
-                +reuse.previousAnalysis().map(a->a.snapshotId().value()).orElse("none")));
+                +previousAnalysis.map(a->a.snapshotId().value()).orElse("none")));
         token.throwIfCancellationRequested();
 
         Map<SourceId, java.util.Set<String>> syntaxUnsupported = new LinkedHashMap<>();
@@ -124,7 +125,7 @@ final class CompilationRun {
         var requestDiagnostics = RequestDiagnosticSelector.select(diagnostics, closure, roots, syntaxSources, token);
         var coverage = AnalysisCoverageBuilder.build(closure, syntaxSources, syntax, requestDiagnostics,
                 resolutionDiagnostics, graphResult, token);
-        AnalysisSnapshot analysis = new AnalysisSnapshot(snapshotId, graphResult.graph(),
+        AnalysisSnapshot analysis = snapshotFactory.create(snapshotId, graphResult.graph(),
                 revisions(sourceSet), syntax, diagnostics, requestDiagnostics, coverage,
                 fingerprint, request.provenance());
         return new RunOutput(analysis, closure, roots, graphResult);
@@ -167,7 +168,7 @@ final class CompilationRun {
             var options = new ParseOptions(mode, java.util.Optional.empty(), request.options().budget());
             var batch = SyntaxServices.batch(options, token);
             for (SourceId id : ids) {
-                var snapshot = batch.prepare(sourceSet.sources().get(id), reuse.previousSyntax().get(id));
+                var snapshot = batch.prepare(sourceSet.sources().get(id), previousSyntax.get(id));
                 syntax.put(id, snapshot);
                 collector.importAll(snapshot.diagnostics());
             }

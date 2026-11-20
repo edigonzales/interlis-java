@@ -19,7 +19,6 @@ import guru.interlis.repository.RepositoryBase;
 import guru.interlis.repository.RepositoryCacheConfiguration;
 import guru.interlis.repository.RepositoryCacheRequest;
 import guru.interlis.repository.RepositoryConfig;
-import guru.interlis.repository.RepositoryClosureService;
 import guru.interlis.repository.RepositoryProblem;
 import guru.interlis.repository.RepositoryResolutionOutcome;
 import guru.interlis.repository.RepositoryResolveOptions;
@@ -97,7 +96,7 @@ final class ModelPreparation {
                     policy.readTimeout(), policy.requestTimeout());
             var loader = new LocalDirectories(access.loader(), options.has("--offline") ? offline : policy);
             var repositories = configure(locations, cwd, token);
-            var service = new RepositoryClosureService(loader, access.contentStore());
+            var service = access.closureService(loader);
             var result = service.resolve(workspace, new AnalysisRequest(workspace.currentRevision(), roots),
                     RepositoryResolveOptions.defaults(new RepositoryConfig(repositories, policy)), token);
             switch (result) {

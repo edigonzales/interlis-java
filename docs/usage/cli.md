@@ -33,12 +33,19 @@ sind darin nicht erfasst. Ohne gültige eingebettete Revision entfällt die
 Git-Angabe. Die Textausgabe nennt zur Fehlersuche auch die laufende JVM
 und die Parserherkunft.
 
-Exitcodes sind 0 für den erfolgreichen Befehl, 1 für fachliche Ablehnung,
-2 für Bedienfehler, 3 für interne oder operationale Fehler und 4 für Abbruch.
+Exitcodes sind 0 für den erfolgreichen Befehl, 1 für fachliche Ablehnung
+oder Betriebsfehler, 2 für Bedienfehler, 3 für interne Fehler und 4 für Abbruch.
 In `format --check` bezeichnet 1 auch einen Formatierungsbedarf.
 `--json` schreibt bei den unterstützten Befehlen ein vollständiges
 JSON-Ergebnis nach stdout. Textdiagnosen gehen nach stderr. Datenströme und
 Dateien bleiben UTF-8 und frei von automatisch eingefügten ANSI-Sequenzen.
+
+Bei einer Ablehnung durch das Compiler-Gate enthält das JSON-Ergebnis von
+`check` und `compile` zusätzlich das Objekt `rejection`. `reasons`
+enthält die stabilen Namen der Ablehnungsgründe, zum Beispiel `SOURCE_ERRORS`
+oder `MISSING_INPUT`. `unsupportedFeatureIds` enthält die IDs fehlender
+Sprachunterstützung und ist sonst leer. Das Objekt ergänzt die bestehende
+Antwort mit `status` und `diagnostics`.
 
 ## Diagnosen und Farbe
 
@@ -140,6 +147,15 @@ Der Standardcache liegt unter `~/.interlis-cache`. Eine abweichende
 ausschliesslich vorhandene verifizierte Inhalte. Ein fehlender erforderlicher
 Cacheeintrag führt zu `OFFLINE` mit Quelle und Grund. Locks binden ihre
 Bytes über den Digest und frieren ungepinnte lokale Projekttexte nicht ein.
+
+Unter `by-url` zeigt die Datei `.current.xml` den zuletzt vollständig
+geladenen Stand einer URL. Für `https://models.example.ch/ilimodels.xml`
+liegt sie unter `by-url/https/models.example.ch/ilimodels.xml/.current.xml`.
+Der darin angegebene SHA-256 bezeichnet die Datei mit den Originalbytes
+direkt im Cacheverzeichnis. Für die freie Offline-Suche nach der
+Layoutumstellung füllt ein Online-Lauf die neuen URL-Zuordnungen.
+Vorhandene Lockdateien können ihre gespeicherten Inhaltsbytes weiterhin
+direkt laden.
 
 ## Einbettung und Ausgabegrenzen
 

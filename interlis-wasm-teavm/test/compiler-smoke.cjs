@@ -52,7 +52,8 @@ function registerCompilerTests(load) {
     if (process.env.INTERLIS_PRODUCT_VERSION) assert.equal(capabilities.toolVersion, process.env.INTERLIS_PRODUCT_VERSION);
     const sourceId = 'memory:/precision.ili';
     const text = [
-      'INTERLIS 2.4;', '!! Grüezi 🧭',
+      '/* Grüezi 🧭 /* nested */ comment */',
+      'INTERLIS /* version */ 2.4 /* end of header */ ;',
       'MODEL Exact AT "x" VERSION "1" =',
       'DOMAIN Big = 9007199254740993.0010..9007199254740993.0010;',
       'TOPIC Data = CLASS Item = exact : Big; END Item; END Data;', 'END Exact.'
@@ -78,6 +79,12 @@ function registerCompilerTests(load) {
       const diagram = ok(request('diagram', {schemaId: compiled.schemaId}));
       assert.match(JSON.stringify(diagram), /9007199254740993\.0010/);
       assert.equal(diagram.sourceRevisions[sourceId], '2');
+      const repeated = compile(request, repaired.workspaceRevision, 'Exact');
+      assert.equal(repeated.outcome, 'succeeded');
+      assert.deepEqual(repeated.diagnostics, compiled.diagnostics);
+      const reusedDiagram = ok(request('diagram', {schemaId: repeated.schemaId}));
+      assert.deepEqual(reusedDiagram.sourceRevisions, diagram.sourceRevisions);
+      assert.match(JSON.stringify(reusedDiagram), /9007199254740993\.0010/);
     });
   });
 

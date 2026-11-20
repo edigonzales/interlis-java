@@ -53,7 +53,8 @@ class DefaultRepositoryCacheTest {
 
     @Test void defaultCacheServesImportsOfflineWithAndWithoutLockAndEmitsCorrelatedEvents() throws Exception {
         String base=repository();success(run("check","Projekt.ili","--repository",base,"--write-lock","projekt.lock"));
-        assertTrue(Files.isDirectory(home().resolve(".interlis-cache/metadata-v2")));assertEquals(2,bodies.get());
+        assertTrue(Files.isRegularFile(home().resolve(".interlis-cache/by-url/http/127.0.0.1~p" + server.getAddress().getPort()
+                + "/ilimodels.xml/.current.xml")));assertEquals(2,bodies.get());
         success(run("check","Projekt.ili","--repository",base));assertEquals(2,bodies.get());
         int before=requests.get();server.stop(0);server=null;
         for(var extra:List.of(List.of("--offline"),List.of("--offline","--read-lock","projekt.lock"))) {
@@ -72,7 +73,7 @@ class DefaultRepositoryCacheTest {
 
     @Test void customCacheNoCacheAndLocalOnlyRunsHaveThePromisedDiskEffects() throws Exception {
         String base=repository();success(run("check","Projekt.ili","--repository",base,"--cache","alternate"));
-        assertTrue(Files.isDirectory(directory.resolve("alternate/metadata-v2")));assertFalse(Files.exists(home()));
+        assertTrue(Files.isDirectory(directory.resolve("alternate/by-url")));assertFalse(Files.exists(home()));
         int before=bodies.get();success(run("check","Projekt.ili","--repository",base,"--no-cache"));assertEquals(before+2,bodies.get());
         assertFalse(Files.exists(home()));
         assertEquals(CliTermination.OPERATIONAL_FAILURE,run("check","Projekt.ili","--repository",base,"--offline","--no-cache").result.termination());

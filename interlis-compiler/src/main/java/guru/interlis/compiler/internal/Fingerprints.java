@@ -1,7 +1,5 @@
 package guru.interlis.compiler.internal;
 
-import guru.interlis.source.ContentFingerprint;
-
 import guru.interlis.source.Hex;
 import guru.interlis.source.Sha256;
 
@@ -25,9 +23,5 @@ public final class Fingerprints {
                                 String budget) {
         return sha256("syntax|" + sourceFingerprint + "|" + GRAMMAR_VERSION + "|" + mode
                 + "|" + language + "|" + budget);
-    }
-
-    public static ContentFingerprint content(String value) {
-        return ContentFingerprint.sha256(sha256(value));
     }
 }

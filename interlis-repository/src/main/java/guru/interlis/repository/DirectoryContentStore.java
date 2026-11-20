@@ -34,9 +34,13 @@ public final class DirectoryContentStore implements ContentStore {
         } catch (IOException unavailable) { return Optional.empty(); }
     }
     @Override public void put(VerifiedContent content) {
+        publish(content);
+    }
+
+    boolean publish(VerifiedContent content) {
         Objects.requireNonNull(content, "content");
         byte[] bytes = content.bytes();
-        if (bytes.length > maxEntryBytes) return;
+        if (bytes.length > maxEntryBytes) return false;
         Path temporary = null;
         try {
             Files.createDirectories(directory);
@@ -45,8 +49,10 @@ public final class DirectoryContentStore implements ContentStore {
             Path target = directory.resolve(content.digest().value());
             try { Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
             catch (AtomicMoveNotSupportedException fallback) { Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING); }
+            return true;
         } catch (IOException unavailable) {
             writeFailure.run();
+            return false;
         } finally {
             if (temporary != null) try { Files.deleteIfExists(temporary); } catch (IOException ignored) { /* optional cache */ }
         }

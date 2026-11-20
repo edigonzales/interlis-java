@@ -3,7 +3,7 @@ package guru.interlis.model;
 import java.util.Objects;
 
 /**
- * Algorithm-tagged semantic fingerprint; excludes run metadata and wall time.
+ * Algorithm-tagged fingerprint of the compilation inputs, independent of run metadata and wall time.
  *
  * @param algorithm algorithm identifier
  * @param value wrapped value

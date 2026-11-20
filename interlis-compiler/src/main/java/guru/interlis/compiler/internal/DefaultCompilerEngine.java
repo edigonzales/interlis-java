@@ -1,7 +1,9 @@
 package guru.interlis.compiler.internal;
 
+import guru.interlis.compiler.AnalysisProvenance;
 import guru.interlis.compiler.AnalysisReuse;
 import guru.interlis.compiler.AnalysisSnapshot;
+import guru.interlis.compiler.CompilationFingerprint;
 import guru.interlis.compiler.CompilationOutcome;
 import guru.interlis.compiler.CompilationRequest;
 import guru.interlis.compiler.CompilerEngine;
@@ -22,21 +24,38 @@ import guru.interlis.execution.OperationCancelledException;
 import guru.interlis.execution.RunCompletion;
 import guru.interlis.execution.RunContext;
 import guru.interlis.execution.RunLifecycle;
+import guru.interlis.model.AnalysisCoverage;
+import guru.interlis.model.SemanticGraph;
+import guru.interlis.model.SnapshotId;
+import guru.interlis.source.SourceId;
+import guru.interlis.source.SourceRevision;
 import guru.interlis.syntax.ParseMode;
+import guru.interlis.syntax.SyntaxSnapshot;
 
-import java.math.BigInteger;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 /** Default reentrant compiler engine. */
 public final class DefaultCompilerEngine implements CompilerEngine {
+    @FunctionalInterface
+    public interface SnapshotFactory {
+        AnalysisSnapshot create(SnapshotId snapshotId, SemanticGraph graph, Map<SourceId, SourceRevision> revisions,
+                                Map<SourceId, SyntaxSnapshot> syntax, List<Diagnostic> diagnostics,
+                                List<Diagnostic> requestDiagnostics, AnalysisCoverage coverage,
+                                CompilationFingerprint fingerprint, AnalysisProvenance provenance);
+    }
+
     private static long failures;
     private final CompilerServices services;
-    private final CompilationOrchestrator orchestrator = new CompilationOrchestrator();
+    private final CompilationOrchestrator orchestrator;
 
-    public DefaultCompilerEngine(CompilerServices services) {
+    public DefaultCompilerEngine(CompilerServices services, SnapshotFactory snapshotFactory,
+                                 Predicate<AnalysisSnapshot> compilerProduced) {
         this.services = Objects.requireNonNull(services, "services");
+        this.orchestrator = new CompilationOrchestrator(snapshotFactory, compilerProduced);
     }
 
     @Override
@@ -64,7 +83,7 @@ public final class DefaultCompilerEngine implements CompilerEngine {
         lifecycle.start(metadata(request, "analyze"));
         try {
             CompilationOrchestrator.Result result = orchestrator.run(request, reuse,
-                    ParseMode.EDITOR, services, cancellation, lifecycle);
+                    ParseMode.EDITOR, cancellation, lifecycle);
             AnalysisSnapshot snapshot = result.output().analysis();
             lifecycle.finish(completion(result));
             return snapshot;
@@ -111,10 +130,10 @@ public final class DefaultCompilerEngine implements CompilerEngine {
         lifecycle.start(metadata(request, "compile"));
         try {
             CompilationOrchestrator.Result result = orchestrator.run(request, reuse,
-                    ParseMode.STRICT, services, cancellation, lifecycle);
+                    ParseMode.STRICT, cancellation, lifecycle);
             AnalysisSnapshot analysis = result.output().analysis();
-            if (result.gate().schema().isPresent()) {
-                var schema = result.gate().schema().get();
+            if (result.gate().accepted()) {
+                var schema = result.gate().schema().orElseThrow();
                 lifecycle.finish(new RunCompletion.Succeeded(
                         (int) analysis.diagnostics().stream()
                                 .filter(d -> d.severity() == Severity.ERROR).count(),
@@ -153,7 +172,7 @@ public final class DefaultCompilerEngine implements CompilerEngine {
         AnalysisSnapshot analysis = result.output().analysis();
         int errors = (int) analysis.diagnostics().stream()
                 .filter(d -> d.severity() == Severity.ERROR).count();
-        if (result.gate().schema().isPresent()) {
+        if (result.gate().accepted()) {
             return new RunCompletion.Succeeded(errors,
                     result.output().graphResult().roots().size(), true, false);
         }

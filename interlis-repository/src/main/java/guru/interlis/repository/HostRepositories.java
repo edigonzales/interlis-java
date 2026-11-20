@@ -17,7 +17,16 @@ public final class HostRepositories {
             Objects.requireNonNull(observations, "observations");
         }
         public RepositoryClosureService closureService() {
-            return new RepositoryClosureService(loader, contentStore, observations);
+            return closureService(loader);
+        }
+
+        /**
+         * Uses a non-null decorator that delegates HTTP requests to this access's loader.
+         * The access retains ownership of HTTP cache publication and supplies the lock store.
+         */
+        public RepositoryClosureService closureService(SourceLoader decoratedLoader) {
+            return new RepositoryClosureService(decoratedLoader, contentStore, observations,
+                    RoutingSourceLoader.persistsHttpWith(loader, contentStore));
         }
     }
 
@@ -41,10 +50,15 @@ public final class HostRepositories {
         Objects.requireNonNull(workingDirectory); Objects.requireNonNull(configuration); Objects.requireNonNull(proxy); Objects.requireNonNull(clock);
         Objects.requireNonNull(observer, "observer");
         var warned = new AtomicBoolean();
-        Runnable unavailable = () -> { if(warned.compareAndSet(false,true))RepositoryCacheObservation.global(RepositoryCacheEvent.WRITE_UNAVAILABLE).publishTo(observer); };
-        ContentStore store=configuration.directory().<ContentStore>map(p -> new DirectoryContentStore(p,16_777_216,unavailable)).orElseGet(InMemoryContentStore::new);
-        var metadata=configuration.directory().map(p -> new DirectoryMetadataStore(p,unavailable)).orElse(null);
-        return new Access(new RoutingSourceLoader(new FileSourceLoader(workingDirectory),new HttpSourceLoader(store,metadata,observer,proxy,clock)),
-                store,observer);
+        Runnable unavailable = () -> {
+            if (warned.compareAndSet(false, true)) {
+                RepositoryCacheObservation.global(RepositoryCacheEvent.WRITE_UNAVAILABLE).publishTo(observer);
+            }
+        };
+        var persistent = configuration.directory().map(p -> new DirectoryContentStore(p, 16_777_216, unavailable));
+        ContentStore store = persistent.<ContentStore>map(value -> value).orElseGet(InMemoryContentStore::new);
+        var metadata = configuration.directory().map(p -> new DirectoryMetadataStore(p, unavailable)).orElse(null);
+        return new Access(new RoutingSourceLoader(new FileSourceLoader(workingDirectory),
+                new HttpSourceLoader(persistent.orElse(null), metadata, observer, proxy, clock)), store, observer);
     }
 }

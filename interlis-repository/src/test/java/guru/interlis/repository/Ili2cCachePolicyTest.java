@@ -105,21 +105,29 @@ class Ili2cCachePolicyTest {
         assertEquals(1, fixture.requests.get());
     }
 
-    @Test void versionOneMetadataIsIgnoredOffline() throws Exception {
+    @Test void oldUrlMappingsAreIgnoredAndExistingExactBytesRemainReadable() throws Exception {
         String url = serve();
         var loaded = load(url, RepositoryCacheRequest.metadata());
         Path current = fixture.metadata(url);
-        Path old = directory.resolve("cache/metadata-v1").resolve(current.getFileName());
-        Files.createDirectories(old.getParent());
-        Files.writeString(old, """
-                <interlis-cache version="1" source="%s" response-source="%s" sha256="%s"/>
-                """.formatted(url, url, loaded.byteSha256()));
-        assertEquals("original", host().loader().loadCached(new SourceLocator(url), OFFLINE, TOKEN).text());
         Files.delete(current);
-        var failure = assertThrows(SourceLoadException.class,
-                () -> host().loader().loadCached(new SourceLocator(url), OFFLINE, TOKEN));
-        assertEquals(SourceLoadException.Reason.OFFLINE, failure.reason());
-        assertEquals(1, fixture.requests.get());
+        var digest = new ContentDigest("sha256", loaded.byteSha256());
+        String oldName = ContentDigest.sha256(url.getBytes(java.nio.charset.StandardCharsets.UTF_8)).value() + ".xml";
+        for (int version : List.of(1, 2)) {
+            Path old = Files.createDirectories(directory.resolve("cache/metadata-v" + version)).resolve(oldName);
+            String age = version == 2 ? " downloaded-at=\"" + now.get() + "\"" : "";
+            Files.writeString(old, """
+                    <interlis-cache version="%d" source="%s" response-source="%s" sha256="%s"%s/>
+                    """.formatted(version, url, url, digest.value(), age));
+            var failure = assertThrows(SourceLoadException.class,
+                    () -> host().loader().loadCached(new SourceLocator(url), OFFLINE, TOKEN));
+            assertEquals(SourceLoadException.Reason.OFFLINE, failure.reason());
+            assertEquals(1, fixture.requests.get());
+        }
+        assertArrayEquals(loaded.text().getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                host().contentStore().lookup(digest).orElseThrow().bytes());
+        load(url, RepositoryCacheRequest.metadata());
+        assertEquals(2, fixture.requests.get());
+        assertTrue(Files.isRegularFile(current));
     }
 
     @Test void applicationCacheIgnoresVaryButHonorsNoStore() throws Exception {
@@ -151,6 +159,41 @@ class Ili2cCachePolicyTest {
         var rejected=assertInstanceOf(RepositoryResolutionOutcome.Rejected.class,fixture.resolve(host(),List.of(base),false,Optional.empty()));
         assertEquals(RepositoryProblem.Reason.PIN_MISMATCH,rejected.problems().getFirst().reason());
         assertEquals(6,fixture.requests.get());
+    }
+
+    @Test void wrongModelMd5DoesNotReplaceLastVerifiedUrlEntry() throws Exception {
+        String original = fixture.model("Dep", "");
+        String wrong = fixture.model("Dep", "DOMAIN D=TEXT;");
+        var model = new AtomicReference<>(original);
+        String index = fixture.index("Dep").replace("</File>", "</File><md5>" + md5(original) + "</md5>");
+        String base = fixture.serve(exchange -> {
+            boolean indexRequest = exchange.getRequestURI().getPath().endsWith("/ilimodels.xml");
+            if (!indexRequest && privateResponse.get()) {
+                exchange.getResponseHeaders().set("Cache-Control", "no-store");
+            }
+            fixture.send(exchange, indexRequest ? index : model.get(), null);
+        });
+        var first = assertInstanceOf(RepositoryResolutionOutcome.Prepared.class,
+                fixture.resolve(host(), List.of(base), false, Optional.empty()));
+        var modelMetadata = fixture.metadata(base + "Dep.ili");
+        byte[] previous = Files.readAllBytes(modelMetadata);
+
+        now.set(now.get().plus(Duration.ofDays(8)));
+        model.set(wrong);
+        for (boolean noStore : List.of(false, true)) {
+            privateResponse.set(noStore);
+            var rejected = assertInstanceOf(RepositoryResolutionOutcome.Rejected.class,
+                    fixture.resolve(host(), List.of(base), false, Optional.empty()));
+            assertEquals(RepositoryProblem.Reason.PIN_MISMATCH, rejected.problems().getFirst().reason());
+            assertArrayEquals(previous, Files.readAllBytes(modelMetadata));
+        }
+        assertTrue(host().contentStore().lookup(ContentDigest.sha256(wrong.getBytes(java.nio.charset.StandardCharsets.UTF_8))).isEmpty());
+
+        int before = fixture.requests.get();
+        var offline = assertInstanceOf(RepositoryResolutionOutcome.Prepared.class,
+                fixture.resolve(host(), List.of(base), true, Optional.empty()));
+        assertEquals(first.update().lock(), offline.update().lock());
+        assertEquals(before, fixture.requests.get());
     }
 
     @Test void noStoreInvalidatesPreviouslyCachedMetadata() throws Exception {

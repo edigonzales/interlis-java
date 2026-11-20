@@ -144,8 +144,9 @@ Die fachliche Anzahl-/Typprüfung der Argumente bleibt zusätzlich erforderlich.
 
 Der `SyntaxSnapshot`-Konstruktor nimmt `ParseOptions` anstelle
 eines einzelnen `ParseMode` entgegen. `mode()` ist die Sicht auf `options().mode()`.
-Wiederverwendung verlangt neben Quelle, Revision und Text dieselben Parseoptionen;
-ein früherer Lauf mit grösserem Budget darf ein später verlangtes Limit nicht umgehen.
+Wiederverwendung setzt einen im Syntaxdienst erstellten Snapshot sowie dieselbe
+Quelle, Revision, denselben Text und dieselben Parseoptionen voraus. Der neue
+Lauf berücksichtigt den gemessenen Aufwand des Snapshots im gemeinsamen Budget.
 
 <a id="eigene-knoten-tokens-und-trivia"></a>
 ### Eigene Knoten, Tokens und Trivia
@@ -268,8 +269,7 @@ Beide Modi arbeiten auf denselben versionsbezogenen gültigen Produktionen. Tole
 
 | Klasse | Verantwortlichkeit und zentrale Methode |
 |---|---|
-| `AntlrSyntaxService` | Implementiert `SyntaxService`; erzeugt pro Parseaufruf frische Lexer-/Parserzustände. |
-| `VersionHeaderScanner` | `detect(SourceText)`; begrenzte headerbezogene Erkennung mit Positionen, keine zweite Vollgrammatik. |
+| `AntlrSyntaxService` | Implementiert `SyntaxService`, erkennt den Sprachkopf aus den ersten sichtbaren Originaltokens und parst denselben Tokenstrom. |
 | `LanguageProfile` | Gepinnte erlaubte Tokens, Syntaxfähigkeiten und Versionsregeln; immutable. |
 | `VersionedTokenAdapter` | Versionsabhängige, quellbereichserhaltende Tokenanpassungen, sofern durch Sprachtests nötig. |
 | `CollectingLexerErrorListener` | Liefert `ILI-SYN-0001` nach Katalog09 und arbeitet ohne stderr. |

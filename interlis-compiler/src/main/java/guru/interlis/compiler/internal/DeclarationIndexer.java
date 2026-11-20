@@ -1,6 +1,7 @@
 package guru.interlis.compiler.internal;
 
-import guru.interlis.compiler.AnalysisReuse;
+import guru.interlis.compiler.AnalysisSnapshot;
+import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.DerivationKind;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.Modifier;
@@ -60,8 +61,9 @@ final class DeclarationIndexer {
     private final Map<SymbolId, SymbolId> modelOf = new LinkedHashMap<>();
     private final List<IndexedDeclarations.ModelEntry> modelEntries = new ArrayList<>();
 
-    IndexedDeclarations index(List<SyntaxSnapshot> snapshots, AnalysisReuse reuse) {
-        preparePrevious(reuse);
+    IndexedDeclarations index(List<SyntaxSnapshot> snapshots, Optional<AnalysisSnapshot> previousAnalysis,
+                              CancellationToken cancellation) {
+        previousAnalysis.ifPresent(analysis -> preparePrevious(analysis, cancellation));
         List<SyntaxSnapshot> sorted = new ArrayList<>(snapshots);
         sorted.sort(Comparator.comparing(s -> s.source().id().value()));
         for (SyntaxSnapshot snapshot : sorted) {
@@ -103,29 +105,51 @@ final class DeclarationIndexer {
                         && range.endOffset() <= node.range().endOffset()).findFirst();
     }
 
-    private void preparePrevious(AnalysisReuse reuse) {
-        reuse.previousAnalysis().ifPresent(analysis -> {
-            var graph=analysis.semanticGraph();
-            var anchors=new HashMap<SymbolId,Anchor>();var counts=new HashMap<Anchor,Integer>();
-            for(var symbol:graph.symbols())if(symbol.origin() instanceof Origin.DeclaredOrigin declared) {
-                String name=graph.qualifiedNames().entrySet().stream().filter(e->e.getValue().contains(symbol.id()))
-                        .map(e->e.getKey().toString()).findFirst().orElse(symbol.name().value());
-                if(symbol.kind()==SymbolKind.CONSTRAINT && symbol.owner().isPresent())
-                    name=graph.qualifiedNames().entrySet().stream().filter(e->e.getValue().contains(symbol.owner().orElseThrow()))
-                            .map(e->e.getKey()+"#"+symbol.name().value()).findFirst().orElse(name);
-                var anchor=new Anchor(declared.range().source(),symbol.kind(),name);
-                anchors.put(symbol.id(),anchor);counts.merge(anchor,1,Integer::sum);reservedPrevious.add(symbol.id());
-            }
-            for(var symbol:graph.symbols())if(anchors.containsKey(symbol.id())) {
-                var current=symbol;boolean unique=true;
-                while(true) {
-                    if(!anchors.containsKey(current.id()) || counts.get(anchors.get(current.id()))!=1){unique=false;break;}
-                    if(current.owner().isEmpty())break;
-                    current=graph.symbol(current.owner().orElseThrow()).orElseThrow();
-                }
-                if(unique)previous.put(anchors.get(symbol.id()),symbol.id());
+    private void preparePrevious(AnalysisSnapshot analysis, CancellationToken cancellation) {
+        var graph = analysis.semanticGraph();
+        var names = new HashMap<SymbolId, String>();
+        graph.qualifiedNames().forEach((name, symbols) -> {
+            String qualified = name.toString();
+            for (SymbolId symbol : symbols) {
+                cancellation.throwIfCancellationRequested();
+                names.putIfAbsent(symbol, qualified);
             }
         });
+
+        var anchors = new HashMap<SymbolId, Anchor>();
+        var counts = new HashMap<Anchor, Integer>();
+        for (var symbol : graph.symbols()) {
+            cancellation.throwIfCancellationRequested();
+            if (!(symbol.origin() instanceof Origin.DeclaredOrigin declared)) {
+                continue;
+            }
+            String name = names.getOrDefault(symbol.id(), symbol.name().value());
+            if (symbol.kind() == SymbolKind.CONSTRAINT) {
+                var ownerName = symbol.owner().map(names::get);
+                if (ownerName.isPresent()) {
+                    name = ownerName.orElseThrow() + "#" + symbol.name().value();
+                }
+            }
+            var anchor = new Anchor(declared.range().source(), symbol.kind(), name);
+            anchors.put(symbol.id(), anchor);
+            counts.merge(anchor, 1, Integer::sum);
+            reservedPrevious.add(symbol.id());
+        }
+        for (var symbol : graph.symbols()) {
+            cancellation.throwIfCancellationRequested();
+            if (!anchors.containsKey(symbol.id())) {
+                continue;
+            }
+            var current = symbol;
+            while (counts.getOrDefault(anchors.get(current.id()), 0) == 1) {
+                cancellation.throwIfCancellationRequested();
+                if (current.owner().isEmpty()) {
+                    previous.put(anchors.get(symbol.id()), symbol.id());
+                    break;
+                }
+                current = graph.symbol(current.owner().orElseThrow()).orElseThrow();
+            }
+        }
     }
 
     /** Delay reuse until all current declarations and their owners are known.

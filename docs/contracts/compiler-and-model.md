@@ -10,7 +10,7 @@ Der portable Compiler analysiert explizite Quellen und Modellbindungen. Die Engi
 
 Alle in diesem Abschnitt benannten Eingabetypen liegen in `guru.interlis.compiler`, sofern nicht ausdrücklich ein Foundationtyp genannt ist.
 
-Die Wurzelliste ist nichtleer und defensiv kopiert. `ByName` bezeichnet einen exakten Modellnamen; eine Modellversion ist ein wörtlicher fachlicher Wert, keine automatisch interpretierte Semver-Range. `sourceHint` schränkt die Auswahl ein und darf einen Konflikt nicht still übersteuern. `BySource` selektiert alle ursprünglichen Modelle der expliziten Quelle. Bei einem fehlerhaften Header oder einer Quelle ohne gültig erkennbares Modell darf daraus nicht „null ausgewählte Modelle, also Erfolg“ werden.
+Die Wurzelliste ist nichtleer und defensiv kopiert. `ByName` bezeichnet einen exakten Modellnamen; eine Modellversion ist ein wörtlicher fachlicher Wert, keine automatisch interpretierte Semver-Range. `sourceHint` schränkt die Auswahl ein und darf einen Konflikt nicht still übersteuern. `BySource` selektiert alle ursprünglichen Modelle der expliziten Quelle. Ein gültiges Dokument ohne Modelle ist syntaktisch zulässig. Als explizite Wurzel führt es zu `MISSING_INPUT`, auch wenn andere Wurzeln Modelle liefern. Eine beschädigte Quelle ohne rekonstruierbares Modell führt zu `SOURCE_ERRORS`.
 
 Ein Dokument kann mehrere Modelle enthalten. Eine Rootauswahl über einen Namen selektiert nicht implizit alle Nachbarmodelle derselben Datei. Syntaxfehler im gemeinsam geparsten Dokument müssen jedoch verlässlich einem Bereich beziehungsweise einer globalen Dokumentbedingung zugeordnet werden. Kann ein Fehler nicht sicher von der Root abgegrenzt werden, gilt er konservativ als blockierend für die betroffene Quelle. Fehler werden nie bloss anhand von Stringpräfixen einer FQN weggefiltert.
 
@@ -148,9 +148,20 @@ Auftragsrelevanz umfasst Roots, Imports, Übersetzungsoriginale und Overlayabhä
 <a id="analysisreuse"></a>
 ### `AnalysisReuse`
 
-Diese Eingabe ist eine unveränderliche Beschleunigungs- und Identitätshilfe. Sie wird nicht als bereits bestätigte Wahrheit akzeptiert. `ReusePlanner.plan(request,reuse)` prüft Text-, Quellen-/Revisions-, Grammatik-, Sprach-, Options-, Modus- und Abhängigkeitsfingerprints, bevor ein Ergebnis wiederverwendet wird. Nicht passende Einträge werden verworfen. Untereinander widersprüchliche vom API-Aufrufer selbst konstruierte Eingaben können als ungültige Argumente abgelehnt werden; ein normaler geänderter Text ist keine Exception.
+Diese unveränderliche Eingabe enthält Hinweise für Syntax- und Identitätswiederverwendung.
+Der Standardcompiler verwendet eigene frühere Analysen für Symbolidentitäten und
+eigene Syntaxresultate bei identischem Quelltext, identischer Revision und
+identischen Parseoptionen. Gemessener Syntaxaufwand belastet auch den neuen Lauf.
+Öffentlich konstruierte Snapshots bleiben als Daten verwendbar. Die Engine
+ignoriert sie als Wiederverwendungshinweise. Die Semantik wird im neuen Lauf gebunden.
 
-`IdentityReconciler` verwendet nachweislich unveränderte, eindeutige Deklarationsanker samt Scope/Art und Textstruktur. Eine Einfügung vor einer Deklaration darf deren Offset ändern, ohne zwingend ihre ID zu ändern. Ein Name allein reicht nicht. Bei Duplikaten oder unklarer Zuordnung werden neue IDs vergeben. Die Relation alter/neuer Identitäten kann als eigenes Delta an Projektionen gehen; sie darf keine falsche semantische Gleichsetzung erzeugen.
+Der Deklarationsindex verwendet eindeutige Anker aus Quelle, Symbolart und
+qualifiziertem Namen. Für Constraints bilden der qualifizierte Name des
+Besitzers und der Constraintname den Namensanteil. Auch die Besitzerkette
+muss eindeutig zugeordnet sein. Eine Einfügung vor einer Deklaration kann
+deren Offset ändern und ihre ID bewahren. Bei Duplikaten oder unklarer
+Zuordnung werden neue IDs vergeben. Ein Delta für Projektionen muss den
+Unterschied zwischen ID-Wiederverwendung und semantischer Gleichheit wahren.
 
 Eine frische Kompilierung und eine wiederverwendende Kompilierung müssen fachlich gleich sein. Opaque IDs, Cachemetriken und Runmetadaten werden beim semantischen Vergleich normalisiert. Wenn dieselben Eingaben mit unterschiedlichen Wiederverwendungswegen verschiedene ID-Belegungen erzeugen, müssen Snapshotidentitäten dies unterscheiden. Ein Snapshotfingerprint darf deshalb nicht nur den Text hashieren und dadurch voneinander abweichende Handle-Räume als identisch ausgeben.
 
@@ -321,7 +332,12 @@ Die Fachregeln dürfen ein gemeinsames Resultatformat verwenden, aber kein frei 
 8. Die konfigurierte Warnungspolitik ist erfüllt.
 9. Graphintegrität und Herkunft sind konsistent, und kein Abbruch wurde vor Publikation angefordert.
 
-Erst dann wird `DefaultCompiledSchema` erzeugt. `GateResult` ist eine interne sealed Ergebnishierarchie `Accepted(CompiledSchema)` beziehungsweise `Denied(List<GateBlocker>, RejectionSummary)`. Jeder Blocker besitzt Art, betroffene Closurestelle und Diagnose-/Coveragebezug. `CompilationGate` erzeugt daraus die öffentliche Zusammenfassung mit den ausschliesslich relevanten Gründen. Der Orchestrator übernimmt sie unverändert in `CompilationOutcome.Rejected`. Das Gate hängt keine neuen willkürlichen Folgefehler an, sondern benennt die bereits vorhandenen Gründe und ergänzt lediglich bisher fehlende erforderliche Abschlussdiagnostik.
+Beim strikten Compile erzeugt `CompilationGate` nach der Annahme das
+`DefaultCompiledSchema` und prüft den Abbruch vor der Übergabe. Bei `analyze`
+verwendet der Lauf die Entscheidung für seinen Abschlussstatus und liefert den
+Analysesnapshot. Das Gate fasst bei einer Ablehnung die für den Auftrag
+relevanten Gründe, Diagnosen und nicht unterstützten Features zusammen.
+Der Orchestrator übernimmt diese Zusammenfassung in `CompilationOutcome.Rejected`.
 
 Die ausgestellte Graph-/Querysicht ist auf die geprüfte Closure beschränkt, wie in05 festgelegt. Ein umfassender Analysesnapshot kann daneben unabhängige fehlerhafte Modelle besitzen. Das Gate darf diese nicht durch einen einfachen Verweis auf einen ungefilterten Gesamtgraphen als scheinbar geprüfte Schemainhalte ausgeben. Die Auswahl teilt unveränderliche Graphdaten und benötigt keine erneute fachliche Kompilierung.
 
@@ -1057,6 +1073,9 @@ Die Produktionsimplementierung ist `guru.interlis.compiler.internal.DefaultCompi
 Dies ist ein API-Vertrag, keine Java-Sicherheitsgrenze gegen Drittcode: Ein externer Aufrufer kann technisch ein Interface selbst implementieren. Die Gültigkeitsgarantie gilt für von `CompilerEngine` ausgegebene Instanzen. Ein Consumer, der fremde Implementierungen akzeptiert, muss seine Eingabegrenze ausdrücklich definieren; er darf deren Herkunft nicht allein aus dem Interfacenamen ableiten.
 
 Die geprüfte Closure enthält keine fachlichen Error-/Pending-Typen und keine unaufgelösten verpflichtenden Bindungen. Rechtmässige Generic-/Deferred-Zustände und externe Funktionssignaturen bleiben zulässig. `SchemaProvenance` enthält Compiler-/Sprachprofil-/Grammatikstand, angeforderte Wurzeln, relevante Quellfingerprints, Resolverbindungen und semantisch wirksame Optionen/Overlays. Uhrzeit und Run-ID sind keine fachlichen Fingerprintbestandteile.
+`CompiledSchema.fingerprint()` wird aus der Identität des Compilerauftrags
+gebildet. Weitere Quellen im Auftrag können deshalb den Fingerprint verändern,
+auch wenn die ausgewählte Closure dieselbe bleibt.
 
 `semanticGraph()` und `queries()` des Schemas sind auf diese geprüfte Closure beschränkt. Sie dürfen unabhängige fehlerhafte Modelle aus dem umfassenderen `AnalysisSnapshot` nicht als eigene geprüfte Inhalte ausgeben. Die Implementierung teilt unveränderliche Symbole, Typen und Ausdrücke und verwendet eine unveränderliche Auswahl-/Indexsicht; ein zweiter tief kopierter Vollgraph ist nicht erforderlich. Referenzvorkommen gehören über den Besitzer ihres ursprünglichen Scopes zur Auswahl. Die Auswahl enthält alle fachlich benötigten Referenzziele und Owner. Ein Handle desselben Snapshots, der ausserhalb dieser Auswahl liegt, ergibt `NotAnalyzed(OUTSIDE_SELECTION)`; ein Handle eines anderen Snapshots bleibt ein `SnapshotMismatchException`-Fall. Dadurch bleiben die Garantien der vollständigen Analyse und der geprüften Schemaauswahl eindeutig.
 

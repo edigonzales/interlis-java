@@ -737,7 +737,22 @@ final class SyntaxTreeBuilder {
         return new AttributeDeclarationSyntax(nextId(), range(context), name,
                 optionalRange(nameToken, context), type.mandatory, transientAttribute,
                 context.ASSIGN() != null, context.CONTINUOUS() != null,
-                context.SUBDIVISION() != null, attributeModifiers, type.type, context.expression().stream().map(this::buildExpression).toList());
+                context.SUBDIVISION() != null, attributeModifiers, type.type,
+                context.expression().stream().map(this::buildAttributeDerivation).toList());
+    }
+
+    private ExpressionSyntax buildAttributeDerivation(InterlisParser.ExpressionContext context) {
+        int priorVersionViolations = versionViolations.size();
+        ExpressionSyntax expression = buildExpression(context);
+        // In 2.3 the derivation itself is a Factor. Its function arguments remain expressions.
+        if (versionViolations.size() == priorVersionViolations
+                && (expression instanceof BinaryExpressionSyntax
+                    || expression instanceof DefinedExpressionSyntax
+                    || expression instanceof UnaryExpressionSyntax
+                    || context.getStart().getType() == InterlisParser.LPAR)) {
+            expressionFeature(LanguageProfile.Feature.ATTRIBUTE_DERIVATION_EXPRESSION, range(context));
+        }
+        return expression;
     }
 
     private DomainDeclarationSyntax buildDomain(InterlisParser.DomainDefContext context) {

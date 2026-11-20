@@ -64,6 +64,14 @@ final class StructureBindings {
         return type instanceof StructureValueType structure?paths.get().commonObjectScope(structure.targetRoots()):null;
     }
 
+    SymbolId localUniquenessTarget(TypeDescriptor type, LanguageVersion language) {
+        if (language == LanguageVersion.ILI23 && type instanceof GeometryType geometry
+                && (geometry.geometryKind() == GeometryKind.SURFACE || geometry.geometryKind() == GeometryKind.AREA)) {
+            return geometry.lineAttributes().orElse(null);
+        }
+        return target(type);
+    }
+
     void validate() {
         for(Symbol symbol:state.symbolsInBuildOrder()) {
             work.checkpoint();
@@ -81,6 +89,13 @@ final class StructureBindings {
         }
         for(Symbol owner:state.symbolsInBuildOrder()) {
             work.checkpoint();
+            if (owner instanceof ClassSymbol clazz && clazz.header().languageVersion() == LanguageVersion.ILI23
+                    && clazz.baseType().filter(base -> state.symbol(base) instanceof StructureSymbol)
+                            .filter(this::containsReference).isPresent()) {
+                index.byId(clazz.id()).ifPresent(declaration -> diagnostics.emitRule(declaration,
+                        "a structure containing reference attributes cannot be extended to a class in INTERLIS 2.3",
+                        "CLASS_EXTENDS_REFERENCE_STRUCTURE"));
+            }
             if(!(owner instanceof ClassSymbol || owner instanceof StructureSymbol || owner instanceof AssociationSymbol) || owner.header().has(Modifier.ABSTRACT))continue;
             DeclInfo declaration=index.byId(owner.id()).orElse(null);
             if(declaration==null)continue;
@@ -88,6 +103,30 @@ final class StructureBindings {
                 if(state.symbol(member.declaredSymbol()) instanceof AttributeSymbol attribute && attribute.header().has(Modifier.ABSTRACT))
                     diagnostics.emitRule(declaration,"concrete viewable retains an abstract attribute","ABSTRACT_MEMBER");
         }
+    }
+
+    private boolean containsReference(SymbolId structure) {
+        var pending = new ArrayDeque<SymbolId>();
+        Set<SymbolId> seen = new HashSet<>();
+        pending.add(structure);
+        while (!pending.isEmpty()) {
+            work.checkpoint();
+            SymbolId current = pending.removeFirst();
+            if (!seen.add(current)) continue;
+            for (EffectiveMember member : state.effectiveMembers(current)) {
+                work.checkpoint();
+                if (!(state.symbol(member.declaredSymbol()) instanceof AttributeSymbol attribute)) continue;
+                TypeDescriptor type = effectiveDescriptor.apply(attribute.declaredType());
+                while (type instanceof CollectionType collection) {
+                    work.checkpoint();
+                    type = effectiveDescriptor.apply(collection.elementType());
+                }
+                if (type instanceof ReferenceType) return true;
+                if (type instanceof StructureValueType nested) pending.addAll(nested.targetRoots());
+                if (type instanceof GeometryType geometry) geometry.lineAttributes().ifPresent(pending::add);
+            }
+        }
+        return false;
     }
 
     private boolean hasConcreteStructure(StructureValueType type, DeclInfo declaration) {

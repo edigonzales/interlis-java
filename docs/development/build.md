@@ -6,7 +6,7 @@ Setze `JAVA_HOME` auf ein Java-25-JDK. Unter Windows verwende `gradlew.bat`.
 ```sh
 ./gradlew build
 ./gradlew check
-./gradlew :interlis-compiler:test --tests '*VersionScannerTest'
+./gradlew :interlis-compiler:test --tests '*SyntaxContractTest'
 ```
 
 Gradle generiert die ANTLR-Klassen unter `interlis-compiler/build/`. ANTLR

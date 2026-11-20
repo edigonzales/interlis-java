@@ -12,17 +12,19 @@ Führe JVM-Tests mit einem normalen Benutzerkonto aus. Die Dateirechtetests
 prüfen tatsächliche Schreibverbote des Betriebssystems.
 
 - `./gradlew test` oder `./gradlew check` führt die regulären JVM-Tests aus.
-- `./gradlew :interlis-compiler:test --tests '*VersionScannerTest'` wählt eine
-  JUnit-Klasse. `--tests '*VersionScannerTest.detectsUnsupportedVersion'`
+- `./gradlew :interlis-compiler:test --tests '*SyntaxContractTest'` wählt eine
+  JUnit-Klasse. `--tests '*SyntaxContractTest.rejectsTrailingContentAndUnsupportedVersion'`
   wählt eine Methode.
 - `./gradlew packageTest` prüft die entpackten CLI- und SDK-Pakete, die
   SDK-Beispiele und den installierten LSP-Prozess. Der LSP-Check braucht Node.
 - `./gradlew codebergConformance` prüft den gepinnten Codeberg-Stand für
   INTERLIS 2.3 und 2.4. Der Build prüft die SHA-256 des Archivs vom GitHub-Spiegel.
   `-PcodebergFilter='^ili23\.Class23Test\.classComplete$'` wählt einen Fall.
-  Die [Erwartungen](../../testdata/conformance/normative/expectations.json) und
-  [Baseline](../../testdata/conformance/baseline.json) enthalten die fachlichen
-  Abweichungen. Die Berichte liegen unter `build/conformance/codeberg/`.
+  Die [Baseline](../../testdata/conformance/baseline.json) enthält die fachlichen
+  Abweichungen. Der Runner speichert die Antwort jedes Originalfalls im nativen
+  Report. Die [direkten JVM-Tests](../../interlis-compiler-cli/src/test/java/guru/interlis/cli/LanguageDecisionTest.java)
+  prüfen die konkreten Diagnosen und Kontrollen. Die Berichte liegen unter
+  `build/conformance/codeberg/`.
 - `./gradlew swisstopoConformance -PswisstopoSuiteDir=../suite-interlis` prüft
   die Originaltests gegen die modulare Validator-Installation. Gradle gibt den Commit
   des Suite-Checkouts aus. Die Ergebnisse liegen unter

@@ -69,7 +69,9 @@ beiden Cachegrenzen.
 
 Java-API 0.11 verwendet `HostRepositories.createObserved` und
 `RepositoryCacheObservation` für Cachebeobachtungen. Suchschritte werden
-direkt als `RepositorySearchStep` übergeben.
+direkt als `RepositorySearchStep` übergeben. Wenn ein Host den HTTP-Loader
+dekoriert, erhält `HostRepositories.Access.closureService(SourceLoader)`
+dessen Zuständigkeit für die Veröffentlichung im gemeinsamen Cache.
 Der Lauf-Lifecycle emittiert Ereignisschema 2 mit Start, Phasen,
 Cachebeobachtungen und typisiertem Abschluss.
 

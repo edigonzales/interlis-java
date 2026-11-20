@@ -1,12 +1,10 @@
-# Positive Gegenproben für bewusst abweichende Referenzerwartungen
+# Originalmodelle und Gegenproben für dokumentierte Sprachentscheidungen
 
-Diese Dateien sind gezielt korrigierte Fassungen der in
-[expectations.json](expectations.json) genannten ili2c-Testfälle
-(Upstream `claeis/ili2c`, Commit `4ea207f388ef7d91b03d968cc1636f4de84e36ea`).
-Die Originaldateien, Suite-Erwartungen und Quellenpins werden nicht geändert.
-Die Herkunft jedes Falls, Original-/Kontrollhashes, Normstellen und exakten
-negativen Diagnosen stehen im Manifest. Die Gegenproben gehören zum normalen
-`./gradlew codebergConformance`; ihr Inhalt wird dabei nicht erneuert.
+Die [Originalmodelle](originals/) stammen unverändert aus
+[ili2c, Commit `4ea207f`](https://github.com/claeis/ili2c/tree/4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data).
+Die [JUnit-Tests](../../../interlis-compiler-cli/src/test/java/guru/interlis/cli/LanguageDecisionTest.java)
+laden Originale und Gegenproben direkt. Die [Codeberg-Baseline](../baseline.json)
+erklärt die Abweichungen im Kompilierausgang der externen Suite.
 
 Änderungen gegenüber den Originalen:
 
@@ -27,8 +25,9 @@ negativen Diagnosen stehen im Manifest. Die Gegenproben gehören zum normalen
 - `attributeComplete`: CIRCULAR bei den zwei kontinuierlichen Unterteilungen ergänzen.
 - `Constraint23Test.setCstrt`: die individuellen booleschen Werte in die WHERE-Filter verschieben; die beiden übersetzten Hauptausdrücke prüfen objectCount(ALL).
 - `iliconversion_ConversionOfSETCONSTRAINT`: DEFINED(attr2) in den WHERE-Filter übernehmen; der Hauptausdruck prüft objectCount(ALL).
+- `uniqueCstrtLocal`: in beiden Übersetzungen `BAG OF` verwenden, sodass der lokale Schlüssel über eine Unterstruktursammlung definiert ist.
 
-Die letzten beiden Fassungen folgen dem ausdrücklich bestätigten SET-Kontextprofil.
+Die beiden SET-Gegenproben folgen dem ausdrücklich bestätigten SET-Kontextprofil.
 Die [Normauslegung](../../../docs/contracts/norm-decisions.md) erläutert die bestätigten Sprachentscheidungen.
 
 Jede Korrektur erhält die übrige Modellstruktur. Damit darf eine Ausnahme keine

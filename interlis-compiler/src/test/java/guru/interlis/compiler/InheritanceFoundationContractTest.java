@@ -292,4 +292,24 @@ class InheritanceFoundationContractTest {
             assertInstanceOf(Origin.DeclaredOrigin.class,inherited.origin());
         }
     }
+
+    @Test void classMayOnlyPromoteAReferenceBearingStructureIn24() {
+        String body = """
+                TOPIC T =
+                    CLASS Target = END Target;
+                    STRUCTURE Ref = target: REFERENCE TO Target; END Ref;
+                    STRUCTURE Inherited EXTENDS Ref = END Inherited;
+                    STRUCTURE Nested = entries: BAG OF Inherited; END Nested;
+                    CLASS Promoted EXTENDS %s = END Promoted;
+                END T;
+                """;
+        for (String base : List.of("Ref", "Inherited", "Nested")) {
+            bad(input("2.3", body.formatted(base)), "CLASS_EXTENDS_REFERENCE_STRUCTURE");
+            var graph = ok(input("2.4", body.formatted(base))).schema().semanticGraph();
+            var promoted = assertInstanceOf(ClassSymbol.class, named(graph, "Promoted"));
+            assertEquals(named(graph, base).id(), promoted.baseType().orElseThrow());
+        }
+        ok(input("2.3", body.formatted("Nested").replace("EXTENDS Nested = END", "= sub: Nested; END")));
+        ok(input("2.3", body.formatted("Nested").replace("target: REFERENCE TO Target", "target: TEXT")));
+    }
 }

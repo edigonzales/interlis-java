@@ -133,11 +133,12 @@ class RepositoryCliContractTest {
         var digest = ContentDigest.sha256(bytes);
         var source = new guru.interlis.source.SourceId(uri);
         new DirectoryContentStore(root).put(new VerifiedContent(source, digest, bytes));
-        var metadata = Files.createDirectories(root.resolve("metadata-v2"));
-        String name = ContentDigest.sha256(uri.getBytes(StandardCharsets.UTF_8)).value() + ".xml";
-        Files.writeString(metadata.resolve(name), """
-                <interlis-cache version="2" source="%s" response-source="%s" sha256="%s" downloaded-at="2026-01-01T00:00:00Z"/>
-                """.formatted(uri, uri, digest.value()));
+        var url = java.net.URI.create(uri);
+        String key = url.getScheme() + "/" + url.getHost() + url.getRawPath();
+        var directory = Files.createDirectories(root.resolve("by-url").resolve(key));
+        Files.writeString(directory.resolve(".current.xml"), """
+                <interlis-cache version="3" source-key="%s" sha256="%s" downloaded-at="2026-01-01T00:00:00Z"/>
+                """.formatted(key, digest.value()));
     }
 
     @Test void malformedRepositoryOptionsAndLockAreUsageErrors() throws Exception {

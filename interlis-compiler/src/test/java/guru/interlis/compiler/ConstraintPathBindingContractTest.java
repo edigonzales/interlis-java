@@ -284,4 +284,45 @@ class ConstraintPathBindingContractTest {
         }
     }
 
+
+    @Test void localUniquenessNeedsACollectionAlongThePrefix() {
+        String body = "TOPIC T = STRUCTURE Item = code: TEXT*10; END Item; "
+                + "STRUCTURE Group = entry: Item; END Group; "
+                + "CLASS A = groups: Group; UNIQUE (LOCAL) groups->entry: code; END A; END T;";
+        for (String version : List.of("2.3", "2.4")) {
+            for (String invalid : List.of(simple("UNIQUE (LOCAL) detail: code;"), body)) {
+                var rejection = bad(version, invalid);
+                assertTrue(rejection.analysis().diagnostics().stream()
+                        .anyMatch(d -> d.arguments().toString().contains("UNIQUE_LOCAL_PREFIX")));
+            }
+            ok(version, body.replace("entry: Item", "entry: LIST OF Item"));
+            ok(version, body.replace("groups: Group", "groups: BAG OF Group"));
+        }
+    }
+
+    @Test void localUniquenessBindsLineAttributesIn23() {
+        String body = """
+                TOPIC T =
+                    DOMAIN Point = COORD 0.000..100.000, 0.000..100.000;
+                    STRUCTURE LineData = code: TEXT*10; END LineData;
+                    CLASS C =
+                        shape: %s WITH (STRAIGHTS) VERTEX Point
+                            WITHOUT OVERLAPS > 0.100 LINE ATTRIBUTES LineData;
+                        UNIQUE (LOCAL) shape: code;
+                    END C;
+                END T;
+                """;
+        for (String geometry : List.of("SURFACE", "AREA")) {
+            String model = body.formatted(geometry);
+            var graph = ok("2.3", model).schema().semanticGraph();
+            var unique = assertInstanceOf(UniquenessConstraint.class, constraints(graph).getFirst());
+            var local = unique.localKeys().getFirst();
+            var prefix = path(graph, local.prefix());
+            var prefixType = assertInstanceOf(GeometryType.class, graph.type(prefix.typeId()).orElseThrow());
+            var field = assertInstanceOf(PathStep.AttributeStep.class, path(graph, local.fields().getFirst()).path().steps().getFirst());
+            assertEquals(prefixType.lineAttributes(), graph.symbol(field.target()).orElseThrow().owner());
+            bad("2.3", model.replace(" LINE ATTRIBUTES LineData", ""));
+            bad("2.4", model);
+        }
+    }
 }

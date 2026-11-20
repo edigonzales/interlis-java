@@ -19,7 +19,7 @@ public final class HttpSourceLoader implements SourceLoader {
     private static final int MAX_REDIRECTS = 5;
     private final java.net.ProxySelector proxySelector;
     private final java.util.concurrent.ConcurrentMap<java.time.Duration, HttpClient> clients = new java.util.concurrent.ConcurrentHashMap<>();
-    private final ContentStore store;
+    private final DirectoryContentStore store;
     private final DirectoryMetadataStore metadata;
     private final Consumer<RepositoryCacheObservation> observer;
     private final java.time.Clock clock;
@@ -29,15 +29,19 @@ public final class HttpSourceLoader implements SourceLoader {
 
     /** Creates an uncached host loader and captures its non-null proxy choice without network IO. */
     public HttpSourceLoader(RepositoryProxyConfiguration proxy) {
-        this(new InMemoryContentStore(), null, event -> { }, proxy, java.time.Clock.systemUTC());
+        this(null, null, event -> { }, proxy, java.time.Clock.systemUTC());
     }
 
-    HttpSourceLoader(ContentStore store, DirectoryMetadataStore metadata,
+    HttpSourceLoader(DirectoryContentStore store, DirectoryMetadataStore metadata,
                      Consumer<RepositoryCacheObservation> observer, RepositoryProxyConfiguration proxy,
                      java.time.Clock clock) {
         this.clock = Objects.requireNonNull(clock, "clock");
         this.proxySelector = Objects.requireNonNull(proxy, "proxy").selector();
         this.store = store; this.metadata = metadata; this.observer = Objects.requireNonNull(observer, "observer");
+    }
+
+    boolean persistsWith(ContentStore other) {
+        return metadata != null && store == other;
     }
 
     @Override
@@ -58,7 +62,7 @@ public final class HttpSourceLoader implements SourceLoader {
         Objects.requireNonNull(locator, "locator"); Objects.requireNonNull(policy, "policy"); Objects.requireNonNull(token, "token");
         token.throwIfCancellationRequested();
         var id = new SourceId(locator.location());
-        var cached = metadata == null ? Optional.<RepositoryCacheMetadata>empty() : metadata.lookup(id);
+        var cached = metadata == null ? Optional.<DirectoryMetadataStore.Current>empty() : metadata.lookup(id);
         if (policy.offline()) {
             var content = cached.flatMap(m -> store.lookup(m.digest()));
             if (content.isEmpty()) {
@@ -74,7 +78,7 @@ public final class HttpSourceLoader implements SourceLoader {
             if (content.isPresent()) {
                 byte[] bytes = content.orElseThrow().bytes();
                 if (bytes.length > policy.maxBytes()) throw new SourceLoadException(SourceLoadException.Reason.TOO_LARGE, "cached source exceeds byte limit", null);
-                if (request.expectedMd5().filter(md5 -> !md5.equalsIgnoreCase(md5(bytes))).isEmpty()) {
+                if (request.matchesExpectedMd5(bytes)) {
                     var loaded = decode(id, bytes, policy, "verified-cache");
                     token.throwIfCancellationRequested();
                     RepositoryCacheObservation.forSource(RepositoryCacheEvent.FRESH_HIT, id).publishTo(observer);
@@ -126,12 +130,15 @@ public final class HttpSourceLoader implements SourceLoader {
             requireIdentity(response);
             byte[] bytes=response.body();
             var loaded=decode(id,bytes,policy,reusable?"http":"http-no-store");
-            if (metadata!=null) {
-                if (reusable) {
+            if (metadata != null && request.matchesExpectedMd5(bytes)) {
+                if (!reusable) {
+                    metadata.remove(id);
+                } else {
                     var digest=new ContentDigest("sha256",loaded.byteSha256());
-                    store.put(new VerifiedContent(id,digest,bytes));
-                    if (store.lookup(digest).isPresent()) metadata.put(new RepositoryCacheMetadata(id,new SourceId(current.toString()),digest,clock.instant()));
-                } else metadata.remove(id);
+                    if (store.publish(new VerifiedContent(id,digest,bytes))) {
+                        metadata.put(id, digest, clock.instant());
+                    }
+                }
             }
             RepositoryCacheObservation.forSource(RepositoryCacheEvent.DOWNLOAD, id).publishTo(observer);
             return loaded;
@@ -145,16 +152,11 @@ public final class HttpSourceLoader implements SourceLoader {
         }
     }
 
-    private boolean fresh(RepositoryCacheMetadata entry, RepositoryCacheRequest request) {
+    private boolean fresh(DirectoryMetadataStore.Current entry, RepositoryCacheRequest request) {
         var now=clock.instant();
-        return !request.maxAge().isZero() && !entry.downloadedAt().equals(java.time.Instant.EPOCH)
+        return !request.maxAge().isZero()
                 && !entry.downloadedAt().isAfter(now)
                 && java.time.Duration.between(entry.downloadedAt(),now).compareTo(request.maxAge())<=0;
-    }
-
-    private static String md5(byte[] bytes) {
-        try { return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("MD5").digest(bytes)); }
-        catch (java.security.NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
     }
 
     private static boolean reusable(HttpResponse<?> response) {
