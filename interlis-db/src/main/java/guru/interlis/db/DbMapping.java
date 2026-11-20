@@ -436,7 +436,7 @@ final class DbMapping {
                 new AssociationRole(second, roleTarget(plan, association, second)));
         boolean embedded = bindings.stream().anyMatch(AssociationRole::single);
         boolean hasAttributes = association.slots().stream().anyMatch(AttributeSlot.class::isInstance);
-        if ((!embedded || hasAttributes) && bindings.stream().anyMatch(role -> hasClassHierarchy(plan, role.target()))) {
+        if (embedded && hasAttributes && bindings.stream().anyMatch(role -> hasClassHierarchy(plan, role.target()))) {
             throw unsupported("association involving class inheritance at " + association.name().declared());
         }
         return bindings;

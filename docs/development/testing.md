@@ -123,6 +123,10 @@ SQL-Namenskollision, Vorwärtsreferenzen, SQL `NULL` und den Rollback bei
 einem unauflösbaren Ziel. Bei n:m-Assoziationen prüft sie die physische
 Beziehungstabelle, anonyme Links, beide Rollenziele, Vorwärtsreferenzen,
 skalare Attribute je Zielpaar und den Rollback bei einem fehlenden Ziel.
+Bei eigenständigen Links mit Hierarchie-Enden prüft sie polymorphe
+Vorwärtsreferenzen an beiden Rollen, die TIDs und die skalaren Werte.
+Ein Endpunkt aus einem Geschwisterzweig rollt den Datensatz zurück. Beim
+Export bleibt die bisherige Datei bei typ- oder basketfremden Zielen erhalten.
 Für 1:n mit Attributen prüft sie eingebettete Attributwerte, direkte Referenzen,
 fehlende Rollen und den Erhalt der Zieldatei bei mehreren Linkzeilen zum Objekt.
 Bei 1:1-Assoziationen kehren die beiden Sprachfixtures die Deklarationsreihenfolge

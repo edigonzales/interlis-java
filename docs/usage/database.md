@@ -182,6 +182,14 @@ Zeilen erhalten eine gemeinsame SQL-ID und den Basket. `TRAFO` enthält
 beschreiben beide Ziele. XTF überträgt die Links ohne TID. Beide Ziele werden
 am Basketende aufgelöst.
 
+Bei diesen eigenständigen n:m-Assoziationen darf jedes Rollenende eine
+Klasse in einer Hierarchie deklarieren. Die Metadaten bezeichnen die
+physische Tabelle des deklarierten Typs. Die Rollen speichern die gemeinsame
+`T_Id` der konkreten Objekte. Ihre XTF-Referenzen verwenden jeweils die TID
+der Wurzeltabelle. Beide Ziele müssen zum deklarierten Typzweig und zum
+Basket des Links gehören. Eigene skalare Attribute bleiben in der
+Linktabelle.
+
 Beim XTF-2.3-Import mit ili2gpkg 5.5.2 wurden identische Zielpaare zweier
 anonymer Assoziationen derselben Beziehungstabelle zugeordnet. Die
 Mischfixtures verwenden für diese Assoziationen unterschiedliche Zieltypen.

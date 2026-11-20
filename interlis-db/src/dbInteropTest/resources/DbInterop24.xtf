@@ -242,6 +242,9 @@
           <TargetPair><Label>missing</Label></TargetPair>
         </Pairs>
       </RefCarrier>
+      <HierarchyLink><WorkBranch i:ref="legacy-relay"/><StaffRoot i:ref="legacy-serviceunit"/></HierarchyLink>
+      <HierarchyNote><RaisedAt i:ref="legacy-beacon"/><SharedAt i:ref="legacy-serviceunit"/>
+        <Memo>reviewed</Memo><Severity>major</Severity></HierarchyNote>
       <RefNoteBook i:tid="legacy-ref-notebook">
         <Entries>
           <RefNoteLeaf>

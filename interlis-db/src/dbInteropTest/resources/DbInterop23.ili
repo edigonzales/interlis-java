@@ -143,6 +143,16 @@ MODEL DbInterop23 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
       Mentor -- {0..1} Mast;
       Mentee -- {0..*} Tower;
     END MastMentoring;
+    ASSOCIATION HierarchyLink =
+      WorkBranch -- {0..*} Tower;
+      StaffRoot -- {0..*} ServiceBase;
+    END HierarchyLink;
+    ASSOCIATION HierarchyNote =
+      RaisedAt -- {0..*} Mast;
+      SharedAt -- {0..*} ServiceBase;
+      Memo : TEXT*12;
+      Severity : (minor, major);
+    END HierarchyNote;
     STRUCTURE TargetPair =
       Label : TEXT*12;
       RootTarget : REFERENCE TO ServiceBase;

@@ -196,6 +196,10 @@ final class DbInteropTest {
             assertAssociationCatalog(db, sql, model, "Review", Map.of("ReviewMarkers", "marker", "Witness", "hub"));
             assertAssociationCatalog(db, sql, model, "AnnotatedLink",
                     Map.of("ConsultedMarker", "marker", "ConsultedReport", "report"));
+            assertAssociationCatalog(db, sql, model, "HierarchyLink", Map.of("WorkBranch", "tower", "StaffRoot", "servicebase"));
+            assertAssociationCatalog(db, sql, model, "HierarchyNote", Map.of("RaisedAt", "mast", "SharedAt", "servicebase"));
+            assertTypeKind(db, sql, "hierarchynote", "memo", "TEXT");
+            assertTypeKind(db, sql, "hierarchynote", "severity", "ENUM");
             assertTypeKind(db, sql, "review", "memo", "TEXT");
             assertTypeKind(db, sql, "review", "grade", "NUMERIC");
             assertTypeKind(db, sql, "annotatedlink", "memo", "TEXT");
@@ -237,6 +241,7 @@ final class DbInteropTest {
             assertCorruptStructureTargetRejected(db, sql, model, nativeOutput);
             assertCorruptPolymorphicTargetsRejected(db, sql, model, nativeOutput);
             assertCorruptHierarchyRoleRejected(db, sql, model, nativeOutput);
+            assertCorruptHierarchyLinkRejected(db, sql, model, nativeOutput);
             assertCorruptClassHierarchyRejected(db, sql, model, nativeOutput);
             assertCorruptInheritedOwnerRejected(db, sql, model, nativeOutput);
             assertClassHierarchyRollback(db, sql, model, version, fixture);
@@ -457,6 +462,41 @@ final class DbInteropTest {
         assertEquals(target, scalar(sql, "select setting from " + db.table("t_ili2db_column_prop")
                 + " where tablename='" + owner + "' and subtype is null and columnname='" + column
                 + "' and tag='ch.ehi.ili2db.foreignKey'"));
+    }
+
+    private static void assertCorruptHierarchyLinkRejected(TestDatabase db, Connection sql, String model, Path output)
+            throws Exception {
+        String links = db.table("hierarchylink");
+        String mast = db.table("mast");
+        String service = db.table("servicebase");
+        String row = " where t_basket=(select t_basket from " + mast + " where t_ili_tid='legacy-relay')";
+        String branch = scalar(sql, "select workbranch from " + links + row);
+        String staff = scalar(sql, "select staffroot from " + links + row);
+        String sibling = scalar(sql, "select t_id from " + mast + " where t_ili_tid='legacy-beacon'");
+        String otherBasket = scalar(sql, "select t_id from " + service + " where t_ili_tid='native-serviceunit'");
+        try {
+            execute(sql, "update " + links + " set workbranch=" + sibling + row);
+            assertExportRejected(db, model, "legacy", output, "HierarchyLink.WorkBranch");
+            execute(sql, "update " + links + " set workbranch=" + branch + ", staffroot=" + otherBasket + row);
+            assertExportRejected(db, model, "legacy", output, "HierarchyLink.StaffRoot");
+        } finally {
+            execute(sql, "update " + links + " set workbranch=" + branch + ", staffroot=" + staff + row);
+        }
+    }
+
+    private void assertUnresolvedHierarchyLinkRollback(TestDatabase db, Connection sql, String model, int version,
+                                                        String fixture) throws Exception {
+        String ref = version == 24 ? "i:ref" : "REF";
+        String field = "<WorkBranch " + ref + "=";
+        String broken = fixture.replace(field + "\"legacy-relay\"", field + "\"legacy-beacon\"");
+        assertNotEquals(fixture, broken);
+        String dataset = "wrong-hierarchy-link";
+        Path input = Files.writeString(work.resolve(dataset + ".xtf"), broken.replace("legacy-", dataset + "-"));
+        var rejected = cli(db, "import", model, dataset, input, CancellationToken.none());
+        assertEquals(1, rejected.code(), rejected::diagnostics);
+        assertTrue(rejected.diagnostics().contains("HierarchyLink.WorkBranch")
+                && rejected.diagnostics().contains(dataset + "-beacon"), rejected::diagnostics);
+        assertRows(db, sql, version, 2);
     }
 
     private static void assertCorruptPolymorphicTargetsRejected(TestDatabase db, Connection sql, String model, Path output)
@@ -1099,6 +1139,7 @@ final class DbInteropTest {
                 "ConsultedMarker", "AnnotatedLink", "missing-annotated-link", 2);
         assertWrongTargetBranchRollback(db, sql, model, version, fixture);
         assertWrongHierarchyRoleRollback(db, sql, model, version, fixture);
+        assertUnresolvedHierarchyLinkRollback(db, sql, model, version, fixture);
         if (db.postgis && modelDir.equals(STORED_MODELS)) assertPostgresIdDefault(db);
         Path tail = Files.writeString(work.resolve("tail.xtf"), fixture.replace("legacy-", "tail-"));
         reference.run(db, modelDir, "--import", "--importTid", "--importBid", "--dataset", "tail", tail.toString());
@@ -1563,6 +1604,7 @@ final class DbInteropTest {
         assertStoredStructureReferences(db, sql, dataset);
         assertStoredPairing(db, sql, version, dataset);
         assertStoredStandaloneLinks(db, sql, dataset);
+        assertStoredHierarchyLinks(db, sql, dataset);
         assertStoredAttributedLinks(db, sql, dataset, "review", "reviewmarkers", "witness", "hub", "reviewed", nativeImport);
         assertStoredAttributedLinks(db, sql, dataset, "annotatedlink", "consultedmarker", "consultedreport", "report",
                 "confirmed", nativeImport);
@@ -1614,6 +1656,41 @@ final class DbInteropTest {
                 }
             }
             assertFalse(result.next());
+        }
+    }
+
+    private static void assertStoredHierarchyLinks(TestDatabase db, Connection sql, String dataset) throws SQLException {
+        String mast = db.table("mast");
+        String service = db.table("servicebase");
+        String basket = db.table("t_ili2db_basket");
+        String bare = """
+                select m.t_ili_tid, s.t_ili_tid
+                from %s l join %s m on m.t_id=l.workbranch and m.t_basket=l.t_basket
+                join %s t on t.t_id=m.t_id and t.t_basket=l.t_basket
+                join %s s on s.t_id=l.staffroot and s.t_basket=l.t_basket
+                join %s b on b.t_id=l.t_basket where b.t_ili_tid='%s-basket-2'
+                """.formatted(db.table("hierarchylink"), mast, db.table("tower"), service, basket, dataset);
+        String attributed = """
+                select m.t_ili_tid, s.t_ili_tid, n.memo, n.severity
+                from %s n join %s m on m.t_id=n.raisedat and m.t_basket=n.t_basket
+                join %s s on s.t_id=n.sharedat and s.t_basket=n.t_basket
+                join %s b on b.t_id=n.t_basket where b.t_ili_tid='%s-basket-2'
+                """.formatted(db.table("hierarchynote"), mast, service, basket, dataset);
+        try (var statement = sql.createStatement()) {
+            try (var row = statement.executeQuery(bare)) {
+                assertTrue(row.next());
+                assertEquals(dataset + "-relay", row.getString(1));
+                assertEquals(dataset + "-serviceunit", row.getString(2));
+                assertFalse(row.next());
+            }
+            try (var row = statement.executeQuery(attributed)) {
+                assertTrue(row.next());
+                assertEquals(dataset + "-beacon", row.getString(1));
+                assertEquals(dataset + "-serviceunit", row.getString(2));
+                assertEquals("reviewed", row.getString(3));
+                assertEquals("major", row.getString(4));
+                assertFalse(row.next());
+            }
         }
     }
 
@@ -2064,8 +2141,12 @@ final class DbInteropTest {
         assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table("refcarrier")));
         assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("targetpair")));
         tables.addAll(List.of("refcarrier", "targetpair"));
+        for (String table : List.of("hierarchylink", "hierarchynote")) {
+            assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table(table)));
+            tables.add(table);
+        }
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 90 : 79)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 92 : 81)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
     }
 
@@ -2085,6 +2166,8 @@ final class DbInteropTest {
         var markerLinks = new HashSet<List<String>>();
         var annotatedLinks = new HashSet<AnnotatedPair>();
         String markerLinkName = version == 24 ? "MarkerLink" : "DbInterop23.Data.MarkerLink";
+        String hierarchyPrefix = version == 24 ? "" : "DbInterop23.Data.";
+        var hierarchyLinks = new HashSet<String>();
         String annotatedLinkName = version == 24 ? "AnnotatedLink" : "DbInterop23.Data.AnnotatedLink";
         for (Element basket : children(data)) {
             assertEquals(version == 24 ? "Data" : "DbInterop23.Data", basket.getLocalName());
@@ -2104,11 +2187,34 @@ final class DbInteropTest {
                     assertTrue(annotatedLinks.add(transferredAnnotatedLink(object, version)));
                     continue;
                 }
+                if (object.getLocalName().equals(hierarchyPrefix + "HierarchyLink")) {
+                    assertTrue(hierarchyLinks.add("HierarchyLink"));
+                    assertEquals(dataset + "-basket-2", bid);
+                    assertEquals("", tid);
+                    assertEquals(List.of("WorkBranch", "StaffRoot"),
+                            children(object).stream().map(Element::getLocalName).toList());
+                    assertLocalReference(object, "WorkBranch", version, dataset + "-relay");
+                    assertLocalReference(object, "StaffRoot", version, dataset + "-serviceunit");
+                    continue;
+                }
+                if (object.getLocalName().equals(hierarchyPrefix + "HierarchyNote")) {
+                    assertTrue(hierarchyLinks.add("HierarchyNote"));
+                    assertEquals(dataset + "-basket-2", bid);
+                    assertEquals("", tid);
+                    assertEquals(List.of("RaisedAt", "SharedAt", "Memo", "Severity"),
+                            children(object).stream().map(Element::getLocalName).toList());
+                    assertLocalReference(object, "RaisedAt", version, dataset + "-beacon");
+                    assertLocalReference(object, "SharedAt", version, dataset + "-serviceunit");
+                    assertEquals("reviewed", text(object, "Memo"));
+                    assertEquals("major", text(object, "Severity"));
+                    continue;
+                }
                 assertNull(objects.put(tid, object));
                 tids.add(tid);
             }
             assertNull(baskets.put(bid, tids));
         }
+        assertEquals(Set.of("HierarchyLink", "HierarchyNote"), hierarchyLinks);
         assertEquals(expectedMarkerLinks(dataset), markerLinks);
         assertEquals(Set.of(new AnnotatedPair(dataset + "-marker-1", dataset + "-report-1", "confirmed", "-3", "approved"),
                 new AnnotatedPair(dataset + "-marker-2", dataset + "-report-1", hasEmptyText ? "" : null, null, null)),

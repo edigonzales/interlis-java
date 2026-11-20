@@ -175,6 +175,9 @@
           <DbInterop23.Data.TargetPair><Label>missing</Label></DbInterop23.Data.TargetPair>
         </Pairs>
       </DbInterop23.Data.RefCarrier>
+      <DbInterop23.Data.HierarchyLink><WorkBranch REF="legacy-relay"/><StaffRoot REF="legacy-serviceunit"/></DbInterop23.Data.HierarchyLink>
+      <DbInterop23.Data.HierarchyNote><RaisedAt REF="legacy-beacon"/><SharedAt REF="legacy-serviceunit"/>
+        <Memo>reviewed</Memo><Severity>major</Severity></DbInterop23.Data.HierarchyNote>
       <DbInterop23.Data.RefNoteBook TID="legacy-ref-notebook">
         <Entries>
           <DbInterop23.Data.RefNoteLeaf>
