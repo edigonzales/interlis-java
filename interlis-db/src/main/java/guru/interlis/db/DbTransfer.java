@@ -121,7 +121,7 @@ final class DbTransfer {
                 checkStructureHierarchy(db, mapping, table, basketId, token);
             }
             if (table.subtype() || table.object().topic().filter(topic.symbol()::equals).isEmpty()) continue;
-            if (table.hasDiscriminator() && table.object().kind() == SymbolKind.CLASS) {
+            if (table.hasDiscriminator() && table.object().kind() != SymbolKind.STRUCTURE && !mapping.isEmbeddedLink(table)) {
                 writeHierarchyObjects(db, mapping, table, basketId, bid, writer, token);
             } else if (table.object().transferable() && !mapping.isEmbeddedLink(table)) {
                 writeObjects(db, mapping, table, basketId, bid, writer, token);
@@ -204,7 +204,10 @@ final class DbTransfer {
     private static void writeHierarchyObjects(Database db, DbMapping mapping, Table root, long basketId,
                                                BasketId bid, TransferWriter writer, CancellationToken token)
             throws SQLException {
-        var fields = new StringJoiner(", ").add("obj." + T_ID).add("obj." + T_ILI_TID).add("obj." + T_TYPE);
+        boolean hasTid = root.hasTidColumn();
+        var fields = new StringJoiner(", ").add("obj." + T_ID);
+        if (hasTid) fields.add("obj." + T_ILI_TID);
+        fields.add("obj." + T_TYPE);
         var from = new StringBuilder(db.table(root.name())).append(" obj");
         appendColumns(db, mapping, root, "obj", fields, from);
         String sql = "SELECT " + fields + " FROM " + from + " WHERE obj." + T_BASKET
@@ -224,12 +227,14 @@ final class DbTransfer {
                 while (rows.next()) {
                     token.throwIfCancellationRequested();
                     long id = rows.getLong(1);
-                    String tid = identifier(rows.getString(2), "TID", root.name());
-                    var actual = mapping.concreteType(root, rows.getString(3), id);
-                    var values = readFields(db, mapping, rows, 4, root, tid);
+                    int field = 2;
+                    String tid = hasTid ? identifier(rows.getString(field++), "TID", root.name()) : null;
+                    var actual = mapping.concreteType(root, rows.getString(field++), id);
+                    var values = readFields(db, mapping, rows, field, root, tid);
                     fragments.readFor(actual, id, tid, values);
                     structures.readFor(id, tid, values);
-                    var identity = new TransferIdentity(bid, Optional.empty(), Optional.of(new TransferId(tid, IdOrigin.SOURCE)),
+                    var identity = new TransferIdentity(bid, Optional.empty(), Optional.ofNullable(tid)
+                            .map(value -> new TransferId(value, IdOrigin.SOURCE)),
                             Optional.empty(), Optional.empty());
                     var object = new TransferObject(identity, new Structured(actual.object().symbol(), values));
                     writer.write(new TransferEvent.ObjectEvent(object, Optional.empty(), Consistency.COMPLETE), token);
@@ -378,7 +383,7 @@ final class DbTransfer {
     private static void checkHierarchyTopics(Database db, DbMapping mapping, long datasetId, CancellationToken token)
             throws SQLException {
         for (var table : mapping.tables()) {
-            if (table.object().kind() != SymbolKind.CLASS || (!table.hasDiscriminator() && !table.subtype())) continue;
+            if (table.object().kind() == SymbolKind.STRUCTURE || (!table.hasDiscriminator() && !table.subtype())) continue;
             token.throwIfCancellationRequested();
             String sql = "SELECT obj." + T_ID + " FROM " + db.table(table.name()) + " obj JOIN "
                     + db.technicalTable(BASKET) + " basket ON basket." + T_ID + " = obj." + T_BASKET

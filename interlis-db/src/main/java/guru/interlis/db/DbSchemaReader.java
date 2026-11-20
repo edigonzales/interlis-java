@@ -108,7 +108,7 @@ final class DbSchemaReader {
                         continue;
                     }
                 }
-                linkRoles.put(object.symbol(), roles);
+                if (object.baseType().isEmpty()) linkRoles.put(object.symbol(), roles);
             }
             if (!NEW_CLASS.equals(transformation)) {
                 throw new DbException("Missing or inconsistent CLASSNAME/TRAFO mapping for " + path);

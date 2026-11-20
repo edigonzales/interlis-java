@@ -270,7 +270,7 @@ final class DbMapping {
                     associations.add(embedded.orElseThrow());
                     if (!embedded.orElseThrow().linkTable()) continue;
                 }
-                linkRoles.put(object.symbol(), roles);
+                if (object.baseType().isEmpty()) linkRoles.put(object.symbol(), roles);
             }
             names.put(object.symbol(), name);
         }
@@ -287,7 +287,7 @@ final class DbMapping {
             if (roles != null) {
                 for (var role : roles) {
                     String column = allocator.roleColumn(name, role.slot().name().declared().last());
-                    checkColumnName(role.slot(), column, false, false, gpkg);
+                    checkColumnName(role.slot(), column, false, discriminator, gpkg);
                     columns.add(roleColumn(role.slot(), role.target(), column));
                 }
             }
@@ -372,7 +372,7 @@ final class DbMapping {
             if (object.baseType().isPresent()) hierarchy.add(object.symbol());
             boolean supported = switch (object.kind()) {
                 case CLASS -> object.topic().isPresent() && (object.transferable() || bases.contains(object.symbol()));
-                case ASSOCIATION -> object.transferable() && object.baseType().isEmpty();
+                case ASSOCIATION -> supportsAssociation(plan, object, bases);
                 case STRUCTURE -> !object.modifiers().contains(Modifier.ABSTRACT) || bases.contains(object.symbol());
                 default -> false;
             };
@@ -381,6 +381,28 @@ final class DbMapping {
             }
         }
         if (!hierarchy.isEmpty()) checkInheritance(plan, hierarchy);
+    }
+
+    private static boolean supportsAssociation(TransferPlan plan, ObjectDescriptor object, Set<SymbolRef> bases) {
+        if (object.baseType().isEmpty() && !bases.contains(object.symbol())) return object.transferable();
+
+        var root = object.baseType().flatMap(plan::object).orElse(object);
+        if (root.kind() != SymbolKind.ASSOCIATION || root.baseType().isPresent()
+                || !root.modifiers().contains(Modifier.ABSTRACT)
+                || (object.baseType().isPresent() && !object.transferable())
+                || plan.objects().stream().filter(other -> other.baseType().filter(root.symbol()::equals).isPresent())
+                .count() != 1) return false;
+
+        var roles = roleSlots(object);
+        return roles.size() == 2 && roles.stream().map(RoleSlot::symbol).toList()
+                .equals(roleSlots(root).stream().map(RoleSlot::symbol).toList())
+                && roles.stream().allMatch(role -> role.role().aggregation() == RoleAggregation.NONE
+                        && !CardinalityUpper.finite(0).equals(role.role().cardinality().upper())
+                        && !CardinalityUpper.finite(1).equals(role.role().cardinality().upper()));
+    }
+
+    private static List<RoleSlot> roleSlots(ObjectDescriptor association) {
+        return association.slots().stream().filter(RoleSlot.class::isInstance).map(RoleSlot.class::cast).toList();
     }
 
     private static void checkInheritance(TransferPlan plan, Set<SymbolRef> hierarchy) {
@@ -420,9 +442,8 @@ final class DbMapping {
 
     static List<AssociationRole> describeRoles(TransferPlan plan, ObjectDescriptor association) {
         String feature = "association " + association.name().declared();
-        var roles = association.slots().stream().filter(RoleSlot.class::isInstance).map(RoleSlot.class::cast).toList();
-        if (association.kind() != SymbolKind.ASSOCIATION || !association.transferable()
-                || association.baseType().isPresent() || !association.oidRules().isEmpty()
+        var roles = roleSlots(association);
+        if (association.kind() != SymbolKind.ASSOCIATION || !association.oidRules().isEmpty()
                 || association.modifiers().contains(Modifier.OID) || (roles.size() != 2 && roles.size() != 3)) {
             throw unsupported(feature);
         }

@@ -214,6 +214,7 @@ final class DbInteropTest {
                     Map.of("DispatchLeft", "pairleft", "DispatchLocation", "place", "DispatchMast", "tower"));
             assertTypeKind(db, sql, "dispatchrecord", "memo", "TEXT");
             assertTypeKind(db, sql, "dispatchrecord", "severity", "ENUM");
+            assertAssociationHierarchyCatalog(db, sql, model);
             assertTypeKind(db, sql, "review", "memo", "TEXT");
             assertTypeKind(db, sql, "review", "grade", "NUMERIC");
             assertTypeKind(db, sql, "annotatedlink", "memo", "TEXT");
@@ -258,6 +259,7 @@ final class DbInteropTest {
             assertCorruptHierarchyLinkRejected(db, sql, model, nativeOutput);
             assertCorruptTernaryLinkRejected(db, sql, model, nativeOutput);
             assertCorruptClassHierarchyRejected(db, sql, model, nativeOutput);
+            assertMissingAssociationFragmentRejected(db, sql, model, nativeOutput);
             assertCorruptInheritedOwnerRejected(db, sql, model, nativeOutput);
             assertClassHierarchyRollback(db, sql, model, version, fixture);
             assertUnresolvedHierarchyReferenceRollback(db, sql, model, version, fixture);
@@ -361,6 +363,39 @@ final class DbInteropTest {
                         + "' and table_name='" + table + "' and column_name='t_ili_tid'"
                 : "select name from pragma_table_info('" + table + "') where lower(name)='t_ili_tid'";
         assertNull(scalar(sql, identityColumn));
+    }
+
+    private static void assertAssociationHierarchyCatalog(TestDatabase db, Connection sql, String model)
+            throws SQLException {
+        assertAssociationCatalog(db, sql, model, "AllocationBase",
+                Map.of("ListedSite", "contractsite", "ListedSigner", "contractsigner"));
+        String prefix = model + ".Data.";
+        assertEquals(prefix + "AllocationBase", scalar(sql, "select baseclass from " + db.table("t_ili2db_inheritance")
+                + " where thisclass='" + prefix + "TaggedAllocation'"));
+        String properties = db.table("t_ili2db_column_prop");
+        assertEquals("allocationbase", scalar(sql, "select setting from " + properties
+                + " where tablename='taggedallocation' and lower(columnname)='t_id' and tag='ch.ehi.ili2db.foreignKey'"));
+        assertEquals("[\"taggedallocation\"]", scalar(sql, "select setting from " + properties
+                + " where tablename='allocationbase' and lower(columnname)='t_type' and tag='ch.ehi.ili2db.types'"));
+        String names = db.table("t_ili2db_attrname");
+        assertEquals("allocationbase", scalar(sql, "select colowner from " + names
+                + " where iliname='" + prefix + "AllocationBase.BaseNote'"));
+        assertEquals("taggedallocation", scalar(sql, "select colowner from " + names
+                + " where iliname='" + prefix + "TaggedAllocation.DetailRank'"));
+    }
+
+    private static void assertMissingAssociationFragmentRejected(TestDatabase db, Connection sql, String model, Path output)
+            throws Exception {
+        String basket = scalar(sql, "select t_id from " + db.table("t_ili2db_basket") + " where t_ili_tid='legacy-basket-2'");
+        String id = scalar(sql, "select t_id from " + db.table("allocationbase") + " where t_basket=" + basket);
+        assertNotNull(id);
+        String leaf = db.table("taggedallocation");
+        execute(sql, "delete from " + leaf + " where t_id=" + id);
+        try {
+            assertExportRejected(db, model, "legacy", output, "Missing inheritance fragment in taggedallocation");
+        } finally {
+            execute(sql, "insert into " + leaf + " (t_id,t_basket,detailrank) values (" + id + "," + basket + ",17)");
+        }
     }
 
     private static void assertPairingCatalog(TestDatabase db, Connection sql, String model, int version) throws SQLException {
@@ -1701,6 +1736,7 @@ final class DbInteropTest {
         assertStoredEmbeddedLink(db, sql, "rating", "ratingforms", "ratingform", dataset + "-ratingform-3",
                 "rated", "mast", null, null);
         assertStoredTernaryLink(db, sql, dataset);
+        assertStoredAssociationHierarchy(db, sql, dataset);
         assertStoredAttributedLinks(db, sql, dataset, "review", "reviewmarkers", "witness", "hub", "reviewed", nativeImport);
         assertStoredAttributedLinks(db, sql, dataset, "annotatedlink", "consultedmarker", "consultedreport", "report",
                 "confirmed", nativeImport);
@@ -1830,6 +1866,27 @@ final class DbInteropTest {
             }
         }
         assertEquals(expectedMarkerLinks(dataset), pairs);
+    }
+
+    private static void assertStoredAssociationHierarchy(TestDatabase db, Connection sql, String dataset)
+            throws SQLException {
+        String rows = """
+                select a.t_type, s.t_ili_tid, g.t_ili_tid, a.basenote, t.detailrank from %s a
+                join %s t on t.t_id=a.t_id and t.t_basket=a.t_basket
+                join %s s on s.t_id=a.listedsite and s.t_basket=a.t_basket
+                join %s g on g.t_id=a.listedsigner and g.t_basket=a.t_basket
+                join %s b on b.t_id=a.t_basket where b.t_ili_tid='%s-basket-2'
+                """.formatted(db.table("allocationbase"), db.table("taggedallocation"), db.table("contractsite"),
+                db.table("contractsigner"), db.table("t_ili2db_basket"), dataset);
+        try (var statement = sql.createStatement(); var result = statement.executeQuery(rows)) {
+            assertTrue(result.next());
+            assertEquals("taggedallocation", result.getString(1));
+            assertEquals(dataset + "-contract-site", result.getString(2));
+            assertEquals(dataset + "-contract-signer", result.getString(3));
+            assertEquals("base allocation", result.getString(4));
+            assertEquals("17", result.getString(5));
+            assertFalse(result.next());
+        }
     }
 
     private static void assertStoredPairing(TestDatabase db, Connection sql, int version, String dataset) throws SQLException {
@@ -2304,8 +2361,12 @@ final class DbInteropTest {
         tables.addAll(List.of("ratingform", "rating"));
         assertTableRows(db, sql, "serviceaggregation", datasets);
         tables.add("serviceaggregation");
+        for (String table : List.of("allocationbase", "taggedallocation", "contractsite", "contractsigner")) {
+            assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table(table)));
+            tables.add(table);
+        }
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 104 : 93)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 107 : 96)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
     }
 
@@ -2334,6 +2395,8 @@ final class DbInteropTest {
         String annotatedLinkName = version == 24 ? "AnnotatedLink" : "DbInterop23.Data.AnnotatedLink";
         String aggregationName = version == 24 ? "ServiceAggregation" : "DbInterop23.Data.ServiceAggregation";
         int aggregations = 0;
+        String allocationName = version == 24 ? "TaggedAllocation" : "DbInterop23.Data.TaggedAllocation";
+        int allocations = 0;
         for (Element basket : children(data)) {
             assertEquals(version == 24 ? "Data" : "DbInterop23.Data", basket.getLocalName());
             String bid = id(basket, version, "bid");
@@ -2395,6 +2458,16 @@ final class DbInteropTest {
                     assertEquals("minor", text(object, "Severity"));
                     continue;
                 }
+                if (object.getLocalName().equals(allocationName)) {
+                    assertEquals("", tid);
+                    assertEquals(dataset + "-basket-2", bid);
+                    assertLocalReference(object, "ListedSite", version, dataset + "-contract-site");
+                    assertLocalReference(object, "ListedSigner", version, dataset + "-contract-signer");
+                    assertEquals("base allocation", text(object, "BaseNote"));
+                    assertEquals("17", text(object, "DetailRank"));
+                    allocations++;
+                    continue;
+                }
                 assertNull(objects.put(tid, object));
                 tids.add(tid);
             }
@@ -2403,6 +2476,7 @@ final class DbInteropTest {
         assertEquals(Set.of("HierarchyLink", "HierarchyNote", "DispatchRecord"), hierarchyLinks);
         assertEquals(expectedMarkerLinks(dataset), markerLinks);
         assertEquals(1, aggregations);
+        assertEquals(1, allocations);
         assertEquals(Set.of(new AnnotatedPair(dataset + "-marker-1", dataset + "-report-1", "confirmed", "-3", "approved"),
                 new AnnotatedPair(dataset + "-marker-2", dataset + "-report-1", hasEmptyText ? "" : null, null, null)),
                 annotatedLinks);
@@ -2428,6 +2502,7 @@ final class DbInteropTest {
         var secondBasket = new HashSet<>(Set.of(third, noLine, noSurface, noArea, secondReport, dataset + "-marker-3",
                 dataset + "-nested-1", dataset + "-nested-2", dataset + "-typed-1", dataset + "-typed-2",
                 dataset + "-pairleft-1", dataset + "-pairleft-2", dataset + "-pairright-1"));
+        secondBasket.addAll(List.of(dataset + "-contract-site", dataset + "-contract-signer"));
         if (version == 24) {
             firstBasket.add(link);
             for (String table : List.of("park", "district", "routegroup", "survey")) {

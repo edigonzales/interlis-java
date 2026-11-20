@@ -234,6 +234,13 @@
       </DbInterop23.Data.Relay>
       <DbInterop23.Data.ServiceUnit TID="legacy-serviceunit-2"><Label>second</Label></DbInterop23.Data.ServiceUnit>
       <DbInterop23.Data.ServiceUnit TID="legacy-serviceunit-3"><Label>third</Label></DbInterop23.Data.ServiceUnit>
+      <DbInterop23.Data.TaggedAllocation>
+        <ListedSite REF="legacy-contract-site"/>
+        <ListedSigner REF="legacy-contract-signer"/>
+        <BaseNote>base allocation</BaseNote><DetailRank>17</DetailRank>
+      </DbInterop23.Data.TaggedAllocation>
+      <DbInterop23.Data.ContractSite TID="legacy-contract-site"/>
+      <DbInterop23.Data.ContractSigner TID="legacy-contract-signer"/>
     </DbInterop23.Data>
   </DATASECTION>
 </TRANSFER>

@@ -206,5 +206,17 @@ MODEL DbInterop23 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
       TaggedForm -- {0..1} RatingForm;
       Memo : TEXT*16;
     END RatingTag;
+    CLASS ContractSite =
+    END ContractSite;
+    CLASS ContractSigner =
+    END ContractSigner;
+    ASSOCIATION AllocationBase (ABSTRACT) =
+      ListedSite -- {0..*} ContractSite;
+      ListedSigner -- {0..*} ContractSigner;
+      BaseNote : TEXT*40;
+    END AllocationBase;
+    ASSOCIATION TaggedAllocation EXTENDS AllocationBase =
+      DetailRank : 0 .. 20;
+    END TaggedAllocation;
   END Data;
 END DbInterop23.

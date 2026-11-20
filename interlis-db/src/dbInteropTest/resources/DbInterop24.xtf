@@ -313,6 +313,13 @@
       </Relay>
       <ServiceUnit i:tid="legacy-serviceunit-2"><Label>second</Label><TaggedForm i:ref="legacy-ratingform-2"/></ServiceUnit>
       <ServiceUnit i:tid="legacy-serviceunit-3"><Label>third</Label></ServiceUnit>
+      <TaggedAllocation>
+        <ListedSite i:ref="legacy-contract-site"/>
+        <ListedSigner i:ref="legacy-contract-signer"/>
+        <BaseNote>base allocation</BaseNote><DetailRank>17</DetailRank>
+      </TaggedAllocation>
+      <ContractSite i:tid="legacy-contract-site"/>
+      <ContractSigner i:tid="legacy-contract-signer"/>
     </Data>
   </i:datasection>
 </i:transfer>

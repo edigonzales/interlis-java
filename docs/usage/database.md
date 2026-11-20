@@ -195,6 +195,14 @@ der Wurzeltabelle. Beide Ziele müssen zum deklarierten Typzweig und zum
 Basket des Links gehören. Eigene skalare Attribute bleiben in der
 Linktabelle.
 
+Eine eigenständige n:m-Assoziation kann von einer abstrakten
+Basisassoziation mit denselben beiden `--`-Rollen erben. Das Profil unterstützt
+eine direkte konkrete Erweiterung mit skalaren Attributen. Die
+Wurzeltabelle speichert beide Rollenschlüssel, die deklarierten Attribute
+der Basis und `T_Type`. Die Erweiterungstabelle speichert ihre eigenen
+Attribute unter derselben `T_Id` und im selben Basket. Im XTF erscheint
+der konkrete Linktyp ohne TID.
+
 Eigenständige Assoziationen können auch drei lokale, ungeordnete `--`-Rollen
 mit einer Obergrenze grösser als eins haben. Ihre Linktabelle speichert
 die drei Rollen in Deklarationsreihenfolge und danach die eigenen skalaren

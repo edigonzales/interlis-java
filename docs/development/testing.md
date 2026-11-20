@@ -151,6 +151,10 @@ Bei Klassenvererbung prüft die Suite konkrete und abstrakte Basisklassen,
 Geschwistertypen, mehrstufige Pfade, den Diskriminator und die gemeinsame ID
 der Teilzeilen. Beschädigte Daten und Vererbungsmetadaten müssen den
 Export abbrechen und eine bestehende Zieldatei erhalten.
+Bei einer erweiterten eigenständigen Assoziation prüft die Suite
+die gemeinsame `T_Id`, den konkreten Linktyp ohne TID, beide physischen
+Rollenzuordnungen und die Attributwerte der beiden Deklarationstabellen.
+Fehlt eine Erweiterungszeile, bleibt die bisherige XTF-Datei erhalten.
 Geometrien in Klassenhierarchien werden anhand ihrer Deklarationstabellen,
 der räumlichen Katalogeinträge, der Koordinaten und der Werte im XTF-Objekt
 geprüft. Die Suite deckt mehrere Geometrien auf einem Tabellenpfad, fehlende
