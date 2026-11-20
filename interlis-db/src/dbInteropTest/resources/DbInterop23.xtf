@@ -7,14 +7,86 @@
   </HEADERSECTION>
   <DATASECTION>
     <DbInterop23.Data BID="legacy-basket-1">
+      <DbInterop23.Data.Route TID="legacy-route-1">
+        <Trace><POLYLINE>
+          <COORD><C1>2600123.125</C1><C2>1200456.375</C2></COORD>
+          <COORD><C1>2600345.250</C1><C2>1200678.500</C2></COORD>
+          <COORD><C1>2600567.625</C1><C2>1200456.750</C2></COORD>
+        </POLYLINE></Trace>
+      </DbInterop23.Data.Route>
+      <DbInterop23.Data.Route TID="legacy-route-3">
+        <Trace><POLYLINE>
+          <COORD><C1>2600500.125</C1><C2>1200500.250</C2></COORD>
+          <ARC><C1>2600510.125</C1><C2>1200500.250</C2><A1>2600505.125</A1><A2>1200505.250</A2></ARC>
+          <ARC><C1>2600520.125</C1><C2>1200500.250</C2><A1>2600515.125</A1><A2>1200495.250</A2></ARC>
+        </POLYLINE></Trace>
+      </DbInterop23.Data.Route>
+      <DbInterop23.Data.Route TID="legacy-route-4">
+        <Trace><POLYLINE>
+          <COORD><C1>2600600.500</C1><C2>1200600.250</C2></COORD>
+          <COORD><C1>2600610.500</C1><C2>1200600.250</C2></COORD>
+          <ARC><C1>2600620.500</C1><C2>1200600.250</C2><A1>2600615.500</A1><A2>1200605.250</A2></ARC>
+          <COORD><C1>2600630.500</C1><C2>1200600.250</C2></COORD>
+        </POLYLINE></Trace>
+      </DbInterop23.Data.Route>
       <DbInterop23.Data.Place TID="legacy-place-1">
         <Select>Brücke</Select><Active>true</Active><Count>-7</Count><Status>approved</Status>
         <Geometry><COORD><C1>2600000.125</C1><C2>1200000.375</C2></COORD></Geometry>
       </DbInterop23.Data.Place>
       <DbInterop23.Data.Place TID="legacy-place-2"><Select></Select><Active>false</Active></DbInterop23.Data.Place>
+      <DbInterop23.Data.Plot TID="legacy-plot-1">
+        <Footprint><SURFACE>
+          <BOUNDARY>
+            <POLYLINE>
+              <COORD><C1>2601000.125</C1><C2>1201000.375</C2></COORD>
+              <COORD><C1>2601040.250</C1><C2>1201000.375</C2></COORD>
+              <COORD><C1>2601040.250</C1><C2>1201040.500</C2></COORD>
+            </POLYLINE>
+            <POLYLINE>
+              <COORD><C1>2601040.25</C1><C2>1201040.5</C2></COORD>
+              <COORD><C1>2601000.125</C1><C2>1201040.500</C2></COORD>
+              <COORD><C1>2601000.125</C1><C2>1201000.375</C2></COORD>
+            </POLYLINE>
+          </BOUNDARY>
+          <BOUNDARY><POLYLINE>
+            <COORD><C1>2601008.125</C1><C2>1201010.375</C2></COORD>
+            <COORD><C1>2601008.125</C1><C2>1201028.625</C2></COORD>
+            <COORD><C1>2601020.250</C1><C2>1201020.500</C2></COORD>
+            <COORD><C1>2601008.125</C1><C2>1201010.375</C2></COORD>
+          </POLYLINE></BOUNDARY>
+        </SURFACE></Footprint>
+      </DbInterop23.Data.Plot>
+      <DbInterop23.Data.Plot TID="legacy-plot-2">
+        <Footprint><SURFACE><BOUNDARY><POLYLINE>
+          <COORD><C1>2601200.250</C1><C2>1201200.625</C2></COORD>
+          <ARC><C1>2601220.250</C1><C2>1201200.625</C2><A1>2601210.250</A1><A2>1201190.625</A2></ARC>
+          <COORD><C1>2601200.250</C1><C2>1201200.625</C2></COORD>
+        </POLYLINE></BOUNDARY></SURFACE></Footprint>
+      </DbInterop23.Data.Plot>
+      <DbInterop23.Data.Parcel TID="legacy-parcel-1">
+        <Boundary><SURFACE><BOUNDARY><POLYLINE>
+          <COORD><C1>2602000.125</C1><C2>1202000.250</C2></COORD>
+          <COORD><C1>2602020.250</C1><C2>1202000.250</C2></COORD>
+          <COORD><C1>2602020.250</C1><C2>1202020.750</C2></COORD>
+          <COORD><C1>2602000.125</C1><C2>1202020.750</C2></COORD>
+          <COORD><C1>2602000.125</C1><C2>1202000.250</C2></COORD>
+        </POLYLINE></BOUNDARY></SURFACE></Boundary>
+      </DbInterop23.Data.Parcel>
+      <DbInterop23.Data.Parcel TID="legacy-parcel-2">
+        <Boundary><SURFACE><BOUNDARY><POLYLINE>
+          <COORD><C1>2602020.250</C1><C2>1202000.250</C2></COORD>
+          <COORD><C1>2602040.500</C1><C2>1202000.250</C2></COORD>
+          <COORD><C1>2602040.500</C1><C2>1202020.750</C2></COORD>
+          <COORD><C1>2602020.250</C1><C2>1202020.750</C2></COORD>
+          <COORD><C1>2602020.250</C1><C2>1202000.250</C2></COORD>
+        </POLYLINE></BOUNDARY></SURFACE></Boundary>
+      </DbInterop23.Data.Parcel>
     </DbInterop23.Data>
     <DbInterop23.Data BID="legacy-basket-2">
       <DbInterop23.Data.Place TID="legacy-place-3"/>
+      <DbInterop23.Data.Route TID="legacy-route-2"/>
+      <DbInterop23.Data.Plot TID="legacy-plot-3"/>
+      <DbInterop23.Data.Parcel TID="legacy-parcel-3"/>
     </DbInterop23.Data>
   </DATASECTION>
 </TRANSFER>

@@ -11,16 +11,22 @@ import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
 import guru.interlis.model.CardinalityUpper;
 import guru.interlis.model.CoordinateType;
+import guru.interlis.model.DomainSymbol;
 import guru.interlis.model.EnumerationType;
+import guru.interlis.model.GeometryKind;
+import guru.interlis.model.GeometryType;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.NumericType;
+import guru.interlis.model.Origin;
 import guru.interlis.model.ReferenceType;
+import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.model.TextKind;
 import guru.interlis.model.TextType;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeKind;
+import guru.interlis.model.TypeRef;
 import guru.interlis.source.SourceText;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
@@ -32,6 +38,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -43,7 +50,20 @@ import static guru.interlis.db.Ili2dbLayout.reservedTable;
 
 /** The SQL names and storage bindings for a checked transfer plan. */
 final class DbMapping {
-    enum Kind { TEXT, BOOLEAN, INTEGER, ENUMERATION, POINT, REFERENCE }
+    enum Kind {
+        TEXT, BOOLEAN, INTEGER, ENUMERATION, POINT, POLYLINE, SURFACE, REFERENCE;
+
+        boolean geometry() { return this == POINT || this == POLYLINE || this == SURFACE; }
+
+        String geometryType() {
+            return switch (this) {
+                case POINT -> "POINT";
+                case POLYLINE -> "COMPOUNDCURVE";
+                case SURFACE -> "CURVEPOLYGON";
+                default -> throw new IllegalStateException("Expected a geometry kind: " + this);
+            };
+        }
+    }
 
     record Column(AttributeSlot slot, String name, Kind kind, TypeDescriptor effectiveType,
                   Optional<SymbolRef> target, int srsId) {
@@ -54,7 +74,7 @@ final class DbMapping {
     record Table(ObjectDescriptor object, String name, List<Column> columns) {
         Table {
             columns = List.copyOf(columns);
-            if (columns.stream().filter(column -> column.kind() == Kind.POINT).count() > 1) {
+            if (columns.stream().filter(column -> column.kind().geometry()).count() > 1) {
                 throw unsupported("multiple geometries in " + object.name().declared());
             }
         }
@@ -105,7 +125,7 @@ final class DbMapping {
                             + attribute.name().declared());
                 }
                 var binding = describeColumn(plan, object, attribute, column);
-                columns.add(binding.kind() == Kind.POINT ? binding.withSrsId(LV95) : binding);
+                columns.add(binding.kind().geometry() ? binding.withSrsId(LV95) : binding);
             }
             tables.add(new Table(object, name, columns));
         }
@@ -171,8 +191,9 @@ final class DbMapping {
             case TextType text when text.textKind() == TextKind.TEXT || text.textKind() == TextKind.MTEXT -> Kind.TEXT;
             case NumericType number when int32(number) -> Kind.INTEGER;
             case EnumerationType enumeration -> Kind.ENUMERATION;
-            case CoordinateType point when point.dimensions() == 2 && !point.multiCoordinate()
-                    && optional(attr) -> Kind.POINT;
+            case CoordinateType point when xy(point) && optional(attr) -> Kind.POINT;
+            case GeometryType geometry when optional(attr) && supportedCurveGeometry(plan, geometry, path) ->
+                    geometry.geometryKind() == GeometryKind.POLYLINE ? Kind.POLYLINE : Kind.SURFACE;
             case ReferenceType reference when !reference.external() && reference.target().isPresent()
                     && reference.restrictions().isEmpty() && optional(attr) -> Kind.REFERENCE;
             default -> {
@@ -189,6 +210,62 @@ final class DbMapping {
             target = Optional.of(symbol);
         }
         return new Column(attr, name, kind, type, target, 0);
+    }
+
+    private static boolean xy(CoordinateType coordinate) {
+        return coordinate.dimensions() == 2 && !coordinate.multiCoordinate();
+    }
+
+    private static boolean supportedCurveGeometry(TransferPlan plan, GeometryType geometry, String path) {
+        var kind = geometry.geometryKind();
+        if ((kind != GeometryKind.POLYLINE && kind != GeometryKind.SURFACE && kind != GeometryKind.AREA)
+                || geometry.lineAttributes().isPresent() || geometry.lineForms().isEmpty()
+                || geometry.vertexDomain().isEmpty()) {
+            return false;
+        }
+        for (var id : geometry.lineForms()) {
+            var form = plan.symbol(new SymbolRef(plan.snapshotId(), id)).known().orElseThrow();
+            if (!(form.origin() instanceof Origin.PredefinedOrigin predefined)
+                    || !(predefined.key().equals("INTERLIS.STRAIGHTS") || predefined.key().equals("INTERLIS.ARCS"))) {
+                return false;
+            }
+        }
+        var domain = vertexDomain(plan, geometry);
+        var type = plan.type(new TypeRef(plan.snapshotId(), domain.typeId())).known().orElseThrow();
+        if (domain.generic() || !(type instanceof CoordinateType coordinates) || !xy(coordinates)) {
+            return false;
+        }
+        validateGeometryCrs(plan, coordinates, domain, kind.name().toLowerCase(Locale.ROOT), path);
+        return true;
+    }
+
+    static DomainSymbol vertexDomain(TransferPlan plan, GeometryType geometry) {
+        return (DomainSymbol) plan.symbol(new SymbolRef(plan.snapshotId(), geometry.vertexDomain().orElseThrow()))
+                .known().orElseThrow();
+    }
+
+    static void validateGeometryCrs(TransferPlan plan, CoordinateType coordinates, Symbol declaration,
+                                    String geometry, String path) {
+        String crs = coordinates.referenceSystem().orElse(null);
+        if (crs == null) crs = metaText(declaration, "CRS");
+        if (crs == null) crs = metaText(plan.symbol(plan.rootModels().getFirst()).known().orElseThrow(), "CRS");
+        if (crs != null && !isLv95(crs)) {
+            throw new DbException("Expected an EPSG:2056 " + geometry + " at " + path);
+        }
+    }
+
+    static String metaText(Symbol symbol, String key) {
+        var value = symbol.header().metaAttributes().values().get(key);
+        return value == null ? null : value.text();
+    }
+
+    private static boolean isLv95(String crs) {
+        if (!crs.startsWith("EPSG:")) return false;
+        try {
+            return Integer.parseInt(crs.substring(5)) == LV95;
+        } catch (NumberFormatException invalid) {
+            return false;
+        }
     }
 
     private static boolean optional(AttributeSlot attr) {

@@ -41,7 +41,7 @@ final class SchemaSql {
     static void createPostgres(Database db, SchemaPlan plan, CancellationToken token) throws SQLException {
         String schema = db.schema();
         checkPostgresSchemaName(db.connection(), schema);
-        if (!plan.pointColumns().isEmpty()) {
+        if (!plan.geometryColumns().isEmpty()) {
             checkPostgresSrs(db);
         }
         var dialect = new Dialect(false, schema, db.postgisObject("geometry"));
@@ -85,7 +85,7 @@ final class SchemaSql {
 
     static void createGeoPackageTables(Connection connection, SchemaPlan plan, CancellationToken token)
             throws SQLException {
-        var dialect = new Dialect(true, "main", "POINT");
+        var dialect = new Dialect(true, "main", "");
         apply(connection, plan, dialect, ddl(plan, dialect), token);
     }
 
@@ -225,7 +225,7 @@ final class SchemaSql {
         statement.executeUpdate();
     }
 
-    private record Dialect(boolean gpkg, String schema, String geometryType) {
+    private record Dialect(boolean gpkg, String schema, String postgisGeometryType) {
         String table(String name) {
             return quote(schema) + "." + quote(Ili2dbLayout.tableName(name, gpkg));
         }
@@ -275,7 +275,10 @@ final class SchemaSql {
                 case INTEGER -> "INTEGER";
                 case ENUMERATION -> text(255);
                 case REFERENCE -> idType();
-                case POINT -> gpkg ? geometryType : geometryType + "(POINT, " + column.srsId() + ")";
+                case POINT, POLYLINE, SURFACE -> {
+                    String type = column.kind().geometryType();
+                    yield gpkg ? type : postgisGeometryType + "(" + type + ", " + column.srsId() + ")";
+                }
                 case TEXT -> {
                     var type = (TextType) column.effectiveType();
                     int length = type.maxLength().orElse(0);

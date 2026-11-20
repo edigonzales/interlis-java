@@ -10,7 +10,7 @@ import guru.interlis.transfer.TopicDescriptor;
 import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferEvent.BasketKind;
 import guru.interlis.transfer.TransferEvent.Consistency;
-import guru.interlis.transfer.TransferGeometry.Coordinate;
+import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TransferIdentity;
 import guru.interlis.transfer.TransferIdentity.BasketId;
 import guru.interlis.transfer.TransferIdentity.IdOrigin;
@@ -119,7 +119,7 @@ final class DbTransfer {
         for (var column : table.columns()) {
             String field = "obj." + quote(column.name());
             switch (column.kind()) {
-                case POINT -> projections.add(db.pointProjection(field));
+                case POINT, POLYLINE, SURFACE -> projections.add(db.geometryProjection(field, column.kind()));
                 case REFERENCE -> {
                     String alias = "ref" + refIndex++;
                     var target = mapping.table(column.target().orElseThrow());
@@ -160,7 +160,7 @@ final class DbTransfer {
 
     private static TransferValue readValue(Database db, ResultSet rows, int index, Column column) throws SQLException {
         return switch (column.kind()) {
-            case POINT -> db.readPoint(rows, index, column.srsId());
+            case POINT, POLYLINE, SURFACE -> db.readGeometry(rows, index, column);
             case BOOLEAN -> readBoolean(db, rows, index, column);
             case INTEGER -> readInteger(rows.getString(index), column);
             case ENUMERATION -> readEnumeration(rows.getString(index), column);
@@ -387,7 +387,7 @@ final class DbTransfer {
                 var values = new StringJoiner(", ").add("?").add("?").add("?");
                 for (var column : table.columns()) {
                     names.add(quote(column.name()));
-                    values.add(column.kind() == DbMapping.Kind.POINT ? db.pointParameter() : "?");
+                    values.add(column.kind().geometry() ? db.geometryParameter() : "?");
                 }
                 statement = db.connection().prepareStatement("INSERT INTO " + db.table(table.name())
                         + " (" + names + ") VALUES (" + values + ")");
@@ -398,8 +398,8 @@ final class DbTransfer {
 
         private int bindValue(PreparedStatement statement, int index, Column column, TransferValue value)
                 throws SQLException {
-            if (column.kind() == DbMapping.Kind.POINT) {
-                return db.bindPoint(statement, index, (Coordinate) value, column.srsId());
+            if (column.kind().geometry()) {
+                return db.bindGeometry(statement, index, column, (TransferGeometry) value);
             }
             if (value == null) {
                 statement.setNull(index, Types.NULL);
@@ -417,7 +417,8 @@ final class DbTransfer {
                                 + column.slot().name().declared(), e);
                     }
                 }
-                case POINT, REFERENCE -> throw new DbException("Unsupported value for " + column.slot().name().declared());
+                case POINT, POLYLINE, SURFACE, REFERENCE ->
+                        throw new DbException("Unsupported value for " + column.slot().name().declared());
             }
             return index + 1;
         }

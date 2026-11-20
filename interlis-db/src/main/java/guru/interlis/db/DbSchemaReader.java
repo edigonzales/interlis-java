@@ -263,7 +263,7 @@ final class DbSchemaReader {
             throw new DbException("Unexpected ATTRNAME.target for " + path);
         }
         requireColumns(db, table, physical, Map.of(column.name(), column.kind()));
-        return column.kind() == Kind.POINT ? column.withSrsId(db.pointSrs(table, column.name())) : column;
+        return column.kind().geometry() ? column.withSrsId(db.geometrySrs(table, column)) : column;
     }
 
     private static void checkSystemTables(Database db) throws SQLException {
@@ -323,7 +323,8 @@ final class DbSchemaReader {
                         || type.equals("smallint");
                 case REFERENCE -> type.equals("integer") || type.equals("int4") || type.equals("int8")
                         || type.equals("bigint") || type.equals("bigserial") || type.equals("serial");
-                case POINT -> type.equals(db.gpkg() ? "point" : "geometry");
+                case POINT, POLYLINE, SURFACE ->
+                        db.gpkg() ? type.equalsIgnoreCase(kind.geometryType()) : type.equals("geometry");
             };
             if (!supported) throw new DbException("Unsupported SQL type for " + table + "." + name + " (" + type + ")");
         });

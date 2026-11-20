@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Compare the stored profile and database shape while ignoring record order and timestamps. */
 record DbSchemaCatalog(Map<String, Set<List<String>>> relations) {
@@ -89,6 +90,16 @@ record DbSchemaCatalog(Map<String, Set<List<String>>> relations) {
                 t_ili2db_settings where tag not in ('ch.ehi.ili2db.sender', 'ch.interlis.ili2c.ilidirs')
                 """));
         return new DbSchemaCatalog(catalog);
+    }
+
+    DbSchemaCatalog expectGeoPackageGeometryExtension(String table, String column, String geometryType) {
+        // ili2gpkg 5.5.2 omits the extension rows required by GeoPackage for non-linear types.
+        var expected = new LinkedHashMap<>(relations);
+        var extensions = new HashSet<>(expected.get("gpkg_extensions"));
+        assertTrue(extensions.add(List.of(table, column, "gpkg_geom_" + geometryType,
+                "https://www.geopackage.org/spec131/#extension_geometry_types", "read-write")));
+        expected.put("gpkg_extensions", extensions);
+        return new DbSchemaCatalog(expected);
     }
 
     void assertSameAs(DbSchemaCatalog actual) {

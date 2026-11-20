@@ -99,7 +99,12 @@ final class GeoPackageSchema {
                  """);
              var geometry = connection.prepareStatement("""
                  INSERT INTO gpkg_geometry_columns (table_name, column_name, geometry_type_name, srs_id, z, m)
-                 VALUES (?, ?, 'POINT', ?, 0, 0)
+                 VALUES (?, ?, ?, ?, 0, 0)
+                 """);
+             var extension = connection.prepareStatement("""
+                 INSERT INTO gpkg_extensions (table_name, column_name, extension_name, definition, scope)
+                 VALUES (?, ?, ?, 'https://www.geopackage.org/spec131/#extension_geometry_types',
+                         'read-write')
                  """)) {
             for (String table : Ili2dbLayout.METADATA_TABLES) {
                 token.throwIfCancellationRequested();
@@ -108,11 +113,18 @@ final class GeoPackageSchema {
             registerAttributes(attributes, Ili2dbLayout.KEY_OBJECT);
             for (var table : plan.mapping().tables()) {
                 token.throwIfCancellationRequested();
-                var point = plan.pointColumns().get(table.name());
-                if (point == null) {
+                var spatial = plan.geometryColumns().get(table.name());
+                if (spatial == null) {
                     registerAttributes(attributes, table.name());
                 } else {
-                    registerFeature(feature, geometry, table.name(), point);
+                    registerFeature(feature, geometry, table.name(), spatial);
+                    var kind = spatial.column().kind();
+                    if (kind == DbMapping.Kind.POLYLINE || kind == DbMapping.Kind.SURFACE) {
+                        extension.setString(1, table.name());
+                        extension.setString(2, spatial.column().name());
+                        extension.setString(3, "gpkg_geom_" + kind.geometryType());
+                        extension.executeUpdate();
+                    }
                 }
             }
         }
@@ -125,20 +137,21 @@ final class GeoPackageSchema {
     }
 
     private static void registerFeature(PreparedStatement contents, PreparedStatement geometry, String table,
-                                        SchemaPlan.PointColumn point) throws SQLException {
-        var column = point.column();
+                                        SchemaPlan.GeometryColumn spatial) throws SQLException {
+        var column = spatial.column();
         contents.setString(1, table);
         contents.setString(2, table);
-        contents.setObject(3, point.minX());
-        contents.setObject(4, point.minY());
-        contents.setObject(5, point.maxX());
-        contents.setObject(6, point.maxY());
+        contents.setObject(3, spatial.minX());
+        contents.setObject(4, spatial.minY());
+        contents.setObject(5, spatial.maxX());
+        contents.setObject(6, spatial.maxY());
         contents.setInt(7, column.srsId());
         contents.executeUpdate();
 
         geometry.setString(1, table);
         geometry.setString(2, column.name());
-        geometry.setInt(3, column.srsId());
+        geometry.setString(3, column.kind().geometryType());
+        geometry.setInt(4, column.srsId());
         geometry.executeUpdate();
     }
 }

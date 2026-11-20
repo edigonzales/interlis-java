@@ -4,13 +4,82 @@
   <i:headersection><i:models><i:model>DbInterop24</i:model></i:models><i:sender>interop fixture</i:sender></i:headersection>
   <i:datasection>
     <Data i:bid="legacy-basket-1">
+      <Route i:tid="legacy-route-1">
+        <Trace><g:polyline>
+          <g:coord><g:c1>2600123.125</g:c1><g:c2>1200456.375</g:c2></g:coord>
+          <g:coord><g:c1>2600345.250</g:c1><g:c2>1200678.500</g:c2></g:coord>
+          <g:coord><g:c1>2600567.625</g:c1><g:c2>1200456.750</g:c2></g:coord>
+        </g:polyline></Trace>
+      </Route>
+      <Route i:tid="legacy-route-3">
+        <Trace><g:polyline>
+          <g:coord><g:c1>2600500.125</g:c1><g:c2>1200500.250</g:c2></g:coord>
+          <g:arc><g:c1>2600510.125</g:c1><g:c2>1200500.250</g:c2><g:a1>2600505.125</g:a1><g:a2>1200505.250</g:a2></g:arc>
+          <g:arc><g:c1>2600520.125</g:c1><g:c2>1200500.250</g:c2><g:a1>2600515.125</g:a1><g:a2>1200495.250</g:a2></g:arc>
+        </g:polyline></Trace>
+      </Route>
+      <Route i:tid="legacy-route-4">
+        <Trace><g:polyline>
+          <g:coord><g:c1>2600600.500</g:c1><g:c2>1200600.250</g:c2></g:coord>
+          <g:coord><g:c1>2600610.500</g:c1><g:c2>1200600.250</g:c2></g:coord>
+          <g:arc><g:c1>2600620.500</g:c1><g:c2>1200600.250</g:c2><g:a1>2600615.500</g:a1><g:a2>1200605.250</g:a2></g:arc>
+          <g:coord><g:c1>2600630.500</g:c1><g:c2>1200600.250</g:c2></g:coord>
+        </g:polyline></Trace>
+      </Route>
       <Link i:tid="legacy-link"><Target i:ref="legacy-place-1"/></Link>
       <Place i:tid="legacy-place-1">
         <Select>Brücke</Select><Active>true</Active><Count>-7</Count><Status>approved</Status>
         <Geometry><g:coord><g:c1>2600000.125</g:c1><g:c2>1200000.375</g:c2></g:coord></Geometry>
       </Place>
       <Place i:tid="legacy-place-2"><Select></Select><Active>false</Active></Place>
+      <Plot i:tid="legacy-plot-1">
+        <Footprint><g:surface>
+          <g:exterior><g:polyline>
+            <g:coord><g:c1>2601000.125</g:c1><g:c2>1201000.375</g:c2></g:coord>
+            <g:coord><g:c1>2601040.250</g:c1><g:c2>1201000.375</g:c2></g:coord>
+            <g:coord><g:c1>2601040.250</g:c1><g:c2>1201040.500</g:c2></g:coord>
+            <g:coord><g:c1>2601000.125</g:c1><g:c2>1201040.500</g:c2></g:coord>
+            <g:coord><g:c1>2601000.125</g:c1><g:c2>1201000.375</g:c2></g:coord>
+          </g:polyline></g:exterior>
+          <g:interior><g:polyline>
+            <g:coord><g:c1>2601008.125</g:c1><g:c2>1201010.375</g:c2></g:coord>
+            <g:coord><g:c1>2601008.125</g:c1><g:c2>1201028.625</g:c2></g:coord>
+            <g:coord><g:c1>2601020.250</g:c1><g:c2>1201020.500</g:c2></g:coord>
+            <g:coord><g:c1>2601008.125</g:c1><g:c2>1201010.375</g:c2></g:coord>
+          </g:polyline></g:interior>
+        </g:surface></Footprint>
+      </Plot>
+      <Plot i:tid="legacy-plot-2">
+        <Footprint><g:surface><g:exterior><g:polyline>
+          <g:coord><g:c1>2601200.250</g:c1><g:c2>1201200.625</g:c2></g:coord>
+          <g:arc><g:c1>2601220.250</g:c1><g:c2>1201200.625</g:c2><g:a1>2601210.250</g:a1><g:a2>1201190.625</g:a2></g:arc>
+          <g:coord><g:c1>2601200.250</g:c1><g:c2>1201200.625</g:c2></g:coord>
+        </g:polyline></g:exterior></g:surface></Footprint>
+      </Plot>
+      <Parcel i:tid="legacy-parcel-1">
+        <Boundary><g:surface><g:exterior><g:polyline>
+          <g:coord><g:c1>2602000.125</g:c1><g:c2>1202000.250</g:c2></g:coord>
+          <g:coord><g:c1>2602020.250</g:c1><g:c2>1202000.250</g:c2></g:coord>
+          <g:coord><g:c1>2602020.250</g:c1><g:c2>1202020.750</g:c2></g:coord>
+          <g:coord><g:c1>2602000.125</g:c1><g:c2>1202020.750</g:c2></g:coord>
+          <g:coord><g:c1>2602000.125</g:c1><g:c2>1202000.250</g:c2></g:coord>
+        </g:polyline></g:exterior></g:surface></Boundary>
+      </Parcel>
+      <Parcel i:tid="legacy-parcel-2">
+        <Boundary><g:surface><g:exterior><g:polyline>
+          <g:coord><g:c1>2602020.250</g:c1><g:c2>1202000.250</g:c2></g:coord>
+          <g:coord><g:c1>2602040.500</g:c1><g:c2>1202000.250</g:c2></g:coord>
+          <g:coord><g:c1>2602040.500</g:c1><g:c2>1202020.750</g:c2></g:coord>
+          <g:coord><g:c1>2602020.250</g:c1><g:c2>1202020.750</g:c2></g:coord>
+          <g:coord><g:c1>2602020.250</g:c1><g:c2>1202000.250</g:c2></g:coord>
+        </g:polyline></g:exterior></g:surface></Boundary>
+      </Parcel>
     </Data>
-    <Data i:bid="legacy-basket-2"><Place i:tid="legacy-place-3"/></Data>
+    <Data i:bid="legacy-basket-2">
+      <Place i:tid="legacy-place-3"/>
+      <Route i:tid="legacy-route-2"/>
+      <Plot i:tid="legacy-plot-3"/>
+      <Parcel i:tid="legacy-parcel-3"/>
+    </Data>
   </i:datasection>
 </i:transfer>

@@ -93,9 +93,15 @@ Dazu muss Docker laufen. GeoPackage-Tests verwenden temporäre Dateien.
 
 Die Auswahl `--tests '*DbInteropTest.geoPackage*'` läuft ohne Docker.
 Die Tests vergleichen vor dem ersten Datenimport den SQL-Katalog und die
-Metadaten der erzeugten Schemata. Sie prüfen XTF 2.3 und 2.4 in beiden
-Werkzeugrichtungen sowie einen weiteren Referenzimport nach dem neuen Import.
-Das Originalwerkzeug lädt das Modell für das neue Schema aus der Datenbank.
+Metadaten der erzeugten Schemata. Die GeoPackage-Erweiterungseinträge für
+Polylinien und Flächen werden separat geprüft. Die Tests vergleichen Punkte,
+gerade und gebogene Segmente, Aussen- und Innenringe, die gemeinsame Kante
+benachbarter `AREA`-Objekte, SRS und `NULL` für XTF 2.3 und 2.4 in beiden
+Werkzeugrichtungen. In 2.3 prüfen sie auch die
+Zusammenführung eines geteilten Randes. Die Suite prüft den Import-Rollback
+bei einem expliziten Bogenradius oder offenen Ring und einen weiteren
+Referenzimport nach dem neuen Import. Das Originalwerkzeug lädt das Modell
+für das neue Schema aus der Datenbank.
 
 Die JUnit-Rohberichte stehen unter `interlis-db/build/test-results/dbInteropTest/`.
 
