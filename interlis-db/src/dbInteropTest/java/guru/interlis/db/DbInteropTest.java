@@ -139,6 +139,7 @@ final class DbInteropTest {
         try (var sql = db.connect()) {
             assertStructureCatalog(db, sql, model, version);
             assertEmbeddedRoleCatalog(db, sql, model);
+            assertStructureReferenceCatalog(db, sql, model);
             assertPairingCatalog(db, sql, model, version);
             assertAssociationCatalog(db, sql, model, "MarkerLink", Map.of("LinkedMarker", "marker", "LinkedHub", "hub"));
             assertAssociationCatalog(db, sql, model, "Review", Map.of("ReviewMarkers", "marker", "Witness", "hub"));
@@ -171,12 +172,14 @@ final class DbInteropTest {
             Path nativeOutput = exchangeDatasets(reference, db, sql, work.toString(), model, version, fixture);
             assertRollback(db, sql, model, version, fixture);
             assertStructureRollback(db, sql, model, version, fixture);
+            assertMissingStructureTargetRollback(db, sql, model, version, fixture);
             assertMissingReferenceRollback(db, sql, model, version, fixture,
                     "Select", "missing-role-marker-1", "missing-role", 3);
             assertExplicitRadiusRollback(db, sql, model, version, fixture);
             assertOpenSurfaceRollback(db, sql, model, version, fixture);
             assertCorruptStructureRejected(db, sql, model, nativeOutput);
             assertCorruptRoleMappingRejected(db, sql, model, nativeOutput);
+            assertCorruptStructureTargetRejected(db, sql, model, nativeOutput);
             assertAmbiguousReviewRejected(db, sql, model, nativeOutput);
             if (version == 24) {
                 assertEmptyCollectionRollback(db, sql, model, fixture, "multisurface", "Park.Coverage", "multisurface", 13);
@@ -289,6 +292,86 @@ final class DbInteropTest {
                         + "' and table_name='" + owner + "' and column_name='" + column + "' and is_nullable='YES'"
                 : "select count(*) from pragma_table_info('" + owner + "') where name='" + column + "' and \"notnull\"=0";
         assertEquals("1", scalar(sql, nullableColumn));
+    }
+
+    private static void assertStructureReferenceCatalog(TestDatabase db, Connection sql, String model)
+            throws SQLException {
+        String names = db.table("t_ili2db_attrname");
+        assertEquals("1", scalar(sql, "select count(*) from " + names
+                + " where iliname='" + model + ".Data.LinkDetail.Destination'"
+                + " and sqlname='destination' and colowner='linkdetail' and target='place'"));
+        assertEquals("place", scalar(sql, "select setting from " + db.table("t_ili2db_column_prop")
+                + " where tablename='linkdetail' and subtype is null and columnname='destination'"
+                + " and tag='ch.ehi.ili2db.foreignKey'"));
+    }
+
+    private static void assertCorruptStructureTargetRejected(TestDatabase db, Connection sql, String model, Path output)
+            throws Exception {
+        String structure = db.table("linkdetail");
+        String place = db.table("place");
+        String row = " where destination=(select t_id from " + place + " where t_ili_tid='legacy-place-3')";
+        execute(sql, "update " + structure + " set destination=(select t_id from " + place
+                + " where t_ili_tid='legacy-place-1')" + row);
+        assertExportRejected(db, model, "legacy", output,
+                model + ".Data.LinkDetail.Destination of object legacy-report-2");
+        execute(sql, "update " + structure + " set destination=(select t_id from " + place
+                + " where t_ili_tid='legacy-place-3') where destination=(select t_id from " + place
+                + " where t_ili_tid='legacy-place-1')");
+    }
+
+    private void assertMissingStructureTargetRollback(TestDatabase db, Connection sql, String model, int version,
+                                                      String fixture) throws Exception {
+        String ref = version == 24 ? "i:ref" : "REF";
+        String broken = fixture.replace("<Destination " + ref + "=\"legacy-place-3\"",
+                "<Destination " + ref + "=\"missing-destination\"");
+        Path input = Files.writeString(work.resolve("missing-structure-target.xtf"),
+                broken.replace("legacy-", "missing-structure-target-"));
+        var rejected = cli(db, "import", model, "missing-structure-target", input, CancellationToken.none());
+        assertEquals(1, rejected.code(), rejected::diagnostics);
+        assertTrue(rejected.diagnostics().contains("missing-structure-target-report-2 at " + model + ".Data.LinkDetail.Destination")
+                && rejected.diagnostics().contains("missing-destination"), rejected::diagnostics);
+        assertNull(scalar(sql, "select datasetname from " + db.table("t_ili2db_dataset")
+                + " where datasetname='missing-structure-target'"));
+        assertRows(db, sql, version, 3);
+    }
+
+    private static void assertStoredStructureReferences(TestDatabase db, Connection sql, String dataset)
+            throws SQLException {
+        String rows = """
+                select l.label, l.t_basket, l.t_seq, l.destination, p.t_id as target_id,
+                       p.t_ili_tid as target_tid, p.t_basket as target_basket
+                from %s l join %s r on r.t_id=l.report_links
+                left join %s p on p.t_id=l.destination
+                where r.t_ili_tid='%s' order by l.t_seq
+                """.formatted(db.table("linkdetail"), db.table("report"), db.table("place"), dataset + "-report-2");
+        try (var statement = sql.createStatement(); var result = statement.executeQuery(rows)) {
+            assertTrue(result.next());
+            assertEquals("first", result.getString("label"));
+            assertEquals(0, result.getInt("t_seq"));
+            assertNotNull(result.getString("destination"));
+            assertEquals(result.getString("target_id"), result.getString("destination"));
+            assertEquals(dataset + "-place-3", result.getString("target_tid"));
+            assertEquals(result.getString("t_basket"), result.getString("target_basket"));
+            assertTrue(result.next());
+            assertEquals("second", result.getString("label"));
+            assertEquals(1, result.getInt("t_seq"));
+            assertNull(result.getString("destination"));
+            assertFalse(result.next());
+        }
+    }
+
+    private static void assertTransferredStructureReferences(Element report, int version, String dataset) {
+        var links = children(report).stream().filter(element -> element.getLocalName().equals("Links"))
+                .flatMap(element -> children(element).stream()).toList();
+        String name = version == 23 ? "DbInterop23.Data.LinkDetail" : "LinkDetail";
+        assertEquals(List.of(name, name), links.stream().map(Element::getLocalName).toList());
+        assertEquals("first", text(links.getFirst(), "Label"));
+        var destination = child(links.getFirst(), "Destination");
+        assertNotNull(destination);
+        assertEquals(dataset + "-place-3", id(destination, version, "ref"));
+        assertEquals("", id(destination, version, "bid"));
+        assertEquals("second", text(links.getLast(), "Label"));
+        assertNull(child(links.getLast(), "Destination"));
     }
 
     private static void assertTypeKind(TestDatabase db, Connection sql, String table, String column, String kind)
@@ -782,6 +865,7 @@ final class DbInteropTest {
         assertSrs(db, sql, "place", "ageometry", srsId);
         assertStoredStructures(db, sql, dataset);
         assertStoredRoles(db, sql, dataset);
+        assertStoredStructureReferences(db, sql, dataset);
         assertStoredPairing(db, sql, version, dataset);
         assertStoredStandaloneLinks(db, sql, dataset);
         assertStoredAttributedLinks(db, sql, dataset, "review", "reviewmarkers", "witness", "hub", "reviewed", nativeImport);
@@ -1135,6 +1219,7 @@ final class DbInteropTest {
         assertEquals(Integer.toString(datasets * 3), scalar(sql, "select count(*) from " + db.table("parcel")));
         assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("report")));
         assertEquals(Integer.toString(datasets * 8), scalar(sql, "select count(*) from " + db.table("detail")));
+        assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("linkdetail")));
         assertEquals(Integer.toString(datasets * 3), scalar(sql, "select count(*) from " + db.table("marker")));
         assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("hub")));
         assertEquals(Integer.toString(datasets * 3), scalar(sql, "select count(*) from " + db.table("markerlink")));
@@ -1143,7 +1228,7 @@ final class DbInteropTest {
         assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("pairleft")));
         assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table("pairright")));
         var tables = new ArrayList<>(List.of("t_ili2db_dataset", "t_ili2db_basket", "place", "route", "plot", "parcel",
-                "report", "detail", "marker", "hub", "markerlink", "review", "annotatedlink", "pairleft", "pairright"));
+                "report", "detail", "marker", "hub", "markerlink", "review", "annotatedlink", "pairleft", "pairright", "linkdetail"));
         if (version == 24) {
             assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table("link")));
             var collections = List.of("park", "district", "routegroup", "survey");
@@ -1154,7 +1239,7 @@ final class DbInteropTest {
             tables.addAll(collections);
         }
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 50 : 41)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 52 : 43)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
     }
 
@@ -1232,6 +1317,7 @@ final class DbInteropTest {
         }
         assertEquals(Map.of(dataset + "-basket-1", firstBasket, dataset + "-basket-2", secondBasket), baskets);
         assertTransferredReports(objects.get(firstReport), objects.get(secondReport), version);
+        assertTransferredStructureReferences(objects.get(secondReport), version, dataset);
         assertTransferredRoles(objects, version, dataset);
         assertTransferredReviews(objects, version, dataset);
         assertTransferredPairing(objects, version, dataset);

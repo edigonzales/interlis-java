@@ -106,6 +106,9 @@ den Erhalt der bisherigen XTF-Datei bei beschädigter Geometrie und einen
 weiteren Referenzimport nach dem neuen Import. In beiden Sprachversionen
 prüft sie auch optionale Einzelstrukturen, `LIST OF` und `BAG OF` mit demselben
 Strukturtyp, Rückverweisspalten, `T_Seq`, Reihenfolge und Duplikate.
+Bei Strukturreferenzen prüft sie das bereits gespeicherte SQL-Ziel,
+Vorwärtsauflösung, fehlende Werte, Rollback bei fehlendem Ziel und
+eine Diagnose für ein basketfremdes Ziel beim Export.
 Sie löst einen Rollback nach geschriebenen Strukturzeilen aus und prüft den
 Erhalt der Zieldatei bei einer beschädigten Rückverweiszuordnung.
 Bei eingebetteten 1:n-Assoziationen prüft sie die Rollenmetadaten, eine

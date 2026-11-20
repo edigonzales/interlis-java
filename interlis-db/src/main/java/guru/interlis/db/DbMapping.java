@@ -429,8 +429,8 @@ final class DbMapping {
                 throw unsupported("attribute " + path + " (" + type.kind() + ")");
             }
         };
-        if ((object.kind() == SymbolKind.STRUCTURE || object.kind() == SymbolKind.ASSOCIATION)
-                && (kind.geometry() || kind == Kind.REFERENCE)) {
+        if ((object.kind() == SymbolKind.STRUCTURE && kind.geometry())
+                || (object.kind() == SymbolKind.ASSOCIATION && (kind.geometry() || kind == Kind.REFERENCE))) {
             throw unsupported("attribute " + path + " (" + type.kind() + ")");
         }
         Optional<SymbolRef> target = Optional.empty();

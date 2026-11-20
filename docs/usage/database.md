@@ -125,7 +125,10 @@ diese Referenzausgabe erfolgt in der gemeinsamen Datenbank.
 In XTF 2.3 und 2.4 FULL kann eine Klasse einen optionalen Struktureinzelwert
 und `LIST OF`- oder `BAG OF`-Attribute mit einem konkreten, flachen
 Strukturtyp aus dem Modell oder dem eigenen Topic enthalten. Strukturelemente
-verwenden die unterstützten skalaren Attributtypen. Jeder Strukturtyp hat eine Tabelle.
+verwenden die unterstützten skalaren Attributtypen. Topic-lokale Strukturen
+können optionale `REFERENCE TO`-Attribute auf eine Klasse desselben Topics
+und Baskets enthalten. Vorwärtsreferenzen werden am Basketende aufgelöst.
+Jeder Strukturtyp hat eine Tabelle.
 Die gespeicherte `ATTRNAME`-Zuordnung benennt je Elternattribut eine
 Rückverweisspalte in dieser Tabelle. Die Strukturzeilen erhalten eigene
 SQL-IDs und den Basket des Elternobjekts. Ihre `T_Ili_Tid` bleibt beim

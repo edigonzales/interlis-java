@@ -144,7 +144,7 @@ final class DbTransfer {
         try (var structures = new StructureRows(db, token);
              var statement = db.connection().prepareStatement(sql)) {
             for (var composition : mapping.compositionsForParent(table.object().symbol())) {
-                structures.open(table, mapping.table(composition.child()), composition, basketId);
+                structures.open(mapping, table, mapping.table(composition.child()), composition, basketId);
             }
             fetchInPages(db, statement);
             statement.setLong(1, basketId);
@@ -155,19 +155,19 @@ final class DbTransfer {
                             ? Optional.of(new TransferId(identifier(rows.getString(2), "TID", table.name()), IdOrigin.SOURCE))
                             : Optional.empty();
                     int start = table.hasTidColumn() ? 3 : 2;
-                    var values = readFields(db, rows, start, table);
+                    var values = readFields(db, rows, start, table, null);
                     int next = start + projectionSize(table);
                     for (var association : links) {
                         var link = mapping.table(association.object().symbol());
                         if (rows.getObject(next) != null) {
-                            var fields = readFields(db, rows, next + 1, link);
+                            var fields = readFields(db, rows, next + 1, link, null);
                             fields.remove(association.ownerRole().slot().symbol());
                             var role = association.role().symbol();
                             values.put(role, fields.size() == 1 ? fields.get(role) : new Structured(link.object().symbol(), fields));
                         }
                         next += 1 + projectionSize(link);
                     }
-                    structures.readFor(rows.getLong(1), values);
+                    structures.readFor(rows.getLong(1), tid.map(TransferId::value).orElse(null), values);
                     var identity = new TransferIdentity(bid, Optional.empty(), tid, Optional.empty(), Optional.empty());
                     var object = new TransferObject(identity, new Structured(table.object().symbol(), values));
                     writer.write(new TransferEvent.ObjectEvent(object, Optional.empty(), Consistency.COMPLETE), token);
@@ -211,11 +211,11 @@ final class DbTransfer {
         return quote(table.column(association.ownerRole().slot().symbol()).name());
     }
 
-    private static Map<SymbolRef, TransferValue> readFields(Database db, ResultSet rows, int index, Table table)
-            throws SQLException {
+    private static Map<SymbolRef, TransferValue> readFields(Database db, ResultSet rows, int index, Table table,
+                                                            String ownerTid) throws SQLException {
         var values = new LinkedHashMap<SymbolRef, TransferValue>();
         for (var column : table.columns()) {
-            var value = readValue(db, rows, index, column);
+            var value = readValue(db, rows, index, column, ownerTid);
             if (value != null) {
                 values.put(column.slot().symbol(), value);
             } else if (!table.hasTidColumn() && column.slot() instanceof RoleSlot) {
@@ -300,17 +300,17 @@ final class DbTransfer {
             this.token = token;
         }
 
-        void open(Table parent, Table child, Composition composition, long basketId) throws SQLException {
+        void open(DbMapping mapping, Table parent, Table child, Composition composition, long basketId)
+                throws SQLException {
             token.throwIfCancellationRequested();
             String owner = "child." + quote(composition.ownerColumn());
             String sequence = "child." + T_SEQ;
             String basket = "child." + T_BASKET;
             var fields = new StringJoiner(", ").add(owner).add(sequence).add(basket);
-            for (var column : child.columns()) {
-                fields.add("child." + quote(column.name()));
-            }
-            String sql = "SELECT " + fields + " FROM " + db.table(child.name()) + " child LEFT JOIN "
-                    + db.table(parent.name()) + " parent ON parent." + T_ID + " = " + owner
+            var from = new StringBuilder(db.table(child.name())).append(" child LEFT JOIN ")
+                    .append(db.table(parent.name())).append(" parent ON parent.").append(T_ID).append(" = ").append(owner);
+            appendColumns(db, mapping, child, "child", fields, from);
+            String sql = "SELECT " + fields + " FROM " + from
                     + " WHERE " + owner + " IS NOT NULL AND (" + basket + " = ? OR parent." + T_BASKET
                     + " = ?) ORDER BY " + owner + ", " + sequence + ", child." + T_ID;
             var statement = db.connection().prepareStatement(sql);
@@ -321,9 +321,9 @@ final class DbTransfer {
             cursors.add(new StructureCursor(child, composition, basketId, statement.executeQuery()));
         }
 
-        void readFor(long parentId, Map<SymbolRef, TransferValue> values) throws SQLException {
+        void readFor(long parentId, String parentTid, Map<SymbolRef, TransferValue> values) throws SQLException {
             for (var cursor : cursors) {
-                var value = cursor.readFor(parentId);
+                var value = cursor.readFor(parentId, parentTid);
                 if (value != null) {
                     values.put(cursor.composition.slot().symbol(), value);
                 }
@@ -359,7 +359,7 @@ final class DbTransfer {
                 advance();
             }
 
-            TransferValue readFor(long parentId) throws SQLException {
+            TransferValue readFor(long parentId, String parentTid) throws SQLException {
                 if (!available || ownerId > parentId) {
                     return null;
                 }
@@ -368,7 +368,7 @@ final class DbTransfer {
                 }
                 var collectionKind = composition.collectionKind();
                 if (collectionKind.isEmpty()) {
-                    var value = readChild();
+                    var value = readChild(parentTid);
                     if (available && ownerId == parentId) {
                         throw problem("Multiple rows for a single structure value");
                     }
@@ -381,14 +381,14 @@ final class DbTransfer {
                     if (previous != null && sequence <= previous) {
                         throw problem("Duplicate or out-of-order T_Seq");
                     }
-                    items.add(readChild());
+                    items.add(readChild(parentTid));
                     previous = sequence;
                 } while (available && ownerId == parentId);
                 return new Repeated(collectionKind.orElseThrow(), items);
             }
 
-            private Structured readChild() throws SQLException {
-                var value = new Structured(child.object().symbol(), readFields(db, rows, 4, child));
+            private Structured readChild(String parentTid) throws SQLException {
+                var value = new Structured(child.object().symbol(), readFields(db, rows, 4, child, parentTid));
                 advance();
                 return value;
             }
@@ -419,7 +419,8 @@ final class DbTransfer {
         }
     }
 
-    private static TransferValue readValue(Database db, ResultSet rows, int index, Column column) throws SQLException {
+    private static TransferValue readValue(Database db, ResultSet rows, int index, Column column,
+                                           String ownerTid) throws SQLException {
         return switch (column.kind()) {
             case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> db.readGeometry(rows, index, column);
             case BOOLEAN -> readBoolean(db, rows, index, column);
@@ -433,8 +434,9 @@ final class DbTransfer {
                 if (rows.getObject(index) == null) {
                     yield null;
                 }
-                String tid = identifier(rows.getString(index + 1), "same-basket reference target TID",
-                        column.slot().name().declared().toString());
+                String path = column.slot().name().declared().toString();
+                String context = ownerTid == null ? path : path + " of object " + ownerTid;
+                String tid = identifier(rows.getString(index + 1), "same-basket reference target TID", context);
                 yield new Reference(new TransferId(tid, IdOrigin.SOURCE), Optional.empty(), false, Optional.empty());
             }
         };
@@ -682,7 +684,7 @@ final class DbTransfer {
             for (var composition : compositions) {
                 var value = object.value(composition.slot().symbol()).orElse(null);
                 if (value != null && value != Undefined.INSTANCE) {
-                    insertStructures(composition, id, value);
+                    insertStructures(composition, id, context, identity.currentBasket(), value);
                 }
             }
             for (var association : links) {
@@ -732,7 +734,8 @@ final class DbTransfer {
             statement.executeUpdate();
         }
 
-        private void insertStructures(Composition composition, long ownerId, TransferValue value) throws SQLException {
+        private void insertStructures(Composition composition, long ownerId, String ownerTid, BasketId basket,
+                                      TransferValue value) throws SQLException {
             var collectionKind = composition.collectionKind();
             if (collectionKind.isPresent()) {
                 var kind = collectionKind.orElseThrow();
@@ -741,15 +744,15 @@ final class DbTransfer {
                 }
                 int sequence = 0;
                 for (var child : collection.values()) {
-                    insertStructure(composition, ownerId, sequence++, child);
+                    insertStructure(composition, ownerId, ownerTid, basket, sequence++, child);
                 }
             } else {
-                insertStructure(composition, ownerId, 0, value);
+                insertStructure(composition, ownerId, ownerTid, basket, 0, value);
             }
         }
 
-        private void insertStructure(Composition composition, long ownerId, int sequence, TransferValue value)
-                throws SQLException {
+        private void insertStructure(Composition composition, long ownerId, String ownerTid, BasketId basket,
+                                     int sequence, TransferValue value) throws SQLException {
             token.throwIfCancellationRequested();
             if (!(value instanceof Structured structure) || !structure.type().equals(composition.child())) {
                 throw new DbException("Cannot encode structure type at " + composition.slot().name().declared());
@@ -760,7 +763,8 @@ final class DbTransfer {
                 statement = prepareInsert(table, composition);
                 structureInserts.put(composition, statement);
             }
-            statement.setLong(1, db.nextId());
+            long id = db.nextId();
+            statement.setLong(1, id);
             statement.setLong(2, basketId);
             statement.setNull(3, Types.VARCHAR);
             statement.setInt(4, sequence);
@@ -772,7 +776,9 @@ final class DbTransfer {
                 if (field.isPresent()) {
                     found++;
                 }
-                index = bindValue(statement, index, column, field.filter(item -> item != Undefined.INSTANCE).orElse(null));
+                var payload = field.filter(item -> item != Undefined.INSTANCE).orElse(null);
+                String context = ownerTid + " at " + column.slot().name().declared();
+                index = bindColumn(statement, index, table, column, id, context, basket, payload);
             }
             if (found != structure.values().size()) {
                 throw new DbException("Structure contains a field without a stored mapping at "

@@ -180,7 +180,6 @@
       <Hub i:tid="legacy-hub-2"/>
     </Data>
     <Data i:bid="legacy-basket-2">
-      <Place i:tid="legacy-place-3"/>
       <Route i:tid="legacy-route-2"/>
       <Plot i:tid="legacy-plot-3"/>
       <Parcel i:tid="legacy-parcel-3"/>
@@ -192,7 +191,12 @@
         <Entries>
           <Detail><Label>later</Label></Detail>
         </Entries>
+        <Links>
+          <LinkDetail><Label>first</Label><Destination i:ref="legacy-place-3"/></LinkDetail>
+          <LinkDetail><Label>second</Label></LinkDetail>
+        </Links>
       </Report>
+      <Place i:tid="legacy-place-3"/>
       <Marker i:tid="legacy-marker-3"><ASelect>unlinked</ASelect></Marker>
       <PairLeft i:tid="legacy-pairleft-1"><RightLink i:ref="legacy-pairright-1"/></PairLeft>
       <PairLeft i:tid="legacy-pairleft-2"/>

@@ -118,7 +118,6 @@
       <DbInterop23.Data.Hub TID="legacy-hub-2"/>
     </DbInterop23.Data>
     <DbInterop23.Data BID="legacy-basket-2">
-      <DbInterop23.Data.Place TID="legacy-place-3"/>
       <DbInterop23.Data.Route TID="legacy-route-2"/>
       <DbInterop23.Data.Plot TID="legacy-plot-3"/>
       <DbInterop23.Data.Parcel TID="legacy-parcel-3"/>
@@ -126,7 +125,12 @@
         <Entries>
           <DbInterop23.Data.Detail><Label>later</Label></DbInterop23.Data.Detail>
         </Entries>
+        <Links>
+          <DbInterop23.Data.LinkDetail><Label>first</Label><Destination REF="legacy-place-3"/></DbInterop23.Data.LinkDetail>
+          <DbInterop23.Data.LinkDetail><Label>second</Label></DbInterop23.Data.LinkDetail>
+        </Links>
       </DbInterop23.Data.Report>
+      <DbInterop23.Data.Place TID="legacy-place-3"/>
       <DbInterop23.Data.Marker TID="legacy-marker-3"><ASelect>unlinked</ASelect></DbInterop23.Data.Marker>
       <DbInterop23.Data.PairRight TID="legacy-pairright-1"><LeftLink REF="legacy-pairleft-1"/></DbInterop23.Data.PairRight>
       <DbInterop23.Data.PairLeft TID="legacy-pairleft-1"/>
