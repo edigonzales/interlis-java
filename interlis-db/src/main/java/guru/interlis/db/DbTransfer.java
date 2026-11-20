@@ -7,6 +7,7 @@ import guru.interlis.db.DbMapping.Table;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.ModelSymbol;
+import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.TopicDescriptor;
@@ -56,6 +57,9 @@ import static guru.interlis.db.Ili2dbLayout.T_ILI_TID;
 import static guru.interlis.db.Ili2dbLayout.T_SEQ;
 
 final class DbTransfer {
+    // The object tag is at depth four. Each structure adds an attribute tag and its value tag.
+    private static final int MAX_STRUCTURE_DEPTH = (128 - 4) / 2;
+
     private DbTransfer() { }
 
     static void exportData(Database db, DbMapping mapping, String dataset,
@@ -141,10 +145,10 @@ final class DbTransfer {
         }
         String sql = "SELECT " + projections + " FROM " + from
                 + " WHERE " + basketField + " = ? ORDER BY obj." + T_ID;
-        try (var structures = new StructureRows(db, token);
+        try (var structures = new StructureRows(db, mapping, basketId, token);
              var statement = db.connection().prepareStatement(sql)) {
             for (var composition : mapping.compositionsForParent(table.object().symbol())) {
-                structures.open(mapping, table, mapping.table(composition.child()), composition, basketId);
+                structures.open(composition);
             }
             fetchInPages(db, statement);
             statement.setLong(1, basketId);
@@ -287,46 +291,114 @@ final class DbTransfer {
                 }
             }
         }
+        // The cursors at the object level check their owners while streaming. Nested lookups
+        // need this check up front because an orphan can never be reached from a parent row.
+        for (var composition : mapping.compositions()) {
+            var parent = mapping.table(composition.parent());
+            if (parent.object().kind() != SymbolKind.STRUCTURE) continue;
+            token.throwIfCancellationRequested();
+            var child = mapping.table(composition.child());
+            String owner = "child." + quote(composition.ownerColumn());
+            String basket = db.technicalTable(BASKET);
+            String sql = "SELECT parent." + T_ID + " FROM " + db.table(child.name()) + " child LEFT JOIN "
+                    + db.table(parent.name()) + " parent ON parent." + T_ID + " = " + owner
+                    + " LEFT JOIN " + basket + " cb ON cb." + T_ID + " = child." + T_BASKET
+                    + " LEFT JOIN " + basket + " pb ON pb." + T_ID + " = parent." + T_BASKET
+                    + " WHERE " + owner + " IS NOT NULL AND (cb.dataset = ? OR pb.dataset = ?)"
+                    + " AND (parent." + T_ID + " IS NULL OR pb." + T_ID + " IS NULL OR cb." + T_ID
+                    + " IS NULL OR parent." + T_BASKET + " <> child." + T_BASKET + ") LIMIT 1";
+            try (var statement = db.connection().prepareStatement(sql)) {
+                statement.setLong(1, datasetId);
+                statement.setLong(2, datasetId);
+                try (var rows = statement.executeQuery()) {
+                    if (rows.next()) {
+                        String problem = rows.getObject(1) == null ? "Orphan structure row"
+                                : "Structure row and owner are in different baskets";
+                        throw new DbException(problem + " at " + composition.slot().name().declared());
+                    }
+                }
+            }
+        }
     }
 
     private static final class StructureRows implements AutoCloseable {
         private final Database db;
+        private final DbMapping mapping;
+        private final long basketId;
         private final CancellationToken token;
         private final List<PreparedStatement> statements = new ArrayList<>();
         private final List<StructureCursor> cursors = new ArrayList<>();
+        private final Map<Composition, PreparedStatement> nestedStatements = new HashMap<>();
 
-        StructureRows(Database db, CancellationToken token) {
+        StructureRows(Database db, DbMapping mapping, long basketId, CancellationToken token) {
             this.db = db;
+            this.mapping = mapping;
+            this.basketId = basketId;
             this.token = token;
         }
 
-        void open(DbMapping mapping, Table parent, Table child, Composition composition, long basketId)
-                throws SQLException {
+        void open(Composition composition) throws SQLException {
             token.throwIfCancellationRequested();
+            var statement = prepare(composition, true);
+            statement.setLong(1, basketId);
+            statement.setLong(2, basketId);
+            cursors.add(new StructureCursor(composition, statement.executeQuery()));
+        }
+
+        private PreparedStatement prepare(Composition composition, boolean streaming) throws SQLException {
+            var child = mapping.table(composition.child());
             String owner = "child." + quote(composition.ownerColumn());
             String sequence = "child." + T_SEQ;
             String basket = "child." + T_BASKET;
-            var fields = new StringJoiner(", ").add(owner).add(sequence).add(basket);
-            var from = new StringBuilder(db.table(child.name())).append(" child LEFT JOIN ")
-                    .append(db.table(parent.name())).append(" parent ON parent.").append(T_ID).append(" = ").append(owner);
+            String id = "child." + T_ID;
+            var fields = new StringJoiner(", ").add(owner).add(sequence).add(basket).add(id);
+            var from = new StringBuilder(db.table(child.name())).append(" child");
+            String where;
+            if (streaming) {
+                var parent = mapping.table(composition.parent());
+                from.append(" LEFT JOIN ").append(db.table(parent.name())).append(" parent ON parent.")
+                        .append(T_ID).append(" = ").append(owner);
+                where = owner + " IS NOT NULL AND (" + basket + " = ? OR parent." + T_BASKET + " = ?)";
+            } else {
+                where = owner + " = ? AND " + basket + " = ?";
+            }
             appendColumns(db, mapping, child, "child", fields, from);
-            String sql = "SELECT " + fields + " FROM " + from
-                    + " WHERE " + owner + " IS NOT NULL AND (" + basket + " = ? OR parent." + T_BASKET
-                    + " = ?) ORDER BY " + owner + ", " + sequence + ", child." + T_ID;
+            String sql = "SELECT " + fields + " FROM " + from + " WHERE " + where
+                    + " ORDER BY " + owner + ", " + sequence + ", " + id;
             var statement = db.connection().prepareStatement(sql);
             statements.add(statement);
             fetchInPages(db, statement);
-            statement.setLong(1, basketId);
-            statement.setLong(2, basketId);
-            cursors.add(new StructureCursor(child, composition, basketId, statement.executeQuery()));
+            return statement;
         }
 
         void readFor(long parentId, String parentTid, Map<SymbolRef, TransferValue> values) throws SQLException {
             for (var cursor : cursors) {
-                var value = cursor.readFor(parentId, parentTid);
-                if (value != null) {
-                    values.put(cursor.composition.slot().symbol(), value);
+                read(cursor, parentId, parentTid, 1, values);
+            }
+        }
+
+        private void readNested(SymbolRef parent, long parentId, String parentTid, int depth,
+                                Map<SymbolRef, TransferValue> values) throws SQLException {
+            for (var composition : mapping.compositionsForParent(parent)) {
+                token.throwIfCancellationRequested();
+                var statement = nestedStatements.get(composition);
+                if (statement == null) {
+                    statement = prepare(composition, false);
+                    nestedStatements.put(composition, statement);
                 }
+                statement.setLong(1, parentId);
+                statement.setLong(2, basketId);
+                try (var rows = statement.executeQuery()) {
+                    read(new StructureCursor(composition, rows), parentId, parentTid, depth, values);
+                }
+            }
+        }
+
+        private void read(StructureCursor cursor, long parentId, String parentTid, int depth,
+                          Map<SymbolRef, TransferValue> values) throws SQLException {
+            var value = cursor.readFor(parentId, parentTid, depth);
+            if (value != null) {
+                values.put(cursor.composition.slot().symbol(), value);
             }
         }
 
@@ -346,29 +418,30 @@ final class DbTransfer {
         private final class StructureCursor {
             private final Table child;
             private final Composition composition;
-            private final long basketId;
             private final ResultSet rows;
             private boolean available;
             private long ownerId;
 
-            StructureCursor(Table child, Composition composition, long basketId, ResultSet rows) throws SQLException {
-                this.child = child;
+            StructureCursor(Composition composition, ResultSet rows) throws SQLException {
+                this.child = mapping.table(composition.child());
                 this.composition = composition;
-                this.basketId = basketId;
                 this.rows = rows;
                 advance();
             }
 
-            TransferValue readFor(long parentId, String parentTid) throws SQLException {
+            TransferValue readFor(long parentId, String parentTid, int depth) throws SQLException {
                 if (!available || ownerId > parentId) {
                     return null;
                 }
                 if (ownerId < parentId) {
                     throw problem("Orphan structure row");
                 }
+                if (depth > MAX_STRUCTURE_DEPTH) {
+                    throw problem("Structure exceeds the supported XTF depth");
+                }
                 var collectionKind = composition.collectionKind();
                 if (collectionKind.isEmpty()) {
-                    var value = readChild(parentTid);
+                    var value = readChild(parentTid, depth);
                     if (available && ownerId == parentId) {
                         throw problem("Multiple rows for a single structure value");
                     }
@@ -381,16 +454,17 @@ final class DbTransfer {
                     if (previous != null && sequence <= previous) {
                         throw problem("Duplicate or out-of-order T_Seq");
                     }
-                    items.add(readChild(parentTid));
+                    items.add(readChild(parentTid, depth));
                     previous = sequence;
                 } while (available && ownerId == parentId);
                 return new Repeated(collectionKind.orElseThrow(), items);
             }
 
-            private Structured readChild(String parentTid) throws SQLException {
-                var value = new Structured(child.object().symbol(), readFields(db, rows, 4, child, parentTid));
+            private Structured readChild(String parentTid, int depth) throws SQLException {
+                var values = readFields(db, rows, 5, child, parentTid);
+                readNested(child.object().symbol(), integer(4, T_ID), parentTid, depth + 1, values);
                 advance();
-                return value;
+                return new Structured(child.object().symbol(), values);
             }
 
             private void advance() throws SQLException {
@@ -681,12 +755,7 @@ final class DbTransfer {
                 throw new DbException("Object " + context + " contains a field without a stored mapping");
             }
             statement.executeUpdate();
-            for (var composition : compositions) {
-                var value = object.value(composition.slot().symbol()).orElse(null);
-                if (value != null && value != Undefined.INSTANCE) {
-                    insertStructures(composition, id, context, identity.currentBasket(), value);
-                }
-            }
+            insertCompositions(object.data(), compositions, id, context, identity.currentBasket());
             for (var association : links) {
                 var value = object.value(association.role().symbol()).orElse(null);
                 if (value != null && value != Undefined.INSTANCE) {
@@ -732,6 +801,16 @@ final class DbTransfer {
                 throw new DbException("Embedded association contains a field without a stored mapping at " + context);
             }
             statement.executeUpdate();
+        }
+
+        private void insertCompositions(Structured parent, List<Composition> compositions, long ownerId,
+                                        String ownerTid, BasketId basket) throws SQLException {
+            for (var composition : compositions) {
+                var value = parent.value(composition.slot().symbol()).orElse(null);
+                if (value != null && value != Undefined.INSTANCE) {
+                    insertStructures(composition, ownerId, ownerTid, basket, value);
+                }
+            }
         }
 
         private void insertStructures(Composition composition, long ownerId, String ownerTid, BasketId basket,
@@ -780,11 +859,16 @@ final class DbTransfer {
                 String context = ownerTid + " at " + column.slot().name().declared();
                 index = bindColumn(statement, index, table, column, id, context, basket, payload);
             }
+            var compositions = mapping.compositionsForParent(structure.type());
+            for (var nested : compositions) {
+                if (structure.value(nested.slot().symbol()).isPresent()) found++;
+            }
             if (found != structure.values().size()) {
                 throw new DbException("Structure contains a field without a stored mapping at "
                         + composition.slot().name().declared());
             }
             statement.executeUpdate();
+            insertCompositions(structure, compositions, id, ownerTid, basket);
         }
 
         private PreparedStatement insertStatement(Table table) throws SQLException {

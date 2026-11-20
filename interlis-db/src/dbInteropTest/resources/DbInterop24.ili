@@ -58,6 +58,21 @@ MODEL DbInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
       Label : TEXT*16;
       Destination : REFERENCE TO Place;
     END LinkDetail;
+    STRUCTURE NestedLeaf =
+      Amount : 0 .. 10;
+    END NestedLeaf;
+    STRUCTURE NestedInner =
+      Headline : TEXT*16;
+      Main : NestedLeaf;
+      Values : LIST {0..*} OF NestedLeaf;
+      Extras : BAG {0..*} OF NestedLeaf;
+    END NestedInner;
+    STRUCTURE NestedOuter =
+      Items : LIST {0..*} OF NestedInner;
+    END NestedOuter;
+    CLASS NestedRecord =
+      Tree : NestedOuter;
+    END NestedRecord;
     CLASS Report =
       Summary : Detail;
       Entries : LIST {0..*} OF Detail;

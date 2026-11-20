@@ -138,6 +138,7 @@ final class DbInteropTest {
                 ili.toString());
         try (var sql = db.connect()) {
             assertStructureCatalog(db, sql, model, version);
+            assertNestedStructureCatalog(db, sql, model);
             assertEmbeddedRoleCatalog(db, sql, model);
             assertStructureReferenceCatalog(db, sql, model);
             assertPairingCatalog(db, sql, model, version);
@@ -178,6 +179,8 @@ final class DbInteropTest {
             assertExplicitRadiusRollback(db, sql, model, version, fixture);
             assertOpenSurfaceRollback(db, sql, model, version, fixture);
             assertCorruptStructureRejected(db, sql, model, nativeOutput);
+            assertNestedSequenceOrder(db, sql, model, version);
+            assertCorruptNestedStructureRejected(db, sql, model, nativeOutput);
             assertCorruptRoleMappingRejected(db, sql, model, nativeOutput);
             assertCorruptStructureTargetRejected(db, sql, model, nativeOutput);
             assertAmbiguousReviewRejected(db, sql, model, nativeOutput);
@@ -215,6 +218,22 @@ final class DbInteropTest {
                     + "' and colowner='detail' and target='report'"));
             assertEquals("report", scalar(sql, "select setting from " + db.table("t_ili2db_column_prop")
                     + " where tablename='detail' and subtype is null and columnname='" + column
+                    + "' and tag='ch.ehi.ili2db.foreignKey'"));
+        }
+    }
+
+    private static void assertNestedStructureCatalog(TestDatabase db, Connection sql, String model) throws SQLException {
+        var childTables = Map.of("NestedRecord.Tree", "nestedouter", "NestedOuter.Items", "nestedinner",
+                "NestedInner.Main", "nestedleaf", "NestedInner.Values", "nestedleaf", "NestedInner.Extras", "nestedleaf");
+        for (var field : childTables.entrySet()) {
+            String parent = field.getKey().substring(0, field.getKey().indexOf('.')).toLowerCase(Locale.ROOT);
+            String column = field.getKey().replace('.', '_').toLowerCase(Locale.ROOT);
+            String child = field.getValue();
+            assertEquals("1", scalar(sql, "select count(*) from " + db.table("t_ili2db_attrname")
+                    + " where iliname='" + model + ".Data." + field.getKey() + "' and sqlname='" + column
+                    + "' and colowner='" + child + "' and target='" + parent + "'"));
+            assertEquals(parent, scalar(sql, "select setting from " + db.table("t_ili2db_column_prop")
+                    + " where tablename='" + child + "' and subtype is null and columnname='" + column
                     + "' and tag='ch.ehi.ili2db.foreignKey'"));
         }
     }
@@ -454,6 +473,44 @@ final class DbInteropTest {
         execute(sql, "update " + mapping + " set sqlname='report_entries'" + attribute);
     }
 
+    private void assertNestedSequenceOrder(TestDatabase db, Connection sql, String model, int version)
+            throws Exception {
+        String leaf = db.table("nestedleaf");
+        String parent = nestedInnerId(db, sql);
+        String positions = " where nestedinner_values=" + parent + " and t_seq in (0, 1)";
+        Path output = work.resolve("nested-reordered.xtf");
+        execute(sql, "update " + leaf + " set t_seq=1-t_seq" + positions);
+        try {
+            assertCliSuccess(db, "export", model, "legacy", output);
+            var record = children(readDataSection(output, version)).stream().flatMap(basket -> children(basket).stream())
+                    .filter(object -> id(object, version, "tid").equals("legacy-nested-1")).findFirst().orElseThrow();
+            assertTransferredNestedTree(record, version, List.of("3", "2", "2"));
+        } finally {
+            execute(sql, "update " + leaf + " set t_seq=1-t_seq" + positions);
+        }
+    }
+
+    private static void assertCorruptNestedStructureRejected(TestDatabase db, Connection sql, String model, Path output)
+            throws Exception {
+        String leaf = db.table("nestedleaf");
+        String parent = nestedInnerId(db, sql);
+        String child = scalar(sql, "select t_id from " + leaf + " where nestedinner_values=" + parent + " and t_seq=0");
+        String row = " where t_id=" + child;
+        execute(sql, "update " + leaf + " set nestedinner_values=-1" + row);
+        try {
+            assertExportRejected(db, model, "legacy", output, "Orphan structure row", "NestedInner.Values");
+        } finally {
+            execute(sql, "update " + leaf + " set nestedinner_values=" + parent + row);
+        }
+    }
+
+    private static String nestedInnerId(TestDatabase db, Connection sql) throws SQLException {
+        return scalar(sql, """
+                select i.t_id from %s i join %s o on o.t_id=i.nestedouter_items
+                join %s r on r.t_id=o.nestedrecord_tree where r.t_ili_tid='legacy-nested-1' and i.t_seq=0
+                """.formatted(db.table("nestedinner"), db.table("nestedouter"), db.table("nestedrecord")));
+    }
+
     private static void assertCorruptRoleMappingRejected(TestDatabase db, Connection sql, String model, Path output)
             throws Exception {
         String mapping = db.table("t_ili2db_attrname");
@@ -679,7 +736,7 @@ final class DbInteropTest {
 
     private void assertStructureRollback(TestDatabase db, Connection sql, String model, int version, String fixture)
             throws Exception {
-        // Reject the second basket's child after both first-basket collections have reached the database.
+        // Reject the second basket's child after the flat collections and nested leaves reached the database.
         String condition = """
                 new.label='later' and exists (
                     select 1 from %s d join %s r on r.t_id=d.report_entries
@@ -689,7 +746,13 @@ final class DbInteropTest {
                     select 1 from %s d join %s r on r.t_id=d.report_observations
                     where r.t_ili_tid='structure-fail-report-1' and d.t_seq=2 and d.label='x'
                 )
-                """.formatted(db.table("detail"), db.table("report"), db.table("detail"), db.table("report"));
+                and exists (
+                    select 1 from %s l join %s i on i.t_id=l.nestedinner_values
+                    join %s o on o.t_id=i.nestedouter_items join %s r on r.t_id=o.nestedrecord_tree
+                    where r.t_ili_tid='structure-fail-nested-1' and l.t_seq=2 and l.amount=2
+                )
+                """.formatted(db.table("detail"), db.table("report"), db.table("detail"), db.table("report"),
+                db.table("nestedleaf"), db.table("nestedinner"), db.table("nestedouter"), db.table("nestedrecord"));
         if (db.postgis) {
             String function = db.table("reject_detail_import");
             execute(sql, """
@@ -864,6 +927,7 @@ final class DbInteropTest {
         }
         assertSrs(db, sql, "place", "ageometry", srsId);
         assertStoredStructures(db, sql, dataset);
+        assertStoredNestedStructures(db, sql, dataset);
         assertStoredRoles(db, sql, dataset);
         assertStoredStructureReferences(db, sql, dataset);
         assertStoredPairing(db, sql, version, dataset);
@@ -1002,6 +1066,60 @@ final class DbInteropTest {
                 assertEquals(index == 1 ? "-3" : null, result.getString(9));
                 assertEquals(index == 1 && annotated ? "approved" : null, result.getString(10));
             }
+            assertFalse(result.next());
+        }
+    }
+
+    private static void assertStoredNestedStructures(TestDatabase db, Connection sql, String dataset) throws SQLException {
+        String rows = """
+                select r.t_ili_tid as root_tid, b.t_ili_tid as bid, r.t_basket as root_basket,
+                       o.t_basket as outer_basket, o.t_ili_tid as outer_tid, o.t_seq as outer_seq,
+                       i.t_id as inner_id, i.t_basket as inner_basket, i.t_ili_tid as inner_tid, i.t_seq as inner_seq,
+                       i.headline, l.t_basket as leaf_basket, l.t_ili_tid as leaf_tid, l.t_seq as leaf_seq, l.amount,
+                       l.nestedinner_main, l.nestedinner_values, l.nestedinner_extras
+                from %s r join %s b on b.t_id=r.t_basket
+                left join %s o on o.nestedrecord_tree=r.t_id
+                left join %s i on i.nestedouter_items=o.t_id
+                left join %s l on coalesce(l.nestedinner_main, l.nestedinner_values, l.nestedinner_extras)=i.t_id
+                where r.t_ili_tid in ('%s-nested-1', '%s-nested-2')
+                order by r.t_ili_tid, i.t_seq,
+                         case when l.nestedinner_main is not null then 0
+                              when l.nestedinner_values is not null then 1 else 2 end, l.t_seq
+                """.formatted(db.table("nestedrecord"), db.table("t_ili2db_basket"), db.table("nestedouter"),
+                db.table("nestedinner"), db.table("nestedleaf"), dataset, dataset);
+        try (var statement = sql.createStatement(); var result = statement.executeQuery(rows)) {
+            for (var values : List.of(Map.entry("main", List.of("1")), Map.entry("values", List.of("2", "3", "2")),
+                    Map.entry("extras", List.of("4", "4")))) {
+                for (int sequence = 0; sequence < values.getValue().size(); sequence++) {
+                    assertTrue(result.next());
+                    assertEquals(dataset + "-nested-1", result.getString("root_tid"));
+                    assertEquals(dataset + "-basket-2", result.getString("bid"));
+                    assertEquals(result.getString("root_basket"), result.getString("outer_basket"));
+                    assertEquals(result.getString("outer_basket"), result.getString("inner_basket"));
+                    assertEquals(result.getString("inner_basket"), result.getString("leaf_basket"));
+                    assertNull(result.getString("outer_tid"));
+                    assertNull(result.getString("inner_tid"));
+                    assertNull(result.getString("leaf_tid"));
+                    assertEquals("0", result.getString("outer_seq"));
+                    assertEquals("0", result.getString("inner_seq"));
+                    assertEquals("populated", result.getString("headline"));
+                    for (String field : List.of("main", "values", "extras")) {
+                        assertEquals(field.equals(values.getKey()) ? result.getString("inner_id") : null,
+                                result.getString("nestedinner_" + field));
+                    }
+                    assertEquals(Integer.toString(sequence), result.getString("leaf_seq"));
+                    assertEquals(values.getValue().get(sequence), result.getString("amount"));
+                }
+            }
+            assertTrue(result.next());
+            assertEquals(dataset + "-nested-1", result.getString("root_tid"));
+            assertEquals("empty", result.getString("headline"));
+            assertEquals("1", result.getString("inner_seq"));
+            assertNull(result.getString("leaf_basket"));
+            assertTrue(result.next());
+            assertEquals(dataset + "-nested-2", result.getString("root_tid"));
+            assertEquals(dataset + "-basket-2", result.getString("bid"));
+            assertNull(result.getString("outer_basket"));
             assertFalse(result.next());
         }
     }
@@ -1218,6 +1336,10 @@ final class DbInteropTest {
         assertEquals(Integer.toString(datasets * 3), scalar(sql, "select count(*) from " + db.table("plot")));
         assertEquals(Integer.toString(datasets * 3), scalar(sql, "select count(*) from " + db.table("parcel")));
         assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("report")));
+        for (var count : Map.of("nestedrecord", 2, "nestedouter", 1, "nestedinner", 2, "nestedleaf", 6).entrySet()) {
+            assertEquals(Integer.toString(datasets * count.getValue()),
+                    scalar(sql, "select count(*) from " + db.table(count.getKey())));
+        }
         assertEquals(Integer.toString(datasets * 8), scalar(sql, "select count(*) from " + db.table("detail")));
         assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("linkdetail")));
         assertEquals(Integer.toString(datasets * 3), scalar(sql, "select count(*) from " + db.table("marker")));
@@ -1228,7 +1350,8 @@ final class DbInteropTest {
         assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("pairleft")));
         assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table("pairright")));
         var tables = new ArrayList<>(List.of("t_ili2db_dataset", "t_ili2db_basket", "place", "route", "plot", "parcel",
-                "report", "detail", "marker", "hub", "markerlink", "review", "annotatedlink", "pairleft", "pairright", "linkdetail"));
+                "report", "detail", "marker", "hub", "markerlink", "review", "annotatedlink", "pairleft", "pairright", "linkdetail",
+                "nestedrecord", "nestedouter", "nestedinner", "nestedleaf"));
         if (version == 24) {
             assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table("link")));
             var collections = List.of("park", "district", "routegroup", "survey");
@@ -1239,7 +1362,7 @@ final class DbInteropTest {
             tables.addAll(collections);
         }
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 52 : 43)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 63 : 54)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
     }
 
@@ -1307,6 +1430,7 @@ final class DbInteropTest {
                 westArea, eastArea, firstReport, dataset + "-marker-1", dataset + "-marker-2", dataset + "-hub-1",
                 dataset + "-hub-2"));
         var secondBasket = new HashSet<>(Set.of(third, noLine, noSurface, noArea, secondReport, dataset + "-marker-3",
+                dataset + "-nested-1", dataset + "-nested-2",
                 dataset + "-pairleft-1", dataset + "-pairleft-2", dataset + "-pairright-1"));
         if (version == 24) {
             firstBasket.add(link);
@@ -1317,6 +1441,8 @@ final class DbInteropTest {
         }
         assertEquals(Map.of(dataset + "-basket-1", firstBasket, dataset + "-basket-2", secondBasket), baskets);
         assertTransferredReports(objects.get(firstReport), objects.get(secondReport), version);
+        assertTransferredNestedTree(objects.get(dataset + "-nested-1"), version, List.of("2", "3", "2"));
+        assertTrue(children(objects.get(dataset + "-nested-2")).isEmpty());
         assertTransferredStructureReferences(objects.get(secondReport), version, dataset);
         assertTransferredRoles(objects, version, dataset);
         assertTransferredReviews(objects, version, dataset);
@@ -1469,6 +1595,26 @@ final class DbInteropTest {
         assertTrue(children(role).isEmpty());
     }
 
+    private static void assertTransferredNestedTree(Element record, int version, List<String> values) {
+        String prefix = version == 23 ? "DbInterop23.Data." : "";
+        assertEquals(prefix + "NestedRecord", record.getLocalName());
+        var tree = transferredStructures(record, "Tree");
+        assertEquals(List.of(prefix + "NestedOuter"), tree.stream().map(Element::getLocalName).toList());
+        var items = transferredStructures(tree.getFirst(), "Items");
+        assertEquals(List.of(prefix + "NestedInner", prefix + "NestedInner"),
+                items.stream().map(Element::getLocalName).toList());
+        assertEquals("populated", text(items.getFirst(), "Headline"));
+        assertEquals("empty", text(items.getLast(), "Headline"));
+        for (var entry : List.of(Map.entry("Main", List.of("1")), Map.entry("Values", values),
+                Map.entry("Extras", List.of("4", "4")))) {
+            var leaves = transferredStructures(items.getFirst(), entry.getKey());
+            assertEquals(entry.getValue(), leaves.stream().map(leaf -> text(leaf, "Amount")).toList());
+            assertTrue(leaves.stream().allMatch(leaf -> leaf.getLocalName().equals(prefix + "NestedLeaf")
+                    && id(leaf, version, "tid").isEmpty()));
+            assertNull(child(items.getLast(), entry.getKey()));
+        }
+    }
+
     private static void assertTransferredReports(Element first, Element second, int version) {
         String prefix = version == 23 ? "DbInterop23.Data." : "";
         assertEquals(prefix + "Report", first.getLocalName());
@@ -1486,13 +1632,17 @@ final class DbInteropTest {
 
     private static void assertTransferredStructures(Element report, String attribute, int version, String detailName,
                                                     List<DetailValue> expected) {
-        // The reference groups the children. The XTF 2.4 writer emits consecutive wrappers.
-        var entries = children(report).stream().filter(element -> element.getLocalName().equals(attribute))
-                .flatMap(element -> children(element).stream()).toList();
+        var entries = transferredStructures(report, attribute);
         assertEquals(expected.size(), entries.size());
         for (int index = 0; index < entries.size(); index++) {
             assertTransferredDetail(entries.get(index), version, detailName, expected.get(index));
         }
+    }
+
+    private static List<Element> transferredStructures(Element owner, String attribute) {
+        // The reference groups the children. The XTF 2.4 writer emits consecutive wrappers.
+        return children(owner).stream().filter(element -> element.getLocalName().equals(attribute))
+                .flatMap(element -> children(element).stream()).toList();
     }
 
     private static void assertTransferredDetail(Element detail, int version, String name, DetailValue expected) {

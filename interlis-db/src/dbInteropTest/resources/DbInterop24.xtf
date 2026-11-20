@@ -187,6 +187,27 @@
       <District i:tid="legacy-district-2"/>
       <RouteGroup i:tid="legacy-routegroup-2"/>
       <Survey i:tid="legacy-survey-2"/>
+      <NestedRecord i:tid="legacy-nested-1">
+        <Tree><NestedOuter>
+          <Items>
+            <NestedInner>
+              <Headline>populated</Headline>
+              <Main><NestedLeaf><Amount>1</Amount></NestedLeaf></Main>
+              <Values>
+                <NestedLeaf><Amount>2</Amount></NestedLeaf>
+                <NestedLeaf><Amount>3</Amount></NestedLeaf>
+                <NestedLeaf><Amount>2</Amount></NestedLeaf>
+              </Values>
+              <Extras>
+                <NestedLeaf><Amount>4</Amount></NestedLeaf>
+                <NestedLeaf><Amount>4</Amount></NestedLeaf>
+              </Extras>
+            </NestedInner>
+            <NestedInner><Headline>empty</Headline></NestedInner>
+          </Items>
+        </NestedOuter></Tree>
+      </NestedRecord>
+      <NestedRecord i:tid="legacy-nested-2"/>
       <Report i:tid="legacy-report-2">
         <Entries>
           <Detail><Label>later</Label></Detail>

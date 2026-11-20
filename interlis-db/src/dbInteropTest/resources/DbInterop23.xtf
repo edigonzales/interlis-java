@@ -121,6 +121,27 @@
       <DbInterop23.Data.Route TID="legacy-route-2"/>
       <DbInterop23.Data.Plot TID="legacy-plot-3"/>
       <DbInterop23.Data.Parcel TID="legacy-parcel-3"/>
+      <DbInterop23.Data.NestedRecord TID="legacy-nested-1">
+        <Tree><DbInterop23.Data.NestedOuter>
+          <Items>
+            <DbInterop23.Data.NestedInner>
+              <Headline>populated</Headline>
+              <Main><DbInterop23.Data.NestedLeaf><Amount>1</Amount></DbInterop23.Data.NestedLeaf></Main>
+              <Values>
+                <DbInterop23.Data.NestedLeaf><Amount>2</Amount></DbInterop23.Data.NestedLeaf>
+                <DbInterop23.Data.NestedLeaf><Amount>3</Amount></DbInterop23.Data.NestedLeaf>
+                <DbInterop23.Data.NestedLeaf><Amount>2</Amount></DbInterop23.Data.NestedLeaf>
+              </Values>
+              <Extras>
+                <DbInterop23.Data.NestedLeaf><Amount>4</Amount></DbInterop23.Data.NestedLeaf>
+                <DbInterop23.Data.NestedLeaf><Amount>4</Amount></DbInterop23.Data.NestedLeaf>
+              </Extras>
+            </DbInterop23.Data.NestedInner>
+            <DbInterop23.Data.NestedInner><Headline>empty</Headline></DbInterop23.Data.NestedInner>
+          </Items>
+        </DbInterop23.Data.NestedOuter></Tree>
+      </DbInterop23.Data.NestedRecord>
+      <DbInterop23.Data.NestedRecord TID="legacy-nested-2"/>
       <DbInterop23.Data.Report TID="legacy-report-2">
         <Entries>
           <DbInterop23.Data.Detail><Label>later</Label></DbInterop23.Data.Detail>

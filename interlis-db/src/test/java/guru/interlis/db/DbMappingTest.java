@@ -9,8 +9,33 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class DbMappingTest {
+    @Test
+    void rejectsCyclicStructureCompositionDuringPlanning() {
+        for (String version : List.of("2.3", "2.4")) {
+            var source = new SourceText(new SourceId("test:/Tree.ili"), new SourceRevision(1), """
+                    INTERLIS %s;
+                    MODEL Tree (en) AT "https://example.org" VERSION "2026-11-20" =
+                      TOPIC Data =
+                        STRUCTURE Node =
+                          Children : LIST {0..*} OF Node;
+                        END Node;
+                        CLASS Root =
+                          Entry : Node;
+                        END Root;
+                      END Data;
+                    END Tree.
+                    """.formatted(version));
+            var rejected = assertThrows(DbException.class,
+                    () -> DbMapping.planNew("Tree", source, false, CancellationToken.none()));
+            assertTrue(rejected.getMessage().contains("cyclic structure composition at Tree.Data.Node.Children"),
+                    rejected::getMessage);
+        }
+    }
+
     @Test
     void mapsEachPredefinedPolylineFormToCompoundCurve() {
         for (String version : List.of("2.3", "2.4")) {

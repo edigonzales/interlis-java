@@ -42,6 +42,7 @@ import guru.interlis.transfer.TransferSlot;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -149,6 +150,7 @@ final class DbMapping {
         this.compositions = List.copyOf(compositions);
         byParent = indexCompositions(this.compositions, Composition::parent);
         byChild = indexCompositions(this.compositions, Composition::child);
+        checkCompositionCycles();
         this.associations = List.copyOf(associations);
     }
 
@@ -156,6 +158,30 @@ final class DbMapping {
                                                                        Function<Composition, SymbolRef> key) {
         return Map.copyOf(compositions.stream().collect(Collectors.groupingBy(key,
                 Collectors.collectingAndThen(Collectors.toList(), List::copyOf))));
+    }
+
+    private void checkCompositionCycles() {
+        var remainingParents = new HashMap<SymbolRef, Integer>();
+        for (var composition : compositions) {
+            remainingParents.putIfAbsent(composition.parent(), 0);
+            remainingParents.merge(composition.child(), 1, Integer::sum);
+        }
+        var ready = new ArrayDeque<SymbolRef>();
+        remainingParents.forEach((type, count) -> {
+            if (count == 0) ready.add(type);
+        });
+        while (!ready.isEmpty()) {
+            for (var composition : compositionsForParent(ready.remove())) {
+                if (remainingParents.merge(composition.child(), -1, Integer::sum) == 0) {
+                    ready.add(composition.child());
+                }
+            }
+        }
+        for (var composition : compositions) {
+            if (remainingParents.get(composition.parent()) > 0 && remainingParents.get(composition.child()) > 0) {
+                throw unsupported("cyclic structure composition at " + composition.slot().name().declared());
+            }
+        }
     }
 
     TransferPlan plan() { return plan; }
@@ -388,7 +414,9 @@ final class DbMapping {
             return Optional.empty();
         }
         String feature = "attribute " + path + " (" + type.kind() + ")";
-        if (parent.kind() != SymbolKind.CLASS) throw unsupported(feature);
+        if (parent.kind() != SymbolKind.CLASS && parent.kind() != SymbolKind.STRUCTURE) {
+            throw unsupported(feature);
+        }
         Optional<CollectionKind> collectionKind = Optional.empty();
         StructureValueType structure;
         if (type instanceof CollectionType collection) {
