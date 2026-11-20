@@ -51,6 +51,10 @@ final class SqlNames {
         return allocateColumn(table, preferred(attribute));
     }
 
+    String roleColumn(String table, String role) {
+        return allocateColumn(table, preferred(shorten(role, NAME_LENGTH - 6)));
+    }
+
     String reverseColumn(String child, String parent, String attribute) {
         String prefix = shorten(parent, REVERSE_PARENT_LENGTH) + "_";
         return allocateColumn(child, preferred(prefix + shorten(attribute, REVERSE_LENGTH - prefix.length())));

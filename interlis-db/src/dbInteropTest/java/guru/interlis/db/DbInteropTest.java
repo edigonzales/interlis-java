@@ -60,6 +60,7 @@ final class DbInteropTest {
     private static final List<DetailValue> ENTRIES = List.of(
             DRAFT_ENTRY, new DetailValue("a", null, -1, "approved"), DRAFT_ENTRY);
     private static final DetailValue LATER_ENTRY = new DetailValue("later", null, null, null);
+    private static final List<String> MARKER_LABELS = List.of("first", "second", "unlinked");
     private static final List<CurveComponent> STRAIGHT_ROUTE = List.of(new CurveComponent(LINESTRING, List.of(
             List.of("2600123.125", "1200456.375"), List.of("2600345.250", "1200678.500"),
             List.of("2600567.625", "1200456.750"))));
@@ -134,6 +135,7 @@ final class DbInteropTest {
                 ili.toString());
         try (var sql = db.connect()) {
             assertStructureCatalog(db, sql, model, version);
+            assertEmbeddedRoleCatalog(db, sql, model);
             assertTypeKind(db, sql, "parcel", "boundary", "AREA");
             if (version == 24) {
                 assertTypeKind(db, sql, "park", "coverage", "MULTISURFACE");
@@ -156,9 +158,11 @@ final class DbInteropTest {
             Path nativeOutput = exchangeDatasets(reference, db, sql, work.toString(), model, version, fixture);
             assertRollback(db, sql, model, version, fixture);
             assertStructureRollback(db, sql, model, version, fixture);
+            assertMissingRoleTargetRollback(db, sql, model, version, fixture);
             assertExplicitRadiusRollback(db, sql, model, version, fixture);
             assertOpenSurfaceRollback(db, sql, model, version, fixture);
             assertCorruptStructureRejected(db, sql, model, nativeOutput);
+            assertCorruptRoleMappingRejected(db, sql, model, nativeOutput);
             if (version == 24) {
                 assertEmptyCollectionRollback(db, sql, model, fixture, "multisurface", "Park.Coverage", "multisurface", 13);
                 assertEmptyCollectionRollback(db, sql, model, fixture, "multipolyline", "RouteGroup.Traces", "multicurve", 15);
@@ -195,6 +199,23 @@ final class DbInteropTest {
                     + " where tablename='detail' and subtype is null and columnname='" + column
                     + "' and tag='ch.ehi.ili2db.foreignKey'"));
         }
+    }
+
+    private static void assertEmbeddedRoleCatalog(TestDatabase db, Connection sql, String model) throws SQLException {
+        assertEquals("markerhub", scalar(sql, "select sqlname from " + db.table("t_ili2db_classname")
+                + " where iliname='" + model + ".Data.MarkerHub'"));
+        String associationTable = db.postgis
+                ? "select count(*) from information_schema.tables where table_schema='" + db.schema + "'"
+                : "select count(*) from sqlite_schema where type='table'";
+        assertEquals("0", scalar(sql, associationTable + (db.postgis ? " and table_name" : " and name") + "='markerhub'"));
+        String columns = db.table("t_ili2db_attrname");
+        assertEquals("1", scalar(sql, "select count(*) from " + columns + " where iliname='" + model
+                + ".Data.Marker.ASelect' and sqlname='aselect' and colowner='marker' and target is null"));
+        assertEquals("1", scalar(sql, "select count(*) from " + columns + " where iliname='" + model
+                + ".Data.MarkerHub.Select' and sqlname='aselect1' and colowner='marker' and target='hub'"));
+        assertEquals("hub", scalar(sql, "select setting from " + db.table("t_ili2db_column_prop")
+                + " where tablename='marker' and subtype is null and columnname='aselect1'"
+                + " and tag='ch.ehi.ili2db.foreignKey'"));
     }
 
     private static void assertTypeKind(TestDatabase db, Connection sql, String table, String column, String kind)
@@ -275,6 +296,15 @@ final class DbInteropTest {
         execute(sql, "update " + mapping + " set sqlname='missing_report_entries'" + attribute);
         assertExportRejected(db, model, "legacy", output, "Report.Entries", "missing_report_entries");
         execute(sql, "update " + mapping + " set sqlname='report_entries'" + attribute);
+    }
+
+    private static void assertCorruptRoleMappingRejected(TestDatabase db, Connection sql, String model, Path output)
+            throws Exception {
+        String mapping = db.table("t_ili2db_attrname");
+        String role = model + ".Data.MarkerHub.Select";
+        execute(sql, "update " + mapping + " set target='place' where iliname='" + role + "'");
+        assertExportRejected(db, model, "legacy", output, role);
+        execute(sql, "update " + mapping + " set target='hub' where iliname='" + role + "'");
     }
 
     private static void assertExportRejected(TestDatabase db, String model, String dataset, Path output, String... diagnostics)
@@ -502,6 +532,26 @@ final class DbInteropTest {
         assertRows(db, sql, version, 3);
     }
 
+    private void assertMissingRoleTargetRollback(TestDatabase db, Connection sql, String model, int version, String fixture)
+            throws Exception {
+        String ref = version == 24 ? "i:ref" : "REF";
+        String broken = fixture.replaceFirst(ref + "=\"legacy-hub-1\"", ref + "=\"unresolved-hub\"");
+        Path input = Files.writeString(work.resolve("missing-role-target.xtf"), broken.replace("legacy-", "missing-role-"));
+        String counter = db.postgis ? "select last_value from " + db.table("t_ili2db_seq")
+                : "select T_LastUniqueId from T_KEY_OBJECT where T_Key='T_Id'";
+        long before = Long.parseLong(scalar(sql, counter));
+        var rejected = cli(db, "import", model, "missing-role", input, CancellationToken.none());
+        assertEquals(1, rejected.code(), rejected::diagnostics);
+        assertTrue(rejected.diagnostics().contains("missing-role-marker-1")
+                && rejected.diagnostics().contains("unresolved-hub"), rejected::diagnostics);
+        // PostgreSQL has allocated IDs for the dataset, first basket and all its rows, including the late Hub.
+        long allocated = version == 24 ? 24 : 19;
+        assertEquals(Long.toString(db.postgis ? before + allocated : before), scalar(sql, counter));
+        assertNull(scalar(sql, "select datasetname from " + db.table("t_ili2db_dataset")
+                + " where datasetname='missing-role'"));
+        assertRows(db, sql, version, 3);
+    }
+
     private void assertExplicitRadiusRollback(TestDatabase db, Connection sql, String model, int version, String fixture)
             throws Exception {
         // The first arc follows the complete straight route in the same basket.
@@ -627,6 +677,7 @@ final class DbInteropTest {
         }
         assertSrs(db, sql, "place", "ageometry", srsId);
         assertStoredStructures(db, sql, dataset);
+        assertStoredRoles(db, sql, dataset);
         assertStoredRoutes(db, sql, dataset, nativeImport);
         assertStoredSurfaces(db, sql, dataset, "plot", "footprint", SURFACE_WITH_HOLE, CURVED_SURFACE, nativeImport);
         assertStoredSurfaces(db, sql, dataset, "parcel", "boundary", WEST_AREA, EAST_AREA, nativeImport);
@@ -647,6 +698,34 @@ final class DbInteropTest {
                     assertStoredPosition(geometry, surveyPoint);
                 }
             });
+        }
+    }
+
+    private static void assertStoredRoles(TestDatabase db, Connection sql, String dataset) throws SQLException {
+        String rows = """
+                select m.t_ili_tid, m.aselect, m.aselect1, b.t_ili_tid as bid, m.t_basket as marker_basket,
+                       h.t_id as hub_id, h.t_ili_tid as hub_tid, h.t_basket as hub_basket
+                from %s m left join %s h on h.t_id=m.aselect1
+                join %s b on b.t_id=m.t_basket join %s d on d.t_id=b.dataset
+                where d.datasetname='%s' order by m.t_ili_tid
+                """.formatted(db.table("marker"), db.table("hub"), db.table("t_ili2db_basket"),
+                db.table("t_ili2db_dataset"), dataset);
+        try (var statement = sql.createStatement(); var result = statement.executeQuery(rows)) {
+            for (int index = 0; index < MARKER_LABELS.size(); index++) {
+                assertTrue(result.next());
+                assertEquals(dataset + "-marker-" + (index + 1), result.getString("t_ili_tid"));
+                assertEquals(MARKER_LABELS.get(index), result.getString("aselect"));
+                if (index < 2) {
+                    assertEquals(dataset + "-basket-1", result.getString("bid"));
+                    assertEquals(dataset + "-hub-1", result.getString("hub_tid"));
+                    assertEquals(result.getString("hub_id"), result.getString("aselect1"));
+                    assertEquals(result.getString("marker_basket"), result.getString("hub_basket"));
+                } else {
+                    assertEquals(dataset + "-basket-2", result.getString("bid"));
+                    assertNull(result.getString("aselect1"));
+                }
+            }
+            assertFalse(result.next());
         }
     }
 
@@ -856,8 +935,10 @@ final class DbInteropTest {
         assertEquals(Integer.toString(datasets * 3), scalar(sql, "select count(*) from " + db.table("parcel")));
         assertEquals(Integer.toString(datasets * 2), scalar(sql, "select count(*) from " + db.table("report")));
         assertEquals(Integer.toString(datasets * 5), scalar(sql, "select count(*) from " + db.table("detail")));
+        assertEquals(Integer.toString(datasets * 3), scalar(sql, "select count(*) from " + db.table("marker")));
+        assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table("hub")));
         var tables = new ArrayList<>(List.of("t_ili2db_dataset", "t_ili2db_basket", "place", "route", "plot", "parcel",
-                "report", "detail"));
+                "report", "detail", "marker", "hub"));
         if (version == 24) {
             assertEquals(Integer.toString(datasets), scalar(sql, "select count(*) from " + db.table("link")));
             var collections = List.of("park", "district", "routegroup", "survey");
@@ -868,7 +949,7 @@ final class DbInteropTest {
             tables.addAll(collections);
         }
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 32 : 23)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 36 : 27)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
     }
 
@@ -913,8 +994,8 @@ final class DbInteropTest {
         String firstReport = dataset + "-report-1";
         String secondReport = dataset + "-report-2";
         var firstBasket = new HashSet<>(Set.of(first, second, line, arcs, mixed, plotWithHole, curvedPlot,
-                westArea, eastArea, firstReport));
-        var secondBasket = new HashSet<>(Set.of(third, noLine, noSurface, noArea, secondReport));
+                westArea, eastArea, firstReport, dataset + "-marker-1", dataset + "-marker-2", dataset + "-hub-1"));
+        var secondBasket = new HashSet<>(Set.of(third, noLine, noSurface, noArea, secondReport, dataset + "-marker-3"));
         if (version == 24) {
             firstBasket.add(link);
             for (String table : List.of("park", "district", "routegroup", "survey")) {
@@ -924,6 +1005,7 @@ final class DbInteropTest {
         }
         assertEquals(Map.of(dataset + "-basket-1", firstBasket, dataset + "-basket-2", secondBasket), baskets);
         assertTransferredReports(objects.get(firstReport), objects.get(secondReport), version);
+        assertTransferredRoles(objects, version, dataset);
 
         String placeName = version == 24 ? "Place" : "DbInterop23.Data.Place";
         for (String tid : List.of(first, second, third)) {
@@ -986,6 +1068,26 @@ final class DbInteropTest {
                 var point = points.get(index);
                 assertEquals(2, children(point).size());
                 assertTransferPosition(point, "c", SURVEY_POINTS.get(index));
+            }
+        }
+    }
+
+    private static void assertTransferredRoles(Map<String, Element> objects, int version, String dataset) {
+        String prefix = version == 23 ? "DbInterop23.Data." : "";
+        String hub = dataset + "-hub-1";
+        assertEquals(prefix + "Hub", objects.get(hub).getLocalName());
+        for (int index = 0; index < MARKER_LABELS.size(); index++) {
+            var marker = objects.get(dataset + "-marker-" + (index + 1));
+            assertEquals(prefix + "Marker", marker.getLocalName());
+            assertEquals(MARKER_LABELS.get(index), text(marker, "ASelect"));
+            var role = child(marker, "Select");
+            if (index < 2) {
+                assertNotNull(role);
+                assertEquals(hub, id(role, version, "ref"));
+                assertEquals("", id(role, version, "bid"));
+                assertEquals(List.of(), children(role));
+            } else {
+                assertNull(role);
             }
         }
     }

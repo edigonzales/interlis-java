@@ -21,12 +21,15 @@ import static guru.interlis.db.Ili2dbLayout.CLASSNAME;
 import static guru.interlis.db.Ili2dbLayout.COLUMN_PROP;
 import static guru.interlis.db.Ili2dbLayout.DATASET;
 import static guru.interlis.db.Ili2dbLayout.DATASET_KEY;
+import static guru.interlis.db.Ili2dbLayout.EMBEDDED;
 import static guru.interlis.db.Ili2dbLayout.ID_COLUMN;
 import static guru.interlis.db.Ili2dbLayout.INHERITANCE;
+import static guru.interlis.db.Ili2dbLayout.INHERITANCE_TAG;
 import static guru.interlis.db.Ili2dbLayout.KEY_OBJECT;
 import static guru.interlis.db.Ili2dbLayout.LV95;
 import static guru.interlis.db.Ili2dbLayout.MODEL;
 import static guru.interlis.db.Ili2dbLayout.MODEL_KEY;
+import static guru.interlis.db.Ili2dbLayout.NEW_CLASS;
 import static guru.interlis.db.Ili2dbLayout.PREFIX;
 import static guru.interlis.db.Ili2dbLayout.SCHEMA_SENDER;
 import static guru.interlis.db.Ili2dbLayout.SEQUENCE;
@@ -187,7 +190,7 @@ final class SchemaSql {
                 String name = table.object().name().declared().toString();
                 row(classes, name, table.name());
                 row(inheritance, name, null);
-                row(transformations, name, PREFIX + "inheritance", "newClass");
+                row(transformations, name, INHERITANCE_TAG, NEW_CLASS);
                 row(tableProps, table.name(), PREFIX + "tableKind", table.object().kind().name());
                 String displayName = plan.displayName(table);
                 if (displayName != null) row(tableProps, table.name(), PREFIX + "dispName", displayName);
@@ -202,6 +205,13 @@ final class SchemaSql {
                     row(attributes, composition.slot().name().declared().toString(), composition.ownerColumn(),
                             table.name(), parent);
                 }
+            }
+            for (var association : plan.mapping().associations()) {
+                token.throwIfCancellationRequested();
+                String name = association.object().name().declared().toString();
+                row(classes, name, association.name());
+                row(inheritance, name, null);
+                row(transformations, name, INHERITANCE_TAG, EMBEDDED);
             }
             for (var property : plan.columnProperties()) {
                 token.throwIfCancellationRequested();
@@ -294,7 +304,7 @@ final class SchemaSql {
                     yield gpkg ? type : postgisGeometryType + "(" + type + ", " + column.srsId() + ")";
                 }
                 case TEXT -> {
-                    var type = (TextType) column.effectiveType();
+                    var type = (TextType) column.effectiveType().orElseThrow();
                     int length = type.maxLength().orElse(0);
                     yield length > 0 ? text(length) : "TEXT";
                 }

@@ -107,8 +107,11 @@ weiteren Referenzimport nach dem neuen Import. In beiden Sprachversionen
 prüft sie auch optionale Einzelstrukturen und `LIST OF` mit demselben
 Strukturtyp, Rückverweisspalten, `T_Seq`, Listenreihenfolge und Duplikate.
 Sie löst einen Rollback nach geschriebenen Strukturzeilen aus und prüft den
-Erhalt der Zieldatei bei einer beschädigten Rückverweiszuordnung. Das
-Originalwerkzeug lädt das Modell für das neue Schema aus der Datenbank.
+Erhalt der Zieldatei bei einer beschädigten Rückverweiszuordnung.
+Bei eingebetteten 1:n-Assoziationen prüft sie die Rollenmetadaten, eine
+SQL-Namenskollision, Vorwärtsreferenzen, SQL `NULL` und den Rollback bei
+einem unauflösbaren Ziel. Das Originalwerkzeug lädt das Modell für das
+neue Schema aus der Datenbank.
 
 Die JUnit-Rohberichte stehen unter `interlis-db/build/test-results/dbInteropTest/`.
 

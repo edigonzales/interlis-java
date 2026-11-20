@@ -7,6 +7,9 @@ import java.util.Set;
 /** Technical identifiers and constants shared by the ili2db profile. */
 final class Ili2dbLayout {
     static final String PREFIX = "ch.ehi.ili2db.";
+    static final String INHERITANCE_TAG = PREFIX + "inheritance";
+    static final String NEW_CLASS = "newClass";
+    static final String EMBEDDED = "embedded";
     static final String SCHEMA_SENDER = "interlis-db/ili2db-5.5.2";
     static final int MAX_MODEL_CHARACTERS = 1_000_000;
     static final int LV95 = 2056;

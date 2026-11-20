@@ -18,6 +18,7 @@ import guru.interlis.model.TypeRef;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
+import guru.interlis.transfer.AttributeSlot;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -93,9 +94,9 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
     }
 
     private static TypeDescriptor declaredType(DbMapping mapping, DbMapping.Column column) {
-        var slot = column.slot();
+        var slot = (AttributeSlot) column.slot();
         return slot.declaredType().equals(slot.effectiveType())
-                ? column.effectiveType() : type(mapping, slot.declaredType());
+                ? column.effectiveType().orElseThrow() : type(mapping, slot.declaredType());
     }
 
     private static Symbol symbol(DbMapping mapping, SymbolRef ref) {
@@ -110,7 +111,11 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
 
     private static void addProperties(List<ColumnProperty> properties, Map<String, GeometryColumn> geometries,
                                       DbMapping mapping, DbMapping.Table table, DbMapping.Column column) {
-        var effective = column.effectiveType();
+        column.target().ifPresent(target ->
+                property(properties, table, null, column, "foreignKey", mapping.table(target).name()));
+        if (!(column.slot() instanceof AttributeSlot attribute)) return;
+
+        var effective = column.effectiveType().orElseThrow();
         String typeKind = switch (column.kind()) {
             case TEXT -> ((TextType) effective).textKind().name();
             case BOOLEAN -> "BOOLEAN";
@@ -140,12 +145,10 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
                 property(properties, table, null, column, "unit", unit.header().name().value());
             });
         }
-        column.target().ifPresent(target ->
-                property(properties, table, null, column, "foreignKey", mapping.table(target).name()));
         if (column.kind().geometry()) {
             geometries.put(table.name(), geometryColumn(properties, mapping, table, column));
         }
-        String caption = metaText(column.slot().attribute(), "ili2db.dispName");
+        String caption = metaText(attribute.attribute(), "ili2db.dispName");
         if (caption != null) property(properties, table, null, column, "dispName", caption);
     }
 
@@ -156,11 +159,12 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
     private static GeometryColumn geometryColumn(List<ColumnProperty> properties, DbMapping mapping,
                                                  DbMapping.Table table, DbMapping.Column column) {
         CoordinateType coordinates;
-        if (column.effectiveType() instanceof CoordinateType coordinateType) {
+        var effective = column.effectiveType().orElseThrow();
+        if (effective instanceof CoordinateType coordinateType) {
             validateCoordinateCrs(mapping, column, coordinateType);
             coordinates = coordinateType;
         } else {
-            var domain = DbMapping.vertexDomain(mapping.plan(), (GeometryType) column.effectiveType());
+            var domain = DbMapping.vertexDomain(mapping.plan(), (GeometryType) effective);
             coordinates = (CoordinateType) type(mapping, new TypeRef(mapping.plan().snapshotId(), domain.typeId()));
         }
         property(properties, table, null, column, "geomType", column.kind().geometryType());
@@ -176,7 +180,7 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
     }
 
     private static void validateCoordinateCrs(DbMapping mapping, DbMapping.Column column, CoordinateType coordinates) {
-        Symbol declaration = column.slot().attribute();
+        Symbol declaration = ((AttributeSlot) column.slot()).attribute();
         if (declaredType(mapping, column) instanceof DomainReferenceType alias) {
             var domain = (DomainSymbol) symbol(mapping, new SymbolRef(mapping.plan().snapshotId(), alias.targetDomain()));
             // The reference uses the default CRS when the immediate domain is another alias.

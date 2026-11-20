@@ -2,6 +2,7 @@ package guru.interlis.db;
 
 import guru.interlis.db.DbMapping.Column;
 import guru.interlis.db.DbMapping.Composition;
+import guru.interlis.db.DbMapping.EmbeddedAssociation;
 import guru.interlis.db.DbMapping.Kind;
 import guru.interlis.db.DbMapping.Table;
 import guru.interlis.execution.CancellationToken;
@@ -32,9 +33,12 @@ import static guru.interlis.db.Ili2dbLayout.ATTRNAME;
 import static guru.interlis.db.Ili2dbLayout.BASKET;
 import static guru.interlis.db.Ili2dbLayout.CLASSNAME;
 import static guru.interlis.db.Ili2dbLayout.DATASET;
+import static guru.interlis.db.Ili2dbLayout.EMBEDDED;
+import static guru.interlis.db.Ili2dbLayout.INHERITANCE_TAG;
 import static guru.interlis.db.Ili2dbLayout.LV95;
 import static guru.interlis.db.Ili2dbLayout.MAX_MODEL_CHARACTERS;
 import static guru.interlis.db.Ili2dbLayout.MODEL;
+import static guru.interlis.db.Ili2dbLayout.NEW_CLASS;
 import static guru.interlis.db.Ili2dbLayout.PREFIX;
 import static guru.interlis.db.Ili2dbLayout.SCHEMA_SENDER;
 import static guru.interlis.db.Ili2dbLayout.SETTINGS;
@@ -67,32 +71,40 @@ final class DbSchemaReader {
         String prefix = modelName + ".";
         var classNames = readClassNames(db, prefix);
         var attrNames = readAttributeNames(db, prefix);
-        var newClasses = readInheritance(db, prefix);
+        var transformations = readTransformations(db, prefix);
         var names = new HashMap<SymbolRef, String>();
-        var physicalNames = new HashSet<String>();
+        var usedNames = new HashSet<String>();
+        var objects = new ArrayList<ObjectDescriptor>();
+        var associations = new ArrayList<EmbeddedAssociation>();
         for (ObjectDescriptor object : plan.objects()) {
             String path = object.name().declared().toString();
             String name = classNames.remove(path);
-            if (name == null || !newClasses.remove(path) || !physicalNames.add(key(db, name))) {
+            boolean association = object.kind() == SymbolKind.ASSOCIATION;
+            String expected = association ? EMBEDDED : NEW_CLASS;
+            if (name == null || !expected.equals(transformations.remove(path)) || !usedNames.add(key(db, name))) {
                 throw new DbException("Missing or inconsistent CLASSNAME/TRAFO mapping for " + path);
             }
-            names.put(object.symbol(), name);
+            if (association) {
+                associations.add(DbMapping.describeAssociation(plan, object, name));
+            } else {
+                objects.add(object);
+                names.put(object.symbol(), name);
+            }
         }
-        if (!classNames.isEmpty() || !newClasses.isEmpty()) {
+        if (!classNames.isEmpty() || !transformations.isEmpty()) {
             throw new DbException("Extra CLASSNAME/TRAFO mappings for " + modelName);
         }
         checkSystemTables(db);
-        var catalog = readCatalog(db, plan, names, token);
+        var catalog = readCatalog(db, objects, names, token);
         var tables = new ArrayList<Table>();
         var compositions = new ArrayList<Composition>();
-        for (ObjectDescriptor object : plan.objects()) {
+        for (ObjectDescriptor object : objects) {
             token.throwIfCancellationRequested();
             var parent = catalog.get(object.symbol());
             var columns = new ArrayList<Column>();
             for (var attr : DbMapping.attributes(object)) {
                 String path = attr.name().declared().toString();
-                var mapping = attrNames.remove(path);
-                if (mapping == null) throw new DbException("Missing or inconsistent ATTRNAME mapping for " + path);
+                var mapping = takeAttributeName(attrNames, path);
                 var composition = DbMapping.describeComposition(plan, object, attr, mapping.name());
                 if (composition.isPresent()) {
                     var binding = composition.orElseThrow();
@@ -105,6 +117,14 @@ final class DbSchemaReader {
                     columns.add(bindColumn(db, plan, object, parent, names, attr, mapping, path));
                 }
             }
+            for (var association : DbMapping.associationsForOwner(associations, object.symbol())) {
+                String path = association.role().name().declared().toString();
+                var mapping = takeAttributeName(attrNames, path);
+                useColumn(db, parent, mapping, path);
+                requireTarget(db, names.get(association.target()), mapping, path);
+                requireColumns(db, parent.name(), parent.columns(), Map.of(mapping.name(), Kind.REFERENCE));
+                columns.add(DbMapping.roleColumn(association, mapping.name()));
+            }
             tables.add(new Table(object, parent.name(), columns));
         }
         for (var table : tables) {
@@ -114,14 +134,14 @@ final class DbSchemaReader {
             }
         }
         if (!attrNames.isEmpty()) throw new DbException("Extra ATTRNAME mappings for " + modelName);
-        return new DbMapping(plan, source.version(), tables, compositions);
+        return new DbMapping(plan, source.version(), tables, compositions, associations);
     }
 
-    private static Map<SymbolRef, CatalogTable> readCatalog(Database db, TransferPlan plan,
+    private static Map<SymbolRef, CatalogTable> readCatalog(Database db, List<ObjectDescriptor> objects,
                                                            Map<SymbolRef, String> names, CancellationToken token)
             throws SQLException {
         var result = new HashMap<SymbolRef, CatalogTable>();
-        for (var object : plan.objects()) {
+        for (var object : objects) {
             token.throwIfCancellationRequested();
             String name = names.get(object.symbol());
             var physical = physicalColumns(db, name);
@@ -246,16 +266,17 @@ final class DbSchemaReader {
         return result;
     }
 
-    private static Set<String> readInheritance(Database db, String prefix) throws SQLException {
+    private static Map<String, String> readTransformations(Database db, String prefix) throws SQLException {
         String table = foldedName(TRAFO);
         requireMetadataColumns(db, table, "iliname", "tag", "setting");
-        var result = new HashSet<String>();
+        var result = new HashMap<String, String>();
         try (var stmt = scopedMetadata(db, table, "iliname, tag, setting", prefix);
              var rows = stmt.executeQuery()) {
             while (rows.next()) {
                 String path = required(rows, 1, "TRAFO.iliname");
-                if (!(PREFIX + "inheritance").equals(rows.getString(2)) || !"newClass".equals(rows.getString(3))
-                        || !result.add(path)) {
+                String setting = rows.getString(3);
+                if (!INHERITANCE_TAG.equals(rows.getString(2)) || !(NEW_CLASS.equals(setting) || EMBEDDED.equals(setting))
+                        || result.putIfAbsent(path, setting) != null) {
                     throw unsupported("TRAFO entries for " + path);
                 }
             }
@@ -300,6 +321,12 @@ final class DbSchemaReader {
         if (!key(db, table.name()).equals(key(db, mapping.owner())) || !table.used().add(key(db, mapping.name()))) {
             throw new DbException("Missing or inconsistent ATTRNAME mapping for " + path);
         }
+    }
+
+    private static AttributeName takeAttributeName(Map<String, AttributeName> names, String path) {
+        var name = names.remove(path);
+        if (name == null) throw new DbException("Missing or inconsistent ATTRNAME mapping for " + path);
+        return name;
     }
 
     private static void requireTarget(Database db, String expected, AttributeName mapping, String path) {

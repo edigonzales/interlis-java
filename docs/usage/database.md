@@ -136,12 +136,26 @@ Strukturzeilen und fehlende oder doppelte Listenpositionen werden beim
 Export diagnostiziert.
 [ili2db-Strukturabbildung](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst#strukturattribute)
 
+XTF 2.3 und 2.4 FULL unterstützen auch binäre 1:n-Assoziationen ohne eigene
+Attribute zwischen konkreten Klassen desselben Topics und Baskets. Beide
+Rollen verwenden `--` und sind lokal und ungeordnet. Die Rolle zur 1-Seite
+hat `{0..1}` oder `{1}`. Die n-Tabelle speichert die Ziel-ID in einer
+nullable Spalte.
+`CLASSNAME` und `INHERITANCE` führen die Assoziation, `TRAFO` kennzeichnet
+sie als `embedded` und `ATTRNAME` benennt Spalte und Ziel. Referenzen auf
+später gelieferte Zielobjekte werden am Basketende aufgelöst. Ein fehlendes
+oder für diesen Basket unauflösbares Referenzziel führt zum Rollback.
+Eine leere Assoziationshülle mit Referenz wird wie die direkte Referenz
+importiert. SQL `NULL` ergibt beim Export eine ausgelassene Rolle.
+[ili2db-Beziehungsabbildung](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst#beziehungen)
+
 In 2.4 kann eine Klasse optionale
 `REFERENCE TO`-Attribute auf eine Klasse desselben Baskets haben. Baskets
 und Objekte verwenden Transferkennungen. Grenzen des Profils sind unter
-anderem Vererbung, verschachtelte Strukturen, Assoziationen, stabile OIDs,
-eigene Linienformen, GeoPackage-RTree beim Schreiben und Updates. Der gespeicherte
-Modelltext ist auf eine Million Zeichen begrenzt.
+anderem Vererbung, verschachtelte Strukturen, Assoziationen mit eigenen
+Attributen, stabile OIDs, eigene Linienformen, GeoPackage-RTree beim
+Schreiben und Updates. Der gespeicherte Modelltext ist auf eine Million
+Zeichen begrenzt.
 
 Der Adapter unterscheidet SQL `NULL` und leeren Text. Die Referenzwerkzeuge
 5.5.1 können leeren Text beim Import zu SQL `NULL` normalisieren und im

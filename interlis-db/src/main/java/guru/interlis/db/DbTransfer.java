@@ -8,6 +8,7 @@ import guru.interlis.model.CollectionKind;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.SymbolRef;
+import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.TopicDescriptor;
 import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferEvent.BasketKind;
@@ -556,6 +557,14 @@ final class DbTransfer {
                     found++;
                 }
                 var payload = value.filter(val -> val != Undefined.INSTANCE).orElse(null);
+                if (column.slot() instanceof RoleSlot role && payload instanceof Structured link) {
+                    var reference = link.value(role.symbol()).orElse(null);
+                    if (link.values().size() != 1 || !(reference instanceof Reference)
+                            || role.role().owner().filter(link.type().symbol()::equals).isEmpty()) {
+                        throw new DbException("Unsupported embedded association payload at " + role.name().declared());
+                    }
+                    payload = reference;
+                }
                 if (column.kind() == DbMapping.Kind.REFERENCE && payload instanceof Reference reference) {
                     var target = bindReference(table, column, id, tid, identity.currentBasket(), reference);
                     if (target == null) {
