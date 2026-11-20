@@ -44,12 +44,15 @@ class RepositoryCacheContractTest {
         return HostRepositories.create(directory,RepositoryCacheConfiguration.at(directory.resolve("cache")),events::add);
     }
     LoadedSource load(HostRepositories.Access access,String url,FetchPolicy policy) { return access.loader().load(new SourceLocator(url),policy,RepositoryCacheRequest.metadata(),TOKEN); }
-    Path metadata(String url) { return directory.resolve("cache/metadata-v2/"+ContentDigest.sha256(url.getBytes(StandardCharsets.UTF_8)).value()+".xml"); }
+    Path metadata(String url) {
+        return directory.resolve("cache/by-url").resolve(RepositoryCachePath.key(new SourceId(url))).resolve(".current.xml");
+    }
 
     @Test void persistsRevalidatesAcrossInstancesAndOfflineNeverConnects() throws Exception {
         var text=new AtomicReference<>("INTERLIS 2.4;\r\n!! ä");var etag=new AtomicReference<>("\"one\"");
         String url=serve(e -> send(e,text.get(),etag.get()))+"file.ili?key=secret";
         var first=load(host(),url,ONLINE);assertEquals(1,bodies.get());
+        assertFalse(Files.readString(metadata(url)).contains("secret"));
         var events=new ArrayList<RepositoryCacheEvent>();assertEquals(first.text(),load(host(events),url,ONLINE).text());
         assertEquals(1,requests.get());assertEquals(1,bodies.get());assertTrue(events.contains(RepositoryCacheEvent.FRESH_HIT));
         text.set("new content");etag.set("\"two\"");host().loader().load(new SourceLocator(url),ONLINE,TOKEN);assertEquals(2,bodies.get());
@@ -75,7 +78,7 @@ class RepositoryCacheContractTest {
         Files.writeString(metadata(url),xml.replace("downloaded-at=\"", "unknown=\""));
         assertThrows(SourceLoadException.class,()->load(host(),url,OFFLINE));
         assertEquals("original",load(host(),url,ONLINE).text());assertEquals("",conditions.getLast());
-        Files.writeString(metadata(url),xml.replace("version=\"2\"","version=\"99\""));
+        Files.writeString(metadata(url),xml.replace("version=\"3\"","version=\"99\""));
         assertThrows(SourceLoadException.class,()->load(host(),url,OFFLINE));
     }
 
@@ -106,6 +109,22 @@ class RepositoryCacheContractTest {
         }
     }
 
+    @Test void urlLeavesCanContainChildUrlsAndCurrentEntriesRemainBoundToTheirSource() throws Exception {
+        String base = serve(exchange -> send(exchange, exchange.getRequestURI().getPath(), null));
+        String parent = base + "nested";
+        String child = parent + "/Model.ili";
+        assertEquals("/nested", load(host(), parent, ONLINE).text());
+        assertEquals("/nested/Model.ili", load(host(), child, ONLINE).text());
+        assertTrue(Files.isRegularFile(metadata(parent)));
+        assertTrue(Files.isRegularFile(metadata(child)));
+
+        Files.copy(metadata(child), metadata(parent), StandardCopyOption.REPLACE_EXISTING);
+        assertEquals(SourceLoadException.Reason.OFFLINE,
+                assertThrows(SourceLoadException.class, () -> load(host(), parent, OFFLINE)).reason());
+        assertEquals("/nested/Model.ili", load(host(), child, OFFLINE).text());
+        assertEquals(2, requests.get());
+    }
+
     @Test void unavailableWritesWarnOnceDisabledCacheDoesNoDiskIOAndLimitsStillApply() throws Exception {
         String url=serve(e -> send(e,"some text","\"tag\""));
         Files.writeString(directory.resolve("blocked"),"file");var events=new ArrayList<RepositoryCacheEvent>();
@@ -120,13 +139,25 @@ class RepositoryCacheContractTest {
     }
 
     @Test void parallelWritersPublishOnlyCompleteMatchingEntries() throws Exception {
-        String url=serve(e -> send(e,"shared bytes","\"tag\""));
-        try(var pool=Executors.newFixedThreadPool(4)) {
-            var futures=new ArrayList<Future<LoadedSource>>();
-            for(int i=0;i<12;i++)futures.add(pool.submit(()->load(host(),url,ONLINE)));
-            for(var future:futures)assertEquals("shared bytes",future.get(10,TimeUnit.SECONDS).text());
+        var sequence = new AtomicInteger();
+        String url = serve(e -> send(e, "version " + sequence.incrementAndGet(), null)) + "nested/Model.ili";
+        var downloaded = new HashSet<LoadedSource>();
+        try (var pool = Executors.newFixedThreadPool(4)) {
+            var futures = new ArrayList<Future<LoadedSource>>();
+            for (int i = 0; i < 12; i++) {
+                futures.add(pool.submit(() -> host().loader().load(new SourceLocator(url), ONLINE, TOKEN)));
+            }
+            for (var future : futures) downloaded.add(future.get(10, TimeUnit.SECONDS));
         }
-        assertEquals("shared bytes",load(host(),url,OFFLINE).text());
+        assertEquals(12, downloaded.size());
+        var offline = load(host(), url, OFFLINE);
+        assertTrue(downloaded.stream().anyMatch(source -> source.byteSha256().equals(offline.byteSha256())
+                && source.text().equals(offline.text())));
+        for (var source : downloaded) {
+            var digest = new ContentDigest("sha256", source.byteSha256());
+            assertArrayEquals(source.text().getBytes(StandardCharsets.UTF_8),
+                    host().contentStore().lookup(digest).orElseThrow().bytes());
+        }
         try(var files=Files.walk(directory.resolve("cache"))) { assertTrue(files.noneMatch(p->p.getFileName().toString().endsWith(".tmp"))); }
     }
 

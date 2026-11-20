@@ -141,6 +141,15 @@ ausschliesslich vorhandene verifizierte Inhalte. Ein fehlender erforderlicher
 Cacheeintrag führt zu `OFFLINE` mit Quelle und Grund. Locks binden ihre
 Bytes über den Digest und frieren ungepinnte lokale Projekttexte nicht ein.
 
+Unter `by-url` zeigt die Datei `.current.xml` den zuletzt vollständig
+geladenen Stand einer URL. Für `https://models.example.ch/ilimodels.xml`
+liegt sie unter `by-url/https/models.example.ch/ilimodels.xml/.current.xml`.
+Der darin angegebene SHA-256 bezeichnet die Datei mit den Originalbytes
+direkt im Cacheverzeichnis. Für die freie Offline-Suche nach der
+Layoutumstellung füllt ein Online-Lauf die neuen URL-Zuordnungen.
+Vorhandene Lockdateien können ihre gespeicherten Inhaltsbytes weiterhin
+direkt laden.
+
 ## Einbettung und Ausgabegrenzen
 
 Das Kommandoschema ist die gemeinsame Quelle für Parser und Hilfe. Es

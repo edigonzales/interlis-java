@@ -5,9 +5,9 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Immutable, null-free URL association and final redirect provenance. downloadedAt
- * is the last successful full download; EPOCH denotes unknown legacy age, never
- * fresh online. HTTP validators are neither stored nor used.
+ * Immutable, null-free URL association and final redirect provenance.
+ * {@code downloadedAt} is the last successful full download. This value type is
+ * separate from the host's current cache file format.
  */
 public record RepositoryCacheMetadata(SourceId source, SourceId responseSource, ContentDigest digest,
                                       Instant downloadedAt) {

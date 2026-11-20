@@ -95,15 +95,29 @@ class Ili2cCachePolicyTest {
         assertEquals("original",host().loader().loadCached(new SourceLocator(url),OFFLINE,TOKEN).text());
     }
 
-    @Test void legacyMetadataIsOfflineOnlyAndNewDownloadsPublishV2() throws Exception {
-        String url=serve();var loaded=load(url,RepositoryCacheRequest.metadata());
-        String old="<interlis-cache version=\"1\" source=\""+url+"\" response-source=\""+url+"\" sha256=\""+loaded.byteSha256()+"\" etag=\"&quot;one&quot;\"/>";
-        Path legacy=directory.resolve("cache/metadata-v1").resolve(fixture.metadata(url).getFileName());
-        Files.createDirectories(legacy.getParent());Files.writeString(legacy,old);Files.delete(fixture.metadata(url));
-        assertEquals("original",host().loader().loadCached(new SourceLocator(url),OFFLINE,TOKEN).text());assertEquals(1,fixture.requests.get());
-        load(url,RepositoryCacheRequest.metadata());assertEquals(2,fixture.requests.get());assertTrue(Files.exists(fixture.metadata(url)));
-        Files.writeString(fixture.metadata(url),"corrupt");
-        assertThrows(SourceLoadException.class,()->host().loader().loadCached(new SourceLocator(url),OFFLINE,TOKEN));
+    @Test void oldUrlMappingsAreIgnoredAndExistingExactBytesRemainReadable() throws Exception {
+        String url = serve();
+        var loaded = load(url, RepositoryCacheRequest.metadata());
+        Path current = fixture.metadata(url);
+        Files.delete(current);
+        var digest = new ContentDigest("sha256", loaded.byteSha256());
+        String oldName = ContentDigest.sha256(url.getBytes(java.nio.charset.StandardCharsets.UTF_8)).value() + ".xml";
+        for (int version : List.of(1, 2)) {
+            Path old = Files.createDirectories(directory.resolve("cache/metadata-v" + version)).resolve(oldName);
+            String age = version == 2 ? " downloaded-at=\"" + now.get() + "\"" : "";
+            Files.writeString(old, """
+                    <interlis-cache version="%d" source="%s" response-source="%s" sha256="%s"%s/>
+                    """.formatted(version, url, url, digest.value(), age));
+            var failure = assertThrows(SourceLoadException.class,
+                    () -> host().loader().loadCached(new SourceLocator(url), OFFLINE, TOKEN));
+            assertEquals(SourceLoadException.Reason.OFFLINE, failure.reason());
+            assertEquals(1, fixture.requests.get());
+        }
+        assertArrayEquals(loaded.text().getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                host().contentStore().lookup(digest).orElseThrow().bytes());
+        load(url, RepositoryCacheRequest.metadata());
+        assertEquals(2, fixture.requests.get());
+        assertTrue(Files.isRegularFile(current));
     }
 
     @Test void applicationCacheIgnoresVaryButHonorsNoStore() throws Exception {
@@ -162,15 +176,6 @@ class Ili2cCachePolicyTest {
                 fixture.resolve(host(), List.of(base), true, Optional.empty()));
         assertEquals(first.update().lock(), offline.update().lock());
         assertEquals(before, fixture.requests.get());
-    }
-
-    @Test void noStoreInvalidationCannotResurrectLegacyOfflineEntry() throws Exception {
-        String url=serve();var loaded=load(url,RepositoryCacheRequest.metadata());
-        Path legacy=directory.resolve("cache/metadata-v1").resolve(fixture.metadata(url).getFileName());
-        Files.createDirectories(legacy.getParent());
-        Files.writeString(legacy,"<interlis-cache version=\"1\" source=\""+url+"\" response-source=\""+url+"\" sha256=\""+loaded.byteSha256()+"\"/>");
-        privateResponse.set(true);load(url,RepositoryCacheRequest.unconditional());
-        assertThrows(SourceLoadException.class,()->host().loader().loadCached(new SourceLocator(url),OFFLINE,TOKEN));
     }
 
     @Test void requestValidationAndFunctionalLoaderCompatibility() {

@@ -65,7 +65,7 @@ public final class HttpSourceLoader implements SourceLoader {
         Objects.requireNonNull(locator, "locator"); Objects.requireNonNull(policy, "policy"); Objects.requireNonNull(token, "token");
         token.throwIfCancellationRequested();
         var id = new SourceId(locator.location());
-        var cached = metadata == null ? Optional.<RepositoryCacheMetadata>empty() : metadata.lookup(id, policy.offline());
+        var cached = metadata == null ? Optional.<DirectoryMetadataStore.Current>empty() : metadata.lookup(id);
         if (policy.offline()) {
             var content = cached.flatMap(m -> store.lookup(m.digest()));
             if (content.isEmpty()) {
@@ -139,7 +139,7 @@ public final class HttpSourceLoader implements SourceLoader {
                 } else if (request.matchesExpectedMd5(bytes)) {
                     var digest=new ContentDigest("sha256",loaded.byteSha256());
                     if (store.publish(new VerifiedContent(id,digest,bytes))) {
-                        metadata.put(new RepositoryCacheMetadata(id,new SourceId(current.toString()),digest,clock.instant()));
+                        metadata.put(id, digest, clock.instant());
                     }
                 }
             }
@@ -155,9 +155,9 @@ public final class HttpSourceLoader implements SourceLoader {
         }
     }
 
-    private boolean fresh(RepositoryCacheMetadata entry, RepositoryCacheRequest request) {
+    private boolean fresh(DirectoryMetadataStore.Current entry, RepositoryCacheRequest request) {
         var now=clock.instant();
-        return !request.maxAge().isZero() && !entry.downloadedAt().equals(java.time.Instant.EPOCH)
+        return !request.maxAge().isZero()
                 && !entry.downloadedAt().isAfter(now)
                 && java.time.Duration.between(entry.downloadedAt(),now).compareTo(request.maxAge())<=0;
     }

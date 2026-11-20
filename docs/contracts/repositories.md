@@ -550,10 +550,22 @@ neu zu schreiben. Die Closure archiviert verifizierte Online-Ergebnisse nicht
 persistent verwalteter Loader und lokaler Quellen weiterhin für Locks.
 `HostRepositories.Access.closureService(SourceLoader)` behält diese
 Schreibzuständigkeit bei einem HTTP-delegierenden Loader bei.
-RepositoryCacheMetadata(source,responseSource,digest,downloadedAt) ersetzt
-Validatoren durch Instant downloadedAt; EPOCH kennzeichnet unbekanntes Alter.
-metadata-v2 speichert atomar je URL, Inhaltsdateien/Lockformate bleiben erhalten.
-Version 1 dient offline nur als Herkunftszuordnung. Online erzeugt der nächste vollständige Download Version 2. Ein defekter Version-2-Eintrag bleibt ein Miss.
+Der URL-Baum liegt unter `by-url`. Beispielsweise enthält
+`by-url/https/models.example.ch/transport/roads.ili/.current.xml`
+den URL-Schlüssel, den Inhaltsdigest und den Zeitpunkt des vollständigen
+Downloads. Jede URL-Komponente ist ein Verzeichnis. `~p` kennzeichnet einen
+expliziten Port, `~` vor einem Kleinbuchstaben einen ursprünglichen
+Grossbuchstaben. Adressen ausserhalb der portablen Abbildung, etwa solche
+mit Query, verwenden `by-url/_opaque/<URL-SHA-256>/.current.xml`. Ein fehlender,
+defekter oder unter einer fremden URL abgelegter Verweis ergibt einen Miss.
+Die exakten Originalbytes liegen weiterhin einmal pro Inhaltsdigest als Datei
+direkt im Cacheverzeichnis. Das gilt auch für `ilimodels.xml` und `ilisite.xml`.
+
+Das frühere URL-Metadatenformat in `metadata-v1` und `metadata-v2` ist
+abgelöst. Ein Online-Lauf baut die URL-Zuordnungen für die freie Offline-Suche
+neu auf. Bestehende Locks können ihre exakten Inhaltsbytes weiterhin direkt
+über den Digest laden, wenn diese vorhanden sind. Die Lockformate bleiben
+erhalten.
 Keine Inhaltsbereinigung. Vary entscheidet nicht über den Anwendungscache;
 no-store bleibt ausgeschlossen, identity und Content-Coding-Prüfung bleiben.
 `FRESH_HIT` bezeichnet lokale Onlineverwendung. `NOT_MODIFIED`, `VerificationStarted` und `ILI-RES-0013` sind reserviert.
