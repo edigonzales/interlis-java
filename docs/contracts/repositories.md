@@ -98,7 +98,7 @@ Für das neue Standardprofil gilt:
 3. Eine explizite Modellversion wird exakt abgeglichen. Datums- oder Semver-Sortierung wird nicht aus dem String geraten.
 4. Explizit übergebene Quellen und konfigurierte Repositoryprioritäten werden in der dokumentierten Reihenfolge ausgewertet.
 5. Im reinen Workspace-Resolver bleiben innerhalb einer gleichrangigen Auswahlgruppe mehrere unterschiedliche passende Definitionen mehrdeutig. Gleichheit wird durch geprüften Inhalt und Modellidentität entschieden, nicht nur Dateiname.
-6. Der JVM-Beschaffungshost verwendet standardmässig das unten beschriebene ili2c-5.6.9-Profil. Explizite Auswahlen und Version-1-Locks behalten ihre eigenen Einschränkungen.
+6. Der JVM-Beschaffungshost verwendet standardmässig das unten beschriebene ili2c-5.6.9-Profil. Explizite Auswahlen behalten ihre eigenen Einschränkungen.
 
 Die endgültige Rootliste und Importauswahl werden in der Laufprovenienz festgehalten. Es gibt keinen aus Versionsstrings geratenen „neuestes Modell“-Fallback; der Host folgt der expliziten Vorgängerkette. Eine Suchfunktion darf mehrere Versionen anzeigen; die Kompilierung muss ihre konkrete Auswahl offenlegen.
 
@@ -252,8 +252,7 @@ MODEL_NAME_UNIQUE; die Beschaffung erklärt deren Verletzung nicht zum Resolverf
 Der Host verifiziert tatsächliche UTF-8-Bytes, SHA-256, optional veröffentlichtes
 MD5 sowie Name/Version/Sprachfassung im geparsten Header. Indexfehler und
 Ladefehler sind getrennte Ursachen. Das Standardprofil setzt die Suche bei
-unverfügbaren Repositorymetadaten mit einer sichtbaren Warnung fort; der alte
-strikte Vertrag gilt weiter beim Replay eines Version-1-Locks. Eine bereits
+unverfügbaren Repositorymetadaten mit einer sichtbaren Warnung fort. Eine bereits
 ausgewählte Modelldatei wird bei einem Fehler nicht durch einen anderen Kandidaten ersetzt. `RepositoryClient.discover` behält seinen separaten partiellen Suchvertrag.
 Online richtet sich die Wiederverwendung nach Cachealter und optionaler
 Index-MD5 gemäss [Cachevertrag](#cache-nach-ili2c); eine zweite Online-Abschlussprüfung entfällt. Liefert die
@@ -375,12 +374,10 @@ Sie beeinflusst den Konfigurationsfingerprint und wird beim Capture in das
 Compiler-Gate und dessen bestehende Warnungspolitik. Keine zweite
 Schemafreigabe im Host. Erfolgsbatches bleiben atomar und workspacegebunden.
 
-Neue Locks haben `formatVersion=2`, `selectionProfile=ili2c-5.6.9`, geordnete
-`steps` und eine Map `unavailable` mit konkreten Ladeursachen. `indexes` enthält
-sämtliche tatsächlich verwendeten Modell- und Siteindizes mit SHA-256.
-Die bestehenden Zweiparameterkonstruktoren erzeugen weiterhin Version-1-Locks;
-`ResolutionLock.current` erzeugt Version 2. Codec und Replay lesen beide
-Versionen ohne stilles Upgrade. Version 1 behält die explizite flache Suche.
+Der Codec liest und schreibt Resolution-Locks als XML-Version 2 mit dem Profil
+`ili2c-5.6.9`. Locks halten geordnete `steps`, konkrete Ladeursachen in
+`unavailable` und die SHA-256-Digests der verwendeten Modell- und Siteindizes
+in `indexes` fest. Der Codec weist ältere Locks als nicht unterstützt zurück.
 Version 2 friert die Suchentscheidungen und ausgewählten Quellen ein. Replay
 prüft die vollständigen eingefrorenen Metadaten gegen ihre Digests und bindet
 die ausgewählten Identitäten direkt aus diesen Indizes, ohne eine neue Suche
@@ -542,10 +539,9 @@ mit Request vor CancellationToken; Default delegiert auf den bisherigen
 abstrakten Einstieg. Routing-/HTTP-/verifizierender Loader reichen den Request
 weiter, alle Repositoryverbraucher wählen Fristen explizit, ohne URL-Heuristik.
 HTTP ohne Request lädt online unbedingt. Uhr ist explizit injizierbar.
-RepositoryCacheMetadata(source,responseSource,digest,downloadedAt) ersetzt
-Validatoren durch Instant downloadedAt; EPOCH kennzeichnet unbekanntes Alter.
-metadata-v2 speichert atomar je URL, Inhaltsdateien/Lockformate bleiben erhalten.
-Version 1 dient offline nur als Herkunftszuordnung. Online erzeugt der nächste vollständige Download Version 2. Ein defekter Version-2-Eintrag bleibt ein Miss.
+RepositoryCacheMetadata(source,responseSource,digest,downloadedAt) enthält den
+Zeitpunkt des vollständigen Downloads. `metadata-v2` speichert atomar je URL.
+Alte Metadatenverzeichnisse bleiben ungenutzt. Defekte Einträge sind Cache-Misses.
 Keine Inhaltsbereinigung. Vary entscheidet nicht über den Anwendungscache;
 no-store bleibt ausgeschlossen, identity und Content-Coding-Prüfung bleiben.
 `FRESH_HIT` bezeichnet lokale Onlineverwendung. `NOT_MODIFIED`, `VerificationStarted` und `ILI-RES-0013` sind reserviert.

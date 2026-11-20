@@ -34,7 +34,7 @@ mit SDK 0.4 eingeführt.
 | Vertrag | Wert | Bedeutung |
 |---|---|---|
 | Werkzeug und Artefakte | `0.2.0-SNAPSHOT` | Entwicklungsstand der ausgelieferten Module |
-| Öffentliche Java-API | `0.10` | Öffentliche Packages und Typen von `guru.interlis` |
+| Öffentliche Java-API | `0.11` | Öffentliche Packages und Typen von `guru.interlis` |
 | Diagnosekatalog | `interlis-diagnostics/v4` | Stabile Diagnosecodes und typisierte Argumente |
 | Bridge | `interlis.compiler/1.0` | Nachrichtenhülle, Ergebnisse und Abfragen |
 | Quellformatierung | `2.0` | Formatierungsoptionen und Ergebnisvertrag |
@@ -56,6 +56,10 @@ Lese- oder Abschlussversuch bereit. Die neuen Methoden sind additive
 Erweiterungen der Java-API 0.10.
 Paarweise UNIQUE- und Identitätsbefunde füllen den vorhandenen zweiten
 Datenort von `ValidationDiagnostic` aus. Die Diagnosecodes bleiben gültig.
+
+API 0.11 verwendet für `ResolutionLock` den Konstruktor mit Modellpins,
+Indexdigests, Suchschritten und nicht verfügbaren Quellen. Der Codec liest
+und schreibt XML-Version 2.
 
 API 0.10 erhält additive Zugänge für Resolverentscheidungen, Modellvererbung
 und gemeinsam budgetierte Syntax. Die bisherigen Konstruktoren und

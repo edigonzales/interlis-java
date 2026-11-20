@@ -233,7 +233,7 @@ class RepositoryClosureContractTest {
             assertEquals(RepositoryProblem.Reason.LOCK_MISMATCH,problem(service.resolve(w,request(w),new RepositoryResolveOptions(config(base),Map.of(),Map.of(),Optional.of(lock)),TOKEN)).reason());
         }
         contents.putAll(closure(base));
-        var partial=new ResolutionLock(Map.of("Middle",lock.models().get("Middle")),lock.indexes());
+        var partial=new ResolutionLock(Map.of("Middle",lock.models().get("Middle")),lock.indexes(),lock.steps(),lock.unavailable());
         try(var w=workspace(model("Root","1","IMPORTS Middle;"))) {
             assertEquals(RepositoryProblem.Reason.LOCK_MISMATCH,problem(service.resolve(w,request(w),new RepositoryResolveOptions(config(base),Map.of(),Map.of(),Optional.of(partial)),TOKEN)).reason());
         }

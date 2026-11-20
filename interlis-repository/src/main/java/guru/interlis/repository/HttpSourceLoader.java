@@ -78,7 +78,7 @@ public final class HttpSourceLoader implements SourceLoader {
         Objects.requireNonNull(locator, "locator"); Objects.requireNonNull(policy, "policy"); Objects.requireNonNull(token, "token");
         token.throwIfCancellationRequested();
         var id = new SourceId(locator.location());
-        var cached = metadata == null ? Optional.<RepositoryCacheMetadata>empty() : metadata.lookup(id, policy.offline());
+        var cached = metadata == null ? Optional.<RepositoryCacheMetadata>empty() : metadata.lookup(id);
         if (policy.offline()) {
             var content = cached.flatMap(m -> store.lookup(m.digest()));
             if (content.isEmpty()) {
