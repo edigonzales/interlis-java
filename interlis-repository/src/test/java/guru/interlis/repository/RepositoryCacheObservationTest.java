@@ -21,15 +21,13 @@ class RepositoryCacheObservationTest {
         return HostRepositories.createObserved(directory,RepositoryCacheConfiguration.at(directory.resolve("cache")),events::add);
     }
     List<RepositoryCacheEvent> kinds(List<RepositoryCacheObservation> observations) {return observations.stream().map(RepositoryCacheObservation::event).toList();}
-    @Test void actualHttpAndOfflineAccessesCarrySanitizedSourcesAndLegacyCallbacksAreNotDuplicated() throws Exception {
+    @Test void actualHttpAndOfflineAccessesCarrySanitizedSources() throws Exception {
         String url=fixture.serve(e -> fixture.send(e,"text","\"one\""))+"model.ili?token=secret#fragment";
         var events=new ArrayList<RepositoryCacheObservation>();var access=host(events);
         fixture.load(access,url,ONLINE);fixture.load(access,url,ONLINE);int requests=fixture.requests.get();fixture.load(access,url,OFFLINE);
         assertEquals(requests,fixture.requests.get());
         assertEquals(List.of(RepositoryCacheEvent.DOWNLOAD,RepositoryCacheEvent.FRESH_HIT,RepositoryCacheEvent.OFFLINE_HIT),kinds(events));
         for(var event:events)assertEquals(url.substring(0,url.indexOf('?')),event.safeSource().orElseThrow());
-        var legacy=new ArrayList<RepositoryCacheEvent>();fixture.load(fixture.host(legacy),url,ONLINE);
-        assertEquals(List.of(RepositoryCacheEvent.FRESH_HIT),legacy);
     }
     @Test void corruptBytesGiveMissThenDownloadAndNeverAFalseHit() throws Exception {
         String url=fixture.serve(e -> fixture.send(e,"original","\"one\""))+"model.ili";
@@ -53,12 +51,10 @@ class RepositoryCacheObservationTest {
         assertThrows(SourceLoadException.class,()->access.loader().load(new SourceLocator(url),ONLINE,TOKEN));
         assertEquals(before+1,fixture.requests.get());assertTrue(events.isEmpty());
     }
-    @Test void observationAndLegacyObserverFailuresDoNotChangeLoadingAndNoStoreDoesNotClaimPersistence() throws Exception {
+    @Test void observerFailureDoesNotChangeLoadingAndNoStoreDoesNotClaimPersistence() throws Exception {
         String url=fixture.serve(e -> {e.getResponseHeaders().set("Cache-Control","no-store");fixture.send(e,"text","\"one\"");})+"model.ili";
         var throwing=HostRepositories.createObserved(directory,RepositoryCacheConfiguration.at(directory.resolve("cache")),event -> {throw new IllegalStateException("observer");});
         assertEquals("text",fixture.load(throwing,url,ONLINE).text());
-        var legacy=HostRepositories.create(directory,RepositoryCacheConfiguration.disabled(),event -> {throw new IllegalStateException("observer");});
-        assertEquals("text",fixture.load(legacy,url,ONLINE).text());
         var events=new ArrayList<RepositoryCacheObservation>();fixture.load(host(events),url,ONLINE);fixture.load(host(events),url,ONLINE);
         assertEquals(List.of(RepositoryCacheEvent.DOWNLOAD,RepositoryCacheEvent.DOWNLOAD),kinds(events));
         assertThrows(SourceLoadException.class,()->fixture.load(host(events),url,OFFLINE));
@@ -73,14 +69,6 @@ class RepositoryCacheObservationTest {
         try(var w=workspace(root)) {prepared(access.closureService().resolve(w,request(w),new RepositoryResolveOptions(offline,Map.of(),Map.of(),Optional.of(lock)),TOKEN));}
         assertEquals(requests,fixture.requests.get());assertEquals(List.of(RepositoryCacheEvent.OFFLINE_HIT,RepositoryCacheEvent.OFFLINE_HIT),kinds(observations));
         assertEquals(Set.of(url+"ilimodels.xml",url+"dep.ili"),observations.stream().map(o -> o.safeSource().orElseThrow()).collect(java.util.stream.Collectors.toSet()));
-        var legacy=new ArrayList<RepositoryCacheEvent>();
-        for(var service:List.of(new HostRepositories.Access(access.loader(),access.contentStore(),legacy::add).closureService(),
-                new RepositoryClosureService(access.loader(),access.contentStore(),legacy::add))) {
-            legacy.clear();
-            try(var w=workspace(root)) {prepared(service.resolve(w,request(w),new RepositoryResolveOptions(offline,Map.of(),Map.of(),Optional.of(lock)),TOKEN));}
-            assertEquals(List.of(RepositoryCacheEvent.OFFLINE_HIT,RepositoryCacheEvent.OFFLINE_HIT),legacy);
-        }
-        assertEquals(requests,fixture.requests.get());
     }
     @Test void publicObservationSanitizesAtConstructionAndGlobalWritesCanOmitSource() {
         var o=new RepositoryCacheObservation(RepositoryCacheEvent.DOWNLOAD,Optional.of("https://user:password@example.org/model.ili?secret=value#private"));

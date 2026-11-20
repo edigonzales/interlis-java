@@ -12,17 +12,15 @@ public final class WorkspaceCapture {
     private final CompilationRequest request;
     private final AnalysisReuse reuse;
     private final PreparedClosure resolution;
-    private final InputFingerprint fingerprint;
     private final Object origin;
 
     WorkspaceCapture(WorkspaceRevision workspaceRevision, CompilationRequest request,
                      AnalysisReuse reuse, PreparedClosure resolution,
-                     InputFingerprint fingerprint, Object origin) {
+                     Object origin) {
         this.workspaceRevision = Objects.requireNonNull(workspaceRevision, "workspaceRevision");
         this.request = Objects.requireNonNull(request, "request");
         this.reuse = Objects.requireNonNull(reuse, "reuse");
         this.resolution = Objects.requireNonNull(resolution, "resolution");
-        this.fingerprint = Objects.requireNonNull(fingerprint, "fingerprint");
         this.origin = Objects.requireNonNull(origin, "origin");
     }
 
@@ -44,14 +42,6 @@ public final class WorkspaceCapture {
     /** Returns the prepared import closure. */
     public PreparedClosure resolution() {
         return resolution;
-    }
-
-    /** Returns the capture fingerprint.
-     *
-     * @return capture fingerprint
-     */
-    public InputFingerprint fingerprint() {
-        return fingerprint;
     }
 
     /**

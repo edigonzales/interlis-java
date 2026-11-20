@@ -39,7 +39,7 @@ class RepositoryParityIntegrationTest {
                 var update=prepared(new RepositoryClosureService(loader(material),cache).resolve(w,request(w),RepositoryResolveOptions.defaults(config(start)),TOKEN));
                 var pin=update.lock().models().get("GeometryCHLV95_V1").getFirst();
                 assertEquals("2017-12-04",pin.modelVersion());assertTrue(pin.source().value().endsWith("/CH/CHBase_Part1_GEOMETRY_V1.ili"));
-                lock=new ResolutionLockCodec().decode(new ResolutionLockCodec().encode(update.lock()));assertEquals(2,lock.formatVersion());
+                lock=new ResolutionLockCodec().decode(new ResolutionLockCodec().encode(update.lock()));
                 update.apply(w);compile(w,"Root");
             }
             var offline=new RepositoryConfig(config(start).sources(),new FetchPolicy(true, 2_000_000, Duration.ofSeconds(1), Duration.ofSeconds(1), java.util.Optional.of(Duration.ofSeconds(1))));
@@ -66,15 +66,6 @@ class RepositoryParityIntegrationTest {
             var offline=new RepositoryConfig(config(base).sources(),new FetchPolicy(true, 10000, Duration.ofSeconds(1), Duration.ofSeconds(1), java.util.Optional.of(Duration.ofSeconds(1))));
             var update=prepared(new RepositoryClosureService((l,p,t)->{fail("offline IO");return null;},cache).resolve(w,request(w),new RepositoryResolveOptions(offline,Map.of(),Map.of(),Optional.of(lock)),TOKEN));
             assertEquals(lock,update.lock());update.apply(w);assertEquals(1,compile(w,"Root").analysis().diagnostics().size());
-        }
-    }
-    @Test void legacyLockKeepsStrictVersionAmbiguityAndNoImplicitUpgrade() {
-        String base="https://repo.example/";String text=model("Dep","1","DOMAIN D=TEXT;");
-        var material=Map.of(base+"ilimodels.xml",index(entry("Dep","1","one.ili")),base+"one.ili",text);
-        var old=new ResolutionLock(Map.of("Dep",List.of(new ModelPin("Dep","1",id(base+"one.ili"),ContentDigest.sha256(text.getBytes(StandardCharsets.UTF_8))))),Map.of(id(base+"ilimodels.xml"),ContentDigest.sha256(material.get(base+"ilimodels.xml").getBytes(StandardCharsets.UTF_8))));
-        try(var w=workspace(model("Root","1","IMPORTS Dep;"))) {
-            var update=prepared(new RepositoryClosureService(loader(material),new InMemoryContentStore()).resolve(w,request(w),new RepositoryResolveOptions(config(base),Map.of(),Map.of(),Optional.of(old)),TOKEN));
-            assertEquals(old,update.lock());assertTrue(new ResolutionLockCodec().encode(update.lock()).contains("version=\"1\""));
         }
     }
     @Test void rejectedImportUsesTheOriginalWorkspaceRevisionAfterAnEdit() {

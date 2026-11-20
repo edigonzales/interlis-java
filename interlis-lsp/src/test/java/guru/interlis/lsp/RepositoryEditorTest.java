@@ -75,7 +75,7 @@ class RepositoryEditorTest {
             var docs = server.textDocumentsForTest();
             var outline = new DocumentSymbolParams(new TextDocumentIdentifier(URI));
             for (var request : List.<java.util.function.Supplier<CompletableFuture<?>>>of(
-                    () -> docs.documentSymbol(outline), docs::compileWorkspace)) {
+                    () -> docs.documentSymbol(outline), () -> server.compileModel(new CompileModelParams("workspace", null, null, null)))) {
                 var failure = assertThrows(ExecutionException.class,
                         () -> request.get().get(10, TimeUnit.SECONDS));
                 var response = assertInstanceOf(ResponseErrorException.class, failure.getCause());

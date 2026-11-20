@@ -233,7 +233,7 @@ class RepositoryClosureContractTest {
             assertEquals(RepositoryProblem.Reason.LOCK_MISMATCH,problem(service.resolve(w,request(w),new RepositoryResolveOptions(config(base),Map.of(),Map.of(),Optional.of(lock)),TOKEN)).reason());
         }
         contents.putAll(closure(base));
-        var partial=new ResolutionLock(Map.of("Middle",lock.models().get("Middle")),lock.indexes());
+        var partial=new ResolutionLock(Map.of("Middle",lock.models().get("Middle")),lock.indexes(),lock.steps(),lock.unavailable());
         try(var w=workspace(model("Root","1","IMPORTS Middle;"))) {
             assertEquals(RepositoryProblem.Reason.LOCK_MISMATCH,problem(service.resolve(w,request(w),new RepositoryResolveOptions(config(base),Map.of(),Map.of(),Optional.of(partial)),TOKEN)).reason());
         }
@@ -267,7 +267,7 @@ class RepositoryClosureContractTest {
             var update=prepared(new RepositoryClosureService(loader(closure(base)),new InMemoryContentStore())
                     .resolve(w,request(w),RepositoryResolveOptions.defaults(config(base)),TOKEN));
             var before=w.currentRevision();var config=w.configuration();
-            var changed=new WorkspaceConfiguration(config.compilerOptions(),config.resolutionPolicy(),config.resolverCatalog(),new CacheLimits(2,1,2,1024));
+            var changed=new WorkspaceConfiguration(config.compilerOptions(),config.resolutionPolicy(),config.resolverCatalog(),new CacheLimits(2, 1024));
             w.configure(changed,w.currentRevision());assertEquals(before,w.currentRevision());
             assertThrows(UpdateRejectedException.class,()->update.apply(w));
             assertEquals(changed,w.configuration());assertEquals(1,w.state().sourceRevisions().size());

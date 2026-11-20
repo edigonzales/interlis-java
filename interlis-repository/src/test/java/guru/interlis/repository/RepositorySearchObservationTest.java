@@ -9,17 +9,11 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static guru.interlis.repository.RepositoryClosureContractTest.*;
 
-class RepositoryResolutionObservationTest {
+class RepositorySearchObservationTest {
     private static final String BASE = "https://example.org/repository/";
     private final Map<String, String> contents = new ConcurrentHashMap<>(Map.of(
             BASE + "ilimodels.xml", index(entry("Dep", "1", "dep.ili")),
             BASE + "dep.ili", model("Dep", "1", "")));
-    private static String event(RepositoryResolutionObservation event) {
-        return switch (event) {
-            case RepositoryResolutionObservation.SearchStep step -> step.step().kind().name();
-            case RepositoryResolutionObservation.VerificationStarted ignored -> "VERIFY";
-        };
-    }
     private RepositoryClosureService service(Consumer<String> loads) {
         SourceLoader loader = (locator, policy, token) -> {
             token.throwIfCancellationRequested(); loads.accept(locator.location());
@@ -36,7 +30,7 @@ class RepositoryResolutionObservationTest {
         try (var w = workspace(model("Root", "1", "IMPORTS Dep;"))) {
             var revision = w.currentRevision();
             var update = prepared(service.resolve(w, request(w), RepositoryResolveOptions.defaults(config(BASE)),
-                    current -> order.add(event(current)), TOKEN));
+                    current -> order.add(current.kind().name()), TOKEN));
             assertEquals(List.of("LOOKUP", "LOAD " + BASE + "ilimodels.xml", "SELECTED", "LOAD " + BASE + "dep.ili"), order);
             assertEquals(List.of(RepositorySearchStep.Kind.LOOKUP, RepositorySearchStep.Kind.SELECTED),
                     update.lock().steps().stream().map(RepositorySearchStep::kind).toList());
@@ -44,7 +38,7 @@ class RepositoryResolutionObservationTest {
         }
     }
 
-    @Test void throwingObserverDoesNotChangeResultAndLegacyEntryStillWorks() {
+    @Test void throwingObserverDoesNotChangeResult() {
         var service = service(uri -> { });
         ResolutionLock lock;
         try (var w = workspace(model("Root", "1", "IMPORTS Dep;"))) {
@@ -64,7 +58,7 @@ class RepositoryResolutionObservationTest {
         try (var w = workspace(model("Root", "1", "IMPORTS Dep;"))) {
             var revision = w.currentRevision();
             var result = service.resolve(w, request(w), RepositoryResolveOptions.defaults(config(BASE)), current -> {
-                events.add(event(current)); cancelled.set(true);
+                events.add(current.kind().name()); cancelled.set(true);
             }, cancelled::get);
             assertInstanceOf(RepositoryResolutionOutcome.Cancelled.class, result);
             assertEquals(revision, w.currentRevision());
@@ -72,31 +66,15 @@ class RepositoryResolutionObservationTest {
         }
     }
 
-    @Test void noCompletionEventOrReReadAndWorkspaceRemainsUntouched() {
-        var events = new ArrayList<String>(); var service = service(uri -> { });
-        try (var w = workspace(model("Root", "1", "IMPORTS Dep;"))) {
-            var revision = w.currentRevision();
-            var result = service.resolve(w, request(w), RepositoryResolveOptions.defaults(config(BASE)), current -> {
-                events.add(event(current));
-                if (current instanceof RepositoryResolutionObservation.VerificationStarted)
-                    contents.put(BASE + "dep.ili", contents.get(BASE + "dep.ili") + "\n!! changed bytes");
-            }, TOKEN);
-            assertInstanceOf(RepositoryResolutionOutcome.Prepared.class, result);
-            assertEquals(List.of("LOOKUP", "SELECTED"), events);
-            assertEquals(revision, w.currentRevision());
-        }
-    }
-
-    @Test void noActualVerificationAndNullObserverHaveExplicitContracts() {
+    @Test void completeLocalClosureDoesNotPublishSearchStepsAndRejectsNullObserver() {
         var loads = new ArrayList<String>(); var service = service(loads::add);
         try (var w = workspace(model("Root", "1", ""))) {
-            var events = new ArrayList<RepositoryResolutionObservation>();
+            var events = new ArrayList<RepositorySearchStep>();
             prepared(service.resolve(w, request(w), RepositoryResolveOptions.defaults(config(BASE)), events::add, TOKEN));
             assertTrue(events.isEmpty()); assertTrue(loads.isEmpty());
             assertThrows(NullPointerException.class, () -> service.resolve(w, request(w),
                     RepositoryResolveOptions.defaults(config(BASE)), null, TOKEN));
         }
-        assertThrows(NullPointerException.class, () -> new RepositoryResolutionObservation.SearchStep(null));
     }
 
     @Test void parallelInvocationsOnOneServiceKeepTheirObserversSeparate() throws Exception {
@@ -111,7 +89,7 @@ class RepositoryResolutionObservationTest {
                 var events = new ArrayList<String>();
                 try (var w = workspace(model("Root", "1", "IMPORTS Dep;"))) {
                     prepared(service.resolve(w, request(w), RepositoryResolveOptions.defaults(config(BASE)),
-                            current -> events.add(event(current)), TOKEN));
+                            current -> events.add(current.kind().name()), TOKEN));
                 }
                 return events;
             }));

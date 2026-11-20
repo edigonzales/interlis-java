@@ -100,7 +100,7 @@ class LspProcessTest {
                 .start();
         try (OutputStream input = process.getOutputStream();
              InputStream output = new BufferedInputStream(process.getInputStream())) {
-            send(input,"{\"jsonrpc\":\"2.0\",\"id\":99,\"method\":\"workspace/executeCommand\",\"params\":{\"command\":\"interlis.compile\"}}");
+            send(input,"{\"jsonrpc\":\"2.0\",\"id\":99,\"method\":\"interlis/compile\",\"params\":{\"mode\":\"workspace\"}}");
             assertTrue(readResponse(output,99).contains("-32002"));
             send(input, """
                     {"jsonrpc":"2.0","id":1,"method":"initialize","params":{
@@ -110,8 +110,16 @@ class LspProcessTest {
             assertTrue(initialize.contains("\"id\":1"), initialize);
             assertTrue(initialize.contains("\"capabilities\""), initialize);
             assertTrue(initialize.contains("\"textDocumentSync\""), initialize);
-            assertTrue(initialize.contains("interlis.diagram"), initialize);
+            assertFalse(initialize.contains("executeCommandProvider"), initialize);
             assertTrue(initialize.contains("\"diagramSelection\":true"), initialize);
+
+            send(input, new Gson().toJson(Map.of(
+                    "jsonrpc", "2.0", "id", 3, "method", "workspace/executeCommand",
+                    "params", Map.of("command", "interlis.compile"))));
+            var commandError = com.google.gson.JsonParser.parseString(readResponse(output, 3))
+                    .getAsJsonObject().getAsJsonObject("error");
+            assertEquals(-32601, commandError.get("code").getAsInt(), commandError.toString());
+            assertTrue(!commandError.has("data") || commandError.get("data").isJsonNull(), commandError.toString());
 
             String uri = "memory:/lsp-process.ili";
             String model = """
@@ -130,19 +138,15 @@ class LspProcessTest {
                     "params", Map.of("textDocument", Map.of(
                             "uri", uri, "languageId", "interlis", "version", 1,
                             "text", model)))));
-            send(input, new Gson().toJson(Map.of(
-                    "jsonrpc", "2.0", "id", 2, "method", "workspace/executeCommand",
-                    "params", Map.of("command", "interlis.diagram",
-                            "arguments", List.of(Map.of("uri", uri,
-                                    "symbolIds", List.of()))))));
-            boolean analysisReady=false;String diagram;
-            do {diagram=readMessage(output);if(diagram.contains("interlis/analysisReady"))analysisReady=true;} while(!diagram.contains("\"id\":2"));
-            assertTrue(analysisReady, "Accepted analysis notification must precede the derived diagram");
-            assertTrue(diagram.contains("snapshotId"), diagram);
-            assertTrue(diagram.contains("Building"), diagram);
-
             send(input,new Gson().toJson(Map.of("jsonrpc","2.0","id",20,"method","interlis/diagram","params",Map.of("protocolVersion",1,"requestId","wire-diagram","textDocument",Map.of("uri",uri,"version",1),"options",Map.of("schemaVersion","1.0")))));
-            var wire=com.google.gson.JsonParser.parseString(readResponse(output,20)).getAsJsonObject().getAsJsonObject("result");
+            boolean analysisReady = false;
+            String diagram;
+            do {
+                diagram = readMessage(output);
+                if (diagram.contains("interlis/analysisReady")) analysisReady = true;
+            } while (!diagram.contains("\"id\":20"));
+            assertTrue(analysisReady, "Accepted analysis notification must precede the derived diagram");
+            var wire = com.google.gson.JsonParser.parseString(diagram).getAsJsonObject().getAsJsonObject("result");
             assertNotNull(wire);assertEquals(1,wire.get("protocolVersion").getAsInt());assertEquals("wire-diagram",wire.get("requestId").getAsString());
             assertEquals(uri,wire.get("rootUri").getAsString());assertEquals(1,wire.get("documentVersion").getAsInt());
             var documentDto=wire.getAsJsonObject("document");assertTrue(documentDto.getAsJsonArray("containers").get(0).getAsJsonObject().has("parentId"),"Canonical nullable fields must survive LSP4J serialization");assertEquals("COMPLETE",documentDto.get("completeness").getAsString());
@@ -157,18 +161,8 @@ class LspProcessTest {
             assertTrue(readResponse(output,22).contains("-32801"),"Old client versions must fail over the real launcher");
 
             send(input, new Gson().toJson(Map.of(
-                    "jsonrpc", "2.0", "id", 3, "method", "workspace/executeCommand",
-                    "params", Map.of("command", "interlis.diagram",
-                            "arguments", List.of(Map.of("uri", uri,
-                                    "snapshotId", "stale-snapshot",
-                                    "symbolIds", List.of()))))));
-            String stale = readResponse(output, 3);
-            assertTrue(stale.contains("\"error\""), stale);
-            assertTrue(stale.contains("stale"), stale);
-
-            send(input, new Gson().toJson(Map.of(
-                    "jsonrpc", "2.0", "id", 4, "method", "workspace/executeCommand",
-                    "params", Map.of("command", "interlis.compile", "arguments", List.of()))));
+                    "jsonrpc", "2.0", "id", 4, "method", "interlis/compile",
+                    "params", Map.of("mode", "workspace"))));
             String compiled = readResponse(output, 4);
             assertTrue(compiled.contains("succeeded"), compiled);
 
@@ -195,7 +189,7 @@ class LspProcessTest {
             send(input, "{\"jsonrpc\":\"2.0\",\"id\":5,\"method\":\"shutdown\",\"params\":null}");
             String shutdown = readResponse(output, 5);
             assertTrue(shutdown.contains("\"id\":5"), shutdown);
-            send(input,"{\"jsonrpc\":\"2.0\",\"id\":6,\"method\":\"workspace/executeCommand\",\"params\":{\"command\":\"interlis.compile\"}}");
+            send(input,"{\"jsonrpc\":\"2.0\",\"id\":6,\"method\":\"interlis/compile\",\"params\":{\"mode\":\"workspace\"}}");
             assertTrue(readResponse(output,6).contains("-32600"));
 
             send(input, "{\"jsonrpc\":\"2.0\",\"method\":\"exit\",\"params\":null}");

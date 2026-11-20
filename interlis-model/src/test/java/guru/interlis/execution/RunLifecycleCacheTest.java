@@ -11,10 +11,11 @@ class RunLifecycleCacheTest {
         var run=RunLifecycle.create(context,events::add,ClockSource.system());
         assertThrows(IllegalStateException.class,()->run.cacheLookup("repository",true,"OFFLINE_HIT"));
         run.start(new RunEvent.RunMetadata("cli",List.of("2.4"),0,"test"));
-        run.cacheLookup("repository",true,"NOT_MODIFIED");
+        run.cacheLookup("repository",true,"FRESH_HIT");
         run.finish(new RunCompletion.Succeeded(0,0,true,false));
         assertEquals(List.of(1L,2L,3L),events.stream().map(e->e.header().sequence()).toList());
         assertTrue(events.stream().allMatch(e->e.header().runId().equals(context.runId())));
+        assertTrue(events.stream().allMatch(e -> e.header().schemaVersion() == 2));
         assertInstanceOf(RunEvent.CacheLookup.class,events.get(1));
         assertThrows(IllegalStateException.class,()->run.cacheLookup("repository",false,"DOWNLOAD"));
     }

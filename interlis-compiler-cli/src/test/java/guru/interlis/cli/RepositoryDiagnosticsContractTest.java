@@ -3,6 +3,7 @@ package guru.interlis.cli;
 import com.google.gson.JsonParser;
 import guru.interlis.diagnostics.*;
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.repository.ResolutionLockCodec;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -70,7 +71,7 @@ class RepositoryDiagnosticsContractTest {
         var analysis=run("analyze","--repository",repo.toString(),"--root","Dep","--warnings","reject");assertEquals(0,analysis.result.exitCode());assertTrue(analysis.err.lines().anyMatch(line -> line.startsWith("WARNING ") && line.endsWith(" [ILI-RES-0008]")));
         var selected=run("check","--repository",repo.toString(),"--root","Dep","--json");
         assertEquals("1",JsonParser.parseString(selected.out).getAsJsonObject().getAsJsonObject("resolution").getAsJsonArray("models").get(0).getAsJsonObject().get("version").getAsString());
-        assertEquals(2,selected.result.resolutionLock().orElseThrow().formatVersion());
+        assertTrue(new ResolutionLockCodec().encode(selected.result.resolutionLock().orElseThrow()).contains("version=\"2\""));
     }
     @Test void lockCannotOverwriteDiscoveredSiteMetadata() throws Exception {
         var repo=repository(entry("Dep","1","Dep.ili"));Files.writeString(repo.resolve("Dep.ili"),model("Dep",""));

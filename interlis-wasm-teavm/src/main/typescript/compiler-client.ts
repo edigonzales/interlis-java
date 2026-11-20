@@ -179,7 +179,7 @@ export class CompilerClient {
       revision:this.revision(opened.workspaceRevision),sources:new Map(),configuration:copy(configuration),limits:copy(opened.limits),fingerprint:opened.configurationFingerprint,snapshots:new Map(),schemas:new Map()};
   }
   private send<T extends object>(operation: string,m: Mirror | undefined,params: object,run: RunOptions = {},restoring=false): Promise<T> {
-    const request={protocol:'interlis.compiler' as const,protocolVersion:'1.0' as const,requestId:run.requestId ?? this.host.requestId(),operation,params,...(m?{sessionId:m.serverId}:{})};
+    const request={protocol:'interlis.compiler' as const,protocolVersion:'2.0' as const,requestId:run.requestId ?? this.host.requestId(),operation,params,...(m?{sessionId:m.serverId}:{})};
     const openingLimit=operation==='openSession'?(params as D.SessionOptions).limits?.maxMessageUtf16Length:undefined;
     const limit=m?.limits.maxMessageUtf16Length ?? (openingLimit && Number.isSafeInteger(openingLimit) && openingLimit>0?Math.min(openingLimit,16777216):4194304);
     if(JSON.stringify(request).length>limit)return Promise.reject(new CompilerHostError('LIMIT_EXCEEDED','session message UTF-16 limit reached'));
@@ -255,7 +255,7 @@ export class CompilerClient {
       const next=update.change.kind==='replace'?update.change.text:this.materialize(m,update);this.apply(m,sourceId,next,receipt);
     };
     const replacement:D.SourceUpdateDto={sourceId,expectation:{kind:'absent'},change:{kind:'replace',text}};
-    const estimate=(params:object)=>JSON.stringify({protocol:'interlis.compiler',protocolVersion:'1.0',requestId:'x'.repeat(80),operation:'updateSource',sessionId:m.serverId,params}).length;
+    const estimate=(params:object)=>JSON.stringify({protocol:'interlis.compiler',protocolVersion:'2.0',requestId:'x'.repeat(80),operation:'updateSource',sessionId:m.serverId,params}).length;
     if(estimate(replacement)<=m.limits.maxMessageUtf16Length){await send(replacement);return;}
     await send({...replacement,change:{kind:'replace',text:''}});
     let offset=0;

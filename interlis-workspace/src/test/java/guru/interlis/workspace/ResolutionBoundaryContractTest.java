@@ -97,19 +97,17 @@ class ResolutionBoundaryContractTest {
         }
     }
 
-    @Test void selectionChangesAlterCaptureIdentityWithoutSourceOrOverlayEdits() {
+    @Test void selectionChangesResolveDifferentRootsWithoutSourceOrOverlayEdits() {
         var config = WorkspaceConfiguration.defaults();
         try (var w = Workspaces.create(CompilerEngines.create(), config)) {
             for (int n : List.of(1, 2)) w.update(new SourceUpdate(new SourceId("memory:/dep"+n), new SourceExpectation.Absent(),
                     new SourceChange.Replace("INTERLIS 2.4; MODEL Dep AT \"https://example.org\" VERSION \""+n+"\"=DOMAIN D=TEXT;END Dep.")));
             var roots = List.<ModelSelector>of(new ModelSelector.ByName("Dep", Optional.empty(), Optional.empty()));
-            InputFingerprint previous = null;
             for (int n : List.of(1, 2)) {
                 var policy = new ResolutionPolicy(true, Map.of("Dep", new ModelSelector.ByName("Dep", Optional.of(Integer.toString(n)), Optional.empty())), Map.of());
                 w.configure(new WorkspaceConfiguration(config.compilerOptions(), policy, config.resolverCatalog(), config.cacheLimits()), w.currentRevision());
                 var capture = w.capture(new AnalysisRequest(w.currentRevision(), roots));
-                if (previous != null) assertNotEquals(previous, capture.fingerprint());
-                previous = capture.fingerprint();
+                assertEquals(new SourceId("memory:/dep" + n), capture.resolution().rootLocations().getFirst().source());
             }
         }
     }

@@ -10,7 +10,7 @@ public final class RepositoryNetworkExample {
         var policy = new FetchPolicy(false, 16 * 1024 * 1024, Duration.ofSeconds(15),
                 Duration.ofSeconds(40), Optional.empty());
         var proxy = new RepositoryProxyConfiguration.SystemDefault();
-        var access = HostRepositories.create(Path.of("."), RepositoryCacheConfiguration.disabled(), event -> {}, proxy);
+        var access = HostRepositories.createObserved(Path.of("."), RepositoryCacheConfiguration.disabled(), event -> {}, proxy);
         System.out.println("connect=" + policy.connectTimeout() + " read=" + policy.readTimeout()
                 + " request=" + policy.requestTimeout().map(Duration::toString).orElse("off"));
         if (args.length > 0) {

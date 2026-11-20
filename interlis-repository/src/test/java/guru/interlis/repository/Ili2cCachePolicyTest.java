@@ -95,15 +95,31 @@ class Ili2cCachePolicyTest {
         assertEquals("original",host().loader().loadCached(new SourceLocator(url),OFFLINE,TOKEN).text());
     }
 
-    @Test void legacyMetadataIsOfflineOnlyAndNewDownloadsPublishV2() throws Exception {
-        String url=serve();var loaded=load(url,RepositoryCacheRequest.metadata());
-        String old="<interlis-cache version=\"1\" source=\""+url+"\" response-source=\""+url+"\" sha256=\""+loaded.byteSha256()+"\" etag=\"&quot;one&quot;\"/>";
-        Path legacy=directory.resolve("cache/metadata-v1").resolve(fixture.metadata(url).getFileName());
-        Files.createDirectories(legacy.getParent());Files.writeString(legacy,old);Files.delete(fixture.metadata(url));
-        assertEquals("original",host().loader().loadCached(new SourceLocator(url),OFFLINE,TOKEN).text());assertEquals(1,fixture.requests.get());
-        load(url,RepositoryCacheRequest.metadata());assertEquals(2,fixture.requests.get());assertTrue(Files.exists(fixture.metadata(url)));
-        Files.writeString(fixture.metadata(url),"corrupt");
-        assertThrows(SourceLoadException.class,()->host().loader().loadCached(new SourceLocator(url),OFFLINE,TOKEN));
+    @Test void corruptMetadataIsAnOfflineMiss() throws Exception {
+        String url = serve();
+        load(url, RepositoryCacheRequest.metadata());
+        Files.writeString(fixture.metadata(url), "corrupt");
+        var failure = assertThrows(SourceLoadException.class,
+                () -> host().loader().loadCached(new SourceLocator(url), OFFLINE, TOKEN));
+        assertEquals(SourceLoadException.Reason.OFFLINE, failure.reason());
+        assertEquals(1, fixture.requests.get());
+    }
+
+    @Test void versionOneMetadataIsIgnoredOffline() throws Exception {
+        String url = serve();
+        var loaded = load(url, RepositoryCacheRequest.metadata());
+        Path current = fixture.metadata(url);
+        Path old = directory.resolve("cache/metadata-v1").resolve(current.getFileName());
+        Files.createDirectories(old.getParent());
+        Files.writeString(old, """
+                <interlis-cache version="1" source="%s" response-source="%s" sha256="%s"/>
+                """.formatted(url, url, loaded.byteSha256()));
+        assertEquals("original", host().loader().loadCached(new SourceLocator(url), OFFLINE, TOKEN).text());
+        Files.delete(current);
+        var failure = assertThrows(SourceLoadException.class,
+                () -> host().loader().loadCached(new SourceLocator(url), OFFLINE, TOKEN));
+        assertEquals(SourceLoadException.Reason.OFFLINE, failure.reason());
+        assertEquals(1, fixture.requests.get());
     }
 
     @Test void applicationCacheIgnoresVaryButHonorsNoStore() throws Exception {
@@ -137,13 +153,16 @@ class Ili2cCachePolicyTest {
         assertEquals(6,fixture.requests.get());
     }
 
-    @Test void noStoreInvalidationCannotResurrectLegacyOfflineEntry() throws Exception {
-        String url=serve();var loaded=load(url,RepositoryCacheRequest.metadata());
-        Path legacy=directory.resolve("cache/metadata-v1").resolve(fixture.metadata(url).getFileName());
-        Files.createDirectories(legacy.getParent());
-        Files.writeString(legacy,"<interlis-cache version=\"1\" source=\""+url+"\" response-source=\""+url+"\" sha256=\""+loaded.byteSha256()+"\"/>");
-        privateResponse.set(true);load(url,RepositoryCacheRequest.unconditional());
-        assertThrows(SourceLoadException.class,()->host().loader().loadCached(new SourceLocator(url),OFFLINE,TOKEN));
+    @Test void noStoreInvalidatesPreviouslyCachedMetadata() throws Exception {
+        String url = serve();
+        load(url, RepositoryCacheRequest.metadata());
+        assertEquals("original", host().loader().loadCached(new SourceLocator(url), OFFLINE, TOKEN).text());
+        privateResponse.set(true);
+        load(url, RepositoryCacheRequest.unconditional());
+        assertFalse(Files.exists(fixture.metadata(url)));
+        var failure = assertThrows(SourceLoadException.class,
+                () -> host().loader().loadCached(new SourceLocator(url), OFFLINE, TOKEN));
+        assertEquals(SourceLoadException.Reason.OFFLINE, failure.reason());
     }
 
     @Test void requestValidationAndFunctionalLoaderCompatibility() {

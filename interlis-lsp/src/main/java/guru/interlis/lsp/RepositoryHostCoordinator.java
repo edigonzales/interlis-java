@@ -28,8 +28,8 @@ final class RepositoryHostCoordinator implements AutoCloseable {
         }
         if(loader!=null)loader.cancelPending(CancellationReason.SUPERSEDED);
         settings=value;
-        access=HostRepositories.create(Path.of(System.getProperty("user.dir")),value.cache(),event -> {
-            if(event==RepositoryCacheEvent.WRITE_UNAVAILABLE) operations.accept("Repository cache is unavailable; downloaded sources remain usable for this session.");
+        access=HostRepositories.createObserved(Path.of(System.getProperty("user.dir")),value.cache(),event -> {
+            if(event.event()==RepositoryCacheEvent.WRITE_UNAVAILABLE) operations.accept("Repository cache is unavailable; downloaded sources remain usable for this session.");
         });
         loader=new CoalescingSourceLoader(access.loader());
     }
@@ -44,7 +44,7 @@ final class RepositoryHostCoordinator implements AutoCloseable {
             WorkspaceConfiguration configuration,CancellationToken token) {
         var result=new CompletableFuture<RepositoryResolutionOutcome>();
         pending.add(result);result.whenComplete((value,failure) -> pending.remove(result));
-        var service=new RepositoryClosureService(loader,access.contentStore(),access.observer());var options=settings.options();
+        var service=new RepositoryClosureService(loader,access.contentStore(),access.observations());var options=settings.options();
         CancellationToken bounded=new CancellationToken() {
             public boolean isCancellationRequested() { return closed.get() || result.isCancelled() || token.isCancellationRequested(); }
             public CancellationReason reason() { return closed.get()?CancellationReason.HOST_SHUTDOWN:token.reason(); }

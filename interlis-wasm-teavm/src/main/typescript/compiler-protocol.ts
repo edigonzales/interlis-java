@@ -1,4 +1,4 @@
-/** Protocol 1.0 data. Revision and exact numerical payloads remain decimal strings. */
+/** Compiler bridge data. Revision and exact numerical payloads remain decimal strings. */
 import type {Revision, JsonValue, JsonObject, SourceRangeDto, SymbolRefDto, SourceAnchorDto} from '../../../../interlis-projection/src/main/typescript/diagram-document';
 export type {Revision, JsonValue, JsonObject, SourceRangeDto, SymbolRefDto, SourceAnchorDto} from '../../../../interlis-projection/src/main/typescript/diagram-document';
 export interface SessionLimits {
@@ -18,8 +18,7 @@ export interface ResolutionPolicyDto {
   readonly sourcePriorities?: readonly {readonly sourceId: string; readonly priority: number}[];
 }
 export interface CacheLimitsDto {
-  readonly maxSyntaxEntries?: number; readonly maxAnalysisEntries?: number;
-  readonly maxQueryEntries?: number; readonly maxRetainedSourceUtf16Units?: string;
+  readonly maxSyntaxEntries?: number; readonly maxRetainedSourceUtf16Units?: string;
 }
 export type OverlayTargetDto = string | {readonly name: string; readonly modelVersion?: string; readonly sourceHint?: string};
 export type OverlayDto = {readonly id: string; readonly priority: number; readonly target: OverlayTargetDto; readonly range?: SourceRangeDto} & (

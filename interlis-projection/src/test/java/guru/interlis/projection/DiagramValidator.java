@@ -11,10 +11,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-/** Structural and snapshot validation of DiagramDocument 1.0; no source I/O. */
-public final class DiagramValidator {
+/** Checks structural and snapshot invariants of projected diagrams in tests. */
+final class DiagramValidator {
     /** Returns ordered errors without mutating the document. Empty means valid. */
-    public List<String> validate(DiagramDocument document) {
+    List<String> validate(DiagramDocument document) {
         Objects.requireNonNull(document, "document");
         List<String> errors = new ArrayList<>();
         Set<String> ids = new HashSet<>();

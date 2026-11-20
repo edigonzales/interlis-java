@@ -155,7 +155,9 @@ void onEvent(RunEvent event);
 
 Die Schnittstelle deklariert keine `IOException` und keine Netzwerkabhängigkeit. `RunObserver.noop()` liefert einen wirkungslosen Observer. Eine konkrete Senke darf intern asynchron arbeiten, muss ihre Queue aber begrenzen. Der Compiler darf nicht unkontrolliert auf einen entfernten Logdienst warten.
 
-`RunEvent` ist ein unveränderlicher getaggter Ereignistyp. Jedes Ereignis enthält einen `RunEventHeader` mit `RunId`, optionaler `parentRunId`, lauflokaler monotoner `sequence`, Schemanummer und Host-Zeitangaben. Die Zeitquelle ist injizierbar:
+`RunEvent` ist ein unveränderlicher getaggter Ereignistyp. Jedes Ereignis enthält einen `RunEventHeader` mit `RunId`, optionaler `parentRunId`, lauflokaler monotoner `sequence`, Schemanummer und Host-Zeitangaben. Der Lifecycle emittiert Schema 2. Ein
+interner Fehler erscheint als `RunCompletion.Failed` mit FailureId. Die
+Zeitquelle ist injizierbar:
 
 ```java
 long wallTimeEpochMillis();
@@ -224,12 +226,7 @@ Die Übernahme in `RunCompletion` ist eine neutrale Datenprojektion: katalogisie
 | `interlis.phase.started` | Phase, bearbeitete Einheit oder aggregierte Anzahl | Grobe Phasenstruktur |
 | `interlis.phase.finished` | Phase, Status, Dauer, Anzahlen | Genau einmal pro gestarteter Phase |
 | `interlis.cache.lookup` | Cacheart, HIT/MISS, begrenzter Reason-Code | Aggregierbar; standardmässig kein Eintrag je AST-Knoten |
-| `interlis.workspace.invalidated` | Revision, Grund, Anzahl betroffener Einheiten | Erklärt Neuberechnung |
-| `interlis.source.resolved` | bereinigte SourceId, Strategie, Cachebezug, Dauer | Host-Resolver, keine Credentials |
-| `interlis.run.cancel_requested` | Grund und anfordernder Adapter | Optional; keine Behauptung bereits erfolgten Abbruchs |
-| `interlis.run.internal_failure` | FailureId, begrenzte technische Ursachen, Stackinformationen soweit verfügbar | Interner Fehlerbericht, getrennt von sicherer fachlicher Diagnose |
 | `interlis.run.finished` | Terminalstatus, Dauer, Zähler, SnapshotId/FailureId | Ein Abschluss-Emissionsversuch je angenommenem Lauf |
-| `interlis.observer.degraded` | Senkentyp, Ausfallklasse, verworfene Anzahl | Nur Host-Fallback; nicht an dieselbe kaputte Senke rekursiv senden |
 
 Eine Diagnose muss nicht zusätzlich als Betriebsereignis dupliziert werden. Wenn ein Host beides benötigt, kennzeichnet er die Diagnoseausgabe eindeutig, damit Zähler nicht doppelt summiert werden.
 
@@ -318,7 +315,6 @@ Revision 20 wird analysiert, während Revision 21 eingeht. Der Host kann für 20
 | `LspStdoutPurityTest` | Keine Nicht-Protokollausgabe auf stdout unter realer Compilerintegration |
 | `CompilerCliIdentityContractTest` / `compilerCliCheck` | Standardentry, Reihenfolge, Kanäle und Exitcodes |
 | `RejectionPresentationTest` | Warnungspolitik, unvollständige Implementierung, Umgebungsfehler und Quellfehler bleiben typisiert; rootfremde Fehler verändern die Gatezusammenfassung nicht |
-| `ObservationBudgetTest` | Begrenzte Queue, dokumentiertes Verwerfen, keine unbeschränkten Strings oder Metriklabels |
 
 <a id="erfolgreiche-hostoperation-ohne-erfolgsschema"></a>
 ### erfolgreiche Hostoperation ohne Erfolgsschema
@@ -360,11 +356,12 @@ fehlgeschlagenen Import im selben Modell entspricht, erhalten dessen
 Fehler über `DiagnosticPresentation`; die vollständige Liste und JSON behalten
 sie. Unabhängige Namen werden nicht aufgrund eines fehlenden Imports verdeckt.
 
-Repositorycache (RES-013): Der explizite Hostcallback aus [Repositoryvertrag](repositories.md) meldet nur
-getypte Statuswerte, niemals URLs, Header, Pfade oder Antwortinhalte.
+Repositorycache (RES-013): Der explizite Hostcallback aus [Repositoryvertrag](repositories.md) meldet getypte
+Statuswerte und optional eine bereinigte Anzeigeadresse. Der CLI-Lifecycle
+übernimmt davon den Status.
 `RunLifecycle.cacheLookup(cache,hit,reason)` verwendet im laufenden CLI-Elternlauf
-die vorhandene CacheLookup-Variante mit dessen Kontext und Sequenz. DOWNLOAD,
-NOT_MODIFIED, OFFLINE_HIT/MISS, CACHE_MISS und WRITE_UNAVAILABLE bleiben erklärbar.
+die CacheLookup-Variante mit dessen Kontext und Sequenz. Die Statuswerte sind
+DOWNLOAD, FRESH_HIT, OFFLINE_HIT/MISS, CACHE_MISS und WRITE_UNAVAILABLE.
 Ein Schreibfehler rendert einmal pro Hostzugriff eine operative ILI-RES-0008 mit
 reason CACHE_WRITE_UNAVAILABLE auf stderr; sie ersetzt keine Quelle und
 verändert keine Compiler-Gateentscheidung. Die kanonischen Suchwarnungen bleiben

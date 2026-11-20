@@ -8,7 +8,7 @@ export interface WorkerPort {
 export interface RunOptions { requestId?: string; signal?: AbortSignal; }
 export type CancelDisposition = 'notStarted' | 'cooperative' | 'workerRestarted' | 'alreadyCompleted' | 'unknownRequest';
 export interface WireRequest {
-  protocol: 'interlis.compiler'; protocolVersion: '1.0'; requestId: string;
+  protocol: 'interlis.compiler'; protocolVersion: '2.0'; requestId: string;
   operation: string; sessionId?: string; params: object;
 }
 export class CompilerHostError extends Error {
@@ -165,7 +165,7 @@ export class CompilerWorkerHost {
       try {
         if (typeof message.response !== 'string') throw new Error('missing compiler response');
         const response = JSON.parse(message.response) as {protocol?: string; protocolVersion?: string; requestId?: string; status?: string};
-        if (response.protocol !== 'interlis.compiler' || response.protocolVersion !== '1.0'
+        if (response.protocol !== 'interlis.compiler' || response.protocolVersion !== '2.0'
             || response.requestId !== pending.request.requestId || !['ok','error','cancelled'].includes(response.status ?? ''))
           throw new Error('invalid compiler response envelope');
         this.finish(pending, response);

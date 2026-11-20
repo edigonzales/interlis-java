@@ -215,7 +215,7 @@ Die Spalte Prüfhinweis nennt relevante Prüfinhalte. Die Assertions stehen in d
 
 | ID | Anforderung | Status | Fachvertrag | Prüfhinweis |
 |---|---|---|---|---|
-| <a id="res-001"></a>`RES-001` | Engine und SourceProvider-Snapshot DÜRFEN keine implizite IO ausführen. | Geltend | [Vertrag](repositories.md) | In-Memory- und Browserlauf; fehlende Quelle wird als PendingSourceRequest sichtbar. |
+| <a id="res-001"></a>`RES-001` | Engine und Resolver DÜRFEN bei der Verarbeitung des eingefrorenen Inventars keine implizite IO ausführen. | Geltend | [Vertrag](repositories.md) | In-Memory- und Browserlauf; fehlende Quelle wird als PendingSourceRequest sichtbar. |
 | <a id="res-002"></a>`RES-002` | Sprache, Modellversion, Quellenrevision und Repositoryrevision MÜSSEN getrennt sein. | Geltend | [Vertrag](repositories.md) | Modelle mit gleichem Namen/verschiedenen Versionsstrings werden korrekt gewählt oder als mehrdeutig gemeldet. |
 | <a id="res-003"></a>`RES-003` | Mehrere Modelle je Datei MÜSSEN korrekt auswählbar sein. | Geltend | [Vertrag](repositories.md) | ByName/BySource und Importbindung testen unterschiedliche Closure. |
 | <a id="res-004"></a>`RES-004` | Auflösungsentscheidungen MÜSSEN deterministisch und erklärbar sein. | Geltend | [Vertrag](repositories.md) | Gleicher Katalog trotz anderer Mapiteration ergibt gleichen Trace und Resultat. |

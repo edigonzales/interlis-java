@@ -2,23 +2,21 @@ package guru.interlis.workspace.resolution;
 
 import guru.interlis.compiler.AnalysisBudget;
 import guru.interlis.compiler.ModelSelector;
+import guru.interlis.compiler.SemanticOverlays;
 
 import java.util.List;
 import java.util.Objects;
 
 /**
- * Explicit root selection and expected inventory revision.
+ * Options for pure model resolution against an immutable inventory.
  *
  * @param roots the {@code roots} component
  * @param policy the {@code policy} component
  * @param budget the {@code budget} component
- * @param expectedInventoryFingerprint the {@code expectedInventoryFingerprint} component
+ * @param overlays semantic overlays for the selected language profile
  */
 public record ResolutionRequest(List<ModelSelector> roots, ResolutionPolicy policy,
-                                AnalysisBudget budget, String expectedInventoryFingerprint,guru.interlis.compiler.SemanticOverlays overlays) {
-    public ResolutionRequest(List<ModelSelector> roots,ResolutionPolicy policy,AnalysisBudget budget,String expectedInventoryFingerprint) {
-        this(roots,policy,budget,expectedInventoryFingerprint,guru.interlis.compiler.SemanticOverlays.empty());
-    }
+                                AnalysisBudget budget, SemanticOverlays overlays) {
     /** Creates a validated instance. */
     public ResolutionRequest {
         Objects.requireNonNull(overlays,"overlays");
@@ -28,6 +26,5 @@ public record ResolutionRequest(List<ModelSelector> roots, ResolutionPolicy poli
         }
         Objects.requireNonNull(policy, "policy");
         Objects.requireNonNull(budget, "budget");
-        Objects.requireNonNull(expectedInventoryFingerprint, "expectedInventoryFingerprint");
     }
 }

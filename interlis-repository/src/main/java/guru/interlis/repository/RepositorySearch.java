@@ -24,7 +24,7 @@ final class RepositorySearch {
     private final Set<SourceId> indexSources=new LinkedHashSet<>();
     private final List<RepositorySearchStep> steps=new ArrayList<>();
     private final Map<URI,Integer> ranks=new LinkedHashMap<>();
-    private final java.util.function.Consumer<RepositoryResolutionObservation> observer;
+    private final java.util.function.Consumer<RepositorySearchStep> observer;
     RepositorySearch(SourceLoader loader,RepositoryConfig config,CancellationToken token,long limit) {
         this(loader,config,token,limit,1000);
     }
@@ -32,7 +32,7 @@ final class RepositorySearch {
         this(loader, config, token, limit, maxDiagnostics, event -> { });
     }
     RepositorySearch(SourceLoader loader,RepositoryConfig config,CancellationToken token,long limit,int maxDiagnostics,
-                     java.util.function.Consumer<RepositoryResolutionObservation> observer) {
+                     java.util.function.Consumer<RepositorySearchStep> observer) {
         this.loader=loader;this.config=config;this.token=token;this.limit=limit;this.maxDiagnostics=maxDiagnostics;
         this.observer=Objects.requireNonNull(observer,"observer");
     }
@@ -54,7 +54,7 @@ final class RepositorySearch {
         tick();var step=new RepositorySearchStep(model,base,kind,detail);
         if(step.warning() && ++warningCount>maxDiagnostics)throw new OperationCancelledException(CancellationReason.RESOURCE_LIMIT);
         steps.add(step);
-        observer.accept(new RepositoryResolutionObservation.SearchStep(step));
+        observer.accept(step);
     }
     private URI base(URI uri) { String s=SourceUris.canonicalFile(uri.toString().trim());return URI.create(s.endsWith("/")?s:s+"/"); }
     Optional<ModelCandidate> find(ModelSelector.ByName query,Optional<LanguageVersion> language) {

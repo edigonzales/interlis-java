@@ -21,7 +21,7 @@ public final class HttpSourceLoader implements SourceLoader {
     private final java.util.concurrent.ConcurrentMap<java.time.Duration, HttpClient> clients = new java.util.concurrent.ConcurrentHashMap<>();
     private final ContentStore store;
     private final DirectoryMetadataStore metadata;
-    private final CacheObservations observer;
+    private final Consumer<RepositoryCacheObservation> observer;
     private final java.time.Clock clock;
 
     /** Explicit uncached loader; existing callers retain their host policy. */
@@ -29,35 +29,15 @@ public final class HttpSourceLoader implements SourceLoader {
 
     /** Creates an uncached host loader and captures its non-null proxy choice without network IO. */
     public HttpSourceLoader(RepositoryProxyConfiguration proxy) {
-        this(new InMemoryContentStore(), null, CacheObservations.detailed(event -> { }), proxy);
+        this(new InMemoryContentStore(), null, event -> { }, proxy, java.time.Clock.systemUTC());
     }
 
-    HttpSourceLoader(ContentStore store, DirectoryMetadataStore metadata, Consumer<RepositoryCacheEvent> observer) {
-        this(store,metadata,CacheObservations.legacy(observer));
-    }
-    static HttpSourceLoader observed(ContentStore store, DirectoryMetadataStore metadata, Consumer<RepositoryCacheObservation> observer) {
-        return observed(store,metadata,observer,new RepositoryProxyConfiguration.SystemDefault());
-    }
-    static HttpSourceLoader observed(ContentStore store, DirectoryMetadataStore metadata,
-                                      Consumer<RepositoryCacheObservation> observer, RepositoryProxyConfiguration proxy) {
-        return new HttpSourceLoader(store,metadata,CacheObservations.detailed(observer),proxy);
-    }
-    private HttpSourceLoader(ContentStore store, DirectoryMetadataStore metadata, CacheObservations observer) {
-        this(store, metadata, observer, new RepositoryProxyConfiguration.SystemDefault());
-    }
-    private HttpSourceLoader(ContentStore store, DirectoryMetadataStore metadata, CacheObservations observer,
-                              RepositoryProxyConfiguration proxy) {
-        this(store, metadata, observer, proxy, java.time.Clock.systemUTC());
-    }
-    static HttpSourceLoader observed(ContentStore store, DirectoryMetadataStore metadata,
-            Consumer<RepositoryCacheObservation> observer, RepositoryProxyConfiguration proxy, java.time.Clock clock) {
-        return new HttpSourceLoader(store, metadata, CacheObservations.detailed(observer), proxy, clock);
-    }
-    private HttpSourceLoader(ContentStore store, DirectoryMetadataStore metadata, CacheObservations observer,
-                             RepositoryProxyConfiguration proxy, java.time.Clock clock) {
+    HttpSourceLoader(ContentStore store, DirectoryMetadataStore metadata,
+                     Consumer<RepositoryCacheObservation> observer, RepositoryProxyConfiguration proxy,
+                     java.time.Clock clock) {
         this.clock = Objects.requireNonNull(clock, "clock");
         this.proxySelector = Objects.requireNonNull(proxy, "proxy").selector();
-        this.store = store; this.metadata = metadata; this.observer = observer;
+        this.store = store; this.metadata = metadata; this.observer = Objects.requireNonNull(observer, "observer");
     }
 
     @Override
@@ -78,15 +58,15 @@ public final class HttpSourceLoader implements SourceLoader {
         Objects.requireNonNull(locator, "locator"); Objects.requireNonNull(policy, "policy"); Objects.requireNonNull(token, "token");
         token.throwIfCancellationRequested();
         var id = new SourceId(locator.location());
-        var cached = metadata == null ? Optional.<RepositoryCacheMetadata>empty() : metadata.lookup(id, policy.offline());
+        var cached = metadata == null ? Optional.<RepositoryCacheMetadata>empty() : metadata.lookup(id);
         if (policy.offline()) {
             var content = cached.flatMap(m -> store.lookup(m.digest()));
             if (content.isEmpty()) {
-                observer.publish(RepositoryCacheEvent.OFFLINE_MISS,id);
+                RepositoryCacheObservation.forSource(RepositoryCacheEvent.OFFLINE_MISS, id).publishTo(observer);
                 throw new SourceLoadException(SourceLoadException.Reason.OFFLINE, "verified content unavailable offline", null);
             }
             var loaded = decode(id,content.orElseThrow().bytes(),policy,"verified-cache");
-            observer.publish(RepositoryCacheEvent.OFFLINE_HIT,id);
+            RepositoryCacheObservation.forSource(RepositoryCacheEvent.OFFLINE_HIT, id).publishTo(observer);
             return loaded;
         }
         if (cached.filter(m -> fresh(m, request)).isPresent()) {
@@ -97,11 +77,11 @@ public final class HttpSourceLoader implements SourceLoader {
                 if (request.expectedMd5().filter(md5 -> !md5.equalsIgnoreCase(md5(bytes))).isEmpty()) {
                     var loaded = decode(id, bytes, policy, "verified-cache");
                     token.throwIfCancellationRequested();
-                    observer.publish(RepositoryCacheEvent.FRESH_HIT, id);
+                    RepositoryCacheObservation.forSource(RepositoryCacheEvent.FRESH_HIT, id).publishTo(observer);
                     return loaded;
                 }
             }
-            observer.publish(RepositoryCacheEvent.CACHE_MISS, id);
+            RepositoryCacheObservation.forSource(RepositoryCacheEvent.CACHE_MISS, id).publishTo(observer);
         }
         URI current;
         try { current = URI.create(locator.location()); }
@@ -153,7 +133,7 @@ public final class HttpSourceLoader implements SourceLoader {
                     if (store.lookup(digest).isPresent()) metadata.put(new RepositoryCacheMetadata(id,new SourceId(current.toString()),digest,clock.instant()));
                 } else metadata.remove(id);
             }
-            observer.publish(RepositoryCacheEvent.DOWNLOAD,id);
+            RepositoryCacheObservation.forSource(RepositoryCacheEvent.DOWNLOAD, id).publishTo(observer);
             return loaded;
         } catch (java.net.http.HttpTimeoutException e) {
             throw new SourceLoadException(SourceLoadException.Reason.TIMEOUT,"source request timed out",e);

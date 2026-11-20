@@ -213,7 +213,7 @@ class DocumentSynchronizationTest {
                     else service.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(URI,"interlis",2,oversized)));
                 });
                 assertEquals(ResponseErrorCode.ContentModified.getValue(),error(()->service.documentSymbol(new DocumentSymbolParams(new TextDocumentIdentifier(URI)))).getResponseError().getCode());
-                assertEquals(ResponseErrorCode.ContentModified.getValue(),error(()->server.getWorkspaceService().executeCommand(new ExecuteCommandParams("interlis.compile",List.of()))).getResponseError().getCode());
+                assertEquals(ResponseErrorCode.ContentModified.getValue(),error(()->server.compileModel(new CompileModelParams("workspace", null, null, null))).getResponseError().getCode());
                 assertTrue(messages.stream().anyMatch(message->message.contains("SOURCE_LIMIT_EXCEEDED")));
                 assertTrue(messages.stream().noneMatch(message->message.contains("SECRET_PAYLOAD")));
                 assertEquals(opened?TEXT:null,workspace.source(new SourceId(URI)).map(value->value.text()).orElse(null));

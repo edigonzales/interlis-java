@@ -74,7 +74,7 @@ class SessionResourceLimitsTest {
 
     @Test void sessionMessageLimitPrecedesFullPayloadParsingAndUnderstandsEscapedHeaderKeys() {
         String id=open(limits(2,2));
-        String prefix="{\"protocol\":\"interlis.compiler\",\"protocolVersion\":\"1.0\",\"requestId\":\"large\",\"sessionId\":\""+id+"\",\"operation\":\"updateSource\",\"params\":{\"text\":\"";
+        String prefix="{\"protocol\":\"interlis.compiler\",\"protocolVersion\":\"2.0\",\"requestId\":\"large\",\"sessionId\":\""+id+"\",\"operation\":\"updateSource\",\"params\":{\"text\":\"";
         // The oversized payload is deliberately malformed, so JSON-tree decoding
         // would return INVALID_JSON instead of the required predecode limit.
         String request=prefix+"a".repeat(10_001)+"\" BROKEN}";
@@ -137,7 +137,7 @@ class SessionResourceLimitsTest {
     private static JsonValue.JsonObject source(String id,String text) { return JsonValues.object("sourceId",JsonValues.string(id),"expectation",JsonValues.object("kind",JsonValues.string("absent")),"change",JsonValues.object("kind",JsonValues.string("replace"),"text",JsonValues.string(text))); }
     private static JsonValue.JsonObject roots(String revision) { return JsonValues.object("expectedWorkspaceRevision",JsonValues.string(revision),"roots",JsonValues.array(List.of(JsonValues.object("kind",JsonValues.string("byName"),"modelName",JsonValues.string("F"))))); }
     private JsonValue.JsonObject call(String operation,String session,JsonValue.JsonObject params) {
-        var request=new LinkedHashMap<String,JsonValue>();request.put("protocol",JsonValues.string("interlis.compiler"));request.put("protocolVersion",JsonValues.string("1.0"));request.put("requestId",JsonValues.string("limits-"+(++sequence)));request.put("operation",JsonValues.string(operation));request.put("params",params);if(session!=null)request.put("sessionId",JsonValues.string(session));
+        var request=new LinkedHashMap<String,JsonValue>();request.put("protocol",JsonValues.string("interlis.compiler"));request.put("protocolVersion",JsonValues.string("2.0"));request.put("requestId",JsonValues.string("limits-"+(++sequence)));request.put("operation",JsonValues.string(operation));request.put("params",params);if(session!=null)request.put("sessionId",JsonValues.string(session));
         return (JsonValue.JsonObject)Json.parse(bridge.handle(Json.write(new JsonValue.JsonObject(request))));
     }
     private static JsonValue.JsonObject result(JsonValue.JsonObject value) { return (JsonValue.JsonObject)value.members().get("result"); }

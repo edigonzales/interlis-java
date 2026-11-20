@@ -1,29 +1,21 @@
 package guru.interlis.workspace;
 
 /**
- * Cache limits are operating settings, never semantic settings.
+ * Limits on retained syntax for reuse across analyses.
  *
- * @param maxSyntaxEntries the {@code maxSyntaxEntries} component
- * @param maxAnalysisEntries the {@code maxAnalysisEntries} component
- * @param maxQueryEntries the {@code maxQueryEntries} component
- * @param maxRetainedSourceUtf16Units the {@code maxRetainedSourceUtf16Units} component
+ * @param maxSyntaxEntries maximum number of syntax snapshots, zero disables retention
+ * @param maxRetainedSourceUtf16Units maximum total source text length in UTF-16 units
  */
-public record CacheLimits(int maxSyntaxEntries, int maxAnalysisEntries,
-                          int maxQueryEntries, long maxRetainedSourceUtf16Units) {
-    /** Creates a validated instance. */
+public record CacheLimits(int maxSyntaxEntries, long maxRetainedSourceUtf16Units) {
+    /** Creates limits with non-negative bounds. */
     public CacheLimits {
-        if (maxSyntaxEntries < 0 || maxAnalysisEntries < 0 || maxQueryEntries < 0
-                || maxRetainedSourceUtf16Units < 0) {
+        if (maxSyntaxEntries < 0 || maxRetainedSourceUtf16Units < 0) {
             throw new IllegalArgumentException("cache limits must be non-negative");
         }
     }
 
-    /**
-     * Returns the {@code defaults} value.
-     *
-     * @return the value
-     */
+    /** Returns the default syntax retention limits. */
     public static CacheLimits defaults() {
-        return new CacheLimits(128, 4, 1024, 16_777_216L);
+        return new CacheLimits(128, 16_777_216L);
     }
 }

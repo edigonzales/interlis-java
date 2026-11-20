@@ -40,7 +40,10 @@ lösen den Selektor aus den mitgelieferten Quellen auf.
 
 Paket: `guru.interlis.workspace.resolution`.
 
-`SourceProvider.snapshot()` liefert ausschliesslich bereits vorhandene Daten. Es darf keine IO-Aktion verstecken. `SourceInventory` enthält eine feste `WorkspaceRevision`, unveränderliche `SourceText`-Werte, einen Kopfindex und einen eingefrorenen Resolverkatalog. Neue Texte erhalten ihre Revision über den Workspace; ein Provider darf keine Revision vergeben.
+`SourceInventory` enthält eine feste `WorkspaceRevision`, unveränderliche
+`SourceText`-Werte, einen Kopfindex und einen eingefrorenen Resolverkatalog.
+Der Workspace vergibt die Quellrevisionen. Der Resolver erhält den Bestand
+direkt und führt seine Berechnung ohne IO aus.
 
 Der Konstruktor von `SourceInventory` erfasst neben Revision,
 Quellen und Katalog eine `Map<SourceId, SyntaxSnapshot>` mit bereits geparsten
@@ -58,7 +61,7 @@ die Übernahme von Wiederverwendungsdaten bleibt an `acceptAnalysis` gebunden.
 | Klasse | Felder bzw. Methoden | Vertrag |
 |---|---|---|
 | `SourceInventory` | `workspaceRevision()`, `sources()`, `headers()`, `catalog()`, `fingerprint()` | defensive unveränderliche Sicht; Kopfindex nennt exakte Quellrevisionen |
-| `ResolutionRequest` | `roots()`, `policy()`, `budget()`, `expectedInventoryFingerprint()` | explizite Rootauswahl und Auswahlregeln |
+| `ResolutionRequest` | `roots()`, `policy()`, `budget()`, `overlays()` | explizite Rootauswahl und Auswahlregeln |
 | `ModelHeader` | Modellname, rohe Modellversion, Sprachversion, Deklarationsbereich, erkannte Imports, Kopfzustand | fehlertolerantes Indexergebnis; kein Semantikzertifikat |
 | `ModelCandidate` | Name/Version, logische Quelle, Herkunft, optionaler Inhaltsdigest, Prioritätsgruppe | vollständiger Provenienzbezug; lokale Verfügbarkeit gesondert |
 | `PendingSourceRequest` | gesuchtes Modell, mögliche Locator, Ursache, abhängig machende Importstellen | Vorschlag an Host, löst selbst nichts aus |
@@ -73,7 +76,7 @@ die Übernahme von Wiederverwendungsdaten bleibt an `acceptAnalysis` gebunden.
 <a id="prepare-vertrag"></a>
 ### prepare-Vertrag
 
-**Vorbedingungen:** nullfreie unveränderliche Eingaben, Fingerprint passt zum Inventar, mindestens eine Rootauswahl, positive sinnvolle Limits. **Nachbedingungen:** Die Methode mutiert weder Provider noch Workspace; Auswahl und Trace sind deterministisch. Ein vollständiges Ergebnis enthält jede benötigte Quelle genau einmal, aber alle benötigten Modelle einer Datei. **Fehler:** ungültige API-Eingaben führen zu gezielter Argument-/Stale-Input-Ausnahme; fehlende Modelle und Mehrdeutigkeit sind fachliche Resultate. **Abbruch:** zwischen Kandidatenlisten, Headeranalysen und Graphschritten prüfen; Teilresultate werden nur als abgebrochene/unvollständige Variante ausgegeben. **Besitz:** Resultate besitzen unveränderliche Daten; keine offenen Streams oder HTTP-Responses.
+**Vorbedingungen:** nullfreie unveränderliche Eingaben, mindestens eine Rootauswahl, positive sinnvolle Limits. **Nachbedingungen:** Auswahl und Trace sind deterministisch. Der Workspace bleibt unverändert. Ein vollständiges Ergebnis enthält jede benötigte Quelle genau einmal, aber alle benötigten Modelle einer Datei. **Fehler:** ungültige API-Eingaben führen zu gezielter Argumentausnahme; fehlende Modelle und Mehrdeutigkeit sind fachliche Resultate. **Abbruch:** zwischen Kandidatenlisten, Headeranalysen und Graphschritten prüfen; Teilresultate werden nur als abgebrochene/unvollständige Variante ausgegeben. **Besitz:** Resultate besitzen unveränderliche Daten; keine offenen Streams oder HTTP-Responses.
 
 <a id="interne-klassen"></a>
 ### Interne Klassen
@@ -98,7 +101,7 @@ Für das neue Standardprofil gilt:
 3. Eine explizite Modellversion wird exakt abgeglichen. Datums- oder Semver-Sortierung wird nicht aus dem String geraten.
 4. Explizit übergebene Quellen und konfigurierte Repositoryprioritäten werden in der dokumentierten Reihenfolge ausgewertet.
 5. Im reinen Workspace-Resolver bleiben innerhalb einer gleichrangigen Auswahlgruppe mehrere unterschiedliche passende Definitionen mehrdeutig. Gleichheit wird durch geprüften Inhalt und Modellidentität entschieden, nicht nur Dateiname.
-6. Der JVM-Beschaffungshost verwendet standardmässig das unten beschriebene ili2c-5.6.9-Profil. Explizite Auswahlen und Version-1-Locks behalten ihre eigenen Einschränkungen.
+6. Der JVM-Beschaffungshost verwendet standardmässig das unten beschriebene ili2c-5.6.9-Profil. Explizite Auswahlen behalten ihre eigenen Einschränkungen.
 
 Die endgültige Rootliste und Importauswahl werden in der Laufprovenienz festgehalten. Es gibt keinen aus Versionsstrings geratenen „neuestes Modell“-Fallback; der Host folgt der expliziten Vorgängerkette. Eine Suchfunktion darf mehrere Versionen anzeigen; die Kompilierung muss ihre konkrete Auswahl offenlegen.
 
@@ -116,7 +119,6 @@ Paket `guru.interlis.repository`, Modul `interlis-repository`. Diese APIs dürfe
 | `HttpSourceLoader` | implementiert `load` | expliziter HTTP-Client, Timeout, Redirect-/Grössenlimits, Abbruch |
 | `RepositoryIndexReader` | `read(IndexPayload, RepositoryBase)` | standardkonforme Indexauswertung und sichere relative URI-Auflösung |
 | `ContentStore` | `lookup(ContentDigest)`, `put(VerifiedContent)` | Cache kann fehlen; Treffer nur bei passendem Digest, atomare Speicherung |
-| `RepositoryRefreshService` | `refresh(RepositoryConfig, previousState, token)` | neuer unveränderlicher Katalog mit Revision; keine Mutation laufender Analysen |
 
 `FetchPolicy` benennt `offline`, `maxBytes`, `connectTimeout`, `readTimeout` und optionalen `requestTimeout`. Die [HTTP-Netzwerkpolicy](#http-netzwerkpolicy-res-009-arch-005) legt die Defaults fest. Redirects sind auf fünf begrenzt; Cache und Proxy werden separat im Host konfiguriert. Der Kern kennt keine HTTP-Authentisierung. Tokens, Cookies oder signierte Querywerte dürfen weder zu DiagnosticArgument noch in öffentliche ResolutionTrace-Werte gelangen.
 
@@ -159,9 +161,8 @@ hinzugefügtes Original oder Änderungen seiner Imports werden neu vorbereitet
 (RES-003/006). `WorkspaceTest` prüft Quellen in getrennten Dateien, Fehler und
 anschliessende Korrektur sowie das spätere Hinzufügen des Originals.
 
-`ResolutionRequest.overlays` führt `SemanticOverlays`. Der
-vierparametrige Konstruktor verwendet empty(). Workspace-Captures reichen
-dieselbe Compilerkonfiguration an die Vorbereitung weiter. Extern konfigurierte
+`ResolutionRequest.overlays` führt die nichtnullfähigen `SemanticOverlays`.
+Der Workspace übergibt die Overlays des Compilerrequests an den Resolver. Extern konfigurierte
 Translationen erzeugen wie Quelltranslationen Originalabhängigkeiten samt
 transitiven Imports, ohne Originalnamensräume zu importieren. Auswahl und
 negative Abhängigkeiten berücksichtigen exakte Version/SourceHint; der
@@ -169,8 +170,9 @@ Compiler überprüft die tatsächliche fachliche Zielbindung selbst.
 
 `SourceInventory.fingerprint` ist eine längenpräfixierte UTF-16-Inhaltsidentität
 (inventory-v2) aus SourceIds, Quellrevisionen/-inhalten und ResolverCatalog; der
-allgemeine WorkspaceRevision-Zähler gehört nicht hinein. Captures prüfen ihn
-weiterhin getrennt. ResolverCatalog.fingerprint verwendet ebenfalls sortierte
+allgemeine WorkspaceRevision-Zähler gehört nicht hinein. Der Inventardigest
+fliesst in den Resolverfingerprint und darüber in den Fingerprint des
+Compilerrequests ein. ResolverCatalog.fingerprint verwendet ebenfalls sortierte
 längenpräfixierte Inhalte statt kollisionsanfälliger key=value-Verkettung.
 Overlay-Rückkehr A→B→A bei unveränderten Quellen stellt dieselbe fachliche
 Identität wieder her, ohne ein verspätetes Capture akzeptieren zu dürfen.
@@ -227,7 +229,7 @@ defensiv kopiert, nullfrei und unveränderlich:
 | Typ | Inhalt / Ergebnis |
 |---|---|
 | `ModelPin` | Modellname, exakte rohe Version, kanonische SourceId, SHA-256 der Originalbytes; `selector()` liefert den passenden ByName-Selektor |
-| `ResolutionLock` | Map Modellname→unveränderliche Liste sämtlicher ausgewählter Versions-/Quellenpins und Map Index-SourceId→ContentDigest; zusätzliche benötigte Remoteabhängigkeiten sind beim Replay verboten |
+| `ResolutionLock` | Map Modellname→unveränderliche Liste sämtlicher ausgewählter Versions-/Quellenpins und Map Index-SourceId→ContentDigest, geordnete Suchschritte und nicht verfügbare Quellen mit Ladeursache; zusätzliche benötigte Remoteabhängigkeiten sind beim Replay verboten |
 | `RepositoryResolveOptions` | explizite RepositoryConfig, Modellpins, Quellen-/Indexpins und optionaler Lock |
 | `RepositoryResolutionOutcome.Prepared` | `PreparedRepositoryUpdate`; Beschaffung vollständig, kein Schema-/Sprachgültigkeitsnachweis |
 | `.Rejected` | nichtleere Liste typisierter `RepositoryProblem`-Werte; NOT_FOUND, AMBIGUOUS, VERSION_MISMATCH, INVALID_SOURCE, INDEX_FAILURE, LOAD_FAILURE, PIN_MISMATCH, LOCK_MISMATCH oder CHANGED_SOURCE; Ladeursache separat |
@@ -252,8 +254,7 @@ MODEL_NAME_UNIQUE; die Beschaffung erklärt deren Verletzung nicht zum Resolverf
 Der Host verifiziert tatsächliche UTF-8-Bytes, SHA-256, optional veröffentlichtes
 MD5 sowie Name/Version/Sprachfassung im geparsten Header. Indexfehler und
 Ladefehler sind getrennte Ursachen. Das Standardprofil setzt die Suche bei
-unverfügbaren Repositorymetadaten mit einer sichtbaren Warnung fort; der alte
-strikte Vertrag gilt weiter beim Replay eines Version-1-Locks. Eine bereits
+unverfügbaren Repositorymetadaten mit einer sichtbaren Warnung fort. Eine bereits
 ausgewählte Modelldatei wird bei einem Fehler nicht durch einen anderen Kandidaten ersetzt. `RepositoryClient.discover` behält seinen separaten partiellen Suchvertrag.
 Online richtet sich die Wiederverwendung nach Cachealter und optionaler
 Index-MD5 gemäss [Cachevertrag](#cache-nach-ili2c); eine zweite Online-Abschlussprüfung entfällt. Liefert die
@@ -285,9 +286,10 @@ Prioritäten, Indexherkünfte, Fehler und die FetchPolicy.
 digestadressierter Cache. Fehler, übergrosse oder korrupte Einträge sind Misses;
 Treffer werden erneut gegen den Digest geprüft. Die Defaultgrenze ist 16 MiB pro
 Eintrag. `InMemoryContentStore` bleibt verfügbar. `ResolutionLockCodec.encode` /
-`decode` verwendet deterministisches UTF-8-XML `interlis-resolution-lock`, Version
-1 beziehungsweise 2; sortierte Indizes/Modelle, keine DTD/externen Entities, keine unbekannten Felder,
-doppelten vollständigen Modellidentitäten oder stillen Formatupgrades.
+`decode` verwendet deterministisches UTF-8-XML `interlis-resolution-lock` in
+Version 2. Der Codec sortiert Indizes und Modelle und weist DTDs, externe
+Entities, unbekannte Felder, doppelte Modellidentitäten und andere
+Lockversionen zurück.
 Verschiedene Versionen/Quellen desselben Namens bleiben getrennte Listeneinträge,
 kanonisch nach rohem Versionsstring und SourceId sortiert; dies ist keine Latest-Auswahl. Decode begrenzt die Eingabelänge
 auf 8 Mi UTF-16-Einheiten; Dateiadapter begrenzen zusätzlich gelesene Bytes.
@@ -375,12 +377,10 @@ Sie beeinflusst den Konfigurationsfingerprint und wird beim Capture in das
 Compiler-Gate und dessen bestehende Warnungspolitik. Keine zweite
 Schemafreigabe im Host. Erfolgsbatches bleiben atomar und workspacegebunden.
 
-Neue Locks haben `formatVersion=2`, `selectionProfile=ili2c-5.6.9`, geordnete
-`steps` und eine Map `unavailable` mit konkreten Ladeursachen. `indexes` enthält
-sämtliche tatsächlich verwendeten Modell- und Siteindizes mit SHA-256.
-Die bestehenden Zweiparameterkonstruktoren erzeugen weiterhin Version-1-Locks;
-`ResolutionLock.current` erzeugt Version 2. Codec und Replay lesen beide
-Versionen ohne stilles Upgrade. Version 1 behält die explizite flache Suche.
+Der Codec liest und schreibt Resolution-Locks als XML-Version 2 mit dem Profil
+`ili2c-5.6.9`. Locks halten geordnete `steps`, konkrete Ladeursachen in
+`unavailable` und die SHA-256-Digests der verwendeten Modell- und Siteindizes
+in `indexes` fest. Der Codec weist ältere Locks als nicht unterstützt zurück.
 Version 2 friert die Suchentscheidungen und ausgewählten Quellen ein. Replay
 prüft die vollständigen eingefrorenen Metadaten gegen ihre Digests und bindet
 die ausgewählten Identitäten direkt aus diesen Indizes, ohne eine neue Suche
@@ -388,8 +388,8 @@ oder neue Kettenentscheidung. Es akzeptiert keine zusätzlichen unbekannten
 Metadaten. Dadurch bleiben auch Locks erweiterter, bereits geladener
 Workspace-Closures in einem frischen Workspace reproduzierbar. Offline
 werden nur digestgeprüfte Cachetexte und eingefrorene Nichtverfügbarkeiten
-verwendet. Online werden gelesene Inhalte sowie beobachtete Nichtverfügbarkeiten
-am Ende erneut geprüft. Fehlende Cachebytes sind `OFFLINE`, kein stiller Miss.
+verwendet. Der Onlinepfad prüft die tatsächlich gelesenen Bytes beim Laden
+gegen die Lock-Digests. Fehlende Cachebytes führen zu `OFFLINE`.
 
 `maxSemanticWorkUnits`, `maxDiagnostics`, die kumulative Grenze
 `maxTotalSourceUtf16Length` und die bestehenden Fetchlimits begrenzen die
@@ -401,7 +401,7 @@ Abnahmen: `RepositorySearchContractTest`, `RepositoryParityIntegrationTest`,
 `RepositoryClosureContractTest`, `RepositoryDiagnosticsContractTest` und
 `repositoryReferenceCheck`. Ketten- und Indexreihenfolge im Host und Mehrdeutigkeit im reinen Workspace werden separat geprüft.
 
-`HostRepositories.create(workingDirectory, RepositoryCacheConfiguration, observer)`
+`HostRepositories.createObserved(workingDirectory, RepositoryCacheConfiguration, observer)`
 ist die explizite JVM-Komposition. `Access.loader()`, `contentStore()` und
 `closureService()` teilen Inhaltscache und den lauflokalen Beobachtungskanal.
 `RepositoryCacheConfiguration.defaults(home)` wählt `home/.interlis-cache`,
@@ -413,8 +413,7 @@ Offlineport: die Defaultmethode lehnt ohne Aufruf von `load` ab. Dadurch bleiben
 bestehende funktionale eigene Loader offline frei von impliziten Hostzugriffen.
 Nur cachefähige HTTP-Hosts überschreiben diesen Port; RoutingSourceLoader reicht
 HTTP(S) entsprechend weiter. Ein nicht-offline FetchPolicy ist ein API-Fehler.
-Die bisherigen expliziten Loader-/Store-/Closurekonstruktoren bleiben verfügbar;
-insbesondere aktiviert `new HttpSourceLoader()` keine persistente Speicherung.
+`new HttpSourceLoader()` verwendet ausschliesslich Speicher.
 
 Offline führt der Host denselben konfigurierten Suchpfad anhand der lokal
 verfügbaren Indexe aus. Optionale Site-Ausfälle bleiben Warnungen. Fehlt das
@@ -439,11 +438,10 @@ Optional<String> safeSource)` gehört zum JVM-Repositorymodul. Beide Komponenten
 sind nullfrei und immutable. Die Anzeigeadresse entfernt Benutzerinformationen,
 Query und Fragment vor Veröffentlichung; sie ist keine Loader- oder
 Cacheidentität. Globale Schreibprobleme dürfen ohne Quelle beobachtet werden.
-`HostRepositories.createObserved` und `RepositoryClosureService.observed` nehmen
-einen detaillierten Observer entgegen. Alte Enum-Callbacks/Konstruktoren und
-der Dreiparameterkonstruktor von Access bleiben über Adapter erhalten.
-Jeder tatsächliche Zugriff veröffentlicht sein Ereignis einmal je angeschlossener
-Schnittstelle. Observerfehler ändern die Beschaffung nicht; kein globaler Zustand.
+`HostRepositories.createObserved` und der Konstruktor von
+`RepositoryClosureService` können einen `Consumer<RepositoryCacheObservation>`
+erhalten. Jeder tatsächliche Zugriff veröffentlicht sein Ereignis einmal.
+Ein Observerfehler beeinflusst die Beschaffung nicht.
 HTTP- und beide Offlinepfade liefern bei jedem tatsächlichen Zugriff die
 angefragte Quelle. Optionale Sites, Pins und Locks behalten ihre Herkunft.
 
@@ -482,10 +480,10 @@ Produktionscode verändert weder Systemproperties noch globale Selector-/
 Authenticatorwerte. Eigene Authentisierung, PAC und Environmentinterpretation
 sind nicht Teil dieses Abschnitts; SystemDefault delegiert an die JVM.
 
-Neue öffentliche Einstiege: HttpSourceLoader(RepositoryProxyConfiguration),
-HostRepositories.create(Path,RepositoryCacheConfiguration,Consumer<RepositoryCacheEvent>,RepositoryProxyConfiguration)
-und createObserved mit Consumer<RepositoryCacheObservation> und demselben letzten
-Parameter. Bisherige Einstiege verwenden SystemDefault. Hostinstanzen besitzen
+`HttpSourceLoader(RepositoryProxyConfiguration)` und
+`HostRepositories.createObserved(Path, RepositoryCacheConfiguration,
+Consumer<RepositoryCacheObservation>, RepositoryProxyConfiguration)` übernehmen
+die explizite Proxywahl. Die Kurzformen verwenden SystemDefault. Hostinstanzen besitzen
 ihre Clients und Proxywahl; Konstruktion löst keine Netzwerkzugriffe aus.
 Offline lädt ausschliesslich verifizierte lokale Inhalte und kontaktiert keinen
 Proxy. FetchPolicy-Felder gehen in die deterministische Katalogrevision v4 ein;
@@ -516,9 +514,10 @@ vollständigen Quellen. `Vary` wählt keine Variante im Anwendungscache.
 Die Anzeige redigiert Benutzerinformationen, Query und Fragment, während
 die tatsächliche URL ihre Cacheidentität behält.
 
-Lookup erscheint vor dem Indexzugriff, Auswahl nach der konkreten Wahl.
-Hostbeobachter erhalten die Ereignisse synchron in der tatsächlichen
-Reihenfolge. Lockdaten spielen frühere Ereignisse nicht erneut ab.
+Der Aufrufer kann `RepositoryClosureService.resolve` einen
+`Consumer<RepositorySearchStep>` mitgeben. Er erhält neue Suchschritte
+synchron. Lookup erscheint vor dem Indexzugriff, Auswahl nach der konkreten
+Wahl. Beim Lock-Replay bleiben historische Suchschritte Provenienzdaten.
 Die Hostmeldungen teilen Darstellung und Redigierung mit der Diagnostik.
 Keine Beobachtung verändert Gate, Auswahl oder Abbruch.
 
@@ -542,13 +541,12 @@ mit Request vor CancellationToken; Default delegiert auf den bisherigen
 abstrakten Einstieg. Routing-/HTTP-/verifizierender Loader reichen den Request
 weiter, alle Repositoryverbraucher wählen Fristen explizit, ohne URL-Heuristik.
 HTTP ohne Request lädt online unbedingt. Uhr ist explizit injizierbar.
-RepositoryCacheMetadata(source,responseSource,digest,downloadedAt) ersetzt
-Validatoren durch Instant downloadedAt; EPOCH kennzeichnet unbekanntes Alter.
-metadata-v2 speichert atomar je URL, Inhaltsdateien/Lockformate bleiben erhalten.
-Version 1 dient offline nur als Herkunftszuordnung. Online erzeugt der nächste vollständige Download Version 2. Ein defekter Version-2-Eintrag bleibt ein Miss.
+RepositoryCacheMetadata(source,responseSource,digest,downloadedAt) enthält den
+Zeitpunkt des vollständigen Downloads. `metadata-v2` speichert atomar je URL.
+Alte Metadatenverzeichnisse bleiben ungenutzt. Defekte Einträge sind Cache-Misses.
 Keine Inhaltsbereinigung. Vary entscheidet nicht über den Anwendungscache;
 no-store bleibt ausgeschlossen, identity und Content-Coding-Prüfung bleiben.
-`FRESH_HIT` bezeichnet lokale Onlineverwendung. `NOT_MODIFIED`, `VerificationStarted` und `ILI-RES-0013` sind reserviert.
+`FRESH_HIT` bezeichnet lokale Onlineverwendung. Die Diagnosekennung `ILI-RES-0013` bleibt reserviert.
 Atomare Workspace-Revisionsprüfung und Gate bleiben erhalten; bereits während
 der normalen Beschaffung erkannte widersprüchliche Inhalte bleiben Fehler.
 Referenz: ili2c5.6.9, bf16026e83f2377153b2e818a4f3838f0a423722,

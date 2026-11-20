@@ -2,7 +2,7 @@
 const assert = require('node:assert/strict');
 async function verifyTokenClassification(api){
   let sequence=0;
-  const call=async(operation,sessionId,params={})=>JSON.parse(await api.handle(JSON.stringify({protocol:'interlis.compiler',protocolVersion:'1.0',requestId:'token-'+ ++sequence,operation,params,...(sessionId?{sessionId}:{})})));
+  const call=async(operation,sessionId,params={})=>JSON.parse(await api.handle(JSON.stringify({protocol:'interlis.compiler',protocolVersion:'2.0',requestId:'token-'+ ++sequence,operation,params,...(sessionId?{sessionId}:{})})));
   for(const version of ['2.3','2.4']){
     const sourceId='memory:/token-classification',text='INTERLIS '+version+';\n!!'+'-'.repeat(100000)+'\n!! mixed A\n!! 🧭\nMODEL F AT "x" VERSION "1"=TOPIC T=CLASS C=value:TEXT;END C;END T;END F.';
     const opened=await call('openSession',null,{sources:[{sourceId,text}]});assert(opened.status==='ok','long trivia source opening failed');const session=opened.result.sessionId;
