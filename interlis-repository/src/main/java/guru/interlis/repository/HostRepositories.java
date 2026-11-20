@@ -15,7 +15,16 @@ public final class HostRepositories {
             this(loader,store,observer,CacheObservations.legacy(observer));
         }
         public Access { Objects.requireNonNull(loader); Objects.requireNonNull(contentStore); Objects.requireNonNull(observer); observations=CacheObservations.detailed(observations); }
-        public RepositoryClosureService closureService() { return RepositoryClosureService.observed(loader,contentStore,observations); }
+        public RepositoryClosureService closureService() { return closureService(loader); }
+
+        /**
+         * Uses a non-null decorator that delegates HTTP requests to this access's loader.
+         * The access retains ownership of HTTP cache publication and supplies the lock store.
+         */
+        public RepositoryClosureService closureService(SourceLoader decoratedLoader) {
+            return new RepositoryClosureService(decoratedLoader, contentStore, CacheObservations.detailed(observations),
+                    RoutingSourceLoader.persistsHttpWith(loader, contentStore));
+        }
     }
     /**
      * Builds host adapters. Observations contain no URLs, headers or paths; callback
@@ -51,9 +60,10 @@ public final class HostRepositories {
         var safe = CacheObservations.detailed(observer);
         var warned = new AtomicBoolean();
         Runnable unavailable = () -> { if(warned.compareAndSet(false,true))safe.accept(RepositoryCacheObservation.global(RepositoryCacheEvent.WRITE_UNAVAILABLE)); };
-        ContentStore store=configuration.directory().<ContentStore>map(p -> new DirectoryContentStore(p,16_777_216,unavailable)).orElseGet(InMemoryContentStore::new);
+        var persistent=configuration.directory().map(p -> new DirectoryContentStore(p,16_777_216,unavailable));
+        ContentStore store=persistent.<ContentStore>map(value -> value).orElseGet(InMemoryContentStore::new);
         var metadata=configuration.directory().map(p -> new DirectoryMetadataStore(p,unavailable)).orElse(null);
-        return new Access(new RoutingSourceLoader(new FileSourceLoader(workingDirectory),HttpSourceLoader.observed(store,metadata,safe,proxy,clock)),
+        return new Access(new RoutingSourceLoader(new FileSourceLoader(workingDirectory),HttpSourceLoader.observed(persistent.orElse(null),metadata,safe,proxy,clock)),
                 store,event -> safe.accept(RepositoryCacheObservation.global(event)),safe);
     }
 }

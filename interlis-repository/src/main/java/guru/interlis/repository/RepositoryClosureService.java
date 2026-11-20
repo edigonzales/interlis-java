@@ -22,6 +22,7 @@ public final class RepositoryClosureService {
     private final SourceLoader loader;
     private final ContentStore store;
     private final CacheObservations cacheObserver;
+    private final boolean httpLoaderPersists;
 
     public RepositoryClosureService(SourceLoader loader, ContentStore store) {
         this(loader,store,event -> { });
@@ -36,9 +37,13 @@ public final class RepositoryClosureService {
         return new RepositoryClosureService(loader,store,CacheObservations.detailed(observer));
     }
     private RepositoryClosureService(SourceLoader loader,ContentStore store,CacheObservations cacheObserver) {
+        this(loader, store, cacheObserver, RoutingSourceLoader.persistsHttpWith(loader, store));
+    }
+    RepositoryClosureService(SourceLoader loader, ContentStore store, CacheObservations cacheObserver, boolean httpLoaderPersists) {
         this.cacheObserver = cacheObserver;
         this.loader = Objects.requireNonNull(loader, "loader");
         this.store = Objects.requireNonNull(store, "store");
+        this.httpLoaderPersists = httpLoaderPersists;
     }
 
     /**
@@ -312,13 +317,6 @@ public final class RepositoryClosureService {
                         }
                         failureSource = id;
                         var loaded = verified.load(new SourceLocator(id.value()), options.repositories().fetchPolicy(), RepositoryCacheRequest.model(metadata.md5()), token);
-                        metadata.md5().ifPresent(md5 -> {
-                            try {
-                                String actual = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("MD5")
-                                        .digest(loaded.text().getBytes(StandardCharsets.UTF_8)));
-                                if (!md5.equalsIgnoreCase(actual)) reject(RepositoryProblem.Reason.PIN_MISMATCH, metadata.name());
-                            } catch (java.security.NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
-                        });
                         staging.update(update(id, loaded.text()));
                         var checked = staging.capture(new AnalysisRequest(staging.currentRevision(), initial.request().roots()), token);
                         var syntax = checked.reuse().previousSyntax().get(id);
@@ -489,7 +487,11 @@ public final class RepositoryClosureService {
             }
             var previous = seen.putIfAbsent(id, result);
             if (previous != null && !previous.byteSha256().equals(result.byteSha256())) reject(RepositoryProblem.Reason.CHANGED_SOURCE, "");
-            if (!result.origin().equals("http-no-store")) store.put(new VerifiedContent(id, digest, bytes));
+            if (!request.matchesExpectedMd5(bytes)) reject(RepositoryProblem.Reason.PIN_MISMATCH, "");
+            if (!policy.offline() && !result.origin().equals("http-no-store")
+                    && !(httpLoaderPersists && RoutingSourceLoader.isHttp(locator.location()))) {
+                store.put(new VerifiedContent(id, digest, bytes));
+            }
             return result;
         }
     }

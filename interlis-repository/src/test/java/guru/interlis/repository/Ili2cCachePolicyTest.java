@@ -137,6 +137,33 @@ class Ili2cCachePolicyTest {
         assertEquals(6,fixture.requests.get());
     }
 
+    @Test void wrongModelMd5DoesNotReplaceLastVerifiedUrlEntry() throws Exception {
+        String original = fixture.model("Dep", "");
+        String wrong = fixture.model("Dep", "DOMAIN D=TEXT;");
+        var model = new AtomicReference<>(original);
+        String index = fixture.index("Dep").replace("</File>", "</File><md5>" + md5(original) + "</md5>");
+        String base = fixture.serve(exchange -> fixture.send(exchange,
+                exchange.getRequestURI().getPath().endsWith("/ilimodels.xml") ? index : model.get(), null));
+        var first = assertInstanceOf(RepositoryResolutionOutcome.Prepared.class,
+                fixture.resolve(host(), List.of(base), false, Optional.empty()));
+        var modelMetadata = fixture.metadata(base + "Dep.ili");
+        byte[] previous = Files.readAllBytes(modelMetadata);
+
+        now.set(now.get().plus(Duration.ofDays(8)));
+        model.set(wrong);
+        var rejected = assertInstanceOf(RepositoryResolutionOutcome.Rejected.class,
+                fixture.resolve(host(), List.of(base), false, Optional.empty()));
+        assertEquals(RepositoryProblem.Reason.PIN_MISMATCH, rejected.problems().getFirst().reason());
+        assertArrayEquals(previous, Files.readAllBytes(modelMetadata));
+        assertTrue(host().contentStore().lookup(ContentDigest.sha256(wrong.getBytes(java.nio.charset.StandardCharsets.UTF_8))).isEmpty());
+
+        int before = fixture.requests.get();
+        var offline = assertInstanceOf(RepositoryResolutionOutcome.Prepared.class,
+                fixture.resolve(host(), List.of(base), true, Optional.empty()));
+        assertEquals(first.update().lock(), offline.update().lock());
+        assertEquals(before, fixture.requests.get());
+    }
+
     @Test void noStoreInvalidationCannotResurrectLegacyOfflineEntry() throws Exception {
         String url=serve();var loaded=load(url,RepositoryCacheRequest.metadata());
         Path legacy=directory.resolve("cache/metadata-v1").resolve(fixture.metadata(url).getFileName());

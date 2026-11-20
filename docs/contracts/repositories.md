@@ -532,7 +532,9 @@ sind online unzuverlässig. Innerhalb der Frist wird vor Modellbeschaffung
 die vorhandene Datei digestgeprüft und gegen die optionale Index-MD5 verglichen.
 Fehlende/defekte/abgelaufene oder MD5-abweichende Inhalte werden vollständig
 geladen. Ohne MD5 entscheidet die Frist. Nach Download bleibt die veröffentlichte
-MD5 verbindlich; SHA256/Pins/Locks werden zusätzlich geprüft. HTTP lädt ohne Validator-Header. Ein 304 wird nicht als Cachetreffer verwendet. Die Auflösung führt auch mit Lock keine zweite Online-Abschlussprüfung aus.
+MD5 verbindlich. Bei einer Abweichung meldet die Auflösung einen Fehler und
+behält den bisherigen URL-Stand. SHA-256, Pins und Locks werden zusätzlich
+geprüft. HTTP lädt ohne Validator-Header. Ein 304 wird nicht als Cachetreffer verwendet. Die Auflösung führt auch mit Lock keine zweite Online-Abschlussprüfung aus.
 Onlinefehler bleiben Fehler, nur --offline verwendet alte verifizierte Inhalte.
 
 RepositoryCacheRequest(Duration maxAge,Optional<String> expectedMd5) ist immutable
@@ -542,6 +544,12 @@ mit Request vor CancellationToken; Default delegiert auf den bisherigen
 abstrakten Einstieg. Routing-/HTTP-/verifizierender Loader reichen den Request
 weiter, alle Repositoryverbraucher wählen Fristen explizit, ohne URL-Heuristik.
 HTTP ohne Request lädt online unbedingt. Uhr ist explizit injizierbar.
+Der HTTP-Loader mit persistentem Cache veröffentlicht die Bytes eines HTTP-Downloads
+und danach den aktuellen URL-Verweis. Treffer lesen Cache und Archiv, ohne sie
+neu zu schreiben. Die Closure archiviert verifizierte Online-Ergebnisse nicht
+persistent verwalteter Loader und lokaler Quellen weiterhin für Locks.
+`HostRepositories.Access.closureService(SourceLoader)` behält diese
+Schreibzuständigkeit bei einem HTTP-delegierenden Loader bei.
 RepositoryCacheMetadata(source,responseSource,digest,downloadedAt) ersetzt
 Validatoren durch Instant downloadedAt; EPOCH kennzeichnet unbekanntes Alter.
 metadata-v2 speichert atomar je URL, Inhaltsdateien/Lockformate bleiben erhalten.

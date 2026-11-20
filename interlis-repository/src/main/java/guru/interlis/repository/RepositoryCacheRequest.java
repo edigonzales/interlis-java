@@ -1,6 +1,9 @@
 package guru.interlis.repository;
 
 import java.time.Duration;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -20,4 +23,14 @@ public record RepositoryCacheRequest(Duration maxAge, Optional<String> expectedM
     public static RepositoryCacheRequest model(Optional<String> md5) { return new RepositoryCacheRequest(Duration.ofDays(7), md5); }
     /** Always download online; offline access still uses verified local contents. */
     public static RepositoryCacheRequest unconditional() { return new RepositoryCacheRequest(Duration.ZERO, Optional.empty()); }
+
+    boolean matchesExpectedMd5(byte[] bytes) {
+        if (expectedMd5.isEmpty()) return true;
+        try {
+            var actual = HexFormat.of().formatHex(MessageDigest.getInstance("MD5").digest(bytes));
+            return expectedMd5.orElseThrow().equalsIgnoreCase(actual);
+        } catch (NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException(impossible);
+        }
+    }
 }

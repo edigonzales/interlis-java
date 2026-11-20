@@ -10,7 +10,9 @@ import org.junit.jupiter.api.io.TempDir;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.nio.file.attribute.FileTime;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
@@ -167,6 +169,31 @@ class RepositoryCacheContractTest {
                 resolve(host(),List.of(base),true,Optional.of(first.update().lock()))).problems().getFirst();
         assertEquals(SourceLoadException.Reason.OFFLINE,missingIndex.loadReason().orElseThrow());
         assertEquals(base+"ilimodels.xml",missingIndex.source().orElseThrow().value());
+    }
+
+    @Test void freshAndOfflineClosureHitsDoNotRewriteCachedBytes() throws Exception {
+        String index = index("Dep");
+        String model = model("Dep", "");
+        String base = serve(exchange -> send(exchange,
+                exchange.getRequestURI().getPath().endsWith("/ilimodels.xml") ? index : model, null));
+        assertInstanceOf(RepositoryResolutionOutcome.Prepared.class, resolve(host(), List.of(base), false, Optional.empty()));
+
+        Path cache = directory.resolve("cache");
+        var modTimes = new LinkedHashMap<Path, FileTime>();
+        for (String body : List.of(index, model)) {
+            Path entry = cache.resolve(ContentDigest.sha256(body.getBytes(StandardCharsets.UTF_8)).value());
+            Files.setLastModifiedTime(entry, FileTime.from(Instant.parse("2000-01-01T00:00:00Z")));
+            modTimes.put(entry, Files.getLastModifiedTime(entry));
+        }
+
+        int before = requests.get();
+        for (boolean offline : List.of(false, true)) {
+            assertInstanceOf(RepositoryResolutionOutcome.Prepared.class, resolve(host(), List.of(base), offline, Optional.empty()));
+            assertEquals(before, requests.get());
+            for (var entry : modTimes.entrySet()) {
+                assertEquals(entry.getValue(), Files.getLastModifiedTime(entry.getKey()));
+            }
+        }
     }
 
     @Test void closureNeverPersistsNoStoreModelBytes() throws Exception {
