@@ -200,6 +200,8 @@ final class DbInteropTest {
             assertAssociationCatalog(db, sql, model, "HierarchyNote", Map.of("RaisedAt", "mast", "SharedAt", "servicebase"));
             assertTypeKind(db, sql, "hierarchynote", "memo", "TEXT");
             assertTypeKind(db, sql, "hierarchynote", "severity", "ENUM");
+            assertAssociationCatalog(db, sql, model, "RelayReview",
+                    Map.of("Recommended", "servicebase", "ReviewingRelays", "arelay"));
             assertAssociationCatalog(db, sql, model, "Rating", Map.of("Rated", "tower", "RatingForms", "ratingform"));
             assertTypeKind(db, sql, "review", "memo", "TEXT");
             assertTypeKind(db, sql, "review", "grade", "NUMERIC");
@@ -247,6 +249,7 @@ final class DbInteropTest {
             assertCorruptInheritedOwnerRejected(db, sql, model, nativeOutput);
             assertClassHierarchyRollback(db, sql, model, version, fixture);
             assertUnresolvedHierarchyReferenceRollback(db, sql, model, version, fixture);
+            assertWrongRelayReviewOwnerRejected(db, sql, model, nativeOutput);
             assertAmbiguousRatingRejected(db, sql, model, nativeOutput);
             assertAmbiguousReviewRejected(db, sql, model, nativeOutput);
             if (version == 24) {
@@ -905,6 +908,21 @@ final class DbInteropTest {
                 """.formatted(review, duplicateId, hub, review, marker));
         assertExportRejected(db, model, "legacy", output, "Review.Witness");
         execute(sql, "delete from " + review + " where t_id=" + duplicateId);
+    }
+
+    private static void assertWrongRelayReviewOwnerRejected(TestDatabase db, Connection sql, String model, Path output)
+            throws Exception {
+        String mast = db.table("mast");
+        String valid = scalar(sql, "select t_id from " + mast + " where t_ili_tid='legacy-relay'");
+        String invalid = scalar(sql, "select t_id from " + mast + " where t_ili_tid='legacy-beacon'");
+        String update = "update " + db.table("relayreview") + " set reviewingrelays=";
+        execute(sql, update + invalid + " where reviewingrelays=" + valid);
+        try {
+            assertExportRejected(db, model, "legacy", output,
+                    "Missing or inconsistent link owner at " + model + ".Data.RelayReview.Recommended");
+        } finally {
+            execute(sql, update + valid + " where reviewingrelays=" + invalid);
+        }
     }
 
     private static void assertAmbiguousRatingRejected(TestDatabase db, Connection sql, String model, Path output)
@@ -1623,6 +1641,8 @@ final class DbInteropTest {
         assertStoredPairing(db, sql, version, dataset);
         assertStoredStandaloneLinks(db, sql, dataset);
         assertStoredHierarchyLinks(db, sql, dataset);
+        assertStoredEmbeddedLink(db, sql, "relayreview", "reviewingrelays", "mast", dataset + "-relay",
+                "recommended", "servicebase", dataset + "-serviceunit", "accepted");
         assertStoredEmbeddedLink(db, sql, "rating", "ratingforms", "ratingform", dataset + "-ratingform-1",
                 "rated", "mast", dataset + "-relay", "checked");
         assertStoredEmbeddedLink(db, sql, "rating", "ratingforms", "ratingform", dataset + "-ratingform-2",
@@ -2190,9 +2210,11 @@ final class DbInteropTest {
         }
         assertTableRows(db, sql, "ratingform", datasets * 3);
         assertTableRows(db, sql, "rating", datasets * 2);
+        assertTableRows(db, sql, "relayreview", datasets);
+        tables.add("relayreview");
         tables.addAll(List.of("ratingform", "rating"));
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 97 : 86)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 98 : 87)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
     }
 
@@ -2322,6 +2344,9 @@ final class DbInteropTest {
         assertEmbeddedLink(objects.get(dataset + "-ratingform-1"), "Rated", dataset + "-relay", "Rating", version, "checked");
         assertEmbeddedLink(objects.get(dataset + "-ratingform-2"), "Rated", dataset + "-tower", "Rating", version, null);
         assertEmbeddedLink(objects.get(dataset + "-ratingform-3"), "Rated", null, "Rating", version, null);
+        assertEmbeddedLink(objects.get(dataset + "-relay"), "Recommended", dataset + "-serviceunit",
+                "RelayReview", version, "accepted");
+        assertNull(child(objects.get(dataset + "-beacon"), "Recommended"));
         assertTransferredReviews(objects, version, dataset);
         assertTransferredPairing(objects, version, dataset);
 
@@ -2477,7 +2502,7 @@ final class DbInteropTest {
         assertClassFields(mast, prefix + "Mast", Map.of("Caption", "base"), "Notes");
         assertClassFields(objects.get(dataset + "-tower"), prefix + "Tower", Map.of("Caption", "middle", "Height", "12"));
         assertClassFields(relay, prefix + "Relay", Map.of("Caption", "leaf", "Height", "24", "Online", "false"),
-                "Notes", "Supplement", "Center", "Alignment", "Sites", "Mentor", "PairedService");
+                "Notes", "Supplement", "Center", "Alignment", "Sites", "Mentor", "PairedService", "Recommended");
         assertLocalReference(relay, "Mentor", version, dataset + "-relay");
         assertTransferClassPoint(relay, "Center", version, MAST_CENTER);
         assertTransferRoute(child(relay, "Alignment"), version, STRAIGHT_ROUTE);

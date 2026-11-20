@@ -140,17 +140,7 @@ final class DbTransfer {
         String basketField = "obj." + T_BASKET;
         appendColumns(db, mapping, table, "obj", projections, from);
         var links = mapping.linkFields(table.object().symbol());
-        for (int index = 0; index < links.size(); index++) {
-            var association = links.get(index);
-            var link = mapping.table(association.object().symbol());
-            String alias = "link" + index;
-            from.append(" LEFT JOIN ").append(db.table(link.name())).append(' ').append(alias)
-                    .append(" ON ").append(alias).append('.').append(linkOwnerColumn(link, association))
-                    .append(" = obj.").append(T_ID)
-                    .append(" AND ").append(alias).append('.').append(T_BASKET).append(" = ").append(basketField);
-            projections.add(alias + "." + T_ID);
-            appendColumns(db, mapping, link, alias, projections, from);
-        }
+        appendEmbeddedLinks(db, mapping, links, "obj", projections, from);
         String sql = "SELECT " + projections + " FROM " + from
                 + " WHERE " + basketField + " = ? ORDER BY obj." + T_ID;
         try (var structures = new StructureRows(db, mapping, basketId, token);
@@ -169,17 +159,7 @@ final class DbTransfer {
                     String ownerTid = tid.map(TransferId::value).orElse(null);
                     int start = table.hasTidColumn() ? 3 : 2;
                     var values = readFields(db, mapping, rows, start, table, ownerTid);
-                    int next = start + projectionSize(mapping, table);
-                    for (var association : links) {
-                        var link = mapping.table(association.object().symbol());
-                        if (rows.getObject(next) != null) {
-                            var fields = readFields(db, mapping, rows, next + 1, link, null);
-                            fields.remove(association.ownerRole().slot().symbol());
-                            var role = association.role().symbol();
-                            values.put(role, fields.size() == 1 ? fields.get(role) : new Structured(link.object().symbol(), fields));
-                        }
-                        next += 1 + projectionSize(mapping, link);
-                    }
+                    readEmbeddedLinks(db, mapping, rows, start + projectionSize(mapping, table), links, ownerTid, values);
                     structures.readFor(rows.getLong(1), ownerTid, values);
                     var identity = new TransferIdentity(bid, Optional.empty(), tid, Optional.empty(), Optional.empty());
                     var object = new TransferObject(identity, new Structured(table.object().symbol(), values));
@@ -187,6 +167,37 @@ final class DbTransfer {
                 }
                 structures.requireExhausted();
             }
+        }
+    }
+
+    private static void appendEmbeddedLinks(Database db, DbMapping mapping, List<EmbeddedAssociation> links,
+                                            String owner, StringJoiner projections, StringBuilder from) {
+        for (int index = 0; index < links.size(); index++) {
+            var association = links.get(index);
+            var link = mapping.table(association.object().symbol());
+            String alias = "link" + index;
+            from.append(" LEFT JOIN ").append(db.table(link.name())).append(' ').append(alias)
+                    .append(" ON ").append(alias).append('.').append(linkOwnerColumn(link, association))
+                    .append(" = ").append(owner).append('.').append(T_ID)
+                    .append(" AND ").append(alias).append('.').append(T_BASKET)
+                    .append(" = ").append(owner).append('.').append(T_BASKET);
+            projections.add(alias + "." + T_ID);
+            appendColumns(db, mapping, link, alias, projections, from);
+        }
+    }
+
+    private static void readEmbeddedLinks(Database db, DbMapping mapping, ResultSet rows, int next,
+                                          List<EmbeddedAssociation> links, String ownerTid,
+                                          Map<SymbolRef, TransferValue> values) throws SQLException {
+        for (var association : links) {
+            var link = mapping.table(association.object().symbol());
+            if (rows.getObject(next) != null) {
+                var fields = readFields(db, mapping, rows, next + 1, link, ownerTid);
+                fields.remove(association.ownerRole().slot().symbol());
+                var role = association.role().symbol();
+                values.put(role, fields.size() == 1 ? fields.get(role) : new Structured(link.object().symbol(), fields));
+            }
+            next += 1 + projectionSize(mapping, link);
         }
     }
 
@@ -276,7 +287,11 @@ final class DbTransfer {
                 var from = new StringBuilder(db.table(part.name())).append(" part LEFT JOIN ")
                         .append(db.table(root.name())).append(" root ON root.").append(T_ID)
                         .append(" = part.").append(T_ID);
-                if (includeFields) appendColumns(db, mapping, part, "part", fields, from);
+                var links = includeFields ? mapping.linkFields(part.object().symbol()) : List.<EmbeddedAssociation>of();
+                if (includeFields) {
+                    appendColumns(db, mapping, part, "part", fields, from);
+                    appendEmbeddedLinks(db, mapping, links, "part", fields, from);
+                }
                 String sql = "SELECT " + fields + " FROM " + from + " WHERE part." + T_BASKET
                         + " = ? OR root." + T_BASKET + " = ? ORDER BY part." + T_ID;
                 var statement = db.connection().prepareStatement(sql);
@@ -284,7 +299,7 @@ final class DbTransfer {
                 fetchInPages(db, statement);
                 statement.setLong(1, basketId);
                 statement.setLong(2, basketId);
-                fragments.put(part, new Fragment(part, statement.executeQuery()));
+                fragments.put(part, new Fragment(part, links, statement.executeQuery()));
             }
         }
 
@@ -316,12 +331,14 @@ final class DbTransfer {
 
         private final class Fragment {
             private final Table table;
+            private final List<EmbeddedAssociation> links;
             private final ResultSet rows;
             private boolean available;
             private long id;
 
-            Fragment(Table table, ResultSet rows) throws SQLException {
+            Fragment(Table table, List<EmbeddedAssociation> links, ResultSet rows) throws SQLException {
                 this.table = table;
+                this.links = links;
                 this.rows = rows;
                 advance();
             }
@@ -329,6 +346,9 @@ final class DbTransfer {
             void readFor(long rootId, String tid, Map<SymbolRef, TransferValue> values) throws SQLException {
                 requireRow(rootId);
                 values.putAll(readFields(db, mapping, rows, 3, table, tid));
+                if (!links.isEmpty()) {
+                    readEmbeddedLinks(db, mapping, rows, 3 + projectionSize(mapping, table), links, tid, values);
+                }
                 advance();
             }
 

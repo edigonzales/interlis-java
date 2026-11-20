@@ -202,7 +202,11 @@ entfällt die Rolle. Mehrere Linkzeilen zum selben Objekt der n-Seite werden
 beim Export an der Rolle diagnostiziert.
 Die 1-Seite darf eine Klasse in einer Vererbungshierarchie deklarieren.
 Der Export liest ihre TID aus der Wurzeltabelle. Die deklarierte Klasse
-auf der n-Seite liegt ausserhalb einer Klassenhierarchie.
+auf der n-Seite darf auch eine konkrete Blattklasse sein. In diesem Fall
+bezieht sich der Rückverweis auf deren Tabellenfragment. Bei einem
+deklarierten Eigentümer mit Untertypen fragt der Referenzexport zusätzliche
+Rollenspalten ab, die das Referenzschema nicht enthält.
+[Referenzabfrage](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/src/ch/ehi/ili2db/toxtf/TransferToXtf.java#L1631-L1664)
 
 XTF 2.3 und 2.4 FULL unterstützen Klassenvererbung mit `--noSmartMapping`
 innerhalb eines Topics. Abstrakte Basisklassen können ihre Attribute an

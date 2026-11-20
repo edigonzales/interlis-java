@@ -436,9 +436,8 @@ final class DbMapping {
                 new AssociationRole(second, roleTarget(plan, association, second)));
     }
 
-    private static boolean hasClassHierarchy(TransferPlan plan, SymbolRef type) {
-        return plan.object(type).orElseThrow().baseType().isPresent()
-                || plan.objects().stream().anyMatch(object -> object.baseType().filter(type::equals).isPresent());
+    private static boolean hasSubtypes(TransferPlan plan, SymbolRef type) {
+        return plan.objects().stream().anyMatch(object -> object.baseType().filter(type::equals).isPresent());
     }
 
     static Optional<EmbeddedAssociation> embeddedAssociation(TransferPlan plan, ObjectDescriptor association, String name,
@@ -455,8 +454,8 @@ final class DbMapping {
         // For 1:1, the second declared role's class owns the column for the first role.
         var target = first.single() ? first : second;
         var owner = first.single() ? second : first;
-        if (linkTable && hasClassHierarchy(plan, owner.target())) {
-            throw unsupported("embedded association with attributes on an owner in a class hierarchy at "
+        if (linkTable && hasSubtypes(plan, owner.target())) {
+            throw unsupported("embedded association with attributes on an owner with subtypes at "
                     + association.name().declared());
         }
         return Optional.of(new EmbeddedAssociation(association, name, owner, target, linkTable));

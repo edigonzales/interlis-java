@@ -131,6 +131,8 @@ Für 1:n mit Attributen prüft sie eingebettete Attributwerte, direkte Referenze
 fehlende Rollen und den Erhalt der Zieldatei bei mehreren Linkzeilen zum Objekt.
 Polymorphe Ziele werden mit einer Zwischenklasse und einem konkreten
 Nachfahren aus derselben Hierarchie geprüft.
+Bei einer Blattklasse als Eigentümer prüft die Suite die Linknutzlast am
+Blatt und einen beschädigten Rückverweis auf ein Geschwisterobjekt.
 Bei 1:1-Assoziationen kehren die beiden Sprachfixtures die Deklarationsreihenfolge
 um. Die Tests prüfen die jeweilige Rollenspalte, deren SQL-Nullbarkeit und die
 gespeicherte Ziel-ID.

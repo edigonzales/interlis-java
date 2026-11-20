@@ -304,6 +304,7 @@
           <g:coord><g:c1>2601500.625</g:c1><g:c2>1201500.500</g:c2></g:coord>
           <g:coord><g:c1>2601100.125</g:c1><g:c2>1201100.750</g:c2></g:coord>
         </g:multicoord></Sites>
+        <Recommended i:ref="legacy-serviceunit"><RelayReview><Memo>accepted</Memo></RelayReview></Recommended>
       </Relay>
     </Data>
   </i:datasection>

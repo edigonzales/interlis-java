@@ -226,6 +226,7 @@
         <Mentor REF="legacy-relay"/>
         <PairedService REF="legacy-serviceunit"/>
         <Online>false</Online>
+        <Recommended REF="legacy-serviceunit"><DbInterop23.Data.RelayReview><Memo>accepted</Memo></DbInterop23.Data.RelayReview></Recommended>
       </DbInterop23.Data.Relay>
     </DbInterop23.Data>
   </DATASECTION>
