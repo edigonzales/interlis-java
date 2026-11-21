@@ -458,15 +458,24 @@ final class DbInteropTest {
                 """.formatted(model, bid, tid) : """
                 <Inspection i:tid="%s-inspection"><Links><InspectionRefs><LocalSite i:ref="%s"/></InspectionRefs></Links></Inspection>
                 """.formatted(bid, tid);
+        String evidence = version == 23 ? """
+                <%1$s.Data.Evidence TID="%2$s"><EvidenceMarker REF="%3$s"/><EvidenceInspection REF="%4$s-inspection"/><Memo>evidence</Memo></%1$s.Data.Evidence>
+                """.formatted(model, evidenceOid(tid), tid, bid) : """
+                <Evidence i:tid="%s"><EvidenceMarker i:ref="%s"/><EvidenceInspection i:ref="%s-inspection"/><Memo>evidence</Memo></Evidence>
+                """.formatted(evidenceOid(tid), tid, bid);
         String second = version == 23 ? """
                 <%1$s.Data BID="%2$s"><%1$s.Data.Site TID="%3$s"><Label>second</Label></%1$s.Data.Site></%1$s.Data>
                 """.formatted(model, oidBasket(bid + "-second"), secondOid(tid)) : """
                 <Data i:bid="%s"><Site i:tid="%s"><Label>second</Label></Site></Data>
                 """.formatted(oidBasket(bid + "-second"), secondOid(tid));
-        String fixture = referenceDatasetFixture(model, version, oidBasket(bid), inspection + object)
+        String fixture = referenceDatasetFixture(model, version, oidBasket(bid), inspection + object + evidence)
                 .replace(version == 23 ? "</DATASECTION>" : "</i:datasection>",
                         second + defaults + (version == 23 ? "</DATASECTION>" : "</i:datasection>"));
         return Files.writeString(work.resolve(bid + ".xtf"), fixture);
+    }
+
+    private static String evidenceOid(String tid) {
+        return tid.replace("-5C5A-", "-CCCC-");
     }
 
     private static String oidBasket(String name) {
@@ -490,6 +499,14 @@ final class DbInteropTest {
                 + " s join " + db.table("t_ili2db_basket") + " b on b.t_id=s.t_basket where b.t_ili_tid='"
                 + oidBasket(bid + "-second") + "' and s.label='second'"));
         assertOidReferenceRow(db, sql, bid + "-inspection", tid, bid, "localsite");
+        String evidence = """
+                select e.t_ili_tid from %s e join %s b on b.t_id=e.t_basket
+                join %s s on s.t_id=e.evidencemarker and s.t_basket=e.t_basket
+                join %s i on i.t_id=e.evidenceinspection and i.t_basket=e.t_basket
+                where b.t_ili_tid='%s' and e.memo='evidence' and s.t_ili_tid='%s' and i.t_ili_tid='%s-inspection'
+                """.formatted(db.table("evidence"), db.table("t_ili2db_basket"), db.table("site"),
+                db.table("inspection"), oidBasket(bid), tid.toLowerCase(Locale.ROOT), bid);
+        assertEquals(evidenceOid(tid).toLowerCase(Locale.ROOT), scalar(sql, evidence));
         assertEquals(defaultOid(tid).toLowerCase(Locale.ROOT), scalar(sql, "select a.t_ili_tid from " + db.table("address")
                 + " a join " + db.table("t_ili2db_basket") + " b on b.t_id=a.t_basket where b.t_ili_tid='"
                 + bid + "-defaults' and a.atext='address'"));
@@ -511,6 +528,12 @@ final class DbInteropTest {
         var inspection = child(basket, version == 23 ? model + ".Data.Inspection" : "Inspection");
         assertExternalReference(child(children(child(inspection, "Links")).getFirst(), "LocalSite"),
                 version, tid.toLowerCase(Locale.ROOT), "");
+        var evidence = child(basket, version == 23 ? model + ".Data.Evidence" : "Evidence");
+        assertNotNull(evidence);
+        assertEquals(evidenceOid(tid).toLowerCase(Locale.ROOT), id(evidence, version, "tid"));
+        assertEquals("evidence", child(evidence, "Memo").getTextContent());
+        assertExternalReference(child(evidence, "EvidenceMarker"), version, tid.toLowerCase(Locale.ROOT), "");
+        assertExternalReference(child(evidence, "EvidenceInspection"), version, bid + "-inspection", "");
         var inherited = child(data, version == 23 ? model + ".Defaults" : "Defaults");
         assertEquals(bid + "-defaults", id(inherited, version, "bid"));
         assertEquals(defaultOid(tid).toLowerCase(Locale.ROOT),

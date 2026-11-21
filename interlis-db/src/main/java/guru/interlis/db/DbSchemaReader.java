@@ -184,8 +184,8 @@ final class DbSchemaReader {
             requireIdPrimaryKey(db, name);
             var used = new HashSet<>(Set.of(T_ID, T_BASKET));
             boolean subtype = object.baseType().isPresent();
-            if (!subtype && object.kind() != SymbolKind.ASSOCIATION) {
-                var domain = DbMapping.oidDomain(plan, object);
+            var domain = DbMapping.oidDomain(plan, object);
+            if (!subtype && (object.kind() != SymbolKind.ASSOCIATION || domain.isPresent())) {
                 if (domain.isPresent()) {
                     requireIdentityColumn(db, name, physical, domain.orElseThrow());
                 } else {

@@ -17,6 +17,12 @@ CONTRACTED MODEL DbOid23 (en) AT "https://example.org/interlis/db" VERSION "1" =
     CLASS Inspection =
       Links : InspectionRefs;
     END Inspection;
+    ASSOCIATION Evidence (OID) =
+      OID AS INTERLIS.UUIDOID;
+      EvidenceMarker -- {0..*} Marker;
+      EvidenceInspection -- {0..*} Inspection;
+      Memo : TEXT*40;
+    END Evidence;
   END Data;
   TOPIC Defaults =
     OID AS INTERLIS.UUIDOID;

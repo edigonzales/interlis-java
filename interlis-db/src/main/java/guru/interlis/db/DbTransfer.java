@@ -501,7 +501,7 @@ final class DbTransfer {
     private static boolean hasExportedTid(Database db, DbMapping mapping, long dataset, String tid, CancellationToken token)
             throws SQLException {
         for (var table : mapping.tables()) {
-            if (!table.hasTidColumn() || table.object().kind() != SymbolKind.CLASS) continue;
+            if (!table.hasTidColumn() || table.object().kind() == SymbolKind.STRUCTURE) continue;
             token.throwIfCancellationRequested();
             String sql = "SELECT 1 FROM " + db.table(table.name()) + " obj JOIN " + db.technicalTable(BASKET)
                     + " basket ON basket." + T_ID + " = obj." + T_BASKET

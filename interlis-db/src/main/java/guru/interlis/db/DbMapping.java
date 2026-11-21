@@ -154,7 +154,7 @@ final class DbMapping {
         }
 
         boolean subtype() { return object.baseType().isPresent(); }
-        boolean hasTidColumn() { return !subtype() && object.kind() != SymbolKind.ASSOCIATION; }
+        boolean hasTidColumn() { return !subtype() && (object.kind() != SymbolKind.ASSOCIATION || oidDomain.isPresent()); }
         boolean uuidIdentity() { return oidDomain.filter(Ili2dbLayout.UUID_OID::equals).isPresent(); }
         boolean hasSequenceColumn() { return !subtype() && object.kind() == SymbolKind.STRUCTURE; }
 
@@ -408,10 +408,13 @@ final class DbMapping {
                 case STRUCTURE -> !object.modifiers().contains(Modifier.ABSTRACT) || bases.contains(object.symbol());
                 default -> false;
             };
-            boolean supportedIdentity = object.oidRules().isEmpty() || (object.kind() == SymbolKind.CLASS
-                    && oidDomain(plan, object).filter(Ili2dbLayout.UUID_OID::equals).isPresent()
-                    && object.baseType().flatMap(plan::object)
-                            .map(base -> oidDomain(plan, base).equals(oidDomain(plan, object))).orElse(true));
+            var domain = oidDomain(plan, object);
+            boolean uuid = domain.filter(Ili2dbLayout.UUID_OID::equals).isPresent();
+            boolean supportedIdentity = object.oidRules().isEmpty() || (uuid && switch (object.kind()) {
+                case CLASS -> object.baseType().flatMap(plan::object).map(base -> oidDomain(plan, base).equals(domain)).orElse(true);
+                case ASSOCIATION -> object.baseType().isEmpty() && !bases.contains(object.symbol());
+                default -> false;
+            });
             if (!supported || !supportedIdentity) {
                 throw unsupported("class layout or identity rules for " + object.name().declared());
             }
@@ -491,9 +494,15 @@ final class DbMapping {
     static List<AssociationRole> describeRoles(TransferPlan plan, ObjectDescriptor association) {
         String feature = "association " + association.name().declared();
         var roles = roleSlots(association);
-        if (association.kind() != SymbolKind.ASSOCIATION || !association.oidRules().isEmpty()
-                || association.modifiers().contains(Modifier.OID) || (roles.size() != 2 && roles.size() != 3)) {
+        boolean identified = oidDomain(plan, association).filter(Ili2dbLayout.UUID_OID::equals).isPresent();
+        if (association.kind() != SymbolKind.ASSOCIATION || (!identified && (!association.oidRules().isEmpty()
+                || association.modifiers().contains(Modifier.OID))) || (roles.size() != 2 && roles.size() != 3)) {
             throw unsupported(feature);
+        }
+        if (identified && (roles.size() != 2 || roles.stream().anyMatch(role ->
+                CardinalityUpper.finite(1).equals(role.role().cardinality().upper()) || role.role().external()
+                        || role.role().ordered() || role.role().aggregation() != RoleAggregation.NONE))) {
+            throw unsupported("UUID identity on " + feature);
         }
         if (roles.stream().anyMatch(role -> role.role().cardinality().upper().equals(CardinalityUpper.finite(0)))) {
             throw unsupported(feature + " requires every role to admit a target");
