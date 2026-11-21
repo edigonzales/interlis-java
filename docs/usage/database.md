@@ -57,8 +57,8 @@ PostgreSQL-Sequenznummern können nach einem Rollback Lücken aufweisen.
 des benannten Datensatzes und ersetzt alle seine Baskets und Objekte. Die neuen
 Zeilen erhalten neue interne IDs, auch bei gleicher BID oder TID. Ein fehlender
 Datensatz wird angelegt. Die Änderung wird erst nach dem bestätigten Ende des
-XTF-FULL-Transfers veröffentlicht. Das erste Profil umfasst flache skalare
-Klassen. PostGIS sperrt die betroffenen Tabellen für konkurrierende Schreibzugriffe.
+XTF-FULL-Transfers veröffentlicht. Die Löschung erfasst auch Klassenfragmente, Strukturen, Linkzeilen und
+Geometrien der bisherigen Baskets. PostGIS sperrt die betroffenen Tabellen für konkurrierende Schreibzugriffe.
 GeoPackage verwendet seine bestehende Schreibtransaktion.
 
 ## Referenzprofil

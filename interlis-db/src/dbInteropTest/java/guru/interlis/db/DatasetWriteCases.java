@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 
 import static guru.interlis.db.DbInteropTest.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -67,6 +68,52 @@ final class DatasetWriteCases {
             runReference(db, "import", "tail", created);
             var tail = rows(db, sql, "mutationitem").get(key("tail", "created", "new"));
             assertTrue(tail.object() > current.object());
+        }
+    }
+
+    void replaceRelations(TestDatabase db, boolean referenceSchema) throws Exception {
+        String model = "DbInterop" + version;
+        schema(db, referenceSchema, model);
+        Path original = work.resolve("replace-original.xtf");
+        if (Files.notExists(original)) {
+            try (var resource = DatasetWriteCases.class.getResourceAsStream("/" + model + ".xtf")) {
+                Files.copy(resource, original);
+            }
+        }
+        seed(db, referenceSchema, model, "rel", original);
+        String fields = "<Links>" + structure(model, "LinkDetail",
+                "<Label>in new basket</Label>" + reference("Destination", "site", "")) + "</Links>";
+        String geometry = version == 23 ? "<COORD><C1>2600600.500</C1><C2>1200600.250</C2></COORD>"
+                : "<g:coord><g:c1>2600600.500</g:c1><g:c2>1200600.250</g:c2></g:coord>";
+        String objects = object(model, "Report", "report", fields)
+                + object(model, "Place", "site", "<Geometry>" + geometry + "</Geometry>");
+        Path replacement = delivery("replace-rel", model, new Basket("new-basket", objects));
+
+        try (var sql = db.connect()) {
+            var originalBaskets = new ArrayList<Long>();
+            try (var statement = sql.createStatement();
+                 var rows = statement.executeQuery("SELECT t_id FROM " + db.table("t_ili2db_basket"))) {
+                while (rows.next()) originalBaskets.add(rows.getLong(1));
+            }
+            assertFalse(originalBaskets.isEmpty());
+            Path exported = mutate(db, referenceSchema, "replace", model, "rel", replacement);
+            for (String table : List.of("mast", "tower", "nestedleaf", "nestedinner", "markerlink", "place", "linkdetail")) {
+                for (long basket : originalBaskets) {
+                    assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table(table) + " WHERE t_basket = " + basket), table);
+                }
+            }
+            assertEquals("site", scalar(sql, "SELECT p.t_ili_tid FROM " + db.table("place") + " p JOIN "
+                    + db.table("linkdetail") + " d ON d.destination=p.t_id"));
+            String srid = db.postgis() ? "SELECT ST_SRID(ageometry) FROM " + db.table("place")
+                    : "SELECT srs_id FROM gpkg_geometry_columns WHERE table_name = 'place'";
+            assertEquals("2056", scalar(sql, srid));
+            var baskets = children(readDataSection(exported, version));
+            assertEquals(1, baskets.size());
+            assertEquals("new-basket", id(baskets.getFirst(), version, "bid"));
+            var place = child(baskets.getFirst(), version == 23 ? model + ".Data.Place" : "Place");
+            assertEquals("site", id(place, version, "tid"));
+            String x = children(children(child(place, "Geometry")).getFirst()).getFirst().getTextContent();
+            assertEquals(0, new java.math.BigDecimal(x).compareTo(new java.math.BigDecimal("2600600.500")));
         }
     }
 
@@ -131,6 +178,7 @@ final class DatasetWriteCases {
     private Path delivery(String file, String model, Basket... baskets) throws Exception {
         var first = baskets[0];
         String xml = referenceDatasetFixture(model, version, first.bid(), first.objects());
+        if (model.equals("DbInterop23")) xml = xml.replace("VERSION=\"1\"", "VERSION=\"2026-11-20\"");
         String end = version == 23 ? "</DATASECTION>" : "</i:datasection>";
         var extra = new StringBuilder();
         for (int i = 1; i < baskets.length; i++) {
@@ -138,11 +186,25 @@ final class DatasetWriteCases {
             extra.append(version == 23 ? "<%1$s.Data BID=\"%2$s\">%3$s</%1$s.Data>".formatted(model, basket.bid(), basket.objects())
                     : "<Data i:bid=\"%s\">%s</Data>".formatted(basket.bid(), basket.objects()));
         }
+        if (version == 24) {
+            xml = xml.replace("<i:transfer ", "<i:transfer xmlns:g=\"http://www.interlis.ch/geometry/1.0\" ");
+        }
         return Files.writeString(work.resolve(file + ".xtf"), xml.replace(end, extra + end));
     }
 
     private String item(String model, String tid, String label) {
         return object(model, "MutationItem", tid, "<Label>" + label + "</Label>");
+    }
+
+    private String structure(String model, String type, String values) {
+        String tag = version == 23 ? model + ".Data." + type : type;
+        return "<%1$s>%2$s</%1$s>".formatted(tag, values);
+    }
+
+    private String reference(String name, String tid, String bid) {
+        if (version == 24) return "<%s i:ref=\"%s\"/>".formatted(name, tid);
+        String targetBasket = bid.isEmpty() ? "" : " BID=\"%s\"".formatted(bid);
+        return "<%s REF=\"%s\"%s/>".formatted(name, tid, targetBasket);
     }
 
     private String object(String model, String type, String tid, String values) {

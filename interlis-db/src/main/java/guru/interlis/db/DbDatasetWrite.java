@@ -1,7 +1,6 @@
 package guru.interlis.db;
 
 import guru.interlis.execution.CancellationToken;
-import guru.interlis.model.SymbolKind;
 
 import java.sql.SQLException;
 import java.util.TreeSet;
@@ -36,10 +35,8 @@ final class DbDatasetWrite {
 
     static void checkReplaceProfile(Database db, DbMapping mapping) throws SQLException {
         for (var table : mapping.tables()) {
-            if (table.object().kind() != SymbolKind.CLASS || table.subtype() || table.hasDiscriminator()
-                    || table.columns().stream().anyMatch(column -> column.kind().geometry()
-                    || column.kind() == DbMapping.Kind.REFERENCE)) {
-                throw new DbException("Unsupported mapping for replace at " + table.object().name().declared());
+            if (table.columns().stream().anyMatch(DbMapping.Column::external)) {
+                throw new DbException("Unsupported external references for replace at " + table.object().name().declared());
             }
         }
         checkUnmappedReferences(db, mapping);
