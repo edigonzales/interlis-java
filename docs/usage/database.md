@@ -7,6 +7,10 @@ Referenzprofil für die Schemaerzeugung verwendet `ili2gpkg` und `ili2pg`
 **5.5.2**. Für den bisherigen Umfang mit Punkten unterstützt der Transfer
 auch bestehende 5.5.1-Schemata. Er kompiliert das gespeicherte Modell und
 verwendet dessen gespeicherte SQL-Zuordnungen.
+Aus derselben gespeicherten Datei kann ein ausgewähltes Modell Text-,
+Aufzählungs- und Koordinatendomänen eines weiteren Modells verwenden.
+Für den Datenaustausch sind die Tabellen und XTF-Baskets des Fachmodells
+massgeblich.
 [Referenzhandbuch](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst)
 
 ## Schemaerzeugung

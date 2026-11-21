@@ -260,6 +260,7 @@ final class DbDatasetWrite {
 
     static void clearDataset(Database db, DbMapping mapping, long dataset, String operation, CancellationToken token) throws SQLException {
         var topics = mapping.plan().topics().stream()
+                .filter(topic -> mapping.models().contains(topic.model()))
                 .map(topic -> topic.name().declared().toString()).collect(Collectors.toSet());
         String baskets = db.technicalTable(BASKET);
         try (var statement = db.connection().prepareStatement("SELECT DISTINCT topic FROM " + baskets + " WHERE dataset = ?")) {

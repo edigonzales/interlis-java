@@ -1,0 +1,24 @@
+INTERLIS 2.3;
+
+MODEL DbSourceTypes23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  DOMAIN
+    Label = TEXT*24;
+    Status = (planned, active);
+    Position = COORD 2480000.000 .. 2840000.000, 1070000.000 .. 1300000.000;
+  TOPIC Unused =
+    CLASS Spare =
+      Name : Label;
+    END Spare;
+  END Unused;
+END DbSourceTypes23.
+
+MODEL DbSharedSource23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  IMPORTS DbSourceTypes23;
+  TOPIC Data =
+    CLASS Station =
+      Name : DbSourceTypes23.Label;
+      State : DbSourceTypes23.Status;
+      Location : DbSourceTypes23.Position;
+    END Station;
+  END Data;
+END DbSharedSource23.

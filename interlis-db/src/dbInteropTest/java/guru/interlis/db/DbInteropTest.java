@@ -108,6 +108,11 @@ final class DbInteropTest {
 
     @TempDir(cleanup = CleanupMode.ALWAYS) Path work;
 
+    @Test void geoPackageSharedSource23() throws Exception { exchangeSharedSource(23, null); }
+    @Test void geoPackageSharedSource24() throws Exception { exchangeSharedSource(24, null); }
+    @Test void postgisSharedSource23() throws Exception { exchangeWithPostgis(23, this::exchangeSharedSource); }
+    @Test void postgisSharedSource24() throws Exception { exchangeWithPostgis(24, this::exchangeSharedSource); }
+
     @Test void geoPackage23() throws Exception { exchange(23, null); }
     @Test void geoPackage24() throws Exception {
         assertWidePolymorphicProjection();
@@ -402,6 +407,11 @@ final class DbInteropTest {
             postgres.start();
             test.run(version, postgres);
         }
+    }
+
+    private void exchangeSharedSource(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "shared_source");
+        new ModelCases(work, new ReferenceTool(db.postgis()), version).sharedSource(db);
     }
 
     private void exchange(int version, PostgreSQLContainer postgres) throws Exception {

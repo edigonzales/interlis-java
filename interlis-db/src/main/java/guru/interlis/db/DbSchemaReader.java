@@ -81,7 +81,10 @@ final class DbSchemaReader {
             throw new DbException("MODEL.iliversion disagrees with MODEL.content for " + modelName);
         }
 
-        if (!settings.multiSrs() && plan.topics().stream().anyMatch(DbDomains::deferred)) {
+        var selected = plan.objects().stream().filter(object -> plan.rootModels().contains(object.model())).toList();
+        DbMapping.checkLayout(plan, selected);
+        if (!settings.multiSrs() && plan.topics().stream()
+                .anyMatch(topic -> plan.rootModels().contains(topic.model()) && DbDomains.deferred(topic))) {
             throw unsupported("deferred generic domains require SETTINGS.useEpsgInNames");
         }
         var crsPair = settings.srsModels().map(pair -> new DbCrsPair(plan, pair, settings.crs(), settings.alternateCrs()));
@@ -95,7 +98,7 @@ final class DbSchemaReader {
         var objects = new ArrayList<ObjectDescriptor>();
         var associations = new ArrayList<EmbeddedAssociation>();
         var linkRoles = new HashMap<SymbolRef, List<AssociationRole>>();
-        for (ObjectDescriptor object : plan.objects()) {
+        for (ObjectDescriptor object : selected) {
             String path = object.name().declared().toString();
             if (crsPair.isPresent() && !path.startsWith(prefix)) continue;
             String name = classNames.remove(path);
@@ -133,7 +136,7 @@ final class DbSchemaReader {
             throw new DbException("Extra CLASSNAME/TRAFO/INHERITANCE mappings for " + modelName);
         }
         checkSystemTables(db);
-        var bases = DbMapping.baseTables(plan);
+        var bases = DbMapping.baseTables(objects);
         var catalog = readCatalog(db, plan, objects, names, bases, token);
         var tables = new ArrayList<Table>();
         var compositions = new ArrayList<Composition>();

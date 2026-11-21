@@ -1,10 +1,16 @@
 package guru.interlis.db;
 
+import guru.interlis.compiler.AnalysisReuse;
 import guru.interlis.compiler.CompilationOutcome;
 import guru.interlis.compiler.CompilationRequest;
 import guru.interlis.compiler.CompilerEngines;
 import guru.interlis.compiler.CompilerOptions;
+import guru.interlis.compiler.ImportBinding;
+import guru.interlis.compiler.ImportResolution;
+import guru.interlis.compiler.ImportSite;
+import guru.interlis.compiler.ModelLocation;
 import guru.interlis.compiler.ModelSelector;
+import guru.interlis.compiler.ResolutionFingerprint;
 import guru.interlis.compiler.SourceSet;
 import guru.interlis.diagnostics.Severity;
 import guru.interlis.execution.CancellationToken;
@@ -34,6 +40,9 @@ import guru.interlis.model.TypeKind;
 import guru.interlis.model.TypeRef;
 import guru.interlis.model.TopicSymbol;
 import guru.interlis.source.SourceText;
+import guru.interlis.syntax.ParseMode;
+import guru.interlis.syntax.ParseOptions;
+import guru.interlis.syntax.SyntaxServices;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.RoleSlot;
@@ -302,8 +311,8 @@ final class DbMapping {
         }
     }
 
-    static Set<SymbolRef> baseTables(TransferPlan plan) {
-        return plan.objects().stream().flatMap(object -> object.baseType().stream()).collect(Collectors.toSet());
+    static Set<SymbolRef> baseTables(List<ObjectDescriptor> objects) {
+        return objects.stream().flatMap(object -> object.baseType().stream()).collect(Collectors.toSet());
     }
 
     List<EmbeddedAssociation> linkFields(SymbolRef owner) {
@@ -331,6 +340,10 @@ final class DbMapping {
                              CancellationToken token) {
         var models = srsModels.map(DbCrsPair.Models::names).orElse(List.of(modelName));
         TransferPlan plan = compile(models, source, "model file", token);
+        if (plan.models().size() != models.size()) {
+            throw unsupported("expected the selected standalone model or CRS model pair");
+        }
+        checkLayout(plan, plan.objects());
         var crs = new CrsDefaults(defaultEpsg, 0);
         var crsPair = srsModels.map(pair -> new DbCrsPair(plan, pair, crs, crs));
         var objects = plan.objects().stream().filter(object -> crsPair.isEmpty()
@@ -360,7 +373,7 @@ final class DbMapping {
             }
             names.put(object.symbol(), name);
         }
-        var bases = baseTables(plan);
+        var bases = baseTables(objects);
         var tables = new ArrayList<Table>();
         var compositions = new ArrayList<Composition>();
         for (var object : objects) {
@@ -439,9 +452,24 @@ final class DbMapping {
         String modelName = models.getFirst();
         var selectors = models.stream().map(name -> (ModelSelector) new ModelSelector.ByName(name, Optional.empty(),
                 Optional.of(source.id()))).toList();
-        var request = new CompilationRequest(selectors, SourceSet.of(Map.of(source.id(), source)),
-                CompilerOptions.defaults());
-        var outcome = CompilerEngines.create().compile(request, token);
+        var syntax = SyntaxServices.create().parse(source, ParseOptions.defaults(ParseMode.EDITOR), token);
+        var declarations = syntax.root().models();
+        var imports = new ArrayList<ImportBinding>();
+        for (var importer : declarations) {
+            for (var imported : importer.imports()) {
+                if ("INTERLIS".equals(imported.modelName())) continue;
+                var targets = declarations.stream().filter(model -> model.name().equals(imported.modelName())).toList();
+                if (targets.size() != 1) continue;
+                var target = targets.getFirst();
+                var location = new ModelLocation(source.id(), source.revision(), target.name(),
+                        Optional.of(target.modelVersion()), target.range().startOffset());
+                var site = new ImportSite(imported.range(), importer.name(), imported.modelName());
+                imports.add(new ImportBinding(site, new ImportResolution.Resolved(location)));
+            }
+        }
+        var sources = SourceSet.of(Map.of(source.id(), source), imports, List.of(), ResolutionFingerprint.none());
+        var request = new CompilationRequest(selectors, sources, CompilerOptions.defaults());
+        var outcome = CompilerEngines.create().compile(request, new AnalysisReuse(Optional.empty(), Map.of(source.id(), syntax)), token);
         var schema = switch (outcome) {
             case CompilationOutcome.Succeeded succeeded -> succeeded.schema();
             case CompilationOutcome.Rejected rejected -> throw new DbException("Cannot compile " + description + " for "
@@ -457,25 +485,25 @@ final class DbMapping {
             case TransferPlanningResult.Ready ready -> ready.plan();
             case TransferPlanningResult.Unsupported rejected -> throw unsupported(rejected.issues().getFirst().toString());
         };
-        checkModel(plan, models.size());
         return plan;
     }
 
-    private static void checkModel(TransferPlan plan, int models) {
-        if (plan.models().size() != models || plan.topics().isEmpty()
-                || plan.objects().stream().noneMatch(object -> object.kind() == SymbolKind.CLASS)) {
-            throw unsupported("expected the selected standalone model or CRS model pair containing classes in topics");
+    static void checkLayout(TransferPlan plan, List<ObjectDescriptor> objects) {
+        if (objects.stream().noneMatch(object -> object.kind() == SymbolKind.CLASS && object.topic().isPresent())) {
+            throw unsupported("expected a selected model containing classes in topics");
         }
+        var topics = objects.stream().flatMap(object -> object.topic().stream()).collect(Collectors.toSet());
         for (var topic : plan.topics()) {
+            if (!topics.contains(topic.symbol()) && !plan.rootModels().contains(topic.model())) continue;
             if (topic.abstractTopic() || topic.baseTopic().isPresent()
                     || topic.oidRules().stream().anyMatch(rule -> !Ili2dbLayout.UUID_OID.equals(oidDomain(plan, rule)))
                     || topic.genericBindings().stream().anyMatch(binding -> binding.state() == TopicSymbol.BindingState.ABSTRACT)) {
                 throw unsupported("topic " + topic.name().declared());
             }
         }
-        var bases = baseTables(plan);
+        var bases = baseTables(objects);
         var hierarchy = new HashSet<>(bases);
-        for (var object : plan.objects()) {
+        for (var object : objects) {
             if (object.baseType().isPresent()) hierarchy.add(object.symbol());
             boolean supported = switch (object.kind()) {
                 case CLASS -> object.topic().isPresent() && (object.transferable() || bases.contains(object.symbol()));
@@ -500,7 +528,7 @@ final class DbMapping {
                 throw unsupported("class layout or identity rules for " + object.name().declared());
             }
         }
-        if (!hierarchy.isEmpty()) checkInheritance(plan, hierarchy);
+        if (!hierarchy.isEmpty()) checkInheritance(plan, objects, hierarchy);
     }
 
     static Optional<String> oidDomain(TransferPlan plan, ObjectDescriptor object) {
@@ -537,16 +565,16 @@ final class DbMapping {
         return association.slots().stream().filter(RoleSlot.class::isInstance).map(RoleSlot.class::cast).toList();
     }
 
-    private static void checkInheritance(TransferPlan plan, Set<SymbolRef> hierarchy) {
-        for (var object : plan.objects()) {
-            boolean inheritedLayout = hierarchy.contains(object.symbol());
-            if (inheritedLayout && object.baseType().isPresent()
+    private static void checkInheritance(TransferPlan plan, List<ObjectDescriptor> objects, Set<SymbolRef> hierarchy) {
+        for (var object : objects) {
+            if (!hierarchy.contains(object.symbol())) continue;
+            if (object.baseType().isPresent()
                     && plan.object(object.baseType().orElseThrow()).filter(base -> base.kind() == object.kind()
                     && base.topic().equals(object.topic())).isEmpty()) {
                 throw unsupported("base type outside the current topic or of a different kind at " + object.name().declared());
             }
             for (var slot : object.slots()) {
-                if (!(slot instanceof AttributeSlot attribute) || !inheritedLayout) continue;
+                if (!(slot instanceof AttributeSlot attribute)) continue;
                 if (attribute.member().overridden()) {
                     throw unsupported("extended attribute in inheritance at " + attribute.name().declared());
                 }

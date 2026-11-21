@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="model imports fixture">
+    <MODELS><MODEL NAME="DbSharedSource23" VERSION="1" URI="https://example.org/interlis/db"/></MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <DbSharedSource23.Data BID="fixture-basket">
+      <DbSharedSource23.Data.Station TID="fixture-station">
+        <Name>Imported domains</Name><State>active</State>
+        <Location><COORD><C1>2600123.125</C1><C2>1200456.375</C2></COORD></Location>
+      </DbSharedSource23.Data.Station>
+    </DbSharedSource23.Data>
+  </DATASECTION>
+</TRANSFER>

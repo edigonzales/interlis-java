@@ -90,6 +90,10 @@ Jeder Fall entpackt sein Referenzwerkzeug in ein eigenes temporäres
 Arbeitsverzeichnis. JUnit löscht dieses Verzeichnis samt GeoPackage-Dateien,
 Prozesslogs und temporären Dateien des Referenzwerkzeugs auch bei Testfehlern.
 
+`*DbInteropTest.*SharedSource*` prüft importierte Typen aus derselben
+gespeicherten Modelldatei, die Fachwerte und CRS sowie beide
+Werkzeugrichtungen mit dem Referenzschema.
+
 Die Fälle `*DbInteropTest.*Mutation*` prüfen `replace` und `update`
 in beiden Werkzeugrichtungen. Sie prüfen die internen IDs und den Bestand
 in SQL, exportiertes XTF, besitzende Datensätze, Referenzen und Rollback.
