@@ -119,8 +119,9 @@ final class DbTransfer {
 
     private static void writeBasket(Database db, DbMapping mapping, TopicDescriptor topic, long basketId,
                                     BasketId bid, TransferWriter writer, CancellationToken token) throws SQLException {
+        var stableOid = basketOid(mapping, topic, bid);
         writer.write(new TransferEvent.StartBasket(bid, topic.symbol(), List.of(), BasketKind.FULL,
-                Consistency.COMPLETE, Optional.empty(), Optional.empty(), Optional.empty(), List.of()), token);
+                Consistency.COMPLETE, Optional.empty(), Optional.empty(), stableOid, List.of()), token);
         for (var table : mapping.tables()) {
             if (table.hasDiscriminator() && table.object().kind() == SymbolKind.STRUCTURE) {
                 checkStructureHierarchy(db, mapping, table, basketId, token);
@@ -1028,15 +1029,24 @@ final class DbTransfer {
                         ? value.map(ObjectOid::new) : Optional.empty(), Optional.empty());
     }
 
+    private static Optional<String> basketOid(DbMapping mapping, TopicDescriptor topic, BasketId bid) {
+        if (topic.oidRules().stream().noneMatch(rule -> rule.basket())) return Optional.empty();
+        canonicalUuid(bid.value(), topic.name().declared().toString());
+        return mapping.version() == LanguageVersion.ILI24 ? Optional.of(bid.value()) : Optional.empty();
+    }
+
     private static String storedTid(Table table, String tid) {
-        if (!table.uuidIdentity()) return tid;
+        return table.uuidIdentity() ? canonicalUuid(tid, table.object().name().declared().toString()) : tid;
+    }
+
+    private static String canonicalUuid(String tid, String context) {
         try {
             String canonical = UUID.fromString(tid).toString();
             if (canonical.equalsIgnoreCase(tid)) return canonical;
         } catch (IllegalArgumentException ignored) {
             // UUID.fromString also accepts abbreviated segments, which are not the ili2db wire form.
         }
-        throw new DbException("Invalid UUID " + tid + " for " + table.object().name().declared());
+        throw new DbException("Invalid UUID " + tid + " for " + context);
     }
 
     private static String identifier(String value, String kind, String context) {
@@ -1125,7 +1135,8 @@ final class DbTransfer {
                     || start.kind() != BasketKind.FULL || start.consistency() != Consistency.COMPLETE
                     || !start.additionalTopics().isEmpty() || !start.domainBindings().isEmpty()
                     || start.startState().isPresent() || start.endState().isPresent()
-                    || start.stableOid().isPresent() || start.id().origin() != IdOrigin.SOURCE) {
+                    || start.id().origin() != IdOrigin.SOURCE
+                    || !start.stableOid().equals(basketOid(mapping, topic, start.id()))) {
                 throw new DbException("Unsupported basket metadata for " + start.id().value());
             }
             basketId = db.nextId();

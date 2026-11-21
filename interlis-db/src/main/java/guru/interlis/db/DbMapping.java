@@ -393,7 +393,7 @@ final class DbMapping {
         }
         for (var topic : plan.topics()) {
             if (topic.abstractTopic() || topic.baseTopic().isPresent()
-                    || topic.oidRules().stream().anyMatch(rule -> rule.basket() || !Ili2dbLayout.UUID_OID.equals(oidDomain(plan, rule)))
+                    || topic.oidRules().stream().anyMatch(rule -> !Ili2dbLayout.UUID_OID.equals(oidDomain(plan, rule)))
                     || !topic.genericBindings().isEmpty()) {
                 throw unsupported("topic " + topic.name().declared());
             }

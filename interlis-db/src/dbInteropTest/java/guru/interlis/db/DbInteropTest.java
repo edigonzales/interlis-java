@@ -395,10 +395,23 @@ final class DbInteropTest {
                 """.formatted(model, bid, defaultOid(tid)) : """
                 <Defaults i:bid="%s-defaults"><Address i:tid="%s"><Text>address</Text></Address></Defaults>
                 """.formatted(bid, defaultOid(tid));
-        String fixture = referenceDatasetFixture(model, version, bid, object)
+        String second = version == 23 ? """
+                <%1$s.Data BID="%2$s"><%1$s.Data.Site TID="%3$s"><Label>second</Label></%1$s.Data.Site></%1$s.Data>
+                """.formatted(model, oidBasket(bid + "-second"), secondOid(tid)) : """
+                <Data i:bid="%s"><Site i:tid="%s"><Label>second</Label></Site></Data>
+                """.formatted(oidBasket(bid + "-second"), secondOid(tid));
+        String fixture = referenceDatasetFixture(model, version, oidBasket(bid), object)
                 .replace(version == 23 ? "</DATASECTION>" : "</i:datasection>",
-                        defaults + (version == 23 ? "</DATASECTION>" : "</i:datasection>"));
+                        second + defaults + (version == 23 ? "</DATASECTION>" : "</i:datasection>"));
         return Files.writeString(work.resolve(bid + ".xtf"), fixture);
+    }
+
+    private static String oidBasket(String name) {
+        return java.util.UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8)).toString();
+    }
+
+    private static String secondOid(String tid) {
+        return tid.replace("-5C5A-", "-BBBB-");
     }
 
     private static String defaultOid(String tid) {
@@ -408,8 +421,11 @@ final class DbInteropTest {
     private static void assertOidRows(TestDatabase db, Connection sql, String bid, String tid) throws SQLException {
         assertEquals(tid.toLowerCase(Locale.ROOT), scalar(sql, "select s.t_ili_tid from " + db.table("site")
                 + " s join " + db.table("marker") + " m on m.t_id=s.t_id and m.t_basket=s.t_basket"
-                + " join " + db.table("t_ili2db_basket") + " b on b.t_id=s.t_basket where b.t_ili_tid='" + bid
+                + " join " + db.table("t_ili2db_basket") + " b on b.t_id=s.t_basket where b.t_ili_tid='" + oidBasket(bid)
                 + "' and s.label='marker' and s.t_type='marker' and m.category='survey'"));
+        assertEquals(secondOid(tid).toLowerCase(Locale.ROOT), scalar(sql, "select s.t_ili_tid from " + db.table("site")
+                + " s join " + db.table("t_ili2db_basket") + " b on b.t_id=s.t_basket where b.t_ili_tid='"
+                + oidBasket(bid + "-second") + "' and s.label='second'"));
         assertEquals(defaultOid(tid).toLowerCase(Locale.ROOT), scalar(sql, "select a.t_ili_tid from " + db.table("address")
                 + " a join " + db.table("t_ili2db_basket") + " b on b.t_id=a.t_basket where b.t_ili_tid='"
                 + bid + "-defaults' and a.atext='address'"));
@@ -417,9 +433,12 @@ final class DbInteropTest {
 
     private static void assertOidXtf(Path output, String model, int version, String bid, String tid) throws Exception {
         var data = readDataSection(output, version);
-        assertEquals(2, children(data).size());
-        var basket = child(data, version == 23 ? model + ".Data" : "Data");
-        assertEquals(bid, id(basket, version, "bid"));
+        assertEquals(3, children(data).size());
+        var basket = children(data).stream().filter(value -> id(value, version, "bid").equals(oidBasket(bid)))
+                .findFirst().orElseThrow();
+        var second = children(data).stream().filter(value -> id(value, version, "bid").equals(oidBasket(bid + "-second")))
+                .findFirst().orElseThrow();
+        assertEquals(secondOid(tid).toLowerCase(Locale.ROOT), id(children(second).getFirst(), version, "tid"));
         var object = child(basket, version == 23 ? model + ".Data.Marker" : "Marker");
         assertNotNull(object);
         assertEquals(tid.toLowerCase(Locale.ROOT), id(object, version, "tid"));

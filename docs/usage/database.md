@@ -335,7 +335,8 @@ Die Spaltenmetadaten führen die
 mit Kleinbuchstaben. XTF 2.3 FULL verwendet die UUID als TID ohne
 OIDSPACE-Präfix. Die UUID-Regel kann aus dem Topic oder der Basisklasse
 stammen. Die Wurzeltabelle speichert die OID und die Fragmente teilen
-dieselbe interne `T_Id`.
+dieselbe interne `T_Id`. Ein Topic mit `BASKET OID AS INTERLIS.UUIDOID`
+speichert die gelieferte BID in `T_ILI2DB_BASKET.T_Ili_Tid`.
 
 Zum weiteren Ausbau gehören weitere Assoziationsformen mit Hierarchie-Enden
 sowie `EXTENDED`-Attribute. Weitere Grenzen sind stabile OIDs, eigene Linienformen,
