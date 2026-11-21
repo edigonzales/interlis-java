@@ -145,6 +145,10 @@ class ValidatorCommandTest {
                       MANDATORY CONSTRAINT label != "reserved";
                       EXISTENCE CONSTRAINT label REQUIRED IN Target:name;
                     END Marks;
+                    STRUCTURE Spare =
+                      note : MANDATORY TEXT*20;
+                      EXISTENCE CONSTRAINT note REQUIRED IN Target:name;
+                    END Spare;
                     CLASS Target =
                       OID AS Id;
                       name : MANDATORY TEXT*20;
@@ -154,7 +158,10 @@ class ValidatorCommandTest {
                       link : REFERENCE TO (EXTERNAL) Target;
                       shape : SURFACE WITH (STRAIGHTS) VERTEX Point WITHOUT OVERLAPS > 0.01 LINE ATTRIBUTES Marks := link->shape;
                     END Pointer;
-                    CLASS Item = pointer : Pointer; END Item;
+                    CLASS Item =
+                      pointer : Pointer;
+                      spare : Spare;
+                    END Item;
                   END Data;
                 END Checks.
                 """);
@@ -169,7 +176,7 @@ class ValidatorCommandTest {
         write("invalid-reference.xtf", reference.replace("<label>valid</label>", "<label>reserved</label>"));
         write("unused.xtf", legacy(""));
 
-        // With Target read as a primary object, Marks' sole global rule supplies its exact reported identity.
+        // Reading Target directly identifies the Marks rule independently of the derivation.
         var direct = assertLineAttributeResult("reference.xtf", 5, "incomplete", 0, 1);
         var unchecked = direct.getAsJsonArray("unchecked");
         assertTrue(unchecked.get(0).getAsString().startsWith("OUT_OF_SCOPE_GLOBAL "));
