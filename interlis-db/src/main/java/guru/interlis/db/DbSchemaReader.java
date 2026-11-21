@@ -170,6 +170,8 @@ final class DbSchemaReader {
                 columns.add(association.ordered() ? bindPosition(db, parent, column) : column);
             }
             if (splitGeometries) DbMapping.requireSingleGeometry(object, columns);
+            db.checkGeometryIndexes(parent.name(), columns.stream().filter(column -> column.kind().geometry()).toList());
+            for (var geometry : secondary) db.checkGeometryIndexes(geometry.table(), List.of(geometry.column()));
             tables.add(new Table(object, parent.name(), columns, hasDiscriminator(object, bases),
                     DbMapping.oidDomain(plan, object), secondary));
         }
@@ -280,6 +282,7 @@ final class DbSchemaReader {
             throw unsupported("enumerations stored as SQL IDs");
         }
         String geometryLayout = settings.get(Ili2dbLayout.GEOMETRY_LAYOUT);
+        if (Ili2dbLayout.MULTIPLE_GEOMETRIES.equals(geometryLayout)) return false;
         if (geometryLayout != null && !Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout)) {
             throw unsupported("SETTINGS.geomAttrPerTable=" + geometryLayout);
         }

@@ -60,6 +60,9 @@ final class GeoPackageSchema {
             transaction.execute("BEGIN IMMEDIATE");
             try {
                 bootstrap(transaction, token);
+                if (plan.splitGeometries()) {
+                    transaction.execute("CREATE UNIQUE INDEX uk_gc_table_name ON gpkg_geometry_columns (table_name)");
+                }
                 SchemaSql.createGeoPackageTables(connection, plan, createGeometryIndexes, token);
                 registerContents(connection, plan, createGeometryIndexes, token);
                 token.throwIfCancellationRequested();
@@ -118,16 +121,20 @@ final class GeoPackageSchema {
                 if (geometries == null) {
                     registerAttributes(attributes, table);
                 } else {
-                    var spatial = geometries.getFirst();
-                    registerFeature(feature, geometry, table, spatial);
-                    if (createGeometryIndexes) GeoPackageRtree.create(connection, table, spatial.column().name());
-                    var kind = spatial.column().kind();
-                    if (kind == DbMapping.Kind.POLYLINE || kind == DbMapping.Kind.SURFACE
-                            || kind == DbMapping.Kind.MULTICURVE || kind == DbMapping.Kind.MULTISURFACE) {
-                        extension.setString(1, table);
-                        extension.setString(2, spatial.column().name());
-                        extension.setString(3, "gpkg_geom_" + kind.geometryType());
-                        extension.executeUpdate();
+                    registerFeature(feature, table, geometries.getFirst());
+                    for (var spatial : geometries) {
+                        token.throwIfCancellationRequested();
+                        var column = spatial.column();
+                        registerGeometry(geometry, table, column);
+                        if (createGeometryIndexes) GeoPackageRtree.create(connection, table, column.name());
+                        var kind = column.kind();
+                        if (kind == DbMapping.Kind.POLYLINE || kind == DbMapping.Kind.SURFACE
+                                || kind == DbMapping.Kind.MULTICURVE || kind == DbMapping.Kind.MULTISURFACE) {
+                            extension.setString(1, table);
+                            extension.setString(2, column.name());
+                            extension.setString(3, "gpkg_geom_" + kind.geometryType());
+                            extension.executeUpdate();
+                        }
                     }
                 }
             }
@@ -140,18 +147,20 @@ final class GeoPackageSchema {
         statement.executeUpdate();
     }
 
-    private static void registerFeature(PreparedStatement contents, PreparedStatement geometry, String table,
-                                        SchemaPlan.GeometryColumn spatial) throws SQLException {
-        var column = spatial.column();
+    private static void registerFeature(PreparedStatement contents, String table, SchemaPlan.GeometryColumn spatial)
+            throws SQLException {
         contents.setString(1, table);
         contents.setString(2, table);
         contents.setObject(3, spatial.minX());
         contents.setObject(4, spatial.minY());
         contents.setObject(5, spatial.maxX());
         contents.setObject(6, spatial.maxY());
-        contents.setInt(7, column.srsId());
+        contents.setInt(7, spatial.column().srsId());
         contents.executeUpdate();
+    }
 
+    private static void registerGeometry(PreparedStatement geometry, String table, DbMapping.Column column)
+            throws SQLException {
         geometry.setString(1, table);
         geometry.setString(2, column.name());
         geometry.setString(3, column.kind().geometryType());

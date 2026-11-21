@@ -32,7 +32,7 @@ public final class Main {
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
                    interlis-db delete --model NAME --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME)
-                   interlis-db schemaimport --model NAME [--create-geom-index] [--one-geom-per-table]
+                   interlis-db schemaimport --model NAME [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.
             """;
@@ -89,7 +89,7 @@ public final class Main {
     private static void createSchema(Options options, String password, CancellationToken cancellation)
             throws IOException, SQLException {
         var plan = SchemaPlan.read(options.model(), options.file(), options.gpkg() != null,
-                options.gpkg() != null || options.oneGeometryPerTable(), cancellation);
+                options.splitGeometries(), cancellation);
         cancellation.throwIfCancellationRequested();
         if (options.gpkg() != null) {
             GeoPackageSchema.create(options.gpkg(), plan, options.createGeometryIndexes(), cancellation);
@@ -159,7 +159,7 @@ public final class Main {
 
     private record Options(Command command, String model, String dataset, Path file, Path gpkg,
                            String pgUrl, String schema, String user, boolean createGeometryIndexes,
-                           boolean oneGeometryPerTable) {
+                           boolean splitGeometries) {
         private static final Set<String> NAMES = Set.of("--model", "--dataset", "--gpkg", "--pg-url", "--schema", "--user");
 
         static Options parse(String[] args) {
@@ -177,7 +177,8 @@ public final class Main {
             var schemaFlags = new HashSet<String>();
             for (int i = 1; i < args.length; i++) {
                 String arg = args[i];
-                if (arg.equals("--create-geom-index") || arg.equals("--one-geom-per-table")) {
+                if (arg.equals("--create-geom-index") || arg.equals("--one-geom-per-table")
+                        || arg.equals("--gpkg-multi-geom-per-table")) {
                     if (command != Command.SCHEMAIMPORT) {
                         throw new IllegalArgumentException(arg + " is only valid with schemaimport");
                     }
@@ -229,8 +230,13 @@ public final class Main {
             if (oneGeometryPerTable && gpkg != null) {
                 throw new IllegalArgumentException("--one-geom-per-table is only valid with PostgreSQL");
             }
+            boolean multipleGeoPackageGeometries = schemaFlags.contains("--gpkg-multi-geom-per-table");
+            if (multipleGeoPackageGeometries && gpkg == null) {
+                throw new IllegalArgumentException("--gpkg-multi-geom-per-table is only valid with GeoPackage");
+            }
             return new Options(command, model, dataset, file, gpkg, pgUrl, schema, user,
-                    schemaFlags.contains("--create-geom-index"), oneGeometryPerTable);
+                    schemaFlags.contains("--create-geom-index"),
+                    oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries));
         }
 
         void checkPaths() throws IOException {

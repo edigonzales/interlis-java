@@ -9,6 +9,7 @@ final class Ili2dbLayout {
     static final String PREFIX = "ch.ehi.ili2db.";
     static final String GEOMETRY_LAYOUT = PREFIX + "geomAttrPerTable";
     static final String SINGLE_GEOMETRY = "oneGeomAttrPerTable";
+    static final String MULTIPLE_GEOMETRIES = "multipleGeomAttrPerTable";
     static final String SECONDARY_TABLE_TAG = PREFIX + "secondaryTable";
     static final String INHERITANCE_TAG = PREFIX + "inheritance";
     static final String NEW_CLASS = "newClass";

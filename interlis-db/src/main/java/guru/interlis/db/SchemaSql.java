@@ -290,7 +290,10 @@ final class SchemaSql {
         row(statement, PREFIX + "defaultSrsCode", Integer.toString(LV95));
         row(statement, PREFIX + "maxSqlNameLength", "60");
         row(statement, "ch.interlis.ili2c.ilidirs", "%ILI_FROM_DB");
-        if (splitGeometries) row(statement, Ili2dbLayout.GEOMETRY_LAYOUT, Ili2dbLayout.SINGLE_GEOMETRY);
+        if (splitGeometries || gpkg) {
+            row(statement, Ili2dbLayout.GEOMETRY_LAYOUT, splitGeometries
+                    ? Ili2dbLayout.SINGLE_GEOMETRY : Ili2dbLayout.MULTIPLE_GEOMETRIES);
+        }
         if (!gpkg) row(statement, PREFIX + "uuidDefaultValue", UUID_DEFAULT);
     }
 

@@ -150,6 +150,9 @@ final class DbInteropTest {
         if (postgres != null) {
             cases.sameTable(new TestDatabase(postgres, "geometry_layout_reference"),
                     new TestDatabase(postgres, "geometry_layout_own"));
+        } else {
+            cases.wideGeoPackage(new TestDatabase(null, "wide_geometry_reference"),
+                    new TestDatabase(null, "wide_geometry_own"));
         }
         cases.split(new TestDatabase(postgres, "split_geometry_reference"),
                 new TestDatabase(postgres, "split_geometry_own"));

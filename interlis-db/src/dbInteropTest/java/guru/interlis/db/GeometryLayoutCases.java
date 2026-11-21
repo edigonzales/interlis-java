@@ -101,6 +101,44 @@ final class GeometryLayoutCases {
         }
     }
 
+    void wideGeoPackage(TestDatabase old, TestDatabase own) throws Exception {
+        create(old, own, false);
+        mixedTransfers(old, own);
+        Path changed = changed();
+        try (var sql = own.connect()) {
+            assertEquals("3", scalar(sql, "SELECT count(*) FROM gpkg_geometry_columns WHERE table_name='asset'"));
+            assertEquals("2460000.125", scalar(sql, "SELECT min_x FROM gpkg_contents WHERE table_name='asset'"));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM rtree_asset_anchor"));
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM rtree_asset_surveyed"));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM rtree_asset_trace"));
+            assertEquals("1", geoPackageHits(sql, "2600100.125"));
+
+            String trigger = scalar(sql, "SELECT sql FROM sqlite_schema WHERE name='rtree_asset_surveyed_update2'");
+            execute(sql, "DROP TRIGGER rtree_asset_surveyed_update2");
+            var failure = cli(own, "update", model, "layout", changed, CancellationToken.none());
+            assertNotEquals(0, failure.code(), failure::diagnostics);
+            assertTrue(failure.diagnostics().contains("asset.surveyed: missing index maintenance trigger"),
+                    failure::diagnostics);
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM asset"));
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM rtree_asset_surveyed"));
+            assertEquals("1", geoPackageHits(sql, "2600100.125"));
+
+            execute(sql, trigger);
+            assertCliSuccess(own, "update", model, "layout", changed);
+            assertEquals("0", scalar(sql, "SELECT count(*) FROM rtree_asset_surveyed"));
+            assertEquals("0", geoPackageHits(sql, "2600100.125"));
+            assertEquals("1", geoPackageHits(sql, "2600400.500"));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM rtree_asset_trace"));
+            var output = work.resolve("wide-updated.xtf");
+            reference.run(own, work.toString(), "--export", "--dataset", "layout", "--exportTid", output.toString());
+            assertTransfer(output, "2600400.500", null, true, 1);
+        }
+    }
+
+    private static String geoPackageHits(Connection sql, String x) throws Exception {
+        return scalar(sql, "SELECT count(*) FROM rtree_asset_anchor WHERE minx <= " + x + " AND maxx >= " + x);
+    }
+
     private static String fragmentRows(TestDatabase db, Connection sql, String table) throws Exception {
         return scalar(sql, "SELECT count(*) FROM " + db.table(table));
     }
@@ -118,6 +156,9 @@ final class GeometryLayoutCases {
         if (split && old.postgis()) {
             options.add("--oneGeomPerTable");
             nativeOptions.add("--one-geom-per-table");
+        } else if (!split && !old.postgis()) {
+            options.add("--gpkgMultiGeomPerTable");
+            nativeOptions.add("--gpkg-multi-geom-per-table");
         }
         options.add(ili.toString());
         reference.run(old, work.toString(), options.toArray(String[]::new));
@@ -126,7 +167,7 @@ final class GeometryLayoutCases {
         try (var oldSql = old.connect(); var sql = own.connect()) {
             var expected = DbSchemaCatalog.read(oldSql, old.postgis(), old.schema());
             if (!old.postgis()) {
-                expected = expected.expectGeoPackageGeometryExtension("asset_trace", "trace", "COMPOUNDCURVE");
+                expected = expected.expectGeoPackageGeometryExtension(split ? "asset_trace" : "asset", "trace", "COMPOUNDCURVE");
             }
             expected.assertSameAs(DbSchemaCatalog.read(sql, own.postgis(), own.schema()));
         }

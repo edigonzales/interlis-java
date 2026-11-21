@@ -4,9 +4,11 @@ import org.sqlite.Function;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import static guru.interlis.db.Database.quote;
@@ -35,12 +37,20 @@ final class GeoPackageRtree {
         }
     }
 
-    static boolean check(Connection connection, String table, String column) throws SQLException {
-        String index = indexName(table, column);
-        String virtual = sql(connection, "table", index);
-        int registration = registration(connection, table, column);
-        var triggers = triggers(table, column);
-        int matches = 0;
+    static Set<String> indexedColumns(Connection connection, String table, List<String> columns) throws SQLException {
+        var stored = indexTriggers(connection, table);
+        var indexed = new HashSet<String>();
+        for (String column : columns) {
+            if (check(connection, table, column, stored)) indexed.add(column);
+        }
+        if (!stored.isEmpty()) {
+            throw new DbException("Invalid GeoPackage RTree at " + table + ": unexpected trigger " + stored.firstKey());
+        }
+        return indexed;
+    }
+
+    private static TreeMap<String, String> indexTriggers(Connection connection, String table) throws SQLException {
+        var stored = new TreeMap<String, String>();
         try (var statement = connection.prepareStatement("""
                 SELECT name, sql FROM main.sqlite_schema WHERE type = 'trigger' AND tbl_name = ? COLLATE NOCASE
                 AND (substr(lower(name), 1, 6) = 'rtree_' OR instr(lower(sql), 'st_isempty(') > 0)
@@ -48,14 +58,27 @@ final class GeoPackageRtree {
             statement.setString(1, table);
             try (var rows = statement.executeQuery()) {
                 while (rows.next()) {
-                    String name = rows.getString(1).toLowerCase(Locale.ROOT);
-                    String expected = triggers.get(name);
-                    if (expected == null || !normalized(expected).equals(normalized(rows.getString(2)))) {
-                        throw invalid(table, column, "unexpected trigger " + name);
-                    }
-                    matches++;
+                    stored.put(rows.getString(1).toLowerCase(Locale.ROOT), rows.getString(2));
                 }
             }
+        }
+        return stored;
+    }
+
+    private static boolean check(Connection connection, String table, String column, Map<String, String> stored)
+            throws SQLException {
+        String index = indexName(table, column);
+        String virtual = sql(connection, "table", index);
+        int registration = registration(connection, table, column);
+        var triggers = triggers(table, column);
+        int matches = 0;
+        for (var trigger : triggers.entrySet()) {
+            String actual = stored.remove(trigger.getKey());
+            if (actual == null) continue;
+            if (!normalized(trigger.getValue()).equals(normalized(actual))) {
+                throw invalid(table, column, "unexpected trigger " + trigger.getKey());
+            }
+            matches++;
         }
         if (virtual == null && registration == 0 && matches == 0) return false;
         if (registration != 1) throw invalid(table, column, "expected one write-only extension registration");

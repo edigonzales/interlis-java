@@ -16,6 +16,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -189,12 +190,17 @@ final class Database implements AutoCloseable {
                 if (!rows.next()) {
                     throw unsupportedGeometry(table, column);
                 }
-                if (importing && GeoPackageRtree.check(connection, table, column.name())) {
-                    if (indexedGeometry.isEmpty()) GeoPackageRtree.register(connection);
-                    indexedGeometry.add(column.slot().symbol());
-                }
                 return rows.getInt(1);
             }
+        }
+    }
+
+    void checkGeometryIndexes(String table, List<Column> columns) throws SQLException {
+        if (!gpkg() || !importing || columns.isEmpty()) return;
+        var indexed = GeoPackageRtree.indexedColumns(connection, table, columns.stream().map(Column::name).toList());
+        if (!indexed.isEmpty() && indexedGeometry.isEmpty()) GeoPackageRtree.register(connection);
+        for (var column : columns) {
+            if (indexed.contains(column.name())) indexedGeometry.add(column.slot().symbol());
         }
     }
 

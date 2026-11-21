@@ -140,7 +140,16 @@ einen GiST-Index. GeoPackage speichert die erste Geometrie in der
 Klassentabelle und jede weitere in einer Hilfstabelle. PostGIS verwendet
 dieselbe Ablage mit `schemaimport --one-geom-per-table` (ili2pg `--oneGeomPerTable`).
 Jede Hilfszeile teilt `T_Id` und `T_Basket` mit ihrem Eigentümer und
-ist auch für `NULL` vorhanden. Beide Backends verwenden EPSG:2056. XYZ-Punkte führen die dritte Ordinate im SQL-Wert
+ist auch für `NULL` vorhanden.
+
+`schemaimport --gpkg-multi-geom-per-table` verwendet das ili2gpkg-Profil
+`--gpkgMultiGeomPerTable` mit mehreren Geometriespalten in einer Tabelle.
+`gpkg_contents` übernimmt die Grenzen der ersten Spalte. Jede Spalte erhält
+einen eigenen Katalogeintrag und mit `--create-geom-index` eigene RTree-Trigger.
+Dieses optionale Profil weicht von der GeoPackage-Regel mit einer
+Geometriespalte pro Feature-Tabelle ab.
+
+Beide Backends verwenden EPSG:2056. XYZ-Punkte führen die dritte Ordinate im SQL-Wert
 und die exakten Modellgrenzen als `c3Min` und `c3Max` in den Spaltenmetadaten.
 PostGIS verwendet `POINTZ`, GeoPackage das Z-Bit der ili2gpkg-Kodierung.
 Die Raumindizes arbeiten mit der XY-Hülle.
