@@ -587,9 +587,12 @@ Grenzen: 500 Knoten, 1000 Kanten, 200 Member pro Knoten, 500 Container,
 10000 Member insgesamt und 4000000 UTF-16-Codeeinheiten des kodierten Dokuments.
 Angeforderte Budgets über diesen Hostgrenzen werden abgewiesen. Erreicht die
 Projektion ihr explizites Budget, bleiben LIMITED und die Projektionshinweise
-erhalten; zusätzliche harte Serialisierungsgrenzen werden abgewiesen. Queryworker und Abbruch
-verwenden die bestehenden begrenzten Hostqueues. Die Navigationsregistry behält
-höchstens16 veröffentlichte Diagramme; Shutdown löscht sie. Navigation prüft
+erhalten; zusätzliche harte Serialisierungsgrenzen werden abgewiesen. Queryworker
+bereiten Diagrammantwort und Quellanker vor. Erst nach erfolgreicher Annahme
+registriert die Ownerqueue das Diagramm und schliesst den Request ab.
+Vor der Annahme erkannte Abbrüche verhindern die Registrierung.
+Die Navigationsregistry behält höchstens 16 veröffentlichte Diagramme nach
+Zugriffsreihenfolge. Shutdown löscht sie. Navigation prüft
 Server-, Diagramm-, Snapshot-, Workspace- und Dokumentidentität erneut und löst
 nur einen tatsächlich publizierten Quellanker auf. Alte Identitäten liefern
 ContentModified, fehlende Anker RequestFailed, ungültige Eingaben InvalidParams.

@@ -41,7 +41,7 @@ final class AnalysisScheduler implements AutoCloseable {
     private final CompletableFuture<Void> terminated = new CompletableFuture<>();
     // The following state belongs exclusively to owner.
     private final Set<Job> running = new LinkedHashSet<>();
-    private final List<PendingQuery<?>> queries = new ArrayList<>();
+    private final List<PendingQuery<?, ?>> queries = new ArrayList<>();
     private volatile long generation;
     private final Set<CompletableFuture<?>> activeQueries=new LinkedHashSet<>();
     private Job pending;
@@ -121,14 +121,20 @@ final class AnalysisScheduler implements AutoCloseable {
 
     /** Captures the query generation, promotes current work and propagates request cancellation. */
     <T> CompletableFuture<T> requestNow(Function<CancellationToken, CompletableFuture<T>> action) {
-        var result = new CompletableFuture<T>();
+        return requestNow(action, () -> false, Function.identity());
+    }
+
+    /** Checks the client request before applying a short owner action and completing the query. */
+    <T, R> CompletableFuture<R> requestNow(Function<CancellationToken, CompletableFuture<T>> action,
+                                           BooleanSupplier clientDone, Function<T, R> accept) {
+        var result = new CompletableFuture<R>();
         enqueue(() -> {
             if(result.isDone()) return;
             if(current && !workspace.currentRevision().equals(acceptedRevision)) schedule();
             if(captureFailure!=null) { result.completeExceptionally(captureFailure); return; }
             if (current || workspace.state().sourceRevisions().isEmpty()) {
                 trackQuery(result);
-                invoke(new PendingQuery<>(generation, action, result));
+                invoke(new PendingQuery<>(generation, action, clientDone, accept, result));
             } else {
                 if (!analysisScheduled()) {
                     schedule();
@@ -141,7 +147,7 @@ final class AnalysisScheduler implements AutoCloseable {
                     result.completeExceptionally(error(ResponseErrorCode.RequestFailed, "language request queue is full"));
                     return;
                 }
-                queries.add(new PendingQuery<>(generation, action, result));
+                queries.add(new PendingQuery<>(generation, action, clientDone, accept, result));
                 trackQuery(result);
             }
         }, result);
@@ -437,7 +443,7 @@ final class AnalysisScheduler implements AutoCloseable {
         return error(ResponseErrorCode.RequestFailed, "compiler queue is full or closed");
     }
 
-    private <T> void invoke(PendingQuery<T> query) {
+    private <T, R> void invoke(PendingQuery<T, R> query) {
         if (query.result.isDone()) return;
         if (query.generation != generation) { query.result.completeExceptionally(changed()); return; }
         var revision=workspace.currentRevision();
@@ -459,7 +465,12 @@ final class AnalysisScheduler implements AutoCloseable {
                     if(query.generation!=generation || !workspace.currentRevision().equals(revision)
                             || !workspace.configuration().fullFingerprint().equals(configuration)) query.result.completeExceptionally(changed());
                     else if(failure!=null) query.result.completeExceptionally(LspFailures.response(failure,operations));
-                    else query.result.complete(value);
+                    else if (closing.get()) query.result.completeExceptionally(stopped());
+                    else if (!query.result.isDone()) {
+                        // The client future may already be done while cancellation propagation is still pending.
+                        if (query.clientDone.getAsBoolean()) query.result.cancel(false);
+                        else query.result.complete(query.accept.apply(value));
+                    }
                 },query.result);
             });
         } catch (ResponseErrorException expected) { query.result.completeExceptionally(expected); }
@@ -549,8 +560,9 @@ final class AnalysisScheduler implements AutoCloseable {
     private static ResponseErrorException error(ResponseErrorCode code, String message) {
         return new ResponseErrorException(new ResponseError(code, message, null));
     }
-    private record PendingQuery<T>(long generation, Function<CancellationToken, CompletableFuture<T>> action,
-                                   CompletableFuture<T> result) { }
+    private record PendingQuery<T, R>(long generation, Function<CancellationToken, CompletableFuture<T>> action,
+                                      BooleanSupplier clientDone, Function<T, R> accept,
+                                      CompletableFuture<R> result) { }
     private final class Job {
         final long generation;
         final AnalysisRequest request;
