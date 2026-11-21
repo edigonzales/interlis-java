@@ -7,6 +7,7 @@ import java.util.Set;
 /** Technical identifiers and constants shared by the ili2db profile. */
 final class Ili2dbLayout {
     static final String PREFIX = "ch.ehi.ili2db.";
+    static final String SRS_MODEL_ASSIGNMENT = PREFIX + "srsModelAssignment";
     static final String USE_EPSG_IN_NAMES = PREFIX + "useEpsgInNames";
     static final String GEOMETRY_LAYOUT = PREFIX + "geomAttrPerTable";
     static final String SINGLE_GEOMETRY = "oneGeomAttrPerTable";

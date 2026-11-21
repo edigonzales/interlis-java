@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import static guru.interlis.db.DbMapping.unsupported;
@@ -60,7 +61,8 @@ import static guru.interlis.db.Ili2dbLayout.foldedName;
 final class DbSchemaReader {
     private record StoredModel(LanguageVersion version, String content) { }
     private record AttributeName(String name, String owner, String target) { }
-    private record Settings(boolean splitGeometries, CrsDefaults crs, boolean referenceEpsgHeader, boolean multiSrs) { }
+    private record Settings(boolean splitGeometries, CrsDefaults crs, boolean referenceEpsgHeader, boolean multiSrs,
+                            Optional<DbCrsPair.Models> srsModels, CrsDefaults alternateCrs) { }
 
     private record Transformations(Map<String, String> classes, Map<String, String> secondary) { }
 
@@ -72,7 +74,8 @@ final class DbSchemaReader {
         token.throwIfCancellationRequested();
         var settings = readSettings(db, modelName);
         StoredModel source = readModel(db, modelName);
-        TransferPlan plan = DbMapping.compile(modelName, new SourceText(new SourceId("database:/model.ili"),
+        var models = settings.srsModels().map(DbCrsPair.Models::names).orElse(List.of(modelName));
+        TransferPlan plan = DbMapping.compile(models, new SourceText(new SourceId("database:/model.ili"),
                 new SourceRevision(1), source.content()), "MODEL.content", token);
         if (!plan.schema().languageVersions().equals(Set.of(source.version()))) {
             throw new DbException("MODEL.iliversion disagrees with MODEL.content for " + modelName);
@@ -81,6 +84,7 @@ final class DbSchemaReader {
         if (!settings.multiSrs() && plan.topics().stream().anyMatch(DbDomains::deferred)) {
             throw unsupported("deferred generic domains require SETTINGS.useEpsgInNames");
         }
+        var crsPair = settings.srsModels().map(pair -> new DbCrsPair(plan, pair, settings.crs(), settings.alternateCrs()));
         String prefix = modelName + ".";
         var classNames = readClassNames(db, prefix);
         var attrNames = readAttributeNames(db, prefix);
@@ -93,6 +97,7 @@ final class DbSchemaReader {
         var linkRoles = new HashMap<SymbolRef, List<AssociationRole>>();
         for (ObjectDescriptor object : plan.objects()) {
             String path = object.name().declared().toString();
+            if (crsPair.isPresent() && !path.startsWith(prefix)) continue;
             String name = classNames.remove(path);
             if (name == null || !usedNames.add(key(db, name))) {
                 throw new DbException("Missing or inconsistent CLASSNAME/TRAFO mapping for " + path);
@@ -158,7 +163,7 @@ final class DbSchemaReader {
                     compositions.add(binding);
                     continue;
                 }
-                for (var described : DbMapping.describeColumns(plan, object, attr, settings.crs())) {
+                for (var described : DbMapping.describeColumns(plan, object, attr, settings.crs(), crsPair)) {
                     String attribute = Ili2dbLayout.geometryAttribute(path, described.epsgCode(), settings.multiSrs());
                     var mapping = takeAttributeName(attrNames, attribute);
                     var column = described.withName(mapping.name());
@@ -199,7 +204,7 @@ final class DbSchemaReader {
             throw new DbException("Extra CLASSNAME/TRAFO mappings for " + modelName);
         }
         if (!attrNames.isEmpty()) throw new DbException("Extra ATTRNAME mappings for " + modelName);
-        return new DbMapping(plan, source.version(), tables, compositions, associations);
+        return new DbMapping(plan, source.version(), tables, compositions, associations, crsPair);
     }
 
     private static boolean hasDiscriminator(ObjectDescriptor object, Set<SymbolRef> bases) {
@@ -297,23 +302,25 @@ final class DbSchemaReader {
         if ("multiTableWithId".equals(settings.get(PREFIX + "createEnumDefs"))) {
             throw unsupported("enumerations stored as SQL IDs");
         }
-        if (settings.containsKey(PREFIX + "srsModelAssignment")) {
-            throw unsupported("SETTINGS.srsModelAssignment");
-        }
         String epsgNames = settings.get(Ili2dbLayout.USE_EPSG_IN_NAMES);
         if (epsgNames != null && !List.of("True", "False").contains(epsgNames)) {
             throw unsupported("SETTINGS.useEpsgInNames=" + epsgNames);
         }
         boolean multiSrs = "True".equals(epsgNames);
+        var srsModels = Optional.ofNullable(settings.get(Ili2dbLayout.SRS_MODEL_ASSIGNMENT))
+                .map(assignment -> DbCrsPair.Models.parse(assignment, modelName));
+        if (srsModels.isPresent() && !multiSrs) throw unsupported("SETTINGS.srsModelAssignment requires --multiSrs");
+        int alternateEpsg = srsModels.map(pair -> modelEpsg(settings.get(PREFIX + "modelSrsCode"), pair.alternate())).orElse(0);
+        var alternateCrs = new CrsDefaults(defaultEpsg, alternateEpsg);
         String geometryLayout = settings.get(Ili2dbLayout.GEOMETRY_LAYOUT);
         boolean referenceEpsgHeader = db.gpkg() && isSender(sender, "ili2gpkg-5.5.2");
         if (Ili2dbLayout.MULTIPLE_GEOMETRIES.equals(geometryLayout)) {
-            return new Settings(false, crs, referenceEpsgHeader, multiSrs);
+            return new Settings(false, crs, referenceEpsgHeader, multiSrs, srsModels, alternateCrs);
         }
         if (geometryLayout != null && !Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout)) {
             throw unsupported("SETTINGS.geomAttrPerTable=" + geometryLayout);
         }
-        return new Settings(db.gpkg() || Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout), crs, referenceEpsgHeader, multiSrs);
+        return new Settings(db.gpkg() || Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout), crs, referenceEpsgHeader, multiSrs, srsModels, alternateCrs);
     }
 
     private static int modelEpsg(String assignments, String modelName) {

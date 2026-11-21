@@ -105,6 +105,11 @@ final class DbMapping {
                     positionColumn, dimensions, domainBinding);
         }
 
+        Column withEpsg(int epsg) {
+            return new Column(slot, name, kind, effectiveType, target, epsg, epsg, false,
+                    positionColumn, dimensions, domainBinding);
+        }
+
         Column withSrsId(int id, boolean acceptsEpsgHeader) {
             return new Column(slot, name, kind, effectiveType, target, epsgCode, id, acceptsEpsgHeader,
                     positionColumn, dimensions, domainBinding);
@@ -179,6 +184,7 @@ final class DbMapping {
 
     private final TransferPlan plan;
     private final LanguageVersion version;
+    private final Optional<DbCrsPair> crsPair;
     private final List<Table> tables;
     private final Map<SymbolRef, Table> bySymbol;
     private final Map<String, Table> byName;
@@ -190,8 +196,9 @@ final class DbMapping {
     private final List<EmbeddedAssociation> associations;
 
     DbMapping(TransferPlan plan, LanguageVersion version, List<Table> tables, List<Composition> compositions,
-              List<EmbeddedAssociation> associations) {
+              List<EmbeddedAssociation> associations, Optional<DbCrsPair> crsPair) {
         this.plan = plan;
+        this.crsPair = crsPair;
         this.version = version;
         this.tables = List.copyOf(tables);
         bySymbol = this.tables.stream().collect(Collectors.toUnmodifiableMap(
@@ -248,6 +255,12 @@ final class DbMapping {
             }
         }
     }
+
+    Optional<DbCrsPair> crsPair() { return crsPair; }
+
+    List<SymbolRef> models() { return crsPair.map(DbCrsPair::models).orElseGet(plan::rootModels); }
+
+    SymbolRef originalTopic(SymbolRef topic) { return crsPair.map(pair -> pair.originalTopic(topic)).orElse(topic); }
 
     TransferPlan plan() { return plan; }
     LanguageVersion version() { return version; }
@@ -402,7 +415,7 @@ final class DbMapping {
             tables.add(new Table(object, name, columns, discriminator, oidDomain(plan, object), secondary));
         }
         var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
-        return new DbMapping(plan, version, tables, compositions, associations);
+        return new DbMapping(plan, version, tables, compositions, associations, Optional.empty());
     }
 
     private static void checkColumnName(TransferSlot slot, String column, boolean structure, boolean discriminator,
@@ -418,8 +431,14 @@ final class DbMapping {
     }
 
     static TransferPlan compile(String modelName, SourceText source, String description, CancellationToken token) {
-        var selector = new ModelSelector.ByName(modelName, Optional.empty(), Optional.of(source.id()));
-        var request = new CompilationRequest(List.of(selector), SourceSet.of(Map.of(source.id(), source)),
+        return compile(List.of(modelName), source, description, token);
+    }
+
+    static TransferPlan compile(List<String> models, SourceText source, String description, CancellationToken token) {
+        String modelName = models.getFirst();
+        var selectors = models.stream().map(name -> (ModelSelector) new ModelSelector.ByName(name, Optional.empty(),
+                Optional.of(source.id()))).toList();
+        var request = new CompilationRequest(selectors, SourceSet.of(Map.of(source.id(), source)),
                 CompilerOptions.defaults());
         var outcome = CompilerEngines.create().compile(request, token);
         var schema = switch (outcome) {
@@ -437,14 +456,14 @@ final class DbMapping {
             case TransferPlanningResult.Ready ready -> ready.plan();
             case TransferPlanningResult.Unsupported rejected -> throw unsupported(rejected.issues().getFirst().toString());
         };
-        checkModel(plan);
+        checkModel(plan, models.size());
         return plan;
     }
 
-    private static void checkModel(TransferPlan plan) {
-        if (plan.models().size() != 1 || plan.topics().isEmpty()
+    private static void checkModel(TransferPlan plan, int models) {
+        if (plan.models().size() != models || plan.topics().isEmpty()
                 || plan.objects().stream().noneMatch(object -> object.kind() == SymbolKind.CLASS)) {
-            throw unsupported("expected one standalone model containing classes in topics");
+            throw unsupported("expected the selected standalone model or CRS model pair containing classes in topics");
         }
         for (var topic : plan.topics()) {
             if (topic.abstractTopic() || topic.baseTopic().isPresent()
@@ -700,6 +719,11 @@ final class DbMapping {
                 collectionKind));
     }
 
+    static List<Column> describeColumns(TransferPlan plan, ObjectDescriptor object, AttributeSlot attr,
+                                        CrsDefaults defaults, Optional<DbCrsPair> crsPair) {
+        return crsPair.map(pair -> pair.columns(attr.symbol())).orElseGet(() -> describeColumns(plan, object, attr, defaults));
+    }
+
     static List<Column> describeColumns(TransferPlan plan, ObjectDescriptor object, AttributeSlot attr, CrsDefaults defaults) {
         var generic = DbDomains.geometryBinding(plan, object, attr);
         if (generic.isEmpty()) return List.of(describeColumn(plan, object, attr, defaults, Optional.empty()));
@@ -843,7 +867,13 @@ final class DbMapping {
         String crs = coordinates.referenceSystem().orElse(null);
         if (crs == null) crs = metaText(declaration, "CRS");
         if (crs == null && defaults.modelEpsg() != 0) return defaults.modelEpsg();
-        if (crs == null) crs = metaText(plan.symbol(plan.rootModels().getFirst()).known().orElseThrow(), "CRS");
+        if (crs == null) {
+            Symbol model = declaration;
+            while (model.kind() != SymbolKind.MODEL && model.owner().isPresent()) {
+                model = plan.symbol(new SymbolRef(plan.snapshotId(), model.owner().orElseThrow())).known().orElseThrow();
+            }
+            crs = metaText(model, "CRS");
+        }
         if (crs == null) return requireDefaultEpsg(defaults.schemaEpsg(), path);
         if (!crs.startsWith("EPSG:")) throw new DbException("Expected an EPSG CRS at " + path + ": " + crs);
         return Ili2dbLayout.parseEpsgCode(crs.substring(5), path);

@@ -79,14 +79,15 @@ final class DbTransfer {
         checkHierarchyTopics(db, mapping, datasetId, token);
         checkCrossDatasetReferences(db, mapping, datasetId, token);
         var plan = mapping.plan();
-        var modelRef = plan.rootModels().getFirst();
-        var model = plan.model(modelRef).orElseThrow();
-        var symbol = (ModelSymbol) plan.symbol(modelRef).known().orElseThrow();
         boolean ili23 = mapping.version() == LanguageVersion.ILI23;
-        var declaration = new TransferEvent.ModelDeclaration(modelRef, mapping.version(),
-                ili23 ? Optional.of(model.modelVersion()) : Optional.empty(),
-                ili23 ? Optional.of(symbol.issuer()) : Optional.empty());
-        var topics = plan.topics().stream().filter(topic -> topic.model().equals(modelRef))
+        var declarations = mapping.models().stream().map(ref -> {
+            var model = plan.model(ref).orElseThrow();
+            var symbol = (ModelSymbol) plan.symbol(ref).known().orElseThrow();
+            return new TransferEvent.ModelDeclaration(ref, mapping.version(),
+                    ili23 ? Optional.of(model.modelVersion()) : Optional.empty(),
+                    ili23 ? Optional.of(symbol.issuer()) : Optional.empty());
+        }).toList();
+        var topics = plan.topics().stream().filter(topic -> mapping.models().contains(topic.model()))
                 .collect(Collectors.toMap(topic -> topic.name().declared().toString(), Function.identity()));
         String sql = "SELECT " + T_ID + ", topic, " + T_ILI_TID + ", domains FROM "
                 + db.technicalTable(BASKET) + " WHERE dataset = ? ORDER BY " + T_ID;
@@ -98,7 +99,7 @@ final class DbTransfer {
                     throw new DbException("Dataset has no baskets: " + dataset);
                 }
                 writer.write(new TransferEvent.StartTransfer(Optional.empty(), Optional.of("interlis-db"),
-                        Optional.empty(), List.of(declaration)), token);
+                        Optional.empty(), declarations), token);
                 do {
                     token.throwIfCancellationRequested();
                     var topicName = rows.getString(2);
@@ -122,22 +123,34 @@ final class DbTransfer {
         var stableOid = basketOid(mapping, topic, bid);
         writer.write(new TransferEvent.StartBasket(bid, topic.symbol(), List.of(), BasketKind.FULL,
                 Consistency.COMPLETE, Optional.empty(), Optional.empty(), stableOid, bindings), token);
+        var owner = mapping.originalTopic(topic.symbol());
+        var selection = new GeometrySelection(bindings,
+                mapping.crsPair().map(pair -> pair.epsgCodes(topic.symbol())).orElse(Map.of()));
         for (var table : mapping.tables()) {
             if (table.hasDiscriminator() && table.object().kind() == SymbolKind.STRUCTURE) {
                 checkStructureHierarchy(db, mapping, table, basketId, token);
             }
-            if (table.subtype() || table.object().topic().filter(topic.symbol()::equals).isEmpty()) continue;
+            if (table.subtype() || table.object().topic().filter(owner::equals).isEmpty()) continue;
             if (table.hasDiscriminator() && table.object().kind() != SymbolKind.STRUCTURE && !mapping.isEmbeddedLink(table)) {
                 writeHierarchyObjects(db, mapping, table, basketId, bid, writer, token);
             } else if (table.object().transferable() && !mapping.isEmbeddedLink(table)) {
-                writeObjects(db, mapping, table, basketId, bid, bindings, writer, token);
+                writeObjects(db, mapping, table, basketId, bid, topic.symbol(), selection, writer, token);
             }
         }
         writer.write(new TransferEvent.EndBasket(bid), token);
     }
 
+    private record GeometrySelection(List<TransferEvent.DomainBinding> domains, Map<SymbolRef, Integer> epsgCodes) {
+        boolean active(Column column) {
+            return (domains.isEmpty() || DbDomains.active(column, domains))
+                    && epsgCodes.getOrDefault(column.slot().symbol(), column.epsgCode()) == column.epsgCode();
+        }
+    }
+
     private static void writeObjects(Database db, DbMapping mapping, Table table, long basketId, BasketId bid,
-                                     List<TransferEvent.DomainBinding> bindings, TransferWriter writer, CancellationToken token) throws SQLException {
+                                     SymbolRef topic, GeometrySelection selection, TransferWriter writer,
+                                     CancellationToken token) throws SQLException {
+        var alternate = mapping.crsPair().flatMap(pair -> pair.alternateClass(topic, table.object().symbol()));
         var projections = new StringJoiner(", ").add("obj." + T_ID);
         if (table.hasTidColumn()) {
             projections.add("obj." + T_ILI_TID);
@@ -161,11 +174,15 @@ final class DbTransfer {
                     token.throwIfCancellationRequested();
                     String ownerTid = table.hasTidColumn() ? identifier(rows.getString(2), "TID", table.name()) : null;
                     int start = table.hasTidColumn() ? 3 : 2;
-                    var values = readFields(db, mapping, rows, start, table, ownerTid, bindings);
+                    var values = readFields(db, mapping, rows, start, table, ownerTid, selection);
                     readEmbeddedLinks(db, mapping, rows, start + projectionSize(mapping, table), links, ownerTid, values);
                     structures.readFor(rows.getLong(1), ownerTid, values);
                     var identity = objectIdentity(mapping, table, bid, ownerTid);
-                    var object = new TransferObject(identity, new Structured(table.object().symbol(), values));
+                    var data = alternate.isPresent()
+                            ? new Structured(alternate.orElseThrow().symbol(),
+                                    mapping.crsPair().orElseThrow().alternateValues(table.object().symbol(), values))
+                            : new Structured(table.object().symbol(), values);
+                    var object = new TransferObject(identity, data);
                     writer.write(new TransferEvent.ObjectEvent(object, Optional.empty(), Consistency.COMPLETE), token);
                 }
                 structures.requireExhausted();
@@ -586,15 +603,15 @@ final class DbTransfer {
 
     private static Map<SymbolRef, TransferValue> readFields(Database db, DbMapping mapping, ResultSet rows,
                                                             int index, Table table, String ownerTid) throws SQLException {
-        return readFields(db, mapping, rows, index, table, ownerTid, List.of());
+        return readFields(db, mapping, rows, index, table, ownerTid, new GeometrySelection(List.of(), Map.of()));
     }
 
     private static Map<SymbolRef, TransferValue> readFields(Database db, DbMapping mapping, ResultSet rows,
                                                             int index, Table table, String ownerTid,
-                                                            List<TransferEvent.DomainBinding> bindings) throws SQLException {
+                                                            GeometrySelection selection) throws SQLException {
         var values = new LinkedHashMap<SymbolRef, TransferValue>();
         for (var column : table.columns()) {
-            var value = checkGeometrySelection(rows, index, column, ownerTid, bindings)
+            var value = checkGeometrySelection(rows, index, column, ownerTid, selection)
                     ? readValue(db, mapping, rows, index, column, ownerTid) : null;
             if (value != null) {
                 values.put(column.slot().symbol(), value);
@@ -611,7 +628,7 @@ final class DbTransfer {
                         + " of object " + ownerTid);
             }
             var column = geometry.column();
-            if (checkGeometrySelection(rows, index, column, ownerTid, bindings)) {
+            if (checkGeometrySelection(rows, index, column, ownerTid, selection)) {
                 var value = db.readGeometry(rows, index, column);
                 if (value != null) values.put(column.slot().symbol(), value);
             }
@@ -621,8 +638,8 @@ final class DbTransfer {
     }
 
     private static boolean checkGeometrySelection(ResultSet rows, int index, Column column, String ownerTid,
-                                                  List<TransferEvent.DomainBinding> bindings) throws SQLException {
-        if (bindings.isEmpty() || DbDomains.active(column, bindings)) return true;
+                                                  GeometrySelection selection) throws SQLException {
+        if (selection.active(column)) return true;
         if (rows.getBytes(index) != null) {
             throw new DbException("Value in inactive EPSG:" + column.epsgCode() + " column at "
                     + column.slot().name().declared() + " of object " + ownerTid);
@@ -1019,6 +1036,7 @@ final class DbTransfer {
     static void importData(Database db, DbMapping mapping, String dataset,
                            TransferReader reader, WriteMode mode, CancellationToken token) throws SQLException {
         token.throwIfCancellationRequested();
+        if (mapping.crsPair().isPresent()) throw DbMapping.unsupported("import of alternate CRS models");
         if (mode != WriteMode.IMPORT) DbDatasetWrite.lock(db, mapping);
         var existing = DbDatasetWrite.findDataset(db, dataset);
         if (mode == WriteMode.IMPORT && existing.isPresent()) {

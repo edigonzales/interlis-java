@@ -1,0 +1,24 @@
+INTERLIS 2.3;
+MODEL Current23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  DOMAIN
+    !!@ CRS="EPSG:2056"
+    Grid = COORD 2460000.000 .. 2870000.000, 1045000.000 .. 1310000.000;
+  TOPIC Data =
+    CLASS Station =
+      Name : TEXT*32;
+      Location : Grid;
+    END Station;
+  END Data;
+END Current23.
+
+MODEL Old23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  DOMAIN
+    !!@ CRS="EPSG:21781"
+    Grid = COORD 460000.000 .. 870000.000, 45000.000 .. 310000.000;
+  TOPIC Data =
+    CLASS Station =
+      Name : TEXT*32;
+      Location : Grid;
+    END Station;
+  END Data;
+END Old23.

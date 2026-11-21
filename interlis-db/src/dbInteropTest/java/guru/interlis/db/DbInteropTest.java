@@ -203,6 +203,14 @@ final class DbInteropTest {
                 new TestDatabase(postgres, "mixed_wide_own"), false);
     }
 
+    @Test void geoPackageAlternateCrsExport23() throws Exception { exchangeAlternateCrsExport(23, null); }
+    @Test void postgisAlternateCrsExport23() throws Exception { exchangeWithPostgis(23, this::exchangeAlternateCrsExport); }
+
+    private void exchangeAlternateCrsExport(int version, PostgreSQLContainer postgres) throws Exception {
+        var cases = new AlternateCrsCases(work, new ReferenceTool(postgres != null));
+        cases.export(new TestDatabase(postgres, "alternate_crs_reference"));
+    }
+
     @Test void geoPackageDeferredMulti24() throws Exception { exchangeDeferredMulti(24, null); }
     @Test void postgisDeferredMulti24() throws Exception { exchangeWithPostgis(24, this::exchangeDeferredMulti); }
 

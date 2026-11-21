@@ -172,6 +172,12 @@ Auswahl gilt für `MULTICOORD`, `MULTIPOLYLINE`, `MULTISURFACE` und
 `MULTIAREA` mit XY- oder XYZ-Koordinaten. Die konkreten Domänen liefern die
 Spalten- und Kataloggrenzen.
 
+In bestehenden XTF-2.3-Schemata mit ili2db `--altSrsModel` exportiert
+`interlis-db` benannte Datensätze aus dem Original- und dem Alternativmodell.
+Die Modelle stehen gemeinsam in einer gespeicherten Modelldatei und haben
+gleich strukturierte flache Topics und Klassen. Das gespeicherte Topic
+bestimmt die EPSG-Spalte sowie die Namen im XTF.
+
 Für neue Schemata setzt `schemaimport --default-epsg CODE` den
 Standard. Ohne Option gilt EPSG:2056. GeoPackage verwendet die vorhandenen
 EPSG-Definitionen aus dem Referenzprofil, darunter LV03 (21781) und
