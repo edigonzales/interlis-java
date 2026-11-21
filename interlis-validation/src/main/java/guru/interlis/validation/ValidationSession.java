@@ -69,6 +69,7 @@ public final class ValidationSession implements AutoCloseable {
     private final Map<SlotKey, Long> missingRuntime = new LinkedHashMap<>();
     private final Map<ConstraintKey, Long> constraints = new LinkedHashMap<>();
     private final Map<SlotKey, Long> unsupported = new LinkedHashMap<>();
+    private final Map<RuleKey, Long> uncheckedDerivedLineRules = new LinkedHashMap<>();
     private State state = State.BEFORE_TRANSFER;
     private Optional<SourceId> source = Optional.empty();
     private BasketContext basket;
@@ -167,7 +168,11 @@ public final class ValidationSession implements AutoCloseable {
 
     ValidationReport finishDataset(List<DatasetRuleCoverage> datasetCoverage, DatasetScope scope) {
         require(State.BEFORE_TRANSFER);
-        return completedReport(datasetCoverage, Optional.of(scope));
+        var coverage = new ArrayList<>(datasetCoverage);
+        uncheckedDerivedLineRules.forEach((rule, occurrences) -> coverage.add(new DatasetRuleCoverage(
+                rule, DatasetRuleCoverage.ScopeKind.DATASET, DatasetRuleCoverage.Outcome.UNSUPPORTED,
+                1, occurrences, 0, 0, occurrences)));
+        return completedReport(coverage, Optional.of(scope));
     }
 
     void relationCardinality(TransferObject object, Symbol declaration, DataLocation data, long targets,
@@ -484,6 +489,9 @@ public final class ValidationSession implements AutoCloseable {
                         violation(object, line.path(), field.slot().attribute(), STRUCTURE_TYPE_MISMATCH, List.of());
                         return Stream.empty();
                     }
+                    if (budget.isDeferredDerivation()) {
+                        recordUncheckedDerivedLineRules(data.type(), context, budget);
+                    }
                     return structureFields(object, pending, child, data, line.path(), partial, context, budget);
                 }).iterator());
             }
@@ -535,6 +543,18 @@ public final class ValidationSession implements AutoCloseable {
             }
         }
         return Optional.empty();
+    }
+
+    private void recordUncheckedDerivedLineRules(SymbolRef type, BasketContext context, ObjectBudget budget) {
+        for (var rule : plan.uncheckedRules()) {
+            budget.cancellation.throwIfCancellationRequested();
+            if (rule.reason() == UncheckedRuleInfo.Reason.OUT_OF_SCOPE_GLOBAL && rule.slot().isEmpty()
+                    && rule.objectType().equals(type)
+                    && plan.symbol(rule.constraint().symbol()).orElse(null) instanceof ConstraintSymbol declaration
+                    && ruleApplies(plan, declaration, context.topicScope())) {
+                uncheckedDerivedLineRules.merge(new RuleKey(rule.constraint(), type, rule.slot()), 1L, Math::addExact);
+            }
+        }
     }
 
     private void checkObjectConstraints(TransferObject root, ObjectValidationPlan objectPlan,
@@ -1008,6 +1028,7 @@ public final class ValidationSession implements AutoCloseable {
         missingRuntime.clear();
         unsupported.clear();
         constraints.clear();
+        uncheckedDerivedLineRules.clear();
     }
 
     private record SlotKey(SymbolRef objectType, SymbolRef slot, ValidationCoverage.RuleFamily family) { }
@@ -1049,7 +1070,7 @@ public final class ValidationSession implements AutoCloseable {
         private final Runnable datasetVisit;
 
         private ObjectBudget(CancellationToken cancellation, long visited) {
-            this(cancellation, visited, () -> {});
+            this(cancellation, visited, null);
         }
 
         private ObjectBudget(CancellationToken cancellation, long visited, Runnable datasetVisit) {
@@ -1058,10 +1079,16 @@ public final class ValidationSession implements AutoCloseable {
             this.datasetVisit = datasetVisit;
         }
 
+        boolean isDeferredDerivation() {
+            return datasetVisit != null;
+        }
+
         void consume() {
             cancellation.throwIfCancellationRequested();
             visited = visit(visited);
-            datasetVisit.run();
+            if (datasetVisit != null) {
+                datasetVisit.run();
+            }
         }
     }
 

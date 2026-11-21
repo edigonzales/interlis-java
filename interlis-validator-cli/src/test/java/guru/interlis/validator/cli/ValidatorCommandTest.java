@@ -132,6 +132,77 @@ class ValidatorCommandTest {
         assertDeferredLineDiagnostic(byTid.get("target").getFirst(), "Target", "/shape/RING[1]/LINE[2]");
     }
 
+    @Test
+    void reportsUncheckedRuleOnGeometryDerivedFromReferenceData() throws Exception {
+        write("Checks.ili", """
+                INTERLIS 2.3;
+                MODEL Checks AT "https://example.org/checks" VERSION "1" =
+                  DOMAIN Id = OID TEXT*20;
+                         Point = COORD 0..100, 0..100;
+                  TOPIC Data =
+                    STRUCTURE Marks =
+                      label : MANDATORY TEXT*20;
+                      MANDATORY CONSTRAINT label != "reserved";
+                      EXISTENCE CONSTRAINT label REQUIRED IN Target:name;
+                    END Marks;
+                    CLASS Target =
+                      OID AS Id;
+                      name : MANDATORY TEXT*20;
+                      shape : SURFACE WITH (STRAIGHTS) VERTEX Point WITHOUT OVERLAPS > 0.01 LINE ATTRIBUTES Marks;
+                    END Target;
+                    STRUCTURE Pointer =
+                      link : REFERENCE TO (EXTERNAL) Target;
+                      shape : SURFACE WITH (STRAIGHTS) VERTEX Point WITHOUT OVERLAPS > 0.01 LINE ATTRIBUTES Marks := link->shape;
+                    END Pointer;
+                    CLASS Item = pointer : Pointer; END Item;
+                  END Data;
+                END Checks.
+                """);
+        String oidSpace = "</MODELS><OIDSPACES><OIDSPACE NAME=\"ids\" OIDDOMAIN=\"Checks.Id\"/></OIDSPACES>";
+        write("primary.xtf", legacy("""
+                <pointer><Checks.Data.Pointer><link REF="ids:target" BID="reference"/></Checks.Data.Pointer></pointer>
+                """).replace("</MODELS>", oidSpace));
+        String reference = legacy("<name>witness</name>" + attributedBoundary("shape", "<label>valid</label>"))
+                .replace("</MODELS>", oidSpace).replace("BID=\"basket\"", "BID=\"reference\"")
+                .replace("Checks.Data.Item", "Checks.Data.Target").replace("TID=\"one\"", "TID=\"ids:target\"");
+        write("reference.xtf", reference);
+        write("invalid-reference.xtf", reference.replace("<label>valid</label>", "<label>reserved</label>"));
+        write("unused.xtf", legacy(""));
+
+        // With Target read as a primary object, Marks' sole global rule supplies its exact reported identity.
+        var direct = assertLineAttributeResult("reference.xtf", 5, "incomplete", 0, 1);
+        var unchecked = direct.getAsJsonArray("unchecked");
+        assertTrue(unchecked.get(0).getAsString().startsWith("OUT_OF_SCOPE_GLOBAL "));
+
+        var unused = run("--offline", "--json", "unused.xtf", "--refdata", "reference.xtf");
+        assertEquals(0, unused.exit(), unused.output());
+        assertEquals(1, unused.json().get("objects").getAsInt());
+        assertTrue(unused.json().getAsJsonArray("unchecked").isEmpty());
+
+        var rejected = run("--offline", "--json", "primary.xtf", "--refdata", "invalid-reference.xtf");
+        assertEquals(1, rejected.exit(), rejected.output());
+        var invalid = rejected.json();
+        assertEquals("rejected", invalid.get("status").getAsString());
+        assertTrue(invalid.get("completed").getAsBoolean());
+        assertEquals(1, invalid.get("objects").getAsInt());
+        assertEquals(1, invalid.get("violations").getAsInt());
+        var diagnostics = invalid.getAsJsonArray("diagnostics");
+        assertEquals(1, diagnostics.size());
+        var diagnostic = diagnostics.get(0).getAsJsonObject();
+        assertEquals("one", diagnostic.getAsJsonObject("location").get("tid").getAsString());
+        assertDeferredLineDiagnostic(diagnostic, "Item", "/pointer/shape/RING[1]/LINE[2]");
+
+        var incomplete = run("--offline", "--json", "primary.xtf", "--refdata", "reference.xtf");
+        assertEquals(5, incomplete.exit(), incomplete.output());
+        var valid = incomplete.json();
+        assertEquals("incomplete", valid.get("status").getAsString());
+        assertTrue(valid.get("completed").getAsBoolean());
+        assertEquals(1, valid.get("objects").getAsInt());
+        assertEquals(0, valid.get("violations").getAsInt());
+        assertEquals(unchecked, valid.getAsJsonArray("unchecked"));
+        assertEquals(unchecked, invalid.getAsJsonArray("unchecked"));
+    }
+
     private void assertDeferredLineDiagnostic(JsonObject diagnostic, String type, String path) throws IOException {
         assertEquals("MANDATORY_CONSTRAINT_FALSE", diagnostic.get("code").getAsString());
         var location = diagnostic.getAsJsonObject("location");
