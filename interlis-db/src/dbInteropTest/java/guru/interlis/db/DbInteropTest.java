@@ -310,6 +310,12 @@ final class DbInteropTest {
             if (version == 24) {
                 assertReferenceMapping(referenceDb, referenceSql, model, "Report.DirectRef", "report", "directref", "targetbranch");
             }
+            assertReferenceMapping(referenceDb, referenceSql, model, "ReportPlace.BaseSite", "report", "basesite", "targetbranch");
+            assertReferenceMapping(referenceDb, referenceSql, model, "ReportPairing.PairedSite", "report", "pairedsite", "targetbranch");
+            for (String association : List.of("ReportPlace", "ReportPairing")) {
+                assertEquals("embedded", scalar(referenceSql, "select setting from " + referenceDb.table("t_ili2db_trafo")
+                        + " where iliname='" + model + ".Data." + association + "' and tag='ch.ehi.ili2db.inheritance'"));
+            }
             exchangeExternalDatasets(reference, referenceDb, referenceSql, model, version, fixture);
             exchangeExternalDatasets(reference, nativeDb, nativeSql, model, version, fixture);
         }
@@ -346,6 +352,10 @@ final class DbInteropTest {
                     .replace("REF=\"failed-late\" BID=\"failed-last\"", "REF=\"failed-late\" BID=\"failed-first\"");
             assertExternalRollback(db, sql, model, wrongBid, "Wrong target BID", "failed-late");
         }
+        String baseSite = version == 23 ? "BaseSite REF" : "BaseSite ili:ref";
+        String wrongRoleTarget = fixture.replace("external-", "failed-")
+                .replace(baseSite + "=\"failed-late\"", baseSite + "=\"failed-sibling\"");
+        assertExternalRollback(db, sql, model, wrongRoleTarget, "ReportPlace.BaseSite", "failed-sibling");
 
         String where = " where note='forward' and t_basket=(select t_basket from " + db.table("report")
                 + " where t_ili_tid='external-forward')";
@@ -379,7 +389,7 @@ final class DbInteropTest {
 
     private static void assertExternalRows(TestDatabase db, Connection sql, int version, String dataset) throws SQLException {
         String query = """
-                select d.note, b.t_ili_tid, t.t_ili_tid, tb.t_ili_tid, t.t_type, t.t_id, leaf.t_id%s
+                select d.note, b.t_ili_tid, t.t_ili_tid, tb.t_ili_tid, t.t_type, t.t_id, leaf.t_id, r.basesite, r.pairedsite%s
                 from %s d join %s r on r.t_id=d.report_detailvalue and r.t_basket=d.t_basket
                 join %s b on b.t_id=d.t_basket join %s ds on ds.t_id=b.dataset
                 left join %s t on t.t_id=d.targetref
@@ -394,7 +404,9 @@ final class DbInteropTest {
             assertEquals("absent", rows.getString(1));
             assertEquals(dataset + "-first", rows.getString(2));
             assertNull(rows.getString(3));
-            if (version == 24) assertNull(rows.getString(8));
+            assertNull(rows.getString(8));
+            assertNull(rows.getString(9));
+            if (version == 24) assertNull(rows.getString(10));
             for (String direction : List.of("backward", "forward")) {
                 boolean backward = direction.equals("backward");
                 assertTrue(rows.next());
@@ -404,7 +416,9 @@ final class DbInteropTest {
                 assertEquals(dataset + (backward ? "-first" : "-last"), rows.getString(4));
                 assertEquals("targetleaf", rows.getString(5));
                 assertEquals(rows.getString(6), rows.getString(7));
-                if (version == 24) assertEquals(rows.getString(6), rows.getString(8));
+                assertEquals(rows.getString(6), rows.getString(8));
+                assertEquals(rows.getString(6), rows.getString(9));
+                if (version == 24) assertEquals(rows.getString(6), rows.getString(10));
             }
             assertFalse(rows.next());
         }
@@ -434,10 +448,15 @@ final class DbInteropTest {
             if (direction.equals("absent")) {
                 assertNull(role);
                 assertNull(child(report, "DirectRef"));
+                assertNull(child(report, "BaseSite"));
+                assertNull(child(report, "PairedSite"));
                 continue;
             }
             String target = dataset + (direction.equals("backward") ? "-early" : "-late");
-            assertExternalReference(role, version, target, own ? targets.get(target) : "");
+            String bid = own ? targets.get(target) : "";
+            assertExternalReference(role, version, target, bid);
+            assertExternalReference(child(report, "BaseSite"), version, target, bid);
+            assertExternalReference(child(report, "PairedSite"), version, target, bid);
             if (version == 24) assertExternalReference(child(report, "DirectRef"), version, target, "");
         }
     }

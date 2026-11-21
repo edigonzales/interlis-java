@@ -6,6 +6,8 @@
       <m:Report ili:tid="external-forward">
         <m:DetailValue><m:Detail><m:Note>forward</m:Note><m:TargetRef ili:ref="external-late"/></m:Detail></m:DetailValue>
         <m:DirectRef ili:ref="external-late"/>
+        <m:BaseSite ili:ref="external-late"/>
+        <m:PairedSite ili:ref="external-late"/>
       </m:Report>
       <m:Report ili:tid="external-absent">
         <m:DetailValue><m:Detail><m:Note>absent</m:Note></m:Detail></m:DetailValue>
@@ -18,6 +20,8 @@
       <m:Report ili:tid="external-backward">
         <m:DetailValue><m:Detail><m:Note>backward</m:Note><m:TargetRef ili:ref="external-early"/></m:Detail></m:DetailValue>
         <m:DirectRef ili:ref="external-early"/>
+        <m:BaseSite ili:ref="external-early"/>
+        <m:PairedSite ili:ref="external-early"/>
       </m:Report>
     </m:Data>
   </ili:datasection>

@@ -91,6 +91,9 @@ Für `EXTERNAL`-Referenzattribute prüft die Suite frühere und spätere Ziele
 im selben Datensatz, den konkreten Zieltyp, die Datensatzisolierung und
 den Rollback bei fehlendem Ziel oder falscher BID. Sie liest auch einen
 XTF-2.3-Referenzexport ohne Ziel-BID erneut ein.
+Bei eingebetteten 1:n- und 1:1-Rollen ohne eigene Attribute prüft sie die
+Rollenspalten am Eigentümer, ausgelassene Rollen und Rollback bei einem
+Ziel ausserhalb des deklarierten Hierarchiezweigs.
 
 ```sh
 ./gradlew :interlis-db:dbInteropTest

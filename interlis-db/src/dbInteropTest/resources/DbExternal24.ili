@@ -16,5 +16,13 @@ MODEL DbExternal24 (en) AT "https://example.org/interlis/db" VERSION "1" =
       DetailValue : Detail;
       DirectRef : REFERENCE TO (EXTERNAL) TargetBranch;
     END Report;
+    ASSOCIATION ReportPlace =
+      PlaceReports -- {0..*} Report;
+      BaseSite (EXTERNAL) -- {0..1} TargetBranch;
+    END ReportPlace;
+    ASSOCIATION ReportPairing =
+      PairedSite (EXTERNAL) -- {0..1} TargetBranch;
+      PairedReport -- {0..1} Report;
+    END ReportPairing;
   END Data;
 END DbExternal24.

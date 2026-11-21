@@ -277,6 +277,10 @@ ein Ziel in einem anderen Basket dessen BID aus. Der Import akzeptiert die
 von ili2db 5.5.2 ausgegebene Form mit `REF` allein und prüft eine mitgelieferte
 BID gegen den tatsächlichen Zielbasket. In XTF 2.4 genügt `ili:ref`.
 
+Dieselbe Auflösung gilt für eingebettete 1:n- und 1:1-Assoziationen ohne
+eigene Attribute im selben Topic. Die gespeicherte Rolle ist `EXTERNAL`.
+Die Rollenspalte liegt wie bei lokalen Zielen in der Eigentümertabelle.
+
 Zum weiteren Ausbau gehören weitere Assoziationsformen mit Hierarchie-Enden
 sowie `EXTENDED`-Attribute. Weitere Grenzen sind stabile OIDs, eigene Linienformen,
 GeoPackage-RTree beim Schreiben und Updates. Der gespeicherte Modelltext

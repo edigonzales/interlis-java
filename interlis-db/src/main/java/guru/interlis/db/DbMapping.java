@@ -120,6 +120,10 @@ final class DbMapping {
         boolean single() {
             return CardinalityUpper.finite(1).equals(slot.role().cardinality().upper());
         }
+
+        boolean external() {
+            return slot.role().external();
+        }
     }
 
     record Table(ObjectDescriptor object, String name, List<Column> columns, boolean hasDiscriminator) {
@@ -464,6 +468,12 @@ final class DbMapping {
                 && roles.stream().anyMatch(role -> role.role().aggregation() != RoleAggregation.NONE)) {
             throw unsupported("attributes on an aggregation or composition at " + association.name().declared());
         }
+        long external = roles.stream().filter(role -> role.role().external()).count();
+        if (external > 0 && (external != 1 || roles.size() != 2
+                || association.baseType().isPresent() || !association.transferable()
+                || roles.stream().anyMatch(role -> role.role().aggregation() != RoleAggregation.NONE))) {
+            throw unsupported("external roles at " + association.name().declared());
+        }
         return roles.stream().map(role -> new AssociationRole(role, roleTarget(plan, association, role))).toList();
     }
 
@@ -477,12 +487,18 @@ final class DbMapping {
         var first = roles.getFirst();
         var second = roles.getLast();
         if (!first.single() && !second.single()) {
+            if (first.external() || second.external()) {
+                throw unsupported("external roles on standalone links at " + association.name().declared());
+            }
             return Optional.empty();
         }
         boolean linkTable = association.slots().stream().anyMatch(AttributeSlot.class::isInstance);
         // For 1:1, the second declared role's class owns the column for the first role.
         var target = first.single() ? first : second;
         var owner = first.single() ? second : first;
+        if (owner.external() || (target.external() && linkTable)) {
+            throw unsupported("external roles on this embedded association at " + association.name().declared());
+        }
         if (linkTable && hasSubtypes(plan, owner.target())) {
             throw unsupported("embedded association with attributes on an owner with subtypes at "
                     + association.name().declared());
@@ -494,7 +510,7 @@ final class DbMapping {
         var role = slot.role();
         String feature = "role " + slot.name().declared();
         if (role.targets().size() != 1 || !role.targets().getFirst().restrictions().isEmpty()
-                || role.external() || role.ordered() || role.hiding() || role.derivation().isPresent()) {
+                || role.ordered() || role.hiding() || role.derivation().isPresent()) {
             throw unsupported(feature);
         }
         var target = new SymbolRef(plan.snapshotId(), role.targets().getFirst().base());
