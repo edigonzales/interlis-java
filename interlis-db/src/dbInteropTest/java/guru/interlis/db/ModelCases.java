@@ -21,6 +21,7 @@ import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
 import static guru.interlis.db.DbInteropTest.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ModelCases {
@@ -353,6 +354,82 @@ final class ModelCases {
                 assertEquals("10", scalar(sql, "SELECT COUNT(DISTINCT t_id) FROM (" + ids + ") ids"));
             }
         }
+    }
+
+    void mixedMutation(TestDatabase db) throws Exception {
+        String warehouse = "DbWarehouse" + version;
+        String workshop = "DbWorkshop" + version;
+        String incoming = "DbIncoming" + version;
+        for (String model : List.of(warehouse, workshop, incoming)) fixture(model + ".ili");
+        createReference(db, String.join(";", warehouse, workshop, incoming));
+        var input = fixture("DbMixedModels" + version + ".xtf");
+        referenceImport(db, "mixed", input);
+        referenceImport(db, "incoming", fixture(incoming + ".xtf"));
+        var single = fixture(warehouse + ".xtf");
+        referenceImport(db, "independent", single);
+        String contents = Files.readString(single).replace("fixture-", "mixed-");
+        var update = Files.writeString(work.resolve("update-warehouse.xtf"), contents.replace(">warehouse<", ">updated<"));
+        var wrongTopic = Files.writeString(work.resolve("wrong-topic.xtf"),
+                contents.replace("mixed-warehouse-basket", "mixed-workshop-basket"));
+        var removeTarget = Files.writeString(work.resolve("remove-target.xtf"), contents.lines()
+                .filter(line -> !line.contains("mixed-warehouse-entry")).collect(java.util.stream.Collectors.joining("\n")));
+        String a = tableFor(db, warehouse + ".Data.Entry");
+        String b = tableFor(db, workshop + ".Data.Entry");
+        String aId = "SELECT t_id FROM " + db.table(a) + " WHERE t_ili_tid='mixed-warehouse-entry'";
+        String bId = "SELECT t_id FROM " + db.table(b) + " WHERE t_ili_tid='mixed-workshop-entry'";
+        String basketId = "SELECT t_id FROM " + db.table("t_ili2db_basket") + " WHERE t_ili_tid='mixed-warehouse-basket'";
+        String datasetId = "SELECT t_id FROM " + db.table("t_ili2db_dataset") + " WHERE datasetname='mixed'";
+        var output = work.resolve("mixed-mutated.xtf");
+        try (var sql = db.connect()) {
+            String oldA = scalar(sql, aId);
+            String link = tableFor(db, incoming + ".Survey.Link");
+            assertEquals(oldA, scalar(sql, "SELECT destination FROM " + db.table(link)));
+            assertEquals(a, scalar(sql, "SELECT setting FROM " + db.table("t_ili2db_column_prop")
+                    + " WHERE tablename='" + link + "' AND columnname='destination' AND tag='ch.ehi.ili2db.foreignKey'"));
+            String oldB = scalar(sql, bId);
+            String oldBasket = scalar(sql, basketId);
+            String oldDataset = scalar(sql, datasetId);
+            var updated = cli(db, "update", warehouse, "mixed", update, CancellationToken.none());
+            assertEquals(0, updated.code(), updated::diagnostics);
+            assertEquals(oldA, scalar(sql, aId));
+            assertEquals(oldB, scalar(sql, bId));
+            assertEquals(oldBasket, scalar(sql, basketId));
+            referenceExport(db, "mixed", output);
+            assertMixedDelivery(output, warehouse, workshop, "mixed", "updated");
+
+            assertCliFailure(db, "update", warehouse, "mixed", wrongTopic, "another dataset or topic");
+            assertCliFailure(db, "update", warehouse, "mixed", removeTarget, "referenced object");
+            assertCliFailure(db, "replace", warehouse, "mixed", update, "outside the selected model");
+            assertCliFailure(db, "delete", warehouse, "mixed", null, "outside the selected model");
+            assertCliFailure(db, "replace", warehouse, "mixed", input, "referenced object", "--model", workshop);
+            assertCliFailure(db, "delete", warehouse, "mixed", null, "referenced object", "--model", workshop);
+            assertEquals(oldA, scalar(sql, aId));
+            assertEquals(oldB, scalar(sql, bId));
+            assertEquals(oldBasket, scalar(sql, basketId));
+            referenceExport(db, "mixed", output);
+            assertMixedDelivery(output, warehouse, workshop, "mixed", "updated");
+
+            assertCliSuccess(db, "delete", incoming, "incoming", null);
+            var replaced = cli(db, "replace", warehouse, "mixed", input, CancellationToken.none(), "--model", workshop);
+            assertEquals(0, replaced.code(), replaced::diagnostics);
+            assertEquals(oldDataset, scalar(sql, datasetId));
+            assertNotEquals(oldA, scalar(sql, aId));
+            assertNotEquals(oldB, scalar(sql, bId));
+            referenceExport(db, "mixed", output);
+            assertMixedDelivery(output, warehouse, workshop, "mixed", "warehouse");
+            var deleted = cli(db, "delete", warehouse, "mixed", null, CancellationToken.none(), "--model", workshop);
+            assertEquals(0, deleted.code(), deleted::diagnostics);
+            assertEquals("independent", scalar(sql, "SELECT datasetname FROM " + db.table("t_ili2db_dataset")));
+            referenceExport(db, "independent", output);
+            assertEntryDelivery(output, warehouse, "warehouse", "fixture");
+        }
+    }
+
+    private void assertCliFailure(TestDatabase db, String operation, String model, String dataset, Path file,
+                                  String diagnostic, String... options) {
+        var result = cli(db, operation, model, dataset, file, CancellationToken.none(), options);
+        assertEquals(1, result.code(), result::diagnostics);
+        assertTrue(result.diagnostics().contains(diagnostic), result::diagnostics);
     }
 
     private void assertMixedDelivery(Path output, String warehouse, String workshop, String prefix, String warehouseMemo)

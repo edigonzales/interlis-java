@@ -115,6 +115,9 @@ XTF-Versionen im selben Referenzschema.
 `*DbInteropTest.*MixedImport*` prüft gemischte Lieferungen in Referenz-
 und eigenen Schemata, die gemeinsame ID-Vergabe beim nächsten Referenzimport
 und den Rollback bei einem fremden späteren Basket.
+`*DbInteropTest.*MixedMutation*` prüft selektive Updates mit stabilen IDs,
+die vollständige Auswahl für Ersatz und Löschung sowie den Rollback bei
+eingehenden Referenzen aus einem weiteren Modell.
 
 Die Fälle `*DbInteropTest.*Mutation*` prüfen `replace` und `update`
 in beiden Werkzeugrichtungen. Sie prüfen die internen IDs und den Bestand

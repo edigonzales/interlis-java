@@ -93,6 +93,8 @@ Datensatz wird angelegt. Die Änderung wird erst nach dem bestätigten Ende des
 XTF-FULL-Transfers veröffentlicht. Die Löschung erfasst auch Klassenfragmente, Strukturen, Linkzeilen und
 Geometrien der bisherigen Baskets. PostGIS sperrt die betroffenen Tabellen für konkurrierende Schreibzugriffe.
 GeoPackage verwendet seine bestehende Schreibtransaktion.
+Bei gemischten Datensätzen muss die Auswahl per `--model` die bisherigen
+Baskets vollständig abdecken.
 Zeigt eine bestehen bleibende Referenz auf eine der alten internen Objekt-IDs,
 wird der Ersatz zurückgerollt. Ausgehende `EXTERNAL`-Referenzen der neuen
 Lieferung verwenden die bestehende Suche im selben Schema.
@@ -106,6 +108,8 @@ Ausgelassene Objekte im gelieferten Basket werden gelöscht. Ausgelassene
 Baskets bleiben erhalten. Bei fremder oder mehrdeutiger BID sowie bei einem
 abweichenden Topic bricht die Operation ab. Eine OID kann bei der
 Aktualisierung innerhalb ihres Baskets wiederverwendet werden.
+Die Auswahl per `--model` kann sich bei einem Update auf die gelieferten
+Modelle beschränken.
 
 Das Update-Profil unterstützt Klassen mit `UUIDOID`, `STANDARDOID`
 oder gespeicherten Transfer-IDs aus `--importTid --importBid`.
@@ -133,7 +137,7 @@ zu löschende Objekte und mehrdeutige Ziele führen zum Rollback.
 `interlis-db delete --gpkg data.gpkg --model Example --dataset original`
 entfernt die Fachzeilen, Baskets und Dataset-Zeile in derselben Transaktion.
 Für PostGIS gelten die üblichen Verbindungsoptionen. Der Datensatz muss
-vorhanden sein und seine Baskets müssen zum ausgewählten Modell gehören.
+vorhanden sein und seine Baskets müssen zu den ausgewählten Modellen gehören.
 Eine Referenz aus einem bestehen bleibenden Basket auf ein zu löschendes
 Objekt führt zum Rollback. Die gemeinsame ID-Vergabe läuft nach der Löschung
 weiter.

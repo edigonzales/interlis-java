@@ -31,11 +31,9 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public final class Main {
     private static final String USAGE = """
-            Usage: interlis-db <export|import> --model NAME [--model NAME]... --dataset NAME
+            Usage: interlis-db <export|import|replace|update> --model NAME [--model NAME]... --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
-                   interlis-db <replace|update> --model NAME --dataset NAME
-                    (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
-                   interlis-db delete --model NAME --dataset NAME
+                   interlis-db delete --model NAME [--model NAME]... --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME)
                    interlis-db schemaimport --model NAME [--model NAME]...
                     [--default-epsg CODE] [--multi-srs [--alt-srs-model ORIGINAL=ALTERNATE]]
@@ -200,9 +198,6 @@ public final class Main {
                         throw new IllegalArgumentException("Missing value for " + arg);
                     }
                     if (models.contains(args[i])) throw new IllegalArgumentException("Repeated model " + args[i]);
-                    if ((command == Command.REPLACE || command == Command.UPDATE || command == Command.DELETE) && !models.isEmpty()) {
-                        throw new IllegalArgumentException("Repeated option --model");
-                    }
                     models.add(args[i]);
                 } else if (arg.equals("--model-file")) {
                     if (command != Command.SCHEMAIMPORT) {

@@ -7,6 +7,7 @@ import guru.interlis.transfer.TopicDescriptor;
 import guru.interlis.transfer.TransferEvent.DomainBinding;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,6 +39,7 @@ final class DbDatasetWrite {
         tables.add(db.technicalTable(DATASET));
         tables.add(db.technicalTable(BASKET));
         for (var table : mapping.storageTables()) tables.add(db.table(table));
+        for (var reference : incomingReferences(db, mapping)) tables.add(db.table(reference.source()));
         try (var statement = db.connection().createStatement()) {
             statement.execute("LOCK TABLE " + String.join(", ", tables) + " IN SHARE ROW EXCLUSIVE MODE NOWAIT");
         } catch (SQLException failure) {
@@ -146,7 +148,6 @@ final class DbDatasetWrite {
     static void deleteRemovedObjects(Database db, DbMapping mapping, List<ExistingObject> removed,
                                      CancellationToken token) throws SQLException {
         if (removed.isEmpty()) return;
-        checkIncomingMappings(db, mapping);
         var byRoot = new HashMap<Table, Set<Long>>();
         for (var object : removed) {
             var root = mapping.rootTable(object.type().object().symbol());
@@ -159,7 +160,18 @@ final class DbDatasetWrite {
                 if (column.kind() != DbMapping.Kind.REFERENCE) continue;
                 var targetRoot = mapping.rootTable(column.target().orElseThrow());
                 var targets = byRoot.get(targetRoot);
-                if (targets != null) checkUpdateReferences(db, table, column, List.copyOf(targets), removedSources, token);
+                if (targets != null) checkUpdateReferences(db, table.name(), column.name(),
+                        column.slot().name().declared().toString(), List.copyOf(targets), removedSources, token);
+            }
+        }
+        for (var reference : incomingReferences(db, mapping)) {
+            String targetName = catalogName(db, reference.target());
+            for (var entry : byRoot.entrySet()) {
+                var root = entry.getKey();
+                boolean target = catalogName(db, root.name()).equals(targetName)
+                        || mapping.hierarchy(root).stream().anyMatch(table -> catalogName(db, table.name()).equals(targetName));
+                if (target) checkUpdateReferences(db, reference.source(), reference.column(), reference.path(),
+                        List.copyOf(entry.getValue()), Set.of(), token);
             }
         }
         for (var removedObject : removed) {
@@ -168,15 +180,15 @@ final class DbDatasetWrite {
         }
     }
 
-    private static void checkUpdateReferences(Database db, Table table, DbMapping.Column column, List<Long> targetIds,
-                                              Set<Long> removedSources, CancellationToken token) throws SQLException {
+    private static void checkUpdateReferences(Database db, String table, String column, String path, List<Long> targetIds,
+                                               Set<Long> removedSources, CancellationToken token) throws SQLException {
         // Bound parameter counts on both databases when many objects disappear from a basket.
         final int batchSize = 256;
-        String field = Database.quote(column.name());
+        String field = Database.quote(column);
         for (int offset = 0; offset < targetIds.size(); offset += batchSize) {
             token.throwIfCancellationRequested();
             int batch = Math.min(batchSize, targetIds.size() - offset);
-            String sql = "SELECT " + T_ID + ", " + field + " FROM " + db.table(table.name()) + " WHERE " + field
+            String sql = "SELECT " + T_ID + ", " + field + " FROM " + db.table(table) + " WHERE " + field
                     + " IN (" + String.join(", ", Collections.nCopies(batch, "?")) + ")";
             try (var statement = db.connection().prepareStatement(sql)) {
                 for (int i = 0; i < batch; i++) statement.setLong(i + 1, targetIds.get(offset + i));
@@ -184,7 +196,7 @@ final class DbDatasetWrite {
                     while (rows.next()) {
                         token.throwIfCancellationRequested();
                         if (!removedSources.contains(rows.getLong(1))) {
-                            throw referencedTarget("delete", column, rows.getLong(2));
+                            throw referencedTarget("delete", path, rows.getLong(2));
                         }
                     }
                 }
@@ -210,8 +222,13 @@ final class DbDatasetWrite {
         }
     }
 
-    private static void checkIncomingMappings(Database db, DbMapping mapping) throws SQLException {
+    private record IncomingReference(String source, String column, String target) {
+        String path() { return source + "." + column; }
+    }
+
+    private static List<IncomingReference> incomingReferences(Database db, DbMapping mapping) throws SQLException {
         var tables = mapping.storageTables().stream().map(table -> catalogName(db, table)).collect(Collectors.toSet());
+        var references = new ArrayList<IncomingReference>();
         String sql = "SELECT tablename, columnname, setting FROM " + db.technicalTable(COLUMN_PROP) + " WHERE tag = ?";
         try (var statement = db.connection().prepareStatement(sql)) {
             statement.setString(1, PREFIX + "foreignKey");
@@ -219,11 +236,14 @@ final class DbDatasetWrite {
                 while (rows.next()) {
                     if (tables.contains(catalogName(db, rows.getString(3)))
                             && !tables.contains(catalogName(db, rows.getString(1)))) {
-                        throw new DbException("Unmapped incoming reference at " + rows.getString(1) + "." + rows.getString(2));
+                        String column = rows.getString(2);
+                        references.add(new IncomingReference(rows.getString(1), T_ID.equalsIgnoreCase(column) ? T_ID : column,
+                                rows.getString(3)));
                     }
                 }
             }
         }
+        return references;
     }
 
     private static String catalogName(Database db, String name) {
@@ -274,7 +294,6 @@ final class DbDatasetWrite {
                 }
             }
         }
-        checkIncomingMappings(db, mapping);
         checkDatasetReferences(db, mapping, dataset, operation, token);
         checkDatasetGeometryFragments(db, mapping, dataset, token);
         for (var table : mapping.storageTables().reversed()) {
@@ -316,33 +335,44 @@ final class DbDatasetWrite {
 
     private static void checkDatasetReferences(Database db, DbMapping mapping, long dataset, String operation,
                                                CancellationToken token) throws SQLException {
-        String baskets = db.technicalTable(BASKET);
         for (var table : mapping.tables()) {
             for (var column : table.columns()) {
                 if (column.kind() != DbMapping.Kind.REFERENCE) continue;
-                token.throwIfCancellationRequested();
                 var root = mapping.rootTable(column.target().orElseThrow());
-                String sql = """
-                        SELECT ref.t_id FROM %s src JOIN %s ref ON ref.t_id = src.%s
-                        JOIN %s dst ON dst.t_id = ref.t_basket
-                        WHERE dst.dataset = ? AND NOT EXISTS
-                           (SELECT 1 FROM %s own WHERE own.t_id = src.t_basket AND own.dataset = ?)
-                        LIMIT 1
-                        """.formatted(db.table(table.name()), db.table(root.name()), Database.quote(column.name()), baskets, baskets);
-                try (var statement = db.connection().prepareStatement(sql)) {
-                    statement.setLong(1, dataset);
-                    statement.setLong(2, dataset);
-                    try (var rows = statement.executeQuery()) {
-                        if (rows.next()) throw referencedTarget(operation, column, rows.getLong(1));
-                    }
-                }
+                checkDatasetReference(db, table.name(), column.name(), root.name(), column.slot().name().declared().toString(),
+                        dataset, operation, true, token);
+            }
+        }
+        for (var reference : incomingReferences(db, mapping)) {
+            checkDatasetReference(db, reference.source(), reference.column(), reference.target(), reference.path(),
+                    dataset, operation, false, token);
+        }
+    }
+
+    private static void checkDatasetReference(Database db, String source, String column, String target, String path,
+                                              long dataset, String operation, boolean mapped, CancellationToken token)
+            throws SQLException {
+        token.throwIfCancellationRequested();
+        String baskets = db.technicalTable(BASKET);
+        String surviving = mapped ? " AND NOT EXISTS (SELECT 1 FROM " + baskets
+                + " own WHERE own.t_id = src.t_basket AND own.dataset = ?)" : "";
+        String sql = """
+                SELECT ref.t_id FROM %s src JOIN %s ref ON ref.t_id = src.%s
+                JOIN %s dst ON dst.t_id = ref.t_basket
+                WHERE dst.dataset = ?%s
+                LIMIT 1
+                """.formatted(db.table(source), db.table(target), Database.quote(column), baskets, surviving);
+        try (var statement = db.connection().prepareStatement(sql)) {
+            statement.setLong(1, dataset);
+            if (mapped) statement.setLong(2, dataset);
+            try (var rows = statement.executeQuery()) {
+                if (rows.next()) throw referencedTarget(operation, path, rows.getLong(1));
             }
         }
     }
 
-    private static DbException referencedTarget(String operation, DbMapping.Column column, long id) {
-        return new DbException("Cannot " + operation + " referenced object T_Id " + id + " at "
-                + column.slot().name().declared());
+    private static DbException referencedTarget(String operation, String path, long id) {
+        return new DbException("Cannot " + operation + " referenced object T_Id " + id + " at " + path);
     }
 
     private static void delete(Database db, String sql, long id) throws SQLException {

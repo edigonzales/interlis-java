@@ -1,0 +1,14 @@
+INTERLIS 2.3;
+
+MODEL DbIncoming23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  IMPORTS DbWarehouse23;
+  TOPIC Survey =
+    DEPENDS ON DbWarehouse23.Data;
+    STRUCTURE Link =
+      Destination : REFERENCE TO (EXTERNAL) DbWarehouse23.Data.Entry;
+    END Link;
+    CLASS Record =
+      Details : Link;
+    END Record;
+  END Survey;
+END DbIncoming23.
