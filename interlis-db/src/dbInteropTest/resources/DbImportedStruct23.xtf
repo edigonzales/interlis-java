@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="imported structures fixture">
+    <MODELS><MODEL NAME="DbImportedStruct23" VERSION="1" URI="https://example.org/interlis/db"/></MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <DbImportedStruct23.Data BID="fixture-basket">
+      <DbImportedStruct23.Data.Report TID="fixture-report">
+        <Summary><DbSharedDetail23.Detail><Label>summary</Label></DbSharedDetail23.Detail></Summary>
+        <Entries><DbSharedDetail23.Detail><Label>second</Label></DbSharedDetail23.Detail><DbSharedDetail23.Detail><Label>first</Label></DbSharedDetail23.Detail></Entries>
+        <Observations><DbSharedDetail23.Detail><Label>same</Label></DbSharedDetail23.Detail><DbSharedDetail23.Detail><Label>same</Label></DbSharedDetail23.Detail></Observations>
+      </DbImportedStruct23.Data.Report>
+    </DbImportedStruct23.Data>
+  </DATASECTION>
+</TRANSFER>

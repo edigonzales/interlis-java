@@ -104,6 +104,67 @@ final class ModelCases {
         exchangeDomains(db, model, domainInput(model));
     }
 
+    void importedStructures(TestDatabase baseline, TestDatabase nativeSchema) throws Exception {
+        String model = "DbImportedStruct" + version;
+        String library = "DbSharedDetail" + version;
+        var source = fixture(model + ".ili");
+        var types = fixture(library + ".ili");
+        createReference(baseline, model, source);
+        var result = cli(nativeSchema, "schemaimport", model, null, source, CancellationToken.none(),
+                "--model-file", types.toString());
+        assertEquals(0, result.code(), result::diagnostics);
+        try (var refSql = baseline.connect(); var sql = nativeSchema.connect()) {
+            DbSchemaCatalog.read(refSql, baseline.postgis(), baseline.schema())
+                    .assertSameAs(DbSchemaCatalog.read(sql, nativeSchema.postgis(), nativeSchema.schema()));
+        }
+        Files.delete(source);
+        Files.delete(types);
+        var input = fixture(model + ".xtf");
+        var second = Files.writeString(work.resolve("own-detail.xtf"), Files.readString(input).replace("fixture-", "own-"));
+        for (var db : List.of(baseline, nativeSchema)) {
+            referenceImport(db, "legacy", input);
+            Path output = work.resolve("legacy-detail.xtf");
+            assertCliSuccess(db, "export", model, "legacy", output);
+            assertStructures(output, model, library, "fixture");
+            assertCliSuccess(db, "import", model, "native", second);
+            referenceExport(db, "native", output);
+            assertStructures(output, model, library, "own");
+            try (var sql = db.connect()) {
+                assertEquals(library + ".Detail", scalar(sql, "SELECT iliname FROM " + db.table("t_ili2db_classname")
+                        + " WHERE sqlname='detail'"));
+                assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("t_ili2db_classname")));
+                for (var field : List.of("summary", "entries", "observations")) {
+                    String query = "SELECT COUNT(*) FROM " + db.table("detail") + " d JOIN "
+                            + db.table("report") + " r ON d.report_" + field + "=r.t_id AND d.t_basket=r.t_basket";
+                    int expected = field.equals("summary") ? 2 : 4;
+                    assertEquals(Integer.toString(expected), scalar(sql, query));
+                    assertEquals("2", scalar(sql, query + " WHERE d.t_seq=0"));
+                }
+            }
+        }
+    }
+
+    private void assertStructures(Path file, String model, String library, String prefix) throws Exception {
+        var data = readDataSection(file, version);
+        assertEquals(List.of(model), headerModels(data));
+        var basket = children(data).getFirst();
+        assertEquals(prefix + "-basket", id(basket, version, "bid"));
+        var report = children(basket).getFirst();
+        assertEquals(prefix + "-report", id(report, version, "tid"));
+        assertEquals(List.of("summary"), structureLabels(report, "Summary", library));
+        assertEquals(List.of("second", "first"), structureLabels(report, "Entries", library));
+        assertEquals(List.of("same", "same"), structureLabels(report, "Observations", library));
+    }
+
+    private List<String> structureLabels(Element parent, String name, String library) {
+        return children(parent).stream().filter(field -> name.equals(field.getLocalName()))
+                .flatMap(field -> children(field).stream()).map(detail -> {
+                    assertEquals(version == 23 ? library + ".Detail" : "Detail", detail.getLocalName());
+                    if (version == 24) assertEquals("http://www.interlis.ch/xtf/2.4/" + library, detail.getNamespaceURI());
+                    return child(detail, "Label").getTextContent();
+                }).toList();
+    }
+
     private Path domainInput(String model) throws Exception {
         String shared = "DbSharedSource" + version;
         var input = work.resolve(model + ".xtf");

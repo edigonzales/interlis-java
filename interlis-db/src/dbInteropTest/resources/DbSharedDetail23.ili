@@ -1,0 +1,10 @@
+INTERLIS 2.3;
+
+MODEL DbSharedDetail23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  STRUCTURE Detail =
+    Label : TEXT*20;
+  END Detail;
+  STRUCTURE Unused =
+    Label : TEXT*20;
+  END Unused;
+END DbSharedDetail23.

@@ -99,6 +99,10 @@ Quellen müssen die vorherige Exportdatei erhalten.
 `*DbInteropTest.*LocalImports*` vergleicht die erzeugten Modellzeilen
 und das SQL-Schema mit ili2db. Danach laufen beide Werkzeugrichtungen
 mit den gespeicherten Quellen.
+`*DbInteropTest.*ImportedStruct*` prüft eine gemeinsam verwendete
+importierte Struktur als Einzelwert, Liste und Bag. Es vergleicht
+die Abbildung, die Eigentümer und Positionen sowie die Qualifikation
+der Werte im XTF.
 
 Die Fälle `*DbInteropTest.*Mutation*` prüfen `replace` und `update`
 in beiden Werkzeugrichtungen. Sie prüfen die internen IDs und den Bestand

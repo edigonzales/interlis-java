@@ -1,0 +1,12 @@
+INTERLIS 2.3;
+
+MODEL DbImportedStruct23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  IMPORTS DbSharedDetail23;
+  TOPIC Data =
+    CLASS Report =
+      Summary : DbSharedDetail23.Detail;
+      Entries : LIST {0..*} OF DbSharedDetail23.Detail;
+      Observations : BAG {0..*} OF DbSharedDetail23.Detail;
+    END Report;
+  END Data;
+END DbImportedStruct23.

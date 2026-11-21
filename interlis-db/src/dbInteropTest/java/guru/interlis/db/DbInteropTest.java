@@ -120,6 +120,10 @@ final class DbInteropTest {
     @Test void geoPackageLocalImports24() throws Exception { exchangeLocalImports(24, null); }
     @Test void postgisLocalImports23() throws Exception { exchangeWithPostgis(23, this::exchangeLocalImports); }
     @Test void postgisLocalImports24() throws Exception { exchangeWithPostgis(24, this::exchangeLocalImports); }
+    @Test void geoPackageImportedStruct23() throws Exception { exchangeImportedStruct(23, null); }
+    @Test void geoPackageImportedStruct24() throws Exception { exchangeImportedStruct(24, null); }
+    @Test void postgisImportedStruct23() throws Exception { exchangeWithPostgis(23, this::exchangeImportedStruct); }
+    @Test void postgisImportedStruct24() throws Exception { exchangeWithPostgis(24, this::exchangeImportedStruct); }
 
     @Test void geoPackage23() throws Exception { exchange(23, null); }
     @Test void geoPackage24() throws Exception {
@@ -431,6 +435,12 @@ final class DbInteropTest {
         var reference = new TestDatabase(postgres, "reference_imports");
         var nativeSchema = new TestDatabase(postgres, "native_imports");
         new ModelCases(work, new ReferenceTool(reference.postgis()), version).localImports(reference, nativeSchema);
+    }
+
+    private void exchangeImportedStruct(int version, PostgreSQLContainer postgres) throws Exception {
+        var reference = new TestDatabase(postgres, "reference_detail");
+        var nativeSchema = new TestDatabase(postgres, "native_detail");
+        new ModelCases(work, new ReferenceTool(reference.postgis()), version).importedStructures(reference, nativeSchema);
     }
 
     private void exchange(int version, PostgreSQLContainer postgres) throws Exception {

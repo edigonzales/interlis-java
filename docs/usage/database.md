@@ -14,6 +14,9 @@ tatsächlichen Importe beim Kompilieren. Fehlende oder mehrdeutige
 Quellen werden mit Modellnamen gemeldet.
 Für den Datenaustausch sind die Tabellen und XTF-Baskets des Fachmodells
 massgeblich.
+Verwendete Strukturen aus importierten Modellen erhalten ihre Tabellen samt
+Rückverweisen. Optionale Einzelwerte, `LIST OF` und `BAG OF` verwenden
+denselben Strukturtyp und behalten dessen qualifizierten XTF-Namen.
 [Referenzhandbuch](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst)
 
 ## Schemaerzeugung

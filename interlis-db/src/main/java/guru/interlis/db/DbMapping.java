@@ -312,6 +312,34 @@ final class DbMapping {
         return table;
     }
 
+    static List<ObjectDescriptor> storageObjects(TransferPlan plan, List<SymbolRef> roots) {
+        var selected = new HashSet<SymbolRef>();
+        var pending = new ArrayDeque<ObjectDescriptor>();
+        for (var object : plan.objects()) {
+            if (roots.contains(object.model())) include(object, selected, pending);
+        }
+        var extensions = plan.objects().stream().filter(object -> object.baseType().isPresent())
+                .collect(Collectors.groupingBy(object -> object.baseType().orElseThrow()));
+        while (!pending.isEmpty()) {
+            var object = pending.removeFirst();
+            if (object.kind() == SymbolKind.STRUCTURE) {
+                object.baseType().flatMap(plan::object).ifPresent(base -> include(base, selected, pending));
+                for (var extension : extensions.getOrDefault(object.symbol(), List.of())) {
+                    include(extension, selected, pending);
+                }
+            }
+            for (var slot : attributes(object)) {
+                describeComposition(plan, object, slot, slot.name().declared().last()).ifPresent(binding ->
+                        include(plan.object(binding.child()).orElseThrow(), selected, pending));
+            }
+        }
+        return plan.objects().stream().filter(object -> selected.contains(object.symbol())).toList();
+    }
+
+    private static void include(ObjectDescriptor object, Set<SymbolRef> selected, ArrayDeque<ObjectDescriptor> pending) {
+        if (selected.add(object.symbol())) pending.addLast(object);
+    }
+
     static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, CancellationToken token) {
         return planNew(modelName, List.of(source), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(), token);
@@ -322,12 +350,11 @@ final class DbMapping {
                              CancellationToken token) {
         var models = srsModels.map(DbCrsPair.Models::names).orElse(List.of(modelName));
         TransferPlan plan = DbModelSources.compile(models, sources, "model files", token);
-        var selected = plan.objects().stream().filter(object -> plan.rootModels().contains(object.model())).toList();
-        checkLayout(plan, selected);
         var crs = new CrsDefaults(defaultEpsg, 0);
         var crsPair = srsModels.map(pair -> new DbCrsPair(plan, pair, crs, crs));
-        var objects = selected.stream().filter(object -> crsPair.isEmpty()
-                || crsPair.orElseThrow().models().getFirst().equals(object.model())).toList();
+        var roots = crsPair.map(pair -> List.of(pair.models().getFirst())).orElseGet(plan::rootModels);
+        var objects = storageObjects(plan, roots);
+        checkLayout(plan, objects);
         if (!multiSrs && plan.topics().stream()
                 .anyMatch(topic -> plan.rootModels().contains(topic.model()) && DbDomains.deferred(topic))) {
             throw unsupported("deferred generic domains require --multi-srs");
@@ -339,7 +366,8 @@ final class DbMapping {
         for (var object : objects) {
             token.throwIfCancellationRequested();
             String topic = object.topic().flatMap(plan::topic).map(value -> value.name().declared().last()).orElse(null);
-            String name = allocator.table(modelName, topic, object.name().declared().last());
+            String declaredModel = plan.model(object.model()).orElseThrow().name().declared().last();
+            String name = allocator.table(declaredModel, topic, object.name().declared().last());
             if (reservedTable(name, gpkg)) {
                 throw unsupported("type " + object.name().declared() + " maps to technical table " + name);
             }
@@ -387,7 +415,7 @@ final class DbMapping {
                 for (var binding : describeColumns(plan, object, attribute, crs, crsPair)) {
                     String storageName = multiSrs && binding.kind().geometry() ? attributeName + "_" + binding.epsgCode() : attributeName;
                     boolean split = splitGeometries && geometrySeen && binding.kind().geometry();
-                    String owner = split ? allocator.geometryTable(modelName,
+                    String owner = split ? allocator.geometryTable(plan.model(object.model()).orElseThrow().name().declared().last(),
                             object.topic().flatMap(plan::topic).orElseThrow().name().declared().last(),
                             object.name().declared().last(), storageName) : name;
                     if (split && reservedTable(owner, gpkg)) {
@@ -680,7 +708,7 @@ final class DbMapping {
         var child = new SymbolRef(plan.snapshotId(), structure.target().orElseThrow());
         if (plan.object(child).filter(object -> object.kind() == SymbolKind.STRUCTURE
                 && (object.topic().isEmpty() || object.topic().equals(parent.topic()))).isEmpty()) {
-            throw unsupported("structure outside the parent model or topic at " + path);
+            throw unsupported("structure outside the supported topic at " + path);
         }
         var root = plan.object(child).orElseThrow();
         while (root.baseType().isPresent()) root = plan.object(root.baseType().orElseThrow()).orElseThrow();

@@ -28,6 +28,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -38,6 +39,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static guru.interlis.db.DbMapping.unsupported;
 import static guru.interlis.db.Ili2dbLayout.ATTRNAME;
@@ -83,18 +85,20 @@ final class DbSchemaReader {
         TransferPlan plan = readModelPlan(db, models, token);
         var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
 
-        var selected = plan.objects().stream().filter(object -> plan.rootModels().contains(object.model())).toList();
+        var crsPair = settings.srsModels().map(pair -> new DbCrsPair(plan, pair, settings.crs(), settings.alternateCrs()));
+        var roots = crsPair.map(pair -> List.of(pair.models().getFirst())).orElseGet(plan::rootModels);
+        var selected = DbMapping.storageObjects(plan, roots);
         DbMapping.checkLayout(plan, selected);
         if (!settings.multiSrs() && plan.topics().stream()
                 .anyMatch(topic -> plan.rootModels().contains(topic.model()) && DbDomains.deferred(topic))) {
             throw unsupported("deferred generic domains require SETTINGS.useEpsgInNames");
         }
-        var crsPair = settings.srsModels().map(pair -> new DbCrsPair(plan, pair, settings.crs(), settings.alternateCrs()));
-        String prefix = modelName + ".";
-        var classNames = readClassNames(db, prefix);
-        var attrNames = readAttributeNames(db, prefix);
-        var transformations = readTransformations(db, prefix);
-        var inheritance = readInheritance(db, prefix);
+        var scope = new MetadataScope(Set.of(modelName), selected.stream()
+                .map(object -> object.name().declared().toString()).collect(Collectors.toSet()));
+        var classNames = readClassNames(db, scope);
+        var attrNames = readAttributeNames(db, scope);
+        var transformations = readTransformations(db, scope);
+        var inheritance = readInheritance(db, scope);
         var names = new HashMap<SymbolRef, String>();
         var usedNames = new HashSet<String>();
         var objects = new ArrayList<ObjectDescriptor>();
@@ -102,7 +106,6 @@ final class DbSchemaReader {
         var linkRoles = new HashMap<SymbolRef, List<AssociationRole>>();
         for (ObjectDescriptor object : selected) {
             String path = object.name().declared().toString();
-            if (crsPair.isPresent() && !path.startsWith(prefix)) continue;
             String name = classNames.remove(path);
             if (name == null || !usedNames.add(key(db, name))) {
                 throw new DbException("Missing or inconsistent CLASSNAME/TRAFO mapping for " + path);
@@ -439,14 +442,15 @@ final class DbSchemaReader {
         return imports;
     }
 
-    private static Map<String, String> readClassNames(Database db, String prefix) throws SQLException {
+    private static Map<String, String> readClassNames(Database db, MetadataScope scope) throws SQLException {
         String table = foldedName(CLASSNAME);
         requireMetadataColumns(db, table, "iliname", "sqlname");
         var result = new LinkedHashMap<String, String>();
-        try (var stmt = scopedMetadata(db, table, "iliname, sqlname", prefix);
+        try (var stmt = scopedMetadata(db, table, "iliname, sqlname", "iliname", scope);
              var rows = stmt.executeQuery()) {
             while (rows.next()) {
                 String path = required(rows, 1, "CLASSNAME.iliname");
+                if (!scope.includes(path)) continue;
                 if (result.putIfAbsent(path, required(rows, 2, "CLASSNAME.sqlname")) != null) {
                     throw new DbException("Duplicate CLASSNAME mapping for " + path);
                 }
@@ -455,14 +459,15 @@ final class DbSchemaReader {
         return result;
     }
 
-    private static Map<String, AttributeName> readAttributeNames(Database db, String prefix) throws SQLException {
+    private static Map<String, AttributeName> readAttributeNames(Database db, MetadataScope scope) throws SQLException {
         String table = foldedName(ATTRNAME);
         requireMetadataColumns(db, table, "iliname", "sqlname", "colowner", "target");
         var result = new LinkedHashMap<String, AttributeName>();
-        try (var stmt = scopedMetadata(db, table, "iliname, sqlname, colowner, target", prefix);
+        try (var stmt = scopedMetadata(db, table, "iliname, sqlname, colowner, target", "iliname", scope);
              var rows = stmt.executeQuery()) {
             while (rows.next()) {
                 String path = required(rows, 1, "ATTRNAME.iliname");
+                if (!scope.includes(path)) continue;
                 var name = new AttributeName(required(rows, 2, "ATTRNAME.sqlname"),
                         required(rows, 3, "ATTRNAME.colowner"), rows.getString(4));
                 if (result.putIfAbsent(path, name) != null) {
@@ -473,15 +478,16 @@ final class DbSchemaReader {
         return result;
     }
 
-    private static Transformations readTransformations(Database db, String prefix) throws SQLException {
+    private static Transformations readTransformations(Database db, MetadataScope scope) throws SQLException {
         String table = foldedName(TRAFO);
         requireMetadataColumns(db, table, "iliname", "tag", "setting");
         var result = new HashMap<String, String>();
         var secondary = new HashMap<String, String>();
-        try (var stmt = scopedMetadata(db, table, "iliname, tag, setting", prefix);
+        try (var stmt = scopedMetadata(db, table, "iliname, tag, setting", "iliname", scope);
              var rows = stmt.executeQuery()) {
             while (rows.next()) {
                 String path = required(rows, 1, "TRAFO.iliname");
+                if (!scope.includes(path)) continue;
                 String setting = required(rows, 3, "TRAFO.setting");
                 String tag = rows.getString(2);
                 if (Ili2dbLayout.SECONDARY_TABLE_TAG.equals(tag)) {
@@ -495,14 +501,15 @@ final class DbSchemaReader {
         return new Transformations(result, secondary);
     }
 
-    private static Map<String, String> readInheritance(Database db, String prefix) throws SQLException {
+    private static Map<String, String> readInheritance(Database db, MetadataScope scope) throws SQLException {
         String table = foldedName(INHERITANCE);
         requireMetadataColumns(db, table, "thisclass", "baseclass");
         var result = new HashMap<String, String>();
-        try (var stmt = scopedMetadata(db, table, "thisclass, baseclass", "thisclass", prefix);
+        try (var stmt = scopedMetadata(db, table, "thisclass, baseclass", "thisclass", scope);
              var rows = stmt.executeQuery()) {
             while (rows.next()) {
                 String path = required(rows, 1, "INHERITANCE.thisClass");
+                if (!scope.includes(path)) continue;
                 if (result.containsKey(path)) throw new DbException("Duplicate INHERITANCE mapping for " + path);
                 result.put(path, rows.getString(2));
             }
@@ -510,25 +517,39 @@ final class DbSchemaReader {
         return result;
     }
 
-    private static PreparedStatement scopedMetadata(Database db, String table, String columns, String prefix)
-            throws SQLException {
-        return scopedMetadata(db, table, columns, "iliname", prefix);
+    private record MetadataScope(Set<String> roots, Set<String> objects) {
+        List<String> models() {
+            var models = new HashSet<>(roots);
+            for (var object : objects) models.add(modelName(object));
+            return models.stream().sorted().toList();
+        }
+
+        boolean includes(String path) {
+            if (roots.contains(modelName(path)) || objects.contains(path)) return true;
+            // Secondary names append the owning class in parentheses after the attribute path.
+            int owner = path.indexOf('(');
+            int member = path.lastIndexOf('.', owner < 0 ? path.length() : owner);
+            return member >= 0 && objects.contains(path.substring(0, member));
+        }
+
+        private static String modelName(String path) {
+            int separator = path.indexOf('.');
+            return separator < 0 ? path : path.substring(0, separator);
+        }
     }
 
     private static PreparedStatement scopedMetadata(Database db, String table, String columns, String field,
-                                                     String prefix) throws SQLException {
+                                                     MetadataScope scope) throws SQLException {
+        var models = scope.models();
+        String separator = (db.gpkg() ? "instr" : "strpos") + "(" + field + ", '.')";
+        String placeholders = String.join(", ", Collections.nCopies(models.size(), "?"));
         var stmt = db.connection().prepareStatement("SELECT " + columns + " FROM " + db.table(table)
-                + " WHERE substr(" + field + ", 1, ?) = ?");
+                + " WHERE substr(" + field + ", 1, " + separator + " - 1) IN (" + placeholders + ")");
         try {
-            stmt.setInt(1, prefix.codePointCount(0, prefix.length()));
-            stmt.setString(2, prefix);
+            for (int i = 0; i < models.size(); i++) stmt.setString(i + 1, models.get(i));
             return stmt;
         } catch (SQLException failure) {
-            try {
-                stmt.close();
-            } catch (SQLException closeFailure) {
-                failure.addSuppressed(closeFailure);
-            }
+            stmt.close();
             throw failure;
         }
     }
