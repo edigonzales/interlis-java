@@ -337,6 +337,8 @@ OIDSPACE-Präfix. Die UUID-Regel kann aus dem Topic oder der Basisklasse
 stammen. Die Wurzeltabelle speichert die OID und die Fragmente teilen
 dieselbe interne `T_Id`. Ein Topic mit `BASKET OID AS INTERLIS.UUIDOID`
 speichert die gelieferte BID in `T_ILI2DB_BASKET.T_Ili_Tid`.
+Lokale und `EXTERNAL`-Referenzen auf UUID-Objekte verwenden dieselbe
+normalisierte UUID bei der Auflösung und behalten die numerischen Fremdschlüssel.
 
 Zum weiteren Ausbau gehören weitere Assoziationsformen mit Hierarchie-Enden
 sowie `EXTENDED`-Attribute. Weitere Grenzen sind stabile OIDs, eigene Linienformen,

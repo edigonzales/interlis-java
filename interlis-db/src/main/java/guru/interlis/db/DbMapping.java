@@ -575,9 +575,6 @@ final class DbMapping {
                 .isEmpty()) {
             throw unsupported(feature + " requires a class in an allowed topic");
         }
-        if (oidDomain(plan, plan.object(target).orElseThrow()).isPresent()) {
-            throw unsupported("OID reference target at " + slot.name().declared());
-        }
         return target;
     }
 
@@ -661,9 +658,6 @@ final class DbMapping {
                     && (obj.topic().equals(object.topic()) || (ref.external() && inDependentTopic(plan, object, obj))))
                     .isEmpty()) {
                 throw unsupported("reference outside the supported topic or class at " + path);
-            }
-            if (oidDomain(plan, plan.object(symbol).orElseThrow()).isPresent()) {
-                throw unsupported("OID reference target at " + path);
             }
             target = Optional.of(symbol);
         }

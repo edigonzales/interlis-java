@@ -376,12 +376,70 @@ final class DbInteropTest {
                 assertTrue(rejected.diagnostics().contains("Invalid UUID"), rejected::diagnostics);
                 assertNull(scalar(sql, "select t_id from " + db.table("t_ili2db_dataset") + " where datasetname='oid-invalid'"));
 
+                exchangeOidReference(reference, db, sql, model, version, referenceId);
                 String metadata = db.table("t_ili2db_column_prop") + " where tablename='site' and tag='ch.ehi.ili2db.oidDomain'";
                 assertEquals("INTERLIS.UUIDOID", scalar(sql, "select setting from " + metadata));
                 execute(sql, "delete from " + metadata);
                 assertExportRejected(db, model, "oid-legacy", ownOutput, "oidDomain", "site.t_ili_tid");
             }
         }
+    }
+
+    private void exchangeOidReference(ReferenceTool reference, TestDatabase db, Connection sql, String model,
+                                      int version, String targetId) throws Exception {
+        String objects = version == 23 ? """
+                <%1$s.Data.Inspection TID="remote-inspection"><Links><%1$s.Data.InspectionRefs>
+                  <RemoteSite REF="%2$s" BID="%3$s"/>
+                </%1$s.Data.InspectionRefs></Links></%1$s.Data.Inspection>
+                """.formatted(model, targetId, oidBasket("oid-legacy")) : """
+                <Inspection i:tid="remote-inspection"><Links><InspectionRefs><RemoteSite i:ref="%s"/></InspectionRefs></Links></Inspection>
+                """.formatted(targetId);
+        Path legacy = Files.writeString(work.resolve("oid-reference-legacy.xtf"),
+                referenceDatasetFixture(model, version, oidBasket("oid-reference-legacy"), objects));
+        reference.run(db, work.toString(), "--import", "--importTid", "--importBid", "--dataset", "oid-reference-legacy", legacy.toString());
+        assertOidReferenceRow(db, sql, "remote-inspection", targetId, "oid-legacy", "remotesite");
+        Path output = work.resolve("oid-reference-output.xtf");
+        assertCliSuccess(db, "export", model, "oid-reference-legacy", output);
+        assertOidReferenceXtf(output, version, targetId, true);
+
+        Path own = Files.writeString(work.resolve("oid-reference-own.xtf"),
+                referenceDatasetFixture(model, version, oidBasket("oid-reference-own"), objects.replace("remote-inspection", "own-inspection")));
+        assertCliSuccess(db, "import", model, "oid-reference-own", own);
+        assertOidReferenceRow(db, sql, "own-inspection", targetId, "oid-legacy", "remotesite");
+        reference.run(db, work.toString(), "--export", "--exportTid", "--dataset", "oid-reference-own", output.toString());
+        assertOidReferenceXtf(output, version, targetId, false);
+
+        Path duplicate = oidFixture(model, version, "oid-duplicate", targetId);
+        assertCliSuccess(db, "import", model, "oid-duplicate", duplicate);
+        var ambiguous = Files.writeString(work.resolve("oid-reference-ambiguous.xtf"), Files.readString(output)
+                .replace("own-inspection", "ambiguous-inspection")
+                .replace(oidBasket("oid-reference-own"), oidBasket("oid-reference-ambiguous")));
+        var rejected = cli(db, "import", model, "oid-reference-ambiguous", ambiguous, CancellationToken.none());
+        assertNotEquals(0, rejected.code(), rejected::diagnostics);
+        assertTrue(rejected.diagnostics().contains("Ambiguous stored reference target"), rejected::diagnostics);
+        assertNull(scalar(sql, "select t_id from " + db.table("t_ili2db_dataset") + " where datasetname='oid-reference-ambiguous'"));
+    }
+
+    private static void assertOidReferenceRow(TestDatabase db, Connection sql, String owner, String target,
+                                              String targetBid, String column) throws SQLException {
+        String query = """
+                select s.t_ili_tid from %s s join %s r on r.%s=s.t_id
+                join %s i on r.inspection_links=i.t_id and r.t_basket=i.t_basket
+                join %s b on b.t_id=s.t_basket where i.t_ili_tid='%s' and b.t_ili_tid='%s' and s.t_type='marker'
+                """.formatted(db.table("site"), db.table("inspectionrefs"), column, db.table("inspection"),
+                db.table("t_ili2db_basket"), owner, oidBasket(targetBid));
+        assertEquals(target.toLowerCase(Locale.ROOT), scalar(sql, query));
+    }
+
+    private static void assertOidReferenceXtf(Path output, int version, String tid, boolean own) throws Exception {
+        var data = readDataSection(output, version);
+        assertEquals(1, children(data).size());
+        var basket = children(data).getFirst();
+        assertEquals(1, children(basket).size());
+        var inspection = children(basket).getFirst();
+        var refs = children(child(inspection, "Links")).getFirst();
+        assertExternalReference(child(refs, "RemoteSite"), version, tid.toLowerCase(Locale.ROOT),
+                own ? oidBasket("oid-legacy") : "");
     }
 
     private Path oidFixture(String model, int version, String bid, String tid) throws IOException {
@@ -395,12 +453,17 @@ final class DbInteropTest {
                 """.formatted(model, bid, defaultOid(tid)) : """
                 <Defaults i:bid="%s-defaults"><Address i:tid="%s"><Text>address</Text></Address></Defaults>
                 """.formatted(bid, defaultOid(tid));
+        String inspection = version == 23 ? """
+                <%1$s.Data.Inspection TID="%2$s-inspection"><Links><%1$s.Data.InspectionRefs><LocalSite REF="%3$s"/></%1$s.Data.InspectionRefs></Links></%1$s.Data.Inspection>
+                """.formatted(model, bid, tid) : """
+                <Inspection i:tid="%s-inspection"><Links><InspectionRefs><LocalSite i:ref="%s"/></InspectionRefs></Links></Inspection>
+                """.formatted(bid, tid);
         String second = version == 23 ? """
                 <%1$s.Data BID="%2$s"><%1$s.Data.Site TID="%3$s"><Label>second</Label></%1$s.Data.Site></%1$s.Data>
                 """.formatted(model, oidBasket(bid + "-second"), secondOid(tid)) : """
                 <Data i:bid="%s"><Site i:tid="%s"><Label>second</Label></Site></Data>
                 """.formatted(oidBasket(bid + "-second"), secondOid(tid));
-        String fixture = referenceDatasetFixture(model, version, oidBasket(bid), object)
+        String fixture = referenceDatasetFixture(model, version, oidBasket(bid), inspection + object)
                 .replace(version == 23 ? "</DATASECTION>" : "</i:datasection>",
                         second + defaults + (version == 23 ? "</DATASECTION>" : "</i:datasection>"));
         return Files.writeString(work.resolve(bid + ".xtf"), fixture);
@@ -426,6 +489,7 @@ final class DbInteropTest {
         assertEquals(secondOid(tid).toLowerCase(Locale.ROOT), scalar(sql, "select s.t_ili_tid from " + db.table("site")
                 + " s join " + db.table("t_ili2db_basket") + " b on b.t_id=s.t_basket where b.t_ili_tid='"
                 + oidBasket(bid + "-second") + "' and s.label='second'"));
+        assertOidReferenceRow(db, sql, bid + "-inspection", tid, bid, "localsite");
         assertEquals(defaultOid(tid).toLowerCase(Locale.ROOT), scalar(sql, "select a.t_ili_tid from " + db.table("address")
                 + " a join " + db.table("t_ili2db_basket") + " b on b.t_id=a.t_basket where b.t_ili_tid='"
                 + bid + "-defaults' and a.atext='address'"));
@@ -444,6 +508,9 @@ final class DbInteropTest {
         assertEquals(tid.toLowerCase(Locale.ROOT), id(object, version, "tid"));
         assertEquals("marker", child(object, "Label").getTextContent());
         assertEquals("survey", child(object, "Category").getTextContent());
+        var inspection = child(basket, version == 23 ? model + ".Data.Inspection" : "Inspection");
+        assertExternalReference(child(children(child(inspection, "Links")).getFirst(), "LocalSite"),
+                version, tid.toLowerCase(Locale.ROOT), "");
         var inherited = child(data, version == 23 ? model + ".Defaults" : "Defaults");
         assertEquals(bid + "-defaults", id(inherited, version, "bid"));
         assertEquals(defaultOid(tid).toLowerCase(Locale.ROOT),

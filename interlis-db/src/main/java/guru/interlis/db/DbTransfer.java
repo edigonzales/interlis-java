@@ -482,7 +482,7 @@ final class DbTransfer {
                         while (rows.next()) {
                             token.throwIfCancellationRequested();
                             String context = column.slot().name().declared().toString();
-                            String tid = identifier(rows.getString(2), "reference target TID", context);
+                            String tid = storedTid(root, identifier(rows.getString(2), "reference target TID", context));
                             var bid = mapping.version() == LanguageVersion.ILI23
                                     ? Optional.of(identifier(rows.getString(3), "reference target BID", context))
                                     : Optional.<String>empty();
@@ -505,7 +505,7 @@ final class DbTransfer {
             token.throwIfCancellationRequested();
             String sql = "SELECT 1 FROM " + db.table(table.name()) + " obj JOIN " + db.technicalTable(BASKET)
                     + " basket ON basket." + T_ID + " = obj." + T_BASKET
-                    + " WHERE basket.dataset = ? AND basket.topic = ? AND CAST(obj." + T_ILI_TID + " AS text) = ? LIMIT 1";
+                    + " WHERE basket.dataset = ? AND basket.topic = ? AND " + tidExpression(table, "obj") + " = ? LIMIT 1";
             try (var statement = db.connection().prepareStatement(sql)) {
                 statement.setLong(1, dataset);
                 statement.setString(2, mapping.plan().topic(table.object().topic().orElseThrow()).orElseThrow()
@@ -529,7 +529,7 @@ final class DbTransfer {
         String sql = "SELECT ref." + T_ID + ", basket." + T_ILI_TID + discriminator
                 + " FROM " + db.table(root.name()) + " ref JOIN " + db.technicalTable(BASKET)
                 + " basket ON basket." + T_ID + " = ref." + T_BASKET + " WHERE basket.topic = ?"
-                + " AND ref." + T_ILI_TID + " = ?" + (bid.isPresent() ? " AND basket." + T_ILI_TID + " = ?" : "") + fragment;
+                + " AND " + tidExpression(root, "ref") + " = ?" + (bid.isPresent() ? " AND basket." + T_ILI_TID + " = ?" : "") + fragment;
         try (var statement = db.connection().prepareStatement(sql)) {
             statement.setString(1, mapping.plan().topic(root.object().topic().orElseThrow()).orElseThrow()
                     .name().declared().toString());
@@ -550,6 +550,11 @@ final class DbTransfer {
                 return result;
             }
         }
+    }
+
+    private static String tidExpression(Table table, String alias) {
+        String column = alias + "." + T_ILI_TID;
+        return table.uuidIdentity() ? "lower(CAST(" + column + " AS text))" : column;
     }
 
     private static int projectionSize(DbMapping mapping, Table table) {
@@ -915,7 +920,9 @@ final class DbTransfer {
                 var bid = projectsTargetBid(mapping, column) ? Optional.ofNullable(rows.getString(next))
                         .map(value -> new BasketId(identifier(value, "reference target BID", context), IdOrigin.SOURCE))
                         : Optional.<BasketId>empty();
-                yield new Reference(new TransferId(tid, IdOrigin.SOURCE), bid, column.external(), position);
+                String value = storedTid(root, tid);
+                TransferIdentity.ObjectKey key = hasWireOid(mapping, root) ? new ObjectOid(value) : new TransferId(value, IdOrigin.SOURCE);
+                yield new Reference(key, bid, column.external(), position);
             }
         };
     }
@@ -1025,8 +1032,11 @@ final class DbTransfer {
     private static TransferIdentity objectIdentity(DbMapping mapping, Table root, BasketId bid, String tid) {
         var value = Optional.ofNullable(tid).map(id -> storedTid(root, id));
         return new TransferIdentity(bid, Optional.empty(), value.map(id -> new TransferId(id, IdOrigin.SOURCE)),
-                mapping.version() == LanguageVersion.ILI24 && root.oidDomain().isPresent()
-                        ? value.map(ObjectOid::new) : Optional.empty(), Optional.empty());
+                hasWireOid(mapping, root) ? value.map(ObjectOid::new) : Optional.empty(), Optional.empty());
+    }
+
+    private static boolean hasWireOid(DbMapping mapping, Table root) {
+        return mapping.version() == LanguageVersion.ILI24 && root.oidDomain().isPresent();
     }
 
     private static Optional<String> basketOid(DbMapping mapping, TopicDescriptor topic, BasketId bid) {
@@ -1168,7 +1178,7 @@ final class DbTransfer {
             var root = chain.getFirst();
             boolean hasTid = root.hasTidColumn();
             var sourceTid = identity.tid().filter(value -> value.origin() == IdOrigin.SOURCE).map(TransferId::value);
-            var expectedOid = mapping.version() == LanguageVersion.ILI24 && root.oidDomain().isPresent()
+            var expectedOid = hasWireOid(mapping, root)
                     ? sourceTid : Optional.<String>empty();
             if (!identity.oid().map(ObjectOid::value).equals(expectedOid)) {
                 throw new DbException("Unsupported object identity for " + table.object().name().declared());
@@ -1492,12 +1502,14 @@ final class DbTransfer {
         private StoredObject bindReference(Table table, Column column, long id, String tid, BasketId basket,
                                            Reference reference) {
             boolean external = column.external();
+            var root = mapping.rootTable(column.target().orElseThrow());
             if (reference.external() != external
                     || (!external && reference.targetBasket().filter(target -> !target.value().equals(basket.value())).isPresent())
-                    || !(reference.target() instanceof TransferId)) {
+                    || (reference.target() instanceof ObjectOid) != hasWireOid(mapping, root)) {
                 throw new DbException("Unsupported reference in " + tid + " at " + column.slot().name().declared());
             }
-            var patch = new Pending(table, column, id, tid, reference.target().value(), reference.targetBasket());
+            String targetTid = storedTid(root, reference.target().value());
+            var patch = new Pending(table, column, id, tid, targetTid, reference.targetBasket());
             var target = (external ? externalObjects : objects).get(patch.targetTid());
             if (target == null) {
                 (external ? externalPending : pending).add(patch);
