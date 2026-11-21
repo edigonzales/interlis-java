@@ -157,6 +157,10 @@ einem Überlauf und Erhalt der Ausgabedatei bei einer ungültigen SQL-Position.
 Bei eingebetteten 1:n-Rollen ohne eigene Attribute prüft sie die
 Sequenzspalte auf der n-Seite, die Position auf der Gegenrolle im XTF,
 ein vorwärts aufgelöstes Ziel und die Diagnose einer Position ohne Referenz.
+Bei 1:n-Rollen mit eigenen Attributen prüft sie die Positionsspalte am
+Rückverweis der Linktabelle und die Kombination aus Position, Referenz
+und Attributwerten. Die Fixtures enthalten direkte, eingebettete und
+ausgelassene Rollen.
 Für 1:n mit Attributen prüft sie eingebettete Attributwerte, direkte Referenzen,
 fehlende Rollen und den Erhalt der Zieldatei bei mehreren Linkzeilen zum Objekt.
 Polymorphe Ziele werden mit einer Zwischenklasse und einem konkreten

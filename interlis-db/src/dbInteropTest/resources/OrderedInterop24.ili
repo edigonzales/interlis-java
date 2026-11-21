@@ -22,5 +22,13 @@ MODEL OrderedInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-1
       WrittenIn -- {0..1} Folder;
       Documents (ORDERED) -- {0..*} Document;
     END Filing;
+
+    CLASS DutyArea = END DutyArea;
+    CLASS Operative = END Operative;
+    ASSOCIATION Placement =
+      Site -- {0..1} DutyArea;
+      Operatives (ORDERED) -- {0..*} Operative;
+      Memo : TEXT*18;
+    END Placement;
   END Data;
 END OrderedInterop24.

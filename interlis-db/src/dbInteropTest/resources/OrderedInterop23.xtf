@@ -35,6 +35,16 @@
       </OrderedInterop23.Data.Document>
       <OrderedInterop23.Data.Document TID="ordered-doc-loose"/>
       <OrderedInterop23.Data.Folder TID="ordered-folder"/>
+      <OrderedInterop23.Data.Operative TID="ordered-operative-nested">
+        <Site REF="ordered-area" ORDER_POS="34">
+          <OrderedInterop23.Data.Placement><Memo>kit</Memo></OrderedInterop23.Data.Placement>
+        </Site>
+      </OrderedInterop23.Data.Operative>
+      <OrderedInterop23.Data.Operative TID="ordered-operative-direct">
+        <Site REF="ordered-area" ORDER_POS="18"/>
+      </OrderedInterop23.Data.Operative>
+      <OrderedInterop23.Data.Operative TID="ordered-operative-absent"/>
+      <OrderedInterop23.Data.DutyArea TID="ordered-area"/>
     </OrderedInterop23.Data>
   </DATASECTION>
 </TRANSFER>

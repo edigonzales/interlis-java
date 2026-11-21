@@ -213,8 +213,8 @@ Beim XTF-2.3-Import mit ili2gpkg 5.5.2 wurden identische Zielpaare zweier
 anonymer Assoziationen derselben Beziehungstabelle zugeordnet. Die
 Mischfixtures verwenden für diese Assoziationen unterschiedliche Zieltypen.
 
-Bei eigenständigen binären n:m-Assoziationen mit lokalen `--`-Rollen kann
-eine oder können beide Rollen `ORDERED` sein. Jede geordnete Rolle erhält
+Bei eigenständigen binären n:m-Assoziationen mit lokalen `--`-Rollen sind
+eine oder beide Rollen mit `ORDERED` zulässig. Jede geordnete Rolle erhält
 in der Beziehungstabelle eine Spalte `<Rollenspalte>_T_Seq`. XTF 2.3
 überträgt die Position als `ORDER_POS`, XTF 2.4 als `ili:order_pos`.
 Der Adapter erhält explizite positive 64-Bit-Positionen und übersetzt eine
@@ -242,6 +242,12 @@ bezieht sich der Rückverweis auf deren Tabellenfragment. Bei einem
 deklarierten Eigentümer mit Untertypen fragt der Referenzexport zusätzliche
 Rollenspalten ab, die das Referenzschema nicht enthält.
 [Referenzabfrage](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/src/ch/ehi/ili2db/toxtf/TransferToXtf.java#L1631-L1664)
+
+Bei einer eingebetteten 1:n-Assoziation mit eigenen Attributen und einer
+lokalen `ORDERED`-Rolle an der n-Seite speichert die Beziehungstabelle die
+Position in `<Eigentümer-Rollenspalte>_T_Seq`. Im XTF trägt die Gegenrolle
+die Position sowohl bei einer direkten Referenz als auch bei einer
+Referenz mit eingebetteten Attributwerten.
 
 XTF 2.3 und 2.4 FULL unterstützen Klassenvererbung mit `--noSmartMapping`
 innerhalb eines Topics. Abstrakte Basisklassen können ihre Attribute an

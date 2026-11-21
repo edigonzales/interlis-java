@@ -194,12 +194,19 @@ final class DbTransfer {
             var link = mapping.table(association.object().symbol());
             if (rows.getObject(next) != null) {
                 var fields = readFields(db, mapping, rows, next + 1, link, ownerTid);
-                fields.remove(association.ownerRole().slot().symbol());
+                var owner = (Reference) fields.remove(association.ownerRole().slot().symbol());
                 var role = association.role().symbol();
+                if (owner.orderPosition().isPresent()) {
+                    fields.put(role, withOrderPosition((Reference) fields.get(role), owner.orderPosition()));
+                }
                 values.put(role, fields.size() == 1 ? fields.get(role) : new Structured(link.object().symbol(), fields));
             }
             next += 1 + projectionSize(mapping, link);
         }
+    }
+
+    private static Reference withOrderPosition(Reference reference, Optional<BigInteger> position) {
+        return new Reference(reference.target(), reference.targetBasket(), reference.external(), position);
     }
 
     private static void writeHierarchyObjects(Database db, DbMapping mapping, Table root, long basketId,
@@ -1128,7 +1135,7 @@ final class DbTransfer {
                 case Structured link when link.type().equals(association.object().symbol()) -> link.values();
                 default -> throw new DbException("Unsupported embedded association payload at " + context);
             };
-            if (!(fields.get(role) instanceof Reference)) {
+            if (!(fields.get(role) instanceof Reference target)) {
                 throw new DbException("Missing link endpoint at " + context);
             }
             long id = db.nextId();
@@ -1141,9 +1148,15 @@ final class DbTransfer {
                 var field = column.slot().symbol();
                 if (field.equals(association.ownerRole().slot().symbol())) {
                     statement.setLong(index++, ownerId);
+                    if (column.positionColumn().isPresent()) {
+                        bindPosition(statement, index++, target.orderPosition(), column);
+                    }
                 } else {
                     var payload = fields.get(field);
                     if (payload != null) found++;
+                    if (field.equals(role) && association.ordered() && target.orderPosition().isPresent()) {
+                        payload = withOrderPosition(target, Optional.empty());
+                    }
                     index = bindColumn(statement, index, table, column, id, context, basket,
                             payload == Undefined.INSTANCE ? null : payload);
                 }

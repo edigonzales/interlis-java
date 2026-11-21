@@ -533,7 +533,7 @@ final class DbMapping {
         if (owner.external() || (target.external() && linkTable && owner.single())) {
             throw unsupported("external roles on this embedded association at " + association.name().declared());
         }
-        if (target.slot().role().ordered() || (owner.slot().role().ordered() && (owner.single() || linkTable))) {
+        if (target.slot().role().ordered() || (owner.slot().role().ordered() && owner.single())) {
             throw unsupported("ORDERED embedded association " + association.name().declared());
         }
         if (linkTable && hasSubtypes(plan, owner.target())) {

@@ -33,6 +33,16 @@
       </Document>
       <Document i:tid="ordered-doc-loose"/>
       <Folder i:tid="ordered-folder"/>
+      <Operative i:tid="ordered-operative-nested">
+        <Site i:ref="ordered-area" i:order_pos="34">
+          <Placement><Memo>kit</Memo></Placement>
+        </Site>
+      </Operative>
+      <Operative i:tid="ordered-operative-direct">
+        <Site i:ref="ordered-area" i:order_pos="18"/>
+      </Operative>
+      <Operative i:tid="ordered-operative-absent"/>
+      <DutyArea i:tid="ordered-area"/>
     </Data>
   </i:datasection>
 </i:transfer>

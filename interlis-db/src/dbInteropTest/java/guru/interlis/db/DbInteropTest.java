@@ -3464,13 +3464,17 @@ final class DbInteropTest {
                 assertOrderColumn(db, sql, "membership", "team");
                 assertOrderColumn(db, sql, "entry", "runner");
                 assertOrderColumn(db, sql, "document", "writtenin");
+                assertOrderColumn(db, sql, "placement", "operatives");
                 assertEmbeddedOrderOwner(db, sql, model);
+                assertAssociationCatalog(db, sql, model, "Placement", Map.of("Site", "dutyarea", "Operatives", "operative"));
+                assertTypeKind(db, sql, "placement", "memo", "TEXT");
                 assertStoredOrderedPositions(db, sql, "ordered", false);
                 assertCliSuccess(db, "export", model, "ordered", nativeOutput);
                 assertOrderedTransfer(nativeOutput, model, version, "ordered", false);
 
                 seedStandalonePositions(db, sql);
                 execute(sql, "update " + db.table("document") + " set writtenin_t_seq=21 where t_ili_tid='ordered-doc-two'");
+                execute(sql, "update " + db.table("placement") + " set operatives_t_seq=case when memo is null then 18 else 34 end");
                 assertCliSuccess(db, "export", model, "ordered", nativeOutput);
                 assertOrderedTransfer(nativeOutput, model, version, "ordered", true);
 
@@ -3562,6 +3566,21 @@ final class DbInteropTest {
         assertEquals(dataset + "-folder|", scalar(sql, document.formatted(db.table("document"), db.table("folder"), dataset, "one")));
         assertEquals(dataset + "-folder|" + (present ? "21" : ""),
                 scalar(sql, document.formatted(db.table("document"), db.table("folder"), dataset, "two")));
+
+        String placements = """
+                select o.t_ili_tid, coalesce(f.t_ili_tid,''), coalesce(l.memo,''), coalesce(cast(l.operatives_t_seq as text),'')
+                from %s o left join %s l on l.operatives=o.t_id and l.t_basket=o.t_basket
+                left join %s f on f.t_id=l.site and f.t_basket=o.t_basket
+                where o.t_ili_tid like '%s-operative-%%'
+                order by o.t_ili_tid
+                """.formatted(db.table("operative"), db.table("placement"), db.table("dutyarea"), dataset);
+        var actual = new ArrayList<List<String>>();
+        try (var statement = sql.createStatement(); var result = statement.executeQuery(placements)) {
+            while (result.next()) actual.add(List.of(result.getString(1), result.getString(2), result.getString(3), result.getString(4)));
+        }
+        assertEquals(List.of(List.of(dataset + "-operative-absent", "", "", ""),
+                List.of(dataset + "-operative-direct", dataset + "-area", "", present ? "18" : ""),
+                List.of(dataset + "-operative-nested", dataset + "-area", "kit", present ? "34" : "")), actual);
     }
 
     private static void seedStandalonePositions(TestDatabase db, Connection sql) throws SQLException {
@@ -3595,16 +3614,34 @@ final class DbInteropTest {
         assertPosition(entry, "Runner", version, dataset + "-runner", present ? "4" : "");
         assertPosition(entry, "Track", version, dataset + "-track", "");
 
-        var documents = new HashMap<String, Element>();
-        for (var object : children(basket)) {
-            if (object.getLocalName().equals(prefix + "Document")) {
-                assertNull(documents.put(id(object, version, "tid"), object));
-            }
-        }
+        var documents = orderedOwners(basket, prefix + "Document", version);
         assertEquals(Set.of(dataset + "-doc-loose", dataset + "-doc-one", dataset + "-doc-two"), documents.keySet());
         assertNull(child(documents.get(dataset + "-doc-loose"), "WrittenIn"));
         assertPosition(documents.get(dataset + "-doc-one"), "WrittenIn", version, dataset + "-folder", "");
         assertPosition(documents.get(dataset + "-doc-two"), "WrittenIn", version, dataset + "-folder", present ? "21" : "");
+
+        var operatives = orderedOwners(basket, prefix + "Operative", version);
+        assertEquals(Set.of(dataset + "-operative-absent", dataset + "-operative-direct", dataset + "-operative-nested"),
+                operatives.keySet());
+        assertNull(child(operatives.get(dataset + "-operative-absent"), "Site"));
+        var direct = operatives.get(dataset + "-operative-direct");
+        assertPosition(direct, "Site", version, dataset + "-area", present ? "18" : "");
+        assertTrue(children(child(direct, "Site")).isEmpty());
+        var nested = operatives.get(dataset + "-operative-nested");
+        assertPosition(nested, "Site", version, dataset + "-area", present ? "34" : "");
+        var payload = child(child(nested, "Site"), prefix + "Placement");
+        assertNotNull(payload);
+        assertEquals("kit", text(payload, "Memo"));
+    }
+
+    private static Map<String, Element> orderedOwners(Element basket, String objectName, int version) {
+        var owners = new HashMap<String, Element>();
+        for (var object : children(basket)) {
+            if (object.getLocalName().equals(objectName)) {
+                assertNull(owners.put(id(object, version, "tid"), object));
+            }
+        }
+        return owners;
     }
 
     private static void assertPosition(Element owner, String role, int version, String target, String position) {
