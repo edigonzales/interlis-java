@@ -85,6 +85,11 @@ testing.suites {
                 inputs.files(downloadIli2dbReferences).withPathSensitivity(PathSensitivity.NONE)
                 systemProperty 'ili2db.reference.version', ili2dbReferenceVersion
                 systemProperty 'ili2db.reference.dir', ili2dbReferenceDirectory.get().asFile.absolutePath
+                systemProperty 'junit.jupiter.execution.parallel.enabled', 'true'
+                systemProperty 'junit.jupiter.execution.parallel.mode.default', 'concurrent'
+                systemProperty 'junit.jupiter.execution.parallel.config.strategy', 'fixed'
+                systemProperty 'junit.jupiter.execution.parallel.config.fixed.parallelism', '2'
+                systemProperty 'junit.jupiter.execution.parallel.config.fixed.max-pool-size', '2'
                 jvmArgs '--add-reads=guru.interlis.db=ALL-UNNAMED'
             }
         }

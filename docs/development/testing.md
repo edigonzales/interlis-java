@@ -83,9 +83,12 @@ automatisch auf. Mit vorhandenen ZIPs und Gradle-Abhängigkeiten im lokalen
 Cache kann Gradle mit `--offline` laufen. Docker lädt fehlende Container-Images
 bei Bedarf separat.
 
-Für jeden PostgreSQL-Test startet und entfernt die Suite mit Testcontainers
-einen PostgreSQL-16-Container mit PostGIS 3.4 (`sogis/postgis:16-3.4`).
-Dazu muss Docker laufen. GeoPackage-Tests verwenden temporäre Dateien.
+JUnit führt bis zu zwei Fälle gleichzeitig aus. Für jeden PostgreSQL-Test
+startet und entfernt die Suite mit Testcontainers einen PostgreSQL-16-Container
+mit PostGIS 3.4 (`sogis/postgis:16-3.4`). Dazu muss Docker laufen.
+Jeder Fall entpackt sein Referenzwerkzeug in ein eigenes temporäres
+Arbeitsverzeichnis. JUnit löscht dieses Verzeichnis samt GeoPackage-Dateien,
+Prozesslogs und temporären Dateien des Referenzwerkzeugs auch bei Testfehlern.
 
 Die Fälle `*DbInteropTest.*Mutation*` prüfen `replace` und `update`
 in beiden Werkzeugrichtungen. Sie prüfen die internen IDs und den Bestand

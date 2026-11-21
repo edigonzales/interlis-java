@@ -3,6 +3,7 @@ package guru.interlis.db;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.CleanupMode;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -105,7 +106,7 @@ final class DbInteropTest {
             List.of("2602040.500", "1202020.750"), List.of("2602020.250", "1202020.750"),
             List.of("2602020.250", "1202000.250")))));
 
-    @TempDir Path work;
+    @TempDir(cleanup = CleanupMode.ALWAYS) Path work;
 
     @Test void geoPackage23() throws Exception { exchange(23, null); }
     @Test void geoPackage24() throws Exception {
@@ -4455,7 +4456,7 @@ final class DbInteropTest {
         private void run(TestDatabase db, String modelDir, String expectedError, String[] args) throws Exception {
             Path java = Path.of(System.getProperty("java.home"), "bin", "java");
             var command = new ArrayList<>(List.of(java.toString(), "--enable-native-access=ALL-UNNAMED",
-                    "-Duser.home=" + home, "-jar", jar.toString(), "--modeldir", modelDir));
+                    "-Duser.home=" + home, "-Djava.io.tmpdir=" + work, "-jar", jar.toString(), "--modeldir", modelDir));
             command.addAll(db.referenceOptions());
             command.addAll(List.of(args));
             Path log = work.resolve("reference-" + ++runs + ".log");
