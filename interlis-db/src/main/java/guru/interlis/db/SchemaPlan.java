@@ -173,13 +173,18 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
         }
         property(properties, table, null, column, "geomType", column.kind().geometryType());
         property(properties, table, null, column, "srid", Integer.toString(column.srsId()));
-        property(properties, table, null, column, "coordDimension", "2");
+        property(properties, table, null, column, "coordDimension", Integer.toString(column.dimensions()));
         var x = coordinates.axes().get(0);
         var y = coordinates.axes().get(1);
         Double minX = bound(properties, table, column, "c1Min", x.minimum());
         Double maxX = bound(properties, table, column, "c1Max", x.maximum());
         Double minY = bound(properties, table, column, "c2Min", y.minimum());
         Double maxY = bound(properties, table, column, "c2Max", y.maximum());
+        if (column.dimensions() == 3) {
+            var z = coordinates.axes().get(2);
+            bound(properties, table, column, "c3Min", z.minimum());
+            bound(properties, table, column, "c3Max", z.maximum());
+        }
         return new GeometryColumn(column, minX, minY, maxX, maxY);
     }
 

@@ -86,7 +86,7 @@ final class DbMapping {
     }
 
     record Column(TransferSlot slot, String name, Kind kind, Optional<TypeDescriptor> effectiveType,
-                  Optional<SymbolRef> target, int srsId, Optional<String> positionColumn) {
+                  Optional<SymbolRef> target, int srsId, Optional<String> positionColumn, int dimensions) {
         Column {
             boolean role = slot instanceof RoleSlot;
             if (effectiveType.isEmpty() != role || (role && kind != Kind.REFERENCE)) {
@@ -95,13 +95,13 @@ final class DbMapping {
         }
 
         Column withSrsId(int id) {
-            return new Column(slot, name, kind, effectiveType, target, id, positionColumn);
+            return new Column(slot, name, kind, effectiveType, target, id, positionColumn, dimensions);
         }
 
         Column withPositionColumn(boolean gpkg) {
             String position = name + "_" + (gpkg ? SEQ_COLUMN : T_SEQ);
             checkColumnName(slot, position, false, false, gpkg);
-            return new Column(slot, name, kind, effectiveType, target, srsId, Optional.of(position));
+            return new Column(slot, name, kind, effectiveType, target, srsId, Optional.of(position), dimensions);
         }
 
         boolean external() {
@@ -596,7 +596,7 @@ final class DbMapping {
     }
 
     static Column roleColumn(RoleSlot role, SymbolRef target, String name) {
-        return new Column(role, name, Kind.REFERENCE, Optional.empty(), Optional.of(target), 0, Optional.empty());
+        return new Column(role, name, Kind.REFERENCE, Optional.empty(), Optional.of(target), 0, Optional.empty(), 0);
     }
 
     static Optional<Composition> describeComposition(TransferPlan plan, ObjectDescriptor parent, AttributeSlot slot,
@@ -649,7 +649,8 @@ final class DbMapping {
             case TextType text when text.textKind() == TextKind.TEXT || text.textKind() == TextKind.MTEXT -> Kind.TEXT;
             case NumericType number when int32(number) -> Kind.INTEGER;
             case EnumerationType enumeration -> Kind.ENUMERATION;
-            case CoordinateType coordinates when coordinates.dimensions() == 2 && optional(attr) ->
+            case CoordinateType coordinates when optional(attr) && (coordinates.dimensions() == 2
+                    || (coordinates.dimensions() == 3 && !coordinates.multiCoordinate())) ->
                     coordinates.multiCoordinate() ? Kind.MULTIPOINT : Kind.POINT;
             case GeometryType geometry when optional(attr) -> curveGeometryKind(plan, geometry, path);
             case ReferenceType reference when reference.target().isPresent()
@@ -673,7 +674,8 @@ final class DbMapping {
             }
             target = Optional.of(symbol);
         }
-        return new Column(attr, name, kind, Optional.of(type), target, 0, Optional.empty());
+        int dimensions = !kind.geometry() ? 0 : type instanceof CoordinateType coord ? coord.dimensions() : 2;
+        return new Column(attr, name, kind, Optional.of(type), target, 0, Optional.empty(), dimensions);
     }
 
     private static Kind curveGeometryKind(TransferPlan plan, GeometryType geometry, String path) {

@@ -351,7 +351,8 @@ final class SchemaSql {
                 case REFERENCE -> idType();
                 case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> {
                     String type = column.kind().geometryType();
-                    yield gpkg ? type : postgisGeometryType + "(" + type + ", " + column.srsId() + ")";
+                    yield gpkg ? type : postgisGeometryType + "(" + type
+                            + (column.dimensions() == 3 ? "Z" : "") + ", " + column.srsId() + ")";
                 }
                 case TEXT -> {
                     var type = (TextType) column.effectiveType().orElseThrow();

@@ -100,7 +100,7 @@ final class GeoPackageSchema {
                  """);
              var geometry = connection.prepareStatement("""
                  INSERT INTO gpkg_geometry_columns (table_name, column_name, geometry_type_name, srs_id, z, m)
-                 VALUES (?, ?, ?, ?, 0, 0)
+                 VALUES (?, ?, ?, ?, ?, 0)
                  """);
              var extension = connection.prepareStatement("""
                  INSERT INTO gpkg_extensions (table_name, column_name, extension_name, definition, scope)
@@ -155,6 +155,7 @@ final class GeoPackageSchema {
         geometry.setString(2, column.name());
         geometry.setString(3, column.kind().geometryType());
         geometry.setInt(4, column.srsId());
+        geometry.setInt(5, column.dimensions() - 2);
         geometry.executeUpdate();
     }
 }

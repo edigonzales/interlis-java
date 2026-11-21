@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/** WKB and GeoPackageBinary for two-dimensional points, curves and surface collections. */
+/** WKB and GeoPackageBinary for points, curves and surface collections. */
 final class GeometryBinary {
     private static final int MAX_VERTICES = 100_000;
 
@@ -36,6 +36,8 @@ final class GeometryBinary {
     private static final int CURVEPOLYGON = 10;
     private static final int MULTICURVE = 11;
     private static final int MULTISURFACE = 12;
+    private static final int EWKB_Z = 0x80000000;
+    private static final int ISO_Z = 1000;
     private static final int TYPE_SIZE = 1 + Integer.BYTES;
     private static final int XY_SIZE = 2 * Double.BYTES;
     private static final int POINT_WKB_SIZE = TYPE_SIZE + XY_SIZE;
@@ -91,9 +93,9 @@ final class GeometryBinary {
         }
     }
 
-    static int maxWkbSize(Kind kind) {
+    static int maxWkbSize(Kind kind, int dimensions) {
         return switch (kind) {
-            case POINT -> POINT_WKB_SIZE;
+            case POINT -> pointSize(dimensions);
             case MULTIPOINT -> CURVE_HEADER_SIZE + MAX_VERTICES * POINT_WKB_SIZE;
             case POLYLINE -> CURVE_HEADER_SIZE * (1 + MAX_COMPONENTS) + MAX_VERTICES * XY_SIZE;
             // Each ring or line includes at least one component with two coordinates.
@@ -104,11 +106,11 @@ final class GeometryBinary {
         };
     }
 
-    static int maxGeoPackageSize(Kind kind) {
-        return GPKG_PAYLOAD_OFFSET + maxWkbSize(kind);
+    static int maxGeoPackageSize(Kind kind, int dimensions) {
+        return GPKG_PAYLOAD_OFFSET + maxWkbSize(kind, dimensions);
     }
 
-    static TransferGeometry decode(byte[] bytes, boolean gpkg, int srsId, Kind kind) {
+    static TransferGeometry decode(byte[] bytes, boolean gpkg, int srsId, Kind kind, int dimensions) {
         var data = ByteBuffer.wrap(bytes);
         boolean empty = false;
         if (gpkg) {
@@ -121,10 +123,10 @@ final class GeometryBinary {
         }
         return switch (kind) {
             case POINT -> {
-                if (data.remaining() != POINT_WKB_SIZE) {
+                if (data.remaining() != pointSize(dimensions)) {
                     throw new DbException("Invalid WKB point size");
                 }
-                yield readPoint(data);
+                yield readPoint(data, gpkg, dimensions);
             }
             case MULTIPOINT -> readMultiPoint(data, empty);
             case POLYLINE -> readPolyline(data);
@@ -159,7 +161,9 @@ final class GeometryBinary {
     static Envelope indexEnvelope(byte[] bytes) {
         var data = ByteBuffer.wrap(bytes);
         var header = readGeoPackageHeader(data);
-        int type = readType(data.duplicate());
+        int storageType = readType(data.duplicate());
+        int dimensions = (storageType & EWKB_Z) == 0 ? 2 : 3;
+        int type = storageType & ~EWKB_Z;
         if (type != POINT) {
             Kind kind = switch (type) {
                 case COMPOUNDCURVE -> Kind.POLYLINE;
@@ -169,7 +173,7 @@ final class GeometryBinary {
                 case MULTISURFACE -> Kind.MULTISURFACE;
                 default -> throw new DbException("Unsupported 2D WKB type for GeoPackage RTree: " + type);
             };
-            if (data.remaining() < CURVE_HEADER_SIZE || bytes.length > maxGeoPackageSize(kind)) {
+            if (data.remaining() < CURVE_HEADER_SIZE || bytes.length > maxGeoPackageSize(kind, dimensions)) {
                 throw new DbException("Invalid GeoPackage RTree geometry size");
             }
             if (header.empty()) {
@@ -179,15 +183,17 @@ final class GeometryBinary {
                 }
                 return null;
             }
-            return header.envelope() ? headerEnvelope(bytes) : envelope(decode(bytes, true, header.srsId(), kind));
+            return header.envelope() ? headerEnvelope(bytes) : envelope(decode(bytes, true, header.srsId(), kind, dimensions));
         }
-        if (data.remaining() != POINT_WKB_SIZE) {
-            throw new DbException("Expected a 2D WKB POINT for GeoPackage RTree");
+        if (data.remaining() != pointSize(dimensions)) {
+            throw new DbException("Invalid WKB point size for GeoPackage RTree");
         }
         readType(data);
         double x = data.getDouble();
         double y = data.getDouble();
-        if (header.empty() && Double.isNaN(x) && Double.isNaN(y)) return null;
+        double z = dimensions == 3 ? data.getDouble() : Double.NaN;
+        if (header.empty() && Double.isNaN(x) && Double.isNaN(y) && Double.isNaN(z)) return null;
+        if (dimensions == 3) finite(z);
         if (header.empty()) throw new DbException("Invalid empty GeoPackage point");
         if (header.envelope()) {
             var declared = headerEnvelope(bytes);
@@ -203,8 +209,8 @@ final class GeometryBinary {
         return new Envelope(data.getDouble(), data.getDouble(), data.getDouble(), data.getDouble());
     }
 
-    static byte[] encodeIndexedGeoPackage(TransferGeometry geometry, int srsId, Kind kind) {
-        byte[] bytes = encode(geometry, true, srsId, kind);
+    static byte[] encodeIndexedGeoPackage(TransferGeometry geometry, int srsId, Kind kind, int dimensions) {
+        byte[] bytes = encode(geometry, true, srsId, kind, dimensions);
         var bounds = envelope(geometry);
         if ((bytes[3] & 2) != 0) return bytes;
         var result = allocate(bytes.length - GPKG_HEADER_SIZE, true, srsId, true);
@@ -325,11 +331,20 @@ final class GeometryBinary {
         }
     }
 
-    private static Coordinate readPoint(ByteBuffer data) {
-        if (readType(data) != POINT) {
-            throw new DbException("Expected a 2D WKB POINT");
+    private static int pointSize(int dimensions) {
+        return TYPE_SIZE + dimensions * Double.BYTES;
+    }
+
+    private static int storageType(int type, boolean gpkg, int dimensions) {
+        if (dimensions == 2) return type;
+        return gpkg ? type | EWKB_Z : type + ISO_Z;
+    }
+
+    private static Coordinate readPoint(ByteBuffer data, boolean gpkg, int dimensions) {
+        if (readType(data) != storageType(POINT, gpkg, dimensions)) {
+            throw new DbException("Expected a " + dimensions + "D WKB POINT");
         }
-        return readCoordinate(data);
+        return readCoordinate(data, dimensions);
     }
 
     private static MultiCoordinate readMultiPoint(ByteBuffer data, boolean empty) {
@@ -339,7 +354,7 @@ final class GeometryBinary {
         }
         var points = new ArrayList<Coordinate>(count);
         for (int index = 0; index < count; index++) {
-            points.add(readPoint(data));
+            points.add(readPoint(data, false, 2));
         }
         return new MultiCoordinate(points);
     }
@@ -497,12 +512,18 @@ final class GeometryBinary {
     }
 
     private static Coordinate readCoordinate(ByteBuffer data) {
-        return new Coordinate(List.of(number(data.getDouble()), number(data.getDouble())));
+        return readCoordinate(data, 2);
     }
 
-    static byte[] encode(TransferGeometry value, boolean gpkg, int srsId, Kind kind) {
+    private static Coordinate readCoordinate(ByteBuffer data, int dimensions) {
+        var ordinates = new ArrayList<NumberValue>(dimensions);
+        for (int axis = 0; axis < dimensions; axis++) ordinates.add(number(data.getDouble()));
+        return new Coordinate(ordinates);
+    }
+
+    static byte[] encode(TransferGeometry value, boolean gpkg, int srsId, Kind kind, int dimensions) {
         return switch (kind) {
-            case POINT -> writePoint(value, gpkg, srsId);
+            case POINT -> writePoint(value, gpkg, srsId, dimensions);
             case MULTIPOINT -> writeMultiPoint(value, gpkg, srsId);
             case POLYLINE -> writePolyline(value, gpkg, srsId);
             case MULTICURVE -> writeMultiCurve(value, gpkg, srsId);
@@ -512,22 +533,22 @@ final class GeometryBinary {
         };
     }
 
-    private static byte[] writePoint(TransferGeometry geometry, boolean gpkg, int srsId) {
+    private static byte[] writePoint(TransferGeometry geometry, boolean gpkg, int srsId, int dimensions) {
         if (!(geometry instanceof Coordinate point)) {
-            throw new DbException("Expected a 2D point");
+            throw new DbException("Expected a point");
         }
-        var data = allocate(POINT_WKB_SIZE, gpkg, srsId, gpkg);
+        var data = allocate(pointSize(dimensions), gpkg, srsId, gpkg);
         int start = data.position() + TYPE_SIZE;
-        writePoint(data, point);
+        writePoint(data, point, gpkg, dimensions);
         if (gpkg) {
-            writeEnvelope(data, start);
+            writeEnvelope(data, start, dimensions);
         }
         return data.array();
     }
 
-    private static void writePoint(ByteBuffer data, Coordinate point) {
-        data.put((byte) 0).putInt(POINT);
-        writeCoordinate(data, point);
+    private static void writePoint(ByteBuffer data, Coordinate point, boolean gpkg, int dimensions) {
+        data.put((byte) 0).putInt(storageType(POINT, gpkg, dimensions));
+        writeCoordinate(data, point, dimensions);
     }
 
     private static byte[] writeMultiPoint(TransferGeometry geometry, boolean gpkg, int srsId) {
@@ -544,7 +565,7 @@ final class GeometryBinary {
         var data = allocate(CURVE_HEADER_SIZE + count * POINT_WKB_SIZE, gpkg, srsId, false);
         data.put((byte) 0).putInt(MULTIPOINT).putInt(count);
         for (var point : multi.coordinates()) {
-            writePoint(data, point);
+            writePoint(data, point, gpkg, 2);
         }
         return data.array();
     }
@@ -560,7 +581,7 @@ final class GeometryBinary {
         int firstCoordinate = data.position() + 2 * CURVE_HEADER_SIZE;
         writeCurve(data, curve);
         if (envelope) {
-            writeEnvelope(data, firstCoordinate);
+            writeEnvelope(data, firstCoordinate, 2);
         }
         return data.array();
     }
@@ -750,20 +771,23 @@ final class GeometryBinary {
     }
 
     private static void writeCoordinate(ByteBuffer data, Coordinate coordinate) {
-        var ordinates = coordinate.ordinates();
-        if (ordinates.size() != 2) {
-            throw new DbException("Expected a 2D coordinate");
-        }
-        data.putDouble(finite(ordinates.get(0).exactValue().doubleValue()));
-        data.putDouble(finite(ordinates.get(1).exactValue().doubleValue()));
+        writeCoordinate(data, coordinate, 2);
     }
 
-    private static void writeEnvelope(ByteBuffer data, int start) {
+    private static void writeCoordinate(ByteBuffer data, Coordinate coordinate, int dimensions) {
+        var ordinates = coordinate.ordinates();
+        if (ordinates.size() != dimensions) {
+            throw new DbException("Expected a " + dimensions + "D coordinate");
+        }
+        for (var ordinate : ordinates) data.putDouble(finite(ordinate.exactValue().doubleValue()));
+    }
+
+    private static void writeEnvelope(ByteBuffer data, int start, int dimensions) {
         double minX = data.getDouble(start);
         double maxX = minX;
         double minY = data.getDouble(start + Double.BYTES);
         double maxY = minY;
-        for (int offset = start + XY_SIZE; offset < data.position(); offset += XY_SIZE) {
+        for (int offset = start + dimensions * Double.BYTES; offset < data.position(); offset += dimensions * Double.BYTES) {
             double x = data.getDouble(offset);
             double y = data.getDouble(offset + Double.BYTES);
             minX = Math.min(minX, x);

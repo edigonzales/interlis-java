@@ -417,7 +417,7 @@ final class DbTransfer {
             String field = alias + "." + quote(column.name());
             switch (column.kind()) {
                 case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE ->
-                        projections.add(db.geometryProjection(field, column.kind()));
+                        projections.add(db.geometryProjection(field, column));
                 case REFERENCE -> {
                     String ref = alias + "ref" + refIndex++;
                     SymbolRef declared = column.target().orElseThrow();

@@ -1,7 +1,6 @@
 package guru.interlis.db;
 
 import guru.interlis.db.DbMapping.Column;
-import guru.interlis.db.DbMapping.Kind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TransferGeometry.MultiCoordinate;
@@ -153,14 +152,15 @@ final class Database implements AutoCloseable {
         }
         String sql = """
                 SELECT srid FROM %s WHERE f_table_schema = ? AND f_table_name = ?
-                AND f_geometry_column = ? AND type = ? AND coord_dimension = 2 AND srid = ?
+                AND f_geometry_column = ? AND type = ? AND coord_dimension = ? AND srid = ?
                 """.formatted(qualified(postgisSchema, "geometry_columns"));
         try (var statement = connection.prepareStatement(sql)) {
             statement.setString(1, schema);
             statement.setString(2, table);
             statement.setString(3, column.name());
             statement.setString(4, column.kind().geometryType());
-            statement.setInt(5, LV95);
+            statement.setInt(5, column.dimensions());
+            statement.setInt(6, LV95);
             try (var rows = statement.executeQuery()) {
                 if (rows.next()) {
                     return LV95;
@@ -176,14 +176,15 @@ final class Database implements AutoCloseable {
                 JOIN main.gpkg_spatial_ref_sys s ON s.srs_id = g.srs_id
                 JOIN main.gpkg_contents c ON c.table_name = g.table_name AND c.srs_id = g.srs_id
                 WHERE g.table_name = ? AND g.column_name = ? AND c.data_type = 'features'
-                AND g.geometry_type_name = ? AND g.z = 0 AND g.m = 0
+                AND g.geometry_type_name = ? AND g.z = ? AND g.m = 0
                 AND s.organization = 'EPSG' AND s.organization_coordsys_id = ?
                 """;
         try (var statement = connection.prepareStatement(sql)) {
             statement.setString(1, table);
             statement.setString(2, column.name());
             statement.setString(3, column.kind().geometryType());
-            statement.setInt(4, LV95);
+            statement.setInt(4, column.dimensions() - 2);
+            statement.setInt(5, LV95);
             try (var rows = statement.executeQuery()) {
                 if (!rows.next()) {
                     throw unsupportedGeometry(table, column);
@@ -198,19 +199,19 @@ final class Database implements AutoCloseable {
     }
 
     private static DbException unsupportedGeometry(String table, Column column) {
-        return new DbException("Expected an EPSG:2056 2D " + column.kind().geometryType()
+        return new DbException("Expected an EPSG:2056 " + column.dimensions() + "D " + column.kind().geometryType()
                 + " column at " + table + "." + column.name());
     }
 
-    String geometryProjection(String field, Kind kind) {
+    String geometryProjection(String field, Column column) {
         if (gpkg()) {
             // Bound the bytes sent to JDBC even when a database contains a malformed geometry.
-            return "CASE WHEN length(" + field + ") > " + GeometryBinary.maxGeoPackageSize(kind)
+            return "CASE WHEN length(" + field + ") > " + GeometryBinary.maxGeoPackageSize(column.kind(), column.dimensions())
                     + " OR typeof(" + field + ") NOT IN ('null', 'blob') THEN X'' ELSE " + field + " END";
         }
         // Read one byte past the limit so the codec can reject oversized values.
         return "pg_catalog.substr(" + postgisObject("st_asbinary") + "(" + field + "), 1, "
-                + (GeometryBinary.maxWkbSize(kind) + 1) + ")";
+                + (GeometryBinary.maxWkbSize(column.kind(), column.dimensions()) + 1) + ")";
     }
 
     String geometryParameter() {
@@ -223,7 +224,7 @@ final class Database implements AutoCloseable {
             if (bytes == null) {
                 return null;
             }
-            var geometry = GeometryBinary.decode(bytes, gpkg(), column.srsId(), column.kind());
+            var geometry = GeometryBinary.decode(bytes, gpkg(), column.srsId(), column.kind(), column.dimensions());
             // The reference exporter omits attributes stored as empty collections.
             boolean empty = switch (geometry) {
                 case MultiCoordinate multi -> multi.coordinates().isEmpty();
@@ -241,8 +242,8 @@ final class Database implements AutoCloseable {
         byte[] bytes;
         try {
             bytes = value == null ? null : indexedGeometry.contains(column.slot().symbol())
-                    ? GeometryBinary.encodeIndexedGeoPackage(value, column.srsId(), column.kind())
-                    : GeometryBinary.encode(value, gpkg(), column.srsId(), column.kind());
+                    ? GeometryBinary.encodeIndexedGeoPackage(value, column.srsId(), column.kind(), column.dimensions())
+                    : GeometryBinary.encode(value, gpkg(), column.srsId(), column.kind(), column.dimensions());
         } catch (DbException failure) {
             throw invalidGeometry(column, failure);
         }

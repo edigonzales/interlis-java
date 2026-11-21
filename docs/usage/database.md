@@ -135,8 +135,11 @@ zulässig.
 Unterstützt sind Klassen eines eigenständigen Modells in
 INTERLIS 2.3 und 2.4 mit Text, Boolean, 32-Bit-Ganzzahlen und Aufzählungen als
 XTF-Code. Je physischer Tabelle ist eine optionale Geometriespalte in
-EPSG:2056 zulässig.
-Sie speichert einen 2D-Punkt, eine zweidimensionale `POLYLINE` oder eine
+EPSG:2056 zulässig. XYZ-Punkte führen die dritte Ordinate im SQL-Wert
+und die exakten Modellgrenzen als `c3Min` und `c3Max` in den Spaltenmetadaten.
+PostGIS verwendet `POINTZ`, GeoPackage das Z-Bit der ili2gpkg-Kodierung.
+Die Raumindizes arbeiten mit der XY-Hülle.
+Die Geometriespalte speichert einen XY- oder XYZ-Punkt, eine zweidimensionale `POLYLINE` oder eine
 zweidimensionale Fläche (`SURFACE` oder `AREA`) mit einem Aussenring und
 optionalen Innenringen. Linien und Flächenränder unterstützen
 `WITH (STRAIGHTS)`, `WITH (ARCS)` und

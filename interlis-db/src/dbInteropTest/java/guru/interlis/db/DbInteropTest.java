@@ -130,6 +130,16 @@ final class DbInteropTest {
     @Test void postgisSpatial23() throws Exception { exchangeWithPostgis(23, this::exchangeSpatial); }
     @Test void postgisSpatial24() throws Exception { exchangeWithPostgis(24, this::exchangeSpatial); }
 
+    @Test void geoPackageXyz23() throws Exception { exchangeXyz(23, null); }
+    @Test void geoPackageXyz24() throws Exception { exchangeXyz(24, null); }
+    @Test void postgisXyz23() throws Exception { exchangeWithPostgis(23, this::exchangeXyz); }
+    @Test void postgisXyz24() throws Exception { exchangeWithPostgis(24, this::exchangeXyz); }
+
+    private void exchangeXyz(int version, PostgreSQLContainer postgres) throws Exception {
+        new XyzGeometryCases(work, version, new ReferenceTool(postgres != null))
+                .exchange(new TestDatabase(postgres, "xyz_reference"), new TestDatabase(postgres, "xyz_own"));
+    }
+
     private void exchangeSpatial(int version, PostgreSQLContainer postgres) throws Exception {
         var cases = new SpatialIndexCases(work, version, new ReferenceTool(postgres != null));
         cases.points(new TestDatabase(postgres, "spatial_points"));

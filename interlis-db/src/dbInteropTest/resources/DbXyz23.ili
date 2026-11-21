@@ -1,0 +1,9 @@
+INTERLIS 2.3;
+MODEL DbXyz23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  DOMAIN Position = COORD 2460000.125 .. 2870000.750, 1045000.500 .. 1310000.250, -999.125 .. 999.875;
+  TOPIC Data =
+    CLASS Marker =
+      Position : DbXyz23.Position;
+    END Marker;
+  END Data;
+END DbXyz23.
