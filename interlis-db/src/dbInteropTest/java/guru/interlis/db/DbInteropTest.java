@@ -199,10 +199,8 @@ final class DbInteropTest {
         var cases = new CrsCases(work, version, new ReferenceTool(postgres != null));
         cases.mixedSrid(new TestDatabase(postgres, "mixed_split_reference"),
                 new TestDatabase(postgres, "mixed_split_own"), true);
-        if (postgres != null) {
-            cases.mixedSrid(new TestDatabase(postgres, "mixed_wide_reference"),
-                    new TestDatabase(postgres, "mixed_wide_own"), false);
-        }
+        cases.mixedSrid(new TestDatabase(postgres, "mixed_wide_reference"),
+                new TestDatabase(postgres, "mixed_wide_own"), false);
     }
 
     private void exchangeSpatial(int version, PostgreSQLContainer postgres) throws Exception {

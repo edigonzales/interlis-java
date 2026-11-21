@@ -144,8 +144,9 @@ ist auch für `NULL` vorhanden.
 
 `schemaimport --gpkg-multi-geom-per-table` verwendet das ili2gpkg-Profil
 `--gpkgMultiGeomPerTable` mit mehreren Geometriespalten in einer Tabelle.
-`gpkg_contents` übernimmt die Grenzen der ersten Spalte. Jede Spalte erhält
-einen eigenen Katalogeintrag und mit `--create-geom-index` eigene RTree-Trigger.
+`gpkg_contents` übernimmt die SRS-ID und die Grenzen der ersten
+physischen Geometriespalte. Jede Spalte erhält einen Katalogeintrag mit
+ihrer eigenen SRS-ID und mit `--create-geom-index` eigene RTree-Trigger.
 Dieses optionale Profil weicht von der GeoPackage-Regel mit einer
 Geometriespalte pro Feature-Tabelle ab.
 

@@ -26,6 +26,7 @@ import static guru.interlis.db.DbInteropTest.referenceDatasetFixture;
 import static guru.interlis.db.DbInteropTest.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class CrsCases {
@@ -224,11 +225,14 @@ final class CrsCases {
         String model = "MixedSrid" + version;
         Path ili = fixture(model);
         if (split && old.postgis()) {
-            createReference(old, ili, 2056, "--oneGeomPerTable");
-            createOwn(own, model, ili, "--one-geom-per-table");
+            createReference(old, ili, 2056, "--oneGeomPerTable", "--createGeomIdx");
+            createOwn(own, model, ili, "--one-geom-per-table", "--create-geom-index");
+        } else if (!split && !old.postgis()) {
+            createReference(old, ili, 2056, "--gpkgMultiGeomPerTable", "--createGeomIdx");
+            createOwn(own, model, ili, "--gpkg-multi-geom-per-table", "--create-geom-index");
         } else {
-            createReference(old, ili, 2056);
-            createOwn(own, model, ili);
+            createReference(old, ili, 2056, "--createGeomIdx");
+            createOwn(own, model, ili, "--create-geom-index");
         }
         assertCatalogs(old, own);
         mixedObjectExchange(old, model, split);
@@ -250,7 +254,32 @@ final class CrsCases {
             try (var sql = own.connect()) {
                 execute(sql, "UPDATE " + table + " SET iliname='" + path + "' WHERE iliname='" + wrong + "'");
             }
+        } else if (!own.postgis()) {
+            assertGeoPackageMultiSrs(own, model);
         }
+    }
+
+    private void assertGeoPackageMultiSrs(TestDatabase db, String model) throws Exception {
+        try (var sql = db.connect()) {
+            assertEquals("2056", scalar(sql, "SELECT srs_id FROM gpkg_contents WHERE table_name='asset'"));
+            assertEquals("2460000.0", scalar(sql, "SELECT min_x FROM gpkg_contents WHERE table_name='asset'"));
+            assertEquals("2", geoPackageHits(sql, "asset", "center", "2600001.625", "1200002.125"));
+            assertEquals("2", geoPackageHits(sql, "asset", "oldposition", "600100.125", "200200.375"));
+            assertEquals("2", geoPackageHits(sql, "asset", "geoposition", "7.125", "46.375"));
+            execute(sql, "UPDATE gpkg_contents SET srs_id=4326 WHERE table_name='asset'");
+            Path output = Files.writeString(work.resolve("wrong-contents-srs.xtf"), "previous output");
+            var result = cli(db, "export", model, "own", output, CancellationToken.none());
+            assertNotEquals(0, result.code(), result::diagnostics);
+            assertTrue(result.diagnostics().contains("contents SRS differs from the first geometry column"), result::diagnostics);
+            assertEquals("previous output", Files.readString(output));
+            execute(sql, "UPDATE gpkg_contents SET srs_id=2056 WHERE table_name='asset'");
+        }
+    }
+
+    private static String geoPackageHits(Connection sql, String table, String column, String x, String y)
+            throws Exception {
+        return scalar(sql, "SELECT count(*) FROM rtree_" + table + "_" + column + " WHERE minx <= " + x
+                + " AND maxx >= " + x + " AND miny <= " + y + " AND maxy >= " + y);
     }
 
     private void mixedObjectExchange(TestDatabase db, String model, boolean split) throws Exception {
@@ -263,7 +292,7 @@ final class CrsCases {
                     String table = split ? "asset_" + field : "asset";
                     String where = " WHERE t_id = (SELECT t_id FROM " + db.table("asset")
                             + " WHERE t_ili_tid='" + tid + "')";
-                    assertStoredSrid(db, sql, "SELECT ", " FROM " + db.table(table) + where, field,
+                    assertStoredSrid(db, sql, " FROM " + db.table(table) + where, field,
                             field.equals("oldposition") ? 21781 : 4326);
                 }
             }
@@ -279,7 +308,7 @@ final class CrsCases {
     private static void assertMixed(Element object, String centerX, boolean withOld) {
         assertPoint(object, "Center", centerX, "1200002.125");
         if (withOld) assertPoint(object, "OldPosition", "600100.125", "200200.375");
-        else org.junit.jupiter.api.Assertions.assertNull(child(object, "OldPosition"));
+        else assertNull(child(object, "OldPosition"));
         assertPoint(object, "GeoPosition", "7.125", "46.375");
     }
 
@@ -380,15 +409,15 @@ final class CrsCases {
     private void assertStoredEpsg(TestDatabase db, Connection sql, String table, String field, String tid, int epsg)
             throws Exception {
         String query = " FROM " + db.table(table) + " WHERE t_ili_tid = '" + tid + "'";
-        assertStoredSrid(db, sql, "SELECT ", query, field, epsg);
+        assertStoredSrid(db, sql, query, field, epsg);
     }
 
-    private static void assertStoredSrid(TestDatabase db, Connection sql, String select, String query, String field, int srid)
+    private static void assertStoredSrid(TestDatabase db, Connection sql, String query, String field, int srid)
             throws Exception {
         if (db.postgis()) {
-            assertEquals(Integer.toString(srid), scalar(sql, select + "ST_SRID(" + field + ")" + query));
+            assertEquals(Integer.toString(srid), scalar(sql, "SELECT ST_SRID(" + field + ")" + query));
         } else {
-            try (var stmt = sql.createStatement(); var rows = stmt.executeQuery(select + field + query)) {
+            try (var stmt = sql.createStatement(); var rows = stmt.executeQuery("SELECT " + field + query)) {
                 assertTrue(rows.next());
                 byte[] blob = rows.getBytes(1);
                 var order = (blob[3] & 1) == 0 ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;

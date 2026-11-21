@@ -177,7 +177,7 @@ final class Database implements AutoCloseable {
         String sql = """
                 SELECT g.srs_id FROM main.gpkg_geometry_columns g
                 JOIN main.gpkg_spatial_ref_sys s ON s.srs_id = g.srs_id
-                JOIN main.gpkg_contents c ON c.table_name = g.table_name AND c.srs_id = g.srs_id
+                JOIN main.gpkg_contents c ON c.table_name = g.table_name
                 WHERE g.table_name = ? AND g.column_name = ? AND c.data_type = 'features'
                 AND g.geometry_type_name = ? AND g.z = ? AND g.m = 0
                 AND s.organization = 'EPSG' AND s.organization_coordsys_id = ?
@@ -197,8 +197,25 @@ final class Database implements AutoCloseable {
         }
     }
 
-    void checkGeometryIndexes(String table, List<Column> columns) throws SQLException {
-        if (!gpkg() || !importing || columns.isEmpty()) return;
+    void checkGeometryTable(String table, List<Column> columns) throws SQLException {
+        if (!gpkg() || columns.isEmpty()) return;
+        // In the ili2gpkg multi-column layout, the contents row describes the first physical geometry column.
+        String sql = """
+                SELECT c.srs_id = g.srs_id FROM main.gpkg_contents c
+                JOIN main.gpkg_geometry_columns g ON g.table_name = c.table_name
+                JOIN pragma_table_info(?) p ON p.name = g.column_name
+                WHERE c.table_name = ? ORDER BY p.cid LIMIT 1
+                """;
+        try (var statement = connection.prepareStatement(sql)) {
+            statement.setString(1, table);
+            statement.setString(2, table);
+            try (var rows = statement.executeQuery()) {
+                if (!rows.next() || !rows.getBoolean(1)) {
+                    throw new DbException("GeoPackage contents SRS differs from the first geometry column in " + table);
+                }
+            }
+        }
+        if (!importing) return;
         var indexed = GeoPackageRtree.indexedColumns(connection, table, columns.stream().map(Column::name).toList());
         if (!indexed.isEmpty() && indexedGeometry.isEmpty()) GeoPackageRtree.register(connection);
         for (var column : columns) {
