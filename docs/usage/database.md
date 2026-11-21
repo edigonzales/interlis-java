@@ -152,7 +152,7 @@ eine `CIRCULARSTRING`-Komponente. Bei einem XYZ-Bogen tragen Anfang und
 Ende Z. Die XY-Zwischenposition wird wie in ili2db mit einem
 `NaN`-Platzhalter für Z gespeichert.
 
-In XTF 2.4 FULL speichern die folgenden Spaltentypen alle Teile einer
+In XTF 2.4 FULL unterstützen die folgenden Spaltentypen XY und XYZ. Sie speichern alle Teile einer
 Geometrie in Lieferreihenfolge und derselben Objektzeile. `typeKind`
 weist den INTERLIS-Modelltyp aus.
 

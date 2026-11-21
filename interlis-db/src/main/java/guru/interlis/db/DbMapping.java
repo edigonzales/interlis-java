@@ -650,8 +650,7 @@ final class DbMapping {
             case TextType text when text.textKind() == TextKind.TEXT || text.textKind() == TextKind.MTEXT -> Kind.TEXT;
             case NumericType number when int32(number) -> Kind.INTEGER;
             case EnumerationType enumeration -> Kind.ENUMERATION;
-            case CoordinateType coordinates when optional(attr) && (coordinates.dimensions() == 2
-                    || (coordinates.dimensions() == 3 && !coordinates.multiCoordinate())) ->
+            case CoordinateType coordinates when optional(attr) && storageDimensions(coordinates) ->
                     coordinates.multiCoordinate() ? Kind.MULTIPOINT : Kind.POINT;
             case GeometryType ignored when curve != null -> curve.kind();
             case ReferenceType reference when reference.target().isPresent()
@@ -704,13 +703,15 @@ final class DbMapping {
         var domain = vertexDomain(plan, geometry);
         var type = plan.type(new TypeRef(plan.snapshotId(), domain.typeId())).known().orElseThrow();
         if (domain.generic() || !(type instanceof CoordinateType coordinates)
-                || coordinates.multiCoordinate()
-                || (coordinates.dimensions() != 2
-                        && !(coordinates.dimensions() == 3 && !kind.collection()))) {
+                || coordinates.multiCoordinate() || !storageDimensions(coordinates)) {
             throw unsupported(feature);
         }
         validateGeometryCrs(plan, coordinates, domain, geometryKind.name().toLowerCase(Locale.ROOT), path);
         return new Curve(kind, coordinates.dimensions());
+    }
+
+    private static boolean storageDimensions(CoordinateType coordinates) {
+        return coordinates.dimensions() == 2 || coordinates.dimensions() == 3;
     }
 
     static DomainSymbol vertexDomain(TransferPlan plan, GeometryType geometry) {

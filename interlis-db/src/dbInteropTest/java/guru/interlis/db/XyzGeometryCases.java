@@ -52,6 +52,11 @@ final class XyzGeometryCases {
                 expected = expected.expectGeoPackageGeometryExtension("track", "trace", "COMPOUNDCURVE")
                         .expectGeoPackageGeometryExtension("plot", "outline", "CURVEPOLYGON")
                         .expectGeoPackageGeometryExtension("parcel", "perimeter", "CURVEPOLYGON");
+                if (version == 24) {
+                    expected = expected.expectGeoPackageGeometryExtension("network", "routes", "MULTICURVE")
+                            .expectGeoPackageGeometryExtension("park", "grounds", "MULTISURFACE")
+                            .expectGeoPackageGeometryExtension("district", "territory", "MULTISURFACE");
+                }
             }
             expected.assertSameAs(DbSchemaCatalog.read(ownSql, own.postgis(), own.schema()));
         }
@@ -74,7 +79,8 @@ final class XyzGeometryCases {
         String arc = arc("2602240", "1202380", "340", "2602380", "1202360");
         String curved = object("Track", "arc-track", "<Trace>" + line(start + arc) + "</Trace>")
                 + object("Plot", "arc-plot", "<Outline>" + surface(line(start + arc + start), "") + "</Outline>");
-        Path input = delivery("xyz", markers + track + areas + curved);
+        String multi = version == 24 ? collections(start, arc, shell, hole) : "";
+        Path input = delivery("xyz", markers + track + areas + curved + multi);
         reference.run(old, work.toString(), "--import", "--dataset", "xyz", "--importTid", "--importBid", input.toString());
         Path ownExport = work.resolve("xyz-native.xtf");
         assertCliSuccess(old, "export", model, "xyz", ownExport);
@@ -93,6 +99,16 @@ final class XyzGeometryCases {
             var failure = cli(own, "replace", model, "xyz", broken, CancellationToken.none());
             assertNotEquals(0, failure.code(), failure::diagnostics);
             assertStorage(own, sql);
+            if (version == 24) {
+                String malformed = object("Survey", "wrong-dimension", "<Locations><g:multicoord>"
+                        + position("2600600", "1200600", "13") + position("2600620", "1200620")
+                        + "</g:multicoord></Locations>");
+                var mixed = cli(own, "replace", model, "xyz", delivery("xyz-mixed", markers + malformed),
+                        CancellationToken.none());
+                assertNotEquals(0, mixed.code(), mixed::diagnostics);
+                assertStorage(own, sql);
+                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + own.table("survey")));
+            }
         }
     }
 
@@ -126,7 +142,7 @@ final class XyzGeometryCases {
         var basket = children(readDataSection(file, version)).getFirst();
         assertEquals("xyz-basket", id(basket, version, "bid"));
         var objects = children(basket);
-        assertEquals(9, objects.size());
+        assertEquals(version == 24 ? 14 : 9, objects.size());
         for (var object : objects) {
             switch (id(object, version, "tid")) {
                 case "above" -> assertHeights(object, "Position", "42.875");
@@ -138,6 +154,12 @@ final class XyzGeometryCases {
                 case "east" -> assertHeights(object, "Perimeter", "22", "32", "33", "23", "22");
                 case "arc-track" -> assertHeights(object, "Trace", "100", "340");
                 case "arc-plot" -> assertHeights(object, "Outline", "100", "340", "100");
+                case "survey" -> assertHeights(object, "Locations", "-113", "502.25");
+                case "survey-empty" -> assertNull(child(object, "Locations"));
+                case "network" -> assertHeights(object, "Routes", "100", "340", "13", "-14");
+                case "park" -> assertHeights(object, "Grounds", "1", "2", "3", "4", "1", "11", "12", "13", "14", "11",
+                        "100", "340", "100");
+                case "district" -> assertHeights(object, "Territory", "5", "6", "7", "8", "5", "9", "10", "11", "12", "9");
                 default -> throw new AssertionError("Unexpected object " + id(object, version, "tid"));
             }
         }
@@ -149,6 +171,22 @@ final class XyzGeometryCases {
         for (int i = 0; i < expected.length; i++) {
             assertEquals(0, new BigDecimal(expected[i]).compareTo(new BigDecimal(elements.item(i).getTextContent())), field);
         }
+    }
+
+    private String collections(String start, String arc, String shell, String hole) {
+        return object("Survey", "survey", "<Locations><g:multicoord>"
+                + position("2600600", "1200600", "-113") + position("2600620", "1200620", "502.25")
+                + "</g:multicoord></Locations>")
+                + object("Survey", "survey-empty", "")
+                + object("Network", "network", "<Routes><g:multipolyline>" + line(start + arc)
+                        + line(position("2600650", "1200600", "13") + position("2600660", "1200620", "-14"))
+                        + "</g:multipolyline></Routes>")
+                + object("Park", "park", "<Grounds><g:multisurface>" + surface(shell, hole)
+                        + surface(line(start + arc + start), "") + "</g:multisurface></Grounds>")
+                + object("District", "district", "<Territory><g:multisurface>"
+                        + surface(box(2600700, 1200700, 10, "5", "6", "7", "8"), "")
+                        + surface(box(2600800, 1200800, 10, "9", "10", "11", "12"), "")
+                        + "</g:multisurface></Territory>");
     }
 
     private String arc(String x, String y, String z, String supportX, String supportY) {

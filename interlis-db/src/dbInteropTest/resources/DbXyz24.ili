@@ -1,6 +1,7 @@
 INTERLIS 2.4;
 MODEL DbXyz24 (en) AT "https://example.org/interlis/db" VERSION "1" =
   DOMAIN Position = COORD 2460000.125 .. 2870000.750, 1045000.500 .. 1310000.250, -999.125 .. 999.875;
+  DOMAIN Positions = MULTICOORD 2460000.125 .. 2870000.750, 1045000.500 .. 1310000.250, -999.125 .. 999.875;
   TOPIC Data =
     CLASS Marker =
       Position : DbXyz24.Position;
@@ -14,5 +15,17 @@ MODEL DbXyz24 (en) AT "https://example.org/interlis/db" VERSION "1" =
     CLASS Parcel =
       Perimeter : AREA WITH (STRAIGHTS) VERTEX Position WITHOUT OVERLAPS > 0.001;
     END Parcel;
+    CLASS Survey =
+      Locations : Positions;
+    END Survey;
+    CLASS Network =
+      Routes : MULTIPOLYLINE WITH (STRAIGHTS, ARCS) VERTEX Position;
+    END Network;
+    CLASS Park =
+      Grounds : MULTISURFACE WITH (STRAIGHTS, ARCS) VERTEX Position WITHOUT OVERLAPS > 0.001;
+    END Park;
+    CLASS District =
+      Territory : MULTIAREA WITH (STRAIGHTS) VERTEX Position WITHOUT OVERLAPS > 0.001;
+    END District;
   END Data;
 END DbXyz24.
