@@ -24,7 +24,6 @@ import static guru.interlis.db.Ili2dbLayout.BASKET;
 import static guru.interlis.db.Ili2dbLayout.DATASET;
 import static guru.interlis.db.Ili2dbLayout.ID_COLUMN;
 import static guru.interlis.db.Ili2dbLayout.KEY_OBJECT;
-import static guru.interlis.db.Ili2dbLayout.LV95;
 import static guru.interlis.db.Ili2dbLayout.SEQUENCE;
 
 /** One JDBC connection and transaction against an existing ili2db schema. */
@@ -152,19 +151,22 @@ final class Database implements AutoCloseable {
             return geoPackageSrs(table, column);
         }
         String sql = """
-                SELECT srid FROM %s WHERE f_table_schema = ? AND f_table_name = ?
-                AND f_geometry_column = ? AND type = ? AND coord_dimension = ? AND srid = ?
-                """.formatted(qualified(postgisSchema, "geometry_columns"));
+                SELECT g.srid FROM %s g JOIN %s s ON s.srid = g.srid
+                WHERE g.f_table_schema = ? AND g.f_table_name = ? AND g.f_geometry_column = ?
+                AND g.type = ? AND g.coord_dimension = ? AND g.srid = ?
+                AND s.auth_name = 'EPSG' AND s.auth_srid = ?
+                """.formatted(postgisObject("geometry_columns"), postgisObject("spatial_ref_sys"));
         try (var statement = connection.prepareStatement(sql)) {
             statement.setString(1, schema);
             statement.setString(2, table);
             statement.setString(3, column.name());
             statement.setString(4, column.kind().geometryType());
             statement.setInt(5, column.dimensions());
-            statement.setInt(6, LV95);
+            statement.setInt(6, column.epsgCode());
+            statement.setInt(7, column.epsgCode());
             try (var rows = statement.executeQuery()) {
                 if (rows.next()) {
-                    return LV95;
+                    return rows.getInt(1);
                 }
             }
         }
@@ -185,7 +187,7 @@ final class Database implements AutoCloseable {
             statement.setString(2, column.name());
             statement.setString(3, column.kind().geometryType());
             statement.setInt(4, column.dimensions() - 2);
-            statement.setInt(5, LV95);
+            statement.setInt(5, column.epsgCode());
             try (var rows = statement.executeQuery()) {
                 if (!rows.next()) {
                     throw unsupportedGeometry(table, column);
@@ -205,7 +207,7 @@ final class Database implements AutoCloseable {
     }
 
     private static DbException unsupportedGeometry(String table, Column column) {
-        return new DbException("Expected an EPSG:2056 " + column.dimensions() + "D " + column.kind().geometryType()
+        return new DbException("Expected an EPSG:" + column.epsgCode() + " " + column.dimensions() + "D " + column.kind().geometryType()
                 + " column at " + table + "." + column.name());
     }
 

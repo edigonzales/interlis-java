@@ -67,6 +67,18 @@ final class Ili2dbLayout {
         return secondaryClass(attribute + ":" + LV95, owner);
     }
 
+    static int parseEpsgCode(String code, String context) {
+        if (code != null && code.matches("[0-9]+")) {
+            try {
+                int value = Integer.parseInt(code);
+                if (value > 0) return value;
+            } catch (NumberFormatException invalid) {
+                // Report an out-of-range code as an unsupported EPSG identifier.
+            }
+        }
+        throw new DbException("Expected a positive EPSG code in " + context + ": " + code);
+    }
+
     static String tableName(String name, boolean gpkg) {
         return gpkg ? name : foldedName(name);
     }

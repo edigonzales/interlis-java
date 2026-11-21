@@ -149,7 +149,10 @@ einen eigenen Katalogeintrag und mit `--create-geom-index` eigene RTree-Trigger.
 Dieses optionale Profil weicht von der GeoPackage-Regel mit einer
 Geometriespalte pro Feature-Tabelle ab.
 
-Beide Backends verwenden EPSG:2056. XYZ-Geometrien speichern die dritte
+Neue Schemata verwenden EPSG:2056. Bei vorhandenen Referenzschemata
+bestimmt `SETTINGS.defaultSrsCode` den EPSG-Code für Koordinaten ohne
+eigene CRS-Angabe. Der räumliche Katalog muss zum Modell und zu den
+gespeicherten Einstellungen passen. XYZ-Geometrien speichern die dritte
 Ordinate im SQL-Wert und die exakten Modellgrenzen als `c3Min` und `c3Max`
 in den Spaltenmetadaten. PostGIS verwendet den Z-Typzusatz, GeoPackage das
 Z-Bit der ili2gpkg-Kodierung. Die Raumindizes arbeiten mit der XY-Hülle.

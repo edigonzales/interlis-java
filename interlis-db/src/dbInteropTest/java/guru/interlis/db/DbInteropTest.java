@@ -171,6 +171,18 @@ final class DbInteropTest {
                 new TestDatabase(postgres, "alternate_hierarchy_own"), postgres != null);
     }
 
+    @Test void geoPackageCrs23() throws Exception { exchangeCrs(23, null); }
+    @Test void geoPackageCrs24() throws Exception { exchangeCrs(24, null); }
+    @Test void postgisCrs23() throws Exception { exchangeWithPostgis(23, this::exchangeCrs); }
+    @Test void postgisCrs24() throws Exception { exchangeWithPostgis(24, this::exchangeCrs); }
+
+    private void exchangeCrs(int version, PostgreSQLContainer postgres) throws Exception {
+        var cases = new CrsCases(work, version, new ReferenceTool(postgres != null));
+        for (int epsg : List.of(21781, 4326)) {
+            cases.existingDefault(new TestDatabase(postgres, "crs_reference_" + epsg), epsg);
+        }
+    }
+
     private void exchangeSpatial(int version, PostgreSQLContainer postgres) throws Exception {
         var cases = new SpatialIndexCases(work, version, new ReferenceTool(postgres != null));
         cases.points(new TestDatabase(postgres, "spatial_points"));

@@ -86,7 +86,7 @@ final class DbMapping {
     }
 
     record Column(TransferSlot slot, String name, Kind kind, Optional<TypeDescriptor> effectiveType,
-                  Optional<SymbolRef> target, int srsId, Optional<String> positionColumn, int dimensions) {
+                  Optional<SymbolRef> target, int epsgCode, int srsId, Optional<String> positionColumn, int dimensions) {
         Column {
             boolean role = slot instanceof RoleSlot;
             if (effectiveType.isEmpty() != role || (role && kind != Kind.REFERENCE)) {
@@ -95,17 +95,21 @@ final class DbMapping {
         }
 
         Column withName(String sqlName) {
-            return new Column(slot, sqlName, kind, effectiveType, target, srsId, positionColumn, dimensions);
+            return new Column(slot, sqlName, kind, effectiveType, target, epsgCode, srsId, positionColumn, dimensions);
+        }
+
+        Column withEpsgCode(int code) {
+            return new Column(slot, name, kind, effectiveType, target, code, code, positionColumn, dimensions);
         }
 
         Column withSrsId(int id) {
-            return new Column(slot, name, kind, effectiveType, target, id, positionColumn, dimensions);
+            return new Column(slot, name, kind, effectiveType, target, epsgCode, id, positionColumn, dimensions);
         }
 
         Column withPositionColumn(boolean gpkg) {
             String position = name + "_" + (gpkg ? SEQ_COLUMN : T_SEQ);
             checkColumnName(slot, position, false, false, gpkg);
-            return new Column(slot, name, kind, effectiveType, target, srsId, Optional.of(position), dimensions);
+            return new Column(slot, name, kind, effectiveType, target, epsgCode, srsId, Optional.of(position), dimensions);
         }
 
         boolean external() {
@@ -366,7 +370,7 @@ final class DbMapping {
                 checkColumnName(attribute, column, object.kind() == SymbolKind.STRUCTURE, !split && discriminator, gpkg);
                 binding = binding.withName(column);
                 if (binding.kind().geometry()) {
-                    binding = binding.withSrsId(LV95);
+                    binding = binding.withEpsgCode(LV95);
                     geometrySeen = true;
                 }
                 if (split) secondary.add(new SecondaryGeometry(owner, binding));
@@ -632,7 +636,7 @@ final class DbMapping {
     }
 
     static Column roleColumn(RoleSlot role, SymbolRef target, String name) {
-        return new Column(role, name, Kind.REFERENCE, Optional.empty(), Optional.of(target), 0, Optional.empty(), 0);
+        return new Column(role, name, Kind.REFERENCE, Optional.empty(), Optional.of(target), 0, 0, Optional.empty(), 0);
     }
 
     static Optional<Composition> describeComposition(TransferPlan plan, ObjectDescriptor parent, AttributeSlot slot,
@@ -712,7 +716,7 @@ final class DbMapping {
         }
         int dimensions = curve != null ? curve.dimensions()
                 : kind.geometry() ? ((CoordinateType) type).dimensions() : 0;
-        return new Column(attr, name, kind, Optional.of(type), target, 0, Optional.empty(), dimensions);
+        return new Column(attr, name, kind, Optional.of(type), target, 0, 0, Optional.empty(), dimensions);
     }
 
     private record Curve(Kind kind, int dimensions) { }
