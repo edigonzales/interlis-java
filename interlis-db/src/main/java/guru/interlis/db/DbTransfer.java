@@ -1140,6 +1140,7 @@ final class DbTransfer {
         private Map<DbDatasetWrite.ObjectKey, DbDatasetWrite.ExistingObject> existingObjects = Map.of();
         private long datasetId;
         private long basketId;
+        private List<TransferEvent.DomainBinding> basketDomains = List.of();
 
         Import(Database db, DbMapping mapping, boolean updating, CancellationToken token) {
             this.db = db;
@@ -1185,10 +1186,10 @@ final class DbTransfer {
                     || !start.stableOid().equals(basketOid(mapping, topic, start.id()))) {
                 throw new DbException("Unsupported basket metadata for " + start.id().value());
             }
-            if (DbDomains.deferred(topic)) {
-                throw DbMapping.unsupported("import of deferred generic domains");
+            if (updating && DbDomains.deferred(topic)) {
+                throw DbMapping.unsupported("update of deferred generic domains");
             }
-            DbDomains.resolve(mapping.plan(), topic, start.domainBindings(), start.id().value());
+            basketDomains = DbDomains.resolve(mapping.plan(), topic, start.domainBindings(), start.id().value());
             String domains = DbDomains.format(mapping.plan(), start.domainBindings(), start.id().value());
             this.datasetId = datasetId;
             if (updating) {
@@ -1310,7 +1311,8 @@ final class DbTransfer {
             }
             int found = 0;
             for (var column : table.columns()) {
-                var value = object.value(column.slot().symbol());
+                var value = DbDomains.active(column, basketDomains) ? object.value(column.slot().symbol())
+                        : Optional.<TransferValue>empty();
                 if (value.isPresent()) {
                     found++;
                 }
@@ -1335,7 +1337,8 @@ final class DbTransfer {
             if (statement.executeUpdate() != 1) throw new DbException("Could not write object " + context + " in " + table.name());
             for (var geometry : table.secondaryGeometries()) {
                 token.throwIfCancellationRequested();
-                var value = object.value(geometry.column().slot().symbol());
+                var value = DbDomains.active(geometry.column(), basketDomains) ? object.value(geometry.column().slot().symbol())
+                        : Optional.<TransferValue>empty();
                 if (value.isPresent()) found++;
                 writeSecondaryGeometry(geometry, (TransferGeometry) value.filter(item -> item != Undefined.INSTANCE)
                         .orElse(null), id, context, update);
@@ -1357,7 +1360,7 @@ final class DbTransfer {
                 statement = db.connection().prepareStatement(sql);
                 statements.put(geometry.table(), statement);
             }
-            int index = db.bindGeometry(statement, 1, geometry.column(), value);
+            int index = db.bindGeometry(statement, 1, geometry.table(), geometry.column(), value);
             statement.setLong(index++, id);
             statement.setLong(index, basketId);
             if (statement.executeUpdate() != 1) {
@@ -1555,10 +1558,10 @@ final class DbTransfer {
                     + " (" + String.join(", ", names) + ") VALUES (" + String.join(", ", values) + ")");
         }
 
-        private int bindValue(PreparedStatement statement, int index, Column column, TransferValue value)
+        private int bindValue(PreparedStatement statement, int index, Table table, Column column, TransferValue value)
                 throws SQLException {
             if (column.kind().geometry()) {
-                return db.bindGeometry(statement, index, column, (TransferGeometry) value);
+                return db.bindGeometry(statement, index, table.name(), column, (TransferGeometry) value);
             }
             if (value == null) {
                 statement.setNull(index, Types.NULL);
@@ -1594,7 +1597,7 @@ final class DbTransfer {
                 }
                 position = reference.orderPosition();
             } else {
-                index = bindValue(statement, index, column, value);
+                index = bindValue(statement, index, table, column, value);
             }
             if (column.positionColumn().isPresent()) {
                 bindPosition(statement, index++, position, column);

@@ -161,9 +161,10 @@ Punktdomänen. Bei einer einzigen erlaubten konkreten Domäne akzeptiert der
 Import auch den von ili2db 5.5.2 erzeugten Basket ohne `ili:domains`.
 Der Export schreibt die eindeutige Zuordnung explizit.
 
-In bestehenden ili2db-`--multiSrs`-Schemata wählt der XTF-2.4-Export
-die Punktspalte anhand der in `T_ILI2DB_BASKET.domains` gespeicherten
-konkreten Domäne. Werte in einer anderen EPSG-Variante führen zum Abbruch.
+In bestehenden ili2db-`--multiSrs`-Schemata wählt der XTF-2.4-Transfer
+die Punktspalte anhand der konkreten Domäne. Der Import speichert die
+Zuordnung in `T_ILI2DB_BASKET.domains` und befüllt die gewählte
+EPSG-Variante. Beim Export führen Werte in einer inaktiven Variante zum Abbruch.
 
 Für neue Schemata setzt `schemaimport --default-epsg CODE` den
 Standard. Ohne Option gilt EPSG:2056. GeoPackage verwendet die vorhandenen

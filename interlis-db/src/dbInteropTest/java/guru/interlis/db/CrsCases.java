@@ -221,6 +221,48 @@ final class CrsCases {
         }
     }
 
+    void importDeferred(TestDatabase db) throws Exception {
+        String model = "DeferredCrs24";
+        createReference(db, deferredPoints(model), 2056, "--multiSrs", "--createGeomIdx");
+        deferredWriteExchange(db, model);
+    }
+
+    private void deferredWriteExchange(TestDatabase db, String model) throws Exception {
+        Path input = deferredDelivery(model, "native");
+        assertCliSuccess(db, "import", model, "native", input);
+        Path output = work.resolve(db.schema() + "-reference-export.xtf");
+        reference.run(db, work.toString(), "--export", "--dataset", "native", "--exportTid", output.toString());
+        assertDeferred(output, model, "native");
+
+        String stations = db.table("station");
+        String oldTable = db.postgis() ? "station" : "station_location_21781";
+        try (var sql = db.connect()) {
+            long maxId = Long.parseLong(scalar(sql, "SELECT max(t_id) FROM " + stations));
+            Path tail = deferredDelivery(model, "tail");
+            reference.run(db, work.toString(), "--import", "--dataset", "tail", "--importBid", "--importTid", tail.toString());
+            assertTrue(Long.parseLong(scalar(sql, "SELECT min(t_id) FROM " + stations + " WHERE t_ili_tid LIKE '%-tail'")) > maxId);
+            assertStoredEpsg(db, sql, "station", "location_2056", "current-native", 2056);
+            assertStoredSrid(db, sql, " FROM " + db.table(oldTable) + " WHERE t_id=(SELECT t_id FROM " + stations
+                    + " WHERE t_ili_tid='old-native')", "location_21781", 21781);
+            assertNull(scalar(sql, "SELECT location_2056 FROM " + stations + " WHERE t_ili_tid='old-native'"));
+            assertNull(scalar(sql, "SELECT location_21781 FROM " + db.table(oldTable) + " WHERE t_id=(SELECT t_id FROM "
+                    + stations + " WHERE t_ili_tid='current-native')"));
+            assertHits(db, sql, "station", "location_2056", "2600001.625", "1200002.125", 2056, 2);
+            assertHits(db, sql, oldTable, "location_21781", "600100.125", "200200.375", 21781, 2);
+
+            Path invalid = deferredDelivery(model, "invalid");
+            String source = Files.readString(invalid);
+            Files.writeString(invalid, source.replace("basket-old-invalid\" i:domains=\"" + model + ".Grid=" + model + ".OldGrid",
+                    "basket-old-invalid\" i:domains=\"" + model + ".Grid=" + model + ".UnknownGrid"));
+            var failure = cli(db, "import", model, "invalid", invalid, CancellationToken.none());
+            assertNotEquals(0, failure.code(), failure::diagnostics);
+            assertEquals("4", scalar(sql, "SELECT count(*) FROM " + stations));
+            assertEquals("6", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket")));
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
+            assertHits(db, sql, "station", "location_2056", "2600001.625", "1200002.125", 2056, 2);
+        }
+    }
+
     void exportDeferred(TestDatabase db) throws Exception {
         String model = "DeferredCrs24";
         createReference(db, deferredPoints(model), 2056, "--multiSrs");

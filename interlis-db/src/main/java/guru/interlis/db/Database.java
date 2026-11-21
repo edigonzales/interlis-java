@@ -1,7 +1,6 @@
 package guru.interlis.db;
 
 import guru.interlis.db.DbMapping.Column;
-import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TransferGeometry.MultiCoordinate;
 import guru.interlis.transfer.TransferGeometry.MultiPolyline;
@@ -32,7 +31,9 @@ final class Database implements AutoCloseable {
     private final String schema;
     private final String postgisSchema;
     private final boolean importing;
-    private final Set<SymbolRef> indexedGeometry = new HashSet<>();
+    private record GeometryColumn(String table, String name) { }
+
+    private final Set<GeometryColumn> indexedGeometry = new HashSet<>();
     private PreparedStatement allocateId;
     private boolean active = true;
 
@@ -240,7 +241,7 @@ final class Database implements AutoCloseable {
         var indexed = GeoPackageRtree.indexedColumns(connection, table, columns.stream().map(Column::name).toList());
         if (!indexed.isEmpty() && indexedGeometry.isEmpty()) GeoPackageRtree.register(connection);
         for (var column : columns) {
-            if (indexed.contains(column.name())) indexedGeometry.add(column.slot().symbol());
+            if (indexed.contains(column.name())) indexedGeometry.add(new GeometryColumn(table, column.name()));
         }
     }
 
@@ -285,10 +286,11 @@ final class Database implements AutoCloseable {
         }
     }
 
-    int bindGeometry(PreparedStatement statement, int index, Column column, TransferGeometry value) throws SQLException {
+    int bindGeometry(PreparedStatement statement, int index, String table, Column column, TransferGeometry value)
+            throws SQLException {
         byte[] bytes;
         try {
-            bytes = value == null ? null : indexedGeometry.contains(column.slot().symbol())
+            bytes = value == null ? null : indexedGeometry.contains(new GeometryColumn(table, column.name()))
                     ? GeometryBinary.encodeIndexedGeoPackage(value, column.srsId(), column.kind(), column.dimensions())
                     : GeometryBinary.encode(value, gpkg(), column.srsId(), column.kind(), column.dimensions());
         } catch (DbException failure) {
