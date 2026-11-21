@@ -293,6 +293,9 @@ final class SchemaSql {
         row(statement, PREFIX + "maxSqlNameLength", "60");
         row(statement, "ch.interlis.ili2c.ilidirs", "%ILI_FROM_DB");
         if (plan.multiSrs()) row(statement, Ili2dbLayout.USE_EPSG_IN_NAMES, "True");
+        if (plan.mapping().crsPair().isPresent()) {
+            row(statement, Ili2dbLayout.SRS_MODEL_ASSIGNMENT, plan.mapping().crsPair().orElseThrow().assignment().setting());
+        }
         if (plan.splitGeometries() || gpkg) {
             row(statement, Ili2dbLayout.GEOMETRY_LAYOUT, plan.splitGeometries()
                     ? Ili2dbLayout.SINGLE_GEOMETRY : Ili2dbLayout.MULTIPLE_GEOMETRIES);

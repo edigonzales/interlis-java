@@ -50,11 +50,12 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
 
     static SchemaPlan read(String modelName, Path file, boolean gpkg, boolean splitGeometries,
                            int defaultEpsg, CancellationToken token) throws IOException {
-        return read(modelName, file, gpkg, splitGeometries, defaultEpsg, false, token);
+        return read(modelName, file, gpkg, splitGeometries, defaultEpsg, false, Optional.empty(), token);
     }
 
     static SchemaPlan read(String modelName, Path file, boolean gpkg, boolean splitGeometries,
-                           int defaultEpsg, boolean multiSrs, CancellationToken token) throws IOException {
+                           int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels,
+                           CancellationToken token) throws IOException {
         token.throwIfCancellationRequested();
         String filename = file.getFileName().toString();
         if (!filename.toLowerCase(Locale.ROOT).endsWith(".ili") || filename.codePointCount(0, filename.length()) > 250) {
@@ -74,10 +75,13 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
             throw new DbException("Model file exceeds the size limit");
         }
         var source = new SourceText(new SourceId(file.toUri().toString()), new SourceRevision(1), content);
-        var mapping = DbMapping.planNew(modelName, source, gpkg, splitGeometries, defaultEpsg, multiSrs, token);
-        var model = (ModelSymbol) symbol(mapping, mapping.plan().rootModels().getFirst());
-        var imports = model.imports().stream().map(ModelImport::importedModel).distinct().sorted().toList();
-        String modelNames = imports.isEmpty() ? modelName : modelName + "{ " + String.join(" ", imports) + "}";
+        var mapping = DbMapping.planNew(modelName, source, gpkg, splitGeometries, defaultEpsg, multiSrs, srsModels, token);
+        String modelNames = mapping.models().stream().map(ref -> {
+            var model = (ModelSymbol) symbol(mapping, ref);
+            String name = model.name().value();
+            var imports = model.imports().stream().map(ModelImport::importedModel).distinct().sorted().toList();
+            return imports.isEmpty() ? name : name + "{ " + String.join(" ", imports) + "}";
+        }).collect(java.util.stream.Collectors.joining(" "));
         var properties = new ArrayList<ColumnProperty>();
         var geometries = new HashMap<String, List<GeometryColumn>>();
         for (var table : mapping.tables()) {

@@ -21,6 +21,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
@@ -32,7 +33,8 @@ public final class Main {
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
                    interlis-db delete --model NAME --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME)
-                   interlis-db schemaimport --model NAME [--default-epsg CODE] [--multi-srs] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
+                   interlis-db schemaimport --model NAME [--default-epsg CODE] [--multi-srs [--alt-srs-model ORIGINAL=ALTERNATE]]
+                    [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.
             """;
@@ -89,7 +91,7 @@ public final class Main {
     private static void createSchema(Options options, String password, CancellationToken cancellation)
             throws IOException, SQLException {
         var plan = SchemaPlan.read(options.model(), options.file(), options.gpkg() != null,
-                options.splitGeometries(), options.defaultEpsg(), options.multiSrs(), cancellation);
+                options.splitGeometries(), options.defaultEpsg(), options.multiSrs(), options.srsModels(), cancellation);
         cancellation.throwIfCancellationRequested();
         if (options.gpkg() != null) {
             GeoPackageSchema.create(options.gpkg(), plan, options.createGeometryIndexes(), cancellation);
@@ -159,9 +161,10 @@ public final class Main {
 
     private record Options(Command command, String model, String dataset, Path file, Path gpkg,
                            String pgUrl, String schema, String user, boolean createGeometryIndexes,
-                           boolean splitGeometries, int defaultEpsg, boolean multiSrs) {
+                           boolean splitGeometries, int defaultEpsg, boolean multiSrs,
+                           Optional<DbCrsPair.Models> srsModels) {
         private static final Set<String> NAMES = Set.of("--model", "--dataset", "--gpkg", "--pg-url", "--schema", "--user",
-                "--default-epsg");
+                "--default-epsg", "--alt-srs-model");
 
         static Options parse(String[] args) {
             Command command = switch (args.length == 0 ? "" : args[0]) {
@@ -240,9 +243,15 @@ public final class Main {
             if (multipleGeoPackageGeometries && gpkg == null) {
                 throw new IllegalArgumentException("--gpkg-multi-geom-per-table is only valid with GeoPackage");
             }
+            boolean multiSrs = schemaFlags.contains("--multi-srs");
+            String alternateSrsModel = flags.get("--alt-srs-model");
+            if (alternateSrsModel != null && (command != Command.SCHEMAIMPORT || !multiSrs)) {
+                throw new IllegalArgumentException("--alt-srs-model requires schemaimport --multi-srs");
+            }
+            var srsModels = Optional.ofNullable(alternateSrsModel).map(value -> DbCrsPair.Models.parse(value, model));
             return new Options(command, model, dataset, file, gpkg, pgUrl, schema, user,
                     schemaFlags.contains("--create-geom-index"),
-                    oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg, schemaFlags.contains("--multi-srs"));
+                    oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg, multiSrs, srsModels);
         }
 
         void checkPaths() throws IOException {

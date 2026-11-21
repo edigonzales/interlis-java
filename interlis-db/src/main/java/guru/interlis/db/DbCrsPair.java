@@ -2,12 +2,17 @@ package guru.interlis.db;
 
 import guru.interlis.db.DbMapping.Column;
 import guru.interlis.db.DbMapping.CrsDefaults;
+import guru.interlis.model.EnumerationType;
+import guru.interlis.model.EnumerationValue;
+import guru.interlis.model.GeometryType;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
+import guru.interlis.model.TextType;
 import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.TopicDescriptor;
 import guru.interlis.transfer.TransferPlan;
+import guru.interlis.transfer.TransferObject;
 import guru.interlis.transfer.TransferValue;
 
 import java.util.HashMap;
@@ -33,16 +38,20 @@ final class DbCrsPair {
         String setting() { return original + "=" + alternate; }
     }
 
-    private record ClassPair(ObjectDescriptor alternate, Map<SymbolRef, SymbolRef> alternateSlots) { }
+    private record ClassPair(ObjectDescriptor original, ObjectDescriptor alternate,
+                             Map<SymbolRef, SymbolRef> alternateSlots, Map<SymbolRef, SymbolRef> originalSlots) { }
 
+    private final Models assignment;
     private final SymbolRef original;
     private final SymbolRef alternate;
     private final Map<SymbolRef, SymbolRef> topicOwners;
     private final Map<SymbolRef, ClassPair> classes;
+    private final Map<SymbolRef, ClassPair> alternateClasses;
     private final Map<SymbolRef, List<Column>> columns;
     private final Map<SymbolRef, Map<SymbolRef, Integer>> codesByTopic;
 
     DbCrsPair(TransferPlan plan, Models models, CrsDefaults originalCrs, CrsDefaults alternateCrs) {
+        assignment = models;
         var main = plan.models().stream().filter(model -> model.name().declared().last().equals(models.original())).findFirst().orElseThrow();
         var other = plan.models().stream().filter(model -> model.name().declared().last().equals(models.alternate())).findFirst().orElseThrow();
         original = main.symbol();
@@ -52,6 +61,7 @@ final class DbCrsPair {
         }
         var ownerTopics = new HashMap<SymbolRef, SymbolRef>();
         var objectPairs = new HashMap<SymbolRef, ClassPair>();
+        var alternatePairs = new HashMap<SymbolRef, ClassPair>();
         var attributes = new HashMap<SymbolRef, List<Column>>();
         var codes = new HashMap<SymbolRef, Map<SymbolRef, Integer>>();
         if (main.topics().size() != other.topics().size()) throw incompatible(models.setting());
@@ -78,6 +88,7 @@ final class DbCrsPair {
                 var alternateFields = DbMapping.attributes(dest);
                 if (originalFields.size() != alternateFields.size()) throw incompatible(src.name().declared().toString());
                 var slots = new HashMap<SymbolRef, SymbolRef>();
+                var originalSlots = new HashMap<SymbolRef, SymbolRef>();
                 for (int field = 0; field < originalFields.size(); field++) {
                     var srcField = originalFields.get(field);
                     var destField = alternateFields.get(field);
@@ -85,11 +96,11 @@ final class DbCrsPair {
                     var first = DbMapping.describeColumns(plan, src, srcField, originalCrs).getFirst();
                     var second = DbMapping.describeColumns(plan, dest, destField, alternateCrs).getFirst();
                     if (!srcField.name().declared().last().equals(destField.name().declared().last())
-                            || !srcField.cardinality().equals(destField.cardinality()) || first.kind() != second.kind()
-                            || first.dimensions() != second.dimensions() || first.target().isPresent()) {
+                            || !srcField.cardinality().equals(destField.cardinality()) || !compatible(first, second)) {
                         throw incompatible(path);
                     }
                     slots.put(srcField.symbol(), destField.symbol());
+                    originalSlots.put(destField.symbol(), srcField.symbol());
                     if (first.kind().geometry()) {
                         leftCodes.put(srcField.symbol(), first.epsgCode());
                         rightCodes.put(srcField.symbol(), second.epsgCode());
@@ -97,13 +108,16 @@ final class DbCrsPair {
                     attributes.put(srcField.symbol(), first.epsgCode() == second.epsgCode() ? List.of(first)
                             : List.of(first, first.withEpsg(second.epsgCode())));
                 }
-                objectPairs.put(src.symbol(), new ClassPair(dest, Map.copyOf(slots)));
+                var pair = new ClassPair(src, dest, Map.copyOf(slots), Map.copyOf(originalSlots));
+                objectPairs.put(src.symbol(), pair);
+                alternatePairs.put(dest.symbol(), pair);
             }
             codes.put(left.symbol(), Map.copyOf(leftCodes));
             codes.put(right.symbol(), Map.copyOf(rightCodes));
         }
         topicOwners = Map.copyOf(ownerTopics);
         classes = Map.copyOf(objectPairs);
+        alternateClasses = Map.copyOf(alternatePairs);
         columns = Map.copyOf(attributes);
         codesByTopic = Map.copyOf(codes);
     }
@@ -123,6 +137,28 @@ final class DbCrsPair {
         return DbMapping.unsupported("structurally incompatible alternate CRS model at " + path);
     }
 
+    private static boolean compatible(Column first, Column second) {
+        if (first.kind() != second.kind() || first.dimensions() != second.dimensions() || first.target().isPresent()) {
+            return false;
+        }
+        var a = first.effectiveType().orElseThrow();
+        var b = second.effectiveType().orElseThrow();
+        if (a instanceof TextType x && b instanceof TextType y) {
+            return x.textKind() == y.textKind() && x.maxLength().equals(y.maxLength());
+        }
+        if (a instanceof EnumerationType x && b instanceof EnumerationType y) {
+            return x.values().stream().map(EnumerationValue::path).toList()
+                    .equals(y.values().stream().map(EnumerationValue::path).toList());
+        }
+        if (a instanceof GeometryType x && b instanceof GeometryType y) {
+            return x.geometryKind() == y.geometryKind() && x.directed() == y.directed()
+                    && x.lineForms().equals(y.lineForms());
+        }
+        return true;
+    }
+
+    Models assignment() { return assignment; }
+
     List<SymbolRef> models() { return List.of(original, alternate); }
 
     SymbolRef originalTopic(SymbolRef topic) { return topicOwners.getOrDefault(topic, topic); }
@@ -136,7 +172,17 @@ final class DbCrsPair {
     }
 
     Map<SymbolRef, TransferValue> alternateValues(SymbolRef type, Map<SymbolRef, TransferValue> values) {
-        var slots = classes.get(type).alternateSlots();
+        return remap(values, classes.get(type).alternateSlots());
+    }
+
+    TransferObject originalObject(TransferObject object) {
+        var pair = alternateClasses.get(object.type());
+        if (pair == null) return object;
+        return new TransferObject(object.identity(), new TransferValue.Structured(pair.original().symbol(),
+                remap(object.data().values(), pair.originalSlots())));
+    }
+
+    private static Map<SymbolRef, TransferValue> remap(Map<SymbolRef, TransferValue> values, Map<SymbolRef, SymbolRef> slots) {
         var mapped = new LinkedHashMap<SymbolRef, TransferValue>();
         values.forEach((slot, value) -> mapped.put(slots.get(slot), value));
         return mapped;

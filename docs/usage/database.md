@@ -176,7 +176,11 @@ In bestehenden XTF-2.3-Schemata mit ili2db `--altSrsModel` exportiert
 `interlis-db` benannte Datensätze aus dem Original- und dem Alternativmodell.
 Die Modelle stehen gemeinsam in einer gespeicherten Modelldatei und haben
 gleich strukturierte flache Topics und Klassen. Das gespeicherte Topic
-bestimmt die EPSG-Spalte sowie die Namen im XTF.
+bestimmt die EPSG-Spalte sowie die Namen im XTF. Für ein neues Schema
+erzeugt `schemaimport --multi-srs --alt-srs-model Original=Alternative`
+die gemeinsamen Tabellen. `--model` bezeichnet das Originalmodell. Der
+Import speichert das ursprüngliche Topic jedes Baskets und verwendet dessen
+EPSG-Spalte.
 
 Für neue Schemata setzt `schemaimport --default-epsg CODE` den
 Standard. Ohne Option gilt EPSG:2056. GeoPackage verwendet die vorhandenen

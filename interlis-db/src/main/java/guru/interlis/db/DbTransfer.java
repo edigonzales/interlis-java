@@ -1036,7 +1036,6 @@ final class DbTransfer {
     static void importData(Database db, DbMapping mapping, String dataset,
                            TransferReader reader, WriteMode mode, CancellationToken token) throws SQLException {
         token.throwIfCancellationRequested();
-        if (mapping.crsPair().isPresent()) throw DbMapping.unsupported("import of alternate CRS models");
         if (mode != WriteMode.IMPORT) DbDatasetWrite.lock(db, mapping);
         var existing = DbDatasetWrite.findDataset(db, dataset);
         if (mode == WriteMode.IMPORT && existing.isPresent()) {
@@ -1048,8 +1047,8 @@ final class DbTransfer {
             for (var next = reader.readNext(token); next.isPresent(); next = reader.readNext(token)) {
                 switch (next.orElseThrow()) {
                     case TransferEvent.StartTransfer start -> {
-                        var model = mapping.plan().rootModels().getFirst();
-                        if (start.models().size() != 1 || !start.models().getFirst().model().equals(model)
+                        var models = mapping.models();
+                        if (start.models().isEmpty() || start.models().stream().anyMatch(model -> !models.contains(model.model()))
                                 || !reader.stableIdentityNamespaces().isEmpty()) {
                             throw new DbException("Expected the selected model and transfer-scoped identities in XTF");
                         }
@@ -1158,7 +1157,7 @@ final class DbTransfer {
         private Map<DbDatasetWrite.ObjectKey, DbDatasetWrite.ExistingObject> existingObjects = Map.of();
         private long datasetId;
         private long basketId;
-        private List<TransferEvent.DomainBinding> basketDomains = List.of();
+        private GeometrySelection basketGeometry = new GeometrySelection(List.of(), Map.of());
 
         Import(Database db, DbMapping mapping, boolean updating, CancellationToken token) {
             this.db = db;
@@ -1196,7 +1195,7 @@ final class DbTransfer {
 
         void startBasket(long datasetId, TransferEvent.StartBasket start) throws SQLException {
             var topic = mapping.plan().topic(start.topic()).orElseThrow();
-            if (!topic.model().equals(mapping.plan().rootModels().getFirst())
+            if (!mapping.models().contains(topic.model())
                     || start.kind() != BasketKind.FULL || start.consistency() != Consistency.COMPLETE
                     || !start.additionalTopics().isEmpty()
                     || start.startState().isPresent() || start.endState().isPresent()
@@ -1204,10 +1203,12 @@ final class DbTransfer {
                     || !start.stableOid().equals(basketOid(mapping, topic, start.id()))) {
                 throw new DbException("Unsupported basket metadata for " + start.id().value());
             }
-            if (updating && DbDomains.deferred(topic)) {
-                throw DbMapping.unsupported("update of deferred generic domains");
+            if (updating && (DbDomains.deferred(topic) || mapping.crsPair().isPresent())) {
+                throw DbMapping.unsupported("update of deferred domains or alternate CRS models");
             }
-            basketDomains = DbDomains.resolve(mapping.plan(), topic, start.domainBindings(), start.id().value());
+            var domainsForBasket = DbDomains.resolve(mapping.plan(), topic, start.domainBindings(), start.id().value());
+            basketGeometry = new GeometrySelection(domainsForBasket,
+                    mapping.crsPair().map(pair -> pair.epsgCodes(topic.symbol())).orElse(Map.of()));
             String domains = DbDomains.format(mapping.plan(), start.domainBindings(), start.id().value());
             this.datasetId = datasetId;
             if (updating) {
@@ -1236,7 +1237,7 @@ final class DbTransfer {
         }
 
         void insertObject(TransferEvent.ObjectEvent event) throws SQLException {
-            var object = event.object();
+            var object = mapping.crsPair().map(pair -> pair.originalObject(event.object())).orElse(event.object());
             var identity = object.identity();
             if (event.operation().isPresent() || event.consistency() != Consistency.COMPLETE
                     || identity.originalBasket().isPresent()) {
@@ -1329,7 +1330,7 @@ final class DbTransfer {
             }
             int found = 0;
             for (var column : table.columns()) {
-                var value = DbDomains.active(column, basketDomains) ? object.value(column.slot().symbol())
+                var value = basketGeometry.active(column) ? object.value(column.slot().symbol())
                         : Optional.<TransferValue>empty();
                 if (value.isPresent()) {
                     found++;
@@ -1355,7 +1356,7 @@ final class DbTransfer {
             if (statement.executeUpdate() != 1) throw new DbException("Could not write object " + context + " in " + table.name());
             for (var geometry : table.secondaryGeometries()) {
                 token.throwIfCancellationRequested();
-                var value = DbDomains.active(geometry.column(), basketDomains) ? object.value(geometry.column().slot().symbol())
+                var value = basketGeometry.active(geometry.column()) ? object.value(geometry.column().slot().symbol())
                         : Optional.<TransferValue>empty();
                 if (value.isPresent()) found++;
                 writeSecondaryGeometry(geometry, (TransferGeometry) value.filter(item -> item != Undefined.INSTANCE)

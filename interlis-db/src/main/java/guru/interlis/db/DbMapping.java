@@ -323,12 +323,18 @@ final class DbMapping {
 
     static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, CancellationToken token) {
-        return planNew(modelName, source, gpkg, splitGeometries, defaultEpsg, false, token);
+        return planNew(modelName, source, gpkg, splitGeometries, defaultEpsg, false, Optional.empty(), token);
     }
 
     static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
-                             int defaultEpsg, boolean multiSrs, CancellationToken token) {
-        TransferPlan plan = compile(modelName, source, "model file", token);
+                             int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels,
+                             CancellationToken token) {
+        var models = srsModels.map(DbCrsPair.Models::names).orElse(List.of(modelName));
+        TransferPlan plan = compile(models, source, "model file", token);
+        var crs = new CrsDefaults(defaultEpsg, 0);
+        var crsPair = srsModels.map(pair -> new DbCrsPair(plan, pair, crs, crs));
+        var objects = plan.objects().stream().filter(object -> crsPair.isEmpty()
+                || crsPair.orElseThrow().models().getFirst().equals(object.model())).toList();
         if (!multiSrs && plan.topics().stream().anyMatch(DbDomains::deferred)) {
             throw unsupported("deferred generic domains require --multi-srs");
         }
@@ -336,7 +342,7 @@ final class DbMapping {
         var names = new HashMap<SymbolRef, String>();
         var associations = new ArrayList<EmbeddedAssociation>();
         var linkRoles = new HashMap<SymbolRef, List<AssociationRole>>();
-        for (var object : plan.objects()) {
+        for (var object : objects) {
             token.throwIfCancellationRequested();
             String topic = object.topic().flatMap(plan::topic).map(value -> value.name().declared().last()).orElse(null);
             String name = allocator.table(modelName, topic, object.name().declared().last());
@@ -357,8 +363,7 @@ final class DbMapping {
         var bases = baseTables(plan);
         var tables = new ArrayList<Table>();
         var compositions = new ArrayList<Composition>();
-        var crs = new CrsDefaults(defaultEpsg, 0);
-        for (var object : plan.objects()) {
+        for (var object : objects) {
             token.throwIfCancellationRequested();
             String name = names.get(object.symbol());
             if (name == null) continue;
@@ -385,7 +390,7 @@ final class DbMapping {
                     compositions.add(edge);
                     continue;
                 }
-                for (var binding : describeColumns(plan, object, attribute, crs)) {
+                for (var binding : describeColumns(plan, object, attribute, crs, crsPair)) {
                     String storageName = multiSrs && binding.kind().geometry() ? attributeName + "_" + binding.epsgCode() : attributeName;
                     boolean split = splitGeometries && geometrySeen && binding.kind().geometry();
                     String owner = split ? allocator.geometryTable(modelName,
@@ -415,7 +420,7 @@ final class DbMapping {
             tables.add(new Table(object, name, columns, discriminator, oidDomain(plan, object), secondary));
         }
         var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
-        return new DbMapping(plan, version, tables, compositions, associations, Optional.empty());
+        return new DbMapping(plan, version, tables, compositions, associations, crsPair);
     }
 
     private static void checkColumnName(TransferSlot slot, String column, boolean structure, boolean discriminator,
@@ -428,10 +433,6 @@ final class DbMapping {
         if (!gpkg && column.length() > 63) {
             throw unsupported("SQL name " + column + " exceeds the PostgreSQL limit at " + slot.name().declared());
         }
-    }
-
-    static TransferPlan compile(String modelName, SourceText source, String description, CancellationToken token) {
-        return compile(List.of(modelName), source, description, token);
     }
 
     static TransferPlan compile(List<String> models, SourceText source, String description, CancellationToken token) {
