@@ -9,6 +9,8 @@
           <FlatSite i:ref="fixture-landmark"/>
         </SiteAnnotation></Annotation>
         <DirectSite i:ref="fixture-leaf"/>
+        <MarkedSite i:ref="fixture-leaf"/>
+        <ReviewedAt i:ref="fixture-leaf"><SurveyReview><ReviewMemo>seen</ReviewMemo></SurveyReview></ReviewedAt>
       </SurveyRecord>
     </Surveys>
     <Catalog i:bid="fixture-catalog">

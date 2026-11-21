@@ -14,6 +14,30 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class DbMappingTest {
     @Test
+    void rejectsOneToOneAssociationsBetweenTopics() {
+        for (String version : List.of("2.3", "2.4")) {
+            var source = new SourceText(new SourceId("test:/Location.ili"), new SourceRevision(1), """
+                    INTERLIS %s;
+                    MODEL Location (en) AT "https://example.org" VERSION "2026-11-21" =
+                      TOPIC Catalog = CLASS Site = END Site; END Catalog;
+                      TOPIC Surveys =
+                        DEPENDS ON Location.Catalog;
+                        CLASS Report = END Report;
+                        ASSOCIATION SurveySite =
+                          SiteRole (EXTERNAL) -- {0..1} Location.Catalog.Site;
+                          ReportRole -- {0..1} Report;
+                        END SurveySite;
+                      END Surveys;
+                    END Location.
+                    """.formatted(version));
+            var rejected = assertThrows(DbException.class,
+                    () -> DbMapping.planNew("Location", source, false, CancellationToken.none()));
+            assertTrue(rejected.getMessage().contains("one-to-one associations between topics at Location.Surveys.SurveySite"),
+                    rejected::getMessage);
+        }
+    }
+
+    @Test
     void rejectsOwnAttributesOnAggregationsAndCompositions() {
         for (String version : List.of("2.3", "2.4")) {
             for (String strength : List.of("-<>", "-<#>")) {

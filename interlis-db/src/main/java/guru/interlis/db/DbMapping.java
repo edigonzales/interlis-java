@@ -491,7 +491,12 @@ final class DbMapping {
         if (roles.size() != 2) return Optional.empty();
         var first = roles.getFirst();
         var second = roles.getLast();
+        boolean crossesTopic = roles.stream().anyMatch(role ->
+                !plan.object(role.target()).orElseThrow().topic().equals(association.topic()));
         if (!first.single() && !second.single()) {
+            if (crossesTopic) {
+                throw unsupported("standalone roles between topics at " + association.name().declared());
+            }
             return Optional.empty();
         }
         boolean linkTable = association.slots().stream().anyMatch(AttributeSlot.class::isInstance);
@@ -500,6 +505,9 @@ final class DbMapping {
         var owner = first.single() ? second : first;
         if (owner.external() || (target.external() && linkTable && owner.single())) {
             throw unsupported("external roles on this embedded association at " + association.name().declared());
+        }
+        if (crossesTopic && owner.single()) {
+            throw unsupported("one-to-one associations between topics at " + association.name().declared());
         }
         if (linkTable && hasSubtypes(plan, owner.target())) {
             throw unsupported("embedded association with attributes on an owner with subtypes at "
@@ -517,8 +525,9 @@ final class DbMapping {
         }
         var target = new SymbolRef(plan.snapshotId(), role.targets().getFirst().base());
         if (plan.object(target).filter(object -> object.kind() == SymbolKind.CLASS
-                && object.topic().equals(association.topic())).isEmpty()) {
-            throw unsupported(feature + " requires a class in the same topic");
+                && (object.topic().equals(association.topic()) || (role.external() && inDependentTopic(plan, association, object))))
+                .isEmpty()) {
+            throw unsupported(feature + " requires a class in an allowed topic");
         }
         return target;
     }

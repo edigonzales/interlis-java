@@ -578,6 +578,12 @@ final class DbInteropTest {
                 assertQualifiedReferenceMapping(referenceDb, referenceSql, model + ".Surveys.SurveyRecord.DirectSite",
                         "surveyrecord", "directsite", "registeredsite");
             }
+            assertQualifiedReferenceMapping(referenceDb, referenceSql, model + ".Surveys.SurveyArea.MarkedSite",
+                    "surveyrecord", "markedsite", "registeredsite");
+            assertEquals("embedded", scalar(referenceSql, "select setting from " + referenceDb.table("t_ili2db_trafo")
+                    + " where iliname='" + model + ".Surveys.SurveyArea' and tag='ch.ehi.ili2db.inheritance'"));
+            assertQualifiedAssociationCatalog(referenceDb, referenceSql, model + ".Surveys", "SurveyReview",
+                    Map.of("Reviews", "surveyrecord", "ReviewedAt", "registeredsite"));
         }
         for (var db : List.of(referenceDb, nativeDb)) {
             try (var sql = db.connect()) {
@@ -613,20 +619,25 @@ final class DbInteropTest {
     private static void assertExternalTopicRows(TestDatabase db, Connection sql, String model, int version, String dataset)
             throws SQLException {
         String query = """
-                select src.topic, dst.topic, t.t_ili_tid, t.t_type, t.t_id%s
+                select src.topic, dst.topic, t.t_ili_tid, t.t_type, t.t_id, r.markedsite, v.reviewedat, v.reviewmemo%s
                 from %s r join %s a on a.surveyrecord_annotation=r.t_id and a.t_basket=r.t_basket
+                join %s v on v.reviews=r.t_id and v.t_basket=r.t_basket
                 join %s t on t.t_id=a.annotationsite join %s leaf on leaf.t_id=t.t_id and leaf.t_basket=t.t_basket
                 join %s src on src.t_id=r.t_basket join %s dst on dst.t_id=t.t_basket and dst.dataset=src.dataset
                 where r.t_ili_tid='%s-survey'
                 """.formatted(version == 24 ? ", r.directsite" : "", db.table("surveyrecord"), db.table("siteannotation"),
-                db.table("registry"), db.table("siteleaf"), db.table("t_ili2db_basket"), db.table("t_ili2db_basket"), dataset);
+                db.table("surveyreview"), db.table("registry"), db.table("siteleaf"), db.table("t_ili2db_basket"),
+                db.table("t_ili2db_basket"), dataset);
         try (var statement = sql.createStatement(); var rows = statement.executeQuery(query)) {
             assertTrue(rows.next());
             assertEquals(model + ".Surveys", rows.getString(1));
             assertEquals(model + ".Catalog", rows.getString(2));
             assertEquals(dataset + "-leaf", rows.getString(3));
             assertEquals("siteleaf", rows.getString(4));
-            if (version == 24) assertEquals(rows.getString(5), rows.getString(6));
+            assertEquals(rows.getString(5), rows.getString(6));
+            assertEquals(rows.getString(5), rows.getString(7));
+            assertEquals("seen", rows.getString(8));
+            if (version == 24) assertEquals(rows.getString(5), rows.getString(9));
             assertFalse(rows.next());
         }
     }
@@ -651,6 +662,13 @@ final class DbInteropTest {
         assertExternalReference(child(note, "AnnotationSite"), version, dataset + "-leaf", bid);
         assertExternalReference(child(note, "FlatSite"), version, dataset + "-landmark", bid);
         if (version == 24) assertExternalReference(child(report, "DirectSite"), version, dataset + "-leaf", "");
+        assertExternalReference(child(report, "MarkedSite"), version, dataset + "-leaf", bid);
+        var reviewed = child(report, "ReviewedAt");
+        assertExternalReference(reviewed, version, dataset + "-leaf", bid);
+        var payload = children(reviewed);
+        assertEquals(1, payload.size());
+        assertEquals(version == 23 ? surveys + ".SurveyReview" : "SurveyReview", payload.getFirst().getLocalName());
+        assertEquals("seen", text(payload.getFirst(), "ReviewMemo"));
     }
 
     private static void assertStructureCatalog(TestDatabase db, Connection sql, String model, int version)
@@ -707,7 +725,12 @@ final class DbInteropTest {
 
     private static void assertAssociationCatalog(TestDatabase db, Connection sql, String model, String name,
                                                  Map<String, String> roles) throws SQLException {
-        String association = model + ".Data." + name;
+        assertQualifiedAssociationCatalog(db, sql, model + ".Data", name, roles);
+    }
+
+    private static void assertQualifiedAssociationCatalog(TestDatabase db, Connection sql, String topic, String name,
+                                                          Map<String, String> roles) throws SQLException {
+        String association = topic + "." + name;
         String table = name.toLowerCase(Locale.ROOT);
         assertEquals(table, scalar(sql, "select sqlname from " + db.table("t_ili2db_classname")
                 + " where iliname='" + association + "'"));

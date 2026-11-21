@@ -16,5 +16,14 @@ MODEL DbExternalTopics23 (en) AT "https://example.org/interlis/db" VERSION "2026
     CLASS SurveyRecord =
       Annotation : SiteAnnotation;
     END SurveyRecord;
+    ASSOCIATION SurveyArea =
+      Areas -- {0..*} SurveyRecord;
+      MarkedSite (EXTERNAL) -- {0..1} DbExternalTopics23.Catalog.RegisteredSite;
+    END SurveyArea;
+    ASSOCIATION SurveyReview =
+      Reviews -- {0..*} SurveyRecord;
+      ReviewedAt (EXTERNAL) -- {0..1} DbExternalTopics23.Catalog.RegisteredSite;
+      ReviewMemo : TEXT*20;
+    END SurveyReview;
   END Surveys;
 END DbExternalTopics23.

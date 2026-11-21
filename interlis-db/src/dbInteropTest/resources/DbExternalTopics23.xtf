@@ -8,6 +8,8 @@
           <AnnotationSite REF="fixture-leaf" BID="fixture-catalog"/>
           <FlatSite REF="fixture-landmark" BID="fixture-catalog"/>
         </DbExternalTopics23.Surveys.SiteAnnotation></Annotation>
+        <MarkedSite REF="fixture-leaf" BID="fixture-catalog"/>
+        <ReviewedAt REF="fixture-leaf" BID="fixture-catalog"><DbExternalTopics23.Surveys.SurveyReview><ReviewMemo>seen</ReviewMemo></DbExternalTopics23.Surveys.SurveyReview></ReviewedAt>
       </DbExternalTopics23.Surveys.SurveyRecord>
     </DbExternalTopics23.Surveys>
     <DbExternalTopics23.Catalog BID="fixture-catalog">

@@ -101,6 +101,8 @@ Nutzlast, die direkte Referenz mit SQL `NULL` und das Fehlen der Rolle.
 Eine zusätzliche Linkzeile zum selben Eigentümer lässt den Export scheitern.
 Ein eigenes Modell mit `DEPENDS ON` prüft die Baskets beider Topics,
 die Zuordnung zur deklarierten Zielklasse und die konkrete Ziel-TID.
+Bei eingebetteten 1:n-Rollen zwischen Topics prüft es die Rollenspalte
+am lokalen Eigentümer und die eingebettete Nutzlast aus einer Linktabelle.
 
 ```sh
 ./gradlew :interlis-db:dbInteropTest
