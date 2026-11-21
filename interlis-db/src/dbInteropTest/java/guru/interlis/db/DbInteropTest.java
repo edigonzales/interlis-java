@@ -112,6 +112,10 @@ final class DbInteropTest {
     @Test void geoPackageSharedSource24() throws Exception { exchangeSharedSource(24, null); }
     @Test void postgisSharedSource23() throws Exception { exchangeWithPostgis(23, this::exchangeSharedSource); }
     @Test void postgisSharedSource24() throws Exception { exchangeWithPostgis(24, this::exchangeSharedSource); }
+    @Test void geoPackageStoredImports23() throws Exception { exchangeStoredImports(23, null); }
+    @Test void geoPackageStoredImports24() throws Exception { exchangeStoredImports(24, null); }
+    @Test void postgisStoredImports23() throws Exception { exchangeWithPostgis(23, this::exchangeStoredImports); }
+    @Test void postgisStoredImports24() throws Exception { exchangeWithPostgis(24, this::exchangeStoredImports); }
 
     @Test void geoPackage23() throws Exception { exchange(23, null); }
     @Test void geoPackage24() throws Exception {
@@ -412,6 +416,11 @@ final class DbInteropTest {
     private void exchangeSharedSource(int version, PostgreSQLContainer postgres) throws Exception {
         var db = new TestDatabase(postgres, "shared_source");
         new ModelCases(work, new ReferenceTool(db.postgis()), version).sharedSource(db);
+    }
+
+    private void exchangeStoredImports(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "stored_imports");
+        new ModelCases(work, new ReferenceTool(db.postgis()), version).storedImports(db);
     }
 
     private void exchange(int version, PostgreSQLContainer postgres) throws Exception {

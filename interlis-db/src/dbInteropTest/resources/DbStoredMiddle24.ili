@@ -1,0 +1,11 @@
+INTERLIS 2.4;
+
+MODEL DbStoredMiddle24 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  IMPORTS DbStoredTypes24;
+  DOMAIN Label = TEXT*24;
+  TOPIC Unused =
+    CLASS Spare =
+      Location : DbStoredTypes24.Position;
+    END Spare;
+  END Unused;
+END DbStoredMiddle24.

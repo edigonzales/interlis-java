@@ -1,0 +1,7 @@
+INTERLIS 2.3;
+
+MODEL DbStoredTypes23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  DOMAIN
+    Status = (planned, active);
+    Position = COORD 2480000.000 .. 2840000.000, 1070000.000 .. 1300000.000;
+END DbStoredTypes23.

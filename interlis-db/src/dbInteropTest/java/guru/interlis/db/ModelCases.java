@@ -55,6 +55,42 @@ final class ModelCases {
         }
     }
 
+    void storedImports(TestDatabase db) throws Exception {
+        String model = "DbStoredImports" + version;
+        String types = "DbStoredTypes" + version;
+        var main = fixture(model + ".ili");
+        var middle = fixture("DbStoredMiddle" + version + ".ili");
+        var leaf = fixture(types + ".ili");
+        createReference(db, model, main);
+        for (var source : List.of(main, middle, leaf)) Files.delete(source);
+        exchangeDomains(db, model, domainInput(model));
+        var output = work.resolve("legacy-output.xtf");
+        String published = Files.readString(output);
+        String catalog = db.table("t_ili2db_model");
+        try (var sql = db.connect()) {
+            assertEquals("3", scalar(sql, "SELECT COUNT(*) FROM " + catalog));
+            execute(sql, "INSERT INTO " + catalog + " (filename,iliversion,modelname,content,importdate)"
+                    + " SELECT filename,iliversion,modelname||' DbDuplicate',content,importdate FROM " + catalog
+                    + " WHERE modelname='" + types + "'");
+            var ambiguous = cli(db, "export", model, "legacy", output, CancellationToken.none());
+            assertEquals(1, ambiguous.code(), ambiguous::diagnostics);
+            assertTrue(ambiguous.diagnostics().contains("Multiple MODEL sources for " + types), ambiguous::diagnostics);
+            assertEquals(published, Files.readString(output));
+            execute(sql, "DELETE FROM " + catalog + " WHERE modelname LIKE '" + types + "%'");
+            var missing = cli(db, "export", model, "legacy", output, CancellationToken.none());
+            assertEquals(1, missing.code(), missing::diagnostics);
+            assertTrue(missing.diagnostics().contains("No MODEL source for " + types), missing::diagnostics);
+            assertEquals(published, Files.readString(output));
+        }
+    }
+
+    private Path domainInput(String model) throws Exception {
+        String shared = "DbSharedSource" + version;
+        var input = work.resolve(model + ".xtf");
+        Files.writeString(input, Files.readString(fixture(shared + ".xtf")).replace(shared, model));
+        return input;
+    }
+
     private void exchangeDomains(TestDatabase db, String model, Path input) throws Exception {
         referenceImport(db, "legacy", input);
         Path output = work.resolve("legacy-output.xtf");

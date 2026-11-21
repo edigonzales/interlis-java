@@ -1,0 +1,11 @@
+INTERLIS 2.3;
+
+MODEL DbStoredMiddle23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  IMPORTS DbStoredTypes23;
+  DOMAIN Label = TEXT*24;
+  TOPIC Unused =
+    CLASS Spare =
+      Location : DbStoredTypes23.Position;
+    END Spare;
+  END Unused;
+END DbStoredMiddle23.

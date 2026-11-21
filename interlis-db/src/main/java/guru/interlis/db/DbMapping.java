@@ -1,20 +1,6 @@
 package guru.interlis.db;
 
-import guru.interlis.compiler.AnalysisReuse;
-import guru.interlis.compiler.CompilationOutcome;
-import guru.interlis.compiler.CompilationRequest;
-import guru.interlis.compiler.CompilerEngines;
-import guru.interlis.compiler.CompilerOptions;
-import guru.interlis.compiler.ImportBinding;
-import guru.interlis.compiler.ImportResolution;
-import guru.interlis.compiler.ImportSite;
-import guru.interlis.compiler.ModelLocation;
-import guru.interlis.compiler.ModelSelector;
-import guru.interlis.compiler.ResolutionFingerprint;
-import guru.interlis.compiler.SourceSet;
-import guru.interlis.diagnostics.Severity;
 import guru.interlis.execution.CancellationToken;
-import guru.interlis.execution.OperationCancelledException;
 import guru.interlis.model.CardinalityUpper;
 import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CollectionType;
@@ -40,16 +26,11 @@ import guru.interlis.model.TypeKind;
 import guru.interlis.model.TypeRef;
 import guru.interlis.model.TopicSymbol;
 import guru.interlis.source.SourceText;
-import guru.interlis.syntax.ParseMode;
-import guru.interlis.syntax.ParseOptions;
-import guru.interlis.syntax.SyntaxServices;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.TransferEvent.DomainBinding;
 import guru.interlis.transfer.TransferPlan;
-import guru.interlis.transfer.TransferPlanner;
-import guru.interlis.transfer.TransferPlanningResult;
 import guru.interlis.transfer.TransferSlot;
 
 import java.math.BigDecimal;
@@ -339,7 +320,7 @@ final class DbMapping {
                              int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels,
                              CancellationToken token) {
         var models = srsModels.map(DbCrsPair.Models::names).orElse(List.of(modelName));
-        TransferPlan plan = compile(models, source, "model file", token);
+        TransferPlan plan = DbModelSources.compile(models, List.of(source), "model file", token);
         if (plan.models().size() != models.size()) {
             throw unsupported("expected the selected standalone model or CRS model pair");
         }
@@ -446,46 +427,6 @@ final class DbMapping {
         if (!gpkg && column.length() > 63) {
             throw unsupported("SQL name " + column + " exceeds the PostgreSQL limit at " + slot.name().declared());
         }
-    }
-
-    static TransferPlan compile(List<String> models, SourceText source, String description, CancellationToken token) {
-        String modelName = models.getFirst();
-        var selectors = models.stream().map(name -> (ModelSelector) new ModelSelector.ByName(name, Optional.empty(),
-                Optional.of(source.id()))).toList();
-        var syntax = SyntaxServices.create().parse(source, ParseOptions.defaults(ParseMode.EDITOR), token);
-        var declarations = syntax.root().models();
-        var imports = new ArrayList<ImportBinding>();
-        for (var importer : declarations) {
-            for (var imported : importer.imports()) {
-                if ("INTERLIS".equals(imported.modelName())) continue;
-                var targets = declarations.stream().filter(model -> model.name().equals(imported.modelName())).toList();
-                if (targets.size() != 1) continue;
-                var target = targets.getFirst();
-                var location = new ModelLocation(source.id(), source.revision(), target.name(),
-                        Optional.of(target.modelVersion()), target.range().startOffset());
-                var site = new ImportSite(imported.range(), importer.name(), imported.modelName());
-                imports.add(new ImportBinding(site, new ImportResolution.Resolved(location)));
-            }
-        }
-        var sources = SourceSet.of(Map.of(source.id(), source), imports, List.of(), ResolutionFingerprint.none());
-        var request = new CompilationRequest(selectors, sources, CompilerOptions.defaults());
-        var outcome = CompilerEngines.create().compile(request, new AnalysisReuse(Optional.empty(), Map.of(source.id(), syntax)), token);
-        var schema = switch (outcome) {
-            case CompilationOutcome.Succeeded succeeded -> succeeded.schema();
-            case CompilationOutcome.Rejected rejected -> throw new DbException("Cannot compile " + description + " for "
-                    + modelName + " (" + rejected.analysis().diagnostics().stream()
-                    .filter(diagnostic -> diagnostic.severity() == Severity.ERROR)
-                    .map(diagnostic -> diagnostic.code() + " " + diagnostic.messageKey())
-                    .distinct().limit(5).collect(Collectors.joining(", ")) + ")");
-            case CompilationOutcome.Cancelled cancelled -> throw new OperationCancelledException(cancelled.reason());
-            case CompilationOutcome.Failed failed -> throw new DbException(
-                    "Compiler failed for " + description + " of " + modelName + " (" + failed.failureId() + ")");
-        };
-        var plan = switch (TransferPlanner.plan(schema, TransferPlanner.Names.DECLARED)) {
-            case TransferPlanningResult.Ready ready -> ready.plan();
-            case TransferPlanningResult.Unsupported rejected -> throw unsupported(rejected.issues().getFirst().toString());
-        };
-        return plan;
     }
 
     static void checkLayout(TransferPlan plan, List<ObjectDescriptor> objects) {

@@ -1,5 +1,6 @@
 package guru.interlis.db;
 
+import guru.interlis.compiler.AnalysisBudget;
 import guru.interlis.db.DbMapping.AssociationRole;
 import guru.interlis.db.DbMapping.Column;
 import guru.interlis.db.DbMapping.Composition;
@@ -10,6 +11,7 @@ import guru.interlis.db.DbMapping.SecondaryGeometry;
 import guru.interlis.db.DbMapping.Table;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.LanguageVersion;
+import guru.interlis.model.Origin;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.source.SourceId;
@@ -24,6 +26,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,6 +37,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static guru.interlis.db.DbMapping.unsupported;
 import static guru.interlis.db.Ili2dbLayout.ATTRNAME;
@@ -59,7 +63,9 @@ import static guru.interlis.db.Ili2dbLayout.foldedName;
 
 /** Binds a checked model to the mappings and physical catalog of an existing ili2db schema. */
 final class DbSchemaReader {
-    private record StoredModel(LanguageVersion version, String content) { }
+    private static final Pattern MODEL_DECLARATION = Pattern.compile("([^\\s{}]+)(?:\\s*\\{([^{}]*)\\})?\\s*");
+
+    private record StoredModel(String names, LanguageVersion version, String content, List<String> imports) { }
     private record AttributeName(String name, String owner, String target) { }
     private record Settings(boolean splitGeometries, CrsDefaults crs, boolean referenceEpsgHeader, boolean multiSrs,
                             Optional<DbCrsPair.Models> srsModels, CrsDefaults alternateCrs) { }
@@ -73,13 +79,9 @@ final class DbSchemaReader {
     static DbMapping read(Database db, String modelName, CancellationToken token) throws SQLException {
         token.throwIfCancellationRequested();
         var settings = readSettings(db, modelName);
-        StoredModel source = readModel(db, modelName);
         var models = settings.srsModels().map(DbCrsPair.Models::names).orElse(List.of(modelName));
-        TransferPlan plan = DbMapping.compile(models, new SourceText(new SourceId("database:/model.ili"),
-                new SourceRevision(1), source.content()), "MODEL.content", token);
-        if (!plan.schema().languageVersions().equals(Set.of(source.version()))) {
-            throw new DbException("MODEL.iliversion disagrees with MODEL.content for " + modelName);
-        }
+        TransferPlan plan = readModelPlan(db, models, token);
+        var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
 
         var selected = plan.objects().stream().filter(object -> plan.rootModels().contains(object.model())).toList();
         DbMapping.checkLayout(plan, selected);
@@ -207,7 +209,7 @@ final class DbSchemaReader {
             throw new DbException("Extra CLASSNAME/TRAFO mappings for " + modelName);
         }
         if (!attrNames.isEmpty()) throw new DbException("Extra ATTRNAME mappings for " + modelName);
-        return new DbMapping(plan, source.version(), tables, compositions, associations, crsPair);
+        return new DbMapping(plan, version, tables, compositions, associations, crsPair);
     }
 
     private static boolean hasDiscriminator(ObjectDescriptor object, Set<SymbolRef> bases) {
@@ -349,9 +351,49 @@ final class DbSchemaReader {
         }
     }
 
-    private static StoredModel readModel(Database db, String modelName) throws SQLException {
+    private static TransferPlan readModelPlan(Database db, List<String> models, CancellationToken token) throws SQLException {
         String table = foldedName(MODEL);
         requireMetadataColumns(db, table, "modelname", "iliversion", "content");
+        var pending = new ArrayDeque<>(models);
+        var versions = new HashMap<String, LanguageVersion>();
+        var files = new LinkedHashMap<String, SourceText>();
+        var sourceIds = new HashMap<String, SourceId>();
+        long totalLength = 0;
+        while (!pending.isEmpty()) {
+            token.throwIfCancellationRequested();
+            String model = pending.removeFirst();
+            if ("INTERLIS".equals(model) || versions.containsKey(model)) continue;
+            var stored = readModel(db, table, model);
+            versions.put(model, stored.version());
+            var source = files.get(stored.names());
+            if (source == null) {
+                totalLength += stored.content().length();
+                if (totalLength > AnalysisBudget.defaults().maxTotalSourceUtf16Length()) {
+                    throw new DbException("MODEL.content closure exceeds the size limit at " + model);
+                }
+                source = new SourceText(new SourceId("database:/" + files.size() + ".ili"),
+                        new SourceRevision(1), stored.content());
+                files.put(stored.names(), source);
+            }
+            sourceIds.put(model, source.id());
+            pending.addAll(stored.imports());
+        }
+        var plan = DbModelSources.compile(models, files.values(), "MODEL.content", token);
+        for (var model : plan.models()) {
+            String name = model.name().declared().last();
+            var symbol = plan.symbol(model.symbol()).known().orElseThrow();
+            if (!(symbol.header().origin() instanceof Origin.DeclaredOrigin origin)
+                    || !origin.range().source().equals(sourceIds.get(name))) {
+                throw new DbException("MODEL.modelname disagrees with MODEL.content for " + name);
+            }
+            if (model.languageVersion() != versions.get(name)) {
+                throw new DbException("MODEL.iliversion disagrees with MODEL.content for " + name);
+            }
+        }
+        return plan;
+    }
+
+    private static StoredModel readModel(Database db, String table, String modelName) throws SQLException {
         // modelname lists definitions followed by optional brace-delimited imports for each file.
         String contains = db.gpkg() ? "instr" : "strpos";
         String sql = "SELECT modelname, iliversion, CASE WHEN length(content) <= ? THEN content END FROM "
@@ -363,9 +405,8 @@ final class DbSchemaReader {
             try (var rows = stmt.executeQuery()) {
                 while (rows.next()) {
                     String names = required(rows, 1, "MODEL.modelname");
-                    if (!List.of(names.replaceAll("\\{[^{}]*}", "").strip().split("\\s+")).contains(modelName)) {
-                        continue;
-                    }
+                    var imports = modelImports(names, modelName);
+                    if (imports == null) continue;
                     if (match != null) throw new DbException("Multiple MODEL sources for " + modelName);
                     var version = LanguageVersion.fromLiteral(rows.getString(2))
                             .orElseThrow(() -> unsupported("MODEL.iliversion for " + modelName));
@@ -373,12 +414,29 @@ final class DbSchemaReader {
                     if (content == null || content.isBlank()) {
                         throw new DbException("MODEL.content is missing or exceeds the size limit for " + modelName);
                     }
-                    match = new StoredModel(version, content);
+                    match = new StoredModel(names, version, content, imports);
                 }
             }
         }
         if (match == null) throw new DbException("No MODEL source for " + modelName);
         return match;
+    }
+
+    private static List<String> modelImports(String names, String model) {
+        String declarations = names.strip();
+        var matcher = MODEL_DECLARATION.matcher(declarations);
+        List<String> imports = null;
+        int offset = 0;
+        while (matcher.find() && matcher.start() == offset) {
+            offset = matcher.end();
+            if (!model.equals(matcher.group(1))) continue;
+            if (imports != null) throw new DbException("Duplicate MODEL.modelname declaration for " + model);
+            String dependencies = matcher.group(2);
+            imports = dependencies == null || dependencies.isBlank() ? List.of()
+                    : List.of(dependencies.strip().split("\\s+"));
+        }
+        if (offset != declarations.length()) throw new DbException("Invalid MODEL.modelname while resolving " + model);
+        return imports;
     }
 
     private static Map<String, String> readClassNames(Database db, String prefix) throws SQLException {
