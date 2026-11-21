@@ -14,6 +14,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -123,14 +125,19 @@ class ValidatorCommandTest {
         assertEquals(2, json.get("violations").getAsInt());
         var diagnostics = json.getAsJsonArray("diagnostics");
         assertEquals(2, diagnostics.size());
-        var derived = diagnostics.asList().stream().map(element -> element.getAsJsonObject())
-                .filter(diagnostic -> diagnostic.getAsJsonObject("location").get("tid").getAsString().equals("one"))
-                .findFirst().orElseThrow(() -> new AssertionError(rejected.output()));
-        assertEquals("MANDATORY_CONSTRAINT_FALSE", derived.get("code").getAsString());
-        var location = derived.getAsJsonObject("location");
-        assertEquals("Item", location.get("objectType").getAsString());
-        assertEquals("/pointer/shape/RING[1]/LINE[2]", location.get("path").getAsString());
-        assertLineRule(derived, "MANDATORY CONSTRAINT label != \"reserved\";");
+        var byTid = diagnostics.asList().stream().map(element -> element.getAsJsonObject())
+                .collect(Collectors.groupingBy(diagnostic -> diagnostic.getAsJsonObject("location").get("tid").getAsString()));
+        assertEquals(Set.of("one", "target"), byTid.keySet());
+        assertDeferredLineDiagnostic(byTid.get("one").getFirst(), "Item", "/pointer/shape/RING[1]/LINE[2]");
+        assertDeferredLineDiagnostic(byTid.get("target").getFirst(), "Target", "/shape/RING[1]/LINE[2]");
+    }
+
+    private void assertDeferredLineDiagnostic(JsonObject diagnostic, String type, String path) throws IOException {
+        assertEquals("MANDATORY_CONSTRAINT_FALSE", diagnostic.get("code").getAsString());
+        var location = diagnostic.getAsJsonObject("location");
+        assertEquals(type, location.get("objectType").getAsString());
+        assertEquals(path, location.get("path").getAsString());
+        assertLineRule(diagnostic, "MANDATORY CONSTRAINT label != \"reserved\";");
     }
 
     private void lineAttributeModel(String constraint) throws Exception {
