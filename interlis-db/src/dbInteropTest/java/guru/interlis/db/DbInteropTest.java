@@ -147,12 +147,12 @@ final class DbInteropTest {
 
     private void exchangeGeometryLayout(int version, PostgreSQLContainer postgres) throws Exception {
         var cases = new GeometryLayoutCases(work, version, new ReferenceTool(postgres != null));
-        var own = new TestDatabase(postgres, "geometry_layout_own");
-        if (postgres == null) {
-            cases.singleColumnProfile(own);
-        } else {
-            cases.sameTable(new TestDatabase(postgres, "geometry_layout_reference"), own);
+        if (postgres != null) {
+            cases.sameTable(new TestDatabase(postgres, "geometry_layout_reference"),
+                    new TestDatabase(postgres, "geometry_layout_own"));
         }
+        cases.split(new TestDatabase(postgres, "split_geometry_reference"),
+                new TestDatabase(postgres, "split_geometry_own"));
     }
 
     private void exchangeSpatial(int version, PostgreSQLContainer postgres) throws Exception {
@@ -2134,7 +2134,7 @@ final class DbInteropTest {
 
         assertExistingTargetPreserved(postgres, model, ili);
         var cancelledDb = new TestDatabase(postgres, "cancelled");
-        var plan = SchemaPlan.read(model, ili, !postgis, CancellationToken.none());
+        var plan = SchemaPlan.read(model, ili, !postgis, !postgis, CancellationToken.none());
         if (postgis) {
             try (var reserved = Database.openPostgres(cancelledDb.url, "select", cancelledDb.user,
                     cancelledDb.password, true)) {

@@ -112,19 +112,19 @@ final class GeoPackageSchema {
                 registerAttributes(attributes, table);
             }
             registerAttributes(attributes, Ili2dbLayout.KEY_OBJECT);
-            for (var table : plan.mapping().tables()) {
+            for (String table : plan.mapping().storageTables()) {
                 token.throwIfCancellationRequested();
-                var geometries = plan.geometryColumns().get(table.name());
+                var geometries = plan.geometryColumns().get(table);
                 if (geometries == null) {
-                    registerAttributes(attributes, table.name());
+                    registerAttributes(attributes, table);
                 } else {
                     var spatial = geometries.getFirst();
-                    registerFeature(feature, geometry, table.name(), spatial);
-                    if (createGeometryIndexes) GeoPackageRtree.create(connection, table.name(), spatial.column().name());
+                    registerFeature(feature, geometry, table, spatial);
+                    if (createGeometryIndexes) GeoPackageRtree.create(connection, table, spatial.column().name());
                     var kind = spatial.column().kind();
                     if (kind == DbMapping.Kind.POLYLINE || kind == DbMapping.Kind.SURFACE
                             || kind == DbMapping.Kind.MULTICURVE || kind == DbMapping.Kind.MULTISURFACE) {
-                        extension.setString(1, table.name());
+                        extension.setString(1, table);
                         extension.setString(2, spatial.column().name());
                         extension.setString(3, "gpkg_geom_" + kind.geometryType());
                         extension.executeUpdate();

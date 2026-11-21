@@ -24,13 +24,24 @@ final class SqlNames {
     private final Map<String, Set<String>> columns = new HashMap<>();
 
     String table(String model, String topic, String className) {
-        String preferred = preferred(className);
+        return table(model, topic, className, null);
+    }
+
+    String geometryTable(String model, String topic, String className, String attribute) {
+        return table(model, topic, className, attribute);
+    }
+
+    private String table(String model, String topic, String className, String attribute) {
+        int classLength = attribute == null ? NAME_LENGTH : NAME_LENGTH - 5;
+        String preferred = preferred(tableStem(className, classLength, attribute));
         if (tables.add(preferred)) {
             return preferred;
         }
-        String prefix = (topic == null ? shorten(model, NAME_LENGTH / 2 - 2)
-                : shorten(model, MODEL_LENGTH) + shorten(topic, TOPIC_LENGTH)) + "_";
-        String qualified = (prefix + shorten(className, NAME_LENGTH - prefix.length())).toLowerCase(Locale.ROOT);
+        String prefix = (topic == null ? shorten(model, classLength / 2 - 2)
+                : shorten(model, attribute == null ? MODEL_LENGTH : classLength / 4 - 1)
+                        + shorten(topic, attribute == null ? TOPIC_LENGTH : classLength / 4 + 2)) + "_";
+        String qualified = (prefix + tableStem(className, classLength - prefix.length(), attribute))
+                .toLowerCase(Locale.ROOT);
         if (tables.add(qualified)) {
             return qualified;
         }
@@ -45,6 +56,11 @@ final class SqlNames {
                 return candidate;
             }
         }
+    }
+
+    private static String tableStem(String className, int classLimit, String attribute) {
+        String stem = shorten(className, classLimit);
+        return attribute == null ? stem : stem + "_" + shorten(attribute, classLimit + 4 - stem.length());
     }
 
     String column(String table, String attribute) {

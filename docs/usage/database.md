@@ -136,8 +136,11 @@ Unterstützt sind Klassen eines eigenständigen Modells in
 INTERLIS 2.3 und 2.4 mit Text, Boolean, 32-Bit-Ganzzahlen und Aufzählungen als
 XTF-Code. PostGIS speichert mehrere optionale Geometrieattribute in der
 Klassentabelle und erhält mit `--create-geom-index` für jede Geometriespalte
-einen GiST-Index. GeoPackage unterstützt eine optionale Geometriespalte je
-Tabelle. Beide Backends verwenden EPSG:2056. XYZ-Punkte führen die dritte Ordinate im SQL-Wert
+einen GiST-Index. GeoPackage speichert die erste Geometrie in der
+Klassentabelle und jede weitere in einer Hilfstabelle. PostGIS verwendet
+dieselbe Ablage mit `schemaimport --one-geom-per-table` (ili2pg `--oneGeomPerTable`).
+Jede Hilfszeile teilt `T_Id` und `T_Basket` mit ihrem Eigentümer und
+ist auch für `NULL` vorhanden. Beide Backends verwenden EPSG:2056. XYZ-Punkte führen die dritte Ordinate im SQL-Wert
 und die exakten Modellgrenzen als `c3Min` und `c3Max` in den Spaltenmetadaten.
 PostGIS verwendet `POINTZ`, GeoPackage das Z-Bit der ili2gpkg-Kodierung.
 Die Raumindizes arbeiten mit der XY-Hülle.

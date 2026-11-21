@@ -36,7 +36,7 @@ final class DbDatasetWrite {
         var tables = new TreeSet<String>();
         tables.add(db.technicalTable(DATASET));
         tables.add(db.technicalTable(BASKET));
-        for (var table : mapping.tables()) tables.add(db.table(table.name()));
+        for (var table : mapping.storageTables()) tables.add(db.table(table));
         try (var statement = db.connection().createStatement()) {
             statement.execute("LOCK TABLE " + String.join(", ", tables) + " IN SHARE ROW EXCLUSIVE MODE NOWAIT");
         } catch (SQLException failure) {
@@ -191,19 +191,24 @@ final class DbDatasetWrite {
 
     private static void deleteObject(Database db, DbMapping mapping, ExistingObject object) throws SQLException {
         for (var table : mapping.tableChain(object.type().object().symbol()).reversed()) {
-            try (var statement = db.connection().prepareStatement("DELETE FROM " + db.table(table.name())
-                    + " WHERE " + T_ID + " = ? AND " + T_BASKET + " = ?")) {
-                statement.setLong(1, object.id());
-                statement.setLong(2, object.basket());
-                if (statement.executeUpdate() != 1) {
-                    throw new DbException("Missing stored row for T_Id " + object.id() + " in " + table.name());
-                }
+            for (var secondary : table.secondaryGeometries()) deleteObjectRow(db, secondary.table(), object);
+            deleteObjectRow(db, table.name(), object);
+        }
+    }
+
+    private static void deleteObjectRow(Database db, String table, ExistingObject object) throws SQLException {
+        try (var statement = db.connection().prepareStatement("DELETE FROM " + db.table(table)
+                + " WHERE " + T_ID + " = ? AND " + T_BASKET + " = ?")) {
+            statement.setLong(1, object.id());
+            statement.setLong(2, object.basket());
+            if (statement.executeUpdate() != 1) {
+                throw new DbException("Missing stored row for T_Id " + object.id() + " in " + table);
             }
         }
     }
 
     private static void checkIncomingMappings(Database db, DbMapping mapping) throws SQLException {
-        var tables = mapping.tables().stream().map(table -> catalogName(db, table.name())).collect(Collectors.toSet());
+        var tables = mapping.storageTables().stream().map(table -> catalogName(db, table)).collect(Collectors.toSet());
         String sql = "SELECT tablename, columnname, setting FROM " + db.technicalTable(COLUMN_PROP) + " WHERE tag = ?";
         try (var statement = db.connection().prepareStatement(sql)) {
             statement.setString(1, PREFIX + "foreignKey");
@@ -267,9 +272,9 @@ final class DbDatasetWrite {
         }
         checkIncomingMappings(db, mapping);
         checkDatasetReferences(db, mapping, dataset, operation, token);
-        for (var table : mapping.tables().reversed()) {
+        for (var table : mapping.storageTables().reversed()) {
             token.throwIfCancellationRequested();
-            delete(db, "DELETE FROM " + db.table(table.name()) + " WHERE " + T_BASKET
+            delete(db, "DELETE FROM " + db.table(table) + " WHERE " + T_BASKET
                     + " IN (SELECT " + T_ID + " FROM " + baskets + " WHERE dataset = ?)", dataset);
         }
         token.throwIfCancellationRequested();

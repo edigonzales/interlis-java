@@ -3,6 +3,7 @@ package guru.interlis.db;
 import guru.interlis.db.DbMapping.Column;
 import guru.interlis.db.DbMapping.Composition;
 import guru.interlis.db.DbMapping.EmbeddedAssociation;
+import guru.interlis.db.DbMapping.SecondaryGeometry;
 import guru.interlis.db.DbMapping.Table;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.LanguageVersion;
@@ -459,6 +460,13 @@ final class DbTransfer {
                 default -> projections.add(field);
             }
         }
+        for (var geometry : table.secondaryGeometries()) {
+            String field = "fragment." + quote(geometry.column().name());
+            String lookup = " FROM " + db.table(geometry.table()) + " fragment WHERE fragment." + T_ID
+                    + " = " + alias + "." + T_ID;
+            projections.add("(SELECT fragment." + T_BASKET + " = " + alias + "." + T_BASKET + lookup + ")");
+            projections.add("(SELECT " + db.geometryProjection(field, geometry.column()) + lookup + ")");
+        }
     }
 
     private static void checkCrossDatasetReferences(Database db, DbMapping mapping, long datasetId, CancellationToken token)
@@ -558,7 +566,8 @@ final class DbTransfer {
     }
 
     private static int projectionSize(DbMapping mapping, Table table) {
-        return table.columns().stream().mapToInt(column -> projectionSize(mapping, column)).sum();
+        return table.columns().stream().mapToInt(column -> projectionSize(mapping, column)).sum()
+                + 2 * table.secondaryGeometries().size();
     }
 
     private static int projectionSize(DbMapping mapping, Column column) {
@@ -587,6 +596,16 @@ final class DbTransfer {
                 throw new DbException("Missing link endpoint at " + column.slot().name().declared());
             }
             index += projectionSize(mapping, column);
+        }
+        for (var geometry : table.secondaryGeometries()) {
+            boolean sameBasket = rows.getBoolean(index++);
+            if (!sameBasket) {
+                String problem = rows.wasNull() ? "Missing secondary geometry row" : "Secondary geometry belongs to a different basket";
+                throw new DbException(problem + " for " + geometry.column().slot().name().declared()
+                        + " of object " + ownerTid);
+            }
+            var value = db.readGeometry(rows, index++, geometry.column());
+            if (value != null) values.put(geometry.column().slot().symbol(), value);
         }
         return values;
     }
@@ -1087,7 +1106,7 @@ final class DbTransfer {
         private final CancellationToken token;
         private final boolean updating;
         private final Map<String, PreparedStatement> inserts = new HashMap<>();
-        private final Map<Table, PreparedStatement> objectUpdates = new HashMap<>();
+        private final Map<String, PreparedStatement> objectUpdates = new HashMap<>();
         private final Map<Composition, PreparedStatement> structureInserts = new HashMap<>();
         private final Map<Column, PreparedStatement> updates = new HashMap<>();
         private final Set<SymbolRef> referenceTargets;
@@ -1288,7 +1307,37 @@ final class DbTransfer {
                 statement.setLong(index, basketId);
             }
             if (statement.executeUpdate() != 1) throw new DbException("Could not write object " + context + " in " + table.name());
+            for (var geometry : table.secondaryGeometries()) {
+                token.throwIfCancellationRequested();
+                var value = object.value(geometry.column().slot().symbol());
+                if (value.isPresent()) found++;
+                writeSecondaryGeometry(geometry, (TransferGeometry) value.filter(item -> item != Undefined.INSTANCE)
+                        .orElse(null), id, context, update);
+            }
             return found;
+        }
+
+        private void writeSecondaryGeometry(SecondaryGeometry geometry, TransferGeometry value, long id,
+                                            String context, boolean update) throws SQLException {
+            var statements = update ? objectUpdates : inserts;
+            var statement = statements.get(geometry.table());
+            if (statement == null) {
+                String table = db.table(geometry.table());
+                String field = quote(geometry.column().name());
+                String parameter = db.geometryParameter();
+                String sql = update
+                        ? "UPDATE " + table + " SET " + field + " = " + parameter + " WHERE " + T_ID + " = ? AND " + T_BASKET + " = ?"
+                        : "INSERT INTO " + table + " (" + field + ", " + T_ID + ", " + T_BASKET + ") VALUES (" + parameter + ", ?, ?)";
+                statement = db.connection().prepareStatement(sql);
+                statements.put(geometry.table(), statement);
+            }
+            int index = db.bindGeometry(statement, 1, geometry.column(), value);
+            statement.setLong(index++, id);
+            statement.setLong(index, basketId);
+            if (statement.executeUpdate() != 1) {
+                throw new DbException("Missing or basket-mismatched secondary geometry row for "
+                        + geometry.column().slot().name().declared() + " of object " + context);
+            }
         }
 
         private void insertLink(EmbeddedAssociation association, long ownerId, String ownerTid,
@@ -1431,10 +1480,10 @@ final class DbTransfer {
         }
 
         private PreparedStatement objectUpdateStatement(Table table) throws SQLException {
-            var statement = objectUpdates.get(table);
+            var statement = objectUpdates.get(table.name());
             if (statement == null) {
                 statement = prepareWrite(table, null, true);
-                objectUpdates.put(table, statement);
+                objectUpdates.put(table.name(), statement);
             }
             return statement;
         }

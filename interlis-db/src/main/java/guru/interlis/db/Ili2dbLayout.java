@@ -7,6 +7,9 @@ import java.util.Set;
 /** Technical identifiers and constants shared by the ili2db profile. */
 final class Ili2dbLayout {
     static final String PREFIX = "ch.ehi.ili2db.";
+    static final String GEOMETRY_LAYOUT = PREFIX + "geomAttrPerTable";
+    static final String SINGLE_GEOMETRY = "oneGeomAttrPerTable";
+    static final String SECONDARY_TABLE_TAG = PREFIX + "secondaryTable";
     static final String INHERITANCE_TAG = PREFIX + "inheritance";
     static final String NEW_CLASS = "newClass";
     static final String EMBEDDED = "embedded";
@@ -54,6 +57,14 @@ final class Ili2dbLayout {
             MODEL_KEY.toLowerCase(Locale.ROOT), ATTRNAME_KEY.toLowerCase(Locale.ROOT));
 
     private Ili2dbLayout() { }
+
+    static String secondaryClass(String attribute, String owner) {
+        return attribute + "(" + owner + ")";
+    }
+
+    static String secondaryTransformation(String attribute, String owner) {
+        return secondaryClass(attribute + ":" + LV95, owner);
+    }
 
     static String tableName(String name, boolean gpkg) {
         return gpkg ? name : foldedName(name);

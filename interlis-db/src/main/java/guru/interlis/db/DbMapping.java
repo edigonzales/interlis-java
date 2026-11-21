@@ -94,6 +94,10 @@ final class DbMapping {
             }
         }
 
+        Column withName(String sqlName) {
+            return new Column(slot, sqlName, kind, effectiveType, target, srsId, positionColumn, dimensions);
+        }
+
         Column withSrsId(int id) {
             return new Column(slot, name, kind, effectiveType, target, id, positionColumn, dimensions);
         }
@@ -135,10 +139,14 @@ final class DbMapping {
         }
     }
 
+    /** A geometry stored in a table that shares its owner's identity and basket. */
+    record SecondaryGeometry(String table, Column column) { }
+
     record Table(ObjectDescriptor object, String name, List<Column> columns, boolean hasDiscriminator,
-                 Optional<String> oidDomain) {
+                 Optional<String> oidDomain, List<SecondaryGeometry> secondaryGeometries) {
         Table {
             columns = List.copyOf(columns);
+            secondaryGeometries = List.copyOf(secondaryGeometries);
             var names = columns.stream().map(column -> foldedName(column.name()))
                     .collect(Collectors.toCollection(HashSet::new));
             for (var column : columns) {
@@ -235,6 +243,15 @@ final class DbMapping {
     TransferPlan plan() { return plan; }
     LanguageVersion version() { return version; }
     List<Table> tables() { return tables; }
+
+    List<String> storageTables() {
+        var names = new ArrayList<String>();
+        for (var table : tables) {
+            names.add(table.name());
+            for (var geometry : table.secondaryGeometries()) names.add(geometry.table());
+        }
+        return names;
+    }
     List<Composition> compositions() { return compositions; }
     List<Composition> compositionsForParent(SymbolRef parent) { return byParent.getOrDefault(parent, List.of()); }
     List<Composition> compositionsForChild(SymbolRef child) { return byChild.getOrDefault(child, List.of()); }
@@ -259,7 +276,7 @@ final class DbMapping {
 
     static void requireSingleGeometry(ObjectDescriptor object, List<Column> columns) {
         if (columns.stream().filter(column -> column.kind().geometry()).count() > 1) {
-            throw unsupported("multiple GeoPackage geometry columns in " + object.name().declared());
+            throw unsupported("multiple geometries in a single-geometry table for " + object.name().declared());
         }
     }
 
@@ -282,7 +299,8 @@ final class DbMapping {
         return table;
     }
 
-    static DbMapping planNew(String modelName, SourceText source, boolean gpkg, CancellationToken token) {
+    static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
+                             CancellationToken token) {
         TransferPlan plan = compile(modelName, source, "model file", token);
         var allocator = new SqlNames();
         var names = new HashMap<SymbolRef, String>();
@@ -315,6 +333,8 @@ final class DbMapping {
             if (name == null) continue;
             boolean discriminator = object.baseType().isEmpty() && bases.contains(object.symbol());
             var columns = new ArrayList<Column>();
+            var secondary = new ArrayList<SecondaryGeometry>();
+            boolean geometrySeen = false;
             var roles = linkRoles.get(object.symbol());
             if (roles != null) {
                 for (var role : roles) {
@@ -334,10 +354,23 @@ final class DbMapping {
                     compositions.add(edge);
                     continue;
                 }
-                String column = allocator.column(name, attributeName);
-                checkColumnName(attribute, column, object.kind() == SymbolKind.STRUCTURE, discriminator, gpkg);
-                var binding = describeColumn(plan, object, attribute, column);
-                columns.add(binding.kind().geometry() ? binding.withSrsId(LV95) : binding);
+                var binding = describeColumn(plan, object, attribute, attributeName);
+                boolean split = splitGeometries && geometrySeen && binding.kind().geometry();
+                String owner = split ? allocator.geometryTable(modelName,
+                        object.topic().flatMap(plan::topic).orElseThrow().name().declared().last(),
+                        object.name().declared().last(), attributeName) : name;
+                if (split && reservedTable(owner, gpkg)) {
+                    throw unsupported("geometry " + attribute.name().declared() + " maps to technical table " + owner);
+                }
+                String column = allocator.column(owner, attributeName);
+                checkColumnName(attribute, column, object.kind() == SymbolKind.STRUCTURE, !split && discriminator, gpkg);
+                binding = binding.withName(column);
+                if (binding.kind().geometry()) {
+                    binding = binding.withSrsId(LV95);
+                    geometrySeen = true;
+                }
+                if (split) secondary.add(new SecondaryGeometry(owner, binding));
+                else columns.add(binding);
             }
             for (var association : associationsForOwner(associations, object.symbol())) {
                 if (association.linkTable()) continue;
@@ -347,8 +380,7 @@ final class DbMapping {
                 var binding = roleColumn(role, association.target(), column);
                 columns.add(association.ordered() ? binding.withPositionColumn(gpkg) : binding);
             }
-            if (gpkg) requireSingleGeometry(object, columns);
-            tables.add(new Table(object, name, columns, discriminator, oidDomain(plan, object)));
+            tables.add(new Table(object, name, columns, discriminator, oidDomain(plan, object), secondary));
         }
         var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
         return new DbMapping(plan, version, tables, compositions, associations);

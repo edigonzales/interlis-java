@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
 
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
@@ -31,7 +32,7 @@ public final class Main {
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
                    interlis-db delete --model NAME --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME)
-                   interlis-db schemaimport --model NAME [--create-geom-index]
+                   interlis-db schemaimport --model NAME [--create-geom-index] [--one-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.
             """;
@@ -87,7 +88,8 @@ public final class Main {
 
     private static void createSchema(Options options, String password, CancellationToken cancellation)
             throws IOException, SQLException {
-        var plan = SchemaPlan.read(options.model(), options.file(), options.gpkg() != null, cancellation);
+        var plan = SchemaPlan.read(options.model(), options.file(), options.gpkg() != null,
+                options.gpkg() != null || options.oneGeometryPerTable(), cancellation);
         cancellation.throwIfCancellationRequested();
         if (options.gpkg() != null) {
             GeoPackageSchema.create(options.gpkg(), plan, options.createGeometryIndexes(), cancellation);
@@ -156,7 +158,8 @@ public final class Main {
     private enum Command { IMPORT, REPLACE, UPDATE, DELETE, EXPORT, SCHEMAIMPORT }
 
     private record Options(Command command, String model, String dataset, Path file, Path gpkg,
-                           String pgUrl, String schema, String user, boolean createGeometryIndexes) {
+                           String pgUrl, String schema, String user, boolean createGeometryIndexes,
+                           boolean oneGeometryPerTable) {
         private static final Set<String> NAMES = Set.of("--model", "--dataset", "--gpkg", "--pg-url", "--schema", "--user");
 
         static Options parse(String[] args) {
@@ -171,15 +174,14 @@ public final class Main {
             };
             var flags = new HashMap<String, String>();
             Path file = null;
-            boolean createGeometryIndexes = false;
+            var schemaFlags = new HashSet<String>();
             for (int i = 1; i < args.length; i++) {
                 String arg = args[i];
-                if (arg.equals("--create-geom-index")) {
+                if (arg.equals("--create-geom-index") || arg.equals("--one-geom-per-table")) {
                     if (command != Command.SCHEMAIMPORT) {
-                        throw new IllegalArgumentException("--create-geom-index is only valid with schemaimport");
+                        throw new IllegalArgumentException(arg + " is only valid with schemaimport");
                     }
-                    if (createGeometryIndexes) throw new IllegalArgumentException("Repeated option " + arg);
-                    createGeometryIndexes = true;
+                    if (!schemaFlags.add(arg)) throw new IllegalArgumentException("Repeated option " + arg);
                 } else if (arg.startsWith("--")) {
                     if (!NAMES.contains(arg)) {
                         throw new IllegalArgumentException("Unknown option " + arg);
@@ -223,7 +225,12 @@ public final class Main {
             } else if (pgUrl == null || !pgUrl.startsWith("jdbc:postgresql:") || schema == null || user == null) {
                 throw new IllegalArgumentException("PostgreSQL needs a JDBC PostgreSQL URL, --schema and --user");
             }
-            return new Options(command, model, dataset, file, gpkg, pgUrl, schema, user, createGeometryIndexes);
+            boolean oneGeometryPerTable = schemaFlags.contains("--one-geom-per-table");
+            if (oneGeometryPerTable && gpkg != null) {
+                throw new IllegalArgumentException("--one-geom-per-table is only valid with PostgreSQL");
+            }
+            return new Options(command, model, dataset, file, gpkg, pgUrl, schema, user,
+                    schemaFlags.contains("--create-geom-index"), oneGeometryPerTable);
         }
 
         void checkPaths() throws IOException {

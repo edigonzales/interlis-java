@@ -5,6 +5,7 @@ import guru.interlis.db.DbMapping.Column;
 import guru.interlis.db.DbMapping.Composition;
 import guru.interlis.db.DbMapping.EmbeddedAssociation;
 import guru.interlis.db.DbMapping.Kind;
+import guru.interlis.db.DbMapping.SecondaryGeometry;
 import guru.interlis.db.DbMapping.Table;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.LanguageVersion;
@@ -59,13 +60,15 @@ import static guru.interlis.db.Ili2dbLayout.foldedName;
 final class DbSchemaReader {
     private record StoredModel(LanguageVersion version, String content) { }
     private record AttributeName(String name, String owner, String target) { }
+    private record Transformations(Map<String, String> classes, Map<String, String> secondary) { }
+
     private record CatalogTable(String name, Map<String, String> columns, Set<String> used) { }
 
     private DbSchemaReader() { }
 
     static DbMapping read(Database db, String modelName, CancellationToken token) throws SQLException {
         token.throwIfCancellationRequested();
-        checkSettings(db);
+        boolean splitGeometries = checkSettings(db);
         StoredModel source = readModel(db, modelName);
         TransferPlan plan = DbMapping.compile(modelName, new SourceText(new SourceId("database:/model.ili"),
                 new SourceRevision(1), source.content()), "MODEL.content", token);
@@ -89,7 +92,7 @@ final class DbSchemaReader {
             if (name == null || !usedNames.add(key(db, name))) {
                 throw new DbException("Missing or inconsistent CLASSNAME/TRAFO mapping for " + path);
             }
-            String transformation = transformations.remove(path);
+            String transformation = transformations.classes().remove(path);
             String expectedBase = object.baseType().flatMap(plan::object)
                     .map(base -> base.name().declared().toString()).orElse(null);
             if (!inheritance.containsKey(path) || !Objects.equals(expectedBase, inheritance.remove(path))) {
@@ -116,7 +119,7 @@ final class DbSchemaReader {
             objects.add(object);
             names.put(object.symbol(), name);
         }
-        if (!classNames.isEmpty() || !transformations.isEmpty() || !inheritance.isEmpty()) {
+        if (!transformations.classes().isEmpty() || !inheritance.isEmpty()) {
             throw new DbException("Extra CLASSNAME/TRAFO/INHERITANCE mappings for " + modelName);
         }
         checkSystemTables(db);
@@ -128,6 +131,7 @@ final class DbSchemaReader {
             token.throwIfCancellationRequested();
             var parent = catalog.get(object.symbol());
             var columns = new ArrayList<Column>();
+            var secondary = new ArrayList<SecondaryGeometry>();
             var roles = linkRoles.get(object.symbol());
             if (roles != null) {
                 for (var role : roles) {
@@ -146,6 +150,16 @@ final class DbSchemaReader {
                     requireTarget(db, parent.name(), mapping, path);
                     requireColumns(db, child.name(), child.columns(), Map.of(binding.ownerColumn(), Kind.REFERENCE));
                     compositions.add(binding);
+                } else if (splitGeometries && !key(db, parent.name()).equals(key(db, mapping.owner()))) {
+                    String owner = object.name().declared().toString();
+                    var table = classNames.remove(Ili2dbLayout.secondaryClass(path, owner));
+                    var transformation = transformations.secondary().remove(Ili2dbLayout.secondaryTransformation(path, owner));
+                    if (table == null || transformation == null || !key(db, table).equals(key(db, transformation))
+                            || !key(db, table).equals(key(db, mapping.owner())) || !usedNames.add(key(db, table))
+                            || Ili2dbLayout.reservedTable(foldedName(table), db.gpkg())) {
+                        throw new DbException("Inconsistent secondary geometry CLASSNAME/TRAFO/ATTRNAME mapping for " + path);
+                    }
+                    secondary.add(bindSecondaryGeometry(db, plan, object, attr, mapping, parent.name(), table, path));
                 } else {
                     columns.add(bindColumn(db, plan, object, parent, names, attr, mapping, path));
                 }
@@ -155,14 +169,18 @@ final class DbSchemaReader {
                 var column = bindRole(db, parent, attrNames, association.role(), association.target(), names);
                 columns.add(association.ordered() ? bindPosition(db, parent, column) : column);
             }
-            if (db.gpkg()) DbMapping.requireSingleGeometry(object, columns);
-            tables.add(new Table(object, parent.name(), columns, hasDiscriminator(object, bases), DbMapping.oidDomain(plan, object)));
+            if (splitGeometries) DbMapping.requireSingleGeometry(object, columns);
+            tables.add(new Table(object, parent.name(), columns, hasDiscriminator(object, bases),
+                    DbMapping.oidDomain(plan, object), secondary));
         }
         for (var table : tables) {
             var physical = catalog.get(table.object().symbol());
             if (!physical.columns().keySet().equals(physical.used())) {
                 throw new DbException("Unexpected physical columns in " + physical.name());
             }
+        }
+        if (!classNames.isEmpty() || !transformations.secondary().isEmpty()) {
+            throw new DbException("Extra CLASSNAME/TRAFO mappings for " + modelName);
         }
         if (!attrNames.isEmpty()) throw new DbException("Extra ATTRNAME mappings for " + modelName);
         return new DbMapping(plan, source.version(), tables, compositions, associations);
@@ -231,7 +249,7 @@ final class DbSchemaReader {
         }
     }
 
-    private static void checkSettings(Database db) throws SQLException {
+    private static boolean checkSettings(Database db) throws SQLException {
         // Both backends accept the folded technical names. Keep the same names in catalog diagnostics.
         String table = foldedName(SETTINGS);
         requireMetadataColumns(db, table, "tag", "setting");
@@ -261,6 +279,11 @@ final class DbSchemaReader {
         if ("multiTableWithId".equals(settings.get(PREFIX + "createEnumDefs"))) {
             throw unsupported("enumerations stored as SQL IDs");
         }
+        String geometryLayout = settings.get(Ili2dbLayout.GEOMETRY_LAYOUT);
+        if (geometryLayout != null && !Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout)) {
+            throw unsupported("SETTINGS.geomAttrPerTable=" + geometryLayout);
+        }
+        return db.gpkg() || Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout);
     }
 
     private static boolean isSender(String sender, String version) {
@@ -339,22 +362,26 @@ final class DbSchemaReader {
         return result;
     }
 
-    private static Map<String, String> readTransformations(Database db, String prefix) throws SQLException {
+    private static Transformations readTransformations(Database db, String prefix) throws SQLException {
         String table = foldedName(TRAFO);
         requireMetadataColumns(db, table, "iliname", "tag", "setting");
         var result = new HashMap<String, String>();
+        var secondary = new HashMap<String, String>();
         try (var stmt = scopedMetadata(db, table, "iliname, tag, setting", prefix);
              var rows = stmt.executeQuery()) {
             while (rows.next()) {
                 String path = required(rows, 1, "TRAFO.iliname");
-                String setting = rows.getString(3);
-                if (!INHERITANCE_TAG.equals(rows.getString(2)) || !(NEW_CLASS.equals(setting) || EMBEDDED.equals(setting))
+                String setting = required(rows, 3, "TRAFO.setting");
+                String tag = rows.getString(2);
+                if (Ili2dbLayout.SECONDARY_TABLE_TAG.equals(tag)) {
+                    if (secondary.putIfAbsent(path, setting) != null) throw unsupported("TRAFO entries for " + path);
+                } else if (!INHERITANCE_TAG.equals(tag) || !(NEW_CLASS.equals(setting) || EMBEDDED.equals(setting))
                         || result.putIfAbsent(path, setting) != null) {
                     throw unsupported("TRAFO entries for " + path);
                 }
             }
         }
-        return result;
+        return new Transformations(result, secondary);
     }
 
     private static Map<String, String> readInheritance(Database db, String prefix) throws SQLException {
@@ -408,6 +435,33 @@ final class DbSchemaReader {
         }
         requireColumns(db, table.name(), table.columns(), Map.of(column.name(), column.kind()));
         return column.kind().geometry() ? column.withSrsId(db.geometrySrs(table.name(), column)) : column;
+    }
+
+    private static SecondaryGeometry bindSecondaryGeometry(Database db, TransferPlan plan, ObjectDescriptor object,
+                                                           AttributeSlot attr, AttributeName mapping,
+                                                           String parent, String table, String path) throws SQLException {
+        var column = DbMapping.describeColumn(plan, object, attr, mapping.name());
+        if (!column.kind().geometry() || mapping.target() != null || Ili2dbLayout.TECHNICAL_COLUMNS.contains(key(db, column.name()))) {
+            throw new DbException("Invalid secondary geometry column for " + path);
+        }
+        var physical = physicalColumns(db, table);
+        requireColumns(db, table, physical, Map.of(T_ID, Kind.REFERENCE, T_BASKET, Kind.REFERENCE, column.name(), column.kind()));
+        requireIdPrimaryKey(db, table);
+        if (physical.size() != 3) throw new DbException("Unexpected physical columns in " + table);
+
+        String query = "SELECT setting FROM " + db.technicalTable(Ili2dbLayout.COLUMN_PROP)
+                + " WHERE tablename = ? AND subtype IS NULL AND lower(columnname) = ? AND tag = ?";
+        try (var stmt = db.connection().prepareStatement(query)) {
+            stmt.setString(1, table);
+            stmt.setString(2, T_ID);
+            stmt.setString(3, PREFIX + "foreignKey");
+            try (var rows = stmt.executeQuery()) {
+                if (!rows.next() || !parent.equals(rows.getString(1)) || rows.next()) {
+                    throw new DbException("Invalid secondary geometry owner for " + path);
+                }
+            }
+        }
+        return new SecondaryGeometry(table, column.withSrsId(db.geometrySrs(table, column)));
     }
 
     private static void useColumn(Database db, CatalogTable table, AttributeName mapping, String path) {

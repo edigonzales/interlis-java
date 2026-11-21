@@ -149,9 +149,16 @@ final class SchemaSql {
                 columns.add(quote(composition.ownerColumn()) + " " + dialect.idType());
             }
             commands.add(dialect.create(table.name(), String.join(", ", columns)));
-            if (createGeometryIndexes) {
-                for (var geometry : plan.geometryColumns().getOrDefault(table.name(), List.of())) {
-                    commands.add("CREATE INDEX ON " + dialect.table(table.name())
+            for (var geometry : table.secondaryGeometries()) {
+                commands.add(dialect.create(geometry.table(), dialect.primaryId()
+                        + ", " + BASKET_COLUMN + " " + dialect.idType() + " NOT NULL, "
+                        + quote(geometry.column().name()) + " " + dialect.columnType(geometry.column())));
+            }
+        }
+        if (createGeometryIndexes) {
+            for (String table : plan.mapping().storageTables()) {
+                for (var geometry : plan.geometryColumns().getOrDefault(table, List.of())) {
+                    commands.add("CREATE INDEX ON " + dialect.table(table)
                             + " USING gist (" + quote(geometry.column().name()) + ")");
                 }
             }
@@ -216,7 +223,7 @@ final class SchemaSql {
              var transformations = insert(connection, d, TRAFO, "iliname, tag, setting", 3);
              var tableProps = insert(connection, d, TABLE_PROP, "tablename, tag, setting", 3);
              var colProps = insert(connection, d, COLUMN_PROP, "tablename, subtype, columnname, tag, setting", 5)) {
-            writeSettings(settings, d.gpkg());
+            writeSettings(settings, d.gpkg(), plan.splitGeometries());
             if (createGeometryIndexes) row(settings, "ch.ehi.sqlgen.createGeomIndex", "True");
             for (var table : plan.mapping().tables()) {
                 token.throwIfCancellationRequested();
@@ -244,6 +251,14 @@ final class SchemaSql {
                     String target = column.target().map(plan.mapping()::table).map(DbMapping.Table::name).orElse(null);
                     row(attributes, column.slot().name().declared().toString(), column.name(), table.name(), target);
                 }
+                for (var secondary : table.secondaryGeometries()) {
+                    var column = secondary.column();
+                    String path = column.slot().name().declared().toString();
+                    row(classes, Ili2dbLayout.secondaryClass(path, name), secondary.table());
+                    row(transformations, Ili2dbLayout.secondaryTransformation(path, name),
+                            Ili2dbLayout.SECONDARY_TABLE_TAG, secondary.table());
+                    row(attributes, path, column.name(), secondary.table(), null);
+                }
                 for (var composition : plan.mapping().compositionsForChild(table.object().symbol())) {
                     token.throwIfCancellationRequested();
                     String parent = plan.mapping().table(composition.parent()).name();
@@ -266,7 +281,7 @@ final class SchemaSql {
         }
     }
 
-    private static void writeSettings(PreparedStatement statement, boolean gpkg) throws SQLException {
+    private static void writeSettings(PreparedStatement statement, boolean gpkg, boolean splitGeometries) throws SQLException {
         row(statement, PREFIX + "sender", SCHEMA_SENDER);
         row(statement, PREFIX + "BasketHandling", "readWrite");
         row(statement, PREFIX + "TidHandling", "property");
@@ -275,11 +290,8 @@ final class SchemaSql {
         row(statement, PREFIX + "defaultSrsCode", Integer.toString(LV95));
         row(statement, PREFIX + "maxSqlNameLength", "60");
         row(statement, "ch.interlis.ili2c.ilidirs", "%ILI_FROM_DB");
-        if (gpkg) {
-            row(statement, PREFIX + "geomAttrPerTable", "oneGeomAttrPerTable");
-        } else {
-            row(statement, PREFIX + "uuidDefaultValue", UUID_DEFAULT);
-        }
+        if (splitGeometries) row(statement, Ili2dbLayout.GEOMETRY_LAYOUT, Ili2dbLayout.SINGLE_GEOMETRY);
+        if (!gpkg) row(statement, PREFIX + "uuidDefaultValue", UUID_DEFAULT);
     }
 
     private static PreparedStatement insert(Connection connection, Dialect dialect, String table, String columns,

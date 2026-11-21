@@ -36,7 +36,8 @@ import static guru.interlis.db.DbMapping.metaText;
 
 /** Read and plan a new schema before opening a writable database. */
 record SchemaPlan(DbMapping mapping, String filename, String modelNames, String content,
-                  List<ColumnProperty> columnProperties, Map<String, List<GeometryColumn>> geometryColumns) {
+                  List<ColumnProperty> columnProperties, Map<String, List<GeometryColumn>> geometryColumns,
+                  boolean splitGeometries) {
     record ColumnProperty(String table, String subtype, String column, String key, String value) { }
 
     /** A mapped geometry and its SQL catalog bounds, with null for an absent bound. */
@@ -48,7 +49,8 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
                 Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
     }
 
-    static SchemaPlan read(String modelName, Path file, boolean gpkg, CancellationToken token) throws IOException {
+    static SchemaPlan read(String modelName, Path file, boolean gpkg, boolean splitGeometries,
+                           CancellationToken token) throws IOException {
         token.throwIfCancellationRequested();
         String filename = file.getFileName().toString();
         if (!filename.toLowerCase(Locale.ROOT).endsWith(".ili") || filename.codePointCount(0, filename.length()) > 250) {
@@ -68,7 +70,7 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
             throw new DbException("Model file exceeds the size limit");
         }
         var source = new SourceText(new SourceId(file.toUri().toString()), new SourceRevision(1), content);
-        var mapping = DbMapping.planNew(modelName, source, gpkg, token);
+        var mapping = DbMapping.planNew(modelName, source, gpkg, splitGeometries, token);
         var model = (ModelSymbol) symbol(mapping, mapping.plan().rootModels().getFirst());
         var imports = model.imports().stream().map(ModelImport::importedModel).distinct().sorted().toList();
         String modelNames = imports.isEmpty() ? modelName : modelName + "{ " + String.join(" ", imports) + "}";
@@ -81,7 +83,12 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
                         Ili2dbLayout.TID_COLUMN, Ili2dbLayout.OID_DOMAIN_PROPERTY, domain)));
             }
             for (var column : table.columns()) {
-                addProperties(properties, geometries, mapping, table, column);
+                addProperties(properties, geometries, mapping, table.name(), column);
+            }
+            for (var secondary : table.secondaryGeometries()) {
+                addProperties(properties, geometries, mapping, secondary.table(), secondary.column());
+                properties.add(new ColumnProperty(secondary.table(), null, Ili2dbLayout.ID_COLUMN,
+                        Ili2dbLayout.PREFIX + "foreignKey", table.name()));
             }
         }
         for (var composition : mapping.compositions()) {
@@ -91,7 +98,7 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
             properties.add(new ColumnProperty(child.name(), null, composition.ownerColumn(),
                     Ili2dbLayout.PREFIX + "foreignKey", parent.name()));
         }
-        return new SchemaPlan(mapping, filename, modelNames, content, properties, geometries);
+        return new SchemaPlan(mapping, filename, modelNames, content, properties, geometries, splitGeometries);
     }
 
     private static TypeDescriptor type(DbMapping mapping, TypeRef ref) {
@@ -115,7 +122,7 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
     }
 
     private static void addProperties(List<ColumnProperty> properties, Map<String, List<GeometryColumn>> geometries,
-                                      DbMapping mapping, DbMapping.Table table, DbMapping.Column column) {
+                                      DbMapping mapping, String table, DbMapping.Column column) {
         column.target().ifPresent(target ->
                 property(properties, table, null, column, "foreignKey", mapping.table(target).name()));
         if (!(column.slot() instanceof AttributeSlot attribute)) return;
@@ -136,9 +143,9 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
             if (declaredType(mapping, column) instanceof DomainReferenceType alias) {
                 var ref = new SymbolRef(mapping.plan().snapshotId(), alias.targetDomain());
                 String domain = qualifiedName(mapping, symbol(mapping, ref));
-                property(properties, table, table.name(), column, "enumDomain", domain);
+                property(properties, table, table, column, "enumDomain", domain);
             } else if (column.kind() == DbMapping.Kind.BOOLEAN) {
-                property(properties, table, table.name(), column, "enumDomain", "INTERLIS.BOOLEAN");
+                property(properties, table, table, column, "enumDomain", "INTERLIS.BOOLEAN");
             }
         }
         if (effective instanceof TextType text && text.textKind() == TextKind.MTEXT) {
@@ -151,7 +158,7 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
             });
         }
         if (column.kind().geometry()) {
-            geometries.computeIfAbsent(table.name(), ignored -> new ArrayList<>())
+            geometries.computeIfAbsent(table, ignored -> new ArrayList<>())
                     .add(geometryColumn(properties, mapping, table, column));
         }
         String caption = metaText(attribute.attribute(), "ili2db.dispName");
@@ -163,7 +170,7 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
     }
 
     private static GeometryColumn geometryColumn(List<ColumnProperty> properties, DbMapping mapping,
-                                                 DbMapping.Table table, DbMapping.Column column) {
+                                                 String table, DbMapping.Column column) {
         CoordinateType coordinates;
         var effective = column.effectiveType().orElseThrow();
         if (effective instanceof CoordinateType coordinateType) {
@@ -205,7 +212,7 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
                 column.slot().name().declared().toString());
     }
 
-    private static Double bound(List<ColumnProperty> properties, DbMapping.Table table, DbMapping.Column column,
+    private static Double bound(List<ColumnProperty> properties, String table, DbMapping.Column column,
                                 String key, Optional<DecimalLiteral> limit) {
         if (limit.isEmpty()) return null;
         var value = limit.get();
@@ -220,8 +227,8 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
         return extent;
     }
 
-    private static void property(List<ColumnProperty> properties, DbMapping.Table table, String subtype,
+    private static void property(List<ColumnProperty> properties, String table, String subtype,
                                  DbMapping.Column column, String key, String value) {
-        properties.add(new ColumnProperty(table.name(), subtype, column.name(), Ili2dbLayout.PREFIX + key, value));
+        properties.add(new ColumnProperty(table, subtype, column.name(), Ili2dbLayout.PREFIX + key, value));
     }
 }

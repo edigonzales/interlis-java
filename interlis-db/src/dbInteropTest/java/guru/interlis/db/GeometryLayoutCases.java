@@ -8,11 +8,14 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
 
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
 import static guru.interlis.db.DbInteropTest.cli;
+import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
 import static guru.interlis.db.DbInteropTest.referenceDatasetFixture;
@@ -36,47 +39,112 @@ final class GeometryLayoutCases {
         this.reference = reference;
     }
 
-    void singleColumnProfile(TestDatabase db) throws Exception {
-        Path ili = modelFile();
-        var failed = cli(db, "schemaimport", model, null, ili, CancellationToken.none(), "--create-geom-index");
-        assertNotEquals(0, failed.code(), failed::diagnostics);
-        assertTrue(failed.diagnostics().contains("multiple GeoPackage geometry columns"), failed::diagnostics);
-    }
-
     void sameTable(TestDatabase old, TestDatabase own) throws Exception {
-        Path ili = modelFile();
-        reference.run(old, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
-                "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056",
-                "--createGeomIdx", ili.toString());
-        var create = cli(own, "schemaimport", model, null, ili, CancellationToken.none(), "--create-geom-index");
-        assertEquals(0, create.code(), create::diagnostics);
-
-        Path input = delivery("layout-input", asset("a1", "2600100.125", "-40.125", true)
-                + asset("a2", null, "90.25", false));
-        reference.run(old, work.toString(), "--import", "--dataset", "layout", "--importTid", "--importBid", input.toString());
-        Path newOutput = work.resolve("layout-new.xtf");
-        assertCliSuccess(old, "export", model, "layout", newOutput);
-        assertTransfer(newOutput, "2600100.125", "-40.125", true, 2);
-
-        assertCliSuccess(own, "import", model, "layout", input);
-        Path oldOutput = work.resolve("layout-old.xtf");
-        reference.run(own, work.toString(), "--export", "--dataset", "layout", "--exportTid", oldOutput.toString());
-        assertTransfer(oldOutput, "2600100.125", "-40.125", true, 2);
-
-        try (var oldSql = old.connect(); var sql = own.connect()) {
-            DbSchemaCatalog.read(oldSql, true, old.schema()).assertSameAs(DbSchemaCatalog.read(sql, true, own.schema()));
+        create(old, own, false);
+        mixedTransfers(old, own);
+        try (var sql = own.connect()) {
             assertEquals("3", scalar(sql, "SELECT count(*) FROM pg_indexes WHERE schemaname='" + own.schema()
                     + "' AND tablename='asset' AND indexdef LIKE '%USING gist%'"));
             String key = scalar(sql, "SELECT t_id FROM " + own.table("asset") + " WHERE t_ili_tid='a1'");
-            Path changed = delivery("layout-changed", asset("a1", "2600400.500", null, true));
+            Path changed = changed();
             assertCliSuccess(own, "update", model, "layout", changed);
             assertEquals(key, scalar(sql, "SELECT t_id FROM " + own.table("asset") + " WHERE t_ili_tid='a1'"));
             assertEquals("1", scalar(sql, "SELECT count(*) FROM " + own.table("asset") + " WHERE surveyed IS NULL"));
             assertPostgisHit(own, sql, "2600100.125", "0");
             assertPostgisHit(own, sql, "2600400.500", "1");
-            reference.run(own, work.toString(), "--export", "--dataset", "layout", "--exportTid", oldOutput.toString());
-            assertTransfer(oldOutput, "2600400.500", null, true, 1);
+            Path output = work.resolve("layout-updated.xtf");
+            reference.run(own, work.toString(), "--export", "--dataset", "layout", "--exportTid", output.toString());
+            assertTransfer(output, "2600400.500", null, true, 1);
         }
+    }
+
+    void split(TestDatabase old, TestDatabase own) throws Exception {
+        create(old, own, true);
+        mixedTransfers(old, own);
+        Path changed = changed();
+        try (var sql = own.connect()) {
+            if (!own.postgis()) GeoPackageRtree.register(sql);
+            String id = scalar(sql, "SELECT t_id FROM " + own.table("asset") + " WHERE t_ili_tid='a1'");
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + own.table("asset_trace") + " WHERE trace IS NULL"));
+            assertEquals("2", fragmentRows(own, sql, "asset_trace"));
+            assertEquals("2", fragmentRows(own, sql, "asset_surveyed"));
+            assertCliSuccess(own, "update", model, "layout", changed);
+            assertEquals(id, scalar(sql, "SELECT t_id FROM " + own.table("asset") + " WHERE t_ili_tid='a1'"));
+            assertEquals("1", fragmentRows(own, sql, "asset_trace"));
+            assertEquals("1", fragmentRows(own, sql, "asset_surveyed"));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + own.table("asset_surveyed") + " WHERE surveyed IS NULL"));
+            String basket = scalar(sql, "SELECT t_basket FROM " + own.table("asset") + " WHERE t_id=" + id);
+            execute(sql, "UPDATE " + own.table("asset_trace") + " SET t_basket=-1 WHERE t_id=" + id);
+            Path output = Files.writeString(work.resolve("layout-corrupt.xtf"), "previous output");
+            var failed = cli(own, "export", model, "layout", output, CancellationToken.none());
+            assertNotEquals(0, failed.code(), failed::diagnostics);
+            assertTrue(failed.diagnostics().contains("Secondary geometry belongs to a different basket"), failed::diagnostics);
+            assertEquals("previous output", Files.readString(output));
+            execute(sql, "UPDATE " + own.table("asset_trace") + " SET t_basket=" + basket + " WHERE t_id=" + id);
+
+            assertCliSuccess(own, "replace", model, "layout", changed);
+            assertNotEquals(id, scalar(sql, "SELECT t_id FROM " + own.table("asset") + " WHERE t_ili_tid='a1'"));
+            assertEquals("1", fragmentRows(own, sql, "asset_trace"));
+            assertCliSuccess(own, "delete", model, "layout", null);
+            assertEquals("0", fragmentRows(own, sql, "asset_trace"));
+            assertEquals("0", fragmentRows(own, sql, "asset_surveyed"));
+        }
+
+        reference.run(old, work.toString(), "--update", "--dataset", "layout", "--importTid", "--importBid", changed.toString());
+        Path updated = work.resolve("split-legacy-update.xtf");
+        assertCliSuccess(old, "export", model, "layout", updated);
+        assertTransfer(updated, "2600400.500", null, true, 1);
+        if (!old.postgis()) {
+            try (var sql = old.connect()) {
+                assertEquals("2", fragmentRows(old, sql, "asset_surveyed"));
+            }
+        }
+    }
+
+    private static String fragmentRows(TestDatabase db, Connection sql, String table) throws Exception {
+        return scalar(sql, "SELECT count(*) FROM " + db.table(table));
+    }
+
+    private Path changed() throws Exception {
+        return delivery("layout-changed", asset("a1", "2600400.500", null, true));
+    }
+
+    private void create(TestDatabase old, TestDatabase own, boolean split) throws Exception {
+        Path ili = modelFile();
+        var options = new ArrayList<>(List.of("--schemaimport", "--noSmartMapping", "--createBasketCol",
+                "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056",
+                "--createGeomIdx"));
+        var nativeOptions = new ArrayList<>(List.of("--create-geom-index"));
+        if (split && old.postgis()) {
+            options.add("--oneGeomPerTable");
+            nativeOptions.add("--one-geom-per-table");
+        }
+        options.add(ili.toString());
+        reference.run(old, work.toString(), options.toArray(String[]::new));
+        var create = cli(own, "schemaimport", model, null, ili, CancellationToken.none(), nativeOptions.toArray(String[]::new));
+        assertEquals(0, create.code(), create::diagnostics);
+        try (var oldSql = old.connect(); var sql = own.connect()) {
+            var expected = DbSchemaCatalog.read(oldSql, old.postgis(), old.schema());
+            if (!old.postgis()) {
+                expected = expected.expectGeoPackageGeometryExtension("asset_trace", "trace", "COMPOUNDCURVE");
+            }
+            expected.assertSameAs(DbSchemaCatalog.read(sql, own.postgis(), own.schema()));
+        }
+    }
+
+    private void mixedTransfers(TestDatabase old, TestDatabase own) throws Exception {
+        Path input = delivery("layout-input", asset("a1", "2600100.125", "-40.125", true)
+                + asset("a2", null, "90.25", false));
+        reference.run(old, work.toString(), "--import", "--dataset", "layout", "--importTid", "--importBid", input.toString());
+        Path newOutput = work.resolve(own.schema() + "-new.xtf");
+        assertCliSuccess(old, "export", model, "layout", newOutput);
+        assertTransfer(newOutput, "2600100.125", "-40.125", true, 2);
+
+        assertCliSuccess(own, "import", model, "layout", input);
+        Path oldOutput = work.resolve(own.schema() + "-old.xtf");
+        reference.run(own, work.toString(), "--export", "--dataset", "layout", "--exportTid", oldOutput.toString());
+        assertTransfer(oldOutput, "2600100.125", "-40.125", true, 2);
+
     }
 
     private Path modelFile() throws Exception {

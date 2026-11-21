@@ -31,7 +31,7 @@ final class DbMappingTest {
                     END Location.
                     """.formatted(version));
             var rejected = assertThrows(DbException.class,
-                    () -> DbMapping.planNew("Location", source, false, CancellationToken.none()));
+                    () -> DbMapping.planNew("Location", source, false, false, CancellationToken.none()));
             assertTrue(rejected.getMessage().contains("one-to-one associations between topics at Location.Surveys.SurveySite"),
                     rejected::getMessage);
         }
@@ -56,7 +56,7 @@ final class DbMappingTest {
                         END Ownership.
                         """.formatted(version, strength));
                 var rejected = assertThrows(DbException.class,
-                        () -> DbMapping.planNew("Ownership", source, false, CancellationToken.none()));
+                        () -> DbMapping.planNew("Ownership", source, false, false, CancellationToken.none()));
                 assertTrue(rejected.getMessage().contains("attributes on an aggregation or composition at Ownership.Data.OwnershipLink"),
                         rejected::getMessage);
             }
@@ -80,7 +80,7 @@ final class DbMappingTest {
                     END Tree.
                     """.formatted(version));
             var rejected = assertThrows(DbException.class,
-                    () -> DbMapping.planNew("Tree", source, false, CancellationToken.none()));
+                    () -> DbMapping.planNew("Tree", source, false, false, CancellationToken.none()));
             assertTrue(rejected.getMessage().contains("cyclic structure composition at Tree.Data.Node.Children"),
                     rejected::getMessage);
         }
@@ -106,7 +106,7 @@ final class DbMappingTest {
                       END Data;
                     END Routes.
                     """.formatted(version));
-            var mapping = DbMapping.planNew("Routes", source, false, CancellationToken.none());
+            var mapping = DbMapping.planNew("Routes", source, false, false, CancellationToken.none());
             var geometryTypes = mapping.tables().stream()
                     .map(table -> table.columns().getFirst().kind().geometryType()).toList();
             assertEquals(List.of("COMPOUNDCURVE", "COMPOUNDCURVE", "COMPOUNDCURVE"), geometryTypes,
