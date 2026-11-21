@@ -43,6 +43,87 @@ final class DatasetWriteCases {
         this.reference = reference;
     }
 
+    void deleteRelations(TestDatabase db, boolean referenceSchema) throws Exception {
+        String model = "DbInterop" + version;
+        schema(db, referenceSchema, model);
+        Path input = work.resolve("delete-source.xtf");
+        if (Files.notExists(input)) {
+            try (var resource = DatasetWriteCases.class.getResourceAsStream("/" + model + ".xtf")) {
+                Files.copy(resource, input);
+            }
+        }
+        seed(db, referenceSchema, model, "remove", input);
+        seed(db, referenceSchema, model, "retain", input);
+        try (var sql = db.connect()) {
+            String datasets = db.table("t_ili2db_dataset");
+            String baskets = db.table("t_ili2db_basket");
+            String removed = scalar(sql, "SELECT t_id FROM " + datasets + " WHERE datasetname='remove'");
+            String retained = scalar(sql, "SELECT t_id FROM " + datasets + " WHERE datasetname='retain'");
+            var removedBaskets = strings(sql, "SELECT t_id FROM " + baskets + " WHERE dataset=" + removed);
+            var retainedBaskets = strings(sql, "SELECT t_id FROM " + baskets + " WHERE dataset=" + retained);
+            var tables = List.of("mast", "tower", "place", "nestedleaf", "nestedinner", "markerlink");
+            var removedRows = basketObjectIds(db, sql, tables, removedBaskets);
+            var retainedRows = basketObjectIds(db, sql, tables, retainedBaskets);
+            assertTrue(removedRows.values().stream().allMatch(ids -> !ids.isEmpty()));
+
+            String pin = db.table("prevent_dataset_delete");
+            execute(sql, "CREATE TABLE " + pin + " (dataset BIGINT REFERENCES " + datasets + "(t_id))");
+            execute(sql, "INSERT INTO " + pin + " VALUES (" + removed + ")");
+            var failed = cli(db, "delete", model, "remove", null, CancellationToken.none());
+            assertNotEquals(0, failed.code(), failed::diagnostics);
+            assertEquals(removed, scalar(sql, "SELECT t_id FROM " + datasets + " WHERE datasetname='remove'"));
+            assertEquals(removedRows, basketObjectIds(db, sql, tables, removedBaskets));
+            execute(sql, "DROP TABLE " + pin);
+
+            if (referenceSchema) assertCliSuccess(db, "delete", model, "remove", null);
+            else reference.run(db, work.toString(), "--delete", "--dataset", "remove");
+
+            assertNull(scalar(sql, "SELECT t_id FROM " + datasets + " WHERE datasetname='remove'"));
+            assertEquals("0", scalar(sql, "SELECT count(*) FROM " + baskets + " WHERE dataset=" + removed));
+            assertTrue(basketObjectIds(db, sql, tables, removedBaskets).values().stream().allMatch(List::isEmpty));
+            assertEquals(retainedRows, basketObjectIds(db, sql, tables, retainedBaskets));
+            failed = cli(db, "delete", model, "remove", null, CancellationToken.none());
+            assertNotEquals(0, failed.code(), failed::diagnostics);
+            assertTrue(failed.diagnostics().contains("Dataset does not exist"), failed::diagnostics);
+
+            long largest = Long.parseLong(scalar(sql, "SELECT max(t_id) FROM " + baskets));
+            runReference(db, "import", "tail", input);
+            assertTrue(Long.parseLong(scalar(sql, "SELECT t_id FROM " + datasets + " WHERE datasetname='tail'")) > largest);
+        }
+    }
+
+    private static Map<String, List<String>> basketObjectIds(TestDatabase db, Connection sql, List<String> tables,
+                                                              List<String> baskets) throws SQLException {
+        var result = new HashMap<String, List<String>>();
+        for (String table : tables) {
+            result.put(table, strings(sql, "SELECT t_id FROM " + db.table(table) + " WHERE t_basket IN ("
+                    + String.join(", ", baskets) + ") ORDER BY t_id"));
+        }
+        return result;
+    }
+
+    void deleteReferenced(TestDatabase db) throws Exception {
+        String model = "DbMutRef" + version;
+        schema(db, true, model);
+        Path catalog = delivery("delete-catalog", model, new Basket("catalog", target(model, "site", "listed")));
+        Path source = delivery("delete-dependent", model,
+                new Basket("source", recordWithReference(model, "record", "observed", "site", "catalog")));
+        runReference(db, "import", "catalog", catalog);
+        assertCliSuccess(db, "import", model, "source", source);
+        try (var sql = db.connect()) {
+            var targets = rows(db, sql, "mutationtarget");
+            var result = cli(db, "delete", model, "catalog", null, CancellationToken.none());
+            assertNotEquals(0, result.code(), result::diagnostics);
+            assertTrue(result.diagnostics().contains("Cannot delete referenced object"), result::diagnostics);
+            assertEquals(targets, rows(db, sql, "mutationtarget"));
+            assertDestination(db, sql, rows(db, sql, "mutationrecord").get(key("source", "source", "record")),
+                    targets.get(key("catalog", "catalog", "site")));
+            assertCliSuccess(db, "delete", model, "source", null);
+            assertCliSuccess(db, "delete", model, "catalog", null);
+            assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
+        }
+    }
+
     void replace(TestDatabase db, boolean referenceSchema) throws Exception {
         String model = "DbMutation" + version;
         schema(db, referenceSchema, model);

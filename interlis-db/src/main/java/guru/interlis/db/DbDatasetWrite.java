@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.TreeSet;
@@ -221,7 +222,35 @@ final class DbDatasetWrite {
         return db.gpkg() ? name.toLowerCase(Locale.ROOT) : name;
     }
 
-    static void clearDataset(Database db, DbMapping mapping, long dataset, CancellationToken token) throws SQLException {
+    static Optional<Long> findDataset(Database db, String dataset) throws SQLException {
+        String sql = "SELECT " + T_ID + " FROM " + db.technicalTable(DATASET)
+                + " WHERE datasetname = ?";
+        try (var statement = db.connection().prepareStatement(sql)) {
+            statement.setString(1, dataset);
+            try (var rows = statement.executeQuery()) {
+                if (!rows.next()) {
+                    return Optional.empty();
+                }
+                long id = rows.getLong(1);
+                if (rows.next()) {
+                    throw new DbException("Dataset name is ambiguous: " + dataset);
+                }
+                return Optional.of(id);
+            }
+        }
+    }
+
+    static void deleteDataset(Database db, DbMapping mapping, String dataset, CancellationToken token)
+            throws SQLException {
+        token.throwIfCancellationRequested();
+        lock(db, mapping);
+        long id = findDataset(db, dataset).orElseThrow(() -> new DbException("Dataset does not exist: " + dataset));
+        clearDataset(db, mapping, id, "delete", token);
+        token.throwIfCancellationRequested();
+        delete(db, "DELETE FROM " + db.technicalTable(DATASET) + " WHERE " + T_ID + " = ?", id);
+    }
+
+    static void clearDataset(Database db, DbMapping mapping, long dataset, String operation, CancellationToken token) throws SQLException {
         var topics = mapping.plan().topics().stream()
                 .map(topic -> topic.name().declared().toString()).collect(Collectors.toSet());
         String baskets = db.technicalTable(BASKET);
@@ -230,14 +259,14 @@ final class DbDatasetWrite {
             try (var rows = statement.executeQuery()) {
                 while (rows.next()) {
                     if (!topics.contains(rows.getString(1))) {
-                        throw new DbException("Cannot replace a dataset with a basket outside the selected model: "
+                        throw new DbException("Cannot " + operation + " a dataset with a basket outside the selected model: "
                                 + rows.getString(1));
                     }
                 }
             }
         }
         checkIncomingMappings(db, mapping);
-        checkReplaceReferences(db, mapping, dataset, token);
+        checkDatasetReferences(db, mapping, dataset, operation, token);
         for (var table : mapping.tables().reversed()) {
             token.throwIfCancellationRequested();
             delete(db, "DELETE FROM " + db.table(table.name()) + " WHERE " + T_BASKET
@@ -247,7 +276,7 @@ final class DbDatasetWrite {
         delete(db, "DELETE FROM " + baskets + " WHERE dataset = ?", dataset);
     }
 
-    private static void checkReplaceReferences(Database db, DbMapping mapping, long dataset,
+    private static void checkDatasetReferences(Database db, DbMapping mapping, long dataset, String operation,
                                                CancellationToken token) throws SQLException {
         String baskets = db.technicalTable(BASKET);
         for (var table : mapping.tables()) {
@@ -266,7 +295,7 @@ final class DbDatasetWrite {
                     statement.setLong(1, dataset);
                     statement.setLong(2, dataset);
                     try (var rows = statement.executeQuery()) {
-                        if (rows.next()) throw referencedTarget("replace", column, rows.getLong(1));
+                        if (rows.next()) throw referencedTarget(operation, column, rows.getLong(1));
                     }
                 }
             }

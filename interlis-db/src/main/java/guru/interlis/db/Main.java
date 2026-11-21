@@ -29,6 +29,8 @@ public final class Main {
     private static final String USAGE = """
             Usage: interlis-db <export|import|replace|update> --model NAME --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
+                   interlis-db delete --model NAME --dataset NAME
+                    (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME)
                    interlis-db schemaimport --model NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.
@@ -62,6 +64,7 @@ public final class Main {
             options.checkPaths();
             switch (options.command()) {
                 case IMPORT, REPLACE, UPDATE -> importData(options, password, cancellation);
+                case DELETE -> deleteData(options, password, cancellation);
                 case EXPORT -> exportData(options, password, cancellation);
                 case SCHEMAIMPORT -> createSchema(options, password, cancellation);
             }
@@ -119,6 +122,15 @@ public final class Main {
         }
     }
 
+    private static void deleteData(Options options, String password, CancellationToken cancellation) throws SQLException {
+        try (var database = options.open(password)) {
+            var mapping = DbSchemaReader.read(database, options.model(), cancellation);
+            DbDatasetWrite.deleteDataset(database, mapping, options.dataset(), cancellation);
+            cancellation.throwIfCancellationRequested();
+            database.commit();
+        }
+    }
+
     private static void exportData(Options options, String password, CancellationToken cancellation)
             throws IOException, SQLException {
         Path temporary = Files.createTempFile(options.file().getParent(), ".interlis-db-", ".xtf");
@@ -141,7 +153,7 @@ public final class Main {
         }
     }
 
-    private enum Command { IMPORT, REPLACE, UPDATE, EXPORT, SCHEMAIMPORT }
+    private enum Command { IMPORT, REPLACE, UPDATE, DELETE, EXPORT, SCHEMAIMPORT }
 
     private record Options(Command command, String model, String dataset, Path file, Path gpkg,
                            String pgUrl, String schema, String user) {
@@ -152,9 +164,10 @@ public final class Main {
                 case "import" -> Command.IMPORT;
                 case "replace" -> Command.REPLACE;
                 case "update" -> Command.UPDATE;
+                case "delete" -> Command.DELETE;
                 case "export" -> Command.EXPORT;
                 case "schemaimport" -> Command.SCHEMAIMPORT;
-                default -> throw new IllegalArgumentException("Expected import, replace, update, export or schemaimport");
+                default -> throw new IllegalArgumentException("Expected import, replace, update, delete, export or schemaimport");
             };
             var flags = new HashMap<String, String>();
             Path file = null;
@@ -183,7 +196,11 @@ public final class Main {
                 if (file == null || file.getParent() == null || model == null) {
                     throw new IllegalArgumentException("An .ili path and --model are required");
                 }
-                if (dataset != null) throw new IllegalArgumentException("--dataset is only valid with an XTF command");
+                if (dataset != null) throw new IllegalArgumentException("--dataset is not valid with schemaimport");
+            } else if (command == Command.DELETE) {
+                if (file != null || model == null || dataset == null) {
+                    throw new IllegalArgumentException("delete requires --model and --dataset without a file");
+                }
             } else if (file == null || file.getParent() == null || model == null || dataset == null) {
                 throw new IllegalArgumentException("An XTF path, --model and --dataset are required");
             }
@@ -207,7 +224,7 @@ public final class Main {
                 if (!Files.isRegularFile(gpkg)) {
                     throw new DbException("Expected an existing GeoPackage file");
                 }
-                if (file.equals(gpkg) || (Files.exists(file) && Files.isSameFile(file, gpkg))) {
+                if (file != null && (file.equals(gpkg) || (Files.exists(file) && Files.isSameFile(file, gpkg)))) {
                     throw new DbException("The XTF and GeoPackage paths must identify different files");
                 }
             }
@@ -215,8 +232,10 @@ public final class Main {
 
         Database open(String password) throws SQLException {
             boolean writable = command != Command.EXPORT;
-            int isolation = command == Command.REPLACE || command == Command.UPDATE ? Connection.TRANSACTION_READ_COMMITTED
-                    : Connection.TRANSACTION_REPEATABLE_READ;
+            int isolation = switch (command) {
+                case REPLACE, UPDATE, DELETE -> Connection.TRANSACTION_READ_COMMITTED;
+                default -> Connection.TRANSACTION_REPEATABLE_READ;
+            };
             return gpkg == null ? Database.openPostgres(pgUrl, schema, user, password, writable, isolation)
                     : Database.openGeoPackage(gpkg, writable);
         }

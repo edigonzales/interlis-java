@@ -71,7 +71,7 @@ final class DbTransfer {
     static void exportData(Database db, DbMapping mapping, String dataset,
                            TransferWriter writer, CancellationToken token) throws SQLException {
         token.throwIfCancellationRequested();
-        long datasetId = findDataset(db, dataset)
+        long datasetId = DbDatasetWrite.findDataset(db, dataset)
                 .orElseThrow(() -> new DbException("Dataset does not exist: " + dataset));
         checkStructureOwners(db, mapping, datasetId, token);
         checkLinkOwners(db, mapping, datasetId, token);
@@ -981,7 +981,7 @@ final class DbTransfer {
                            TransferReader reader, WriteMode mode, CancellationToken token) throws SQLException {
         token.throwIfCancellationRequested();
         if (mode != WriteMode.IMPORT) DbDatasetWrite.lock(db, mapping);
-        var existing = findDataset(db, dataset);
+        var existing = DbDatasetWrite.findDataset(db, dataset);
         if (mode == WriteMode.IMPORT && existing.isPresent()) {
             throw new DbException("Dataset already exists: " + dataset);
         }
@@ -998,7 +998,7 @@ final class DbTransfer {
                         }
                         if (existing.isPresent()) {
                             datasetId = existing.orElseThrow();
-                            if (mode == WriteMode.REPLACE) DbDatasetWrite.clearDataset(db, mapping, datasetId, token);
+                            if (mode == WriteMode.REPLACE) DbDatasetWrite.clearDataset(db, mapping, datasetId, "replace", token);
                         } else {
                             datasetId = importer.insertDataset(dataset);
                         }
@@ -1017,24 +1017,6 @@ final class DbTransfer {
                 throw new DbException("A dataset must contain at least one basket");
             }
             importer.finishTransfer();
-        }
-    }
-
-    private static Optional<Long> findDataset(Database db, String dataset) throws SQLException {
-        String sql = "SELECT " + T_ID + " FROM " + db.technicalTable(DATASET)
-                + " WHERE datasetname = ?";
-        try (var statement = db.connection().prepareStatement(sql)) {
-            statement.setString(1, dataset);
-            try (var rows = statement.executeQuery()) {
-                if (!rows.next()) {
-                    return Optional.empty();
-                }
-                long id = rows.getLong(1);
-                if (rows.next()) {
-                    throw new DbException("Dataset name is ambiguous: " + dataset);
-                }
-                return Optional.of(id);
-            }
         }
     }
 

@@ -95,6 +95,16 @@ in anderen Baskets oder Datensätzen zeigen. Externe Zielfremdschlüssel
 werden gegen den Endbestand gebunden. Bestehen bleibende Referenzen auf
 zu löschende Objekte und mehrdeutige Ziele führen zum Rollback.
 
+## Datensätze löschen
+
+`interlis-db delete --gpkg data.gpkg --model Example --dataset original`
+entfernt die Fachzeilen, Baskets und Dataset-Zeile in derselben Transaktion.
+Für PostGIS gelten die üblichen Verbindungsoptionen. Der Datensatz muss
+vorhanden sein und seine Baskets müssen zum ausgewählten Modell gehören.
+Eine Referenz aus einem bestehen bleibenden Basket auf ein zu löschendes
+Objekt führt zum Rollback. Die gemeinsame ID-Vergabe läuft nach der Löschung
+weiter.
+
 ## Referenzprofil
 
 Für die Erzeugung mit dem Originalwerkzeug verwende

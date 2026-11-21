@@ -112,13 +112,25 @@ final class DbInteropTest {
         assertWidePolymorphicProjection();
         exchange(24, null);
     }
-    @Test void postgis23() throws Exception { exchangeWithPostgis(23, false); }
-    @Test void postgis24() throws Exception { exchangeWithPostgis(24, false); }
+    @Test void postgis23() throws Exception { exchangeWithPostgis(23, this::exchange); }
+    @Test void postgis24() throws Exception { exchangeWithPostgis(24, this::exchange); }
 
     @Test void geoPackageMutation23() throws Exception { exchangeMutation(23, null); }
     @Test void geoPackageMutation24() throws Exception { exchangeMutation(24, null); }
-    @Test void postgisMutation23() throws Exception { exchangeWithPostgis(23, true); }
-    @Test void postgisMutation24() throws Exception { exchangeWithPostgis(24, true); }
+    @Test void postgisMutation23() throws Exception { exchangeWithPostgis(23, this::exchangeMutation); }
+    @Test void postgisMutation24() throws Exception { exchangeWithPostgis(24, this::exchangeMutation); }
+
+    @Test void geoPackageDelete23() throws Exception { exchangeDelete(23, null); }
+    @Test void geoPackageDelete24() throws Exception { exchangeDelete(24, null); }
+    @Test void postgisDelete23() throws Exception { exchangeWithPostgis(23, this::exchangeDelete); }
+    @Test void postgisDelete24() throws Exception { exchangeWithPostgis(24, this::exchangeDelete); }
+
+    private void exchangeDelete(int version, PostgreSQLContainer postgres) throws Exception {
+        var cases = new DatasetWriteCases(work, version, new ReferenceTool(postgres != null));
+        cases.deleteRelations(new TestDatabase(postgres, "delete_reference"), true);
+        cases.deleteRelations(new TestDatabase(postgres, "delete_native"), false);
+        cases.deleteReferenced(new TestDatabase(postgres, "delete_references"));
+    }
 
     private void exchangeMutation(int version, PostgreSQLContainer postgres) throws Exception {
         var reference = new ReferenceTool(postgres != null);
@@ -184,14 +196,18 @@ final class DbInteropTest {
         }
     }
 
-    private void exchangeWithPostgis(int version, boolean mutation) throws Exception {
+    @FunctionalInterface
+    private interface PostgisCase {
+        void run(int version, PostgreSQLContainer postgres) throws Exception;
+    }
+
+    private void exchangeWithPostgis(int version, PostgisCase test) throws Exception {
         var image = DockerImageName.parse("sogis/postgis:16-3.4").asCompatibleSubstituteFor("postgres");
         try (var postgres = new PostgreSQLContainer(image)
                 .withTmpFs(Map.of("/var/lib/postgresql/data", "rw,size=256m"))
                 .withPassword("db_interop_password")) {
             postgres.start();
-            if (mutation) exchangeMutation(version, postgres);
-            else exchange(version, postgres);
+            test.run(version, postgres);
         }
     }
 
@@ -4198,7 +4214,7 @@ final class DbInteropTest {
         var args = new ArrayList<>(List.of(operation, "--model", model));
         if (dataset != null) args.addAll(List.of("--dataset", dataset));
         args.addAll(db.nativeOptions());
-        args.add(path.toString());
+        if (path != null) args.add(path.toString());
         int code = Main.run(args.toArray(String[]::new), print, print, db.password, token);
         return new CliResult(code, diagnostics.toString());
     }
