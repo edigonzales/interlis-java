@@ -13,6 +13,7 @@ import guru.interlis.model.CardinalityUpper;
 import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.CoordinateType;
+import guru.interlis.model.DomainReferenceType;
 import guru.interlis.model.DomainSymbol;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.GeometryType;
@@ -96,10 +97,6 @@ final class DbMapping {
 
         Column withName(String sqlName) {
             return new Column(slot, sqlName, kind, effectiveType, target, epsgCode, srsId, positionColumn, dimensions);
-        }
-
-        Column withEpsgCode(int code) {
-            return new Column(slot, name, kind, effectiveType, target, code, code, positionColumn, dimensions);
         }
 
         Column withSrsId(int id) {
@@ -358,7 +355,7 @@ final class DbMapping {
                     compositions.add(edge);
                     continue;
                 }
-                var binding = describeColumn(plan, object, attribute, attributeName);
+                var binding = describeColumn(plan, object, attribute, attributeName, defaultEpsg);
                 boolean split = splitGeometries && geometrySeen && binding.kind().geometry();
                 String owner = split ? allocator.geometryTable(modelName,
                         object.topic().flatMap(plan::topic).orElseThrow().name().declared().last(),
@@ -370,7 +367,6 @@ final class DbMapping {
                 checkColumnName(attribute, column, object.kind() == SymbolKind.STRUCTURE, !split && discriminator, gpkg);
                 binding = binding.withName(column);
                 if (binding.kind().geometry()) {
-                    binding = binding.withEpsgCode(defaultEpsg);
                     geometrySeen = true;
                 }
                 if (split) secondary.add(new SecondaryGeometry(owner, binding));
@@ -681,7 +677,8 @@ final class DbMapping {
                 collectionKind));
     }
 
-    static Column describeColumn(TransferPlan plan, ObjectDescriptor object, AttributeSlot attr, String name) {
+    static Column describeColumn(TransferPlan plan, ObjectDescriptor object, AttributeSlot attr, String name,
+                                 int defaultEpsg) {
         String path = attr.name().declared().toString();
         if (!CardinalityUpper.finite(1).equals(attr.cardinality().upper())) throw unsupported(path);
         var type = plan.type(attr.effectiveType()).known().orElseThrow(() -> unsupported(path));
@@ -716,7 +713,12 @@ final class DbMapping {
         }
         int dimensions = curve != null ? curve.dimensions()
                 : kind.geometry() ? ((CoordinateType) type).dimensions() : 0;
-        return new Column(attr, name, kind, Optional.of(type), target, 0, 0, Optional.empty(), dimensions);
+        int epsg = 0;
+        if (kind.geometry()) {
+            epsg = type instanceof CoordinateType coord
+                    ? pointEpsg(plan, attr, coord, defaultEpsg, path) : requireDefaultEpsg(defaultEpsg, path);
+        }
+        return new Column(attr, name, kind, Optional.of(type), target, epsg, epsg, Optional.empty(), dimensions);
     }
 
     private record Curve(Kind kind, int dimensions) { }
@@ -757,6 +759,37 @@ final class DbMapping {
     static DomainSymbol vertexDomain(TransferPlan plan, GeometryType geometry) {
         return (DomainSymbol) plan.symbol(new SymbolRef(plan.snapshotId(), geometry.vertexDomain().orElseThrow()))
                 .known().orElseThrow();
+    }
+
+    private static int pointEpsg(TransferPlan plan, AttributeSlot attr, CoordinateType coordinates,
+                                 int defaultEpsg, String path) {
+        Symbol declaration = attr.attribute();
+        if (plan.type(attr.declaredType()).known().orElseThrow() instanceof DomainReferenceType alias) {
+            var domain = (DomainSymbol) plan.symbol(new SymbolRef(plan.snapshotId(), alias.targetDomain()))
+                    .known().orElseThrow();
+            // ili2db uses the fallback when the immediate domain itself is an alias.
+            if (plan.type(new TypeRef(plan.snapshotId(), domain.typeId())).known().orElseThrow()
+                    instanceof DomainReferenceType) {
+                return requireDefaultEpsg(defaultEpsg, path);
+            }
+            declaration = domain;
+        }
+        return geometryEpsg(plan, coordinates, declaration, defaultEpsg, path);
+    }
+
+    private static int geometryEpsg(TransferPlan plan, CoordinateType coordinates, Symbol declaration,
+                                    int defaultEpsg, String path) {
+        String crs = coordinates.referenceSystem().orElse(null);
+        if (crs == null) crs = metaText(declaration, "CRS");
+        if (crs == null) crs = metaText(plan.symbol(plan.rootModels().getFirst()).known().orElseThrow(), "CRS");
+        if (crs == null) return requireDefaultEpsg(defaultEpsg, path);
+        if (!crs.startsWith("EPSG:")) throw new DbException("Expected an EPSG CRS at " + path + ": " + crs);
+        return Ili2dbLayout.parseEpsgCode(crs.substring(5), path);
+    }
+
+    private static int requireDefaultEpsg(int defaultEpsg, String path) {
+        if (defaultEpsg == 0) throw new DbException("No EPSG CRS declared or configured for " + path);
+        return defaultEpsg;
     }
 
     static void validateGeometryCrs(TransferPlan plan, CoordinateType coordinates, Symbol declaration,

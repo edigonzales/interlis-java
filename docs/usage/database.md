@@ -153,10 +153,11 @@ Für neue Schemata setzt `schemaimport --default-epsg CODE` den
 Standard. Ohne Option gilt EPSG:2056. GeoPackage verwendet die vorhandenen
 EPSG-Definitionen aus dem Referenzprofil, darunter LV03 (21781) und
 WGS84 (4326). PostGIS prüft den Code in `spatial_ref_sys`.
-Bei vorhandenen Referenzschemata
-bestimmt `SETTINGS.defaultSrsCode` den EPSG-Code für Koordinaten ohne
-eigene CRS-Angabe. Der räumliche Katalog muss zum Modell und zu den
-gespeicherten Einstellungen passen. XYZ-Geometrien speichern die dritte
+Für Koordinatenattribute gilt zuerst `REFSYS` (INTERLIS 2.4), dann
+`!!@ CRS` an der Typdeklaration oder am Modell. Bei einem Verweis auf
+eine Koordinatendomäne ist deren Deklaration massgeblich. Ohne CRS-Angabe
+aus dem Modell gilt `SETTINGS.defaultSrsCode`. Der räumliche Katalog muss
+zur Auflösung passen. XYZ-Geometrien speichern die dritte
 Ordinate im SQL-Wert und die exakten Modellgrenzen als `c3Min` und `c3Max`
 in den Spaltenmetadaten. PostGIS verwendet den Z-Typzusatz, GeoPackage das
 Z-Bit der ili2gpkg-Kodierung. Die Raumindizes arbeiten mit der XY-Hülle.

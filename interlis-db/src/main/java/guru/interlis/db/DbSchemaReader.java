@@ -274,7 +274,8 @@ final class DbSchemaReader {
         requireSetting(settings, "TidHandling", "property");
         requireSetting(settings, "SqlNull", "enable");
         requireSetting(settings, "defaultSrsAuthority", "EPSG");
-        int defaultEpsg = Ili2dbLayout.parseEpsgCode(settings.get(PREFIX + "defaultSrsCode"), "SETTINGS.defaultSrsCode");
+        String value = settings.get(PREFIX + "defaultSrsCode");
+        int defaultEpsg = value == null ? 0 : Ili2dbLayout.parseEpsgCode(value, "SETTINGS.defaultSrsCode");
         for (String tag : List.of("inheritanceTrafo", "createEnumColAsItfCode", "createEnumCols",
                 "createDatasetCols", "typeDiscriminator", "createStdCols", "SqlColsAsText", "SqlExtRefCols")) {
             if (settings.containsKey(PREFIX + tag)) throw unsupported("SETTINGS." + tag);
@@ -431,20 +432,20 @@ final class DbSchemaReader {
                                      String path, int defaultEpsg)
             throws SQLException {
         useColumn(db, table, mapping, path);
-        var column = DbMapping.describeColumn(plan, object, attr, mapping.name());
+        var column = DbMapping.describeColumn(plan, object, attr, mapping.name(), defaultEpsg);
         if (column.target().isPresent()) {
             requireTarget(db, tables.get(column.target().orElseThrow()), mapping, path);
         } else if (mapping.target() != null) {
             throw new DbException("Unexpected ATTRNAME.target for " + path);
         }
         requireColumns(db, table.name(), table.columns(), Map.of(column.name(), column.kind()));
-        return column.kind().geometry() ? bindGeometry(db, table.name(), column, defaultEpsg) : column;
+        return column.kind().geometry() ? bindGeometry(db, table.name(), column) : column;
     }
 
     private static SecondaryGeometry bindSecondaryGeometry(Database db, TransferPlan plan, ObjectDescriptor object,
                                                            AttributeSlot attr, AttributeName mapping,
                                                            String parent, String table, String path, int defaultEpsg) throws SQLException {
-        var column = DbMapping.describeColumn(plan, object, attr, mapping.name());
+        var column = DbMapping.describeColumn(plan, object, attr, mapping.name(), defaultEpsg);
         if (!column.kind().geometry() || mapping.target() != null || Ili2dbLayout.TECHNICAL_COLUMNS.contains(key(db, column.name()))) {
             throw new DbException("Invalid secondary geometry column for " + path);
         }
@@ -465,12 +466,11 @@ final class DbSchemaReader {
                 }
             }
         }
-        return new SecondaryGeometry(table, bindGeometry(db, table, column, defaultEpsg));
+        return new SecondaryGeometry(table, bindGeometry(db, table, column));
     }
 
-    private static Column bindGeometry(Database db, String table, Column column, int defaultEpsg) throws SQLException {
-        var geometry = column.withEpsgCode(defaultEpsg);
-        return geometry.withSrsId(db.geometrySrs(table, geometry));
+    private static Column bindGeometry(Database db, String table, Column column) throws SQLException {
+        return column.withSrsId(db.geometrySrs(table, column));
     }
 
     private static void useColumn(Database db, CatalogTable table, AttributeName mapping, String path) {

@@ -4,7 +4,6 @@ import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.CoordinateType;
 import guru.interlis.model.DecimalLiteral;
 import guru.interlis.model.DomainReferenceType;
-import guru.interlis.model.DomainSymbol;
 import guru.interlis.model.GeometryType;
 import guru.interlis.model.ModelImport;
 import guru.interlis.model.ModelSymbol;
@@ -179,7 +178,6 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
         CoordinateType coordinates;
         var effective = column.effectiveType().orElseThrow();
         if (effective instanceof CoordinateType coordinateType) {
-            validateCoordinateCrs(mapping, column, coordinateType);
             coordinates = coordinateType;
         } else {
             var domain = DbMapping.vertexDomain(mapping.plan(), (GeometryType) effective);
@@ -200,21 +198,6 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
             bound(properties, table, column, "c3Max", z.maximum());
         }
         return new GeometryColumn(column, minX, minY, maxX, maxY);
-    }
-
-    private static void validateCoordinateCrs(DbMapping mapping, DbMapping.Column column, CoordinateType coordinates) {
-        Symbol declaration = ((AttributeSlot) column.slot()).attribute();
-        if (declaredType(mapping, column) instanceof DomainReferenceType alias) {
-            var domain = (DomainSymbol) symbol(mapping, new SymbolRef(mapping.plan().snapshotId(), alias.targetDomain()));
-            // The reference uses the default CRS when the immediate domain is another alias.
-            if (type(mapping, new TypeRef(mapping.plan().snapshotId(), domain.typeId())) instanceof DomainReferenceType) {
-                return;
-            }
-            declaration = domain;
-        }
-        String geometry = coordinates.multiCoordinate() ? "multipoint" : "point";
-        DbMapping.validateGeometryCrs(mapping.plan(), coordinates, declaration, geometry,
-                column.slot().name().declared().toString());
     }
 
     private static Double bound(List<ColumnProperty> properties, String table, DbMapping.Column column,

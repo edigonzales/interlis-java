@@ -3,6 +3,7 @@ package guru.interlis.db;
 import guru.interlis.db.DbInteropTest.ReferenceTool;
 import guru.interlis.db.DbInteropTest.TestDatabase;
 import guru.interlis.execution.CancellationToken;
+import org.w3c.dom.Element;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -42,13 +43,8 @@ final class CrsCases {
         String model = "DefaultCrs" + version + "_" + epsg;
         Path ili = defaultModel(model, epsg);
         createReference(db, ili, epsg);
-        var creation = cli(own, "schemaimport", model, null, ili, CancellationToken.none(),
-                "--default-epsg", Integer.toString(epsg));
-        assertEquals(0, creation.code(), creation::diagnostics);
-        try (var ref = db.connect(); var sql = own.connect()) {
-            DbSchemaCatalog.read(ref, db.postgis(), db.schema())
-                    .assertSameAs(DbSchemaCatalog.read(sql, own.postgis(), own.schema()));
-        }
+        createOwn(own, model, ili, "--default-epsg", Integer.toString(epsg));
+        assertCatalogs(db, own);
         defaultExchange(db, model, epsg);
         defaultExchange(own, model, epsg);
 
@@ -62,6 +58,68 @@ final class CrsCases {
         assertTrue(failed.diagnostics().contains("Expected an EPSG:2056"), failed::diagnostics);
         assertTrue(failed.diagnostics().contains("station.location"), failed::diagnostics);
         assertEquals("previous output", Files.readString(output));
+    }
+
+    void declaredPointCrs(TestDatabase old, TestDatabase own) throws Exception {
+        String model = "DeclaredCrs" + version;
+        String declaration = version == 24 ? "21781" : "4326";
+        String refsys = version == 24 ? " REFSYS \"EPSG:4326\"" : "";
+        Path ili = Files.writeString(work.resolve(model + ".ili"), """
+                INTERLIS 2.%s;
+                !!@ CRS="EPSG:21781"
+                MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
+                  DOMAIN
+                    !!@ CRS="EPSG:%s"
+                    Angles = COORD -180.000 .. 180.000, -90.000 .. 90.000%s;
+                  TOPIC Data =
+                    CLASS Globe =
+                      Location : Angles;
+                    END Globe;
+                    CLASS Marker =
+                      !!@ CRS="EPSG:2056"
+                      Location : COORD 2460000.000 .. 2870000.000, 1045000.000 .. 1310000.000;
+                    END Marker;
+                    CLASS Station =
+                      Location : COORD 460000.000 .. 870000.000, 45000.000 .. 310000.000;
+                    END Station;
+                  END Data;
+                END %s.
+                """.formatted(version % 10, model, declaration, refsys, model));
+        createReference(old, ili, 2056);
+        createOwn(own, model, ili);
+        assertCatalogs(old, own);
+        declaredExchange(old, model);
+        declaredExchange(own, model);
+        try (var sql = old.connect()) {
+            execute(sql, "DELETE FROM " + old.table("t_ili2db_settings")
+                    + " WHERE tag = 'ch.ehi.ili2db.defaultSrsCode'");
+        }
+        Path output = work.resolve(model + "-no-default.xtf");
+        assertCliSuccess(old, "export", model, "legacy", output);
+        assertDeclared(output, "legacy-declared");
+    }
+
+    private void declaredExchange(TestDatabase db, String model) throws Exception {
+        mixedExchange(db, model, "declared", tid ->
+                object(model, "Globe", tid + "-globe", field("Location", point("7.125", "46.375")))
+                + object(model, "Marker", tid + "-marker", field("Location", point("2600001.625", "1200002.125")))
+                + object(model, "Station", tid + "-station", field("Location", point("600100.125", "200200.375"))),
+                this::assertDeclared);
+        try (var sql = db.connect()) {
+            for (String tid : List.of("legacy-declared", "own-declared")) {
+                assertStoredEpsg(db, sql, "globe", "location", tid + "-globe", 4326);
+                assertStoredEpsg(db, sql, "marker", "location", tid + "-marker", 2056);
+                assertStoredEpsg(db, sql, "station", "location", tid + "-station", 21781);
+            }
+        }
+    }
+
+    private void assertDeclared(Path file, String tid) throws Exception {
+        var basket = basket(file, tid);
+        assertEquals(3, children(basket).size());
+        assertPoint(object(basket, tid + "-globe"), "Location", "7.125", "46.375");
+        assertPoint(object(basket, tid + "-marker"), "Location", "2600001.625", "1200002.125");
+        assertPoint(object(basket, tid + "-station"), "Location", "600100.125", "200200.375");
     }
 
     void rejectMissingDefault(TestDatabase db) throws Exception {
@@ -95,6 +153,18 @@ final class CrsCases {
         args.addAll(List.of(extra));
         args.add(ili.toString());
         reference.run(db, work.toString(), args.toArray(String[]::new));
+    }
+
+    private void createOwn(TestDatabase db, String model, Path ili, String... options) {
+        var creation = cli(db, "schemaimport", model, null, ili, CancellationToken.none(), options);
+        assertEquals(0, creation.code(), creation::diagnostics);
+    }
+
+    private static void assertCatalogs(TestDatabase old, TestDatabase own) throws Exception {
+        try (var ref = old.connect(); var sql = own.connect()) {
+            DbSchemaCatalog.read(ref, old.postgis(), old.schema())
+                    .assertSameAs(DbSchemaCatalog.read(sql, own.postgis(), own.schema()));
+        }
     }
 
     private void defaultExchange(TestDatabase db, String model, int epsg) throws Exception {
@@ -171,11 +241,22 @@ final class CrsCases {
         return "<" + name + ">" + value + "</" + name + ">";
     }
 
-    private void assertPoint(Path output, String tid, String field, String x, String y) throws Exception {
+    private Element basket(Path output, String tid) throws Exception {
         var basket = children(readDataSection(output, version)).getFirst();
         assertEquals("basket-" + tid, id(basket, version, "bid"));
-        var object = children(basket).getFirst();
-        assertEquals(tid, id(object, version, "tid"));
+        return basket;
+    }
+
+    private Element object(Element basket, String tid) {
+        return children(basket).stream().filter(object -> id(object, version, "tid").equals(tid))
+                .findFirst().orElseThrow();
+    }
+
+    private void assertPoint(Path output, String tid, String field, String x, String y) throws Exception {
+        assertPoint(object(basket(output, tid), tid), field, x, y);
+    }
+
+    private static void assertPoint(Element object, String field, String x, String y) {
         var position = children(children(child(object, field)).getFirst());
         assertEquals(0, new BigDecimal(x).compareTo(new BigDecimal(position.get(0).getTextContent())));
         assertEquals(0, new BigDecimal(y).compareTo(new BigDecimal(position.get(1).getTextContent())));
