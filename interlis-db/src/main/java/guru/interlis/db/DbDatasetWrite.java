@@ -33,16 +33,7 @@ final class DbDatasetWrite {
         }
     }
 
-    static void checkReplaceProfile(Database db, DbMapping mapping) throws SQLException {
-        for (var table : mapping.tables()) {
-            if (table.columns().stream().anyMatch(DbMapping.Column::external)) {
-                throw new DbException("Unsupported external references for replace at " + table.object().name().declared());
-            }
-        }
-        checkUnmappedReferences(db, mapping);
-    }
-
-    private static void checkUnmappedReferences(Database db, DbMapping mapping) throws SQLException {
+    static void checkIncomingMappings(Database db, DbMapping mapping) throws SQLException {
         var tables = mapping.tables().stream().map(DbMapping.Table::name).collect(Collectors.toSet());
         String sql = "SELECT tablename, columnname, setting FROM " + db.technicalTable(COLUMN_PROP) + " WHERE tag = ?";
         try (var statement = db.connection().prepareStatement(sql)) {
@@ -72,6 +63,7 @@ final class DbDatasetWrite {
                 }
             }
         }
+        checkReplaceReferences(db, mapping, dataset, token);
         for (var table : mapping.tables().reversed()) {
             token.throwIfCancellationRequested();
             delete(db, "DELETE FROM " + db.table(table.name()) + " WHERE " + T_BASKET
@@ -79,6 +71,37 @@ final class DbDatasetWrite {
         }
         token.throwIfCancellationRequested();
         delete(db, "DELETE FROM " + baskets + " WHERE dataset = ?", dataset);
+    }
+
+    private static void checkReplaceReferences(Database db, DbMapping mapping, long dataset,
+                                               CancellationToken token) throws SQLException {
+        String baskets = db.technicalTable(BASKET);
+        for (var table : mapping.tables()) {
+            for (var column : table.columns()) {
+                if (column.kind() != DbMapping.Kind.REFERENCE) continue;
+                token.throwIfCancellationRequested();
+                var root = mapping.rootTable(column.target().orElseThrow());
+                String sql = """
+                        SELECT ref.t_id FROM %s src JOIN %s ref ON ref.t_id = src.%s
+                        JOIN %s dst ON dst.t_id = ref.t_basket
+                        WHERE dst.dataset = ? AND NOT EXISTS
+                           (SELECT 1 FROM %s own WHERE own.t_id = src.t_basket AND own.dataset = ?)
+                        LIMIT 1
+                        """.formatted(db.table(table.name()), db.table(root.name()), Database.quote(column.name()), baskets, baskets);
+                try (var statement = db.connection().prepareStatement(sql)) {
+                    statement.setLong(1, dataset);
+                    statement.setLong(2, dataset);
+                    try (var rows = statement.executeQuery()) {
+                        if (rows.next()) throw referencedTarget("replace", column, rows.getLong(1));
+                    }
+                }
+            }
+        }
+    }
+
+    private static DbException referencedTarget(String operation, DbMapping.Column column, long id) {
+        return new DbException("Cannot " + operation + " referenced object T_Id " + id + " at "
+                + column.slot().name().declared());
     }
 
     private static void delete(Database db, String sql, long id) throws SQLException {

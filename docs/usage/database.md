@@ -60,6 +60,9 @@ Datensatz wird angelegt. Die Änderung wird erst nach dem bestätigten Ende des
 XTF-FULL-Transfers veröffentlicht. Die Löschung erfasst auch Klassenfragmente, Strukturen, Linkzeilen und
 Geometrien der bisherigen Baskets. PostGIS sperrt die betroffenen Tabellen für konkurrierende Schreibzugriffe.
 GeoPackage verwendet seine bestehende Schreibtransaktion.
+Zeigt eine bestehen bleibende Referenz auf eine der alten internen Objekt-IDs,
+wird der Ersatz zurückgerollt. Ausgehende `EXTERNAL`-Referenzen der neuen
+Lieferung verwenden die bestehende Suche im selben Schema.
 
 ## Referenzprofil
 

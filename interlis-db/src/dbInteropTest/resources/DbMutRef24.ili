@@ -1,0 +1,15 @@
+INTERLIS 2.4;
+MODEL DbMutRef24 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  TOPIC Data =
+    CLASS MutationTarget =
+      Label : TEXT*40;
+    END MutationTarget;
+    STRUCTURE MutationLink =
+      Destination : REFERENCE TO (EXTERNAL) MutationTarget;
+    END MutationLink;
+    CLASS MutationRecord =
+      Label : TEXT*40;
+      Detail : MutationLink;
+    END MutationRecord;
+  END Data;
+END DbMutRef24.

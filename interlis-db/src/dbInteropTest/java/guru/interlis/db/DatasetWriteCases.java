@@ -117,6 +117,39 @@ final class DatasetWriteCases {
         }
     }
 
+    void replaceExternal(TestDatabase db, boolean referenceSchema) throws Exception {
+        String model = "DbMutRef" + version;
+        schema(db, referenceSchema, model);
+        Path catalog = delivery("replace-catalog", model,
+                new Basket("catalog", object(model, "MutationTarget", "destination", "<Label>listed</Label>")));
+        Path source = delivery("replace-ext-source", model,
+                new Basket("source", recordWithReference(model, "record", "original", "destination", "catalog")));
+        Path replacement = delivery("replace-ext-new", model,
+                new Basket("source", recordWithReference(model, "record", "replacement", "destination", "catalog")));
+        seed(db, referenceSchema, model, "catalog", catalog);
+        seed(db, referenceSchema, model, "source", source);
+
+        try (var sql = db.connect()) {
+            var target = rows(db, sql, "mutationtarget").get(key("catalog", "catalog", "destination"));
+            var failed = cli(db, "replace", model, "catalog", catalog, CancellationToken.none());
+            assertNotEquals(0, failed.code(), failed::diagnostics);
+            assertTrue(failed.diagnostics().contains("referenced object T_Id " + target.object()), failed::diagnostics);
+            assertEquals(target, rows(db, sql, "mutationtarget").get(key("catalog", "catalog", "destination")));
+            String readLink = "SELECT destination FROM " + db.table("mutationlink");
+            assertEquals(Long.toString(target.object()), scalar(sql, readLink));
+
+            Path output = mutate(db, referenceSchema, "replace", model, "source", replacement);
+            assertSingleExport(output, "source", "record", "replacement");
+            assertEquals(Long.toString(target.object()), scalar(sql, readLink));
+            assertEquals(target, rows(db, sql, "mutationtarget").get(key("catalog", "catalog", "destination")));
+        }
+    }
+
+    private String recordWithReference(String model, String tid, String label, String target, String bid) {
+        return object(model, "MutationRecord", tid, "<Label>" + label + "</Label><Detail>"
+                + structure(model, "MutationLink", reference("Destination", target, bid)) + "</Detail>");
+    }
+
     private void checkConcurrentWriter(TestDatabase db, String model, Path input) throws Exception {
         try (var lock = db.connect(); var statement = lock.createStatement()) {
             if (db.postgis()) {

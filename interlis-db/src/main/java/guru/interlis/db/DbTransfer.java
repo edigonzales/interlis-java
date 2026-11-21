@@ -996,7 +996,7 @@ final class DbTransfer {
                                 || !reader.stableIdentityNamespaces().isEmpty()) {
                             throw new DbException("Expected the selected model and transfer-scoped identities in XTF");
                         }
-                        if (mode == WriteMode.REPLACE) DbDatasetWrite.checkReplaceProfile(db, mapping);
+                        if (mode == WriteMode.REPLACE) DbDatasetWrite.checkIncomingMappings(db, mapping);
                         if (existing.isPresent()) {
                             datasetId = existing.orElseThrow();
                             DbDatasetWrite.clearDataset(db, mapping, datasetId, token);
