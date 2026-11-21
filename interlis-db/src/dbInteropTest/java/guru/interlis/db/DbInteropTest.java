@@ -325,7 +325,125 @@ final class DbInteropTest {
             assertTypeKind(referenceDb, referenceSql, "externalreview", "reviewmemo", "TEXT");
             exchangeExternalDatasets(reference, referenceDb, referenceSql, model, version, fixture);
             exchangeExternalDatasets(reference, nativeDb, nativeSql, model, version, fixture);
+            exchangeReferenceDataset(reference, referenceDb, referenceSql, model, version);
+            exchangeReferenceDataset(reference, nativeDb, nativeSql, model, version);
         }
+    }
+
+    private void exchangeReferenceDataset(ReferenceTool reference, TestDatabase db, Connection sql, String model,
+                                          int version) throws Exception {
+        String leaf = version == 23 ? "<%s.Data.TargetLeaf TID=\"catalog-leaf\"/>".formatted(model)
+                : "<TargetLeaf i:tid=\"catalog-leaf\"/>";
+        Path target = Files.writeString(work.resolve("catalog.xtf"), referenceDatasetFixture(model, version, "catalog-basket", leaf));
+        reference.run(db, work.toString(), "--import", "--importTid", "--importBid", "--dataset", "catalog", target.toString());
+        String report = version == 23 ? """
+                <%1$s.Data.Report TID="report-id"><DetailValue><%1$s.Data.Detail>
+                  <TargetRef REF="catalog-leaf" BID="catalog-basket"/>
+                </%1$s.Data.Detail></DetailValue></%1$s.Data.Report>
+                """.formatted(model) : """
+                <Report i:tid="report-id"><DetailValue><Detail><TargetRef i:ref="catalog-leaf"/></Detail></DetailValue>
+                  <DirectRef i:ref="catalog-leaf"/>
+                </Report>
+                """;
+        Path input = Files.writeString(work.resolve("catalog-source.xtf"),
+                referenceDatasetFixture(model, version, "catalog-source", report));
+        reference.run(db, work.toString(), "--import", "--importTid", "--importBid", "--dataset", "catalog-source", input.toString());
+        assertReferenceDatasetRows(db, sql, version, "report-id");
+        Path output = work.resolve("catalog-native-output.xtf");
+        assertCliSuccess(db, "export", model, "catalog-source", output);
+        assertReferenceDatasetXtf(output, version, true);
+
+        Path other = Files.writeString(work.resolve("other-catalog.xtf"), referenceDatasetFixture(model, version, "other-basket", leaf));
+        Path replay = Files.writeString(work.resolve("catalog-replay.xtf"),
+                Files.readString(output).replace("report-id", "replay-report").replace("catalog-source", "replay-basket"));
+        assertCliSuccess(db, "import", model, "catalog-replay", replay);
+        assertReferenceDatasetRows(db, sql, version, "replay-report");
+        Path referenceOutput = work.resolve("catalog-reference-output.xtf");
+        reference.run(db, work.toString(), "--export", "--exportTid", "--dataset", "catalog-replay", referenceOutput.toString());
+        assertReferenceDatasetXtf(referenceOutput, version, false);
+        Path referenceReplay = Files.writeString(work.resolve("catalog-reference-replay.xtf"),
+                Files.readString(referenceOutput).replace("replay-report", "reference-report").replace("replay-basket", "reference-basket"));
+        assertCliSuccess(db, "import", model, "catalog-reference-replay", referenceReplay);
+        assertReferenceDatasetRows(db, sql, version, "reference-report");
+
+        if (version == 23) {
+            Path wrongBid = Files.writeString(work.resolve("catalog-bad-bid.xtf"),
+                    Files.readString(replay).replace("BID=\"catalog-basket\"", "BID=\"wrong-bid\""));
+            assertReferenceDatasetRollback(db, sql, model, wrongBid, "catalog-leaf");
+        }
+        assertCliSuccess(db, "import", model, "other-catalog", other);
+        assertReferenceDatasetRollback(db, sql, model, referenceReplay, "Ambiguous stored reference target catalog-leaf");
+        if (version == 23) {
+            assertCliSuccess(db, "export", model, "catalog-source", output);
+            assertReferenceDatasetXtf(output, version, true);
+        } else {
+            String previous = Files.readString(output);
+            var rejected = cli(db, "export", model, "catalog-source", output, CancellationToken.none());
+            assertNotEquals(0, rejected.code(), rejected::diagnostics);
+            assertTrue(rejected.diagnostics().contains("Ambiguous stored reference target catalog-leaf"), rejected::diagnostics);
+            assertEquals(previous, Files.readString(output));
+        }
+
+        Path tail = Files.writeString(work.resolve("catalog-tail.xtf"),
+                referenceDatasetFixture(model, version, "tail-catalog-basket", leaf.replace("catalog-leaf", "tail-catalog-leaf")));
+        reference.run(db, work.toString(), "--import", "--importTid", "--importBid", "--dataset", "catalog-tail", tail.toString());
+        assertEquals("1", scalar(sql, "select count(*) from " + db.table("targetroot") + " where t_ili_tid='tail-catalog-leaf'"));
+    }
+
+    private static String referenceDatasetFixture(String model, int version, String bid, String objects) {
+        if (version == 23) return """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+                  <HEADERSECTION VERSION="2.3" SENDER="interop"><MODELS><MODEL NAME="%1$s" VERSION="1" URI="https://example.org/interlis/db"/></MODELS></HEADERSECTION>
+                  <DATASECTION><%1$s.Data BID="%2$s">%3$s</%1$s.Data></DATASECTION>
+                </TRANSFER>
+                """.formatted(model, bid, objects);
+        return """
+                <i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="http://www.interlis.ch/xtf/2.4/%1$s">
+                  <i:headersection><i:models><i:model>%1$s</i:model></i:models><i:sender>interop</i:sender></i:headersection>
+                  <i:datasection><Data i:bid="%2$s">%3$s</Data></i:datasection>
+                </i:transfer>
+                """.formatted(model, bid, objects);
+    }
+
+    private static void assertReferenceDatasetRows(TestDatabase db, Connection sql, int version, String tid) throws SQLException {
+        String query = """
+                select r.t_basket<>b.t_id, ds.datasetname, dest.t_ili_tid, d.targetref%s
+                from %s r join %s d on d.report_detailvalue=r.t_id and d.t_basket=r.t_basket
+                join %s dest on dest.t_id=d.targetref
+                join %s b on b.t_id=dest.t_basket
+                join %s ds on ds.t_id=b.dataset where r.t_ili_tid='%s'
+                """.formatted(version == 24 ? ", r.directref" : "", db.table("report"), db.table("detail"), db.table("targetroot"),
+                db.table("t_ili2db_basket"), db.table("t_ili2db_dataset"), tid);
+        try (var statement = sql.createStatement(); var rows = statement.executeQuery(query)) {
+            assertTrue(rows.next());
+            assertTrue(rows.getBoolean(1));
+            assertEquals("catalog", rows.getString(2));
+            assertEquals("catalog-leaf", rows.getString(3));
+            if (version == 24) assertEquals(rows.getLong(4), rows.getLong(5));
+            assertFalse(rows.next());
+        }
+    }
+
+    private static void assertReferenceDatasetXtf(Path output, int version, boolean nativeExport) throws Exception {
+        var baskets = children(readDataSection(output, version));
+        assertEquals(1, baskets.size());
+        var objects = children(baskets.getFirst());
+        assertEquals(1, objects.size());
+        var report = objects.getFirst();
+        var detail = children(child(report, "DetailValue")).getFirst();
+        assertExternalReference(child(detail, "TargetRef"), version, "catalog-leaf", nativeExport ? "catalog-basket" : "");
+        if (version == 24) assertExternalReference(child(report, "DirectRef"), version, "catalog-leaf", "");
+    }
+
+    private static void assertReferenceDatasetRollback(TestDatabase db, Connection sql, String model, Path input,
+                                                       String expected) throws SQLException {
+        var result = cli(db, "import", model, "failed-catalog", input, CancellationToken.none());
+        assertNotEquals(0, result.code(), result::diagnostics);
+        assertTrue(result.diagnostics().contains(expected), result::diagnostics);
+        assertNull(scalar(sql, "select t_id from " + db.table("t_ili2db_dataset") + " where datasetname='failed-catalog'"));
+        assertEquals("1", scalar(sql, "select count(*) from " + db.table("report") + " where t_ili_tid='replay-report'"));
+        assertEquals("1", scalar(sql, "select count(*) from " + db.table("report") + " where t_ili_tid='reference-report'"));
     }
 
     private void exchangeExternalDatasets(ReferenceTool reference, TestDatabase db, Connection sql, String model,
@@ -352,8 +470,8 @@ final class DbInteropTest {
 
         String wrongDataset = fixture.replace("external-", "failed-")
                 .replace((version == 23 ? "REF" : "ref") + "=\"failed-late\"",
-                        (version == 23 ? "REF" : "ref") + "=\"external-late\"");
-        assertExternalRollback(db, sql, model, wrongDataset, "external-late", "dataset");
+                        (version == 23 ? "REF" : "ref") + "=\"absent-late\"");
+        assertExternalRollback(db, sql, model, wrongDataset, "absent-late", "dataset");
         if (version == 23) {
             String wrongBid = fixture.replace("external-", "failed-")
                     .replace("REF=\"failed-late\" BID=\"failed-last\"", "REF=\"failed-late\" BID=\"failed-first\"");
@@ -372,7 +490,7 @@ final class DbInteropTest {
                 + " where t_ili_tid='external-forward')";
         String detail = db.table("detail");
         String target = scalar(sql, "select targetref from " + detail + where);
-        String foreign = scalar(sql, "select t_id from " + db.table("targetroot") + " where t_ili_tid='own-late'");
+        String foreign = scalar(sql, "select t_id from " + db.table("targetroot") + " where t_ili_tid='own-sibling'");
         try {
             execute(sql, "update " + detail + " set targetref=" + foreign + where);
             assertExportRejected(db, model, "external", ownOutput, "same-dataset reference target TID", "Detail.TargetRef");

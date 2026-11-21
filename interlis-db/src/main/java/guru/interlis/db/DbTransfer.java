@@ -10,6 +10,7 @@ import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.Modifier;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
+import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.TopicDescriptor;
 import guru.interlis.transfer.TransferEvent;
@@ -73,6 +74,7 @@ final class DbTransfer {
         checkStructureOwners(db, mapping, datasetId, token);
         checkLinkOwners(db, mapping, datasetId, token);
         checkHierarchyTopics(db, mapping, datasetId, token);
+        checkCrossDatasetReferences(db, mapping, datasetId, token);
         var plan = mapping.plan();
         var modelRef = plan.rootModels().getFirst();
         var model = plan.model(modelRef).orElseThrow();
@@ -431,10 +433,13 @@ final class DbTransfer {
                     if (column.external()) {
                         String topic = root.object().topic().flatMap(mapping.plan()::topic).orElseThrow()
                                 .name().declared().toString();
-                        from.append(" AND EXISTS (SELECT 1 FROM ").append(baskets).append(" dst JOIN ")
-                                .append(baskets).append(" src ON src.dataset = dst.dataset WHERE src.").append(T_ID)
-                                .append(" = ").append(sourceBasket).append(" AND dst.").append(T_ID)
-                                .append(" = ").append(targetBasket).append(" AND dst.topic = '")
+                        from.append(" AND EXISTS (SELECT 1 FROM ").append(baskets).append(" dst WHERE dst.")
+                                .append(T_ID).append(" = ").append(targetBasket);
+                        if (!supportsCrossDataset(mapping, table, column)) {
+                            from.append(" AND dst.dataset = (SELECT src.dataset FROM ").append(baskets)
+                                    .append(" src WHERE src.").append(T_ID).append(" = ").append(sourceBasket).append(')');
+                        }
+                        from.append(" AND dst.topic = '")
                                 .append(topic.replace("'", "''")).append("')");
                     } else {
                         from.append(" AND ").append(targetBasket).append(" = ").append(sourceBasket);
@@ -458,6 +463,101 @@ final class DbTransfer {
                     column.positionColumn().ifPresent(position -> projections.add(alias + "." + quote(position)));
                 }
                 default -> projections.add(field);
+            }
+        }
+    }
+
+    private static boolean supportsCrossDataset(DbMapping mapping, Table table, Column column) {
+        return column.external() && column.slot() instanceof AttributeSlot;
+    }
+
+    private static void checkCrossDatasetReferences(Database db, DbMapping mapping, long datasetId, CancellationToken token)
+            throws SQLException {
+        String baskets = db.technicalTable(BASKET);
+        for (var table : mapping.tables()) {
+            for (var column : table.columns()) {
+                if (!supportsCrossDataset(mapping, table, column)) continue;
+                token.throwIfCancellationRequested();
+                var root = mapping.rootTable(column.target().orElseThrow());
+                String sql = "SELECT DISTINCT ref." + T_ID + ", ref." + T_ILI_TID + ", dst." + T_ILI_TID
+                        + " FROM " + db.table(table.name()) + " obj JOIN " + baskets
+                        + " src ON src." + T_ID + " = obj." + T_BASKET + " JOIN " + db.table(root.name())
+                        + " ref ON ref." + T_ID + " = obj." + quote(column.name()) + " JOIN " + baskets
+                        + " dst ON dst." + T_ID + " = ref." + T_BASKET + " WHERE src.dataset = ? AND (dst.dataset IS NULL OR dst.dataset <> ?)";
+                try (var statement = db.connection().prepareStatement(sql)) {
+                    fetchInPages(db, statement);
+                    statement.setLong(1, datasetId);
+                    statement.setLong(2, datasetId);
+                    try (var rows = statement.executeQuery()) {
+                        while (rows.next()) {
+                            token.throwIfCancellationRequested();
+                            String context = column.slot().name().declared().toString();
+                            String tid = identifier(rows.getString(2), "reference target TID", context);
+                            var bid = mapping.version() == LanguageVersion.ILI23
+                                    ? Optional.of(identifier(rows.getString(3), "reference target BID", context))
+                                    : Optional.<String>empty();
+                            var resolved = findReference(db, mapping, column, tid, bid);
+                            if (resolved == null || resolved.id() != rows.getLong(1)
+                                    || hasExportedTid(db, mapping, datasetId, tid, token)) {
+                                throw new DbException("Cannot export cross-dataset reference to " + tid + " at " + context);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static boolean hasExportedTid(Database db, DbMapping mapping, long dataset, String tid, CancellationToken token)
+            throws SQLException {
+        for (var table : mapping.tables()) {
+            if (!table.hasTidColumn() || table.object().kind() != SymbolKind.CLASS) continue;
+            token.throwIfCancellationRequested();
+            String sql = "SELECT 1 FROM " + db.table(table.name()) + " obj JOIN " + db.technicalTable(BASKET)
+                    + " basket ON basket." + T_ID + " = obj." + T_BASKET
+                    + " WHERE basket.dataset = ? AND basket.topic = ? AND obj." + T_ILI_TID + " = ? LIMIT 1";
+            try (var statement = db.connection().prepareStatement(sql)) {
+                statement.setLong(1, dataset);
+                statement.setString(2, mapping.plan().topic(table.object().topic().orElseThrow()).orElseThrow()
+                        .name().declared().toString());
+                statement.setString(3, tid);
+                try (var rows = statement.executeQuery()) {
+                    if (rows.next()) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static StoredObject findReference(Database db, DbMapping mapping, Column column,
+                                              String tid, Optional<String> bid) throws SQLException {
+        var target = mapping.table(column.target().orElseThrow());
+        var root = mapping.rootTable(target.object().symbol());
+        String discriminator = root.hasDiscriminator() ? ", ref." + T_TYPE : "";
+        String fragment = target.equals(root) ? "" : " AND EXISTS (SELECT 1 FROM " + db.table(target.name())
+                + " leaf WHERE leaf." + T_ID + " = ref." + T_ID + " AND leaf." + T_BASKET + " = ref." + T_BASKET + ")";
+        String sql = "SELECT ref." + T_ID + ", basket." + T_ILI_TID + discriminator
+                + " FROM " + db.table(root.name()) + " ref JOIN " + db.technicalTable(BASKET)
+                + " basket ON basket." + T_ID + " = ref." + T_BASKET + " WHERE basket.topic = ?"
+                + " AND ref." + T_ILI_TID + " = ?" + (bid.isPresent() ? " AND basket." + T_ILI_TID + " = ?" : "") + fragment;
+        try (var statement = db.connection().prepareStatement(sql)) {
+            statement.setString(1, mapping.plan().topic(root.object().topic().orElseThrow()).orElseThrow()
+                    .name().declared().toString());
+            statement.setString(2, tid);
+            if (bid.isPresent()) statement.setString(3, bid.orElseThrow());
+            try (var rows = statement.executeQuery()) {
+                StoredObject result = null;
+                while (rows.next()) {
+                    long id = rows.getLong(1);
+                    var type = root.hasDiscriminator() ? mapping.concreteType(root, rows.getString(3), id).object().symbol()
+                            : root.object().symbol();
+                    if (!mapping.isAssignableTo(type, target.object().symbol())) continue;
+                    String context = column.slot().name().declared().toString();
+                    if (result != null) throw new DbException("Ambiguous stored reference target " + tid + " at " + context);
+                    var basket = new BasketId(identifier(rows.getString(2), "reference target BID", context), IdOrigin.SOURCE);
+                    result = new StoredObject(id, type, basket);
+                }
+                return result;
             }
         }
     }
@@ -971,6 +1071,7 @@ final class DbTransfer {
         private final Map<Composition, PreparedStatement> structureInserts = new HashMap<>();
         private final Map<Column, PreparedStatement> updates = new HashMap<>();
         private final Set<SymbolRef> referenceTargets;
+        private final boolean crossDataset;
         private final Set<SymbolRef> externalTargets;
         private final Map<String, StoredObject> objects = new HashMap<>();
         private final Map<String, StoredObject> externalObjects = new HashMap<>();
@@ -982,6 +1083,8 @@ final class DbTransfer {
             this.db = db;
             this.mapping = mapping;
             this.token = token;
+            crossDataset = mapping.tables().stream().anyMatch(table -> table.columns().stream()
+                    .anyMatch(column -> supportsCrossDataset(mapping, table, column)));
             referenceTargets = referenceTargets(false);
             externalTargets = referenceTargets(true);
         }
@@ -1083,7 +1186,7 @@ final class DbTransfer {
             if (referenceTargets.contains(object.type())) {
                 objects.put(tid.orElseThrow(), new StoredObject(id, object.type(), identity.currentBasket()));
             }
-            if (externalTargets.contains(object.type())) {
+            if (externalTargets.contains(object.type()) || (crossDataset && tid.isPresent())) {
                 externalObjects.put(tid.orElseThrow(), new StoredObject(id, object.type(), identity.currentBasket()));
             }
         }
@@ -1386,6 +1489,10 @@ final class DbTransfer {
             for (var patch : references) {
                 token.throwIfCancellationRequested();
                 var target = targets.get(patch.targetTid());
+                if (target == null && supportsCrossDataset(mapping, patch.table(), patch.column())) {
+                    target = findReference(db, mapping, patch.column(), patch.targetTid(),
+                            patch.targetBasket().map(BasketId::value));
+                }
                 checkReference(patch, target);
                 var statement = updates.get(patch.column());
                 if (statement == null) {

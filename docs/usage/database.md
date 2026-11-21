@@ -298,6 +298,13 @@ ein Ziel in einem anderen Basket dessen BID aus. Der Import akzeptiert die
 von ili2db 5.5.2 ausgegebene Form mit `REF` allein und prüft eine mitgelieferte
 BID gegen den tatsächlichen Zielbasket. In XTF 2.4 genügt `ili:ref`.
 
+Fehlt ein `EXTERNAL`-Attributziel im aktuellen Transfer, sucht der Import
+im selben Schema nach einem eindeutigen Treffer im deklarierten Typzweig.
+Eine mitgelieferte Ziel-BID schränkt die Suche ein. Der Export liefert
+die Baskets des Quelldatensatzes und prüft die Eindeutigkeit externer
+Referenzen auf separat gespeicherte Ziele. Der Zieldatensatz muss für
+den Wiederimport vorliegen.
+
 Dieselbe Auflösung gilt für eingebettete 1:n- und 1:1-Assoziationen ohne
 eigene Attribute im selben Topic. Die gespeicherte Rolle ist `EXTERNAL`.
 Die Rollenspalte liegt wie bei lokalen Zielen in der Eigentümertabelle.
