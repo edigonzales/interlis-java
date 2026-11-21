@@ -19,6 +19,7 @@ import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TransferIdentity;
 import guru.interlis.transfer.TransferIdentity.BasketId;
 import guru.interlis.transfer.TransferIdentity.IdOrigin;
+import guru.interlis.transfer.TransferIdentity.ObjectOid;
 import guru.interlis.transfer.TransferIdentity.TransferId;
 import guru.interlis.transfer.TransferObject;
 import guru.interlis.transfer.TransferReader;
@@ -41,12 +42,14 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -155,15 +158,12 @@ final class DbTransfer {
             try (var rows = statement.executeQuery()) {
                 while (rows.next()) {
                     token.throwIfCancellationRequested();
-                    Optional<TransferId> tid = table.hasTidColumn()
-                            ? Optional.of(new TransferId(identifier(rows.getString(2), "TID", table.name()), IdOrigin.SOURCE))
-                            : Optional.empty();
-                    String ownerTid = tid.map(TransferId::value).orElse(null);
+                    String ownerTid = table.hasTidColumn() ? identifier(rows.getString(2), "TID", table.name()) : null;
                     int start = table.hasTidColumn() ? 3 : 2;
                     var values = readFields(db, mapping, rows, start, table, ownerTid);
                     readEmbeddedLinks(db, mapping, rows, start + projectionSize(mapping, table), links, ownerTid, values);
                     structures.readFor(rows.getLong(1), ownerTid, values);
-                    var identity = new TransferIdentity(bid, Optional.empty(), tid, Optional.empty(), Optional.empty());
+                    var identity = objectIdentity(mapping, table, bid, ownerTid);
                     var object = new TransferObject(identity, new Structured(table.object().symbol(), values));
                     writer.write(new TransferEvent.ObjectEvent(object, Optional.empty(), Consistency.COMPLETE), token);
                 }
@@ -242,9 +242,7 @@ final class DbTransfer {
                     var values = readFields(db, mapping, rows, field, root, tid);
                     fragments.readFor(actual, id, tid, values);
                     structures.readFor(id, tid, values);
-                    var identity = new TransferIdentity(bid, Optional.empty(), Optional.ofNullable(tid)
-                            .map(value -> new TransferId(value, IdOrigin.SOURCE)),
-                            Optional.empty(), Optional.empty());
+                    var identity = objectIdentity(mapping, root, bid, tid);
                     var object = new TransferObject(identity, new Structured(actual.object().symbol(), values));
                     writer.write(new TransferEvent.ObjectEvent(object, Optional.empty(), Consistency.COMPLETE), token);
                 }
@@ -506,7 +504,7 @@ final class DbTransfer {
             token.throwIfCancellationRequested();
             String sql = "SELECT 1 FROM " + db.table(table.name()) + " obj JOIN " + db.technicalTable(BASKET)
                     + " basket ON basket." + T_ID + " = obj." + T_BASKET
-                    + " WHERE basket.dataset = ? AND basket.topic = ? AND obj." + T_ILI_TID + " = ? LIMIT 1";
+                    + " WHERE basket.dataset = ? AND basket.topic = ? AND CAST(obj." + T_ILI_TID + " AS text) = ? LIMIT 1";
             try (var statement = db.connection().prepareStatement(sql)) {
                 statement.setLong(1, dataset);
                 statement.setString(2, mapping.plan().topic(table.object().topic().orElseThrow()).orElseThrow()
@@ -1023,6 +1021,24 @@ final class DbTransfer {
         }
     }
 
+    private static TransferIdentity objectIdentity(DbMapping mapping, Table root, BasketId bid, String tid) {
+        var value = Optional.ofNullable(tid).map(id -> storedTid(root, id));
+        return new TransferIdentity(bid, Optional.empty(), value.map(id -> new TransferId(id, IdOrigin.SOURCE)),
+                mapping.version() == LanguageVersion.ILI24 && root.oidDomain().isPresent()
+                        ? value.map(ObjectOid::new) : Optional.empty(), Optional.empty());
+    }
+
+    private static String storedTid(Table table, String tid) {
+        if (!table.uuidIdentity()) return tid;
+        try {
+            String canonical = UUID.fromString(tid).toString();
+            if (canonical.equalsIgnoreCase(tid)) return canonical;
+        } catch (IllegalArgumentException ignored) {
+            // UUID.fromString also accepts abbreviated segments, which are not the ili2db wire form.
+        }
+        throw new DbException("Invalid UUID " + tid + " for " + table.object().name().declared());
+    }
+
     private static String identifier(String value, String kind, String context) {
         if (value == null || value.isEmpty()) {
             throw new DbException("Missing " + kind + " in " + context);
@@ -1064,6 +1080,7 @@ final class DbTransfer {
         private final Set<SymbolRef> referenceTargets;
         private final Set<SymbolRef> externalTargets;
         private final Map<String, StoredObject> objects = new HashMap<>();
+        private final Optional<Set<String>> storedTids;
         private final Map<String, StoredObject> externalObjects = new HashMap<>();
         private final List<Pending> pending = new ArrayList<>();
         private final List<Pending> externalPending = new ArrayList<>();
@@ -1075,6 +1092,8 @@ final class DbTransfer {
             this.token = token;
             referenceTargets = referenceTargets(false);
             externalTargets = referenceTargets(true);
+            storedTids = mapping.tables().stream().anyMatch(Table::uuidIdentity)
+                    ? Optional.of(new HashSet<>()) : Optional.empty();
         }
 
         private Set<SymbolRef> referenceTargets(boolean external) {
@@ -1127,7 +1146,7 @@ final class DbTransfer {
             var object = event.object();
             var identity = object.identity();
             if (event.operation().isPresent() || event.consistency() != Consistency.COMPLETE
-                    || identity.oid().isPresent() || identity.originalBasket().isPresent()) {
+                    || identity.originalBasket().isPresent()) {
                 throw new DbException("Unsupported object metadata for " + object.type());
             }
             var table = mapping.table(object.type());
@@ -1135,8 +1154,18 @@ final class DbTransfer {
                 throw new DbException("Expected an embedded association at " + table.object().name().declared());
             }
             var chain = mapping.tableChain(object.type());
-            boolean hasTid = chain.getFirst().hasTidColumn();
-            var tid = identity.tid().filter(value -> value.origin() == IdOrigin.SOURCE).map(TransferId::value);
+            var root = chain.getFirst();
+            boolean hasTid = root.hasTidColumn();
+            var sourceTid = identity.tid().filter(value -> value.origin() == IdOrigin.SOURCE).map(TransferId::value);
+            var expectedOid = mapping.version() == LanguageVersion.ILI24 && root.oidDomain().isPresent()
+                    ? sourceTid : Optional.<String>empty();
+            if (!identity.oid().map(ObjectOid::value).equals(expectedOid)) {
+                throw new DbException("Unsupported object identity for " + table.object().name().declared());
+            }
+            var tid = sourceTid.map(value -> storedTid(root, value));
+            tid.ifPresent(value -> storedTids.ifPresent(seen -> {
+                if (!seen.add(value)) throw new DbException("Duplicate stored object TID " + value);
+            }));
             if (hasTid && tid.isEmpty()) {
                 throw new DbException("Missing source TID");
             }
@@ -1190,7 +1219,11 @@ final class DbTransfer {
                 statement.setString(index++, concreteName);
             }
             if (table.hasTidColumn()) {
-                statement.setString(index++, tid.orElseThrow());
+                if (table.uuidIdentity() && !db.gpkg()) {
+                    statement.setObject(index++, UUID.fromString(tid.orElseThrow()));
+                } else {
+                    statement.setString(index++, tid.orElseThrow());
+                }
             }
             int found = 0;
             for (var column : table.columns()) {

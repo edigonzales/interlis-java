@@ -287,6 +287,7 @@ final class DbInteropTest {
         exchangeExternal(version, postgres, reference);
         exchangeExternalTopics(version, postgres, reference);
         exchangeOrdered(reference, postgres, version);
+        exchangeOid(reference, postgres, version);
     }
 
     private void exchangeExternal(int version, PostgreSQLContainer postgres, ReferenceTool reference) throws Exception {
@@ -328,6 +329,80 @@ final class DbInteropTest {
             exchangeReferenceDataset(reference, referenceDb, referenceSql, model, version);
             exchangeReferenceDataset(reference, nativeDb, nativeSql, model, version);
         }
+    }
+
+    private void exchangeOid(ReferenceTool reference, PostgreSQLContainer postgres, int version) throws Exception {
+        String model = "DbOid" + version;
+        Path ili = work.resolve(model + ".ili");
+        try (var resource = DbInteropTest.class.getResourceAsStream("/" + ili.getFileName())) {
+            Files.copy(resource, ili);
+        }
+        var referenceDb = new TestDatabase(postgres, "oid_reference");
+        reference.run(referenceDb, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
+                "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", ili.toString());
+        var nativeDb = new TestDatabase(postgres, "oid_native");
+        assertCliSuccess(nativeDb, "schemaimport", model, null, ili);
+        try (var legacy = referenceDb.connect(); var own = nativeDb.connect()) {
+            DbSchemaCatalog.read(legacy, referenceDb.postgis, referenceDb.schema)
+                    .assertSameAs(DbSchemaCatalog.read(own, nativeDb.postgis, nativeDb.schema));
+        }
+        String referenceId = "C09B1740-5C5A-48EA-B095-938D1C946974";
+        String nativeId = "D09B1740-5C5A-48EA-B095-938D1C946974";
+        String tailId = "E09B1740-5C5A-48EA-B095-938D1C946974";
+        Path legacyInput = oidFixture(model, version, "oid-legacy", referenceId);
+        Path nativeInput = oidFixture(model, version, "oid-own", nativeId);
+        Path tailInput = oidFixture(model, version, "oid-tail", tailId);
+        for (var db : List.of(referenceDb, nativeDb)) {
+            try (var sql = db.connect()) {
+                reference.run(db, work.toString(), "--import", "--importTid", "--importBid", "--dataset", "oid-legacy",
+                        legacyInput.toString());
+                assertOidRows(db, sql, "oid-legacy", referenceId);
+                Path ownOutput = work.resolve("oid-own-output.xtf");
+                assertCliSuccess(db, "export", model, "oid-legacy", ownOutput);
+                assertOidXtf(ownOutput, model, version, "oid-legacy", referenceId);
+
+                assertCliSuccess(db, "import", model, "oid-own", nativeInput);
+                assertOidRows(db, sql, "oid-own", nativeId);
+                Path legacyOutput = work.resolve("oid-legacy-output.xtf");
+                reference.run(db, work.toString(), "--export", "--exportTid", "--dataset", "oid-own", legacyOutput.toString());
+                assertOidXtf(legacyOutput, model, version, "oid-own", nativeId);
+
+                reference.run(db, work.toString(), "--import", "--importTid", "--importBid", "--dataset", "oid-tail",
+                        tailInput.toString());
+                assertOidRows(db, sql, "oid-tail", tailId);
+                Path invalid = oidFixture(model, version, "oid-invalid", "malformed");
+                var rejected = cli(db, "import", model, "oid-invalid", invalid, CancellationToken.none());
+                assertNotEquals(0, rejected.code(), rejected::diagnostics);
+                assertTrue(rejected.diagnostics().contains("Invalid UUID"), rejected::diagnostics);
+                assertNull(scalar(sql, "select t_id from " + db.table("t_ili2db_dataset") + " where datasetname='oid-invalid'"));
+
+                String metadata = db.table("t_ili2db_column_prop") + " where tablename='site' and tag='ch.ehi.ili2db.oidDomain'";
+                assertEquals("INTERLIS.UUIDOID", scalar(sql, "select setting from " + metadata));
+                execute(sql, "delete from " + metadata);
+                assertExportRejected(db, model, "oid-legacy", ownOutput, "oidDomain", "site.t_ili_tid");
+            }
+        }
+    }
+
+    private Path oidFixture(String model, int version, String bid, String tid) throws IOException {
+        String object = version == 23 ? "<%1$s.Data.Site TID=\"%2$s\"><Label>marker</Label></%1$s.Data.Site>"
+                .formatted(model, tid) : "<Site i:tid=\"%s\"><Label>marker</Label></Site>".formatted(tid);
+        return Files.writeString(work.resolve(bid + ".xtf"), referenceDatasetFixture(model, version, bid, object));
+    }
+
+    private static void assertOidRows(TestDatabase db, Connection sql, String bid, String tid) throws SQLException {
+        assertEquals(tid.toLowerCase(Locale.ROOT), scalar(sql, "select s.t_ili_tid from " + db.table("site")
+                + " s join " + db.table("t_ili2db_basket") + " b on b.t_id=s.t_basket where b.t_ili_tid='" + bid + "' and s.label='marker'"));
+    }
+
+    private static void assertOidXtf(Path output, String model, int version, String bid, String tid) throws Exception {
+        var baskets = children(readDataSection(output, version));
+        assertEquals(1, baskets.size());
+        assertEquals(bid, id(baskets.getFirst(), version, "bid"));
+        var object = child(baskets.getFirst(), version == 23 ? model + ".Data.Site" : "Site");
+        assertNotNull(object);
+        assertEquals(tid.toLowerCase(Locale.ROOT), id(object, version, "tid"));
+        assertEquals("marker", child(object, "Label").getTextContent());
     }
 
     private void exchangeReferenceDataset(ReferenceTool reference, TestDatabase db, Connection sql, String model,

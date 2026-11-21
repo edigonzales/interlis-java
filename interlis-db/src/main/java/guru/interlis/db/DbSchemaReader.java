@@ -121,7 +121,7 @@ final class DbSchemaReader {
         }
         checkSystemTables(db);
         var bases = DbMapping.baseTables(plan);
-        var catalog = readCatalog(db, objects, names, bases, token);
+        var catalog = readCatalog(db, plan, objects, names, bases, token);
         var tables = new ArrayList<Table>();
         var compositions = new ArrayList<Composition>();
         for (ObjectDescriptor object : objects) {
@@ -155,7 +155,7 @@ final class DbSchemaReader {
                 var column = bindRole(db, parent, attrNames, association.role(), association.target(), names);
                 columns.add(association.ordered() ? bindPosition(db, parent, column) : column);
             }
-            tables.add(new Table(object, parent.name(), columns, hasDiscriminator(object, bases)));
+            tables.add(new Table(object, parent.name(), columns, hasDiscriminator(object, bases), DbMapping.oidDomain(plan, object)));
         }
         for (var table : tables) {
             var physical = catalog.get(table.object().symbol());
@@ -171,7 +171,7 @@ final class DbSchemaReader {
         return object.baseType().isEmpty() && bases.contains(object.symbol());
     }
 
-    private static Map<SymbolRef, CatalogTable> readCatalog(Database db, List<ObjectDescriptor> objects,
+    private static Map<SymbolRef, CatalogTable> readCatalog(Database db, TransferPlan plan, List<ObjectDescriptor> objects,
                                                            Map<SymbolRef, String> names, Set<SymbolRef> bases,
                                                            CancellationToken token)
             throws SQLException {
@@ -185,7 +185,12 @@ final class DbSchemaReader {
             var used = new HashSet<>(Set.of(T_ID, T_BASKET));
             boolean subtype = object.baseType().isPresent();
             if (!subtype && object.kind() != SymbolKind.ASSOCIATION) {
-                requireColumns(db, name, physical, Map.of(T_ILI_TID, Kind.TEXT));
+                var domain = DbMapping.oidDomain(plan, object);
+                if (domain.isPresent()) {
+                    requireIdentityColumn(db, name, physical, domain.orElseThrow());
+                } else {
+                    requireColumns(db, name, physical, Map.of(T_ILI_TID, Kind.TEXT));
+                }
                 used.add(T_ILI_TID);
             }
             if (hasDiscriminator(object, bases)) {
@@ -200,6 +205,26 @@ final class DbSchemaReader {
             result.put(object.symbol(), new CatalogTable(name, physical, used));
         }
         return result;
+    }
+
+    private static void requireIdentityColumn(Database db, String table, Map<String, String> physical, String domain)
+            throws SQLException {
+        String type = physical.get(T_ILI_TID);
+        if (!(db.gpkg() ? "text".equals(type) : "uuid".equals(type))) {
+            throw new DbException("Expected UUID identity column " + table + "." + T_ILI_TID);
+        }
+        String sql = "SELECT setting FROM " + db.technicalTable(Ili2dbLayout.COLUMN_PROP)
+                + " WHERE tablename = ? AND subtype IS NULL AND lower(columnname) = ? AND tag = ?";
+        try (var statement = db.connection().prepareStatement(sql)) {
+            statement.setString(1, table);
+            statement.setString(2, T_ILI_TID);
+            statement.setString(3, Ili2dbLayout.OID_DOMAIN_PROPERTY);
+            try (var rows = statement.executeQuery()) {
+                if (!rows.next() || !domain.equals(rows.getString(1)) || rows.next()) {
+                    throw new DbException("Missing or inconsistent oidDomain for " + table + "." + T_ILI_TID);
+                }
+            }
+        }
     }
 
     private static void checkSettings(Database db) throws SQLException {

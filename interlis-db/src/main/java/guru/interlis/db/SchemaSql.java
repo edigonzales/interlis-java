@@ -43,6 +43,8 @@ import static guru.interlis.db.Ili2dbLayout.TYPE_COLUMN;
 
 /** DDL and parameterized ili2db metadata for the 5.5.2 profile. */
 final class SchemaSql {
+    private static final String UUID_DEFAULT = "uuid_generate_v4()";
+
     private SchemaSql() { }
 
     static void createPostgres(Database db, SchemaPlan plan, CancellationToken token) throws SQLException {
@@ -50,6 +52,9 @@ final class SchemaSql {
         checkPostgresSchemaName(db.connection(), schema);
         if (!plan.geometryColumns().isEmpty()) {
             checkPostgresSrs(db);
+        }
+        if (plan.mapping().tables().stream().anyMatch(DbMapping.Table::uuidIdentity)) {
+            requireUuidDefault(db.connection());
         }
         var dialect = new Dialect(false, schema, db.postgisObject("geometry"));
         var ddl = ddl(plan, dialect);
@@ -74,6 +79,17 @@ final class SchemaSql {
             statement.setString(1, schema);
             try (var rows = statement.executeQuery()) {
                 if (rows.next()) throw new DbException("PostgreSQL schema name is a reserved word: " + schema);
+            }
+        }
+    }
+
+    private static void requireUuidDefault(Connection connection) throws SQLException {
+        try (var statement = connection.prepareStatement("SELECT pg_catalog.to_regprocedure(?)")) {
+            statement.setString(1, UUID_DEFAULT);
+            try (var rows = statement.executeQuery()) {
+                if (!rows.next() || rows.getString(1) == null) {
+                    throw new DbException("UUID identity columns require uuid_generate_v4() from the PostgreSQL uuid-ossp extension");
+                }
             }
         }
     }
@@ -119,7 +135,7 @@ final class SchemaSql {
                 columns.add(TYPE_COLUMN + " " + dialect.text(60) + " NOT NULL");
             }
             if (table.hasTidColumn()) {
-                columns.add(TID_COLUMN + " " + dialect.text(200));
+                columns.add(TID_COLUMN + " " + dialect.tidType(table.uuidIdentity()));
             }
             if (table.hasSequenceColumn()) {
                 columns.add(SEQ_COLUMN + " " + dialect.idType());
@@ -253,7 +269,7 @@ final class SchemaSql {
         if (gpkg) {
             row(statement, PREFIX + "geomAttrPerTable", "oneGeomAttrPerTable");
         } else {
-            row(statement, PREFIX + "uuidDefaultValue", "uuid_generate_v4()");
+            row(statement, PREFIX + "uuidDefaultValue", UUID_DEFAULT);
         }
     }
 
@@ -271,6 +287,11 @@ final class SchemaSql {
     }
 
     private record Dialect(boolean gpkg, String schema, String postgisGeometryType) {
+        String tidType(boolean uuid) {
+            if (!uuid) return text(200);
+            return gpkg ? text(36) : "uuid DEFAULT " + UUID_DEFAULT;
+        }
+
         String table(String name) {
             return quote(schema) + "." + quote(Ili2dbLayout.tableName(name, gpkg));
         }

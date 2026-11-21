@@ -1,0 +1,10 @@
+INTERLIS 2.4;
+
+MODEL DbOid24 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  TOPIC Data =
+    CLASS Site =
+      OID AS INTERLIS.UUIDOID;
+      Label : TEXT*40;
+    END Site;
+  END Data;
+END DbOid24.

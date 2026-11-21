@@ -75,6 +75,10 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
         var geometries = new HashMap<String, GeometryColumn>();
         for (var table : mapping.tables()) {
             token.throwIfCancellationRequested();
+            if (table.hasTidColumn()) {
+                table.oidDomain().ifPresent(domain -> properties.add(new ColumnProperty(table.name(), null,
+                        Ili2dbLayout.TID_COLUMN, Ili2dbLayout.OID_DOMAIN_PROPERTY, domain)));
+            }
             for (var column : table.columns()) {
                 addProperties(properties, geometries, mapping, table, column);
             }

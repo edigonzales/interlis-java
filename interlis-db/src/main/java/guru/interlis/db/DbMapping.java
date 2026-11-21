@@ -135,7 +135,8 @@ final class DbMapping {
         }
     }
 
-    record Table(ObjectDescriptor object, String name, List<Column> columns, boolean hasDiscriminator) {
+    record Table(ObjectDescriptor object, String name, List<Column> columns, boolean hasDiscriminator,
+                 Optional<String> oidDomain) {
         Table {
             columns = List.copyOf(columns);
             if (columns.stream().filter(column -> column.kind().geometry()).count() > 1) {
@@ -154,6 +155,7 @@ final class DbMapping {
 
         boolean subtype() { return object.baseType().isPresent(); }
         boolean hasTidColumn() { return !subtype() && object.kind() != SymbolKind.ASSOCIATION; }
+        boolean uuidIdentity() { return oidDomain.filter(Ili2dbLayout.UUID_OID::equals).isPresent(); }
         boolean hasSequenceColumn() { return !subtype() && object.kind() == SymbolKind.STRUCTURE; }
 
         Column column(SymbolRef field) {
@@ -342,7 +344,7 @@ final class DbMapping {
                 var binding = roleColumn(role, association.target(), column);
                 columns.add(association.ordered() ? binding.withPositionColumn(gpkg) : binding);
             }
-            tables.add(new Table(object, name, columns, discriminator));
+            tables.add(new Table(object, name, columns, discriminator, oidDomain(plan, object)));
         }
         var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
         return new DbMapping(plan, version, tables, compositions, associations);
@@ -405,11 +407,26 @@ final class DbMapping {
                 case STRUCTURE -> !object.modifiers().contains(Modifier.ABSTRACT) || bases.contains(object.symbol());
                 default -> false;
             };
-            if (!supported || !object.oidRules().isEmpty()) {
+            boolean supportedIdentity = object.oidRules().isEmpty() || (object.kind() == SymbolKind.CLASS
+                    && object.baseType().isEmpty() && !bases.contains(object.symbol())
+                    && oidDomain(plan, object).filter(Ili2dbLayout.UUID_OID::equals).isPresent());
+            if (!supported || !supportedIdentity) {
                 throw unsupported("class layout or identity rules for " + object.name().declared());
             }
         }
         if (!hierarchy.isEmpty()) checkInheritance(plan, hierarchy);
+    }
+
+    static Optional<String> oidDomain(TransferPlan plan, ObjectDescriptor object) {
+        return object.oidRules().stream().filter(rule -> !rule.basket()).findFirst()
+                .flatMap(rule -> rule.domain())
+                .map(id -> plan.symbol(new SymbolRef(plan.snapshotId(), id)).known().orElseThrow())
+                .map(domain -> {
+                    if (domain.header().origin() instanceof Origin.PredefinedOrigin predefined) return predefined.key();
+                    var owner = plan.symbol(new SymbolRef(plan.snapshotId(), domain.owner().orElseThrow()))
+                            .known().orElseThrow();
+                    return owner.name().value() + "." + domain.name().value();
+                });
     }
 
     private static boolean supportsAssociation(TransferPlan plan, ObjectDescriptor object, Set<SymbolRef> bases) {
@@ -556,6 +573,9 @@ final class DbMapping {
                 .isEmpty()) {
             throw unsupported(feature + " requires a class in an allowed topic");
         }
+        if (oidDomain(plan, plan.object(target).orElseThrow()).isPresent()) {
+            throw unsupported("OID reference target at " + slot.name().declared());
+        }
         return target;
     }
 
@@ -639,6 +659,9 @@ final class DbMapping {
                     && (obj.topic().equals(object.topic()) || (ref.external() && inDependentTopic(plan, object, obj))))
                     .isEmpty()) {
                 throw unsupported("reference outside the supported topic or class at " + path);
+            }
+            if (oidDomain(plan, plan.object(symbol).orElseThrow()).isPresent()) {
+                throw unsupported("OID reference target at " + path);
             }
             target = Optional.of(symbol);
         }

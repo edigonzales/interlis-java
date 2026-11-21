@@ -326,6 +326,15 @@ Eigenständige n:m-Links können ein Ziel im abhängigen Topic ansprechen.
 Liegt bei einer 1:n-Assoziation die n-Seite im fremden Topic, erscheint sie
 im XTF als eigenständiger Link und die Linkzeile bleibt im deklarierenden Topic.
 
+Flache Klassen können `OID AS INTERLIS.UUIDOID` deklarieren. Für das
+Referenzprofil speichert `T_Ili_Tid` den UUID-Wert in PostGIS als `uuid`
+und in GeoPackage als `TEXT(36)`. Für die Schemaerzeugung auf PostGIS
+muss `uuid_generate_v4()` aus `uuid-ossp` im Suchpfad verfügbar sein.
+Die Spaltenmetadaten führen die
+`oidDomain`. Import und Export verwenden die kanonische UUID-Schreibweise
+mit Kleinbuchstaben. XTF 2.3 FULL verwendet die UUID als TID ohne
+OIDSPACE-Präfix.
+
 Zum weiteren Ausbau gehören weitere Assoziationsformen mit Hierarchie-Enden
 sowie `EXTENDED`-Attribute. Weitere Grenzen sind stabile OIDs, eigene Linienformen,
 GeoPackage-RTree beim Schreiben und Updates. Der gespeicherte Modelltext
