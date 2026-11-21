@@ -1,0 +1,28 @@
+INTERLIS 2.4;
+MODEL DeferredMulti24 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  DOMAIN
+    Grid (GENERIC) = COORD NUMERIC, NUMERIC, NUMERIC;
+    CurrentGrid EXTENDS Grid = COORD 2460000.000 .. 2870000.000, 1045000.000 .. 1310000.000, -1000.000 .. 9000.000 REFSYS "EPSG:2056";
+    OldGrid EXTENDS Grid = COORD 460000.000 .. 870000.000, 45000.000 .. 310000.000, -1000.000 .. 9000.000 REFSYS "EPSG:21781";
+    PointSet (GENERIC) = MULTICOORD NUMERIC, NUMERIC, NUMERIC;
+    CurrentPoints EXTENDS PointSet = MULTICOORD 2460000.000 .. 2870000.000, 1045000.000 .. 1310000.000, -1000.000 .. 9000.000 REFSYS "EPSG:2056";
+    OldPoints EXTENDS PointSet = MULTICOORD 460000.000 .. 870000.000, 45000.000 .. 310000.000, -1000.000 .. 9000.000 REFSYS "EPSG:21781";
+  CONTEXT grids =
+    Grid = OldGrid OR CurrentGrid;
+    PointSet = OldPoints OR CurrentPoints;
+  TOPIC Data =
+    DEFERRED GENERICS Grid, PointSet;
+    CLASS Network =
+      Routes : MULTIPOLYLINE WITH (STRAIGHTS) VERTEX Grid;
+    END Network;
+    CLASS Park =
+      Coverage : MULTISURFACE WITH (STRAIGHTS) VERTEX Grid WITHOUT OVERLAPS > 0.001;
+    END Park;
+    CLASS District =
+      Boundary : MULTIAREA WITH (STRAIGHTS) VERTEX Grid WITHOUT OVERLAPS > 0.001;
+    END District;
+    CLASS Survey =
+      Sites : PointSet;
+    END Survey;
+  END Data;
+END DeferredMulti24.

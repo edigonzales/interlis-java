@@ -167,7 +167,9 @@ Zuordnung in `T_ILI2DB_BASKET.domains` und befüllt die gewählte
 EPSG-Variante. Beim Export führen Werte in einer inaktiven Variante zum Abbruch.
 `schemaimport --multi-srs` plant für eine aufgeschobene Punktdomäne eine
 Spalte pro konkretem EPSG-Code. Bei `POLYLINE`, `SURFACE` und `AREA`
-gilt die Basketbindung der generischen `VERTEX`-Domäne. Die konkreten Domänen liefern die
+gilt die Basketbindung der generischen `VERTEX`-Domäne. Dieselbe
+Auswahl gilt für `MULTICOORD`, `MULTIPOLYLINE`, `MULTISURFACE` und
+`MULTIAREA` mit XY- oder XYZ-Koordinaten. Die konkreten Domänen liefern die
 Spalten- und Kataloggrenzen.
 
 Für neue Schemata setzt `schemaimport --default-epsg CODE` den

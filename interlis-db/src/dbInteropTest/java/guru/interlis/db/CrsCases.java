@@ -221,6 +221,94 @@ final class CrsCases {
         }
     }
 
+    void deferredMulti(TestDatabase legacy, TestDatabase nativeDb) throws Exception {
+        String model = "DeferredMulti24";
+        Path ili = fixture(model);
+        createReference(legacy, ili, 2056, "--multiSrs");
+        createOwn(nativeDb, model, ili, "--multi-srs");
+        for (var db : List.of(legacy, nativeDb)) {
+            Path fromReference = multiDelivery(model, "ref-multi");
+            reference.run(db, work.toString(), "--import", "--disableValidation", "--dataset", "reference",
+                    "--importTid", "--importBid", fromReference.toString());
+            Path output = work.resolve(db.schema() + "-native-multi.xtf");
+            assertCliSuccess(db, "export", model, "reference", output);
+            assertMulti(output, "ref-multi");
+            Path fromNative = multiDelivery(model, "own-multi");
+            assertCliSuccess(db, "import", model, "own", fromNative);
+            output = work.resolve(db.schema() + "-ref-multi.xtf");
+            reference.run(db, work.toString(), "--export", "--disableValidation", "--dataset", "own", "--exportTid", output.toString());
+            assertMulti(output, "own-multi");
+            try (var sql = db.connect()) {
+                for (String pair : List.of("network.routes", "park.coverage", "district.boundary", "survey.sites")) {
+                    String[] names = pair.split("\\.");
+                    String tid = names[0] + (names[0].equals("survey") ? "-old" : "-current") + "-own-multi";
+                    assertStoredEpsg(db, sql, names[0], names[1] + "_2056", tid, 2056);
+                    String table = db.table(db.postgis() ? names[0] : names[0] + "_" + names[1] + "_21781");
+                    tid = names[0] + (names[0].equals("survey") ? "-current" : "-old") + "-own-multi";
+                    assertStoredSrid(db, sql, " FROM " + table + " WHERE t_id=(SELECT t_id FROM " + db.table(names[0])
+                            + " WHERE t_ili_tid='" + tid + "')", names[1] + "_21781", 21781);
+                    if (db.postgis()) {
+                        assertEquals("3", scalar(sql, "SELECT ST_NDims(" + names[1] + "_21781) FROM " + table
+                                + " WHERE t_ili_tid='" + tid + "'"));
+                    } else {
+                        assertEquals("1", scalar(sql, "SELECT z FROM gpkg_geometry_columns WHERE table_name='" + table
+                                + "' AND column_name='" + names[1] + "_21781'"));
+                    }
+                }
+            }
+        }
+    }
+
+    private Path multiDelivery(String model, String suffix) throws Exception {
+        Path source = deferredDelivery(model, suffix,
+                multiObjects(model, "current-" + suffix, 2600000, 1200000, 600000, 200000),
+                multiObjects(model, "old-" + suffix, 600000, 200000, 2600000, 1200000));
+        String content = Files.readString(source)
+                .replace(".CurrentGrid\"", ".CurrentGrid " + model + ".PointSet=" + model + ".OldPoints\"")
+                .replace(".OldGrid\"", ".OldGrid " + model + ".PointSet=" + model + ".CurrentPoints\"");
+        return Files.writeString(source, content);
+    }
+
+    private String multiObjects(String model, String tid, int x, int y, int pointX, int pointY) {
+        String lines = line(xyz(x, y, 1) + xyz(x + 20, y + 10, 2))
+                + line(xyz(x + 50, y + 50, 3) + xyz(x + 70, y + 80, 4));
+        String surfaces = face3d(x + 100, y + 100) + face3d(x + 150, y + 150);
+        String areas = face3d(x + 200, y + 200) + face3d(x + 250, y + 250);
+        String points = xyz(pointX + 10, pointY + 10, 5) + xyz(pointX + 20, pointY + 20, 6);
+        return object(model, "Network", "network-" + tid, field("Routes", field("g:multipolyline", lines)))
+                + object(model, "Park", "park-" + tid, field("Coverage", field("g:multisurface", surfaces)))
+                + object(model, "District", "district-" + tid, field("Boundary", field("g:multisurface", areas)))
+                + object(model, "Survey", "survey-" + tid, field("Sites", field("g:multicoord", points)));
+    }
+
+    private String face3d(int x, int y) {
+        return surface(line(xyz(x, y, 1) + xyz(x + 20, y, 2) + xyz(x + 20, y + 20, 3)
+                + xyz(x, y + 20, 4) + xyz(x, y, 1)), "");
+    }
+
+    private String xyz(int x, int y, int z) {
+        return point(Integer.toString(x), Integer.toString(y), Integer.toString(z));
+    }
+
+    private void assertMulti(Path output, String suffix) throws Exception {
+        var baskets = children(readDataSection(output, version));
+        for (String type : List.of("current", "old")) {
+            String tid = type + "-" + suffix;
+            var basket = baskets.stream().filter(b -> ("basket-" + tid).equals(id(b, version, "bid"))).findFirst().orElseThrow();
+            assertTrue(id(basket, version, "domains").contains(type.equals("current") ? ".OldPoints" : ".CurrentPoints"));
+            assertOrdinates(child(object(basket, "network-" + tid), "Routes"), 3, "1", "2", "3", "4");
+            for (String key : List.of("park-" + tid, "district-" + tid)) {
+                var value = children(object(basket, key)).getFirst();
+                assertEquals(2, value.getElementsByTagNameNS("*", "surface").getLength());
+                assertOrdinates(value, 3, "1", "2", "3", "4", "1", "1", "2", "3", "4", "1");
+            }
+            var sites = child(object(basket, "survey-" + tid), "Sites");
+            assertOrdinates(sites, 3, "5", "6");
+            assertOrdinates(sites, 1, type.equals("current") ? "600010" : "2600010",
+                    type.equals("current") ? "600020" : "2600020");
+        }
+    }
+
     void deferredCurves(TestDatabase legacy, TestDatabase nativeDb) throws Exception {
         String model = "DeferredCurves24";
         Path ili = fixture(model);

@@ -711,6 +711,10 @@ final class DbMapping {
             if (!codes.add(column.epsgCode())) {
                 throw unsupported("multiple concrete domains with EPSG:" + column.epsgCode() + " at " + attr.name().declared());
             }
+            if (!columns.isEmpty() && (column.kind() != columns.getFirst().kind()
+                    || column.dimensions() != columns.getFirst().dimensions())) {
+                throw unsupported("inconsistent geometry kind or dimension at " + attr.name().declared());
+            }
             columns.add(column);
         }
         columns.sort(Comparator.comparingInt(Column::epsgCode));
