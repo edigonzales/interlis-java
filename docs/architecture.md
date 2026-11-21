@@ -24,13 +24,14 @@ Die Gradle-Teilprojekte deklarieren die konkreten Abhängigkeiten und Scopes.
 | `interlis-validation-jts` | validation, JTS | Optionales JVM-Modul für analytische Geometrieoperationen |
 | `interlis-validation-mvstore` | validation, H2 MVStore | Optionaler JVM-Speicher für einen Datensatzlauf |
 | `interlis-xtf` | transfer, model | XML-Adapter für XTF 2.3 und 2.4 |
+| `interlis-explorer` | model, transfer, xtf | Lokaler DuckDB-Host für einen XTF-2.4-FULL-Transfer |
 | `interlis-compiler-cli` | compiler, model, repository, workspace, projection | CLI, Prozessgrenzen, Präsentation und Ausgabe |
 | `interlis-validator-cli` | compiler, workspace, repository, transfer, xtf, validation, validation-jts, validation-mvstore, Gson | JVM-Host für Modellbeschaffung, XTF-Dateien und Validatorausgabe |
 | `interlis-compiler-gui` | model, compiler, workspace, repository | Desktop-Modellprüfung, Diagnosen, Abhängigkeiten und Repositoryexplorer |
 | `interlis-lsp` | workspace, compiler, projection, model, repository | LSP-/Editorhost, Scheduling und Ausgaben |
 | `interlis-wasm-bridge` | workspace, compiler, projection, model | Gemeinsames JSON-Protokoll und Sitzungen |
 
-Gradle baut alle fünfzehn JVM-Module. TeaVM und Web Image beziehen ihre
+Gradle baut alle JVM-Module. TeaVM und Web Image beziehen ihre
 Laufzeitclosure aus direkten Gradle-Projektabhängigkeiten. Der Browserharness prüft den Compiler und zeigt Diagramm-DTOs.
 Der produktive Renderer liegt im Repository der VS-Code-Extension.
 

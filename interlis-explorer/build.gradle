@@ -1,0 +1,18 @@
+dependencies {
+    api project(':interlis-model')
+    api project(':interlis-transfer')
+    implementation project(':interlis-xtf')
+    implementation 'com.google.code.gson:gson:2.14.0'
+    implementation 'org.duckdb:duckdb_jdbc:1.4.5.0'
+    testImplementation project(':interlis-compiler')
+}
+
+javaModuleTesting.whitebox(testing.suites.test) {
+    requires.add('guru.interlis.compiler')
+    requires.add('guru.interlis.xtf')
+}
+
+tasks.named('test') {
+    inputs.dir(rootProject.file('testdata/reference/iox/ili24')).withPathSensitivity(PathSensitivity.RELATIVE)
+    jvmArgs '--enable-native-access=duckdb.jdbc'
+}
