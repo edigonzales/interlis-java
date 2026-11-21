@@ -113,6 +113,24 @@ class ValidatorCommandTest {
         assertTrue(result.json().get("completed").getAsBoolean());
         assertEquals(0, result.json().get("violations").getAsInt());
         assertTrue(result.json().getAsJsonArray("unchecked").isEmpty());
+
+        write("invalid-derived-line.xtf", input.replace("<label>valid</label>", "<label>reserved</label>"));
+        var rejected = run("--json", "--offline", "invalid-derived-line.xtf");
+        assertEquals(1, rejected.exit(), rejected.output());
+        var json = rejected.json();
+        assertEquals("rejected", json.get("status").getAsString());
+        assertTrue(json.get("completed").getAsBoolean());
+        assertEquals(2, json.get("violations").getAsInt());
+        var diagnostics = json.getAsJsonArray("diagnostics");
+        assertEquals(2, diagnostics.size());
+        var derived = diagnostics.asList().stream().map(element -> element.getAsJsonObject())
+                .filter(diagnostic -> diagnostic.getAsJsonObject("location").get("tid").getAsString().equals("one"))
+                .findFirst().orElseThrow(() -> new AssertionError(rejected.output()));
+        assertEquals("MANDATORY_CONSTRAINT_FALSE", derived.get("code").getAsString());
+        var location = derived.getAsJsonObject("location");
+        assertEquals("Item", location.get("objectType").getAsString());
+        assertEquals("/pointer/shape/RING[1]/LINE[2]", location.get("path").getAsString());
+        assertLineRule(derived, "MANDATORY CONSTRAINT label != \"reserved\";");
     }
 
     private void lineAttributeModel(String constraint) throws Exception {
@@ -182,6 +200,10 @@ class ValidatorCommandTest {
         assertEquals("Item", location.get("objectType").getAsString());
         assertEquals("/" + geometry + "/RING[1]/LINE[2]" + suffix,
                 location.get("path").getAsString());
+        assertLineRule(diagnostic, declaration);
+    }
+
+    private void assertLineRule(JsonObject diagnostic, String declaration) throws IOException {
         var rule = diagnostic.getAsJsonObject("ruleLocation");
         assertTrue(rule.get("source").getAsString().endsWith("Checks.ili"));
         int start = rule.get("startOffset").getAsInt();
