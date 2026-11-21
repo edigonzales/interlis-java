@@ -2,7 +2,7 @@
 
 Das JVM-Kommando `interlis-db` erstellt ili2db-kompatible Schemata in
 GeoPackage oder PostgreSQL/PostGIS. Es importiert XTF-FULL-Transfers in einen
-neuen benannten Datensatz und exportiert benannte Datensätze. Das
+neuen benannten Datensatz, ersetzt Datensätze und exportiert sie. Das
 Referenzprofil für die Schemaerzeugung verwendet `ili2gpkg` und `ili2pg`
 **5.5.2**. Für den bisherigen Umfang mit Punkten unterstützt der Transfer
 auch bestehende 5.5.1-Schemata. Er kompiliert das gespeicherte Modell und
@@ -50,6 +50,16 @@ in einer Transaktion und bestätigt das XTF-Quellenende vor dem Commit.
 Nach dem Rollback lässt sich der Import mit demselben Datensatznamen
 wiederholen.
 PostgreSQL-Sequenznummern können nach einem Rollback Lücken aufweisen.
+
+## Datensätze ersetzen
+
+`replace` verwendet dieselben Optionen wie `import`. Es behält die interne ID
+des benannten Datensatzes und ersetzt alle seine Baskets und Objekte. Die neuen
+Zeilen erhalten neue interne IDs, auch bei gleicher BID oder TID. Ein fehlender
+Datensatz wird angelegt. Die Änderung wird erst nach dem bestätigten Ende des
+XTF-FULL-Transfers veröffentlicht. Das erste Profil umfasst flache skalare
+Klassen. PostGIS sperrt die betroffenen Tabellen für konkurrierende Schreibzugriffe.
+GeoPackage verwendet seine bestehende Schreibtransaktion.
 
 ## Referenzprofil
 

@@ -17,6 +17,7 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Set;
@@ -26,7 +27,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public final class Main {
     private static final String USAGE = """
-            Usage: interlis-db <export|import> --model NAME --dataset NAME
+            Usage: interlis-db <export|import|replace> --model NAME --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
                    interlis-db schemaimport --model NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
@@ -60,7 +61,7 @@ public final class Main {
             cancellation.throwIfCancellationRequested();
             options.checkPaths();
             switch (options.command()) {
-                case IMPORT -> importData(options, password, cancellation);
+                case IMPORT, REPLACE -> importData(options, password, cancellation);
                 case EXPORT -> exportData(options, password, cancellation);
                 case SCHEMAIMPORT -> createSchema(options, password, cancellation);
             }
@@ -106,7 +107,8 @@ public final class Main {
                      case ILI23 -> new Xtf23Reader(mapping.plan(), input);
                      case ILI24 -> new Xtf24Reader(mapping.plan(), input);
                  }) {
-                DbTransfer.importData(database, mapping, options.dataset(), reader, cancellation);
+                var mode = options.command() == Command.REPLACE ? DbTransfer.WriteMode.REPLACE : DbTransfer.WriteMode.IMPORT;
+                DbTransfer.importData(database, mapping, options.dataset(), reader, mode, cancellation);
             }
             cancellation.throwIfCancellationRequested();
             database.commit();
@@ -135,7 +137,7 @@ public final class Main {
         }
     }
 
-    private enum Command { IMPORT, EXPORT, SCHEMAIMPORT }
+    private enum Command { IMPORT, REPLACE, EXPORT, SCHEMAIMPORT }
 
     private record Options(Command command, String model, String dataset, Path file, Path gpkg,
                            String pgUrl, String schema, String user) {
@@ -144,9 +146,10 @@ public final class Main {
         static Options parse(String[] args) {
             Command command = switch (args.length == 0 ? "" : args[0]) {
                 case "import" -> Command.IMPORT;
+                case "replace" -> Command.REPLACE;
                 case "export" -> Command.EXPORT;
                 case "schemaimport" -> Command.SCHEMAIMPORT;
-                default -> throw new IllegalArgumentException("Expected import, export or schemaimport");
+                default -> throw new IllegalArgumentException("Expected import, replace, export or schemaimport");
             };
             var flags = new HashMap<String, String>();
             Path file = null;
@@ -175,7 +178,7 @@ public final class Main {
                 if (file == null || file.getParent() == null || model == null) {
                     throw new IllegalArgumentException("An .ili path and --model are required");
                 }
-                if (dataset != null) throw new IllegalArgumentException("--dataset is only valid with import or export");
+                if (dataset != null) throw new IllegalArgumentException("--dataset is only valid with an XTF command");
             } else if (file == null || file.getParent() == null || model == null || dataset == null) {
                 throw new IllegalArgumentException("An XTF path, --model and --dataset are required");
             }
@@ -207,7 +210,9 @@ public final class Main {
 
         Database open(String password) throws SQLException {
             boolean writable = command != Command.EXPORT;
-            return gpkg == null ? Database.openPostgres(pgUrl, schema, user, password, writable)
+            int isolation = command == Command.REPLACE ? Connection.TRANSACTION_READ_COMMITTED
+                    : Connection.TRANSACTION_REPEATABLE_READ;
+            return gpkg == null ? Database.openPostgres(pgUrl, schema, user, password, writable, isolation)
                     : Database.openGeoPackage(gpkg, writable);
         }
     }

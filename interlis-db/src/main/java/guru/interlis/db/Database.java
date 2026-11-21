@@ -47,21 +47,26 @@ final class Database implements AutoCloseable {
         config.setBusyTimeout(5000);
         config.enforceForeignKeys(true);
         return open(DriverManager.getConnection("jdbc:sqlite:" + path.toUri(), config.toProperties()),
-                "main", true, importing);
+                "main", true, importing, Connection.TRANSACTION_READ_COMMITTED);
     }
 
     static Database openPostgres(String url, String schema, String user, String password, boolean importing)
             throws SQLException {
+        return openPostgres(url, schema, user, password, importing, Connection.TRANSACTION_REPEATABLE_READ);
+    }
+
+    static Database openPostgres(String url, String schema, String user, String password, boolean importing,
+                                 int isolation) throws SQLException {
         var properties = new Properties();
         properties.setProperty("user", user);
         if (password != null) {
             properties.setProperty("password", password);
         }
         properties.setProperty("connectTimeout", "10");
-        return open(DriverManager.getConnection(url, properties), schema, false, importing);
+        return open(DriverManager.getConnection(url, properties), schema, false, importing, isolation);
     }
 
-    private static Database open(Connection connection, String schema, boolean gpkg, boolean importing)
+    private static Database open(Connection connection, String schema, boolean gpkg, boolean importing, int isolation)
             throws SQLException {
         try {
             if (gpkg) {
@@ -78,7 +83,7 @@ final class Database implements AutoCloseable {
                 }
                 return new Database(connection, schema, null, importing);
             }
-            connection.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
+            connection.setTransactionIsolation(isolation);
             connection.setReadOnly(!importing);
             connection.setAutoCommit(false);
             try (var statement = connection.createStatement();

@@ -975,10 +975,14 @@ final class DbTransfer {
         }
     }
 
+    enum WriteMode { IMPORT, REPLACE }
+
     static void importData(Database db, DbMapping mapping, String dataset,
-                           TransferReader reader, CancellationToken token) throws SQLException {
+                           TransferReader reader, WriteMode mode, CancellationToken token) throws SQLException {
         token.throwIfCancellationRequested();
-        if (findDataset(db, dataset).isPresent()) {
+        if (mode == WriteMode.REPLACE) DbDatasetWrite.lock(db, mapping);
+        var existing = findDataset(db, dataset);
+        if (mode == WriteMode.IMPORT && existing.isPresent()) {
             throw new DbException("Dataset already exists: " + dataset);
         }
         try (var importer = new Import(db, mapping, token)) {
@@ -992,7 +996,13 @@ final class DbTransfer {
                                 || !reader.stableIdentityNamespaces().isEmpty()) {
                             throw new DbException("Expected the selected model and transfer-scoped identities in XTF");
                         }
-                        datasetId = importer.insertDataset(dataset);
+                        if (mode == WriteMode.REPLACE) DbDatasetWrite.checkReplaceProfile(db, mapping);
+                        if (existing.isPresent()) {
+                            datasetId = existing.orElseThrow();
+                            DbDatasetWrite.clearDataset(db, mapping, datasetId, token);
+                        } else {
+                            datasetId = importer.insertDataset(dataset);
+                        }
                     }
                     case TransferEvent.StartBasket start -> {
                         importer.startBasket(datasetId, start);

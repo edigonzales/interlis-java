@@ -1,0 +1,8 @@
+INTERLIS 2.4;
+MODEL DbMutation24 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  TOPIC Data =
+    CLASS MutationItem =
+      Label : TEXT*40;
+    END MutationItem;
+  END Data;
+END DbMutation24.

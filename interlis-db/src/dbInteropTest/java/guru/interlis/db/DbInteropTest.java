@@ -112,8 +112,20 @@ final class DbInteropTest {
         assertWidePolymorphicProjection();
         exchange(24, null);
     }
-    @Test void postgis23() throws Exception { exchangeWithPostgis(23); }
-    @Test void postgis24() throws Exception { exchangeWithPostgis(24); }
+    @Test void postgis23() throws Exception { exchangeWithPostgis(23, false); }
+    @Test void postgis24() throws Exception { exchangeWithPostgis(24, false); }
+
+    @Test void geoPackageMutation23() throws Exception { exchangeMutation(23, null); }
+    @Test void geoPackageMutation24() throws Exception { exchangeMutation(24, null); }
+    @Test void postgisMutation23() throws Exception { exchangeWithPostgis(23, true); }
+    @Test void postgisMutation24() throws Exception { exchangeWithPostgis(24, true); }
+
+    private void exchangeMutation(int version, PostgreSQLContainer postgres) throws Exception {
+        var reference = new ReferenceTool(postgres != null);
+        var cases = new DatasetWriteCases(work, version, reference);
+        cases.replace(new TestDatabase(postgres, "mutation_reference"), true);
+        cases.replace(new TestDatabase(postgres, "mutation_native"), false);
+    }
 
     private void assertWidePolymorphicProjection() throws Exception {
         var attributes = new StringBuilder();
@@ -154,13 +166,14 @@ final class DbInteropTest {
         }
     }
 
-    private void exchangeWithPostgis(int version) throws Exception {
+    private void exchangeWithPostgis(int version, boolean mutation) throws Exception {
         var image = DockerImageName.parse("sogis/postgis:16-3.4").asCompatibleSubstituteFor("postgres");
         try (var postgres = new PostgreSQLContainer(image)
                 .withTmpFs(Map.of("/var/lib/postgresql/data", "rw,size=256m"))
                 .withPassword("db_interop_password")) {
             postgres.start();
-            exchange(version, postgres);
+            if (mutation) exchangeMutation(version, postgres);
+            else exchange(version, postgres);
         }
     }
 
@@ -630,7 +643,7 @@ final class DbInteropTest {
         assertEquals("1", scalar(sql, "select count(*) from " + db.table("targetroot") + " where t_ili_tid='tail-catalog-leaf'"));
     }
 
-    private static String referenceDatasetFixture(String model, int version, String bid, String objects) {
+    static String referenceDatasetFixture(String model, int version, String bid, String objects) {
         if (version == 23) return """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
@@ -3251,7 +3264,7 @@ final class DbInteropTest {
         assertEquals(Integer.toString(count), scalar(sql, "select count(*) from " + db.table(table)), table);
     }
 
-    private static Element readDataSection(Path output, int version) throws Exception {
+    static Element readDataSection(Path output, int version) throws Exception {
         var factory = DocumentBuilderFactory.newDefaultNSInstance();
         factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         var document = factory.newDocumentBuilder().parse(output.toFile());
@@ -4124,7 +4137,7 @@ final class DbInteropTest {
     private record DetailValue(String label, Boolean enabled, Integer quantity, String decision) { }
     private record AnnotatedPair(String marker, String report, String memo, String grade, String decision) { }
 
-    private static List<Element> children(Element parent) {
+    static List<Element> children(Element parent) {
         var elements = new ArrayList<Element>();
         for (var node = parent.getFirstChild(); node != null; node = node.getNextSibling()) {
             if (node instanceof Element child) elements.add(child);
@@ -4132,15 +4145,15 @@ final class DbInteropTest {
         return elements;
     }
 
-    private static Element child(Element parent, String name) {
+    static Element child(Element parent, String name) {
         return children(parent).stream().filter(element -> element.getLocalName().equals(name)).findFirst().orElse(null);
     }
 
-    private static String id(Element element, int version, String name) {
+    static String id(Element element, int version, String name) {
         return version == 24 ? element.getAttributeNS(XTF24_NS, name) : element.getAttribute(name.toUpperCase(Locale.ROOT));
     }
 
-    private static String scalar(Connection sql, String query) throws SQLException {
+    static String scalar(Connection sql, String query) throws SQLException {
         try (var statement = sql.createStatement(); var result = statement.executeQuery(query)) {
             if (!result.next()) return null;
             String value = result.getString(1);
@@ -4149,18 +4162,18 @@ final class DbInteropTest {
         }
     }
 
-    private static void execute(Connection sql, String query) throws SQLException {
+    static void execute(Connection sql, String query) throws SQLException {
         try (var statement = sql.createStatement()) {
             statement.executeUpdate(query);
         }
     }
 
-    private static void assertCliSuccess(TestDatabase db, String operation, String model, String dataset, Path path) {
+    static void assertCliSuccess(TestDatabase db, String operation, String model, String dataset, Path path) {
         var result = cli(db, operation, model, dataset, path, CancellationToken.none());
         assertEquals(0, result.code(), result::diagnostics);
     }
 
-    private static CliResult cli(TestDatabase db, String operation, String model, String dataset, Path path,
+    static CliResult cli(TestDatabase db, String operation, String model, String dataset, Path path,
                                  CancellationToken token) {
         var diagnostics = new StringWriter();
         var print = new PrintWriter(diagnostics);
@@ -4172,9 +4185,9 @@ final class DbInteropTest {
         return new CliResult(code, diagnostics.toString());
     }
 
-    private record CliResult(int code, String diagnostics) {}
+    record CliResult(int code, String diagnostics) {}
 
-    private final class ReferenceTool {
+    final class ReferenceTool {
         private final Path jar;
         private final Path home;
         private int runs;
@@ -4202,7 +4215,7 @@ final class DbInteropTest {
             jar = dist.resolve(name + ".jar");
         }
 
-        private void run(TestDatabase db, String modelDir, String... args) throws Exception {
+        void run(TestDatabase db, String modelDir, String... args) throws Exception {
             Path java = Path.of(System.getProperty("java.home"), "bin", "java");
             var command = new ArrayList<>(List.of(java.toString(), "--enable-native-access=ALL-UNNAMED",
                     "-Duser.home=" + home, "-jar", jar.toString(), "--modeldir", modelDir));
@@ -4220,7 +4233,7 @@ final class DbInteropTest {
         }
     }
 
-    private final class TestDatabase {
+    final class TestDatabase {
         private final PostgreSQLContainer postgres;
         private final boolean postgis;
         private final Path file;
@@ -4239,7 +4252,7 @@ final class DbInteropTest {
             schema = "db_interop_" + name;
         }
 
-        private Connection connect() throws SQLException {
+        Connection connect() throws SQLException {
             return DriverManager.getConnection(url, user, password);
         }
 
@@ -4254,7 +4267,9 @@ final class DbInteropTest {
                     "--dbdatabase", postgres.getDatabaseName(), "--dbschema", schema, "--dbusr", user, "--dbpwd", password);
         }
 
-        private String table(String name) { return postgis ? schema + "." + name : name; }
+        boolean postgis() { return postgis; }
+
+        String table(String name) { return postgis ? schema + "." + name : name; }
     }
 
     private static String logText(Path log, String password) {
