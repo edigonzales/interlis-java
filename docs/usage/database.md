@@ -192,7 +192,8 @@ Sammlung führt zu einer Diagnose.
 Der XTF-Import erwartet bei einem Bogen Start-, Zwischen- und Endpunkt.
 Ein expliziter Radius (`R` in XTF 2.3 oder `r` in XTF 2.4) führt zu
 einer Diagnose am Attribut und zum Rollback. Beim Export stammen die drei
-Punkte aus der gespeicherten Geometrie. Der XTF-2.4-Codec verwendet die
+Punkte aus der gespeicherten Geometrie. Der XTF-2.4-Leser akzeptiert auch die a1/a2-vor-c1/c2-Reihenfolge aus ili2db-Exporten.
+Der XTF-2.4-Writer verwendet die
 normgerechte Reihenfolge mit Endpunkt vor Zwischenpunkt. ili2gpkg 5.5.2
 schreibt beim Export die umgekehrte Reihenfolge. Der Werkzeugwechsel für
 diese Referenzausgabe erfolgt in der gemeinsamen Datenbank.

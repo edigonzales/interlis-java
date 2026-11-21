@@ -167,6 +167,8 @@ final class SpatialIndexCases {
             Path exported = work.resolve("indexed-arcs-reference.xtf");
             reference.run(db, work.toString(), "--export", "--exportTid", "--dataset", "curves", exported.toString());
             assertCurvesInXtf(exported);
+            assertCliSuccess(db, "replace", model, "curves", exported);
+            assertSearch(db, sql, "indexedline", "trace", "2602399", "1202300", true);
             runReference(db, "import", "curves-reference", input);
             Path ownExport = work.resolve("indexed-arcs-native.xtf");
             assertCliSuccess(db, "export", model, "curves-reference", ownExport);

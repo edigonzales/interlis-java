@@ -194,18 +194,31 @@ final class Xtf24GeometryCodec {
         private Arc arc() throws XMLStreamException {
             attributes();
             startContents();
-            var end = position();
-            var a1 = number("a1");
-            input.nextTag();
-            var a2 = number("a2");
-            input.nextTag();
+            Coordinate end;
+            Coordinate support;
+            // ili2db writes the intermediate position before the endpoint.
+            if (at(START_ELEMENT, "a1")) {
+                support = arcSupport();
+                end = position();
+            } else {
+                end = position();
+                support = arcSupport();
+            }
             Optional<ArcRadius> radius = Optional.empty();
             if (at(START_ELEMENT, "r")) {
                 radius = Optional.of(new ArcRadius(number("r"), RadiusConvention.POSITIVE_SELECTED_BY_SUPPORT));
                 input.nextTag();
             }
             require(END_ELEMENT, "arc");
-            return new Arc(new Coordinate(List.of(a1, a2)), end, radius);
+            return new Arc(support, end, radius);
+        }
+
+        private Coordinate arcSupport() throws XMLStreamException {
+            var a1 = number("a1");
+            input.nextTag();
+            var a2 = number("a2");
+            input.nextTag();
+            return new Coordinate(List.of(a1, a2));
         }
 
         private Surface surface() throws XMLStreamException {

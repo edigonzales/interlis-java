@@ -110,6 +110,19 @@ class Xtf24GeometryTest {
     }
 
     @Test
+    void readsTheIntermediatePositionBeforeTheEndpointInIli2dbExports() throws Exception {
+        String support = "<g:a1>1</g:a1><g:a2>1.5</g:a2>";
+        String end = "<g:c1>2</g:c1><g:c2>0</g:c2><g:c3>42</g:c3>";
+        String start = point("0", "0", "12");
+        var events = read(plan, transfer("<line>" + line(start, "<g:arc>" + support + end + "</g:arc>")
+                + "</line>", false));
+        var canonical = read(plan, transfer("<line>" + line(start, "<g:arc>" + end + support + "</g:arc>")
+                + "</line>", false));
+        assertEquals(canonical, events);
+        assertEquals(events, read(plan, write(plan, events)));
+    }
+
+    @Test
     void retainsExteriorAndInteriorRolesWithoutTopologyChecks() throws Exception {
         var exterior = line(point("0", "0"), point("4", "4"), point("0", "4"), point("4", "0"));
         var hole1 = line(point("1", "1"), point("2", "1"));
