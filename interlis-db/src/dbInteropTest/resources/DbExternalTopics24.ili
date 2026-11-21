@@ -1,0 +1,21 @@
+INTERLIS 2.4;
+MODEL DbExternalTopics24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-21" =
+  TOPIC Catalog =
+    CLASS Registry (ABSTRACT) = END Registry;
+    CLASS RegisteredSite EXTENDS Registry = END RegisteredSite;
+    CLASS SiteLeaf EXTENDS RegisteredSite = END SiteLeaf;
+    CLASS SiteSibling EXTENDS Registry = END SiteSibling;
+    CLASS Landmark = END Landmark;
+  END Catalog;
+  TOPIC Surveys =
+    DEPENDS ON DbExternalTopics24.Catalog;
+    STRUCTURE SiteAnnotation =
+      AnnotationSite : REFERENCE TO (EXTERNAL) DbExternalTopics24.Catalog.RegisteredSite;
+      FlatSite : REFERENCE TO (EXTERNAL) DbExternalTopics24.Catalog.Landmark;
+    END SiteAnnotation;
+    CLASS SurveyRecord =
+      Annotation : SiteAnnotation;
+      DirectSite : REFERENCE TO (EXTERNAL) DbExternalTopics24.Catalog.RegisteredSite;
+    END SurveyRecord;
+  END Surveys;
+END DbExternalTopics24.

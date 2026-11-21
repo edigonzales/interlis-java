@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="interop fixture"><MODELS><MODEL NAME="DbExternalTopics23" VERSION="2026-11-21" URI="https://example.org/interlis/db"/></MODELS></HEADERSECTION>
+  <DATASECTION>
+    <DbExternalTopics23.Surveys BID="fixture-surveys">
+      <DbExternalTopics23.Surveys.SurveyRecord TID="fixture-survey">
+        <Annotation><DbExternalTopics23.Surveys.SiteAnnotation>
+          <AnnotationSite REF="fixture-leaf" BID="fixture-catalog"/>
+          <FlatSite REF="fixture-landmark" BID="fixture-catalog"/>
+        </DbExternalTopics23.Surveys.SiteAnnotation></Annotation>
+      </DbExternalTopics23.Surveys.SurveyRecord>
+    </DbExternalTopics23.Surveys>
+    <DbExternalTopics23.Catalog BID="fixture-catalog">
+      <DbExternalTopics23.Catalog.SiteLeaf TID="fixture-leaf"/>
+      <DbExternalTopics23.Catalog.SiteSibling TID="fixture-sibling"/>
+      <DbExternalTopics23.Catalog.Landmark TID="fixture-landmark"/>
+    </DbExternalTopics23.Catalog>
+  </DATASECTION>
+</TRANSFER>

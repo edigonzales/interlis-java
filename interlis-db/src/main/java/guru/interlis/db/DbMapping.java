@@ -371,7 +371,7 @@ final class DbMapping {
         }
         for (var topic : plan.topics()) {
             if (topic.abstractTopic() || topic.baseTopic().isPresent() || !topic.oidRules().isEmpty()
-                    || !topic.genericBindings().isEmpty() || !topic.dependencies().isEmpty()) {
+                    || !topic.genericBindings().isEmpty()) {
                 throw unsupported("topic " + topic.name().declared());
             }
         }
@@ -479,6 +479,11 @@ final class DbMapping {
 
     private static boolean hasSubtypes(TransferPlan plan, SymbolRef type) {
         return plan.objects().stream().anyMatch(object -> object.baseType().filter(type::equals).isPresent());
+    }
+
+    private static boolean inDependentTopic(TransferPlan plan, ObjectDescriptor source, ObjectDescriptor target) {
+        return source.topic().flatMap(plan::topic).filter(topic ->
+                target.topic().filter(topic.dependencies()::contains).isPresent()).isPresent();
     }
 
     static Optional<EmbeddedAssociation> embeddedAssociation(TransferPlan plan, ObjectDescriptor association, String name,
@@ -594,8 +599,10 @@ final class DbMapping {
         Optional<SymbolRef> target = Optional.empty();
         if (type instanceof ReferenceType ref) {
             var symbol = new SymbolRef(plan.snapshotId(), ref.target().orElseThrow());
-            if (plan.object(symbol).filter(obj -> obj.kind() == SymbolKind.CLASS && obj.topic().equals(object.topic())).isEmpty()) {
-                throw unsupported("reference to another topic or an unmapped class at " + path);
+            if (plan.object(symbol).filter(obj -> obj.kind() == SymbolKind.CLASS
+                    && (obj.topic().equals(object.topic()) || (ref.external() && inDependentTopic(plan, object, obj))))
+                    .isEmpty()) {
+                throw unsupported("reference outside the supported topic or class at " + path);
             }
             target = Optional.of(symbol);
         }

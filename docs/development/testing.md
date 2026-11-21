@@ -99,6 +99,8 @@ die anonymen XTF-Links. Eine basketfremde lokale Rolle löst einen Rollback aus.
 Bei attributierten eingebetteten 1:n-Links vergleicht sie die verschachtelte
 Nutzlast, die direkte Referenz mit SQL `NULL` und das Fehlen der Rolle.
 Eine zusätzliche Linkzeile zum selben Eigentümer lässt den Export scheitern.
+Ein eigenes Modell mit `DEPENDS ON` prüft die Baskets beider Topics,
+die Zuordnung zur deklarierten Zielklasse und die konkrete Ziel-TID.
 
 ```sh
 ./gradlew :interlis-db:dbInteropTest

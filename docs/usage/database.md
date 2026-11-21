@@ -286,6 +286,10 @@ Bei einer eingebetteten 1:n-Assoziation mit eigenen skalaren Attributen
 speichert die Linktabelle die `EXTERNAL`-Zielrolle. Die Eigentümerrolle
 und der Basket der Linkzeile gehören weiterhin zum Eigentümerobjekt.
 
+Ein `EXTERNAL`-Referenzattribut darf auf eine Klasse eines Topics zielen,
+das im gleichen Modell direkt mit `DEPENDS ON` deklariert ist. Der physische
+Fremdschlüssel und die Auflösung am Transferende bleiben gleich.
+
 Zum weiteren Ausbau gehören weitere Assoziationsformen mit Hierarchie-Enden
 sowie `EXTENDED`-Attribute. Weitere Grenzen sind stabile OIDs, eigene Linienformen,
 GeoPackage-RTree beim Schreiben und Updates. Der gespeicherte Modelltext

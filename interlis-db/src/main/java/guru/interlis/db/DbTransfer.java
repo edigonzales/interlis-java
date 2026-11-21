@@ -421,10 +421,13 @@ final class DbTransfer {
                     String sourceBasket = alias + "." + T_BASKET;
                     String baskets = db.technicalTable(BASKET);
                     if (column.external()) {
+                        String topic = root.object().topic().flatMap(mapping.plan()::topic).orElseThrow()
+                                .name().declared().toString();
                         from.append(" AND EXISTS (SELECT 1 FROM ").append(baskets).append(" dst JOIN ")
                                 .append(baskets).append(" src ON src.dataset = dst.dataset WHERE src.").append(T_ID)
                                 .append(" = ").append(sourceBasket).append(" AND dst.").append(T_ID)
-                                .append(" = ").append(targetBasket).append(')');
+                                .append(" = ").append(targetBasket).append(" AND dst.topic = '")
+                                .append(topic.replace("'", "''")).append("')");
                     } else {
                         from.append(" AND ").append(targetBasket).append(" = ").append(sourceBasket);
                     }

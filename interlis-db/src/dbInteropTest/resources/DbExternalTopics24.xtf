@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="http://www.interlis.ch/xtf/2.4/DbExternalTopics24">
+  <i:headersection><i:models><i:model>DbExternalTopics24</i:model></i:models><i:sender>interop fixture</i:sender></i:headersection>
+  <i:datasection>
+    <Surveys i:bid="fixture-surveys">
+      <SurveyRecord i:tid="fixture-survey">
+        <Annotation><SiteAnnotation>
+          <AnnotationSite i:ref="fixture-leaf"/>
+          <FlatSite i:ref="fixture-landmark"/>
+        </SiteAnnotation></Annotation>
+        <DirectSite i:ref="fixture-leaf"/>
+      </SurveyRecord>
+    </Surveys>
+    <Catalog i:bid="fixture-catalog">
+      <SiteLeaf i:tid="fixture-leaf"/>
+      <SiteSibling i:tid="fixture-sibling"/>
+      <Landmark i:tid="fixture-landmark"/>
+    </Catalog>
+  </i:datasection>
+</i:transfer>

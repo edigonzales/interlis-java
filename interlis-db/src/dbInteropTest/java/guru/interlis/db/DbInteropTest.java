@@ -285,6 +285,7 @@ final class DbInteropTest {
             assertEquals(originalOutput, Files.readString(nativeOutput));
         }
         exchangeExternal(version, postgres, reference);
+        exchangeExternalTopics(version, postgres, reference);
     }
 
     private void exchangeExternal(int version, PostgreSQLContainer postgres, ReferenceTool reference) throws Exception {
@@ -546,6 +547,112 @@ final class DbInteropTest {
         assertEquals(version == 23 ? bid : "", id(reference, version, "bid"));
     }
 
+    private void exchangeExternalTopics(int version, PostgreSQLContainer postgres, ReferenceTool reference) throws Exception {
+        String model = "DbExternalTopics" + version;
+        Path ili = work.resolve(model + ".ili");
+        try (var resource = DbInteropTest.class.getResourceAsStream("/" + ili.getFileName())) {
+            Files.copy(resource, ili);
+        }
+        String fixture;
+        try (var resource = DbInteropTest.class.getResourceAsStream("/" + model + ".xtf")) {
+            fixture = new String(resource.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        Path referenceInput = Files.writeString(work.resolve("topics-input.xtf"), fixture);
+        Path ownInput = Files.writeString(work.resolve("topics-own-input.xtf"), fixture.replace("fixture-", "own-"));
+        Path tailInput = Files.writeString(work.resolve("topics-tail-input.xtf"), fixture.replace("fixture-", "tail-"));
+        Path ownOutput = work.resolve("topics-own-output.xtf");
+        Path referenceOutput = work.resolve("topics-reference-output.xtf");
+        var referenceDb = new TestDatabase(postgres, "topics_reference");
+        reference.run(referenceDb, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
+                "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", ili.toString());
+        var nativeDb = new TestDatabase(postgres, "topics_native");
+        assertCliSuccess(nativeDb, "schemaimport", model, null, ili);
+        try (var referenceSql = referenceDb.connect(); var nativeSql = nativeDb.connect()) {
+            DbSchemaCatalog.read(referenceSql, referenceDb.postgis, referenceDb.schema)
+                    .assertSameAs(DbSchemaCatalog.read(nativeSql, nativeDb.postgis, nativeDb.schema));
+            assertQualifiedReferenceMapping(referenceDb, referenceSql, model + ".Surveys.SiteAnnotation.AnnotationSite",
+                    "siteannotation", "annotationsite", "registeredsite");
+            assertQualifiedReferenceMapping(referenceDb, referenceSql, model + ".Surveys.SiteAnnotation.FlatSite",
+                    "siteannotation", "flatsite", "landmark");
+            if (version == 24) {
+                assertQualifiedReferenceMapping(referenceDb, referenceSql, model + ".Surveys.SurveyRecord.DirectSite",
+                        "surveyrecord", "directsite", "registeredsite");
+            }
+        }
+        for (var db : List.of(referenceDb, nativeDb)) {
+            try (var sql = db.connect()) {
+                reference.run(db, work.toString(), "--import", "--importTid", "--importBid", "--dataset", "fixture",
+                        referenceInput.toString());
+                assertExternalTopicRows(db, sql, model, version, "fixture");
+                assertCliSuccess(db, "export", model, "fixture", ownOutput);
+                assertExternalTopicXtf(ownOutput, model, version, "fixture", true);
+                assertWrongFlatTargetTopicRejected(db, sql, model, ownOutput);
+                assertCliSuccess(db, "import", model, "own", ownInput);
+                assertExternalTopicRows(db, sql, model, version, "own");
+                reference.run(db, work.toString(), "--export", "--exportTid", "--dataset", "own", referenceOutput.toString());
+                assertExternalTopicXtf(referenceOutput, model, version, "own", false);
+                reference.run(db, work.toString(), "--import", "--importTid", "--importBid", "--dataset", "tail",
+                        tailInput.toString());
+                assertExternalTopicRows(db, sql, model, version, "tail");
+            }
+        }
+    }
+
+    private static void assertWrongFlatTargetTopicRejected(TestDatabase db, Connection sql, String model, Path output)
+            throws Exception {
+        String update = "update " + db.table("landmark") + " set t_basket=(select t_id from "
+                + db.table("t_ili2db_basket") + " where t_ili_tid='fixture-%s') where t_ili_tid='fixture-landmark'";
+        execute(sql, update.formatted("surveys"));
+        try {
+            assertExportRejected(db, model, "fixture", output, "SiteAnnotation.FlatSite");
+        } finally {
+            execute(sql, update.formatted("catalog"));
+        }
+    }
+
+    private static void assertExternalTopicRows(TestDatabase db, Connection sql, String model, int version, String dataset)
+            throws SQLException {
+        String query = """
+                select src.topic, dst.topic, t.t_ili_tid, t.t_type, t.t_id%s
+                from %s r join %s a on a.surveyrecord_annotation=r.t_id and a.t_basket=r.t_basket
+                join %s t on t.t_id=a.annotationsite join %s leaf on leaf.t_id=t.t_id and leaf.t_basket=t.t_basket
+                join %s src on src.t_id=r.t_basket join %s dst on dst.t_id=t.t_basket and dst.dataset=src.dataset
+                where r.t_ili_tid='%s-survey'
+                """.formatted(version == 24 ? ", r.directsite" : "", db.table("surveyrecord"), db.table("siteannotation"),
+                db.table("registry"), db.table("siteleaf"), db.table("t_ili2db_basket"), db.table("t_ili2db_basket"), dataset);
+        try (var statement = sql.createStatement(); var rows = statement.executeQuery(query)) {
+            assertTrue(rows.next());
+            assertEquals(model + ".Surveys", rows.getString(1));
+            assertEquals(model + ".Catalog", rows.getString(2));
+            assertEquals(dataset + "-leaf", rows.getString(3));
+            assertEquals("siteleaf", rows.getString(4));
+            if (version == 24) assertEquals(rows.getString(5), rows.getString(6));
+            assertFalse(rows.next());
+        }
+    }
+
+    private static void assertExternalTopicXtf(Path output, String model, int version, String dataset, boolean own)
+            throws Exception {
+        String catalog = version == 23 ? model + ".Catalog" : "Catalog";
+        String surveys = version == 23 ? model + ".Surveys" : "Surveys";
+        var section = readDataSection(output, version);
+        var source = child(section, surveys);
+        var target = child(section, catalog);
+        assertEquals(dataset + "-surveys", id(source, version, "bid"));
+        assertEquals(dataset + "-catalog", id(target, version, "bid"));
+        var report = child(source, version == 23 ? surveys + ".SurveyRecord" : "SurveyRecord");
+        var leaf = child(target, version == 23 ? catalog + ".SiteLeaf" : "SiteLeaf");
+        assertEquals(dataset + "-survey", id(report, version, "tid"));
+        assertEquals(dataset + "-leaf", id(leaf, version, "tid"));
+        var landmark = child(target, version == 23 ? catalog + ".Landmark" : "Landmark");
+        assertEquals(dataset + "-landmark", id(landmark, version, "tid"));
+        String bid = own ? dataset + "-catalog" : "";
+        var note = children(child(report, "Annotation")).getFirst();
+        assertExternalReference(child(note, "AnnotationSite"), version, dataset + "-leaf", bid);
+        assertExternalReference(child(note, "FlatSite"), version, dataset + "-landmark", bid);
+        if (version == 24) assertExternalReference(child(report, "DirectSite"), version, dataset + "-leaf", "");
+    }
+
     private static void assertStructureCatalog(TestDatabase db, Connection sql, String model, int version)
             throws SQLException {
         String structure = model + (version == 23 ? ".Data.Detail" : ".Detail");
@@ -787,8 +894,13 @@ final class DbInteropTest {
 
     private static void assertReferenceMapping(TestDatabase db, Connection sql, String model, String attribute,
                                                String owner, String column, String target) throws SQLException {
+        assertQualifiedReferenceMapping(db, sql, model + ".Data." + attribute, owner, column, target);
+    }
+
+    private static void assertQualifiedReferenceMapping(TestDatabase db, Connection sql, String attribute,
+                                                        String owner, String column, String target) throws SQLException {
         assertEquals("1", scalar(sql, "select count(*) from " + db.table("t_ili2db_attrname")
-                + " where iliname='" + model + ".Data." + attribute + "' and sqlname='" + column
+                + " where iliname='" + attribute + "' and sqlname='" + column
                 + "' and colowner='" + owner + "' and target='" + target + "'"));
         assertEquals(target, scalar(sql, "select setting from " + db.table("t_ili2db_column_prop")
                 + " where tablename='" + owner + "' and subtype is null and columnname='" + column
