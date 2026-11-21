@@ -159,7 +159,9 @@ eine Koordinatendomäne ist deren Deklaration massgeblich. Ein gespeichertes
 `SETTINGS.modelSrsCode` ersetzt die CRS-Metainfo des betreffenden Modells.
 Ohne CRS-Angabe aus dem Modell gilt `SETTINGS.defaultSrsCode`. Der räumliche Katalog muss
 zur Auflösung passen. Linien und Flächen verwenden das CRS ihrer
-`VERTEX`-Domäne. XYZ-Geometrien speichern die dritte
+`VERTEX`-Domäne. Verschiedene Geometrieattribute eines Objekts dürfen
+unterschiedliche CRS haben. Der Schlüssel einer Geometrie-Hilfstabelle
+in `T_ILI2DB_TRAFO` enthält den EPSG-Code des betreffenden Attributs. XYZ-Geometrien speichern die dritte
 Ordinate im SQL-Wert und die exakten Modellgrenzen als `c3Min` und `c3Max`
 in den Spaltenmetadaten. PostGIS verwendet den Z-Typzusatz, GeoPackage das
 Z-Bit der ili2gpkg-Kodierung. Die Raumindizes arbeiten mit der XY-Hülle.

@@ -190,6 +190,21 @@ final class DbInteropTest {
         cases.modelOverride(new TestDatabase(postgres, "model_crs_reference"));
     }
 
+    @Test void geoPackageMixedSrid23() throws Exception { exchangeMixedSrid(23, null); }
+    @Test void geoPackageMixedSrid24() throws Exception { exchangeMixedSrid(24, null); }
+    @Test void postgisMixedSrid23() throws Exception { exchangeWithPostgis(23, this::exchangeMixedSrid); }
+    @Test void postgisMixedSrid24() throws Exception { exchangeWithPostgis(24, this::exchangeMixedSrid); }
+
+    private void exchangeMixedSrid(int version, PostgreSQLContainer postgres) throws Exception {
+        var cases = new CrsCases(work, version, new ReferenceTool(postgres != null));
+        cases.mixedSrid(new TestDatabase(postgres, "mixed_split_reference"),
+                new TestDatabase(postgres, "mixed_split_own"), true);
+        if (postgres != null) {
+            cases.mixedSrid(new TestDatabase(postgres, "mixed_wide_reference"),
+                    new TestDatabase(postgres, "mixed_wide_own"), false);
+        }
+    }
+
     private void exchangeSpatial(int version, PostgreSQLContainer postgres) throws Exception {
         var cases = new SpatialIndexCases(work, version, new ReferenceTool(postgres != null));
         cases.points(new TestDatabase(postgres, "spatial_points"));

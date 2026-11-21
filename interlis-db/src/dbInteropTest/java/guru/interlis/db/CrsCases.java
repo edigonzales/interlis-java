@@ -220,6 +220,69 @@ final class CrsCases {
         }
     }
 
+    void mixedSrid(TestDatabase old, TestDatabase own, boolean split) throws Exception {
+        String model = "MixedSrid" + version;
+        Path ili = fixture(model);
+        if (split && old.postgis()) {
+            createReference(old, ili, 2056, "--oneGeomPerTable");
+            createOwn(own, model, ili, "--one-geom-per-table");
+        } else {
+            createReference(old, ili, 2056);
+            createOwn(own, model, ili);
+        }
+        assertCatalogs(old, own);
+        mixedObjectExchange(old, model, split);
+        mixedObjectExchange(own, model, split);
+
+        if (split) {
+            String table = own.table("t_ili2db_trafo");
+            String path = model + ".Data.Asset.OldPosition:21781(" + model + ".Data.Asset)";
+            String wrong = path.replace(":21781(", ":2056(");
+            try (var sql = own.connect()) {
+                assertEquals(path, scalar(sql, "SELECT iliname FROM " + table + " WHERE setting='asset_oldposition'"));
+                execute(sql, "UPDATE " + table + " SET iliname='" + wrong + "' WHERE iliname='" + path + "'");
+            }
+            Path output = Files.writeString(work.resolve("wrong-trafo.xtf"), "previous output");
+            var failure = cli(own, "export", model, "own", output, CancellationToken.none());
+            assertNotEquals(0, failure.code(), failure::diagnostics);
+            assertTrue(failure.diagnostics().contains("secondary geometry CLASSNAME/TRAFO/ATTRNAME mapping"), failure::diagnostics);
+            assertEquals("previous output", Files.readString(output));
+            try (var sql = own.connect()) {
+                execute(sql, "UPDATE " + table + " SET iliname='" + path + "' WHERE iliname='" + wrong + "'");
+            }
+        }
+    }
+
+    private void mixedObjectExchange(TestDatabase db, String model, boolean split) throws Exception {
+        mixedExchange(db, model, "mixed", tid -> mixedObject(model, tid, "2600001.625", true),
+                (output, tid) -> assertMixed(object(basket(output, tid), tid), "2600001.625", true));
+        try (var sql = db.connect()) {
+            for (String tid : List.of("legacy-mixed", "own-mixed")) {
+                assertStoredEpsg(db, sql, "asset", "center", tid, 2056);
+                for (String field : List.of("oldposition", "geoposition")) {
+                    String table = split ? "asset_" + field : "asset";
+                    String where = " WHERE t_id = (SELECT t_id FROM " + db.table("asset")
+                            + " WHERE t_ili_tid='" + tid + "')";
+                    assertStoredSrid(db, sql, "SELECT ", " FROM " + db.table(table) + where, field,
+                            field.equals("oldposition") ? 21781 : 4326);
+                }
+            }
+        }
+    }
+
+    private String mixedObject(String model, String tid, String centerX, boolean withOld) {
+        return object(model, "Asset", tid, field("Center", point(centerX, "1200002.125"))
+                + (withOld ? field("OldPosition", point("600100.125", "200200.375")) : "")
+                + field("GeoPosition", point("7.125", "46.375")));
+    }
+
+    private static void assertMixed(Element object, String centerX, boolean withOld) {
+        assertPoint(object, "Center", centerX, "1200002.125");
+        if (withOld) assertPoint(object, "OldPosition", "600100.125", "200200.375");
+        else org.junit.jupiter.api.Assertions.assertNull(child(object, "OldPosition"));
+        assertPoint(object, "GeoPosition", "7.125", "46.375");
+    }
+
     void rejectMissingDefault(TestDatabase db) throws Exception {
         String model = "MissingCrs" + version;
         Path ili = defaultModel(model, 4326);
@@ -317,14 +380,19 @@ final class CrsCases {
     private void assertStoredEpsg(TestDatabase db, Connection sql, String table, String field, String tid, int epsg)
             throws Exception {
         String query = " FROM " + db.table(table) + " WHERE t_ili_tid = '" + tid + "'";
+        assertStoredSrid(db, sql, "SELECT ", query, field, epsg);
+    }
+
+    private static void assertStoredSrid(TestDatabase db, Connection sql, String select, String query, String field, int srid)
+            throws Exception {
         if (db.postgis()) {
-            assertEquals(Integer.toString(epsg), scalar(sql, "SELECT ST_SRID(" + field + ")" + query));
+            assertEquals(Integer.toString(srid), scalar(sql, select + "ST_SRID(" + field + ")" + query));
         } else {
-            try (var stmt = sql.createStatement(); var rows = stmt.executeQuery("SELECT " + field + query)) {
+            try (var stmt = sql.createStatement(); var rows = stmt.executeQuery(select + field + query)) {
                 assertTrue(rows.next());
                 byte[] blob = rows.getBytes(1);
                 var order = (blob[3] & 1) == 0 ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
-                assertEquals(epsg, ByteBuffer.wrap(blob).order(order).getInt(4));
+                assertEquals(srid, ByteBuffer.wrap(blob).order(order).getInt(4));
             }
         }
     }

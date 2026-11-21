@@ -153,15 +153,17 @@ final class DbSchemaReader {
                     requireColumns(db, child.name(), child.columns(), Map.of(binding.ownerColumn(), Kind.REFERENCE));
                     compositions.add(binding);
                 } else if (settings.splitGeometries() && !key(db, parent.name()).equals(key(db, mapping.owner()))) {
+                    var column = DbMapping.describeColumn(plan, object, attr, mapping.name(), settings.crs());
                     String owner = object.name().declared().toString();
                     var table = classNames.remove(Ili2dbLayout.secondaryClass(path, owner));
-                    var transformation = transformations.secondary().remove(Ili2dbLayout.secondaryTransformation(path, owner));
+                    var transformation = transformations.secondary()
+                            .remove(Ili2dbLayout.secondaryTransformation(path, owner, column.epsgCode()));
                     if (table == null || transformation == null || !key(db, table).equals(key(db, transformation))
                             || !key(db, table).equals(key(db, mapping.owner())) || !usedNames.add(key(db, table))
                             || Ili2dbLayout.reservedTable(foldedName(table), db.gpkg())) {
                         throw new DbException("Inconsistent secondary geometry CLASSNAME/TRAFO/ATTRNAME mapping for " + path);
                     }
-                    secondary.add(bindSecondaryGeometry(db, plan, object, attr, mapping, parent.name(), table, path, settings.crs()));
+                    secondary.add(bindSecondaryGeometry(db, column, mapping, parent.name(), table, path));
                 } else {
                     columns.add(bindColumn(db, plan, object, parent, names, attr, mapping, path, settings.crs()));
                 }
@@ -457,10 +459,8 @@ final class DbSchemaReader {
         return column.kind().geometry() ? bindGeometry(db, table.name(), column) : column;
     }
 
-    private static SecondaryGeometry bindSecondaryGeometry(Database db, TransferPlan plan, ObjectDescriptor object,
-                                                           AttributeSlot attr, AttributeName mapping,
-                                                           String parent, String table, String path, CrsDefaults crs) throws SQLException {
-        var column = DbMapping.describeColumn(plan, object, attr, mapping.name(), crs);
+    private static SecondaryGeometry bindSecondaryGeometry(Database db, Column column, AttributeName mapping,
+                                                           String parent, String table, String path) throws SQLException {
         if (!column.kind().geometry() || mapping.target() != null || Ili2dbLayout.TECHNICAL_COLUMNS.contains(key(db, column.name()))) {
             throw new DbException("Invalid secondary geometry column for " + path);
         }

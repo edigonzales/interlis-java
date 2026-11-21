@@ -63,8 +63,8 @@ final class Ili2dbLayout {
         return attribute + "(" + owner + ")";
     }
 
-    static String secondaryTransformation(String attribute, String owner) {
-        return secondaryClass(attribute + ":" + LV95, owner);
+    static String secondaryTransformation(String attribute, String owner, int epsg) {
+        return secondaryClass(attribute + ":" + epsg, owner);
     }
 
     static int parseEpsgCode(String code, String context) {

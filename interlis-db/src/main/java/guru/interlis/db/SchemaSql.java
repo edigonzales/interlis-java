@@ -255,7 +255,7 @@ final class SchemaSql {
                     var column = secondary.column();
                     String path = column.slot().name().declared().toString();
                     row(classes, Ili2dbLayout.secondaryClass(path, name), secondary.table());
-                    row(transformations, Ili2dbLayout.secondaryTransformation(path, name),
+                    row(transformations, Ili2dbLayout.secondaryTransformation(path, name, column.epsgCode()),
                             Ili2dbLayout.SECONDARY_TABLE_TAG, secondary.table());
                     row(attributes, path, column.name(), secondary.table(), null);
                 }

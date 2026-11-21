@@ -1,0 +1,16 @@
+INTERLIS 2.3;
+MODEL MixedSrid23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  DOMAIN
+    NewGrid = COORD 2460000.000 .. 2870000.000, 1045000.000 .. 1310000.000;
+    !!@ CRS="EPSG:21781"
+    OldGrid = COORD 460000.000 .. 870000.000, 45000.000 .. 310000.000;
+    !!@ CRS="EPSG:4326"
+    Angles = COORD -180.000 .. 180.000, -90.000 .. 90.000;
+  TOPIC Data =
+    CLASS Asset =
+      Center : NewGrid;
+      OldPosition : OldGrid;
+      GeoPosition : Angles;
+    END Asset;
+  END Data;
+END MixedSrid23.
