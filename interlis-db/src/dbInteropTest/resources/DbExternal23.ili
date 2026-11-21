@@ -23,5 +23,9 @@ MODEL DbExternal23 (en) AT "https://example.org/interlis/db" VERSION "1" =
       PairedSite (EXTERNAL) -- {0..1} TargetBranch;
       PairedReport -- {0..1} Report;
     END ReportPairing;
+    ASSOCIATION ExternalPair =
+      PairObject -- {0..*} Report;
+      PairTarget (EXTERNAL) -- {0..*} TargetBranch;
+    END ExternalPair;
   END Data;
 END DbExternal23.

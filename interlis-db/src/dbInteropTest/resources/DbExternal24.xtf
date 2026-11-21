@@ -3,6 +3,7 @@
   <ili:headersection><ili:models><ili:model>DbExternal24</ili:model></ili:models><ili:sender>interop fixture</ili:sender></ili:headersection>
   <ili:datasection>
     <m:Data ili:bid="external-first">
+      <m:ExternalPair><m:PairObject ili:ref="external-forward"/><m:PairTarget ili:ref="external-late"/></m:ExternalPair>
       <m:Report ili:tid="external-forward">
         <m:DetailValue><m:Detail><m:Note>forward</m:Note><m:TargetRef ili:ref="external-late"/></m:Detail></m:DetailValue>
         <m:DirectRef ili:ref="external-late"/>
@@ -17,6 +18,7 @@
     <m:Data ili:bid="external-last">
       <m:TargetLeaf ili:tid="external-late"/>
       <m:TargetSibling ili:tid="external-sibling"/>
+      <m:ExternalPair><m:PairObject ili:ref="external-backward"/><m:PairTarget ili:ref="external-early"/></m:ExternalPair>
       <m:Report ili:tid="external-backward">
         <m:DetailValue><m:Detail><m:Note>backward</m:Note><m:TargetRef ili:ref="external-early"/></m:Detail></m:DetailValue>
         <m:DirectRef ili:ref="external-early"/>

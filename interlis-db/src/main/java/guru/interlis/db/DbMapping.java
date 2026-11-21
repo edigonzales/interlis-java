@@ -487,9 +487,6 @@ final class DbMapping {
         var first = roles.getFirst();
         var second = roles.getLast();
         if (!first.single() && !second.single()) {
-            if (first.external() || second.external()) {
-                throw unsupported("external roles on standalone links at " + association.name().declared());
-            }
             return Optional.empty();
         }
         boolean linkTable = association.slots().stream().anyMatch(AttributeSlot.class::isInstance);

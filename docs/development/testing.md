@@ -94,6 +94,8 @@ XTF-2.3-Referenzexport ohne Ziel-BID erneut ein.
 Bei eingebetteten 1:n- und 1:1-Rollen ohne eigene Attribute prüft sie die
 Rollenspalten am Eigentümer, ausgelassene Rollen und Rollback bei einem
 Ziel ausserhalb des deklarierten Hierarchiezweigs.
+Bei eigenständigen n:m-Links prüft sie die beiden SQL-Schlüssel und
+die anonymen XTF-Links. Eine basketfremde lokale Rolle löst einen Rollback aus.
 
 ```sh
 ./gradlew :interlis-db:dbInteropTest

@@ -280,6 +280,8 @@ BID gegen den tatsächlichen Zielbasket. In XTF 2.4 genügt `ili:ref`.
 Dieselbe Auflösung gilt für eingebettete 1:n- und 1:1-Assoziationen ohne
 eigene Attribute im selben Topic. Die gespeicherte Rolle ist `EXTERNAL`.
 Die Rollenspalte liegt wie bei lokalen Zielen in der Eigentümertabelle.
+Bei einem eigenständigen n:m-Link darf eine der beiden Rollen `EXTERNAL`
+sein. Die andere Rolle und die Linkzeile bleiben im selben Basket verankert.
 
 Zum weiteren Ausbau gehören weitere Assoziationsformen mit Hierarchie-Enden
 sowie `EXTENDED`-Attribute. Weitere Grenzen sind stabile OIDs, eigene Linienformen,

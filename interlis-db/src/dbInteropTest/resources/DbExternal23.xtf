@@ -5,6 +5,7 @@
   </HEADERSECTION>
   <DATASECTION>
     <DbExternal23.Data BID="external-first">
+      <DbExternal23.Data.ExternalPair><PairObject REF="external-forward"/><PairTarget REF="external-late" BID="external-last"/></DbExternal23.Data.ExternalPair>
       <DbExternal23.Data.Report TID="external-forward">
         <DetailValue><DbExternal23.Data.Detail><Note>forward</Note><TargetRef REF="external-late" BID="external-last"/></DbExternal23.Data.Detail></DetailValue>
         <BaseSite REF="external-late" BID="external-last"/>
@@ -18,6 +19,7 @@
     <DbExternal23.Data BID="external-last">
       <DbExternal23.Data.TargetLeaf TID="external-late"/>
       <DbExternal23.Data.TargetSibling TID="external-sibling"/>
+      <DbExternal23.Data.ExternalPair><PairObject REF="external-backward"/><PairTarget REF="external-early" BID="external-first"/></DbExternal23.Data.ExternalPair>
       <DbExternal23.Data.Report TID="external-backward">
         <DetailValue><DbExternal23.Data.Detail><Note>backward</Note><TargetRef REF="external-early" BID="external-first"/></DbExternal23.Data.Detail></DetailValue>
         <BaseSite REF="external-early" BID="external-first"/>

@@ -316,6 +316,8 @@ final class DbInteropTest {
                 assertEquals("embedded", scalar(referenceSql, "select setting from " + referenceDb.table("t_ili2db_trafo")
                         + " where iliname='" + model + ".Data." + association + "' and tag='ch.ehi.ili2db.inheritance'"));
             }
+            assertAssociationCatalog(referenceDb, referenceSql, model, "ExternalPair",
+                    Map.of("PairObject", "report", "PairTarget", "targetbranch"));
             exchangeExternalDatasets(reference, referenceDb, referenceSql, model, version, fixture);
             exchangeExternalDatasets(reference, nativeDb, nativeSql, model, version, fixture);
         }
@@ -356,6 +358,10 @@ final class DbInteropTest {
         String wrongRoleTarget = fixture.replace("external-", "failed-")
                 .replace(baseSite + "=\"failed-late\"", baseSite + "=\"failed-sibling\"");
         assertExternalRollback(db, sql, model, wrongRoleTarget, "ReportPlace.BaseSite", "failed-sibling");
+        String pairObject = version == 23 ? "PairObject REF" : "PairObject ili:ref";
+        String wrongLocalBasket = fixture.replace("external-", "failed-")
+                .replace(pairObject + "=\"failed-backward\"", pairObject + "=\"failed-forward\"");
+        assertExternalRollback(db, sql, model, wrongLocalBasket, "ExternalPair.PairObject", "failed-forward", "basket");
 
         String where = " where note='forward' and t_basket=(select t_basket from " + db.table("report")
                 + " where t_ili_tid='external-forward')";
@@ -375,7 +381,7 @@ final class DbInteropTest {
 
     private void assertExternalRollback(TestDatabase db, Connection sql, String model, String fixture, String... messages)
             throws Exception {
-        var tables = List.of("t_ili2db_dataset", "t_ili2db_basket", "report", "detail", "targetroot", "targetleaf");
+        var tables = List.of("t_ili2db_dataset", "t_ili2db_basket", "report", "detail", "targetroot", "targetleaf", "externalpair");
         var counts = new ArrayList<String>();
         for (String table : tables) counts.add(scalar(sql, "select count(*) from " + db.table(table)));
         Path input = Files.writeString(work.resolve("external-failed.xtf"), fixture);
@@ -422,23 +428,52 @@ final class DbInteropTest {
             }
             assertFalse(rows.next());
         }
+        String links = """
+                select r.t_ili_tid, t.t_ili_tid, b.t_ili_tid, tb.t_ili_tid from %s l
+                join %s r on r.t_id=l.pairobject and r.t_basket=l.t_basket
+                join %s t on t.t_id=l.pairtarget join %s b on b.t_id=l.t_basket
+                join %s tb on tb.t_id=t.t_basket and tb.dataset=b.dataset
+                join %s ds on ds.t_id=b.dataset where ds.datasetname='%s' order by r.t_ili_tid
+                """.formatted(db.table("externalpair"), db.table("report"), db.table("targetroot"),
+                db.table("t_ili2db_basket"), db.table("t_ili2db_basket"), db.table("t_ili2db_dataset"), dataset);
+        try (var statement = sql.createStatement(); var rows = statement.executeQuery(links)) {
+            assertTrue(rows.next());
+            assertEquals(List.of(dataset + "-backward", dataset + "-early", dataset + "-last", dataset + "-first"),
+                    List.of(rows.getString(1), rows.getString(2), rows.getString(3), rows.getString(4)));
+            assertTrue(rows.next());
+            assertEquals(List.of(dataset + "-forward", dataset + "-late", dataset + "-first", dataset + "-last"),
+                    List.of(rows.getString(1), rows.getString(2), rows.getString(3), rows.getString(4)));
+            assertFalse(rows.next());
+        }
     }
 
     private static void assertExternalXtf(Path output, String model, int version, String dataset, boolean own)
             throws Exception {
         var reports = new HashMap<String, Element>();
         var targets = new HashMap<String, String>();
+        var pairs = new HashSet<String>();
         for (Element basket : children(readDataSection(output, version))) {
             String bid = id(basket, version, "bid");
             for (Element object : children(basket)) {
                 String name = object.getLocalName();
                 String tid = id(object, version, "tid");
-                if (name.equals("Report") || name.equals(model + ".Data.Report")) reports.put(tid, object);
-                else targets.put(tid, bid);
+                if (name.equals("Report") || name.equals(model + ".Data.Report")) {
+                    reports.put(tid, object);
+                } else if (name.equals("ExternalPair") || name.equals(model + ".Data.ExternalPair")) {
+                    assertEquals("", tid);
+                    assertTrue(pairs.add(bid));
+                    boolean first = bid.equals(dataset + "-first");
+                    assertExternalReference(child(object, "PairObject"), version, dataset + (first ? "-forward" : "-backward"), "");
+                    assertExternalReference(child(object, "PairTarget"), version, dataset + (first ? "-late" : "-early"),
+                            own ? dataset + (first ? "-last" : "-first") : "");
+                } else {
+                    targets.put(tid, bid);
+                }
             }
         }
         assertEquals(dataset + "-first", targets.get(dataset + "-early"));
         assertEquals(dataset + "-last", targets.get(dataset + "-late"));
+        assertEquals(Set.of(dataset + "-first", dataset + "-last"), pairs);
         for (String direction : List.of("absent", "backward", "forward")) {
             var report = reports.get(dataset + "-" + direction);
             assertNotNull(report);
