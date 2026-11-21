@@ -392,7 +392,8 @@ final class DbMapping {
             throw unsupported("expected one standalone model containing classes in topics");
         }
         for (var topic : plan.topics()) {
-            if (topic.abstractTopic() || topic.baseTopic().isPresent() || !topic.oidRules().isEmpty()
+            if (topic.abstractTopic() || topic.baseTopic().isPresent()
+                    || topic.oidRules().stream().anyMatch(rule -> rule.basket() || !Ili2dbLayout.UUID_OID.equals(oidDomain(plan, rule)))
                     || !topic.genericBindings().isEmpty()) {
                 throw unsupported("topic " + topic.name().declared());
             }
@@ -408,8 +409,9 @@ final class DbMapping {
                 default -> false;
             };
             boolean supportedIdentity = object.oidRules().isEmpty() || (object.kind() == SymbolKind.CLASS
-                    && object.baseType().isEmpty() && !bases.contains(object.symbol())
-                    && oidDomain(plan, object).filter(Ili2dbLayout.UUID_OID::equals).isPresent());
+                    && oidDomain(plan, object).filter(Ili2dbLayout.UUID_OID::equals).isPresent()
+                    && object.baseType().flatMap(plan::object)
+                            .map(base -> oidDomain(plan, base).equals(oidDomain(plan, object))).orElse(true));
             if (!supported || !supportedIdentity) {
                 throw unsupported("class layout or identity rules for " + object.name().declared());
             }
@@ -419,14 +421,14 @@ final class DbMapping {
 
     static Optional<String> oidDomain(TransferPlan plan, ObjectDescriptor object) {
         return object.oidRules().stream().filter(rule -> !rule.basket()).findFirst()
-                .flatMap(rule -> rule.domain())
-                .map(id -> plan.symbol(new SymbolRef(plan.snapshotId(), id)).known().orElseThrow())
-                .map(domain -> {
-                    if (domain.header().origin() instanceof Origin.PredefinedOrigin predefined) return predefined.key();
-                    var owner = plan.symbol(new SymbolRef(plan.snapshotId(), domain.owner().orElseThrow()))
-                            .known().orElseThrow();
-                    return owner.name().value() + "." + domain.name().value();
-                });
+                .filter(rule -> rule.domain().isPresent()).map(rule -> oidDomain(plan, rule));
+    }
+
+    private static String oidDomain(TransferPlan plan, guru.interlis.model.OidRule rule) {
+        var domain = plan.symbol(new SymbolRef(plan.snapshotId(), rule.domain().orElseThrow())).known().orElseThrow();
+        if (domain.header().origin() instanceof Origin.PredefinedOrigin predefined) return predefined.key();
+        var owner = plan.symbol(new SymbolRef(plan.snapshotId(), domain.owner().orElseThrow())).known().orElseThrow();
+        return owner.name().value() + "." + domain.name().value();
     }
 
     private static boolean supportsAssociation(TransferPlan plan, ObjectDescriptor object, Set<SymbolRef> bases) {

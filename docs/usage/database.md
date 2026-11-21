@@ -333,7 +333,9 @@ muss `uuid_generate_v4()` aus `uuid-ossp` im Suchpfad verfügbar sein.
 Die Spaltenmetadaten führen die
 `oidDomain`. Import und Export verwenden die kanonische UUID-Schreibweise
 mit Kleinbuchstaben. XTF 2.3 FULL verwendet die UUID als TID ohne
-OIDSPACE-Präfix.
+OIDSPACE-Präfix. Die UUID-Regel kann aus dem Topic oder der Basisklasse
+stammen. Die Wurzeltabelle speichert die OID und die Fragmente teilen
+dieselbe interne `T_Id`.
 
 Zum weiteren Ausbau gehören weitere Assoziationsformen mit Hierarchie-Enden
 sowie `EXTENDED`-Attribute. Weitere Grenzen sind stabile OIDs, eigene Linienformen,

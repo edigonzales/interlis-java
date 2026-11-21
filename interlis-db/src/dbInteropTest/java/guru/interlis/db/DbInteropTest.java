@@ -385,24 +385,50 @@ final class DbInteropTest {
     }
 
     private Path oidFixture(String model, int version, String bid, String tid) throws IOException {
-        String object = version == 23 ? "<%1$s.Data.Site TID=\"%2$s\"><Label>marker</Label></%1$s.Data.Site>"
-                .formatted(model, tid) : "<Site i:tid=\"%s\"><Label>marker</Label></Site>".formatted(tid);
-        return Files.writeString(work.resolve(bid + ".xtf"), referenceDatasetFixture(model, version, bid, object));
+        String object = version == 23 ? """
+                <%1$s.Data.Marker TID="%2$s"><Label>marker</Label><Category>survey</Category></%1$s.Data.Marker>
+                """.formatted(model, tid) : """
+                <Marker i:tid="%s"><Label>marker</Label><Category>survey</Category></Marker>
+                """.formatted(tid);
+        String defaults = version == 23 ? """
+                <%1$s.Defaults BID="%2$s-defaults"><%1$s.Defaults.Address TID="%3$s"><Text>address</Text></%1$s.Defaults.Address></%1$s.Defaults>
+                """.formatted(model, bid, defaultOid(tid)) : """
+                <Defaults i:bid="%s-defaults"><Address i:tid="%s"><Text>address</Text></Address></Defaults>
+                """.formatted(bid, defaultOid(tid));
+        String fixture = referenceDatasetFixture(model, version, bid, object)
+                .replace(version == 23 ? "</DATASECTION>" : "</i:datasection>",
+                        defaults + (version == 23 ? "</DATASECTION>" : "</i:datasection>"));
+        return Files.writeString(work.resolve(bid + ".xtf"), fixture);
+    }
+
+    private static String defaultOid(String tid) {
+        return tid.replace("-5C5A-", "-ABCD-");
     }
 
     private static void assertOidRows(TestDatabase db, Connection sql, String bid, String tid) throws SQLException {
         assertEquals(tid.toLowerCase(Locale.ROOT), scalar(sql, "select s.t_ili_tid from " + db.table("site")
-                + " s join " + db.table("t_ili2db_basket") + " b on b.t_id=s.t_basket where b.t_ili_tid='" + bid + "' and s.label='marker'"));
+                + " s join " + db.table("marker") + " m on m.t_id=s.t_id and m.t_basket=s.t_basket"
+                + " join " + db.table("t_ili2db_basket") + " b on b.t_id=s.t_basket where b.t_ili_tid='" + bid
+                + "' and s.label='marker' and s.t_type='marker' and m.category='survey'"));
+        assertEquals(defaultOid(tid).toLowerCase(Locale.ROOT), scalar(sql, "select a.t_ili_tid from " + db.table("address")
+                + " a join " + db.table("t_ili2db_basket") + " b on b.t_id=a.t_basket where b.t_ili_tid='"
+                + bid + "-defaults' and a.atext='address'"));
     }
 
     private static void assertOidXtf(Path output, String model, int version, String bid, String tid) throws Exception {
-        var baskets = children(readDataSection(output, version));
-        assertEquals(1, baskets.size());
-        assertEquals(bid, id(baskets.getFirst(), version, "bid"));
-        var object = child(baskets.getFirst(), version == 23 ? model + ".Data.Site" : "Site");
+        var data = readDataSection(output, version);
+        assertEquals(2, children(data).size());
+        var basket = child(data, version == 23 ? model + ".Data" : "Data");
+        assertEquals(bid, id(basket, version, "bid"));
+        var object = child(basket, version == 23 ? model + ".Data.Marker" : "Marker");
         assertNotNull(object);
         assertEquals(tid.toLowerCase(Locale.ROOT), id(object, version, "tid"));
         assertEquals("marker", child(object, "Label").getTextContent());
+        assertEquals("survey", child(object, "Category").getTextContent());
+        var inherited = child(data, version == 23 ? model + ".Defaults" : "Defaults");
+        assertEquals(bid + "-defaults", id(inherited, version, "bid"));
+        assertEquals(defaultOid(tid).toLowerCase(Locale.ROOT),
+                id(child(inherited, version == 23 ? model + ".Defaults.Address" : "Address"), version, "tid"));
     }
 
     private void exchangeReferenceDataset(ReferenceTool reference, TestDatabase db, Connection sql, String model,
