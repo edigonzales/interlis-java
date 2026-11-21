@@ -56,7 +56,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static guru.interlis.db.Ili2dbLayout.LV95;
 import static guru.interlis.db.Ili2dbLayout.SEQ_COLUMN;
 import static guru.interlis.db.Ili2dbLayout.TECHNICAL_COLUMNS;
 import static guru.interlis.db.Ili2dbLayout.T_SEQ;
@@ -682,7 +681,7 @@ final class DbMapping {
         String path = attr.name().declared().toString();
         if (!CardinalityUpper.finite(1).equals(attr.cardinality().upper())) throw unsupported(path);
         var type = plan.type(attr.effectiveType()).known().orElseThrow(() -> unsupported(path));
-        var curve = type instanceof GeometryType geometry && optional(attr) ? describeCurve(plan, geometry, path) : null;
+        var curve = type instanceof GeometryType geometry && optional(attr) ? describeCurve(plan, geometry, path, defaultEpsg) : null;
         Kind kind = switch (type) {
             case TextType text when text.textKind() == TextKind.TEXT || text.textKind() == TextKind.MTEXT -> Kind.TEXT;
             case NumericType number when int32(number) -> Kind.INTEGER;
@@ -714,16 +713,17 @@ final class DbMapping {
         int dimensions = curve != null ? curve.dimensions()
                 : kind.geometry() ? ((CoordinateType) type).dimensions() : 0;
         int epsg = 0;
-        if (kind.geometry()) {
-            epsg = type instanceof CoordinateType coord
-                    ? pointEpsg(plan, attr, coord, defaultEpsg, path) : requireDefaultEpsg(defaultEpsg, path);
+        if (curve != null) {
+            epsg = curve.epsg();
+        } else if (kind.geometry()) {
+            epsg = pointEpsg(plan, attr, (CoordinateType) type, defaultEpsg, path);
         }
         return new Column(attr, name, kind, Optional.of(type), target, epsg, epsg, Optional.empty(), dimensions);
     }
 
-    private record Curve(Kind kind, int dimensions) { }
+    private record Curve(Kind kind, int dimensions, int epsg) { }
 
-    private static Curve describeCurve(TransferPlan plan, GeometryType geometry, String path) {
+    private static Curve describeCurve(TransferPlan plan, GeometryType geometry, String path, int defaultEpsg) {
         String feature = "attribute " + path + " (" + geometry.kind() + ")";
         var geometryKind = geometry.geometryKind();
         var kind = switch (geometryKind) {
@@ -748,8 +748,7 @@ final class DbMapping {
                 || coordinates.multiCoordinate() || !storageDimensions(coordinates)) {
             throw unsupported(feature);
         }
-        validateGeometryCrs(plan, coordinates, domain, geometryKind.name().toLowerCase(Locale.ROOT), path);
-        return new Curve(kind, coordinates.dimensions());
+        return new Curve(kind, coordinates.dimensions(), geometryEpsg(plan, coordinates, domain, defaultEpsg, path));
     }
 
     private static boolean storageDimensions(CoordinateType coordinates) {
@@ -792,28 +791,9 @@ final class DbMapping {
         return defaultEpsg;
     }
 
-    static void validateGeometryCrs(TransferPlan plan, CoordinateType coordinates, Symbol declaration,
-                                    String geometry, String path) {
-        String crs = coordinates.referenceSystem().orElse(null);
-        if (crs == null) crs = metaText(declaration, "CRS");
-        if (crs == null) crs = metaText(plan.symbol(plan.rootModels().getFirst()).known().orElseThrow(), "CRS");
-        if (crs != null && !isLv95(crs)) {
-            throw new DbException("Expected an EPSG:2056 " + geometry + " at " + path);
-        }
-    }
-
     static String metaText(Symbol symbol, String key) {
         var value = symbol.header().metaAttributes().values().get(key);
         return value == null ? null : value.text();
-    }
-
-    private static boolean isLv95(String crs) {
-        if (!crs.startsWith("EPSG:")) return false;
-        try {
-            return Integer.parseInt(crs.substring(5)) == LV95;
-        } catch (NumberFormatException invalid) {
-            return false;
-        }
     }
 
     private static boolean optional(AttributeSlot attr) {

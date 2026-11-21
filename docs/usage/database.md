@@ -157,7 +157,8 @@ Für Koordinatenattribute gilt zuerst `REFSYS` (INTERLIS 2.4), dann
 `!!@ CRS` an der Typdeklaration oder am Modell. Bei einem Verweis auf
 eine Koordinatendomäne ist deren Deklaration massgeblich. Ohne CRS-Angabe
 aus dem Modell gilt `SETTINGS.defaultSrsCode`. Der räumliche Katalog muss
-zur Auflösung passen. XYZ-Geometrien speichern die dritte
+zur Auflösung passen. Linien und Flächen verwenden das CRS ihrer
+`VERTEX`-Domäne. XYZ-Geometrien speichern die dritte
 Ordinate im SQL-Wert und die exakten Modellgrenzen als `c3Min` und `c3Max`
 in den Spaltenmetadaten. PostGIS verwendet den Z-Typzusatz, GeoPackage das
 Z-Bit der ili2gpkg-Kodierung. Die Raumindizes arbeiten mit der XY-Hülle.

@@ -185,6 +185,8 @@ final class DbInteropTest {
         cases.rejectMissingDefault(new TestDatabase(postgres, "crs_missing"));
         cases.declaredPointCrs(new TestDatabase(postgres, "declared_crs_reference"),
                 new TestDatabase(postgres, "declared_crs_own"));
+        cases.vertexCrs(new TestDatabase(postgres, "vertex_crs_reference"),
+                new TestDatabase(postgres, "vertex_crs_own"));
     }
 
     private void exchangeSpatial(int version, PostgreSQLContainer postgres) throws Exception {

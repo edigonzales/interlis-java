@@ -122,6 +122,70 @@ final class CrsCases {
         assertPoint(object(basket, tid + "-station"), "Location", "600100.125", "200200.375");
     }
 
+    void vertexCrs(TestDatabase old, TestDatabase own) throws Exception {
+        String model = "VertexCrs" + version;
+        Path ili = fixture(model);
+        createReference(old, ili, 2056);
+        createOwn(own, model, ili);
+        try (var ref = old.connect(); var sql = own.connect()) {
+            var catalog = DbSchemaCatalog.read(ref, old.postgis(), old.schema());
+            if (!old.postgis()) {
+                catalog = catalog.expectGeoPackageGeometryExtension("route", "trace", "COMPOUNDCURVE")
+                        .expectGeoPackageGeometryExtension("plot", "outline", "CURVEPOLYGON")
+                        .expectGeoPackageGeometryExtension("parcel", "boundary", "CURVEPOLYGON");
+                if (version == 24) catalog = catalog.expectGeoPackageGeometryExtension("network", "routes", "MULTICURVE");
+            }
+            catalog.assertSameAs(DbSchemaCatalog.read(sql, own.postgis(), own.schema()));
+        }
+        vertexExchange(old, model);
+        vertexExchange(own, model);
+    }
+
+    private void vertexExchange(TestDatabase db, String model) throws Exception {
+        String trace = line(point("600100.125", "200100.375", "4.125") + point("600120.250", "200130.625", "-9.375"));
+        String shell = line(point("7", "46") + point("8", "46") + point("8", "47") + point("7", "47") + point("7", "46"));
+        String hole = line(point("7.125", "46.125") + point("7.125", "46.375") + point("7.375", "46.375")
+                + point("7.375", "46.125") + point("7.125", "46.125"));
+        String area = line(point("600300", "200300", "1") + point("600340", "200300", "2")
+                + point("600340", "200340", "3") + point("600300", "200340", "4") + point("600300", "200300", "1"));
+        String second = line(point("600150", "200150", "11") + point("600160", "200180", "12"));
+        mixedExchange(db, model, "vertex", tid -> object(model, "Route", tid + "-route", field("Trace", trace))
+                + object(model, "Plot", tid + "-plot", field("Outline", surface(shell, hole)))
+                + object(model, "Parcel", tid + "-parcel", field("Boundary", surface(area, "")))
+                + (version == 24 ? object(model, "Network", tid + "-network",
+                        field("Routes", "<g:multipolyline>" + trace + second + "</g:multipolyline>")) : ""), this::assertVertex);
+        try (var sql = db.connect()) {
+            for (String tid : List.of("legacy-vertex", "own-vertex")) {
+                assertStoredEpsg(db, sql, "route", "trace", tid + "-route", 21781);
+                assertStoredEpsg(db, sql, "plot", "outline", tid + "-plot", 4326);
+                assertStoredEpsg(db, sql, "parcel", "boundary", tid + "-parcel", 21781);
+                if (version == 24) assertStoredEpsg(db, sql, "network", "routes", tid + "-network", 21781);
+            }
+        }
+    }
+
+    private void assertVertex(Path file, String tid) throws Exception {
+        var basket = basket(file, tid);
+        assertEquals(version == 24 ? 4 : 3, children(basket).size());
+        assertOrdinates(child(object(basket, tid + "-route"), "Trace"), 3, "4.125", "-9.375");
+        assertOrdinates(child(object(basket, tid + "-plot"), "Outline"), 1,
+                "7", "8", "8", "7", "7", "7.125", "7.125", "7.375", "7.375", "7.125");
+        assertOrdinates(child(object(basket, tid + "-parcel"), "Boundary"), 3, "1", "2", "3", "4", "1");
+        if (version == 24) {
+            var routes = child(object(basket, tid + "-network"), "Routes");
+            assertOrdinates(routes, 3, "4.125", "-9.375", "11", "12");
+            assertEquals(2, children(children(routes).getFirst()).size());
+        }
+    }
+
+    private void assertOrdinates(Element field, int axis, String... values) {
+        var found = field.getElementsByTagNameNS("*", (version == 23 ? "C" : "c") + axis);
+        assertEquals(values.length, found.getLength(), field.getTagName());
+        for (int i = 0; i < values.length; i++) {
+            assertEquals(0, new BigDecimal(values[i]).compareTo(new BigDecimal(found.item(i).getTextContent())));
+        }
+    }
+
     void rejectMissingDefault(TestDatabase db) throws Exception {
         String model = "MissingCrs" + version;
         Path ili = defaultModel(model, 4326);
@@ -129,6 +193,16 @@ final class CrsCases {
         assertNotEquals(0, result.code(), result::diagnostics);
         assertTrue(result.diagnostics().contains("missing the EPSG:999999 SRS"), result::diagnostics);
         assertMissingTarget(db);
+    }
+
+    private Path fixture(String model) throws Exception {
+        Path ili = work.resolve(model + ".ili");
+        if (Files.notExists(ili)) {
+            try (var resource = getClass().getResourceAsStream("/" + ili.getFileName())) {
+                Files.copy(resource, ili);
+            }
+        }
+        return ili;
     }
 
     private Path defaultModel(String model, int epsg) throws Exception {
@@ -232,9 +306,23 @@ final class CrsCases {
                 : "<%1$s i:tid=\"%2$s\">%3$s</%1$s>".formatted(type, tid, values);
     }
 
-    private String point(String x, String y) {
-        return version == 23 ? "<COORD><C1>%s</C1><C2>%s</C2></COORD>".formatted(x, y)
-                : "<g:coord><g:c1>%s</g:c1><g:c2>%s</g:c2></g:coord>".formatted(x, y);
+    private String point(String... coordinates) {
+        var body = new StringBuilder();
+        for (int axis = 0; axis < coordinates.length; axis++) {
+            body.append(field((version == 23 ? "C" : "g:c") + (axis + 1), coordinates[axis]));
+        }
+        return field(version == 23 ? "COORD" : "g:coord", body.toString());
+    }
+
+    private String line(String positions) {
+        return field(version == 23 ? "POLYLINE" : "g:polyline", positions);
+    }
+
+    private String surface(String shell, String hole) {
+        if (version == 23) {
+            return field("SURFACE", field("BOUNDARY", shell) + (hole.isEmpty() ? "" : field("BOUNDARY", hole)));
+        }
+        return field("g:surface", field("g:exterior", shell) + (hole.isEmpty() ? "" : field("g:interior", hole)));
     }
 
     private static String field(String name, String value) {
