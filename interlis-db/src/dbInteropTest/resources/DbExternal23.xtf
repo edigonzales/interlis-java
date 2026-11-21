@@ -10,6 +10,7 @@
         <DetailValue><DbExternal23.Data.Detail><Note>forward</Note><TargetRef REF="external-late" BID="external-last"/></DbExternal23.Data.Detail></DetailValue>
         <BaseSite REF="external-late" BID="external-last"/>
         <PairedSite REF="external-late" BID="external-last"/>
+        <ReviewSite REF="external-late" BID="external-last"><DbExternal23.Data.ExternalReview><ReviewMemo>observed</ReviewMemo></DbExternal23.Data.ExternalReview></ReviewSite>
       </DbExternal23.Data.Report>
       <DbExternal23.Data.Report TID="external-absent">
         <DetailValue><DbExternal23.Data.Detail><Note>absent</Note></DbExternal23.Data.Detail></DetailValue>
@@ -24,6 +25,7 @@
         <DetailValue><DbExternal23.Data.Detail><Note>backward</Note><TargetRef REF="external-early" BID="external-first"/></DbExternal23.Data.Detail></DetailValue>
         <BaseSite REF="external-early" BID="external-first"/>
         <PairedSite REF="external-early" BID="external-first"/>
+        <ReviewSite REF="external-early" BID="external-first"/>
       </DbExternal23.Data.Report>
     </DbExternal23.Data>
   </DATASECTION>

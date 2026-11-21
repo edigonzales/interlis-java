@@ -493,7 +493,7 @@ final class DbMapping {
         // For 1:1, the second declared role's class owns the column for the first role.
         var target = first.single() ? first : second;
         var owner = first.single() ? second : first;
-        if (owner.external() || (target.external() && linkTable)) {
+        if (owner.external() || (target.external() && linkTable && owner.single())) {
             throw unsupported("external roles on this embedded association at " + association.name().declared());
         }
         if (linkTable && hasSubtypes(plan, owner.target())) {

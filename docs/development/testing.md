@@ -96,6 +96,9 @@ Rollenspalten am Eigentümer, ausgelassene Rollen und Rollback bei einem
 Ziel ausserhalb des deklarierten Hierarchiezweigs.
 Bei eigenständigen n:m-Links prüft sie die beiden SQL-Schlüssel und
 die anonymen XTF-Links. Eine basketfremde lokale Rolle löst einen Rollback aus.
+Bei attributierten eingebetteten 1:n-Links vergleicht sie die verschachtelte
+Nutzlast, die direkte Referenz mit SQL `NULL` und das Fehlen der Rolle.
+Eine zusätzliche Linkzeile zum selben Eigentümer lässt den Export scheitern.
 
 ```sh
 ./gradlew :interlis-db:dbInteropTest

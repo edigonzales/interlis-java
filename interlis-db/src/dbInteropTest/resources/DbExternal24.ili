@@ -28,5 +28,10 @@ MODEL DbExternal24 (en) AT "https://example.org/interlis/db" VERSION "1" =
       PairObject -- {0..*} Report;
       PairTarget (EXTERNAL) -- {0..*} TargetBranch;
     END ExternalPair;
+    ASSOCIATION ExternalReview =
+      ReviewOwner -- {0..*} Report;
+      ReviewSite (EXTERNAL) -- {0..1} TargetBranch;
+      ReviewMemo : TEXT*20;
+    END ExternalReview;
   END Data;
 END DbExternal24.

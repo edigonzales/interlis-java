@@ -318,6 +318,9 @@ final class DbInteropTest {
             }
             assertAssociationCatalog(referenceDb, referenceSql, model, "ExternalPair",
                     Map.of("PairObject", "report", "PairTarget", "targetbranch"));
+            assertAssociationCatalog(referenceDb, referenceSql, model, "ExternalReview",
+                    Map.of("ReviewOwner", "report", "ReviewSite", "targetbranch"));
+            assertTypeKind(referenceDb, referenceSql, "externalreview", "reviewmemo", "TEXT");
             exchangeExternalDatasets(reference, referenceDb, referenceSql, model, version, fixture);
             exchangeExternalDatasets(reference, nativeDb, nativeSql, model, version, fixture);
         }
@@ -374,6 +377,15 @@ final class DbInteropTest {
         } finally {
             execute(sql, "update " + detail + " set targetref=" + target + where);
         }
+        String review = db.table("externalreview");
+        execute(sql, "insert into " + review + " (t_id,t_basket,reviewowner,reviewsite,reviewmemo) "
+                + "select -1,t_basket,reviewowner,reviewsite,reviewmemo from " + review
+                + " where reviewowner=(select t_id from " + db.table("report") + " where t_ili_tid='external-forward')");
+        try {
+            assertExportRejected(db, model, "external", ownOutput, "Multiple link rows", "ExternalReview.ReviewSite");
+        } finally {
+            execute(sql, "delete from " + review + " where t_id=-1");
+        }
         Path tail = Files.writeString(work.resolve("external-tail.xtf"), fixture.replace("external-", "tail-"));
         reference.run(db, work.toString(), "--import", "--importTid", "--importBid", "--dataset", "tail", tail.toString());
         assertExternalRows(db, sql, version, "tail");
@@ -381,7 +393,8 @@ final class DbInteropTest {
 
     private void assertExternalRollback(TestDatabase db, Connection sql, String model, String fixture, String... messages)
             throws Exception {
-        var tables = List.of("t_ili2db_dataset", "t_ili2db_basket", "report", "detail", "targetroot", "targetleaf", "externalpair");
+        var tables = List.of("t_ili2db_dataset", "t_ili2db_basket", "report", "detail", "targetroot", "targetleaf",
+                "externalpair", "externalreview");
         var counts = new ArrayList<String>();
         for (String table : tables) counts.add(scalar(sql, "select count(*) from " + db.table(table)));
         Path input = Files.writeString(work.resolve("external-failed.xtf"), fixture);
@@ -445,6 +458,25 @@ final class DbInteropTest {
                     List.of(rows.getString(1), rows.getString(2), rows.getString(3), rows.getString(4)));
             assertFalse(rows.next());
         }
+        String reviews = """
+                select r.t_ili_tid, t.t_ili_tid, l.reviewmemo from %s l
+                join %s b on b.t_id=l.t_basket join %s ds on ds.t_id=b.dataset
+                left join %s r on r.t_id=l.reviewowner and r.t_basket=l.t_basket
+                left join %s t on t.t_id=l.reviewsite and t.t_basket<>l.t_basket
+                where ds.datasetname='%s' order by r.t_ili_tid
+                """.formatted(db.table("externalreview"), db.table("t_ili2db_basket"), db.table("t_ili2db_dataset"),
+                db.table("report"), db.table("targetroot"), dataset);
+        try (var statement = sql.createStatement(); var rows = statement.executeQuery(reviews)) {
+            assertTrue(rows.next());
+            assertEquals(dataset + "-backward", rows.getString(1));
+            assertEquals(dataset + "-early", rows.getString(2));
+            assertNull(rows.getString(3));
+            assertTrue(rows.next());
+            assertEquals(dataset + "-forward", rows.getString(1));
+            assertEquals(dataset + "-late", rows.getString(2));
+            assertEquals("observed", rows.getString(3));
+            assertFalse(rows.next());
+        }
     }
 
     private static void assertExternalXtf(Path output, String model, int version, String dataset, boolean own)
@@ -485,6 +517,7 @@ final class DbInteropTest {
                 assertNull(child(report, "DirectRef"));
                 assertNull(child(report, "BaseSite"));
                 assertNull(child(report, "PairedSite"));
+                assertNull(child(report, "ReviewSite"));
                 continue;
             }
             String target = dataset + (direction.equals("backward") ? "-early" : "-late");
@@ -492,6 +525,17 @@ final class DbInteropTest {
             assertExternalReference(role, version, target, bid);
             assertExternalReference(child(report, "BaseSite"), version, target, bid);
             assertExternalReference(child(report, "PairedSite"), version, target, bid);
+            var review = child(report, "ReviewSite");
+            assertExternalReference(review, version, target, bid);
+            var payload = children(review);
+            if (direction.equals("forward")) {
+                assertEquals(1, payload.size());
+                var association = payload.getFirst();
+                assertEquals(version == 23 ? model + ".Data.ExternalReview" : "ExternalReview", association.getLocalName());
+                assertEquals("observed", text(association, "ReviewMemo"));
+            } else {
+                assertTrue(payload.isEmpty());
+            }
             if (version == 24) assertExternalReference(child(report, "DirectRef"), version, target, "");
         }
     }

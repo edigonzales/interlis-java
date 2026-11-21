@@ -9,6 +9,7 @@
         <m:DirectRef ili:ref="external-late"/>
         <m:BaseSite ili:ref="external-late"/>
         <m:PairedSite ili:ref="external-late"/>
+        <m:ReviewSite ili:ref="external-late"><m:ExternalReview><m:ReviewMemo>observed</m:ReviewMemo></m:ExternalReview></m:ReviewSite>
       </m:Report>
       <m:Report ili:tid="external-absent">
         <m:DetailValue><m:Detail><m:Note>absent</m:Note></m:Detail></m:DetailValue>
@@ -24,6 +25,7 @@
         <m:DirectRef ili:ref="external-early"/>
         <m:BaseSite ili:ref="external-early"/>
         <m:PairedSite ili:ref="external-early"/>
+        <m:ReviewSite ili:ref="external-early"/>
       </m:Report>
     </m:Data>
   </ili:datasection>
