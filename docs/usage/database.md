@@ -182,6 +182,11 @@ die gemeinsamen Tabellen. `--model` bezeichnet das Originalmodell. Der
 Import speichert das ursprüngliche Topic jedes Baskets und verwendet dessen
 EPSG-Spalte.
 
+Bei `update` behalten bestehende Baskets ihre Domänenbindung und ihr
+Topic. `replace` kann Baskets mit einer neuen CRS-Auswahl liefern.
+`delete` entfernt die zugehörigen Hilfszeilen und Raumindexeinträge
+in derselben Transaktion.
+
 Für neue Schemata setzt `schemaimport --default-epsg CODE` den
 Standard. Ohne Option gilt EPSG:2056. GeoPackage verwendet die vorhandenen
 EPSG-Definitionen aus dem Referenzprofil, darunter LV03 (21781) und

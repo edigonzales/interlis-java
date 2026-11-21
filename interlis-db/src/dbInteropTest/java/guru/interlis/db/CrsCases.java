@@ -221,6 +221,66 @@ final class CrsCases {
         }
     }
 
+    void mutateDeferred(TestDatabase db) throws Exception {
+        String model = "DeferredCrs24";
+        createOwn(db, model, deferredPoints(model), "--multi-srs", "--create-geom-index");
+        Path original = deferredDelivery(model, "main");
+        reference.run(db, work.toString(), "--import", "--dataset", "main", "--importTid", "--importBid", original.toString());
+        assertCliSuccess(db, "import", model, "other", deferredDelivery(model, "other"));
+
+        String start = Files.readString(original);
+        Path updated = Files.writeString(work.resolve("domains-update.xtf"), start.replace("2600001.625", "2600100.625"));
+        String replacement = start.replace(".CurrentGrid", ".OldGrid")
+                .replace("2600001.625", "620000.125").replace("1200002.125", "220000.375");
+        Path switched = Files.writeString(work.resolve("domains-switch.xtf"), replacement);
+        Path invalid = Files.writeString(work.resolve("domains-replace-invalid.xtf"), replacement.replace(
+                "basket-old-main\" i:domains=\"" + model + ".Grid=" + model + ".OldGrid",
+                "basket-old-main\" i:domains=\"" + model + ".Grid=" + model + ".MissingGrid"));
+        String station = db.table("station");
+        String oldTable = db.postgis() ? "station" : "station_location_21781";
+        String objectId = "SELECT t_id FROM " + station + " WHERE t_ili_tid='current-main'";
+        String basketId = "SELECT t_id FROM " + db.table("t_ili2db_basket") + " WHERE t_ili_tid='basket-current-main'";
+        try (var sql = db.connect()) {
+            String objectBefore = scalar(sql, objectId);
+            String basketBefore = scalar(sql, basketId);
+            assertCliSuccess(db, "update", model, "main", updated);
+            assertEquals(objectBefore, scalar(sql, objectId));
+            assertEquals(basketBefore, scalar(sql, basketId));
+            assertHits(db, sql, "station", "location_2056", "2600100.625", "1200002.125", 2056, 1);
+            Path output = work.resolve("domains-updated.xtf");
+            reference.run(db, work.toString(), "--export", "--dataset", "main", "--exportTid", output.toString());
+            assertPoint(object(basket(output, "current-main"), "current-main"), "Location", "2600100.625", "1200002.125");
+
+            var rejected = cli(db, "update", model, "main", switched, CancellationToken.none());
+            assertNotEquals(0, rejected.code(), rejected::diagnostics);
+            assertTrue(rejected.diagnostics().contains("Cannot change domain assignments"), rejected::diagnostics);
+            var rollback = cli(db, "replace", model, "main", invalid, CancellationToken.none());
+            assertNotEquals(0, rollback.code(), rollback::diagnostics);
+            assertTrue(rollback.diagnostics().contains("permitted assignments"), rollback::diagnostics);
+            assertEquals(objectBefore, scalar(sql, objectId));
+            assertEquals(basketBefore, scalar(sql, basketId));
+            assertHits(db, sql, "station", "location_2056", "2600100.625", "1200002.125", 2056, 1);
+            assertHits(db, sql, oldTable, "location_21781", "620000.125", "220000.375", 21781, 0);
+
+            assertCliSuccess(db, "replace", model, "main", switched);
+            assertNotEquals(objectBefore, scalar(sql, objectId));
+            assertHits(db, sql, "station", "location_2056", "2600100.625", "1200002.125", 2056, 0);
+            assertHits(db, sql, oldTable, "location_21781", "620000.125", "220000.375", 21781, 1);
+            output = work.resolve("domains-replaced.xtf");
+            reference.run(db, work.toString(), "--export", "--dataset", "main", "--exportTid", output.toString());
+            var switchedBasket = basket(output, "current-main");
+            assertEquals(model + ".Grid=" + model + ".OldGrid", id(switchedBasket, version, "domains"));
+            assertPoint(object(switchedBasket, "current-main"), "Location", "620000.125", "220000.375");
+
+            assertCliSuccess(db, "delete", model, "main", null);
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
+            assertEquals("3", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket")));
+            assertHits(db, sql, oldTable, "location_21781", "620000.125", "220000.375", 21781, 0);
+            assertHits(db, sql, oldTable, "location_21781", "600100.125", "200200.375", 21781, 1);
+            assertHits(db, sql, "station", "location_2056", "2600001.625", "1200002.125", 2056, 1);
+        }
+    }
+
     void deferredMulti(TestDatabase legacy, TestDatabase nativeDb) throws Exception {
         String model = "DeferredMulti24";
         Path ili = fixture(model);
@@ -755,7 +815,7 @@ final class CrsCases {
         execute(sql, "UPDATE " + properties + " SET setting='21781'" + where);
     }
 
-    private static void assertHits(TestDatabase db, Connection sql, String table, String column, String x, String y,
+    static void assertHits(TestDatabase db, Connection sql, String table, String column, String x, String y,
                                    int epsg, int count) throws Exception {
         String actual = db.postgis() ? scalar(sql, "SELECT count(*) FROM " + db.table(table) + " WHERE " + column
                 + " && ST_MakeEnvelope(" + x + "," + y + "," + x + "," + y + "," + epsg + ")")

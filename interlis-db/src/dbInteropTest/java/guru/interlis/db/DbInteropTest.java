@@ -203,6 +203,18 @@ final class DbInteropTest {
                 new TestDatabase(postgres, "mixed_wide_own"), false);
     }
 
+    @Test void geoPackageBasketCrsMutation23() throws Exception { exchangeBasketCrsMutation(23, null); }
+    @Test void geoPackageBasketCrsMutation24() throws Exception { exchangeBasketCrsMutation(24, null); }
+    @Test void postgisBasketCrsMutation23() throws Exception { exchangeWithPostgis(23, this::exchangeBasketCrsMutation); }
+    @Test void postgisBasketCrsMutation24() throws Exception { exchangeWithPostgis(24, this::exchangeBasketCrsMutation); }
+
+    private void exchangeBasketCrsMutation(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "basket_crs_mutation");
+        var reference = new ReferenceTool(postgres != null);
+        if (version == 23) new AlternateCrsCases(work, reference).mutate(db);
+        else new CrsCases(work, version, reference).mutateDeferred(db);
+    }
+
     @Test void geoPackageAlternateCrsExchange23() throws Exception { exchangeAlternateCrs(23, null); }
     @Test void postgisAlternateCrsExchange23() throws Exception { exchangeWithPostgis(23, this::exchangeAlternateCrs); }
 

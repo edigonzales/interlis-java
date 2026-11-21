@@ -115,6 +115,12 @@ und den Rollback eines erst beim zweiten Objekt fehlgeschlagenen Ersatzes.
 `*DbInteropTest.*LocalSrid*` prüft abweichende lokale GeoPackage-SRS-IDs
 und die Ablehnung nicht eindeutiger Katalogzuordnungen.
 
+`*DbInteropTest.*FixedMultiSrs*` prüft EPSG-suffigierte Spalten in beiden
+XTF-Versionen. Die XTF-2.4-Fälle mit `Deferred` im Namen prüfen die Domänenwahl
+pro Basket, die XTF-2.3-Fälle mit `AlternateCrs` das alternative CRS-Modell.
+`*DbInteropTest.*BasketCrsMutation*` prüft in beiden Transferformaten
+unveränderte IDs beim Update, CRS-Wechsel beim Ersatz, Rollback und Raumindizes.
+
 Die Tests zu aufgeschobenen `VERTEX`-Domänen prüfen den Werkzeugwechsel
 mit `--disableValidation` auf der ili2db-Seite. Der Validator von 5.5.2
 bricht bei generischen Stützpunktdomänen mit offenen Achsgrenzen ab.

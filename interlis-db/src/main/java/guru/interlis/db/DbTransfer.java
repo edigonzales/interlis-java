@@ -1203,16 +1203,13 @@ final class DbTransfer {
                     || !start.stableOid().equals(basketOid(mapping, topic, start.id()))) {
                 throw new DbException("Unsupported basket metadata for " + start.id().value());
             }
-            if (updating && (DbDomains.deferred(topic) || mapping.crsPair().isPresent())) {
-                throw DbMapping.unsupported("update of deferred domains or alternate CRS models");
-            }
             var domainsForBasket = DbDomains.resolve(mapping.plan(), topic, start.domainBindings(), start.id().value());
             basketGeometry = new GeometrySelection(domainsForBasket,
                     mapping.crsPair().map(pair -> pair.epsgCodes(topic.symbol())).orElse(Map.of()));
             String domains = DbDomains.format(mapping.plan(), start.domainBindings(), start.id().value());
             this.datasetId = datasetId;
             if (updating) {
-                var stored = DbDatasetWrite.findBasket(db, datasetId, topic, start.id().value());
+                var stored = DbDatasetWrite.findBasket(db, mapping, datasetId, topic, start.id().value(), domainsForBasket);
                 if (stored.isPresent()) {
                     basketId = stored.getAsLong();
                     existingObjects = DbDatasetWrite.readObjects(db, mapping, topic, basketId, token);

@@ -4,6 +4,7 @@ import guru.interlis.db.DbMapping.Table;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.transfer.TopicDescriptor;
+import guru.interlis.transfer.TransferEvent.DomainBinding;
 
 import java.sql.SQLException;
 import java.util.Collections;
@@ -47,7 +48,8 @@ final class DbDatasetWrite {
         }
     }
 
-    static OptionalLong findBasket(Database db, long dataset, TopicDescriptor topic, String bid) throws SQLException {
+    static OptionalLong findBasket(Database db, DbMapping mapping, long dataset, TopicDescriptor topic,
+                                   String bid, List<DomainBinding> bindings) throws SQLException {
         String baskets = db.technicalTable(BASKET);
         String sql = "SELECT " + T_ID + ", dataset, topic, domains FROM " + baskets + " WHERE " + T_ILI_TID + " = ?";
         String topicName = topic.name().declared().toString();
@@ -60,8 +62,8 @@ final class DbDatasetWrite {
                     String domains = rows.getString(4);
                     if (rows.next()) throw new DbException("Ambiguous stored BID " + bid);
                     if (!belongs) throw new DbException("BID " + bid + " belongs to another dataset or topic");
-                    if (domains != null && !domains.isBlank()) {
-                        throw new DbException("Unsupported domain assignments for stored basket " + bid);
+                    if (!DbDomains.read(mapping.plan(), topic, domains, bid).equals(bindings)) {
+                        throw new DbException("Cannot change domain assignments when updating basket " + bid);
                     }
                     return OptionalLong.of(id);
                 }
@@ -85,9 +87,10 @@ final class DbDatasetWrite {
     static Map<ObjectKey, ExistingObject> readObjects(Database db, DbMapping mapping, TopicDescriptor topic, long basket,
                                                        CancellationToken token) throws SQLException {
         var objects = new HashMap<ObjectKey, ExistingObject>();
+        var owner = mapping.originalTopic(topic.symbol());
         for (var table : mapping.tables()) {
             if (!table.hasTidColumn() || table.object().kind() == SymbolKind.STRUCTURE
-                    || table.object().topic().filter(topic.symbol()::equals).isEmpty()) continue;
+                    || table.object().topic().filter(owner::equals).isEmpty()) continue;
             token.throwIfCancellationRequested();
             String discriminator = table.hasDiscriminator() ? ", " + T_TYPE : "";
             String sql = "SELECT " + T_ID + ", " + T_ILI_TID + discriminator + " FROM " + db.table(table.name())
