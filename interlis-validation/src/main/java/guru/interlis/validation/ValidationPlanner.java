@@ -342,7 +342,9 @@ public final class ValidationPlanner {
             for (var declaration : ordered) {
                 var constraint = new SymbolRef(transfer.snapshotId(), declaration.header().id());
                 var reason = unsupported(declaration.definition(), constraint);
-                if (profile == ValidationProfile.DATASET && datasetRule(declaration.definition())) {
+                // Dataset populations contain top-level occurrences. Embedded rules have no such population.
+                if (profile == ValidationProfile.DATASET && object.kind() != SymbolKind.STRUCTURE
+                        && datasetRule(declaration.definition())) {
                     datasetCandidates.computeIfAbsent(declaration, ignored -> new ArrayList<>()).add(object.symbol());
                 } else if (reason.isPresent()) {
                     unchecked.add(new UncheckedRuleInfo(constraint, object.symbol(), slot, depth, reason.orElseThrow()));

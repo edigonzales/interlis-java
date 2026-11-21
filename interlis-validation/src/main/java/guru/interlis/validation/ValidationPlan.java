@@ -233,11 +233,15 @@ public final class ValidationPlan {
     }
 
     boolean assignable(StructureValueType type, ObjectValidationPlan child) {
+        return assignable(type.targetRoots(), child);
+    }
+
+    boolean assignable(List<SymbolId> roots, ObjectValidationPlan child) {
         var descriptor = child.descriptor();
         if (descriptor.kind() != SymbolKind.STRUCTURE || descriptor.modifiers().contains(Modifier.ABSTRACT)) {
             return false;
         }
-        return ModelValueRules.specializes(this, descriptor, type.targetRoots());
+        return ModelValueRules.specializes(this, descriptor, roots);
     }
 
     Optional<TypeDescriptor> effectiveType(TypeId id) {

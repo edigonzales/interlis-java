@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static guru.interlis.validation.ValidationCode.*;
 import static guru.interlis.validation.ValidationCoverage.RuleFamily.*;
@@ -303,7 +304,7 @@ public final class ValidationSession implements AutoCloseable {
         checkObjectIdentity(object, objectPlan);
         var budget = new ObjectBudget(cancellation, checkValueBudget(object, cancellation));
         var stack = new ArrayDeque<Iterator<PendingValue>>();
-        stack.push(fields(objectPlan, object.data(), null, List.of()));
+        stack.push(fields(objectPlan, object.data(), null, List.of()).iterator());
         boolean delete = event.operation().orElse(null) == TransferEvent.Operation.DELETE;
         boolean partial = event.consistency() == TransferEvent.Consistency.INCOMPLETE
                 || basket.start().consistency() == TransferEvent.Consistency.INCOMPLETE;
@@ -315,7 +316,7 @@ public final class ValidationSession implements AutoCloseable {
                     budget.consume();
                     var path = new ValuePath(null, new DataLocation.Slot(entry.getKey()));
                     checkObjectConstraints(object, association, payload, path, delete, partial, basket, budget);
-                    stack.push(fields(association, payload, path, List.of(object.data())));
+                    stack.push(fields(association, payload, path, List.of(object.data())).iterator());
                 }
             }
         }
@@ -361,11 +362,21 @@ public final class ValidationSession implements AutoCloseable {
         }
     }
 
-    private Iterator<PendingValue> fields(ObjectValidationPlan object, TransferValue.Structured value,
-                                          ValuePath parent, List<TransferValue.Structured> ancestors) {
+    private Stream<PendingValue> fields(ObjectValidationPlan object, TransferValue.Structured value,
+                                        ValuePath parent, List<TransferValue.Structured> ancestors) {
         return object.fields().stream().map(field -> new PendingValue(object.descriptor().symbol(), field, 0,
                 value.value(field.slot().symbol()), value,
-                new ValuePath(parent, new DataLocation.Slot(field.slot().symbol())), ancestors)).iterator();
+                new ValuePath(parent, new DataLocation.Slot(field.slot().symbol())), ancestors));
+    }
+
+    private Stream<PendingValue> structureFields(TransferObject object, PendingValue pending,
+                                                  ObjectValidationPlan child, TransferValue.Structured data,
+                                                  ValuePath path, boolean partial, BasketContext context,
+                                                  ObjectBudget budget) {
+        checkObjectConstraints(object, child, data, path, false, partial, context, budget);
+        var ancestors = new ArrayList<>(pending.ancestors());
+        ancestors.add(pending.container());
+        return fields(child, data, path, List.copyOf(ancestors));
     }
 
     private Optional<Iterator<PendingValue>> check(TransferObject object, PendingValue pending, boolean delete,
@@ -456,12 +467,26 @@ public final class ValidationSession implements AutoCloseable {
             for (var declaration : rules.constraints(concreteDomain)) {
                 if (declaration.definition() instanceof DomainConstraint domain) {
                     checkConstraint(object, pending.owner(), Optional.of(field.slot().symbol()), declaration,
-                            domain.condition(), actual, pending.path(), false, partial, budget);
+                            domain.condition(), actual, pending.path(), false, partial, context, budget);
                 }
             }
         }
         if (actual instanceof TransferGeometry geometry) {
             geometry(object, pending, effective, geometry, partial, type.isPresent(), context, budget);
+            if (effective instanceof GeometryType curve && GeometryRules.accepts(curve, geometry, partial)) {
+                var roots = curve.lineAttributes().stream().toList();
+                return Optional.of(GeometryRules.lineAttributes(geometry, pending.path(),
+                        budget.cancellation::throwIfCancellationRequested).flatMap(line -> {
+                    var data = line.value();
+                    var child = plan.object(data.type());
+                    count(checked, pending, STRUCTURE);
+                    if (child == null || roots.isEmpty() || !plan.assignable(roots, child)) {
+                        violation(object, line.path(), field.slot().attribute(), STRUCTURE_TYPE_MISMATCH, List.of());
+                        return Stream.empty();
+                    }
+                    return structureFields(object, pending, child, data, line.path(), partial, context, budget);
+                }).iterator());
+            }
             return Optional.empty();
         }
         if (effective instanceof OidType oid && actual instanceof TransferValue.Oid valueOid) {
@@ -505,10 +530,8 @@ public final class ValidationSession implements AutoCloseable {
             if (child == null || !plan.assignable(structure, child)) {
                 violation(object, pending, field.slot().attribute(), STRUCTURE_TYPE_MISMATCH, List.of());
             } else {
-                checkObjectConstraints(object, child, data, pending.path(), false, partial, context, budget);
-                var ancestors = new ArrayList<>(pending.ancestors());
-                ancestors.add(pending.container());
-                return Optional.of(fields(child, data, pending.path(), List.copyOf(ancestors)));
+                return Optional.of(structureFields(object, pending, child, data, pending.path(), partial, context, budget)
+                        .iterator());
             }
         }
         return Optional.empty();
@@ -523,7 +546,7 @@ public final class ValidationSession implements AutoCloseable {
             }
             if (declaration.definition() instanceof MandatoryConstraint mandatory) {
                 checkConstraint(root, objectPlan.descriptor().symbol(), Optional.empty(), declaration,
-                        mandatory.condition(), current, path, incomplete, partial, budget);
+                        mandatory.condition(), current, path, incomplete, partial, context, budget);
             } else if (declaration.definition() instanceof UniquenessConstraint unique) {
                 var status = incomplete ? ConstraintStatus.INCOMPLETE_CONTEXT
                         : LocalUnique.check(unique, plan, current, path, partial, budget::consume,
@@ -542,7 +565,7 @@ public final class ValidationSession implements AutoCloseable {
 
     private void checkConstraint(TransferObject root, SymbolRef owner, Optional<SymbolRef> slot,
                                  ConstraintSymbol declaration, ExpressionId expression, TransferValue current,
-                                 ValuePath path, boolean incomplete, boolean partial, ObjectBudget budget) {
+                                 ValuePath path, boolean incomplete, boolean partial, BasketContext context, ObjectBudget budget) {
         if (incomplete) {
             countConstraint(owner, slot, declaration, ConstraintStatus.INCOMPLETE_CONTEXT);
             return;
@@ -552,7 +575,7 @@ public final class ValidationSession implements AutoCloseable {
         }
         var result = plan.expression(expression).evaluate(new EvaluationFrame(plan, current, partial, budget::consume,
                 java.util.OptionalLong.empty(), budget.cancellation)
-                .withLocalGeometry(location(root, ValuePath.steps(path)), basket.domains()));
+                .withLocalGeometry(location(root, ValuePath.steps(path)), context.domains()));
         recordConstraint(root, owner, slot, declaration, path, result, null);
     }
 
@@ -867,7 +890,7 @@ public final class ValidationSession implements AutoCloseable {
     }
 
     private long checkValueBudget(TransferObject object, CancellationToken cancellation) {
-        var stack = new ArrayDeque<Iterator<TransferValue>>();
+        var stack = new ArrayDeque<Iterator<? extends TransferValue>>();
         stack.push(object.data().values().values().iterator());
         long visited = 0;
         while (!stack.isEmpty()) {
@@ -878,12 +901,9 @@ public final class ValidationSession implements AutoCloseable {
                 continue;
             }
             visited = visit(visited);
-            Iterator<TransferValue> children = switch (current.next()) {
-                case TransferValue.Structured structure -> structure.values().values().iterator();
-                case TransferValue.Repeated repeated -> repeated.values().iterator();
-                default -> null;
-            };
-            if (children != null) {
+            var value = current.next();
+            var children = valueChildren(value, options, cancellation);
+            if (children != null && (!(value instanceof TransferGeometry) || children.hasNext())) {
                 if (stack.size() > options.maxNestedDepth()) {
                     throw new ValidationLimitException("Maximum value depth exceeded");
                 }
@@ -891,6 +911,18 @@ public final class ValidationSession implements AutoCloseable {
             }
         }
         return visited;
+    }
+
+    static Iterator<? extends TransferValue> valueChildren(TransferValue value, ValidationOptions options,
+                                                            CancellationToken cancellation) {
+        return switch (value) {
+            case TransferValue.Structured structure -> structure.values().values().iterator();
+            case TransferValue.Repeated repeated -> repeated.values().iterator();
+            case TransferGeometry geometry -> GeometryRules.lineAttributes(geometry, null,
+                            cancellation::throwIfCancellationRequested)
+                    .limit(options.maxValuesPerObject()).map(GeometryRules.LineAttributes::value).iterator();
+            default -> null;
+        };
     }
 
     private long visit(long visited) {
