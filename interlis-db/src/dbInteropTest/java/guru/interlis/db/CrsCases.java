@@ -221,6 +221,29 @@ final class CrsCases {
         }
     }
 
+    void createDeferred(TestDatabase db, TestDatabase referenceDb, TestDatabase rejected) throws Exception {
+        String model = "DeferredCrs24";
+        Path ili = deferredPoints(model);
+        createReference(referenceDb, ili, 2056, "--multiSrs", "--createGeomIdx");
+        var withoutOption = cli(rejected, "schemaimport", model, null, ili, CancellationToken.none());
+        assertNotEquals(0, withoutOption.code(), withoutOption::diagnostics);
+        assertTrue(withoutOption.diagnostics().contains("require --multi-srs"), withoutOption::diagnostics);
+        assertMissingTarget(rejected);
+        createOwn(db, model, ili, "--multi-srs", "--create-geom-index");
+        assertCatalogs(referenceDb, db);
+        deferredWriteExchange(db, model);
+        Path exported = work.resolve("new-deferred-export.xtf");
+        assertCliSuccess(db, "export", model, "tail", exported);
+        assertDeferred(exported, model, "tail");
+
+        Path ambiguous = Files.writeString(work.resolve("ambiguous.ili"),
+                Files.readString(ili).replace("EPSG:21781", "EPSG:2056"));
+        var result = cli(rejected, "schemaimport", model, null, ambiguous, CancellationToken.none(), "--multi-srs");
+        assertNotEquals(0, result.code(), result::diagnostics);
+        assertTrue(result.diagnostics().contains("multiple concrete domains with EPSG:2056"), result::diagnostics);
+        assertMissingTarget(rejected);
+    }
+
     void importDeferred(TestDatabase db) throws Exception {
         String model = "DeferredCrs24";
         createReference(db, deferredPoints(model), 2056, "--multiSrs", "--createGeomIdx");

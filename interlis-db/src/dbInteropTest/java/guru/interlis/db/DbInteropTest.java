@@ -203,6 +203,15 @@ final class DbInteropTest {
                 new TestDatabase(postgres, "mixed_wide_own"), false);
     }
 
+    @Test void geoPackageCreateDeferred24() throws Exception { exchangeCreateDeferred(24, null); }
+    @Test void postgisCreateDeferred24() throws Exception { exchangeWithPostgis(24, this::exchangeCreateDeferred); }
+
+    private void exchangeCreateDeferred(int version, PostgreSQLContainer postgres) throws Exception {
+        var cases = new CrsCases(work, version, new ReferenceTool(postgres != null));
+        cases.createDeferred(new TestDatabase(postgres, "deferred_native_ddl"),
+                new TestDatabase(postgres, "deferred_reference_ddl"), new TestDatabase(postgres, "deferred_rejected_ddl"));
+    }
+
     @Test void geoPackageImportDeferred24() throws Exception { exchangeImportDeferred(24, null); }
     @Test void postgisImportDeferred24() throws Exception { exchangeWithPostgis(24, this::exchangeImportDeferred); }
 

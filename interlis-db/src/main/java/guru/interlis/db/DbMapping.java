@@ -316,8 +316,8 @@ final class DbMapping {
     static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, boolean multiSrs, CancellationToken token) {
         TransferPlan plan = compile(modelName, source, "model file", token);
-        if (plan.topics().stream().anyMatch(DbDomains::deferred)) {
-            throw unsupported("schema creation for deferred generic domains");
+        if (!multiSrs && plan.topics().stream().anyMatch(DbDomains::deferred)) {
+            throw unsupported("deferred generic domains require --multi-srs");
         }
         var allocator = new SqlNames();
         var names = new HashMap<SymbolRef, String>();
@@ -372,23 +372,24 @@ final class DbMapping {
                     compositions.add(edge);
                     continue;
                 }
-                var binding = describeColumns(plan, object, attribute, crs).getFirst();
-                String storageName = multiSrs && binding.kind().geometry() ? attributeName + "_" + binding.epsgCode() : attributeName;
-                boolean split = splitGeometries && geometrySeen && binding.kind().geometry();
-                String owner = split ? allocator.geometryTable(modelName,
-                        object.topic().flatMap(plan::topic).orElseThrow().name().declared().last(),
-                        object.name().declared().last(), storageName) : name;
-                if (split && reservedTable(owner, gpkg)) {
-                    throw unsupported("geometry " + attribute.name().declared() + " maps to technical table " + owner);
+                for (var binding : describeColumns(plan, object, attribute, crs)) {
+                    String storageName = multiSrs && binding.kind().geometry() ? attributeName + "_" + binding.epsgCode() : attributeName;
+                    boolean split = splitGeometries && geometrySeen && binding.kind().geometry();
+                    String owner = split ? allocator.geometryTable(modelName,
+                            object.topic().flatMap(plan::topic).orElseThrow().name().declared().last(),
+                            object.name().declared().last(), storageName) : name;
+                    if (split && reservedTable(owner, gpkg)) {
+                        throw unsupported("geometry " + attribute.name().declared() + " maps to technical table " + owner);
+                    }
+                    String column = allocator.column(owner, storageName);
+                    checkColumnName(attribute, column, object.kind() == SymbolKind.STRUCTURE, !split && discriminator, gpkg);
+                    var named = binding.withName(column);
+                    if (binding.kind().geometry()) {
+                        geometrySeen = true;
+                    }
+                    if (split) secondary.add(new SecondaryGeometry(owner, named));
+                    else columns.add(named);
                 }
-                String column = allocator.column(owner, storageName);
-                checkColumnName(attribute, column, object.kind() == SymbolKind.STRUCTURE, !split && discriminator, gpkg);
-                binding = binding.withName(column);
-                if (binding.kind().geometry()) {
-                    geometrySeen = true;
-                }
-                if (split) secondary.add(new SecondaryGeometry(owner, binding));
-                else columns.add(binding);
             }
             for (var association : associationsForOwner(associations, object.symbol())) {
                 if (association.linkTable()) continue;
