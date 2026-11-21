@@ -1,13 +1,16 @@
 package guru.interlis.db;
 
+import guru.interlis.compiler.AnalysisBudget;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.CoordinateType;
 import guru.interlis.model.DecimalLiteral;
 import guru.interlis.model.DomainReferenceType;
 import guru.interlis.model.GeometryType;
+import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.ModelImport;
 import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.NumericType;
+import guru.interlis.model.Origin;
 import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.model.TextKind;
@@ -25,24 +28,30 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static guru.interlis.db.DbMapping.metaText;
 
 /** Read and plan a new schema before opening a writable database. */
-record SchemaPlan(DbMapping mapping, String filename, String modelNames, String content,
+record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                   List<ColumnProperty> columnProperties, Map<String, List<GeometryColumn>> geometryColumns,
                   boolean splitGeometries, int defaultEpsg, boolean multiSrs) {
+    record ModelFile(String filename, LanguageVersion version, String modelNames, String content) { }
+
     record ColumnProperty(String table, String subtype, String column, String key, String value) { }
 
     /** A mapped geometry and its SQL catalog bounds, with null for an absent bound. */
     record GeometryColumn(DbMapping.Column column, Double minX, Double minY, Double maxX, Double maxY) { }
 
     SchemaPlan {
+        modelFiles = List.copyOf(modelFiles);
         columnProperties = List.copyOf(columnProperties);
         geometryColumns = geometryColumns.entrySet().stream().collect(java.util.stream.Collectors.toUnmodifiableMap(
                 Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
@@ -50,38 +59,41 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
 
     static SchemaPlan read(String modelName, Path file, boolean gpkg, boolean splitGeometries,
                            int defaultEpsg, CancellationToken token) throws IOException {
-        return read(modelName, file, gpkg, splitGeometries, defaultEpsg, false, Optional.empty(), token);
+        return read(modelName, file, List.of(), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(), token);
     }
 
-    static SchemaPlan read(String modelName, Path file, boolean gpkg, boolean splitGeometries,
+    static SchemaPlan read(String modelName, Path file, List<Path> imports, boolean gpkg, boolean splitGeometries,
                            int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels,
                            CancellationToken token) throws IOException {
-        token.throwIfCancellationRequested();
-        String filename = file.getFileName().toString();
-        if (!filename.toLowerCase(Locale.ROOT).endsWith(".ili") || filename.codePointCount(0, filename.length()) > 250) {
-            throw new DbException("Expected an .ili model filename of at most 250 characters");
+        var files = new ArrayList<Path>();
+        files.add(file);
+        files.addAll(imports);
+        var sources = new LinkedHashMap<SourceId, SourceText>();
+        var filenames = new HashMap<SourceId, String>();
+        long totalLength = 0;
+        for (var path : files) {
+            token.throwIfCancellationRequested();
+            var source = readSource(path);
+            totalLength += source.text().length();
+            if (totalLength > AnalysisBudget.defaults().maxTotalSourceUtf16Length()) {
+                throw new DbException("Model file closure exceeds the size limit");
+            }
+            sources.put(source.id(), source);
+            filenames.put(source.id(), path.getFileName().toString());
         }
-        if (!Files.isRegularFile(file)) {
-            throw new DbException("Expected a regular .ili model file: " + filename);
+        var mapping = DbMapping.planNew(modelName, sources.values(), gpkg, splitGeometries, defaultEpsg, multiSrs,
+                srsModels, token);
+        var declarations = mapping.plan().models().stream()
+                .map(model -> (ModelSymbol) symbol(mapping, model.symbol()))
+                .collect(Collectors.groupingBy(model -> origin(model).range().source()));
+        var modelFiles = new ArrayList<ModelFile>();
+        for (var source : sources.values()) {
+            var models = declarations.get(source.id());
+            if (models == null) continue;
+            String names = models.stream().sorted(Comparator.comparingInt(model -> origin(model).range().startOffset()))
+                    .map(SchemaPlan::modelEntry).collect(Collectors.joining(" "));
+            modelFiles.add(new ModelFile(filenames.get(source.id()), models.getFirst().languageVersion(), names, source.text()));
         }
-        int maxBytes = 4 * Ili2dbLayout.MAX_MODEL_CHARACTERS;
-        byte[] bytes;
-        try (var input = Files.newInputStream(file)) {
-            bytes = input.readNBytes(maxBytes + 1);
-        }
-        if (bytes.length > maxBytes) throw new DbException("Model file exceeds the size limit");
-        String content = StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(bytes)).toString();
-        if (content.codePointCount(0, content.length()) > Ili2dbLayout.MAX_MODEL_CHARACTERS) {
-            throw new DbException("Model file exceeds the size limit");
-        }
-        var source = new SourceText(new SourceId(file.toUri().toString()), new SourceRevision(1), content);
-        var mapping = DbMapping.planNew(modelName, source, gpkg, splitGeometries, defaultEpsg, multiSrs, srsModels, token);
-        String modelNames = mapping.models().stream().map(ref -> {
-            var model = (ModelSymbol) symbol(mapping, ref);
-            String name = model.name().value();
-            var imports = model.imports().stream().map(ModelImport::importedModel).distinct().sorted().toList();
-            return imports.isEmpty() ? name : name + "{ " + String.join(" ", imports) + "}";
-        }).collect(java.util.stream.Collectors.joining(" "));
         var properties = new ArrayList<ColumnProperty>();
         var geometries = new HashMap<String, List<GeometryColumn>>();
         for (var table : mapping.tables()) {
@@ -106,7 +118,38 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
             properties.add(new ColumnProperty(child.name(), null, composition.ownerColumn(),
                     Ili2dbLayout.PREFIX + "foreignKey", parent.name()));
         }
-        return new SchemaPlan(mapping, filename, modelNames, content, properties, geometries, splitGeometries, defaultEpsg, multiSrs);
+        return new SchemaPlan(mapping, modelFiles, properties, geometries, splitGeometries, defaultEpsg, multiSrs);
+    }
+
+    private static Origin.DeclaredOrigin origin(ModelSymbol model) {
+        return (Origin.DeclaredOrigin) model.header().origin();
+    }
+
+    private static String modelEntry(ModelSymbol model) {
+        String name = model.name().value();
+        var imports = model.imports().stream().map(ModelImport::importedModel).distinct().sorted().toList();
+        return imports.isEmpty() ? name : name + "{ " + String.join(" ", imports) + "}";
+    }
+
+    private static SourceText readSource(Path file) throws IOException {
+        String filename = file.getFileName().toString();
+        if (!filename.toLowerCase(Locale.ROOT).endsWith(".ili") || filename.codePointCount(0, filename.length()) > 250) {
+            throw new DbException("Expected an .ili model filename of at most 250 characters");
+        }
+        if (!Files.isRegularFile(file)) {
+            throw new DbException("Expected a regular .ili model file: " + filename);
+        }
+        int maxBytes = 4 * Ili2dbLayout.MAX_MODEL_CHARACTERS;
+        byte[] bytes;
+        try (var input = Files.newInputStream(file)) {
+            bytes = input.readNBytes(maxBytes + 1);
+        }
+        if (bytes.length > maxBytes) throw new DbException("Model file exceeds the size limit");
+        String content = StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(bytes)).toString();
+        if (content.codePointCount(0, content.length()) > Ili2dbLayout.MAX_MODEL_CHARACTERS) {
+            throw new DbException("Model file exceeds the size limit");
+        }
+        return new SourceText(new SourceId(file.toUri().toString()), new SourceRevision(1), content);
     }
 
     List<Integer> geometryEpsgCodes() {

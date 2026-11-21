@@ -9,12 +9,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Compare the stored profile and database shape while ignoring record order and timestamps. */
 record DbSchemaCatalog(Map<String, Set<List<String>>> relations) {
+    private static final Pattern MODEL_IMPORTS = Pattern.compile("\\{([^{}]*)\\}");
+
     static DbSchemaCatalog read(Connection sql, boolean postgis, String schema) throws SQLException {
         var catalog = new LinkedHashMap<String, Set<List<String>>>();
         if (postgis) {
@@ -84,8 +88,15 @@ record DbSchemaCatalog(Map<String, Set<List<String>>> relations) {
         for (String table : List.of("attrname", "classname", "column_prop", "inheritance", "table_prop", "trafo")) {
             catalog.put(table, rows(sql, "select * from " + prefix + "t_ili2db_" + table));
         }
-        catalog.put("model", rows(sql, "select filename, iliversion, modelname, content from "
-                + prefix + "t_ili2db_model where importdate is not null"));
+        var models = new HashSet<List<String>>();
+        for (var row : rows(sql, "select filename, iliversion, modelname, content from "
+                + prefix + "t_ili2db_model where importdate is not null")) {
+            // ili2db's dependency sets may enumerate the same imports in different orders.
+            String names = MODEL_IMPORTS.matcher(row.get(2)).replaceAll(match -> Matcher.quoteReplacement(
+                    "{ " + String.join(" ", java.util.Arrays.stream(match.group(1).strip().split("\\s+")).sorted().toList()) + "}"));
+            models.add(List.of(row.get(0), row.get(1), names, row.get(3)));
+        }
+        catalog.put("model", models);
         catalog.put("settings", rows(sql, "select tag, setting from " + prefix + """
                 t_ili2db_settings where tag not in ('ch.ehi.ili2db.sender', 'ch.interlis.ili2c.ilidirs')
                 """));

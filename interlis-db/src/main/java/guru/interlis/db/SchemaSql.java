@@ -209,12 +209,16 @@ final class SchemaSql {
                                       CancellationToken token)
             throws SQLException {
         try (var models = insert(connection, d, MODEL, "filename, iliversion, modelName, content, importDate", 5)) {
-            models.setString(1, plan.filename());
-            models.setString(2, plan.mapping().version().literal());
-            models.setString(3, plan.modelNames());
-            models.setString(4, plan.content());
-            models.setTimestamp(5, Timestamp.from(Instant.now()));
-            models.executeUpdate();
+            var imported = Timestamp.from(Instant.now());
+            for (var model : plan.modelFiles()) {
+                token.throwIfCancellationRequested();
+                models.setString(1, model.filename());
+                models.setString(2, model.version().literal());
+                models.setString(3, model.modelNames());
+                models.setString(4, model.content());
+                models.setTimestamp(5, imported);
+                models.executeUpdate();
+            }
         }
         try (var settings = insert(connection, d, SETTINGS, "tag, setting", 2);
              var classes = insert(connection, d, CLASSNAME, "IliName, SqlName", 2);

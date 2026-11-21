@@ -37,6 +37,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -313,23 +314,22 @@ final class DbMapping {
 
     static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, CancellationToken token) {
-        return planNew(modelName, source, gpkg, splitGeometries, defaultEpsg, false, Optional.empty(), token);
+        return planNew(modelName, List.of(source), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(), token);
     }
 
-    static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
+    static DbMapping planNew(String modelName, Collection<SourceText> sources, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels,
                              CancellationToken token) {
         var models = srsModels.map(DbCrsPair.Models::names).orElse(List.of(modelName));
-        TransferPlan plan = DbModelSources.compile(models, List.of(source), "model file", token);
-        if (plan.models().size() != models.size()) {
-            throw unsupported("expected the selected standalone model or CRS model pair");
-        }
-        checkLayout(plan, plan.objects());
+        TransferPlan plan = DbModelSources.compile(models, sources, "model files", token);
+        var selected = plan.objects().stream().filter(object -> plan.rootModels().contains(object.model())).toList();
+        checkLayout(plan, selected);
         var crs = new CrsDefaults(defaultEpsg, 0);
         var crsPair = srsModels.map(pair -> new DbCrsPair(plan, pair, crs, crs));
-        var objects = plan.objects().stream().filter(object -> crsPair.isEmpty()
+        var objects = selected.stream().filter(object -> crsPair.isEmpty()
                 || crsPair.orElseThrow().models().getFirst().equals(object.model())).toList();
-        if (!multiSrs && plan.topics().stream().anyMatch(DbDomains::deferred)) {
+        if (!multiSrs && plan.topics().stream()
+                .anyMatch(topic -> plan.rootModels().contains(topic.model()) && DbDomains.deferred(topic))) {
             throw unsupported("deferred generic domains require --multi-srs");
         }
         var allocator = new SqlNames();

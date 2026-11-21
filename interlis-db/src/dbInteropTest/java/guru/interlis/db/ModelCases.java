@@ -84,6 +84,26 @@ final class ModelCases {
         }
     }
 
+    void localImports(TestDatabase baseline, TestDatabase db) throws Exception {
+        String model = "DbStoredImports" + version;
+        var main = fixture(model + ".ili");
+        var middle = fixture("DbStoredMiddle" + version + ".ili");
+        var leaf = fixture("DbStoredTypes" + version + ".ili");
+        createReference(baseline, model, main);
+        var missing = cli(db, "schemaimport", model, null, main, CancellationToken.none(), "--model-file", middle.toString());
+        assertEquals(1, missing.code(), missing::diagnostics);
+        assertTrue(missing.diagnostics().contains("DbStoredTypes" + version), missing::diagnostics);
+        var created = cli(db, "schemaimport", model, null, main, CancellationToken.none(),
+                "--model-file", middle.toString(), "--model-file", leaf.toString());
+        assertEquals(0, created.code(), created::diagnostics);
+        for (var source : List.of(main, middle, leaf)) Files.delete(source);
+        try (var refSql = baseline.connect(); var sql = db.connect()) {
+            DbSchemaCatalog.read(refSql, baseline.postgis(), baseline.schema())
+                    .assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+        }
+        exchangeDomains(db, model, domainInput(model));
+    }
+
     private Path domainInput(String model) throws Exception {
         String shared = "DbSharedSource" + version;
         var input = work.resolve(model + ".xtf");

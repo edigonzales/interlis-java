@@ -27,7 +27,10 @@ interlis-db/build/install/interlis-db/bin/interlis-db schemaimport \
   --model Example Example.ili
 ```
 
-Das Kommando liest ein eigenständiges Modell aus einer lokalen UTF-8-Datei.
+Das Kommando liest das ausgewählte Modell aus lokalen UTF-8-Dateien.
+Zusätzliche Importquellen werden mit je einem `--model-file IMPORT.ili`
+angegeben. Es speichert die benötigten Dateien samt ihren Modell- und
+Importlisten im neuen Schema.
 Vor dem ersten Schreibzugriff prüft es das Modell und bestimmt die
 Tabellen, Spalten und Metadaten gemäss der Standard-Namensvergabe von 5.5.2.
 PostgreSQL benötigt eine vorhandene PostGIS-Erweiterung und einen

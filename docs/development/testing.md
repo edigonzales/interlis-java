@@ -96,6 +96,9 @@ Werkzeugrichtungen mit dem Referenzschema.
 `*DbInteropTest.*StoredImports*` prüft transitive und gemeinsam genutzte
 Quellen in mehreren gespeicherten Dateien. Fehlende und mehrdeutige
 Quellen müssen die vorherige Exportdatei erhalten.
+`*DbInteropTest.*LocalImports*` vergleicht die erzeugten Modellzeilen
+und das SQL-Schema mit ili2db. Danach laufen beide Werkzeugrichtungen
+mit den gespeicherten Quellen.
 
 Die Fälle `*DbInteropTest.*Mutation*` prüfen `replace` und `update`
 in beiden Werkzeugrichtungen. Sie prüfen die internen IDs und den Bestand
