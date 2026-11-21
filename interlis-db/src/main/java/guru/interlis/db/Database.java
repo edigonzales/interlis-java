@@ -189,9 +189,6 @@ final class Database implements AutoCloseable {
                     throw unsupportedGeometry(table, column);
                 }
                 if (importing && GeoPackageRtree.check(connection, table, column.name())) {
-                    if (column.kind().collection()) {
-                        throw new DbException("Unsupported GeoPackage RTree geometry at " + table + "." + column.name());
-                    }
                     if (indexedGeometry.isEmpty()) GeoPackageRtree.register(connection);
                     indexedGeometry.add(column.slot().symbol());
                 }

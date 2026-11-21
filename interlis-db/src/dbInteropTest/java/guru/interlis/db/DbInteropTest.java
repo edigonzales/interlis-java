@@ -135,6 +135,7 @@ final class DbInteropTest {
         cases.points(new TestDatabase(postgres, "spatial_points"));
         cases.straightGeometries(new TestDatabase(postgres, "spatial_straight"));
         cases.circularGeometries(new TestDatabase(postgres, "spatial_arcs"));
+        if (version == 24) cases.collections(new TestDatabase(postgres, "spatial_collections"));
     }
 
     private void exchangeDelete(int version, PostgreSQLContainer postgres) throws Exception {

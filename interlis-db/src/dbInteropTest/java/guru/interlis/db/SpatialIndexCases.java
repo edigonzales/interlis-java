@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
@@ -172,6 +173,82 @@ final class SpatialIndexCases {
             assertCurvesInXtf(ownExport);
             assertCliSuccess(db, "delete", model, "curves-reference", null);
             assertSearch(db, sql, "indexedline", "trace", "2602399", "1202300", true);
+        }
+    }
+
+    void collections(TestDatabase db) throws Exception {
+        String model = "DbInterop24";
+        createReferenceSchema(db, model);
+        Path input = work.resolve("indexed-collections.xtf");
+        try (var resource = SpatialIndexCases.class.getResourceAsStream("/DbInterop24.xtf")) {
+            Files.copy(resource, input);
+        }
+        assertCliSuccess(db, "import", model, "collections", input);
+        try (var sql = db.connect()) {
+            assertIndex(db, sql, "survey", "locations");
+            assertIndex(db, sql, "routegroup", "traces");
+            assertIndex(db, sql, "park", "coverage");
+            assertIndex(db, sql, "district", "coverage");
+            assertCollectionHits(db, sql, true);
+            for (String table : List.of("park", "district", "routegroup", "survey")) {
+                String field = switch (table) {
+                    case "routegroup" -> "traces";
+                    case "survey" -> "locations";
+                    default -> "coverage";
+                };
+                // These classes also have absent values in another basket.
+                if (!db.postgis()) {
+                    assertEquals("02", scalar(sql, "SELECT hex(substr(" + field + ",4,1)) FROM " + table
+                            + " WHERE " + field + " IS NOT NULL"));
+                }
+            }
+            Path referenceOutput = work.resolve("indexed-collections-reference.xtf");
+            reference.run(db, work.toString(), "--export", "--exportTid", "--dataset", "collections", referenceOutput.toString());
+            assertCollectionOrder(referenceOutput);
+
+            String surveyId = scalar(sql, "SELECT t_id FROM " + db.table("survey") + " WHERE t_ili_tid='legacy-survey-1'");
+            Path clear = delivery("indexed-collections-clear", model, "legacy-basket-1",
+                    object(model, "Survey", "legacy-survey-1", "") + object(model, "RouteGroup", "legacy-routegroup-1", "")
+                    + object(model, "Park", "legacy-park-1", "") + object(model, "District", "legacy-district-1", ""));
+            assertCliSuccess(db, "update", model, "collections", clear);
+            assertEquals(surveyId, scalar(sql, "SELECT t_id FROM " + db.table("survey")
+                    + " WHERE t_ili_tid='legacy-survey-1' AND locations IS NULL"));
+            assertCollectionHits(db, sql, false);
+            assertCliSuccess(db, "delete", model, "collections", null);
+
+            runReference(db, "import", "collections-reference", input);
+            Path ownOutput = work.resolve("indexed-collections-native.xtf");
+            assertCliSuccess(db, "export", model, "collections-reference", ownOutput);
+            assertCollectionOrder(ownOutput);
+            assertCollectionHits(db, sql, true);
+        }
+    }
+
+    private static void assertCollectionHits(TestDatabase db, Connection sql, boolean present) throws SQLException {
+        assertSearch(db, sql, "survey", "locations", "2601500.625", "1201500.500", present);
+        assertSearch(db, sql, "survey", "locations", "2601100.125", "1201100.750", present);
+        assertSearch(db, sql, "routegroup", "traces", "2600620.500", "1200600.250", present);
+        assertSearch(db, sql, "routegroup", "traces", "2600123.125", "1200456.375", present);
+        assertSearch(db, sql, "park", "coverage", "2601001", "1201001", present);
+        assertSearch(db, sql, "park", "coverage", "2601210.250", "1201192", present);
+        assertSearch(db, sql, "district", "coverage", "2601210.250", "1201192", present);
+    }
+
+    private static void assertCollectionOrder(Path path) throws Exception {
+        var baskets = children(readDataSection(path, 24));
+        var first = baskets.stream().filter(b -> "legacy-basket-1".equals(id(b, 24, "bid"))).findFirst().orElseThrow();
+        assertParts(first, "Survey", "Locations", List.of("2601500.625", "2601100.125"));
+        assertParts(first, "RouteGroup", "Traces", List.of("2600123.125", "2600600.500"));
+        assertParts(first, "Park", "Coverage", List.of("2601000.125", "2601200.250"));
+        assertParts(first, "District", "Coverage", List.of("2601000.125", "2601200.250"));
+    }
+
+    private static void assertParts(org.w3c.dom.Element basket, String tag, String field, List<String> expected) {
+        var elements = children(children(child(child(basket, tag), field)).getFirst());
+        assertEquals(expected.size(), elements.size());
+        for (int i = 0; i < expected.size(); i++) {
+            var text = elements.get(i).getElementsByTagNameNS("*", "c1").item(0).getTextContent();
+            assertEquals(0, new BigDecimal(expected.get(i)).compareTo(new BigDecimal(text)));
         }
     }
 

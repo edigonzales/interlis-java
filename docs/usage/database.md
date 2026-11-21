@@ -113,7 +113,9 @@ Tabelle und ihre Standardtrigger müssen zur gemappten Geometriespalte und
 zur internen ID passen. Die Trigger pflegen den Index in derselben Transaktion
 wie die Fachzeilen. Indizierte GeoPackage-Geometrien erhalten eine XY-Hülle
 im Header. Bei Kreisbögen umfasst diese Hülle auch die Extrempunkte des
-durchlaufenen Bogens. Bei PostGIS pflegt PostgreSQL die vorhandenen GiST-Indizes.
+durchlaufenen Bogens. In XTF 2.4 umfasst sie bei `MULTICOORD`,
+`MULTIPOLYLINE`, `MULTISURFACE` und `MULTIAREA` alle Teile.
+Bei PostGIS pflegt PostgreSQL die vorhandenen GiST-Indizes.
 
 ## Referenzprofil
 
@@ -412,7 +414,7 @@ die OID in der gespeicherten Schreibweise.
 
 Zum weiteren Ausbau gehören weitere Assoziationsformen mit Hierarchie-Enden
 sowie `EXTENDED`-Attribute. Weitere Grenzen sind andere OID-Regeln, eigene Linienformen,
-GeoPackage-RTree beim Schreiben und inkrementelle XTF-Transfers. Der gespeicherte Modelltext
+inkrementelle XTF-Transfers. Der gespeicherte Modelltext
 ist auf eine Million Zeichen begrenzt.
 
 Der Adapter unterscheidet SQL `NULL` und leeren Text. Die Referenzwerkzeuge

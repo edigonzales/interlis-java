@@ -160,10 +160,20 @@ final class GeometryBinary {
             Kind kind = switch (type) {
                 case COMPOUNDCURVE -> Kind.POLYLINE;
                 case CURVEPOLYGON -> Kind.SURFACE;
+                case MULTIPOINT -> Kind.MULTIPOINT;
+                case MULTICURVE -> Kind.MULTICURVE;
+                case MULTISURFACE -> Kind.MULTISURFACE;
                 default -> throw new DbException("Unsupported 2D WKB type for GeoPackage RTree: " + type);
             };
-            if (header.empty() || data.remaining() < CURVE_HEADER_SIZE || bytes.length > maxGeoPackageSize(kind)) {
-                throw new DbException("Invalid GeoPackage RTree geometry size or flags");
+            if (data.remaining() < CURVE_HEADER_SIZE || bytes.length > maxGeoPackageSize(kind)) {
+                throw new DbException("Invalid GeoPackage RTree geometry size");
+            }
+            if (header.empty()) {
+                readType(data);
+                if (data.remaining() != Integer.BYTES || data.getInt() != 0) {
+                    throw new DbException("Invalid empty GeoPackage geometry");
+                }
+                return null;
             }
             return header.envelope() ? headerEnvelope(bytes) : envelope(decode(bytes, true, header.srsId(), kind));
         }
@@ -220,7 +230,9 @@ final class GeometryBinary {
                     addRing(surface.shell());
                     surface.holes().forEach(this::addRing);
                 }
-                default -> throw new DbException("Unsupported geometry for GeoPackage RTree");
+                case MultiCoordinate multi -> multi.coordinates().forEach(this::addPoint);
+                case MultiPolyline multi -> multi.lines().forEach(this::add);
+                case MultiSurface multi -> multi.surfaces().forEach(this::add);
             }
         }
 
