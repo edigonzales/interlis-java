@@ -74,8 +74,10 @@ Baskets bleiben erhalten. Bei fremder oder mehrdeutiger BID sowie bei einem
 abweichenden Topic bricht die Operation ab. Eine OID kann bei der
 Aktualisierung innerhalb ihres Baskets wiederverwendet werden.
 
-Das erste Update-Profil unterstützt flache Klassen mit `UUIDOID` oder
-`STANDARDOID` in Baskets mit stabiler UUID-BID.
+Das Update-Profil unterstützt flache Klassen mit `UUIDOID`, `STANDARDOID`
+oder gespeicherten Transfer-IDs aus `--importTid --importBid`.
+BID und TID müssen für den Abgleich im Bestand vorliegen.
+Bei fehlender oder mehrdeutiger Zuordnung bricht das Update ab.
 
 ## Referenzprofil
 

@@ -43,7 +43,6 @@ final class DbDatasetWrite {
     static void checkUpdateProfile(DbMapping mapping) {
         for (var table : mapping.tables()) {
             if (table.object().kind() != SymbolKind.CLASS || table.subtype() || table.hasDiscriminator()
-                    || table.oidDomain().isEmpty()
                     || table.columns().stream().anyMatch(column -> column.kind().geometry()
                     || column.kind() == DbMapping.Kind.REFERENCE)) {
                 throw new DbException("Unsupported mapping for update at " + table.object().name().declared());
@@ -55,24 +54,35 @@ final class DbDatasetWrite {
     }
 
     static OptionalLong findBasket(Database db, long dataset, TopicDescriptor topic, String bid) throws SQLException {
-        String sql = "SELECT " + T_ID + ", dataset, topic, domains FROM " + db.technicalTable(BASKET)
-                + " WHERE " + T_ILI_TID + " = ?";
+        String baskets = db.technicalTable(BASKET);
+        String sql = "SELECT " + T_ID + ", dataset, topic, domains FROM " + baskets + " WHERE " + T_ILI_TID + " = ?";
+        String topicName = topic.name().declared().toString();
         try (var statement = db.connection().prepareStatement(sql)) {
             statement.setString(1, bid);
             try (var rows = statement.executeQuery()) {
-                if (!rows.next()) return OptionalLong.empty();
-                long id = rows.getLong(1);
-                if (rows.getLong(2) != dataset || !topic.name().declared().toString().equals(rows.getString(3))) {
-                    throw new DbException("BID " + bid + " belongs to another dataset or topic");
+                if (rows.next()) {
+                    long id = rows.getLong(1);
+                    boolean belongs = rows.getLong(2) == dataset && topicName.equals(rows.getString(3));
+                    String domains = rows.getString(4);
+                    if (rows.next()) throw new DbException("Ambiguous stored BID " + bid);
+                    if (!belongs) throw new DbException("BID " + bid + " belongs to another dataset or topic");
+                    if (domains != null && !domains.isBlank()) {
+                        throw new DbException("Unsupported domain assignments for stored basket " + bid);
+                    }
+                    return OptionalLong.of(id);
                 }
-                String domains = rows.getString(4);
-                if (domains != null && !domains.isBlank()) {
-                    throw new DbException("Unsupported domain assignments for stored basket " + bid);
-                }
-                if (rows.next()) throw new DbException("Ambiguous stored BID " + bid);
-                return OptionalLong.of(id);
             }
         }
+        String missing = "SELECT 1 FROM " + baskets + " WHERE dataset = ? AND topic = ? AND ("
+                + T_ILI_TID + " IS NULL OR " + T_ILI_TID + " = '') LIMIT 1";
+        try (var statement = db.connection().prepareStatement(missing)) {
+            statement.setLong(1, dataset);
+            statement.setString(2, topicName);
+            try (var rows = statement.executeQuery()) {
+                if (rows.next()) throw new DbException("Missing stored BID in the dataset for topic " + topicName);
+            }
+        }
+        return OptionalLong.empty();
     }
 
     record ObjectKey(Table root, String tid) { }
@@ -82,7 +92,7 @@ final class DbDatasetWrite {
                                                        CancellationToken token) throws SQLException {
         var objects = new HashMap<ObjectKey, ExistingObject>();
         for (var table : mapping.tables()) {
-            if (!table.object().topic().filter(topic.symbol()::equals).isPresent()) continue;
+            if (table.object().topic().filter(topic.symbol()::equals).isEmpty()) continue;
             token.throwIfCancellationRequested();
             String sql = "SELECT " + T_ID + ", " + T_ILI_TID + " FROM " + db.table(table.name())
                     + " WHERE " + T_BASKET + " = ?";

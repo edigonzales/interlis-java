@@ -1168,9 +1168,6 @@ final class DbTransfer {
             }
             this.datasetId = datasetId;
             if (updating) {
-                if (topic.oidRules().stream().noneMatch(rule -> rule.basket())) {
-                    throw new DbException("Update requires a stable BID in " + topic.name().declared());
-                }
                 var stored = DbDatasetWrite.findBasket(db, datasetId, topic, start.id().value());
                 if (stored.isPresent()) {
                     basketId = stored.getAsLong();

@@ -214,7 +214,43 @@ final class DatasetWriteCases {
             assertCliSuccess(db, "update", model, "fresh", fresh);
             assertEquals("first version", rows(db, sql, "mutationitem")
                     .get(key("fresh", identity("fresh", stable), identity("fresh-item", stable))).label());
+            if (!stable) checkStoredIdentities(db, sql, model, changed, after);
         }
+    }
+
+    private void checkStoredIdentities(TestDatabase db, Connection sql, String model, Path input,
+                                       Map<List<String>, Row> after) throws Exception {
+        assertCliSuccess(db, "update", model, "main", input);
+        var replayed = rows(db, sql, "mutationitem");
+        replayed.remove(key("fresh", "fresh", "fresh-item"));
+        assertEquals(after, replayed);
+
+        String items = db.table("mutationitem");
+        long added = after.get(key("main", "main", "added")).object();
+        execute(sql, "UPDATE " + items + " SET t_ili_tid='kept' WHERE t_id=" + added);
+        var failure = cli(db, "update", model, "main", input, CancellationToken.none());
+        assertNotEquals(0, failure.code(), failure::diagnostics);
+        assertTrue(failure.diagnostics().contains("Ambiguous stored object TID kept"), failure::diagnostics);
+        execute(sql, "UPDATE " + items + " SET t_ili_tid='added' WHERE t_id=" + added);
+
+        String baskets = db.table("t_ili2db_basket");
+        long foreign = after.get(key("other", "foreign", "their-item")).basket();
+        execute(sql, "UPDATE " + baskets + " SET t_ili_tid='main' WHERE t_id=" + foreign);
+        failure = cli(db, "update", model, "main", input, CancellationToken.none());
+        assertNotEquals(0, failure.code(), failure::diagnostics);
+        assertTrue(failure.diagnostics().contains("Ambiguous stored BID main"), failure::diagnostics);
+        execute(sql, "UPDATE " + baskets + " SET t_ili_tid='foreign' WHERE t_id=" + foreign);
+
+        long untouch = after.get(key("main", "untouched", "untouched-item")).basket();
+        execute(sql, "UPDATE " + baskets + " SET t_ili_tid=NULL WHERE t_id=" + untouch);
+        Path unknown = delivery("unknown-basket", model, new Basket("cannot-recover", item(model, "new", "new")));
+        failure = cli(db, "update", model, "main", unknown, CancellationToken.none());
+        assertNotEquals(0, failure.code(), failure::diagnostics);
+        assertTrue(failure.diagnostics().contains("Missing stored BID"), failure::diagnostics);
+        execute(sql, "UPDATE " + baskets + " SET t_ili_tid='untouched' WHERE t_id=" + untouch);
+        var finalRows = rows(db, sql, "mutationitem");
+        finalRows.remove(key("fresh", "fresh", "fresh-item"));
+        assertEquals(after, finalRows);
     }
 
     private static String identity(String name, boolean stable) {
