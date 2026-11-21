@@ -46,6 +46,17 @@ final class GeometryBinary {
 
     private GeometryBinary() { }
 
+    record Envelope(double minX, double maxX, double minY, double maxY) {
+        Envelope {
+            if (!Double.isFinite(minX) || !Double.isFinite(maxX) || !Double.isFinite(minY) || !Double.isFinite(maxY)
+                    || minX > maxX || minY > maxY) {
+                throw new DbException("Invalid GeoPackage XY envelope");
+            }
+        }
+    }
+
+    private record GeoPackageHeader(int srsId, boolean empty, boolean envelope) { }
+
     private record CompoundCurve(CurvePart part, int components, int size, boolean hasArcs) { }
     private record CurvePolygon(List<CompoundCurve> rings, int size) { }
 
@@ -94,7 +105,15 @@ final class GeometryBinary {
 
     static TransferGeometry decode(byte[] bytes, boolean gpkg, int srsId, Kind kind) {
         var data = ByteBuffer.wrap(bytes);
-        boolean empty = gpkg && readGeoPackageHeader(data, srsId, kind);
+        boolean empty = false;
+        if (gpkg) {
+            var header = readGeoPackageHeader(data);
+            if (header.srsId() != srsId) {
+                throw new DbException("GeoPackage geometry SRS differs from its geometry column");
+            }
+            empty = header.empty();
+            if (empty && !kind.collection()) throw new DbException("Unsupported GeoPackage geometry flags");
+        }
         return switch (kind) {
             case POINT -> {
                 if (data.remaining() != POINT_WKB_SIZE) {
@@ -111,27 +130,49 @@ final class GeometryBinary {
         };
     }
 
-    private static boolean readGeoPackageHeader(ByteBuffer data, int srsId, Kind kind) {
+    private static GeoPackageHeader readGeoPackageHeader(ByteBuffer data) {
         if (data.remaining() < GPKG_HEADER_SIZE || data.get() != 'G' || data.get() != 'P' || data.get() != 0) {
             throw new DbException("Invalid GeoPackage geometry header");
         }
         int flags = Byte.toUnsignedInt(data.get());
         int envelope = (flags >>> 1) & 7;
         boolean empty = (flags & 0x10) != 0;
-        if ((flags & 0xe0) != 0 || envelope > 1 || (empty && (!kind.collection() || envelope != 0))) {
+        if ((flags & 0xe0) != 0 || envelope > 1 || (empty && envelope != 0)) {
             throw new DbException("Unsupported GeoPackage geometry flags");
         }
         data.order(byteOrder(flags & 1));
-        if (data.getInt() != srsId) {
-            throw new DbException("GeoPackage geometry SRS differs from its geometry column");
-        }
+        int srsId = data.getInt();
         if (envelope == 1) {
             if (data.remaining() < XY_ENVELOPE_SIZE) {
                 throw new DbException("Invalid GeoPackage geometry envelope size");
             }
             data.position(data.position() + XY_ENVELOPE_SIZE);
         }
-        return empty;
+        return new GeoPackageHeader(srsId, empty, envelope == 1);
+    }
+
+    static Envelope indexEnvelope(byte[] bytes) {
+        var data = ByteBuffer.wrap(bytes);
+        var header = readGeoPackageHeader(data);
+        if (data.remaining() != POINT_WKB_SIZE || readType(data) != POINT) {
+            throw new DbException("Expected a 2D WKB POINT for GeoPackage RTree");
+        }
+        double x = data.getDouble();
+        double y = data.getDouble();
+        if (header.empty() && Double.isNaN(x) && Double.isNaN(y)) return null;
+        if (header.empty()) throw new DbException("Invalid empty GeoPackage point");
+        if (header.envelope()) {
+            var declared = headerEnvelope(bytes);
+            if (x < declared.minX() || x > declared.maxX() || y < declared.minY() || y > declared.maxY()) {
+                throw new DbException("GeoPackage XY envelope does not contain its point");
+            }
+        }
+        return new Envelope(x, x, y, y);
+    }
+
+    private static Envelope headerEnvelope(byte[] bytes) {
+        var data = ByteBuffer.wrap(bytes, GPKG_HEADER_SIZE, XY_ENVELOPE_SIZE).order(byteOrder(bytes[3] & 1));
+        return new Envelope(data.getDouble(), data.getDouble(), data.getDouble(), data.getDouble());
     }
 
     private static Coordinate readPoint(ByteBuffer data) {

@@ -105,6 +105,14 @@ Eine Referenz aus einem bestehen bleibenden Basket auf ein zu löschendes
 Objekt führt zum Rollback. Die gemeinsame ID-Vergabe läuft nach der Löschung
 weiter.
 
+## Bestehende Raumindizes
+
+GeoPackage-Dateien mit einem RTree für 2D-Punkte können mit `import`,
+`replace`, `update` und `delete` verwendet werden. Die registrierte virtuelle
+Tabelle und ihre Standardtrigger müssen zur gemappten Geometriespalte und
+zur internen ID passen. Die Trigger pflegen den Index in derselben Transaktion
+wie die Fachzeilen. Bei PostGIS pflegt PostgreSQL die vorhandenen GiST-Indizes.
+
 ## Referenzprofil
 
 Für die Erzeugung mit dem Originalwerkzeug verwende

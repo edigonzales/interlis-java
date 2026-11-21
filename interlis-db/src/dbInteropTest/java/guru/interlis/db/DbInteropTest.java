@@ -125,6 +125,16 @@ final class DbInteropTest {
     @Test void postgisDelete23() throws Exception { exchangeWithPostgis(23, this::exchangeDelete); }
     @Test void postgisDelete24() throws Exception { exchangeWithPostgis(24, this::exchangeDelete); }
 
+    @Test void geoPackageSpatial23() throws Exception { exchangeSpatial(23, null); }
+    @Test void geoPackageSpatial24() throws Exception { exchangeSpatial(24, null); }
+    @Test void postgisSpatial23() throws Exception { exchangeWithPostgis(23, this::exchangeSpatial); }
+    @Test void postgisSpatial24() throws Exception { exchangeWithPostgis(24, this::exchangeSpatial); }
+
+    private void exchangeSpatial(int version, PostgreSQLContainer postgres) throws Exception {
+        var cases = new SpatialIndexCases(work, version, new ReferenceTool(postgres != null));
+        cases.points(new TestDatabase(postgres, "spatial_points"));
+    }
+
     private void exchangeDelete(int version, PostgreSQLContainer postgres) throws Exception {
         var cases = new DatasetWriteCases(work, version, new ReferenceTool(postgres != null));
         cases.deleteRelations(new TestDatabase(postgres, "delete_reference"), true);
@@ -4302,6 +4312,8 @@ final class DbInteropTest {
         }
 
         boolean postgis() { return postgis; }
+
+        String schema() { return schema; }
 
         String table(String name) { return postgis ? schema + "." + name : name; }
     }

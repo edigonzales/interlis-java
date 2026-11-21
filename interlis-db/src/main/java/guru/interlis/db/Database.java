@@ -2,6 +2,7 @@ package guru.interlis.db;
 
 import guru.interlis.db.DbMapping.Column;
 import guru.interlis.db.DbMapping.Kind;
+import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TransferGeometry.MultiCoordinate;
 import guru.interlis.transfer.TransferGeometry.MultiPolyline;
@@ -15,7 +16,9 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
 import static guru.interlis.db.Ili2dbLayout.BASKET;
 import static guru.interlis.db.Ili2dbLayout.DATASET;
@@ -30,6 +33,7 @@ final class Database implements AutoCloseable {
     private final String schema;
     private final String postgisSchema;
     private final boolean importing;
+    private final Set<SymbolRef> indexedGeometry = new HashSet<>();
     private PreparedStatement allocateId;
     private boolean active = true;
 
@@ -184,27 +188,14 @@ final class Database implements AutoCloseable {
                 if (!rows.next()) {
                     throw unsupportedGeometry(table, column);
                 }
-                if (importing) {
-                    checkGeoPackageIndex(table, column.name());
+                if (importing && GeoPackageRtree.check(connection, table, column.name())) {
+                    if (column.kind() != Kind.POINT) {
+                        throw new DbException("Unsupported GeoPackage RTree geometry at " + table + "." + column.name());
+                    }
+                    if (indexedGeometry.isEmpty()) GeoPackageRtree.register(connection);
+                    indexedGeometry.add(column.slot().symbol());
                 }
                 return rows.getInt(1);
-            }
-        }
-    }
-
-    private void checkGeoPackageIndex(String table, String column) throws SQLException {
-        try (var statement = connection.prepareStatement("""
-                SELECT name FROM main.sqlite_schema
-                WHERE (type = 'table' AND name = ? COLLATE NOCASE)
-                    OR (type = 'trigger' AND tbl_name = ? COLLATE NOCASE
-                        AND (substr(lower(name), 1, 6) = 'rtree_' OR instr(lower(sql), 'st_isempty(') > 0))
-                """)) {
-            statement.setString(1, "rtree_" + table + "_" + column);
-            statement.setString(2, table);
-            try (var rows = statement.executeQuery()) {
-                if (rows.next()) {
-                    throw new DbException("GeoPackage RTree writes are unsupported for " + table);
-                }
             }
         }
     }
