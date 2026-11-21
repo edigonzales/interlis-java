@@ -981,7 +981,6 @@ final class DbTransfer {
                            TransferReader reader, WriteMode mode, CancellationToken token) throws SQLException {
         token.throwIfCancellationRequested();
         if (mode != WriteMode.IMPORT) DbDatasetWrite.lock(db, mapping);
-        if (mode == WriteMode.UPDATE) DbDatasetWrite.checkUpdateProfile(mapping);
         var existing = findDataset(db, dataset);
         if (mode == WriteMode.IMPORT && existing.isPresent()) {
             throw new DbException("Dataset already exists: " + dataset);
@@ -997,7 +996,6 @@ final class DbTransfer {
                                 || !reader.stableIdentityNamespaces().isEmpty()) {
                             throw new DbException("Expected the selected model and transfer-scoped identities in XTF");
                         }
-                        if (mode != WriteMode.IMPORT) DbDatasetWrite.checkIncomingMappings(db, mapping);
                         if (existing.isPresent()) {
                             datasetId = existing.orElseThrow();
                             if (mode == WriteMode.REPLACE) DbDatasetWrite.clearDataset(db, mapping, datasetId, token);
@@ -1592,10 +1590,7 @@ final class DbTransfer {
         }
 
         void finishTransfer() throws SQLException {
-            for (var removed : removedObjects) {
-                token.throwIfCancellationRequested();
-                DbDatasetWrite.deleteObject(db, mapping, removed);
-            }
+            DbDatasetWrite.deleteRemovedObjects(db, mapping, removedObjects, token);
             patchReferences(externalPending, externalObjects);
         }
 

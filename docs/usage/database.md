@@ -90,6 +90,10 @@ einschliesslich eigener Attribute und `ORDERED`-Positionen. Eigenständige
 UUID-Links behalten ihre interne ID. Die bereits beschriebene Behandlung
 von Positionswerten durch ili2db 5.5.2 gilt auch beim Werkzeugwechsel mit
 `update`.
+`EXTERNAL`-Referenzen können auf später gelieferte Objekte sowie auf Ziele
+in anderen Baskets oder Datensätzen zeigen. Externe Zielfremdschlüssel
+werden gegen den Endbestand gebunden. Bestehen bleibende Referenzen auf
+zu löschende Objekte und mehrdeutige Ziele führen zum Rollback.
 
 ## Referenzprofil
 
@@ -388,7 +392,7 @@ die OID in der gespeicherten Schreibweise.
 
 Zum weiteren Ausbau gehören weitere Assoziationsformen mit Hierarchie-Enden
 sowie `EXTENDED`-Attribute. Weitere Grenzen sind andere OID-Regeln, eigene Linienformen,
-GeoPackage-RTree beim Schreiben und Updates. Der gespeicherte Modelltext
+GeoPackage-RTree beim Schreiben und inkrementelle XTF-Transfers. Der gespeicherte Modelltext
 ist auf eine Million Zeichen begrenzt.
 
 Der Adapter unterscheidet SQL `NULL` und leeren Text. Die Referenzwerkzeuge

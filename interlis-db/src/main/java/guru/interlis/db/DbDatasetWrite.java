@@ -6,9 +6,14 @@ import guru.interlis.model.SymbolKind;
 import guru.interlis.transfer.TopicDescriptor;
 
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.OptionalLong;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -38,14 +43,6 @@ final class DbDatasetWrite {
                 throw new DbException("Another writer is using the dataset tables", failure);
             }
             throw failure;
-        }
-    }
-
-    static void checkUpdateProfile(DbMapping mapping) {
-        for (var table : mapping.tables()) {
-            if (table.columns().stream().anyMatch(DbMapping.Column::external)) {
-                throw new DbException("Unsupported external references for update at " + table.object().name().declared());
-            }
         }
     }
 
@@ -142,7 +139,56 @@ final class DbDatasetWrite {
         }
     }
 
-    static void deleteObject(Database db, DbMapping mapping, ExistingObject object) throws SQLException {
+    static void deleteRemovedObjects(Database db, DbMapping mapping, List<ExistingObject> removed,
+                                     CancellationToken token) throws SQLException {
+        if (removed.isEmpty()) return;
+        checkIncomingMappings(db, mapping);
+        var byRoot = new HashMap<Table, Set<Long>>();
+        for (var object : removed) {
+            var root = mapping.rootTable(object.type().object().symbol());
+            byRoot.computeIfAbsent(root, ignored -> new HashSet<>()).add(object.id());
+        }
+        for (var table : mapping.tables()) {
+            var sourceRoot = mapping.rootTable(table.object().symbol());
+            var removedSources = byRoot.getOrDefault(sourceRoot, Set.of());
+            for (var column : table.columns()) {
+                if (column.kind() != DbMapping.Kind.REFERENCE) continue;
+                var targetRoot = mapping.rootTable(column.target().orElseThrow());
+                var targets = byRoot.get(targetRoot);
+                if (targets != null) checkUpdateReferences(db, table, column, List.copyOf(targets), removedSources, token);
+            }
+        }
+        for (var removedObject : removed) {
+            token.throwIfCancellationRequested();
+            deleteObject(db, mapping, removedObject);
+        }
+    }
+
+    private static void checkUpdateReferences(Database db, Table table, DbMapping.Column column, List<Long> targetIds,
+                                              Set<Long> removedSources, CancellationToken token) throws SQLException {
+        // Bound parameter counts on both databases when many objects disappear from a basket.
+        final int batchSize = 256;
+        String field = Database.quote(column.name());
+        for (int offset = 0; offset < targetIds.size(); offset += batchSize) {
+            token.throwIfCancellationRequested();
+            int batch = Math.min(batchSize, targetIds.size() - offset);
+            String sql = "SELECT " + T_ID + ", " + field + " FROM " + db.table(table.name()) + " WHERE " + field
+                    + " IN (" + String.join(", ", Collections.nCopies(batch, "?")) + ")";
+            try (var statement = db.connection().prepareStatement(sql)) {
+                for (int i = 0; i < batch; i++) statement.setLong(i + 1, targetIds.get(offset + i));
+                try (var rows = statement.executeQuery()) {
+                    while (rows.next()) {
+                        token.throwIfCancellationRequested();
+                        if (!removedSources.contains(rows.getLong(1))) {
+                            throw referencedTarget("delete", column, rows.getLong(2));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static void deleteObject(Database db, DbMapping mapping, ExistingObject object) throws SQLException {
         for (var table : mapping.tableChain(object.type().object().symbol()).reversed()) {
             try (var statement = db.connection().prepareStatement("DELETE FROM " + db.table(table.name())
                     + " WHERE " + T_ID + " = ? AND " + T_BASKET + " = ?")) {
@@ -155,19 +201,24 @@ final class DbDatasetWrite {
         }
     }
 
-    static void checkIncomingMappings(Database db, DbMapping mapping) throws SQLException {
-        var tables = mapping.tables().stream().map(DbMapping.Table::name).collect(Collectors.toSet());
+    private static void checkIncomingMappings(Database db, DbMapping mapping) throws SQLException {
+        var tables = mapping.tables().stream().map(table -> catalogName(db, table.name())).collect(Collectors.toSet());
         String sql = "SELECT tablename, columnname, setting FROM " + db.technicalTable(COLUMN_PROP) + " WHERE tag = ?";
         try (var statement = db.connection().prepareStatement(sql)) {
             statement.setString(1, PREFIX + "foreignKey");
             try (var rows = statement.executeQuery()) {
                 while (rows.next()) {
-                    if (tables.contains(rows.getString(3)) && !tables.contains(rows.getString(1))) {
+                    if (tables.contains(catalogName(db, rows.getString(3)))
+                            && !tables.contains(catalogName(db, rows.getString(1)))) {
                         throw new DbException("Unmapped incoming reference at " + rows.getString(1) + "." + rows.getString(2));
                     }
                 }
             }
         }
+    }
+
+    private static String catalogName(Database db, String name) {
+        return db.gpkg() ? name.toLowerCase(Locale.ROOT) : name;
     }
 
     static void clearDataset(Database db, DbMapping mapping, long dataset, CancellationToken token) throws SQLException {
@@ -185,6 +236,7 @@ final class DbDatasetWrite {
                 }
             }
         }
+        checkIncomingMappings(db, mapping);
         checkReplaceReferences(db, mapping, dataset, token);
         for (var table : mapping.tables().reversed()) {
             token.throwIfCancellationRequested();

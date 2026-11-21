@@ -10,14 +10,27 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.ArrayList;
 
-import static guru.interlis.db.DbInteropTest.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static guru.interlis.db.DbInteropTest.assertCliSuccess;
+import static guru.interlis.db.DbInteropTest.child;
+import static guru.interlis.db.DbInteropTest.children;
+import static guru.interlis.db.DbInteropTest.cli;
+import static guru.interlis.db.DbInteropTest.execute;
+import static guru.interlis.db.DbInteropTest.id;
+import static guru.interlis.db.DbInteropTest.readDataSection;
+import static guru.interlis.db.DbInteropTest.referenceDatasetFixture;
+import static guru.interlis.db.DbInteropTest.scalar;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class DatasetWriteCases {
     private final Path work;
@@ -431,6 +444,85 @@ final class DatasetWriteCases {
     private String proof(String model, String tid, String marker, String hub, String label) {
         return object(model, "RoleProof", tid, reference("ProofMarker", marker, "") + reference("ProofHub", hub, "")
                 + "<Label>" + label + "</Label>");
+    }
+
+    void updateExternalReferences(TestDatabase db, boolean referenceSchema) throws Exception {
+        String model = "DbMutRef" + version;
+        schema(db, referenceSchema, model);
+        Path catalog = delivery("update-catalog", model, new Basket("catalog", target(model, "destination", "listed")));
+        Path initial = delivery("external-before", model, new Basket("source",
+                        recordWithReference(model, "external", "old", "destination", "catalog")),
+                new Basket("spare", target(model, "untouched", "leave")),
+                new Basket("sinks", target(model, "retain", "old target") + target(model, "drop", "unused")));
+        Path consumer = delivery("external-consumer", model, new Basket("consumer",
+                recordWithReference(model, "consumer-record", "separate dataset", "retain", "sinks")));
+        String source = recordWithReference(model, "external", "new", "destination", "catalog")
+                + recordWithReference(model, "forward", "later", "fresh", "sinks")
+                + recordWithReference(model, "spare-ref", "from omitted basket", "untouched", "spare");
+        Path changed = delivery("external-after", model, new Basket("source", source),
+                new Basket("sinks", target(model, "retain", "updated target") + target(model, "fresh", "new")));
+        seed(db, referenceSchema, model, "catalog", catalog);
+        seed(db, referenceSchema, model, "main", initial);
+        seed(db, referenceSchema, model, "consumer", consumer);
+
+        try (var sql = db.connect()) {
+            var before = rows(db, sql, "mutationtarget");
+            var externalBefore = rows(db, sql, "mutationrecord").get(key("main", "source", "external"));
+            Path output = mutate(db, referenceSchema, "update", model, "main", changed);
+            var after = rows(db, sql, "mutationtarget");
+            var records = rows(db, sql, "mutationrecord");
+            var retain = key("main", "sinks", "retain");
+            var outside = key("catalog", "catalog", "destination");
+            var spare = key("main", "spare", "untouched");
+            assertEquals(before.get(retain).withLabel("updated target"), after.get(retain));
+            assertEquals(before.get(outside), after.get(outside));
+            assertEquals(before.get(spare), after.get(spare));
+            assertNull(after.get(key("main", "sinks", "drop")));
+            assertEquals(externalBefore.withLabel("new"), records.get(key("main", "source", "external")));
+            assertDestination(db, sql, records.get(key("main", "source", "forward")), after.get(key("main", "sinks", "fresh")));
+            assertDestination(db, sql, records.get(key("main", "source", "spare-ref")), after.get(spare));
+            assertDestination(db, sql, records.get(key("main", "source", "external")), after.get(outside));
+            assertDestination(db, sql, records.get(key("consumer", "consumer", "consumer-record")), after.get(retain));
+            var exported = children(readDataSection(output, version)).stream().flatMap(b -> children(b).stream())
+                    .filter(o -> "forward".equals(id(o, version, "tid"))).findFirst().orElseThrow();
+            assertEquals("fresh", id(child(children(child(exported, "Detail")).getFirst(), "Destination"), version, "ref"));
+
+            Path noTarget = delivery("external-remove-protected", model, new Basket("sinks", target(model, "fresh", "new")));
+            var failure = cli(db, "update", model, "main", noTarget, CancellationToken.none());
+            assertNotEquals(0, failure.code(), failure::diagnostics);
+            assertTrue(failure.diagnostics().contains("Cannot delete referenced object T_Id " + after.get(retain).object()),
+                    failure::diagnostics);
+            assertEquals(after, rows(db, sql, "mutationtarget"));
+            assertEquals(records, rows(db, sql, "mutationrecord"));
+
+            Path duplicate = delivery("duplicate-catalog", model, new Basket("other-catalog", target(model, "destination", "duplicate")));
+            assertCliSuccess(db, "import", model, "duplicate", duplicate);
+            Path ambiguous = delivery("ambiguous-update-ref", model, new Basket("source",
+                    recordWithReference(model, "external", "ambiguous", "destination", "")));
+            failure = cli(db, "update", model, "main", ambiguous, CancellationToken.none());
+            assertNotEquals(0, failure.code(), failure::diagnostics);
+            assertTrue(failure.diagnostics().contains("Ambiguous stored reference target destination"), failure::diagnostics);
+            assertEquals(records, rows(db, sql, "mutationrecord"));
+            assertDestination(db, sql, records.get(key("main", "source", "external")), after.get(outside));
+
+            Path removeBoth = delivery("external-remove-source-and-target", model, new Basket("source", ""),
+                    new Basket("sinks", target(model, "retain", "updated target")));
+            assertCliSuccess(db, "update", model, "main", removeBoth);
+            assertNull(rows(db, sql, "mutationtarget").get(key("main", "sinks", "fresh")));
+            var survivingRecords = rows(db, sql, "mutationrecord");
+            assertEquals(Map.of(key("consumer", "consumer", "consumer-record"),
+                    records.get(key("consumer", "consumer", "consumer-record"))), survivingRecords);
+            assertDestination(db, sql, survivingRecords.get(key("consumer", "consumer", "consumer-record")), after.get(retain));
+        }
+    }
+
+    private String target(String model, String tid, String label) {
+        return object(model, "MutationTarget", tid, "<Label>" + label + "</Label>");
+    }
+
+    private static void assertDestination(TestDatabase db, Connection sql, Row owner, Row target) throws SQLException {
+        assertEquals(Long.toString(target.object()), scalar(sql, "SELECT destination FROM " + db.table("mutationlink")
+                + " WHERE mutationrecord_detail = " + owner.object()));
     }
 
     private String tree(String model, String one, List<String> chain, List<String> flags) {
