@@ -308,6 +308,7 @@ den Wiederimport vorliegen.
 Dieselbe Auflösung gilt für eingebettete 1:n- und 1:1-Assoziationen ohne
 eigene Attribute im selben Topic. Die gespeicherte Rolle ist `EXTERNAL`.
 Die Rollenspalte liegt wie bei lokalen Zielen in der Eigentümertabelle.
+Das Ziel darf in einem anderen Datensatz desselben Schemas liegen.
 Bei einem eigenständigen n:m-Link darf eine der beiden Rollen `EXTERNAL`
 sein. Die andere Rolle und die Linkzeile bleiben im selben Basket verankert.
 Bei einer eingebetteten 1:n-Assoziation mit eigenen skalaren Attributen

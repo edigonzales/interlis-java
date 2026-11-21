@@ -339,10 +339,15 @@ final class DbInteropTest {
         String report = version == 23 ? """
                 <%1$s.Data.Report TID="report-id"><DetailValue><%1$s.Data.Detail>
                   <TargetRef REF="catalog-leaf" BID="catalog-basket"/>
-                </%1$s.Data.Detail></DetailValue></%1$s.Data.Report>
+                </%1$s.Data.Detail></DetailValue>
+                  <BaseSite REF="catalog-leaf" BID="catalog-basket"/>
+                  <PairedSite REF="catalog-leaf" BID="catalog-basket"/>
+                </%1$s.Data.Report>
                 """.formatted(model) : """
                 <Report i:tid="report-id"><DetailValue><Detail><TargetRef i:ref="catalog-leaf"/></Detail></DetailValue>
                   <DirectRef i:ref="catalog-leaf"/>
+                  <BaseSite i:ref="catalog-leaf"/>
+                  <PairedSite i:ref="catalog-leaf"/>
                 </Report>
                 """;
         Path input = Files.writeString(work.resolve("catalog-source.xtf"),
@@ -408,7 +413,7 @@ final class DbInteropTest {
 
     private static void assertReferenceDatasetRows(TestDatabase db, Connection sql, int version, String tid) throws SQLException {
         String query = """
-                select r.t_basket<>b.t_id, ds.datasetname, dest.t_ili_tid, d.targetref%s
+                select r.t_basket<>b.t_id, ds.datasetname, dest.t_ili_tid, d.targetref, r.basesite, r.pairedsite%s
                 from %s r join %s d on d.report_detailvalue=r.t_id and d.t_basket=r.t_basket
                 join %s dest on dest.t_id=d.targetref
                 join %s b on b.t_id=dest.t_basket
@@ -420,7 +425,9 @@ final class DbInteropTest {
             assertTrue(rows.getBoolean(1));
             assertEquals("catalog", rows.getString(2));
             assertEquals("catalog-leaf", rows.getString(3));
-            if (version == 24) assertEquals(rows.getLong(4), rows.getLong(5));
+            assertEquals(rows.getLong(4), rows.getLong(5));
+            assertEquals(rows.getLong(4), rows.getLong(6));
+            if (version == 24) assertEquals(rows.getLong(4), rows.getLong(7));
             assertFalse(rows.next());
         }
     }
@@ -433,6 +440,8 @@ final class DbInteropTest {
         var report = objects.getFirst();
         var detail = children(child(report, "DetailValue")).getFirst();
         assertExternalReference(child(detail, "TargetRef"), version, "catalog-leaf", nativeExport ? "catalog-basket" : "");
+        assertExternalReference(child(report, "BaseSite"), version, "catalog-leaf", nativeExport ? "catalog-basket" : "");
+        assertExternalReference(child(report, "PairedSite"), version, "catalog-leaf", nativeExport ? "catalog-basket" : "");
         if (version == 24) assertExternalReference(child(report, "DirectRef"), version, "catalog-leaf", "");
     }
 
