@@ -221,6 +221,94 @@ final class CrsCases {
         }
     }
 
+    void exportDeferred(TestDatabase db) throws Exception {
+        String model = "DeferredCrs24";
+        createReference(db, deferredPoints(model), 2056, "--multiSrs");
+        Path input = deferredDelivery(model, "reference");
+        reference.run(db, work.toString(), "--import", "--dataset", "reference", "--importTid", "--importBid", input.toString());
+
+        Path output = work.resolve("deferred-export.xtf");
+        assertCliSuccess(db, "export", model, "reference", output);
+        assertDeferred(output, model, "reference");
+        String accepted = Files.readString(output);
+        try (var sql = db.connect()) {
+            String buckets = db.table("t_ili2db_basket");
+            String where = " WHERE t_ili_tid='basket-current-reference'";
+            String assignment = model + ".Grid=" + model + ".CurrentGrid";
+            for (String corrupt : List.of("", assignment + " " + assignment, model + ".Grid=" + model + ".UnknownGrid")) {
+                execute(sql, "UPDATE " + buckets + " SET domains='" + corrupt + "'" + where);
+                rejectDeferredExport(db, model, output, accepted, "Invalid domain assignments");
+            }
+            execute(sql, "UPDATE " + buckets + " SET domains='" + assignment + "'" + where);
+
+            String station = db.table("station");
+            String old = db.table(db.postgis() ? "station" : "station_location_21781");
+            String first = " WHERE t_id=(SELECT t_id FROM " + station + " WHERE t_ili_tid='current-reference')";
+            String second = " WHERE t_id=(SELECT t_id FROM " + station + " WHERE t_ili_tid='old-reference')";
+            execute(sql, "UPDATE " + old + " SET location_21781=(SELECT location_21781 FROM " + old + second + ")" + first);
+            rejectDeferredExport(db, model, output, accepted, "inactive EPSG:21781");
+        }
+    }
+
+    private static void rejectDeferredExport(TestDatabase db, String model, Path output, String accepted, String diagnosis)
+            throws Exception {
+        var rejected = cli(db, "export", model, "reference", output, CancellationToken.none());
+        assertNotEquals(0, rejected.code(), rejected::diagnostics);
+        assertTrue(rejected.diagnostics().contains(diagnosis), rejected::diagnostics);
+        assertEquals(accepted, Files.readString(output));
+    }
+
+    private Path deferredPoints(String model) throws Exception {
+        return Files.writeString(work.resolve(model + ".ili"), """
+                INTERLIS 2.4;
+                MODEL %1$s (en) AT "https://example.org/interlis/db" VERSION "1" =
+                  DOMAIN
+                    Grid (GENERIC) = COORD NUMERIC, NUMERIC;
+                    CurrentGrid EXTENDS Grid = COORD 2460000.000 .. 2870000.000, 1045000.000 .. 1310000.000 REFSYS "EPSG:2056";
+                    OldGrid EXTENDS Grid = COORD 460000.000 .. 870000.000, 45000.000 .. 310000.000 REFSYS "EPSG:21781";
+                  CONTEXT grids = Grid = OldGrid OR CurrentGrid;
+                  TOPIC Data =
+                    DEFERRED GENERICS Grid;
+                    CLASS Station =
+                      Location : Grid;
+                    END Station;
+                  END Data;
+                END %1$s.
+                """.formatted(model));
+    }
+
+    private Path deferredDelivery(String model, String suffix) throws Exception {
+        return Files.writeString(work.resolve(model + "-" + suffix + ".xtf"), """
+                <i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
+                    xmlns:g="http://www.interlis.ch/geometry/1.0" xmlns="http://www.interlis.ch/xtf/2.4/%1$s">
+                  <i:headersection><i:models><i:model>%1$s</i:model></i:models><i:sender>interop</i:sender></i:headersection>
+                  <i:datasection>
+                    <Data i:bid="basket-current-%2$s" i:domains="%1$s.Grid=%1$s.CurrentGrid">%3$s</Data>
+                    <Data i:bid="basket-old-%2$s" i:domains="%1$s.Grid=%1$s.OldGrid">%4$s</Data>
+                    <Data i:bid="basket-empty-%2$s" i:domains="%1$s.Grid=%1$s.OldGrid"/>
+                  </i:datasection>
+                </i:transfer>
+                """.formatted(model, suffix,
+                object(model, "Station", "current-" + suffix, field("Location", point("2600001.625", "1200002.125"))),
+                object(model, "Station", "old-" + suffix, field("Location", point("600100.125", "200200.375")))));
+    }
+
+    private void assertDeferred(Path output, String model, String suffix) throws Exception {
+        var baskets = children(readDataSection(output, version));
+        assertEquals(3, baskets.size());
+        for (String type : List.of("current", "old", "empty")) {
+            String bid = type + "-" + suffix;
+            var basket = baskets.stream().filter(b -> ("basket-" + bid).equals(id(b, version, "bid"))).findFirst().orElseThrow();
+            assertEquals(model + ".Grid=" + model + (type.equals("current") ? ".CurrentGrid" : ".OldGrid"),
+                    id(basket, version, "domains"));
+            switch (type) {
+                case "current" -> assertPoint(object(basket, bid), "Location", "2600001.625", "1200002.125");
+                case "old" -> assertPoint(object(basket, bid), "Location", "600100.125", "200200.375");
+                case "empty" -> assertTrue(children(basket).isEmpty());
+            }
+        }
+    }
+
     void staticGeneric(TestDatabase old, TestDatabase own) throws Exception {
         String model = "StaticCrs24";
         String x = "600100.125";

@@ -35,6 +35,14 @@ final class DbDomains {
         return Optional.empty();
     }
 
+    static boolean deferred(TopicDescriptor topic) {
+        return topic.genericBindings().stream().anyMatch(binding -> binding.state() == TopicSymbol.BindingState.DEFERRED);
+    }
+
+    static boolean active(DbMapping.Column column, List<DomainBinding> bindings) {
+        return column.domainBinding().isEmpty() || bindings.contains(column.domainBinding().orElseThrow());
+    }
+
     static TopicSymbol.GenericBinding binding(TransferPlan plan, ObjectDescriptor object, SymbolId id) {
         return object.topic().flatMap(plan::topic).stream().flatMap(topic -> topic.genericBindings().stream())
                 .filter(candidate -> candidate.genericDomain().equals(id)).findFirst()

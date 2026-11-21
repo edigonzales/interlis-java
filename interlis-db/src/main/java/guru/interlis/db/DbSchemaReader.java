@@ -78,6 +78,9 @@ final class DbSchemaReader {
             throw new DbException("MODEL.iliversion disagrees with MODEL.content for " + modelName);
         }
 
+        if (!settings.multiSrs() && plan.topics().stream().anyMatch(DbDomains::deferred)) {
+            throw unsupported("deferred generic domains require SETTINGS.useEpsgInNames");
+        }
         String prefix = modelName + ".";
         var classNames = readClassNames(db, prefix);
         var attrNames = readAttributeNames(db, prefix);
@@ -155,23 +158,24 @@ final class DbSchemaReader {
                     compositions.add(binding);
                     continue;
                 }
-                var column = DbMapping.describeColumn(plan, object, attr, attr.name().declared().last(), settings.crs());
-                String attribute = Ili2dbLayout.geometryAttribute(path, column.epsgCode(), settings.multiSrs());
-                var mapping = takeAttributeName(attrNames, attribute);
-                column = column.withName(mapping.name());
-                if (settings.splitGeometries() && !key(db, parent.name()).equals(key(db, mapping.owner()))) {
-                    String owner = object.name().declared().toString();
-                    var table = classNames.remove(Ili2dbLayout.secondaryClass(attribute, owner));
-                    var transformation = transformations.secondary()
-                            .remove(Ili2dbLayout.secondaryTransformation(path, owner, column.epsgCode()));
-                    if (table == null || transformation == null || !key(db, table).equals(key(db, transformation))
-                            || !key(db, table).equals(key(db, mapping.owner())) || !usedNames.add(key(db, table))
-                            || Ili2dbLayout.reservedTable(foldedName(table), db.gpkg())) {
-                        throw new DbException("Inconsistent secondary geometry CLASSNAME/TRAFO/ATTRNAME mapping for " + path);
+                for (var described : DbMapping.describeColumns(plan, object, attr, settings.crs())) {
+                    String attribute = Ili2dbLayout.geometryAttribute(path, described.epsgCode(), settings.multiSrs());
+                    var mapping = takeAttributeName(attrNames, attribute);
+                    var column = described.withName(mapping.name());
+                    if (settings.splitGeometries() && !key(db, parent.name()).equals(key(db, mapping.owner()))) {
+                        String owner = object.name().declared().toString();
+                        var table = classNames.remove(Ili2dbLayout.secondaryClass(attribute, owner));
+                        var transformation = transformations.secondary()
+                                .remove(Ili2dbLayout.secondaryTransformation(path, owner, column.epsgCode()));
+                        if (table == null || transformation == null || !key(db, table).equals(key(db, transformation))
+                                || !key(db, table).equals(key(db, mapping.owner())) || !usedNames.add(key(db, table))
+                                || Ili2dbLayout.reservedTable(foldedName(table), db.gpkg())) {
+                            throw new DbException("Inconsistent secondary geometry CLASSNAME/TRAFO/ATTRNAME mapping for " + path);
+                        }
+                        secondary.add(bindSecondaryGeometry(db, column, mapping, parent.name(), table, path, settings));
+                    } else {
+                        columns.add(bindColumn(db, parent, names, column, mapping, path, settings));
                     }
-                    secondary.add(bindSecondaryGeometry(db, column, mapping, parent.name(), table, path, settings));
-                } else {
-                    columns.add(bindColumn(db, parent, names, column, mapping, path, settings));
                 }
             }
             for (var association : DbMapping.associationsForOwner(associations, object.symbol())) {

@@ -316,6 +316,9 @@ final class DbMapping {
     static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, boolean multiSrs, CancellationToken token) {
         TransferPlan plan = compile(modelName, source, "model file", token);
+        if (plan.topics().stream().anyMatch(DbDomains::deferred)) {
+            throw unsupported("schema creation for deferred generic domains");
+        }
         var allocator = new SqlNames();
         var names = new HashMap<SymbolRef, String>();
         var associations = new ArrayList<EmbeddedAssociation>();
@@ -369,7 +372,7 @@ final class DbMapping {
                     compositions.add(edge);
                     continue;
                 }
-                var binding = describeColumn(plan, object, attribute, attributeName, crs);
+                var binding = describeColumns(plan, object, attribute, crs).getFirst();
                 String storageName = multiSrs && binding.kind().geometry() ? attributeName + "_" + binding.epsgCode() : attributeName;
                 boolean split = splitGeometries && geometrySeen && binding.kind().geometry();
                 String owner = split ? allocator.geometryTable(modelName,
@@ -445,7 +448,7 @@ final class DbMapping {
         for (var topic : plan.topics()) {
             if (topic.abstractTopic() || topic.baseTopic().isPresent()
                     || topic.oidRules().stream().anyMatch(rule -> !Ili2dbLayout.UUID_OID.equals(oidDomain(plan, rule)))
-                    || topic.genericBindings().stream().anyMatch(binding -> binding.state() != TopicSymbol.BindingState.CONCRETE)) {
+                    || topic.genericBindings().stream().anyMatch(binding -> binding.state() == TopicSymbol.BindingState.ABSTRACT)) {
                 throw unsupported("topic " + topic.name().declared());
             }
         }
@@ -469,6 +472,9 @@ final class DbMapping {
                 case ASSOCIATION -> uuid && flat;
                 default -> false;
             };
+            if (!flat && object.topic().flatMap(plan::topic).filter(DbDomains::deferred).isPresent()) {
+                throw unsupported("deferred generic domains in a class hierarchy at " + object.name().declared());
+            }
             if (!supported || !supportedIdentity) {
                 throw unsupported("class layout or identity rules for " + object.name().declared());
             }
@@ -693,12 +699,28 @@ final class DbMapping {
                 collectionKind));
     }
 
-    static Column describeColumn(TransferPlan plan, ObjectDescriptor object, AttributeSlot attr, String name,
-                                 CrsDefaults defaults) {
+    static List<Column> describeColumns(TransferPlan plan, ObjectDescriptor object, AttributeSlot attr, CrsDefaults defaults) {
+        var generic = DbDomains.pointBinding(plan, object, attr);
+        if (generic.isEmpty()) return List.of(describeColumn(plan, object, attr, defaults, Optional.empty()));
+        var binding = generic.orElseThrow();
+        var columns = new ArrayList<Column>();
+        var codes = new HashSet<Integer>();
+        for (var id : binding.alternatives()) {
+            var column = describeColumn(plan, object, attr, defaults, Optional.of(DbDomains.choice(plan, binding, id)));
+            if (!codes.add(column.epsgCode())) {
+                throw unsupported("multiple concrete domains with EPSG:" + column.epsgCode() + " at " + attr.name().declared());
+            }
+            columns.add(column);
+        }
+        columns.sort(Comparator.comparingInt(Column::epsgCode));
+        return List.copyOf(columns);
+    }
+
+    private static Column describeColumn(TransferPlan plan, ObjectDescriptor object, AttributeSlot attr,
+                                         CrsDefaults defaults, Optional<DomainBinding> selection) {
         String path = attr.name().declared().toString();
+        String name = attr.name().declared().last();
         if (!CardinalityUpper.finite(1).equals(attr.cardinality().upper())) throw unsupported(path);
-        var selection = DbDomains.pointBinding(plan, object, attr)
-                .map(binding -> DbDomains.choice(plan, binding, binding.alternatives().getFirst()));
         var concrete = selection.map(binding -> DbDomains.domain(plan, binding.concrete().symbol()));
         var type = plan.type(concrete.map(domain -> new TypeRef(plan.snapshotId(), domain.typeId()))
                 .orElse(attr.effectiveType())).known().orElseThrow(() -> unsupported(path));

@@ -130,14 +130,14 @@ final class DbTransfer {
             if (table.hasDiscriminator() && table.object().kind() != SymbolKind.STRUCTURE && !mapping.isEmbeddedLink(table)) {
                 writeHierarchyObjects(db, mapping, table, basketId, bid, writer, token);
             } else if (table.object().transferable() && !mapping.isEmbeddedLink(table)) {
-                writeObjects(db, mapping, table, basketId, bid, writer, token);
+                writeObjects(db, mapping, table, basketId, bid, bindings, writer, token);
             }
         }
         writer.write(new TransferEvent.EndBasket(bid), token);
     }
 
     private static void writeObjects(Database db, DbMapping mapping, Table table, long basketId, BasketId bid,
-                                     TransferWriter writer, CancellationToken token) throws SQLException {
+                                     List<TransferEvent.DomainBinding> bindings, TransferWriter writer, CancellationToken token) throws SQLException {
         var projections = new StringJoiner(", ").add("obj." + T_ID);
         if (table.hasTidColumn()) {
             projections.add("obj." + T_ILI_TID);
@@ -161,7 +161,7 @@ final class DbTransfer {
                     token.throwIfCancellationRequested();
                     String ownerTid = table.hasTidColumn() ? identifier(rows.getString(2), "TID", table.name()) : null;
                     int start = table.hasTidColumn() ? 3 : 2;
-                    var values = readFields(db, mapping, rows, start, table, ownerTid);
+                    var values = readFields(db, mapping, rows, start, table, ownerTid, bindings);
                     readEmbeddedLinks(db, mapping, rows, start + projectionSize(mapping, table), links, ownerTid, values);
                     structures.readFor(rows.getLong(1), ownerTid, values);
                     var identity = objectIdentity(mapping, table, bid, ownerTid);
@@ -586,9 +586,16 @@ final class DbTransfer {
 
     private static Map<SymbolRef, TransferValue> readFields(Database db, DbMapping mapping, ResultSet rows,
                                                             int index, Table table, String ownerTid) throws SQLException {
+        return readFields(db, mapping, rows, index, table, ownerTid, List.of());
+    }
+
+    private static Map<SymbolRef, TransferValue> readFields(Database db, DbMapping mapping, ResultSet rows,
+                                                            int index, Table table, String ownerTid,
+                                                            List<TransferEvent.DomainBinding> bindings) throws SQLException {
         var values = new LinkedHashMap<SymbolRef, TransferValue>();
         for (var column : table.columns()) {
-            var value = readValue(db, mapping, rows, index, column, ownerTid);
+            var value = checkGeometrySelection(rows, index, column, ownerTid, bindings)
+                    ? readValue(db, mapping, rows, index, column, ownerTid) : null;
             if (value != null) {
                 values.put(column.slot().symbol(), value);
             } else if (table.object().kind() == SymbolKind.ASSOCIATION && column.slot() instanceof RoleSlot) {
@@ -603,10 +610,24 @@ final class DbTransfer {
                 throw new DbException(problem + " for " + geometry.column().slot().name().declared()
                         + " of object " + ownerTid);
             }
-            var value = db.readGeometry(rows, index++, geometry.column());
-            if (value != null) values.put(geometry.column().slot().symbol(), value);
+            var column = geometry.column();
+            if (checkGeometrySelection(rows, index, column, ownerTid, bindings)) {
+                var value = db.readGeometry(rows, index, column);
+                if (value != null) values.put(column.slot().symbol(), value);
+            }
+            index++;
         }
         return values;
+    }
+
+    private static boolean checkGeometrySelection(ResultSet rows, int index, Column column, String ownerTid,
+                                                  List<TransferEvent.DomainBinding> bindings) throws SQLException {
+        if (bindings.isEmpty() || DbDomains.active(column, bindings)) return true;
+        if (rows.getBytes(index) != null) {
+            throw new DbException("Value in inactive EPSG:" + column.epsgCode() + " column at "
+                    + column.slot().name().declared() + " of object " + ownerTid);
+        }
+        return false;
     }
 
     private static void checkLinkOwners(Database db, DbMapping mapping, long datasetId,
@@ -1163,6 +1184,9 @@ final class DbTransfer {
                     || start.id().origin() != IdOrigin.SOURCE
                     || !start.stableOid().equals(basketOid(mapping, topic, start.id()))) {
                 throw new DbException("Unsupported basket metadata for " + start.id().value());
+            }
+            if (DbDomains.deferred(topic)) {
+                throw DbMapping.unsupported("import of deferred generic domains");
             }
             DbDomains.resolve(mapping.plan(), topic, start.domainBindings(), start.id().value());
             String domains = DbDomains.format(mapping.plan(), start.domainBindings(), start.id().value());
