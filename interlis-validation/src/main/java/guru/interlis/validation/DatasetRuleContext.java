@@ -2,6 +2,7 @@ package guru.interlis.validation;
 
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.CollectionType;
+import guru.interlis.model.GeometryType;
 import guru.interlis.model.DomainConstraint;
 import guru.interlis.model.ExpressionId;
 import guru.interlis.model.MandatoryConstraint;
@@ -15,6 +16,7 @@ import guru.interlis.model.TypeDescriptor;
 import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferObject;
 import guru.interlis.transfer.TransferValue;
+import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.validation.ValidationSession.ValuePath;
 
 import java.nio.ByteBuffer;
@@ -365,6 +367,17 @@ final class DatasetRuleContext {
                 checkDeferredValue(report, occurrence, basket, owner, frame, field, depth + 1,
                         repeated.values().get(index), new ValuePath(path, new DataLocation.Index(index + 1)));
             }
+        } else if (effective instanceof GeometryType curve
+                && value instanceof TransferGeometry geometry
+                && curve.lineAttributes().isPresent() && GeometryRules.accepts(curve, geometry, occurrence.partial())) {
+            var roots = curve.lineAttributes().stream().toList();
+            GeometryRules.lineAttributes(geometry, path, this::visit).forEach(line -> {
+                var child = line.value();
+                var type = plan.object(child.type());
+                if (type != null && plan.assignable(roots, type)) {
+                    checkDeferredObject(report, occurrence, basket, child, type, frame.descend(owner, child), line.path());
+                }
+            });
         } else if (rules.type() instanceof StructureValueType structure && value instanceof TransferValue.Structured child) {
             var type = plan.object(child.type());
             if (type != null && plan.assignable(structure, type)) {

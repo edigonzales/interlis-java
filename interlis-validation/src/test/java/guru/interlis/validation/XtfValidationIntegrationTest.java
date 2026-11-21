@@ -41,6 +41,97 @@ class XtfValidationIntegrationTest {
     private static final ValidationOptions OPTIONS = ValidationOptions.defaults();
 
     @Test
+    void appliesLineAttributeRulesAndBudgetsToDecodedValues() {
+        var schema = compile("""
+                INTERLIS 2.3;
+                MODEL Checks (en) AT "https://example.org/checks" VERSION "1" =
+                  DOMAIN Point = COORD 0..100, 0..100;
+                  TOPIC Data =
+                    CLASS Target = level : 0..10; END Target;
+                    STRUCTURE Details = level : 0..10; END Details;
+                    STRUCTURE Marks =
+                      label : MANDATORY TEXT*20;
+                      details : BAG {0..*} OF Details;
+                      link : REFERENCE TO Target;
+                      MANDATORY CONSTRAINT link->level == 5;
+                    END Marks;
+                    CLASS Item =
+                      shape : SURFACE WITH (STRAIGHTS) VERTEX Point WITHOUT OVERLAPS > 0.01 LINE ATTRIBUTES Marks;
+                    END Item;
+                  END Data;
+                END Checks.
+                """);
+        var transfer = transfer(schema);
+        var plan = assertInstanceOf(ValidationPlanningResult.Ready.class,
+                ValidationPlanner.plan(transfer, ValidationProfile.DATASET)).plan();
+        var input = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+                  <HEADERSECTION VERSION="2.3" SENDER="test">
+                    <MODELS><MODEL NAME="Checks" VERSION="1" URI="https://example.org/checks"/></MODELS>
+                  </HEADERSECTION>
+                  <DATASECTION><Checks.Data BID="basket">
+                    <Checks.Data.Item TID="item"><shape><SURFACE><BOUNDARY><POLYLINE>
+                      <LINEATTR><Checks.Data.Marks><label>valid</label><details>
+                        <Checks.Data.Details><level>10.4</level></Checks.Data.Details>
+                        <Checks.Data.Details><level>10.7</level></Checks.Data.Details>
+                      </details><link REF="%s"/></Checks.Data.Marks></LINEATTR>
+                      <COORD><C1>0</C1><C2>0</C2></COORD><COORD><C1>10</C1><C2>0</C2></COORD>
+                      <COORD><C1>10</C1><C2>10</C2></COORD><COORD><C1>0</C1><C2>0</C2></COORD>
+                    </POLYLINE></BOUNDARY></SURFACE></shape></Checks.Data.Item>
+                    <Checks.Data.Target TID="target"><level>7</level></Checks.Data.Target>
+                  </Checks.Data></DATASECTION>
+                </TRANSFER>
+                """;
+        var primary = new InputDescriptor(new InputId("primary"), InputRole.PRIMARY);
+        var limits = new ValidationOptions(10, 3, 1_000, false);
+        try (var reader = new Xtf23Reader(transfer, xtfInput(input.formatted("target")))) {
+            var error = assertThrows(ValidationLimitException.class,
+                    () -> LocalValidator.validate(ready(schema, transfer), reader, limits, RUN));
+            assertEquals("Maximum value depth exceeded", error.getMessage());
+        }
+        var defaults = DatasetOptions.defaults();
+        var limited = new DatasetOptions(limits, defaults.limits(), defaults.scope());
+        try (var reader = new Xtf23Reader(transfer, xtfInput(input.formatted("target")));
+             var storage = new InMemoryValidationStorage(100, 1_000_000);
+             var session = DatasetValidator.session(plan, limited, storage)) {
+            var error = assertThrows(ValidationLimitException.class, () -> session.readInput(
+                    new InputDescriptor(new InputId("reference"), InputRole.REFERENCE), reader, RUN));
+            assertEquals("Dataset value traversal budget exceeded", error.getMessage());
+        }
+
+        for (var target : List.of("target", "missing")) {
+            try (var reader = new Xtf23Reader(transfer, xtfInput(input.formatted(target)));
+                 var storage = new InMemoryValidationStorage(100, 1_000_000);
+                 var session = DatasetValidator.session(plan, defaults, storage)) {
+                session.readInput(primary, reader, RUN);
+                var report = session.finish(RUN);
+                assertEquals(2, report.inspectedObjects());
+                assertEquals(List.of(VALUE_OUT_OF_RANGE,
+                                target.equals("target") ? MANDATORY_CONSTRAINT_FALSE : REFERENCE_TARGET_MISSING),
+                        report.examples().stream().map(ValidationDiagnostic::code).toList());
+                var level = schema.queries().findQualifiedName(QualifiedName.of("Checks", "Data", "Details", "level"))
+                        .getFirst();
+                var diagnostic = report.examples().getFirst();
+                assertEquals(level, diagnostic.rule().declaration());
+                assertEquals("item", diagnostic.data().tid().orElseThrow().value());
+                assertEquals(List.of(new DataLocation.Index(2), new DataLocation.Slot(level)),
+                        diagnostic.data().path().subList(4, 6));
+                var coverage = report.coverage();
+                assertEquals(List.of(ValidationCoverage.RuleFamily.TOPOLOGY),
+                        coverage.unsupportedValues().stream().map(ValidationCoverage.RuleCount::family).toList());
+                assertTrue(coverage.checked().stream().anyMatch(rule -> rule.slot().equals(level)
+                        && rule.family() == ValidationCoverage.RuleFamily.VALUE_RANGE && rule.occurrences() == 2));
+                assertEquals(1, coverage.constraints().getFirst().occurrences());
+            }
+        }
+    }
+
+    private static InputStream xtfInput(String source) {
+        return new ByteArrayInputStream(source.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
     void checksOidDomainsFromXtf23AdditionalTopics() {
         var schema = compile("""
                 INTERLIS 2.3;

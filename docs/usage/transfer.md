@@ -152,7 +152,10 @@ die wirksame Domäne für die Achsenbereiche und lokalen Domain-Ausdrücke.
 Es wertet vollständig unterstützte
 lokale `MANDATORY CONSTRAINT`- und Domain-Ausdrücke sowie `UNIQUE (LOCAL)`
 mit direkten, typisierten Schlüsseln aus Text, Zahlen, Aufzählungen,
-Ausrichtungen oder BOOLEAN aus. Der Index gilt pro Besitzer.
+Ausrichtungen oder BOOLEAN aus. Der Index gilt pro Besitzer. In XTF 2.3 gelten die Strukturregeln auch
+für gelieferte Linienattribute von SURFACE und AREA. Diagnosen nennen den
+Ring und den Linienzug vor dem betroffenen Strukturattribut. Globale
+Datensatzregeln auf eingebetteten Strukturen bleiben als ungeprüft sichtbar.
 
 Im XTF-2.3-Header bleibt `MODEL URI` als übertragene Metadatenangabe
 erhalten. Der Reader bindet das Modell über Name und Version an den

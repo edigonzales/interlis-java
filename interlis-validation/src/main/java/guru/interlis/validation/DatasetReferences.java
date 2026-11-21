@@ -2,6 +2,7 @@ package guru.interlis.validation;
 
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.CollectionType;
+import guru.interlis.model.GeometryType;
 import guru.interlis.model.ReferenceType;
 import guru.interlis.model.RoleSymbol;
 import guru.interlis.model.Symbol;
@@ -11,6 +12,8 @@ import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferObject;
 import guru.interlis.transfer.TransferValue;
+import guru.interlis.transfer.TransferGeometry;
+import guru.interlis.validation.ValidationSession.ValuePath;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -175,6 +178,22 @@ final class DatasetReferences {
                 }
             }
             case TransferValue.Structured structured -> fields(context, structured, path);
+            case TransferGeometry geometry -> {
+                if (type.orElse(null) instanceof GeometryType curve && curve.lineAttributes().isPresent()) {
+                    var roots = curve.lineAttributes().stream().toList();
+                    ValuePath parent = null;
+                    for (var step : path) {
+                        parent = new ValuePath(parent, step);
+                    }
+                    GeometryRules.lineAttributes(geometry, parent, context.cancellation()::throwIfCancellationRequested)
+                            .forEach(line -> {
+                                var child = plan.object(line.value().type());
+                                if (child != null && plan.assignable(roots, child)) {
+                                    fields(context, line.value(), new ArrayList<>(ValuePath.steps(line.path())));
+                                }
+                            });
+                }
+            }
             case TransferValue.Repeated repeated -> {
                 var element = type.filter(CollectionType.class::isInstance).map(CollectionType.class::cast)
                         .flatMap(collection -> plan.effectiveType(collection.elementType()));

@@ -7,6 +7,7 @@ import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferReader;
 import guru.interlis.transfer.TransferValue;
+import guru.interlis.validation.DatasetRuleCoverage;
 import guru.interlis.validation.DatasetScope;
 import guru.interlis.validation.InputRole;
 import guru.interlis.validation.ValidationPlan;
@@ -102,7 +103,25 @@ final class ActiveCoverage {
         var gaps = new ArrayList<String>();
         applicable.forEach(rule -> gaps.add(rule.reason() + " " + rule.constraint().symbol().value()));
         for (var rule : coverage.datasetRules()) {
-            if (rule.scopes() > 0 && switch (rule.outcome()) {
+            if (rule.scopes() == 0) {
+                continue;
+            }
+            if (rule.outcome() == DatasetRuleCoverage.Outcome.UNSUPPORTED) {
+                var key = rule.rule();
+                var plannedGap = planned.stream().filter(gap ->
+                        gap.reason() == UncheckedRuleInfo.Reason.OUT_OF_SCOPE_GLOBAL
+                                && gap.constraint().equals(key.declaration())
+                                && gap.objectType().equals(key.applicationRoot())
+                                && gap.slot().equals(key.slot())).findFirst();
+                if (plannedGap.isPresent()) {
+                    var gap = plannedGap.orElseThrow();
+                    if (!applicable.contains(gap)) {
+                        gaps.add(gap.reason() + " " + gap.constraint().symbol().value());
+                    }
+                    continue;
+                }
+            }
+            if (switch (rule.outcome()) {
                 case UNSUPPORTED, UNSUPPORTED_VALUE_SEMANTICS, UNDETERMINED -> true;
                 case NO_VIOLATION_IN_AVAILABLE_SCOPE -> scope == DatasetScope.SUPPLIED_DATASET;
                 default -> false;

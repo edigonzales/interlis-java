@@ -232,26 +232,26 @@ public final class DatasetValidationSession implements AutoCloseable {
                     || pending.size() > options.localOptions().maxNestedDepth() + 1L) {
                 throw new ValidationLimitException("Dataset value traversal budget exceeded");
             }
-            switch (iterator.next()) {
-                case TransferValue.Structured data -> {
-                    requireSnapshot(data.type());
-                    var type = plan.object(data.type());
-                    if (type == null) {
-                        throw new ValidationStreamException("Dataset value type is outside the plan");
-                    }
-                    for (var field : data.values().entrySet()) {
-                        cancellation.throwIfCancellationRequested();
-                        var slot = field.getKey();
-                        requireSnapshot(slot);
-                        if (type.descriptor().slots().stream().noneMatch(candidate -> candidate.symbol().equals(slot))
-                                && !embeddedField(slot, field.getValue())) {
-                            throw new ValidationStreamException("Dataset value slot is outside its type");
-                        }
-                    }
-                    pending.push(data.values().values().iterator());
+            var value = iterator.next();
+            if (value instanceof TransferValue.Structured data) {
+                requireSnapshot(data.type());
+                var type = plan.object(data.type());
+                if (type == null) {
+                    throw new ValidationStreamException("Dataset value type is outside the plan");
                 }
-                case TransferValue.Repeated data -> pending.push(data.values().iterator());
-                default -> { }
+                for (var field : data.values().entrySet()) {
+                    cancellation.throwIfCancellationRequested();
+                    var slot = field.getKey();
+                    requireSnapshot(slot);
+                    if (type.descriptor().slots().stream().noneMatch(candidate -> candidate.symbol().equals(slot))
+                            && !embeddedField(slot, field.getValue())) {
+                        throw new ValidationStreamException("Dataset value slot is outside its type");
+                    }
+                }
+            }
+            var children = ValidationSession.valueChildren(value, options.localOptions(), cancellation);
+            if (children != null) {
+                pending.push(children);
             }
         }
     }
