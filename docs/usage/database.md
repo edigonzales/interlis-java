@@ -149,7 +149,11 @@ einen eigenen Katalogeintrag und mit `--create-geom-index` eigene RTree-Trigger.
 Dieses optionale Profil weicht von der GeoPackage-Regel mit einer
 Geometriespalte pro Feature-Tabelle ab.
 
-Neue Schemata verwenden EPSG:2056. Bei vorhandenen Referenzschemata
+Für neue Schemata setzt `schemaimport --default-epsg CODE` den
+Standard. Ohne Option gilt EPSG:2056. GeoPackage verwendet die vorhandenen
+EPSG-Definitionen aus dem Referenzprofil, darunter LV03 (21781) und
+WGS84 (4326). PostGIS prüft den Code in `spatial_ref_sys`.
+Bei vorhandenen Referenzschemata
 bestimmt `SETTINGS.defaultSrsCode` den EPSG-Code für Koordinaten ohne
 eigene CRS-Angabe. Der räumliche Katalog muss zum Modell und zu den
 gespeicherten Einstellungen passen. XYZ-Geometrien speichern die dritte

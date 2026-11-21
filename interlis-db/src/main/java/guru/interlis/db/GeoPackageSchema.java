@@ -63,6 +63,7 @@ final class GeoPackageSchema {
                 if (plan.splitGeometries()) {
                     transaction.execute("CREATE UNIQUE INDEX uk_gc_table_name ON gpkg_geometry_columns (table_name)");
                 }
+                checkSrs(connection, plan, token);
                 SchemaSql.createGeoPackageTables(connection, plan, createGeometryIndexes, token);
                 registerContents(connection, plan, createGeometryIndexes, token);
                 token.throwIfCancellationRequested();
@@ -85,6 +86,22 @@ final class GeoPackageSchema {
             for (String sql : script.split(";\\R")) {
                 token.throwIfCancellationRequested();
                 if (!sql.isBlank()) statement.execute(sql);
+            }
+        }
+    }
+
+    private static void checkSrs(Connection connection, SchemaPlan plan, CancellationToken token) throws SQLException {
+        try (var statement = connection.prepareStatement("""
+                SELECT srs_id FROM gpkg_spatial_ref_sys
+                WHERE srs_id = ? AND organization = 'EPSG' AND organization_coordsys_id = ?
+                """)) {
+            for (int epsg : plan.geometryEpsgCodes()) {
+                token.throwIfCancellationRequested();
+                statement.setInt(1, epsg);
+                statement.setInt(2, epsg);
+                try (var rows = statement.executeQuery()) {
+                    if (!rows.next()) throw new DbException("GeoPackage is missing the EPSG:" + epsg + " SRS");
+                }
             }
         }
     }

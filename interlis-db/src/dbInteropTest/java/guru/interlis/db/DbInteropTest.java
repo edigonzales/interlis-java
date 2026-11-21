@@ -179,8 +179,10 @@ final class DbInteropTest {
     private void exchangeCrs(int version, PostgreSQLContainer postgres) throws Exception {
         var cases = new CrsCases(work, version, new ReferenceTool(postgres != null));
         for (int epsg : List.of(21781, 4326)) {
-            cases.existingDefault(new TestDatabase(postgres, "crs_reference_" + epsg), epsg);
+            cases.defaults(new TestDatabase(postgres, "crs_reference_" + epsg),
+                    new TestDatabase(postgres, "crs_own_" + epsg), epsg);
         }
+        cases.rejectMissingDefault(new TestDatabase(postgres, "crs_missing"));
     }
 
     private void exchangeSpatial(int version, PostgreSQLContainer postgres) throws Exception {
@@ -2162,7 +2164,7 @@ final class DbInteropTest {
 
         assertExistingTargetPreserved(postgres, model, ili);
         var cancelledDb = new TestDatabase(postgres, "cancelled");
-        var plan = SchemaPlan.read(model, ili, !postgis, !postgis, CancellationToken.none());
+        var plan = SchemaPlan.read(model, ili, !postgis, !postgis, 2056, CancellationToken.none());
         if (postgis) {
             try (var reserved = Database.openPostgres(cancelledDb.url, "select", cancelledDb.user,
                     cancelledDb.password, true)) {
@@ -2280,7 +2282,7 @@ final class DbInteropTest {
         }
     }
 
-    private static void assertMissingTarget(TestDatabase db) throws SQLException {
+    static void assertMissingTarget(TestDatabase db) throws SQLException {
         if (db.postgis) {
             try (var sql = db.connect()) {
                 assertNull(scalar(sql, "select nspname from pg_namespace where nspname='" + db.schema + "'"));

@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
+import static guru.interlis.db.DbInteropTest.assertMissingTarget;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
 import static guru.interlis.db.DbInteropTest.cli;
@@ -37,11 +38,19 @@ final class CrsCases {
         this.reference = reference;
     }
 
-    void existingDefault(TestDatabase db, int epsg) throws Exception {
+    void defaults(TestDatabase db, TestDatabase own, int epsg) throws Exception {
         String model = "DefaultCrs" + version + "_" + epsg;
         Path ili = defaultModel(model, epsg);
         createReference(db, ili, epsg);
+        var creation = cli(own, "schemaimport", model, null, ili, CancellationToken.none(),
+                "--default-epsg", Integer.toString(epsg));
+        assertEquals(0, creation.code(), creation::diagnostics);
+        try (var ref = db.connect(); var sql = own.connect()) {
+            DbSchemaCatalog.read(ref, db.postgis(), db.schema())
+                    .assertSameAs(DbSchemaCatalog.read(sql, own.postgis(), own.schema()));
+        }
         defaultExchange(db, model, epsg);
+        defaultExchange(own, model, epsg);
 
         try (var sql = db.connect()) {
             execute(sql, "UPDATE " + db.table("t_ili2db_settings")
@@ -53,6 +62,15 @@ final class CrsCases {
         assertTrue(failed.diagnostics().contains("Expected an EPSG:2056"), failed::diagnostics);
         assertTrue(failed.diagnostics().contains("station.location"), failed::diagnostics);
         assertEquals("previous output", Files.readString(output));
+    }
+
+    void rejectMissingDefault(TestDatabase db) throws Exception {
+        String model = "MissingCrs" + version;
+        Path ili = defaultModel(model, 4326);
+        var result = cli(db, "schemaimport", model, null, ili, CancellationToken.none(), "--default-epsg", "999999");
+        assertNotEquals(0, result.code(), result::diagnostics);
+        assertTrue(result.diagnostics().contains("missing the EPSG:999999 SRS"), result::diagnostics);
+        assertMissingTarget(db);
     }
 
     private Path defaultModel(String model, int epsg) throws Exception {

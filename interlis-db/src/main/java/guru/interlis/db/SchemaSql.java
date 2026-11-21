@@ -27,7 +27,6 @@ import static guru.interlis.db.Ili2dbLayout.ID_COLUMN;
 import static guru.interlis.db.Ili2dbLayout.INHERITANCE;
 import static guru.interlis.db.Ili2dbLayout.INHERITANCE_TAG;
 import static guru.interlis.db.Ili2dbLayout.KEY_OBJECT;
-import static guru.interlis.db.Ili2dbLayout.LV95;
 import static guru.interlis.db.Ili2dbLayout.MODEL;
 import static guru.interlis.db.Ili2dbLayout.MODEL_KEY;
 import static guru.interlis.db.Ili2dbLayout.NEW_CLASS;
@@ -50,8 +49,9 @@ final class SchemaSql {
     static void createPostgres(Database db, SchemaPlan plan, boolean createGeometryIndexes, CancellationToken token) throws SQLException {
         String schema = db.schema();
         checkPostgresSchemaName(db.connection(), schema);
-        if (!plan.geometryColumns().isEmpty()) {
-            checkPostgresSrs(db);
+        for (int epsg : plan.geometryEpsgCodes()) {
+            token.throwIfCancellationRequested();
+            checkPostgresSrs(db, epsg);
         }
         if (plan.mapping().tables().stream().anyMatch(DbMapping.Table::uuidIdentity)) {
             requireUuidDefault(db.connection());
@@ -94,14 +94,14 @@ final class SchemaSql {
         }
     }
 
-    private static void checkPostgresSrs(Database db) throws SQLException {
+    private static void checkPostgresSrs(Database db, int epsg) throws SQLException {
         String sql = "SELECT srid FROM " + db.postgisObject("spatial_ref_sys")
                 + " WHERE srid = ? AND auth_name = 'EPSG' AND auth_srid = ?";
         try (var statement = db.connection().prepareStatement(sql)) {
-            statement.setInt(1, LV95);
-            statement.setInt(2, LV95);
+            statement.setInt(1, epsg);
+            statement.setInt(2, epsg);
             try (var rows = statement.executeQuery()) {
-                if (!rows.next()) throw new DbException("PostGIS is missing the EPSG:2056 SRS");
+                if (!rows.next()) throw new DbException("PostGIS is missing the EPSG:" + epsg + " SRS");
             }
         }
     }
@@ -223,7 +223,7 @@ final class SchemaSql {
              var transformations = insert(connection, d, TRAFO, "iliname, tag, setting", 3);
              var tableProps = insert(connection, d, TABLE_PROP, "tablename, tag, setting", 3);
              var colProps = insert(connection, d, COLUMN_PROP, "tablename, subtype, columnname, tag, setting", 5)) {
-            writeSettings(settings, d.gpkg(), plan.splitGeometries());
+            writeSettings(settings, d.gpkg(), plan.splitGeometries(), plan.defaultEpsg());
             if (createGeometryIndexes) row(settings, "ch.ehi.sqlgen.createGeomIndex", "True");
             for (var table : plan.mapping().tables()) {
                 token.throwIfCancellationRequested();
@@ -281,13 +281,13 @@ final class SchemaSql {
         }
     }
 
-    private static void writeSettings(PreparedStatement statement, boolean gpkg, boolean splitGeometries) throws SQLException {
+    private static void writeSettings(PreparedStatement statement, boolean gpkg, boolean splitGeometries, int defaultEpsg) throws SQLException {
         row(statement, PREFIX + "sender", SCHEMA_SENDER);
         row(statement, PREFIX + "BasketHandling", "readWrite");
         row(statement, PREFIX + "TidHandling", "property");
         row(statement, PREFIX + "SqlNull", "enable");
         row(statement, PREFIX + "defaultSrsAuthority", "EPSG");
-        row(statement, PREFIX + "defaultSrsCode", Integer.toString(LV95));
+        row(statement, PREFIX + "defaultSrsCode", Integer.toString(defaultEpsg));
         row(statement, PREFIX + "maxSqlNameLength", "60");
         row(statement, "ch.interlis.ili2c.ilidirs", "%ILI_FROM_DB");
         if (splitGeometries || gpkg) {

@@ -32,7 +32,7 @@ public final class Main {
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
                    interlis-db delete --model NAME --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME)
-                   interlis-db schemaimport --model NAME [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
+                   interlis-db schemaimport --model NAME [--default-epsg CODE] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.
             """;
@@ -54,7 +54,7 @@ public final class Main {
         Options options;
         try {
             options = Options.parse(args);
-        } catch (IllegalArgumentException failure) {
+        } catch (IllegalArgumentException | DbException failure) {
             err.println(failure.getMessage());
             err.print(USAGE);
             err.flush();
@@ -89,7 +89,7 @@ public final class Main {
     private static void createSchema(Options options, String password, CancellationToken cancellation)
             throws IOException, SQLException {
         var plan = SchemaPlan.read(options.model(), options.file(), options.gpkg() != null,
-                options.splitGeometries(), cancellation);
+                options.splitGeometries(), options.defaultEpsg(), cancellation);
         cancellation.throwIfCancellationRequested();
         if (options.gpkg() != null) {
             GeoPackageSchema.create(options.gpkg(), plan, options.createGeometryIndexes(), cancellation);
@@ -159,8 +159,9 @@ public final class Main {
 
     private record Options(Command command, String model, String dataset, Path file, Path gpkg,
                            String pgUrl, String schema, String user, boolean createGeometryIndexes,
-                           boolean splitGeometries) {
-        private static final Set<String> NAMES = Set.of("--model", "--dataset", "--gpkg", "--pg-url", "--schema", "--user");
+                           boolean splitGeometries, int defaultEpsg) {
+        private static final Set<String> NAMES = Set.of("--model", "--dataset", "--gpkg", "--pg-url", "--schema", "--user",
+                "--default-epsg");
 
         static Options parse(String[] args) {
             Command command = switch (args.length == 0 ? "" : args[0]) {
@@ -226,6 +227,11 @@ public final class Main {
             } else if (pgUrl == null || !pgUrl.startsWith("jdbc:postgresql:") || schema == null || user == null) {
                 throw new IllegalArgumentException("PostgreSQL needs a JDBC PostgreSQL URL, --schema and --user");
             }
+            String epsg = flags.get("--default-epsg");
+            if (epsg != null && command != Command.SCHEMAIMPORT) {
+                throw new IllegalArgumentException("--default-epsg is only valid with schemaimport");
+            }
+            int defaultEpsg = epsg == null ? Ili2dbLayout.LV95 : Ili2dbLayout.parseEpsgCode(epsg, "--default-epsg");
             boolean oneGeometryPerTable = schemaFlags.contains("--one-geom-per-table");
             if (oneGeometryPerTable && gpkg != null) {
                 throw new IllegalArgumentException("--one-geom-per-table is only valid with PostgreSQL");
@@ -236,7 +242,7 @@ public final class Main {
             }
             return new Options(command, model, dataset, file, gpkg, pgUrl, schema, user,
                     schemaFlags.contains("--create-geom-index"),
-                    oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries));
+                    oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg);
         }
 
         void checkPaths() throws IOException {

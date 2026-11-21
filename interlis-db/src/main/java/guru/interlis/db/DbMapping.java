@@ -304,7 +304,7 @@ final class DbMapping {
     }
 
     static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
-                             CancellationToken token) {
+                             int defaultEpsg, CancellationToken token) {
         TransferPlan plan = compile(modelName, source, "model file", token);
         var allocator = new SqlNames();
         var names = new HashMap<SymbolRef, String>();
@@ -370,7 +370,7 @@ final class DbMapping {
                 checkColumnName(attribute, column, object.kind() == SymbolKind.STRUCTURE, !split && discriminator, gpkg);
                 binding = binding.withName(column);
                 if (binding.kind().geometry()) {
-                    binding = binding.withEpsgCode(LV95);
+                    binding = binding.withEpsgCode(defaultEpsg);
                     geometrySeen = true;
                 }
                 if (split) secondary.add(new SecondaryGeometry(owner, binding));
