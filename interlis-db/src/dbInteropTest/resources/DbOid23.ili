@@ -10,9 +10,14 @@ CONTRACTED MODEL DbOid23 (en) AT "https://example.org/interlis/db" VERSION "1" =
     CLASS Marker EXTENDS Site =
       Category : TEXT*20;
     END Marker;
+    CLASS StandardSite =
+      OID AS INTERLIS.STANDARDOID;
+      Name : TEXT*40;
+    END StandardSite;
     STRUCTURE InspectionRefs =
       LocalSite : REFERENCE TO Site;
       RemoteSite : REFERENCE TO (EXTERNAL) Marker;
+      CatalogId : REFERENCE TO StandardSite;
     END InspectionRefs;
     CLASS Inspection =
       Links : InspectionRefs;

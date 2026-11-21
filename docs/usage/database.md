@@ -341,9 +341,13 @@ Lokale und `EXTERNAL`-Referenzen auf UUID-Objekte verwenden dieselbe
 normalisierte UUID bei der Auflösung und behalten die numerischen Fremdschlüssel.
 Eigenständige lokale n:m-Assoziationen können eine UUID-OID besitzen.
 Die Beziehungstabelle führt dafür zusätzlich `T_Ili_Tid` und `oidDomain`.
+Flache Klassen können auch `OID AS INTERLIS.STANDARDOID` deklarieren.
+Beide Backends speichern die OID als Text in `T_Ili_Tid`. Referenzen
+behalten ihre numerischen Fremdschlüssel. Transfer und Suche verwenden
+die OID in der gespeicherten Schreibweise.
 
 Zum weiteren Ausbau gehören weitere Assoziationsformen mit Hierarchie-Enden
-sowie `EXTENDED`-Attribute. Weitere Grenzen sind stabile OIDs, eigene Linienformen,
+sowie `EXTENDED`-Attribute. Weitere Grenzen sind andere OID-Regeln, eigene Linienformen,
 GeoPackage-RTree beim Schreiben und Updates. Der gespeicherte Modelltext
 ist auf eine Million Zeichen begrenzt.
 

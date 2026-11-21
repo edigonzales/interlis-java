@@ -209,9 +209,12 @@ final class DbSchemaReader {
 
     private static void requireIdentityColumn(Database db, String table, Map<String, String> physical, String domain)
             throws SQLException {
-        String type = physical.get(T_ILI_TID);
-        if (!(db.gpkg() ? "text".equals(type) : "uuid".equals(type))) {
-            throw new DbException("Expected UUID identity column " + table + "." + T_ILI_TID);
+        if (Ili2dbLayout.UUID_OID.equals(domain)) {
+            if (!(db.gpkg() ? "text" : "uuid").equals(physical.get(T_ILI_TID))) {
+                throw new DbException("Expected UUID identity column " + table + "." + T_ILI_TID);
+            }
+        } else {
+            requireColumns(db, table, physical, Map.of(T_ILI_TID, Kind.TEXT));
         }
         String sql = "SELECT setting FROM " + db.technicalTable(Ili2dbLayout.COLUMN_PROP)
                 + " WHERE tablename = ? AND subtype IS NULL AND lower(columnname) = ? AND tag = ?";

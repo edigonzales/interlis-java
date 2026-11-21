@@ -34,6 +34,7 @@ final class Ili2dbLayout {
     static final String BASKET_COLUMN = "T_basket";
     static final String TYPE_COLUMN = "T_Type";
     static final String UUID_OID = "INTERLIS.UUIDOID";
+    static final String STANDARD_OID = "INTERLIS.STANDARDOID";
     static final String OID_DOMAIN_PROPERTY = PREFIX + "oidDomain";
     static final String TID_COLUMN = "T_Ili_Tid";
     static final String SEQ_COLUMN = "T_Seq";

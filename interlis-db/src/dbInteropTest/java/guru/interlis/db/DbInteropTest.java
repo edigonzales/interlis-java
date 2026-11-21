@@ -454,10 +454,15 @@ final class DbInteropTest {
                 <Defaults i:bid="%s-defaults"><Address i:tid="%s"><Text>address</Text></Address></Defaults>
                 """.formatted(bid, defaultOid(tid));
         String inspection = version == 23 ? """
-                <%1$s.Data.Inspection TID="%2$s-inspection"><Links><%1$s.Data.InspectionRefs><LocalSite REF="%3$s"/></%1$s.Data.InspectionRefs></Links></%1$s.Data.Inspection>
-                """.formatted(model, bid, tid) : """
-                <Inspection i:tid="%s-inspection"><Links><InspectionRefs><LocalSite i:ref="%s"/></InspectionRefs></Links></Inspection>
-                """.formatted(bid, tid);
+                <%1$s.Data.Inspection TID="%2$s-inspection"><Links><%1$s.Data.InspectionRefs><LocalSite REF="%3$s"/><CatalogId REF="%4$s"/></%1$s.Data.InspectionRefs></Links></%1$s.Data.Inspection>
+                """.formatted(model, bid, tid, standardOid(tid)) : """
+                <Inspection i:tid="%s-inspection"><Links><InspectionRefs><LocalSite i:ref="%s"/><CatalogId i:ref="%s"/></InspectionRefs></Links></Inspection>
+                """.formatted(bid, tid, standardOid(tid));
+        String standard = version == 23 ? """
+                <%1$s.Data.StandardSite TID="%2$s"><Name>catalog</Name></%1$s.Data.StandardSite>
+                """.formatted(model, standardOid(tid)) : """
+                <StandardSite i:tid="%s"><Name>catalog</Name></StandardSite>
+                """.formatted(standardOid(tid));
         String evidence = version == 23 ? """
                 <%1$s.Data.Evidence TID="%2$s"><EvidenceMarker REF="%3$s"/><EvidenceInspection REF="%4$s-inspection"/><Memo>evidence</Memo></%1$s.Data.Evidence>
                 """.formatted(model, evidenceOid(tid), tid, bid) : """
@@ -468,10 +473,14 @@ final class DbInteropTest {
                 """.formatted(model, oidBasket(bid + "-second"), secondOid(tid)) : """
                 <Data i:bid="%s"><Site i:tid="%s"><Label>second</Label></Site></Data>
                 """.formatted(oidBasket(bid + "-second"), secondOid(tid));
-        String fixture = referenceDatasetFixture(model, version, oidBasket(bid), inspection + object + evidence)
+        String fixture = referenceDatasetFixture(model, version, oidBasket(bid), inspection + object + evidence + standard)
                 .replace(version == 23 ? "</DATASECTION>" : "</i:datasection>",
                         second + defaults + (version == 23 ? "</DATASECTION>" : "</i:datasection>"));
         return Files.writeString(work.resolve(bid + ".xtf"), fixture);
+    }
+
+    private static String standardOid(String tid) {
+        return "ch203400000000%02d".formatted(Math.max(0, Character.digit(tid.charAt(0), 16)));
     }
 
     private static String evidenceOid(String tid) {
@@ -499,6 +508,12 @@ final class DbInteropTest {
                 + " s join " + db.table("t_ili2db_basket") + " b on b.t_id=s.t_basket where b.t_ili_tid='"
                 + oidBasket(bid + "-second") + "' and s.label='second'"));
         assertOidReferenceRow(db, sql, bid + "-inspection", tid, bid, "localsite");
+        String catalog = """
+                select s.t_ili_tid from %s s join %s r on r.catalogid=s.t_id and r.t_basket=s.t_basket
+                join %s i on r.inspection_links=i.t_id and r.t_basket=i.t_basket
+                where i.t_ili_tid='%s-inspection' and s.aname='catalog'
+                """.formatted(db.table("standardsite"), db.table("inspectionrefs"), db.table("inspection"), bid);
+        assertEquals(standardOid(tid), scalar(sql, catalog));
         String evidence = """
                 select e.t_ili_tid from %s e join %s b on b.t_id=e.t_basket
                 join %s s on s.t_id=e.evidencemarker and s.t_basket=e.t_basket
@@ -526,8 +541,12 @@ final class DbInteropTest {
         assertEquals("marker", child(object, "Label").getTextContent());
         assertEquals("survey", child(object, "Category").getTextContent());
         var inspection = child(basket, version == 23 ? model + ".Data.Inspection" : "Inspection");
-        assertExternalReference(child(children(child(inspection, "Links")).getFirst(), "LocalSite"),
-                version, tid.toLowerCase(Locale.ROOT), "");
+        var refs = children(child(inspection, "Links")).getFirst();
+        assertExternalReference(child(refs, "LocalSite"), version, tid.toLowerCase(Locale.ROOT), "");
+        assertExternalReference(child(refs, "CatalogId"), version, standardOid(tid), "");
+        var standard = child(basket, version == 23 ? model + ".Data.StandardSite" : "StandardSite");
+        assertEquals(standardOid(tid), id(standard, version, "tid"));
+        assertEquals("catalog", child(standard, "Name").getTextContent());
         var evidence = child(basket, version == 23 ? model + ".Data.Evidence" : "Evidence");
         assertNotNull(evidence);
         assertEquals(evidenceOid(tid).toLowerCase(Locale.ROOT), id(evidence, version, "tid"));

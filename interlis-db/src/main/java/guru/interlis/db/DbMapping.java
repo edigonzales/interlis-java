@@ -410,11 +410,14 @@ final class DbMapping {
             };
             var domain = oidDomain(plan, object);
             boolean uuid = domain.filter(Ili2dbLayout.UUID_OID::equals).isPresent();
-            boolean supportedIdentity = object.oidRules().isEmpty() || (uuid && switch (object.kind()) {
-                case CLASS -> object.baseType().flatMap(plan::object).map(base -> oidDomain(plan, base).equals(domain)).orElse(true);
-                case ASSOCIATION -> object.baseType().isEmpty() && !bases.contains(object.symbol());
+            boolean flat = object.baseType().isEmpty() && !bases.contains(object.symbol());
+            boolean standard = domain.filter(Ili2dbLayout.STANDARD_OID::equals).isPresent();
+            boolean supportedIdentity = object.oidRules().isEmpty() || switch (object.kind()) {
+                case CLASS -> (standard && flat) || (uuid && object.baseType().flatMap(plan::object)
+                        .map(base -> oidDomain(plan, base).equals(domain)).orElse(true));
+                case ASSOCIATION -> uuid && flat;
                 default -> false;
-            });
+            };
             if (!supported || !supportedIdentity) {
                 throw unsupported("class layout or identity rules for " + object.name().declared());
             }
