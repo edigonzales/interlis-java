@@ -310,6 +310,51 @@ final class ModelCases {
         new ModelCases(work, reference, otherVersion).assertEntryDelivery(output, other, "warehouse", "fixture");
     }
 
+    void mixedImport(TestDatabase baseline, TestDatabase nativeSchema) throws Exception {
+        String warehouse = "DbWarehouse" + version;
+        String workshop = "DbWorkshop" + version;
+        var first = fixture(warehouse + ".ili");
+        var second = fixture(workshop + ".ili");
+        createReference(baseline, warehouse + ";" + workshop);
+        var created = cli(nativeSchema, "schemaimport", warehouse, null, first, CancellationToken.none(),
+                "--model", workshop, "--model-file", second.toString());
+        assertEquals(0, created.code(), created::diagnostics);
+        Files.delete(first);
+        Files.delete(second);
+        var input = fixture("DbMixedModels" + version + ".xtf");
+        String fixture = Files.readString(input);
+        String outside = version == 23 ? fixture.replace("<" + workshop + ".Data BID", "<DbOutside.Data BID")
+                : fixture.replace("<b:Data i:bid", "<b:Data xmlns:b=\"http://www.interlis.ch/xtf/2.4/DbOutside\" i:bid");
+        var invalid = Files.writeString(work.resolve("mixed-outside.xtf"), outside);
+        var tail = Files.writeString(work.resolve("mixed-tail.xtf"), fixture.replace("mixed-", "tail-"));
+        var output = work.resolve("mixed-import-output.xtf");
+        for (var db : List.of(baseline, nativeSchema)) {
+            String a = tableFor(db, warehouse + ".Data.Entry");
+            String b = tableFor(db, workshop + ".Data.Entry");
+            try (var sql = db.connect()) {
+                var failure = cli(db, "import", warehouse, "native", invalid, CancellationToken.none(), "--model", workshop);
+                assertEquals(1, failure.code(), failure::diagnostics);
+                assertTrue(failure.diagnostics().contains("DbOutside"), failure::diagnostics);
+                for (var table : List.of(a, b, "t_ili2db_dataset", "t_ili2db_basket")) {
+                    assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + db.table(table)), table);
+                }
+                var imported = cli(db, "import", warehouse, "native", input, CancellationToken.none(), "--model", workshop);
+                assertEquals(0, imported.code(), imported::diagnostics);
+                assertEquals("mixed-warehouse-entry", scalar(sql, "SELECT t_ili_tid FROM " + db.table(a)));
+                assertEquals("mixed-workshop-entry", scalar(sql, "SELECT t_ili_tid FROM " + db.table(b)));
+                referenceExport(db, "native", output);
+                assertMixedDelivery(output, warehouse, workshop, "mixed", "warehouse");
+                referenceImport(db, "tail", tail);
+                var exported = cli(db, "export", warehouse, "tail", output, CancellationToken.none(), "--model", workshop);
+                assertEquals(0, exported.code(), exported::diagnostics);
+                assertMixedDelivery(output, warehouse, workshop, "tail", "warehouse");
+                String ids = List.of(a, b, "t_ili2db_dataset", "t_ili2db_basket").stream()
+                        .map(table -> "SELECT t_id FROM " + db.table(table)).collect(java.util.stream.Collectors.joining(" UNION ALL "));
+                assertEquals("10", scalar(sql, "SELECT COUNT(DISTINCT t_id) FROM (" + ids + ") ids"));
+            }
+        }
+    }
+
     private void assertMixedDelivery(Path output, String warehouse, String workshop, String prefix, String warehouseMemo)
             throws Exception {
         var data = readDataSection(output, version);

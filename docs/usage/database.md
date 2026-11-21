@@ -72,6 +72,9 @@ je ein `--model` ausgewählt werden. Die Auswahl muss sämtliche Baskets
 des Datensatzes abdecken. Der Header nennt die Modelle der exportierten
 Baskets. Ein Schema kann getrennte Datensätze in beiden Sprachversionen
 enthalten.
+Beim Import können ebenfalls mehrere Modelle derselben Sprachversion
+ausgewählt werden. Header und Baskets müssen zur Auswahl passen. Ein
+unzulässiger späterer Basket rollt den ganzen Import zurück.
 Ein Import legt den angegebenen Datensatz an. Einen bereits vorhandenen
 Datensatznamen meldet er als Fehler. Ein erfolgreicher Export ersetzt die
 ausdrücklich gewählte Zieldatei atomar. Ein abgebrochener Export belässt eine

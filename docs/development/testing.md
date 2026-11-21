@@ -112,6 +112,9 @@ die gemeinsame ID-Vergabe und beide Werkzeugrichtungen.
 `*DbInteropTest.*MixedExport*` prüft Header und Baskets gemischter
 Datensätze, eine unvollständige Auswahl und getrennte Datensätze beider
 XTF-Versionen im selben Referenzschema.
+`*DbInteropTest.*MixedImport*` prüft gemischte Lieferungen in Referenz-
+und eigenen Schemata, die gemeinsame ID-Vergabe beim nächsten Referenzimport
+und den Rollback bei einem fremden späteren Basket.
 
 Die Fälle `*DbInteropTest.*Mutation*` prüfen `replace` und `update`
 in beiden Werkzeugrichtungen. Sie prüfen die internen IDs und den Bestand

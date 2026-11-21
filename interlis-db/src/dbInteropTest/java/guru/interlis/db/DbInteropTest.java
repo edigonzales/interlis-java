@@ -136,6 +136,10 @@ final class DbInteropTest {
     @Test void geoPackageMixedExport24() throws Exception { exchangeMixedExport(24, null); }
     @Test void postgisMixedExport23() throws Exception { exchangeWithPostgis(23, this::exchangeMixedExport); }
     @Test void postgisMixedExport24() throws Exception { exchangeWithPostgis(24, this::exchangeMixedExport); }
+    @Test void geoPackageMixedImport23() throws Exception { exchangeMixedImport(23, null); }
+    @Test void geoPackageMixedImport24() throws Exception { exchangeMixedImport(24, null); }
+    @Test void postgisMixedImport23() throws Exception { exchangeWithPostgis(23, this::exchangeMixedImport); }
+    @Test void postgisMixedImport24() throws Exception { exchangeWithPostgis(24, this::exchangeMixedImport); }
 
     @Test void geoPackage23() throws Exception { exchange(23, null); }
     @Test void geoPackage24() throws Exception {
@@ -470,6 +474,12 @@ final class DbInteropTest {
     private void exchangeMixedExport(int version, PostgreSQLContainer postgres) throws Exception {
         var db = new TestDatabase(postgres, "mixed_export");
         new ModelCases(work, new ReferenceTool(db.postgis()), version).mixedExport(db);
+    }
+
+    private void exchangeMixedImport(int version, PostgreSQLContainer postgres) throws Exception {
+        var reference = new TestDatabase(postgres, "reference_mixed");
+        var nativeSchema = new TestDatabase(postgres, "native_mixed");
+        new ModelCases(work, new ReferenceTool(reference.postgis()), version).mixedImport(reference, nativeSchema);
     }
 
     private void exchange(int version, PostgreSQLContainer postgres) throws Exception {
