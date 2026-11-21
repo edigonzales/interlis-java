@@ -468,7 +468,8 @@ final class DbTransfer {
     }
 
     private static boolean supportsCrossDataset(DbMapping mapping, Table table, Column column) {
-        return column.external() && (column.slot() instanceof AttributeSlot || table.object().kind() == SymbolKind.CLASS);
+        return column.external() && (column.slot() instanceof AttributeSlot
+                || table.object().kind() == SymbolKind.CLASS || mapping.isEmbeddedLink(table));
     }
 
     private static void checkCrossDatasetReferences(Database db, DbMapping mapping, long datasetId, CancellationToken token)

@@ -342,13 +342,19 @@ final class DbInteropTest {
                 </%1$s.Data.Detail></DetailValue>
                   <BaseSite REF="catalog-leaf" BID="catalog-basket"/>
                   <PairedSite REF="catalog-leaf" BID="catalog-basket"/>
+                  <ReviewSite REF="catalog-leaf" BID="catalog-basket"><%1$s.Data.ExternalReview><ReviewMemo>catalogue check</ReviewMemo></%1$s.Data.ExternalReview></ReviewSite>
                 </%1$s.Data.Report>
+                <%1$s.Data.Report TID="direct-report-id"><ReviewSite REF="catalog-leaf" BID="catalog-basket"/></%1$s.Data.Report>
+                <%1$s.Data.Report TID="empty-report-id"/>
                 """.formatted(model) : """
                 <Report i:tid="report-id"><DetailValue><Detail><TargetRef i:ref="catalog-leaf"/></Detail></DetailValue>
                   <DirectRef i:ref="catalog-leaf"/>
                   <BaseSite i:ref="catalog-leaf"/>
                   <PairedSite i:ref="catalog-leaf"/>
+                  <ReviewSite i:ref="catalog-leaf"><ExternalReview><ReviewMemo>catalogue check</ReviewMemo></ExternalReview></ReviewSite>
                 </Report>
+                <Report i:tid="direct-report-id"><ReviewSite i:ref="catalog-leaf"/></Report>
+                <Report i:tid="empty-report-id"/>
                 """;
         Path input = Files.writeString(work.resolve("catalog-source.xtf"),
                 referenceDatasetFixture(model, version, "catalog-source", report));
@@ -430,18 +436,34 @@ final class DbInteropTest {
             if (version == 24) assertEquals(rows.getLong(4), rows.getLong(7));
             assertFalse(rows.next());
         }
+        String target = "(select dest.t_id from " + db.table("targetroot") + " dest join "
+                + db.table("t_ili2db_basket") + " b on b.t_id=dest.t_basket where dest.t_ili_tid='catalog-leaf' and b.t_ili_tid='catalog-basket')";
+        String reviews = " from " + db.table("externalreview") + " l join " + db.table("report")
+                + " r on r.t_id=l.reviewowner and l.t_basket=r.t_basket where l.reviewsite=" + target + " and r.t_ili_tid=";
+        assertEquals("catalogue check", scalar(sql, "select l.reviewmemo" + reviews + "'" + tid + "'"));
+        assertEquals("1", scalar(sql, "select count(*)" + reviews + "'direct-" + tid + "' and l.reviewmemo is null"));
+        assertEquals("0", scalar(sql, "select count(*)" + reviews + "'empty-" + tid + "'"));
     }
 
     private static void assertReferenceDatasetXtf(Path output, int version, boolean nativeExport) throws Exception {
         var baskets = children(readDataSection(output, version));
         assertEquals(1, baskets.size());
         var objects = children(baskets.getFirst());
-        assertEquals(1, objects.size());
-        var report = objects.getFirst();
+        assertEquals(3, objects.size());
+        var report = objects.stream().filter(object -> child(object, "DetailValue") != null).findFirst().orElseThrow();
         var detail = children(child(report, "DetailValue")).getFirst();
         assertExternalReference(child(detail, "TargetRef"), version, "catalog-leaf", nativeExport ? "catalog-basket" : "");
         assertExternalReference(child(report, "BaseSite"), version, "catalog-leaf", nativeExport ? "catalog-basket" : "");
         assertExternalReference(child(report, "PairedSite"), version, "catalog-leaf", nativeExport ? "catalog-basket" : "");
+        var review = child(report, "ReviewSite");
+        assertExternalReference(review, version, "catalog-leaf", nativeExport ? "catalog-basket" : "");
+        assertEquals("catalogue check", child(children(review).getFirst(), "ReviewMemo").getTextContent());
+        var direct = objects.stream().filter(object -> id(object, version, "tid").startsWith("direct-")).findFirst().orElseThrow();
+        var directReview = child(direct, "ReviewSite");
+        assertExternalReference(directReview, version, "catalog-leaf", nativeExport ? "catalog-basket" : "");
+        assertTrue(children(directReview).isEmpty());
+        var empty = objects.stream().filter(object -> id(object, version, "tid").startsWith("empty-")).findFirst().orElseThrow();
+        assertNull(child(empty, "ReviewSite"));
         if (version == 24) assertExternalReference(child(report, "DirectRef"), version, "catalog-leaf", "");
     }
 

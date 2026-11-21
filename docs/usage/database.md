@@ -314,6 +314,7 @@ sein. Die andere Rolle und die Linkzeile bleiben im selben Basket verankert.
 Bei einer eingebetteten 1:n-Assoziation mit eigenen skalaren Attributen
 speichert die Linktabelle die `EXTERNAL`-Zielrolle. Die Eigentümerrolle
 und der Basket der Linkzeile gehören weiterhin zum Eigentümerobjekt.
+Das `EXTERNAL`-Ziel darf aus einem anderen Datensatz desselben Schemas kommen.
 
 Ein `EXTERNAL`-Referenzattribut darf auf eine Klasse eines Topics zielen,
 das im gleichen Modell direkt mit `DEPENDS ON` deklariert ist. Der physische
