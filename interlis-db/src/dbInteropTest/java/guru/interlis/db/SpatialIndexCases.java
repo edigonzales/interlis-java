@@ -145,6 +145,56 @@ final class SpatialIndexCases {
         }
     }
 
+    void circularGeometries(TestDatabase db) throws Exception {
+        String model = "DbSpatial" + version;
+        createReferenceSchema(db, model);
+        // Radius 100 about (2602300, 1202300). The east extreme is beyond the three positions.
+        String start = coordinate("2602360", "1202220");
+        String arc = arc("2602380", "1202360", "2602240", "1202380");
+        String line = object(model, "IndexedLine", "arc-line", "<Trace>" + polyline(start + arc) + "</Trace>");
+        String plot = object(model, "IndexedPlot", "arc-plot", "<Footprint>"
+                + surface(polyline(start + arc + start), "") + "</Footprint>");
+        Path input = delivery("indexed-arcs", model, "arcs", line + plot);
+        assertCliSuccess(db, "import", model, "curves", input);
+        try (var sql = db.connect()) {
+            assertGeoPackageHeader(db, sql, "indexedline", "trace");
+            assertGeoPackageHeader(db, sql, "indexedplot", "footprint");
+            assertSearch(db, sql, "indexedline", "trace", "2602399", "1202300", true);
+            assertSearch(db, sql, "indexedplot", "footprint", "2602399", "1202300", true);
+            assertSearch(db, sql, "indexedline", "trace", "2602405", "1202300", false);
+
+            Path exported = work.resolve("indexed-arcs-reference.xtf");
+            reference.run(db, work.toString(), "--export", "--exportTid", "--dataset", "curves", exported.toString());
+            assertCurvesInXtf(exported);
+            runReference(db, "import", "curves-reference", input);
+            Path ownExport = work.resolve("indexed-arcs-native.xtf");
+            assertCliSuccess(db, "export", model, "curves-reference", ownExport);
+            assertCurvesInXtf(ownExport);
+            assertCliSuccess(db, "delete", model, "curves-reference", null);
+            assertSearch(db, sql, "indexedline", "trace", "2602399", "1202300", true);
+        }
+    }
+
+    private void assertCurvesInXtf(Path output) throws Exception {
+        var basket = children(readDataSection(output, version)).getFirst();
+        var arcs = basket.getElementsByTagNameNS("*", version == 23 ? "ARC" : "arc");
+        assertEquals(2, arcs.getLength());
+        for (int i = 0; i < arcs.getLength(); i++) {
+            var arc = (org.w3c.dom.Element) arcs.item(i);
+            assertEquals(0, new BigDecimal("2602380").compareTo(
+                    new BigDecimal(child(arc, version == 23 ? "A1" : "a1").getTextContent())));
+        }
+    }
+
+    private String arc(String supportX, String supportY, String endX, String endY) {
+        return version == 23 ? """
+                <ARC><C1>%3$s</C1><C2>%4$s</C2><A1>%1$s</A1><A2>%2$s</A2></ARC>
+                """.formatted(supportX, supportY, endX, endY)
+                : """
+                <g:arc><g:c1>%3$s</g:c1><g:c2>%4$s</g:c2><g:a1>%1$s</g:a1><g:a2>%2$s</g:a2></g:arc>
+                """.formatted(supportX, supportY, endX, endY);
+    }
+
     private String box(String xmin, String xmax, String ymin, String ymax) {
         return polyline(coordinate(xmin, ymin) + coordinate(xmax, ymin) + coordinate(xmax, ymax)
                 + coordinate(xmin, ymax) + coordinate(xmin, ymin));

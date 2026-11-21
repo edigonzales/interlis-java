@@ -37,8 +37,44 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class GeometryBinaryTest {
+    @Test
+    void boundsAnArcWithAndWithoutAStoredEnvelope() {
+        var start = coordinate("2602360", "1202220");
+        var middle = coordinate("2602380", "1202360");
+        var end = coordinate("2602240", "1202380");
+        var line = new Polyline(List.of(new CurvePart(start, List.of(new Arc(middle, end, Optional.empty())))));
+        byte[] plain = GeometryBinary.encode(line, true, 2056, POLYLINE);
+        var forward = GeometryBinary.indexEnvelope(plain);
+        assertTrue(forward.maxX() >= 2602400 && forward.maxX() < 2602400.001);
+        assertTrue(forward.maxY() >= 1202400 && forward.maxY() < 1202400.001);
+        assertEquals(2602240, forward.minX());
+        assertEquals(1202220, forward.minY());
+        byte[] indexed = GeometryBinary.encodeIndexedGeoPackage(line, 2056, POLYLINE);
+        assertEquals(forward, GeometryBinary.indexEnvelope(indexed));
+        assertArrayEquals(Arrays.copyOfRange(plain, 8, plain.length), Arrays.copyOfRange(indexed, 40, indexed.length));
+        var reversed = new Polyline(List.of(new CurvePart(end, List.of(new Arc(middle, start, Optional.empty())))));
+        assertEquals(forward, GeometryBinary.indexEnvelope(GeometryBinary.encode(reversed, true, 2056, POLYLINE)));
+    }
+
+    @Test
+    void boundsFullCircleAndCollinearCircularStrings() {
+        var start = coordinate("1", "0");
+        var circle = new Polyline(List.of(new CurvePart(start, List.of(new Arc(coordinate("-1", "0"), start, Optional.empty())))));
+        var bounds = GeometryBinary.indexEnvelope(GeometryBinary.encodeIndexedGeoPackage(circle, 2056, POLYLINE));
+        assertEquals(-1, bounds.minX(), 1e-12);
+        assertEquals(1, bounds.maxX(), 1e-12);
+        assertEquals(-1, bounds.minY(), 1e-12);
+        assertEquals(1, bounds.maxY(), 1e-12);
+
+        var straight = new Polyline(List.of(new CurvePart(start,
+                List.of(new Arc(coordinate("2", "0"), coordinate("3", "0"), Optional.empty())))));
+        bounds = GeometryBinary.indexEnvelope(GeometryBinary.encodeIndexedGeoPackage(straight, 2056, POLYLINE));
+        assertEquals(new GeometryBinary.Envelope(1, 3, 0, 0), bounds);
+    }
+
     @Test
     void readsGeoPackagePointWithIndependentHeaderAndWkbByteOrders() {
         byte[] bytes = ByteBuffer.allocate(29).order(ByteOrder.LITTLE_ENDIAN)

@@ -134,6 +134,7 @@ final class DbInteropTest {
         var cases = new SpatialIndexCases(work, version, new ReferenceTool(postgres != null));
         cases.points(new TestDatabase(postgres, "spatial_points"));
         cases.straightGeometries(new TestDatabase(postgres, "spatial_straight"));
+        cases.circularGeometries(new TestDatabase(postgres, "spatial_arcs"));
     }
 
     private void exchangeDelete(int version, PostgreSQLContainer postgres) throws Exception {

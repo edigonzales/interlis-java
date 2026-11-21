@@ -16,6 +16,7 @@ import guru.interlis.transfer.TransferGeometry.Surface;
 import guru.interlis.transfer.TransferValue.NumberValue;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -228,11 +229,74 @@ final class GeometryBinary {
         }
 
         private void addPart(CurvePart part) {
-            addPoint(part.start());
+            Coordinate start = part.start();
+            addPoint(start);
             for (var segment : part.segments()) {
-                if (segment instanceof Arc) throw new DbException("Unsupported circular arc for GeoPackage RTree");
-                addPoint(segment.end());
+                if (segment instanceof Arc arc) addArc(start, arc.support(), arc.end());
+                start = segment.end();
+                addPoint(start);
             }
+        }
+
+        private void addArc(Coordinate start, Coordinate support, Coordinate end) {
+            addPoint(support);
+            // Use the exact binary ordinates and translate to the start point before solving the circle.
+            // A small determinant is meaningful and must not be rounded to collinearity.
+            var originX = binaryOrdinate(start, 0);
+            var originY = binaryOrdinate(start, 1);
+            var supportX = binaryOrdinate(support, 0).subtract(originX);
+            var supportY = binaryOrdinate(support, 1).subtract(originY);
+            var chordX = binaryOrdinate(end, 0).subtract(originX);
+            var chordY = binaryOrdinate(end, 1).subtract(originY);
+            var side = cross(chordX, chordY, supportX, supportY);
+            BigDecimal centerX;
+            BigDecimal centerY;
+            if (chordX.signum() == 0 && chordY.signum() == 0) {
+                if (supportX.signum() == 0 && supportY.signum() == 0) return;
+                // A closed WKB circular string with three positions uses the diameter.
+                centerX = supportX.divide(BigDecimal.TWO);
+                centerY = supportY.divide(BigDecimal.TWO);
+            } else {
+                if (side.signum() == 0) return; // Start, support and end supply the straight bounds.
+                var denominator = side.negate().multiply(BigDecimal.TWO);
+                var supportSquared = squaredLength(supportX, supportY);
+                var chordSquared = squaredLength(chordX, chordY);
+                centerX = supportSquared.multiply(chordY).subtract(chordSquared.multiply(supportY))
+                        .divide(denominator, MathContext.DECIMAL128);
+                centerY = supportX.multiply(chordSquared).subtract(chordX.multiply(supportSquared))
+                        .divide(denominator, MathContext.DECIMAL128);
+            }
+            var radius = squaredLength(centerX, centerY).sqrt(MathContext.DECIMAL128);
+            // The chord divides the circle. Only extrema on the support point's side lie on this arc.
+            addExtreme(originX, originY, chordX, chordY, side.signum(), centerX.subtract(radius), centerY);
+            addExtreme(originX, originY, chordX, chordY, side.signum(), centerX.add(radius), centerY);
+            addExtreme(originX, originY, chordX, chordY, side.signum(), centerX, centerY.subtract(radius));
+            addExtreme(originX, originY, chordX, chordY, side.signum(), centerX, centerY.add(radius));
+        }
+
+        private void addExtreme(BigDecimal originX, BigDecimal originY, BigDecimal chordX, BigDecimal chordY,
+                                int arcSide, BigDecimal x, BigDecimal y) {
+            int side = cross(chordX, chordY, x, y).signum();
+            if (arcSide != 0 && side != 0 && side != arcSide) return;
+            double worldX = originX.add(x).doubleValue();
+            double worldY = originY.add(y).doubleValue();
+            // Round outwards before SQLite converts the envelope to its 32-bit RTree coordinates.
+            minX = Math.min(minX, Math.nextDown(worldX));
+            maxX = Math.max(maxX, Math.nextUp(worldX));
+            minY = Math.min(minY, Math.nextDown(worldY));
+            maxY = Math.max(maxY, Math.nextUp(worldY));
+        }
+
+        private static BigDecimal cross(BigDecimal ax, BigDecimal ay, BigDecimal bx, BigDecimal by) {
+            return ax.multiply(by).subtract(ay.multiply(bx));
+        }
+
+        private static BigDecimal squaredLength(BigDecimal x, BigDecimal y) {
+            return x.multiply(x).add(y.multiply(y));
+        }
+
+        private static BigDecimal binaryOrdinate(Coordinate point, int axis) {
+            return new BigDecimal(point.ordinates().get(axis).exactValue().doubleValue());
         }
 
         private void addPoint(Coordinate point) {
