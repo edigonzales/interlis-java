@@ -139,7 +139,8 @@ EPSG:2056 zulässig. XYZ-Punkte führen die dritte Ordinate im SQL-Wert
 und die exakten Modellgrenzen als `c3Min` und `c3Max` in den Spaltenmetadaten.
 PostGIS verwendet `POINTZ`, GeoPackage das Z-Bit der ili2gpkg-Kodierung.
 Die Raumindizes arbeiten mit der XY-Hülle.
-Die Geometriespalte speichert einen XY- oder XYZ-Punkt, eine zweidimensionale `POLYLINE` oder eine
+Die Geometriespalte speichert einen XY- oder XYZ-Punkt, eine XY- oder gerade
+XYZ-`POLYLINE` oder eine
 zweidimensionale Fläche (`SURFACE` oder `AREA`) mit einem Aussenring und
 optionalen Innenringen. Linien und Flächenränder unterstützen
 `WITH (STRAIGHTS)`, `WITH (ARCS)` und

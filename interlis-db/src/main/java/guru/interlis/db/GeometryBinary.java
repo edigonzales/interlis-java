@@ -97,11 +97,11 @@ final class GeometryBinary {
         return switch (kind) {
             case POINT -> pointSize(dimensions);
             case MULTIPOINT -> CURVE_HEADER_SIZE + MAX_VERTICES * POINT_WKB_SIZE;
-            case POLYLINE -> CURVE_HEADER_SIZE * (1 + MAX_COMPONENTS) + MAX_VERTICES * XY_SIZE;
+            case POLYLINE -> CURVE_HEADER_SIZE * (1 + MAX_COMPONENTS) + MAX_VERTICES * dimensions * Double.BYTES;
             // Each ring or line includes at least one component with two coordinates.
-            case SURFACE, MULTICURVE -> CURVE_HEADER_SIZE * (1 + 2 * MAX_COMPONENTS) + MAX_VERTICES * XY_SIZE;
+            case SURFACE, MULTICURVE -> CURVE_HEADER_SIZE * (1 + 2 * MAX_COMPONENTS) + MAX_VERTICES * dimensions * Double.BYTES;
             // Each child adds a header and includes at least one nonempty ring.
-            case MULTISURFACE -> CURVE_HEADER_SIZE * (1 + 3 * MAX_COMPONENTS) + MAX_VERTICES * XY_SIZE;
+            case MULTISURFACE -> CURVE_HEADER_SIZE * (1 + 3 * MAX_COMPONENTS) + MAX_VERTICES * dimensions * Double.BYTES;
             default -> throw new IllegalArgumentException("Not a geometry kind: " + kind);
         };
     }
@@ -129,7 +129,7 @@ final class GeometryBinary {
                 yield readPoint(data, gpkg, dimensions);
             }
             case MULTIPOINT -> readMultiPoint(data, empty);
-            case POLYLINE -> readPolyline(data);
+            case POLYLINE -> readPolyline(data, gpkg, dimensions);
             case MULTICURVE -> readMultiCurve(data, empty);
             case SURFACE -> readSurface(data);
             case MULTISURFACE -> readMultiSurface(data, empty);
@@ -359,11 +359,11 @@ final class GeometryBinary {
         return new MultiCoordinate(points);
     }
 
-    private static Polyline readPolyline(ByteBuffer data) {
-        if (readType(data) != COMPOUNDCURVE) {
-            throw new DbException("Expected a 2D WKB COMPOUNDCURVE");
+    private static Polyline readPolyline(ByteBuffer data, boolean gpkg, int dimensions) {
+        if (readType(data) != storageType(COMPOUNDCURVE, gpkg, dimensions)) {
+            throw new DbException("Expected a " + dimensions + "D WKB COMPOUNDCURVE");
         }
-        var part = readCurve(data, COMPOUNDCURVE, new CoordinateBudget(Kind.POLYLINE));
+        var part = readCurve(data, COMPOUNDCURVE, new CoordinateBudget(Kind.POLYLINE), gpkg, dimensions);
         if (data.hasRemaining()) {
             throw new DbException("Invalid WKB polyline size");
         }
@@ -379,7 +379,7 @@ final class GeometryBinary {
             if (type != COMPOUNDCURVE && type != LINESTRING) {
                 throw new DbException("Expected a 2D WKB COMPOUNDCURVE or LINESTRING in a multicurve");
             }
-            lines.add(new Polyline(List.of(readCurve(data, type, budget))));
+            lines.add(new Polyline(List.of(readCurve(data, type, budget, false, 2))));
         }
         if (data.hasRemaining()) {
             throw new DbException("Invalid WKB multicurve size");
@@ -430,12 +430,12 @@ final class GeometryBinary {
 
     private static Ring readRing(ByteBuffer data, int surfaceType, CoordinateBudget budget) {
         // A POLYGON ring uses the LINESTRING body without its byte order and type.
-        var part = readCurve(data, surfaceType == POLYGON ? LINESTRING : readType(data), budget);
+        var part = readCurve(data, surfaceType == POLYGON ? LINESTRING : readType(data), budget, false, 2);
         requireClosedRing(part);
         return new Ring(List.of(new Polyline(List.of(part))));
     }
 
-    private static CurvePart readCurve(ByteBuffer data, int type, CoordinateBudget budget) {
+    private static CurvePart readCurve(ByteBuffer data, int type, CoordinateBudget budget, boolean gpkg, int dimensions) {
         boolean compound = type == COMPOUNDCURVE;
         int components = compound ? readCount(data) : 1;
         if (components < 1 || components > MAX_COMPONENTS) {
@@ -445,11 +445,14 @@ final class GeometryBinary {
         Coordinate start = null;
         var segments = new ArrayList<Segment>();
         for (int index = 0; index < components; index++) {
-            int componentType = compound ? readType(data) : type;
-            if (componentType != LINESTRING && componentType != CIRCULARSTRING) {
-                throw new DbException("Expected a 2D WKB LINESTRING or CIRCULARSTRING component");
+            int componentType = compound ? readType(data) : storageType(type, gpkg, dimensions);
+            int lineType = storageType(LINESTRING, gpkg, dimensions);
+            int arcType = storageType(CIRCULARSTRING, gpkg, dimensions);
+            if (componentType != lineType && componentType != arcType) {
+                throw new DbException("Expected a " + dimensions + "D WKB LINESTRING or CIRCULARSTRING component");
             }
-            boolean circular = componentType == CIRCULARSTRING;
+            boolean circular = componentType == arcType;
+            if (circular && dimensions == 3) throw new DbException("XYZ circular arcs are unsupported");
             int count = readCount(data);
             if (count < 2) {
                 throw new DbException("A WKB curve component requires at least two vertices");
@@ -458,23 +461,23 @@ final class GeometryBinary {
             if (circular && count % 2 == 0) {
                 throw new DbException("A WKB CIRCULARSTRING requires an odd number of at least three vertices");
             }
-            if (data.remaining() < count * XY_SIZE) {
+            if (data.remaining() < count * dimensions * Double.BYTES) {
                 throw new DbException("Invalid WKB polyline size");
             }
 
-            var componentStart = readCoordinate(data);
+            var componentStart = readCoordinate(data, dimensions);
             if (index == 0) {
                 start = componentStart;
-            } else if (!sameXY(segments.getLast().end(), componentStart)) {
+            } else if (!samePosition(segments.getLast().end(), componentStart)) {
                 throw new DbException("WKB compound curve components do not share an endpoint");
             }
 
             for (int point = 1; point < count; point += circular ? 2 : 1) {
                 if (circular) {
-                    var support = readCoordinate(data);
-                    segments.add(new Arc(support, readCoordinate(data), Optional.empty()));
+                    var support = readCoordinate(data, dimensions);
+                    segments.add(new Arc(support, readCoordinate(data, dimensions), Optional.empty()));
                 } else {
-                    segments.add(new Straight(readCoordinate(data)));
+                    segments.add(new Straight(readCoordinate(data, dimensions)));
                 }
             }
         }
@@ -511,10 +514,6 @@ final class GeometryBinary {
         return count;
     }
 
-    private static Coordinate readCoordinate(ByteBuffer data) {
-        return readCoordinate(data, 2);
-    }
-
     private static Coordinate readCoordinate(ByteBuffer data, int dimensions) {
         var ordinates = new ArrayList<NumberValue>(dimensions);
         for (int axis = 0; axis < dimensions; axis++) ordinates.add(number(data.getDouble()));
@@ -525,7 +524,7 @@ final class GeometryBinary {
         return switch (kind) {
             case POINT -> writePoint(value, gpkg, srsId, dimensions);
             case MULTIPOINT -> writeMultiPoint(value, gpkg, srsId);
-            case POLYLINE -> writePolyline(value, gpkg, srsId);
+            case POLYLINE -> writePolyline(value, gpkg, srsId, dimensions);
             case MULTICURVE -> writeMultiCurve(value, gpkg, srsId);
             case SURFACE -> writeSurface(value, gpkg, srsId);
             case MULTISURFACE -> writeMultiSurface(value, gpkg, srsId);
@@ -570,18 +569,18 @@ final class GeometryBinary {
         return data.array();
     }
 
-    private static byte[] writePolyline(TransferGeometry geometry, boolean gpkg, int srsId) {
+    private static byte[] writePolyline(TransferGeometry geometry, boolean gpkg, int srsId, int dimensions) {
         if (!(geometry instanceof Polyline line)) {
             throw new DbException("Expected a polyline with one part and no line attributes");
         }
-        var curve = planCurve(linePart(line), new CoordinateBudget(Kind.POLYLINE));
+        var curve = planCurve(linePart(line), new CoordinateBudget(Kind.POLYLINE), dimensions);
         // Arc extrema can lie outside the bounds of the stored XY pairs.
         boolean envelope = gpkg && !curve.hasArcs();
         var data = allocate(curve.size(), gpkg, srsId, envelope);
         int firstCoordinate = data.position() + 2 * CURVE_HEADER_SIZE;
-        writeCurve(data, curve);
+        writeCurve(data, curve, gpkg, dimensions);
         if (envelope) {
-            writeEnvelope(data, firstCoordinate, 2);
+            writeEnvelope(data, firstCoordinate, dimensions);
         }
         return data.array();
     }
@@ -607,14 +606,14 @@ final class GeometryBinary {
         var curves = new ArrayList<CompoundCurve>();
         int size = CURVE_HEADER_SIZE;
         for (var line : multi.lines()) {
-            var curve = planCurve(linePart(line), budget);
+            var curve = planCurve(linePart(line), budget, 2);
             curves.add(curve);
             size += curve.size();
         }
         var data = allocate(size, gpkg, srsId, false);
         data.put((byte) 0).putInt(MULTICURVE).putInt(curves.size());
         for (var curve : curves) {
-            writeCurve(data, curve);
+            writeCurve(data, curve, gpkg, 2);
         }
         return data.array();
     }
@@ -659,7 +658,7 @@ final class GeometryBinary {
     private static void writeSurface(ByteBuffer data, CurvePolygon polygon) {
         data.put((byte) 0).putInt(CURVEPOLYGON).putInt(polygon.rings().size());
         for (var ring : polygon.rings()) {
-            writeCurve(data, ring);
+            writeCurve(data, ring, false, 2);
         }
     }
 
@@ -667,7 +666,7 @@ final class GeometryBinary {
         var first = linePart(ring.lines().getFirst());
         var part = ring.lines().size() == 1 ? first : joinRingLines(ring, first, budget);
         requireClosedRing(part);
-        return planCurve(part, budget);
+        return planCurve(part, budget, 2);
     }
 
     private static CurvePart joinRingLines(Ring ring, CurvePart first, CoordinateBudget budget) {
@@ -677,7 +676,7 @@ final class GeometryBinary {
         var segments = new ArrayList<>(first.segments());
         for (int index = 1; index < ring.lines().size(); index++) {
             var part = linePart(ring.lines().get(index));
-            if (!sameXY(segments.getLast().end(), part.start())) {
+            if (!samePosition(segments.getLast().end(), part.start())) {
                 throw new DbException("Surface ring polylines do not share an endpoint");
             }
             if (part.segments().isEmpty() || part.segments().size() >= budget.remaining - segments.size()) {
@@ -696,20 +695,22 @@ final class GeometryBinary {
     }
 
     private static void requireClosedRing(CurvePart part) {
-        if (part.segments().isEmpty() || !sameXY(part.start(), part.segments().getLast().end())) {
+        if (part.segments().isEmpty() || !samePosition(part.start(), part.segments().getLast().end())) {
             throw new DbException("A surface ring must be closed");
         }
     }
 
-    private static boolean sameXY(Coordinate first, Coordinate second) {
+    private static boolean samePosition(Coordinate first, Coordinate second) {
         var a = first.ordinates();
         var b = second.ordinates();
-        return a.size() == 2 && b.size() == 2
-                && a.get(0).exactValue().compareTo(b.get(0).exactValue()) == 0
-                && a.get(1).exactValue().compareTo(b.get(1).exactValue()) == 0;
+        if (a.size() != b.size()) return false;
+        for (int axis = 0; axis < a.size(); axis++) {
+            if (a.get(axis).exactValue().compareTo(b.get(axis).exactValue()) != 0) return false;
+        }
+        return true;
     }
 
-    private static CompoundCurve planCurve(CurvePart part, CoordinateBudget budget) {
+    private static CompoundCurve planCurve(CurvePart part, CoordinateBudget budget, int dimensions) {
         var segments = part.segments();
         if (segments.isEmpty()) {
             throw new DbException("A polyline requires at least one segment");
@@ -732,12 +733,12 @@ final class GeometryBinary {
             budget.consume(circular ? 2 : 1);
             hasArcs |= circular;
         }
-        int size = CURVE_HEADER_SIZE * (1 + components) + (before - budget.remaining) * XY_SIZE;
+        int size = CURVE_HEADER_SIZE * (1 + components) + (before - budget.remaining) * dimensions * Double.BYTES;
         return new CompoundCurve(part, components, size, hasArcs);
     }
 
-    private static void writeCurve(ByteBuffer data, CompoundCurve curve) {
-        data.put((byte) 0).putInt(COMPOUNDCURVE).putInt(curve.components());
+    private static void writeCurve(ByteBuffer data, CompoundCurve curve, boolean gpkg, int dimensions) {
+        data.put((byte) 0).putInt(storageType(COMPOUNDCURVE, gpkg, dimensions)).putInt(curve.components());
         var segments = curve.part().segments();
         var componentStart = curve.part().start();
         for (int index = 0; index < segments.size();) {
@@ -746,16 +747,17 @@ final class GeometryBinary {
             while (end < segments.size() && (segments.get(end) instanceof Arc) == circular) {
                 end++;
             }
-            data.put((byte) 0).putInt(circular ? CIRCULARSTRING : LINESTRING);
+            data.put((byte) 0).putInt(storageType(circular ? CIRCULARSTRING : LINESTRING, gpkg, dimensions));
             data.putInt(1 + (end - index) * (circular ? 2 : 1));
-            writeCoordinate(data, componentStart);
+            writeCoordinate(data, componentStart, dimensions);
             for (; index < end; index++) {
                 var segment = segments.get(index);
                 if (segment instanceof Arc arc) {
-                    writeCoordinate(data, arc.support());
+                    if (dimensions == 3) throw new DbException("XYZ circular arcs are unsupported");
+                    writeCoordinate(data, arc.support(), dimensions);
                 }
                 componentStart = segment.end();
-                writeCoordinate(data, componentStart);
+                writeCoordinate(data, componentStart, dimensions);
             }
         }
     }
@@ -768,10 +770,6 @@ final class GeometryBinary {
             data.position(headerSize);
         }
         return data;
-    }
-
-    private static void writeCoordinate(ByteBuffer data, Coordinate coordinate) {
-        writeCoordinate(data, coordinate, 2);
     }
 
     private static void writeCoordinate(ByteBuffer data, Coordinate coordinate, int dimensions) {

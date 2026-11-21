@@ -5,5 +5,8 @@ MODEL DbXyz23 (en) AT "https://example.org/interlis/db" VERSION "1" =
     CLASS Marker =
       Position : DbXyz23.Position;
     END Marker;
+    CLASS Track =
+      Trace : POLYLINE WITH (STRAIGHTS) VERTEX Position;
+    END Track;
   END Data;
 END DbXyz23.

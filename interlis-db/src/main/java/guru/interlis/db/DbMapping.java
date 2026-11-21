@@ -645,6 +645,7 @@ final class DbMapping {
         String path = attr.name().declared().toString();
         if (!CardinalityUpper.finite(1).equals(attr.cardinality().upper())) throw unsupported(path);
         var type = plan.type(attr.effectiveType()).known().orElseThrow(() -> unsupported(path));
+        var curve = type instanceof GeometryType geometry && optional(attr) ? describeCurve(plan, geometry, path) : null;
         Kind kind = switch (type) {
             case TextType text when text.textKind() == TextKind.TEXT || text.textKind() == TextKind.MTEXT -> Kind.TEXT;
             case NumericType number when int32(number) -> Kind.INTEGER;
@@ -652,7 +653,7 @@ final class DbMapping {
             case CoordinateType coordinates when optional(attr) && (coordinates.dimensions() == 2
                     || (coordinates.dimensions() == 3 && !coordinates.multiCoordinate())) ->
                     coordinates.multiCoordinate() ? Kind.MULTIPOINT : Kind.POINT;
-            case GeometryType geometry when optional(attr) -> curveGeometryKind(plan, geometry, path);
+            case GeometryType ignored when curve != null -> curve.kind();
             case ReferenceType reference when reference.target().isPresent()
                     && reference.restrictions().isEmpty() && optional(attr) -> Kind.REFERENCE;
             default -> {
@@ -674,11 +675,14 @@ final class DbMapping {
             }
             target = Optional.of(symbol);
         }
-        int dimensions = !kind.geometry() ? 0 : type instanceof CoordinateType coord ? coord.dimensions() : 2;
+        int dimensions = curve != null ? curve.dimensions()
+                : kind.geometry() ? ((CoordinateType) type).dimensions() : 0;
         return new Column(attr, name, kind, Optional.of(type), target, 0, Optional.empty(), dimensions);
     }
 
-    private static Kind curveGeometryKind(TransferPlan plan, GeometryType geometry, String path) {
+    private record Curve(Kind kind, int dimensions) { }
+
+    private static Curve describeCurve(TransferPlan plan, GeometryType geometry, String path) {
         String feature = "attribute " + path + " (" + geometry.kind() + ")";
         var geometryKind = geometry.geometryKind();
         var kind = switch (geometryKind) {
@@ -690,21 +694,25 @@ final class DbMapping {
         if (geometry.lineAttributes().isPresent() || geometry.lineForms().isEmpty() || geometry.vertexDomain().isEmpty()) {
             throw unsupported(feature);
         }
+        boolean arcs = false;
         for (var id : geometry.lineForms()) {
             var form = plan.symbol(new SymbolRef(plan.snapshotId(), id)).known().orElseThrow();
             if (!(form.origin() instanceof Origin.PredefinedOrigin predefined)
                     || !(predefined.key().equals("INTERLIS.STRAIGHTS") || predefined.key().equals("INTERLIS.ARCS"))) {
                 throw unsupported(feature);
             }
+            arcs |= predefined.key().equals("INTERLIS.ARCS");
         }
         var domain = vertexDomain(plan, geometry);
         var type = plan.type(new TypeRef(plan.snapshotId(), domain.typeId())).known().orElseThrow();
         if (domain.generic() || !(type instanceof CoordinateType coordinates)
-                || coordinates.dimensions() != 2 || coordinates.multiCoordinate()) {
+                || coordinates.multiCoordinate()
+                || (coordinates.dimensions() != 2
+                        && !(coordinates.dimensions() == 3 && kind == Kind.POLYLINE && !arcs))) {
             throw unsupported(feature);
         }
         validateGeometryCrs(plan, coordinates, domain, geometryKind.name().toLowerCase(Locale.ROOT), path);
-        return kind;
+        return new Curve(kind, coordinates.dimensions());
     }
 
     static DomainSymbol vertexDomain(TransferPlan plan, GeometryType geometry) {
