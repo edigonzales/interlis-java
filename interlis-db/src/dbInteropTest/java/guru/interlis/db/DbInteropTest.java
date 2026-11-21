@@ -129,6 +129,8 @@ final class DbInteropTest {
         cases.replaceRelations(new TestDatabase(postgres, "replace_rel_native"), false);
         cases.replaceExternal(new TestDatabase(postgres, "replace_ext_reference"), true);
         cases.replaceExternal(new TestDatabase(postgres, "replace_ext_native"), false);
+        cases.updateFlat(new TestDatabase(postgres, "update_stable_reference"), true, true);
+        cases.updateFlat(new TestDatabase(postgres, "update_stable_native"), false, true);
     }
 
     private void assertWidePolymorphicProjection() throws Exception {

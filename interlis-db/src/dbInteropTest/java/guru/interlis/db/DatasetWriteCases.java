@@ -4,6 +4,7 @@ import guru.interlis.db.DbInteropTest.ReferenceTool;
 import guru.interlis.db.DbInteropTest.TestDatabase;
 import guru.interlis.execution.CancellationToken;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -11,6 +12,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.ArrayList;
 
 import static guru.interlis.db.DbInteropTest.*;
@@ -150,6 +152,75 @@ final class DatasetWriteCases {
                 + structure(model, "MutationLink", reference("Destination", target, bid)) + "</Detail>");
     }
 
+    void updateFlat(TestDatabase db, boolean referenceSchema, boolean stable) throws Exception {
+        String model = (stable ? "DbMutStable" : "DbMutation") + version;
+        schema(db, referenceSchema, model);
+        String main = identity("main", stable);
+        String later = identity("later", stable);
+        String clear = identity("clear", stable);
+        String untouched = identity("untouched", stable);
+        String foreign = identity("foreign", stable);
+        String kept = identity("kept", stable);
+        String added = identity("added", stable);
+        String standard = stable ? object(model, "MutationStandard", "ch20340000000001", "<Label>before</Label>") : "";
+        String newStandard = stable ? standard.replace("before", "after") : "";
+        Path original = delivery("update-original", model, new Basket(main,
+                        item(model, kept, "before") + item(model, identity("removed", stable), "removed") + standard),
+                new Basket(clear, item(model, identity("to-clear", stable), "clear me")),
+                new Basket(untouched, item(model, identity("untouched-item", stable), "leave")));
+        Path other = delivery("update-foreign", model,
+                new Basket(foreign, item(model, identity("their-item", stable), "other dataset")));
+        Path changed = delivery("updated", model, new Basket(main,
+                        item(model, kept, "after") + item(model, added, "added") + newStandard),
+                new Basket(clear, ""), new Basket(later, item(model, identity("another", stable), "new basket")));
+        seed(db, referenceSchema, model, "main", original);
+        seed(db, referenceSchema, model, "other", other);
+
+        try (var sql = db.connect()) {
+            var before = rows(db, sql, "mutationitem");
+            var keeper = key("main", main, kept);
+            long emptyBasket = before.get(key("main", clear, identity("to-clear", stable))).basket();
+            Row oldStandard = stable ? rows(db, sql, "mutationstandard").get(key("main", main, "ch20340000000001")) : null;
+
+            var rejected = cli(db, "update", model, "main", other, CancellationToken.none());
+            assertNotEquals(0, rejected.code(), rejected::diagnostics);
+            assertTrue(rejected.diagnostics().contains("another dataset or topic"), rejected::diagnostics);
+            Path invalid = Files.writeString(work.resolve("late-update-error.xtf"), Files.readString(changed) + "<trailing/>");
+            rejected = cli(db, "update", model, "main", invalid, CancellationToken.none());
+            assertNotEquals(0, rejected.code(), rejected::diagnostics);
+            assertEquals(before, rows(db, sql, "mutationitem"));
+
+            Path output = mutate(db, referenceSchema, "update", model, "main", changed);
+            var after = rows(db, sql, "mutationitem");
+            assertEquals(5, after.size(), after.toString());
+            assertEquals(before.get(keeper).withLabel("after"), after.get(keeper));
+            assertEquals(before.get(key("main", untouched, identity("untouched-item", stable))),
+                    after.get(key("main", untouched, identity("untouched-item", stable))));
+            assertEquals(before.get(key("other", foreign, identity("their-item", stable))),
+                    after.get(key("other", foreign, identity("their-item", stable))));
+            assertEquals("added", after.get(key("main", main, added)).label());
+            assertEquals("new basket", after.get(key("main", later, identity("another", stable))).label());
+            assertEquals(Long.toString(emptyBasket), scalar(sql, "SELECT t_id FROM " + db.table("t_ili2db_basket")
+                    + " WHERE t_ili_tid='" + clear + "'"));
+            assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("mutationitem") + " WHERE t_basket=" + emptyBasket));
+            if (stable) assertEquals(oldStandard.withLabel("after"),
+                    rows(db, sql, "mutationstandard").get(key("main", main, "ch20340000000001")));
+            var exported = children(readDataSection(output, version)).stream().flatMap(b -> children(b).stream())
+                    .filter(o -> kept.equals(id(o, version, "tid"))).findFirst().orElseThrow();
+            assertEquals("after", child(exported, "Label").getTextContent());
+
+            Path fresh = delivery("created-by-update", model, new Basket(identity("fresh", stable),
+                    item(model, identity("fresh-item", stable), "first version")));
+            assertCliSuccess(db, "update", model, "fresh", fresh);
+            assertEquals("first version", rows(db, sql, "mutationitem")
+                    .get(key("fresh", identity("fresh", stable), identity("fresh-item", stable))).label());
+        }
+    }
+
+    private static String identity(String name, boolean stable) {
+        return stable ? UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8)).toString() : name;
+    }
+
     private void checkConcurrentWriter(TestDatabase db, String model, Path input) throws Exception {
         try (var lock = db.connect(); var statement = lock.createStatement()) {
             if (db.postgis()) {
@@ -274,5 +345,7 @@ final class DatasetWriteCases {
     private static List<String> key(String dataset, String bid, String tid) { return List.of(dataset, bid, tid); }
 
     private record Basket(String bid, String objects) { }
-    private record Row(long dataset, long basket, long object, String label) { }
+    private record Row(long dataset, long basket, long object, String label) {
+        Row withLabel(String value) { return new Row(dataset, basket, object, value); }
+    }
 }

@@ -1,0 +1,14 @@
+INTERLIS 2.4;
+MODEL DbMutStable24 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  TOPIC Data =
+    BASKET OID AS INTERLIS.UUIDOID;
+    CLASS MutationItem =
+      OID AS INTERLIS.UUIDOID;
+      Label : TEXT*40;
+    END MutationItem;
+    CLASS MutationStandard =
+      OID AS INTERLIS.STANDARDOID;
+      Label : TEXT*40;
+    END MutationStandard;
+  END Data;
+END DbMutStable24.

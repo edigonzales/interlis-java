@@ -1,8 +1,14 @@
 package guru.interlis.db;
 
+import guru.interlis.db.DbMapping.Table;
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.SymbolKind;
+import guru.interlis.transfer.TopicDescriptor;
 
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.OptionalLong;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -12,6 +18,7 @@ import static guru.interlis.db.Ili2dbLayout.DATASET;
 import static guru.interlis.db.Ili2dbLayout.PREFIX;
 import static guru.interlis.db.Ili2dbLayout.T_BASKET;
 import static guru.interlis.db.Ili2dbLayout.T_ID;
+import static guru.interlis.db.Ili2dbLayout.T_ILI_TID;
 
 /** Operations on rows of existing datasets. All writes belong to the caller's transaction. */
 final class DbDatasetWrite {
@@ -30,6 +37,101 @@ final class DbDatasetWrite {
                 throw new DbException("Another writer is using the dataset tables", failure);
             }
             throw failure;
+        }
+    }
+
+    static void checkUpdateProfile(DbMapping mapping) {
+        for (var table : mapping.tables()) {
+            if (table.object().kind() != SymbolKind.CLASS || table.subtype() || table.hasDiscriminator()
+                    || table.oidDomain().isEmpty()
+                    || table.columns().stream().anyMatch(column -> column.kind().geometry()
+                    || column.kind() == DbMapping.Kind.REFERENCE)) {
+                throw new DbException("Unsupported mapping for update at " + table.object().name().declared());
+            }
+        }
+        if (!mapping.associations().isEmpty()) {
+            throw new DbException("Associations are outside the update profile");
+        }
+    }
+
+    static OptionalLong findBasket(Database db, long dataset, TopicDescriptor topic, String bid) throws SQLException {
+        String sql = "SELECT " + T_ID + ", dataset, topic, domains FROM " + db.technicalTable(BASKET)
+                + " WHERE " + T_ILI_TID + " = ?";
+        try (var statement = db.connection().prepareStatement(sql)) {
+            statement.setString(1, bid);
+            try (var rows = statement.executeQuery()) {
+                if (!rows.next()) return OptionalLong.empty();
+                long id = rows.getLong(1);
+                if (rows.getLong(2) != dataset || !topic.name().declared().toString().equals(rows.getString(3))) {
+                    throw new DbException("BID " + bid + " belongs to another dataset or topic");
+                }
+                String domains = rows.getString(4);
+                if (domains != null && !domains.isBlank()) {
+                    throw new DbException("Unsupported domain assignments for stored basket " + bid);
+                }
+                if (rows.next()) throw new DbException("Ambiguous stored BID " + bid);
+                return OptionalLong.of(id);
+            }
+        }
+    }
+
+    record ObjectKey(Table root, String tid) { }
+    record ExistingObject(Table type, long basket, long id) { }
+
+    static Map<ObjectKey, ExistingObject> readObjects(Database db, DbMapping mapping, TopicDescriptor topic, long basket,
+                                                       CancellationToken token) throws SQLException {
+        var objects = new HashMap<ObjectKey, ExistingObject>();
+        for (var table : mapping.tables()) {
+            if (!table.object().topic().filter(topic.symbol()::equals).isPresent()) continue;
+            token.throwIfCancellationRequested();
+            String sql = "SELECT " + T_ID + ", " + T_ILI_TID + " FROM " + db.table(table.name())
+                    + " WHERE " + T_BASKET + " = ?";
+            try (var statement = db.connection().prepareStatement(sql)) {
+                statement.setLong(1, basket);
+                try (var rows = statement.executeQuery()) {
+                    while (rows.next()) {
+                        token.throwIfCancellationRequested();
+                        long id = rows.getLong(1);
+                        String raw = rows.getString(2);
+                        if (raw == null || raw.isEmpty()) {
+                            throw new DbException("Missing stored TID at " + table.name() + " T_Id " + id);
+                        }
+                        String tid = DbTransfer.storedTid(table, raw);
+                        if (objects.putIfAbsent(new ObjectKey(table, tid), new ExistingObject(table, basket, id)) != null) {
+                            throw new DbException("Ambiguous stored object TID " + tid + " at " + table.name());
+                        }
+                    }
+                }
+            }
+        }
+        return objects;
+    }
+
+    static void checkStableObjectBasket(Database db, Table table, long dataset, long basket, String tid) throws SQLException {
+        String sql = """
+                SELECT 1 FROM %s obj JOIN %s b ON b.t_id = obj.t_basket
+                WHERE b.dataset = ? AND b.t_id <> ? AND %s = ? LIMIT 1
+                """.formatted(db.table(table.name()), db.technicalTable(BASKET), DbTransfer.tidExpression(table, "obj"));
+        try (var statement = db.connection().prepareStatement(sql)) {
+            statement.setLong(1, dataset);
+            statement.setLong(2, basket);
+            statement.setString(3, tid);
+            try (var rows = statement.executeQuery()) {
+                if (rows.next()) throw new DbException("Object OID " + tid + " is already stored in another basket");
+            }
+        }
+    }
+
+    static void deleteObject(Database db, DbMapping mapping, ExistingObject object) throws SQLException {
+        for (var table : mapping.tableChain(object.type().object().symbol()).reversed()) {
+            try (var statement = db.connection().prepareStatement("DELETE FROM " + db.table(table.name())
+                    + " WHERE " + T_ID + " = ? AND " + T_BASKET + " = ?")) {
+                statement.setLong(1, object.id());
+                statement.setLong(2, object.basket());
+                if (statement.executeUpdate() != 1) {
+                    throw new DbException("Missing stored row for T_Id " + object.id() + " in " + table.name());
+                }
+            }
         }
     }
 

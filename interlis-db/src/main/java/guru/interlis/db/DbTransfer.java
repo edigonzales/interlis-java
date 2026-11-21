@@ -552,7 +552,7 @@ final class DbTransfer {
         }
     }
 
-    private static String tidExpression(Table table, String alias) {
+    static String tidExpression(Table table, String alias) {
         String column = alias + "." + T_ILI_TID;
         return table.uuidIdentity() ? "lower(CAST(" + column + " AS text))" : column;
     }
@@ -975,17 +975,18 @@ final class DbTransfer {
         }
     }
 
-    enum WriteMode { IMPORT, REPLACE }
+    enum WriteMode { IMPORT, REPLACE, UPDATE }
 
     static void importData(Database db, DbMapping mapping, String dataset,
                            TransferReader reader, WriteMode mode, CancellationToken token) throws SQLException {
         token.throwIfCancellationRequested();
-        if (mode == WriteMode.REPLACE) DbDatasetWrite.lock(db, mapping);
+        if (mode != WriteMode.IMPORT) DbDatasetWrite.lock(db, mapping);
+        if (mode == WriteMode.UPDATE) DbDatasetWrite.checkUpdateProfile(mapping);
         var existing = findDataset(db, dataset);
         if (mode == WriteMode.IMPORT && existing.isPresent()) {
             throw new DbException("Dataset already exists: " + dataset);
         }
-        try (var importer = new Import(db, mapping, token)) {
+        try (var importer = new Import(db, mapping, mode == WriteMode.UPDATE, token)) {
             long datasetId = 0;
             boolean sawBasket = false;
             for (var next = reader.readNext(token); next.isPresent(); next = reader.readNext(token)) {
@@ -996,10 +997,10 @@ final class DbTransfer {
                                 || !reader.stableIdentityNamespaces().isEmpty()) {
                             throw new DbException("Expected the selected model and transfer-scoped identities in XTF");
                         }
-                        if (mode == WriteMode.REPLACE) DbDatasetWrite.checkIncomingMappings(db, mapping);
+                        if (mode != WriteMode.IMPORT) DbDatasetWrite.checkIncomingMappings(db, mapping);
                         if (existing.isPresent()) {
                             datasetId = existing.orElseThrow();
-                            DbDatasetWrite.clearDataset(db, mapping, datasetId, token);
+                            if (mode == WriteMode.REPLACE) DbDatasetWrite.clearDataset(db, mapping, datasetId, token);
                         } else {
                             datasetId = importer.insertDataset(dataset);
                         }
@@ -1055,7 +1056,7 @@ final class DbTransfer {
         return mapping.version() == LanguageVersion.ILI24 ? Optional.of(bid.value()) : Optional.empty();
     }
 
-    private static String storedTid(Table table, String tid) {
+    static String storedTid(Table table, String tid) {
         return table.uuidIdentity() ? canonicalUuid(tid, table.object().name().declared().toString()) : tid;
     }
 
@@ -1104,7 +1105,9 @@ final class DbTransfer {
         private final Database db;
         private final DbMapping mapping;
         private final CancellationToken token;
+        private final boolean updating;
         private final Map<String, PreparedStatement> inserts = new HashMap<>();
+        private final Map<Table, PreparedStatement> objectUpdates = new HashMap<>();
         private final Map<Composition, PreparedStatement> structureInserts = new HashMap<>();
         private final Map<Column, PreparedStatement> updates = new HashMap<>();
         private final Set<SymbolRef> referenceTargets;
@@ -1114,12 +1117,16 @@ final class DbTransfer {
         private final Map<String, StoredObject> externalObjects = new HashMap<>();
         private final List<Pending> pending = new ArrayList<>();
         private final List<Pending> externalPending = new ArrayList<>();
+        private final List<DbDatasetWrite.ExistingObject> removedObjects = new ArrayList<>();
+        private Map<DbDatasetWrite.ObjectKey, DbDatasetWrite.ExistingObject> existingObjects = Map.of();
+        private long datasetId;
         private long basketId;
 
-        Import(Database db, DbMapping mapping, CancellationToken token) {
+        Import(Database db, DbMapping mapping, boolean updating, CancellationToken token) {
             this.db = db;
             this.mapping = mapping;
             this.token = token;
+            this.updating = updating;
             referenceTargets = referenceTargets(false);
             externalTargets = referenceTargets(true);
             storedTids = mapping.tables().stream().anyMatch(Table::uuidIdentity)
@@ -1158,6 +1165,19 @@ final class DbTransfer {
                     || start.id().origin() != IdOrigin.SOURCE
                     || !start.stableOid().equals(basketOid(mapping, topic, start.id()))) {
                 throw new DbException("Unsupported basket metadata for " + start.id().value());
+            }
+            this.datasetId = datasetId;
+            if (updating) {
+                if (topic.oidRules().stream().noneMatch(rule -> rule.basket())) {
+                    throw new DbException("Update requires a stable BID in " + topic.name().declared());
+                }
+                var stored = DbDatasetWrite.findBasket(db, datasetId, topic, start.id().value());
+                if (stored.isPresent()) {
+                    basketId = stored.getAsLong();
+                    existingObjects = DbDatasetWrite.readObjects(db, mapping, topic, basketId, token);
+                    return;
+                }
+                existingObjects = new HashMap<>();
             }
             basketId = db.nextId();
             String sql = "INSERT INTO " + db.technicalTable(BASKET)
@@ -1203,12 +1223,17 @@ final class DbTransfer {
             if (!hasTid && identity.tid().isPresent()) {
                 throw new DbException("Unexpected TID for link " + table.object().name().declared());
             }
-            long id = db.nextId();
+            DbDatasetWrite.ExistingObject previous = updating && tid.isPresent()
+                    ? existingObjects.remove(new DbDatasetWrite.ObjectKey(root, tid.orElseThrow())) : null;
+            if (updating && previous == null && root.oidDomain().isPresent()) {
+                DbDatasetWrite.checkStableObjectBasket(db, root, datasetId, basketId, tid.orElseThrow());
+            }
+            long id = previous == null ? db.nextId() : previous.id();
             String context = tid.orElseGet(() -> table.object().name().declared() + " T_Id " + id);
             int found = 0;
             for (var part : chain) {
                 token.throwIfCancellationRequested();
-                found += insertObjectRow(part, table.name(), object, id, context, tid);
+                found += writeObjectRow(part, table.name(), object, id, context, tid, previous != null);
             }
             var compositions = chain.stream()
                     .flatMap(part -> mapping.compositionsForParent(part.object().symbol()).stream()).toList();
@@ -1239,13 +1264,13 @@ final class DbTransfer {
             }
         }
 
-        private int insertObjectRow(Table table, String concreteName, TransferObject object, long id, String context,
-                                    Optional<String> tid) throws SQLException {
-            boolean anonymousLink = table.object().kind() == SymbolKind.ASSOCIATION;
-            var statement = insertStatement(table);
-            statement.setLong(1, id);
-            statement.setLong(2, basketId);
-            int index = 3;
+        private int writeObjectRow(Table table, String concreteName, TransferObject object, long id, String context,
+                                   Optional<String> tid, boolean update) throws SQLException {
+            boolean link = table.object().kind() == SymbolKind.ASSOCIATION;
+            var statement = update ? objectUpdateStatement(table) : insertStatement(table);
+            int index = 1;
+            if (!update) statement.setLong(index++, id);
+            statement.setLong(index++, basketId);
             if (table.hasDiscriminator()) {
                 statement.setString(index++, concreteName);
             }
@@ -1263,20 +1288,24 @@ final class DbTransfer {
                     found++;
                 }
                 var payload = value.filter(val -> val != Undefined.INSTANCE).orElse(null);
-                if (anonymousLink && column.slot() instanceof RoleSlot && !(payload instanceof Reference)) {
+                if (link && column.slot() instanceof RoleSlot && !(payload instanceof Reference)) {
                     throw new DbException("Missing link endpoint at " + column.slot().name().declared());
                 }
-                if (!anonymousLink && column.slot() instanceof RoleSlot role && payload instanceof Structured link) {
-                    var reference = link.value(role.symbol()).orElse(null);
-                    if (link.values().size() != 1 || !(reference instanceof Reference)
-                            || role.role().owner().filter(link.type().symbol()::equals).isEmpty()) {
+                if (!link && column.slot() instanceof RoleSlot role && payload instanceof Structured embedded) {
+                    var reference = embedded.value(role.symbol()).orElse(null);
+                    if (embedded.values().size() != 1 || !(reference instanceof Reference)
+                            || role.role().owner().filter(embedded.type().symbol()::equals).isEmpty()) {
                         throw new DbException("Unsupported embedded association payload at " + role.name().declared());
                     }
                     payload = reference;
                 }
                 index = bindColumn(statement, index, table, column, id, context, object.identity().currentBasket(), payload);
             }
-            statement.executeUpdate();
+            if (update) {
+                statement.setLong(index++, id);
+                statement.setLong(index, basketId);
+            }
+            if (statement.executeUpdate() != 1) throw new DbException("Could not write object " + context + " in " + table.name());
             return found;
         }
 
@@ -1365,7 +1394,7 @@ final class DbTransfer {
             var table = chain.getFirst();
             var statement = structureInserts.get(composition);
             if (statement == null) {
-                statement = prepareInsert(table, composition);
+                statement = prepareWrite(table, composition, false);
                 structureInserts.put(composition, statement);
             }
             long id = db.nextId();
@@ -1413,15 +1442,30 @@ final class DbTransfer {
         private PreparedStatement insertStatement(Table table) throws SQLException {
             var statement = inserts.get(table.name());
             if (statement == null) {
-                statement = prepareInsert(table, null);
+                statement = prepareWrite(table, null, false);
                 inserts.put(table.name(), statement);
             }
             return statement;
         }
 
-        private PreparedStatement prepareInsert(Table table, Composition composition) throws SQLException {
-            var names = new StringJoiner(", ").add(T_ID).add(T_BASKET);
-            var values = new StringJoiner(", ").add("?").add("?");
+        private PreparedStatement objectUpdateStatement(Table table) throws SQLException {
+            var statement = objectUpdates.get(table);
+            if (statement == null) {
+                statement = prepareWrite(table, null, true);
+                objectUpdates.put(table, statement);
+            }
+            return statement;
+        }
+
+        private PreparedStatement prepareWrite(Table table, Composition composition, boolean update) throws SQLException {
+            var names = new ArrayList<String>();
+            var values = new ArrayList<String>();
+            if (!update) {
+                names.add(T_ID);
+                values.add("?");
+            }
+            names.add(T_BASKET);
+            values.add("?");
             if (table.hasDiscriminator()) {
                 names.add(T_TYPE);
                 values.add("?");
@@ -1431,8 +1475,10 @@ final class DbTransfer {
                 values.add("?");
             }
             if (composition != null) {
-                names.add(T_SEQ).add(quote(composition.ownerColumn()));
-                values.add("?").add("?");
+                names.add(T_SEQ);
+                names.add(quote(composition.ownerColumn()));
+                values.add("?");
+                values.add("?");
             }
             for (var column : table.columns()) {
                 names.add(quote(column.name()));
@@ -1442,8 +1488,14 @@ final class DbTransfer {
                     values.add("?");
                 });
             }
+            if (update) {
+                var assignments = new StringJoiner(", ");
+                for (int i = 0; i < names.size(); i++) assignments.add(names.get(i) + " = " + values.get(i));
+                return db.connection().prepareStatement("UPDATE " + db.table(table.name()) + " SET " + assignments
+                        + " WHERE " + T_ID + " = ? AND " + T_BASKET + " = ?");
+            }
             return db.connection().prepareStatement("INSERT INTO " + db.table(table.name())
-                    + " (" + names + ") VALUES (" + values + ")");
+                    + " (" + String.join(", ", names) + ") VALUES (" + String.join(", ", values) + ")");
         }
 
         private int bindValue(PreparedStatement statement, int index, Column column, TransferValue value)
@@ -1533,9 +1585,15 @@ final class DbTransfer {
             patchReferences(pending, objects);
             pending.clear();
             objects.clear();
+            removedObjects.addAll(existingObjects.values());
+            existingObjects = Map.of();
         }
 
         void finishTransfer() throws SQLException {
+            for (var removed : removedObjects) {
+                token.throwIfCancellationRequested();
+                DbDatasetWrite.deleteObject(db, mapping, removed);
+            }
             patchReferences(externalPending, externalObjects);
         }
 
@@ -1579,6 +1637,7 @@ final class DbTransfer {
         public void close() throws SQLException {
             var statements = new ArrayList<>(inserts.values());
             statements.addAll(structureInserts.values());
+            statements.addAll(objectUpdates.values());
             statements.addAll(updates.values());
             closeStatements(statements);
         }

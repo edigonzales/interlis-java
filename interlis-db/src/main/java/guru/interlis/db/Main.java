@@ -27,7 +27,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public final class Main {
     private static final String USAGE = """
-            Usage: interlis-db <export|import|replace> --model NAME --dataset NAME
+            Usage: interlis-db <export|import|replace|update> --model NAME --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
                    interlis-db schemaimport --model NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
@@ -61,7 +61,7 @@ public final class Main {
             cancellation.throwIfCancellationRequested();
             options.checkPaths();
             switch (options.command()) {
-                case IMPORT, REPLACE -> importData(options, password, cancellation);
+                case IMPORT, REPLACE, UPDATE -> importData(options, password, cancellation);
                 case EXPORT -> exportData(options, password, cancellation);
                 case SCHEMAIMPORT -> createSchema(options, password, cancellation);
             }
@@ -107,7 +107,11 @@ public final class Main {
                      case ILI23 -> new Xtf23Reader(mapping.plan(), input);
                      case ILI24 -> new Xtf24Reader(mapping.plan(), input);
                  }) {
-                var mode = options.command() == Command.REPLACE ? DbTransfer.WriteMode.REPLACE : DbTransfer.WriteMode.IMPORT;
+                var mode = switch (options.command()) {
+                    case REPLACE -> DbTransfer.WriteMode.REPLACE;
+                    case UPDATE -> DbTransfer.WriteMode.UPDATE;
+                    default -> DbTransfer.WriteMode.IMPORT;
+                };
                 DbTransfer.importData(database, mapping, options.dataset(), reader, mode, cancellation);
             }
             cancellation.throwIfCancellationRequested();
@@ -137,7 +141,7 @@ public final class Main {
         }
     }
 
-    private enum Command { IMPORT, REPLACE, EXPORT, SCHEMAIMPORT }
+    private enum Command { IMPORT, REPLACE, UPDATE, EXPORT, SCHEMAIMPORT }
 
     private record Options(Command command, String model, String dataset, Path file, Path gpkg,
                            String pgUrl, String schema, String user) {
@@ -147,9 +151,10 @@ public final class Main {
             Command command = switch (args.length == 0 ? "" : args[0]) {
                 case "import" -> Command.IMPORT;
                 case "replace" -> Command.REPLACE;
+                case "update" -> Command.UPDATE;
                 case "export" -> Command.EXPORT;
                 case "schemaimport" -> Command.SCHEMAIMPORT;
-                default -> throw new IllegalArgumentException("Expected import, replace, export or schemaimport");
+                default -> throw new IllegalArgumentException("Expected import, replace, update, export or schemaimport");
             };
             var flags = new HashMap<String, String>();
             Path file = null;
@@ -210,7 +215,7 @@ public final class Main {
 
         Database open(String password) throws SQLException {
             boolean writable = command != Command.EXPORT;
-            int isolation = command == Command.REPLACE ? Connection.TRANSACTION_READ_COMMITTED
+            int isolation = command == Command.REPLACE || command == Command.UPDATE ? Connection.TRANSACTION_READ_COMMITTED
                     : Connection.TRANSACTION_REPEATABLE_READ;
             return gpkg == null ? Database.openPostgres(pgUrl, schema, user, password, writable, isolation)
                     : Database.openGeoPackage(gpkg, writable);

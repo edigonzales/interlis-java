@@ -64,6 +64,19 @@ Zeigt eine bestehen bleibende Referenz auf eine der alten internen Objekt-IDs,
 wird der Ersatz zurückgerollt. Ausgehende `EXTERNAL`-Referenzen der neuen
 Lieferung verwenden die bestehende Suche im selben Schema.
 
+## Baskets aktualisieren
+
+`update` verwendet dieselben Optionen wie `import`. Ein fehlender Datensatz
+wird angelegt. Jeder gelieferte Basket enthält seinen vollständigen neuen
+Bestand. Vorhandene Baskets und überlebende Objekte behalten ihre internen IDs.
+Ausgelassene Objekte im gelieferten Basket werden gelöscht. Ausgelassene
+Baskets bleiben erhalten. Bei fremder oder mehrdeutiger BID sowie bei einem
+abweichenden Topic bricht die Operation ab. Eine OID kann bei der
+Aktualisierung innerhalb ihres Baskets wiederverwendet werden.
+
+Das erste Update-Profil unterstützt flache Klassen mit `UUIDOID` oder
+`STANDARDOID` in Baskets mit stabiler UUID-BID.
+
 ## Referenzprofil
 
 Für die Erzeugung mit dem Originalwerkzeug verwende
