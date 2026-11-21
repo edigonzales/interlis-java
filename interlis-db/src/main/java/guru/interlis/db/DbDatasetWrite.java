@@ -43,7 +43,7 @@ final class DbDatasetWrite {
 
     static void checkUpdateProfile(DbMapping mapping) {
         for (var table : mapping.tables()) {
-            if (table.object().kind() != SymbolKind.CLASS
+            if ((table.object().kind() != SymbolKind.CLASS && table.object().kind() != SymbolKind.STRUCTURE)
                     || table.columns().stream().anyMatch(column -> column.kind() == DbMapping.Kind.REFERENCE)) {
                 throw new DbException("Unsupported mapping for update at " + table.object().name().declared());
             }
@@ -92,7 +92,8 @@ final class DbDatasetWrite {
                                                        CancellationToken token) throws SQLException {
         var objects = new HashMap<ObjectKey, ExistingObject>();
         for (var table : mapping.tables()) {
-            if (!table.hasTidColumn() || table.object().topic().filter(topic.symbol()::equals).isEmpty()) continue;
+            if (!table.hasTidColumn() || table.object().kind() == SymbolKind.STRUCTURE
+                    || table.object().topic().filter(topic.symbol()::equals).isEmpty()) continue;
             token.throwIfCancellationRequested();
             String discriminator = table.hasDiscriminator() ? ", " + T_TYPE : "";
             String sql = "SELECT " + T_ID + ", " + T_ILI_TID + discriminator + " FROM " + db.table(table.name())
@@ -131,6 +132,15 @@ final class DbDatasetWrite {
             try (var rows = statement.executeQuery()) {
                 if (rows.next()) throw new DbException("Object OID " + tid + " is already stored in another basket");
             }
+        }
+    }
+
+    static void clearBasketPayload(Database db, DbMapping mapping, long basket,
+                                   CancellationToken token) throws SQLException {
+        for (var table : mapping.tables().reversed()) {
+            if (table.object().kind() != SymbolKind.STRUCTURE) continue;
+            token.throwIfCancellationRequested();
+            delete(db, "DELETE FROM " + db.table(table.name()) + " WHERE " + T_BASKET + " = ?", basket);
         }
     }
 

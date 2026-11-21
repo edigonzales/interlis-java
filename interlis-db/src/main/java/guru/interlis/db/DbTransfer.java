@@ -1172,6 +1172,7 @@ final class DbTransfer {
                 if (stored.isPresent()) {
                     basketId = stored.getAsLong();
                     existingObjects = DbDatasetWrite.readObjects(db, mapping, topic, basketId, token);
+                    DbDatasetWrite.clearBasketPayload(db, mapping, basketId, token);
                     return;
                 }
                 existingObjects = new HashMap<>();

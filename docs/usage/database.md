@@ -81,6 +81,8 @@ Bei fehlender oder mehrdeutiger Zuordnung bricht das Update ab.
 In einer Klassenhierarchie teilen die aktualisierten Fragmente weiterhin
 dieselbe `T_Id`. Die konkrete Klasse eines bestehenden Objekts muss
 übereinstimmen. Geometriewerte können ersetzt oder gelöscht werden.
+Strukturzeilen des gelieferten Baskets werden aus den neuen optionalen Werten,
+Listen und Bags aufgebaut. Die Eigentümer behalten ihre internen IDs.
 
 ## Referenzprofil
 

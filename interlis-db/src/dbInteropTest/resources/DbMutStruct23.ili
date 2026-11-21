@@ -1,0 +1,17 @@
+INTERLIS 2.3;
+MODEL DbMutStruct23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  TOPIC Data =
+    STRUCTURE LeafValue =
+      Label : TEXT*20;
+    END LeafValue;
+    STRUCTURE OuterValue =
+      One : LeafValue;
+      Chain : LIST {0..*} OF LeafValue;
+      Flags : BAG {0..*} OF LeafValue;
+    END OuterValue;
+    CLASS TreeRecord =
+      Label : TEXT*40;
+      Detail : OuterValue;
+    END TreeRecord;
+  END Data;
+END DbMutStruct23.

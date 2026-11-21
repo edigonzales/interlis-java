@@ -263,6 +263,68 @@ final class DatasetWriteCases {
                 : "<Center><g:coord><g:c1>%s</g:c1><g:c2>1200000.375</g:c2></g:coord></Center>".formatted(x);
     }
 
+    void updateStructures(TestDatabase db, boolean referenceSchema) throws Exception {
+        String model = "DbMutStruct" + version;
+        schema(db, referenceSchema, model);
+        String oldTree = tree(model, "old one", List.of("old entry", "discard"), List.of("old flag", "other"));
+        Path initial = delivery("tree-before", model, new Basket("trees",
+                object(model, "TreeRecord", "keeper", "<Label>before</Label>" + oldTree)
+                + object(model, "TreeRecord", "clear", "<Label>clear</Label>" + tree(model, "clear it", List.of(), List.of()))));
+        Path changed = delivery("tree-after", model, new Basket("trees",
+                object(model, "TreeRecord", "keeper", "<Label>after</Label>"
+                        + tree(model, "new one", List.of("first", "second", "first"), List.of("repeat", "repeat")))
+                + object(model, "TreeRecord", "clear", "<Label>empty</Label>")));
+        seed(db, referenceSchema, model, "structures", initial);
+        try (var sql = db.connect()) {
+            var before = rows(db, sql, "treerecord");
+            var oldLeafIds = strings(sql, "SELECT t_id FROM " + db.table("leafvalue"));
+            assertEquals(6, oldLeafIds.size());
+            Path output = mutate(db, referenceSchema, "update", model, "structures", changed);
+            var after = rows(db, sql, "treerecord");
+            long owner = after.get(key("structures", "trees", "keeper")).object();
+            assertEquals(before.get(key("structures", "trees", "keeper")).withLabel("after"),
+                    after.get(key("structures", "trees", "keeper")));
+            assertEquals(before.get(key("structures", "trees", "clear")).withLabel("empty"),
+                    after.get(key("structures", "trees", "clear")));
+            String root = scalar(sql, "SELECT t_id FROM " + db.table("outervalue") + " WHERE treerecord_detail=" + owner);
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("outervalue")));
+            assertEquals(List.of("new one"), strings(sql, "SELECT label FROM " + db.table("leafvalue") + " WHERE outervalue_one=" + root));
+            assertEquals(List.of("first", "second", "first"), strings(sql, "SELECT label FROM " + db.table("leafvalue")
+                    + " WHERE outervalue_chain=" + root + " ORDER BY t_seq"));
+            assertEquals(List.of("repeat", "repeat"), strings(sql, "SELECT label FROM " + db.table("leafvalue")
+                    + " WHERE outervalue_flags=" + root + " ORDER BY t_seq"));
+            var newLeafIds = strings(sql, "SELECT t_id FROM " + db.table("leafvalue"));
+            assertEquals(6, newLeafIds.size());
+            assertTrue(newLeafIds.stream().noneMatch(oldLeafIds::contains));
+            var objects = children(children(readDataSection(output, version)).getFirst());
+            var keeper = objects.stream().filter(o -> "keeper".equals(id(o, version, "tid"))).findFirst().orElseThrow();
+            assertEquals("new one", child(children(child(children(child(keeper, "Detail")).getFirst(), "One")).getFirst(),
+                    "Label").getTextContent());
+            var cleared = objects.stream().filter(o -> "clear".equals(id(o, version, "tid"))).findFirst().orElseThrow();
+            assertNull(child(cleared, "Detail"));
+        }
+    }
+
+    private String tree(String model, String one, List<String> chain, List<String> flags) {
+        return "<Detail>" + structure(model, "OuterValue", leaves(model, "One", List.of(one))
+                + leaves(model, "Chain", chain) + leaves(model, "Flags", flags)) + "</Detail>";
+    }
+
+    private String leaves(String model, String field, List<String> values) {
+        if (values.isEmpty()) return "";
+        var xml = new StringBuilder("<").append(field).append(">");
+        for (String value : values) xml.append(structure(model, "LeafValue", "<Label>" + value + "</Label>"));
+        return xml.append("</").append(field).append(">").toString();
+    }
+
+    private static List<String> strings(Connection sql, String query) throws SQLException {
+        var values = new ArrayList<String>();
+        try (var statement = sql.createStatement(); var rows = statement.executeQuery(query)) {
+            while (rows.next()) values.add(rows.getString(1));
+        }
+        return values;
+    }
+
     private void checkStoredIdentities(TestDatabase db, Connection sql, String model, Path input,
                                        Map<List<String>, Row> after) throws Exception {
         assertCliSuccess(db, "update", model, "main", input);
