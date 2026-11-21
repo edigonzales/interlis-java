@@ -165,6 +165,72 @@ final class ModelCases {
                 }).toList();
     }
 
+    void importedTopics(TestDatabase baseline, TestDatabase nativeSchema) throws Exception {
+        String model = "DbReachTopic" + version;
+        String library = "DbImportedTarget" + version;
+        var modelFile = fixture(model + ".ili");
+        var libraryFile = fixture(library + ".ili");
+        createReference(baseline, model, modelFile);
+        var schema = cli(nativeSchema, "schemaimport", model, null, modelFile, CancellationToken.none(),
+                "--model-file", libraryFile.toString());
+        assertEquals(0, schema.code(), schema::diagnostics);
+        try (var refSql = baseline.connect(); var sql = nativeSchema.connect()) {
+            DbSchemaCatalog.read(refSql, baseline.postgis(), baseline.schema())
+                    .assertSameAs(DbSchemaCatalog.read(sql, nativeSchema.postgis(), nativeSchema.schema()));
+        }
+        Files.delete(modelFile);
+        Files.delete(libraryFile);
+        var target = fixture(library + ".xtf");
+        var input = fixture(model + ".xtf");
+        var own = Files.writeString(work.resolve("own-topic.xtf"), Files.readString(input).replace("fixture-", "own-"));
+        var duplicate = Files.writeString(work.resolve("duplicate-catalog.xtf"),
+                Files.readString(target).replace("target-basket", "duplicate-basket"));
+        var rejected = Files.writeString(work.resolve("ambiguous-topic.xtf"), Files.readString(input)
+                .replace("fixture-", "ambiguous-").replace(" BID=\"target-basket\"", ""));
+        for (var db : List.of(baseline, nativeSchema)) {
+            referenceImport(db, "catalog", target);
+            referenceImport(db, "legacy", input);
+            Path output = work.resolve("legacy-topic.xtf");
+            assertCliSuccess(db, "export", model, "legacy", output);
+            assertTopicDelivery(output, model, "fixture");
+
+            assertCliSuccess(db, "import", model, "native", own);
+            referenceExport(db, "native", output);
+            assertTopicDelivery(output, model, "own");
+            referenceImport(db, "catalog-copy", duplicate);
+            try (var sql = db.connect()) {
+                String metadata = db.table("t_ili2db_classname");
+                assertEquals(library + ".Catalog.Marker", scalar(sql, "SELECT iliname FROM " + metadata + " WHERE sqlname='marker'"));
+                assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + metadata + " WHERE iliname LIKE '" + library + ".Unused.%'"));
+                String query = "SELECT COUNT(*) FROM " + db.table("report") + " r JOIN " + db.table("note")
+                        + " n ON n.report_details=r.t_id JOIN " + db.table("entry")
+                        + " e ON e.t_id=r.site AND e.t_id=n.destination JOIN " + db.table("t_ili2db_basket")
+                        + " b ON e.t_basket=b.t_id WHERE e.t_ili_tid='target-entry' AND b.t_ili_tid='target-basket'";
+                assertEquals("2", scalar(sql, query));
+                var failed = cli(db, "import", model, "ambiguous", rejected, CancellationToken.none());
+                assertEquals(1, failed.code(), failed::diagnostics);
+                assertTrue(failed.diagnostics().contains("Ambiguous stored reference target target-entry"), failed::diagnostics);
+                assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + db.table("t_ili2db_dataset")
+                        + " WHERE datasetname='ambiguous'"));
+                assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("report")));
+                assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("note")));
+            }
+        }
+    }
+
+    private void assertTopicDelivery(Path file, String model, String prefix) throws Exception {
+        var data = readDataSection(file, version);
+        assertEquals(List.of(model), headerModels(data));
+        assertEquals(1, children(data).size());
+        var basket = children(data).getFirst();
+        assertEquals(prefix + "-basket", id(basket, version, "bid"));
+        var report = children(basket).getFirst();
+        assertEquals(prefix + "-report", id(report, version, "tid"));
+        assertEquals("target-entry", id(child(report, "Site"), version, "ref"));
+        var note = children(child(report, "Details")).getFirst();
+        assertEquals("target-entry", id(child(note, "Destination"), version, "ref"));
+    }
+
     private Path domainInput(String model) throws Exception {
         String shared = "DbSharedSource" + version;
         var input = work.resolve(model + ".xtf");

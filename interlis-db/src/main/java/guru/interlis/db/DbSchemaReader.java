@@ -87,7 +87,7 @@ final class DbSchemaReader {
 
         var crsPair = settings.srsModels().map(pair -> new DbCrsPair(plan, pair, settings.crs(), settings.alternateCrs()));
         var roots = crsPair.map(pair -> List.of(pair.models().getFirst())).orElseGet(plan::rootModels);
-        var selected = DbMapping.storageObjects(plan, roots);
+        var selected = DbMapping.storageObjects(plan, roots, token);
         DbMapping.checkLayout(plan, selected);
         if (!settings.multiSrs() && plan.topics().stream()
                 .anyMatch(topic -> plan.rootModels().contains(topic.model()) && DbDomains.deferred(topic))) {

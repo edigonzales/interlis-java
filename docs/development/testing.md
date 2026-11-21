@@ -103,6 +103,9 @@ mit den gespeicherten Quellen.
 importierte Struktur als Einzelwert, Liste und Bag. Es vergleicht
 die Abbildung, die Eigentümer und Positionen sowie die Qualifikation
 der Werte im XTF.
+`*DbInteropTest.*ImportedTopic*` prüft den Umfang der Abbildung bei
+`DEPENDS ON`, den Werkzeugwechsel mit einem separaten Zieldatensatz
+und den Rollback bei mehrdeutigen Ziel-TIDs.
 
 Die Fälle `*DbInteropTest.*Mutation*` prüfen `replace` und `update`
 in beiden Werkzeugrichtungen. Sie prüfen die internen IDs und den Bestand

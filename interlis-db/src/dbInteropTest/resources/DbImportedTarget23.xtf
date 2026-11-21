@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="imported topic fixture">
+    <MODELS><MODEL NAME="DbImportedTarget23" VERSION="1" URI="https://example.org/interlis/db"/></MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <DbImportedTarget23.Catalog BID="target-basket">
+      <DbImportedTarget23.Catalog.Entry TID="target-entry"/>
+      <DbImportedTarget23.Catalog.Marker TID="target-marker"/>
+    </DbImportedTarget23.Catalog>
+  </DATASECTION>
+</TRANSFER>

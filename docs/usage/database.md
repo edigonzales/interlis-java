@@ -17,6 +17,9 @@ massgeblich.
 Verwendete Strukturen aus importierten Modellen erhalten ihre Tabellen samt
 Rückverweisen. Optionale Einzelwerte, `LIST OF` und `BAG OF` verwenden
 denselben Strukturtyp und behalten dessen qualifizierten XTF-Namen.
+Ein `DEPENDS ON` übernimmt die Abbildung des importierten Zieltopics.
+`EXTERNAL`-Attribute und Rollen können dessen Objekte auch in separaten
+Datensätzen referenzieren.
 [Referenzhandbuch](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst)
 
 ## Schemaerzeugung

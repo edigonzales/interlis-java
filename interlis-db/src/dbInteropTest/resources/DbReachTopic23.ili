@@ -1,0 +1,18 @@
+INTERLIS 2.3;
+
+MODEL DbReachTopic23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  IMPORTS DbImportedTarget23;
+  TOPIC Survey =
+    DEPENDS ON DbImportedTarget23.Catalog;
+    STRUCTURE Note =
+      Destination : REFERENCE TO (EXTERNAL) DbImportedTarget23.Catalog.Entry;
+    END Note;
+    CLASS Report =
+      Details : Note;
+    END Report;
+    ASSOCIATION SurveySite =
+      Reports -- {0..*} Report;
+      Site (EXTERNAL) -- {0..1} DbImportedTarget23.Catalog.Entry;
+    END SurveySite;
+  END Survey;
+END DbReachTopic23.

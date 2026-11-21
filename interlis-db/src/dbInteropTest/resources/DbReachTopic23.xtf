@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="imported topic fixture">
+    <MODELS><MODEL NAME="DbReachTopic23" VERSION="1" URI="https://example.org/interlis/db"/></MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <DbReachTopic23.Survey BID="fixture-basket">
+      <DbReachTopic23.Survey.Report TID="fixture-report">
+        <Details><DbReachTopic23.Survey.Note><Destination REF="target-entry" BID="target-basket"/></DbReachTopic23.Survey.Note></Details>
+        <Site REF="target-entry" BID="target-basket"/>
+      </DbReachTopic23.Survey.Report>
+    </DbReachTopic23.Survey>
+  </DATASECTION>
+</TRANSFER>

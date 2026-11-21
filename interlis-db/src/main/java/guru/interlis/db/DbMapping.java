@@ -312,15 +312,28 @@ final class DbMapping {
         return table;
     }
 
-    static List<ObjectDescriptor> storageObjects(TransferPlan plan, List<SymbolRef> roots) {
+    static List<ObjectDescriptor> storageObjects(TransferPlan plan, List<SymbolRef> roots, CancellationToken token) {
+        var topics = new HashSet<SymbolRef>();
+        var dependencies = new ArrayDeque<SymbolRef>();
+        for (var topic : plan.topics()) {
+            if (roots.contains(topic.model())) dependencies.add(topic.symbol());
+        }
+        while (!dependencies.isEmpty()) {
+            token.throwIfCancellationRequested();
+            var topic = dependencies.removeFirst();
+            if (topics.add(topic)) dependencies.addAll(plan.topic(topic).orElseThrow().dependencies());
+        }
         var selected = new HashSet<SymbolRef>();
         var pending = new ArrayDeque<ObjectDescriptor>();
         for (var object : plan.objects()) {
-            if (roots.contains(object.model())) include(object, selected, pending);
+            if (roots.contains(object.model()) || object.topic().filter(topics::contains).isPresent()) {
+                include(object, selected, pending);
+            }
         }
         var extensions = plan.objects().stream().filter(object -> object.baseType().isPresent())
                 .collect(Collectors.groupingBy(object -> object.baseType().orElseThrow()));
         while (!pending.isEmpty()) {
+            token.throwIfCancellationRequested();
             var object = pending.removeFirst();
             if (object.kind() == SymbolKind.STRUCTURE) {
                 object.baseType().flatMap(plan::object).ifPresent(base -> include(base, selected, pending));
@@ -353,7 +366,7 @@ final class DbMapping {
         var crs = new CrsDefaults(defaultEpsg, 0);
         var crsPair = srsModels.map(pair -> new DbCrsPair(plan, pair, crs, crs));
         var roots = crsPair.map(pair -> List.of(pair.models().getFirst())).orElseGet(plan::rootModels);
-        var objects = storageObjects(plan, roots);
+        var objects = storageObjects(plan, roots, token);
         checkLayout(plan, objects);
         if (!multiSrs && plan.topics().stream()
                 .anyMatch(topic -> plan.rootModels().contains(topic.model()) && DbDomains.deferred(topic))) {

@@ -1,0 +1,11 @@
+INTERLIS 2.3;
+
+MODEL DbImportedTarget23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  TOPIC Catalog =
+    CLASS Entry = END Entry;
+    CLASS Marker = END Marker;
+  END Catalog;
+  TOPIC Unused =
+    CLASS Other = END Other;
+  END Unused;
+END DbImportedTarget23.
