@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -36,6 +37,7 @@ public final class Main {
                    interlis-db delete --model NAME [--model NAME]... --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME)
                    interlis-db schemaimport --model NAME [--model NAME]...
+                    [--add-models]
                     [--default-epsg CODE] [--multi-srs [--alt-srs-model ORIGINAL=ALTERNATE]]
                     [--model-file IMPORT.ili]...
                     [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
@@ -94,6 +96,14 @@ public final class Main {
 
     private static void createSchema(Options options, String password, CancellationToken cancellation)
             throws IOException, SQLException {
+        if (options.addModels()) {
+            try (var database = options.open(password)) {
+                appendModels(database, options, cancellation);
+                cancellation.throwIfCancellationRequested();
+                database.commit();
+            }
+            return;
+        }
         var plan = SchemaPlan.read(options.models(), options.file(), options.modelFiles(), options.gpkg() != null,
                 options.splitGeometries(), options.defaultEpsg(), options.multiSrs(), options.srsModels(), cancellation);
         cancellation.throwIfCancellationRequested();
@@ -107,6 +117,37 @@ public final class Main {
                 database.commit();
             }
         }
+    }
+
+    private static void appendModels(Database db, Options options, CancellationToken cancellation)
+            throws IOException, SQLException {
+        if (!db.gpkg()) {
+            String tables = Ili2dbLayout.METADATA_TABLES.stream().map(db::technicalTable).sorted().collect(Collectors.joining(", "));
+            try (var statement = db.connection().createStatement()) {
+                statement.execute("LOCK TABLE " + tables + " IN SHARE ROW EXCLUSIVE MODE NOWAIT");
+            }
+        }
+        var settings = DbSchemaReader.readSettings(db, options.models());
+        if (settings.defaultEpsg() == 0
+                || (options.explicitEpsg() && options.defaultEpsg() != settings.defaultEpsg())
+                || (options.explicitLayout() && options.splitGeometries() != settings.splitGeometries())
+                || (options.multiSrs() && !settings.multiSrs())
+                || (options.createGeometryIndexes() && !settings.createGeometryIndexes())) {
+            throw new DbException("Schema options conflict with the existing ili2db SETTINGS");
+        }
+        var names = DbSchemaReader.namesForExtension(db, options.models());
+        var plan = SchemaPlan.read(options.models(), options.file(), options.modelFiles(), db.gpkg(),
+                settings.splitGeometries(), settings.defaultEpsg(), settings.multiSrs(), Optional.empty(), names, cancellation);
+        if (plan.addedTables().isEmpty()) throw new DbException("No new model tables to add");
+        plan = plan.withModelFiles(DbSchemaReader.newModelFiles(db, plan.modelFiles(), cancellation));
+        if (db.gpkg()) GeoPackageSchema.addModels(db, plan, settings.createGeometryIndexes(), cancellation);
+        else SchemaSql.addTables(db, plan, settings.createGeometryIndexes(), cancellation);
+
+        var transfer = plan.mapping().plan();
+        var byVersion = transfer.rootModels().stream().map(model -> transfer.model(model).orElseThrow())
+                .collect(Collectors.groupingBy(model -> model.languageVersion(),
+                        Collectors.mapping(model -> model.name().declared().last(), Collectors.toList())));
+        for (var models : byVersion.values()) DbSchemaReader.read(db, models, cancellation);
     }
 
     private static void importData(Options options, String password, CancellationToken cancellation)
@@ -165,7 +206,8 @@ public final class Main {
 
     private record Options(Command command, List<String> models, String dataset, Path file, Path gpkg,
                            String pgUrl, String schema, String user, boolean createGeometryIndexes,
-                           boolean splitGeometries, int defaultEpsg, boolean multiSrs,
+                           boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean addModels,
+                           boolean explicitEpsg, boolean explicitLayout,
                            Optional<DbCrsPair.Models> srsModels, List<Path> modelFiles) {
         private static final Set<String> NAMES = Set.of("--dataset", "--gpkg", "--pg-url", "--schema", "--user",
                 "--default-epsg", "--alt-srs-model");
@@ -188,7 +230,7 @@ public final class Main {
             for (int i = 1; i < args.length; i++) {
                 String arg = args[i];
                 if (arg.equals("--create-geom-index") || arg.equals("--one-geom-per-table")
-                        || arg.equals("--gpkg-multi-geom-per-table") || arg.equals("--multi-srs")) {
+                        || arg.equals("--gpkg-multi-geom-per-table") || arg.equals("--multi-srs") || arg.equals("--add-models")) {
                     if (command != Command.SCHEMAIMPORT) {
                         throw new IllegalArgumentException(arg + " is only valid with schemaimport");
                     }
@@ -273,19 +315,25 @@ public final class Main {
             if (alternateSrsModel != null && models.size() != 1) {
                 throw new IllegalArgumentException("--alt-srs-model requires one --model");
             }
+            boolean addModels = schemaFlags.contains("--add-models");
+            if (addModels && alternateSrsModel != null) {
+                throw new IllegalArgumentException("--add-models uses the existing schema's CRS settings");
+            }
             var srsModels = Optional.ofNullable(alternateSrsModel).map(value -> DbCrsPair.Models.parse(value, models.getFirst()));
             return new Options(command, List.copyOf(models), dataset, file, gpkg, pgUrl, schema, user,
                     schemaFlags.contains("--create-geom-index"),
-                    oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg, multiSrs, srsModels,
+                    oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg, multiSrs, addModels,
+                    epsg != null, oneGeometryPerTable || multipleGeoPackageGeometries, srsModels,
                     List.copyOf(modelFiles));
         }
 
         void checkPaths() throws IOException {
-            if (gpkg != null && command != Command.SCHEMAIMPORT) {
+            if (gpkg != null && (command != Command.SCHEMAIMPORT || addModels)) {
                 if (!Files.isRegularFile(gpkg)) {
                     throw new DbException("Expected an existing GeoPackage file");
                 }
-                if (file != null && (file.equals(gpkg) || (Files.exists(file) && Files.isSameFile(file, gpkg)))) {
+                if (command != Command.SCHEMAIMPORT && file != null
+                        && (file.equals(gpkg) || (Files.exists(file) && Files.isSameFile(file, gpkg)))) {
                     throw new DbException("The XTF and GeoPackage paths must identify different files");
                 }
             }
@@ -295,7 +343,7 @@ public final class Main {
             boolean writable = command != Command.EXPORT;
             int isolation = switch (command) {
                 case REPLACE, UPDATE, DELETE -> Connection.TRANSACTION_READ_COMMITTED;
-                default -> Connection.TRANSACTION_REPEATABLE_READ;
+                default -> addModels ? Connection.TRANSACTION_READ_COMMITTED : Connection.TRANSACTION_REPEATABLE_READ;
             };
             return gpkg == null ? Database.openPostgres(pgUrl, schema, user, password, writable, isolation)
                     : Database.openGeoPackage(gpkg, writable);

@@ -22,6 +22,30 @@ final class SqlNames {
 
     private final Set<String> tables = new HashSet<>();
     private final Map<String, Set<String>> columns = new HashMap<>();
+    private final Map<String, String> storedClasses;
+    private final Set<String> storedAttributes;
+
+    SqlNames() {
+        this(Map.of(), Set.of(), Map.of(), Set.of());
+    }
+
+    SqlNames(Map<String, String> storedClasses, Set<String> relations, Map<String, Set<String>> storedColumns,
+             Set<String> storedAttributes) {
+        this.storedClasses = Map.copyOf(storedClasses);
+        this.storedAttributes = Set.copyOf(storedAttributes);
+        relations.forEach(name -> tables.add(Ili2dbLayout.foldedName(name)));
+        storedClasses.values().forEach(name -> tables.add(Ili2dbLayout.foldedName(name)));
+        storedColumns.forEach((table, names) -> columns.put(table, new HashSet<>(names)));
+    }
+
+    boolean hasClass(String name) { return storedClasses.containsKey(name); }
+
+    boolean hasAttribute(String name) { return storedAttributes.contains(name); }
+
+    String mappedTable(String declared, String model, String topic, String className) {
+        String prior = storedClasses.get(declared);
+        return prior != null ? prior : table(model, topic, className);
+    }
 
     String table(String model, String topic, String className) {
         return table(model, topic, className, null);

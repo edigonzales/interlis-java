@@ -118,6 +118,10 @@ und den Rollback bei einem fremden späteren Basket.
 `*DbInteropTest.*MixedMutation*` prüft selektive Updates mit stabilen IDs,
 die vollständige Auswahl für Ersatz und Löschung sowie den Rollback bei
 eingehenden Referenzen aus einem weiteren Modell.
+`*DbInteropTest.*AppendModels*` ergänzt ein befülltes Referenzschema
+mit einer Namenskollision und einer gemeinsam genutzten Struktur. Es
+vergleicht den Katalog nach einem Abbruch während der DDL und prüft danach
+den Werkzeugwechsel mit den bestehenden und neuen SQL-Zuordnungen.
 
 Die Fälle `*DbInteropTest.*Mutation*` prüfen `replace` und `update`
 in beiden Werkzeugrichtungen. Sie prüfen die internen IDs und den Bestand

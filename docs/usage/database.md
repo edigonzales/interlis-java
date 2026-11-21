@@ -55,6 +55,24 @@ einen Raumindex. GeoPackage registriert `gpkg_rtree_index` mit der
 virtuellen Tabelle und ihren Standardtriggern. PostGIS legt einen GiST-Index an.
 Die entsprechende Option in ili2db 5.5.2 ist `--createGeomIdx`.
 
+## Bestehendes Schema ergänzen
+
+```sh
+interlis-db schemaimport --add-models --gpkg data.gpkg \
+  --model Survey --model-file Shared.ili Survey.ili
+```
+
+`--add-models` ergänzt ein vorhandenes ili2db-Schema in einer
+Transaktion. Das Kommando übernimmt dessen Einstellungen, die
+gespeicherten SQL-Zuordnungen und die gemeinsame ID-Vergabe.
+Zusätzliche lokale Abhängigkeiten werden wie bei der Schemaerzeugung
+mit `--model-file` angegeben. Identische gespeicherte Quellen und
+bereits abgebildete Abhängigkeiten werden wiederverwendet. Eine
+gemeinsam genutzte Strukturtabelle erhält die zusätzlichen
+Rückverweisspalten für neue Eigentümer. Ein bereits abgebildetes
+ausgewähltes Modell, eine abweichende gespeicherte Quelle oder eine
+widersprüchliche Schemaoption führt zum Abbruch.
+
 ## Aufruf
 
 ```sh

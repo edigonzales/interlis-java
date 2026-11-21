@@ -39,8 +39,10 @@ import java.util.stream.Collectors;
 
 import static guru.interlis.db.DbMapping.metaText;
 
-/** Read and plan a new schema before opening a writable database. */
+/** Immutable SQL definitions and metadata for the tables to create. */
 record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
+                  List<DbMapping.Table> addedTables, List<DbMapping.EmbeddedAssociation> addedAssociations,
+                  List<DbMapping.Composition> addedCompositions,
                   List<ColumnProperty> columnProperties, Map<String, List<GeometryColumn>> geometryColumns,
                   boolean splitGeometries, int defaultEpsg, boolean multiSrs) {
     record ModelFile(String filename, LanguageVersion version, String modelNames, String content) { }
@@ -52,6 +54,9 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
 
     SchemaPlan {
         modelFiles = List.copyOf(modelFiles);
+        addedTables = List.copyOf(addedTables);
+        addedAssociations = List.copyOf(addedAssociations);
+        addedCompositions = List.copyOf(addedCompositions);
         columnProperties = List.copyOf(columnProperties);
         geometryColumns = geometryColumns.entrySet().stream().collect(java.util.stream.Collectors.toUnmodifiableMap(
                 Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
@@ -64,6 +69,12 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
 
     static SchemaPlan read(List<String> models, Path file, List<Path> imports, boolean gpkg, boolean splitGeometries,
                            int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels,
+                           CancellationToken token) throws IOException {
+        return read(models, file, imports, gpkg, splitGeometries, defaultEpsg, multiSrs, srsModels, new SqlNames(), token);
+    }
+
+    static SchemaPlan read(List<String> models, Path file, List<Path> imports, boolean gpkg, boolean splitGeometries,
+                           int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels, SqlNames names,
                            CancellationToken token) throws IOException {
         var files = new ArrayList<Path>();
         files.add(file);
@@ -82,7 +93,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             filenames.put(source.id(), path.getFileName().toString());
         }
         var mapping = DbMapping.planNew(models, sources.values(), gpkg, splitGeometries, defaultEpsg, multiSrs,
-                srsModels, token);
+                srsModels, names, token);
         var declarations = mapping.plan().models().stream()
                 .map(model -> (ModelSymbol) symbol(mapping, model.symbol()))
                 .collect(Collectors.groupingBy(model -> origin(model).range().source()));
@@ -90,13 +101,20 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         for (var source : sources.values()) {
             var fileModels = declarations.get(source.id());
             if (fileModels == null) continue;
-            String names = fileModels.stream().sorted(Comparator.comparingInt(model -> origin(model).range().startOffset()))
+            String modelEntries = fileModels.stream().sorted(Comparator.comparingInt(model -> origin(model).range().startOffset()))
                     .map(SchemaPlan::modelEntry).collect(Collectors.joining(" "));
-            modelFiles.add(new ModelFile(filenames.get(source.id()), fileModels.getFirst().languageVersion(), names, source.text()));
+            modelFiles.add(new ModelFile(filenames.get(source.id()), fileModels.getFirst().languageVersion(),
+                    modelEntries, source.text()));
         }
+        var addedTables = mapping.tables().stream()
+                .filter(table -> !names.hasClass(table.object().name().declared().toString())).toList();
+        var addedAssociations = mapping.associations().stream().filter(association -> !association.linkTable()
+                && !names.hasClass(association.object().name().declared().toString())).toList();
+        var addedCompositions = mapping.compositions().stream()
+                .filter(composition -> !names.hasAttribute(composition.slot().name().declared().toString())).toList();
         var properties = new ArrayList<ColumnProperty>();
         var geometries = new HashMap<String, List<GeometryColumn>>();
-        for (var table : mapping.tables()) {
+        for (var table : addedTables) {
             token.throwIfCancellationRequested();
             if (table.hasTidColumn()) {
                 table.oidDomain().ifPresent(domain -> properties.add(new ColumnProperty(table.name(), null,
@@ -111,14 +129,22 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                         Ili2dbLayout.PREFIX + "foreignKey", table.name()));
             }
         }
-        for (var composition : mapping.compositions()) {
+        for (var composition : addedCompositions) {
             token.throwIfCancellationRequested();
             var child = mapping.table(composition.childRoot());
             var parent = mapping.table(composition.parent());
             properties.add(new ColumnProperty(child.name(), null, composition.ownerColumn(),
                     Ili2dbLayout.PREFIX + "foreignKey", parent.name()));
         }
-        return new SchemaPlan(mapping, modelFiles, properties, geometries, splitGeometries, defaultEpsg, multiSrs);
+        return new SchemaPlan(mapping, modelFiles, addedTables, addedAssociations, addedCompositions, properties, geometries,
+                splitGeometries, defaultEpsg, multiSrs);
+    }
+
+    List<String> addedStorageTables() { return DbMapping.storageTables(addedTables); }
+
+    SchemaPlan withModelFiles(List<ModelFile> files) {
+        return new SchemaPlan(mapping, files, addedTables, addedAssociations, addedCompositions, columnProperties,
+                geometryColumns, splitGeometries, defaultEpsg, multiSrs);
     }
 
     private static Origin.DeclaredOrigin origin(ModelSymbol model) {

@@ -65,7 +65,7 @@ final class GeoPackageSchema {
                 }
                 checkSrs(connection, plan, token);
                 SchemaSql.createGeoPackageTables(connection, plan, createGeometryIndexes, token);
-                registerContents(connection, plan, createGeometryIndexes, token);
+                registerContents(connection, plan, true, createGeometryIndexes, token);
                 token.throwIfCancellationRequested();
                 transaction.execute("COMMIT");
             } catch (IOException | SQLException | RuntimeException failure) {
@@ -77,6 +77,13 @@ final class GeoPackageSchema {
                 throw failure;
             }
         }
+    }
+
+    static void addModels(Database db, SchemaPlan plan, boolean createGeometryIndexes, CancellationToken token)
+            throws SQLException {
+        checkSrs(db.connection(), plan, token);
+        SchemaSql.addTables(db, plan, createGeometryIndexes, token);
+        registerContents(db.connection(), plan, false, createGeometryIndexes, token);
     }
 
     private static void bootstrap(Statement statement, CancellationToken token) throws IOException, SQLException {
@@ -106,7 +113,7 @@ final class GeoPackageSchema {
         }
     }
 
-    private static void registerContents(Connection connection, SchemaPlan plan, boolean createGeometryIndexes,
+    private static void registerContents(Connection connection, SchemaPlan plan, boolean newSchema, boolean createGeometryIndexes,
                                          CancellationToken token)
             throws SQLException {
         try (var attributes = connection.prepareStatement("""
@@ -127,12 +134,14 @@ final class GeoPackageSchema {
                  VALUES (?, ?, ?, 'https://www.geopackage.org/spec131/#extension_geometry_types',
                          'read-write')
                  """)) {
-            for (String table : Ili2dbLayout.METADATA_TABLES) {
-                token.throwIfCancellationRequested();
-                registerAttributes(attributes, table);
+            if (newSchema) {
+                for (String table : Ili2dbLayout.METADATA_TABLES) {
+                    token.throwIfCancellationRequested();
+                    registerAttributes(attributes, table);
+                }
+                registerAttributes(attributes, Ili2dbLayout.KEY_OBJECT);
             }
-            registerAttributes(attributes, Ili2dbLayout.KEY_OBJECT);
-            for (String table : plan.mapping().storageTables()) {
+            for (String table : plan.addedStorageTables()) {
                 token.throwIfCancellationRequested();
                 var geometries = plan.geometryColumns().get(table);
                 if (geometries == null) {

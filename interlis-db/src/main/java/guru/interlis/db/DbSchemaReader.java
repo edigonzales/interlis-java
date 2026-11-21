@@ -69,8 +69,8 @@ final class DbSchemaReader {
 
     private record StoredModel(String names, LanguageVersion version, String content, List<String> imports) { }
     private record AttributeName(String name, String owner, String target) { }
-    private record Settings(boolean splitGeometries, int defaultEpsg, String modelEpsgAssignments,
-                            boolean referenceEpsgHeader, boolean multiSrs, Optional<DbCrsPair.Models> srsModels) {
+    record Settings(boolean splitGeometries, int defaultEpsg, String modelEpsgAssignments, boolean referenceEpsgHeader,
+                    boolean multiSrs, Optional<DbCrsPair.Models> srsModels, boolean createGeometryIndexes) {
         CrsDefaults crs(String model) {
             return new CrsDefaults(defaultEpsg, modelEpsg(modelEpsgAssignments, model));
         }
@@ -215,6 +215,10 @@ final class DbSchemaReader {
         }
         for (var table : tables) {
             var physical = catalog.get(table.object().symbol());
+            if (table.object().kind() == SymbolKind.STRUCTURE && !table.subtype()
+                    && !physical.columns().keySet().equals(physical.used())) {
+                bindOtherStructureOwners(db, scope, physical);
+            }
             if (!physical.columns().keySet().equals(physical.used())) {
                 throw new DbException("Unexpected physical columns in " + physical.name());
             }
@@ -228,6 +232,28 @@ final class DbSchemaReader {
 
     private static boolean hasDiscriminator(ObjectDescriptor object, Set<SymbolRef> bases) {
         return object.baseType().isEmpty() && bases.contains(object.symbol());
+    }
+
+    private static void bindOtherStructureOwners(Database db, MetadataScope scope, CatalogTable table) throws SQLException {
+        String sql = """
+                SELECT a.iliname, a.sqlname FROM %s a JOIN %s p
+                  ON p.tablename = a.colowner AND lower(p.columnname) = lower(a.sqlname)
+                   AND p.setting = a.target AND p.subtype IS NULL
+                WHERE a.colowner = ? AND p.tag = ?
+                """.formatted(db.technicalTable(ATTRNAME), db.technicalTable(Ili2dbLayout.COLUMN_PROP));
+        try (var stmt = db.connection().prepareStatement(sql)) {
+            stmt.setString(1, table.name());
+            stmt.setString(2, PREFIX + "foreignKey");
+            try (var rows = stmt.executeQuery()) {
+                while (rows.next()) {
+                    String path = required(rows, 1, "ATTRNAME.iliname");
+                    if (scope.includes(path)) continue;
+                    String column = key(db, required(rows, 2, "ATTRNAME.sqlname"));
+                    requireColumns(db, table.name(), table.columns(), Map.of(column, Kind.REFERENCE));
+                    table.used().add(column);
+                }
+            }
+        }
     }
 
     private static Map<SymbolRef, CatalogTable> readCatalog(Database db, TransferPlan plan, List<ObjectDescriptor> objects,
@@ -289,7 +315,7 @@ final class DbSchemaReader {
         }
     }
 
-    private static Settings readSettings(Database db, List<String> models) throws SQLException {
+    static Settings readSettings(Database db, List<String> models) throws SQLException {
         // Both backends accept the folded technical names. Keep the same names in catalog diagnostics.
         String table = foldedName(SETTINGS);
         requireMetadataColumns(db, table, "tag", "setting");
@@ -335,14 +361,82 @@ final class DbSchemaReader {
         }
         String geometryLayout = settings.get(Ili2dbLayout.GEOMETRY_LAYOUT);
         boolean referenceEpsgHeader = db.gpkg() && isSender(sender, "ili2gpkg-5.5.2");
+        boolean indexes = "True".equals(settings.get(Ili2dbLayout.CREATE_GEOMETRY_INDEX));
         if (Ili2dbLayout.MULTIPLE_GEOMETRIES.equals(geometryLayout)) {
-            return new Settings(false, defaultEpsg, modelEpsg, referenceEpsgHeader, multiSrs, srsModels);
+            return new Settings(false, defaultEpsg, modelEpsg, referenceEpsgHeader, multiSrs, srsModels, indexes);
         }
         if (geometryLayout != null && !Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout)) {
             throw unsupported("SETTINGS.geomAttrPerTable=" + geometryLayout);
         }
         return new Settings(db.gpkg() || Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout), defaultEpsg, modelEpsg,
-                referenceEpsgHeader, multiSrs, srsModels);
+                referenceEpsgHeader, multiSrs, srsModels, indexes);
+    }
+
+    static SqlNames namesForExtension(Database db, List<String> models) throws SQLException {
+        checkSystemTables(db);
+        var relations = new HashSet<String>();
+        var metadata = db.connection().getMetaData();
+        try (var rows = metadata.getTables(db.connection().getCatalog(),
+                searchPattern(db.schema(), metadata.getSearchStringEscape()), "%", null)) {
+            while (rows.next()) relations.add(foldedName(rows.getString("TABLE_NAME")));
+        }
+        String ids = db.gpkg() ? foldedName(Ili2dbLayout.KEY_OBJECT) : Ili2dbLayout.SEQUENCE;
+        if (!relations.contains(ids)) throw new DbException("Missing ili2db ID allocator " + ids);
+        var classes = new HashMap<String, String>();
+        String classTable = foldedName(CLASSNAME);
+        requireMetadataColumns(db, classTable, "iliname", "sqlname");
+        try (var stmt = db.connection().createStatement();
+             var rows = stmt.executeQuery("SELECT iliname, sqlname FROM " + db.table(classTable))) {
+            var roots = Set.copyOf(models);
+            while (rows.next()) {
+                String path = required(rows, 1, "CLASSNAME.iliname");
+                if (roots.contains(MetadataScope.modelName(path))) {
+                    throw new DbException("Model already has a SQL mapping: " + MetadataScope.modelName(path));
+                }
+                if (classes.putIfAbsent(path, required(rows, 2, "CLASSNAME.sqlname")) != null) {
+                    throw new DbException("Duplicate CLASSNAME mapping for " + path);
+                }
+            }
+        }
+        var attributes = new HashSet<String>();
+        var columns = new HashMap<String, Set<String>>();
+        String attributeTable = foldedName(ATTRNAME);
+        requireMetadataColumns(db, attributeTable, "iliname", "colowner", "sqlname");
+        try (var stmt = db.connection().createStatement();
+             var rows = stmt.executeQuery("SELECT iliname, colowner, sqlname FROM " + db.table(attributeTable))) {
+            while (rows.next()) {
+                attributes.add(required(rows, 1, "ATTRNAME.iliname"));
+                String owner = required(rows, 2, "ATTRNAME.colowner");
+                columns.computeIfAbsent(owner, unused -> new HashSet<>()).add(foldedName(required(rows, 3, "ATTRNAME.sqlname")));
+            }
+        }
+        return new SqlNames(classes, relations, columns, attributes);
+    }
+
+    static List<SchemaPlan.ModelFile> newModelFiles(Database db, List<SchemaPlan.ModelFile> files, CancellationToken token)
+            throws SQLException {
+        String table = foldedName(MODEL);
+        requireMetadataColumns(db, table, "modelname", "iliversion", "content");
+        var fresh = new ArrayList<SchemaPlan.ModelFile>();
+        for (var file : files) {
+            var declarations = storedDeclarations(file.modelNames());
+            int stored = 0;
+            for (var entry : declarations.entrySet()) {
+                token.throwIfCancellationRequested();
+                var prior = lookupModel(db, table, entry.getKey());
+                if (prior == null) continue;
+                stored++;
+                if (prior.version() != file.version() || !prior.content().equals(file.content())
+                        || !Set.copyOf(prior.imports()).equals(Set.copyOf(entry.getValue()))) {
+                    throw new DbException("Stored MODEL source differs for " + entry.getKey());
+                }
+            }
+            if (stored == 0) fresh.add(file);
+            else if (stored != declarations.size()) {
+                throw new DbException("Stored MODEL source only covers part of " + file.filename());
+            }
+        }
+        return fresh;
     }
 
     private static int modelEpsg(String assignments, String modelName) {
@@ -380,7 +474,8 @@ final class DbSchemaReader {
             token.throwIfCancellationRequested();
             String model = pending.removeFirst();
             if ("INTERLIS".equals(model) || versions.containsKey(model)) continue;
-            var stored = readModel(db, table, model);
+            var stored = lookupModel(db, table, model);
+            if (stored == null) throw new DbException("No MODEL source for " + model);
             versions.put(model, stored.version());
             var source = files.get(stored.names());
             if (source == null) {
@@ -410,7 +505,7 @@ final class DbSchemaReader {
         return plan;
     }
 
-    private static StoredModel readModel(Database db, String table, String modelName) throws SQLException {
+    private static StoredModel lookupModel(Database db, String table, String modelName) throws SQLException {
         // modelname lists definitions followed by optional brace-delimited imports for each file.
         String contains = db.gpkg() ? "instr" : "strpos";
         String sql = "SELECT modelname, iliversion, CASE WHEN length(content) <= ? THEN content END FROM "
@@ -422,7 +517,7 @@ final class DbSchemaReader {
             try (var rows = stmt.executeQuery()) {
                 while (rows.next()) {
                     String names = required(rows, 1, "MODEL.modelname");
-                    var imports = modelImports(names, modelName);
+                    var imports = storedDeclarations(names).get(modelName);
                     if (imports == null) continue;
                     if (match != null) throw new DbException("Multiple MODEL sources for " + modelName);
                     var version = LanguageVersion.fromLiteral(rows.getString(2))
@@ -435,24 +530,25 @@ final class DbSchemaReader {
                 }
             }
         }
-        if (match == null) throw new DbException("No MODEL source for " + modelName);
         return match;
     }
 
-    private static List<String> modelImports(String names, String model) {
+    private static Map<String, List<String>> storedDeclarations(String names) {
         String declarations = names.strip();
         var matcher = MODEL_DECLARATION.matcher(declarations);
-        List<String> imports = null;
+        var imports = new LinkedHashMap<String, List<String>>();
         int offset = 0;
         while (matcher.find() && matcher.start() == offset) {
             offset = matcher.end();
-            if (!model.equals(matcher.group(1))) continue;
-            if (imports != null) throw new DbException("Duplicate MODEL.modelname declaration for " + model);
+            String model = matcher.group(1);
             String dependencies = matcher.group(2);
-            imports = dependencies == null || dependencies.isBlank() ? List.of()
+            List<String> namesForModel = dependencies == null || dependencies.isBlank() ? List.of()
                     : List.of(dependencies.strip().split("\\s+"));
+            if (imports.putIfAbsent(model, namesForModel) != null) {
+                throw new DbException("Duplicate MODEL.modelname declaration for " + model);
+            }
         }
-        if (offset != declarations.length()) throw new DbException("Invalid MODEL.modelname while resolving " + model);
+        if (offset != declarations.length()) throw new DbException("Invalid MODEL.modelname: " + names);
         return imports;
     }
 

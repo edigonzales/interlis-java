@@ -49,15 +49,7 @@ final class SchemaSql {
     static void createPostgres(Database db, SchemaPlan plan, boolean createGeometryIndexes, CancellationToken token) throws SQLException {
         String schema = db.schema();
         checkPostgresSchemaName(db.connection(), schema);
-        for (int epsg : plan.geometryEpsgCodes()) {
-            token.throwIfCancellationRequested();
-            checkPostgresSrs(db, epsg);
-        }
-        if (plan.mapping().tables().stream().anyMatch(DbMapping.Table::uuidIdentity)) {
-            requireUuidDefault(db.connection());
-        }
-        var dialect = new Dialect(false, schema, db.postgisObject("geometry"));
-        var ddl = ddl(plan, dialect, createGeometryIndexes);
+        var dialect = postgresDialect(db, plan, token);
         try (var statement = db.connection().createStatement()) {
             statement.execute("CREATE SCHEMA " + quote(schema));
         } catch (SQLException failure) {
@@ -66,7 +58,16 @@ final class SchemaSql {
             }
             throw failure;
         }
-        apply(db.connection(), plan, dialect, ddl, createGeometryIndexes, token);
+        apply(db.connection(), plan, dialect, true, createGeometryIndexes, token);
+    }
+
+    private static Dialect postgresDialect(Database db, SchemaPlan plan, CancellationToken token) throws SQLException {
+        for (int epsg : plan.geometryEpsgCodes()) {
+            token.throwIfCancellationRequested();
+            checkPostgresSrs(db, epsg);
+        }
+        if (plan.addedTables().stream().anyMatch(DbMapping.Table::uuidIdentity)) requireUuidDefault(db.connection());
+        return new Dialect(false, db.schema(), db.postgisObject("geometry"));
     }
 
     private static void checkPostgresSchemaName(Connection connection, String schema) throws SQLException {
@@ -110,25 +111,32 @@ final class SchemaSql {
                                        CancellationToken token)
             throws SQLException {
         var dialect = new Dialect(true, "main", "");
-        apply(connection, plan, dialect, ddl(plan, dialect, false), createGeometryIndexes, token);
+        apply(connection, plan, dialect, true, createGeometryIndexes, token);
     }
 
-    private static void apply(Connection connection, SchemaPlan plan, Dialect dialect, List<String> ddl,
+    static void addTables(Database db, SchemaPlan plan, boolean createGeometryIndexes, CancellationToken token)
+            throws SQLException {
+        var dialect = db.gpkg() ? new Dialect(true, "main", "") : postgresDialect(db, plan, token);
+        apply(db.connection(), plan, dialect, false, createGeometryIndexes, token);
+    }
+
+    private static void apply(Connection connection, SchemaPlan plan, Dialect dialect, boolean newSchema,
                               boolean createGeometryIndexes, CancellationToken token) throws SQLException {
         try (var statement = connection.createStatement()) {
-            for (String sql : ddl) {
+            for (String sql : ddl(plan, dialect, newSchema, createGeometryIndexes && !dialect.gpkg())) {
                 token.throwIfCancellationRequested();
                 statement.execute(sql);
             }
         }
         token.throwIfCancellationRequested();
-        writeMetadata(connection, plan, dialect, createGeometryIndexes, token);
+        writeMetadata(connection, plan, dialect, newSchema, createGeometryIndexes, token);
     }
 
-    private static List<String> ddl(SchemaPlan plan, Dialect dialect, boolean createGeometryIndexes) {
+    private static List<String> ddl(SchemaPlan plan, Dialect dialect, boolean newSchema, boolean createGeometryIndexes) {
         var commands = new ArrayList<String>();
-        if (!dialect.gpkg()) commands.add("CREATE SEQUENCE " + dialect.table(SEQUENCE));
-        for (var table : plan.mapping().tables()) {
+        if (newSchema && !dialect.gpkg()) commands.add("CREATE SEQUENCE " + dialect.table(SEQUENCE));
+        var storage = new java.util.HashSet<>(plan.addedStorageTables());
+        for (var table : plan.addedTables()) {
             var columns = new ArrayList<String>();
             columns.add(dialect.primaryId() + (table.subtype() ? "" : dialect.sequenceDefault()));
             columns.add(BASKET_COLUMN + " " + dialect.idType() + " NOT NULL");
@@ -145,8 +153,10 @@ final class SchemaSql {
                 columns.add(quote(column.name()) + " " + dialect.columnType(column));
                 column.positionColumn().ifPresent(position -> columns.add(quote(position) + " " + dialect.idType()));
             }
-            for (var composition : plan.mapping().compositionsForChild(table.object().symbol())) {
-                columns.add(quote(composition.ownerColumn()) + " " + dialect.idType());
+            for (var composition : plan.addedCompositions()) {
+                if (composition.childRoot().equals(table.object().symbol())) {
+                    columns.add(quote(composition.ownerColumn()) + " " + dialect.idType());
+                }
             }
             commands.add(dialect.create(table.name(), String.join(", ", columns)));
             for (var geometry : table.secondaryGeometries()) {
@@ -155,15 +165,22 @@ final class SchemaSql {
                         + quote(geometry.column().name()) + " " + dialect.columnType(geometry.column())));
             }
         }
+        for (var composition : plan.addedCompositions()) {
+            String child = plan.mapping().table(composition.childRoot()).name();
+            if (!storage.contains(child)) {
+                commands.add("ALTER TABLE " + dialect.table(child) + " ADD COLUMN "
+                        + quote(composition.ownerColumn()) + " " + dialect.idType());
+            }
+        }
         if (createGeometryIndexes) {
-            for (String table : plan.mapping().storageTables()) {
+            for (String table : plan.addedStorageTables()) {
                 for (var geometry : plan.geometryColumns().getOrDefault(table, List.of())) {
                     commands.add("CREATE INDEX ON " + dialect.table(table)
                             + " USING gist (" + quote(geometry.column().name()) + ")");
                 }
             }
         }
-        commands.addAll(metadataDdl(dialect));
+        if (newSchema) commands.addAll(metadataDdl(dialect));
         return List.copyOf(commands);
     }
 
@@ -205,8 +222,8 @@ final class SchemaSql {
         return ddl;
     }
 
-    private static void writeMetadata(Connection connection, SchemaPlan plan, Dialect d, boolean createGeometryIndexes,
-                                      CancellationToken token)
+    private static void writeMetadata(Connection connection, SchemaPlan plan, Dialect d, boolean newSchema,
+                                      boolean createGeometryIndexes, CancellationToken token)
             throws SQLException {
         try (var models = insert(connection, d, MODEL, "filename, iliversion, modelName, content, importDate", 5)) {
             var imported = Timestamp.from(Instant.now());
@@ -227,9 +244,11 @@ final class SchemaSql {
              var transformations = insert(connection, d, TRAFO, "iliname, tag, setting", 3);
              var tableProps = insert(connection, d, TABLE_PROP, "tablename, tag, setting", 3);
              var colProps = insert(connection, d, COLUMN_PROP, "tablename, subtype, columnname, tag, setting", 5)) {
-            writeSettings(settings, d.gpkg(), plan);
-            if (createGeometryIndexes) row(settings, "ch.ehi.sqlgen.createGeomIndex", "True");
-            for (var table : plan.mapping().tables()) {
+            if (newSchema) {
+                writeSettings(settings, d.gpkg(), plan);
+                if (createGeometryIndexes) row(settings, Ili2dbLayout.CREATE_GEOMETRY_INDEX, "True");
+            }
+            for (var table : plan.addedTables()) {
                 token.throwIfCancellationRequested();
                 String name = table.object().name().declared().toString();
                 row(classes, name, table.name());
@@ -265,16 +284,15 @@ final class SchemaSql {
                             Ili2dbLayout.SECONDARY_TABLE_TAG, secondary.table());
                     row(attributes, attribute, column.name(), secondary.table(), null);
                 }
-                for (var composition : plan.mapping().compositionsForChild(table.object().symbol())) {
-                    token.throwIfCancellationRequested();
-                    String parent = plan.mapping().table(composition.parent()).name();
-                    row(attributes, composition.slot().name().declared().toString(), composition.ownerColumn(),
-                            table.name(), parent);
-                }
             }
-            for (var association : plan.mapping().associations()) {
+            for (var composition : plan.addedCompositions()) {
                 token.throwIfCancellationRequested();
-                if (association.linkTable()) continue;
+                String parent = plan.mapping().table(composition.parent()).name();
+                String child = plan.mapping().table(composition.childRoot()).name();
+                row(attributes, composition.slot().name().declared().toString(), composition.ownerColumn(), child, parent);
+            }
+            for (var association : plan.addedAssociations()) {
+                token.throwIfCancellationRequested();
                 String name = association.object().name().declared().toString();
                 row(classes, name, association.name());
                 row(inheritance, name, null);

@@ -257,7 +257,9 @@ final class DbMapping {
     LanguageVersion version() { return version; }
     List<Table> tables() { return tables; }
 
-    List<String> storageTables() {
+    List<String> storageTables() { return storageTables(tables); }
+
+    static List<String> storageTables(List<Table> tables) {
         var names = new ArrayList<String>();
         for (var table : tables) {
             names.add(table.name());
@@ -355,12 +357,13 @@ final class DbMapping {
 
     static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, CancellationToken token) {
-        return planNew(List.of(modelName), List.of(source), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(), token);
+        return planNew(List.of(modelName), List.of(source), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(),
+                new SqlNames(), token);
     }
 
     static DbMapping planNew(List<String> modelNames, Collection<SourceText> sources, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels,
-                             CancellationToken token) {
+                             SqlNames allocator, CancellationToken token) {
         var models = srsModels.map(DbCrsPair.Models::names).orElse(modelNames);
         TransferPlan plan = DbModelSources.compile(models, sources, "model files", token);
         var crs = new CrsDefaults(defaultEpsg, 0);
@@ -372,7 +375,6 @@ final class DbMapping {
                 .anyMatch(topic -> plan.rootModels().contains(topic.model()) && DbDomains.deferred(topic))) {
             throw unsupported("deferred generic domains require --multi-srs");
         }
-        var allocator = new SqlNames();
         var names = new HashMap<SymbolRef, String>();
         var associations = new ArrayList<EmbeddedAssociation>();
         var linkRoles = new HashMap<SymbolRef, List<AssociationRole>>();
@@ -380,7 +382,8 @@ final class DbMapping {
             token.throwIfCancellationRequested();
             String topic = object.topic().flatMap(plan::topic).map(value -> value.name().declared().last()).orElse(null);
             String declaredModel = plan.model(object.model()).orElseThrow().name().declared().last();
-            String name = allocator.table(declaredModel, topic, object.name().declared().last());
+            String name = allocator.mappedTable(object.name().declared().toString(), declaredModel, topic,
+                    object.name().declared().last());
             if (reservedTable(name, gpkg)) {
                 throw unsupported("type " + object.name().declared() + " maps to technical table " + name);
             }
