@@ -11,6 +11,8 @@ import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferReader;
 import guru.interlis.transfer.TransferValue.Reference;
 import guru.interlis.xtf24.Xtf24Writer;
+import org.duckdb.DuckDBAppender;
+import org.duckdb.DuckDBConnection;
 
 import java.io.OutputStream;
 import java.nio.file.Path;
@@ -144,13 +146,11 @@ public final class DuckDbStore implements AutoCloseable {
     }
 
     private void ingest(Connection transaction, TransferReader reader, CancellationToken cancellation) throws SQLException {
+        var duckdb = transaction.unwrap(DuckDBConnection.class);
         try (var transfer = transaction.prepareStatement("INSERT INTO transfer VALUES (true, ?)");
              var basket = transaction.prepareStatement("INSERT INTO basket VALUES (?, ?, ?)");
-             var object = transaction.prepareStatement("INSERT INTO object VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-             var reference = transaction.prepareStatement("""
-                     INSERT INTO reference (source_position, position, slot, value, target_key, stable, target_basket, external)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                     """)) {
+             var object = duckdb.createAppender("object");
+             var reference = duckdb.createAppender("reference")) {
             long basketPosition = 0;
             long objectPosition = 0;
             boolean started = false;
@@ -187,10 +187,13 @@ public final class DuckDbStore implements AutoCloseable {
             if (!started) {
                 throw new IllegalArgumentException("Import requires a reader positioned before StartTransfer");
             }
+            // DuckDB JDBC 2.0.1.0 suppresses flush failures in Appender.close().
+            object.flush();
+            reference.flush();
         }
     }
 
-    private void insertObject(PreparedStatement object, PreparedStatement reference, long position, long basketPosition,
+    private void insertObject(DuckDBAppender object, DuckDBAppender reference, long position, long basketPosition,
                               ObjectEvent occurrence, CancellationToken cancellation) throws SQLException {
         if (occurrence.operation().isPresent()) {
             throw new IllegalArgumentException("The store does not support incremental object operations");
@@ -199,29 +202,32 @@ public final class DuckDbStore implements AutoCloseable {
         var identity = value.identity();
         var links = new ArrayList<Map.Entry<String, Reference>>();
         var fields = codec.fields(value.data(), (slot, target) -> links.add(Map.entry(slot, target)));
-        object.setLong(1, position);
-        object.setLong(2, basketPosition);
-        object.setString(3, codec.objectName(value.type()));
-        object.setString(4, identity.tid().map(ObjectKey::value).orElse(null));
-        object.setString(5, identity.oid().map(ObjectKey::value).orElse(null));
-        object.setString(6, codec.identity(identity).toString());
-        object.setString(7, occurrence.consistency().name());
-        object.setString(8, fields.toString());
-        object.executeUpdate();
+        object.beginRow()
+                .append(position)
+                .append(basketPosition)
+                .append(codec.objectName(value.type()))
+                .append(identity.tid().map(ObjectKey::value).orElse(null))
+                .append(identity.oid().map(ObjectKey::value).orElse(null))
+                .append(codec.identity(identity).toString())
+                .append(occurrence.consistency().name())
+                .append(fields.toString())
+                .endRow();
 
         int index = 0;
         for (var link : links) {
             cancellation.throwIfCancellationRequested();
             var target = link.getValue();
-            reference.setLong(1, position);
-            reference.setInt(2, ++index);
-            reference.setString(3, link.getKey());
-            reference.setString(4, StoreCodec.reference(target).toString());
-            reference.setString(5, target.target().value());
-            reference.setBoolean(6, !(target.target() instanceof TransferId));
-            reference.setString(7, target.targetBasket().map(BasketId::value).orElse(null));
-            reference.setBoolean(8, target.external());
-            reference.executeUpdate();
+            reference.beginRow()
+                    .append(position)
+                    .append(++index)
+                    .append(link.getKey())
+                    .append(StoreCodec.reference(target).toString())
+                    .append(target.target().value())
+                    .append(!(target.target() instanceof TransferId))
+                    .append(target.targetBasket().map(BasketId::value).orElse(null))
+                    .append(target.external())
+                    .appendNull() // target_position is set by reference resolution.
+                    .endRow();
         }
     }
 

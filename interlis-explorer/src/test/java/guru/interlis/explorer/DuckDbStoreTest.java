@@ -36,6 +36,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -159,13 +161,7 @@ class DuckDbStoreTest {
         try (var store = DuckDbStore.open(file, plan);
              var connection = DriverManager.getConnection("jdbc:duckdb:" + file);
              var statement = connection.createStatement()) {
-            assertFalse(store.hasTransfer());
-            for (var table : List.of("transfer", "basket", "object", "reference")) {
-                try (var rows = statement.executeQuery("SELECT count(*) FROM " + table)) {
-                    assertTrue(rows.next());
-                    assertEquals(0L, rows.getLong(1), table);
-                }
-            }
+            assertEmptyStore(store, statement);
             var missing = xml.replace("i:ref=\"p1\"", "i:ref=\"missing\"").getBytes(StandardCharsets.UTF_8);
             try (var reader = new Xtf24Reader(plan, new ByteArrayInputStream(missing))) {
                 store.importTransfer(reader, RUN);
@@ -182,6 +178,38 @@ class DuckDbStoreTest {
                 assertThrows(IllegalStateException.class, () -> store.importTransfer(reader, RUN));
             }
             assertEquals(unresolved, store.outgoing(item.position()));
+        }
+    }
+
+    @Test
+    void rollsBackWhenFlushingReferencesFails() throws Exception {
+        var file = temp.resolve("flush-failure.duckdb");
+        var plan = compile();
+        var xml = Files.readString(fixture("structures-and-link.xtf")).replace("</Data>", """
+                <Item i:tid="i2">
+                  <required>yes</required>
+                  <parent i:ref="p1"><Link><note>linked</note></Link></parent>
+                </Item>
+                </Data>
+                """);
+        try (var store = DuckDbStore.open(file, plan);
+             var connection = DriverManager.getConnection("jdbc:duckdb:" + file);
+             var statement = connection.createStatement();
+             var reader = new Xtf24Reader(plan, new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)))) {
+            statement.execute("CREATE UNIQUE INDEX one_reference_per_slot ON reference (slot)");
+            var failure = assertThrows(SQLException.class, () -> store.importTransfer(reader, RUN));
+            assertTrue(failure.getMessage().contains(PARENT_ROLE.toString()), failure::getMessage);
+            assertEmptyStore(store, statement);
+        }
+    }
+
+    private static void assertEmptyStore(DuckDbStore store, Statement statement) throws SQLException {
+        assertFalse(store.hasTransfer());
+        for (var table : List.of("transfer", "basket", "object", "reference")) {
+            try (var rows = statement.executeQuery("SELECT count(*) FROM " + table)) {
+                assertTrue(rows.next());
+                assertEquals(0L, rows.getLong(1), table);
+            }
         }
     }
 
