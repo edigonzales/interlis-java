@@ -155,8 +155,9 @@ EPSG-Definitionen aus dem Referenzprofil, darunter LV03 (21781) und
 WGS84 (4326). PostGIS prüft den Code in `spatial_ref_sys`.
 Für Koordinatenattribute gilt zuerst `REFSYS` (INTERLIS 2.4), dann
 `!!@ CRS` an der Typdeklaration oder am Modell. Bei einem Verweis auf
-eine Koordinatendomäne ist deren Deklaration massgeblich. Ohne CRS-Angabe
-aus dem Modell gilt `SETTINGS.defaultSrsCode`. Der räumliche Katalog muss
+eine Koordinatendomäne ist deren Deklaration massgeblich. Ein gespeichertes
+`SETTINGS.modelSrsCode` ersetzt die CRS-Metainfo des betreffenden Modells.
+Ohne CRS-Angabe aus dem Modell gilt `SETTINGS.defaultSrsCode`. Der räumliche Katalog muss
 zur Auflösung passen. Linien und Flächen verwenden das CRS ihrer
 `VERTEX`-Domäne. XYZ-Geometrien speichern die dritte
 Ordinate im SQL-Wert und die exakten Modellgrenzen als `c3Min` und `c3Max`

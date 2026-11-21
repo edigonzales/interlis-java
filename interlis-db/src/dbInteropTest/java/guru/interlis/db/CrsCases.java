@@ -186,6 +186,40 @@ final class CrsCases {
         }
     }
 
+    void modelOverride(TestDatabase db) throws Exception {
+        String model = "OverrideCrs" + version;
+        Path ili = Files.writeString(work.resolve(model + ".ili"), """
+                INTERLIS 2.%s;
+                !!@ CRS="EPSG:2056"
+                MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
+                  TOPIC Data =
+                    CLASS Station =
+                      Location : COORD 460000.000 .. 870000.000, 45000.000 .. 310000.000;
+                    END Station;
+                    CLASS Globe =
+                      !!@ CRS="EPSG:4326"
+                      Location : COORD -180.000 .. 180.000, -90.000 .. 90.000;
+                    END Globe;
+                  END Data;
+                END %s.
+                """.formatted(version % 10, model, model));
+        createReference(db, ili, 2056, "--modelSrsCode", model + "=21781");
+        mixedExchange(db, model, "override", tid ->
+                object(model, "Station", tid + "-station", field("Location", point("600100.125", "200200.375")))
+                + object(model, "Globe", tid + "-globe", field("Location", point("7.125", "46.375"))),
+                (output, tid) -> {
+                    var basket = basket(output, tid);
+                    assertPoint(object(basket, tid + "-station"), "Location", "600100.125", "200200.375");
+                    assertPoint(object(basket, tid + "-globe"), "Location", "7.125", "46.375");
+                });
+        try (var sql = db.connect()) {
+            for (String tid : List.of("legacy-override", "own-override")) {
+                assertStoredEpsg(db, sql, "station", "location", tid + "-station", 21781);
+                assertStoredEpsg(db, sql, "globe", "location", tid + "-globe", 4326);
+            }
+        }
+    }
+
     void rejectMissingDefault(TestDatabase db) throws Exception {
         String model = "MissingCrs" + version;
         Path ili = defaultModel(model, 4326);

@@ -85,6 +85,9 @@ final class DbMapping {
         }
     }
 
+    /** A zero code means the corresponding fallback was absent. */
+    record CrsDefaults(int schemaEpsg, int modelEpsg) { }
+
     record Column(TransferSlot slot, String name, Kind kind, Optional<TypeDescriptor> effectiveType,
                   Optional<SymbolRef> target, int epsgCode, int srsId, Optional<String> positionColumn, int dimensions) {
         Column {
@@ -327,6 +330,7 @@ final class DbMapping {
         var bases = baseTables(plan);
         var tables = new ArrayList<Table>();
         var compositions = new ArrayList<Composition>();
+        var crs = new CrsDefaults(defaultEpsg, 0);
         for (var object : plan.objects()) {
             token.throwIfCancellationRequested();
             String name = names.get(object.symbol());
@@ -354,7 +358,7 @@ final class DbMapping {
                     compositions.add(edge);
                     continue;
                 }
-                var binding = describeColumn(plan, object, attribute, attributeName, defaultEpsg);
+                var binding = describeColumn(plan, object, attribute, attributeName, crs);
                 boolean split = splitGeometries && geometrySeen && binding.kind().geometry();
                 String owner = split ? allocator.geometryTable(modelName,
                         object.topic().flatMap(plan::topic).orElseThrow().name().declared().last(),
@@ -677,11 +681,11 @@ final class DbMapping {
     }
 
     static Column describeColumn(TransferPlan plan, ObjectDescriptor object, AttributeSlot attr, String name,
-                                 int defaultEpsg) {
+                                 CrsDefaults defaults) {
         String path = attr.name().declared().toString();
         if (!CardinalityUpper.finite(1).equals(attr.cardinality().upper())) throw unsupported(path);
         var type = plan.type(attr.effectiveType()).known().orElseThrow(() -> unsupported(path));
-        var curve = type instanceof GeometryType geometry && optional(attr) ? describeCurve(plan, geometry, path, defaultEpsg) : null;
+        var curve = type instanceof GeometryType geometry && optional(attr) ? describeCurve(plan, geometry, path, defaults) : null;
         Kind kind = switch (type) {
             case TextType text when text.textKind() == TextKind.TEXT || text.textKind() == TextKind.MTEXT -> Kind.TEXT;
             case NumericType number when int32(number) -> Kind.INTEGER;
@@ -716,14 +720,14 @@ final class DbMapping {
         if (curve != null) {
             epsg = curve.epsg();
         } else if (kind.geometry()) {
-            epsg = pointEpsg(plan, attr, (CoordinateType) type, defaultEpsg, path);
+            epsg = pointEpsg(plan, attr, (CoordinateType) type, defaults, path);
         }
         return new Column(attr, name, kind, Optional.of(type), target, epsg, epsg, Optional.empty(), dimensions);
     }
 
     private record Curve(Kind kind, int dimensions, int epsg) { }
 
-    private static Curve describeCurve(TransferPlan plan, GeometryType geometry, String path, int defaultEpsg) {
+    private static Curve describeCurve(TransferPlan plan, GeometryType geometry, String path, CrsDefaults defaults) {
         String feature = "attribute " + path + " (" + geometry.kind() + ")";
         var geometryKind = geometry.geometryKind();
         var kind = switch (geometryKind) {
@@ -748,7 +752,7 @@ final class DbMapping {
                 || coordinates.multiCoordinate() || !storageDimensions(coordinates)) {
             throw unsupported(feature);
         }
-        return new Curve(kind, coordinates.dimensions(), geometryEpsg(plan, coordinates, domain, defaultEpsg, path));
+        return new Curve(kind, coordinates.dimensions(), geometryEpsg(plan, coordinates, domain, defaults, path));
     }
 
     private static boolean storageDimensions(CoordinateType coordinates) {
@@ -761,7 +765,7 @@ final class DbMapping {
     }
 
     private static int pointEpsg(TransferPlan plan, AttributeSlot attr, CoordinateType coordinates,
-                                 int defaultEpsg, String path) {
+                                 CrsDefaults defaults, String path) {
         Symbol declaration = attr.attribute();
         if (plan.type(attr.declaredType()).known().orElseThrow() instanceof DomainReferenceType alias) {
             var domain = (DomainSymbol) plan.symbol(new SymbolRef(plan.snapshotId(), alias.targetDomain()))
@@ -769,19 +773,20 @@ final class DbMapping {
             // ili2db uses the fallback when the immediate domain itself is an alias.
             if (plan.type(new TypeRef(plan.snapshotId(), domain.typeId())).known().orElseThrow()
                     instanceof DomainReferenceType) {
-                return requireDefaultEpsg(defaultEpsg, path);
+                return requireDefaultEpsg(defaults.schemaEpsg(), path);
             }
             declaration = domain;
         }
-        return geometryEpsg(plan, coordinates, declaration, defaultEpsg, path);
+        return geometryEpsg(plan, coordinates, declaration, defaults, path);
     }
 
     private static int geometryEpsg(TransferPlan plan, CoordinateType coordinates, Symbol declaration,
-                                    int defaultEpsg, String path) {
+                                    CrsDefaults defaults, String path) {
         String crs = coordinates.referenceSystem().orElse(null);
         if (crs == null) crs = metaText(declaration, "CRS");
+        if (crs == null && defaults.modelEpsg() != 0) return defaults.modelEpsg();
         if (crs == null) crs = metaText(plan.symbol(plan.rootModels().getFirst()).known().orElseThrow(), "CRS");
-        if (crs == null) return requireDefaultEpsg(defaultEpsg, path);
+        if (crs == null) return requireDefaultEpsg(defaults.schemaEpsg(), path);
         if (!crs.startsWith("EPSG:")) throw new DbException("Expected an EPSG CRS at " + path + ": " + crs);
         return Ili2dbLayout.parseEpsgCode(crs.substring(5), path);
     }

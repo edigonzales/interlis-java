@@ -187,6 +187,7 @@ final class DbInteropTest {
                 new TestDatabase(postgres, "declared_crs_own"));
         cases.vertexCrs(new TestDatabase(postgres, "vertex_crs_reference"),
                 new TestDatabase(postgres, "vertex_crs_own"));
+        cases.modelOverride(new TestDatabase(postgres, "model_crs_reference"));
     }
 
     private void exchangeSpatial(int version, PostgreSQLContainer postgres) throws Exception {

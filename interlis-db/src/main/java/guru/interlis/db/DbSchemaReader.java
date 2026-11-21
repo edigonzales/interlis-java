@@ -3,6 +3,7 @@ package guru.interlis.db;
 import guru.interlis.db.DbMapping.AssociationRole;
 import guru.interlis.db.DbMapping.Column;
 import guru.interlis.db.DbMapping.Composition;
+import guru.interlis.db.DbMapping.CrsDefaults;
 import guru.interlis.db.DbMapping.EmbeddedAssociation;
 import guru.interlis.db.DbMapping.Kind;
 import guru.interlis.db.DbMapping.SecondaryGeometry;
@@ -59,7 +60,7 @@ import static guru.interlis.db.Ili2dbLayout.foldedName;
 final class DbSchemaReader {
     private record StoredModel(LanguageVersion version, String content) { }
     private record AttributeName(String name, String owner, String target) { }
-    private record Settings(boolean splitGeometries, int defaultEpsg) { }
+    private record Settings(boolean splitGeometries, CrsDefaults crs) { }
 
     private record Transformations(Map<String, String> classes, Map<String, String> secondary) { }
 
@@ -69,7 +70,7 @@ final class DbSchemaReader {
 
     static DbMapping read(Database db, String modelName, CancellationToken token) throws SQLException {
         token.throwIfCancellationRequested();
-        var settings = readSettings(db);
+        var settings = readSettings(db, modelName);
         StoredModel source = readModel(db, modelName);
         TransferPlan plan = DbMapping.compile(modelName, new SourceText(new SourceId("database:/model.ili"),
                 new SourceRevision(1), source.content()), "MODEL.content", token);
@@ -160,9 +161,9 @@ final class DbSchemaReader {
                             || Ili2dbLayout.reservedTable(foldedName(table), db.gpkg())) {
                         throw new DbException("Inconsistent secondary geometry CLASSNAME/TRAFO/ATTRNAME mapping for " + path);
                     }
-                    secondary.add(bindSecondaryGeometry(db, plan, object, attr, mapping, parent.name(), table, path, settings.defaultEpsg()));
+                    secondary.add(bindSecondaryGeometry(db, plan, object, attr, mapping, parent.name(), table, path, settings.crs()));
                 } else {
-                    columns.add(bindColumn(db, plan, object, parent, names, attr, mapping, path, settings.defaultEpsg()));
+                    columns.add(bindColumn(db, plan, object, parent, names, attr, mapping, path, settings.crs()));
                 }
             }
             for (var association : DbMapping.associationsForOwner(associations, object.symbol())) {
@@ -252,7 +253,7 @@ final class DbSchemaReader {
         }
     }
 
-    private static Settings readSettings(Database db) throws SQLException {
+    private static Settings readSettings(Database db, String modelName) throws SQLException {
         // Both backends accept the folded technical names. Keep the same names in catalog diagnostics.
         String table = foldedName(SETTINGS);
         requireMetadataColumns(db, table, "tag", "setting");
@@ -276,6 +277,7 @@ final class DbSchemaReader {
         requireSetting(settings, "defaultSrsAuthority", "EPSG");
         String value = settings.get(PREFIX + "defaultSrsCode");
         int defaultEpsg = value == null ? 0 : Ili2dbLayout.parseEpsgCode(value, "SETTINGS.defaultSrsCode");
+        var crs = new CrsDefaults(defaultEpsg, modelEpsg(settings.get(PREFIX + "modelSrsCode"), modelName));
         for (String tag : List.of("inheritanceTrafo", "createEnumColAsItfCode", "createEnumCols",
                 "createDatasetCols", "typeDiscriminator", "createStdCols", "SqlColsAsText", "SqlExtRefCols")) {
             if (settings.containsKey(PREFIX + tag)) throw unsupported("SETTINGS." + tag);
@@ -284,11 +286,24 @@ final class DbSchemaReader {
             throw unsupported("enumerations stored as SQL IDs");
         }
         String geometryLayout = settings.get(Ili2dbLayout.GEOMETRY_LAYOUT);
-        if (Ili2dbLayout.MULTIPLE_GEOMETRIES.equals(geometryLayout)) return new Settings(false, defaultEpsg);
+        if (Ili2dbLayout.MULTIPLE_GEOMETRIES.equals(geometryLayout)) return new Settings(false, crs);
         if (geometryLayout != null && !Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout)) {
             throw unsupported("SETTINGS.geomAttrPerTable=" + geometryLayout);
         }
-        return new Settings(db.gpkg() || Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout), defaultEpsg);
+        return new Settings(db.gpkg() || Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout), crs);
+    }
+
+    private static int modelEpsg(String assignments, String modelName) {
+        if (assignments == null || assignments.isBlank()) return 0;
+        int epsg = 0;
+        for (String assignment : assignments.split(";")) {
+            int separator = assignment.indexOf('=');
+            if (separator <= 0) throw unsupported("invalid SETTINGS.modelSrsCode assignment");
+            if (!modelName.equals(assignment.substring(0, separator))) continue;
+            if (epsg != 0) throw unsupported("multiple SETTINGS.modelSrsCode assignments for " + modelName);
+            epsg = Ili2dbLayout.parseEpsgCode(assignment.substring(separator + 1), "SETTINGS.modelSrsCode for " + modelName);
+        }
+        return epsg;
     }
 
     private static boolean isSender(String sender, String version) {
@@ -429,10 +444,10 @@ final class DbSchemaReader {
 
     private static Column bindColumn(Database db, TransferPlan plan, ObjectDescriptor object, CatalogTable table,
                                      Map<SymbolRef, String> tables, AttributeSlot attr, AttributeName mapping,
-                                     String path, int defaultEpsg)
+                                     String path, CrsDefaults crs)
             throws SQLException {
         useColumn(db, table, mapping, path);
-        var column = DbMapping.describeColumn(plan, object, attr, mapping.name(), defaultEpsg);
+        var column = DbMapping.describeColumn(plan, object, attr, mapping.name(), crs);
         if (column.target().isPresent()) {
             requireTarget(db, tables.get(column.target().orElseThrow()), mapping, path);
         } else if (mapping.target() != null) {
@@ -444,8 +459,8 @@ final class DbSchemaReader {
 
     private static SecondaryGeometry bindSecondaryGeometry(Database db, TransferPlan plan, ObjectDescriptor object,
                                                            AttributeSlot attr, AttributeName mapping,
-                                                           String parent, String table, String path, int defaultEpsg) throws SQLException {
-        var column = DbMapping.describeColumn(plan, object, attr, mapping.name(), defaultEpsg);
+                                                           String parent, String table, String path, CrsDefaults crs) throws SQLException {
+        var column = DbMapping.describeColumn(plan, object, attr, mapping.name(), crs);
         if (!column.kind().geometry() || mapping.target() != null || Ili2dbLayout.TECHNICAL_COLUMNS.contains(key(db, column.name()))) {
             throw new DbException("Invalid secondary geometry column for " + path);
         }
