@@ -221,6 +221,87 @@ final class CrsCases {
         }
     }
 
+    void deferredCurves(TestDatabase legacy, TestDatabase nativeDb) throws Exception {
+        String model = "DeferredCurves24";
+        Path ili = fixture(model);
+        createReference(legacy, ili, 2056, "--multiSrs");
+        createOwn(nativeDb, model, ili, "--multi-srs");
+        try (var ref = legacy.connect(); var own = nativeDb.connect()) {
+            var expected = DbSchemaCatalog.read(ref, legacy.postgis(), legacy.schema());
+            if (!legacy.postgis()) {
+                for (String field : List.of("route.trace", "plot.outline", "parcel.boundary")) {
+                    String[] names = field.split("\\.");
+                    String type = names[0].equals("route") ? "COMPOUNDCURVE" : "CURVEPOLYGON";
+                    expected = expected.expectGeoPackageGeometryExtension(names[0], names[1] + "_2056", type)
+                            .expectGeoPackageGeometryExtension(names[0] + "_" + names[1] + "_21781", names[1] + "_21781", type);
+                }
+            }
+            expected.assertSameAs(DbSchemaCatalog.read(own, nativeDb.postgis(), nativeDb.schema()));
+        }
+        for (var db : List.of(legacy, nativeDb)) {
+            Path input = deferredDelivery(model, "curves-ref", curveObjects(model, "cr", 2600000, 1200000),
+                    curveObjects(model, "or", 600000, 200000));
+            // The 5.5.2 validator dereferences the absent bounds of the generic vertex domain.
+            reference.run(db, work.toString(), "--import", "--disableValidation", "--dataset", "legacy", "--importTid", "--importBid", input.toString());
+            Path output = work.resolve(db.schema() + "-curves-native.xtf");
+            assertCliSuccess(db, "export", model, "legacy", output);
+            assertCurves(output, "cr", "or");
+            input = deferredDelivery(model, "curves-native", curveObjects(model, "cn", 2600000, 1200000),
+                    curveObjects(model, "on", 600000, 200000));
+            assertCliSuccess(db, "import", model, "native", input);
+            output = work.resolve(db.schema() + "-curves-ref.xtf");
+            reference.run(db, work.toString(), "--export", "--disableValidation", "--dataset", "native", "--exportTid", output.toString());
+            assertCurves(output, "cn", "on");
+            try (var sql = db.connect()) {
+                assertStoredEpsg(db, sql, "route", "trace_2056", "route-cn", 2056);
+                String table = db.table(db.postgis() ? "route" : "route_trace_21781");
+                assertStoredSrid(db, sql, " FROM " + table + " WHERE t_id=(SELECT t_id FROM " + db.table("route")
+                        + " WHERE t_ili_tid='route-on')", "trace_21781", 21781);
+            }
+        }
+    }
+
+    private String curveObjects(String model, String tid, int x, int y) {
+        String arc = "<g:arc>" + field("g:c1", Integer.toString(x + 20)) + field("g:c2", Integer.toString(y))
+                + field("g:a1", Integer.toString(x + 10)) + field("g:a2", Integer.toString(y + 10)) + "</g:arc>";
+        String trace = line(xy(x, y) + arc + xy(x + 30, y));
+        String shell = ring(x + 100, y + 100, 30, false);
+        String hole = ring(x + 110, y + 110, 10, true);
+        return object(model, "Route", "route-" + tid, field("Trace", trace))
+                + object(model, "Plot", "plot-" + tid, field("Outline", surface(shell, hole)))
+                + object(model, "Parcel", "parcel-" + tid, field("Boundary", surface(ring(x + 200, y + 200, 20, false), "")));
+    }
+
+    private String ring(int x, int y, int span, boolean interior) {
+        String a = xy(x, y);
+        String b = xy(x + span, y);
+        String c = xy(x + span, y + span);
+        String d = xy(x, y + span);
+        return line(a + (interior ? d + c + b : b + c + d) + a);
+    }
+
+    private String xy(int x, int y) {
+        return point(Integer.toString(x), Integer.toString(y));
+    }
+
+    private void assertCurves(Path output, String current, String old) throws Exception {
+        var baskets = children(readDataSection(output, version));
+        for (String tid : List.of(current, old)) {
+            var basket = baskets.stream().filter(b -> children(b).stream()
+                    .anyMatch(o -> ("route-" + tid).equals(id(o, version, "tid")))).findFirst().orElseThrow();
+            int offset = tid.equals(current) ? 2600000 : 600000;
+            var trace = child(object(basket, "route-" + tid), "Trace");
+            assertOrdinates(trace, 1, Integer.toString(offset), Integer.toString(offset + 20), Integer.toString(offset + 30));
+            var controls = trace.getElementsByTagNameNS("*", "a1");
+            assertEquals(1, controls.getLength());
+            assertEquals(0, BigDecimal.valueOf(offset + 10).compareTo(new BigDecimal(controls.item(0).getTextContent())));
+            var outline = child(object(basket, "plot-" + tid), "Outline");
+            assertEquals(1, outline.getElementsByTagNameNS("*", "interior").getLength());
+            assertEquals(10, outline.getElementsByTagNameNS("*", "c1").getLength());
+            assertEquals(5, child(object(basket, "parcel-" + tid), "Boundary").getElementsByTagNameNS("*", "c1").getLength());
+        }
+    }
+
     void createDeferred(TestDatabase db, TestDatabase referenceDb, TestDatabase rejected) throws Exception {
         String model = "DeferredCrs24";
         Path ili = deferredPoints(model);
@@ -343,6 +424,12 @@ final class CrsCases {
     }
 
     private Path deferredDelivery(String model, String suffix) throws Exception {
+        return deferredDelivery(model, suffix,
+                object(model, "Station", "current-" + suffix, field("Location", point("2600001.625", "1200002.125"))),
+                object(model, "Station", "old-" + suffix, field("Location", point("600100.125", "200200.375"))));
+    }
+
+    private Path deferredDelivery(String model, String suffix, String current, String old) throws Exception {
         return Files.writeString(work.resolve(model + "-" + suffix + ".xtf"), """
                 <i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
                     xmlns:g="http://www.interlis.ch/geometry/1.0" xmlns="http://www.interlis.ch/xtf/2.4/%1$s">
@@ -353,9 +440,7 @@ final class CrsCases {
                     <Data i:bid="basket-empty-%2$s" i:domains="%1$s.Grid=%1$s.OldGrid"/>
                   </i:datasection>
                 </i:transfer>
-                """.formatted(model, suffix,
-                object(model, "Station", "current-" + suffix, field("Location", point("2600001.625", "1200002.125"))),
-                object(model, "Station", "old-" + suffix, field("Location", point("600100.125", "200200.375")))));
+                """.formatted(model, suffix, current, old));
     }
 
     private void assertDeferred(Path output, String model, String suffix) throws Exception {

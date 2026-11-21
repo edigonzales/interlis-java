@@ -2,6 +2,7 @@ package guru.interlis.db;
 
 import guru.interlis.model.DomainReferenceType;
 import guru.interlis.model.DomainSymbol;
+import guru.interlis.model.GeometryType;
 import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolRef;
@@ -23,7 +24,7 @@ import java.util.stream.Collectors;
 final class DbDomains {
     private DbDomains() { }
 
-    static Optional<TopicSymbol.GenericBinding> pointBinding(TransferPlan plan, ObjectDescriptor object, AttributeSlot attr) {
+    static Optional<TopicSymbol.GenericBinding> geometryBinding(TransferPlan plan, ObjectDescriptor object, AttributeSlot attr) {
         var type = plan.type(attr.declaredType()).known().orElseThrow();
         while (type instanceof DomainReferenceType alias) {
             var domain = domain(plan, alias.targetDomain());
@@ -31,6 +32,10 @@ final class DbDomains {
                 return Optional.of(binding(plan, object, domain.id()));
             }
             type = plan.type(new TypeRef(plan.snapshotId(), domain.typeId())).known().orElseThrow();
+        }
+        if (type instanceof GeometryType geometry && geometry.vertexDomain().isPresent()) {
+            var vertex = domain(plan, geometry.vertexDomain().orElseThrow());
+            if (vertex.generic()) return Optional.of(binding(plan, object, vertex.id()));
         }
         return Optional.empty();
     }

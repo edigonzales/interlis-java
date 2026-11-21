@@ -1,0 +1,20 @@
+INTERLIS 2.4;
+MODEL DeferredCurves24 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  DOMAIN
+    Grid (GENERIC) = COORD NUMERIC, NUMERIC;
+    CurrentGrid EXTENDS Grid = COORD 2460000.000 .. 2870000.000, 1045000.000 .. 1310000.000 REFSYS "EPSG:2056";
+    OldGrid EXTENDS Grid = COORD 460000.000 .. 870000.000, 45000.000 .. 310000.000 REFSYS "EPSG:21781";
+  CONTEXT grids = Grid = OldGrid OR CurrentGrid;
+  TOPIC Data =
+    DEFERRED GENERICS Grid;
+    CLASS Route =
+      Trace : POLYLINE WITH (STRAIGHTS, ARCS) VERTEX Grid;
+    END Route;
+    CLASS Plot =
+      Outline : SURFACE WITH (STRAIGHTS) VERTEX Grid WITHOUT OVERLAPS > 0.001;
+    END Plot;
+    CLASS Parcel =
+      Boundary : AREA WITH (STRAIGHTS) VERTEX Grid WITHOUT OVERLAPS > 0.001;
+    END Parcel;
+  END Data;
+END DeferredCurves24.

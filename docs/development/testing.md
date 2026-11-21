@@ -115,6 +115,10 @@ und den Rollback eines erst beim zweiten Objekt fehlgeschlagenen Ersatzes.
 `*DbInteropTest.*LocalSrid*` prüft abweichende lokale GeoPackage-SRS-IDs
 und die Ablehnung nicht eindeutiger Katalogzuordnungen.
 
+Die Tests zu aufgeschobenen `VERTEX`-Domänen prüfen den Werkzeugwechsel
+mit `--disableValidation` auf der ili2db-Seite. Der Validator von 5.5.2
+bricht bei generischen Stützpunktdomänen mit offenen Achsgrenzen ab.
+
 Für `EXTERNAL`-Referenzattribute prüft die Suite frühere und spätere Ziele
 im selben Datensatz, den konkreten Zieltyp, die Datensatzisolierung und
 den Rollback bei fehlendem Ziel oder falscher BID. Sie liest auch einen

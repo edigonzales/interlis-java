@@ -701,7 +701,7 @@ final class DbMapping {
     }
 
     static List<Column> describeColumns(TransferPlan plan, ObjectDescriptor object, AttributeSlot attr, CrsDefaults defaults) {
-        var generic = DbDomains.pointBinding(plan, object, attr);
+        var generic = DbDomains.geometryBinding(plan, object, attr);
         if (generic.isEmpty()) return List.of(describeColumn(plan, object, attr, defaults, Optional.empty()));
         var binding = generic.orElseThrow();
         var columns = new ArrayList<Column>();
@@ -723,9 +723,12 @@ final class DbMapping {
         String name = attr.name().declared().last();
         if (!CardinalityUpper.finite(1).equals(attr.cardinality().upper())) throw unsupported(path);
         var concrete = selection.map(binding -> DbDomains.domain(plan, binding.concrete().symbol()));
-        var type = plan.type(concrete.map(domain -> new TypeRef(plan.snapshotId(), domain.typeId()))
-                .orElse(attr.effectiveType())).known().orElseThrow(() -> unsupported(path));
-        var curve = type instanceof GeometryType geometry && optional(attr) ? describeCurve(plan, geometry, path, defaults) : null;
+        var type = plan.type(attr.effectiveType()).known().orElseThrow(() -> unsupported(path));
+        if (!(type instanceof GeometryType) && concrete.isPresent()) {
+            type = plan.type(new TypeRef(plan.snapshotId(), concrete.orElseThrow().typeId())).known().orElseThrow();
+        }
+        var curve = type instanceof GeometryType geometry && optional(attr)
+                ? describeCurve(plan, geometry, path, defaults, concrete) : null;
         Kind kind = switch (type) {
             case TextType text when text.textKind() == TextKind.TEXT || text.textKind() == TextKind.MTEXT -> Kind.TEXT;
             case NumericType number when int32(number) -> Kind.INTEGER;
@@ -769,7 +772,8 @@ final class DbMapping {
 
     private record Curve(Kind kind, int dimensions, int epsg) { }
 
-    private static Curve describeCurve(TransferPlan plan, GeometryType geometry, String path, CrsDefaults defaults) {
+    private static Curve describeCurve(TransferPlan plan, GeometryType geometry, String path, CrsDefaults defaults,
+                                       Optional<DomainSymbol> concrete) {
         String feature = "attribute " + path + " (" + geometry.kind() + ")";
         var geometryKind = geometry.geometryKind();
         var kind = switch (geometryKind) {
@@ -788,13 +792,15 @@ final class DbMapping {
                 throw unsupported(feature);
             }
         }
-        var domain = vertexDomain(plan, geometry);
+        var domain = concrete.orElseGet(() -> vertexDomain(plan, geometry));
         var type = plan.type(new TypeRef(plan.snapshotId(), domain.typeId())).known().orElseThrow();
         if (domain.generic() || !(type instanceof CoordinateType coordinates)
                 || coordinates.multiCoordinate() || !storageDimensions(coordinates)) {
             throw unsupported(feature);
         }
-        return new Curve(kind, coordinates.dimensions(), geometryEpsg(plan, coordinates, domain, defaults, path));
+        int epsg = concrete.isPresent() ? explicitEpsg(coordinates, domain, path)
+                : geometryEpsg(plan, coordinates, domain, defaults, path);
+        return new Curve(kind, coordinates.dimensions(), epsg);
     }
 
     private static boolean storageDimensions(CoordinateType coordinates) {

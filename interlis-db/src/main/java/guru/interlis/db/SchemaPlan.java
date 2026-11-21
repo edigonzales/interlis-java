@@ -185,7 +185,8 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
         if (effective instanceof CoordinateType coordinateType) {
             coordinates = coordinateType;
         } else {
-            var domain = DbMapping.vertexDomain(mapping.plan(), (GeometryType) effective);
+            var domain = column.domainBinding().map(binding -> DbDomains.domain(mapping.plan(), binding.concrete().symbol()))
+                    .orElseGet(() -> DbMapping.vertexDomain(mapping.plan(), (GeometryType) effective));
             coordinates = (CoordinateType) type(mapping, new TypeRef(mapping.plan().snapshotId(), domain.typeId()));
         }
         property(properties, table, null, column, "geomType", column.kind().geometryType());
