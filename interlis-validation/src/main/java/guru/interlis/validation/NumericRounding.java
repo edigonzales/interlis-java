@@ -7,6 +7,7 @@ import guru.interlis.model.NumericRange;
 import guru.interlis.model.NumericType;
 import guru.interlis.model.PrecisionOrigin;
 import guru.interlis.model.SymbolRef;
+import guru.interlis.model.TypeDescriptor;
 import guru.interlis.transfer.TransferEvent.ObjectEvent;
 import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TransferGeometry.*;
@@ -19,6 +20,8 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -86,7 +89,21 @@ final class NumericRounding {
                         next.run();
                     }), () -> accept.accept(changed[0] ? new TransferValue.Repeated(repeated.kind(), items) : repeated));
             }
-            default -> accept.accept(scalar(value, field, level));
+            case TransferGeometry geometry -> {
+                var type = effectiveType(field, level);
+                var axes = switch (type) {
+                    case CoordinateType coordinate -> coordinate;
+                    case GeometryType curve -> curve.vertexDomain()
+                            .map(id -> GeometryParameters.coordinate(plan, basket, id)).orElse(null);
+                    case null, default -> null;
+                };
+                if (axes != null || type instanceof GeometryType curve && curve.lineAttributes().isPresent()) {
+                    geometry(geometry, axes, depth, accept);
+                } else {
+                    accept.accept(geometry);
+                }
+            }
+            default -> accept.accept(scalar(value, effectiveType(field, level)));
         }
     }
 
@@ -101,68 +118,83 @@ final class NumericRounding {
         });
     }
 
-    private TransferValue scalar(TransferValue value, ObjectValidationPlan.FieldRule field, int level) {
+    private TypeDescriptor effectiveType(ObjectValidationPlan.FieldRule field, int level) {
         if (field == null || level >= field.values().size()) {
-            return value;
+            return null;
         }
         var rule = field.values().get(level);
-        var type = rule.genericDomain().isPresent()
+        return rule.genericDomain().isPresent()
                 ? rule.genericDomain().map(basket.domains()::get).flatMap(plan::domainType).orElse(null)
                 : rule.type();
-        if (type instanceof NumericType numeric && value instanceof NumberValue number) {
-            return number(number, numeric.range());
+    }
+
+    private TransferValue scalar(TransferValue value, TypeDescriptor type) {
+        return type instanceof NumericType numeric && value instanceof NumberValue number
+                ? number(number, numeric.range()) : value;
+    }
+
+    private void geometry(TransferGeometry value, CoordinateType axes, int depth, Consumer<TransferValue> accept) {
+        switch (value) {
+            case Coordinate point -> accept.accept(coordinate(point, axes));
+            case MultiCoordinate multi -> accept.accept(new MultiCoordinate(multi.coordinates().stream()
+                    .map(point -> coordinate(point, axes)).toList()));
+            case Polyline line -> line(line, axes, depth, accept::accept);
+            case MultiPolyline multi -> mapChildren(multi.lines(),
+                    (line, result) -> line(line, axes, depth, result),
+                    lines -> accept.accept(new MultiPolyline(lines)));
+            case Surface surface -> surface(surface, axes, depth, accept::accept);
+            case MultiSurface multi -> mapChildren(multi.surfaces(),
+                    (surface, result) -> surface(surface, axes, depth, result),
+                    surfaces -> accept.accept(new MultiSurface(surfaces)));
         }
-        if (value instanceof TransferGeometry geometry) {
-            var vertices = switch (type) {
-                case CoordinateType coordinate -> coordinate;
-                case GeometryType curve -> curve.vertexDomain()
-                        .map(id -> GeometryParameters.coordinate(plan, basket, id)).orElse(null);
-                case null, default -> null;
-            };
-            if (vertices != null) {
-                return geometry(geometry, vertices);
-            }
+    }
+
+    private void surface(Surface surface, CoordinateType axes, int depth, Consumer<Surface> accept) {
+        visit();
+        ring(surface.shell(), axes, depth, shell ->
+                mapChildren(surface.holes(), (hole, result) -> ring(hole, axes, depth, result),
+                        holes -> accept.accept(new Surface(shell, holes))));
+    }
+
+    private void ring(Ring ring, CoordinateType axes, int depth, Consumer<Ring> accept) {
+        visit();
+        mapChildren(ring.lines(), (line, result) -> line(line, axes, depth, result),
+                lines -> accept.accept(new Ring(lines)));
+    }
+
+    private void line(Polyline line, CoordinateType axes, int depth, Consumer<Polyline> accept) {
+        visit();
+        var parts = axes == null ? line.parts() : line.parts().stream()
+                .map(part -> new CurvePart(coordinate(part.start(), axes), part.segments().stream().map(segment ->
+                        switch (segment) {
+                            case Straight straight -> (Segment) new Straight(coordinate(straight.end(), axes));
+                            case Arc arc -> {
+                                // The intermediate point determines the curve and retains its supplied precision.
+                                visit();
+                                yield new Arc(arc.support(), coordinate(arc.end(), axes), arc.radius());
+                            }
+                        }).toList())).toList();
+        if (line.lineAttributes().isEmpty()) {
+            accept.accept(new Polyline(parts));
+        } else {
+            value(line.lineAttributes().orElseThrow(), null, 0, depth + 1, rounded ->
+                    accept.accept(new Polyline(parts, Optional.of((TransferValue.Structured) rounded))));
         }
-        return value;
     }
 
-    private TransferGeometry geometry(TransferGeometry value, CoordinateType axes) {
-        return switch (value) {
-            case Coordinate position -> coordinate(position, axes);
-            case MultiCoordinate multi -> new MultiCoordinate(multi.coordinates().stream()
-                    .map(position -> coordinate(position, axes)).toList());
-            case Polyline line -> line(line, axes);
-            case MultiPolyline multi -> new MultiPolyline(multi.lines().stream().map(line -> line(line, axes)).toList());
-            case Surface surface -> surface(surface, axes);
-            case MultiSurface multi -> new MultiSurface(multi.surfaces().stream().map(s -> surface(s, axes)).toList());
-        };
-    }
-
-    private Surface surface(Surface surface, CoordinateType axes) {
-        visit();
-        return new Surface(ring(surface.shell(), axes), surface.holes().stream().map(hole -> ring(hole, axes)).toList());
-    }
-
-    private Ring ring(Ring ring, CoordinateType axes) {
-        visit();
-        return new Ring(ring.lines().stream().map(line -> line(line, axes)).toList());
-    }
-
-    private Polyline line(Polyline line, CoordinateType axes) {
-        visit();
-        return new Polyline(line.parts().stream().map(part -> new CurvePart(coordinate(part.start(), axes),
-                part.segments().stream().map(segment -> switch (segment) {
-                    case Straight straight -> (Segment) new Straight(coordinate(straight.end(), axes));
-                    case Arc arc -> {
-                        // The intermediate point determines the curve and retains its supplied precision.
-                        visit();
-                        yield new Arc(arc.support(), coordinate(arc.end(), axes), arc.radius());
-                    }
-                }).toList())).toList(), line.lineAttributes());
+    private <T> void mapChildren(List<T> source, BiConsumer<T, Consumer<T>> transform, Consumer<List<T>> accept) {
+        var values = new ArrayList<T>();
+        children(source.iterator(), (original, next) -> transform.accept(original, item -> {
+            values.add(item);
+            next.run();
+        }), () -> accept.accept(values));
     }
 
     private Coordinate coordinate(Coordinate coordinate, CoordinateType axes) {
         visit();
+        if (axes == null) {
+            return coordinate;
+        }
         var ordinates = new ArrayList<>(coordinate.ordinates());
         for (int i = 0; i < Math.min(axes.dimensions(), ordinates.size()); i++) {
             ordinates.set(i, number(ordinates.get(i), axes.axes().get(i)));

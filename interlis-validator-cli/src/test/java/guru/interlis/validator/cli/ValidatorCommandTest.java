@@ -14,6 +14,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -28,6 +30,194 @@ class ValidatorCommandTest {
         assertEquals(0, result.exit(), result.error());
         assertTrue(result.error().contains("Objects checked: 1"), result.error());
         assertEquals("", result.output());
+    }
+
+    @Test
+    void checksSurfaceAndAreaLineAttributes() throws Exception {
+        lineAttributeModel("MANDATORY CONSTRAINT label != \"reserved\";");
+        write("valid.xtf", legacy(attributedBoundary("shape", "<label>valid</label>")
+                + attributedBoundary("parcel", "<label>valid</label>")));
+        assertLineAttributeResult("valid.xtf", 0, "passed", 0, 0);
+
+        write("missing.xtf", legacy(attributedBoundary("shape", "")));
+        var missing = assertLineAttributeResult("missing.xtf", 1, "rejected", 1, 0);
+        assertLineDiagnostic(missing, "missing.xtf", "REQUIRED_VALUE_MISSING", "shape",
+                "/label", "label : MANDATORY TEXT*20;");
+
+        write("long.xtf", legacy(attributedBoundary("parcel", "<label>abcdefghijklmnopqrstu</label>")));
+        var longText = assertLineAttributeResult("long.xtf", 1, "rejected", 1, 0);
+        assertLineDiagnostic(longText, "long.xtf", "TEXT_TOO_LONG", "parcel",
+                "/label", "label : MANDATORY TEXT*20;");
+
+        write("nested.xtf", legacy(attributedBoundary("shape", """
+                <label>valid</label><details>
+                  <Checks.Data.Details><note>ok</note></Checks.Data.Details>
+                  <Checks.Data.Details><note>too long</note></Checks.Data.Details>
+                </details>
+                """)));
+        var nested = assertLineAttributeResult("nested.xtf", 1, "rejected", 1, 0);
+        assertLineDiagnostic(nested, "nested.xtf", "TEXT_TOO_LONG", "shape",
+                "/details[2]/note", "note : TEXT*4;");
+
+        write("constraint.xtf", legacy(attributedBoundary("parcel", "<label>reserved</label>")));
+        var constraint = assertLineAttributeResult("constraint.xtf", 1, "rejected", 1, 0);
+        assertLineDiagnostic(constraint, "constraint.xtf", "MANDATORY_CONSTRAINT_FALSE", "parcel",
+                "", "MANDATORY CONSTRAINT label != \"reserved\";");
+    }
+
+    @Test
+    void reportsUnsupportedLineConstraintsAlongsideViolations() throws Exception {
+        lineAttributeModel("MANDATORY CONSTRAINT Checks.accepts(label);");
+        write("unchecked-line.xtf", legacy(attributedBoundary("shape", "<label>valid</label>")));
+        var unchecked = assertLineAttributeResult("unchecked-line.xtf", 5, "incomplete", 0, 1);
+        assertTrue(unchecked.getAsJsonArray("unchecked").get(0).getAsString().contains("UNSUPPORTED_EXPRESSION"));
+        write("rejected-line.xtf", legacy(attributedBoundary("shape", "<label>abcdefghijklmnopqrstu</label>")));
+        assertLineAttributeResult("rejected-line.xtf", 1, "rejected", 1, 1);
+    }
+
+    @Test
+    void reportsDatasetRulesOnLineStructuresOutsideTheCheckedScope() throws Exception {
+        lineAttributeModel("EXISTENCE CONSTRAINT label REQUIRED IN Target:name;");
+        write("missing-target.xtf", legacy(attributedBoundary("shape", "<label>valid</label>")));
+        var result = assertLineAttributeResult("missing-target.xtf", 5, "incomplete", 0, 1);
+        assertTrue(result.getAsJsonArray("unchecked").get(0).getAsString().startsWith("OUT_OF_SCOPE_GLOBAL "));
+    }
+
+    @Test
+    void checksLocalLineConstraintsOnDeferredGeometry() throws Exception {
+        write("Checks.ili", """
+                INTERLIS 2.3;
+                MODEL Checks AT "https://example.org/checks" VERSION "1" =
+                  DOMAIN Point = COORD 0..100, 0..100;
+                  TOPIC Data =
+                    STRUCTURE Marks =
+                      label : MANDATORY TEXT*20;
+                      MANDATORY CONSTRAINT label != "reserved";
+                    END Marks;
+                    CLASS Target =
+                      shape : SURFACE WITH (STRAIGHTS) VERTEX Point WITHOUT OVERLAPS > 0.01 LINE ATTRIBUTES Marks;
+                    END Target;
+                    STRUCTURE Pointer =
+                      link : REFERENCE TO Target;
+                      shape : SURFACE WITH (STRAIGHTS) VERTEX Point WITHOUT OVERLAPS > 0.01 LINE ATTRIBUTES Marks := link->shape;
+                    END Pointer;
+                    CLASS Item = pointer : Pointer; END Item;
+                  END Data;
+                END Checks.
+                """);
+        var input = legacy("<pointer><Checks.Data.Pointer><link REF=\"target\"/></Checks.Data.Pointer></pointer>")
+                .replace("</Checks.Data.Item>", "</Checks.Data.Item><Checks.Data.Target TID=\"target\">"
+                        + attributedBoundary("shape", "<label>valid</label>") + "</Checks.Data.Target>");
+        write("derived-line.xtf", input);
+        var result = run("--json", "--offline", "derived-line.xtf");
+        assertEquals(0, result.exit(), result.output());
+        assertEquals(2, result.json().get("objects").getAsInt());
+        assertTrue(result.json().get("completed").getAsBoolean());
+        assertEquals(0, result.json().get("violations").getAsInt());
+        assertTrue(result.json().getAsJsonArray("unchecked").isEmpty());
+
+        write("invalid-derived-line.xtf", input.replace("<label>valid</label>", "<label>reserved</label>"));
+        var rejected = run("--json", "--offline", "invalid-derived-line.xtf");
+        assertEquals(1, rejected.exit(), rejected.output());
+        var json = rejected.json();
+        assertEquals("rejected", json.get("status").getAsString());
+        assertTrue(json.get("completed").getAsBoolean());
+        assertEquals(2, json.get("violations").getAsInt());
+        var diagnostics = json.getAsJsonArray("diagnostics");
+        assertEquals(2, diagnostics.size());
+        var byTid = diagnostics.asList().stream().map(element -> element.getAsJsonObject())
+                .collect(Collectors.groupingBy(diagnostic -> diagnostic.getAsJsonObject("location").get("tid").getAsString()));
+        assertEquals(Set.of("one", "target"), byTid.keySet());
+        assertDeferredLineDiagnostic(byTid.get("one").getFirst(), "Item", "/pointer/shape/RING[1]/LINE[2]");
+        assertDeferredLineDiagnostic(byTid.get("target").getFirst(), "Target", "/shape/RING[1]/LINE[2]");
+    }
+
+    private void assertDeferredLineDiagnostic(JsonObject diagnostic, String type, String path) throws IOException {
+        assertEquals("MANDATORY_CONSTRAINT_FALSE", diagnostic.get("code").getAsString());
+        var location = diagnostic.getAsJsonObject("location");
+        assertEquals(type, location.get("objectType").getAsString());
+        assertEquals(path, location.get("path").getAsString());
+        assertLineRule(diagnostic, "MANDATORY CONSTRAINT label != \"reserved\";");
+    }
+
+    private void lineAttributeModel(String constraint) throws Exception {
+        write("Checks.ili", """
+                INTERLIS 2.3;
+                CONTRACTED MODEL Checks AT "https://example.org/checks" VERSION "1" =
+                  FUNCTION accepts(value: TEXT): BOOLEAN;
+                  DOMAIN Point = COORD 0.00..100.00, 0.00..100.00;
+                  TOPIC Data =
+                    CLASS Target = name : TEXT*20; END Target;
+                    STRUCTURE Details =
+                      note : TEXT*4;
+                    END Details;
+                    STRUCTURE Marks =
+                      label : MANDATORY TEXT*20;
+                      details : BAG {0..*} OF Details;
+                      %s
+                    END Marks;
+                    CLASS Item =
+                      shape : SURFACE WITH (STRAIGHTS) VERTEX Point WITHOUT OVERLAPS > 0.01 LINE ATTRIBUTES Marks;
+                      parcel : AREA WITH (STRAIGHTS) VERTEX Point WITHOUT OVERLAPS > 0.01 LINE ATTRIBUTES Marks;
+                    END Item;
+                  END Data;
+                END Checks.
+                """.formatted(constraint));
+    }
+
+    private static String attributedBoundary(String field, String attributes) {
+        return """
+                <%1$s><SURFACE><BOUNDARY>
+                  <POLYLINE><LINEATTR><Checks.Data.Marks><label>first</label></Checks.Data.Marks></LINEATTR>
+                    <COORD><C1>0.00</C1><C2>0.00</C2></COORD>
+                    <COORD><C1>10.00</C1><C2>0.00</C2></COORD>
+                    <COORD><C1>10.00</C1><C2>10.00</C2></COORD>
+                  </POLYLINE>
+                  <POLYLINE><LINEATTR><Checks.Data.Marks>%2$s</Checks.Data.Marks></LINEATTR>
+                    <COORD><C1>10.00</C1><C2>10.00</C2></COORD>
+                    <COORD><C1>0.00</C1><C2>10.00</C2></COORD>
+                    <COORD><C1>0.00</C1><C2>0.00</C2></COORD>
+                  </POLYLINE>
+                </BOUNDARY></SURFACE></%1$s>
+                """.formatted(field, attributes);
+    }
+
+    private JsonObject assertLineAttributeResult(String file, int exit, String status, int violations, int unchecked) {
+        var result = run("--json", "--offline", file);
+        assertEquals(exit, result.exit(), result.output() + result.error());
+        var json = result.json();
+        assertEquals(status, json.get("status").getAsString());
+        assertTrue(json.get("completed").getAsBoolean());
+        assertEquals(1, json.get("objects").getAsInt());
+        assertEquals(violations, json.get("violations").getAsInt());
+        assertEquals(unchecked, json.getAsJsonArray("unchecked").size(), result.output());
+        return json;
+    }
+
+    private void assertLineDiagnostic(JsonObject json, String file, String code, String geometry,
+                                             String suffix, String declaration) throws IOException {
+        var diagnostics = json.getAsJsonArray("diagnostics");
+        assertEquals(1, diagnostics.size());
+        var diagnostic = diagnostics.get(0).getAsJsonObject();
+        assertEquals(code, diagnostic.get("code").getAsString());
+        var location = diagnostic.getAsJsonObject("location");
+        assertTrue(location.get("source").getAsString().endsWith(file));
+        assertEquals("basket", location.get("bid").getAsString());
+        assertEquals("one", location.get("tid").getAsString());
+        assertEquals("Item", location.get("objectType").getAsString());
+        assertEquals("/" + geometry + "/RING[1]/LINE[2]" + suffix,
+                location.get("path").getAsString());
+        assertLineRule(diagnostic, declaration);
+    }
+
+    private void assertLineRule(JsonObject diagnostic, String declaration) throws IOException {
+        var rule = diagnostic.getAsJsonObject("ruleLocation");
+        assertTrue(rule.get("source").getAsString().endsWith("Checks.ili"));
+        int start = rule.get("startOffset").getAsInt();
+        int end = rule.get("endOffset").getAsInt();
+        assertEquals(declaration, Files.readString(directory.resolve("Checks.ili")).substring(start, end));
+        assertEquals(declaration.startsWith("MANDATORY") ? "constraint@" + start : declaration.split(" ")[0],
+                rule.get("declaration").getAsString());
     }
 
     @Test

@@ -4,10 +4,14 @@ import guru.interlis.model.CoordinateType;
 import guru.interlis.model.GeometryType;
 import guru.interlis.model.Origin;
 import guru.interlis.transfer.TransferGeometry;
+import guru.interlis.transfer.TransferValue;
+import guru.interlis.validation.ValidationSession.ValuePath;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static guru.interlis.validation.DataLocation.GeometryComponent.Kind.*;
 import static guru.interlis.validation.ValidationCode.*;
@@ -74,6 +78,37 @@ final class GeometryRules {
         };
     }
 
+    record LineAttributes(TransferValue.Structured value, ValuePath path) { }
+
+    static Stream<LineAttributes> lineAttributes(TransferGeometry value, ValuePath path, Runnable visit) {
+        visit.run();
+        return switch (value) {
+            case TransferGeometry.Polyline line -> line.lineAttributes().stream()
+                    .map(attributes -> new LineAttributes(attributes, path));
+            case TransferGeometry.MultiPolyline multi -> lineAttributes(multi.lines(), path, visit);
+            case TransferGeometry.Surface surface -> IntStream.rangeClosed(0, surface.holes().size())
+                    .mapToObj(index -> {
+                        visit.run();
+                        var ring = index == 0 ? surface.shell() : surface.holes().get(index - 1);
+                        return lineAttributes(ring.lines(), component(path, RING, index), visit);
+                    }).flatMap(lines -> lines);
+            case TransferGeometry.MultiSurface multi -> IntStream.range(0, multi.surfaces().size())
+                    .mapToObj(index -> lineAttributes(multi.surfaces().get(index),
+                            component(path, SURFACE, index), visit)).flatMap(lines -> lines);
+            default -> Stream.empty();
+        };
+    }
+
+    private static Stream<LineAttributes> lineAttributes(List<TransferGeometry.Polyline> lines,
+                                                         ValuePath path, Runnable visit) {
+        return IntStream.range(0, lines.size()).mapToObj(index ->
+                lineAttributes(lines.get(index), component(path, LINE, index), visit)).flatMap(line -> line);
+    }
+
+    private static ValuePath component(ValuePath path, DataLocation.GeometryComponent.Kind kind, int index) {
+        return new ValuePath(path, new DataLocation.GeometryComponent(kind, index + 1));
+    }
+
     boolean check(TransferGeometry geometry) {
         switch (geometry) {
             case TransferGeometry.Coordinate coordinate -> coordinate(coordinate, List.of());
@@ -115,7 +150,7 @@ final class GeometryRules {
 
     private void line(TransferGeometry.Polyline line, List<DataLocation.GeometryComponent> path) {
         visit.run();
-        if (line.lineAttributes().isPresent() || !standardForms(forms)) {
+        if (!standardForms(forms)) {
             fullyChecked = false;
         }
         for (int partIndex = 0; partIndex < line.parts().size(); partIndex++) {
