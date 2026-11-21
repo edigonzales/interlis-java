@@ -19,7 +19,7 @@ import java.sql.Statement;
 final class GeoPackageSchema {
     private GeoPackageSchema() { }
 
-    static void create(Path target, SchemaPlan plan, CancellationToken token) throws IOException, SQLException {
+    static void create(Path target, SchemaPlan plan, boolean createGeometryIndexes, CancellationToken token) throws IOException, SQLException {
         token.throwIfCancellationRequested();
         Path destination = target.toAbsolutePath().normalize();
         if (Files.exists(destination, LinkOption.NOFOLLOW_LINKS)) {
@@ -27,7 +27,7 @@ final class GeoPackageSchema {
         }
         Path temporary = Files.createTempFile(destination.getParent(), ".interlis-db-", ".gpkg");
         try {
-            build(temporary, plan, token);
+            build(temporary, plan, createGeometryIndexes, token);
             token.throwIfCancellationRequested();
             try {
                 // Linking publishes the completed file without overwriting a concurrent target.
@@ -51,7 +51,7 @@ final class GeoPackageSchema {
         }
     }
 
-    private static void build(Path file, SchemaPlan plan, CancellationToken token) throws IOException, SQLException {
+    private static void build(Path file, SchemaPlan plan, boolean createGeometryIndexes, CancellationToken token) throws IOException, SQLException {
         var config = new SQLiteConfig();
         config.resetOpenMode(SQLiteOpenMode.CREATE);
         config.enforceForeignKeys(true);
@@ -60,8 +60,8 @@ final class GeoPackageSchema {
             transaction.execute("BEGIN IMMEDIATE");
             try {
                 bootstrap(transaction, token);
-                SchemaSql.createGeoPackageTables(connection, plan, token);
-                registerContents(connection, plan, token);
+                SchemaSql.createGeoPackageTables(connection, plan, createGeometryIndexes, token);
+                registerContents(connection, plan, createGeometryIndexes, token);
                 token.throwIfCancellationRequested();
                 transaction.execute("COMMIT");
             } catch (IOException | SQLException | RuntimeException failure) {
@@ -86,7 +86,8 @@ final class GeoPackageSchema {
         }
     }
 
-    private static void registerContents(Connection connection, SchemaPlan plan, CancellationToken token)
+    private static void registerContents(Connection connection, SchemaPlan plan, boolean createGeometryIndexes,
+                                         CancellationToken token)
             throws SQLException {
         try (var attributes = connection.prepareStatement("""
                  INSERT INTO gpkg_contents (table_name, data_type, identifier, description)
@@ -118,6 +119,7 @@ final class GeoPackageSchema {
                     registerAttributes(attributes, table.name());
                 } else {
                     registerFeature(feature, geometry, table.name(), spatial);
+                    if (createGeometryIndexes) GeoPackageRtree.create(connection, table.name(), spatial.column().name());
                     var kind = spatial.column().kind();
                     if (kind == DbMapping.Kind.POLYLINE || kind == DbMapping.Kind.SURFACE
                             || kind == DbMapping.Kind.MULTICURVE || kind == DbMapping.Kind.MULTISURFACE) {

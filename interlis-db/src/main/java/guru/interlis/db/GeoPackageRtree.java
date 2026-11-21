@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static guru.interlis.db.Database.quote;
 import static guru.interlis.db.Ili2dbLayout.ID_COLUMN;
@@ -17,6 +18,22 @@ final class GeoPackageRtree {
     private static final List<String> FUNCTIONS = List.of("ST_IsEmpty", "ST_MinX", "ST_MaxX", "ST_MinY", "ST_MaxY");
 
     private GeoPackageRtree() { }
+
+    static void create(Connection connection, String table, String column) throws SQLException {
+        try (var statement = connection.createStatement()) {
+            statement.execute(createIndex(indexName(table, column)));
+            for (String trigger : new TreeMap<>(triggers(table, column)).values()) statement.execute(trigger);
+        }
+        try (var registration = connection.prepareStatement("""
+                INSERT INTO gpkg_extensions (table_name, column_name, extension_name, definition, scope)
+                VALUES (?, ?, ?, 'http://www.geopackage.org/spec120/#extension_rtree', 'write-only')
+                """)) {
+            registration.setString(1, table);
+            registration.setString(2, column);
+            registration.setString(3, EXTENSION);
+            registration.executeUpdate();
+        }
+    }
 
     static boolean check(Connection connection, String table, String column) throws SQLException {
         String index = indexName(table, column);
@@ -139,10 +156,10 @@ final class GeoPackageRtree {
                         if (name.equals("ST_IsEmpty")) result(bounds == null ? 1 : 0);
                         else if (bounds == null) result();
                         else result(switch (name) {
-                            case "ST_MinX" -> bounds.minX();
-                            case "ST_MaxX" -> bounds.maxX();
-                            case "ST_MinY" -> bounds.minY();
-                            case "ST_MaxY" -> bounds.maxY();
+                            case "ST_MinX" -> indexBound(bounds.minX(), true);
+                            case "ST_MaxX" -> indexBound(bounds.maxX(), false);
+                            case "ST_MinY" -> indexBound(bounds.minY(), true);
+                            case "ST_MaxY" -> indexBound(bounds.maxY(), false);
                             default -> throw new AssertionError(name);
                         });
                     } catch (DbException failure) {
@@ -151,6 +168,15 @@ final class GeoPackageRtree {
                 }
             }, 1, Function.FLAG_DETERMINISTIC);
         }
+    }
+
+    private static double indexBound(double value, boolean minimum) {
+        // SQLite's relative adjustment may round back to the same subnormal float.
+        if (Math.abs(value) >= Float.MIN_NORMAL || value == 0) return value;
+        float rounded = (float) value;
+        if (minimum && rounded > value) return Math.nextDown(rounded);
+        if (!minimum && rounded < value) return Math.nextUp(rounded);
+        return rounded;
     }
 
     private static DbException invalid(String table, String column, String reason) {

@@ -47,7 +47,7 @@ final class SchemaSql {
 
     private SchemaSql() { }
 
-    static void createPostgres(Database db, SchemaPlan plan, CancellationToken token) throws SQLException {
+    static void createPostgres(Database db, SchemaPlan plan, boolean createGeometryIndexes, CancellationToken token) throws SQLException {
         String schema = db.schema();
         checkPostgresSchemaName(db.connection(), schema);
         if (!plan.geometryColumns().isEmpty()) {
@@ -57,7 +57,7 @@ final class SchemaSql {
             requireUuidDefault(db.connection());
         }
         var dialect = new Dialect(false, schema, db.postgisObject("geometry"));
-        var ddl = ddl(plan, dialect);
+        var ddl = ddl(plan, dialect, createGeometryIndexes);
         try (var statement = db.connection().createStatement()) {
             statement.execute("CREATE SCHEMA " + quote(schema));
         } catch (SQLException failure) {
@@ -66,7 +66,7 @@ final class SchemaSql {
             }
             throw failure;
         }
-        apply(db.connection(), plan, dialect, ddl, token);
+        apply(db.connection(), plan, dialect, ddl, createGeometryIndexes, token);
     }
 
     private static void checkPostgresSchemaName(Connection connection, String schema) throws SQLException {
@@ -106,14 +106,15 @@ final class SchemaSql {
         }
     }
 
-    static void createGeoPackageTables(Connection connection, SchemaPlan plan, CancellationToken token)
+    static void createGeoPackageTables(Connection connection, SchemaPlan plan, boolean createGeometryIndexes,
+                                       CancellationToken token)
             throws SQLException {
         var dialect = new Dialect(true, "main", "");
-        apply(connection, plan, dialect, ddl(plan, dialect), token);
+        apply(connection, plan, dialect, ddl(plan, dialect, false), createGeometryIndexes, token);
     }
 
     private static void apply(Connection connection, SchemaPlan plan, Dialect dialect, List<String> ddl,
-                              CancellationToken token) throws SQLException {
+                              boolean createGeometryIndexes, CancellationToken token) throws SQLException {
         try (var statement = connection.createStatement()) {
             for (String sql : ddl) {
                 token.throwIfCancellationRequested();
@@ -121,10 +122,10 @@ final class SchemaSql {
             }
         }
         token.throwIfCancellationRequested();
-        writeMetadata(connection, plan, dialect, token);
+        writeMetadata(connection, plan, dialect, createGeometryIndexes, token);
     }
 
-    private static List<String> ddl(SchemaPlan plan, Dialect dialect) {
+    private static List<String> ddl(SchemaPlan plan, Dialect dialect, boolean createGeometryIndexes) {
         var commands = new ArrayList<String>();
         if (!dialect.gpkg()) commands.add("CREATE SEQUENCE " + dialect.table(SEQUENCE));
         for (var table : plan.mapping().tables()) {
@@ -148,6 +149,11 @@ final class SchemaSql {
                 columns.add(quote(composition.ownerColumn()) + " " + dialect.idType());
             }
             commands.add(dialect.create(table.name(), String.join(", ", columns)));
+            var geometry = plan.geometryColumns().get(table.name());
+            if (createGeometryIndexes && geometry != null) {
+                commands.add("CREATE INDEX ON " + dialect.table(table.name())
+                        + " USING gist (" + quote(geometry.column().name()) + ")");
+            }
         }
         commands.addAll(metadataDdl(dialect));
         return List.copyOf(commands);
@@ -191,7 +197,8 @@ final class SchemaSql {
         return ddl;
     }
 
-    private static void writeMetadata(Connection connection, SchemaPlan plan, Dialect d, CancellationToken token)
+    private static void writeMetadata(Connection connection, SchemaPlan plan, Dialect d, boolean createGeometryIndexes,
+                                      CancellationToken token)
             throws SQLException {
         try (var models = insert(connection, d, MODEL, "filename, iliversion, modelName, content, importDate", 5)) {
             models.setString(1, plan.filename());
@@ -209,6 +216,7 @@ final class SchemaSql {
              var tableProps = insert(connection, d, TABLE_PROP, "tablename, tag, setting", 3);
              var colProps = insert(connection, d, COLUMN_PROP, "tablename, subtype, columnname, tag, setting", 5)) {
             writeSettings(settings, d.gpkg());
+            if (createGeometryIndexes) row(settings, "ch.ehi.sqlgen.createGeomIndex", "True");
             for (var table : plan.mapping().tables()) {
                 token.throwIfCancellationRequested();
                 String name = table.object().name().declared().toString();

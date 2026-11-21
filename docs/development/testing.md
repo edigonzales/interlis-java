@@ -92,6 +92,12 @@ in beiden Werkzeugrichtungen. Sie prüfen die internen IDs und den Bestand
 in SQL, exportiertes XTF, besitzende Datensätze, Referenzen und Rollback.
 Die Auswahl umfasst beide XTF-Versionen und beide Backends.
 
+Die Fälle `*DbInteropTest.*Delete*` prüfen das Löschen benannter
+Datensätze und die Wiederherstellung aller Zeilen beim Rollback.
+`*DbInteropTest.*Spatial*` prüft die Raumindizes aus beiden Schemaerzeugern,
+den Werkzeugwechsel und die räumlichen Treffer nach Schreiboperationen.
+Die GeoPackage-Fälle prüfen zusätzlich die RTree-Trigger und den Indexinhalt.
+
 Für `EXTERNAL`-Referenzattribute prüft die Suite frühere und spätere Ziele
 im selben Datensatz, den konkreten Zieltyp, die Datensatzisolierung und
 den Rollback bei fehlendem Ziel oder falscher BID. Sie liest auch einen

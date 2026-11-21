@@ -46,6 +46,39 @@ final class GeoPackageRtreeTest {
         }
     }
 
+    @Test
+    void sqliteRtreeEnclosesSubnormalBoundsAndRejectsOverflow() throws SQLException {
+        double tiny = 1e-50;
+        byte[] point = header(29, 1).putInt(1).putDouble(tiny).putDouble(-tiny).array();
+        try (var connection = DriverManager.getConnection("jdbc:sqlite::memory:");
+             var sql = connection.createStatement()) {
+            GeoPackageRtree.register(connection);
+            sql.execute("CREATE TABLE points (t_id INTEGER PRIMARY KEY, geom BLOB)");
+            sql.execute("""
+                    CREATE TABLE gpkg_extensions (
+                        table_name TEXT, column_name TEXT, extension_name TEXT, definition TEXT, scope TEXT
+                    )
+                    """);
+            GeoPackageRtree.create(connection, "points", "geom");
+            try (var insert = connection.prepareStatement("INSERT INTO points VALUES (?, ?)")) {
+                insert.setInt(1, 1);
+                insert.setBytes(2, point);
+                insert.executeUpdate();
+                insert.setInt(1, 2);
+                insert.setBytes(2, header(29, 1).putInt(1).putDouble(1e40).putDouble(0).array());
+                var failure = assertThrows(SQLException.class, insert::executeUpdate);
+                assertTrue(failure.getMessage().contains("coordinate range of SQLite RTree"));
+            }
+            try (var rows = sql.executeQuery("""
+                    SELECT COUNT(*) FROM rtree_points_geom
+                    WHERE minx <= 1e-50 AND maxx >= 1e-50 AND miny <= -1e-50 AND maxy >= -1e-50
+                    """)) {
+                assertTrue(rows.next());
+                assertEquals(1, rows.getInt(1));
+            }
+        }
+    }
+
     private static ByteBuffer header(int size, int flags) {
         return ByteBuffer.allocate(size).order(ByteOrder.LITTLE_ENDIAN)
                 .put((byte) 'G').put((byte) 'P').put((byte) 0).put((byte) flags).putInt(2056).put((byte) 1);

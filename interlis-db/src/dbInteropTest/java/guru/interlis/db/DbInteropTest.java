@@ -136,6 +136,8 @@ final class DbInteropTest {
         cases.straightGeometries(new TestDatabase(postgres, "spatial_straight"));
         cases.circularGeometries(new TestDatabase(postgres, "spatial_arcs"));
         if (version == 24) cases.collections(new TestDatabase(postgres, "spatial_collections"));
+        cases.createdSchemas(new TestDatabase(postgres, "spatial_created_reference"),
+                new TestDatabase(postgres, "spatial_created_native"));
     }
 
     private void exchangeDelete(int version, PostgreSQLContainer postgres) throws Exception {
@@ -2112,14 +2114,14 @@ final class DbInteropTest {
             try (var reserved = Database.openPostgres(cancelledDb.url, "select", cancelledDb.user,
                     cancelledDb.password, true)) {
                 var rejected = assertThrows(DbException.class,
-                        () -> SchemaSql.createPostgres(reserved, plan, CancellationToken.none()));
+                        () -> SchemaSql.createPostgres(reserved, plan, false, CancellationToken.none()));
                 assertTrue(rejected.getMessage().contains("reserved word"), rejected::getMessage);
             }
             try (var target = Database.openPostgres(cancelledDb.url, cancelledDb.schema, cancelledDb.user,
                     cancelledDb.password, true)) {
                 // The first execution checkpoint follows CREATE SCHEMA.
                 assertThrows(OperationCancelledException.class,
-                        () -> SchemaSql.createPostgres(target, plan, () -> true));
+                        () -> SchemaSql.createPostgres(target, plan, false, () -> true));
                 assertEquals(cancelledDb.schema, scalar(target.connection(),
                         "select nspname from pg_namespace where nspname='" + cancelledDb.schema + "'"));
             }
@@ -2128,7 +2130,7 @@ final class DbInteropTest {
             var checks = new AtomicInteger();
             // The fourth check precedes CREATE TABLE gpkg_spatial_ref_sys.
             assertThrows(OperationCancelledException.class,
-                    () -> GeoPackageSchema.create(cancelledDb.file, plan, () -> checks.incrementAndGet() == 5));
+                    () -> GeoPackageSchema.create(cancelledDb.file, plan, false, () -> checks.incrementAndGet() == 5));
             assertEquals(before, temporaryFiles());
         }
         assertMissingTarget(cancelledDb);
@@ -4221,12 +4223,13 @@ final class DbInteropTest {
     }
 
     static CliResult cli(TestDatabase db, String operation, String model, String dataset, Path path,
-                                 CancellationToken token) {
+                                 CancellationToken token, String... options) {
         var diagnostics = new StringWriter();
         var print = new PrintWriter(diagnostics);
         var args = new ArrayList<>(List.of(operation, "--model", model));
         if (dataset != null) args.addAll(List.of("--dataset", dataset));
         args.addAll(db.nativeOptions());
+        args.addAll(List.of(options));
         if (path != null) args.add(path.toString());
         int code = Main.run(args.toArray(String[]::new), print, print, db.password, token);
         return new CliResult(code, diagnostics.toString());

@@ -53,6 +53,10 @@ final class GeometryBinary {
                     || minX > maxX || minY > maxY) {
                 throw new DbException("Invalid GeoPackage XY envelope");
             }
+            if (minX < -Float.MAX_VALUE || maxX > Float.MAX_VALUE
+                    || minY < -Float.MAX_VALUE || maxY > Float.MAX_VALUE) {
+                throw new DbException("GeoPackage XY envelope exceeds the coordinate range of SQLite RTree");
+            }
         }
     }
 

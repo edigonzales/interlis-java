@@ -30,6 +30,11 @@ neben dem Ziel und wird nach erfolgreichem Abschluss per Hardlink
 veröffentlicht. Ein vorhandener Schemaname oder Zielpfad führt zu einem
 Fehler. Für GeoPackage muss das Ziel-Dateisystem Hardlinks unterstützen.
 
+Mit `schemaimport --create-geom-index` erhält jede Geometriespalte
+einen Raumindex. GeoPackage registriert `gpkg_rtree_index` mit der
+virtuellen Tabelle und ihren Standardtriggern. PostGIS legt einen GiST-Index an.
+Die entsprechende Option in ili2db 5.5.2 ist `--createGeomIdx`.
+
 ## Aufruf
 
 ```sh

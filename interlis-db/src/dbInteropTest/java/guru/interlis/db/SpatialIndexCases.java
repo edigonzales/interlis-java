@@ -252,6 +252,71 @@ final class SpatialIndexCases {
         }
     }
 
+    void createdSchemas(TestDatabase old, TestDatabase own) throws Exception {
+        String model = "DbSpatial" + version;
+        createReferenceSchema(old, model);
+        var ili = work.resolve(model + ".ili");
+        var result = cli(own, "schemaimport", model, null, ili, CancellationToken.none(), "--create-geom-index");
+        assertEquals(0, result.code(), result::diagnostics);
+
+        try (var oldSql = old.connect(); var ownSql = own.connect()) {
+            var expected = DbSchemaCatalog.read(oldSql, old.postgis(), old.schema());
+            if (!old.postgis()) {
+                expected = expected.expectGeoPackageGeometryExtension("indexedline", "trace", "COMPOUNDCURVE")
+                        .expectGeoPackageGeometryExtension("indexedplot", "footprint", "CURVEPOLYGON")
+                        .expectGeoPackageGeometryExtension("indexedarea", "boundary", "CURVEPOLYGON");
+            }
+            expected.assertSameAs(DbSchemaCatalog.read(ownSql, own.postgis(), own.schema()));
+            assertEquals(indexDefinitions(old, oldSql), indexDefinitions(own, ownSql));
+            assertIndex(own, ownSql, "indexedline", "trace");
+            assertIndex(own, ownSql, "indexedplot", "footprint");
+            assertIndex(own, ownSql, "indexedarea", "boundary");
+
+            String first = object(model, "IndexedLine", "segment", "<Trace>" + polyline(
+                    coordinate("2600800.125", "1200800.375") + coordinate("2600820.250", "1200820.500")) + "</Trace>");
+            String second = first.replace("2600800.125", "2600900.125").replace("2600820.250", "2600920.250");
+            Path original = delivery("created-index-original", model, "created-index", first);
+            Path changed = delivery("created-index-update", model, "created-index", second);
+
+            runReference(own, "import", "index", original);
+            assertSearch(own, ownSql, "indexedline", "trace", "2600810", "1200810", true);
+            assertCliSuccess(own, "update", model, "index", changed);
+            assertSearch(own, ownSql, "indexedline", "trace", "2600810", "1200810", false);
+            assertSearch(own, ownSql, "indexedline", "trace", "2600910", "1200810", true);
+            Path legacy = work.resolve("created-index-reference.xtf");
+            reference.run(own, work.toString(), "--export", "--exportTid", "--dataset", "index", legacy.toString());
+            assertUpdatedLine(legacy);
+
+            assertCliSuccess(old, "import", model, "index", original);
+            assertSearch(old, oldSql, "indexedline", "trace", "2600810", "1200810", true);
+            runReference(old, "update", "index", changed);
+            assertSearch(old, oldSql, "indexedline", "trace", "2600810", "1200810", false);
+            assertSearch(old, oldSql, "indexedline", "trace", "2600910", "1200810", true);
+            Path nativeOutput = work.resolve("created-index-native.xtf");
+            assertCliSuccess(old, "export", model, "index", nativeOutput);
+            assertUpdatedLine(nativeOutput);
+        }
+    }
+
+    private void assertUpdatedLine(Path path) throws Exception {
+        var object = children(children(readDataSection(path, version)).getFirst()).getFirst();
+        var x = children(children(children(child(object, "Trace")).getFirst()).getFirst()).getFirst();
+        assertEquals(0, new BigDecimal("2600900.125").compareTo(new BigDecimal(x.getTextContent())));
+    }
+
+    private static List<String> indexDefinitions(TestDatabase db, Connection sql) throws SQLException {
+        String query = db.postgis() ? "SELECT replace(indexdef,'" + db.schema() + ".','<schema>.')"
+                + " FROM pg_indexes WHERE schemaname='" + db.schema() + "' AND indexdef LIKE '%USING gist%' ORDER BY indexname"
+                : "SELECT name||':'||tbl_name FROM sqlite_schema WHERE type='trigger'"
+                  + " AND name LIKE 'rtree_%' ORDER BY name";
+        var result = new java.util.ArrayList<String>();
+        try (var statement = sql.createStatement(); var rows = statement.executeQuery(query)) {
+            while (rows.next()) result.add(rows.getString(1));
+        }
+        assertEquals(db.postgis() ? 3 : 18, result.size());
+        return result;
+    }
+
     private void assertCurvesInXtf(Path output) throws Exception {
         var basket = children(readDataSection(output, version)).getFirst();
         var arcs = basket.getElementsByTagNameNS("*", version == 23 ? "ARC" : "arc");
