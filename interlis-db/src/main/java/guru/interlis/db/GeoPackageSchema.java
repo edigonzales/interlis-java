@@ -114,10 +114,11 @@ final class GeoPackageSchema {
             registerAttributes(attributes, Ili2dbLayout.KEY_OBJECT);
             for (var table : plan.mapping().tables()) {
                 token.throwIfCancellationRequested();
-                var spatial = plan.geometryColumns().get(table.name());
-                if (spatial == null) {
+                var geometries = plan.geometryColumns().get(table.name());
+                if (geometries == null) {
                     registerAttributes(attributes, table.name());
                 } else {
+                    var spatial = geometries.getFirst();
                     registerFeature(feature, geometry, table.name(), spatial);
                     if (createGeometryIndexes) GeoPackageRtree.create(connection, table.name(), spatial.column().name());
                     var kind = spatial.column().kind();

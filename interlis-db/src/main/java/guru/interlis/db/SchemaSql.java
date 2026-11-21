@@ -149,10 +149,11 @@ final class SchemaSql {
                 columns.add(quote(composition.ownerColumn()) + " " + dialect.idType());
             }
             commands.add(dialect.create(table.name(), String.join(", ", columns)));
-            var geometry = plan.geometryColumns().get(table.name());
-            if (createGeometryIndexes && geometry != null) {
-                commands.add("CREATE INDEX ON " + dialect.table(table.name())
-                        + " USING gist (" + quote(geometry.column().name()) + ")");
+            if (createGeometryIndexes) {
+                for (var geometry : plan.geometryColumns().getOrDefault(table.name(), List.of())) {
+                    commands.add("CREATE INDEX ON " + dialect.table(table.name())
+                            + " USING gist (" + quote(geometry.column().name()) + ")");
+                }
             }
         }
         commands.addAll(metadataDdl(dialect));

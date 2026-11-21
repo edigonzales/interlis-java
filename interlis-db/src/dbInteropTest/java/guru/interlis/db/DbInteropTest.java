@@ -140,6 +140,21 @@ final class DbInteropTest {
                 .exchange(new TestDatabase(postgres, "xyz_reference"), new TestDatabase(postgres, "xyz_own"));
     }
 
+    @Test void geoPackageGeometryLayout23() throws Exception { exchangeGeometryLayout(23, null); }
+    @Test void geoPackageGeometryLayout24() throws Exception { exchangeGeometryLayout(24, null); }
+    @Test void postgisGeometryLayout23() throws Exception { exchangeWithPostgis(23, this::exchangeGeometryLayout); }
+    @Test void postgisGeometryLayout24() throws Exception { exchangeWithPostgis(24, this::exchangeGeometryLayout); }
+
+    private void exchangeGeometryLayout(int version, PostgreSQLContainer postgres) throws Exception {
+        var cases = new GeometryLayoutCases(work, version, new ReferenceTool(postgres != null));
+        var own = new TestDatabase(postgres, "geometry_layout_own");
+        if (postgres == null) {
+            cases.singleColumnProfile(own);
+        } else {
+            cases.sameTable(new TestDatabase(postgres, "geometry_layout_reference"), own);
+        }
+    }
+
     private void exchangeSpatial(int version, PostgreSQLContainer postgres) throws Exception {
         var cases = new SpatialIndexCases(work, version, new ReferenceTool(postgres != null));
         cases.points(new TestDatabase(postgres, "spatial_points"));

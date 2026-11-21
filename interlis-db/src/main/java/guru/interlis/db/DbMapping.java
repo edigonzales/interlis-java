@@ -139,9 +139,6 @@ final class DbMapping {
                  Optional<String> oidDomain) {
         Table {
             columns = List.copyOf(columns);
-            if (columns.stream().filter(column -> column.kind().geometry()).count() > 1) {
-                throw unsupported("multiple geometries in " + object.name().declared());
-            }
             var names = columns.stream().map(column -> foldedName(column.name()))
                     .collect(Collectors.toCollection(HashSet::new));
             for (var column : columns) {
@@ -260,6 +257,12 @@ final class DbMapping {
         return actual;
     }
 
+    static void requireSingleGeometry(ObjectDescriptor object, List<Column> columns) {
+        if (columns.stream().filter(column -> column.kind().geometry()).count() > 1) {
+            throw unsupported("multiple GeoPackage geometry columns in " + object.name().declared());
+        }
+    }
+
     static Set<SymbolRef> baseTables(TransferPlan plan) {
         return plan.objects().stream().flatMap(object -> object.baseType().stream()).collect(Collectors.toSet());
     }
@@ -344,6 +347,7 @@ final class DbMapping {
                 var binding = roleColumn(role, association.target(), column);
                 columns.add(association.ordered() ? binding.withPositionColumn(gpkg) : binding);
             }
+            if (gpkg) requireSingleGeometry(object, columns);
             tables.add(new Table(object, name, columns, discriminator, oidDomain(plan, object)));
         }
         var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();

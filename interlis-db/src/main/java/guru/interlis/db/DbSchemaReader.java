@@ -155,6 +155,7 @@ final class DbSchemaReader {
                 var column = bindRole(db, parent, attrNames, association.role(), association.target(), names);
                 columns.add(association.ordered() ? bindPosition(db, parent, column) : column);
             }
+            if (db.gpkg()) DbMapping.requireSingleGeometry(object, columns);
             tables.add(new Table(object, parent.name(), columns, hasDiscriminator(object, bases), DbMapping.oidDomain(plan, object)));
         }
         for (var table : tables) {

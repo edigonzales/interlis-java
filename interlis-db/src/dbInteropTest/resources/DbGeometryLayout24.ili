@@ -1,0 +1,13 @@
+INTERLIS 2.4;
+MODEL DbGeometryLayout24 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  DOMAIN
+    XY = COORD 2460000.125 .. 2870000.750, 1045000.500 .. 1310000.250;
+    XYZ = COORD 2460100.125 .. 2870100.750, 1045100.500 .. 1310100.250, -999.125 .. 999.875;
+  TOPIC Data =
+    CLASS Asset =
+      Anchor : XY;
+      Surveyed : XYZ;
+      Trace : POLYLINE WITH (STRAIGHTS) VERTEX XY;
+    END Asset;
+  END Data;
+END DbGeometryLayout24.

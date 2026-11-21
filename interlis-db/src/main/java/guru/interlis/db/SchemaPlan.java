@@ -36,7 +36,7 @@ import static guru.interlis.db.DbMapping.metaText;
 
 /** Read and plan a new schema before opening a writable database. */
 record SchemaPlan(DbMapping mapping, String filename, String modelNames, String content,
-                  List<ColumnProperty> columnProperties, Map<String, GeometryColumn> geometryColumns) {
+                  List<ColumnProperty> columnProperties, Map<String, List<GeometryColumn>> geometryColumns) {
     record ColumnProperty(String table, String subtype, String column, String key, String value) { }
 
     /** A mapped geometry and its SQL catalog bounds, with null for an absent bound. */
@@ -44,7 +44,8 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
 
     SchemaPlan {
         columnProperties = List.copyOf(columnProperties);
-        geometryColumns = Map.copyOf(geometryColumns);
+        geometryColumns = geometryColumns.entrySet().stream().collect(java.util.stream.Collectors.toUnmodifiableMap(
+                Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
     }
 
     static SchemaPlan read(String modelName, Path file, boolean gpkg, CancellationToken token) throws IOException {
@@ -72,7 +73,7 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
         var imports = model.imports().stream().map(ModelImport::importedModel).distinct().sorted().toList();
         String modelNames = imports.isEmpty() ? modelName : modelName + "{ " + String.join(" ", imports) + "}";
         var properties = new ArrayList<ColumnProperty>();
-        var geometries = new HashMap<String, GeometryColumn>();
+        var geometries = new HashMap<String, List<GeometryColumn>>();
         for (var table : mapping.tables()) {
             token.throwIfCancellationRequested();
             if (table.hasTidColumn()) {
@@ -113,7 +114,7 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
                 new SymbolRef(mapping.plan().snapshotId(), id))) + "." + name).orElse(name);
     }
 
-    private static void addProperties(List<ColumnProperty> properties, Map<String, GeometryColumn> geometries,
+    private static void addProperties(List<ColumnProperty> properties, Map<String, List<GeometryColumn>> geometries,
                                       DbMapping mapping, DbMapping.Table table, DbMapping.Column column) {
         column.target().ifPresent(target ->
                 property(properties, table, null, column, "foreignKey", mapping.table(target).name()));
@@ -150,7 +151,8 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
             });
         }
         if (column.kind().geometry()) {
-            geometries.put(table.name(), geometryColumn(properties, mapping, table, column));
+            geometries.computeIfAbsent(table.name(), ignored -> new ArrayList<>())
+                    .add(geometryColumn(properties, mapping, table, column));
         }
         String caption = metaText(attribute.attribute(), "ili2db.dispName");
         if (caption != null) property(properties, table, null, column, "dispName", caption);
