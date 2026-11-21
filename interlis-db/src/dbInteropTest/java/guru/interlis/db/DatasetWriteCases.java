@@ -4,6 +4,7 @@ import guru.interlis.db.DbInteropTest.ReferenceTool;
 import guru.interlis.db.DbInteropTest.TestDatabase;
 import guru.interlis.execution.CancellationToken;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -115,7 +116,7 @@ final class DatasetWriteCases {
             var place = child(baskets.getFirst(), version == 23 ? model + ".Data.Place" : "Place");
             assertEquals("site", id(place, version, "tid"));
             String x = children(children(child(place, "Geometry")).getFirst()).getFirst().getTextContent();
-            assertEquals(0, new java.math.BigDecimal(x).compareTo(new java.math.BigDecimal("2600600.500")));
+            assertEquals(0, new BigDecimal(x).compareTo(new BigDecimal("2600600.500")));
         }
     }
 
@@ -216,6 +217,50 @@ final class DatasetWriteCases {
                     .get(key("fresh", identity("fresh", stable), identity("fresh-item", stable))).label());
             if (!stable) checkStoredIdentities(db, sql, model, changed, after);
         }
+    }
+
+    void updateGeometry(TestDatabase db, boolean referenceSchema) throws Exception {
+        String model = "DbMutGeom" + version;
+        schema(db, referenceSchema, model);
+        Path original = delivery("geom-before", model, new Basket("geometries",
+                object(model, "GeoLeaf", "kept", "<Label>old</Label>" + point("2600000.125") + "<DetailCode>old</DetailCode>")
+                + object(model, "GeoLeaf", "clear", "<Label>clear</Label>" + point("2600050.500"))
+                + object(model, "GeoLeaf", "removed", "<Label>removed</Label>")));
+        Path changed = delivery("geom-after", model, new Basket("geometries",
+                object(model, "GeoLeaf", "kept", "<Label>now</Label>" + point("2600600.500") + "<DetailCode>new</DetailCode>")
+                + object(model, "GeoLeaf", "clear", "<Label>empty</Label>")));
+        seed(db, referenceSchema, model, "geom", original);
+        try (var sql = db.connect()) {
+            var before = rows(db, sql, "georoot");
+            Path switched = delivery("geom-wrong-type", model, new Basket("geometries",
+                    object(model, "GeoSibling", "kept", "<Label>other class</Label>")));
+            var failure = cli(db, "update", model, "geom", switched, CancellationToken.none());
+            assertNotEquals(0, failure.code(), failure::diagnostics);
+            assertTrue(failure.diagnostics().contains("Cannot change concrete class"), failure::diagnostics);
+            assertEquals(before, rows(db, sql, "georoot"));
+
+            Path output = mutate(db, referenceSchema, "update", model, "geom", changed);
+            var current = rows(db, sql, "georoot");
+            var kept = key("geom", "geometries", "kept");
+            assertEquals(before.get(kept).withLabel("now"), current.get(kept));
+            assertEquals(before.get(key("geom", "geometries", "clear")).withLabel("empty"),
+                    current.get(key("geom", "geometries", "clear")));
+            assertEquals(2, current.size());
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("geoleaf")));
+            assertEquals("new", scalar(sql, "SELECT detailcode FROM " + db.table("geoleaf")
+                    + " WHERE t_id=" + current.get(kept).object() + " AND t_basket=" + current.get(kept).basket()));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("georoot")
+                    + " WHERE t_ili_tid='clear' AND center IS NULL"));
+            var pointOwner = children(children(readDataSection(output, version)).getFirst()).stream()
+                    .filter(o -> "kept".equals(id(o, version, "tid"))).findFirst().orElseThrow();
+            String x = children(children(child(pointOwner, "Center")).getFirst()).getFirst().getTextContent();
+            assertEquals(0, new BigDecimal(x).compareTo(new BigDecimal("2600600.500")));
+        }
+    }
+
+    private String point(String x) {
+        return version == 23 ? "<Center><COORD><C1>%s</C1><C2>1200000.375</C2></COORD></Center>".formatted(x)
+                : "<Center><g:coord><g:c1>%s</g:c1><g:c2>1200000.375</g:c2></g:coord></Center>".formatted(x);
     }
 
     private void checkStoredIdentities(TestDatabase db, Connection sql, String model, Path input,

@@ -1222,6 +1222,10 @@ final class DbTransfer {
             }
             DbDatasetWrite.ExistingObject previous = updating && tid.isPresent()
                     ? existingObjects.remove(new DbDatasetWrite.ObjectKey(root, tid.orElseThrow())) : null;
+            if (previous != null && !previous.type().equals(table)) {
+                throw new DbException("Cannot change concrete class for TID " + tid.orElseThrow() + " from "
+                        + previous.type().object().name().declared() + " to " + table.object().name().declared());
+            }
             if (updating && previous == null && root.oidDomain().isPresent()) {
                 DbDatasetWrite.checkStableObjectBasket(db, root, datasetId, basketId, tid.orElseThrow());
             }

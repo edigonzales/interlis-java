@@ -19,6 +19,7 @@ import static guru.interlis.db.Ili2dbLayout.PREFIX;
 import static guru.interlis.db.Ili2dbLayout.T_BASKET;
 import static guru.interlis.db.Ili2dbLayout.T_ID;
 import static guru.interlis.db.Ili2dbLayout.T_ILI_TID;
+import static guru.interlis.db.Ili2dbLayout.T_TYPE;
 
 /** Operations on rows of existing datasets. All writes belong to the caller's transaction. */
 final class DbDatasetWrite {
@@ -42,9 +43,8 @@ final class DbDatasetWrite {
 
     static void checkUpdateProfile(DbMapping mapping) {
         for (var table : mapping.tables()) {
-            if (table.object().kind() != SymbolKind.CLASS || table.subtype() || table.hasDiscriminator()
-                    || table.columns().stream().anyMatch(column -> column.kind().geometry()
-                    || column.kind() == DbMapping.Kind.REFERENCE)) {
+            if (table.object().kind() != SymbolKind.CLASS
+                    || table.columns().stream().anyMatch(column -> column.kind() == DbMapping.Kind.REFERENCE)) {
                 throw new DbException("Unsupported mapping for update at " + table.object().name().declared());
             }
         }
@@ -92,9 +92,10 @@ final class DbDatasetWrite {
                                                        CancellationToken token) throws SQLException {
         var objects = new HashMap<ObjectKey, ExistingObject>();
         for (var table : mapping.tables()) {
-            if (table.object().topic().filter(topic.symbol()::equals).isEmpty()) continue;
+            if (!table.hasTidColumn() || table.object().topic().filter(topic.symbol()::equals).isEmpty()) continue;
             token.throwIfCancellationRequested();
-            String sql = "SELECT " + T_ID + ", " + T_ILI_TID + " FROM " + db.table(table.name())
+            String discriminator = table.hasDiscriminator() ? ", " + T_TYPE : "";
+            String sql = "SELECT " + T_ID + ", " + T_ILI_TID + discriminator + " FROM " + db.table(table.name())
                     + " WHERE " + T_BASKET + " = ?";
             try (var statement = db.connection().prepareStatement(sql)) {
                 statement.setLong(1, basket);
@@ -107,7 +108,8 @@ final class DbDatasetWrite {
                             throw new DbException("Missing stored TID at " + table.name() + " T_Id " + id);
                         }
                         String tid = DbTransfer.storedTid(table, raw);
-                        if (objects.putIfAbsent(new ObjectKey(table, tid), new ExistingObject(table, basket, id)) != null) {
+                        var concrete = table.hasDiscriminator() ? mapping.concreteType(table, rows.getString(3), id) : table;
+                        if (objects.putIfAbsent(new ObjectKey(table, tid), new ExistingObject(concrete, basket, id)) != null) {
                             throw new DbException("Ambiguous stored object TID " + tid + " at " + table.name());
                         }
                     }

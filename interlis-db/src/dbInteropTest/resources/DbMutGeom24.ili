@@ -1,0 +1,15 @@
+INTERLIS 2.4;
+MODEL DbMutGeom24 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  DOMAIN Position = COORD 2460000.000 .. 2870000.000, 1045000.000 .. 1310000.000;
+  TOPIC Data =
+    CLASS GeoRoot =
+      Label : TEXT*40;
+      Center : Position;
+    END GeoRoot;
+    CLASS GeoLeaf EXTENDS GeoRoot =
+      DetailCode : TEXT*20;
+    END GeoLeaf;
+    CLASS GeoSibling EXTENDS GeoRoot =
+    END GeoSibling;
+  END Data;
+END DbMutGeom24.
