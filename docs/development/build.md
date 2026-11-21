@@ -1,6 +1,6 @@
 # Build und Toolchains
 
-Der Gradle-Wrapper baut alle fünfzehn JVM-Module und die portablen Backends.
+Der Gradle-Wrapper baut alle JVM-Module und die portablen Backends.
 Setze `JAVA_HOME` auf ein Java-25-JDK. Unter Windows verwende `gradlew.bat`.
 
 ```sh

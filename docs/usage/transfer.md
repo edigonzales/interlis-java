@@ -291,3 +291,79 @@ Der Bericht nennt den vereinbarten Lieferumfang. Die Modellroots bestimmen
 die Prüfsubjekte in den Primäreingaben. Referenzeingaben liefern Ziele und Zeugen
 und zählen nicht zur primären SET-Population. Reader und Validator müssen mit
 derselben unveränderlichen Schemainstanz geplant sein.
+
+## Objektspeicher in DuckDB
+
+`interlis-explorer` ist ein lokaler Java-25-Prototyp für einen XTF-2.4-FULL-Transfer
+pro DuckDB-Datei. Import und Export verwenden die Transferwerte und XTF-Codecs
+der Bibliothek. Die Transaktion wird nach `EndTransfer` und bestätigtem
+Quellenende abgeschlossen. Readerfehler und beobachteter Abbruch rollen den
+Import zurück. Für einen weiteren Transfer braucht es eine neue Datei.
+Die fachliche Datenvalidierung bleibt Aufgabe des Validators.
+
+Der Host benötigt `requires guru.interlis.explorer;` und für den
+`Xtf24Reader` zusätzlich `requires guru.interlis.xtf;`. Auf dem Modulpfad
+aktiviert `--enable-native-access=duckdb.jdbc` den nativen JDBC-Treiber.
+
+```java
+var ready = (TransferPlanningResult.Ready)
+        TransferPlanner.plan(schema, TransferPlanner.Names.DECLARED);
+var plan = ready.plan();
+try (var store = DuckDbStore.open(database, plan);
+     var reader = new Xtf24Reader(plan, input)) {
+    store.importTransfer(reader, cancellation);
+}
+
+try (var store = DuckDbStore.open(database, reboundPlan)) {
+    var type = QualifiedName.of("Reference24", "Data", "Item");
+    for (var item : store.objects(type)) {
+        var object = item.object();
+        var outgoing = store.outgoing(item.position());
+        var incoming = store.incoming(item.position());
+    }
+    store.exportTransfer(output, cancellation);
+}
+```
+
+`input` und `output` gehören dem Aufrufer. Der Import erwartet einen frischen,
+zum Plan passenden Reader mit XTF-2.4-FULL-Ereignissen. Beim erneuten Öffnen
+liefert der Aufrufer den passenden Plan aus dem Compiler. Der Store bindet
+Typen und Slots anhand ihrer deklarierten qualifizierten Namen neu und meldet
+fehlende oder mehrdeutige Deklarationen beim Lesen der betroffenen Werte.
+`find(basketId, objectKey)` sucht nach TID oder OID im angegebenen Basket.
+Vorkommen ohne TID oder OID bleiben über `objects(type)` zugänglich.
+Die Positionsnummern gelten innerhalb der Datei.
+
+| Tabelle | Inhalt |
+|---|---|
+| `transfer` | Eine Zeile mit den Header-Metadaten und den geordneten Modelldeklarationen |
+| `basket` | Position, BID und Basket-Metadaten einschliesslich Domainbindungen |
+| `object` | Position, Basket, deklarierter Typ, TID, OID, vollständige Identität, Konsistenz und typisierte JSON-Attributwerte |
+| `reference` | Abgeleitete Referenzen mit Quellposition, qualifiziertem Slot, ursprünglichem Referenzwert und optionaler Zielposition |
+
+Referenzen aus verschachtelten Strukturen und eingebetteten Assoziationen
+führen vom gespeicherten Quellobjekt zum referenzierten Vorkommen. Der Index
+bindet eine TID oder OID an ein eindeutiges lokales Ziel im erforderlichen
+Basketkontext. Fehlt ein eindeutiger Treffer, bleibt die ursprüngliche
+Referenz mit leerer Zielposition verfügbar.
+
+Die Schlüssel in `object.fields` sind deklarierte qualifizierte Slotnamen.
+Ein Zahlenwert enthält Typkennung, Lexem und exakten Dezimalwert als
+`["number", "5", "5"]`. Abfragen können DuckDBs JSON-Funktionen verwenden.
+
+```sql
+SELECT tid FROM object
+WHERE type_name = 'Reference24.Data.Item'
+  AND CAST(json_extract_string(fields, '$."Reference24.Data.Item.count"[2]') AS INTEGER) = 5;
+```
+
+Der Store erhält Reihenfolge, Duplikate, Referenzmetadaten, eingebettete
+Assoziationsattribute und native Geometrien einschliesslich Kreisbögen.
+Explizit undefinierte Werte haben eine eigene JSON-Darstellung, sofern ein
+neutraler Reader sie liefert. Beim XTF-Export gelten die Grenzen des
+bestehenden Writers, unter anderem für explizites UNDEFINED, leere
+LIST-/BAG-Werte und negative native Radien. Inkrementelle Transfers,
+OID-Namensraumaliase und LINEATTR-Payloads werden beim Import abgelehnt.
+Modellquellen verbleiben beim Aufrufer. Der Prototyp ist auf einen Aufrufer
+ausgelegt. Direkte SQL-Abfragen sind möglich. Schreibende SQL-Änderungen
+umgehen den Store und können den Referenzindex inkonsistent machen.
