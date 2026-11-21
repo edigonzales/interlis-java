@@ -2,6 +2,7 @@ package guru.interlis.xtf24;
 
 import guru.interlis.model.DomainSymbol;
 import guru.interlis.model.SymbolRef;
+import guru.interlis.model.TopicSymbol;
 import guru.interlis.model.TypeRef;
 import guru.interlis.transfer.TopicDescriptor;
 import guru.interlis.transfer.TransferEvent.DomainBinding;
@@ -56,7 +57,7 @@ final class Xtf24Domains {
                 .collect(Collectors.joining(" "));
     }
 
-    Map<SymbolRef, TypeRef> resolve(TopicDescriptor topic, List<DomainBinding> bindings) {
+    Map<SymbolRef, TypeRef> resolve(TopicDescriptor topic, List<DomainBinding> bindings, boolean reading) {
         Map<SymbolRef, SymbolRef> selected = new LinkedHashMap<>();
         for (var binding : bindings) {
             if (selected.putIfAbsent(binding.generic(), binding.concrete()) != null) {
@@ -67,6 +68,9 @@ final class Xtf24Domains {
         for (var usage : topic.genericBindings()) {
             var generic = new SymbolRef(plan.snapshotId(), usage.genericDomain());
             SymbolRef concrete = selected.remove(generic);
+            if (reading && concrete == null && usage.state() == TopicSymbol.BindingState.CONCRETE) {
+                concrete = new SymbolRef(plan.snapshotId(), usage.alternatives().getFirst());
+            }
             if (concrete == null || !usage.alternatives().contains(concrete.symbol())
                     || !(plan.symbol(concrete).known().orElse(null) instanceof DomainSymbol domain)) {
                 throw invalid();
@@ -91,6 +95,6 @@ final class Xtf24Domains {
     }
 
     private static Xtf24Exception invalid() {
-        return Xtf24Wire.failure(INVALID_WIRE, "Expected explicit, permitted assignments for the basket's generic domains");
+        return Xtf24Wire.failure(INVALID_WIRE, "Expected permitted assignments for the basket's generic domains");
     }
 }

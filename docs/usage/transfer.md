@@ -52,7 +52,9 @@ bestimmen der Attributtyp, das umgebende Modell und dessen Importe die Auflösun
 weist Werte zurück, deren Wire-Name eine andere Deklaration auswählen würde.
 Pro Basket werden
 generische Domains mit expliziten vollqualifizierten `generic=concrete`-Paaren
-gebunden. Ein Basket beeinflusst die Bindungen des folgenden Baskets nicht.
+geschrieben. Der Reader akzeptiert eine ausgelassene Bindung, wenn der
+Modellkontext genau eine konkrete Domäne festlegt. Ein Basket beeinflusst die
+Bindungen des folgenden Baskets nicht.
 
 Der Adapter transportiert typisierte Skalare mit exakten Zahlenlexemen,
 Strukturen, LIST/BAG mit Reihenfolge und Duplikaten, Vererbung, Referenzen und

@@ -203,6 +203,15 @@ final class DbInteropTest {
                 new TestDatabase(postgres, "mixed_wide_own"), false);
     }
 
+    @Test void geoPackageStaticGeneric24() throws Exception { exchangeStaticGeneric(24, null); }
+    @Test void postgisStaticGeneric24() throws Exception { exchangeWithPostgis(24, this::exchangeStaticGeneric); }
+
+    private void exchangeStaticGeneric(int version, PostgreSQLContainer postgres) throws Exception {
+        var cases = new CrsCases(work, version, new ReferenceTool(postgres != null));
+        cases.staticGeneric(new TestDatabase(postgres, "static_crs_reference"),
+                new TestDatabase(postgres, "static_crs_own"));
+    }
+
     @Test void geoPackageFixedMultiSrs23() throws Exception { exchangeFixedMultiSrs(23, null); }
     @Test void geoPackageFixedMultiSrs24() throws Exception { exchangeFixedMultiSrs(24, null); }
     @Test void postgisFixedMultiSrs23() throws Exception { exchangeWithPostgis(23, this::exchangeFixedMultiSrs); }

@@ -204,7 +204,7 @@ public final class Xtf24Reader extends TransferReader {
         var start = new StartBasket(new BasketId(bid, IdOrigin.SOURCE), topic.symbol(), List.of(),
                 BasketKind.FULL, consistency, Optional.empty(), Optional.empty(), stableOid, bindings);
         values.basketConsistency(consistency);
-        basket = new BasketContext(start, Set.copyOf(topic.objectTypes()), domains.resolve(topic, bindings));
+        basket = new BasketContext(start, Set.copyOf(topic.objectTypes()), domains.resolve(topic, bindings, true));
         position = Position.IN_BASKET;
         return start;
     }

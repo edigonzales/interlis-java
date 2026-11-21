@@ -107,11 +107,9 @@ final class DbTransfer {
                         throw new DbException("Basket topic is outside the selected model: " + topicName);
                     }
                     String domains = rows.getString(4);
-                    if (domains != null && !domains.isBlank()) {
-                        throw new DbException("Basket domain assignments are outside the supported profile: " + topicName);
-                    }
                     var bid = new BasketId(identifier(rows.getString(3), "BID", topicName), IdOrigin.SOURCE);
-                    writeBasket(db, mapping, topic, rows.getLong(1), bid, writer, token);
+                    var bindings = DbDomains.read(plan, topic, domains, bid.value());
+                    writeBasket(db, mapping, topic, rows.getLong(1), bid, bindings, writer, token);
                 } while (rows.next());
             }
         }
@@ -119,10 +117,11 @@ final class DbTransfer {
     }
 
     private static void writeBasket(Database db, DbMapping mapping, TopicDescriptor topic, long basketId,
-                                    BasketId bid, TransferWriter writer, CancellationToken token) throws SQLException {
+                                    BasketId bid, List<TransferEvent.DomainBinding> bindings, TransferWriter writer,
+                                    CancellationToken token) throws SQLException {
         var stableOid = basketOid(mapping, topic, bid);
         writer.write(new TransferEvent.StartBasket(bid, topic.symbol(), List.of(), BasketKind.FULL,
-                Consistency.COMPLETE, Optional.empty(), Optional.empty(), stableOid, List.of()), token);
+                Consistency.COMPLETE, Optional.empty(), Optional.empty(), stableOid, bindings), token);
         for (var table : mapping.tables()) {
             if (table.hasDiscriminator() && table.object().kind() == SymbolKind.STRUCTURE) {
                 checkStructureHierarchy(db, mapping, table, basketId, token);
@@ -1159,12 +1158,14 @@ final class DbTransfer {
             var topic = mapping.plan().topic(start.topic()).orElseThrow();
             if (!topic.model().equals(mapping.plan().rootModels().getFirst())
                     || start.kind() != BasketKind.FULL || start.consistency() != Consistency.COMPLETE
-                    || !start.additionalTopics().isEmpty() || !start.domainBindings().isEmpty()
+                    || !start.additionalTopics().isEmpty()
                     || start.startState().isPresent() || start.endState().isPresent()
                     || start.id().origin() != IdOrigin.SOURCE
                     || !start.stableOid().equals(basketOid(mapping, topic, start.id()))) {
                 throw new DbException("Unsupported basket metadata for " + start.id().value());
             }
+            DbDomains.resolve(mapping.plan(), topic, start.domainBindings(), start.id().value());
+            String domains = DbDomains.format(mapping.plan(), start.domainBindings(), start.id().value());
             this.datasetId = datasetId;
             if (updating) {
                 var stored = DbDatasetWrite.findBasket(db, datasetId, topic, start.id().value());
@@ -1179,13 +1180,14 @@ final class DbTransfer {
             basketId = db.nextId();
             String sql = "INSERT INTO " + db.technicalTable(BASKET)
                     + " (" + T_ID + ", topic, " + T_ILI_TID
-                    + ", attachmentkey, dataset, domains) VALUES (?, ?, ?, ?, ?, '')";
+                    + ", attachmentkey, dataset, domains) VALUES (?, ?, ?, ?, ?, ?)";
             try (var statement = db.connection().prepareStatement(sql)) {
                 statement.setLong(1, basketId);
                 statement.setString(2, topic.name().declared().toString());
                 statement.setString(3, start.id().value());
                 statement.setString(4, Long.toString(basketId));
                 statement.setLong(5, datasetId);
+                statement.setString(6, domains);
                 statement.executeUpdate();
             }
         }

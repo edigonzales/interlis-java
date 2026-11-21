@@ -181,7 +181,7 @@ public final class Xtf24Writer extends TransferWriter {
         if (start.stableOid().filter(oid -> !stable || !oid.equals(bid)).isPresent()) {
             throw Xtf24Wire.failure(UNSUPPORTED, "Independent stable basket identity");
         }
-        concreteTypes = domains.resolve(topic, start.domainBindings());
+        concreteTypes = domains.resolve(topic, start.domainBindings(), false);
         activeTypes = Set.copyOf(topic.objectTypes());
         values.basketConsistency(start.consistency());
         identities.add(bid);

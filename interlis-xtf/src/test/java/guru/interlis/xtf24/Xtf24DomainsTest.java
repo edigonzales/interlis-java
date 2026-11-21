@@ -43,8 +43,8 @@ class Xtf24DomainsTest {
         assertEquals("B", plan.symbol(b.concrete()).known().orElseThrow().name().value());
         var topic = plan.topic(first.topic()).orElseThrow();
         var domains = new Xtf24Domains(plan, new Xtf24Names(plan));
-        var aType = domains.resolve(topic, first.domainBindings()).get(a.generic());
-        var bType = domains.resolve(topic, second.domainBindings()).get(b.generic());
+        var aType = domains.resolve(topic, first.domainBindings(), true).get(a.generic());
+        var bType = domains.resolve(topic, second.domainBindings(), true).get(b.generic());
         assertNotEquals(aType, bType);
         assertEquals(((DomainSymbol) plan.symbol(a.concrete()).known().orElseThrow()).typeId(), aType.type());
         assertEquals(((DomainSymbol) plan.symbol(b.concrete()).known().orElseThrow()).typeId(), bType.type());
@@ -73,10 +73,10 @@ class Xtf24DomainsTest {
     }
 
     @Test
-    void requiresExplicitFixedBindingsOnReadAndWrite() {
+    void readsImplicitFixedBindingAndRequiresExplicitBindingOnWrite() {
         var plan = plan(MODEL.formatted("A", ""), "GenericExample");
-        assertEquals(Xtf24Exception.Reason.INVALID_WIRE, assertThrows(Xtf24Exception.class,
-                () -> read(plan, transfer("<Data ili:bid=\"b1\"/>"))).reason());
+        var implicit = read(plan, transfer("<Data ili:bid=\"b1\"/>"));
+        assertEquals(java.util.List.of(), ((StartBasket) implicit.get(1)).domainBindings());
         var events = read(plan, transfer("<Data ili:bid=\"b1\" ili:domains=\"GenericExample.G=GenericExample.A\"/>"));
         var start = (StartBasket) events.get(1);
         var noBindings = new StartBasket(start.id(), start.topic(), start.additionalTopics(),

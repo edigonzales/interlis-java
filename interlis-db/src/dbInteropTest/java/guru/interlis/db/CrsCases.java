@@ -221,6 +221,47 @@ final class CrsCases {
         }
     }
 
+    void staticGeneric(TestDatabase old, TestDatabase own) throws Exception {
+        String model = "StaticCrs24";
+        String x = "600100.125";
+        String y = "200200.375";
+        String selection = model + ".Grid=" + model + ".LocalGrid";
+        Path ili = Files.writeString(work.resolve(model + ".ili"), """
+                INTERLIS 2.4;
+                MODEL StaticCrs24 (en) AT "https://example.org/interlis/db" VERSION "1" =
+                  DOMAIN
+                    Grid (GENERIC) = COORD NUMERIC, NUMERIC;
+                    LocalGrid EXTENDS Grid = COORD 460000.000 .. 870000.000, 45000.000 .. 310000.000 REFSYS "EPSG:21781";
+                  CONTEXT fixed = Grid = LocalGrid;
+                  TOPIC Data =
+                    CLASS Station =
+                      Location : Grid;
+                    END Station;
+                  END Data;
+                END StaticCrs24.
+                """);
+        createReference(old, ili, 2056);
+        createOwn(own, model, ili);
+        assertCatalogs(old, own);
+        for (var db : List.of(old, own)) {
+            mixedExchange(db, model, "static", tid -> object(model, "Station", tid, field("Location", point(x, y))),
+                    (output, tid) -> assertPoint(output, tid, "Location", x, y));
+            Path output = work.resolve(db.schema() + "-explicit.xtf");
+            assertCliSuccess(db, "export", model, "own", output);
+            assertEquals(selection, id(basket(output, "own-static"), version, "domains"));
+            try (var sql = db.connect()) {
+                assertStoredEpsg(db, sql, "station", "location", "own-static", 21781);
+            }
+            assertCliSuccess(db, "import", model, "explicit", output);
+
+            String content = Files.readString(output);
+            Files.writeString(output, content.replace(selection, model + ".Grid=" + model + ".Grid"));
+            var invalid = cli(db, "import", model, "invalid", output, CancellationToken.none());
+            assertNotEquals(0, invalid.code(), invalid::diagnostics);
+            assertTrue(invalid.diagnostics().contains("permitted assignments"), invalid::diagnostics);
+        }
+    }
+
     void fixedMultiSrs(TestDatabase old, TestDatabase own, boolean split) throws Exception {
         String model = "MixedSrid" + version;
         Path ili = fixture(model);

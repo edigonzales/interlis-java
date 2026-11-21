@@ -32,10 +32,12 @@ import guru.interlis.model.TextType;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeKind;
 import guru.interlis.model.TypeRef;
+import guru.interlis.model.TopicSymbol;
 import guru.interlis.source.SourceText;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.RoleSlot;
+import guru.interlis.transfer.TransferEvent.DomainBinding;
 import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferPlanner;
 import guru.interlis.transfer.TransferPlanningResult;
@@ -90,7 +92,7 @@ final class DbMapping {
 
     record Column(TransferSlot slot, String name, Kind kind, Optional<TypeDescriptor> effectiveType,
                   Optional<SymbolRef> target, int epsgCode, int srsId, boolean legacyEpsgHeader,
-                  Optional<String> positionColumn, int dimensions) {
+                  Optional<String> positionColumn, int dimensions, Optional<DomainBinding> domainBinding) {
         Column {
             boolean role = slot instanceof RoleSlot;
             if (effectiveType.isEmpty() != role || (role && kind != Kind.REFERENCE)) {
@@ -100,19 +102,19 @@ final class DbMapping {
 
         Column withName(String sqlName) {
             return new Column(slot, sqlName, kind, effectiveType, target, epsgCode, srsId, legacyEpsgHeader,
-                    positionColumn, dimensions);
+                    positionColumn, dimensions, domainBinding);
         }
 
         Column withSrsId(int id, boolean acceptsEpsgHeader) {
             return new Column(slot, name, kind, effectiveType, target, epsgCode, id, acceptsEpsgHeader,
-                    positionColumn, dimensions);
+                    positionColumn, dimensions, domainBinding);
         }
 
         Column withPositionColumn(boolean gpkg) {
             String position = name + "_" + (gpkg ? SEQ_COLUMN : T_SEQ);
             checkColumnName(slot, position, false, false, gpkg);
             return new Column(slot, name, kind, effectiveType, target, epsgCode, srsId, legacyEpsgHeader,
-                    Optional.of(position), dimensions);
+                    Optional.of(position), dimensions, domainBinding);
         }
 
         boolean external() {
@@ -443,7 +445,7 @@ final class DbMapping {
         for (var topic : plan.topics()) {
             if (topic.abstractTopic() || topic.baseTopic().isPresent()
                     || topic.oidRules().stream().anyMatch(rule -> !Ili2dbLayout.UUID_OID.equals(oidDomain(plan, rule)))
-                    || !topic.genericBindings().isEmpty()) {
+                    || topic.genericBindings().stream().anyMatch(binding -> binding.state() != TopicSymbol.BindingState.CONCRETE)) {
                 throw unsupported("topic " + topic.name().declared());
             }
         }
@@ -646,7 +648,7 @@ final class DbMapping {
 
     static Column roleColumn(RoleSlot role, SymbolRef target, String name) {
         return new Column(role, name, Kind.REFERENCE, Optional.empty(), Optional.of(target), 0, 0, false,
-                Optional.empty(), 0);
+                Optional.empty(), 0, Optional.empty());
     }
 
     static Optional<Composition> describeComposition(TransferPlan plan, ObjectDescriptor parent, AttributeSlot slot,
@@ -695,7 +697,11 @@ final class DbMapping {
                                  CrsDefaults defaults) {
         String path = attr.name().declared().toString();
         if (!CardinalityUpper.finite(1).equals(attr.cardinality().upper())) throw unsupported(path);
-        var type = plan.type(attr.effectiveType()).known().orElseThrow(() -> unsupported(path));
+        var selection = DbDomains.pointBinding(plan, object, attr)
+                .map(binding -> DbDomains.choice(plan, binding, binding.alternatives().getFirst()));
+        var concrete = selection.map(binding -> DbDomains.domain(plan, binding.concrete().symbol()));
+        var type = plan.type(concrete.map(domain -> new TypeRef(plan.snapshotId(), domain.typeId()))
+                .orElse(attr.effectiveType())).known().orElseThrow(() -> unsupported(path));
         var curve = type instanceof GeometryType geometry && optional(attr) ? describeCurve(plan, geometry, path, defaults) : null;
         Kind kind = switch (type) {
             case TextType text when text.textKind() == TextKind.TEXT || text.textKind() == TextKind.MTEXT -> Kind.TEXT;
@@ -731,9 +737,11 @@ final class DbMapping {
         if (curve != null) {
             epsg = curve.epsg();
         } else if (kind.geometry()) {
-            epsg = pointEpsg(plan, attr, (CoordinateType) type, defaults, path);
+            var coordinates = (CoordinateType) type;
+            epsg = concrete.isPresent() ? explicitEpsg(coordinates, concrete.orElseThrow(), path)
+                    : pointEpsg(plan, attr, coordinates, defaults, path);
         }
-        return new Column(attr, name, kind, Optional.of(type), target, epsg, epsg, false, Optional.empty(), dimensions);
+        return new Column(attr, name, kind, Optional.of(type), target, epsg, epsg, false, Optional.empty(), dimensions, selection);
     }
 
     private record Curve(Kind kind, int dimensions, int epsg) { }
@@ -789,6 +797,12 @@ final class DbMapping {
             declaration = domain;
         }
         return geometryEpsg(plan, coordinates, declaration, defaults, path);
+    }
+
+    private static int explicitEpsg(CoordinateType coordinates, DomainSymbol domain, String path) {
+        String crs = coordinates.referenceSystem().orElseGet(() -> metaText(domain, "CRS"));
+        if (crs == null || !crs.startsWith("EPSG:")) throw new DbException("Expected an EPSG CRS for " + domain.name().value() + " at " + path);
+        return Ili2dbLayout.parseEpsgCode(crs.substring(5), path);
     }
 
     private static int geometryEpsg(TransferPlan plan, CoordinateType coordinates, Symbol declaration,

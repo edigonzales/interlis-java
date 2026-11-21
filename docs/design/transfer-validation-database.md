@@ -142,7 +142,7 @@ Eine Java-`null`-Sammlung ist kein Ersatz für diese Unterscheidungen. Ein allge
 
 `StartBasket` erhält Basketidentität, Topics, Zustandsmetadaten und Laufzeitdomänen. Im neutralen Kern gilt bei `CONCRETE` die einzige vom Modell festgelegte Alternative. Eine mitgelieferte Zuordnung muss damit übereinstimmen. `DEFERRED` erfordert eine explizite Auswahl aus den veröffentlichten Alternativen. `ABSTRACT` beschreibt eine unaufgelöste Bindung. Ein Basket braucht ein konkretes Topic. Für alle wirksamen Verwendungen derselben generischen Domäne im Basket gilt dieselbe Konkretisierung, einschliesslich geerbter Verwendungen.
 
-Der XTF-2.4-Adapter muss nach §4.3.6 auch schemafeste generische Verwendungen in `domains` explizit zuordnen. Die Auswertung inkrementeller Änderungen gehört zum späteren Verbraucher.
+Der XTF-2.4-Writer verlangt nach §4.3.6 auch für schemafeste generische Verwendungen eine explizite Zuordnung in `domains`. Der Reader akzeptiert im ili2db-5.5.2-Kompatibilitätsfall eine fehlende Zuordnung, wenn der geprüfte Modellkontext genau eine konkrete Domäne festlegt. Die Auswertung inkrementeller Änderungen gehört zum späteren Verbraucher.
 
 <a id="iom-iox-adapter"></a>
 ### IOM-/iox-Adapter

@@ -156,6 +156,11 @@ Geometrieattribut mit EPSG:2056 erhält beispielsweise die Spalte
 `lage_2056`. Bei bestehenden Schemata liest der Transfer die tatsächlichen
 Namen aus den ili2db-Zuordnungen.
 
+XTF 2.4 unterstützt statisch über `CONTEXT` gebundene generische
+Punktdomänen. Bei einer einzigen erlaubten konkreten Domäne akzeptiert der
+Import auch den von ili2db 5.5.2 erzeugten Basket ohne `ili:domains`.
+Der Export schreibt die eindeutige Zuordnung explizit.
+
 Für neue Schemata setzt `schemaimport --default-epsg CODE` den
 Standard. Ohne Option gilt EPSG:2056. GeoPackage verwendet die vorhandenen
 EPSG-Definitionen aus dem Referenzprofil, darunter LV03 (21781) und
