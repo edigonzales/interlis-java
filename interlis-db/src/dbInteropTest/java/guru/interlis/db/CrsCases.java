@@ -321,6 +321,46 @@ final class CrsCases {
         assertMissingTarget(db);
     }
 
+    void localSrid(TestDatabase db) throws Exception {
+        String model = "LocalSrid" + version;
+        String x = "600100.125";
+        String y = "200200.375";
+        createReference(db, defaultModel(model, 21781), 21781);
+        if (!db.postgis()) {
+            try (var sql = db.connect()) {
+                execute(sql, "UPDATE gpkg_spatial_ref_sys SET srs_id=921781 WHERE srs_id=21781");
+                execute(sql, "UPDATE gpkg_geometry_columns SET srs_id=921781 WHERE srs_id=21781");
+                execute(sql, "UPDATE gpkg_contents SET srs_id=921781 WHERE srs_id=21781");
+            }
+        }
+        mixedExchange(db, model, "local", tid -> object(model, "Station", tid, field("Location", point(x, y))),
+                (output, tid) -> assertPoint(output, tid, "Location", x, y));
+
+        try (var sql = db.connect()) {
+            assertStoredEpsg(db, sql, "station", "location", "legacy-local", 21781);
+            assertStoredEpsg(db, sql, "station", "location", "own-local", db.postgis() ? 21781 : 921781);
+            if (db.postgis()) {
+                execute(sql, "UPDATE spatial_ref_sys SET srid=921781 WHERE srid=21781");
+            } else {
+                execute(sql, """
+                        INSERT INTO gpkg_spatial_ref_sys (srs_name, srs_id, organization, organization_coordsys_id, definition)
+                        SELECT srs_name, 21781, organization, organization_coordsys_id, definition
+                        FROM gpkg_spatial_ref_sys WHERE srs_id=4326
+                        """);
+            }
+        }
+        Path output = Files.writeString(work.resolve("ambiguous-local-srid.xtf"), "previous output");
+        var failure = cli(db, "export", model, "legacy", output, CancellationToken.none());
+        assertNotEquals(0, failure.code(), failure::diagnostics);
+        String message = db.postgis() ? "Expected an EPSG:21781" : "SRS differs from its geometry column";
+        assertTrue(failure.diagnostics().contains(message), failure::diagnostics);
+        assertEquals("previous output", Files.readString(output));
+        if (!db.postgis()) {
+            assertCliSuccess(db, "export", model, "own", output);
+            assertPoint(output, "own-local", "Location", x, y);
+        }
+    }
+
     private Path fixture(String model) throws Exception {
         Path ili = work.resolve(model + ".ili");
         if (Files.notExists(ili)) {

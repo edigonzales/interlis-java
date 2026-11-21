@@ -162,7 +162,13 @@ Ohne CRS-Angabe aus dem Modell gilt `SETTINGS.defaultSrsCode`. Der räumliche Ka
 zur Auflösung passen. Linien und Flächen verwenden das CRS ihrer
 `VERTEX`-Domäne. Verschiedene Geometrieattribute eines Objekts dürfen
 unterschiedliche CRS haben. Der Schlüssel einer Geometrie-Hilfstabelle
-in `T_ILI2DB_TRAFO` enthält den EPSG-Code des betreffenden Attributs. XYZ-Geometrien speichern die dritte
+in `T_ILI2DB_TRAFO` enthält den EPSG-Code des betreffenden Attributs.
+GeoPackage schreibt die lokale `srs_id` des Katalogs in den Geometrie-Header.
+Bei bestehenden Schemas von ili2gpkg 5.5.2 liest `interlis-db` auch Header
+mit dem EPSG-Code, sofern dieser Code im Katalog eindeutig der lokalen ID
+zugeordnet und die Nummer als lokaler Schlüssel unbelegt ist. PostGIS
+verwendet im Referenzprofil die EPSG-Nummer als SRID.
+XYZ-Geometrien speichern die dritte
 Ordinate im SQL-Wert und die exakten Modellgrenzen als `c3Min` und `c3Max`
 in den Spaltenmetadaten. PostGIS verwendet den Z-Typzusatz, GeoPackage das
 Z-Bit der ili2gpkg-Kodierung. Die Raumindizes arbeiten mit der XY-Hülle.

@@ -109,11 +109,15 @@ final class GeometryBinary {
     }
 
     static TransferGeometry decode(byte[] bytes, boolean gpkg, int srsId, Kind kind, int dimensions) {
+        return decode(bytes, gpkg, srsId, kind, dimensions, 0);
+    }
+
+    static TransferGeometry decode(byte[] bytes, boolean gpkg, int srsId, Kind kind, int dimensions, int legacySrsId) {
         var data = ByteBuffer.wrap(bytes);
         boolean empty = false;
         if (gpkg) {
             var header = readGeoPackageHeader(data);
-            if (header.srsId() != srsId) {
+            if (header.srsId() != srsId && (legacySrsId == 0 || header.srsId() != legacySrsId)) {
                 throw new DbException("GeoPackage geometry SRS differs from its geometry column");
             }
             empty = header.empty();

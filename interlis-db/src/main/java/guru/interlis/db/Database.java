@@ -146,7 +146,28 @@ final class Database implements AutoCloseable {
         return quote(schema) + "." + quote(name);
     }
 
-    int geometrySrs(String table, Column column) throws SQLException {
+    Column geometryStorage(String table, Column column, boolean referenceEpsgHeader) throws SQLException {
+        int srsId = geometrySrs(table, column);
+        boolean acceptsEpsgHeader = gpkg() && referenceEpsgHeader && srsId != column.epsgCode()
+                && unambiguousEpsgHeader(srsId, column.epsgCode());
+        return column.withSrsId(srsId, acceptsEpsgHeader);
+    }
+
+    private boolean unambiguousEpsgHeader(int srsId, int epsgCode) throws SQLException {
+        // ili2gpkg 5.5.2 can put the EPSG code in the header even when the catalog uses a local key.
+        // The local row must be the only registration for that EPSG, and the header key must be unused.
+        String sql = "SELECT srs_id FROM main.gpkg_spatial_ref_sys WHERE srs_id = ?"
+                + " OR (organization = 'EPSG' AND organization_coordsys_id = ?)";
+        try (var statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, epsgCode);
+            statement.setInt(2, epsgCode);
+            try (var rows = statement.executeQuery()) {
+                return rows.next() && rows.getInt(1) == srsId && !rows.next();
+            }
+        }
+    }
+
+    private int geometrySrs(String table, Column column) throws SQLException {
         if (gpkg()) {
             return geoPackageSrs(table, column);
         }
@@ -249,7 +270,8 @@ final class Database implements AutoCloseable {
             if (bytes == null) {
                 return null;
             }
-            var geometry = GeometryBinary.decode(bytes, gpkg(), column.srsId(), column.kind(), column.dimensions());
+            var geometry = GeometryBinary.decode(bytes, gpkg(), column.srsId(), column.kind(), column.dimensions(),
+                    column.legacyEpsgHeader() ? column.epsgCode() : 0);
             // The reference exporter omits attributes stored as empty collections.
             boolean empty = switch (geometry) {
                 case MultiCoordinate multi -> multi.coordinates().isEmpty();

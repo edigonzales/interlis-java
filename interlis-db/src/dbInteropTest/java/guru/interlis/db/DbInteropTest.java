@@ -203,6 +203,16 @@ final class DbInteropTest {
                 new TestDatabase(postgres, "mixed_wide_own"), false);
     }
 
+    @Test void geoPackageLocalSrid23() throws Exception { exchangeLocalSrid(23, null); }
+    @Test void geoPackageLocalSrid24() throws Exception { exchangeLocalSrid(24, null); }
+    @Test void postgisLocalSrid23() throws Exception { exchangeWithPostgis(23, this::exchangeLocalSrid); }
+    @Test void postgisLocalSrid24() throws Exception { exchangeWithPostgis(24, this::exchangeLocalSrid); }
+
+    private void exchangeLocalSrid(int version, PostgreSQLContainer postgres) throws Exception {
+        var cases = new CrsCases(work, version, new ReferenceTool(postgres != null));
+        cases.localSrid(new TestDatabase(postgres, "local_srid"));
+    }
+
     private void exchangeSpatial(int version, PostgreSQLContainer postgres) throws Exception {
         var cases = new SpatialIndexCases(work, version, new ReferenceTool(postgres != null));
         cases.points(new TestDatabase(postgres, "spatial_points"));
