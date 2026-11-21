@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION SENDER="interop fixture" VERSION="2.3">
+    <MODELS><MODEL NAME="DbExternal23" VERSION="1" URI="https://example.org/interlis/db"/></MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <DbExternal23.Data BID="external-first">
+      <DbExternal23.Data.Report TID="external-forward">
+        <DetailValue><DbExternal23.Data.Detail><Note>forward</Note><TargetRef REF="external-late" BID="external-last"/></DbExternal23.Data.Detail></DetailValue>
+      </DbExternal23.Data.Report>
+      <DbExternal23.Data.Report TID="external-absent">
+        <DetailValue><DbExternal23.Data.Detail><Note>absent</Note></DbExternal23.Data.Detail></DetailValue>
+      </DbExternal23.Data.Report>
+      <DbExternal23.Data.TargetLeaf TID="external-early"/>
+    </DbExternal23.Data>
+    <DbExternal23.Data BID="external-last">
+      <DbExternal23.Data.TargetLeaf TID="external-late"/>
+      <DbExternal23.Data.TargetSibling TID="external-sibling"/>
+      <DbExternal23.Data.Report TID="external-backward">
+        <DetailValue><DbExternal23.Data.Detail><Note>backward</Note><TargetRef REF="external-early" BID="external-first"/></DbExternal23.Data.Detail></DetailValue>
+      </DbExternal23.Data.Report>
+    </DbExternal23.Data>
+  </DATASECTION>
+</TRANSFER>

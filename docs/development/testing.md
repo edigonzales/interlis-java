@@ -87,6 +87,11 @@ Für jeden PostgreSQL-Test startet und entfernt die Suite mit Testcontainers
 einen PostgreSQL-16-Container mit PostGIS 3.4 (`sogis/postgis:16-3.4`).
 Dazu muss Docker laufen. GeoPackage-Tests verwenden temporäre Dateien.
 
+Für `EXTERNAL`-Referenzattribute prüft die Suite frühere und spätere Ziele
+im selben Datensatz, den konkreten Zieltyp, die Datensatzisolierung und
+den Rollback bei fehlendem Ziel oder falscher BID. Sie liest auch einen
+XTF-2.3-Referenzexport ohne Ziel-BID erneut ein.
+
 ```sh
 ./gradlew :interlis-db:dbInteropTest
 ```

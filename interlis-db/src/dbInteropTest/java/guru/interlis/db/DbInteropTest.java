@@ -284,6 +284,168 @@ final class DbInteropTest {
                     corrupt::diagnostics);
             assertEquals(originalOutput, Files.readString(nativeOutput));
         }
+        exchangeExternal(version, postgres, reference);
+    }
+
+    private void exchangeExternal(int version, PostgreSQLContainer postgres, ReferenceTool reference) throws Exception {
+        String model = "DbExternal" + version;
+        Path ili = work.resolve(model + ".ili");
+        try (var resource = DbInteropTest.class.getResourceAsStream("/" + ili.getFileName())) {
+            Files.copy(resource, ili);
+        }
+        String fixture;
+        try (var resource = DbInteropTest.class.getResourceAsStream("/" + model + ".xtf")) {
+            fixture = new String(resource.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        var referenceDb = new TestDatabase(postgres, "external_reference");
+        reference.run(referenceDb, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
+                "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056",
+                ili.toString());
+        var nativeDb = new TestDatabase(postgres, "external_native");
+        assertCliSuccess(nativeDb, "schemaimport", model, null, ili);
+        try (var referenceSql = referenceDb.connect(); var nativeSql = nativeDb.connect()) {
+            DbSchemaCatalog.read(referenceSql, referenceDb.postgis, referenceDb.schema)
+                    .assertSameAs(DbSchemaCatalog.read(nativeSql, nativeDb.postgis, nativeDb.schema));
+            assertReferenceMapping(referenceDb, referenceSql, model, "Detail.TargetRef", "detail", "targetref", "targetbranch");
+            if (version == 24) {
+                assertReferenceMapping(referenceDb, referenceSql, model, "Report.DirectRef", "report", "directref", "targetbranch");
+            }
+            exchangeExternalDatasets(reference, referenceDb, referenceSql, model, version, fixture);
+            exchangeExternalDatasets(reference, nativeDb, nativeSql, model, version, fixture);
+        }
+    }
+
+    private void exchangeExternalDatasets(ReferenceTool reference, TestDatabase db, Connection sql, String model,
+                                          int version, String fixture) throws Exception {
+        Path referenceInput = Files.writeString(work.resolve("external-input.xtf"), fixture);
+        reference.run(db, work.toString(), "--import", "--importTid", "--importBid", "--dataset", "external",
+                referenceInput.toString());
+        assertExternalRows(db, sql, version, "external");
+        Path ownOutput = work.resolve("external-own-output.xtf");
+        assertCliSuccess(db, "export", model, "external", ownOutput);
+        assertExternalXtf(ownOutput, model, version, "external", true);
+
+        Path ownInput = Files.writeString(work.resolve("external-own-input.xtf"), fixture.replace("external-", "own-"));
+        assertCliSuccess(db, "import", model, "own", ownInput);
+        assertExternalRows(db, sql, version, "own");
+        Path referenceOutput = work.resolve("external-reference-output.xtf");
+        reference.run(db, work.toString(), "--export", "--exportTid", "--dataset", "own", referenceOutput.toString());
+        assertExternalXtf(referenceOutput, model, version, "own", false);
+
+        Path replay = Files.writeString(work.resolve("external-replay.xtf"),
+                Files.readString(referenceOutput).replace("own-", "replay-"));
+        assertCliSuccess(db, "import", model, "replay", replay);
+        assertExternalRows(db, sql, version, "replay");
+
+        String wrongDataset = fixture.replace("external-", "failed-")
+                .replace((version == 23 ? "REF" : "ref") + "=\"failed-late\"",
+                        (version == 23 ? "REF" : "ref") + "=\"external-late\"");
+        assertExternalRollback(db, sql, model, wrongDataset, "external-late", "dataset");
+        if (version == 23) {
+            String wrongBid = fixture.replace("external-", "failed-")
+                    .replace("REF=\"failed-late\" BID=\"failed-last\"", "REF=\"failed-late\" BID=\"failed-first\"");
+            assertExternalRollback(db, sql, model, wrongBid, "Wrong target BID", "failed-late");
+        }
+
+        String where = " where note='forward' and t_basket=(select t_basket from " + db.table("report")
+                + " where t_ili_tid='external-forward')";
+        String detail = db.table("detail");
+        String target = scalar(sql, "select targetref from " + detail + where);
+        String foreign = scalar(sql, "select t_id from " + db.table("targetroot") + " where t_ili_tid='own-late'");
+        try {
+            execute(sql, "update " + detail + " set targetref=" + foreign + where);
+            assertExportRejected(db, model, "external", ownOutput, "same-dataset reference target TID", "Detail.TargetRef");
+        } finally {
+            execute(sql, "update " + detail + " set targetref=" + target + where);
+        }
+        Path tail = Files.writeString(work.resolve("external-tail.xtf"), fixture.replace("external-", "tail-"));
+        reference.run(db, work.toString(), "--import", "--importTid", "--importBid", "--dataset", "tail", tail.toString());
+        assertExternalRows(db, sql, version, "tail");
+    }
+
+    private void assertExternalRollback(TestDatabase db, Connection sql, String model, String fixture, String... messages)
+            throws Exception {
+        var tables = List.of("t_ili2db_dataset", "t_ili2db_basket", "report", "detail", "targetroot", "targetleaf");
+        var counts = new ArrayList<String>();
+        for (String table : tables) counts.add(scalar(sql, "select count(*) from " + db.table(table)));
+        Path input = Files.writeString(work.resolve("external-failed.xtf"), fixture);
+        var result = cli(db, "import", model, "failed", input, CancellationToken.none());
+        assertNotEquals(0, result.code(), result::diagnostics);
+        for (String message : messages) assertTrue(result.diagnostics().contains(message), result::diagnostics);
+        for (int index = 0; index < tables.size(); index++) {
+            assertEquals(counts.get(index), scalar(sql, "select count(*) from " + db.table(tables.get(index))));
+        }
+    }
+
+    private static void assertExternalRows(TestDatabase db, Connection sql, int version, String dataset) throws SQLException {
+        String query = """
+                select d.note, b.t_ili_tid, t.t_ili_tid, tb.t_ili_tid, t.t_type, t.t_id, leaf.t_id%s
+                from %s d join %s r on r.t_id=d.report_detailvalue and r.t_basket=d.t_basket
+                join %s b on b.t_id=d.t_basket join %s ds on ds.t_id=b.dataset
+                left join %s t on t.t_id=d.targetref
+                left join %s tb on tb.t_id=t.t_basket and tb.dataset=ds.t_id
+                left join %s leaf on leaf.t_id=t.t_id and leaf.t_basket=t.t_basket
+                where ds.datasetname='%s' order by d.note
+                """.formatted(version == 24 ? ", r.directref" : "", db.table("detail"), db.table("report"),
+                db.table("t_ili2db_basket"), db.table("t_ili2db_dataset"), db.table("targetroot"),
+                db.table("t_ili2db_basket"), db.table("targetleaf"), dataset);
+        try (var statement = sql.createStatement(); var rows = statement.executeQuery(query)) {
+            assertTrue(rows.next());
+            assertEquals("absent", rows.getString(1));
+            assertEquals(dataset + "-first", rows.getString(2));
+            assertNull(rows.getString(3));
+            if (version == 24) assertNull(rows.getString(8));
+            for (String direction : List.of("backward", "forward")) {
+                boolean backward = direction.equals("backward");
+                assertTrue(rows.next());
+                assertEquals(direction, rows.getString(1));
+                assertEquals(dataset + (backward ? "-last" : "-first"), rows.getString(2));
+                assertEquals(dataset + (backward ? "-early" : "-late"), rows.getString(3));
+                assertEquals(dataset + (backward ? "-first" : "-last"), rows.getString(4));
+                assertEquals("targetleaf", rows.getString(5));
+                assertEquals(rows.getString(6), rows.getString(7));
+                if (version == 24) assertEquals(rows.getString(6), rows.getString(8));
+            }
+            assertFalse(rows.next());
+        }
+    }
+
+    private static void assertExternalXtf(Path output, String model, int version, String dataset, boolean own)
+            throws Exception {
+        var reports = new HashMap<String, Element>();
+        var targets = new HashMap<String, String>();
+        for (Element basket : children(readDataSection(output, version))) {
+            String bid = id(basket, version, "bid");
+            for (Element object : children(basket)) {
+                String name = object.getLocalName();
+                String tid = id(object, version, "tid");
+                if (name.equals("Report") || name.equals(model + ".Data.Report")) reports.put(tid, object);
+                else targets.put(tid, bid);
+            }
+        }
+        assertEquals(dataset + "-first", targets.get(dataset + "-early"));
+        assertEquals(dataset + "-last", targets.get(dataset + "-late"));
+        for (String direction : List.of("absent", "backward", "forward")) {
+            var report = reports.get(dataset + "-" + direction);
+            assertNotNull(report);
+            var detail = children(child(report, "DetailValue")).getFirst();
+            assertEquals(direction, text(detail, "Note"));
+            var role = child(detail, "TargetRef");
+            if (direction.equals("absent")) {
+                assertNull(role);
+                assertNull(child(report, "DirectRef"));
+                continue;
+            }
+            String target = dataset + (direction.equals("backward") ? "-early" : "-late");
+            assertExternalReference(role, version, target, own ? targets.get(target) : "");
+            if (version == 24) assertExternalReference(child(report, "DirectRef"), version, target, "");
+        }
+    }
+
+    private static void assertExternalReference(Element reference, int version, String tid, String bid) {
+        assertNotNull(reference);
+        assertEquals(tid, id(reference, version, "ref"));
+        assertEquals(version == 23 ? bid : "", id(reference, version, "bid"));
     }
 
     private static void assertStructureCatalog(TestDatabase db, Connection sql, String model, int version)

@@ -416,9 +416,18 @@ final class DbTransfer {
                     var target = mapping.table(declared);
                     var root = mapping.rootTable(declared);
                     from.append(" LEFT JOIN ").append(db.table(root.name())).append(' ').append(ref)
-                            .append(" ON ").append(ref).append('.').append(T_ID).append(" = ").append(field)
-                            .append(" AND ").append(ref).append('.').append(T_BASKET).append(" = ")
-                            .append(alias).append('.').append(T_BASKET);
+                            .append(" ON ").append(ref).append('.').append(T_ID).append(" = ").append(field);
+                    String targetBasket = ref + "." + T_BASKET;
+                    String sourceBasket = alias + "." + T_BASKET;
+                    String baskets = db.technicalTable(BASKET);
+                    if (column.external()) {
+                        from.append(" AND EXISTS (SELECT 1 FROM ").append(baskets).append(" dst JOIN ")
+                                .append(baskets).append(" src ON src.dataset = dst.dataset WHERE src.").append(T_ID)
+                                .append(" = ").append(sourceBasket).append(" AND dst.").append(T_ID)
+                                .append(" = ").append(targetBasket).append(')');
+                    } else {
+                        from.append(" AND ").append(targetBasket).append(" = ").append(sourceBasket);
+                    }
                     if (!target.equals(root)) {
                         // Keep one outer join per reference within SQLite's join limit.
                         String fragment = ref + "part";
@@ -430,6 +439,11 @@ final class DbTransfer {
                     }
                     projections.add(field).add(ref + "." + T_ILI_TID);
                     if (root.hasDiscriminator()) projections.add(ref + "." + T_TYPE);
+                    if (projectsTargetBid(mapping, column)) {
+                        projections.add("CASE WHEN " + targetBasket + " <> " + sourceBasket + " THEN (SELECT basket."
+                                + T_ILI_TID + " FROM " + baskets + " basket WHERE basket." + T_ID + " = "
+                                + targetBasket + ") END");
+                    }
                 }
                 default -> projections.add(field);
             }
@@ -442,7 +456,12 @@ final class DbTransfer {
 
     private static int projectionSize(DbMapping mapping, Column column) {
         if (column.kind() != DbMapping.Kind.REFERENCE) return 1;
-        return mapping.rootTable(column.target().orElseThrow()).hasDiscriminator() ? 3 : 2;
+        int targetFields = mapping.rootTable(column.target().orElseThrow()).hasDiscriminator() ? 3 : 2;
+        return targetFields + (projectsTargetBid(mapping, column) ? 1 : 0);
+    }
+
+    private static boolean projectsTargetBid(DbMapping mapping, Column column) {
+        return mapping.version() == LanguageVersion.ILI23 && column.external();
     }
 
     private static String linkOwnerColumn(Table table, EmbeddedAssociation association) {
@@ -777,16 +796,21 @@ final class DbTransfer {
                 }
                 String path = column.slot().name().declared().toString();
                 String context = ownerTid == null ? path : path + " of object " + ownerTid;
-                String tid = identifier(rows.getString(index + 1), "same-basket reference target TID", context);
+                String tid = identifier(rows.getString(index + 1), column.external()
+                        ? "same-dataset reference target TID" : "same-basket reference target TID", context);
                 SymbolRef declared = column.target().orElseThrow();
                 Table root = mapping.rootTable(declared);
+                int next = index + 2;
                 if (root.hasDiscriminator()) {
-                    var actual = mapping.concreteType(root, rows.getString(index + 2), rows.getLong(index));
+                    var actual = mapping.concreteType(root, rows.getString(next++), rows.getLong(index));
                     if (!mapping.isAssignableTo(actual.object().symbol(), declared)) {
                         throw new DbException("Unexpected reference type " + actual.name() + " at " + context);
                     }
                 }
-                yield new Reference(new TransferId(tid, IdOrigin.SOURCE), Optional.empty(), false, Optional.empty());
+                var bid = projectsTargetBid(mapping, column) ? Optional.ofNullable(rows.getString(next))
+                        .map(value -> new BasketId(identifier(value, "reference target BID", context), IdOrigin.SOURCE))
+                        : Optional.<BasketId>empty();
+                yield new Reference(new TransferId(tid, IdOrigin.SOURCE), bid, column.external(), Optional.empty());
             }
         };
     }
@@ -861,6 +885,7 @@ final class DbTransfer {
             if (!sawBasket) {
                 throw new DbException("A dataset must contain at least one basket");
             }
+            importer.finishTransfer();
         }
     }
 
@@ -921,17 +946,26 @@ final class DbTransfer {
         private final Map<Composition, PreparedStatement> structureInserts = new HashMap<>();
         private final Map<Column, PreparedStatement> updates = new HashMap<>();
         private final Set<SymbolRef> referenceTargets;
+        private final Set<SymbolRef> externalTargets;
         private final Map<String, StoredObject> objects = new HashMap<>();
+        private final Map<String, StoredObject> externalObjects = new HashMap<>();
         private final List<Pending> pending = new ArrayList<>();
+        private final List<Pending> externalPending = new ArrayList<>();
         private long basketId;
 
         Import(Database db, DbMapping mapping, CancellationToken token) {
             this.db = db;
             this.mapping = mapping;
             this.token = token;
+            referenceTargets = referenceTargets(false);
+            externalTargets = referenceTargets(true);
+        }
+
+        private Set<SymbolRef> referenceTargets(boolean external) {
             var declaredTargets = mapping.tables().stream().flatMap(table -> table.columns().stream())
+                    .filter(column -> column.external() == external)
                     .flatMap(column -> column.target().stream()).collect(Collectors.toSet());
-            referenceTargets = mapping.tables().stream().filter(table -> table.object().transferable())
+            return mapping.tables().stream().filter(table -> table.object().transferable())
                     .map(table -> table.object().symbol())
                     .filter(type -> mapping.tableChain(type).stream()
                             .anyMatch(part -> declaredTargets.contains(part.object().symbol())))
@@ -1022,7 +1056,10 @@ final class DbTransfer {
                 }
             }
             if (referenceTargets.contains(object.type())) {
-                objects.put(tid.orElseThrow(), new StoredObject(id, object.type()));
+                objects.put(tid.orElseThrow(), new StoredObject(id, object.type(), identity.currentBasket()));
+            }
+            if (externalTargets.contains(object.type())) {
+                externalObjects.put(tid.orElseThrow(), new StoredObject(id, object.type(), identity.currentBasket()));
             }
         }
 
@@ -1262,15 +1299,16 @@ final class DbTransfer {
 
         private StoredObject bindReference(Table table, Column column, long id, String tid, BasketId basket,
                                            Reference reference) {
-            if (reference.external() || reference.orderPosition().isPresent()
-                    || reference.targetBasket().filter(target -> !target.value().equals(basket.value())).isPresent()
+            boolean external = column.external();
+            if (reference.external() != external || reference.orderPosition().isPresent()
+                    || (!external && reference.targetBasket().filter(target -> !target.value().equals(basket.value())).isPresent())
                     || !(reference.target() instanceof TransferId)) {
                 throw new DbException("Unsupported reference in " + tid + " at " + column.slot().name().declared());
             }
-            var patch = new Pending(table, column, id, tid, reference.target().value());
-            var target = objects.get(patch.targetTid());
+            var patch = new Pending(table, column, id, tid, reference.target().value(), reference.targetBasket());
+            var target = (external ? externalObjects : objects).get(patch.targetTid());
             if (target == null) {
-                pending.add(patch);
+                (external ? externalPending : pending).add(patch);
             } else {
                 checkReference(patch, target);
             }
@@ -1278,9 +1316,19 @@ final class DbTransfer {
         }
 
         void finishBasket() throws SQLException {
-            for (var patch : pending) {
+            patchReferences(pending, objects);
+            pending.clear();
+            objects.clear();
+        }
+
+        void finishTransfer() throws SQLException {
+            patchReferences(externalPending, externalObjects);
+        }
+
+        private void patchReferences(List<Pending> references, Map<String, StoredObject> targets) throws SQLException {
+            for (var patch : references) {
                 token.throwIfCancellationRequested();
-                var target = objects.get(patch.targetTid());
+                var target = targets.get(patch.targetTid());
                 checkReference(patch, target);
                 var statement = updates.get(patch.column());
                 if (statement == null) {
@@ -1294,15 +1342,18 @@ final class DbTransfer {
                     throw new DbException("Could not patch reference on object " + patch.objectTid());
                 }
             }
-            pending.clear();
-            objects.clear();
         }
 
         private void checkReference(Pending patch, StoredObject target) {
             if (target == null || !mapping.isAssignableTo(target.type(), patch.column().target().orElseThrow())) {
                 throw new DbException("Cannot encode reference from " + patch.objectTid() + " at "
                         + patch.column().slot().name().declared() + " to " + patch.targetTid()
-                        + " as an ID in the mapped target table in this basket");
+                        + " as an ID in the mapped target table in this " + (patch.column().external() ? "dataset" : "basket"));
+            }
+            if (patch.targetBasket().filter(bid -> !bid.value().equals(target.basket().value())).isPresent()) {
+                throw new DbException("Wrong target BID for reference from " + patch.objectTid() + " at "
+                        + patch.column().slot().name().declared() + " to " + patch.targetTid()
+                        + ": expected " + target.basket().value() + ", got " + patch.targetBasket().orElseThrow().value());
             }
         }
 
@@ -1315,7 +1366,8 @@ final class DbTransfer {
         }
     }
 
-    private record StoredObject(long id, SymbolRef type) { }
+    private record StoredObject(long id, SymbolRef type, BasketId basket) { }
 
-    private record Pending(Table table, Column column, long objectId, String objectTid, String targetTid) { }
+    private record Pending(Table table, Column column, long objectId, String objectTid, String targetTid,
+                           Optional<BasketId> targetBasket) { }
 }

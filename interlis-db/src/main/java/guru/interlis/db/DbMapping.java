@@ -95,6 +95,11 @@ final class DbMapping {
         Column withSrsId(int id) {
             return new Column(slot, name, kind, effectiveType, target, id);
         }
+
+        boolean external() {
+            if (slot instanceof RoleSlot role) return role.role().external();
+            return effectiveType.orElseThrow() instanceof ReferenceType reference && reference.external();
+        }
     }
 
     /** A structure-valued field whose declared child type is stored in a physical hierarchy root.
@@ -562,7 +567,7 @@ final class DbMapping {
             case CoordinateType coordinates when coordinates.dimensions() == 2 && optional(attr) ->
                     coordinates.multiCoordinate() ? Kind.MULTIPOINT : Kind.POINT;
             case GeometryType geometry when optional(attr) -> curveGeometryKind(plan, geometry, path);
-            case ReferenceType reference when !reference.external() && reference.target().isPresent()
+            case ReferenceType reference when reference.target().isPresent()
                     && reference.restrictions().isEmpty() && optional(attr) -> Kind.REFERENCE;
             default -> {
                 if (type.kind() == TypeKind.BOOLEAN) yield Kind.BOOLEAN;

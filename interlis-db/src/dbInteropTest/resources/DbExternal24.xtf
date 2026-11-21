@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ili:transfer xmlns:ili="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns:m="http://www.interlis.ch/xtf/2.4/DbExternal24">
+  <ili:headersection><ili:models><ili:model>DbExternal24</ili:model></ili:models><ili:sender>interop fixture</ili:sender></ili:headersection>
+  <ili:datasection>
+    <m:Data ili:bid="external-first">
+      <m:Report ili:tid="external-forward">
+        <m:DetailValue><m:Detail><m:Note>forward</m:Note><m:TargetRef ili:ref="external-late"/></m:Detail></m:DetailValue>
+        <m:DirectRef ili:ref="external-late"/>
+      </m:Report>
+      <m:Report ili:tid="external-absent">
+        <m:DetailValue><m:Detail><m:Note>absent</m:Note></m:Detail></m:DetailValue>
+      </m:Report>
+      <m:TargetLeaf ili:tid="external-early"/>
+    </m:Data>
+    <m:Data ili:bid="external-last">
+      <m:TargetLeaf ili:tid="external-late"/>
+      <m:TargetSibling ili:tid="external-sibling"/>
+      <m:Report ili:tid="external-backward">
+        <m:DetailValue><m:Detail><m:Note>backward</m:Note><m:TargetRef ili:ref="external-early"/></m:Detail></m:DetailValue>
+        <m:DirectRef ili:ref="external-early"/>
+      </m:Report>
+    </m:Data>
+  </ili:datasection>
+</ili:transfer>

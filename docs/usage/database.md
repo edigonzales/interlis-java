@@ -268,6 +268,15 @@ Sprachversionen und für Klassenattribute in 2.4. Eine Vorwärtsreferenz
 aktualisiert die Zeile dieser Tabelle. Im XTF erscheint die Referenz am
 konkreten Strukturwert oder Klassenobjekt.
 
+Optionale `REFERENCE TO (EXTERNAL)`-Attribute unterstützen Ziele in anderen
+Baskets desselben Topics und Datensatzes. In 2.3 liegt das Attribut in einer
+Struktur, in 2.4 auch direkt in einer Klasse. Die Spalte speichert weiterhin
+die numerische `T_Id` des Zielobjekts. Beim Import werden noch offene Ziele
+nach dem bestätigten Transferende aufgelöst. In XTF 2.3 gibt der Export für
+ein Ziel in einem anderen Basket dessen BID aus. Der Import akzeptiert die
+von ili2db 5.5.2 ausgegebene Form mit `REF` allein und prüft eine mitgelieferte
+BID gegen den tatsächlichen Zielbasket. In XTF 2.4 genügt `ili:ref`.
+
 Zum weiteren Ausbau gehören weitere Assoziationsformen mit Hierarchie-Enden
 sowie `EXTENDED`-Attribute. Weitere Grenzen sind stabile OIDs, eigene Linienformen,
 GeoPackage-RTree beim Schreiben und Updates. Der gespeicherte Modelltext

@@ -1,0 +1,20 @@
+INTERLIS 2.4;
+
+MODEL DbExternal24 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  TOPIC Data =
+    CLASS TargetRoot (ABSTRACT) = END TargetRoot;
+    CLASS TargetBranch EXTENDS TargetRoot = END TargetBranch;
+    CLASS TargetLeaf EXTENDS TargetBranch = END TargetLeaf;
+    CLASS TargetSibling EXTENDS TargetRoot = END TargetSibling;
+
+    STRUCTURE Detail =
+      Note : TEXT*40;
+      TargetRef : REFERENCE TO (EXTERNAL) TargetBranch;
+    END Detail;
+
+    CLASS Report =
+      DetailValue : Detail;
+      DirectRef : REFERENCE TO (EXTERNAL) TargetBranch;
+    END Report;
+  END Data;
+END DbExternal24.
