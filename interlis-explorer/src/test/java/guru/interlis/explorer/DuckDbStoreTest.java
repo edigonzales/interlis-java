@@ -69,6 +69,9 @@ class DuckDbStoreTest {
         try (var store = DuckDbStore.open(file, plan)) {
             var items = store.objects(ITEM);
             assertEquals(1, items.size());
+            assertEquals(items, store.objects(ITEM, 1));
+            assertEquals(List.of(), store.objects(ITEM, 0));
+            assertThrows(IllegalArgumentException.class, () -> store.objects(ITEM, -1));
             var item = store.find(BASKET, new TransferId("i1", IdOrigin.SOURCE)).orElseThrow();
             assertEquals(items.getFirst(), item);
             assertEquals(plan.snapshotId(), item.object().type().snapshot());

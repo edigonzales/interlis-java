@@ -1,0 +1,23 @@
+plugins {
+    id 'application'
+}
+
+application {
+    mainModule = 'guru.interlis.explorer.gui'
+    mainClass = 'guru.interlis.explorer.gui.ExplorerMain'
+    applicationDefaultJvmArgs = ['--enable-native-access=duckdb.jdbc,com.formdev.flatlaf']
+}
+
+dependencies {
+    implementation project(':interlis-model')
+    implementation project(':interlis-compiler')
+    implementation project(':interlis-transfer')
+    implementation project(':interlis-xtf')
+    implementation project(':interlis-explorer')
+    implementation 'com.formdev:flatlaf:3.7'
+}
+
+tasks.named('test') {
+    inputs.dir(rootProject.file('testdata/reference/iox/ili24')).withPathSensitivity(PathSensitivity.RELATIVE)
+    jvmArgs '--enable-native-access=duckdb.jdbc'
+}

@@ -28,6 +28,7 @@ die Buildausgaben.
 | `:interlis-lsp:installDist` | Modularer Launcher unter `interlis-lsp/build/install/interlis-lsp/` |
 | `:interlis-lsp:distZip` | Plattformunabhängiges LSP-ZIP mit Modulpfad, Wire-Dateien und Lizenzen |
 | `packageTest` | Prozessprüfungen für Compiler, SDK, Validator und LSP. Benötigt Node für LSP. |
+| `:interlis-explorer-gui:run` | Modularer Start des Object Explorers |
 | `:interlis-compiler-gui:run` | Modularer Desktop-Start |
 | `:interlis-compiler-gui:guiRuntime` | Verlinkte Laufzeit unter `interlis-compiler-gui/build/gui/runtime/` |
 | `:interlis-compiler-gui:guiApp` | macOS-ARM64-App unter `interlis-compiler-gui/build/gui/macos-arm64/` |

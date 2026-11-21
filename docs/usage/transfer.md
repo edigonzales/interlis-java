@@ -295,6 +295,16 @@ die Prüfsubjekte in den Primäreingaben. Referenzeingaben liefern Ziele und Zeu
 und zählen nicht zur primären SET-Population. Reader und Validator müssen mit
 derselben unveränderlichen Schemainstanz geplant sein.
 
+## INTERLIS Object Explorer
+
+Starte den lokalen Explorer mit `./gradlew :interlis-explorer-gui:run`.
+Wähle unter **Open dataset…** die lokalen ILI-Dateien einschliesslich
+ihrer Modellimporte und anschliessend eine XTF-2.4-FULL-Datei. Wähle
+im Modellbaum eine Klasse und danach ein Objekt. Die Liste zeigt bis zu
+100 Instanzen der gewählten Klasse in Transferreihenfolge. Der Inspektor
+zeigt die Attribute in effektiver Modellreihenfolge. Beim Schliessen
+wird die temporäre DuckDB-Datenbank entfernt.
+
 ## Objektspeicher in DuckDB
 
 `interlis-explorer` ist ein lokaler Java-25-Prototyp für einen XTF-2.4-FULL-Transfer
@@ -335,7 +345,8 @@ Typen und Slots anhand ihrer deklarierten qualifizierten Namen neu und meldet
 fehlende oder mehrdeutige Deklarationen beim Lesen der betroffenen Werte.
 `find(basketId, objectKey)` sucht nach TID oder OID im angegebenen Basket.
 Vorkommen ohne TID oder OID bleiben über `objects(type)` zugänglich.
-Die Positionsnummern gelten innerhalb der Datei.
+`objects(type, limit)` liest höchstens die angegebene Anzahl Vorkommen des
+exakten Typs in Transferreihenfolge. Die Positionsnummern gelten innerhalb der Datei.
 
 | Tabelle | Inhalt |
 |---|---|
