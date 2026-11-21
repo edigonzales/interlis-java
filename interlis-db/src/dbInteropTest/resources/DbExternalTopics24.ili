@@ -33,7 +33,7 @@ MODEL DbExternalTopics24 (en) AT "https://example.org/interlis/db" VERSION "2026
     END SurveyMatch;
     ASSOCIATION SitePermit =
       CoveredSite (EXTERNAL) -- {0..*} DbExternalTopics24.Catalog.RegisteredSite;
-      IssuedPermit -- {1} PermitRecord;
+      IssuedPermit -- {0..1} PermitRecord;
       Reason : TEXT*20;
     END SitePermit;
   END Surveys;

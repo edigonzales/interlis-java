@@ -754,8 +754,69 @@ final class DbInteropTest {
                 reference.run(db, work.toString(), "--import", "--importTid", "--importBid", "--dataset", "tail",
                         tailInput.toString());
                 assertExternalTopicRows(db, sql, model, version, "tail");
+                exchangeExternalTopicDatasets(reference, db, sql, model, version, fixture);
             }
         }
+    }
+
+    private void exchangeExternalTopicDatasets(ReferenceTool reference, TestDatabase db, Connection sql, String model,
+                                               int version, String fixture) throws Exception {
+        String catalog = version == 23 ? model + ".Catalog" : "Catalog";
+        String surveys = version == 23 ? model + ".Surveys" : "Surveys";
+        String split = fixture.replace("fixture-", "split-");
+        Path target = Files.writeString(work.resolve("topics-split-catalog.xtf"), withoutBasket(split, surveys));
+        Path source = Files.writeString(work.resolve("topics-split-surveys.xtf"), withoutBasket(split, catalog));
+        reference.run(db, work.toString(), "--import", "--importTid", "--importBid", "--dataset", "split-catalog",
+                target.toString());
+        reference.run(db, work.toString(), "--import", "--importTid", "--importBid", "--dataset", "split",
+                source.toString());
+        assertSplitTopicLinks(db, sql, "split");
+        Path ownOutput = work.resolve("topics-split-own-output.xtf");
+        assertCliSuccess(db, "export", model, "split", ownOutput);
+        assertSplitTopicLinksXtf(ownOutput, model, version, "split", true);
+        Path local = Files.writeString(work.resolve("topics-split-native.xtf"),
+                Files.readString(source).replace("split-survey", "split-own-survey").replace("split-permit", "split-own-permit"));
+        assertCliSuccess(db, "import", model, "split-own", local);
+        assertSplitTopicLinks(db, sql, "split-own");
+        Path referenceOutput = work.resolve("topics-split-reference-output.xtf");
+        reference.run(db, work.toString(), "--export", "--exportTid", "--dataset", "split-own", referenceOutput.toString());
+        assertSplitTopicLinksXtf(referenceOutput, model, version, "split-own", false);
+
+        String role = version == 23 ? "MatchedRecord REF" : "MatchedRecord i:ref";
+        Path broken = Files.writeString(work.resolve("topics-split-local-error.xtf"), Files.readString(local)
+                .replace(role + "=\"split-own-survey\"", role + "=\"split-survey\""));
+        var rejected = cli(db, "import", model, "split-failed", broken, CancellationToken.none());
+        assertNotEquals(0, rejected.code(), rejected::diagnostics);
+        assertTrue(rejected.diagnostics().contains("MatchedRecord") && rejected.diagnostics().contains("basket"), rejected::diagnostics);
+        assertNull(scalar(sql, "select t_id from " + db.table("t_ili2db_dataset") + " where datasetname='split-failed'"));
+    }
+
+    private static String withoutBasket(String fixture, String tag) {
+        String name = java.util.regex.Pattern.quote(tag);
+        return fixture.replaceFirst("(?s)<" + name + " .*?</" + name + ">", "");
+    }
+
+    private static void assertSplitTopicLinks(TestDatabase db, Connection sql, String source) throws SQLException {
+        assertExternalTopicLink(db, sql, "surveymatch", "surveyrecord", "matchedrecord", "surveyed",
+                source, source + "-survey", null, "split");
+        assertExternalTopicLink(db, sql, "sitepermit", "permitrecord", "issuedpermit", "coveredsite",
+                source, source + "-permit", "access", "split");
+    }
+
+    private static void assertSplitTopicLinksXtf(Path output, String model, int version, String source, boolean own)
+            throws Exception {
+        var baskets = children(readDataSection(output, version));
+        assertEquals(1, baskets.size());
+        assertEquals(source + "-surveys", id(baskets.getFirst(), version, "bid"));
+        String prefix = version == 23 ? model + ".Surveys." : "";
+        var match = child(baskets.getFirst(), prefix + "SurveyMatch");
+        var permit = child(baskets.getFirst(), prefix + "SitePermit");
+        String bid = own ? "split-catalog" : "";
+        assertExternalReference(child(match, "Surveyed"), version, "split-leaf", bid);
+        assertExternalReference(child(match, "MatchedRecord"), version, source + "-survey", "");
+        assertExternalReference(child(permit, "CoveredSite"), version, "split-leaf", bid);
+        assertExternalReference(child(permit, "IssuedPermit"), version, source + "-permit", "");
+        assertEquals("access", child(permit, "Reason").getTextContent());
     }
 
     private static void assertWrongFlatTargetTopicRejected(TestDatabase db, Connection sql, String model, Path output)
@@ -795,21 +856,21 @@ final class DbInteropTest {
             assertFalse(rows.next());
         }
         assertExternalTopicLink(db, sql, "surveymatch", "surveyrecord", "matchedrecord", "surveyed",
-                dataset, dataset + "-survey", null);
+                dataset, dataset + "-survey", null, dataset);
         assertExternalTopicLink(db, sql, "sitepermit", "permitrecord", "issuedpermit", "coveredsite",
-                dataset, dataset + "-permit", "access");
+                dataset, dataset + "-permit", "access", dataset);
     }
 
     private static void assertExternalTopicLink(TestDatabase db, Connection sql, String linkTable, String localTable,
                                                 String localColumn, String externalColumn, String dataset,
-                                                String localTid, String reason) throws SQLException {
+                                                String localTid, String reason, String target) throws SQLException {
         String query = """
                 select local.t_ili_tid, foreign_site.t_ili_tid, src.t_ili_tid, dst.t_ili_tid, %s from %s link
                 join %s src on src.t_id=link.t_basket
                 join %s ds on ds.t_id=src.dataset
                 left join %s local on local.t_id=link.%s and local.t_basket=link.t_basket
                 left join %s foreign_site on foreign_site.t_id=link.%s
-                left join %s dst on dst.t_id=foreign_site.t_basket and dst.dataset=src.dataset
+                left join %s dst on dst.t_id=foreign_site.t_basket
                 where ds.datasetname='%s'
                 """.formatted(reason == null ? "null" : "link.reason", db.table(linkTable), db.table("t_ili2db_basket"),
                 db.table("t_ili2db_dataset"), db.table(localTable), localColumn, db.table("registry"), externalColumn,
@@ -817,9 +878,9 @@ final class DbInteropTest {
         try (var statement = sql.createStatement(); var rows = statement.executeQuery(query)) {
             assertTrue(rows.next());
             assertEquals(localTid, rows.getString(1));
-            assertEquals(dataset + "-leaf", rows.getString(2));
+            assertEquals(target + "-leaf", rows.getString(2));
             assertEquals(dataset + "-surveys", rows.getString(3));
-            assertEquals(dataset + "-catalog", rows.getString(4));
+            assertEquals(target + "-catalog", rows.getString(4));
             assertEquals(reason, rows.getString(5));
             assertFalse(rows.next());
         }

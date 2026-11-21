@@ -310,7 +310,8 @@ eigene Attribute im selben Topic. Die gespeicherte Rolle ist `EXTERNAL`.
 Die Rollenspalte liegt wie bei lokalen Zielen in der Eigentümertabelle.
 Das Ziel darf in einem anderen Datensatz desselben Schemas liegen.
 Bei einem eigenständigen n:m-Link darf eine der beiden Rollen `EXTERNAL`
-sein. Die andere Rolle und die Linkzeile bleiben im selben Basket verankert.
+sein, auch auf ein Ziel in einem anderen Datensatz desselben Schemas.
+Die andere Rolle und die Linkzeile bleiben im selben Basket verankert.
 Bei einer eingebetteten 1:n-Assoziation mit eigenen skalaren Attributen
 speichert die Linktabelle die `EXTERNAL`-Zielrolle. Die Eigentümerrolle
 und der Basket der Linkzeile gehören weiterhin zum Eigentümerobjekt.

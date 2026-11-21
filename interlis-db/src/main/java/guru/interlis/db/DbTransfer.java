@@ -10,7 +10,6 @@ import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.Modifier;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
-import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.TopicDescriptor;
 import guru.interlis.transfer.TransferEvent;
@@ -435,10 +434,6 @@ final class DbTransfer {
                                 .name().declared().toString();
                         from.append(" AND EXISTS (SELECT 1 FROM ").append(baskets).append(" dst WHERE dst.")
                                 .append(T_ID).append(" = ").append(targetBasket);
-                        if (!supportsCrossDataset(mapping, table, column)) {
-                            from.append(" AND dst.dataset = (SELECT src.dataset FROM ").append(baskets)
-                                    .append(" src WHERE src.").append(T_ID).append(" = ").append(sourceBasket).append(')');
-                        }
                         from.append(" AND dst.topic = '")
                                 .append(topic.replace("'", "''")).append("')");
                     } else {
@@ -467,17 +462,12 @@ final class DbTransfer {
         }
     }
 
-    private static boolean supportsCrossDataset(DbMapping mapping, Table table, Column column) {
-        return column.external() && (column.slot() instanceof AttributeSlot
-                || table.object().kind() == SymbolKind.CLASS || mapping.isEmbeddedLink(table));
-    }
-
     private static void checkCrossDatasetReferences(Database db, DbMapping mapping, long datasetId, CancellationToken token)
             throws SQLException {
         String baskets = db.technicalTable(BASKET);
         for (var table : mapping.tables()) {
             for (var column : table.columns()) {
-                if (!supportsCrossDataset(mapping, table, column)) continue;
+                if (!column.external()) continue;
                 token.throwIfCancellationRequested();
                 var root = mapping.rootTable(column.target().orElseThrow());
                 String sql = "SELECT DISTINCT ref." + T_ID + ", ref." + T_ILI_TID + ", dst." + T_ILI_TID
@@ -1072,7 +1062,6 @@ final class DbTransfer {
         private final Map<Composition, PreparedStatement> structureInserts = new HashMap<>();
         private final Map<Column, PreparedStatement> updates = new HashMap<>();
         private final Set<SymbolRef> referenceTargets;
-        private final boolean crossDataset;
         private final Set<SymbolRef> externalTargets;
         private final Map<String, StoredObject> objects = new HashMap<>();
         private final Map<String, StoredObject> externalObjects = new HashMap<>();
@@ -1084,8 +1073,6 @@ final class DbTransfer {
             this.db = db;
             this.mapping = mapping;
             this.token = token;
-            crossDataset = mapping.tables().stream().anyMatch(table -> table.columns().stream()
-                    .anyMatch(column -> supportsCrossDataset(mapping, table, column)));
             referenceTargets = referenceTargets(false);
             externalTargets = referenceTargets(true);
         }
@@ -1187,7 +1174,7 @@ final class DbTransfer {
             if (referenceTargets.contains(object.type())) {
                 objects.put(tid.orElseThrow(), new StoredObject(id, object.type(), identity.currentBasket()));
             }
-            if (externalTargets.contains(object.type()) || (crossDataset && tid.isPresent())) {
+            if (externalTargets.contains(object.type()) || (!externalTargets.isEmpty() && tid.isPresent())) {
                 externalObjects.put(tid.orElseThrow(), new StoredObject(id, object.type(), identity.currentBasket()));
             }
         }
@@ -1490,7 +1477,7 @@ final class DbTransfer {
             for (var patch : references) {
                 token.throwIfCancellationRequested();
                 var target = targets.get(patch.targetTid());
-                if (target == null && supportsCrossDataset(mapping, patch.table(), patch.column())) {
+                if (target == null && patch.column().external()) {
                     target = findReference(db, mapping, patch.column(), patch.targetTid(),
                             patch.targetBasket().map(BasketId::value));
                 }
