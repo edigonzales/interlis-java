@@ -158,6 +158,19 @@ final class DbInteropTest {
                 new TestDatabase(postgres, "split_geometry_own"));
     }
 
+    @Test void geoPackageGeometryHierarchy23() throws Exception { exchangeGeometryHierarchy(23, null); }
+    @Test void geoPackageGeometryHierarchy24() throws Exception { exchangeGeometryHierarchy(24, null); }
+    @Test void postgisGeometryHierarchy23() throws Exception { exchangeWithPostgis(23, this::exchangeGeometryHierarchy); }
+    @Test void postgisGeometryHierarchy24() throws Exception { exchangeWithPostgis(24, this::exchangeGeometryHierarchy); }
+
+    private void exchangeGeometryHierarchy(int version, PostgreSQLContainer postgres) throws Exception {
+        var cases = new GeometryLayoutCases(work, version, new ReferenceTool(postgres != null));
+        cases.hierarchy(new TestDatabase(postgres, "hierarchy_geometry_reference"),
+                new TestDatabase(postgres, "hierarchy_geometry_own"), postgres == null);
+        cases.hierarchy(new TestDatabase(postgres, "alternate_hierarchy_reference"),
+                new TestDatabase(postgres, "alternate_hierarchy_own"), postgres != null);
+    }
+
     private void exchangeSpatial(int version, PostgreSQLContainer postgres) throws Exception {
         var cases = new SpatialIndexCases(work, version, new ReferenceTool(postgres != null));
         cases.points(new TestDatabase(postgres, "spatial_points"));
@@ -4294,6 +4307,14 @@ final class DbInteropTest {
         }
 
         void run(TestDatabase db, String modelDir, String... args) throws Exception {
+            run(db, modelDir, null, args);
+        }
+
+        void expectFailure(TestDatabase db, String modelDir, String error, String... args) throws Exception {
+            run(db, modelDir, error, args);
+        }
+
+        private void run(TestDatabase db, String modelDir, String expectedError, String[] args) throws Exception {
             Path java = Path.of(System.getProperty("java.home"), "bin", "java");
             var command = new ArrayList<>(List.of(java.toString(), "--enable-native-access=ALL-UNNAMED",
                     "-Duser.home=" + home, "-jar", jar.toString(), "--modeldir", modelDir));
@@ -4304,7 +4325,13 @@ final class DbInteropTest {
                     .redirectOutput(log.toFile()).start();
             try {
                 assertTrue(process.waitFor(60, TimeUnit.SECONDS), () -> "Reference timed out: " + args[0]);
-                assertEquals(0, process.exitValue(), () -> logText(log, db.password));
+                if (expectedError == null) {
+                    assertEquals(0, process.exitValue(), () -> logText(log, db.password));
+                } else {
+                    String output = logText(log, db.password);
+                    assertNotEquals(0, process.exitValue(), output);
+                    assertTrue(output.contains(expectedError), output);
+                }
             } finally {
                 if (process.isAlive()) process.destroyForcibly().waitFor(5, TimeUnit.SECONDS);
             }

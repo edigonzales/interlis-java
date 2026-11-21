@@ -112,8 +112,8 @@ weiter.
 
 ## Bestehende Raumindizes
 
-GeoPackage-Dateien mit einem RTree für 2D-Punkte, Linien und Flächen können mit `import`,
-`replace`, `update` und `delete` verwendet werden. Die registrierte virtuelle
+GeoPackage-Dateien mit RTree-Indizes für XY- und XYZ-Geometrien können mit
+`import`, `replace`, `update` und `delete` verwendet werden. Die registrierte virtuelle
 Tabelle und ihre Standardtrigger müssen zur gemappten Geometriespalte und
 zur internen ID passen. Die Trigger pflegen den Index in derselben Transaktion
 wie die Fachzeilen. Indizierte GeoPackage-Geometrien erhalten eine XY-Hülle
@@ -149,13 +149,12 @@ einen eigenen Katalogeintrag und mit `--create-geom-index` eigene RTree-Trigger.
 Dieses optionale Profil weicht von der GeoPackage-Regel mit einer
 Geometriespalte pro Feature-Tabelle ab.
 
-Beide Backends verwenden EPSG:2056. XYZ-Punkte führen die dritte Ordinate im SQL-Wert
-und die exakten Modellgrenzen als `c3Min` und `c3Max` in den Spaltenmetadaten.
-PostGIS verwendet `POINTZ`, GeoPackage das Z-Bit der ili2gpkg-Kodierung.
-Die Raumindizes arbeiten mit der XY-Hülle.
-Die Geometriespalte speichert einen XY- oder XYZ-Punkt, eine XY- oder
-XYZ-`POLYLINE` oder eine XY- oder XYZ-Fläche (`SURFACE` oder `AREA`) mit einem Aussenring und
-optionalen Innenringen. Linien und Flächenränder unterstützen
+Beide Backends verwenden EPSG:2056. XYZ-Geometrien speichern die dritte
+Ordinate im SQL-Wert und die exakten Modellgrenzen als `c3Min` und `c3Max`
+in den Spaltenmetadaten. PostGIS verwendet den Z-Typzusatz, GeoPackage das
+Z-Bit der ili2gpkg-Kodierung. Die Raumindizes arbeiten mit der XY-Hülle.
+Die Geometriespalte speichert XY- und XYZ-Punkte, `POLYLINE` sowie
+`SURFACE` oder `AREA` mit einem Aussenring und optionalen Innenringen. Linien und Flächenränder unterstützen
 `WITH (STRAIGHTS)`, `WITH (ARCS)` und
 `WITH (STRAIGHTS, ARCS)`. Wie bei ili2db 5.5.2 liegen Linien in
 `COMPOUNDCURVE`-Spalten und Flächen in `CURVEPOLYGON`-Spalten.
@@ -166,9 +165,9 @@ eine `CIRCULARSTRING`-Komponente. Bei einem XYZ-Bogen tragen Anfang und
 Ende Z. Die XY-Zwischenposition wird wie in ili2db mit einem
 `NaN`-Platzhalter für Z gespeichert.
 
-In XTF 2.4 FULL unterstützen die folgenden Spaltentypen XY und XYZ. Sie speichern alle Teile einer
-Geometrie in Lieferreihenfolge und derselben Objektzeile. `typeKind`
-weist den INTERLIS-Modelltyp aus.
+In XTF 2.4 FULL unterstützen die folgenden Spaltentypen XY und XYZ.
+Alle Teile einer Geometrie liegen in Lieferreihenfolge in demselben
+Spaltenwert. `typeKind` weist den INTERLIS-Modelltyp aus.
 
 | INTERLIS | SQL | WKB-Teile |
 |---|---|---|
@@ -182,9 +181,9 @@ Anschlusspunkte zwischen Komponenten zählen mit. Neue GeoPackages
 registrieren je nach Spaltentyp `gpkg_geom_COMPOUNDCURVE`,
 `gpkg_geom_CURVEPOLYGON`, `gpkg_geom_MULTICURVE` oder
 `gpkg_geom_MULTISURFACE`. Beim Lesen genügen der übereinstimmende
-Geometriekatalog und das passende Binärformat. GeoPackage-Flächen,
-gebogene Linien und Geometriesammlungen verwenden den Standardheader ohne
-optionale XY-Ausdehnung.
+Geometriekatalog und das passende Binärformat. Ohne Raumindex verwenden
+GeoPackage-Flächen, gebogene Linien und Geometriesammlungen den Header
+ohne XY-Ausdehnung.
 [GeoPackage-Geometrieerweiterung](https://www.geopackage.org/spec131/#extension_geometry_types)
 
 Beim Import von XTF 2.3 fügt der Adapter die `POLYLINE`-Teile einer
@@ -207,11 +206,9 @@ Sammlung führt zu einer Diagnose.
 Der XTF-Import erwartet bei einem Bogen Start-, Zwischen- und Endpunkt.
 Ein expliziter Radius (`R` in XTF 2.3 oder `r` in XTF 2.4) führt zu
 einer Diagnose am Attribut und zum Rollback. Beim Export stammen die drei
-Punkte aus der gespeicherten Geometrie. Der XTF-2.4-Leser akzeptiert auch die a1/a2-vor-c1/c2-Reihenfolge aus ili2db-Exporten.
-Der XTF-2.4-Writer verwendet die
-normgerechte Reihenfolge mit Endpunkt vor Zwischenpunkt. ili2gpkg 5.5.2
-schreibt beim Export die umgekehrte Reihenfolge. Der Werkzeugwechsel für
-diese Referenzausgabe erfolgt in der gemeinsamen Datenbank.
+Punkte aus der gespeicherten Geometrie. Der XTF-2.4-Writer schreibt den
+Endpunkt vor dem Zwischenpunkt. Der Leser akzeptiert auch die umgekehrte
+Reihenfolge aus Exporten von ili2db 5.5.2.
 [INTERLIS 2.4, Anhang C](https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=133)
 
 In XTF 2.3 und 2.4 FULL können Klassen und Strukturen optionale Strukturwerte
@@ -351,11 +348,21 @@ Feldern seines Pfads. Fehlende, unerwartete oder basketfremde Teilzeilen
 und unbekannte oder abstrakte Typen werden diagnostiziert.
 [ili2db-Vererbungsabbildung](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst#vererbung)
 
-Eine Geometrie liegt in der Tabelle ihrer Deklaration. Ein Objekt kann
-je eine Geometrie aus mehreren Stufen seines Vererbungspfads enthalten.
-Der räumliche Katalog führt die Spalten auf ihren physischen Tabellen.
-GeoPackage registriert Tabellen mit eigener Geometriespalte als `features`
-und die übrigen Tabellen als `attributes`.
+Geometrien behalten die Zuordnung zur deklarierenden Klasse. Ein Objekt
+kann geerbte und eigene XY- sowie XYZ-Geometrien enthalten. Bei separater
+Ablage gehört jede Hilfszeile zur Tabellenzeile der deklarierenden Klasse.
+Fehlende Hilfszeilen oder abweichende Baskets verhindern den Export und
+eine betroffene Datensatzlöschung. GeoPackage registriert die physischen
+Geometrietabellen als `features` und übrige Tabellen als `attributes`.
+
+ili2db 5.5.2 bindet beim Export aus einer Klassenhierarchie die
+Geometrie-Hilfstabelle einer Unterklasse doppelt ein. Der Fehler tritt
+auch in einem vom Referenzwerkzeug erzeugten und befüllten Schema auf,
+bei ili2gpkg im Standardlayout und bei ili2pg mit `--oneGeomPerTable`.
+Für diese Ablage funktionieren der Referenzimport und der Export mit
+`interlis-db`. Für den Wechsel in beiden Richtungen eignen sich das
+PostGIS-Standardlayout und das optionale GeoPackage-Profil mit mehreren
+Geometriespalten in einer Tabelle.
 
 Optionale Struktureinzelwerte, `LIST OF` und `BAG OF` können in einer
 Klassenhierarchie deklariert und geerbt werden. Die Rückverweisspalte

@@ -272,6 +272,7 @@ final class DbDatasetWrite {
         }
         checkIncomingMappings(db, mapping);
         checkDatasetReferences(db, mapping, dataset, operation, token);
+        checkDatasetGeometryFragments(db, mapping, dataset, token);
         for (var table : mapping.storageTables().reversed()) {
             token.throwIfCancellationRequested();
             delete(db, "DELETE FROM " + db.table(table) + " WHERE " + T_BASKET
@@ -279,6 +280,34 @@ final class DbDatasetWrite {
         }
         token.throwIfCancellationRequested();
         delete(db, "DELETE FROM " + baskets + " WHERE dataset = ?", dataset);
+    }
+
+    private static void checkDatasetGeometryFragments(Database db, DbMapping mapping, long dataset,
+                                                       CancellationToken token) throws SQLException {
+        String datasetBaskets = "(SELECT " + T_ID + " FROM " + db.technicalTable(BASKET) + " WHERE dataset = ?)";
+        for (var table : mapping.tables()) {
+            for (var geometry : table.secondaryGeometries()) {
+                token.throwIfCancellationRequested();
+                // Check both sides of the basket boundary. An orphan left by ili2db UPDATE has no owner
+                // row and can be removed by its own basket.
+                String sql = """
+                        SELECT obj.t_id FROM %s obj LEFT JOIN %s geom ON obj.t_id = geom.t_id
+                        WHERE (obj.t_basket IN %s AND (geom.t_basket IS NULL OR geom.t_basket <> obj.t_basket))
+                           OR (geom.t_basket IN %s AND geom.t_basket <> obj.t_basket)
+                        LIMIT 1
+                        """.formatted(db.table(table.name()), db.table(geometry.table()), datasetBaskets, datasetBaskets);
+                try (var statement = db.connection().prepareStatement(sql)) {
+                    statement.setLong(1, dataset);
+                    statement.setLong(2, dataset);
+                    try (var rows = statement.executeQuery()) {
+                        if (rows.next()) {
+                            throw new DbException("Missing or basket-mismatched secondary geometry row for "
+                                    + geometry.column().slot().name().declared() + " at T_Id " + rows.getLong(1));
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private static void checkDatasetReferences(Database db, DbMapping mapping, long dataset, String operation,

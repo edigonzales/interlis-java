@@ -98,6 +98,15 @@ Datensätze und die Wiederherstellung aller Zeilen beim Rollback.
 den Werkzeugwechsel und die räumlichen Treffer nach Schreiboperationen.
 Die GeoPackage-Fälle prüfen zusätzlich die RTree-Trigger und den Indexinhalt.
 
+`*DbInteropTest.*Xyz*` prüft XYZ-Geometrien und die XY-Indexhüllen.
+`*DbInteropTest.*GeometryLayout*` prüft mehrere Spalten und Hilfstabellen,
+`*DbInteropTest.*GeometryHierarchy*` deren Verwendung in Klassenhierarchien.
+Die Tests vergleichen Kataloge beider Schemaerzeuger und wechseln für Import,
+Export und Mutationen zwischen den Werkzeugen. Bei Klassenhierarchien
+mit Geometrie-Hilfstabellen prüfen sie den Referenzimport und reproduzieren
+den [Fehler des Referenzexports](../usage/database.md#referenzprofil)
+für dieses Layout.
+
 Für `EXTERNAL`-Referenzattribute prüft die Suite frühere und spätere Ziele
 im selben Datensatz, den konkreten Zieltyp, die Datensatzisolierung und
 den Rollback bei fehlendem Ziel oder falscher BID. Sie liest auch einen

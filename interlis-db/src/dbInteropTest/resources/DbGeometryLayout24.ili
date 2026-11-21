@@ -9,5 +9,15 @@ MODEL DbGeometryLayout24 (en) AT "https://example.org/interlis/db" VERSION "1" =
       Surveyed : XYZ;
       Trace : POLYLINE WITH (STRAIGHTS) VERTEX XY;
     END Asset;
+    CLASS Device (ABSTRACT) =
+      Origin : XYZ;
+    END Device;
+    CLASS Recorder EXTENDS Device =
+      Peg : XY;
+      Track : POLYLINE WITH (STRAIGHTS) VERTEX XYZ;
+    END Recorder;
+    CLASS Beacon EXTENDS Device =
+      Signal : XY;
+    END Beacon;
   END Data;
 END DbGeometryLayout24.

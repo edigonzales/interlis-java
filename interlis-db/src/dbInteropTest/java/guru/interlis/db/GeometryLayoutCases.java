@@ -97,6 +97,8 @@ final class GeometryLayoutCases {
         if (!old.postgis()) {
             try (var sql = old.connect()) {
                 assertEquals("2", fragmentRows(old, sql, "asset_surveyed"));
+                assertCliSuccess(old, "delete", model, "layout", null);
+                assertEquals("0", fragmentRows(old, sql, "asset_surveyed"));
             }
         }
     }
@@ -135,6 +137,125 @@ final class GeometryLayoutCases {
         }
     }
 
+    void hierarchy(TestDatabase old, TestDatabase own, boolean split) throws Exception {
+        create(old, own, split);
+        Path input = delivery("hierarchy", recorder("rec", "2601000.125", "-81.125", true) + beacon("beacon"));
+        reference.run(old, work.toString(), "--import", "--dataset", "layout", "--importTid", "--importBid", input.toString());
+        var oldResult = work.resolve("hierarchy-native.xtf");
+        assertCliSuccess(old, "export", model, "layout", oldResult);
+        assertHierarchy(oldResult, 2, "-81.125", true);
+
+        assertCliSuccess(own, "import", model, "layout", input);
+        var ownResult = work.resolve("hierarchy-legacy.xtf");
+        if (split) {
+            // The reference exporter reads Track twice from a split hierarchy, even in its own schema.
+            reference.expectFailure(old, work.toString(), "max one POLYLINE value allowed (Track)",
+                    "--export", "--dataset", "layout", "--exportTid", work.resolve("hierarchy-broken-reference.xtf").toString());
+            var legacy = delivery("hierarchy-legacy-input", "legacy-basket", recorder("rec", "2601000.125", "-81.125", true)
+                    + beacon("beacon"));
+            reference.run(own, work.toString(), "--import", "--dataset", "legacy", "--importTid", "--importBid", legacy.toString());
+            assertCliSuccess(own, "export", model, "legacy", ownResult);
+            assertCliSuccess(own, "delete", model, "legacy", null);
+        } else {
+            reference.run(own, work.toString(), "--export", "--dataset", "layout", "--exportTid", ownResult.toString());
+        }
+        assertHierarchy(ownResult, 2, "-81.125", true);
+
+        Path other = delivery("other", "other-basket", beacon("other"));
+        assertCliSuccess(own, "import", model, "other", other);
+        Path update = delivery("hierarchy-update", recorder("rec", "2601400.125", "11.750", false));
+        try (var sql = own.connect()) {
+            String row = scalar(sql, "SELECT t_id FROM " + own.table("device") + " WHERE t_ili_tid='rec'");
+            String trackTable = split ? "recorder_track" : "recorder";
+            String join = " FROM " + own.table("device") + " d JOIN " + own.table(trackTable)
+                    + " r ON r.t_id=d.t_id AND r.t_basket=d.t_basket";
+            assertEquals("1", scalar(sql, "SELECT count(*)" + join + " WHERE d.t_type='recorder' AND r.track IS NOT NULL"));
+            assertEquals("1", trackHits(own, sql, trackTable, "2601000.125"));
+            assertCliSuccess(own, "update", model, "layout", update);
+            assertEquals(row, scalar(sql, "SELECT t_id FROM " + own.table("device") + " WHERE t_ili_tid='rec'"));
+            assertEquals("1", fragmentRows(own, sql, "beacon"));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + own.table("recorder") + " WHERE peg IS NULL"));
+            assertEquals("0", trackHits(own, sql, trackTable, "2601000.125"));
+            assertEquals("1", trackHits(own, sql, trackTable, "2601400.125"));
+
+            if (split) {
+                assertForeignBasketRejected(own, sql, row, update);
+            }
+            assertCliSuccess(own, "replace", model, "layout", update);
+            assertNotEquals(row, scalar(sql, "SELECT t_id FROM " + own.table("device") + " WHERE t_ili_tid='rec'"));
+            assertEquals("1", scalar(sql, "SELECT count(*)" + join + " WHERE d.t_type='recorder' AND r.track IS NOT NULL"));
+            assertCliSuccess(own, "export", model, "layout", ownResult);
+            assertHierarchy(ownResult, 1, "11.750", false);
+            assertCliSuccess(own, "delete", model, "layout", null);
+            assertEquals("0", fragmentRows(own, sql, trackTable));
+            assertEquals("0", trackHits(own, sql, trackTable, "2601400.125"));
+            assertEquals("other", scalar(sql, "SELECT t_ili_tid FROM " + own.table("device")));
+            assertEquals("1", fragmentRows(own, sql, "beacon"));
+        }
+    }
+
+    private void assertForeignBasketRejected(TestDatabase db, Connection sql, String row, Path replacement)
+            throws Exception {
+        if (!db.postgis()) GeoPackageRtree.register(sql);
+        String device = db.table("device");
+        String ownBasket = scalar(sql, "SELECT t_basket FROM " + device + " WHERE t_id=" + row);
+        String otherBasket = scalar(sql, "SELECT t_basket FROM " + device + " WHERE t_ili_tid='other'");
+        String setBasket = "UPDATE " + db.table("recorder_track") + " SET t_basket=";
+        execute(sql, setBasket + otherBasket + " WHERE t_id=" + row);
+        for (String dataset : List.of("layout", "other")) {
+            var failure = cli(db, "delete", model, dataset, null, CancellationToken.none());
+            assertNotEquals(0, failure.code(), failure::diagnostics);
+            assertTrue(failure.diagnostics().contains("basket-mismatched secondary geometry"), failure::diagnostics);
+        }
+        var failedReplace = cli(db, "replace", model, "layout", replacement, CancellationToken.none());
+        assertNotEquals(0, failedReplace.code(), failedReplace::diagnostics);
+        assertTrue(failedReplace.diagnostics().contains("basket-mismatched secondary geometry"), failedReplace::diagnostics);
+        assertEquals("2", fragmentRows(db, sql, "device"));
+        assertEquals("1", trackHits(db, sql, "recorder_track", "2601400.125"));
+        execute(sql, setBasket + ownBasket + " WHERE t_id=" + row);
+    }
+
+    private static String trackHits(TestDatabase db, Connection sql, String table, String x) throws Exception {
+        String query = db.postgis() ? "SELECT count(*) FROM " + db.table(table)
+                + " WHERE track && ST_MakeEnvelope(" + x + ",1201000," + x + ",1201001,2056)"
+                : "SELECT count(*) FROM rtree_" + table + "_track WHERE minx<=" + x + " AND maxx>=" + x;
+        return scalar(sql, query);
+    }
+
+    private void assertHierarchy(Path output, int count, String z, boolean peg) throws Exception {
+        var basket = children(readDataSection(output, version)).getFirst();
+        var objects = children(basket);
+        assertEquals(count, objects.size());
+        var recorder = objects.stream().filter(object -> id(object, version, "tid").equals("rec")).findFirst().orElseThrow();
+        assertTrue(recorder.getLocalName().endsWith("Recorder"));
+        var origin = children(children(child(recorder, "Origin")).getFirst());
+        assertEquals(0, new BigDecimal(z).compareTo(new BigDecimal(origin.get(2).getTextContent())));
+        assertEquals(2, child(recorder, "Track").getElementsByTagNameNS("*", version == 23 ? "C3" : "c3").getLength());
+        if (peg) assertNotNull(child(recorder, "Peg"));
+        else assertNull(child(recorder, "Peg"));
+        if (count == 2) {
+            var beacon = objects.stream().filter(object -> id(object, version, "tid").equals("beacon")).findFirst().orElseThrow();
+            assertTrue(beacon.getLocalName().endsWith("Beacon"));
+            assertNull(child(beacon, "Track"));
+            assertNotNull(child(beacon, "Origin"));
+            assertNotNull(child(beacon, "Signal"));
+        }
+    }
+
+    private String recorder(String tid, String trackStart, String originZ, boolean peg) {
+        String origin = "<Origin>" + position("2600700.125", "1200700.375", originZ) + "</Origin>";
+        String pegField = peg ? "<Peg>" + position("2600800.125", "1200800.375", null) + "</Peg>" : "";
+        String line = version == 23 ? "POLYLINE" : "g:polyline";
+        String track = "<Track><" + line + ">" + position(trackStart, "1201000.375", "100")
+                + position("2601100.375", "1201020.500", "-32") + "</" + line + "></Track>";
+        return object("Recorder", tid, origin + pegField + track);
+    }
+
+    private String beacon(String tid) {
+        return object("Beacon", tid, "<Origin>" + position("2600900.125", "1200900.375", "14.250")
+                + "</Origin><Signal>" + position("2600910.125", "1200910.375", null) + "</Signal>");
+    }
+
     private static String geoPackageHits(Connection sql, String x) throws Exception {
         return scalar(sql, "SELECT count(*) FROM rtree_asset_anchor WHERE minx <= " + x + " AND maxx >= " + x);
     }
@@ -167,7 +288,8 @@ final class GeometryLayoutCases {
         try (var oldSql = old.connect(); var sql = own.connect()) {
             var expected = DbSchemaCatalog.read(oldSql, old.postgis(), old.schema());
             if (!old.postgis()) {
-                expected = expected.expectGeoPackageGeometryExtension(split ? "asset_trace" : "asset", "trace", "COMPOUNDCURVE");
+                expected = expected.expectGeoPackageGeometryExtension(split ? "asset_trace" : "asset", "trace", "COMPOUNDCURVE")
+                        .expectGeoPackageGeometryExtension(split ? "recorder_track" : "recorder", "track", "COMPOUNDCURVE");
             }
             expected.assertSameAs(DbSchemaCatalog.read(sql, own.postgis(), own.schema()));
         }
@@ -204,7 +326,11 @@ final class GeometryLayoutCases {
     }
 
     private Path delivery(String name, String objects) throws Exception {
-        String text = referenceDatasetFixture(model, version, "layout-basket", objects);
+        return delivery(name, "layout-basket", objects);
+    }
+
+    private Path delivery(String name, String bid, String objects) throws Exception {
+        String text = referenceDatasetFixture(model, version, bid, objects);
         if (version == 24) text = text.replace("<i:transfer ", "<i:transfer xmlns:g=\"http://www.interlis.ch/geometry/1.0\" ");
         return Files.writeString(work.resolve(name + ".xtf"), text);
     }
@@ -217,8 +343,12 @@ final class GeometryLayoutCases {
             body += "<Trace><" + line + ">" + position("2600600.125", "1200600.375", null)
                     + position("2600620.250", "1200640.500", null) + "</" + line + "></Trace>";
         }
-        return version == 23 ? "<%1$s.Data.Asset TID=\"%2$s\">%3$s</%1$s.Data.Asset>".formatted(model, tid, body)
-                : "<Asset i:tid=\"%s\">%s</Asset>".formatted(tid, body);
+        return object("Asset", tid, body);
+    }
+
+    private String object(String type, String tid, String body) {
+        return version == 23 ? "<%1$s.Data.%2$s TID=\"%3$s\">%4$s</%1$s.Data.%2$s>".formatted(model, type, tid, body)
+                : "<%1$s i:tid=\"%2$s\">%3$s</%1$s>".formatted(type, tid, body);
     }
 
     private String position(String x, String y, String z) {
