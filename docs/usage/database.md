@@ -213,6 +213,15 @@ Beim XTF-2.3-Import mit ili2gpkg 5.5.2 wurden identische Zielpaare zweier
 anonymer Assoziationen derselben Beziehungstabelle zugeordnet. Die
 Mischfixtures verwenden für diese Assoziationen unterschiedliche Zieltypen.
 
+Bei eigenständigen binären n:m-Assoziationen mit lokalen `--`-Rollen kann
+eine oder können beide Rollen `ORDERED` sein. Jede geordnete Rolle erhält
+in der Beziehungstabelle eine Spalte `<Rollenspalte>_T_Seq`. XTF 2.3
+überträgt die Position als `ORDER_POS`, XTF 2.4 als `ili:order_pos`.
+Der Adapter erhält explizite positive 64-Bit-Positionen und übersetzt eine
+fehlende Position in SQL `NULL`. ili2db 5.5.2 nutzt dasselbe SQL-Schema,
+ignoriert Positionswerte aber beim Import und lässt sie beim Export weg.
+[Referenzschema](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/src/ch/ehi/ili2db/fromili/FromIliRecordConverter.java#L496-L506)
+
 1:n- und 1:1-Assoziationen mit eigenen skalaren Attributen verwenden ebenfalls
 eine Beziehungstabelle. Im XTF erscheint die Rolle am Objekt der n-Seite
 bzw. der zweiten deklarierten Rolle. Eine

@@ -34,6 +34,7 @@ import guru.interlis.transfer.TransferValue.Undefined;
 import guru.interlis.transfer.TransferWriter;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -447,6 +448,7 @@ final class DbTransfer {
                                 + T_ILI_TID + " FROM " + baskets + " basket WHERE basket." + T_ID + " = "
                                 + targetBasket + ") END");
                     }
+                    column.positionColumn().ifPresent(position -> projections.add(alias + "." + quote(position)));
                 }
                 default -> projections.add(field);
             }
@@ -460,7 +462,8 @@ final class DbTransfer {
     private static int projectionSize(DbMapping mapping, Column column) {
         if (column.kind() != DbMapping.Kind.REFERENCE) return 1;
         int targetFields = mapping.rootTable(column.target().orElseThrow()).hasDiscriminator() ? 3 : 2;
-        return targetFields + (projectsTargetBid(mapping, column) ? 1 : 0);
+        return targetFields + (projectsTargetBid(mapping, column) ? 1 : 0)
+                + (column.positionColumn().isPresent() ? 1 : 0);
     }
 
     private static boolean projectsTargetBid(DbMapping mapping, Column column) {
@@ -794,11 +797,13 @@ final class DbTransfer {
                 yield value == null ? null : new Text(value);
             }
             case REFERENCE -> {
-                if (rows.getObject(index) == null) {
-                    yield null;
-                }
                 String path = column.slot().name().declared().toString();
                 String context = ownerTid == null ? path : path + " of object " + ownerTid;
+                boolean hasTarget = rows.getObject(index) != null;
+                var position = column.positionColumn().isPresent()
+                        ? readPosition(rows.getObject(index + projectionSize(mapping, column) - 1), hasTarget, context)
+                        : Optional.<BigInteger>empty();
+                if (!hasTarget) yield null;
                 String tid = identifier(rows.getString(index + 1), column.external()
                         ? "same-dataset reference target TID" : "same-basket reference target TID", context);
                 SymbolRef declared = column.target().orElseThrow();
@@ -813,9 +818,19 @@ final class DbTransfer {
                 var bid = projectsTargetBid(mapping, column) ? Optional.ofNullable(rows.getString(next))
                         .map(value -> new BasketId(identifier(value, "reference target BID", context), IdOrigin.SOURCE))
                         : Optional.<BasketId>empty();
-                yield new Reference(new TransferId(tid, IdOrigin.SOURCE), bid, column.external(), Optional.empty());
+                yield new Reference(new TransferId(tid, IdOrigin.SOURCE), bid, column.external(), position);
             }
         };
+    }
+
+    private static Optional<BigInteger> readPosition(Object value, boolean hasTarget, String context) {
+        if (value == null) return Optional.empty();
+        if (!hasTarget) throw new DbException("Role position without a reference at " + context);
+        if (value instanceof Long || value instanceof Integer || value instanceof Short) {
+            long position = ((Number) value).longValue();
+            if (position > 0) return Optional.of(BigInteger.valueOf(position));
+        }
+        throw new DbException("Expected a positive integer role position at " + context);
     }
 
     private static BooleanValue readBoolean(Database db, ResultSet rows, int index, Column column) throws SQLException {
@@ -1254,6 +1269,10 @@ final class DbTransfer {
             for (var column : table.columns()) {
                 names.add(quote(column.name()));
                 values.add(column.kind().geometry() ? db.geometryParameter() : "?");
+                column.positionColumn().ifPresent(position -> {
+                    names.add(quote(position));
+                    values.add("?");
+                });
             }
             return db.connection().prepareStatement("INSERT INTO " + db.table(table.name())
                     + " (" + names + ") VALUES (" + values + ")");
@@ -1288,22 +1307,44 @@ final class DbTransfer {
 
         private int bindColumn(PreparedStatement statement, int index, Table table, Column column, long id,
                                String context, BasketId basket, TransferValue value) throws SQLException {
+            Optional<BigInteger> position = Optional.empty();
             if (column.kind() == DbMapping.Kind.REFERENCE && value instanceof Reference reference) {
                 var target = bindReference(table, column, id, context, basket, reference);
                 if (target == null) {
-                    statement.setNull(index, Types.BIGINT);
+                    statement.setNull(index++, Types.BIGINT);
                 } else {
-                    statement.setLong(index, target.id());
+                    statement.setLong(index++, target.id());
                 }
-                return index + 1;
+                position = reference.orderPosition();
+            } else {
+                index = bindValue(statement, index, column, value);
             }
-            return bindValue(statement, index, column, value);
+            if (column.positionColumn().isPresent()) {
+                bindPosition(statement, index++, position, column);
+            } else if (position.isPresent()) {
+                throw new DbException("Unexpected role position at " + column.slot().name().declared());
+            }
+            return index;
+        }
+
+        private static void bindPosition(PreparedStatement statement, int index, Optional<BigInteger> position,
+                                         Column column) throws SQLException {
+            if (position.isEmpty()) {
+                statement.setNull(index, Types.BIGINT);
+                return;
+            }
+            try {
+                statement.setLong(index, position.orElseThrow().longValueExact());
+            } catch (ArithmeticException e) {
+                throw new DbException("Role position exceeds the 64-bit integer encoding of "
+                        + column.slot().name().declared(), e);
+            }
         }
 
         private StoredObject bindReference(Table table, Column column, long id, String tid, BasketId basket,
                                            Reference reference) {
             boolean external = column.external();
-            if (reference.external() != external || reference.orderPosition().isPresent()
+            if (reference.external() != external
                     || (!external && reference.targetBasket().filter(target -> !target.value().equals(basket.value())).isPresent())
                     || !(reference.target() instanceof TransferId)) {
                 throw new DbException("Unsupported reference in " + tid + " at " + column.slot().name().declared());

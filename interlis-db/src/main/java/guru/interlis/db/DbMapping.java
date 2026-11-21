@@ -56,9 +56,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static guru.interlis.db.Ili2dbLayout.LV95;
+import static guru.interlis.db.Ili2dbLayout.SEQ_COLUMN;
 import static guru.interlis.db.Ili2dbLayout.TECHNICAL_COLUMNS;
 import static guru.interlis.db.Ili2dbLayout.T_SEQ;
 import static guru.interlis.db.Ili2dbLayout.T_TYPE;
+import static guru.interlis.db.Ili2dbLayout.foldedName;
 import static guru.interlis.db.Ili2dbLayout.reservedTable;
 
 /** The SQL names and storage bindings for a checked transfer plan. */
@@ -84,7 +86,7 @@ final class DbMapping {
     }
 
     record Column(TransferSlot slot, String name, Kind kind, Optional<TypeDescriptor> effectiveType,
-                  Optional<SymbolRef> target, int srsId) {
+                  Optional<SymbolRef> target, int srsId, Optional<String> positionColumn) {
         Column {
             boolean role = slot instanceof RoleSlot;
             if (effectiveType.isEmpty() != role || (role && kind != Kind.REFERENCE)) {
@@ -93,7 +95,13 @@ final class DbMapping {
         }
 
         Column withSrsId(int id) {
-            return new Column(slot, name, kind, effectiveType, target, id);
+            return new Column(slot, name, kind, effectiveType, target, id, positionColumn);
+        }
+
+        Column withPositionColumn(boolean gpkg) {
+            String position = name + "_" + (gpkg ? SEQ_COLUMN : T_SEQ);
+            checkColumnName(slot, position, false, false, gpkg);
+            return new Column(slot, name, kind, effectiveType, target, srsId, Optional.of(position));
         }
 
         boolean external() {
@@ -131,6 +139,15 @@ final class DbMapping {
             columns = List.copyOf(columns);
             if (columns.stream().filter(column -> column.kind().geometry()).count() > 1) {
                 throw unsupported("multiple geometries in " + object.name().declared());
+            }
+            var names = columns.stream().map(column -> foldedName(column.name()))
+                    .collect(Collectors.toCollection(HashSet::new));
+            for (var column : columns) {
+                column.positionColumn().ifPresent(position -> {
+                    if (!names.add(foldedName(position))) {
+                        throw unsupported("role position column " + position + " collides in " + name);
+                    }
+                });
             }
         }
 
@@ -297,7 +314,8 @@ final class DbMapping {
                 for (var role : roles) {
                     String column = allocator.roleColumn(name, role.slot().name().declared().last());
                     checkColumnName(role.slot(), column, false, discriminator, gpkg);
-                    columns.add(roleColumn(role.slot(), role.target(), column));
+                    var binding = roleColumn(role.slot(), role.target(), column);
+                    columns.add(role.slot().role().ordered() ? binding.withPositionColumn(gpkg) : binding);
                 }
             }
             for (var attribute : attributes(object)) {
@@ -474,6 +492,12 @@ final class DbMapping {
                 || roles.stream().anyMatch(role -> role.role().aggregation() != RoleAggregation.NONE))) {
             throw unsupported("external roles at " + association.name().declared());
         }
+        if (roles.stream().anyMatch(role -> role.role().ordered()) && (roles.size() != 2
+                || association.baseType().isPresent() || hasSubtypes(plan, association.symbol())
+                || roles.stream().anyMatch(role -> role.role().external()
+                        || role.role().aggregation() != RoleAggregation.NONE))) {
+            throw unsupported("ORDERED roles in " + feature);
+        }
         return roles.stream().map(role -> new AssociationRole(role, roleTarget(plan, association, role))).toList();
     }
 
@@ -493,6 +517,9 @@ final class DbMapping {
         var second = roles.getLast();
         if (!first.single() && !second.single()) {
             return Optional.empty();
+        }
+        if (roles.stream().anyMatch(role -> role.slot().role().ordered())) {
+            throw unsupported("ORDERED embedded association " + association.name().declared());
         }
         boolean linkTable = association.slots().stream().anyMatch(AttributeSlot.class::isInstance);
         // For 1:1, the second declared role's class owns the column for the first role.
@@ -518,7 +545,7 @@ final class DbMapping {
         var role = slot.role();
         String feature = "role " + slot.name().declared();
         if (role.targets().size() != 1 || !role.targets().getFirst().restrictions().isEmpty()
-                || role.ordered() || role.hiding() || role.derivation().isPresent()) {
+                || role.hiding() || role.derivation().isPresent()) {
             throw unsupported(feature);
         }
         var target = new SymbolRef(plan.snapshotId(), role.targets().getFirst().base());
@@ -536,7 +563,7 @@ final class DbMapping {
     }
 
     static Column roleColumn(RoleSlot role, SymbolRef target, String name) {
-        return new Column(role, name, Kind.REFERENCE, Optional.empty(), Optional.of(target), 0);
+        return new Column(role, name, Kind.REFERENCE, Optional.empty(), Optional.of(target), 0, Optional.empty());
     }
 
     static Optional<Composition> describeComposition(TransferPlan plan, ObjectDescriptor parent, AttributeSlot slot,
@@ -613,7 +640,7 @@ final class DbMapping {
             }
             target = Optional.of(symbol);
         }
-        return new Column(attr, name, kind, Optional.of(type), target, 0);
+        return new Column(attr, name, kind, Optional.of(type), target, 0, Optional.empty());
     }
 
     private static Kind curveGeometryKind(TransferPlan plan, GeometryType geometry, String path) {

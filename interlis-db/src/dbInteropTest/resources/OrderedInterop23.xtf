@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="interop fixture">
+    <MODELS><MODEL NAME="OrderedInterop23" VERSION="2026-11-21" URI="https://example.org/interlis/db"/></MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <OrderedInterop23.Data BID="ordered-basket">
+      <OrderedInterop23.Data.Member TID="ordered-beta"/>
+      <OrderedInterop23.Data.Member TID="ordered-alpha"/>
+      <OrderedInterop23.Data.Team TID="ordered-blue"/>
+      <OrderedInterop23.Data.Team TID="ordered-red"/>
+      <OrderedInterop23.Data.Membership>
+        <Member REF="ordered-beta" ORDER_POS="9"/>
+        <Team REF="ordered-blue" ORDER_POS="3"/>
+      </OrderedInterop23.Data.Membership>
+      <OrderedInterop23.Data.Membership>
+        <Member REF="ordered-alpha" ORDER_POS="2"/>
+        <Team REF="ordered-blue"/>
+      </OrderedInterop23.Data.Membership>
+      <OrderedInterop23.Data.Membership>
+        <Member REF="ordered-beta"/>
+        <Team REF="ordered-red" ORDER_POS="9223372036854775807"/>
+      </OrderedInterop23.Data.Membership>
+      <OrderedInterop23.Data.Runner TID="ordered-runner"/>
+      <OrderedInterop23.Data.Track TID="ordered-track"/>
+      <OrderedInterop23.Data.Entry>
+        <Runner REF="ordered-runner" ORDER_POS="4"/>
+        <Track REF="ordered-track"/>
+      </OrderedInterop23.Data.Entry>
+    </OrderedInterop23.Data>
+  </DATASECTION>
+</TRANSFER>

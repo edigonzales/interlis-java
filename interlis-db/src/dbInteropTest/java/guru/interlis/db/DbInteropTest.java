@@ -286,6 +286,7 @@ final class DbInteropTest {
         }
         exchangeExternal(version, postgres, reference);
         exchangeExternalTopics(version, postgres, reference);
+        exchangeOrdered(reference, postgres, version);
     }
 
     private void exchangeExternal(int version, PostgreSQLContainer postgres, ReferenceTool reference) throws Exception {
@@ -3436,6 +3437,178 @@ final class DbInteropTest {
             assertEquals(0, new BigDecimal(expected.get(axis)).compareTo(new BigDecimal(ordinate.getTextContent())), name);
         }
     }
+
+    private void exchangeOrdered(ReferenceTool reference, PostgreSQLContainer postgres, int version) throws Exception {
+        String model = "OrderedInterop" + version;
+        Path ili = copyOrderedFixture(model + ".ili");
+        Path input = copyOrderedFixture(model + ".xtf");
+        String fixture = Files.readString(input);
+        Path nativeInput = Files.writeString(work.resolve("ordered-native.xtf"), fixture.replace("ordered-", "native-"));
+        var referenceSchema = new TestDatabase(postgres, "ordered_reference");
+        var nativeSchema = new TestDatabase(postgres, "ordered_native");
+
+        reference.run(referenceSchema, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
+                "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056",
+                ili.toString());
+        assertCliSuccess(nativeSchema, "schemaimport", model, null, ili);
+        try (var original = referenceSchema.connect(); var own = nativeSchema.connect()) {
+            DbSchemaCatalog.read(original, referenceSchema.postgis, referenceSchema.schema)
+                    .assertSameAs(DbSchemaCatalog.read(own, nativeSchema.postgis, nativeSchema.schema));
+        }
+        for (var db : List.of(referenceSchema, nativeSchema)) {
+            reference.run(db, STORED_MODELS, "--import", "--importTid", "--importBid", "--dataset", "ordered", input.toString());
+            Path nativeOutput = work.resolve(db.schema + "-native-export.xtf");
+            Path referenceOutput = work.resolve(db.schema + "-reference-export.xtf");
+            try (var sql = db.connect()) {
+                assertOrderColumn(db, sql, "membership", "amember");
+                assertOrderColumn(db, sql, "membership", "team");
+                assertOrderColumn(db, sql, "entry", "runner");
+                assertStoredStandalonePositions(db, sql, "ordered", false);
+                assertCliSuccess(db, "export", model, "ordered", nativeOutput);
+                assertStandalonePositions(nativeOutput, model, version, "ordered", false);
+
+                seedStandalonePositions(db, sql);
+                assertCliSuccess(db, "export", model, "ordered", nativeOutput);
+                assertStandalonePositions(nativeOutput, model, version, "ordered", true);
+
+                assertCliSuccess(db, "import", model, "native", nativeInput);
+                assertStoredStandalonePositions(db, sql, "native", true);
+                assertCliSuccess(db, "export", model, "native", nativeOutput);
+                assertStandalonePositions(nativeOutput, model, version, "native", true);
+                reference.run(db, STORED_MODELS, "--export", "--exportTid", "--dataset", "native", referenceOutput.toString());
+                assertStandalonePositions(referenceOutput, model, version, "native", false);
+
+                if (db == nativeSchema) {
+                    assertOrderOverflowRollback(db, sql, model, fixture, version);
+                    execute(sql, "update " + db.table("entry") + " set runner_t_seq=0");
+                    assertExportRejected(db, model, "native", nativeOutput, "Entry.Runner");
+                }
+            }
+        }
+    }
+
+    private Path copyOrderedFixture(String name) throws IOException {
+        Path path = work.resolve(name);
+        try (var input = DbInteropTest.class.getResourceAsStream("/" + name)) {
+            Files.copy(input, path);
+        }
+        return path;
+    }
+
+    private static void assertOrderColumn(TestDatabase db, Connection sql, String table, String fk) throws SQLException {
+        String sequence = fk + "_t_seq";
+        if (db.postgis) {
+            assertEquals("bigint|YES", scalar(sql, "select data_type||'|'||is_nullable from information_schema.columns"
+                    + " where table_schema='" + db.schema + "' and table_name='" + table + "' and column_name='" + sequence + "'"));
+        } else {
+            assertEquals("INTEGER|0", scalar(sql, "select type||'|'||\"notnull\" from pragma_table_info('" + table
+                    + "') where name='" + fk + "_T_Seq'"));
+        }
+        assertEquals("0", scalar(sql, "select count(*) from " + db.table("t_ili2db_attrname")
+                + " where lower(sqlname)='" + sequence + "' and colowner='" + table + "'"));
+        assertEquals("0", scalar(sql, "select count(*) from " + db.table("t_ili2db_column_prop")
+                + " where lower(columnname)='" + sequence + "' and tablename='" + table + "'"));
+    }
+
+    private static void assertStoredStandalonePositions(TestDatabase db, Connection sql, String dataset, boolean present)
+            throws SQLException {
+        String rows = """
+                select m.t_ili_tid, t.t_ili_tid, l.amember_t_seq, l.team_t_seq, b.t_ili_tid
+                from %s l join %s m on m.t_id=l.amember join %s t on t.t_id=l.team
+                join %s b on b.t_id=l.t_basket join %s d on d.t_id=b.dataset
+                where d.datasetname='%s' and m.t_basket=b.t_id and t.t_basket=b.t_id
+                order by m.t_ili_tid,t.t_ili_tid
+                """.formatted(db.table("membership"), db.table("amember"), db.table("team"),
+                db.table("t_ili2db_basket"), db.table("t_ili2db_dataset"), dataset);
+        try (var statement = sql.createStatement(); var result = statement.executeQuery(rows)) {
+            for (var expected : orderedMemberships(dataset, present)) {
+                assertTrue(result.next());
+                assertEquals(expected.member(), result.getString(1));
+                assertEquals(expected.team(), result.getString(2));
+                assertEquals(expected.memberPosition(), emptyIfNull(result.getString(3)));
+                assertEquals(expected.teamPosition(), emptyIfNull(result.getString(4)));
+                assertEquals(dataset + "-basket", result.getString(5));
+            }
+            assertFalse(result.next());
+        }
+        String entry = """
+                select r.t_ili_tid||'|'||t.t_ili_tid||'|'||coalesce(cast(l.runner_t_seq as text),'')
+                from %s l join %s r on r.t_id=l.runner join %s t on t.t_id=l.track
+                join %s b on b.t_id=l.t_basket join %s d on d.t_id=b.dataset
+                where d.datasetname='%s' and r.t_basket=b.t_id and t.t_basket=b.t_id
+                """.formatted(db.table("entry"), db.table("runner"), db.table("track"), db.table("t_ili2db_basket"),
+                db.table("t_ili2db_dataset"), dataset);
+        assertEquals(dataset + "-runner|" + dataset + "-track|" + (present ? "4" : ""), scalar(sql, entry));
+    }
+
+    private static void seedStandalonePositions(TestDatabase db, Connection sql) throws SQLException {
+        for (var pair : orderedMemberships("ordered", true)) {
+            execute(sql, "update " + db.table("membership") + " set amember_t_seq=" + nullIfEmpty(pair.memberPosition())
+                    + ", team_t_seq=" + nullIfEmpty(pair.teamPosition()) + " where amember=(select t_id from " + db.table("amember")
+                    + " where t_ili_tid='" + pair.member() + "') and team=(select t_id from " + db.table("team")
+                    + " where t_ili_tid='" + pair.team() + "')");
+        }
+        execute(sql, "update " + db.table("entry") + " set runner_t_seq=4");
+    }
+
+    private static void assertStandalonePositions(Path output, String model, int version, String dataset, boolean present)
+            throws Exception {
+        var baskets = children(readDataSection(output, version));
+        assertEquals(1, baskets.size());
+        var basket = baskets.getFirst();
+        assertEquals(dataset + "-basket", id(basket, version, "bid"));
+        String prefix = version == 23 ? model + ".Data." : "";
+        var memberships = new HashSet<OrderedMembership>();
+        for (var link : children(basket)) {
+            if (!link.getLocalName().equals(prefix + "Membership")) continue;
+            assertEquals("", id(link, version, "tid"));
+            var member = child(link, "Member");
+            var team = child(link, "Team");
+            assertTrue(memberships.add(new OrderedMembership(id(member, version, "ref"), id(team, version, "ref"),
+                    id(member, version, "order_pos"), id(team, version, "order_pos"))));
+        }
+        assertEquals(Set.copyOf(orderedMemberships(dataset, present)), memberships);
+        var entry = child(basket, prefix + "Entry");
+        assertPosition(entry, "Runner", version, dataset + "-runner", present ? "4" : "");
+        assertPosition(entry, "Track", version, dataset + "-track", "");
+    }
+
+    private static void assertPosition(Element owner, String role, int version, String target, String position) {
+        assertLocalReference(owner, role, version, target);
+        assertEquals(position, id(child(owner, role), version, "order_pos"), role);
+    }
+
+    private void assertOrderOverflowRollback(TestDatabase db, Connection sql, String model, String fixture, int version)
+            throws Exception {
+        String order = version == 23 ? "ORDER_POS" : "i:order_pos";
+        String broken = fixture.replace(order + "=\"4\"", order + "=\"9223372036854775808\"");
+        assertNotEquals(fixture, broken);
+        Path input = Files.writeString(work.resolve("order-overflow.xtf"), broken.replace("ordered-", "overflow-"));
+        var rejected = cli(db, "import", model, "overflow", input, CancellationToken.none());
+        assertNotEquals(0, rejected.code(), rejected::diagnostics);
+        assertTrue(rejected.diagnostics().contains("Entry.Runner"), rejected::diagnostics);
+        assertTrue(rejected.diagnostics().contains("64-bit"), rejected::diagnostics);
+        assertEquals("0", scalar(sql, "select count(*) from " + db.table("t_ili2db_dataset") + " where datasetname='overflow'"));
+        assertEquals("0", scalar(sql, "select count(*) from " + db.table("t_ili2db_basket") + " where t_ili_tid='overflow-basket'"));
+        assertEquals("6", scalar(sql, "select count(*) from " + db.table("membership")));
+        assertEquals("0", scalar(sql, "select count(*) from " + db.table("amember") + " where t_ili_tid like 'overflow-%'"));
+    }
+
+    private static List<OrderedMembership> orderedMemberships(String dataset, boolean present) {
+        return List.of(new OrderedMembership(dataset + "-alpha", dataset + "-blue", present ? "2" : "", ""),
+                new OrderedMembership(dataset + "-beta", dataset + "-blue", present ? "9" : "", present ? "3" : ""),
+                new OrderedMembership(dataset + "-beta", dataset + "-red", "", present ? Long.toString(Long.MAX_VALUE) : ""));
+    }
+
+    private static String emptyIfNull(String value) {
+        return value == null ? "" : value;
+    }
+
+    private static String nullIfEmpty(String value) {
+        return value.isEmpty() ? "null" : value;
+    }
+
+    private record OrderedMembership(String member, String team, String memberPosition, String teamPosition) { }
 
     private record CurveComponent(int type, List<List<String>> vertices) { }
     private record DetailValue(String label, Boolean enabled, Integer quantity, String decision) { }

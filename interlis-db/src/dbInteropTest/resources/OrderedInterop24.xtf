@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="http://www.interlis.ch/xtf/2.4/OrderedInterop24">
+  <i:headersection><i:models><i:model>OrderedInterop24</i:model></i:models><i:sender>interop fixture</i:sender></i:headersection>
+  <i:datasection>
+    <Data i:bid="ordered-basket">
+      <Member i:tid="ordered-beta"/>
+      <Member i:tid="ordered-alpha"/>
+      <Team i:tid="ordered-blue"/>
+      <Team i:tid="ordered-red"/>
+      <Membership>
+        <Member i:ref="ordered-beta" i:order_pos="9"/>
+        <Team i:ref="ordered-blue" i:order_pos="3"/>
+      </Membership>
+      <Membership>
+        <Member i:ref="ordered-alpha" i:order_pos="2"/>
+        <Team i:ref="ordered-blue"/>
+      </Membership>
+      <Membership>
+        <Member i:ref="ordered-beta"/>
+        <Team i:ref="ordered-red" i:order_pos="9223372036854775807"/>
+      </Membership>
+      <Runner i:tid="ordered-runner"/>
+      <Track i:tid="ordered-track"/>
+      <Entry>
+        <Runner i:ref="ordered-runner" i:order_pos="4"/>
+        <Track i:ref="ordered-track"/>
+      </Entry>
+    </Data>
+  </i:datasection>
+</i:transfer>

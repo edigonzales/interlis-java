@@ -1,0 +1,19 @@
+INTERLIS 2.3;
+
+MODEL OrderedInterop23 (en) AT "https://example.org/interlis/db" VERSION "2026-11-21" =
+  TOPIC Data =
+    CLASS Member = END Member;
+    CLASS Team = END Team;
+    ASSOCIATION Membership =
+      Member (ORDERED) -- {0..*} Member;
+      Team (ORDERED) -- {0..*} Team;
+    END Membership;
+
+    CLASS Runner = END Runner;
+    CLASS Track = END Track;
+    ASSOCIATION Entry =
+      Runner (ORDERED) -- {0..*} Runner;
+      Track -- {0..*} Track;
+    END Entry;
+  END Data;
+END OrderedInterop23.

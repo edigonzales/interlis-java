@@ -131,7 +131,8 @@ final class DbSchemaReader {
             var roles = linkRoles.get(object.symbol());
             if (roles != null) {
                 for (var role : roles) {
-                    columns.add(bindRole(db, parent, attrNames, role.slot(), role.target(), names));
+                    var column = bindRole(db, parent, attrNames, role.slot(), role.target(), names);
+                    columns.add(role.slot().role().ordered() ? bindPosition(db, parent, column) : column);
                 }
             }
             for (var attr : DbMapping.attributes(object)) {
@@ -393,6 +394,28 @@ final class DbSchemaReader {
         requireTarget(db, tables.get(target), mapping, path);
         requireColumns(db, table.name(), table.columns(), Map.of(mapping.name(), Kind.REFERENCE));
         return DbMapping.roleColumn(role, target, mapping.name());
+    }
+
+    private static Column bindPosition(Database db, CatalogTable table, Column role) throws SQLException {
+        var column = role.withPositionColumn(db.gpkg());
+        String position = column.positionColumn().orElseThrow();
+        String columnKey = key(db, position);
+        requireColumns(db, table.name(), table.columns(), Map.of(position, Kind.REFERENCE));
+        String type = table.columns().get(columnKey);
+        var metadata = db.connection().getMetaData();
+        String escape = metadata.getSearchStringEscape();
+        try (var columns = metadata.getColumns(db.connection().getCatalog(), searchPattern(db.schema(), escape),
+                searchPattern(table.name(), escape), searchPattern(position, escape))) {
+            while (columns.next()) {
+                if (!columnKey.equals(key(db, columns.getString("COLUMN_NAME")))) continue;
+                boolean idType = db.gpkg() ? type.equals("integer") : type.equals("int8") || type.equals("bigint");
+                if (idType && columns.getInt("NULLABLE") == DatabaseMetaData.columnNullable
+                        && table.used().add(columnKey)) return column;
+                break;
+            }
+        }
+        throw new DbException("Expected distinct nullable ID column " + table.name() + "." + position
+                + " for role position at " + role.slot().name().declared());
     }
 
     private static AttributeName takeAttributeName(Map<String, AttributeName> names, String path) {

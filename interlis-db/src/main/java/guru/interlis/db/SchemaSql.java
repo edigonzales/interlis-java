@@ -126,6 +126,7 @@ final class SchemaSql {
             }
             for (var column : table.columns()) {
                 columns.add(quote(column.name()) + " " + dialect.columnType(column));
+                column.positionColumn().ifPresent(position -> columns.add(quote(position) + " " + dialect.idType()));
             }
             for (var composition : plan.mapping().compositionsForChild(table.object().symbol())) {
                 columns.add(quote(composition.ownerColumn()) + " " + dialect.idType());

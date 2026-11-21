@@ -149,6 +149,11 @@ Export bleibt die bisherige Datei bei typ- oder basketfremden Zielen erhalten.
 Bei eigenständigen Links mit drei Rollen prüft die Suite die Spalten und
 die XTF-Reihenfolge aller Rollen sowie die skalaren Werte. Ein Ziel ausserhalb
 des deklarierten Zweigs der dritten Rolle führt zu Rollback oder Exportabbruch.
+Für binäre n:m-Links mit einer oder zwei `ORDERED`-Rollen prüft die Suite
+die Sequenzspalten und die Rollenziele in beiden Werkzeugrichtungen. Sie
+speichert Positionen zusätzlich direkt im SQL-Schema und prüft Import und
+Export mit `interlis-db` auf exakte Positionswerte, SQL `NULL`, Rollback bei
+einem Überlauf und Erhalt der Ausgabedatei bei einer ungültigen SQL-Position.
 Für 1:n mit Attributen prüft sie eingebettete Attributwerte, direkte Referenzen,
 fehlende Rollen und den Erhalt der Zieldatei bei mehreren Linkzeilen zum Objekt.
 Polymorphe Ziele werden mit einer Zwischenklasse und einem konkreten
