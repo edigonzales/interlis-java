@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
+    xmlns="http://www.interlis.ch/xtf/2.4/DbWorkshop24">
+  <i:headersection><i:models><i:model>DbWorkshop24</i:model></i:models><i:sender>multiple models fixture</i:sender></i:headersection>
+  <i:datasection>
+    <Data i:bid="fixture-workshop-basket">
+      <Entry i:tid="fixture-workshop-entry"><Memo>workshop</Memo></Entry>
+    </Data>
+  </i:datasection>
+</i:transfer>

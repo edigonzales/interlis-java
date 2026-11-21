@@ -128,6 +128,10 @@ final class DbInteropTest {
     @Test void geoPackageImportedTopic24() throws Exception { exchangeImportedTopic(24, null); }
     @Test void postgisImportedTopic23() throws Exception { exchangeWithPostgis(23, this::exchangeImportedTopic); }
     @Test void postgisImportedTopic24() throws Exception { exchangeWithPostgis(24, this::exchangeImportedTopic); }
+    @Test void geoPackageJointSchema23() throws Exception { exchangeJointSchema(23, null); }
+    @Test void geoPackageJointSchema24() throws Exception { exchangeJointSchema(24, null); }
+    @Test void postgisJointSchema23() throws Exception { exchangeWithPostgis(23, this::exchangeJointSchema); }
+    @Test void postgisJointSchema24() throws Exception { exchangeWithPostgis(24, this::exchangeJointSchema); }
 
     @Test void geoPackage23() throws Exception { exchange(23, null); }
     @Test void geoPackage24() throws Exception {
@@ -451,6 +455,12 @@ final class DbInteropTest {
         var reference = new TestDatabase(postgres, "reference_topic");
         var nativeSchema = new TestDatabase(postgres, "native_topic");
         new ModelCases(work, new ReferenceTool(reference.postgis()), version).importedTopics(reference, nativeSchema);
+    }
+
+    private void exchangeJointSchema(int version, PostgreSQLContainer postgres) throws Exception {
+        var reference = new TestDatabase(postgres, "reference_joint");
+        var nativeSchema = new TestDatabase(postgres, "native_joint");
+        new ModelCases(work, new ReferenceTool(reference.postgis()), version).jointSchema(reference, nativeSchema);
     }
 
     private void exchange(int version, PostgreSQLContainer postgres) throws Exception {

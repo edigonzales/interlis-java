@@ -1,0 +1,9 @@
+INTERLIS 2.3;
+
+MODEL DbWarehouse23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  TOPIC Data =
+    CLASS Entry =
+      Memo : TEXT*32;
+    END Entry;
+  END Data;
+END DbWarehouse23.

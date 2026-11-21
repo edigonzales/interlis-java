@@ -37,6 +37,10 @@ Das Kommando liest das ausgewählte Modell aus lokalen UTF-8-Dateien.
 Zusätzliche Importquellen werden mit je einem `--model-file IMPORT.ili`
 angegeben. Es speichert die benötigten Dateien samt ihren Modell- und
 Importlisten im neuen Schema.
+Mit mehreren `--model NAME` legt `schemaimport` eigenständige Modelle
+gemeinsam an. Ihre Tabellen teilen die technischen Metadaten und die
+ID-Vergabe. Namenskollisionen werden anhand des deklarierenden Modells
+aufgelöst.
 Vor dem ersten Schreibzugriff prüft es das Modell und bestimmt die
 Tabellen, Spalten und Metadaten gemäss der Standard-Namensvergabe von 5.5.2.
 PostgreSQL benötigt eine vorhandene PostGIS-Erweiterung und einen

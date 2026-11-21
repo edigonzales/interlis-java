@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="multiple models fixture">
+    <MODELS><MODEL NAME="DbWarehouse23" VERSION="1" URI="https://example.org/interlis/db"/></MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <DbWarehouse23.Data BID="fixture-warehouse-basket">
+      <DbWarehouse23.Data.Entry TID="fixture-warehouse-entry"><Memo>warehouse</Memo></DbWarehouse23.Data.Entry>
+    </DbWarehouse23.Data>
+  </DATASECTION>
+</TRANSFER>

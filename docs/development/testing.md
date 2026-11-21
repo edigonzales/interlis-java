@@ -106,6 +106,9 @@ der Werte im XTF.
 `*DbInteropTest.*ImportedTopic*` prüft den Umfang der Abbildung bei
 `DEPENDS ON`, den Werkzeugwechsel mit einem separaten Zieldatensatz
 und den Rollback bei mehrdeutigen Ziel-TIDs.
+`*DbInteropTest.*JointSchema*` prüft zwei eigenständige Modelle mit
+gleichnamigen Topics und Klassen, ihre gespeicherten SQL-Zuordnungen,
+die gemeinsame ID-Vergabe und beide Werkzeugrichtungen.
 
 Die Fälle `*DbInteropTest.*Mutation*` prüfen `replace` und `update`
 in beiden Werkzeugrichtungen. Sie prüfen die internen IDs und den Bestand

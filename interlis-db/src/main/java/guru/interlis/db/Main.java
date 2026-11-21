@@ -35,7 +35,8 @@ public final class Main {
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
                    interlis-db delete --model NAME --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME)
-                   interlis-db schemaimport --model NAME [--default-epsg CODE] [--multi-srs [--alt-srs-model ORIGINAL=ALTERNATE]]
+                   interlis-db schemaimport --model NAME [--model NAME]...
+                    [--default-epsg CODE] [--multi-srs [--alt-srs-model ORIGINAL=ALTERNATE]]
                     [--model-file IMPORT.ili]...
                     [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
@@ -93,7 +94,7 @@ public final class Main {
 
     private static void createSchema(Options options, String password, CancellationToken cancellation)
             throws IOException, SQLException {
-        var plan = SchemaPlan.read(options.model(), options.file(), options.modelFiles(), options.gpkg() != null,
+        var plan = SchemaPlan.read(options.models(), options.file(), options.modelFiles(), options.gpkg() != null,
                 options.splitGeometries(), options.defaultEpsg(), options.multiSrs(), options.srsModels(), cancellation);
         cancellation.throwIfCancellationRequested();
         if (options.gpkg() != null) {
@@ -162,11 +163,11 @@ public final class Main {
 
     private enum Command { IMPORT, REPLACE, UPDATE, DELETE, EXPORT, SCHEMAIMPORT }
 
-    private record Options(Command command, String model, String dataset, Path file, Path gpkg,
+    private record Options(Command command, List<String> models, String dataset, Path file, Path gpkg,
                            String pgUrl, String schema, String user, boolean createGeometryIndexes,
                            boolean splitGeometries, int defaultEpsg, boolean multiSrs,
                            Optional<DbCrsPair.Models> srsModels, List<Path> modelFiles) {
-        private static final Set<String> NAMES = Set.of("--model", "--dataset", "--gpkg", "--pg-url", "--schema", "--user",
+        private static final Set<String> NAMES = Set.of("--dataset", "--gpkg", "--pg-url", "--schema", "--user",
                 "--default-epsg", "--alt-srs-model");
 
         static Options parse(String[] args) {
@@ -183,6 +184,7 @@ public final class Main {
             Path file = null;
             var schemaFlags = new HashSet<String>();
             var modelFiles = new ArrayList<Path>();
+            var models = new ArrayList<String>();
             for (int i = 1; i < args.length; i++) {
                 String arg = args[i];
                 if (arg.equals("--create-geom-index") || arg.equals("--one-geom-per-table")
@@ -191,6 +193,15 @@ public final class Main {
                         throw new IllegalArgumentException(arg + " is only valid with schemaimport");
                     }
                     if (!schemaFlags.add(arg)) throw new IllegalArgumentException("Repeated option " + arg);
+                } else if (arg.equals("--model")) {
+                    if (++i == args.length || args[i].isBlank() || args[i].startsWith("--")) {
+                        throw new IllegalArgumentException("Missing value for " + arg);
+                    }
+                    if (models.contains(args[i])) throw new IllegalArgumentException("Repeated model " + args[i]);
+                    if (command != Command.SCHEMAIMPORT && !models.isEmpty()) {
+                        throw new IllegalArgumentException("Repeated option --model");
+                    }
+                    models.add(args[i]);
                 } else if (arg.equals("--model-file")) {
                     if (command != Command.SCHEMAIMPORT) {
                         throw new IllegalArgumentException(arg + " is only valid with schemaimport");
@@ -218,19 +229,18 @@ public final class Main {
                     file = Path.of(arg).toAbsolutePath().normalize();
                 }
             }
-            String model = flags.get("--model");
             String dataset = flags.get("--dataset");
             if (command == Command.SCHEMAIMPORT) {
-                if (file == null || file.getParent() == null || model == null) {
+                if (file == null || file.getParent() == null || models.isEmpty()) {
                     throw new IllegalArgumentException("An .ili path and --model are required");
                 }
                 if (dataset != null) throw new IllegalArgumentException("--dataset is not valid with schemaimport");
                 if (modelFiles.contains(file)) throw new IllegalArgumentException("Repeated model file " + file);
             } else if (command == Command.DELETE) {
-                if (file != null || model == null || dataset == null) {
+                if (file != null || models.isEmpty() || dataset == null) {
                     throw new IllegalArgumentException("delete requires --model and --dataset without a file");
                 }
-            } else if (file == null || file.getParent() == null || model == null || dataset == null) {
+            } else if (file == null || file.getParent() == null || models.isEmpty() || dataset == null) {
                 throw new IllegalArgumentException("An XTF path, --model and --dataset are required");
             }
             String gpkgPath = flags.get("--gpkg");
@@ -263,12 +273,17 @@ public final class Main {
             if (alternateSrsModel != null && (command != Command.SCHEMAIMPORT || !multiSrs)) {
                 throw new IllegalArgumentException("--alt-srs-model requires schemaimport --multi-srs");
             }
-            var srsModels = Optional.ofNullable(alternateSrsModel).map(value -> DbCrsPair.Models.parse(value, model));
-            return new Options(command, model, dataset, file, gpkg, pgUrl, schema, user,
+            if (alternateSrsModel != null && models.size() != 1) {
+                throw new IllegalArgumentException("--alt-srs-model requires one --model");
+            }
+            var srsModels = Optional.ofNullable(alternateSrsModel).map(value -> DbCrsPair.Models.parse(value, models.getFirst()));
+            return new Options(command, List.copyOf(models), dataset, file, gpkg, pgUrl, schema, user,
                     schemaFlags.contains("--create-geom-index"),
                     oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg, multiSrs, srsModels,
                     List.copyOf(modelFiles));
         }
+
+        String model() { return models.getFirst(); }
 
         void checkPaths() throws IOException {
             if (gpkg != null && command != Command.SCHEMAIMPORT) {

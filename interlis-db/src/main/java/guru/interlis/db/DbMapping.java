@@ -355,13 +355,13 @@ final class DbMapping {
 
     static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, CancellationToken token) {
-        return planNew(modelName, List.of(source), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(), token);
+        return planNew(List.of(modelName), List.of(source), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(), token);
     }
 
-    static DbMapping planNew(String modelName, Collection<SourceText> sources, boolean gpkg, boolean splitGeometries,
+    static DbMapping planNew(List<String> modelNames, Collection<SourceText> sources, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels,
                              CancellationToken token) {
-        var models = srsModels.map(DbCrsPair.Models::names).orElse(List.of(modelName));
+        var models = srsModels.map(DbCrsPair.Models::names).orElse(modelNames);
         TransferPlan plan = DbModelSources.compile(models, sources, "model files", token);
         var crs = new CrsDefaults(defaultEpsg, 0);
         var crsPair = srsModels.map(pair -> new DbCrsPair(plan, pair, crs, crs));

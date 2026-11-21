@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
@@ -229,6 +230,68 @@ final class ModelCases {
         assertEquals("target-entry", id(child(report, "Site"), version, "ref"));
         var note = children(child(report, "Details")).getFirst();
         assertEquals("target-entry", id(child(note, "Destination"), version, "ref"));
+    }
+
+    void jointSchema(TestDatabase baseline, TestDatabase nativeSchema) throws Exception {
+        String warehouse = "DbWarehouse" + version;
+        String workshop = "DbWorkshop" + version;
+        var first = fixture(warehouse + ".ili");
+        var second = fixture(workshop + ".ili");
+        createReference(baseline, warehouse + ";" + workshop);
+        var created = cli(nativeSchema, "schemaimport", warehouse, null, first, CancellationToken.none(),
+                "--model", workshop, "--model-file", second.toString());
+        assertEquals(0, created.code(), created::diagnostics);
+        Files.delete(first);
+        Files.delete(second);
+        var inputWarehouse = fixture(warehouse + ".xtf");
+        var inputWorkshop = fixture(workshop + ".xtf");
+        for (var db : List.of(baseline, nativeSchema)) {
+            String warehouseTable = tableFor(db, warehouse + ".Data.Entry");
+            String workshopTable = tableFor(db, workshop + ".Data.Entry");
+            assertTrue(Set.of(warehouseTable, workshopTable).contains("entry"));
+            assertTrue(warehouseTable.equals("entry") || warehouseTable.startsWith("dbwarehouse" + version));
+            assertTrue(workshopTable.equals("entry") || workshopTable.startsWith("dbworkshop" + version));
+            singleModelExchange(db, warehouse, "warehouse", inputWarehouse);
+            singleModelExchange(db, workshop, "workshop", inputWorkshop);
+            try (var sql = db.connect()) {
+                String ids = String.join(" UNION ALL ", List.of("t_ili2db_dataset", "t_ili2db_basket",
+                                warehouseTable, workshopTable).stream()
+                        .map(table -> "SELECT t_id FROM " + db.table(table)).toList());
+                assertEquals("12", scalar(sql, "SELECT COUNT(DISTINCT t_id) FROM (" + ids + ") ids"));
+            }
+        }
+    }
+
+    private void singleModelExchange(TestDatabase db, String model, String value, Path input) throws Exception {
+        referenceImport(db, "legacy-" + value, input);
+        var output = work.resolve("single-model-output.xtf");
+        assertCliSuccess(db, "export", model, "legacy-" + value, output);
+        assertEntryDelivery(output, model, value, "fixture");
+        var own = Files.writeString(work.resolve("single-model-input.xtf"), Files.readString(input).replace("fixture-", "own-"));
+        assertCliSuccess(db, "import", model, "native-" + value, own);
+        referenceExport(db, "native-" + value, output);
+        assertEntryDelivery(output, model, value, "own");
+    }
+
+    private void assertEntryDelivery(Path output, String model, String value, String prefix) throws Exception {
+        var data = readDataSection(output, version);
+        assertEquals(List.of(model), headerModels(data));
+        assertEntry(children(data).getFirst(), model, value, prefix, value);
+    }
+
+    private void assertEntry(Element basket, String model, String value, String prefix, String memo) {
+        assertEquals(version == 23 ? model + ".Data" : "Data", basket.getLocalName());
+        if (version == 24) assertEquals("http://www.interlis.ch/xtf/2.4/" + model, basket.getNamespaceURI());
+        assertEquals(prefix + "-" + value + "-basket", id(basket, version, "bid"));
+        var entry = children(basket).getFirst();
+        assertEquals(prefix + "-" + value + "-entry", id(entry, version, "tid"));
+        assertEquals(memo, child(entry, "Memo").getTextContent());
+    }
+
+    private static String tableFor(TestDatabase db, String iliName) throws Exception {
+        try (var sql = db.connect()) {
+            return scalar(sql, "SELECT sqlname FROM " + db.table("t_ili2db_classname") + " WHERE iliname='" + iliName + "'");
+        }
     }
 
     private Path domainInput(String model) throws Exception {

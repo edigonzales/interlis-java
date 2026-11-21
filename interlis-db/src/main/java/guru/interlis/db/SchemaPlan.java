@@ -59,10 +59,10 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
 
     static SchemaPlan read(String modelName, Path file, boolean gpkg, boolean splitGeometries,
                            int defaultEpsg, CancellationToken token) throws IOException {
-        return read(modelName, file, List.of(), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(), token);
+        return read(List.of(modelName), file, List.of(), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(), token);
     }
 
-    static SchemaPlan read(String modelName, Path file, List<Path> imports, boolean gpkg, boolean splitGeometries,
+    static SchemaPlan read(List<String> models, Path file, List<Path> imports, boolean gpkg, boolean splitGeometries,
                            int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels,
                            CancellationToken token) throws IOException {
         var files = new ArrayList<Path>();
@@ -81,18 +81,18 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             sources.put(source.id(), source);
             filenames.put(source.id(), path.getFileName().toString());
         }
-        var mapping = DbMapping.planNew(modelName, sources.values(), gpkg, splitGeometries, defaultEpsg, multiSrs,
+        var mapping = DbMapping.planNew(models, sources.values(), gpkg, splitGeometries, defaultEpsg, multiSrs,
                 srsModels, token);
         var declarations = mapping.plan().models().stream()
                 .map(model -> (ModelSymbol) symbol(mapping, model.symbol()))
                 .collect(Collectors.groupingBy(model -> origin(model).range().source()));
         var modelFiles = new ArrayList<ModelFile>();
         for (var source : sources.values()) {
-            var models = declarations.get(source.id());
-            if (models == null) continue;
-            String names = models.stream().sorted(Comparator.comparingInt(model -> origin(model).range().startOffset()))
+            var fileModels = declarations.get(source.id());
+            if (fileModels == null) continue;
+            String names = fileModels.stream().sorted(Comparator.comparingInt(model -> origin(model).range().startOffset()))
                     .map(SchemaPlan::modelEntry).collect(Collectors.joining(" "));
-            modelFiles.add(new ModelFile(filenames.get(source.id()), models.getFirst().languageVersion(), names, source.text()));
+            modelFiles.add(new ModelFile(filenames.get(source.id()), fileModels.getFirst().languageVersion(), names, source.text()));
         }
         var properties = new ArrayList<ColumnProperty>();
         var geometries = new HashMap<String, List<GeometryColumn>>();
