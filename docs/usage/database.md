@@ -141,7 +141,7 @@ PostGIS verwendet `POINTZ`, GeoPackage das Z-Bit der ili2gpkg-Kodierung.
 Die Raumindizes arbeiten mit der XY-Hülle.
 Die Geometriespalte speichert einen XY- oder XYZ-Punkt, eine XY- oder gerade
 XYZ-`POLYLINE` oder eine
-zweidimensionale Fläche (`SURFACE` oder `AREA`) mit einem Aussenring und
+XY-Fläche oder gerade XYZ-Fläche (`SURFACE` oder `AREA`) mit einem Aussenring und
 optionalen Innenringen. Linien und Flächenränder unterstützen
 `WITH (STRAIGHTS)`, `WITH (ARCS)` und
 `WITH (STRAIGHTS, ARCS)`. Wie bei ili2db 5.5.2 liegen Linien in

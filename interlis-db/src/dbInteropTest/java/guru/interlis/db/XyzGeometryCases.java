@@ -51,7 +51,9 @@ final class XyzGeometryCases {
         try (var oldSql = old.connect(); var ownSql = own.connect()) {
             var expected = DbSchemaCatalog.read(oldSql, old.postgis(), old.schema());
             if (!old.postgis()) {
-                expected = expected.expectGeoPackageGeometryExtension("track", "trace", "COMPOUNDCURVE");
+                expected = expected.expectGeoPackageGeometryExtension("track", "trace", "COMPOUNDCURVE")
+                        .expectGeoPackageGeometryExtension("plot", "outline", "CURVEPOLYGON")
+                        .expectGeoPackageGeometryExtension("parcel", "perimeter", "CURVEPOLYGON");
             }
             expected.assertSameAs(DbSchemaCatalog.read(ownSql, own.postgis(), own.schema()));
         }
@@ -63,7 +65,14 @@ final class XyzGeometryCases {
                 position("2600300.125", "1200300.375", "7.500")
                 + position("2600310.250", "1200320.500", "-11.250")
                 + position("2600320.375", "1200340.750", "12.875")) + "</Trace>");
-        Path input = delivery("xyz", markers + track);
+        String shell = box(2600400, 1200400, 40, "1", "2", "3", "4");
+        String hole = box(2600410, 1200410, 10, "11", "12", "13", "14");
+        String areas = object("Plot", "plot-1", "<Outline>" + surface(shell, hole) + "</Outline>")
+                + object("Parcel", "west", "<Perimeter>" + surface(
+                        box(2600500, 1200500, 20, "21", "22", "23", "24"), "") + "</Perimeter>")
+                + object("Parcel", "east", "<Perimeter>" + surface(
+                        box(2600520, 1200500, 20, "22", "32", "33", "23"), "") + "</Perimeter>");
+        Path input = delivery("xyz", markers + track + areas);
         reference.run(old, work.toString(), "--import", "--dataset", "xyz", "--importTid", "--importBid", input.toString());
         Path ownExport = work.resolve("xyz-native.xtf");
         assertCliSuccess(old, "export", model, "xyz", ownExport);
@@ -87,6 +96,8 @@ final class XyzGeometryCases {
 
     private void assertStorage(TestDatabase db, Connection sql) throws SQLException {
         String table = db.table("marker");
+        assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("plot") + " WHERE outline IS NOT NULL"));
+        assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("parcel") + " WHERE perimeter IS NOT NULL"));
         assertEquals("3", scalar(sql, "SELECT count(*) FROM " + table));
         assertEquals("1", scalar(sql, "SELECT count(*) FROM " + table + " WHERE aposition IS NULL"));
         assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("track") + " WHERE t_ili_tid='track-1'"));
@@ -105,14 +116,18 @@ final class XyzGeometryCases {
         var basket = children(readDataSection(file, version)).getFirst();
         assertEquals("xyz-basket", id(basket, version, "bid"));
         var markers = children(basket);
-        assertEquals(4, markers.size());
+        assertEquals(7, markers.size());
         var heights = new ArrayList<BigDecimal>();
         for (var marker : markers) {
             String tid = id(marker, version, "tid");
-            if (tid.equals("track-1")) {
-                assertHeights(marker, "Trace", "7.5", "-11.25", "12.875");
-                continue;
+            switch (tid) {
+                case "track-1" -> assertHeights(marker, "Trace", "7.5", "-11.25", "12.875");
+                case "plot-1" -> assertHeights(marker, "Outline", "1", "2", "3", "4", "1", "11", "12", "13", "14", "11");
+                case "west" -> assertHeights(marker, "Perimeter", "21", "22", "23", "24", "21");
+                case "east" -> assertHeights(marker, "Perimeter", "22", "32", "33", "23", "22");
+                default -> { }
             }
+            if (List.of("track-1", "plot-1", "west", "east").contains(tid)) continue;
             var field = child(marker, "Position");
             if (tid.equals("absent")) {
                 assertNull(field);
@@ -131,6 +146,23 @@ final class XyzGeometryCases {
         for (int i = 0; i < expected.length; i++) {
             assertEquals(0, new BigDecimal(expected[i]).compareTo(new BigDecimal(elements.item(i).getTextContent())), field);
         }
+    }
+
+    private String box(int x, int y, int width, String first, String second, String third, String fourth) {
+        return line(position(Integer.toString(x), Integer.toString(y), first)
+                + position(Integer.toString(x + width), Integer.toString(y), second)
+                + position(Integer.toString(x + width), Integer.toString(y + width), third)
+                + position(Integer.toString(x), Integer.toString(y + width), fourth)
+                + position(Integer.toString(x), Integer.toString(y), first));
+    }
+
+    private String surface(String shell, String hole) {
+        if (version == 23) {
+            return "<SURFACE><BOUNDARY>" + shell + "</BOUNDARY>"
+                    + (hole.isEmpty() ? "" : "<BOUNDARY>" + hole + "</BOUNDARY>") + "</SURFACE>";
+        }
+        return "<g:surface><g:exterior>" + shell + "</g:exterior>"
+                + (hole.isEmpty() ? "" : "<g:interior>" + hole + "</g:interior>") + "</g:surface>";
     }
 
     private String line(String positions) {

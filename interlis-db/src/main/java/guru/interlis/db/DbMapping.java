@@ -708,7 +708,7 @@ final class DbMapping {
         if (domain.generic() || !(type instanceof CoordinateType coordinates)
                 || coordinates.multiCoordinate()
                 || (coordinates.dimensions() != 2
-                        && !(coordinates.dimensions() == 3 && kind == Kind.POLYLINE && !arcs))) {
+                        && !(coordinates.dimensions() == 3 && !kind.collection() && !arcs))) {
             throw unsupported(feature);
         }
         validateGeometryCrs(plan, coordinates, domain, geometryKind.name().toLowerCase(Locale.ROOT), path);

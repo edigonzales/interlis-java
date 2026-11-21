@@ -131,7 +131,7 @@ final class GeometryBinary {
             case MULTIPOINT -> readMultiPoint(data, empty);
             case POLYLINE -> readPolyline(data, gpkg, dimensions);
             case MULTICURVE -> readMultiCurve(data, empty);
-            case SURFACE -> readSurface(data);
+            case SURFACE -> readSurface(data, gpkg, dimensions);
             case MULTISURFACE -> readMultiSurface(data, empty);
             default -> throw new IllegalArgumentException("Not a geometry kind: " + kind);
         };
@@ -387,11 +387,11 @@ final class GeometryBinary {
         return new MultiPolyline(lines);
     }
 
-    private static Surface readSurface(ByteBuffer data) {
-        if (readType(data) != CURVEPOLYGON) {
-            throw new DbException("Expected a 2D WKB CURVEPOLYGON");
+    private static Surface readSurface(ByteBuffer data, boolean gpkg, int dimensions) {
+        if (readType(data) != storageType(CURVEPOLYGON, gpkg, dimensions)) {
+            throw new DbException("Expected a " + dimensions + "D WKB CURVEPOLYGON");
         }
-        var surface = readSurface(data, CURVEPOLYGON, new CoordinateBudget(Kind.SURFACE));
+        var surface = readSurface(data, CURVEPOLYGON, new CoordinateBudget(Kind.SURFACE), gpkg, dimensions);
         if (data.hasRemaining()) {
             throw new DbException("Invalid WKB curve polygon size");
         }
@@ -407,7 +407,7 @@ final class GeometryBinary {
             if (type != CURVEPOLYGON && type != POLYGON) {
                 throw new DbException("Expected a 2D WKB CURVEPOLYGON or POLYGON in a multisurface");
             }
-            surfaces.add(readSurface(data, type, budget));
+            surfaces.add(readSurface(data, type, budget, false, 2));
         }
         if (data.hasRemaining()) {
             throw new DbException("Invalid WKB multisurface size");
@@ -415,22 +415,23 @@ final class GeometryBinary {
         return new MultiSurface(surfaces);
     }
 
-    private static Surface readSurface(ByteBuffer data, int type, CoordinateBudget budget) {
+    private static Surface readSurface(ByteBuffer data, int type, CoordinateBudget budget, boolean gpkg, int dimensions) {
         int rings = readCount(data);
         if (rings < 1 || rings > MAX_COMPONENTS) {
             throw new DbException("Invalid WKB polygon ring count. A surface requires an exterior ring");
         }
-        var shell = readRing(data, type, budget);
+        var shell = readRing(data, type, budget, gpkg, dimensions);
         var holes = new ArrayList<Ring>();
         for (int index = 1; index < rings; index++) {
-            holes.add(readRing(data, type, budget));
+            holes.add(readRing(data, type, budget, gpkg, dimensions));
         }
         return new Surface(shell, holes);
     }
 
-    private static Ring readRing(ByteBuffer data, int surfaceType, CoordinateBudget budget) {
+    private static Ring readRing(ByteBuffer data, int surfaceType, CoordinateBudget budget, boolean gpkg, int dimensions) {
         // A POLYGON ring uses the LINESTRING body without its byte order and type.
-        var part = readCurve(data, surfaceType == POLYGON ? LINESTRING : readType(data), budget, false, 2);
+        int type = surfaceType == POLYGON ? LINESTRING : readType(data, gpkg, dimensions);
+        var part = readCurve(data, type, budget, gpkg, dimensions);
         requireClosedRing(part);
         return new Ring(List.of(new Polyline(List.of(part))));
     }
@@ -492,6 +493,16 @@ final class GeometryBinary {
         return data.getInt();
     }
 
+    private static int readType(ByteBuffer data, boolean gpkg, int dimensions) {
+        int stored = readType(data);
+        if (dimensions == 2) return stored;
+        int type = gpkg ? stored & ~EWKB_Z : stored - ISO_Z;
+        if (type < POINT || type > MULTISURFACE || stored != storageType(type, gpkg, dimensions)) {
+            throw new DbException("Expected an XYZ WKB type");
+        }
+        return type;
+    }
+
     private static int readCount(ByteBuffer data) {
         if (data.remaining() < Integer.BYTES) {
             throw new DbException("Truncated WKB geometry count");
@@ -526,7 +537,7 @@ final class GeometryBinary {
             case MULTIPOINT -> writeMultiPoint(value, gpkg, srsId);
             case POLYLINE -> writePolyline(value, gpkg, srsId, dimensions);
             case MULTICURVE -> writeMultiCurve(value, gpkg, srsId);
-            case SURFACE -> writeSurface(value, gpkg, srsId);
+            case SURFACE -> writeSurface(value, gpkg, srsId, dimensions);
             case MULTISURFACE -> writeMultiSurface(value, gpkg, srsId);
             default -> throw new IllegalArgumentException("Not a geometry kind: " + kind);
         };
@@ -585,13 +596,13 @@ final class GeometryBinary {
         return data.array();
     }
 
-    private static byte[] writeSurface(TransferGeometry geometry, boolean gpkg, int srsId) {
+    private static byte[] writeSurface(TransferGeometry geometry, boolean gpkg, int srsId, int dimensions) {
         if (!(geometry instanceof Surface surface)) {
             throw new DbException("Expected a surface");
         }
-        var polygon = planSurface(surface, new CoordinateBudget(Kind.SURFACE));
+        var polygon = planSurface(surface, new CoordinateBudget(Kind.SURFACE), dimensions);
         var data = allocate(polygon.size(), gpkg, srsId, false);
-        writeSurface(data, polygon);
+        writeSurface(data, polygon, gpkg, dimensions);
         return data.array();
     }
 
@@ -629,44 +640,44 @@ final class GeometryBinary {
         var polygons = new ArrayList<CurvePolygon>();
         int size = CURVE_HEADER_SIZE;
         for (var surface : multi.surfaces()) {
-            var polygon = planSurface(surface, budget);
+            var polygon = planSurface(surface, budget, 2);
             polygons.add(polygon);
             size += polygon.size();
         }
         var data = allocate(size, gpkg, srsId, false);
         data.put((byte) 0).putInt(MULTISURFACE).putInt(polygons.size());
         for (var polygon : polygons) {
-            writeSurface(data, polygon);
+            writeSurface(data, polygon, gpkg, 2);
         }
         return data.array();
     }
 
-    private static CurvePolygon planSurface(Surface surface, CoordinateBudget budget) {
+    private static CurvePolygon planSurface(Surface surface, CoordinateBudget budget, int dimensions) {
         var rings = new ArrayList<CompoundCurve>();
         int size = CURVE_HEADER_SIZE;
-        var shell = planRing(surface.shell(), budget);
+        var shell = planRing(surface.shell(), budget, dimensions);
         rings.add(shell);
         size += shell.size();
         for (var hole : surface.holes()) {
-            var ring = planRing(hole, budget);
+            var ring = planRing(hole, budget, dimensions);
             rings.add(ring);
             size += ring.size();
         }
         return new CurvePolygon(rings, size);
     }
 
-    private static void writeSurface(ByteBuffer data, CurvePolygon polygon) {
-        data.put((byte) 0).putInt(CURVEPOLYGON).putInt(polygon.rings().size());
+    private static void writeSurface(ByteBuffer data, CurvePolygon polygon, boolean gpkg, int dimensions) {
+        data.put((byte) 0).putInt(storageType(CURVEPOLYGON, gpkg, dimensions)).putInt(polygon.rings().size());
         for (var ring : polygon.rings()) {
-            writeCurve(data, ring, false, 2);
+            writeCurve(data, ring, gpkg, dimensions);
         }
     }
 
-    private static CompoundCurve planRing(Ring ring, CoordinateBudget budget) {
+    private static CompoundCurve planRing(Ring ring, CoordinateBudget budget, int dimensions) {
         var first = linePart(ring.lines().getFirst());
         var part = ring.lines().size() == 1 ? first : joinRingLines(ring, first, budget);
         requireClosedRing(part);
-        return planCurve(part, budget, 2);
+        return planCurve(part, budget, dimensions);
     }
 
     private static CurvePart joinRingLines(Ring ring, CurvePart first, CoordinateBudget budget) {
