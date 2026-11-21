@@ -15,5 +15,12 @@ MODEL OrderedInterop24 (en) AT "https://example.org/interlis/db" VERSION "2026-1
       Runner (ORDERED) -- {0..*} Runner;
       Track -- {0..*} Track;
     END Entry;
+
+    CLASS Folder = END Folder;
+    CLASS Document = END Document;
+    ASSOCIATION Filing =
+      WrittenIn -- {0..1} Folder;
+      Documents (ORDERED) -- {0..*} Document;
+    END Filing;
   END Data;
 END OrderedInterop24.

@@ -25,6 +25,14 @@
         <Runner i:ref="ordered-runner" i:order_pos="4"/>
         <Track i:ref="ordered-track"/>
       </Entry>
+      <Document i:tid="ordered-doc-two">
+        <WrittenIn i:ref="ordered-folder" i:order_pos="21"/>
+      </Document>
+      <Document i:tid="ordered-doc-one">
+        <WrittenIn i:ref="ordered-folder"/>
+      </Document>
+      <Document i:tid="ordered-doc-loose"/>
+      <Folder i:tid="ordered-folder"/>
     </Data>
   </i:datasection>
 </i:transfer>

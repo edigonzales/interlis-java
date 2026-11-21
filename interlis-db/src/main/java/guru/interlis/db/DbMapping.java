@@ -122,6 +122,7 @@ final class DbMapping {
         SymbolRef owner() { return ownerRole.target(); }
         SymbolRef target() { return targetRole.target(); }
         RoleSlot role() { return targetRole.slot(); }
+        boolean ordered() { return ownerRole.slot().role().ordered(); }
     }
 
     record AssociationRole(RoleSlot slot, SymbolRef target) {
@@ -338,7 +339,8 @@ final class DbMapping {
                 var role = association.role();
                 String column = allocator.roleColumn(name, role.name().declared().last());
                 checkColumnName(role, column, false, discriminator, gpkg);
-                columns.add(roleColumn(role, association.target(), column));
+                var binding = roleColumn(role, association.target(), column);
+                columns.add(association.ordered() ? binding.withPositionColumn(gpkg) : binding);
             }
             tables.add(new Table(object, name, columns, discriminator));
         }
@@ -518,9 +520,6 @@ final class DbMapping {
         if (!first.single() && !second.single()) {
             return Optional.empty();
         }
-        if (roles.stream().anyMatch(role -> role.slot().role().ordered())) {
-            throw unsupported("ORDERED embedded association " + association.name().declared());
-        }
         boolean linkTable = association.slots().stream().anyMatch(AttributeSlot.class::isInstance);
         // For 1:1, the second declared role's class owns the column for the first role.
         var target = first.single() ? first : second;
@@ -533,6 +532,9 @@ final class DbMapping {
         if (crossesTopic && owner.external()) return Optional.empty();
         if (owner.external() || (target.external() && linkTable && owner.single())) {
             throw unsupported("external roles on this embedded association at " + association.name().declared());
+        }
+        if (target.slot().role().ordered() || (owner.slot().role().ordered() && (owner.single() || linkTable))) {
+            throw unsupported("ORDERED embedded association " + association.name().declared());
         }
         if (linkTable && hasSubtypes(plan, owner.target())) {
             throw unsupported("embedded association with attributes on an owner with subtypes at "

@@ -222,6 +222,12 @@ fehlende Position in SQL `NULL`. ili2db 5.5.2 nutzt dasselbe SQL-Schema,
 ignoriert Positionswerte aber beim Import und lässt sie beim Export weg.
 [Referenzschema](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/src/ch/ehi/ili2db/fromili/FromIliRecordConverter.java#L496-L506)
 
+Bei eingebetteten 1:n-Assoziationen ohne eigene Attribute darf die
+lokale n-Rolle `ORDERED` sein. Im XTF trägt die übertragene Gegenrolle
+die Position. Die physische Tabelle der n-Seite speichert sie in
+`<Rollenspalte>_T_Seq` neben dem Fremdschlüssel. Fehlt die Rolle, sind
+Fremdschlüssel und Position SQL `NULL`.
+
 1:n- und 1:1-Assoziationen mit eigenen skalaren Attributen verwenden ebenfalls
 eine Beziehungstabelle. Im XTF erscheint die Rolle am Objekt der n-Seite
 bzw. der zweiten deklarierten Rolle. Eine

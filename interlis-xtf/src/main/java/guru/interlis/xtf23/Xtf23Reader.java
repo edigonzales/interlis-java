@@ -724,17 +724,17 @@ public final class Xtf23Reader extends TransferReader {
         if (is(END_ELEMENT, token, tag)) {
             var role = first.opposite().role();
             if (variants.stream().anyMatch(value -> value.opposite().role().external() != role.external()
-                    || value.opposite().role().ordered() != role.ordered())) {
+                    || value.ordered() != first.ordered())) {
                 throw xml.error(UNSUPPORTED, "Embedded XTF role needs a concrete association tag: " + tag);
             }
-            return reference(attributes, role.external(), role.ordered());
+            return reference(attributes, role.external(), first.ordered());
         }
         String associationTag = elementName(token);
         var variant = variants.stream().filter(value -> value.association().name().declared().toString().equals(associationTag))
                 .findFirst().orElseThrow(() -> xml.error(INVALID_WIRE, "Unexpected embedded XTF association " + associationTag));
         attributes(false);
         var role = variant.opposite();
-        var reference = reference(attributes, role.role().external(), role.role().ordered());
+        var reference = reference(attributes, role.role().external(), variant.ordered());
         var fields = readFields(variant.association(), associationTag, true);
         require(END_ELEMENT, xml.nextTag(), tag);
         var values = new LinkedHashMap<SymbolRef, TransferValue>();

@@ -45,7 +45,7 @@ class Xtf24AssociationTest {
                     CLASS Item = title : TEXT; details : Detail; END Item;
                     ASSOCIATION Note =
                       parent (EXTERNAL) -- {0..1} Parent;
-                      item -- {0..*} Item;
+                      item (ORDERED) -- {0..*} Item;
                       remark : TEXT;
                     END Note;
                     ASSOCIATION Peer =
@@ -74,7 +74,7 @@ class Xtf24AssociationTest {
         var events = read(plan, transfer("""
                 <Item ili:tid="item">
                   <title>title</title><details><Detail><owner ili:ref="outside"/></Detail></details>
-                  <parent ili:ref="forward"><Note><remark>payload</remark></Note></parent>
+                  <parent ili:ref="forward" ili:order_pos="5"><Note><remark>payload</remark></Note></parent>
                 </Item>
                 <Peer><left ili:ref="missing" ili:order_pos="%s"/><right ili:ref="item"/><remark>link</remark></Peer>
                 <Triple><one ili:ref="forward"/><two ili:ref="item"/><three ili:ref="absent"/><label>three</label></Triple>
@@ -89,7 +89,7 @@ class Xtf24AssociationTest {
         assertEquals(type("Note"), payload.type());
         assertEquals(new Text("payload"), payload.value(slot("Note", "remark")).orElseThrow());
         assertEquals(new Reference(new TransferIdentity.TransferId("forward", TransferIdentity.IdOrigin.SOURCE),
-                Optional.empty(), true, Optional.empty()), payload.value(parent).orElseThrow());
+                Optional.empty(), true, Optional.of(BigInteger.valueOf(5))), payload.value(parent).orElseThrow());
         var nested = (Structured) item.value(slot("Item", "details")).orElseThrow();
         assertEquals(new Reference(new TransferIdentity.TransferId("outside", TransferIdentity.IdOrigin.SOURCE),
                 Optional.empty(), true, Optional.empty()), nested.value(slot("Detail", "owner")).orElseThrow());
@@ -113,6 +113,7 @@ class Xtf24AssociationTest {
         assertEquals(List.of("title", "details", "parent"), children(itemXml).stream().map(Element::getLocalName).toList());
         var parentXml = children(itemXml).getLast();
         assertEquals("forward", parentXml.getAttributeNS(ILI, "ref"));
+        assertEquals("5", parentXml.getAttributeNS(ILI, "order_pos"));
         assertEquals("Note", children(parentXml).getFirst().getLocalName());
         assertEquals("payload", children(children(parentXml).getFirst()).getFirst().getTextContent());
         var peerXml = (Element) parsed.getElementsByTagNameNS(NS, "Peer").item(0);
@@ -162,10 +163,11 @@ class Xtf24AssociationTest {
 
     @Test
     void readsPlainEmbeddedReferencesAndRejectsUnrepresentableTargetBasket() {
-        var events = read(plan, transfer("<Item ili:tid=\"item\"><parent ili:ref=\"missing\"/></Item>"));
+        var events = read(plan, transfer("<Item ili:tid=\"item\"><parent ili:ref=\"missing\" ili:order_pos=\"9\"/></Item>"));
         var object = ((ObjectEvent) events.get(2)).object();
         var reference = assertInstanceOf(Reference.class, object.value(slot("Note", "parent")).orElseThrow());
         assertEquals("missing", reference.target().value());
+        assertEquals(Optional.of(BigInteger.valueOf(9)), reference.orderPosition());
         assertEquals(events, read(plan, write(plan, events)));
         var changed = new Reference(reference.target(),
                 Optional.of(new TransferIdentity.BasketId("other", TransferIdentity.IdOrigin.SOURCE)),

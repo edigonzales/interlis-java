@@ -152,7 +152,8 @@ final class DbSchemaReader {
             }
             for (var association : DbMapping.associationsForOwner(associations, object.symbol())) {
                 if (association.linkTable()) continue;
-                columns.add(bindRole(db, parent, attrNames, association.role(), association.target(), names));
+                var column = bindRole(db, parent, attrNames, association.role(), association.target(), names);
+                columns.add(association.ordered() ? bindPosition(db, parent, column) : column);
             }
             tables.add(new Table(object, parent.name(), columns, hasDiscriminator(object, bases)));
         }

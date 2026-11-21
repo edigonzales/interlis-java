@@ -141,11 +141,11 @@ final class Xtf24ValueReader {
             var role = first.opposite().role();
             boolean stable = layout.stableTargets(role.targetRoots());
             if (variants.stream().anyMatch(variant -> variant.opposite().role().external() != role.external()
-                    || variant.opposite().role().ordered() != role.ordered()
+                    || variant.ordered() != first.ordered()
                     || layout.stableTargets(variant.opposite().role().targetRoots()) != stable)) {
                 throw input.error(UNSUPPORTED, "Embedded role needs an explicit association type");
             }
-            return references.interpret(raw, role.external(), role.ordered(), stable);
+            return references.interpret(raw, role.external(), first.ordered(), stable);
         }
         if (input.cursor().getEventType() != START_ELEMENT) {
             throw input.error(INVALID_WIRE, "Expected embedded association payload");
@@ -164,7 +164,7 @@ final class Xtf24ValueReader {
         }
         var role = variant.opposite();
         var values = new LinkedHashMap<SymbolRef, TransferValue>();
-        values.put(role.symbol(), references.interpret(raw, role.role().external(), role.role().ordered(),
+        values.put(role.symbol(), references.interpret(raw, role.role().external(), variant.ordered(),
                 layout.stableTargets(role.role().targetRoots())));
         values.putAll(payload.values());
         return new Structured(association.symbol(), values);

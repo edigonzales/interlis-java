@@ -115,11 +115,11 @@ final class Xtf24ValueWriter {
             var role = first.opposite().role();
             boolean stable = layout.stableTargets(role.targetRoots());
             if (variants.stream().anyMatch(variant -> variant.opposite().role().external() != role.external()
-                    || variant.opposite().role().ordered() != role.ordered()
+                    || variant.ordered() != first.ordered()
                     || layout.stableTargets(variant.opposite().role().targetRoots()) != stable)) {
                 throw Xtf24Wire.failure(UNSUPPORTED, "Embedded role needs an explicit association type");
             }
-            references.write(output, reference, role.external(), role.ordered(), stable);
+            references.write(output, reference, role.external(), first.ordered(), stable);
             return;
         }
         var payload = Xtf24Scalars.require(value, Structured.class);
@@ -127,7 +127,7 @@ final class Xtf24ValueWriter {
                 .findFirst().orElseThrow(() -> Xtf24Wire.failure(INVALID_WIRE, "Unexpected embedded association type"));
         var role = variant.opposite();
         var reference = Xtf24Scalars.require(payload.values().get(role.symbol()), Reference.class);
-        references.write(output, reference, role.role().external(), role.role().ordered(),
+        references.write(output, reference, role.role().external(), variant.ordered(),
                 layout.stableTargets(role.role().targetRoots()));
         output.start(layout.names().objectName(variant.association()));
         write(variant.association(), payload, concreteTypes, structureTypes, activeTypes,

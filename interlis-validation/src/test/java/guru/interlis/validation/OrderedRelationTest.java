@@ -34,6 +34,25 @@ class OrderedRelationTest {
                 incomplete.examples().stream().map(ValidationDiagnostic::code).toList());
     }
 
+    @Test
+    void checksPositionsOfTheImplicitOrderedRoleOfAnEmbeddedLink() {
+        String embedded = MODEL.replace("owner -- {0..*}", "owner -- {0..1}");
+        String objects = """
+                <Owner i:tid="o1"/><Owner i:tid="o2"/>
+                <Item i:tid="i1"><owner i:ref="o1" i:order_pos="%s"/></Item>
+                <Item i:tid="i2"><owner i:ref="o2" i:order_pos="1"/></Item>
+                <Item i:tid="i3"><owner i:ref="o1" i:order_pos="1"/></Item>
+                """;
+        assertTrue(validateModel(embedded, "COMPLETE", objects.formatted("2")).examples().isEmpty());
+        var duplicate = validateModel(embedded, "COMPLETE", objects.formatted("1"));
+        assertEquals(List.of(ValidationCode.ORDER_POSITION_DUPLICATE),
+                duplicate.examples().stream().map(ValidationDiagnostic::code).toList());
+        var gap = validateModel(embedded, "COMPLETE", objects.formatted("3"));
+        assertEquals(List.of(ValidationCode.ORDER_POSITION_GAP),
+                gap.examples().stream().map(ValidationDiagnostic::code).toList());
+        assertEquals(List.of("2", "3"), gap.examples().getFirst().arguments());
+    }
+
     private static String link(String owner, String item, String position) {
         return "<Links><owner i:ref='%s'/><items i:ref='%s' i:order_pos='%s'/></Links>"
                 .formatted(owner, item, position);

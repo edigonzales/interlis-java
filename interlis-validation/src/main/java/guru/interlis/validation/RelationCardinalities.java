@@ -13,6 +13,7 @@ import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferValue;
 
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -93,6 +94,7 @@ final class RelationCardinalities {
         }
 
         var association = plan.transferPlan().object(link.association()).orElseThrow();
+        var actualRoles = roles(association);
         for (var current = Optional.of(association); current.isPresent();
              current = current.orElseThrow().baseType().flatMap(plan.transferPlan()::object)) {
             var descriptor = current.orElseThrow();
@@ -122,7 +124,7 @@ final class RelationCardinalities {
                 groups.observe(role.id(), counterparts, target);
                 if (role.ordered()) {
                     ordering.observe(role, counterparts, source.basket(), link.source(), occurrence,
-                            link.endpoints().get(i).reference().flatMap(TransferValue.Reference::orderPosition));
+                            orderPosition(link, actualRoles, i));
                 }
                 if (role.aggregation() == RoleAggregation.COMPOSITION) {
                     composition.observe(counterparts.getFirst(), target, role.id());
@@ -135,8 +137,8 @@ final class RelationCardinalities {
                         paths.observe(endpoints.get(sourceRole), roles.get(sourceRole).role().id(),
                                 roles.get(targetRole).role().id(), sourceRole == targetRole ? link.source()
                                         : endpoints.get(targetRole), occurrence,
-                                roles.get(targetRole).role().ordered() ? link.endpoints().get(targetRole).reference()
-                                        .flatMap(TransferValue.Reference::orderPosition) : Optional.empty());
+                                roles.get(targetRole).role().ordered() ? orderPosition(link, actualRoles, targetRole)
+                                        : Optional.empty());
                     }
                 }
             }
@@ -144,6 +146,20 @@ final class RelationCardinalities {
                 groups.observe(descriptor.symbol().symbol(), endpoints, occurrence);
             }
         }
+    }
+
+    private static Optional<BigInteger> orderPosition(RelationProjector.Link link, List<RoleSlot> roles, int index) {
+        var endpoint = link.endpoints().get(index);
+        if (link.embeddedField().isPresent()) {
+            int opposite = 1 - index;
+            // The reference carries the position of the ordered implicit owner in its counterpart's list.
+            if (endpoint.implicitTarget().isPresent()) {
+                endpoint = link.endpoints().get(opposite);
+            } else if (roles.get(opposite).role().ordered()) {
+                return Optional.empty();
+            }
+        }
+        return endpoint.reference().flatMap(TransferValue.Reference::orderPosition);
     }
 
     private void seedGroups(CancellationToken cancellation) {

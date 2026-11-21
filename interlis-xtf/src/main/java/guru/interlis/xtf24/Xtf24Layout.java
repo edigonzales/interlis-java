@@ -29,7 +29,9 @@ import java.util.Set;
 
 /** Derives the XTF 2.4 wire order and association placement from the neutral plan. */
 final class Xtf24Layout {
-    record Embedded(ObjectDescriptor association, RoleSlot owner, RoleSlot opposite, RoleSlot rootOpposite) { }
+    record Embedded(ObjectDescriptor association, RoleSlot owner, RoleSlot opposite, RoleSlot rootOpposite) {
+        boolean ordered() { return owner.role().ordered() || opposite.role().ordered(); }
+    }
 
     record Field(TransferSlot slot, QName name,
                  List<Embedded> embeddings, int inheritanceLevel) {

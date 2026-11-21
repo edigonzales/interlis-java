@@ -424,10 +424,10 @@ public final class Xtf23Writer extends TransferWriter {
         if (value instanceof Reference reference) {
             var role = first.opposite().role();
             if (variants.stream().anyMatch(variant -> variant.opposite().role().external() != role.external()
-                    || variant.opposite().role().ordered() != role.ordered())) {
+                    || variant.ordered() != first.ordered())) {
                 throw error(UNSUPPORTED, "Embedded XTF role needs a concrete association type: " + field.name());
             }
-            writeReference(reference, role.external(), role.ordered());
+            writeReference(reference, role.external(), first.ordered());
             return;
         }
         var payload = requireValue(value, Structured.class);
@@ -435,7 +435,7 @@ public final class Xtf23Writer extends TransferWriter {
                 .findFirst().orElseThrow(() -> error(INVALID_WIRE, "Unexpected embedded XTF association type"));
         var role = variant.opposite();
         var reference = requireValue(payload.values().get(role.symbol()), Reference.class);
-        writeReference(reference, role.role().external(), role.role().ordered());
+        writeReference(reference, role.role().external(), variant.ordered());
         xml.start(variant.association().name().declared().toString());
         writeFields(variant.association(), payload, Optional.of(role.symbol()));
         xml.end();

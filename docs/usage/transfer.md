@@ -68,6 +68,11 @@ exportiert. Der Writer gibt für jedes Element einen eigenen Attribut-Tag aus.
 Diese kompatible Erweiterung der Leseakzeptanz verwendet die bestehende
 Transfer-API und deren Ressourcenlimits.
 
+Bei einem eingebetteten 1:n-Link kann die auf der 1-Rolle übertragene Referenz
+die Position der n-Rolle tragen. `ORDER_POS` in XTF 2.3 und `ili:order_pos` in
+XTF 2.4 bleiben im bestehenden `Reference.orderPosition()` erhalten. Die
+Datenvalidierung prüft diese Position in der Liste der n-Objekte.
+
 Beide XTF-Codecs lesen die Vererbung aus dem gebundenen Modell. Die
 Transferdeskriptoren liefern das Wire-Layout der übertragbaren Deklarationen.
 Eine vordefinierte Basisklasse wie `INTERLIS.REFSYSTEM` braucht deshalb

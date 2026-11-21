@@ -27,6 +27,14 @@
         <Runner REF="ordered-runner" ORDER_POS="4"/>
         <Track REF="ordered-track"/>
       </OrderedInterop23.Data.Entry>
+      <OrderedInterop23.Data.Document TID="ordered-doc-two">
+        <WrittenIn REF="ordered-folder" ORDER_POS="21"/>
+      </OrderedInterop23.Data.Document>
+      <OrderedInterop23.Data.Document TID="ordered-doc-one">
+        <WrittenIn REF="ordered-folder"/>
+      </OrderedInterop23.Data.Document>
+      <OrderedInterop23.Data.Document TID="ordered-doc-loose"/>
+      <OrderedInterop23.Data.Folder TID="ordered-folder"/>
     </OrderedInterop23.Data>
   </DATASECTION>
 </TRANSFER>

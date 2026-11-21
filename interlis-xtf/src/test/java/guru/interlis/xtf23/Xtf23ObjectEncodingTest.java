@@ -55,7 +55,7 @@ final class Xtf23ObjectEncodingTest {
                     END Item;
                     ASSOCIATION Note =
                       parent (EXTERNAL) -- {0..1} Parent;
-                      item -- {0..*} Item;
+                      item (ORDERED) -- {0..*} Item;
                       remark: TEXT*32;
                     END Note;
                     ASSOCIATION Peer =
@@ -144,7 +144,7 @@ final class Xtf23ObjectEncodingTest {
     void preservesEmbeddedPayloadStandaloneRolesAndSeparateIdentityKinds() {
         String stable = "u:123e4567-e89b-12d3-a456-426614174000";
         String data = item("item", """
-                <parent REF="%s" BID="foreign">
+                <parent REF="%s" BID="foreign" ORDER_POS="5">
                   <Values.Data.Note><remark>embedded</remark></Values.Data.Note>
                 </parent>
                 """.formatted(stable)) + """
@@ -164,6 +164,7 @@ final class Xtf23ObjectEncodingTest {
             assertEquals(new ObjectOid(stable), parent.target());
             assertEquals("foreign", parent.targetBasket().orElseThrow().value());
             assertTrue(parent.external());
+            assertEquals(Optional.of(BigInteger.valueOf(5)), parent.orderPosition());
             var peer = objects.get(1);
             assertTrue(peer.identity().tid().isEmpty());
             var left = assertInstanceOf(Reference.class, field(values, peer, "left"));

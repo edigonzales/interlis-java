@@ -3463,23 +3463,30 @@ final class DbInteropTest {
                 assertOrderColumn(db, sql, "membership", "amember");
                 assertOrderColumn(db, sql, "membership", "team");
                 assertOrderColumn(db, sql, "entry", "runner");
-                assertStoredStandalonePositions(db, sql, "ordered", false);
+                assertOrderColumn(db, sql, "document", "writtenin");
+                assertEmbeddedOrderOwner(db, sql, model);
+                assertStoredOrderedPositions(db, sql, "ordered", false);
                 assertCliSuccess(db, "export", model, "ordered", nativeOutput);
-                assertStandalonePositions(nativeOutput, model, version, "ordered", false);
+                assertOrderedTransfer(nativeOutput, model, version, "ordered", false);
 
                 seedStandalonePositions(db, sql);
+                execute(sql, "update " + db.table("document") + " set writtenin_t_seq=21 where t_ili_tid='ordered-doc-two'");
                 assertCliSuccess(db, "export", model, "ordered", nativeOutput);
-                assertStandalonePositions(nativeOutput, model, version, "ordered", true);
+                assertOrderedTransfer(nativeOutput, model, version, "ordered", true);
 
                 assertCliSuccess(db, "import", model, "native", nativeInput);
-                assertStoredStandalonePositions(db, sql, "native", true);
+                assertStoredOrderedPositions(db, sql, "native", true);
                 assertCliSuccess(db, "export", model, "native", nativeOutput);
-                assertStandalonePositions(nativeOutput, model, version, "native", true);
+                assertOrderedTransfer(nativeOutput, model, version, "native", true);
                 reference.run(db, STORED_MODELS, "--export", "--exportTid", "--dataset", "native", referenceOutput.toString());
-                assertStandalonePositions(referenceOutput, model, version, "native", false);
+                assertOrderedTransfer(referenceOutput, model, version, "native", false);
 
                 if (db == nativeSchema) {
                     assertOrderOverflowRollback(db, sql, model, fixture, version);
+                    String orphan = " where t_ili_tid='native-doc-loose'";
+                    execute(sql, "update " + db.table("document") + " set writtenin_t_seq=6" + orphan);
+                    assertExportRejected(db, model, "native", nativeOutput, "Filing.WrittenIn");
+                    execute(sql, "update " + db.table("document") + " set writtenin_t_seq=null" + orphan);
                     execute(sql, "update " + db.table("entry") + " set runner_t_seq=0");
                     assertExportRejected(db, model, "native", nativeOutput, "Entry.Runner");
                 }
@@ -3510,7 +3517,13 @@ final class DbInteropTest {
                 + " where lower(columnname)='" + sequence + "' and tablename='" + table + "'"));
     }
 
-    private static void assertStoredStandalonePositions(TestDatabase db, Connection sql, String dataset, boolean present)
+    private static void assertEmbeddedOrderOwner(TestDatabase db, Connection sql, String model) throws SQLException {
+        assertReferenceMapping(db, sql, model, "Filing.WrittenIn", "document", "writtenin", "folder");
+        assertEquals("embedded", scalar(sql, "select setting from " + db.table("t_ili2db_trafo")
+                + " where iliname='" + model + ".Data.Filing' and tag='ch.ehi.ili2db.inheritance'"));
+    }
+
+    private static void assertStoredOrderedPositions(TestDatabase db, Connection sql, String dataset, boolean present)
             throws SQLException {
         String rows = """
                 select m.t_ili_tid, t.t_ili_tid, l.amember_t_seq, l.team_t_seq, b.t_ili_tid
@@ -3539,6 +3552,16 @@ final class DbInteropTest {
                 """.formatted(db.table("entry"), db.table("runner"), db.table("track"), db.table("t_ili2db_basket"),
                 db.table("t_ili2db_dataset"), dataset);
         assertEquals(dataset + "-runner|" + dataset + "-track|" + (present ? "4" : ""), scalar(sql, entry));
+
+        String document = """
+                select coalesce(f.t_ili_tid,'')||'|'||coalesce(cast(doc.writtenin_t_seq as text),'')
+                from %s doc left join %s f on f.t_id=doc.writtenin and f.t_basket=doc.t_basket
+                where doc.t_ili_tid='%s-doc-%s'
+                """;
+        assertEquals("|", scalar(sql, document.formatted(db.table("document"), db.table("folder"), dataset, "loose")));
+        assertEquals(dataset + "-folder|", scalar(sql, document.formatted(db.table("document"), db.table("folder"), dataset, "one")));
+        assertEquals(dataset + "-folder|" + (present ? "21" : ""),
+                scalar(sql, document.formatted(db.table("document"), db.table("folder"), dataset, "two")));
     }
 
     private static void seedStandalonePositions(TestDatabase db, Connection sql) throws SQLException {
@@ -3551,7 +3574,7 @@ final class DbInteropTest {
         execute(sql, "update " + db.table("entry") + " set runner_t_seq=4");
     }
 
-    private static void assertStandalonePositions(Path output, String model, int version, String dataset, boolean present)
+    private static void assertOrderedTransfer(Path output, String model, int version, String dataset, boolean present)
             throws Exception {
         var baskets = children(readDataSection(output, version));
         assertEquals(1, baskets.size());
@@ -3571,6 +3594,17 @@ final class DbInteropTest {
         var entry = child(basket, prefix + "Entry");
         assertPosition(entry, "Runner", version, dataset + "-runner", present ? "4" : "");
         assertPosition(entry, "Track", version, dataset + "-track", "");
+
+        var documents = new HashMap<String, Element>();
+        for (var object : children(basket)) {
+            if (object.getLocalName().equals(prefix + "Document")) {
+                assertNull(documents.put(id(object, version, "tid"), object));
+            }
+        }
+        assertEquals(Set.of(dataset + "-doc-loose", dataset + "-doc-one", dataset + "-doc-two"), documents.keySet());
+        assertNull(child(documents.get(dataset + "-doc-loose"), "WrittenIn"));
+        assertPosition(documents.get(dataset + "-doc-one"), "WrittenIn", version, dataset + "-folder", "");
+        assertPosition(documents.get(dataset + "-doc-two"), "WrittenIn", version, dataset + "-folder", present ? "21" : "");
     }
 
     private static void assertPosition(Element owner, String role, int version, String target, String position) {

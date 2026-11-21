@@ -154,6 +154,9 @@ die Sequenzspalten und die Rollenziele in beiden Werkzeugrichtungen. Sie
 speichert Positionen zusätzlich direkt im SQL-Schema und prüft Import und
 Export mit `interlis-db` auf exakte Positionswerte, SQL `NULL`, Rollback bei
 einem Überlauf und Erhalt der Ausgabedatei bei einer ungültigen SQL-Position.
+Bei eingebetteten 1:n-Rollen ohne eigene Attribute prüft sie die
+Sequenzspalte auf der n-Seite, die Position auf der Gegenrolle im XTF,
+ein vorwärts aufgelöstes Ziel und die Diagnose einer Position ohne Referenz.
 Für 1:n mit Attributen prüft sie eingebettete Attributwerte, direkte Referenzen,
 fehlende Rollen und den Erhalt der Zieldatei bei mehreren Linkzeilen zum Objekt.
 Polymorphe Ziele werden mit einer Zwischenklasse und einem konkreten
