@@ -584,6 +584,10 @@ final class DbInteropTest {
                     + " where iliname='" + model + ".Surveys.SurveyArea' and tag='ch.ehi.ili2db.inheritance'"));
             assertQualifiedAssociationCatalog(referenceDb, referenceSql, model + ".Surveys", "SurveyReview",
                     Map.of("Reviews", "surveyrecord", "ReviewedAt", "registeredsite"));
+            assertQualifiedAssociationCatalog(referenceDb, referenceSql, model + ".Surveys", "SurveyMatch",
+                    Map.of("MatchedRecord", "surveyrecord", "Surveyed", "registeredsite"));
+            assertQualifiedAssociationCatalog(referenceDb, referenceSql, model + ".Surveys", "SitePermit",
+                    Map.of("IssuedPermit", "permitrecord", "CoveredSite", "registeredsite"));
         }
         for (var db : List.of(referenceDb, nativeDb)) {
             try (var sql = db.connect()) {
@@ -640,6 +644,35 @@ final class DbInteropTest {
             if (version == 24) assertEquals(rows.getString(5), rows.getString(9));
             assertFalse(rows.next());
         }
+        assertExternalTopicLink(db, sql, "surveymatch", "surveyrecord", "matchedrecord", "surveyed",
+                dataset, dataset + "-survey", null);
+        assertExternalTopicLink(db, sql, "sitepermit", "permitrecord", "issuedpermit", "coveredsite",
+                dataset, dataset + "-permit", "access");
+    }
+
+    private static void assertExternalTopicLink(TestDatabase db, Connection sql, String linkTable, String localTable,
+                                                String localColumn, String externalColumn, String dataset,
+                                                String localTid, String reason) throws SQLException {
+        String query = """
+                select local.t_ili_tid, foreign_site.t_ili_tid, src.t_ili_tid, dst.t_ili_tid, %s from %s link
+                join %s src on src.t_id=link.t_basket
+                join %s ds on ds.t_id=src.dataset
+                left join %s local on local.t_id=link.%s and local.t_basket=link.t_basket
+                left join %s foreign_site on foreign_site.t_id=link.%s
+                left join %s dst on dst.t_id=foreign_site.t_basket and dst.dataset=src.dataset
+                where ds.datasetname='%s'
+                """.formatted(reason == null ? "null" : "link.reason", db.table(linkTable), db.table("t_ili2db_basket"),
+                db.table("t_ili2db_dataset"), db.table(localTable), localColumn, db.table("registry"), externalColumn,
+                db.table("t_ili2db_basket"), dataset);
+        try (var statement = sql.createStatement(); var rows = statement.executeQuery(query)) {
+            assertTrue(rows.next());
+            assertEquals(localTid, rows.getString(1));
+            assertEquals(dataset + "-leaf", rows.getString(2));
+            assertEquals(dataset + "-surveys", rows.getString(3));
+            assertEquals(dataset + "-catalog", rows.getString(4));
+            assertEquals(reason, rows.getString(5));
+            assertFalse(rows.next());
+        }
     }
 
     private static void assertExternalTopicXtf(Path output, String model, int version, String dataset, boolean own)
@@ -669,6 +702,15 @@ final class DbInteropTest {
         assertEquals(1, payload.size());
         assertEquals(version == 23 ? surveys + ".SurveyReview" : "SurveyReview", payload.getFirst().getLocalName());
         assertEquals("seen", text(payload.getFirst(), "ReviewMemo"));
+        var match = child(source, version == 23 ? surveys + ".SurveyMatch" : "SurveyMatch");
+        assertEquals("", id(match, version, "tid"));
+        assertExternalReference(child(match, "Surveyed"), version, dataset + "-leaf", bid);
+        assertExternalReference(child(match, "MatchedRecord"), version, dataset + "-survey", "");
+        var permit = child(source, version == 23 ? surveys + ".SitePermit" : "SitePermit");
+        assertEquals("", id(permit, version, "tid"));
+        assertExternalReference(child(permit, "CoveredSite"), version, dataset + "-leaf", bid);
+        assertExternalReference(child(permit, "IssuedPermit"), version, dataset + "-permit", "");
+        assertEquals("access", text(permit, "Reason"));
     }
 
     private static void assertStructureCatalog(TestDatabase db, Connection sql, String model, int version)

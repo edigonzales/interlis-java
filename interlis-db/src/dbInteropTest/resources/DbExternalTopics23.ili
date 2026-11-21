@@ -25,5 +25,15 @@ MODEL DbExternalTopics23 (en) AT "https://example.org/interlis/db" VERSION "2026
       ReviewedAt (EXTERNAL) -- {0..1} DbExternalTopics23.Catalog.RegisteredSite;
       ReviewMemo : TEXT*20;
     END SurveyReview;
+    CLASS PermitRecord = END PermitRecord;
+    ASSOCIATION SurveyMatch =
+      Surveyed (EXTERNAL) -- {0..*} DbExternalTopics23.Catalog.RegisteredSite;
+      MatchedRecord -- {0..*} SurveyRecord;
+    END SurveyMatch;
+    ASSOCIATION SitePermit =
+      CoveredSite (EXTERNAL) -- {0..*} DbExternalTopics23.Catalog.RegisteredSite;
+      IssuedPermit -- {1} PermitRecord;
+      Reason : TEXT*20;
+    END SitePermit;
   END Surveys;
 END DbExternalTopics23.

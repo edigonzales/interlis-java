@@ -103,6 +103,8 @@ Ein eigenes Modell mit `DEPENDS ON` prüft die Baskets beider Topics,
 die Zuordnung zur deklarierten Zielklasse und die konkrete Ziel-TID.
 Bei eingebetteten 1:n-Rollen zwischen Topics prüft es die Rollenspalte
 am lokalen Eigentümer und die eingebettete Nutzlast aus einer Linktabelle.
+Bei eigenständigen n:m-Links und 1:n-Links mit fremder n-Seite prüft es
+den Basket des Links, beide Ziel-TIDs und die eigenständigen XTF-Objekte.
 
 ```sh
 ./gradlew :interlis-db:dbInteropTest

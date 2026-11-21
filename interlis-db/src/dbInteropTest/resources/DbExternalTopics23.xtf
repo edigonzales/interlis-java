@@ -11,6 +11,9 @@
         <MarkedSite REF="fixture-leaf" BID="fixture-catalog"/>
         <ReviewedAt REF="fixture-leaf" BID="fixture-catalog"><DbExternalTopics23.Surveys.SurveyReview><ReviewMemo>seen</ReviewMemo></DbExternalTopics23.Surveys.SurveyReview></ReviewedAt>
       </DbExternalTopics23.Surveys.SurveyRecord>
+      <DbExternalTopics23.Surveys.SurveyMatch><Surveyed REF="fixture-leaf" BID="fixture-catalog"/><MatchedRecord REF="fixture-survey"/></DbExternalTopics23.Surveys.SurveyMatch>
+      <DbExternalTopics23.Surveys.SitePermit><CoveredSite REF="fixture-leaf" BID="fixture-catalog"/><IssuedPermit REF="fixture-permit"/><Reason>access</Reason></DbExternalTopics23.Surveys.SitePermit>
+      <DbExternalTopics23.Surveys.PermitRecord TID="fixture-permit"/>
     </DbExternalTopics23.Surveys>
     <DbExternalTopics23.Catalog BID="fixture-catalog">
       <DbExternalTopics23.Catalog.SiteLeaf TID="fixture-leaf"/>

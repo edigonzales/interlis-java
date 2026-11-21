@@ -291,6 +291,9 @@ das im gleichen Modell direkt mit `DEPENDS ON` deklariert ist. Der physische
 Fremdschlüssel und die Auflösung am Transferende bleiben gleich.
 Das gilt auch für die `EXTERNAL`-Rolle einer eingebetteten 1:n-Assoziation
 mit lokaler n-Seite. Eigene skalare Attribute bleiben in der Linktabelle.
+Eigenständige n:m-Links können ein Ziel im abhängigen Topic ansprechen.
+Liegt bei einer 1:n-Assoziation die n-Seite im fremden Topic, erscheint sie
+im XTF als eigenständiger Link und die Linkzeile bleibt im deklarierenden Topic.
 
 Zum weiteren Ausbau gehören weitere Assoziationsformen mit Hierarchie-Enden
 sowie `EXTENDED`-Attribute. Weitere Grenzen sind stabile OIDs, eigene Linienformen,
