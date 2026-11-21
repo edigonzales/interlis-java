@@ -257,6 +257,109 @@ final class CrsCases {
         } else if (!own.postgis()) {
             assertGeoPackageMultiSrs(own, model);
         }
+        assertMixedMutations(own, model, split);
+    }
+
+    private void assertMixedMutations(TestDatabase db, String model, boolean split) throws Exception {
+        String assets = db.table("asset");
+        String baskets = db.table("t_ili2db_basket");
+        String datasets = db.table("t_ili2db_dataset");
+        String oldTable = split ? "asset_oldposition" : "asset";
+        String geoTable = split ? "asset_geoposition" : "asset";
+        String centerX = "2600001.625";
+        String updatedX = "2600800.125";
+        String replacementX = "2600900.125";
+        Path updated = delivery(model, "basket-own-mixed", mixedObject(model, "own-mixed", updatedX, false));
+        Path replacement = delivery(model, "replacement-srid", mixedObject(model, "replaced", replacementX, true));
+        Path invalid = delivery(model, "rollback-srid", mixedObject(model, "rolled-back", replacementX, true)
+                + mixedObject(model, "wrong-srid", updatedX, true));
+        Path output = work.resolve(db.schema() + "-updated-srid.xtf");
+        try (var sql = db.connect()) {
+            String originalId = scalar(sql, "SELECT t_id FROM " + assets + " WHERE t_ili_tid='own-mixed'");
+            String basketId = scalar(sql, "SELECT t_id FROM " + baskets + " WHERE t_ili_tid='basket-own-mixed'");
+            String datasetId = scalar(sql, "SELECT t_id FROM " + datasets + " WHERE datasetname='own'");
+            rejectWrongSridProperty(db, sql, model, oldTable, updated, output);
+            assertHits(db, sql, "asset", "center", centerX, "1200002.125", 2056, 2);
+            assertHits(db, sql, "asset", "center", updatedX, "1200002.125", 2056, 0);
+
+            assertCliSuccess(db, "update", model, "own", updated);
+            assertEquals(originalId, scalar(sql, "SELECT t_id FROM " + assets + " WHERE t_ili_tid='own-mixed'"));
+            assertEquals(basketId, scalar(sql, "SELECT t_basket FROM " + assets + " WHERE t_ili_tid='own-mixed'"));
+            assertStoredEpsg(db, sql, "asset", "center", "own-mixed", 2056);
+            assertStoredSrid(db, sql, " FROM " + db.table(geoTable) + " WHERE t_id=" + originalId, "geoposition", 4326);
+            assertHits(db, sql, "asset", "center", centerX, "1200002.125", 2056, 1);
+            assertHits(db, sql, "asset", "center", updatedX, "1200002.125", 2056, 1);
+            assertHits(db, sql, oldTable, "oldposition", "600100.125", "200200.375", 21781, 1);
+            assertHits(db, sql, geoTable, "geoposition", "7.125", "46.375", 4326, 2);
+            Files.delete(output);
+            reference.run(db, work.toString(), "--export", "--dataset", "own", "--exportTid", output.toString());
+            assertMixed(object(basket(output, "own-mixed"), "own-mixed"), updatedX, false);
+
+            // Only the second new object fails the database check, after the first was written.
+            if (db.postgis()) {
+                execute(sql, "ALTER TABLE " + assets + " ADD CONSTRAINT test_srid_check"
+                        + " CHECK (t_ili_tid <> 'wrong-srid' OR ST_SRID(center)=21781)");
+            } else {
+                execute(sql, """
+                        CREATE TRIGGER test_srid_check BEFORE INSERT ON asset
+                        WHEN NEW.t_ili_tid='wrong-srid' AND substr(hex(NEW.center),9,8) <> '00005515'
+                        BEGIN SELECT RAISE(ABORT, 'test_srid_check'); END
+                        """);
+            }
+            var failure = cli(db, "replace", model, "own", invalid, CancellationToken.none());
+            assertEquals(1, failure.code(), failure::diagnostics);
+            String sqlCode = db.postgis() ? "23514" : "19";
+            assertEquals("Database operation failed (SQL code " + sqlCode + ")", failure.diagnostics().strip());
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + assets));
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + baskets));
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + datasets));
+            assertEquals(originalId, scalar(sql, "SELECT t_id FROM " + assets + " WHERE t_ili_tid='own-mixed'"));
+            assertEquals(basketId, scalar(sql, "SELECT t_id FROM " + baskets + " WHERE t_ili_tid='basket-own-mixed'"));
+            assertHits(db, sql, "asset", "center", updatedX, "1200002.125", 2056, 1);
+            assertHits(db, sql, "asset", "center", replacementX, "1200002.125", 2056, 0);
+            assertHits(db, sql, oldTable, "oldposition", "600100.125", "200200.375", 21781, 1);
+            assertHits(db, sql, geoTable, "geoposition", "7.125", "46.375", 4326, 2);
+            execute(sql, db.postgis() ? "ALTER TABLE " + assets + " DROP CONSTRAINT test_srid_check"
+                    : "DROP TRIGGER test_srid_check");
+
+            assertCliSuccess(db, "replace", model, "own", replacement);
+            assertEquals(datasetId, scalar(sql, "SELECT t_id FROM " + datasets + " WHERE datasetname='own'"));
+            assertNull(scalar(sql, "SELECT t_id FROM " + assets + " WHERE t_ili_tid='own-mixed'"));
+            assertHits(db, sql, "asset", "center", replacementX, "1200002.125", 2056, 1);
+            assertHits(db, sql, oldTable, "oldposition", "600100.125", "200200.375", 21781, 2);
+            assertCliSuccess(db, "delete", model, "own", null);
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + assets));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + datasets));
+            assertHits(db, sql, "asset", "center", replacementX, "1200002.125", 2056, 0);
+            assertHits(db, sql, "asset", "center", centerX, "1200002.125", 2056, 1);
+            assertHits(db, sql, oldTable, "oldposition", "600100.125", "200200.375", 21781, 1);
+            assertHits(db, sql, geoTable, "geoposition", "7.125", "46.375", 4326, 1);
+        }
+    }
+
+    private static void rejectWrongSridProperty(TestDatabase db, Connection sql, String model, String table,
+                                                 Path updated, Path output) throws Exception {
+        String properties = db.table("t_ili2db_column_prop");
+        String where = " WHERE tablename='" + table + "' AND columnname='oldposition' AND tag='ch.ehi.ili2db.srid'";
+        assertEquals("21781", scalar(sql, "SELECT setting FROM " + properties + where));
+        execute(sql, "UPDATE " + properties + " SET setting='2056'" + where);
+        Files.writeString(output, "previous output");
+        for (String operation : List.of("export", "update")) {
+            var failure = cli(db, operation, model, "own", operation.equals("export") ? output : updated,
+                    CancellationToken.none());
+            assertNotEquals(0, failure.code(), failure::diagnostics);
+            assertTrue(failure.diagnostics().contains("COLUMN_PROP.srid for " + table + ".oldposition"), failure::diagnostics);
+        }
+        assertEquals("previous output", Files.readString(output));
+        execute(sql, "UPDATE " + properties + " SET setting='21781'" + where);
+    }
+
+    private static void assertHits(TestDatabase db, Connection sql, String table, String column, String x, String y,
+                                   int epsg, int count) throws Exception {
+        String actual = db.postgis() ? scalar(sql, "SELECT count(*) FROM " + db.table(table) + " WHERE " + column
+                + " && ST_MakeEnvelope(" + x + "," + y + "," + x + "," + y + "," + epsg + ")")
+                : geoPackageHits(sql, table, column, x, y);
+        assertEquals(Integer.toString(count), actual, table + "." + column);
     }
 
     private void assertGeoPackageMultiSrs(TestDatabase db, String model) throws Exception {

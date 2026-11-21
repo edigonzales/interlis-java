@@ -184,7 +184,7 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
             coordinates = (CoordinateType) type(mapping, new TypeRef(mapping.plan().snapshotId(), domain.typeId()));
         }
         property(properties, table, null, column, "geomType", column.kind().geometryType());
-        property(properties, table, null, column, "srid", Integer.toString(column.srsId()));
+        property(properties, table, null, column, Ili2dbLayout.SRID_PROPERTY, Integer.toString(column.epsgCode()));
         property(properties, table, null, column, "coordDimension", Integer.toString(column.dimensions()));
         var x = coordinates.axes().get(0);
         var y = coordinates.axes().get(1);

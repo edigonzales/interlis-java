@@ -163,6 +163,8 @@ zur Auflösung passen. Linien und Flächen verwenden das CRS ihrer
 `VERTEX`-Domäne. Verschiedene Geometrieattribute eines Objekts dürfen
 unterschiedliche CRS haben. Der Schlüssel einer Geometrie-Hilfstabelle
 in `T_ILI2DB_TRAFO` enthält den EPSG-Code des betreffenden Attributs.
+Ein vorhandener `srid`-Eintrag in `T_ILI2DB_COLUMN_PROP` muss ebenfalls
+diesen EPSG-Code enthalten. Widersprüchliche Zuordnungen führen zum Abbruch.
 GeoPackage schreibt die lokale `srs_id` des Katalogs in den Geometrie-Header.
 Bei bestehenden Schemas von ili2gpkg 5.5.2 liest `interlis-db` auch Header
 mit dem EPSG-Code, sofern dieser Code im Katalog eindeutig der lokalen ID

@@ -459,7 +459,7 @@ final class DbSchemaReader {
             throw new DbException("Unexpected ATTRNAME.target for " + path);
         }
         requireColumns(db, table.name(), table.columns(), Map.of(column.name(), column.kind()));
-        return column.kind().geometry() ? db.geometryStorage(table.name(), column, settings.referenceEpsgHeader()) : column;
+        return column.kind().geometry() ? bindGeometry(db, table.name(), column, settings) : column;
     }
 
     private static SecondaryGeometry bindSecondaryGeometry(Database db, Column column, AttributeName mapping,
@@ -485,7 +485,29 @@ final class DbSchemaReader {
                 }
             }
         }
-        return new SecondaryGeometry(table, db.geometryStorage(table, column, settings.referenceEpsgHeader()));
+        return new SecondaryGeometry(table, bindGeometry(db, table, column, settings));
+    }
+
+    private static Column bindGeometry(Database db, String table, Column column, Settings settings) throws SQLException {
+        var stored = db.geometryStorage(table, column, settings.referenceEpsgHeader());
+        String names = db.gpkg() ? "lower(tablename) = ? AND lower(columnname) = ?" : "tablename = ? AND columnname = ?";
+        String sql = "SELECT setting FROM " + db.technicalTable(Ili2dbLayout.COLUMN_PROP)
+                + " WHERE " + names + " AND subtype IS NULL AND tag = ?";
+        try (var statement = db.connection().prepareStatement(sql)) {
+            statement.setString(1, key(db, table));
+            statement.setString(2, key(db, column.name()));
+            statement.setString(3, PREFIX + Ili2dbLayout.SRID_PROPERTY);
+            try (var rows = statement.executeQuery()) {
+                if (rows.next()) {
+                    String property = "COLUMN_PROP.srid for " + table + "." + column.name();
+                    int epsg = Ili2dbLayout.parseEpsgCode(rows.getString(1), property);
+                    if (epsg != column.epsgCode() || rows.next()) {
+                        throw new DbException("Inconsistent " + property + ": expected one EPSG:" + column.epsgCode());
+                    }
+                }
+            }
+        }
+        return stored;
     }
 
     private static void useColumn(Database db, CatalogTable table, AttributeName mapping, String path) {

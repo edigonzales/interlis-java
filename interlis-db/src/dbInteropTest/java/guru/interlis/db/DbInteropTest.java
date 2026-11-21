@@ -2202,9 +2202,11 @@ final class DbInteropTest {
             }
             try (var target = Database.openPostgres(cancelledDb.url, cancelledDb.schema, cancelledDb.user,
                     cancelledDb.password, true)) {
-                // The first execution checkpoint follows CREATE SCHEMA.
+                var checks = new AtomicInteger();
+                int srsChecks = plan.geometryEpsgCodes().size();
+                // Let the SRS catalog checks finish and cancel at the first checkpoint after CREATE SCHEMA.
                 assertThrows(OperationCancelledException.class,
-                        () -> SchemaSql.createPostgres(target, plan, false, () -> true));
+                        () -> SchemaSql.createPostgres(target, plan, false, () -> checks.incrementAndGet() > srsChecks));
                 assertEquals(cancelledDb.schema, scalar(target.connection(),
                         "select nspname from pg_namespace where nspname='" + cancelledDb.schema + "'"));
             }

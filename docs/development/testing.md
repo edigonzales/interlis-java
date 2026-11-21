@@ -107,6 +107,14 @@ mit Geometrie-Hilfstabellen prüfen sie den Referenzimport und reproduzieren
 den [Fehler des Referenzexports](../usage/database.md#referenzprofil)
 für dieses Layout.
 
+`*DbInteropTest.*Crs*` prüft Schema- und Modellstandards, Koordinatendomänen
+und Stützpunktdomänen. `*DbInteropTest.*MixedSrid*` prüft mehrere EPSG-Codes
+pro Objekt, die Kataloge beider Schemaerzeuger und räumliche Treffer nach
+`update`, `replace` und `delete`. Es prüft auch fehlerhafte Spaltenmetadaten
+und den Rollback eines erst beim zweiten Objekt fehlgeschlagenen Ersatzes.
+`*DbInteropTest.*LocalSrid*` prüft abweichende lokale GeoPackage-SRS-IDs
+und die Ablehnung nicht eindeutiger Katalogzuordnungen.
+
 Für `EXTERNAL`-Referenzattribute prüft die Suite frühere und spätere Ziele
 im selben Datensatz, den konkreten Zieltyp, die Datensatzisolierung und
 den Rollback bei fehlendem Ziel oder falscher BID. Sie liest auch einen
