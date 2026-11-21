@@ -6,10 +6,10 @@ MODEL DbXyz23 (en) AT "https://example.org/interlis/db" VERSION "1" =
       Position : DbXyz23.Position;
     END Marker;
     CLASS Track =
-      Trace : POLYLINE WITH (STRAIGHTS) VERTEX Position;
+      Trace : POLYLINE WITH (STRAIGHTS, ARCS) VERTEX Position;
     END Track;
     CLASS Plot =
-      Outline : SURFACE WITH (STRAIGHTS) VERTEX Position WITHOUT OVERLAPS > 0.001;
+      Outline : SURFACE WITH (STRAIGHTS, ARCS) VERTEX Position WITHOUT OVERLAPS > 0.001;
     END Plot;
     CLASS Parcel =
       Perimeter : AREA WITH (STRAIGHTS) VERTEX Position WITHOUT OVERLAPS > 0.001;

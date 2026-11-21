@@ -694,21 +694,19 @@ final class DbMapping {
         if (geometry.lineAttributes().isPresent() || geometry.lineForms().isEmpty() || geometry.vertexDomain().isEmpty()) {
             throw unsupported(feature);
         }
-        boolean arcs = false;
         for (var id : geometry.lineForms()) {
             var form = plan.symbol(new SymbolRef(plan.snapshotId(), id)).known().orElseThrow();
             if (!(form.origin() instanceof Origin.PredefinedOrigin predefined)
                     || !(predefined.key().equals("INTERLIS.STRAIGHTS") || predefined.key().equals("INTERLIS.ARCS"))) {
                 throw unsupported(feature);
             }
-            arcs |= predefined.key().equals("INTERLIS.ARCS");
         }
         var domain = vertexDomain(plan, geometry);
         var type = plan.type(new TypeRef(plan.snapshotId(), domain.typeId())).known().orElseThrow();
         if (domain.generic() || !(type instanceof CoordinateType coordinates)
                 || coordinates.multiCoordinate()
                 || (coordinates.dimensions() != 2
-                        && !(coordinates.dimensions() == 3 && !kind.collection() && !arcs))) {
+                        && !(coordinates.dimensions() == 3 && !kind.collection()))) {
             throw unsupported(feature);
         }
         validateGeometryCrs(plan, coordinates, domain, geometryKind.name().toLowerCase(Locale.ROOT), path);

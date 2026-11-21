@@ -453,7 +453,6 @@ final class GeometryBinary {
                 throw new DbException("Expected a " + dimensions + "D WKB LINESTRING or CIRCULARSTRING component");
             }
             boolean circular = componentType == arcType;
-            if (circular && dimensions == 3) throw new DbException("XYZ circular arcs are unsupported");
             int count = readCount(data);
             if (count < 2) {
                 throw new DbException("A WKB curve component requires at least two vertices");
@@ -475,7 +474,10 @@ final class GeometryBinary {
 
             for (int point = 1; point < count; point += circular ? 2 : 1) {
                 if (circular) {
-                    var support = readCoordinate(data, dimensions);
+                    var support = readCoordinate(data, 2);
+                    if (dimensions == 3 && !Double.isNaN(data.getDouble())) {
+                        throw new DbException("An XYZ arc support position must have an undefined Z ordinate");
+                    }
                     segments.add(new Arc(support, readCoordinate(data, dimensions), Optional.empty()));
                 } else {
                     segments.add(new Straight(readCoordinate(data, dimensions)));
@@ -764,8 +766,9 @@ final class GeometryBinary {
             for (; index < end; index++) {
                 var segment = segments.get(index);
                 if (segment instanceof Arc arc) {
-                    if (dimensions == 3) throw new DbException("XYZ circular arcs are unsupported");
-                    writeCoordinate(data, arc.support(), dimensions);
+                    writeCoordinate(data, arc.support(), 2);
+                    // The INTERLIS intermediate position is XY, including on an XYZ arc.
+                    if (dimensions == 3) data.putDouble(Double.NaN);
                 }
                 componentStart = segment.end();
                 writeCoordinate(data, componentStart, dimensions);

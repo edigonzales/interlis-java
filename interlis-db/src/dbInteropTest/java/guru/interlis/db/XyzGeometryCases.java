@@ -9,8 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
@@ -72,7 +70,11 @@ final class XyzGeometryCases {
                         box(2600500, 1200500, 20, "21", "22", "23", "24"), "") + "</Perimeter>")
                 + object("Parcel", "east", "<Perimeter>" + surface(
                         box(2600520, 1200500, 20, "22", "32", "33", "23"), "") + "</Perimeter>");
-        Path input = delivery("xyz", markers + track + areas);
+        String start = position("2602360", "1202220", "100");
+        String arc = arc("2602240", "1202380", "340", "2602380", "1202360");
+        String curved = object("Track", "arc-track", "<Trace>" + line(start + arc) + "</Trace>")
+                + object("Plot", "arc-plot", "<Outline>" + surface(line(start + arc + start), "") + "</Outline>");
+        Path input = delivery("xyz", markers + track + areas + curved);
         reference.run(old, work.toString(), "--import", "--dataset", "xyz", "--importTid", "--importBid", input.toString());
         Path ownExport = work.resolve("xyz-native.xtf");
         assertCliSuccess(old, "export", model, "xyz", ownExport);
@@ -96,12 +98,20 @@ final class XyzGeometryCases {
 
     private void assertStorage(TestDatabase db, Connection sql) throws SQLException {
         String table = db.table("marker");
-        assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("plot") + " WHERE outline IS NOT NULL"));
+        assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("plot") + " WHERE outline IS NOT NULL"));
         assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("parcel") + " WHERE perimeter IS NOT NULL"));
         assertEquals("3", scalar(sql, "SELECT count(*) FROM " + table));
         assertEquals("1", scalar(sql, "SELECT count(*) FROM " + table + " WHERE aposition IS NULL"));
         assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("track") + " WHERE t_ili_tid='track-1'"));
+        String arcHit = db.postgis()
+                ? "SELECT count(*) FROM " + db.table("track")
+                        + " WHERE trace && ST_MakeEnvelope(2602399,1202300,2602399,1202300,2056)"
+                : "SELECT count(*) FROM rtree_track_trace WHERE minx<=2602399 AND maxx>=2602399"
+                        + " AND miny<=1202300 AND maxy>=1202300";
+        assertEquals("1", scalar(sql, arcHit));
         if (db.postgis()) {
+            assertTrue(scalar(sql, "SELECT ST_AsEWKT(trace) FROM " + db.table("track") + " WHERE t_ili_tid='arc-track'")
+                    .contains("2602380 1202360 NaN"));
             assertEquals("42.875", scalar(sql, "SELECT ST_Z(aposition) FROM " + table + " WHERE t_ili_tid='above'"));
             assertEquals("1", scalar(sql, "SELECT count(*) FROM " + table
                     + " WHERE aposition && ST_MakeEnvelope(2600000,1200000,2600001,1200001,2056)"));
@@ -115,29 +125,22 @@ final class XyzGeometryCases {
     private void assertTransfer(Path file) throws Exception {
         var basket = children(readDataSection(file, version)).getFirst();
         assertEquals("xyz-basket", id(basket, version, "bid"));
-        var markers = children(basket);
-        assertEquals(7, markers.size());
-        var heights = new ArrayList<BigDecimal>();
-        for (var marker : markers) {
-            String tid = id(marker, version, "tid");
-            switch (tid) {
-                case "track-1" -> assertHeights(marker, "Trace", "7.5", "-11.25", "12.875");
-                case "plot-1" -> assertHeights(marker, "Outline", "1", "2", "3", "4", "1", "11", "12", "13", "14", "11");
-                case "west" -> assertHeights(marker, "Perimeter", "21", "22", "23", "24", "21");
-                case "east" -> assertHeights(marker, "Perimeter", "22", "32", "33", "23", "22");
-                default -> { }
-            }
-            if (List.of("track-1", "plot-1", "west", "east").contains(tid)) continue;
-            var field = child(marker, "Position");
-            if (tid.equals("absent")) {
-                assertNull(field);
-            } else {
-                var coords = children(children(field).getFirst());
-                assertEquals(3, coords.size());
-                heights.add(new BigDecimal(coords.get(2).getTextContent()).stripTrailingZeros());
+        var objects = children(basket);
+        assertEquals(9, objects.size());
+        for (var object : objects) {
+            switch (id(object, version, "tid")) {
+                case "above" -> assertHeights(object, "Position", "42.875");
+                case "below" -> assertHeights(object, "Position", "-31.125");
+                case "absent" -> assertNull(child(object, "Position"));
+                case "track-1" -> assertHeights(object, "Trace", "7.5", "-11.25", "12.875");
+                case "plot-1" -> assertHeights(object, "Outline", "1", "2", "3", "4", "1", "11", "12", "13", "14", "11");
+                case "west" -> assertHeights(object, "Perimeter", "21", "22", "23", "24", "21");
+                case "east" -> assertHeights(object, "Perimeter", "22", "32", "33", "23", "22");
+                case "arc-track" -> assertHeights(object, "Trace", "100", "340");
+                case "arc-plot" -> assertHeights(object, "Outline", "100", "340", "100");
+                default -> throw new AssertionError("Unexpected object " + id(object, version, "tid"));
             }
         }
-        assertEquals(List.of(new BigDecimal("-31.125"), new BigDecimal("42.875")), heights.stream().sorted().toList());
     }
 
     private void assertHeights(org.w3c.dom.Element object, String field, String... expected) {
@@ -146,6 +149,15 @@ final class XyzGeometryCases {
         for (int i = 0; i < expected.length; i++) {
             assertEquals(0, new BigDecimal(expected[i]).compareTo(new BigDecimal(elements.item(i).getTextContent())), field);
         }
+    }
+
+    private String arc(String x, String y, String z, String supportX, String supportY) {
+        if (version == 23) {
+            return "<ARC><C1>%s</C1><C2>%s</C2><C3>%s</C3><A1>%s</A1><A2>%s</A2></ARC>"
+                    .formatted(x, y, z, supportX, supportY);
+        }
+        return "<g:arc><g:c1>%s</g:c1><g:c2>%s</g:c2><g:c3>%s</g:c3><g:a1>%s</g:a1><g:a2>%s</g:a2></g:arc>"
+                .formatted(x, y, z, supportX, supportY);
     }
 
     private String box(int x, int y, int width, String first, String second, String third, String fourth) {

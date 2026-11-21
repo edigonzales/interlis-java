@@ -139,9 +139,8 @@ EPSG:2056 zulässig. XYZ-Punkte führen die dritte Ordinate im SQL-Wert
 und die exakten Modellgrenzen als `c3Min` und `c3Max` in den Spaltenmetadaten.
 PostGIS verwendet `POINTZ`, GeoPackage das Z-Bit der ili2gpkg-Kodierung.
 Die Raumindizes arbeiten mit der XY-Hülle.
-Die Geometriespalte speichert einen XY- oder XYZ-Punkt, eine XY- oder gerade
-XYZ-`POLYLINE` oder eine
-XY-Fläche oder gerade XYZ-Fläche (`SURFACE` oder `AREA`) mit einem Aussenring und
+Die Geometriespalte speichert einen XY- oder XYZ-Punkt, eine XY- oder
+XYZ-`POLYLINE` oder eine XY- oder XYZ-Fläche (`SURFACE` oder `AREA`) mit einem Aussenring und
 optionalen Innenringen. Linien und Flächenränder unterstützen
 `WITH (STRAIGHTS)`, `WITH (ARCS)` und
 `WITH (STRAIGHTS, ARCS)`. Wie bei ili2db 5.5.2 liegen Linien in
@@ -149,7 +148,9 @@ optionalen Innenringen. Linien und Flächenränder unterstützen
 Die Spaltenmetadaten weisen den Modelltyp `SURFACE` oder `AREA` aus.
 Jeder Ring wird als `COMPOUNDCURVE` geschrieben. Aufeinanderfolgende
 Geraden bilden eine `LINESTRING`-Komponente, aufeinanderfolgende Bögen
-eine `CIRCULARSTRING`-Komponente.
+eine `CIRCULARSTRING`-Komponente. Bei einem XYZ-Bogen tragen Anfang und
+Ende Z. Die XY-Zwischenposition wird wie in ili2db mit einem
+`NaN`-Platzhalter für Z gespeichert.
 
 In XTF 2.4 FULL speichern die folgenden Spaltentypen alle Teile einer
 Geometrie in Lieferreihenfolge und derselben Objektzeile. `typeKind`
