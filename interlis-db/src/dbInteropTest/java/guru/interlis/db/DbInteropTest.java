@@ -139,6 +139,8 @@ final class DbInteropTest {
         cases.updateStructures(new TestDatabase(postgres, "update_struct_native"), false);
         cases.updateLocalReferences(new TestDatabase(postgres, "update_local_reference"), true);
         cases.updateLocalReferences(new TestDatabase(postgres, "update_local_native"), false);
+        cases.updateAssociations(new TestDatabase(postgres, "update_link_reference"), true);
+        cases.updateAssociations(new TestDatabase(postgres, "update_link_native"), false);
     }
 
     private void assertWidePolymorphicProjection() throws Exception {

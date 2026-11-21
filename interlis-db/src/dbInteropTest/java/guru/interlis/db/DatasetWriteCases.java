@@ -350,6 +350,89 @@ final class DatasetWriteCases {
         }
     }
 
+    void updateAssociations(TestDatabase db, boolean referenceSchema) throws Exception {
+        String model = "DbMutRoles" + version;
+        schema(db, referenceSchema, model);
+        String proofId = identity("proof", true);
+        String lost = identity("proof-removed", true);
+        Path initial = delivery("roles-before", model, new Basket("roles",
+                object(model, "RoleMarker", "first", "<Label>first</Label>" + review(model, "hub-a", "old"))
+                + object(model, "RoleMarker", "second", "<Label>second</Label>" + review(model, "hub-a", "remove"))
+                + object(model, "RoleHub", "hub-a", "<Label>a</Label>") + object(model, "RoleHub", "hub-b", "<Label>b</Label>")
+                + visit(model, "first", "hub-a", "7") + visit(model, "second", "hub-b", "4")
+                + proof(model, proofId, "first", "hub-a", "old") + proof(model, lost, "second", "hub-b", "remove")));
+        Path changed = delivery("roles-after", model, new Basket("roles",
+                proof(model, proofId, "second", "hub-b", "updated") + visit(model, "second", "hub-b", "17")
+                + object(model, "RoleMarker", "first", "<Label>first</Label>" + review(model, "hub-b", "checked"))
+                + object(model, "RoleMarker", "second", "<Label>second</Label>")
+                + object(model, "RoleHub", "hub-a", "<Label>a</Label>") + object(model, "RoleHub", "hub-b", "<Label>b</Label>")));
+        seed(db, referenceSchema, model, "roles", initial);
+
+        try (var sql = db.connect()) {
+            var markerRows = rows(db, sql, "rolemarker");
+            var hubRows = rows(db, sql, "rolehub");
+            var before = rows(db, sql, "roleproof");
+            var previousVisits = strings(sql, "SELECT t_id FROM " + db.table("rolevisit"));
+            assertEquals(2, previousVisits.size());
+            Path output = mutate(db, referenceSchema, "update", model, "roles", changed);
+            assertEquals(markerRows, rows(db, sql, "rolemarker"));
+            assertEquals(hubRows, rows(db, sql, "rolehub"));
+            var proofs = rows(db, sql, "roleproof");
+            var proofKey = key("roles", "roles", proofId);
+            assertEquals(Map.of(proofKey, before.get(proofKey).withLabel("updated")), proofs);
+
+            long first = markerRows.get(key("roles", "roles", "first")).object();
+            long second = markerRows.get(key("roles", "roles", "second")).object();
+            long hub = hubRows.get(key("roles", "roles", "hub-b")).object();
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("roleproof")
+                    + " WHERE proofmarker=" + second + " AND proofhub=" + hub));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("rolereview")));
+            assertEquals("checked", scalar(sql, "SELECT memo FROM " + db.table("rolereview")
+                    + " WHERE reviewowner=" + first + " AND reviewedat=" + hub));
+            String positions = referenceSchema ? " = 17" : " IS NULL";
+            String visitId = scalar(sql, "SELECT t_id FROM " + db.table("rolevisit")
+                    + " WHERE markervisit=" + second + " AND hubvisit=" + hub + " AND markervisit_t_seq" + positions);
+            assertNotNull(visitId);
+            assertFalse(previousVisits.contains(visitId));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("rolevisit")));
+
+            var objects = children(children(readDataSection(output, version)).getFirst());
+            var kept = objects.stream().filter(o -> proofId.equals(id(o, version, "tid"))).findFirst().orElseThrow();
+            assertEquals("second", id(child(kept, "ProofMarker"), version, "ref"));
+            assertEquals("hub-b", id(child(kept, "ProofHub"), version, "ref"));
+            assertVisitPosition(output, "");
+            if (referenceSchema) {
+                // The standalone ORDERED positions are omitted by the 5.5.2 reference exporter.
+                Path nativeOutput = work.resolve("ordered-update-native.xtf");
+                assertCliSuccess(db, "export", model, "roles", nativeOutput);
+                assertVisitPosition(nativeOutput, "17");
+            }
+        }
+    }
+
+    private void assertVisitPosition(Path output, String position) throws Exception {
+        var visit = children(children(readDataSection(output, version)).getFirst()).stream()
+                .filter(o -> o.getLocalName().endsWith("RoleVisit")).findFirst().orElseThrow();
+        assertEquals(position, id(child(visit, "MarkerVisit"), version, "order_pos"));
+    }
+
+    private String review(String model, String hub, String memo) {
+        String ref = version == 23 ? "REF" : "i:ref";
+        return "<ReviewedAt " + ref + "=\"" + hub + "\">"
+                + structure(model, "RoleReview", "<Memo>" + memo + "</Memo>") + "</ReviewedAt>";
+    }
+
+    private String visit(String model, String marker, String hub, String position) {
+        String ordered = version == 23 ? "<MarkerVisit REF=\"%s\" ORDER_POS=\"%s\"/>".formatted(marker, position)
+                : "<MarkerVisit i:ref=\"%s\" i:order_pos=\"%s\"/>".formatted(marker, position);
+        return structure(model, "RoleVisit", ordered + reference("HubVisit", hub, ""));
+    }
+
+    private String proof(String model, String tid, String marker, String hub, String label) {
+        return object(model, "RoleProof", tid, reference("ProofMarker", marker, "") + reference("ProofHub", hub, "")
+                + "<Label>" + label + "</Label>");
+    }
+
     private String tree(String model, String one, List<String> chain, List<String> flags) {
         return "<Detail>" + structure(model, "OuterValue", leaves(model, "One", List.of(one))
                 + leaves(model, "Chain", chain) + leaves(model, "Flags", flags)) + "</Detail>";

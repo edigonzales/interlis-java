@@ -1,0 +1,26 @@
+INTERLIS 2.4;
+MODEL DbMutRoles24 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  TOPIC Data =
+    CLASS RoleMarker =
+      Label : TEXT*40;
+    END RoleMarker;
+    CLASS RoleHub =
+      Label : TEXT*40;
+    END RoleHub;
+    ASSOCIATION RoleReview =
+      ReviewOwner -- {0..*} RoleMarker;
+      ReviewedAt -- {0..1} RoleHub;
+      Memo : TEXT*20;
+    END RoleReview;
+    ASSOCIATION RoleVisit =
+      MarkerVisit (ORDERED) -- {0..*} RoleMarker;
+      HubVisit -- {0..*} RoleHub;
+    END RoleVisit;
+    ASSOCIATION RoleProof (OID) =
+      OID AS INTERLIS.UUIDOID;
+      ProofMarker -- {0..*} RoleMarker;
+      ProofHub -- {0..*} RoleHub;
+      Label : TEXT*20;
+    END RoleProof;
+  END Data;
+END DbMutRoles24.

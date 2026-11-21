@@ -43,13 +43,9 @@ final class DbDatasetWrite {
 
     static void checkUpdateProfile(DbMapping mapping) {
         for (var table : mapping.tables()) {
-            if ((table.object().kind() != SymbolKind.CLASS && table.object().kind() != SymbolKind.STRUCTURE)
-                    || table.columns().stream().anyMatch(DbMapping.Column::external)) {
-                throw new DbException("Unsupported mapping for update at " + table.object().name().declared());
+            if (table.columns().stream().anyMatch(DbMapping.Column::external)) {
+                throw new DbException("Unsupported external references for update at " + table.object().name().declared());
             }
-        }
-        if (!mapping.associations().isEmpty()) {
-            throw new DbException("Associations are outside the update profile");
         }
     }
 
@@ -138,7 +134,9 @@ final class DbDatasetWrite {
     static void clearBasketPayload(Database db, DbMapping mapping, long basket,
                                    CancellationToken token) throws SQLException {
         for (var table : mapping.tables().reversed()) {
-            if (table.object().kind() != SymbolKind.STRUCTURE) continue;
+            boolean anonymousLink = table.object().kind() == SymbolKind.ASSOCIATION
+                    && !mapping.rootTable(table.object().symbol()).hasTidColumn();
+            if (table.object().kind() != SymbolKind.STRUCTURE && !anonymousLink) continue;
             token.throwIfCancellationRequested();
             delete(db, "DELETE FROM " + db.table(table.name()) + " WHERE " + T_BASKET + " = ?", basket);
         }

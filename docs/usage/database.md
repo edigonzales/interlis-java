@@ -85,6 +85,11 @@ Strukturzeilen des gelieferten Baskets werden aus den neuen optionalen Werten,
 Listen und Bags aufgebaut. Die Eigentümer behalten ihre internen IDs.
 Lokale Referenzattribute werden gegen den gelieferten neuen Basketbestand
 aufgelöst. Vorwärtsreferenzen können dadurch auf neu gelieferte Objekte zeigen.
+Eingebettete Rollen und anonyme Linkzeilen geben den neuen Basketinhalt wieder,
+einschliesslich eigener Attribute und `ORDERED`-Positionen. Eigenständige
+UUID-Links behalten ihre interne ID. Die bereits beschriebene Behandlung
+von Positionswerten durch ili2db 5.5.2 gilt auch beim Werkzeugwechsel mit
+`update`.
 
 ## Referenzprofil
 
