@@ -38,6 +38,7 @@
   Vertragsversion betroffen ist. Erhöhe sie bei einem inkompatiblen Bruch im
   selben PR. Begründe bei kompatiblen Änderungen die Versionsentscheidung.
   Die Prüfliste steht in der [Freigabeprüfung](docs/development/release.md#vertragsversionen).
+- Für die Entwicklung des INTERLIS Object Explorers gelten verbindlich die Gestaltungsregeln in `docs/design/explorer-gui.md`. Fachliche Modellsemantik und effektive Attributreihenfolge haben Vorrang vor gestalterischer Umgruppierung. Die Oberfläche muss einfach, grosszügig und visuell zurückhaltend sein. Verschachtelte Rahmen, dekorative Trennpunkte und unnötige GUI-Abstraktionen sind zu vermeiden. Offene Gestaltungsfragen dürfen nicht eigenmächtig durch zusätzliche Architektur entschieden werden.
 
 Der Core besitzt die Diagrammprojektion und ihren Wire-Vertrag. Die
 VS-Code-Extension besitzt Sprotty, ELK, View-State und Bildexport. Fachliche
