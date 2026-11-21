@@ -189,7 +189,7 @@ final class Database implements AutoCloseable {
                     throw unsupportedGeometry(table, column);
                 }
                 if (importing && GeoPackageRtree.check(connection, table, column.name())) {
-                    if (column.kind() != Kind.POINT) {
+                    if (column.kind().collection()) {
                         throw new DbException("Unsupported GeoPackage RTree geometry at " + table + "." + column.name());
                     }
                     if (indexedGeometry.isEmpty()) GeoPackageRtree.register(connection);
@@ -243,7 +243,9 @@ final class Database implements AutoCloseable {
     int bindGeometry(PreparedStatement statement, int index, Column column, TransferGeometry value) throws SQLException {
         byte[] bytes;
         try {
-            bytes = value == null ? null : GeometryBinary.encode(value, gpkg(), column.srsId(), column.kind());
+            bytes = value == null ? null : indexedGeometry.contains(column.slot().symbol())
+                    ? GeometryBinary.encodeIndexedGeoPackage(value, column.srsId(), column.kind())
+                    : GeometryBinary.encode(value, gpkg(), column.srsId(), column.kind());
         } catch (DbException failure) {
             throw invalidGeometry(column, failure);
         }

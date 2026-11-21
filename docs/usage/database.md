@@ -107,11 +107,11 @@ weiter.
 
 ## Bestehende Raumindizes
 
-GeoPackage-Dateien mit einem RTree für 2D-Punkte können mit `import`,
+GeoPackage-Dateien mit einem RTree für 2D-Punkte und gerade Linien und Flächen können mit `import`,
 `replace`, `update` und `delete` verwendet werden. Die registrierte virtuelle
 Tabelle und ihre Standardtrigger müssen zur gemappten Geometriespalte und
 zur internen ID passen. Die Trigger pflegen den Index in derselben Transaktion
-wie die Fachzeilen. Bei PostGIS pflegt PostgreSQL die vorhandenen GiST-Indizes.
+wie die Fachzeilen. Indizierte Geometrien erhalten eine XY-Hülle im GeoPackage-Header. Bei PostGIS pflegt PostgreSQL die vorhandenen GiST-Indizes.
 
 ## Referenzprofil
 

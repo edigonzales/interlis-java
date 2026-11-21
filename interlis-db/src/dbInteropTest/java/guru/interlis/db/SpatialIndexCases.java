@@ -106,6 +106,85 @@ final class SpatialIndexCases {
         }
     }
 
+    void straightGeometries(TestDatabase db) throws Exception {
+        String model = "DbSpatial" + version;
+        createReferenceSchema(db, model);
+        String line = object(model, "IndexedLine", "line", "<Trace>" + polyline(
+                coordinate("2601000.125", "1201000.375") + coordinate("2601020.250", "1201010.500")) + "</Trace>");
+        String shell = box("2601050.125", "2601080.250", "1201050.250", "1201080.500");
+        String hole = box("2601060.125", "2601065.250", "1201060.250", "1201065.500");
+        String plot = object(model, "IndexedPlot", "plot", "<Footprint>" + surface(shell, hole) + "</Footprint>");
+        String area = object(model, "IndexedArea", "area", "<Boundary>" + surface(
+                box("2601100.125", "2601120.250", "1201100.250", "1201120.500"), "") + "</Boundary>");
+        Path input = delivery("indexed-straight", model, "geometries", line + plot + area);
+        Path update = delivery("indexed-straight-update", model, "geometries",
+                line.replace("2601000.125", "2601200.125").replace("2601020.250", "2601220.250") + plot + area);
+        assertCliSuccess(db, "import", model, "straight", input);
+        try (var sql = db.connect()) {
+            assertIndex(db, sql, "indexedline", "trace");
+            assertIndex(db, sql, "indexedplot", "footprint");
+            assertIndex(db, sql, "indexedarea", "boundary");
+            assertSearch(db, sql, "indexedline", "trace", "2601005", "1201005", true);
+            assertSearch(db, sql, "indexedplot", "footprint", "2601062", "1201062", true);
+            assertSearch(db, sql, "indexedarea", "boundary", "2601110", "1201110", true);
+            assertGeoPackageHeader(db, sql, "indexedplot", "footprint");
+            assertGeoPackageHeader(db, sql, "indexedarea", "boundary");
+            Path exported = work.resolve("indexed-straight-reference.xtf");
+            reference.run(db, work.toString(), "--export", "--exportTid", "--dataset", "straight", exported.toString());
+            var objects = children(children(readDataSection(exported, version)).getFirst());
+            assertEquals(3, objects.size());
+            var surface = objects.stream().filter(o -> "plot".equals(id(o, version, "tid"))).findFirst().orElseThrow();
+            assertEquals(2, children(children(child(surface, "Footprint")).getFirst()).size());
+
+            runReference(db, "update", "straight", update);
+            assertSearch(db, sql, "indexedline", "trace", "2601005", "1201005", false);
+            assertSearch(db, sql, "indexedline", "trace", "2601205", "1201005", true);
+            Path nativeOutput = work.resolve("indexed-straight-native.xtf");
+            assertCliSuccess(db, "export", model, "straight", nativeOutput);
+            assertEquals(3, children(children(readDataSection(nativeOutput, version)).getFirst()).size());
+        }
+    }
+
+    private String box(String xmin, String xmax, String ymin, String ymax) {
+        return polyline(coordinate(xmin, ymin) + coordinate(xmax, ymin) + coordinate(xmax, ymax)
+                + coordinate(xmin, ymax) + coordinate(xmin, ymin));
+    }
+
+    private String surface(String shell, String hole) {
+        if (version == 23) return "<SURFACE><BOUNDARY>" + shell + "</BOUNDARY>"
+                + (hole.isEmpty() ? "" : "<BOUNDARY>" + hole + "</BOUNDARY>") + "</SURFACE>";
+        return "<g:surface><g:exterior>" + shell + "</g:exterior>"
+                + (hole.isEmpty() ? "" : "<g:interior>" + hole + "</g:interior>") + "</g:surface>";
+    }
+
+    private String coordinate(String x, String y) {
+        return version == 23 ? "<COORD><C1>%s</C1><C2>%s</C2></COORD>".formatted(x, y)
+                : "<g:coord><g:c1>%s</g:c1><g:c2>%s</g:c2></g:coord>".formatted(x, y);
+    }
+
+    private String polyline(String parts) {
+        String tag = version == 23 ? "POLYLINE" : "g:polyline";
+        return "<" + tag + ">" + parts + "</" + tag + ">";
+    }
+
+    private static void assertGeoPackageHeader(TestDatabase db, Connection sql, String table, String field) throws SQLException {
+        if (db.postgis()) return;
+        try (var statement = sql.createStatement(); var rows = statement.executeQuery("SELECT " + field + " FROM " + table)) {
+            assertTrue(rows.next());
+            assertEquals(1, (rows.getBytes(1)[3] >>> 1) & 7);
+        }
+    }
+
+    private static void assertSearch(TestDatabase db, Connection sql, String table, String field, String x, String y,
+                                     boolean expected) throws SQLException {
+        String query = db.postgis()
+                ? "SELECT count(*) FROM " + db.table(table) + " WHERE " + field
+                  + " && ST_MakeEnvelope(" + x + "," + y + "," + x + "," + y + ",2056)"
+                : "SELECT count(*) FROM rtree_" + table + "_" + field
+                  + " WHERE minx <= " + x + " AND maxx >= " + x + " AND miny <= " + y + " AND maxy >= " + y;
+        assertEquals(expected ? "1" : "0", scalar(sql, query), table + "." + field);
+    }
+
     private void createReferenceSchema(TestDatabase db, String model) throws Exception {
         Path ili = work.resolve(model + ".ili");
         if (Files.notExists(ili)) {
@@ -133,8 +212,12 @@ final class SpatialIndexCases {
         String geometry = x == null ? "" : version == 23
                 ? "<Center><COORD><C1>%s</C1><C2>1200000.375</C2></COORD></Center>".formatted(x)
                 : "<Center><g:coord><g:c1>%s</g:c1><g:c2>1200000.375</g:c2></g:coord></Center>".formatted(x);
-        return version == 23 ? "<%1$s.Data.%2$s TID=\"%3$s\">%4$s</%1$s.Data.%2$s>".formatted(model, type, tid, geometry)
-                : "<%1$s i:tid=\"%2$s\">%3$s</%1$s>".formatted(type, tid, geometry);
+        return object(model, type, tid, geometry);
+    }
+
+    private String object(String model, String type, String tid, String values) {
+        return version == 23 ? "<%1$s.Data.%2$s TID=\"%3$s\">%4$s</%1$s.Data.%2$s>".formatted(model, type, tid, values)
+                : "<%1$s i:tid=\"%2$s\">%3$s</%1$s>".formatted(type, tid, values);
     }
 
     private void assertPointXtf(Path path, String tid, String x) throws Exception {

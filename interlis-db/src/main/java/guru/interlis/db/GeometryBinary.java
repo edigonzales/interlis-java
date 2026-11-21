@@ -154,9 +154,22 @@ final class GeometryBinary {
     static Envelope indexEnvelope(byte[] bytes) {
         var data = ByteBuffer.wrap(bytes);
         var header = readGeoPackageHeader(data);
-        if (data.remaining() != POINT_WKB_SIZE || readType(data) != POINT) {
+        int type = readType(data.duplicate());
+        if (type != POINT) {
+            Kind kind = switch (type) {
+                case COMPOUNDCURVE -> Kind.POLYLINE;
+                case CURVEPOLYGON -> Kind.SURFACE;
+                default -> throw new DbException("Unsupported 2D WKB type for GeoPackage RTree: " + type);
+            };
+            if (header.empty() || data.remaining() < CURVE_HEADER_SIZE || bytes.length > maxGeoPackageSize(kind)) {
+                throw new DbException("Invalid GeoPackage RTree geometry size or flags");
+            }
+            return header.envelope() ? headerEnvelope(bytes) : envelope(decode(bytes, true, header.srsId(), kind));
+        }
+        if (data.remaining() != POINT_WKB_SIZE) {
             throw new DbException("Expected a 2D WKB POINT for GeoPackage RTree");
         }
+        readType(data);
         double x = data.getDouble();
         double y = data.getDouble();
         if (header.empty() && Double.isNaN(x) && Double.isNaN(y)) return null;
@@ -173,6 +186,63 @@ final class GeometryBinary {
     private static Envelope headerEnvelope(byte[] bytes) {
         var data = ByteBuffer.wrap(bytes, GPKG_HEADER_SIZE, XY_ENVELOPE_SIZE).order(byteOrder(bytes[3] & 1));
         return new Envelope(data.getDouble(), data.getDouble(), data.getDouble(), data.getDouble());
+    }
+
+    static byte[] encodeIndexedGeoPackage(TransferGeometry geometry, int srsId, Kind kind) {
+        byte[] bytes = encode(geometry, true, srsId, kind);
+        var bounds = envelope(geometry);
+        if ((bytes[3] & 2) != 0) return bytes;
+        var result = allocate(bytes.length - GPKG_HEADER_SIZE, true, srsId, true);
+        result.put(bytes, GPKG_HEADER_SIZE, bytes.length - GPKG_HEADER_SIZE);
+        result.position(GPKG_HEADER_SIZE);
+        result.putDouble(bounds.minX()).putDouble(bounds.maxX()).putDouble(bounds.minY()).putDouble(bounds.maxY());
+        return result.array();
+    }
+
+    private static Envelope envelope(TransferGeometry geometry) {
+        var bounds = new Bounds();
+        bounds.add(geometry);
+        return new Envelope(bounds.minX, bounds.maxX, bounds.minY, bounds.maxY);
+    }
+
+    private static final class Bounds {
+        private double minX = Double.POSITIVE_INFINITY;
+        private double maxX = Double.NEGATIVE_INFINITY;
+        private double minY = Double.POSITIVE_INFINITY;
+        private double maxY = Double.NEGATIVE_INFINITY;
+
+        void add(TransferGeometry geometry) {
+            switch (geometry) {
+                case Coordinate point -> addPoint(point);
+                case Polyline line -> line.parts().forEach(this::addPart);
+                case Surface surface -> {
+                    addRing(surface.shell());
+                    surface.holes().forEach(this::addRing);
+                }
+                default -> throw new DbException("Unsupported geometry for GeoPackage RTree");
+            }
+        }
+
+        private void addRing(Ring ring) {
+            ring.lines().forEach(this::add);
+        }
+
+        private void addPart(CurvePart part) {
+            addPoint(part.start());
+            for (var segment : part.segments()) {
+                if (segment instanceof Arc) throw new DbException("Unsupported circular arc for GeoPackage RTree");
+                addPoint(segment.end());
+            }
+        }
+
+        private void addPoint(Coordinate point) {
+            double x = point.ordinates().get(0).exactValue().doubleValue();
+            double y = point.ordinates().get(1).exactValue().doubleValue();
+            minX = Math.min(minX, x);
+            maxX = Math.max(maxX, x);
+            minY = Math.min(minY, y);
+            maxY = Math.max(maxY, y);
+        }
     }
 
     private static Coordinate readPoint(ByteBuffer data) {

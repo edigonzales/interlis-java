@@ -133,6 +133,7 @@ final class DbInteropTest {
     private void exchangeSpatial(int version, PostgreSQLContainer postgres) throws Exception {
         var cases = new SpatialIndexCases(work, version, new ReferenceTool(postgres != null));
         cases.points(new TestDatabase(postgres, "spatial_points"));
+        cases.straightGeometries(new TestDatabase(postgres, "spatial_straight"));
     }
 
     private void exchangeDelete(int version, PostgreSQLContainer postgres) throws Exception {
