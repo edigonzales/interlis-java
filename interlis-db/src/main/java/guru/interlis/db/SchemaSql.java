@@ -223,7 +223,7 @@ final class SchemaSql {
              var transformations = insert(connection, d, TRAFO, "iliname, tag, setting", 3);
              var tableProps = insert(connection, d, TABLE_PROP, "tablename, tag, setting", 3);
              var colProps = insert(connection, d, COLUMN_PROP, "tablename, subtype, columnname, tag, setting", 5)) {
-            writeSettings(settings, d.gpkg(), plan.splitGeometries(), plan.defaultEpsg());
+            writeSettings(settings, d.gpkg(), plan);
             if (createGeometryIndexes) row(settings, "ch.ehi.sqlgen.createGeomIndex", "True");
             for (var table : plan.mapping().tables()) {
                 token.throwIfCancellationRequested();
@@ -249,15 +249,17 @@ final class SchemaSql {
                 for (var column : table.columns()) {
                     token.throwIfCancellationRequested();
                     String target = column.target().map(plan.mapping()::table).map(DbMapping.Table::name).orElse(null);
-                    row(attributes, column.slot().name().declared().toString(), column.name(), table.name(), target);
+                    String path = Ili2dbLayout.geometryAttribute(column.slot().name().declared().toString(), column.epsgCode(), plan.multiSrs());
+                    row(attributes, path, column.name(), table.name(), target);
                 }
                 for (var secondary : table.secondaryGeometries()) {
                     var column = secondary.column();
                     String path = column.slot().name().declared().toString();
-                    row(classes, Ili2dbLayout.secondaryClass(path, name), secondary.table());
+                    String attribute = Ili2dbLayout.geometryAttribute(path, column.epsgCode(), plan.multiSrs());
+                    row(classes, Ili2dbLayout.secondaryClass(attribute, name), secondary.table());
                     row(transformations, Ili2dbLayout.secondaryTransformation(path, name, column.epsgCode()),
                             Ili2dbLayout.SECONDARY_TABLE_TAG, secondary.table());
-                    row(attributes, path, column.name(), secondary.table(), null);
+                    row(attributes, attribute, column.name(), secondary.table(), null);
                 }
                 for (var composition : plan.mapping().compositionsForChild(table.object().symbol())) {
                     token.throwIfCancellationRequested();
@@ -281,17 +283,18 @@ final class SchemaSql {
         }
     }
 
-    private static void writeSettings(PreparedStatement statement, boolean gpkg, boolean splitGeometries, int defaultEpsg) throws SQLException {
+    private static void writeSettings(PreparedStatement statement, boolean gpkg, SchemaPlan plan) throws SQLException {
         row(statement, PREFIX + "sender", SCHEMA_SENDER);
         row(statement, PREFIX + "BasketHandling", "readWrite");
         row(statement, PREFIX + "TidHandling", "property");
         row(statement, PREFIX + "SqlNull", "enable");
         row(statement, PREFIX + "defaultSrsAuthority", "EPSG");
-        row(statement, PREFIX + "defaultSrsCode", Integer.toString(defaultEpsg));
+        row(statement, PREFIX + "defaultSrsCode", Integer.toString(plan.defaultEpsg()));
         row(statement, PREFIX + "maxSqlNameLength", "60");
         row(statement, "ch.interlis.ili2c.ilidirs", "%ILI_FROM_DB");
-        if (splitGeometries || gpkg) {
-            row(statement, Ili2dbLayout.GEOMETRY_LAYOUT, splitGeometries
+        if (plan.multiSrs()) row(statement, Ili2dbLayout.USE_EPSG_IN_NAMES, "True");
+        if (plan.splitGeometries() || gpkg) {
+            row(statement, Ili2dbLayout.GEOMETRY_LAYOUT, plan.splitGeometries()
                     ? Ili2dbLayout.SINGLE_GEOMETRY : Ili2dbLayout.MULTIPLE_GEOMETRIES);
         }
         if (!gpkg) row(statement, PREFIX + "uuidDefaultValue", UUID_DEFAULT);

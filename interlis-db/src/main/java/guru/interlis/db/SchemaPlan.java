@@ -36,7 +36,7 @@ import static guru.interlis.db.DbMapping.metaText;
 /** Read and plan a new schema before opening a writable database. */
 record SchemaPlan(DbMapping mapping, String filename, String modelNames, String content,
                   List<ColumnProperty> columnProperties, Map<String, List<GeometryColumn>> geometryColumns,
-                  boolean splitGeometries, int defaultEpsg) {
+                  boolean splitGeometries, int defaultEpsg, boolean multiSrs) {
     record ColumnProperty(String table, String subtype, String column, String key, String value) { }
 
     /** A mapped geometry and its SQL catalog bounds, with null for an absent bound. */
@@ -50,6 +50,11 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
 
     static SchemaPlan read(String modelName, Path file, boolean gpkg, boolean splitGeometries,
                            int defaultEpsg, CancellationToken token) throws IOException {
+        return read(modelName, file, gpkg, splitGeometries, defaultEpsg, false, token);
+    }
+
+    static SchemaPlan read(String modelName, Path file, boolean gpkg, boolean splitGeometries,
+                           int defaultEpsg, boolean multiSrs, CancellationToken token) throws IOException {
         token.throwIfCancellationRequested();
         String filename = file.getFileName().toString();
         if (!filename.toLowerCase(Locale.ROOT).endsWith(".ili") || filename.codePointCount(0, filename.length()) > 250) {
@@ -69,7 +74,7 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
             throw new DbException("Model file exceeds the size limit");
         }
         var source = new SourceText(new SourceId(file.toUri().toString()), new SourceRevision(1), content);
-        var mapping = DbMapping.planNew(modelName, source, gpkg, splitGeometries, defaultEpsg, token);
+        var mapping = DbMapping.planNew(modelName, source, gpkg, splitGeometries, defaultEpsg, multiSrs, token);
         var model = (ModelSymbol) symbol(mapping, mapping.plan().rootModels().getFirst());
         var imports = model.imports().stream().map(ModelImport::importedModel).distinct().sorted().toList();
         String modelNames = imports.isEmpty() ? modelName : modelName + "{ " + String.join(" ", imports) + "}";
@@ -97,7 +102,7 @@ record SchemaPlan(DbMapping mapping, String filename, String modelNames, String 
             properties.add(new ColumnProperty(child.name(), null, composition.ownerColumn(),
                     Ili2dbLayout.PREFIX + "foreignKey", parent.name()));
         }
-        return new SchemaPlan(mapping, filename, modelNames, content, properties, geometries, splitGeometries, defaultEpsg);
+        return new SchemaPlan(mapping, filename, modelNames, content, properties, geometries, splitGeometries, defaultEpsg, multiSrs);
     }
 
     List<Integer> geometryEpsgCodes() {

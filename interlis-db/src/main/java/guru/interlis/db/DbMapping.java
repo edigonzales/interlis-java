@@ -308,6 +308,11 @@ final class DbMapping {
 
     static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, CancellationToken token) {
+        return planNew(modelName, source, gpkg, splitGeometries, defaultEpsg, false, token);
+    }
+
+    static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
+                             int defaultEpsg, boolean multiSrs, CancellationToken token) {
         TransferPlan plan = compile(modelName, source, "model file", token);
         var allocator = new SqlNames();
         var names = new HashMap<SymbolRef, String>();
@@ -363,14 +368,15 @@ final class DbMapping {
                     continue;
                 }
                 var binding = describeColumn(plan, object, attribute, attributeName, crs);
+                String storageName = multiSrs && binding.kind().geometry() ? attributeName + "_" + binding.epsgCode() : attributeName;
                 boolean split = splitGeometries && geometrySeen && binding.kind().geometry();
                 String owner = split ? allocator.geometryTable(modelName,
                         object.topic().flatMap(plan::topic).orElseThrow().name().declared().last(),
-                        object.name().declared().last(), attributeName) : name;
+                        object.name().declared().last(), storageName) : name;
                 if (split && reservedTable(owner, gpkg)) {
                     throw unsupported("geometry " + attribute.name().declared() + " maps to technical table " + owner);
                 }
-                String column = allocator.column(owner, attributeName);
+                String column = allocator.column(owner, storageName);
                 checkColumnName(attribute, column, object.kind() == SymbolKind.STRUCTURE, !split && discriminator, gpkg);
                 binding = binding.withName(column);
                 if (binding.kind().geometry()) {

@@ -150,6 +150,12 @@ ihrer eigenen SRS-ID und mit `--create-geom-index` eigene RTree-Trigger.
 Dieses optionale Profil weicht von der GeoPackage-Regel mit einer
 Geometriespalte pro Feature-Tabelle ab.
 
+Für Geometrien mit festem CRS erzeugt `schemaimport --multi-srs` die
+EPSG-suffigierten Spalten und Metadaten von ili2db `--multiSrs`. Ein
+Geometrieattribut mit EPSG:2056 erhält beispielsweise die Spalte
+`lage_2056`. Bei bestehenden Schemata liest der Transfer die tatsächlichen
+Namen aus den ili2db-Zuordnungen.
+
 Für neue Schemata setzt `schemaimport --default-epsg CODE` den
 Standard. Ohne Option gilt EPSG:2056. GeoPackage verwendet die vorhandenen
 EPSG-Definitionen aus dem Referenzprofil, darunter LV03 (21781) und

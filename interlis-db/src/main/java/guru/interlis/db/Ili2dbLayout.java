@@ -7,6 +7,7 @@ import java.util.Set;
 /** Technical identifiers and constants shared by the ili2db profile. */
 final class Ili2dbLayout {
     static final String PREFIX = "ch.ehi.ili2db.";
+    static final String USE_EPSG_IN_NAMES = PREFIX + "useEpsgInNames";
     static final String GEOMETRY_LAYOUT = PREFIX + "geomAttrPerTable";
     static final String SINGLE_GEOMETRY = "oneGeomAttrPerTable";
     static final String MULTIPLE_GEOMETRIES = "multipleGeomAttrPerTable";
@@ -59,6 +60,10 @@ final class Ili2dbLayout {
             MODEL_KEY.toLowerCase(Locale.ROOT), ATTRNAME_KEY.toLowerCase(Locale.ROOT));
 
     private Ili2dbLayout() { }
+
+    static String geometryAttribute(String attribute, int epsg, boolean multiSrs) {
+        return multiSrs && epsg != 0 ? attribute + ":" + epsg : attribute;
+    }
 
     static String secondaryClass(String attribute, String owner) {
         return attribute + "(" + owner + ")";

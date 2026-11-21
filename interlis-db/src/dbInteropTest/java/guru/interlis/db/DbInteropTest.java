@@ -203,6 +203,19 @@ final class DbInteropTest {
                 new TestDatabase(postgres, "mixed_wide_own"), false);
     }
 
+    @Test void geoPackageFixedMultiSrs23() throws Exception { exchangeFixedMultiSrs(23, null); }
+    @Test void geoPackageFixedMultiSrs24() throws Exception { exchangeFixedMultiSrs(24, null); }
+    @Test void postgisFixedMultiSrs23() throws Exception { exchangeWithPostgis(23, this::exchangeFixedMultiSrs); }
+    @Test void postgisFixedMultiSrs24() throws Exception { exchangeWithPostgis(24, this::exchangeFixedMultiSrs); }
+
+    private void exchangeFixedMultiSrs(int version, PostgreSQLContainer postgres) throws Exception {
+        var cases = new CrsCases(work, version, new ReferenceTool(postgres != null));
+        cases.fixedMultiSrs(new TestDatabase(postgres, "suffix_split_reference"),
+                new TestDatabase(postgres, "suffix_split_own"), true);
+        cases.fixedMultiSrs(new TestDatabase(postgres, "suffix_wide_reference"),
+                new TestDatabase(postgres, "suffix_wide_own"), false);
+    }
+
     @Test void geoPackageLocalSrid23() throws Exception { exchangeLocalSrid(23, null); }
     @Test void geoPackageLocalSrid24() throws Exception { exchangeLocalSrid(24, null); }
     @Test void postgisLocalSrid23() throws Exception { exchangeWithPostgis(23, this::exchangeLocalSrid); }

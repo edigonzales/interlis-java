@@ -32,7 +32,7 @@ public final class Main {
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
                    interlis-db delete --model NAME --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME)
-                   interlis-db schemaimport --model NAME [--default-epsg CODE] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
+                   interlis-db schemaimport --model NAME [--default-epsg CODE] [--multi-srs] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.
             """;
@@ -89,7 +89,7 @@ public final class Main {
     private static void createSchema(Options options, String password, CancellationToken cancellation)
             throws IOException, SQLException {
         var plan = SchemaPlan.read(options.model(), options.file(), options.gpkg() != null,
-                options.splitGeometries(), options.defaultEpsg(), cancellation);
+                options.splitGeometries(), options.defaultEpsg(), options.multiSrs(), cancellation);
         cancellation.throwIfCancellationRequested();
         if (options.gpkg() != null) {
             GeoPackageSchema.create(options.gpkg(), plan, options.createGeometryIndexes(), cancellation);
@@ -159,7 +159,7 @@ public final class Main {
 
     private record Options(Command command, String model, String dataset, Path file, Path gpkg,
                            String pgUrl, String schema, String user, boolean createGeometryIndexes,
-                           boolean splitGeometries, int defaultEpsg) {
+                           boolean splitGeometries, int defaultEpsg, boolean multiSrs) {
         private static final Set<String> NAMES = Set.of("--model", "--dataset", "--gpkg", "--pg-url", "--schema", "--user",
                 "--default-epsg");
 
@@ -179,7 +179,7 @@ public final class Main {
             for (int i = 1; i < args.length; i++) {
                 String arg = args[i];
                 if (arg.equals("--create-geom-index") || arg.equals("--one-geom-per-table")
-                        || arg.equals("--gpkg-multi-geom-per-table")) {
+                        || arg.equals("--gpkg-multi-geom-per-table") || arg.equals("--multi-srs")) {
                     if (command != Command.SCHEMAIMPORT) {
                         throw new IllegalArgumentException(arg + " is only valid with schemaimport");
                     }
@@ -242,7 +242,7 @@ public final class Main {
             }
             return new Options(command, model, dataset, file, gpkg, pgUrl, schema, user,
                     schemaFlags.contains("--create-geom-index"),
-                    oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg);
+                    oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg, schemaFlags.contains("--multi-srs"));
         }
 
         void checkPaths() throws IOException {

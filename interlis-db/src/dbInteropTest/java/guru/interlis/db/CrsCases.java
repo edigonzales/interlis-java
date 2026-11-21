@@ -221,6 +221,40 @@ final class CrsCases {
         }
     }
 
+    void fixedMultiSrs(TestDatabase old, TestDatabase own, boolean split) throws Exception {
+        String model = "MixedSrid" + version;
+        Path ili = fixture(model);
+        var referenceFlags = new ArrayList<>(List.of("--multiSrs"));
+        var nativeFlags = new ArrayList<>(List.of("--multi-srs"));
+        if (split && old.postgis()) {
+            referenceFlags.add("--oneGeomPerTable");
+            nativeFlags.add("--one-geom-per-table");
+        } else if (!split && !old.postgis()) {
+            referenceFlags.add("--gpkgMultiGeomPerTable");
+            nativeFlags.add("--gpkg-multi-geom-per-table");
+        }
+        createReference(old, ili, 2056, referenceFlags.toArray(String[]::new));
+        createOwn(own, model, ili, nativeFlags.toArray(String[]::new));
+        assertCatalogs(old, own);
+        mixedObjectExchange(old, model, split, true);
+        mixedObjectExchange(own, model, split, true);
+
+        String table = old.table("asset");
+        try (var sql = old.connect()) {
+            execute(sql, "ALTER TABLE " + table + " RENAME COLUMN center_2056 TO renamed_center");
+            execute(sql, "UPDATE " + old.table("t_ili2db_attrname")
+                    + " SET sqlname='renamed_center' WHERE sqlname='center_2056'");
+            execute(sql, "UPDATE " + old.table("t_ili2db_column_prop")
+                    + " SET columnname='renamed_center' WHERE columnname='center_2056'");
+            if (!old.postgis()) {
+                execute(sql, "UPDATE gpkg_geometry_columns SET column_name='renamed_center' WHERE table_name='asset' AND column_name='center_2056'");
+            }
+        }
+        Path renamed = work.resolve(old.schema() + "-renamed.xtf");
+        assertCliSuccess(old, "export", model, "legacy", renamed);
+        assertMixed(object(basket(renamed, "legacy-mixed"), "legacy-mixed"), "2600001.625", true);
+    }
+
     void mixedSrid(TestDatabase old, TestDatabase own, boolean split) throws Exception {
         String model = "MixedSrid" + version;
         Path ili = fixture(model);
@@ -235,8 +269,8 @@ final class CrsCases {
             createOwn(own, model, ili, "--create-geom-index");
         }
         assertCatalogs(old, own);
-        mixedObjectExchange(old, model, split);
-        mixedObjectExchange(own, model, split);
+        mixedObjectExchange(old, model, split, false);
+        mixedObjectExchange(own, model, split, false);
 
         if (split) {
             String table = own.table("t_ili2db_trafo");
@@ -385,18 +419,19 @@ final class CrsCases {
                 + " AND maxx >= " + x + " AND miny <= " + y + " AND maxy >= " + y);
     }
 
-    private void mixedObjectExchange(TestDatabase db, String model, boolean split) throws Exception {
+    private void mixedObjectExchange(TestDatabase db, String model, boolean split, boolean multiSrs) throws Exception {
         mixedExchange(db, model, "mixed", tid -> mixedObject(model, tid, "2600001.625", true),
                 (output, tid) -> assertMixed(object(basket(output, tid), tid), "2600001.625", true));
         try (var sql = db.connect()) {
             for (String tid : List.of("legacy-mixed", "own-mixed")) {
-                assertStoredEpsg(db, sql, "asset", "center", tid, 2056);
+                assertStoredEpsg(db, sql, "asset", multiSrs ? "center_2056" : "center", tid, 2056);
                 for (String field : List.of("oldposition", "geoposition")) {
-                    String table = split ? "asset_" + field : "asset";
+                    int epsg = field.equals("oldposition") ? 21781 : 4326;
+                    String column = multiSrs ? field + "_" + epsg : field;
+                    String table = split ? "asset_" + column : "asset";
                     String where = " WHERE t_id = (SELECT t_id FROM " + db.table("asset")
                             + " WHERE t_ili_tid='" + tid + "')";
-                    assertStoredSrid(db, sql, " FROM " + db.table(table) + where, field,
-                            field.equals("oldposition") ? 21781 : 4326);
+                    assertStoredSrid(db, sql, " FROM " + db.table(table) + where, column, epsg);
                 }
             }
         }

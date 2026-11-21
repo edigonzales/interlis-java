@@ -60,7 +60,7 @@ import static guru.interlis.db.Ili2dbLayout.foldedName;
 final class DbSchemaReader {
     private record StoredModel(LanguageVersion version, String content) { }
     private record AttributeName(String name, String owner, String target) { }
-    private record Settings(boolean splitGeometries, CrsDefaults crs, boolean referenceEpsgHeader) { }
+    private record Settings(boolean splitGeometries, CrsDefaults crs, boolean referenceEpsgHeader, boolean multiSrs) { }
 
     private record Transformations(Map<String, String> classes, Map<String, String> secondary) { }
 
@@ -143,19 +143,25 @@ final class DbSchemaReader {
             }
             for (var attr : DbMapping.attributes(object)) {
                 String path = attr.name().declared().toString();
-                var mapping = takeAttributeName(attrNames, path);
-                var composition = DbMapping.describeComposition(plan, object, attr, mapping.name());
+                var ordinary = attrNames.get(path);
+                var composition = DbMapping.describeComposition(plan, object, attr, ordinary == null ? path : ordinary.name());
                 if (composition.isPresent()) {
+                    var mapping = takeAttributeName(attrNames, path);
                     var binding = composition.orElseThrow();
                     var child = catalog.get(binding.childRoot());
                     useColumn(db, child, mapping, path);
                     requireTarget(db, parent.name(), mapping, path);
                     requireColumns(db, child.name(), child.columns(), Map.of(binding.ownerColumn(), Kind.REFERENCE));
                     compositions.add(binding);
-                } else if (settings.splitGeometries() && !key(db, parent.name()).equals(key(db, mapping.owner()))) {
-                    var column = DbMapping.describeColumn(plan, object, attr, mapping.name(), settings.crs());
+                    continue;
+                }
+                var column = DbMapping.describeColumn(plan, object, attr, attr.name().declared().last(), settings.crs());
+                String attribute = Ili2dbLayout.geometryAttribute(path, column.epsgCode(), settings.multiSrs());
+                var mapping = takeAttributeName(attrNames, attribute);
+                column = column.withName(mapping.name());
+                if (settings.splitGeometries() && !key(db, parent.name()).equals(key(db, mapping.owner()))) {
                     String owner = object.name().declared().toString();
-                    var table = classNames.remove(Ili2dbLayout.secondaryClass(path, owner));
+                    var table = classNames.remove(Ili2dbLayout.secondaryClass(attribute, owner));
                     var transformation = transformations.secondary()
                             .remove(Ili2dbLayout.secondaryTransformation(path, owner, column.epsgCode()));
                     if (table == null || transformation == null || !key(db, table).equals(key(db, transformation))
@@ -165,7 +171,7 @@ final class DbSchemaReader {
                     }
                     secondary.add(bindSecondaryGeometry(db, column, mapping, parent.name(), table, path, settings));
                 } else {
-                    columns.add(bindColumn(db, plan, object, parent, names, attr, mapping, path, settings));
+                    columns.add(bindColumn(db, parent, names, column, mapping, path, settings));
                 }
             }
             for (var association : DbMapping.associationsForOwner(associations, object.symbol())) {
@@ -287,15 +293,23 @@ final class DbSchemaReader {
         if ("multiTableWithId".equals(settings.get(PREFIX + "createEnumDefs"))) {
             throw unsupported("enumerations stored as SQL IDs");
         }
+        if (settings.containsKey(PREFIX + "srsModelAssignment")) {
+            throw unsupported("SETTINGS.srsModelAssignment");
+        }
+        String epsgNames = settings.get(Ili2dbLayout.USE_EPSG_IN_NAMES);
+        if (epsgNames != null && !List.of("True", "False").contains(epsgNames)) {
+            throw unsupported("SETTINGS.useEpsgInNames=" + epsgNames);
+        }
+        boolean multiSrs = "True".equals(epsgNames);
         String geometryLayout = settings.get(Ili2dbLayout.GEOMETRY_LAYOUT);
         boolean referenceEpsgHeader = db.gpkg() && isSender(sender, "ili2gpkg-5.5.2");
         if (Ili2dbLayout.MULTIPLE_GEOMETRIES.equals(geometryLayout)) {
-            return new Settings(false, crs, referenceEpsgHeader);
+            return new Settings(false, crs, referenceEpsgHeader, multiSrs);
         }
         if (geometryLayout != null && !Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout)) {
             throw unsupported("SETTINGS.geomAttrPerTable=" + geometryLayout);
         }
-        return new Settings(db.gpkg() || Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout), crs, referenceEpsgHeader);
+        return new Settings(db.gpkg() || Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout), crs, referenceEpsgHeader, multiSrs);
     }
 
     private static int modelEpsg(String assignments, String modelName) {
@@ -447,12 +461,11 @@ final class DbSchemaReader {
         }
     }
 
-    private static Column bindColumn(Database db, TransferPlan plan, ObjectDescriptor object, CatalogTable table,
-                                     Map<SymbolRef, String> tables, AttributeSlot attr, AttributeName mapping,
+    private static Column bindColumn(Database db, CatalogTable table,
+                                     Map<SymbolRef, String> tables, Column column, AttributeName mapping,
                                      String path, Settings settings)
             throws SQLException {
         useColumn(db, table, mapping, path);
-        var column = DbMapping.describeColumn(plan, object, attr, mapping.name(), settings.crs());
         if (column.target().isPresent()) {
             requireTarget(db, tables.get(column.target().orElseThrow()), mapping, path);
         } else if (mapping.target() != null) {
