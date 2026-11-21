@@ -44,7 +44,7 @@ final class DbDatasetWrite {
     static void checkUpdateProfile(DbMapping mapping) {
         for (var table : mapping.tables()) {
             if ((table.object().kind() != SymbolKind.CLASS && table.object().kind() != SymbolKind.STRUCTURE)
-                    || table.columns().stream().anyMatch(column -> column.kind() == DbMapping.Kind.REFERENCE)) {
+                    || table.columns().stream().anyMatch(DbMapping.Column::external)) {
                 throw new DbException("Unsupported mapping for update at " + table.object().name().declared());
             }
         }

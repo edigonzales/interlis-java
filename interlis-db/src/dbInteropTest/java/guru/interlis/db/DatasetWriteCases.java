@@ -305,6 +305,51 @@ final class DatasetWriteCases {
         }
     }
 
+    void updateLocalReferences(TestDatabase db, boolean referenceSchema) throws Exception {
+        String model = "DbMutLocal" + version;
+        schema(db, referenceSchema, model);
+        String originalTarget = object(model, "MutationTarget", "former", "<Label>former</Label>");
+        Path original = delivery("local-before", model, new Basket("local",
+                originalTarget + recordWithReference(model, "record", "before", "former", "")
+                + recordWithReference(model, "clear", "clear", "former", "")));
+        String owner = recordWithReference(model, "record", "now", "fresh", "");
+        String cleared = object(model, "MutationRecord", "clear", "<Label>empty</Label><Detail>"
+                + structure(model, "MutationLink", "") + "</Detail>");
+        Path changed = delivery("local-after", model, new Basket("local", owner + cleared
+                + object(model, "MutationTarget", "fresh", "<Label>fresh</Label>")));
+        seed(db, referenceSchema, model, "local", original);
+
+        try (var sql = db.connect()) {
+            var before = rows(db, sql, "mutationrecord");
+            Path output = mutate(db, referenceSchema, "update", model, "local", changed);
+            var after = rows(db, sql, "mutationrecord");
+            assertEquals(before.get(key("local", "local", "record")).withLabel("now"),
+                    after.get(key("local", "local", "record")));
+            assertEquals(before.get(key("local", "local", "clear")).withLabel("empty"),
+                    after.get(key("local", "local", "clear")));
+            var targets = rows(db, sql, "mutationtarget");
+            assertEquals(1, targets.size());
+            String link = "SELECT destination FROM " + db.table("mutationlink") + " WHERE mutationrecord_detail = ";
+            String targetId = Long.toString(targets.get(key("local", "local", "fresh")).object());
+            assertEquals(targetId, scalar(sql, link + after.get(key("local", "local", "record")).object()));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("mutationlink")
+                    + " WHERE destination IS NULL AND mutationrecord_detail=" + after.get(key("local", "local", "clear")).object()));
+
+            var objects = children(children(readDataSection(output, version)).getFirst());
+            var exported = objects.stream().filter(o -> "record".equals(id(o, version, "tid"))).findFirst().orElseThrow();
+            var destination = child(children(child(exported, "Detail")).getFirst(), "Destination");
+            assertEquals("fresh", id(destination, version, "ref"));
+
+            Path unresolved = delivery("local-invalid", model, new Basket("local", owner.replace(">now<", ">bad<")));
+            var failure = cli(db, "update", model, "local", unresolved, CancellationToken.none());
+            assertNotEquals(0, failure.code(), failure::diagnostics);
+            assertTrue(failure.diagnostics().contains("Cannot encode reference"), failure::diagnostics);
+            assertEquals(after, rows(db, sql, "mutationrecord"));
+            assertEquals(targets, rows(db, sql, "mutationtarget"));
+            assertEquals(targetId, scalar(sql, link + after.get(key("local", "local", "record")).object()));
+        }
+    }
+
     private String tree(String model, String one, List<String> chain, List<String> flags) {
         return "<Detail>" + structure(model, "OuterValue", leaves(model, "One", List.of(one))
                 + leaves(model, "Chain", chain) + leaves(model, "Flags", flags)) + "</Detail>";

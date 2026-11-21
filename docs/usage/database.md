@@ -83,6 +83,8 @@ dieselbe `T_Id`. Die konkrete Klasse eines bestehenden Objekts muss
 übereinstimmen. Geometriewerte können ersetzt oder gelöscht werden.
 Strukturzeilen des gelieferten Baskets werden aus den neuen optionalen Werten,
 Listen und Bags aufgebaut. Die Eigentümer behalten ihre internen IDs.
+Lokale Referenzattribute werden gegen den gelieferten neuen Basketbestand
+aufgelöst. Vorwärtsreferenzen können dadurch auf neu gelieferte Objekte zeigen.
 
 ## Referenzprofil
 
