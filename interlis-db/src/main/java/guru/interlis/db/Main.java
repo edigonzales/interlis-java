@@ -31,7 +31,9 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public final class Main {
     private static final String USAGE = """
-            Usage: interlis-db <export|import|replace|update> --model NAME --dataset NAME
+            Usage: interlis-db export --model NAME [--model NAME]... --dataset NAME
+                    (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
+                   interlis-db <import|replace|update> --model NAME --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
                    interlis-db delete --model NAME --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME)
@@ -112,7 +114,7 @@ public final class Main {
     private static void importData(Options options, String password, CancellationToken cancellation)
             throws IOException, SQLException {
         try (var database = options.open(password)) {
-            var mapping = DbSchemaReader.read(database, options.model(), cancellation);
+            var mapping = DbSchemaReader.read(database, options.models(), cancellation);
             try (var input = Files.newInputStream(options.file());
                  TransferReader reader = switch (mapping.version()) {
                      case ILI23 -> new Xtf23Reader(mapping.plan(), input);
@@ -132,7 +134,7 @@ public final class Main {
 
     private static void deleteData(Options options, String password, CancellationToken cancellation) throws SQLException {
         try (var database = options.open(password)) {
-            var mapping = DbSchemaReader.read(database, options.model(), cancellation);
+            var mapping = DbSchemaReader.read(database, options.models(), cancellation);
             DbDatasetWrite.deleteDataset(database, mapping, options.dataset(), cancellation);
             cancellation.throwIfCancellationRequested();
             database.commit();
@@ -144,7 +146,7 @@ public final class Main {
         Path temporary = Files.createTempFile(options.file().getParent(), ".interlis-db-", ".xtf");
         try {
             try (var database = options.open(password)) {
-                var mapping = DbSchemaReader.read(database, options.model(), cancellation);
+                var mapping = DbSchemaReader.read(database, options.models(), cancellation);
                 try (var output = Files.newOutputStream(temporary);
                      TransferWriter writer = switch (mapping.version()) {
                          case ILI23 -> new Xtf23Writer(mapping.plan(), output);
@@ -198,7 +200,7 @@ public final class Main {
                         throw new IllegalArgumentException("Missing value for " + arg);
                     }
                     if (models.contains(args[i])) throw new IllegalArgumentException("Repeated model " + args[i]);
-                    if (command != Command.SCHEMAIMPORT && !models.isEmpty()) {
+                    if (command != Command.SCHEMAIMPORT && command != Command.EXPORT && !models.isEmpty()) {
                         throw new IllegalArgumentException("Repeated option --model");
                     }
                     models.add(args[i]);
@@ -282,8 +284,6 @@ public final class Main {
                     oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg, multiSrs, srsModels,
                     List.copyOf(modelFiles));
         }
-
-        String model() { return models.getFirst(); }
 
         void checkPaths() throws IOException {
             if (gpkg != null && command != Command.SCHEMAIMPORT) {

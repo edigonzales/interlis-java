@@ -69,8 +69,12 @@ final class DbSchemaReader {
 
     private record StoredModel(String names, LanguageVersion version, String content, List<String> imports) { }
     private record AttributeName(String name, String owner, String target) { }
-    private record Settings(boolean splitGeometries, CrsDefaults crs, boolean referenceEpsgHeader, boolean multiSrs,
-                            Optional<DbCrsPair.Models> srsModels, CrsDefaults alternateCrs) { }
+    private record Settings(boolean splitGeometries, int defaultEpsg, String modelEpsgAssignments,
+                            boolean referenceEpsgHeader, boolean multiSrs, Optional<DbCrsPair.Models> srsModels) {
+        CrsDefaults crs(String model) {
+            return new CrsDefaults(defaultEpsg, modelEpsg(modelEpsgAssignments, model));
+        }
+    }
 
     private record Transformations(Map<String, String> classes, Map<String, String> secondary) { }
 
@@ -78,14 +82,20 @@ final class DbSchemaReader {
 
     private DbSchemaReader() { }
 
-    static DbMapping read(Database db, String modelName, CancellationToken token) throws SQLException {
+    static DbMapping read(Database db, List<String> selectedModels, CancellationToken token) throws SQLException {
         token.throwIfCancellationRequested();
-        var settings = readSettings(db, modelName);
-        var models = settings.srsModels().map(DbCrsPair.Models::names).orElse(List.of(modelName));
+        String modelName = String.join(", ", selectedModels);
+        var settings = readSettings(db, selectedModels);
+        var models = settings.srsModels().map(DbCrsPair.Models::names).orElse(selectedModels);
         TransferPlan plan = readModelPlan(db, models, token);
         var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
+        if (plan.rootModels().stream().map(ref -> plan.model(ref).orElseThrow().languageVersion())
+                .anyMatch(language -> language != version)) {
+            throw new DbException("Selected transfer models must use the same INTERLIS language version: " + modelName);
+        }
 
-        var crsPair = settings.srsModels().map(pair -> new DbCrsPair(plan, pair, settings.crs(), settings.alternateCrs()));
+        var crsPair = settings.srsModels().map(pair -> new DbCrsPair(plan, pair, settings.crs(pair.original()),
+                settings.crs(pair.alternate())));
         var roots = crsPair.map(pair -> List.of(pair.models().getFirst())).orElseGet(plan::rootModels);
         var selected = DbMapping.storageObjects(plan, roots, token);
         DbMapping.checkLayout(plan, selected);
@@ -93,7 +103,7 @@ final class DbSchemaReader {
                 .anyMatch(topic -> plan.rootModels().contains(topic.model()) && DbDomains.deferred(topic))) {
             throw unsupported("deferred generic domains require SETTINGS.useEpsgInNames");
         }
-        var scope = new MetadataScope(Set.of(modelName), selected.stream()
+        var scope = new MetadataScope(Set.copyOf(selectedModels), selected.stream()
                 .map(object -> object.name().declared().toString()).collect(Collectors.toSet()));
         var classNames = readClassNames(db, scope);
         var attrNames = readAttributeNames(db, scope);
@@ -148,6 +158,7 @@ final class DbSchemaReader {
         for (ObjectDescriptor object : objects) {
             token.throwIfCancellationRequested();
             var parent = catalog.get(object.symbol());
+            var defaults = settings.crs(plan.model(object.model()).orElseThrow().name().declared().last());
             var columns = new ArrayList<Column>();
             var secondary = new ArrayList<SecondaryGeometry>();
             var roles = linkRoles.get(object.symbol());
@@ -171,7 +182,7 @@ final class DbSchemaReader {
                     compositions.add(binding);
                     continue;
                 }
-                for (var described : DbMapping.describeColumns(plan, object, attr, settings.crs(), crsPair)) {
+                for (var described : DbMapping.describeColumns(plan, object, attr, defaults, crsPair)) {
                     String attribute = Ili2dbLayout.geometryAttribute(path, described.epsgCode(), settings.multiSrs());
                     var mapping = takeAttributeName(attrNames, attribute);
                     var column = described.withName(mapping.name());
@@ -278,7 +289,7 @@ final class DbSchemaReader {
         }
     }
 
-    private static Settings readSettings(Database db, String modelName) throws SQLException {
+    private static Settings readSettings(Database db, List<String> models) throws SQLException {
         // Both backends accept the folded technical names. Keep the same names in catalog diagnostics.
         String table = foldedName(SETTINGS);
         requireMetadataColumns(db, table, "tag", "setting");
@@ -302,7 +313,7 @@ final class DbSchemaReader {
         requireSetting(settings, "defaultSrsAuthority", "EPSG");
         String value = settings.get(PREFIX + "defaultSrsCode");
         int defaultEpsg = value == null ? 0 : Ili2dbLayout.parseEpsgCode(value, "SETTINGS.defaultSrsCode");
-        var crs = new CrsDefaults(defaultEpsg, modelEpsg(settings.get(PREFIX + "modelSrsCode"), modelName));
+        String modelEpsg = settings.get(PREFIX + "modelSrsCode");
         for (String tag : List.of("inheritanceTrafo", "createEnumColAsItfCode", "createEnumCols",
                 "createDatasetCols", "typeDiscriminator", "createStdCols", "SqlColsAsText", "SqlExtRefCols")) {
             if (settings.containsKey(PREFIX + tag)) throw unsupported("SETTINGS." + tag);
@@ -315,20 +326,23 @@ final class DbSchemaReader {
             throw unsupported("SETTINGS.useEpsgInNames=" + epsgNames);
         }
         boolean multiSrs = "True".equals(epsgNames);
-        var srsModels = Optional.ofNullable(settings.get(Ili2dbLayout.SRS_MODEL_ASSIGNMENT))
-                .map(assignment -> DbCrsPair.Models.parse(assignment, modelName));
+        var srsModels = Optional.ofNullable(settings.get(Ili2dbLayout.SRS_MODEL_ASSIGNMENT)).map(assignment ->
+                DbCrsPair.Models.parse(assignment, assignment.split("=", 2)[0]));
         if (srsModels.isPresent() && !multiSrs) throw unsupported("SETTINGS.srsModelAssignment requires --multiSrs");
-        int alternateEpsg = srsModels.map(pair -> modelEpsg(settings.get(PREFIX + "modelSrsCode"), pair.alternate())).orElse(0);
-        var alternateCrs = new CrsDefaults(defaultEpsg, alternateEpsg);
+        srsModels = srsModels.filter(pair -> !Collections.disjoint(models, pair.names()));
+        if (srsModels.isPresent() && !models.equals(List.of(srsModels.orElseThrow().original()))) {
+            throw unsupported("select the original CRS model by itself: " + srsModels.orElseThrow().original());
+        }
         String geometryLayout = settings.get(Ili2dbLayout.GEOMETRY_LAYOUT);
         boolean referenceEpsgHeader = db.gpkg() && isSender(sender, "ili2gpkg-5.5.2");
         if (Ili2dbLayout.MULTIPLE_GEOMETRIES.equals(geometryLayout)) {
-            return new Settings(false, crs, referenceEpsgHeader, multiSrs, srsModels, alternateCrs);
+            return new Settings(false, defaultEpsg, modelEpsg, referenceEpsgHeader, multiSrs, srsModels);
         }
         if (geometryLayout != null && !Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout)) {
             throw unsupported("SETTINGS.geomAttrPerTable=" + geometryLayout);
         }
-        return new Settings(db.gpkg() || Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout), crs, referenceEpsgHeader, multiSrs, srsModels, alternateCrs);
+        return new Settings(db.gpkg() || Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout), defaultEpsg, modelEpsg,
+                referenceEpsgHeader, multiSrs, srsModels);
     }
 
     private static int modelEpsg(String assignments, String modelName) {

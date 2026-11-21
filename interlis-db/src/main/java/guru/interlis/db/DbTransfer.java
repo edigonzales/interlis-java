@@ -79,16 +79,28 @@ final class DbTransfer {
         checkHierarchyTopics(db, mapping, datasetId, token);
         checkCrossDatasetReferences(db, mapping, datasetId, token);
         var plan = mapping.plan();
+        var topics = plan.topics().stream().filter(topic -> mapping.models().contains(topic.model()))
+                .collect(Collectors.toMap(topic -> topic.name().declared().toString(), Function.identity()));
+        var exported = new HashSet<SymbolRef>();
+        String modelQuery = "SELECT DISTINCT topic FROM " + db.technicalTable(BASKET) + " WHERE dataset = ?";
+        try (var statement = db.connection().prepareStatement(modelQuery)) {
+            statement.setLong(1, datasetId);
+            try (var rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    token.throwIfCancellationRequested();
+                    exported.add(selectedTopic(topics, rows.getString(1)).model());
+                }
+            }
+        }
+        if (exported.isEmpty()) throw new DbException("Dataset has no baskets: " + dataset);
         boolean ili23 = mapping.version() == LanguageVersion.ILI23;
-        var declarations = mapping.models().stream().map(ref -> {
+        var declarations = mapping.models().stream().filter(exported::contains).map(ref -> {
             var model = plan.model(ref).orElseThrow();
             var symbol = (ModelSymbol) plan.symbol(ref).known().orElseThrow();
             return new TransferEvent.ModelDeclaration(ref, mapping.version(),
                     ili23 ? Optional.of(model.modelVersion()) : Optional.empty(),
                     ili23 ? Optional.of(symbol.issuer()) : Optional.empty());
         }).toList();
-        var topics = plan.topics().stream().filter(topic -> mapping.models().contains(topic.model()))
-                .collect(Collectors.toMap(topic -> topic.name().declared().toString(), Function.identity()));
         String sql = "SELECT " + T_ID + ", topic, " + T_ILI_TID + ", domains FROM "
                 + db.technicalTable(BASKET) + " WHERE dataset = ? ORDER BY " + T_ID;
         try (var statement = db.connection().prepareStatement(sql)) {
@@ -103,10 +115,7 @@ final class DbTransfer {
                 do {
                     token.throwIfCancellationRequested();
                     var topicName = rows.getString(2);
-                    var topic = topics.get(topicName);
-                    if (topic == null) {
-                        throw new DbException("Basket topic is outside the selected model: " + topicName);
-                    }
+                    var topic = selectedTopic(topics, topicName);
                     String domains = rows.getString(4);
                     var bid = new BasketId(identifier(rows.getString(3), "BID", topicName), IdOrigin.SOURCE);
                     var bindings = DbDomains.read(plan, topic, domains, bid.value());
@@ -115,6 +124,12 @@ final class DbTransfer {
             }
         }
         writer.write(new TransferEvent.EndTransfer(), token);
+    }
+
+    private static TopicDescriptor selectedTopic(Map<String, TopicDescriptor> topics, String name) {
+        var topic = topics.get(name);
+        if (topic == null) throw new DbException("Basket topic is outside the selected model: " + name);
+        return topic;
     }
 
     private static void writeBasket(Database db, DbMapping mapping, TopicDescriptor topic, long basketId,

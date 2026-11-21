@@ -67,6 +67,11 @@ interlis-db/build/install/interlis-db/bin/interlis-db import \
 ```
 
 Das PostgreSQL-Passwort wird bei Bedarf aus `INTERLIS_DB_PASSWORD` gelesen.
+Beim Export können mehrere Modelle derselben INTERLIS-Sprachversion über
+je ein `--model` ausgewählt werden. Die Auswahl muss sämtliche Baskets
+des Datensatzes abdecken. Der Header nennt die Modelle der exportierten
+Baskets. Ein Schema kann getrennte Datensätze in beiden Sprachversionen
+enthalten.
 Ein Import legt den angegebenen Datensatz an. Einen bereits vorhandenen
 Datensatznamen meldet er als Fehler. Ein erfolgreicher Export ersetzt die
 ausdrücklich gewählte Zieldatei atomar. Ein abgebrochener Export belässt eine

@@ -273,6 +273,58 @@ final class ModelCases {
         assertEntryDelivery(output, model, value, "own");
     }
 
+    void mixedExport(TestDatabase db) throws Exception {
+        String warehouse = "DbWarehouse" + version;
+        String workshop = "DbWorkshop" + version;
+        int otherVersion = version == 23 ? 24 : 23;
+        String other = "DbWarehouse" + otherVersion;
+        var first = fixture(warehouse + ".ili");
+        var second = fixture(workshop + ".ili");
+        var unrelated = fixture(other + ".ili");
+        createReference(db, warehouse + ";" + workshop);
+        createReference(db, other, unrelated);
+        for (var source : List.of(first, second, unrelated)) Files.delete(source);
+        referenceImport(db, "mixed", fixture("DbMixedModels" + version + ".xtf"));
+        referenceImport(db, "other-version", fixture(other + ".xtf"));
+        referenceImport(db, "warehouse-only", fixture(warehouse + ".xtf"));
+
+        var output = work.resolve("mixed-export.xtf");
+        var exported = cli(db, "export", warehouse, "mixed", output, CancellationToken.none(), "--model", workshop);
+        assertEquals(0, exported.code(), exported::diagnostics);
+        assertMixedDelivery(output, warehouse, workshop, "mixed", "warehouse");
+        String published = Files.readString(output);
+        var incomplete = cli(db, "export", warehouse, "mixed", output, CancellationToken.none());
+        assertEquals(1, incomplete.code(), incomplete::diagnostics);
+        assertTrue(incomplete.diagnostics().contains("outside the selected model: " + workshop + ".Data"),
+                incomplete::diagnostics);
+        assertEquals(published, Files.readString(output));
+        var mixedVersions = cli(db, "export", warehouse, "mixed", output, CancellationToken.none(), "--model", other);
+        assertEquals(1, mixedVersions.code(), mixedVersions::diagnostics);
+        assertTrue(mixedVersions.diagnostics().contains("same INTERLIS language version"), mixedVersions::diagnostics);
+        assertEquals(published, Files.readString(output));
+
+        exported = cli(db, "export", warehouse, "warehouse-only", output, CancellationToken.none(), "--model", workshop);
+        assertEquals(0, exported.code(), exported::diagnostics);
+        assertEntryDelivery(output, warehouse, "warehouse", "fixture");
+        assertCliSuccess(db, "export", other, "other-version", output);
+        new ModelCases(work, reference, otherVersion).assertEntryDelivery(output, other, "warehouse", "fixture");
+    }
+
+    private void assertMixedDelivery(Path output, String warehouse, String workshop, String prefix, String warehouseMemo)
+            throws Exception {
+        var data = readDataSection(output, version);
+        assertEquals(Set.of(warehouse, workshop), Set.copyOf(headerModels(data)));
+        var baskets = children(data);
+        assertEquals(2, baskets.size());
+        for (var basket : baskets) {
+            String bid = id(basket, version, "bid");
+            if (bid.equals(prefix + "-warehouse-basket")) assertEntry(basket, warehouse, "warehouse", prefix, warehouseMemo);
+            else assertEntry(basket, workshop, "workshop", prefix, "workshop");
+        }
+        assertEquals(Set.of(prefix + "-warehouse-basket", prefix + "-workshop-basket"),
+                Set.copyOf(baskets.stream().map(basket -> id(basket, version, "bid")).toList()));
+    }
+
     private void assertEntryDelivery(Path output, String model, String value, String prefix) throws Exception {
         var data = readDataSection(output, version);
         assertEquals(List.of(model), headerModels(data));

@@ -132,6 +132,10 @@ final class DbInteropTest {
     @Test void geoPackageJointSchema24() throws Exception { exchangeJointSchema(24, null); }
     @Test void postgisJointSchema23() throws Exception { exchangeWithPostgis(23, this::exchangeJointSchema); }
     @Test void postgisJointSchema24() throws Exception { exchangeWithPostgis(24, this::exchangeJointSchema); }
+    @Test void geoPackageMixedExport23() throws Exception { exchangeMixedExport(23, null); }
+    @Test void geoPackageMixedExport24() throws Exception { exchangeMixedExport(24, null); }
+    @Test void postgisMixedExport23() throws Exception { exchangeWithPostgis(23, this::exchangeMixedExport); }
+    @Test void postgisMixedExport24() throws Exception { exchangeWithPostgis(24, this::exchangeMixedExport); }
 
     @Test void geoPackage23() throws Exception { exchange(23, null); }
     @Test void geoPackage24() throws Exception {
@@ -461,6 +465,11 @@ final class DbInteropTest {
         var reference = new TestDatabase(postgres, "reference_joint");
         var nativeSchema = new TestDatabase(postgres, "native_joint");
         new ModelCases(work, new ReferenceTool(reference.postgis()), version).jointSchema(reference, nativeSchema);
+    }
+
+    private void exchangeMixedExport(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "mixed_export");
+        new ModelCases(work, new ReferenceTool(db.postgis()), version).mixedExport(db);
     }
 
     private void exchange(int version, PostgreSQLContainer postgres) throws Exception {

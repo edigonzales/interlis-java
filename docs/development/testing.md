@@ -109,6 +109,9 @@ und den Rollback bei mehrdeutigen Ziel-TIDs.
 `*DbInteropTest.*JointSchema*` prüft zwei eigenständige Modelle mit
 gleichnamigen Topics und Klassen, ihre gespeicherten SQL-Zuordnungen,
 die gemeinsame ID-Vergabe und beide Werkzeugrichtungen.
+`*DbInteropTest.*MixedExport*` prüft Header und Baskets gemischter
+Datensätze, eine unvollständige Auswahl und getrennte Datensätze beider
+XTF-Versionen im selben Referenzschema.
 
 Die Fälle `*DbInteropTest.*Mutation*` prüfen `replace` und `update`
 in beiden Werkzeugrichtungen. Sie prüfen die internen IDs und den Bestand
