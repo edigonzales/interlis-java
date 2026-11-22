@@ -514,6 +514,83 @@ final class StructureMappingCases {
         assertEquals(List.of(), children(objects.get(prefix + "-missing")));
     }
 
+    void jsonSchema(TestDatabase baseline, TestDatabase own) throws Exception {
+        String model = "JsonSchema" + version;
+        String fields = """
+                    !!@ili2db.mapping=EXPAND
+                    Items : LIST {0..2} OF Entry;
+                    !!@ili2db.mapping=JSON
+                    Doc : Entry;
+                    !!@ili2db.mapping=JSON
+                    Copies : BAG {0..2} OF Entry;
+                """;
+        var ili = source(model, fields);
+        referenceSchema(baseline, model, "--expandStruct", "--coalesceJson");
+        createSchema(own, model, ili, "--expand-struct", "--coalesce-json");
+        assertSameCatalog(baseline, own);
+        Path output = work.resolve("out.xtf");
+        for (var db : List.of(baseline, own)) {
+            referenceImport(db, "legacy", mixedDataset(model, "legacy", false));
+            assertCliSuccess(db, "export", model, "legacy", output);
+            assertMixed(output, "legacy", false);
+            assertCliSuccess(db, "import", model, "native", mixedDataset(model, "native", false));
+            referenceExport(db, "native", output);
+            assertMixed(output, "native", false);
+            try (var sql = db.connect()) {
+                var asset = db.table("asset");
+                var row = " FROM " + asset + " WHERE t_ili_tid='native-value'";
+                String identity = "SELECT CAST(t_id AS text) || ':' || CAST(t_basket AS text)";
+                String before = scalar(sql, identity + row);
+                assertEquals("entry", scalar(sql, "SELECT items1_t_type" + row));
+                assertEquals("é & a", scalar(sql, "SELECT " + jsonKey(db, "doc", "Label") + row));
+                assertCliSuccess(db, "update", model, "native", mixedDataset(model, "native", true));
+                assertEquals(before, scalar(sql, identity + row));
+                assertNull(scalar(sql, "SELECT doc" + row));
+                assertNull(scalar(sql, "SELECT items1_t_type" + row));
+                assertNull(scalar(sql, "SELECT items1_label" + row));
+            }
+            referenceExport(db, "native", output);
+            assertMixed(output, "native", true);
+            referenceImport(db, "tail", mixedDataset(model, "tail", false));
+            assertCliSuccess(db, "export", model, "tail", output);
+            assertMixed(output, "tail", false);
+            try (var sql = db.connect()) {
+                assertSharedIds(db, sql, "9", "asset");
+            }
+        }
+
+        var appended = "JsonAppend" + version;
+        createSchema(own, appended, source(appended, fields), "--add-models");
+        assertCliSuccess(own, "import", appended, "added", mixedDataset(appended, "added", false));
+        referenceExport(own, "added", output);
+        assertMixed(output, "added", false);
+        try (var sql = own.connect()) {
+            var metadata = own.table("t_ili2db_trafo");
+            assertEquals("coalesce", scalar(sql, "SELECT setting FROM " + metadata
+                    + " WHERE iliname='" + appended + ".Data.Asset.Doc' AND tag='ch.ehi.ili2db.jsonTrafo'"));
+            assertEquals("expand", scalar(sql, "SELECT setting FROM " + metadata
+                    + " WHERE iliname='" + appended + ".Data.Asset.Items' AND tag='ch.ehi.ili2db.structTrafo'"));
+        }
+    }
+
+    private Path mixedDataset(String model, String prefix, boolean updated) throws Exception {
+        String first = entry(model, field("Label", updated ? "updated" : "first"));
+        String second = entry(model, field("Label", "second"));
+        String payload = field("Items", first + (updated ? "" : second))
+                + (updated ? "" : field("Doc", entry(model, VALUES))) + field("Copies", first + first);
+        return dataset(model, prefix, asset(model, prefix + "-value", payload));
+    }
+
+    private void assertMixed(Path output, String prefix, boolean updated) throws Exception {
+        var value = objects(output, prefix).get(prefix + "-value");
+        assertEquals(updated ? List.of("updated") : List.of("first", "second"), members(value, "Items").stream()
+                .map(item -> child(item, "Label").getTextContent()).toList());
+        if (updated) assertNull(child(value, "Doc"));
+        else assertEntry(members(value, "Doc").getFirst());
+        assertEquals(updated ? List.of("updated", "updated") : List.of("first", "first"), members(value, "Copies").stream()
+                .map(item -> child(item, "Label").getTextContent()).toList());
+    }
+
     private Path singleDataset(String model, String prefix, String field) throws Exception {
         return dataset(model, prefix, asset(model, prefix + "-empty", field(field, entry(model, "")))
                 + asset(model, prefix + "-missing", "")

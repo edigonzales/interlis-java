@@ -108,6 +108,11 @@ für das geerbte Attribut. `update` leert die frei gewordenen Spalten
 einer gekürzten Liste. `--add-models` übernimmt die Einstellung des
 bestehenden `newClass`-Schemas.
 
+Mit `schemaimport --coalesce-json` legt das Kommando in einem neuen
+`newClass`-Schema die JSON-Spalten für `ili2db.mapping=JSON` an. Die
+Option lässt sich mit `--expand-struct` kombinieren. `--add-models`
+übernimmt beide gespeicherten Einstellungen.
+
 ## Bestehendes Schema ergänzen
 
 ```sh

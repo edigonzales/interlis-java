@@ -450,6 +450,7 @@ final class SchemaSql {
         }
 
         String columnType(DbMapping.Column column, int index) {
+            if (column.jsonStructure().isPresent()) return gpkg ? "TEXT" : "jsonb";
             if (column.textExpansion().isPresent()) {
                 return column.textExpansion().orElseThrow().translations().isEmpty() && index == 1 ? text(2) : "TEXT";
             }

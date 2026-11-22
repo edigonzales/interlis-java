@@ -28,6 +28,7 @@ import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -494,12 +495,16 @@ final class DbSchemaReader {
         if (strokeArcs && !Ili2dbLayout.STROKE_ARCS_ENABLED.equals(settings.get(Ili2dbLayout.STROKE_ARCS))) {
             throw unsupported("SETTINGS.StrokeArcs");
         }
-        var expansion = Ili2dbLayout.AttributeTransformation.EXPANDED_STRUCTURE;
-        var structureTransformations = Set.<Ili2dbLayout.AttributeTransformation>of();
-        if (settings.containsKey(expansion.tag)) {
-            if (!expansion.setting.equals(settings.get(expansion.tag))) throw unsupported("SETTINGS.structTrafo");
-            structureTransformations = Set.of(expansion);
+        var transformations = EnumSet.noneOf(Ili2dbLayout.AttributeTransformation.class);
+        for (var transformation : List.of(Ili2dbLayout.AttributeTransformation.EXPANDED_STRUCTURE,
+                Ili2dbLayout.AttributeTransformation.JSON_STRUCTURE)) {
+            if (!settings.containsKey(transformation.tag)) continue;
+            if (!transformation.setting.equals(settings.get(transformation.tag))) {
+                throw unsupported("SETTINGS." + transformation.tag.substring(PREFIX.length()));
+            }
+            transformations.add(transformation);
         }
+        var structureTransformations = Set.copyOf(transformations);
         if (Ili2dbLayout.MULTIPLE_GEOMETRIES.equals(geometryLayout)) {
             return new Settings(false, defaultEpsg, modelEpsg, referenceEpsgHeader, multiSrs, srsModels, indexes, inheritance, strokeArcs, structureTransformations);
         }

@@ -108,7 +108,10 @@ typisierte Werte, SQL `NULL` und den Erhalt der XTF-Datei bei fehlerhaftem JSON.
 Die `*JsonCollections*`-Fälle prüfen flache Arrays in beiden
 Werkzeugrichtungen. Für innere JSON-Objekte vergleichen sie die
 gespeicherten Werte und prüfen den Export mit `interlis-db` sowie den
-bekannten Exportfehler von ili2db 5.5.2.
+bekannten Exportfehler von ili2db 5.5.2. Die `*JsonSchema*`-Fälle
+vergleichen den Katalog, kombinieren JSON und expandierte Spalten in
+derselben Tabelle und prüfen `update`, `--add-models` sowie die
+gemeinsame ID-Vergabe.
 
 `*DbInteropTest.*CatalogueReference*` prüft beide Werkzeugrichtungen
 für Katalogreferenzen mit `--coalesceCatalogueRef` auf GeoPackage und

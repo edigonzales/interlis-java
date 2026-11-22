@@ -193,6 +193,7 @@ final class DbMapping {
 
         AttributeTransformation transformation() {
             if (expandedStructure.isPresent()) return AttributeTransformation.EXPANDED_STRUCTURE;
+            if (jsonStructure.isPresent()) return AttributeTransformation.JSON_STRUCTURE;
             if (catalogueReference.isPresent()) return AttributeTransformation.CATALOGUE_REFERENCE;
             if (wrappedGeometry.isPresent()) return wrappedGeometry.orElseThrow().transformation();
             return textExpansion.map(DbTextExpansion::transformation).orElse(null);
@@ -687,6 +688,13 @@ final class DbMapping {
                             return field;
                         });
                         columns.add(expandedColumn(plan, attribute, binding));
+                        continue;
+                    }
+                    if (transformations.contains(AttributeTransformation.JSON_STRUCTURE)
+                            && "JSON".equals(metaText(attribute.attribute(), "ili2db.mapping"))) {
+                        String field = allocator.column(name, attributeName);
+                        checkColumnName(attribute, field, object.kind() == SymbolKind.STRUCTURE, discriminator, gpkg);
+                        columns.add(jsonColumn(plan, attribute, field, DbJsonStructure.describe(plan, attribute)));
                         continue;
                     }
                     var wrapped = wrappedGeometries.get(attribute.symbol());

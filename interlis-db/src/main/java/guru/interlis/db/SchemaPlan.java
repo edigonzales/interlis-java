@@ -238,7 +238,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 && mapping.isAssignableTo(declaringType, owner.object().symbol())
                 ? mapping.storage(declaringType).discriminator() : null;
         var effective = column.effectiveType().orElseThrow();
-        String typeKind = switch (column.kind()) {
+        String typeKind = column.jsonStructure().isPresent() ? "STRUCTURE" : switch (column.kind()) {
             case TEXT -> ((TextType) effective).textKind().name();
             case BOOLEAN -> "BOOLEAN";
             case INTEGER -> "NUMERIC";
