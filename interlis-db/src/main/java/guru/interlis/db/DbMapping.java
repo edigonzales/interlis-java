@@ -702,6 +702,7 @@ final class DbMapping {
                     }
                     if (transformations.contains(AttributeTransformation.EXPANDED_STRUCTURE) && DbExpandedStructure.planned(attribute)) {
                         var binding = DbExpandedStructure.bind(plan, attribute, names, DbExpandedStructure::planned, (path, kind) -> {
+                            enumOptions.checkExpandedField(kind, path);
                             String field = allocator.expandedColumn(name, path);
                             checkColumnName(attribute, field, object.kind() == SymbolKind.STRUCTURE, discriminator, gpkg);
                             return field;
@@ -721,9 +722,9 @@ final class DbMapping {
                         String field = allocator.column(name, attributeName);
                         checkColumnName(attribute, field, object.kind() == SymbolKind.STRUCTURE, discriminator, gpkg);
                         var array = DbArray.describe(plan, inheritance, object, attribute);
-                        if ((enumOptions.itfCodes() || enumOptions.lookup() == DbEnumOptions.Lookup.WITH_ID)
-                                && array.kind() == Kind.ENUMERATION) {
-                            throw unsupported("numeric enumeration codes in array " + attribute.name().declared());
+                        if (enumOptions.itfCodes() && array.kind() == Kind.ENUMERATION) {
+                            array = array.withEnumeration(DbEnumeration.itfCodes((EnumerationType) array.type(),
+                                    attribute.name().declared().toString()));
                         }
                         columns.add(arrayColumn(plan, attribute, field, array));
                         continue;

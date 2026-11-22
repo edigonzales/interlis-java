@@ -115,6 +115,9 @@ Die `*EnumAppend*`-Fälle prüfen ein unabhängiges Modell und die
 Erweiterung einer bestehenden Aufzählungsdomäne. Ein SQL-Konflikt beim
 Einfügen der Lookup-Zeilen muss auch Modellmetadaten und Fachtabellen
 zurückrollen.
+Die `*EnumNumericArrays*`-Fälle prüfen ITF-Codes und gespeicherte
+Lookup-IDs in Arrays. Sie vergleichen SQL-Typen, JSON-Zahlen, Reihenfolge,
+Duplikate, den Import-Rollback und den Erhalt einer Exportdatei.
 
 Die `*ArrayText*`-Fälle prüfen Reihenfolge, Duplikate, Sonderzeichen,
 gespeicherte SQL-Spaltennamen und den bekannten Referenzfehler bei

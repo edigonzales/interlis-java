@@ -528,7 +528,7 @@ final class SchemaSql {
                 var array = column.array().orElseThrow();
                 String element = switch (array.kind()) {
                     case TEXT -> array.textLength() == 0 ? "TEXT" : text(array.textLength());
-                    case ENUMERATION -> text(255);
+                    case ENUMERATION -> enumOptions.numeric() ? idType() : text(255);
                     case BOOLEAN -> "BOOLEAN";
                     case INTEGER -> "INTEGER";
                     case REFERENCE -> "BIGINT";

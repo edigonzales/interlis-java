@@ -567,6 +567,12 @@ betroffenen Attribut diagnostiziert.
 Bei `--createEnumTabsWithId` speichert die Fachspalte die `T_Id`
 des Lookup-Eintrags. Der Transfer verwendet die in der Datenbank
 gespeicherte Zuordnung für die jeweilige Aufzählungsdefinition.
+Mit `--coalesceArray` verwenden auch Aufzählungsarrays diese numerischen
+Kodierungen. GeoPackage speichert JSON-Zahlen, PostGIS verwendet `bigint[]`.
+XTF 2.3 überträgt die Einfeldstruktur, XTF 2.4 auch die direkte Liste.
+Für Aufzählungen in expandierten Strukturen gilt die XTF-Textkodierung.
+Numerische Kodierung und zusätzliche Anzeigespalten für diese Felder
+werden als nicht unterstützte Kombination diagnostiziert.
 
 In bestehenden Schemata mit `--coalesceJson` speichert ili2db eine
 optionale flache Struktur als JSON-Objekt. GeoPackage verwendet `TEXT`,

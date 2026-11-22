@@ -8,6 +8,7 @@ import guru.interlis.model.DomainSymbol;
 import guru.interlis.model.EnumElementSymbol;
 import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolRef;
+import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeRef;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.TransferPlan;
@@ -37,8 +38,12 @@ record DbEnumeration(Map<String, Long> numbers, Map<Long, String> paths, Map<Str
     }
 
     static Symbol definition(TransferPlan plan, AttributeSlot slot) {
+        return definition(plan, slot, plan.type(slot.declaredType()).known().orElseThrow());
+    }
+
+    static Symbol definition(TransferPlan plan, AttributeSlot slot, TypeDescriptor declaredType) {
         Symbol symbol = slot.attribute();
-        var type = plan.type(slot.declaredType()).known().orElseThrow();
+        var type = declaredType;
         while (type instanceof DomainReferenceType alias) {
             var domain = DbDomains.domain(plan, alias.targetDomain());
             symbol = domain;
@@ -84,12 +89,15 @@ record DbEnumeration(Map<String, Long> numbers, Map<Long, String> paths, Map<Str
 
     Enumeration read(String value, String context) {
         if (value == null) return null;
-        String mapped;
         try {
-            mapped = paths.get(Long.parseLong(value));
+            return read(Long.parseLong(value), context);
         } catch (NumberFormatException failure) {
             throw new DbException("Invalid numeric enumeration value " + value + " at " + context, failure);
         }
+    }
+
+    Enumeration read(long value, String context) {
+        String mapped = paths.get(value);
         if (mapped == null) throw new DbException("Unknown numeric enumeration value " + value + " at " + context);
         return DbTransfer.readEnumeration(mapped, context);
     }

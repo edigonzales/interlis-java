@@ -1,6 +1,8 @@
 package guru.interlis.db;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.CollectionType;
+import guru.interlis.model.DomainReferenceType;
 import guru.interlis.model.DomainSymbol;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.ModelSymbol;
@@ -139,9 +141,14 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
         for (var object : objects) {
             for (var slot : DbMapping.attributes(object)) {
                 var effective = plan.type(slot.effectiveType()).known().orElseThrow();
-                if (!(effective instanceof EnumerationType)) continue;
+                var declared = plan.type(slot.declaredType()).known().orElseThrow();
+                if (effective instanceof CollectionType collection && declared instanceof CollectionType original) {
+                    effective = plan.type(new TypeRef(plan.snapshotId(), collection.elementType())).known().orElseThrow();
+                    declared = plan.type(new TypeRef(plan.snapshotId(), original.elementType())).known().orElseThrow();
+                }
+                if (!(effective instanceof EnumerationType) && !(effective instanceof DomainReferenceType)) continue;
                 token.throwIfCancellationRequested();
-                var declaration = DbEnumeration.definition(plan, slot);
+                var declaration = DbEnumeration.definition(plan, slot, declared);
                 var type = declaration instanceof DomainSymbol domain
                         ? plan.type(new TypeRef(plan.snapshotId(), domain.typeId())).known().orElseThrow()
                         : effective;

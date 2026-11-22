@@ -8,6 +8,7 @@ import guru.interlis.db.DbMapping.Kind;
 import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.DomainReferenceType;
+import guru.interlis.model.Symbol;
 import guru.interlis.model.ReferenceType;
 import guru.interlis.model.StructureValueType;
 import guru.interlis.model.TextType;
@@ -40,7 +41,7 @@ import java.util.Optional;
 
 /** The ili2db representation of single-field values stored together in one column. */
 record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, Kind kind, TypeDescriptor type,
-               Optional<SymbolRef> target) {
+               Optional<SymbolRef> target, Optional<DbEnumeration> enumeration) {
     record Wrapper(SymbolRef structure, AttributeSlot field) { }
 
     private static final int MAX_ELEMENTS = 1_000_000;
@@ -84,11 +85,20 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
                     && relation.base().isEmpty() && !relation.discriminator())) {
                 throw DbMapping.unsupported("coalesced array requires a single target table at " + path);
             }
-            return new DbArray(collection, wrapper, Kind.REFERENCE, type, Optional.of(symbol));
+            return new DbArray(collection, wrapper, Kind.REFERENCE, type, Optional.of(symbol), Optional.empty());
         }
         var kind = DbMapping.scalarKind(type);
         if (kind == null) throw DbMapping.unsupported("coalesced array element at " + path);
-        return new DbArray(collection, wrapper, kind, type, Optional.empty());
+        return new DbArray(collection, wrapper, kind, type, Optional.empty(), Optional.empty());
+    }
+
+    DbArray withEnumeration(DbEnumeration encoding) {
+        return new DbArray(collection, wrapper, kind, type, target, Optional.of(encoding));
+    }
+
+    Symbol enumDefinition(TransferPlan plan, AttributeSlot outer) {
+        var member = wrapper.map(Wrapper::field).orElse(outer);
+        return DbEnumeration.definition(plan, member, declaredElement(plan, outer));
     }
 
     TypeDescriptor declaredElement(TransferPlan plan, AttributeSlot outer) {
@@ -105,7 +115,7 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
     String pgElementType() {
         return switch (kind) {
             case TEXT -> textLength() == 0 ? "text" : "varchar";
-            case ENUMERATION -> "varchar";
+            case ENUMERATION -> enumeration.isPresent() ? "int8" : "varchar";
             case BOOLEAN -> "bool";
             case INTEGER -> "int4";
             case REFERENCE -> "int8";
@@ -168,7 +178,8 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
     private TransferValue readElement(Object value, String context) {
         return switch (value) {
             case String text when kind == Kind.TEXT -> new Text(text);
-            case String text when kind == Kind.ENUMERATION -> DbTransfer.readEnumeration(text, context);
+            case String text when kind == Kind.ENUMERATION && enumeration.isEmpty() -> DbTransfer.readEnumeration(text, context);
+            case Long code when enumeration.isPresent() -> enumeration.orElseThrow().read(code.longValue(), context);
             case Boolean bool when kind == Kind.BOOLEAN -> new BooleanValue(bool);
             case Integer number when kind == Kind.INTEGER -> new NumberValue(number.toString(), BigDecimal.valueOf(number));
             case Reference reference when kind == Kind.REFERENCE -> reference;
@@ -179,7 +190,8 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
     private Object writeElement(TransferValue value, String context) {
         return switch (value) {
             case Text text when kind == Kind.TEXT -> text.value();
-            case Enumeration enumeration when kind == Kind.ENUMERATION -> String.join(".", enumeration.path());
+            case Enumeration enumValue when kind == Kind.ENUMERATION -> enumeration.<Object>map(binding -> binding.number(enumValue, context))
+                    .orElseGet(() -> String.join(".", enumValue.path()));
             case BooleanValue bool when kind == Kind.BOOLEAN -> bool.value();
             case NumberValue number when kind == Kind.INTEGER -> DbTransfer.integerValue(number, context);
             case Reference reference when kind == Kind.REFERENCE -> reference;
@@ -223,6 +235,7 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
                     case Boolean bool -> writer.value(bool);
                     case Integer integer -> writer.value(integer);
                     case Long id when kind == Kind.REFERENCE -> writer.value(id.toString());
+                    case Long code when enumeration.isPresent() -> writer.value(code);
                     default -> throw unexpectedElement(context);
                 }
             }
@@ -236,28 +249,34 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
 
     private Object readJsonElement(JsonReader reader, String context) throws IOException {
         var expected = switch (kind) {
-            case TEXT, ENUMERATION, REFERENCE -> JsonToken.STRING;
+            case TEXT, REFERENCE -> JsonToken.STRING;
+            case ENUMERATION -> enumeration.isPresent() ? JsonToken.NUMBER : JsonToken.STRING;
             case BOOLEAN -> JsonToken.BOOLEAN;
             case INTEGER -> JsonToken.NUMBER;
             default -> throw new IllegalStateException("Unsupported JSON array element " + kind);
         };
         if (reader.peek() != expected) throw unexpectedElement(context);
         return switch (kind) {
-            case TEXT, ENUMERATION -> reader.nextString();
+            case TEXT -> reader.nextString();
+            case ENUMERATION -> {
+                String code = reader.nextString();
+                yield enumeration.isPresent() ? numericElement(code, context) : code;
+            }
             case BOOLEAN -> reader.nextBoolean();
             case INTEGER -> DbTransfer.readInteger(reader.nextString(), context).exactValue().intValueExact();
-            case REFERENCE -> {
-                String id = reader.nextString();
-                try {
-                    long number = Long.parseLong(id);
-                    if (!id.equals(Long.toString(number))) throw unexpectedElement(context);
-                    yield number;
-                } catch (NumberFormatException failure) {
-                    throw unexpectedElement(context);
-                }
-            }
+            case REFERENCE -> numericElement(reader.nextString(), context);
             default -> throw new IllegalStateException("Unsupported JSON array element " + kind);
         };
+    }
+
+    private long numericElement(String value, String context) {
+        try {
+            long number = Long.parseLong(value);
+            if (!value.equals(Long.toString(number))) throw unexpectedElement(context);
+            return number;
+        } catch (NumberFormatException failure) {
+            throw unexpectedElement(context);
+        }
     }
 
     private DbException unexpectedElement(String context) {

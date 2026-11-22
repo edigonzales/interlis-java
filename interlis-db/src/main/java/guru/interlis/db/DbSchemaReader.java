@@ -10,6 +10,7 @@ import guru.interlis.db.DbMapping.Kind;
 import guru.interlis.db.DbMapping.SecondaryGeometry;
 import guru.interlis.db.DbMapping.Table;
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.EnumerationType;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.Origin;
 import guru.interlis.model.SymbolKind;
@@ -266,6 +267,7 @@ final class DbSchemaReader {
                         var binding = DbExpandedStructure.bind(plan, attr, names,
                                 field -> transformations.attributes().get(field.name().declared().toString())
                                         == Ili2dbLayout.AttributeTransformation.EXPANDED_STRUCTURE, (field, kind) -> {
+                                    settings.enumOptions().checkExpandedField(kind, field);
                                     var stored = attrNames.take(field, parent.name(), null);
                                     useColumn(db, parent, stored, field);
                                     if (stored.target() != null) throw new DbException("Unexpected ATTRNAME.target for " + field);
@@ -290,6 +292,12 @@ final class DbSchemaReader {
                     }
                     if (transformation == Ili2dbLayout.AttributeTransformation.ARRAY) {
                         var binding = DbArray.describe(plan, layout, object, attr);
+                        if (binding.kind() == Kind.ENUMERATION && settings.enumOptions().numeric()) {
+                            var encoding = settings.enumOptions().itfCodes()
+                                    ? DbEnumeration.itfCodes((EnumerationType) binding.type(), path)
+                                    : enumeration(enumerations, DbEnumLookup.name(plan, binding.enumDefinition(plan, attr)));
+                            binding = binding.withEnumeration(encoding);
+                        }
                         var stored = attrNames.take(path, parent.name(), null);
                         useColumn(db, parent, stored, path);
                         if (binding.target().isPresent()) {
@@ -345,9 +353,7 @@ final class DbSchemaReader {
                                 column = column.withItfCodes();
                             } else if (enumLookup == DbEnumOptions.Lookup.WITH_ID) {
                                 String definition = DbEnumLookup.name(plan, DbEnumeration.definition(plan, attr));
-                                var encoding = enumerations.get(definition);
-                                if (encoding == null) throw new DbException("Missing enumeration lookup for " + definition);
-                                column = column.withEnumeration(encoding);
+                                column = column.withEnumeration(enumeration(enumerations, definition));
                             }
                         }
                         if (settings.enumOptions().textColumns() && (column.kind() == Kind.ENUMERATION || column.kind() == Kind.BOOLEAN)) {
@@ -1094,6 +1100,12 @@ final class DbSchemaReader {
             if (ids) bindings.put(definition, readEnumerationIds(db, table, definition, token));
         }
         return Map.copyOf(bindings);
+    }
+
+    private static DbEnumeration enumeration(Map<String, DbEnumeration> enumerations, String definition) {
+        var encoding = enumerations.get(definition);
+        if (encoding == null) throw new DbException("Missing enumeration lookup for " + definition);
+        return encoding;
     }
 
     private static DbEnumeration readEnumerationIds(Database db, String table, String definition, CancellationToken token)

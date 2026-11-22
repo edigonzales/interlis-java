@@ -414,6 +414,111 @@ final class EnumerationCases {
         assertEquals("Closed_Code", child(row, "StatusValue").getTextContent());
     }
 
+    void numericArrays(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "EnumArrayNumbers" + version;
+        var ili = source(model, """
+                DOMAIN Grade = (Zulu, Family (Zed, Alpha), Last_Code) ORDERED;
+                %s
+                CLASS Asset =
+                  !!@ili2db.mapping=ARRAY
+                  Grades : LIST OF %s;
+                END Asset;
+                """.formatted(version == 23 ? "STRUCTURE Member = Value : Grade; END Member;" : "",
+                version == 23 ? "Member" : "Grade"));
+        schema(expected, model, "--coalesceArray", "--createEnumColAsItfCode");
+        create(own, model, ili, "--coalesce-array", "--create-enum-col-as-itf-code");
+        assertSameCatalog(expected, own);
+        for (var db : List.of(expected, own)) numericArrayRoundtrip(db, model, false);
+
+        var refs = own.peer("enum_array_ids_ref");
+        var nativeIds = own.peer("enum_array_ids_own");
+        schema(refs, model, "--coalesceArray", "--createEnumTabsWithId");
+        create(nativeIds, model, ili, "--coalesce-array", "--create-enum-tabs-with-id");
+        assertSameCatalog(refs, nativeIds);
+        assertLookupContents(refs, nativeIds, "grade");
+        for (var db : List.of(refs, nativeIds)) numericArrayRoundtrip(db, model, true);
+
+        String expanded = "EnumExpandedGuard" + version;
+        var source = source(expanded, """
+                DOMAIN Grade = (Zulu, Alpha);
+                STRUCTURE Member = Value : Grade; END Member;
+                CLASS Asset =
+                  !!@ili2db.mapping=EXPAND
+                  Detail : Member;
+                END Asset;
+                """);
+        var rejected = cli(own.peer("enum_array_expand_guard"), "schemaimport", expanded, null, source,
+                CancellationToken.none(), "--expand-struct", "--create-enum-col-as-itf-code");
+        assertEquals(1, rejected.code(), rejected::diagnostics);
+        assertTrue(rejected.diagnostics().contains("enumeration column options for expanded field"), rejected::diagnostics);
+    }
+
+    private void numericArrayRoundtrip(TestDatabase db, String model, boolean ids) throws Exception {
+        var values = List.of("Family.Alpha", "Zulu", "Family.Alpha");
+        var output = work.resolve("output.xtf");
+        String first = ids ? "7100" : "2";
+        String second = ids ? "7200" : "0";
+        String table = db.table("asset");
+        try (var sql = db.connect()) {
+            if (ids) {
+                execute(sql, "UPDATE " + db.table("grade") + " SET t_id = 7100 WHERE ilicode = 'Family.Alpha'");
+                execute(sql, "UPDATE " + db.table("grade") + " SET t_id = 7200 WHERE ilicode = 'Zulu'");
+            }
+            referenceImport(db, "legacy", numericDataset(model, "legacy", values));
+            assertCliSuccess(db, "export", model, "legacy", output);
+            assertNumericArray(output, "legacy", values);
+            assertCliSuccess(db, "import", model, "native", numericDataset(model, "native", values));
+            referenceExport(db, "native", output);
+            assertNumericArray(output, "native", values);
+            for (var prefix : List.of("legacy", "native")) {
+                String from = " FROM " + table + " WHERE t_ili_tid = '" + prefix;
+                String series = db.postgis() ? "array_to_string(grades, ',')"
+                        : "json_extract(grades, '$[0]') || ',' || json_extract(grades, '$[1]') || ',' || json_extract(grades, '$[2]')";
+                String type = db.postgis() ? "pg_typeof(grades)::text" : "json_type(grades, '$[0]')";
+                assertEquals(first + "," + second + "," + first, scalar(sql, "SELECT " + series + from + "-value'"));
+                assertEquals(db.postgis() ? "bigint[]" : "integer", scalar(sql, "SELECT " + type + from + "-value'"));
+                assertNull(scalar(sql, "SELECT grades" + from + "-missing'"));
+            }
+            var invalid = dataset(model, "broken", object(model, "Asset", "broken-first", numericFields(model, values))
+                    + object(model, "Asset", "broken-last", numericFields(model, List.of("Family.Unknown"))));
+            assertCliFailure(db, "import", model, "broken", invalid, "Cannot encode enumeration value Family.Unknown");
+            assertEquals("4", scalar(sql, "SELECT count(*) FROM " + table));
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket")));
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
+            String invalidSql = db.postgis() ? "ARRAY[9999]::bigint[]" : "'[9999]'";
+            execute(sql, "UPDATE " + table + " SET grades = " + invalidSql + " WHERE t_ili_tid = 'native-value'");
+            byte[] previous = Files.readAllBytes(output);
+            assertCliFailure(db, "export", model, "native", output, "Unknown numeric enumeration value 9999");
+            assertArrayEquals(previous, Files.readAllBytes(output));
+        }
+    }
+
+    private Path numericDataset(String model, String prefix, List<String> values) throws Exception {
+        return dataset(model, prefix, object(model, "Asset", prefix + "-value", numericFields(model, values))
+                + object(model, "Asset", prefix + "-missing", ""));
+    }
+
+    private String numericFields(String model, List<String> values) {
+        if (version == 24) {
+            return values.stream().map(value -> "<Grades>" + value + "</Grades>").collect(Collectors.joining());
+        }
+        String wrapper = model + ".Data.Member";
+        return "<Grades>" + values.stream().map(value -> "<" + wrapper + "><Value>" + value + "</Value></" + wrapper + ">")
+                .collect(Collectors.joining()) + "</Grades>";
+    }
+
+    private void assertNumericArray(Path output, String prefix, List<String> values) throws Exception {
+        var basket = children(readDataSection(output, version)).getFirst();
+        assertEquals(prefix + "-basket", id(basket, version, "bid"));
+        var rows = children(basket).stream().collect(Collectors.toMap(row -> id(row, version, "tid"), row -> row));
+        assertNull(child(rows.get(prefix + "-missing"), "Grades"));
+        var row = rows.get(prefix + "-value");
+        var paths = version == 23
+                ? children(child(row, "Grades")).stream().map(item -> child(item, "Value").getTextContent()).toList()
+                : children(row).stream().filter(item -> item.getLocalName().equals("Grades")).map(item -> item.getTextContent()).toList();
+        assertEquals(values, paths);
+    }
+
     private static List<List<String>> rows(Connection sql, String query) throws Exception {
         var result = new ArrayList<List<String>>();
         try (var statement = sql.createStatement(); var rows = statement.executeQuery(query)) {
