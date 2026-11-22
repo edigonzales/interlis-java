@@ -112,12 +112,21 @@ final class DbInteropTest {
     @Test void geoPackageCatalogueReference24() throws Exception { exchangeCatalogueReference(24, null); }
     @Test void postgisCatalogueReference23() throws Exception { exchangeWithPostgis(23, this::exchangeCatalogueReference); }
     @Test void postgisCatalogueReference24() throws Exception { exchangeWithPostgis(24, this::exchangeCatalogueReference); }
+    @Test void geoPackageCatalogueSmart223() throws Exception { exchangeCatalogueSmart2(23, null); }
+    @Test void geoPackageCatalogueSmart224() throws Exception { exchangeCatalogueSmart2(24, null); }
+    @Test void postgisCatalogueSmart223() throws Exception { exchangeWithPostgis(23, this::exchangeCatalogueSmart2); }
+    @Test void postgisCatalogueSmart224() throws Exception { exchangeWithPostgis(24, this::exchangeCatalogueSmart2); }
 
     private void exchangeCatalogueReference(int version, PostgreSQLContainer postgres) throws Exception {
         var db = new TestDatabase(postgres, "catalogue_reference");
         var cases = new CatalogueCases(work, new ReferenceTool(db.postgis()), version);
         cases.singleTarget(db);
         if (version == 24) cases.directReference(new TestDatabase(postgres, "catalogue_direct"));
+    }
+
+    private void exchangeCatalogueSmart2(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "catalogue_smart2");
+        new CatalogueCases(work, new ReferenceTool(db.postgis()), version).smart2(db);
     }
 
     @Test void geoPackageSmart1Scalars23() throws Exception { exchangeSmart1Scalars(23, null); }

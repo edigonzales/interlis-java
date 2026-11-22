@@ -221,6 +221,9 @@ aus `CatalogueReference` und `MandatoryCatalogueReference` mit dem einzigen
 Feld `Reference`. Das XTF behält die Struktur. Ein fehlender Verweis wird als
 SQL-`NULL` gespeichert und das Feld beim Export weggelassen. Das Ziel kann
 in einem separaten Datensatz desselben Schemas liegen.
+In Smart2-Schemata kann das Katalogziel in mehreren konkreten Tabellen liegen.
+Der Import befüllt die Fremdschlüsselspalte der passenden Tabelle. Mehrere
+passende Zielzeilen oder gleichzeitig befüllte Zielspalten werden abgewiesen.
 
 Für bestehende Smart1-Schemata unterstützt `interlis-db` den FULL-Import
 und -Export von Klassenhierarchien mit skalaren Attributen. Das

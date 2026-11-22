@@ -23,6 +23,9 @@ MODEL CatalogueSurvey24 (en) AT "https://example.org" VERSION "2026-01-01" =
       Label : TEXT*40;
     END Material;
 
+    CLASS Secondary EXTENDS Material =
+    END Secondary;
+
     STRUCTURE MaterialRef EXTENDS CatalogueObjects_V1.Catalogues.CatalogueReference =
       Reference (EXTENDED) : REFERENCE TO (EXTERNAL) Material;
     END MaterialRef;

@@ -6,6 +6,7 @@
   <DATASECTION>
     <CatalogueSurvey23.Catalog BID="cat-b">
       <CatalogueSurvey23.Catalog.Material TID="material-a"><Label>Timber</Label></CatalogueSurvey23.Catalog.Material>
+      <CatalogueSurvey23.Catalog.Secondary TID="secondary-a"><Label>Steel</Label></CatalogueSurvey23.Catalog.Secondary>
     </CatalogueSurvey23.Catalog>
   </DATASECTION>
 </TRANSFER>

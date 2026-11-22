@@ -216,12 +216,12 @@ final class DbSchemaReader {
             }
             for (var contributor : relation.contributors()) {
                 var defaults = settings.crs(plan.model(contributor.model()).orElseThrow().name().declared().last());
-                for (var attr : DbMapping.attributes(contributor)) {
+                for (var attr : DbMapping.storageAttributes(object, contributor)) {
                     String path = attr.name().declared().toString();
                     if (transformations.catalogue().contains(path)) {
                         var binding = DbCatalogueReference.describe(plan, attr)
                                 .orElseThrow(() -> unsupported("catalogue reference at " + path));
-                        if (settings.inheritance() != DbInheritance.Profile.NEW_CLASS) {
+                        if (settings.inheritance() == DbInheritance.Profile.SMART1) {
                             throw unsupported("catalogue reference inheritance at " + path);
                         }
                         columns.addAll(bindReferences(db, parent, attrNames, layout, names,
@@ -241,7 +241,8 @@ final class DbSchemaReader {
                                 mapping.name(), binding.collectionKind()));
                         continue;
                     }
-                    for (var described : DbMapping.describeColumns(plan, contributor, attr, defaults, crsPair)) {
+                    var declaration = attr.member().overridden() ? object : contributor;
+                    for (var described : DbMapping.describeColumns(plan, declaration, attr, defaults, crsPair)) {
                         if (described.kind() == Kind.REFERENCE) {
                             columns.addAll(bindReferences(db, parent, attrNames, layout, names, described, false, settings));
                             continue;

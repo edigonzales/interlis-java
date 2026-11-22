@@ -95,6 +95,8 @@ für Katalogreferenzen mit `--coalesceCatalogueRef` auf GeoPackage und
 PostGIS. Die Fixtures verwenden die CHBase-V1-Strukturform in beiden
 Sprachversionen. Die Fälle prüfen die Ziel-ID im separaten Katalogdatensatz,
 leere Strukturen, Rollback bei fehlendem Ziel und fehlerhafte Metadaten.
+`*DbInteropTest.*CatalogueSmart2*` prüft zusätzlich alternative Zielspalten,
+mehrdeutige Ziel-TIDs und den atomaren Export bei doppelt belegten Spalten.
 
 `*DbInteropTest.*Smart*` prüft Smart1 und Smart2 mit XTF 2.3 und 2.4.
 Die Fälle vergleichen beide Werkzeugrichtungen, physische Eigentümer

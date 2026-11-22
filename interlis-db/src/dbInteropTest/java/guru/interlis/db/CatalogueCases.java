@@ -106,6 +106,52 @@ final class CatalogueCases {
         }
     }
 
+    void smart2(TestDatabase db) throws Exception {
+        String model = "CatalogueSurvey" + version;
+        fixture(model + ".ili");
+        referenceSchema(db, model, true);
+        var catalog = fixture(model + "-catalog.xtf");
+        var survey = fixture(model + "-survey.xtf");
+        Files.writeString(survey, Files.readString(survey).replaceFirst("material-a", "secondary-a"));
+        var output = work.resolve("smart2-output.xtf");
+        referenceImport(db, "catalog", catalog);
+        referenceImport(db, "legacy", survey);
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertSurvey(output, model, "survey", "secondary-a");
+
+        assertCliSuccess(db, "import", model, "native", surveyWithPrefix(survey, "native"));
+        referenceExport(db, "native", output);
+        assertSurvey(output, model, "native", "secondary-a");
+
+        try (var sql = db.connect()) {
+            String assets = db.table("asset");
+            String material = db.table("material");
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + assets + " a JOIN " + material
+                    + " m ON m.t_id=a.requiredmaterial_material JOIN " + db.table("asecondary")
+                    + " s ON s.t_id=a.mainmaterial_asecondary WHERE m.t_ili_tid='material-a'"
+                    + " AND s.t_ili_tid='secondary-a' AND a.mainmaterial_material IS NULL"
+                    + " AND a.requiredmaterial_asecondary IS NULL"));
+            assertEquals("4", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_attrname")
+                    + " WHERE colowner='asset' AND target IN ('material','asecondary') AND iliname IN ('"
+                    + model + ".Survey.Asset.MainMaterial','" + model + ".Survey.Asset.RequiredMaterial')"));
+            assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("materialref")));
+            assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("materialmandatory")));
+            execute(sql, "UPDATE " + assets + " SET mainmaterial_material=requiredmaterial_material WHERE t_ili_tid='native-a'");
+        }
+        var previous = Files.readString(output);
+        assertCliFailure(db, "export", model, "native", output,
+                "Multiple stored values for " + model + ".Survey.Asset.MainMaterial");
+        assertEquals(previous, Files.readString(output));
+
+        var other = Files.writeString(work.resolve("other-catalog.xtf"),
+                Files.readString(catalog).replace("cat-b", "other-b"));
+        assertCliSuccess(db, "import", model, "other-catalog", other);
+        var ambiguous = surveyWithPrefix(survey, "ambiguous");
+        Files.writeString(ambiguous, Files.readString(ambiguous).replace(" BID=\"cat-b\"", ""));
+        assertCliFailure(db, "import", model, "ambiguous", ambiguous, "Ambiguous stored reference target secondary-a");
+        assertNoFailedImport(db, "ambiguous");
+    }
+
     private void assertDirectReference(Path output, String prefix) throws Exception {
         var basket = children(readDataSection(output, version)).getFirst();
         assertEquals(prefix + "-b", id(basket, version, "bid"));

@@ -32,14 +32,17 @@ record DbCatalogueReference(SymbolRef structure, AttributeSlot field, ReferenceT
 
     static boolean isWrapper(TransferPlan plan, ObjectDescriptor structure) {
         for (var current = structure; ; current = plan.object(current.baseType().orElseThrow()).orElseThrow()) {
-            switch (current.name().declared().toString()) {
-                case "CatalogueObjects_V1.Catalogues.CatalogueReference",
-                     "CatalogueObjects_V1.Catalogues.MandatoryCatalogueReference" -> { return true; }
-                default -> {
-                    if (current.baseType().isEmpty()) return false;
-                }
-            }
+            if (isBase(current)) return true;
+            if (current.baseType().isEmpty()) return false;
         }
+    }
+
+    static boolean isBase(ObjectDescriptor structure) {
+        return switch (structure.name().declared().toString()) {
+            case "CatalogueObjects_V1.Catalogues.CatalogueReference",
+                 "CatalogueObjects_V1.Catalogues.MandatoryCatalogueReference" -> true;
+            default -> false;
+        };
     }
 
     static boolean isReferenceField(AttributeSlot field) {

@@ -780,6 +780,17 @@ final class DbMapping {
         return attributes;
     }
 
+    static List<AttributeSlot> storageAttributes(ObjectDescriptor table, ObjectDescriptor contributor) {
+        var attributes = attributes(contributor);
+        if (table.equals(contributor) || !DbCatalogueReference.isBase(contributor)) return attributes;
+        // When a Smart layout copies a wrapper's base field into the concrete table,
+        // ili2db stores the concrete declaration and its narrower target.
+        var effective = table.slots().stream().filter(AttributeSlot.class::isInstance)
+                .map(AttributeSlot.class::cast).filter(DbCatalogueReference::isReferenceField).findFirst();
+        return attributes.stream().map(attribute -> DbCatalogueReference.isReferenceField(attribute)
+                ? effective.orElse(attribute) : attribute).toList();
+    }
+
     static List<AssociationRole> describeRoles(TransferPlan plan, ObjectDescriptor association) {
         String feature = "association " + association.name().declared();
         var roles = roleSlots(association);

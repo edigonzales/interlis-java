@@ -5,6 +5,7 @@
   <i:datasection>
     <Catalog i:bid="cat-b">
       <Material i:tid="material-a"><Label>Timber</Label></Material>
+      <Secondary i:tid="secondary-a"><Label>Steel</Label></Secondary>
     </Catalog>
   </i:datasection>
 </i:transfer>
