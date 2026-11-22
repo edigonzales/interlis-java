@@ -193,6 +193,41 @@ final class EnumerationCases {
         return scalar(sql, "SELECT sqlname FROM " + db.table("t_ili2db_classname") + " WHERE iliname = '" + path + "'");
     }
 
+    void storedIds(TestDatabase db) throws Exception {
+        String model = "EnumStoredIds" + version;
+        source(model, BASE);
+        schema(db, model, "--createEnumTabsWithId");
+        try (var sql = db.connect()) {
+            String grade = db.table(mappedTable(db, sql, model + ".Data.Grade"));
+            String direct = db.table(mappedTable(db, sql, model + ".Data.Asset.DirectValue"));
+            execute(sql, "UPDATE " + grade + " SET t_id = 7001 WHERE ilicode = 'Family.Alpha'");
+            execute(sql, "UPDATE " + direct + " SET t_id = 8111 WHERE ilicode = 'No_Sign'");
+            mixScalars(db, model);
+            String assets = db.table("asset");
+            for (var prefix : List.of("legacy", "native")) {
+                String from = " FROM " + assets + " WHERE t_ili_tid = '" + prefix;
+                assertEquals("7001", scalar(sql, "SELECT gradevalue" + from + "-value'"));
+                assertEquals("8111", scalar(sql, "SELECT directvalue" + from + "-value'"));
+                assertNull(scalar(sql, "SELECT gradevalue" + from + "-missing'"));
+            }
+
+            var output = work.resolve("output.xtf");
+            byte[] existing = Files.readAllBytes(output);
+            execute(sql, "UPDATE " + assets + " SET gradevalue = 9000 WHERE t_ili_tid = 'legacy-value'");
+            assertCliFailure(db, "export", model, "legacy", output, "Unknown numeric enumeration value 9000");
+            assertArrayEquals(existing, Files.readAllBytes(output));
+            execute(sql, "UPDATE " + assets + " SET gradevalue = 7001 WHERE t_ili_tid = 'legacy-value'");
+
+            execute(sql, "INSERT INTO " + grade + """
+                     (t_id, thisclass, baseclass, itfcode, ilicode, seq, dispname, description, inactive)
+                     SELECT 9000, thisclass, baseclass, itfcode, ilicode, seq, dispname, description, inactive
+                     FROM
+                    """ + grade + " WHERE t_id = 7001");
+            assertCliFailure(db, "export", model, "legacy", output, "Ambiguous enumeration lookup");
+            assertArrayEquals(existing, Files.readAllBytes(output));
+        }
+    }
+
     private static List<List<String>> rows(Connection sql, String query) throws Exception {
         var result = new ArrayList<List<String>>();
         try (var statement = sql.createStatement(); var rows = statement.executeQuery(query)) {

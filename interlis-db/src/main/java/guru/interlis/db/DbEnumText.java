@@ -21,6 +21,9 @@ record DbEnumText(String column, Map<String, String> labels, boolean beautify) {
     static DbEnumText describe(TransferPlan plan, DbMapping.Column column, boolean beautify) {
         var labels = new HashMap<String, String>();
         if (column.kind() == DbMapping.Kind.ENUMERATION) {
+            if (column.enumeration().filter(value -> !value.labels().isEmpty()).isPresent()) {
+                return new DbEnumText(column.name() + "_txt", column.enumeration().orElseThrow().labels(), beautify);
+            }
             var definition = DbEnumeration.definition(plan, (AttributeSlot) column.slot());
             String language = language(plan, definition);
             DbEnumeration.elements(plan, definition).forEach((path, element) -> {

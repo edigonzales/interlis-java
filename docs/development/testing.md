@@ -103,6 +103,8 @@ Transfers erhalten manuell geänderte Lookup-Zeilen.
 Die `*EnumPerLookup*`-Fälle prüfen den Katalog für Lookup-Tabellen pro
 Definition, eine Namenskollision und einen gespeicherten SQL-Namen
 nach dem Umbenennen einer Lookup-Tabelle.
+Die `*EnumStoredIds*`-Fälle prüfen beliebige gespeicherte Lookup-IDs,
+`NULL`, unbekannte IDs und mehrdeutige Zuordnungen.
 
 Die `*ArrayText*`-Fälle prüfen Reihenfolge, Duplikate, Sonderzeichen,
 gespeicherte SQL-Spaltennamen und den bekannten Referenzfehler bei

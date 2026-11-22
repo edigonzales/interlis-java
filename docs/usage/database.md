@@ -552,6 +552,9 @@ Aufzählungen als numerische Codes vor. Die Blattwerte werden in der
 effektiven Baumreihenfolge ab null nummeriert. Der XTF-Transfer verwendet
 weiterhin die qualifizierten XTF-Codes. Unbekannte Codes werden am
 betroffenen Attribut diagnostiziert.
+Bei `--createEnumTabsWithId` speichert die Fachspalte die `T_Id`
+des Lookup-Eintrags. Der Transfer verwendet die in der Datenbank
+gespeicherte Zuordnung für die jeweilige Aufzählungsdefinition.
 
 In bestehenden Schemata mit `--coalesceJson` speichert ili2db eine
 optionale flache Struktur als JSON-Objekt. GeoPackage verwendet `TEXT`,

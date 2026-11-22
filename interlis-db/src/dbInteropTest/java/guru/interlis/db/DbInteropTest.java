@@ -162,6 +162,16 @@ final class DbInteropTest {
         new EnumerationCases(work, new ReferenceTool(db.postgis()), version).perLookup(expected, db);
     }
 
+    @Test void geoPackageEnumStoredIds23() throws Exception { exchangeEnumStoredIds(23, null); }
+    @Test void geoPackageEnumStoredIds24() throws Exception { exchangeEnumStoredIds(24, null); }
+    @Test void postgisEnumStoredIds23() throws Exception { exchangeWithPostgis(23, this::exchangeEnumStoredIds); }
+    @Test void postgisEnumStoredIds24() throws Exception { exchangeWithPostgis(24, this::exchangeEnumStoredIds); }
+
+    private void exchangeEnumStoredIds(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "enum_stored_id");
+        new EnumerationCases(work, new ReferenceTool(db.postgis()), version).storedIds(db);
+    }
+
     @Test void geoPackageArrayText23() throws Exception { exchangeArrayText(23, null); }
     @Test void geoPackageArrayText24() throws Exception { exchangeArrayText(24, null); }
     @Test void postgisArrayText23() throws Exception { exchangeWithPostgis(23, this::exchangeArrayText); }

@@ -19,10 +19,11 @@ import java.util.List;
 import java.util.Map;
 
 /** Bidirectional mapping between an enumeration path and its numeric database value. */
-record DbEnumeration(Map<String, Long> numbers, Map<Long, String> paths) {
+record DbEnumeration(Map<String, Long> numbers, Map<Long, String> paths, Map<String, String> labels) {
     DbEnumeration {
         numbers = Map.copyOf(numbers);
         paths = Map.copyOf(paths);
+        labels = Map.copyOf(labels);
     }
 
     static List<EnumerationValue> values(EnumerationType type) {
@@ -78,7 +79,7 @@ record DbEnumeration(Map<String, Long> numbers, Map<Long, String> paths) {
             numbers.put(value.path(), code);
             paths.put(code++, value.path());
         }
-        return new DbEnumeration(numbers, paths);
+        return new DbEnumeration(numbers, paths, Map.of());
     }
 
     Enumeration read(String value, String context) {

@@ -33,6 +33,7 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
 
     static List<DbEnumLookup> plan(DbMapping mapping, SqlNames names, DbEnumOptions options, CancellationToken token) {
         if (options.lookup() == DbEnumOptions.Lookup.NONE) return List.of();
+        if (options.lookup() == DbEnumOptions.Lookup.WITH_ID) throw DbMapping.unsupported("creation of enumeration ID tables");
         var plan = mapping.plan();
         var objects = mapping.inheritance().declarations().stream().map(DbInheritance.Declaration::object).toList();
         var definitions = definitions(plan, DbMapping.storageRoots(plan, mapping.crsPair()), objects, token);

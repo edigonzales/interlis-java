@@ -130,10 +130,13 @@ final class DbSchemaReader {
         var mappedModels = new HashSet<>(selectedModels);
         roots.stream().map(ref -> plan.model(ref).orElseThrow().name().declared().last()).forEach(mappedModels::add);
         var enumDefinitions = new HashSet<String>();
-        if (settings.enumOptions().lookup() == DbEnumOptions.Lookup.PER_DEFINITION) {
+        var enumLookup = settings.enumOptions().lookup();
+        if (enumLookup == DbEnumOptions.Lookup.PER_DEFINITION || enumLookup == DbEnumOptions.Lookup.WITH_ID) {
             DbEnumLookup.definitions(plan, roots, selected, token).stream()
                     .map(value -> DbEnumLookup.name(plan, value.declaration())).forEach(enumDefinitions::add);
-            if (DbEnumLookup.hasBoolean(plan, selected)) enumDefinitions.add(DbEnumLookup.BOOLEAN_DEFINITION);
+            if (enumLookup == DbEnumOptions.Lookup.PER_DEFINITION && DbEnumLookup.hasBoolean(plan, selected)) {
+                enumDefinitions.add(DbEnumLookup.BOOLEAN_DEFINITION);
+            }
         }
         var scope = new MetadataScope(mappedModels, selected.stream()
                 .map(object -> object.name().declared().toString()).collect(Collectors.toSet()), enumDefinitions);
@@ -154,7 +157,7 @@ final class DbSchemaReader {
         var inheritance = readInheritance(db, scope);
         var names = new HashMap<SymbolRef, String>();
         var usedNames = new HashSet<String>();
-        readEnumTables(db, classNames, usedNames, enumDefinitions, settings.enumOptions().lookup(), token);
+        var enumerations = readEnumTables(db, classNames, usedNames, enumDefinitions, enumLookup, token);
         var declarations = new ArrayList<DbInheritance.Declaration>();
         var associations = new ArrayList<EmbeddedAssociation>();
         var linkRoles = new HashMap<SymbolRef, List<AssociationRole>>();
@@ -332,6 +335,16 @@ final class DbSchemaReader {
                         String table = settings.splitGeometries() && described.kind().geometry() ? classNames.remove(secondaryKey) : null;
                         var mapping = attrNames.take(attribute, table == null ? parent.name() : table, null);
                         var column = described.withName(mapping.name()).withStrokeArcs(plan, settings.strokeArcs());
+                        if (column.kind() == Kind.ENUMERATION) {
+                            if (settings.enumOptions().itfCodes()) {
+                                column = column.withItfCodes();
+                            } else if (enumLookup == DbEnumOptions.Lookup.WITH_ID) {
+                                String definition = DbEnumLookup.name(plan, DbEnumeration.definition(plan, attr));
+                                var encoding = enumerations.get(definition);
+                                if (encoding == null) throw new DbException("Missing enumeration lookup for " + definition);
+                                column = column.withEnumeration(encoding);
+                            }
+                        }
                         if (settings.enumOptions().textColumns() && (column.kind() == Kind.ENUMERATION || column.kind() == Kind.BOOLEAN)) {
                             column = column.withEnumText(DbEnumText.describe(plan, column, settings.enumOptions().beautify()));
                         }
@@ -507,11 +520,9 @@ final class DbSchemaReader {
                 switch (settings.get(Ili2dbLayout.ENUM_DEFINITIONS)) {
                     case "singleTable" -> DbEnumOptions.Lookup.SINGLE;
                     case "multiTable" -> DbEnumOptions.Lookup.PER_DEFINITION;
+                    case "multiTableWithId" -> DbEnumOptions.Lookup.WITH_ID;
                     case null, default -> DbEnumOptions.Lookup.NONE;
                 });
-        if ("multiTableWithId".equals(settings.get(Ili2dbLayout.ENUM_DEFINITIONS))) {
-            throw unsupported("enumerations stored as SQL IDs");
-        }
         String epsgNames = settings.get(Ili2dbLayout.USE_EPSG_IN_NAMES);
         if (epsgNames != null && !List.of("True", "False").contains(epsgNames)) {
             throw unsupported("SETTINGS.useEpsgInNames=" + epsgNames);
@@ -902,9 +913,6 @@ final class DbSchemaReader {
             requireGeometryColumn(db, table.name(), table.columns(), column);
             return bindGeometry(db, table.name(), column, settings);
         }
-        if (column.kind() == Kind.ENUMERATION && settings.enumOptions().itfCodes()) {
-            column = column.withItfCodes();
-        }
         for (var name : column.physicalNames()) {
             boolean supplementary = !name.equals(column.name());
             if (supplementary && !table.used().add(key(db, name))) {
@@ -1056,19 +1064,50 @@ final class DbSchemaReader {
         }
     }
 
-    private static void readEnumTables(Database db, Map<String, String> classNames, Set<String> usedNames,
+    private static Map<String, DbEnumeration> readEnumTables(Database db, Map<String, String> classNames, Set<String> usedNames,
                                        Set<String> definitions, DbEnumOptions.Lookup mode, CancellationToken token) throws SQLException {
         if (mode == DbEnumOptions.Lookup.SINGLE) {
             requireEnumTable(db, foldedName(Ili2dbLayout.ENUM), true);
         }
+        var bindings = new HashMap<String, DbEnumeration>();
+        boolean ids = mode == DbEnumOptions.Lookup.WITH_ID;
         for (var definition : definitions.stream().sorted().toList()) {
             token.throwIfCancellationRequested();
             String table = classNames.remove(definition);
             if (table == null || !usedNames.add(key(db, table)) || Ili2dbLayout.reservedTable(foldedName(table), db.gpkg())) {
                 throw new DbException("Missing or inconsistent enumeration CLASSNAME mapping for " + definition);
             }
-            requireEnumTable(db, table, false);
+            requireEnumTable(db, table, ids);
+            if (ids) {
+                requireColumns(db, table, physicalColumns(db, table), Map.of(T_ID, Kind.REFERENCE));
+                bindings.put(definition, readEnumerationIds(db, table, definition, token));
+            }
         }
+        return Map.copyOf(bindings);
+    }
+
+    private static DbEnumeration readEnumerationIds(Database db, String table, String definition, CancellationToken token)
+            throws SQLException {
+        var numbers = new HashMap<String, Long>();
+        var paths = new HashMap<Long, String>();
+        var labels = new HashMap<String, String>();
+        String sql = "SELECT " + T_ID + ", ilicode, dispname FROM " + db.table(table) + " WHERE thisclass = ?";
+        try (var statement = db.connection().prepareStatement(sql)) {
+            statement.setString(1, definition);
+            try (var rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    token.throwIfCancellationRequested();
+                    String path = required(rows, 2, "enumeration iliCode");
+                    long id = rows.getLong(1);
+                    if (rows.wasNull() || numbers.putIfAbsent(path, id) != null || paths.putIfAbsent(id, path) != null) {
+                        throw new DbException("Ambiguous enumeration lookup for " + definition + " at " + path);
+                    }
+                    String label = rows.getString(3);
+                    if (label != null && !label.isEmpty()) labels.put(path, label);
+                }
+            }
+        }
+        return new DbEnumeration(numbers, paths, labels);
     }
 
     private static void requireEnumTable(Database db, String table, boolean shared) throws SQLException {
