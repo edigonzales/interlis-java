@@ -30,17 +30,20 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /** The ili2db representation of single-field values stored together in one column. */
-record DbArray(CollectionKind collection, SymbolRef structure, AttributeSlot field, Kind kind, TypeDescriptor type) {
+record DbArray(Optional<CollectionKind> collection, SymbolRef structure, AttributeSlot field, Kind kind, TypeDescriptor type) {
     private static final int MAX_ELEMENTS = 1_000_000;
 
     static DbArray describe(TransferPlan plan, AttributeSlot outer) {
         String path = outer.name().declared().toString();
-        if (!(DbStructureShape.type(plan, outer) instanceof CollectionType repeated)) {
-            throw DbMapping.unsupported("coalesced array at " + path);
+        var type = DbStructureShape.type(plan, outer);
+        Optional<CollectionKind> collection = Optional.empty();
+        if (type instanceof CollectionType repeated) {
+            collection = Optional.of(repeated.collectionKind());
+            type = plan.type(new TypeRef(plan.snapshotId(), repeated.elementType())).known().orElseThrow();
         }
-        var type = plan.type(new TypeRef(plan.snapshotId(), repeated.elementType())).known().orElseThrow();
         var structure = DbStructureShape.target(plan, type)
                 .filter(target -> target.kind() == SymbolKind.STRUCTURE && !target.modifiers().contains(Modifier.ABSTRACT))
                 .orElseThrow(() -> DbMapping.unsupported("coalesced array structure at " + path));
@@ -54,7 +57,7 @@ record DbArray(CollectionKind collection, SymbolRef structure, AttributeSlot fie
         if (kind != Kind.TEXT && kind != Kind.BOOLEAN && kind != Kind.INTEGER && kind != Kind.ENUMERATION) {
             throw DbMapping.unsupported("coalesced array element at " + path);
         }
-        return new DbArray(repeated.collectionKind(), structure.symbol(), field, scalar.kind(), scalar.effectiveType().orElseThrow());
+        return new DbArray(collection, structure.symbol(), field, scalar.kind(), scalar.effectiveType().orElseThrow());
     }
 
     String pgElementType() {
@@ -68,22 +71,30 @@ record DbArray(CollectionKind collection, SymbolRef structure, AttributeSlot fie
 
     TransferValue assemble(List<?> values, String context) {
         if (values.isEmpty()) return null;
+        if (collection.isEmpty() && values.size() != 1) {
+            throw invalid("Single coalesced structure has multiple array elements", context);
+        }
         var items = new ArrayList<TransferValue>(values.size());
         for (var value : values) {
             var element = value == null ? null : readElement(value, context);
             items.add(new Structured(structure, element == null ? Map.of() : Map.of(field.symbol(), element)));
         }
-        return new Repeated(collection, items);
+        return collection.<TransferValue>map(kind -> new Repeated(kind, items)).orElseGet(items::getFirst);
     }
 
     List<Object> disassemble(TransferValue value, String context) {
         if (value == null || value == Undefined.INSTANCE) return List.of();
-        if (!(value instanceof Repeated repeated) || repeated.kind() != collection) {
+        List<TransferValue> items;
+        if (collection.isEmpty()) {
+            items = List.of(value);
+        } else if (value instanceof Repeated repeated && repeated.kind() == collection.orElseThrow()) {
+            items = repeated.values();
+        } else {
             throw invalid("Unexpected array collection", context);
         }
-        checkCount(repeated.values().size(), context);
-        var result = new ArrayList<>(repeated.values().size());
-        for (var item : repeated.values()) {
+        checkCount(items.size(), context);
+        var result = new ArrayList<>(items.size());
+        for (var item : items) {
             if (!(item instanceof Structured structureValue) || !structure.equals(structureValue.type())
                     || structureValue.values().keySet().stream().anyMatch(key -> !key.equals(field.symbol()))) {
                 throw invalid("Unexpected array structure", context);

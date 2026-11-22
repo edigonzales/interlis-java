@@ -98,7 +98,8 @@ Die `*ArrayInteger*`-Fälle prüfen typisierte Ganzzahlen und den Rollback,
 wenn ein Wert die 32-Bit-Kodierung übersteigt. Die `*ArrayEnumeration*`-Fälle
 prüfen benannte Aufzählungen und qualifizierte XTF-Codes. Die
 `*ArrayBag*`-Fälle prüfen Duplikate, fehlende Werte und die gruppierte
-XTF-2.4-Ausgabe von ili2db.
+XTF-2.4-Ausgabe von ili2db. Die `*ArraySingle*`-Fälle prüfen optionale
+Einzelwerte und diagnostizieren mehrere gespeicherte Elemente.
 
 Die `*ExpandSingle*`-Fälle prüfen den Austausch optionaler flacher
 Strukturen mit ili2db-`--expandStruct`, das Umbenennen einer SQL-Spalte

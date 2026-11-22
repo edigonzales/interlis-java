@@ -506,7 +506,8 @@ JSON-Array in `TEXT`, PostGIS verwendet `varchar[]`, `boolean[]` oder
 Attribut. Ein einzelnes `NULL`-Element ergibt bei `interlis-db` eine
 leere Struktur. ili2db 5.5.2 importiert dieselbe Form, bricht aber beim
 eigenen Export mit `illegal value null for Entry` ab, wenn das Textfeld
-`Entry` heisst.
+`Entry` heisst. Ein optionaler Struktureinzelwert mit `ili2db.mapping=ARRAY`
+verwendet dieselbe Kodierung mit höchstens einem Element.
 
 In bestehenden Schemata mit `--coalesceJson` speichert ili2db eine
 optionale flache Struktur als JSON-Objekt. GeoPackage verwendet `TEXT`,

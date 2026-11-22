@@ -174,6 +174,28 @@ final class ArrayCases {
                 items(objects.get(prefix + "-value"), "Items").stream().sorted().toList());
     }
 
+    void single(TestDatabase db) throws Exception {
+        String model = "ArraySingle" + version;
+        source(model, "STRUCTURE Elem = Entry : TEXT*40; END Elem;", """
+                CLASS Asset =
+                  !!@ili2db.mapping=ARRAY
+                  Items : Elem;
+                END Asset;
+                """);
+        var output = mixedLists(db, model, List.of("one"));
+        try (var sql = db.connect()) {
+            String size = db.postgis() ? "cardinality(items)" : "json_array_length(items)";
+            var table = db.table("asset");
+            assertEquals("1", scalar(sql, "SELECT " + size + " FROM " + table + " WHERE t_ili_tid='native-value'"));
+            assertNull(scalar(sql, "SELECT items FROM " + table + " WHERE t_ili_tid='native-missing'"));
+            String invalid = db.postgis() ? "'{first,second}'" : "'[\"first\",\"second\"]'";
+            execute(sql, "UPDATE " + table + " SET items=" + invalid + " WHERE t_ili_tid='native-value'");
+        }
+        var previous = Files.readString(output);
+        assertCliFailure(db, "export", model, "native", output, "Single coalesced structure has multiple array elements");
+        assertEquals(previous, Files.readString(output));
+    }
+
     private Path mixedLists(TestDatabase db, String model, List<String> expected) throws Exception {
         schema(db, model);
         var output = work.resolve("output.xtf");
