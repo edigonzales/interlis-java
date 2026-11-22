@@ -55,7 +55,9 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
 
     record ColumnProperty(String table, String subtype, String column, String key, String value) { }
 
-    record ForeignKey(String table, String column, String target) { }
+    record ForeignKey(String table, String column, String target, boolean index) {
+        ForeignKey(String table, String column, String target) { this(table, column, target, true); }
+    }
 
     /** A mapped geometry and its SQL catalog bounds, with null for an absent bound. */
     record GeometryColumn(DbMapping.Column column, Double minX, Double minY, Double maxX, Double maxY) { }
@@ -157,6 +159,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         var keys = new ArrayList<ForeignKey>();
         if (newSchema) keys.add(new ForeignKey(Ili2dbLayout.BASKET, "dataset", Ili2dbLayout.DATASET));
         for (var table : addedTables) {
+            table.baseTable().ifPresent(base -> keys.add(new ForeignKey(table.name(), Ili2dbLayout.ID_COLUMN,
+                    mapping.table(base).name(), false)));
             keys.add(new ForeignKey(table.name(), Ili2dbLayout.BASKET_COLUMN, Ili2dbLayout.BASKET));
             for (var column : table.columns()) {
                 if (column.target().isPresent()) {
@@ -164,6 +168,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 }
             }
             for (var geometry : table.secondaryGeometries()) {
+                keys.add(new ForeignKey(geometry.table(), Ili2dbLayout.ID_COLUMN, table.name(), false));
                 keys.add(new ForeignKey(geometry.table(), Ili2dbLayout.BASKET_COLUMN, Ili2dbLayout.BASKET));
             }
         }
@@ -172,6 +177,11 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                     mapping.table(composition.parent()).name()));
         }
         return List.copyOf(keys);
+    }
+
+    List<String> linkOwnerColumns(DbMapping.Table table) {
+        return mapping.associations().stream().filter(link -> link.linkTable() && link.object().symbol().equals(table.object().symbol()))
+                .map(link -> table.column(link.ownerRole().slot().symbol()).name()).toList();
     }
 
     String tableKind(DbMapping.Table table) {

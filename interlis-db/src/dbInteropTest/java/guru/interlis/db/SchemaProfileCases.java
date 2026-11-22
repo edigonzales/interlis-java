@@ -26,6 +26,7 @@ import static guru.interlis.db.DbInteropTest.readDataSection;
 import static guru.interlis.db.DbInteropTest.referenceDatasetFixture;
 import static guru.interlis.db.DbInteropTest.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -152,6 +153,112 @@ final class SchemaProfileCases {
         assertEquals("present", child(children(child(row, "Notes")).getFirst(), "Message").getTextContent());
     }
 
+    void hierarchyKeys(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "SmartPoly" + version;
+        Path ili = fixture(model + ".ili");
+        Files.writeString(ili, Files.readString(ili).replace("  END Data;", """
+                    DOMAIN Position = COORD 0.000 .. 100.000, 0.000 .. 100.000;
+                    CLASS Marker = MainPoint : Position; CheckPoint : Position; END Marker;
+                    ASSOCIATION Calibration =
+                      Applying -- {0..1} Terminal;
+                      Applied -- {0..*} Marker;
+                      Score : 0..9;
+                    END Calibration;
+                    STRUCTURE PointerValue = Destination : REFERENCE TO (EXTERNAL) Instrument; END PointerValue;
+                    CLASS Pointer = Link : PointerValue; END Pointer;
+                  END Data;"""));
+        Path input = fixture(model + ".xtf");
+        String endBasket = version == 23 ? "</" + model + ".Data>" : "</Data>";
+        String marker = object(model, "Marker", "fixture-point", "<MainPoint>" + point("12.000", "13.000")
+                + "</MainPoint><CheckPoint>" + point("14.000", "15.000") + "</CheckPoint>"
+                + reference("Applying", "fixture-t"));
+        Files.writeString(input, Files.readString(input).replace(endBasket, marker + endBasket));
+        Path nativeData = Files.writeString(work.resolve("hierarchy-native.xtf"), Files.readString(input).replace("fixture-", "native-"));
+        Path update = Files.writeString(work.resolve("hierarchy-update.xtf"), Files.readString(nativeData).replace(">smart<", ">changed<"));
+        String structure = version == 23 ? model + ".Data.PointerValue" : "PointerValue";
+        String destination = version == 23 ? "<Destination REF=\"native-s\" BID=\"native-b\"/>"
+                : "<Destination i:ref=\"native-s\"/>";
+        Path incoming = data(model, "incoming", object(model, "Pointer", "incoming-p",
+                "<Link><" + structure + ">" + destination + "</" + structure + "></Link>"));
+        for (boolean smart : List.of(false, true)) {
+            var baseline = smart ? expected.peer("profile_smart_keys_ref") : expected;
+            var created = smart ? own.peer("profile_smart_keys_own") : own;
+            var legacyOptions = new ArrayList<>(List.of("--sqlEnableNull", "--createFk"));
+            var nativeOptions = new ArrayList<>(List.of("--create-fk"));
+            if (own.postgis()) {
+                legacyOptions.add("--oneGeomPerTable");
+                nativeOptions.add("--one-geom-per-table");
+            }
+            if (smart) {
+                legacyOptions.add("--smart2Inheritance");
+                nativeOptions.addAll(List.of("--inheritance", "smart2"));
+            }
+            referenceSchema(baseline, ili, legacyOptions.toArray(String[]::new));
+            schema(created, model, ili, nativeOptions.toArray(String[]::new));
+            try (var left = baseline.connect(); var right = created.connect()) {
+                var keys = foreignKeyColumns(baseline, left);
+                assertTrue(keys.contains("marker_checkpoint:t_id:marker"), keys.toString());
+                assertTrue(keys.contains(smart ? "crosscheck:checkedinstrument_terminal:terminal"
+                        : "meter:t_id:instrument"), keys.toString());
+                assertEquals(keys, foreignKeyColumns(created, right));
+                for (var catalog : List.of(DbSchemaCatalog.read(left, baseline.postgis(), baseline.schema()),
+                        DbSchemaCatalog.read(right, created.postgis(), created.schema()))) {
+                    assertTrue(catalog.relations().get("unique keys").contains(List.of("calibration", "applied")));
+                }
+            }
+            for (var db : List.of(baseline, created)) {
+                Path output = work.resolve("hierarchy-output.xtf");
+                referenceImport(db, "legacy", input);
+                assertCliSuccess(db, "export", model, "legacy", output);
+                assertHierarchy(basketRows(output, "fixture-b", 7), "fixture", "smart");
+                assertCliSuccess(db, "import", model, "native", nativeData);
+                referenceExport(db, "native", output);
+                assertHierarchy(basketRows(output, "native-b", 7), "native", "smart");
+                try (var sql = db.connect()) {
+                    String row = " FROM " + db.table(smart ? "smartunit" : "instrument") + " WHERE t_ili_tid='native-s'";
+                    String original = scalar(sql, "SELECT t_id" + row);
+                    assertCliSuccess(db, "update", model, "native", update);
+                    assertEquals(original, scalar(sql, "SELECT t_id" + row));
+                    assertCliSuccess(db, "import", model, "incoming", incoming);
+                    assertCliFailure(db, "delete", model, "native", null, "referenced object");
+                    assertCliFailure(db, "replace", model, "native", nativeData, "referenced object");
+                    referenceExport(db, "native", output);
+                    assertHierarchy(basketRows(output, "native-b", 7), "native", "changed");
+                    assertCliSuccess(db, "delete", model, "incoming", null);
+                    assertCliSuccess(db, "replace", model, "native", nativeData);
+                    assertNotEquals(original, scalar(sql, "SELECT t_id" + row));
+                    assertCliSuccess(db, "delete", model, "native", null);
+                    assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("marker_checkpoint")));
+                }
+            }
+        }
+    }
+
+    private void assertHierarchy(List<Element> rows, String prefix, String memo) {
+        var smart = rows.stream().filter(row -> (prefix + "-s").equals(id(row, version, "tid"))).findFirst().orElseThrow();
+        assertEquals(memo, child(smart, "Memo").getTextContent());
+        var marker = rows.stream().filter(row -> (prefix + "-point").equals(id(row, version, "tid"))).findFirst().orElseThrow();
+        var coordinate = child(children(child(marker, "CheckPoint")).getFirst(), version == 23 ? "C1" : "c1");
+        assertEquals(0, new java.math.BigDecimal("14").compareTo(new java.math.BigDecimal(coordinate.getTextContent())));
+        assertEquals(prefix + "-t", id(child(marker, "Applying"), version, "ref"));
+        var links = rows.stream().filter(row -> row.getLocalName().endsWith("CrossCheck")).toList();
+        assertEquals(Set.of(prefix + "-s", prefix + "-t"), links.stream()
+                .map(row -> id(child(row, "CheckedInstrument"), version, "ref")).collect(java.util.stream.Collectors.toSet()));
+    }
+
+    private String point(String x, String y) {
+        return version == 23 ? "<COORD><C1>" + x + "</C1><C2>" + y + "</C2></COORD>"
+                : "<g:coord xmlns:g=\"http://www.interlis.ch/geometry/1.0\"><g:c1>" + x + "</g:c1><g:c2>" + y + "</g:c2></g:coord>";
+    }
+
+    private Path fixture(String name) throws Exception {
+        Path destination = work.resolve(name);
+        try (var input = SchemaProfileCases.class.getResourceAsStream("/smart/" + name)) {
+            Files.copy(java.util.Objects.requireNonNull(input, name), destination);
+        }
+        return destination;
+    }
+
     private Path linkedModel(String model) throws Exception {
         return source(model, """
                 STRUCTURE Note = Message : TEXT*24; END Note;
@@ -265,9 +372,13 @@ final class SchemaProfileCases {
     }
 
     private List<Element> rows(Path path, String prefix, int count) throws Exception {
+        return basketRows(path, prefix + "-basket", count);
+    }
+
+    private List<Element> basketRows(Path path, String bid, int count) throws Exception {
         var baskets = children(readDataSection(path, version));
         assertEquals(1, baskets.size());
-        assertEquals(prefix + "-basket", id(baskets.getFirst(), version, "bid"));
+        assertEquals(bid, id(baskets.getFirst(), version, "bid"));
         var rows = children(baskets.getFirst()).stream().sorted(Comparator.comparing(row -> id(row, version, "tid"))).toList();
         assertEquals(count, rows.size());
         return rows;

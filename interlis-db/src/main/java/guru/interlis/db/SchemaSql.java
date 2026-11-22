@@ -171,6 +171,9 @@ final class SchemaSql {
                     columns.add(quote(composition.ownerColumn()) + " " + dialect.idType());
                 }
             }
+            if (createForeignKeys) {
+                for (String owner : plan.linkOwnerColumns(table)) columns.add("UNIQUE (" + quote(owner) + ")");
+            }
             commands.add(dialect.create(table.name(), String.join(", ", columns), inlineKeys.getOrDefault(table.name(), List.of())));
             for (var geometry : table.secondaryGeometries()) {
                 commands.add(dialect.create(geometry.table(), dialect.primaryId()
@@ -201,7 +204,7 @@ final class SchemaSql {
             for (var key : keys) commands.add("ALTER TABLE " + dialect.table(key.table()) + " ADD " + dialect.foreignKey(key));
         }
         if (createForeignKeyIndexes) {
-            for (var key : keys) commands.add(dialect.index(key.table(), key.column()));
+            for (var key : keys) if (key.index()) commands.add(dialect.index(key.table(), key.column()));
         }
         return List.copyOf(commands);
     }

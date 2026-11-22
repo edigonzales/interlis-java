@@ -93,6 +93,8 @@ Es erzeugt Indizes für Basket-, Dataset-, Rollen- und Strukturverweise.
 `schemaimport --create-fk` entspricht ili2db `--createFk` und legt
 aufgeschobene SQL-Fremdschlüssel an. Die Referenzprüfung der Datenbank
 erfolgt beim Commit der Transaktion.
+Das gilt auch für gemeinsam verwendete `T_Id` in Basistabellen und
+Geometriehilfstabellen, Beziehungstabellen und alternative Smart2-Ziele.
 
 Mit `schemaimport --coalesce-catalogue-ref` erzeugt das Kommando die
 kompakte SQL-Abbildung für CHBase-V1-Katalogreferenzen, entsprechend
