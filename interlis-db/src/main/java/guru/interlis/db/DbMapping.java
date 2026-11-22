@@ -2,6 +2,8 @@ package guru.interlis.db;
 
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.AttributeSymbol;
+import guru.interlis.model.BlackboxKind;
+import guru.interlis.model.BlackboxType;
 import guru.interlis.model.CardinalityUpper;
 import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CollectionType;
@@ -64,7 +66,7 @@ import static guru.interlis.db.Ili2dbLayout.reservedTable;
 /** The SQL names and storage bindings for a checked transfer plan. */
 final class DbMapping {
     enum Kind {
-        TEXT, BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, UUID, ENUMERATION, POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE;
+        TEXT, BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, UUID, BINARY, ENUMERATION, POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE;
 
         boolean geometry() { return this == POINT || this == POLYLINE || this == SURFACE || collection(); }
 
@@ -1121,6 +1123,7 @@ final class DbMapping {
             };
             case FormattedType ignored -> Kind.FORMATTED;
             case OidType oid when oid.oidKind() == OidKind.UUID -> Kind.UUID;
+            case BlackboxType box when box.blackboxKind() == BlackboxKind.BINARY -> Kind.BINARY;
             default -> type.kind() == TypeKind.BOOLEAN ? Kind.BOOLEAN : null;
         };
     }

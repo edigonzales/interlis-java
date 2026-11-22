@@ -273,6 +273,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             case DATETIME -> "DATETIME";
             case FORMATTED -> "FORMATTED";
             case UUID -> "OID";
+            case BINARY -> "BINARY";
             case INTEGER, BIGINT, DECIMAL -> "NUMERIC";
             case ENUMERATION -> "ENUM";
             case POINT -> "COORD";

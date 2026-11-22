@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -232,6 +233,47 @@ final class ScalarCases {
 
     private String uuidField(String value) {
         return version == 23 ? "<ExternalId OID=\"" + value + "\"/>" : field("ExternalId", value);
+    }
+
+    void binary(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ScalarBinary" + version;
+        schemas(expected, own, model, "CLASS Asset = Payload : BLACKBOX BINARY; END Asset;");
+        byte[] payload = {0, 1, 2, (byte) 0xff};
+        var values = List.of(binaryField(Base64.getEncoder().encodeToString(payload)), "");
+        for (var db : List.of(expected, own)) {
+            mixed(db, model, values, rows -> {
+                assertArrayEquals(payload, binaryValue(rows.getFirst()));
+                assertNull(child(rows.getLast(), "Payload"));
+            });
+            Path output = work.resolve("out.xtf");
+            assertCliSuccess(db, "import", model, "empty", data(model, "empty", List.of(binaryField(""), "")));
+            assertCliSuccess(db, "export", model, "empty", output);
+            var empty = rows(output, "empty", 2);
+            assertArrayEquals(new byte[0], binaryValue(empty.getFirst()));
+            assertNull(child(empty.getLast(), "Payload"));
+            try (var sql = db.connect()) {
+                String hex = db.postgis() ? "lower(encode(payload, 'hex'))" : "lower(hex(payload))";
+                assertEquals("000102ff", stored(db, sql, hex, "legacy", 0));
+                assertEquals("000102ff", stored(db, sql, hex, "native", 0));
+                assertNull(stored(db, sql, "payload", "native", 1));
+                assertEquals("0", stored(db, sql, db.postgis() ? "octet_length(payload)" : "length(payload)", "empty", 0));
+                String large = db.postgis() ? "decode(repeat('00', 786433), 'hex')" : "zeroblob(786433)";
+                execute(sql, "UPDATE " + db.table("asset") + " SET payload = " + large + " WHERE t_ili_tid = 'native-0'");
+                byte[] previous = Files.readAllBytes(output);
+                assertCliFailure(db, "export", model, "native", output, "Oversized BLACKBOX BINARY");
+                assertArrayEquals(previous, Files.readAllBytes(output));
+            }
+        }
+    }
+
+    private String binaryField(String base64) {
+        return field("Payload", version == 23 ? field("BINBLBOX", base64) : base64);
+    }
+
+    private byte[] binaryValue(Element row) {
+        var payload = child(row, "Payload");
+        String encoded = (version == 23 ? child(payload, "BINBLBOX") : payload).getTextContent();
+        return Base64.getMimeDecoder().decode(encoded);
     }
 
     private void differentZones(TestDatabase db, String model, List<String> values, CheckRows check) throws Exception {

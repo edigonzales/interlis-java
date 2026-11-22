@@ -25,6 +25,7 @@ import guru.interlis.transfer.TransferIdentity.TransferId;
 import guru.interlis.transfer.TransferObject;
 import guru.interlis.transfer.TransferReader;
 import guru.interlis.transfer.TransferValue;
+import guru.interlis.transfer.TransferValue.Binary;
 import guru.interlis.transfer.TransferValue.BooleanValue;
 import guru.interlis.transfer.TransferValue.Enumeration;
 import guru.interlis.transfer.TransferValue.NumberValue;
@@ -463,6 +464,7 @@ final class DbTransfer {
             switch (column.kind()) {
                 case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE ->
                         projections.add(db.geometryProjection(field, column));
+                case BINARY -> projections.add(db.binaryProjection(field));
                 case REFERENCE -> {
                     String ref = alias + "ref" + refIndex++;
                     SymbolRef declared = column.target().orElseThrow();
@@ -1044,7 +1046,7 @@ final class DbTransfer {
         }
         return switch (column.kind()) {
             case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> readGeometry(db, rows, index, column);
-            case BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, UUID, ENUMERATION -> readScalar(db, rows, index, column);
+            case BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, UUID, BINARY, ENUMERATION -> readScalar(db, rows, index, column);
             case TEXT -> {
                 if (column.textExpansion().isPresent()) {
                     var expansion = column.textExpansion().orElseThrow();
@@ -1131,6 +1133,7 @@ final class DbTransfer {
                         ? column.enumeration().orElseThrow().read(value, column.slot().name().declared().toString())
                         : readEnumeration(value, column);
             }
+            case BINARY -> db.readBinary(rows, index, column.slot().name().declared().toString());
             case UUID -> {
                 String value = rows.getString(index);
                 yield value == null ? null : new Oid(canonicalUuid(value, column.slot().name().declared().toString()));
@@ -1848,6 +1851,7 @@ final class DbTransfer {
             }
             switch (column.kind()) {
                 case TEXT, FORMATTED -> statement.setString(index, ((Text) value).value());
+                case BINARY -> statement.setBytes(index, ((Binary) value).bytes());
                 case UUID -> db.bindUuid(statement, index,
                         uuid(((Oid) value).lexeme(), column.slot().name().declared().toString()));
                 case BOOLEAN -> statement.setBoolean(index, ((BooleanValue) value).value());

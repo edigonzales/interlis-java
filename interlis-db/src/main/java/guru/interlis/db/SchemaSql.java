@@ -549,6 +549,7 @@ final class SchemaSql {
                 case DATETIME -> timestamp();
                 case FORMATTED -> text(255);
                 case UUID -> gpkg ? text(36) : "uuid";
+                case BINARY -> gpkg ? "BLOB" : "bytea";
                 case DECIMAL -> {
                     var decimal = DbDecimal.describe((guru.interlis.model.NumericType) column.effectiveType().orElseThrow());
                     yield gpkg ? "DOUBLE" : "numeric(" + decimal.precision() + "," + decimal.scale() + ")";

@@ -186,6 +186,17 @@ final class DbInteropTest {
         new ScalarCases(work, new ReferenceTool(own.postgis()), version).uuidAttribute(expected, own);
     }
 
+    @Test void geoPackageScalarBinary23() throws Exception { exchangeScalarBinary(23, null); }
+    @Test void geoPackageScalarBinary24() throws Exception { exchangeScalarBinary(24, null); }
+    @Test void postgisScalarBinary23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarBinary); }
+    @Test void postgisScalarBinary24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarBinary); }
+
+    private void exchangeScalarBinary(int version, PostgreSQLContainer postgres) throws Exception {
+        var expected = new TestDatabase(postgres, "scalar_binary_ref");
+        var own = new TestDatabase(postgres, "scalar_binary_own");
+        new ScalarCases(work, new ReferenceTool(own.postgis()), version).binary(expected, own);
+    }
+
     @Test void geoPackageEnumItfCodes23() throws Exception { exchangeEnumItfCodes(23, null); }
     @Test void geoPackageEnumItfCodes24() throws Exception { exchangeEnumItfCodes(24, null); }
     @Test void postgisEnumItfCodes23() throws Exception { exchangeWithPostgis(23, this::exchangeEnumItfCodes); }

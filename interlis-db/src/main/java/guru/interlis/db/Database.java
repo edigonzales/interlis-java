@@ -8,8 +8,10 @@ import guru.interlis.transfer.TransferGeometry.MultiSurface;
 import org.sqlite.SQLiteConfig;
 import org.sqlite.SQLiteOpenMode;
 
+import guru.interlis.transfer.TransferValue.Binary;
 import guru.interlis.transfer.TransferValue.NumberValue;
 import guru.interlis.transfer.TransferValue.Text;
+import guru.interlis.xtf24.Xtf24Limits;
 
 import java.math.BigDecimal;
 import java.nio.file.Path;
@@ -40,6 +42,9 @@ import static guru.interlis.db.Ili2dbLayout.SEQUENCE;
 
 /** One JDBC connection and transaction against an existing ili2db schema. */
 final class Database implements AutoCloseable {
+    // The database CLI uses the same one-mebiunit scalar allowance in both XTF profiles.
+    private static final int BLACKBOX_TEXT_LIMIT = Xtf24Limits.defaults().maxScalarCodeUnits();
+    private static final int BLACKBOX_BINARY_LIMIT = BLACKBOX_TEXT_LIMIT / 4 * 3;
     private static final DateTimeFormatter MILLISECOND_TIME = DateTimeFormatter.ofPattern("HH:mm:ss.SSS", Locale.ROOT);
     private static final DateTimeFormatter MILLISECOND_TIMESTAMP =
             DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSS", Locale.ROOT);
@@ -169,6 +174,21 @@ final class Database implements AutoCloseable {
     String jsonProjection(String field) {
         String text = gpkg() ? field : "CAST(" + field + " AS text)";
         return "CASE WHEN length(" + text + ") > " + DbJsonStructure.MAX_CODE_UNITS + " THEN '' ELSE " + text + " END";
+    }
+
+    String binaryProjection(String field) {
+        int limit = BLACKBOX_BINARY_LIMIT + 1;
+        if (!gpkg()) return "substring(" + field + ", 1, " + limit + ")";
+        return "CASE WHEN length(" + field + ") >= " + limit + " THEN substr(" + field
+                + ", 1, " + limit + ") ELSE " + field + " END";
+    }
+
+    Binary readBinary(ResultSet rows, int index, String context) throws SQLException {
+        var stored = gpkg() ? rows.getObject(index) : rows.getBytes(index);
+        if (stored == null) return null;
+        if (!(stored instanceof byte[] bytes)) throw new DbException("Expected binary SQL value at " + context);
+        if (bytes.length > BLACKBOX_BINARY_LIMIT) throw new DbException("Oversized BLACKBOX BINARY at " + context);
+        return new Binary(bytes);
     }
 
     void bindUuid(PreparedStatement statement, int index, UUID value) throws SQLException {

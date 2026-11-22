@@ -394,6 +394,9 @@ Fachattribute vom Typ `INTERLIS.UUIDOID` liegen als `TEXT(36)` in
 GeoPackage und als `uuid` in PostGIS. Das Kommando normalisiert die
 Schreibweise auf Kleinbuchstaben. XTF 2.3 verwendet das `OID`-Attribut,
 XTF 2.4 den UUID-Wert als Text.
+`BLACKBOX BINARY` belegt `BLOB` in GeoPackage und `bytea` in PostGIS.
+Der Adapter unterscheidet leere Binärwerte und SQL `NULL` und begrenzt
+die gelesene Bytezahl anhand des Base64-Limits der XTF-Codecs.
 
 `schemaimport --gpkg-multi-geom-per-table` verwendet das ili2gpkg-Profil
 `--gpkgMultiGeomPerTable` mit mehreren Geometriespalten in einer Tabelle.

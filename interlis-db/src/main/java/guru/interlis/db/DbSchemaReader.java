@@ -1208,6 +1208,7 @@ final class DbSchemaReader {
                 case BOOLEAN -> type.equals("boolean") || type.equals("bool");
                 case INTEGER -> type.equals("integer") || type.equals("int4") || type.equals("int2")
                         || type.equals("smallint");
+                case BINARY -> db.gpkg() ? type.equals("blob") : type.equals("bytea");
                 case UUID -> db.gpkg() ? type.equals("text") || type.equals("varchar") : type.equals("uuid");
                 case DATE -> type.equals("date");
                 case TIME -> type.equals("time");
