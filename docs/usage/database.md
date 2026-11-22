@@ -15,6 +15,10 @@ Quellen werden mit Modellnamen gemeldet.
 Gespeicherte `TRANSLATION OF`-Beziehungen werden mit dem angegebenen
 Original und seiner Modellversion kompiliert. Die physische Abbildung
 der Übersetzungsfamilie verwendet die gespeicherten SQL-Namen des Originals.
+Bei XTF 2.3 führt die Datenbank die Sprache jedes Baskets in
+`T_ILI2DB_BASKET.topic`. Die Enum-Spalten verwenden die Codes des Originals.
+Bei XTF 2.4 verwendet der Transfer auch bei Auswahl eines übersetzten Modells
+die Originalsprache.
 Für den Datenaustausch sind die Tabellen und XTF-Baskets des Fachmodells
 massgeblich.
 Verwendete Strukturen aus importierten Modellen erhalten ihre Tabellen samt

@@ -77,6 +77,30 @@ final class TranslationCases {
         assertEquals(saved, Files.readString(output));
     }
 
+    void scalars(TestDatabase db) throws Exception {
+        fixture(original + ".ili");
+        fixture(translated + ".ili");
+        createReference(db, translated);
+        boolean french = version == 23;
+        String label = french ? "translated" : "original";
+        var input = fixture(label + version + ".xtf");
+        referenceImport(db, "legacy", input);
+        var output = work.resolve("output.xtf");
+        run(db, "export", translated, "legacy", output);
+        assertDelivery(output, french, label);
+        var own = Files.writeString(work.resolve("import.xtf"), Files.readString(input).replace(label + "-", "own-"));
+        run(db, "import", translated, "own", own);
+        referenceExport(db, "own", output);
+        assertDelivery(output, french, "own");
+        try (var sql = db.connect()) {
+            String topic = french ? translated + ".Releve" : original + ".Survey";
+            assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("station")
+                    + " WHERE astate='open' AND t_ili_tid IN ('" + label + "-o','own-o')"));
+            assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("t_ili2db_basket")
+                    + " WHERE topic='" + topic + "' AND t_ili_tid IN ('" + label + "-b','own-b')"));
+        }
+    }
+
     private void assertDelivery(Path output, boolean french, String prefix) throws Exception {
         var data = readDataSection(output, version);
         String model = french ? translated : original;

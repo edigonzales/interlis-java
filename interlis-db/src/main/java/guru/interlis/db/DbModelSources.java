@@ -21,6 +21,7 @@ import guru.interlis.diagnostics.DiagnosticMessageFormatter;
 import guru.interlis.diagnostics.Severity;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
+import guru.interlis.model.LanguageVersion;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceText;
 import guru.interlis.syntax.ParseMode;
@@ -34,6 +35,7 @@ import guru.interlis.transfer.TransferPlanningResult;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -44,8 +46,11 @@ final class DbModelSources {
 
     static TransferPlan compile(List<String> models, Collection<SourceText> input, String description,
                                 CancellationToken token) {
-        var selectors = models.stream().map(name -> (ModelSelector) new ModelSelector.ByName(name, Optional.empty(),
-                Optional.empty())).toList();
+        return compile(models, input, description, false, token);
+    }
+
+    static TransferPlan compile(List<String> models, Collection<SourceText> input, String description,
+                                boolean originalWireModels, CancellationToken token) {
         var parser = SyntaxServices.create();
         var sources = new LinkedHashMap<SourceId, SourceText>();
         var syntax = new LinkedHashMap<SourceId, SyntaxSnapshot>();
@@ -63,6 +68,7 @@ final class DbModelSources {
         }
         var imports = new ArrayList<ImportBinding>();
         var translations = new ArrayList<TranslationBinding>();
+        var originalModels24 = new LinkedHashMap<String, String>();
         for (var parsed : syntax.values()) {
             for (var importer : parsed.root().models()) {
                 token.throwIfCancellationRequested();
@@ -75,6 +81,9 @@ final class DbModelSources {
                         var translated = new ModelLocation(source.id(), source.revision(), importer.name(),
                                 Optional.of(importer.modelVersion()), importer.range().startOffset());
                         translations.add(new TranslationBinding(translated, candidates.getFirst()));
+                        if (importer.languageVersion() == LanguageVersion.ILI24) {
+                            originalModels24.put(importer.name(), original.text());
+                        }
                     }
                 });
                 for (var imported : importer.imports()) {
@@ -92,6 +101,15 @@ final class DbModelSources {
                 }
             }
         }
+        var selected = new LinkedHashSet<>(models);
+        if (originalWireModels) {
+            for (String model : models) {
+                for (String original = originalModels24.get(model); original != null && selected.add(original);
+                     original = originalModels24.get(original)) { }
+            }
+        }
+        var selectors = selected.stream().map(name -> (ModelSelector) new ModelSelector.ByName(name, Optional.empty(),
+                Optional.empty())).toList();
         var sourceSet = SourceSet.of(sources, imports, List.of(), ResolutionFingerprint.none(), translations);
         var request = new CompilationRequest(selectors, sourceSet, CompilerOptions.defaults());
         var outcome = CompilerEngines.create().compile(request, new AnalysisReuse(Optional.empty(), syntax), token);

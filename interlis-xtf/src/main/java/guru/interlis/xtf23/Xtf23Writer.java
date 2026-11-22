@@ -60,6 +60,7 @@ public final class Xtf23Writer extends TransferWriter {
     private final Xtf23Layout layout;
     private final Xtf23Output xml;
     private final List<Xtf23OidSpace> oidSpaces;
+    private final boolean ili2db;
     private final Set<String> oidAliases;
     private final Xtf23IdentityScope identities = new Xtf23IdentityScope();
     private final Map<SymbolRef, List<Xtf23Layout.Field>> fields = new HashMap<>();
@@ -76,8 +77,18 @@ public final class Xtf23Writer extends TransferWriter {
      * The constructor does not write to the stream.
      */
     public Xtf23Writer(TransferPlan plan, OutputStream output, List<Xtf23OidSpace> oidSpaces) {
+        this(plan, output, oidSpaces, false);
+    }
+
+    /** Writes the ili2db FULL profile, declaring translated models without ALIAS entries. */
+    public static Xtf23Writer forIli2db(TransferPlan plan, OutputStream output) {
+        return new Xtf23Writer(plan, output, List.of(), true);
+    }
+
+    private Xtf23Writer(TransferPlan plan, OutputStream output, List<Xtf23OidSpace> oidSpaces, boolean ili2db) {
         super(plan);
         this.plan = plan;
+        this.ili2db = ili2db;
         this.layout = new Xtf23Layout(plan);
         this.xml = new Xtf23Output(output);
         this.oidSpaces = List.copyOf(oidSpaces);
@@ -160,7 +171,7 @@ public final class Xtf23Writer extends TransferWriter {
             if (model.languageVersion() != LanguageVersion.ILI23) {
                 throw error(UNSUPPORTED, "Model " + model.name().declared() + " does not use INTERLIS 2.3");
             }
-            if (symbol.translation().isPresent()) {
+            if (!ili2db && symbol.translation().isPresent()) {
                 throw error(UNSUPPORTED, "Translated models require an XTF ALIAS table");
             }
             String version = required(declaration.modelVersion(), "MODEL VERSION");

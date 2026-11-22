@@ -176,6 +176,7 @@ final class DbMapping {
     private final TransferPlan plan;
     private final LanguageVersion version;
     private final Optional<DbCrsPair> crsPair;
+    private final DbTranslations translations;
     private final List<Table> tables;
     private final Map<SymbolRef, Table> bySymbol;
     private final Map<String, Table> byName;
@@ -190,6 +191,7 @@ final class DbMapping {
               List<EmbeddedAssociation> associations, Optional<DbCrsPair> crsPair) {
         this.plan = plan;
         this.crsPair = crsPair;
+        translations = new DbTranslations(plan);
         this.version = version;
         this.tables = List.copyOf(tables);
         bySymbol = this.tables.stream().collect(Collectors.toUnmodifiableMap(
@@ -249,9 +251,17 @@ final class DbMapping {
 
     Optional<DbCrsPair> crsPair() { return crsPair; }
 
-    List<SymbolRef> models() { return crsPair.map(DbCrsPair::models).orElseGet(plan::rootModels); }
+    List<SymbolRef> models() {
+        if (crsPair.isPresent()) return crsPair.orElseThrow().models();
+        return version != LanguageVersion.ILI24 ? plan.rootModels() : plan.rootModels().stream()
+                .map(ref -> plan.model(ref).orElseThrow().name().canonical()).distinct().toList();
+    }
 
-    SymbolRef originalTopic(SymbolRef topic) { return crsPair.map(pair -> pair.originalTopic(topic)).orElse(topic); }
+    SymbolRef originalTopic(SymbolRef topic) {
+        return crsPair.map(pair -> pair.originalTopic(topic)).orElseGet(() -> plan.topic(topic).orElseThrow().name().canonical());
+    }
+
+    DbTranslations translations() { return translations; }
 
     TransferPlan plan() { return plan; }
     LanguageVersion version() { return version; }

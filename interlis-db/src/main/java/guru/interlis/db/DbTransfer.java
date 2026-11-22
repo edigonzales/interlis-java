@@ -147,7 +147,7 @@ final class DbTransfer {
             }
             if (table.subtype() || table.object().topic().filter(owner::equals).isEmpty()) continue;
             if (table.hasDiscriminator() && table.object().kind() != SymbolKind.STRUCTURE && !mapping.isEmbeddedLink(table)) {
-                writeHierarchyObjects(db, mapping, table, basketId, bid, writer, token);
+                writeHierarchyObjects(db, mapping, table, basketId, bid, topic.symbol(), writer, token);
             } else if (table.object().transferable() && !mapping.isEmbeddedLink(table)) {
                 writeObjects(db, mapping, table, basketId, bid, topic.symbol(), selection, writer, token);
             }
@@ -198,6 +198,7 @@ final class DbTransfer {
                                     mapping.crsPair().orElseThrow().alternateValues(table.object().symbol(), values))
                             : new Structured(table.object().symbol(), values);
                     var object = new TransferObject(identity, data);
+                    object = mapping.translations().inTopic(object, topic);
                     writer.write(new TransferEvent.ObjectEvent(object, Optional.empty(), Consistency.COMPLETE), token);
                 }
                 structures.requireExhausted();
@@ -244,7 +245,7 @@ final class DbTransfer {
     }
 
     private static void writeHierarchyObjects(Database db, DbMapping mapping, Table root, long basketId,
-                                               BasketId bid, TransferWriter writer, CancellationToken token)
+                                               BasketId bid, SymbolRef topic, TransferWriter writer, CancellationToken token)
             throws SQLException {
         boolean hasTid = root.hasTidColumn();
         var fields = new StringJoiner(", ").add("obj." + T_ID);
@@ -277,6 +278,7 @@ final class DbTransfer {
                     structures.readFor(id, tid, values);
                     var identity = objectIdentity(mapping, root, bid, tid);
                     var object = new TransferObject(identity, new Structured(actual.object().symbol(), values));
+                    object = mapping.translations().inTopic(object, topic);
                     writer.write(new TransferEvent.ObjectEvent(object, Optional.empty(), Consistency.COMPLETE), token);
                 }
                 fragments.requireExhausted();
@@ -1250,6 +1252,7 @@ final class DbTransfer {
 
         void insertObject(TransferEvent.ObjectEvent event) throws SQLException {
             var object = mapping.crsPair().map(pair -> pair.originalObject(event.object())).orElse(event.object());
+            object = mapping.translations().toOriginal(object);
             var identity = object.identity();
             if (event.operation().isPresent() || event.consistency() != Consistency.COMPLETE
                     || identity.originalBasket().isPresent()) {

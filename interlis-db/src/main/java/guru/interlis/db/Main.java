@@ -156,7 +156,7 @@ public final class Main {
             var mapping = DbSchemaReader.read(database, options.models(), cancellation);
             try (var input = Files.newInputStream(options.file());
                  TransferReader reader = switch (mapping.version()) {
-                     case ILI23 -> new Xtf23Reader(mapping.plan(), input);
+                     case ILI23 -> Xtf23Reader.forIli2db(mapping.plan(), input);
                      case ILI24 -> new Xtf24Reader(mapping.plan(), input);
                  }) {
                 var mode = switch (options.command()) {
@@ -188,7 +188,7 @@ public final class Main {
                 var mapping = DbSchemaReader.read(database, options.models(), cancellation);
                 try (var output = Files.newOutputStream(temporary);
                      TransferWriter writer = switch (mapping.version()) {
-                         case ILI23 -> new Xtf23Writer(mapping.plan(), output);
+                         case ILI23 -> Xtf23Writer.forIli2db(mapping.plan(), output);
                          case ILI24 -> new Xtf24Writer(mapping.plan(), output);
                      }) {
                     DbTransfer.exportData(database, mapping, options.dataset(), writer, cancellation);

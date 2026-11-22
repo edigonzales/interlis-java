@@ -82,6 +82,7 @@ public final class Xtf23Reader extends TransferReader {
     private final Map<String, TopicDescriptor> topics;
     private final Map<String, ObjectDescriptor> objects;
     private final Xtf23Layout layout;
+    private final boolean ili2db;
     private final Xtf23IdentityScope identities = new Xtf23IdentityScope();
     private final Map<SymbolRef, Map<String, PositionedField>> fieldIndexes = new HashMap<>();
     private Map<String, Xtf23OidSpace> oidSpaces = Map.of();
@@ -97,8 +98,18 @@ public final class Xtf23Reader extends TransferReader {
 
     /** Creates a reader with an optional nonnull opaque source identity for events. */
     public Xtf23Reader(TransferPlan plan, InputStream input, Optional<SourceId> source) {
+        this(plan, input, source, false);
+    }
+
+    /** Reads the ili2db FULL profile, which declares translated models without ALIAS entries. */
+    public static Xtf23Reader forIli2db(TransferPlan plan, InputStream input) {
+        return new Xtf23Reader(plan, input, Optional.empty(), true);
+    }
+
+    private Xtf23Reader(TransferPlan plan, InputStream input, Optional<SourceId> source, boolean ili2db) {
         super(plan);
         this.plan = plan;
+        this.ili2db = ili2db;
         this.source = Objects.requireNonNull(source, "source");
         xml = new Xtf23Input(input);
         models = index(plan.models(), ModelDescriptor::name);
@@ -226,7 +237,7 @@ public final class Xtf23Reader extends TransferReader {
                 throw xml.error(UNSUPPORTED, "Model " + name + " does not use INTERLIS 2.3");
             }
             var symbol = (ModelSymbol) plan.symbol(model.symbol()).known().orElseThrow();
-            if (symbol.translation().isPresent()) {
+            if (!ili2db && symbol.translation().isPresent()) {
                 throw xml.error(UNSUPPORTED, "Translated models require an XTF ALIAS table");
             }
             if (!version.equals(model.modelVersion())) {

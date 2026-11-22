@@ -492,7 +492,7 @@ final class DbSchemaReader {
             sourceIds.put(model, source.id());
             pending.addAll(stored.imports());
         }
-        var plan = DbModelSources.compile(models, files.values(), "MODEL.content", token);
+        var plan = DbModelSources.compile(models, files.values(), "MODEL.content", true, token);
         for (var model : plan.models()) {
             String name = model.name().declared().last();
             var symbol = plan.symbol(model.symbol()).known().orElseThrow();
