@@ -156,8 +156,7 @@ final class DbMapping {
 
         Column withStrokeArcs(TransferPlan plan, boolean strokeArcs) {
             if (!strokeArcs || !kind.geometry() || kind == Kind.POINT || kind == Kind.MULTIPOINT) return this;
-            var geometry = (GeometryType) effectiveType.orElseThrow();
-            if (dimensions != 2 || !(kind == Kind.POLYLINE || geometry.geometryKind() == guru.interlis.model.GeometryKind.SURFACE)) {
+            if (dimensions != 2 || (kind != Kind.POLYLINE && kind != Kind.SURFACE)) {
                 throw unsupported("linear geometry at " + slot.name().declared());
             }
             int digits = vertexCoordinates(plan).axes().getFirst().maximum()

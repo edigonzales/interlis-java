@@ -140,6 +140,16 @@ final class DbInteropTest {
         new StrokeCases(work, new ReferenceTool(db.postgis()), version).surface(db);
     }
 
+    @Test void geoPackageStrokeArea23() throws Exception { exchangeStrokeArea(23, null); }
+    @Test void geoPackageStrokeArea24() throws Exception { exchangeStrokeArea(24, null); }
+    @Test void postgisStrokeArea23() throws Exception { exchangeWithPostgis(23, this::exchangeStrokeArea); }
+    @Test void postgisStrokeArea24() throws Exception { exchangeWithPostgis(24, this::exchangeStrokeArea); }
+
+    private void exchangeStrokeArea(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "stroke_area");
+        new StrokeCases(work, new ReferenceTool(db.postgis()), version).area(db);
+    }
+
     @Test void postgisChbasePoints23() throws Exception { exchangeWithPostgis(23, this::exchangeChbasePoints); }
     @Test void postgisChbasePoints24() throws Exception { exchangeWithPostgis(24, this::exchangeChbasePoints); }
     @Test void geoPackageChbaseLines23() throws Exception { exchangeChbaseLines(23, null); }

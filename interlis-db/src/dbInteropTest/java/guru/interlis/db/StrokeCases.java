@@ -167,11 +167,60 @@ final class StrokeCases {
         assertEquals(previous, Files.readString(output));
     }
 
+    void area(TestDatabase db) throws Exception {
+        String model = "StrokeArea" + version;
+        source(model, "AREA");
+        referenceSchema(db, model);
+        var start = coord(600000, 200000);
+        var end = coord(600010, 200000);
+        var top = start + arc(600005, 200005, 600010, 200000);
+        var topClosure = coord(600010, 200010) + coord(600000, 200010) + start;
+        var bottom = end + arc(600005, 200005, 600000, 200000)
+                + coord(600000, 199990) + coord(600010, 199990) + end;
+        var upper = version == 23 ? polyline(top) + polyline(end + topClosure) : polyline(top + topClosure);
+        var upperSurface = surfaceValue(upper);
+        var lowerSurface = surfaceValue(polyline(bottom));
+        var output = work.resolve("output.xtf");
+        referenceImport(db, "legacy", transfer(model, "legacy",
+                route(model, "legacy-value", upperSurface) + route(model, "legacy-bottom", lowerSurface)));
+        assertGeometryColumn(db, "route", "shape", "POLYGON", 2056);
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertSharedAreaEdge(output, "legacy");
+        assertCliSuccess(db, "import", model, "native", transfer(model, "native",
+                route(model, "native-value", upperSurface) + route(model, "native-bottom", lowerSurface)));
+        assertCliSuccess(db, "export", model, "native", output);
+        assertSharedAreaEdge(output, "native");
+        referenceExport(db, "native", output);
+        assertSharedAreaEdge(output, "native");
+        try (var sql = db.connect()) {
+            assertEquals("AREA", scalar(sql, "SELECT setting FROM " + db.table("t_ili2db_column_prop")
+                    + " WHERE tablename='route' AND columnname='shape' AND tag='ch.ehi.ili2db.typeKind'"));
+            if (db.postgis()) {
+                var table = db.table("route");
+                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + table + " a JOIN " + table
+                        + " b ON ST_Touches(a.shape,b.shape) WHERE a.t_ili_tid='native-value' AND b.t_ili_tid='native-bottom'"));
+            }
+        }
+    }
+
+    private void assertSharedAreaEdge(Path output, String prefix) throws Exception {
+        var objects = objects(output, prefix);
+        var upper = rings(objects.get(prefix + "-value")).getFirst();
+        var lower = rings(objects.get(prefix + "-bottom")).getFirst();
+        assertEquals(84, upper.size());
+        assertEquals(84, lower.size());
+        assertEquals(List.of(600000.0, 200000.0), upper.getFirst());
+        assertEquals(List.of(600010.0, 200000.0), lower.getFirst());
+        assertEquals(List.of(600005.0, 200005.0), upper.get(40));
+        assertEquals(upper.getFirst(), upper.getLast());
+        assertEquals(lower.getFirst(), lower.getLast());
+        assertEquals(upper.subList(0, 81), lower.subList(0, 81).reversed());
+    }
+
     private void assertPolygon(Path output, String prefix) throws Exception {
         var objects = objects(output, prefix);
         assertNull(child(objects.get(prefix + "-null"), "Shape"));
-        var surface = children(child(objects.get(prefix + "-value"), "Shape")).getFirst();
-        var rings = children(surface).stream().map(ring -> positions(children(ring).getFirst())).toList();
+        var rings = rings(objects.get(prefix + "-value"));
         assertEquals(2, rings.size());
         assertEquals(84, rings.getFirst().size());
         assertEquals(List.of(600000.0, 200000.0), rings.getFirst().getFirst());
@@ -179,6 +228,11 @@ final class StrokeCases {
         assertEquals(List.of(600005.0, 199995.0), rings.getFirst().get(40));
         assertEquals(List.of(List.of(600002.0, 200002.0), List.of(600002.0, 200004.0), List.of(600004.0, 200002.0),
                 List.of(600002.0, 200002.0)), rings.getLast());
+    }
+
+    private List<List<List<Double>>> rings(Element object) {
+        var surface = children(child(object, "Shape")).getFirst();
+        return children(surface).stream().map(ring -> positions(children(ring).getFirst())).toList();
     }
 
     private String surfaceValue(String exterior, String... interiors) {

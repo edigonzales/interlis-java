@@ -398,8 +398,8 @@ Ende Z. Die XY-Zwischenposition wird wie in ili2db mit einem
 `NaN`-Platzhalter für Z gespeichert.
 
 Bestehende ili2db-Schemata mit `--strokeArcs` speichern XY-Polylinien in
-`LINESTRING`-Spalten und XY-`SURFACE` mit Aussen- und Innenringen in
-`POLYGON`-Spalten. `interlis-db` liest die Option aus den
+`LINESTRING`-Spalten und XY-`SURFACE` sowie XY-`AREA` mit Aussen- und
+Innenringen in `POLYGON`-Spalten. `interlis-db` liest die Option aus den
 Schemaeinstellungen und prüft den SQL-Typ im Katalog sowie in den
 Spaltenmetadaten. Gerade Polylinien bleiben in ihrer ursprünglichen
 Reihenfolge erhalten. Beim Import bleiben Anfang, Stützpunkt und Ende
@@ -407,7 +407,9 @@ eines Kreisbogens erhalten. Die Sehnenabweichung richtet sich nach den
 Nachkommastellen der ersten Achse der Koordinatendomäne. Bei ganzzahligen
 Achsen beträgt die Toleranz eine halbe Koordinateneinheit. Grosse Bögen
 folgen der durch den Stützpunkt bestimmten Seite. Bei einem Vollkreis
-bilden Anfang und Stützpunkt die Enden des Durchmessers. Der Export
+bilden Anfang und Stützpunkt die Enden des Durchmessers. Zwei benachbarte
+`AREA`-Objekte mit entgegengesetzt gelieferten gemeinsamen Bögen erhalten
+dieselben Stützpunkte in umgekehrter Reihenfolge. Der Export
 liefert die gespeicherten Geraden. Ein Import rollt zurück, wenn die
 Segmentierung das Koordinatenlimit überschreitet.
 
