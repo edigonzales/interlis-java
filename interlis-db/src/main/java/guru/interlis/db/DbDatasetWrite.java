@@ -3,6 +3,7 @@ package guru.interlis.db;
 import guru.interlis.db.DbMapping.Table;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.SymbolKind;
+import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.TopicDescriptor;
 import guru.interlis.transfer.TransferEvent.DomainBinding;
 
@@ -83,7 +84,7 @@ final class DbDatasetWrite {
         return OptionalLong.empty();
     }
 
-    record ObjectKey(Table root, String tid) { }
+    record ObjectKey(SymbolRef family, String tid) { }
     record ExistingObject(DbMapping.ObjectStorage type, long basket, long id) { }
 
     static Map<ObjectKey, ExistingObject> readObjects(Database db, DbMapping mapping, TopicDescriptor topic, long basket,
@@ -110,7 +111,8 @@ final class DbDatasetWrite {
                         var concrete = table.hasDiscriminator()
                                 ? mapping.concreteType(table, rows.getString(3), id, topic.symbol())
                                 : mapping.storage(table.object().symbol());
-                        if (objects.putIfAbsent(new ObjectKey(table, tid), new ExistingObject(concrete, basket, id)) != null) {
+                        var key = new ObjectKey(mapping.identityFamily(concrete.object().symbol()), tid);
+                        if (objects.putIfAbsent(key, new ExistingObject(concrete, basket, id)) != null) {
                             throw new DbException("Ambiguous stored object TID " + tid + " at " + table.name());
                         }
                     }
@@ -159,7 +161,7 @@ final class DbDatasetWrite {
             var removedSources = byRoot.getOrDefault(sourceRoot, Set.of());
             for (var column : table.columns()) {
                 if (column.kind() != DbMapping.Kind.REFERENCE) continue;
-                var targetRoot = mapping.rootTable(column.target().orElseThrow());
+                var targetRoot = mapping.referenceRoot(column);
                 var targets = byRoot.get(targetRoot);
                 if (targets != null) checkUpdateReferences(db, table.name(), column.name(),
                         column.slot().name().declared().toString(), List.copyOf(targets), removedSources, token);
@@ -177,7 +179,7 @@ final class DbDatasetWrite {
         }
         for (var removedObject : removed) {
             token.throwIfCancellationRequested();
-            deleteObject(db, removedObject);
+            deleteObject(db, mapping, removedObject);
         }
     }
 
@@ -205,9 +207,13 @@ final class DbDatasetWrite {
         }
     }
 
-    private static void deleteObject(Database db, ExistingObject object) throws SQLException {
+    private static void deleteObject(Database db, DbMapping mapping, ExistingObject object) throws SQLException {
         for (var table : object.type().rows().reversed()) {
-            for (var secondary : table.secondaryGeometries()) deleteObjectRow(db, secondary.table(), object);
+            for (var secondary : table.secondaryGeometries()) {
+                if (mapping.applies(secondary.column(), object.type().object().symbol())) {
+                    deleteObjectRow(db, secondary.table(), object);
+                }
+            }
             deleteObjectRow(db, table.name(), object);
         }
     }
@@ -314,12 +320,29 @@ final class DbDatasetWrite {
                 token.throwIfCancellationRequested();
                 // Check both sides of the basket boundary. An orphan left by ili2db UPDATE has no owner
                 // row and can be removed by its own basket.
+                String from = db.table(table.name()) + " obj LEFT JOIN " + db.table(geometry.table()) + " geom ON obj.t_id = geom.t_id";
+                String problem = "(geom.t_basket IS NULL OR geom.t_basket <> obj.t_basket)";
+                var root = mapping.rootTable(table.object().symbol());
+                if (mapping.profile() != DbInheritance.Profile.NEW_CLASS && root.hasDiscriminator()) {
+                    var types = mapping.objectStorage().stream()
+                            .filter(binding -> binding.rows().contains(table)
+                                    && mapping.applies(geometry.column(), binding.object().symbol()))
+                            .map(DbMapping.ObjectStorage::discriminator)
+                            .map(type -> "'" + type.replace("'", "''") + "'").collect(Collectors.joining(", "));
+                    String typeAlias = "obj";
+                    if (!root.equals(table)) {
+                        from += " LEFT JOIN " + db.table(root.name()) + " root ON root.t_id=obj.t_id";
+                        typeAlias = "root";
+                    }
+                    String applies = types.isEmpty() ? "FALSE" : typeAlias + ".t_type IN (" + types + ")";
+                    problem = "(CASE WHEN " + applies + " THEN " + problem + " ELSE geom.t_id IS NOT NULL END)";
+                }
                 String sql = """
-                        SELECT obj.t_id FROM %s obj LEFT JOIN %s geom ON obj.t_id = geom.t_id
-                        WHERE (obj.t_basket IN %s AND (geom.t_basket IS NULL OR geom.t_basket <> obj.t_basket))
+                        SELECT obj.t_id FROM %s
+                        WHERE (obj.t_basket IN %s AND %s)
                            OR (geom.t_basket IN %s AND geom.t_basket <> obj.t_basket)
                         LIMIT 1
-                        """.formatted(db.table(table.name()), db.table(geometry.table()), datasetBaskets, datasetBaskets);
+                        """.formatted(from, datasetBaskets, problem, datasetBaskets);
                 try (var statement = db.connection().prepareStatement(sql)) {
                     statement.setLong(1, dataset);
                     statement.setLong(2, dataset);
@@ -339,7 +362,7 @@ final class DbDatasetWrite {
         for (var table : mapping.tables()) {
             for (var column : table.columns()) {
                 if (column.kind() != DbMapping.Kind.REFERENCE) continue;
-                var root = mapping.rootTable(column.target().orElseThrow());
+                var root = mapping.referenceRoot(column);
                 checkDatasetReference(db, table.name(), column.name(), root.name(), column.slot().name().declared().toString(),
                         dataset, operation, true, token);
             }

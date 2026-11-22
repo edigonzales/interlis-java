@@ -1333,7 +1333,8 @@ final class DbTransfer {
                 throw new DbException("Unexpected TID for link " + table.object().name().declared());
             }
             DbDatasetWrite.ExistingObject previous = updating && tid.isPresent()
-                    ? existingObjects.remove(new DbDatasetWrite.ObjectKey(root, tid.orElseThrow())) : null;
+                    ? existingObjects.remove(new DbDatasetWrite.ObjectKey(mapping.identityFamily(object.type()), tid.orElseThrow()))
+                    : null;
             if (previous != null && !previous.type().equals(storage)) {
                 throw new DbException("Cannot change concrete class for TID " + tid.orElseThrow() + " from "
                         + previous.type().object().name().declared() + " to " + storage.object().name().declared());

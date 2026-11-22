@@ -21,6 +21,7 @@ import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
 import static guru.interlis.db.DbInteropTest.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 final class SmartCases {
@@ -316,6 +317,93 @@ final class SmartCases {
         assertEquals(0, new BigDecimal(y).compareTo(new BigDecimal(coordinates.get(1).getTextContent())));
     }
 
+    void mutations(TestDatabase smart1, TestDatabase smart2) throws Exception {
+        String parent = "TownParent" + version;
+        String model = "TownChild" + version;
+        String incoming = "TownIncoming" + version;
+        String geometry = "SmartGeometry" + version;
+        fixture("/topics/", parent + ".ili");
+        fixture("/topics/", model + ".ili");
+        fixture("/topics/", incoming + ".ili");
+        fixture(geometry + ".ili");
+        referenceSchema(smart1, model + ";" + incoming + ";" + geometry, "smart1");
+        referenceSchema(smart2, model + ";" + incoming + ";" + geometry, "smart2");
+        var input = fixture("/topics/", "region" + version + ".xtf");
+        var referenceInput = fixture("/topics/", "incoming" + version + ".xtf");
+        var geometryInput = fixture(geometry + ".xtf");
+        String original = Files.readString(input);
+        var changed = Files.writeString(work.resolve("region-changed.xtf"), original.replace(">child<", ">updated<")
+                .replace(">inherited<", ">marker updated<"));
+        var withoutTarget = Files.writeString(work.resolve("region-removed.xtf"),
+                original.lines().filter(line -> !line.contains("region-s")).collect(Collectors.joining("\n"))
+                        .replace(">inherited<", ">must roll back<"));
+        String changedType = version == 23
+                ? original.replace(model + ".Region.LocalStation", parent + ".Core.Station").replace("<LocalMemo>child</LocalMemo>", "")
+                : original.replace("a:LocalStation", "b:Station").replace("<a:LocalMemo>child</a:LocalMemo>", "");
+        var wrongType = Files.writeString(work.resolve("region-type-change.xtf"), changedType);
+        var geometryUpdate = Files.writeString(work.resolve("geometry-remove-optional.xtf"),
+                Files.readString(geometryInput).lines().filter(line -> !line.contains("fixture-n")).collect(Collectors.joining("\n")));
+        var output = work.resolve("mutated-output.xtf");
+        for (var db : List.of(smart1, smart2)) {
+            String station = db.table(db == smart1 ? "station" : "localstation");
+            referenceImport(db, "region", input);
+            referenceImport(db, "incoming", referenceInput);
+            String row = " FROM " + station + " WHERE t_ili_tid='region-s'";
+            String basket = "SELECT t_id FROM " + db.table("t_ili2db_basket") + " WHERE t_ili_tid='region-b'";
+            String dataset = "SELECT t_id FROM " + db.table("t_ili2db_dataset") + " WHERE datasetname='region'";
+            try (var sql = db.connect()) {
+                String previous = scalar(sql, "SELECT t_id" + row);
+                String previousBasket = scalar(sql, basket);
+                String previousDataset = scalar(sql, dataset);
+                assertEquals(previous, scalar(sql, "SELECT destination FROM " + db.table("incominglink")));
+                assertCliSuccess(db, "update", model, "region", changed);
+                assertEquals(previous, scalar(sql, "SELECT t_id" + row));
+                assertEquals(previousBasket, scalar(sql, basket));
+                assertEquals("updated", scalar(sql, "SELECT localmemo" + row));
+                assertCliFailure(db, "update", model, "region", wrongType, "Cannot change concrete class");
+                assertCliFailure(db, "update", model, "region", withoutTarget, "referenced object");
+                assertCliFailure(db, "replace", model, "region", input, "referenced object");
+                assertCliFailure(db, "delete", model, "region", null, "referenced object");
+                assertEquals(previous, scalar(sql, "SELECT t_id" + row));
+                assertEquals("marker updated", scalar(sql, "SELECT memo FROM " + db.table("marker") + " WHERE t_ili_tid='region-m'"));
+                referenceExport(db, "region", output);
+                assertRegion(output, "updated");
+                assertCliSuccess(db, "delete", incoming, "incoming", null);
+                assertCliSuccess(db, "replace", model, "region", input);
+                assertEquals(previousDataset, scalar(sql, dataset));
+                assertNotEquals(previous, scalar(sql, "SELECT t_id" + row));
+                referenceExport(db, "region", output);
+                assertRegion(output, "child");
+                assertCliSuccess(db, "delete", model, "region", null);
+                assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + station));
+                assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + db.table("marker")));
+                assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + db.table("t_ili2db_basket")));
+            }
+            referenceImport(db, "geometry", geometryInput);
+            assertCliSuccess(db, "update", geometry, "geometry", geometryUpdate);
+            assertCliSuccess(db, "replace", geometry, "geometry", geometryInput);
+            referenceExport(db, "geometry", output);
+            assertGeometries(output, geometry, "fixture");
+            assertCliSuccess(db, "delete", geometry, "geometry", null);
+            try (var sql = db.connect()) {
+                assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + db.table("t_ili2db_dataset")));
+                if (!db.postgis()) {
+                    String helper = db == smart1 ? "meter_extralocation" : "smartunit_location";
+                    assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + db.table(helper)));
+                }
+            }
+        }
+    }
+
+    private void assertRegion(Path path, String memo) throws Exception {
+        var basket = children(readDataSection(path, version)).getFirst();
+        assertEquals("region-b", id(basket, version, "bid"));
+        var station = children(basket).stream().filter(element -> "region-s".equals(id(element, version, "tid")))
+                .findFirst().orElseThrow();
+        assertEquals(memo, child(station, "LocalMemo").getTextContent());
+        assertEquals("base", child(station, "Memo").getTextContent());
+    }
+
     private void assertScalarObjects(Path path, String model, String prefix, boolean emptyMemo) throws Exception {
         var basket = children(readDataSection(path, version)).getFirst();
         assertEquals(prefix + "-b", id(basket, version, "bid"));
@@ -351,8 +439,12 @@ final class SmartCases {
     }
 
     private Path fixture(String name) throws Exception {
+        return fixture("/smart/", name);
+    }
+
+    private Path fixture(String directory, String name) throws Exception {
         var path = work.resolve(name);
-        try (var source = getClass().getResourceAsStream("/smart/" + name)) {
+        try (var source = getClass().getResourceAsStream(directory + name)) {
             Files.copy(source, path);
         }
         return path;

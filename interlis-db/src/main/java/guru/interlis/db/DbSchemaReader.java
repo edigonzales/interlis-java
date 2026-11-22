@@ -129,6 +129,12 @@ final class DbSchemaReader {
         var scope = new MetadataScope(mappedModels, selected.stream()
                 .map(object -> object.name().declared().toString()).collect(Collectors.toSet()));
         var classNames = readClassNames(db, scope);
+        var unselectedOwners = new HashSet<String>();
+        classNames.entrySet().removeIf(entry -> {
+            if (scope.includes(entry.getKey())) return false;
+            unselectedOwners.add(key(db, entry.getValue()));
+            return true;
+        });
         var attrNames = readAttributeNames(db, scope);
         var transformations = readTransformations(db, scope);
         var inheritance = readInheritance(db, scope);
@@ -273,6 +279,7 @@ final class DbSchemaReader {
         if (!classNames.isEmpty() || !transformations.secondary().isEmpty()) {
             throw new DbException("Extra CLASSNAME/TRAFO mappings for " + modelName);
         }
+        if (settings.inheritance() != DbInheritance.Profile.NEW_CLASS) attrNames.ignoreOwners(unselectedOwners);
         if (!attrNames.isEmpty()) throw new DbException("Extra ATTRNAME mappings for " + modelName);
         return new DbMapping(plan, version, tables, compositions, associations, crsPair, requestedRoots,
                 settings.inheritance(), layout.aliases());
@@ -610,7 +617,6 @@ final class DbSchemaReader {
              var rows = stmt.executeQuery()) {
             while (rows.next()) {
                 String path = required(rows, 1, "CLASSNAME.iliname");
-                if (!scope.includes(path)) continue;
                 if (result.putIfAbsent(path, required(rows, 2, "CLASSNAME.sqlname")) != null) {
                     throw new DbException("Duplicate CLASSNAME mapping for " + path);
                 }
@@ -643,6 +649,11 @@ final class DbSchemaReader {
             alternatives.remove(selected);
             if (alternatives.isEmpty()) mappings.remove(path);
             return selected;
+        }
+
+        void ignoreOwners(Set<String> owners) {
+            mappings.values().forEach(names -> names.removeIf(name -> owners.contains(key(db, name.owner()))));
+            mappings.values().removeIf(List::isEmpty);
         }
 
         boolean isEmpty() { return mappings.isEmpty(); }
@@ -711,10 +722,10 @@ final class DbSchemaReader {
         }
 
         boolean includes(String path) {
-            if (roots.contains(modelName(path)) || objects.contains(path)) return true;
-            // Secondary names append the owning class in parentheses after the attribute path.
             int owner = path.indexOf('(');
-            int member = path.lastIndexOf('.', owner < 0 ? path.length() : owner);
+            if (owner >= 0 && path.endsWith(")")) return includes(path.substring(owner + 1, path.length() - 1));
+            if (roots.contains(modelName(path)) || objects.contains(path)) return true;
+            int member = path.lastIndexOf('.');
             return member >= 0 && objects.contains(path.substring(0, member));
         }
 

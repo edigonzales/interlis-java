@@ -381,6 +381,13 @@ final class DbMapping {
         return storage(actual).rows().stream().anyMatch(row -> row.object().symbol().equals(relation));
     }
 
+    SymbolRef identityFamily(SymbolRef type) {
+        if (profile == DbInheritance.Profile.NEW_CLASS) return rootTable(type).object().symbol();
+        var object = plan.object(type).orElseThrow();
+        while (object.baseType().isPresent()) object = plan.object(object.baseType().orElseThrow()).orElseThrow();
+        return object.symbol();
+    }
+
     boolean isAssignableTo(SymbolRef actual, SymbolRef declared) {
         for (var type = actual; type != null; type = plan.object(type).orElseThrow().baseType().orElse(null)) {
             if (type.equals(declared)) return true;

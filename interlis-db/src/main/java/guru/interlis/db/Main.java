@@ -158,7 +158,6 @@ public final class Main {
             throws IOException, SQLException {
         try (var database = options.open(password)) {
             var mapping = DbSchemaReader.read(database, options.models(), cancellation);
-            if (options.command() != Command.IMPORT) requireNewClassMutations(mapping);
             try (var input = Files.newInputStream(options.file());
                  TransferReader reader = switch (mapping.version()) {
                      case ILI23 -> Xtf23Reader.forIli2db(mapping.plan(), input);
@@ -179,16 +178,9 @@ public final class Main {
     private static void deleteData(Options options, String password, CancellationToken cancellation) throws SQLException {
         try (var database = options.open(password)) {
             var mapping = DbSchemaReader.read(database, options.models(), cancellation);
-            requireNewClassMutations(mapping);
             DbDatasetWrite.deleteDataset(database, mapping, options.dataset(), cancellation);
             cancellation.throwIfCancellationRequested();
             database.commit();
-        }
-    }
-
-    private static void requireNewClassMutations(DbMapping mapping) {
-        if (mapping.profile() != DbInheritance.Profile.NEW_CLASS) {
-            throw DbMapping.unsupported("dataset mutation with smart inheritance");
         }
     }
 

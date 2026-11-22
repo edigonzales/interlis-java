@@ -238,6 +238,10 @@ Bei geerbten Punkten bestimmen die gespeicherten Zuordnungen die
 Geometriespalte und ihren CRS. GeoPackage kann die geerbte oder die
 lokal deklarierte Geometrie in eine Hilfstabelle auslagern. Die Hilfszeile
 gehört zum konkreten Typ und teilt dessen Objekt- und Basket-ID.
+`update`, `replace` und `delete` verwenden in beiden Smart-Profilen
+die tatsächlich belegten Tabellen. Updates behalten die internen IDs
+überlebender Objekte. Eingehende Referenzen aus verbleibenden Datensätzen
+schützen die referenzierten Zeilen.
 
 Unterstützt sind Klassen eines eigenständigen Modells in
 INTERLIS 2.3 und 2.4 mit Text, Boolean, 32-Bit-Ganzzahlen und Aufzählungen als
