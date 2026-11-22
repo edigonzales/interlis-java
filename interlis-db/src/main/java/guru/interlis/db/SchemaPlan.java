@@ -238,6 +238,27 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 && mapping.isAssignableTo(declaringType, owner.object().symbol())
                 ? mapping.storage(declaringType).discriminator() : null;
         var effective = column.effectiveType().orElseThrow();
+        if (column.array().isPresent()) {
+            var binding = column.array().orElseThrow();
+            if (binding.kind() == DbMapping.Kind.ENUMERATION || binding.kind() == DbMapping.Kind.BOOLEAN) {
+                String domain = null;
+                if (binding.declaredElement(mapping.plan(), attribute) instanceof DomainReferenceType alias) {
+                    domain = qualifiedName(mapping, symbol(mapping, new SymbolRef(mapping.plan().snapshotId(), alias.targetDomain())));
+                } else if (binding.kind() == DbMapping.Kind.BOOLEAN) {
+                    domain = "INTERLIS.BOOLEAN";
+                }
+                if (domain != null) {
+                    property(properties, table, null, column, "enumDomain", domain);
+                    if (binding.wrapper().isEmpty()) {
+                        property(properties, table, table, column, "enumDomain", domain);
+                    }
+                }
+            }
+            if (binding.type() instanceof TextType text && text.textKind() == TextKind.MTEXT) {
+                property(properties, table, subtype, column, "textKind", "MTEXT");
+            }
+            return;
+        }
         String typeKind = column.jsonStructure().isPresent() ? "STRUCTURE" : switch (column.kind()) {
             case TEXT -> ((TextType) effective).textKind().name();
             case BOOLEAN -> "BOOLEAN";

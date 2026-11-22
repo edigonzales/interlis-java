@@ -113,6 +113,12 @@ Mit `schemaimport --coalesce-json` legt das Kommando in einem neuen
 Option lässt sich mit `--expand-struct` kombinieren. `--add-models`
 übernimmt beide gespeicherten Einstellungen.
 
+Mit `schemaimport --coalesce-array` erzeugt das Kommando in `newClass`
+die Spalten für `ili2db.mapping=ARRAY`. GeoPackage speichert die Arrays
+als JSON-Text, PostGIS als typisierte SQL-Arrays. Die Option ist mit
+`--expand-struct` und `--coalesce-json` kombinierbar. `--add-models`
+übernimmt die gespeicherte Array-Einstellung.
+
 ## Bestehendes Schema ergänzen
 
 ```sh

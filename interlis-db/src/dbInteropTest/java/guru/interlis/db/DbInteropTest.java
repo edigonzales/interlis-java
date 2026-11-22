@@ -178,6 +178,17 @@ final class DbInteropTest {
         new ArrayCases(work, new ReferenceTool(db.postgis()), version).direct(db);
     }
 
+    @Test void geoPackageArraySchema23() throws Exception { exchangeArraySchema(23, null); }
+    @Test void geoPackageArraySchema24() throws Exception { exchangeArraySchema(24, null); }
+    @Test void postgisArraySchema23() throws Exception { exchangeWithPostgis(23, this::exchangeArraySchema); }
+    @Test void postgisArraySchema24() throws Exception { exchangeWithPostgis(24, this::exchangeArraySchema); }
+
+    private void exchangeArraySchema(int version, PostgreSQLContainer postgres) throws Exception {
+        var baseline = new TestDatabase(postgres, "array_schema_reference");
+        var db = new TestDatabase(postgres, "array_schema_native");
+        new ArrayCases(work, new ReferenceTool(db.postgis()), version).createSchema(baseline, db);
+    }
+
     @Test void geoPackageExpandSingle23() throws Exception { exchangeExpandSingle(23, null); }
     @Test void geoPackageExpandSingle24() throws Exception { exchangeExpandSingle(24, null); }
     @Test void postgisExpandSingle23() throws Exception { exchangeWithPostgis(23, this::exchangeExpandSingle); }

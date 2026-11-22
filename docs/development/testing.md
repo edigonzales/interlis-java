@@ -102,6 +102,9 @@ XTF-2.4-Ausgabe von ili2db. Die `*ArraySingle*`-Fälle prüfen optionale
 Einzelwerte und diagnostizieren mehrere gespeicherte Elemente. Die
 `*ArrayDirect*`-Fälle prüfen in XTF 2.4 direkte skalare Array-Werte
 und in XTF 2.3 die entsprechende Einfeldstruktur.
+Die `*ArraySchema*`-Fälle vergleichen den SQL-Katalog und die Metadaten
+mit ili2db und prüfen den gemischten Datenaustausch, die gemeinsame
+ID-Vergabe und `--add-models` mit kombinierter EXPAND- und JSON-Abbildung.
 
 Die `*ExpandSingle*`-Fälle prüfen den Austausch optionaler flacher
 Strukturen mit ili2db-`--expandStruct`, das Umbenennen einer SQL-Spalte

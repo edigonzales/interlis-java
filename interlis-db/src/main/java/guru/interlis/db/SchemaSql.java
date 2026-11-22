@@ -450,6 +450,18 @@ final class SchemaSql {
         }
 
         String columnType(DbMapping.Column column, int index) {
+            if (column.array().isPresent()) {
+                if (gpkg) return "TEXT";
+                var array = column.array().orElseThrow();
+                String element = switch (array.kind()) {
+                    case TEXT -> array.textLength() == 0 ? "TEXT" : text(array.textLength());
+                    case ENUMERATION -> text(255);
+                    case BOOLEAN -> "BOOLEAN";
+                    case INTEGER -> "INTEGER";
+                    default -> throw new IllegalStateException("Unsupported SQL array element " + array.kind());
+                };
+                return element + "[]";
+            }
             if (column.jsonStructure().isPresent()) return gpkg ? "TEXT" : "jsonb";
             if (column.textExpansion().isPresent()) {
                 return column.textExpansion().orElseThrow().translations().isEmpty() && index == 1 ? text(2) : "TEXT";

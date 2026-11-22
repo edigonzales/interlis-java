@@ -44,7 +44,7 @@ public final class Main {
                     [--default-epsg CODE] [--multi-srs [--alt-srs-model ORIGINAL=ALTERNATE]]
                     [--model-file IMPORT.ili]...
                     [--inheritance smart1|smart2] [--coalesce-catalogue-ref] [--expand-multilingual] [--expand-localised]
-                    [--coalesce-multi-point] [--coalesce-multi-line] [--coalesce-multi-surface] [--expand-struct] [--coalesce-json]
+                    [--coalesce-multi-point] [--coalesce-multi-line] [--coalesce-multi-surface] [--expand-struct] [--coalesce-json] [--coalesce-array]
                     [--stroke-arcs] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.
@@ -354,6 +354,10 @@ public final class Main {
             if (transformations.contains(Ili2dbLayout.AttributeTransformation.JSON_STRUCTURE)
                     && inheritance != DbInheritance.Profile.NEW_CLASS) {
                 throw new IllegalArgumentException("--coalesce-json requires a new schema with newClass inheritance");
+            }
+            if (transformations.contains(Ili2dbLayout.AttributeTransformation.ARRAY)
+                    && inheritance != DbInheritance.Profile.NEW_CLASS) {
+                throw new IllegalArgumentException("--coalesce-array requires a new schema with newClass inheritance");
             }
             boolean strokeArcs = schemaFlags.contains("--stroke-arcs");
             if (strokeArcs && (addModels || inheritance == DbInheritance.Profile.SMART1)) {

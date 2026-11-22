@@ -9,6 +9,7 @@ import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.DomainReferenceType;
 import guru.interlis.model.StructureValueType;
+import guru.interlis.model.TextType;
 import guru.interlis.model.Modifier;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
@@ -72,9 +73,21 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
         return new DbArray(collection, wrapper, kind, type);
     }
 
+    TypeDescriptor declaredElement(TransferPlan plan, AttributeSlot outer) {
+        var ref = wrapper.map(shape -> shape.field().declaredType()).orElseGet(outer::declaredType);
+        var declared = plan.type(ref).known().orElseThrow();
+        if (wrapper.isEmpty() && declared instanceof CollectionType repeated) {
+            return plan.type(new TypeRef(plan.snapshotId(), repeated.elementType())).known().orElseThrow();
+        }
+        return declared;
+    }
+
+    int textLength() { return ((TextType) type).maxLength().orElse(0); }
+
     String pgElementType() {
         return switch (kind) {
-            case TEXT, ENUMERATION -> "varchar";
+            case TEXT -> textLength() == 0 ? "text" : "varchar";
+            case ENUMERATION -> "varchar";
             case BOOLEAN -> "bool";
             case INTEGER -> "int4";
             default -> throw new IllegalStateException("Unsupported PostgreSQL array element " + kind);

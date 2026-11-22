@@ -2,6 +2,7 @@ package guru.interlis.db;
 
 import guru.interlis.db.DbInteropTest.ReferenceTool;
 import guru.interlis.db.DbInteropTest.TestDatabase;
+import guru.interlis.execution.CancellationToken;
 import org.w3c.dom.Element;
 
 import java.nio.file.Files;
@@ -17,6 +18,7 @@ import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
+import static guru.interlis.db.DbInteropTest.cli;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
@@ -271,6 +273,109 @@ final class ArrayCases {
     private List<String> scalarItems(Element object, String name) {
         if (version == 23) return items(object, name);
         return children(object).stream().filter(value -> value.getLocalName().equals(name)).map(Element::getTextContent).toList();
+    }
+
+    void createSchema(TestDatabase baseline, TestDatabase db) throws Exception {
+        String model = "ArraySchema" + version;
+        String structures = """
+                DOMAIN Grade = (Low, Family (High, Higher));
+                STRUCTURE Elem = Entry : TEXT*40; END Elem;
+                STRUCTURE NoteElem = Entry : MTEXT; END NoteElem;
+                STRUCTURE NumberElem = Entry : -20 .. 20; END NumberElem;
+                STRUCTURE FlagElem = Entry : BOOLEAN; END FlagElem;
+                STRUCTURE GradeElem = Entry : Grade; END GradeElem;
+                """;
+        var ili = source(model, structures, """
+                CLASS Asset =
+                  !!@ili2db.mapping=ARRAY
+                  Items : LIST OF Elem;
+                  !!@ili2db.mapping=ARRAY
+                  Notes : LIST OF NoteElem;
+                  !!@ili2db.mapping=ARRAY
+                  Numbers : LIST OF NumberElem;
+                  !!@ili2db.mapping=ARRAY
+                  Flags : LIST OF FlagElem;
+                  !!@ili2db.mapping=ARRAY
+                  Grades : LIST OF GradeElem;
+                  !!@ili2db.mapping=EXPAND
+                  Detail : Elem;
+                  !!@ili2db.mapping=JSON
+                  Doc : Elem;
+                END Asset;
+                """ + (version == 24 ? """
+                CLASS DirectAsset =
+                  !!@ili2db.mapping=ARRAY
+                  Grades : LIST OF Grade;
+                END DirectAsset;
+                """ : ""));
+        schema(baseline, model, "--expandStruct", "--coalesceJson");
+        create(db, model, ili, "--coalesce-array", "--expand-struct", "--coalesce-json");
+        assertSameCatalog(baseline, db);
+        var output = work.resolve("output.xtf");
+        referenceImport(db, "legacy", schemaDataset(model, "legacy"));
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertSchemaData(output, "legacy");
+        assertCliSuccess(db, "import", model, "native", schemaDataset(model, "native"));
+        referenceExport(db, "native", output);
+        assertSchemaData(output, "native");
+        referenceImport(db, "tail", schemaDataset(model, "tail"));
+        assertCliSuccess(db, "export", model, "tail", output);
+        assertSchemaData(output, "tail");
+        try (var sql = db.connect()) {
+            assertSharedIds(db, sql, 9, "asset");
+        }
+
+        String added = "ArrayAppend" + version;
+        var extra = arraySource(added, "TEXT*40", "LIST");
+        create(db, added, extra, "--add-models");
+        referenceImport(db, "added", dataset(added, "added", List.of("one", "two")));
+        assertCliSuccess(db, "export", added, "added", output);
+        assertItems(output, "added", List.of("one", "two"));
+        try (var sql = db.connect()) {
+            assertEquals("coalesce", scalar(sql, "SELECT setting FROM " + db.table("t_ili2db_trafo")
+                    + " WHERE iliname='" + added + ".Data.Asset.Items' AND tag='ch.ehi.ili2db.arrayTrafo'"));
+        }
+    }
+
+    private Path schemaDataset(String model, String prefix) throws Exception {
+        String values = element("Items", entry(model, "some") + entry(model, "words"))
+                + element("Notes", element(tag(model, "NoteElem"), element("Entry", "long text")))
+                + element("Numbers", element(tag(model, "NumberElem"), element("Entry", "-9")))
+                + element("Flags", element(tag(model, "FlagElem"), element("Entry", "false")))
+                + element("Grades", element(tag(model, "GradeElem"), element("Entry", "Family.High")))
+                + element("Detail", entry(model, "expanded")) + element("Doc", entry(model, "json"));
+        return transfer(model, prefix, object(model, "Asset", prefix + "-value", values));
+    }
+
+    private void assertSchemaData(Path output, String prefix) throws Exception {
+        var asset = objects(output, prefix).get(prefix + "-value");
+        assertEquals(List.of("some", "words"), items(asset, "Items"));
+        assertEquals(List.of("long text"), items(asset, "Notes"));
+        assertEquals(List.of("-9"), items(asset, "Numbers"));
+        assertEquals(List.of("false"), items(asset, "Flags"));
+        assertEquals(List.of("Family.High"), items(asset, "Grades"));
+        assertEquals(List.of("expanded"), items(asset, "Detail"));
+        assertEquals(List.of("json"), items(asset, "Doc"));
+    }
+
+    private static void create(TestDatabase db, String model, Path ili, String... options) {
+        var result = cli(db, "schemaimport", model, null, ili, CancellationToken.none(), options);
+        assertEquals(0, result.code(), result::diagnostics);
+    }
+
+    private static void assertSameCatalog(TestDatabase baseline, TestDatabase db) throws Exception {
+        try (var expected = baseline.connect(); var actual = db.connect()) {
+            DbSchemaCatalog.read(expected, baseline.postgis(), baseline.schema())
+                    .assertSameAs(DbSchemaCatalog.read(actual, db.postgis(), db.schema()));
+        }
+    }
+
+    private static void assertSharedIds(TestDatabase db, Connection sql, int count, String... tables) throws Exception {
+        var all = new ArrayList<>(List.of(tables));
+        all.addAll(List.of("t_ili2db_dataset", "t_ili2db_basket"));
+        var rows = all.stream().map(table -> "SELECT t_id FROM " + db.table(table)).collect(Collectors.joining(" UNION ALL "));
+        assertEquals(Integer.toString(count), scalar(sql, "SELECT count(*) FROM (" + rows + ") ids"));
+        assertEquals(Integer.toString(count), scalar(sql, "SELECT count(DISTINCT t_id) FROM (" + rows + ") ids"));
     }
 
     private Path mixedLists(TestDatabase db, String model, List<String> expected) throws Exception {

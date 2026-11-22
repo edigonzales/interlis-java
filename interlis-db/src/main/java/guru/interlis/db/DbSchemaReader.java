@@ -510,7 +510,7 @@ final class DbSchemaReader {
         }
         var transformations = EnumSet.noneOf(Ili2dbLayout.AttributeTransformation.class);
         for (var transformation : List.of(Ili2dbLayout.AttributeTransformation.EXPANDED_STRUCTURE,
-                Ili2dbLayout.AttributeTransformation.JSON_STRUCTURE)) {
+                Ili2dbLayout.AttributeTransformation.JSON_STRUCTURE, Ili2dbLayout.AttributeTransformation.ARRAY)) {
             if (!settings.containsKey(transformation.tag)) continue;
             if (!transformation.setting.equals(settings.get(transformation.tag))) {
                 throw unsupported("SETTINGS." + transformation.tag.substring(PREFIX.length()));
