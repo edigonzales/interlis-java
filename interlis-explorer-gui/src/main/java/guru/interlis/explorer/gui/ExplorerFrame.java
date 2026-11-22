@@ -24,7 +24,9 @@ import javax.swing.JTextArea;
 import javax.swing.JTree;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingWorker;
+import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -33,6 +35,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.WindowAdapter;
@@ -44,8 +47,12 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 
 final class ExplorerFrame extends JFrame {
+    private static final String LAST_TRANSFER_DIRECTORY = "lastTransferDirectory";
+
     private final JButton open = new JButton("Open dataset…");
     private final JLabel status = new JLabel("Choose the local model files and an XTF 2.4 FULL transfer.");
     private final JTree tree = new JTree(new DefaultMutableTreeNode());
@@ -160,11 +167,43 @@ final class ExplorerFrame extends JFrame {
         pane.setBorder(BorderFactory.createEmptyBorder());
         pane.setDividerLocation(divider);
         pane.setResizeWeight(weight);
+        if (pane.getUI() instanceof BasicSplitPaneUI ui) {
+            var line = UIManager.getColor("Separator.foreground");
+            ui.getDivider().setBorder(direction == JSplitPane.HORIZONTAL_SPLIT
+                    ? BorderFactory.createMatteBorder(0, 1, 0, 0, line)
+                    : BorderFactory.createMatteBorder(1, 0, 0, 0, line));
+        }
         return pane;
     }
 
+    private static File lastTransferDirectory() {
+        try {
+            var preferences = Preferences.userNodeForPackage(ExplorerFrame.class);
+            var path = preferences.get(LAST_TRANSFER_DIRECTORY, "");
+            if (!path.isEmpty()) {
+                var directory = new File(path);
+                if (directory.isDirectory() && directory.canRead() && directory.canExecute()) {
+                    return directory;
+                }
+            }
+        } catch (SecurityException | IllegalStateException ignored) {
+            // The chooser can still use its default directory.
+        }
+        return null;
+    }
+
+    private static void rememberTransferDirectory(Path xtf) {
+        try {
+            var preferences = Preferences.userNodeForPackage(ExplorerFrame.class);
+            preferences.put(LAST_TRANSFER_DIRECTORY, xtf.toAbsolutePath().getParent().toString());
+            preferences.flush();
+        } catch (BackingStoreException | SecurityException | IllegalStateException ignored) {
+            // A preferences failure does not affect the imported dataset.
+        }
+    }
+
     private void chooseDataset() {
-        var modelChooser = new JFileChooser();
+        var modelChooser = new JFileChooser(lastTransferDirectory());
         modelChooser.setDialogTitle("Select INTERLIS model files and their imports");
         modelChooser.setMultiSelectionEnabled(true);
         modelChooser.setAcceptAllFileFilterUsed(false);
@@ -185,6 +224,8 @@ final class ExplorerFrame extends JFrame {
 
     private void openDataset(List<Path> files, Path xtf) {
         open.setEnabled(false);
+        var previousCursor = getCursor();
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         status.setText("Compiling models and importing " + xtf.getFileName() + "…");
         new SwingWorker<ExplorerDataset, Void>() {
             @Override
@@ -194,6 +235,7 @@ final class ExplorerFrame extends JFrame {
 
             @Override
             protected void done() {
+                setCursor(previousCursor);
                 try {
                     var opened = get();
                     if (closing) {
@@ -204,6 +246,7 @@ final class ExplorerFrame extends JFrame {
                         tree.setModel(new DefaultTreeModel(modelTree(opened.plan())));
                         selectClass();
                         status.setText("Opened " + xtf.getFileName());
+                        rememberTransferDirectory(xtf);
                         release(previous);
                     }
                 } catch (ExecutionException failure) {

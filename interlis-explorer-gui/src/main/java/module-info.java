@@ -1,6 +1,7 @@
 /** Local Swing application for browsing an INTERLIS transfer. */
 module guru.interlis.explorer.gui {
     requires java.desktop;
+    requires java.prefs;
     requires java.sql;
     requires com.formdev.flatlaf;
     requires guru.interlis.model;

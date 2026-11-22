@@ -299,11 +299,13 @@ derselben unveränderlichen Schemainstanz geplant sein.
 
 Starte den lokalen Explorer mit `./gradlew :interlis-explorer-gui:run`.
 Wähle unter **Open dataset…** die lokalen ILI-Dateien einschliesslich
-ihrer Modellimporte und anschliessend eine XTF-2.4-FULL-Datei. Wähle
-im Modellbaum eine Klasse und danach ein Objekt. Die Liste zeigt bis zu
-100 Instanzen der gewählten Klasse in Transferreihenfolge. Der Inspektor
-zeigt die Attribute in effektiver Modellreihenfolge. Beim Schliessen
-wird die temporäre DuckDB-Datenbank entfernt.
+ihrer Modellimporte und anschliessend eine XTF-2.4-FULL-Datei. Der Explorer
+merkt sich den Ordner des letzten erfolgreichen Imports auch über einen
+Neustart hinweg. Wähle im Modellbaum eine Klasse und danach ein Objekt.
+Die Liste zeigt bis zu 100 Instanzen der gewählten Klasse in
+Transferreihenfolge. Der Inspektor zeigt die Attribute in effektiver
+Modellreihenfolge. Beim Schliessen wird die temporäre DuckDB-Datenbank
+entfernt.
 
 ## Objektspeicher in DuckDB
 
