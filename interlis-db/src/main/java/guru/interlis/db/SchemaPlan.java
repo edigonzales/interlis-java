@@ -9,6 +9,7 @@ import guru.interlis.model.GeometryType;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.ModelImport;
 import guru.interlis.model.ModelSymbol;
+import guru.interlis.model.ModelTranslation;
 import guru.interlis.model.NumericType;
 import guru.interlis.model.Origin;
 import guru.interlis.model.Symbol;
@@ -36,6 +37,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static guru.interlis.db.DbMapping.metaText;
 
@@ -153,7 +155,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
 
     private static String modelEntry(ModelSymbol model) {
         String name = model.name().value();
-        var imports = model.imports().stream().map(ModelImport::importedModel).distinct().sorted().toList();
+        var imports = Stream.concat(model.imports().stream().map(ModelImport::importedModel),
+                model.translation().stream().map(ModelTranslation::sourceModel)).distinct().sorted().toList();
         return imports.isEmpty() ? name : name + "{ " + String.join(" ", imports) + "}";
     }
 

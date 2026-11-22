@@ -146,6 +146,44 @@ final class TranslationCases {
         assertEquals(0, new BigDecimal("1200224.500").compareTo(new BigDecimal(axes.get(1).getTextContent())));
     }
 
+    void schema(TestDatabase baseline, TestDatabase own, TestDatabase extended) throws Exception {
+        var originalFile = fixture(original + ".ili");
+        var translatedFile = fixture(translated + ".ili");
+        createReference(baseline, translated);
+        run(own, "schemaimport", translated, null, translatedFile, "--model-file", originalFile.toString());
+        createReference(extended, original);
+        var input = fixture("original" + version + ".xtf");
+        referenceImport(extended, "existing", input);
+        try (var sql = extended.connect()) {
+            String identity = scalar(sql, "SELECT t_id FROM " + extended.table("station"));
+            run(extended, "schemaimport", translated, null, translatedFile, "--add-models",
+                    "--model-file", originalFile.toString());
+            assertEquals(identity, scalar(sql, "SELECT t_id FROM " + extended.table("station")));
+        }
+        Files.delete(originalFile);
+        Files.delete(translatedFile);
+        var output = work.resolve("schema-output.xtf");
+        boolean french = version == 23;
+        String label = french ? "translated" : "original";
+        String source = Files.readString(french ? fixture("translated23.xtf") : input);
+        var legacy = Files.writeString(work.resolve("schema-legacy.xtf"), source.replace(label + "-", "legacy-"));
+        var nativeData = Files.writeString(work.resolve("schema-native.xtf"), source.replace(label + "-", "native-"));
+        try (var refSql = baseline.connect()) {
+            var catalog = DbSchemaCatalog.read(refSql, baseline.postgis(), baseline.schema());
+            for (var db : List.of(own, extended)) {
+                try (var sql = db.connect()) {
+                    catalog.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+                }
+                referenceImport(db, "legacy", legacy);
+                run(db, "export", translated, "legacy", output);
+                assertDelivery(output, french, "legacy");
+                run(db, "import", translated, "native", nativeData);
+                referenceExport(db, "native", output);
+                assertDelivery(output, french, "native");
+            }
+        }
+    }
+
     private void assertDelivery(Path output, boolean french, String prefix) throws Exception {
         var data = readDataSection(output, version);
         String model = french ? translated : original;

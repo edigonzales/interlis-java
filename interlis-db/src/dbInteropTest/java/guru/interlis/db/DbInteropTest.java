@@ -120,6 +120,10 @@ final class DbInteropTest {
     @Test void geoPackageTranslationNested24() throws Exception { exchangeTranslationNested(24, null); }
     @Test void postgisTranslationNested23() throws Exception { exchangeWithPostgis(23, this::exchangeTranslationNested); }
     @Test void postgisTranslationNested24() throws Exception { exchangeWithPostgis(24, this::exchangeTranslationNested); }
+    @Test void geoPackageTranslationSchema23() throws Exception { exchangeTranslationSchema(23, null); }
+    @Test void geoPackageTranslationSchema24() throws Exception { exchangeTranslationSchema(24, null); }
+    @Test void postgisTranslationSchema23() throws Exception { exchangeWithPostgis(23, this::exchangeTranslationSchema); }
+    @Test void postgisTranslationSchema24() throws Exception { exchangeWithPostgis(24, this::exchangeTranslationSchema); }
 
     @Test void geoPackageSharedSource23() throws Exception { exchangeSharedSource(23, null); }
     @Test void geoPackageSharedSource24() throws Exception { exchangeSharedSource(24, null); }
@@ -471,6 +475,13 @@ final class DbInteropTest {
     private void exchangeTranslationNested(int version, PostgreSQLContainer postgres) throws Exception {
         var db = new TestDatabase(postgres, "translation_nested");
         new TranslationCases(work, new ReferenceTool(db.postgis()), version).nested(db);
+    }
+
+    private void exchangeTranslationSchema(int version, PostgreSQLContainer postgres) throws Exception {
+        var reference = new TestDatabase(postgres, "reference_translation");
+        var own = new TestDatabase(postgres, "own_translation");
+        var extended = new TestDatabase(postgres, "extended_translation");
+        new TranslationCases(work, new ReferenceTool(reference.postgis()), version).schema(reference, own, extended);
     }
 
     private void exchangeSharedSource(int version, PostgreSQLContainer postgres) throws Exception {

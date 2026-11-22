@@ -138,8 +138,10 @@ public final class Main {
         var names = DbSchemaReader.namesForExtension(db, options.models());
         var plan = SchemaPlan.read(options.models(), options.file(), options.modelFiles(), db.gpkg(),
                 settings.splitGeometries(), settings.defaultEpsg(), settings.multiSrs(), Optional.empty(), names, cancellation);
-        if (plan.addedTables().isEmpty()) throw new DbException("No new model tables to add");
         plan = plan.withModelFiles(DbSchemaReader.newModelFiles(db, plan.modelFiles(), cancellation));
+        if (plan.addedTables().isEmpty() && plan.modelFiles().isEmpty()) {
+            throw new DbException("No new model tables or sources to add");
+        }
         if (db.gpkg()) GeoPackageSchema.addModels(db, plan, settings.createGeometryIndexes(), cancellation);
         else SchemaSql.addTables(db, plan, settings.createGeometryIndexes(), cancellation);
 

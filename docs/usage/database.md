@@ -78,6 +78,8 @@ gespeicherten SQL-Zuordnungen und die gemeinsame ID-Vergabe.
 Zusätzliche lokale Abhängigkeiten werden wie bei der Schemaerzeugung
 mit `--model-file` angegeben. Identische gespeicherte Quellen und
 bereits abgebildete Abhängigkeiten werden wiederverwendet. Eine
+Übersetzung zu einem vorhandenen Original wird als Modellquelle ergänzt
+und verwendet dessen Fachtabellen. Eine
 gemeinsam genutzte Strukturtabelle erhält die zusätzlichen
 Rückverweisspalten für neue Eigentümer. Ein bereits abgebildetes
 ausgewähltes Modell, eine abweichende gespeicherte Quelle oder eine

@@ -388,7 +388,7 @@ final class DbMapping {
         TransferPlan plan = DbModelSources.compile(models, sources, "model files", token);
         var crs = new CrsDefaults(defaultEpsg, 0);
         var crsPair = srsModels.map(pair -> new DbCrsPair(plan, pair, crs, crs));
-        var roots = crsPair.map(pair -> List.of(pair.models().getFirst())).orElseGet(plan::rootModels);
+        var roots = storageRoots(plan, crsPair);
         var objects = storageObjects(plan, roots, token);
         checkLayout(plan, objects);
         if (!multiSrs && plan.topics().stream()
