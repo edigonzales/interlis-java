@@ -116,6 +116,9 @@ beiden Werkzeugrichtungen, einschliesslich doppelter Punkte, SRID,
 SQL-`NULL` und der leeren Strukturtabellen.
 `*DbInteropTest.*ChbaseLines*` prüft `--coalesceMultiLine` mit geraden
 und gebogenen Segmenten sowie gerichteten Linien.
+`*DbInteropTest.*ChbaseSurfaces*` prüft `--coalesceMultiSurface` mit
+mehreren Flächen, Innenring, Kreisbogen, abweichendem SRID und atomarem
+Export bei einer beschädigten Geometrieabbildung.
 
 `*DbInteropTest.*Smart*` prüft Smart1 und Smart2 mit XTF 2.3 und 2.4.
 Die Fälle vergleichen beide Werkzeugrichtungen, physische Eigentümer

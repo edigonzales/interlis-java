@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="http://www.interlis.ch/xtf/2.4/ChbaseSurfaces24"
+  xmlns:g="http://www.interlis.ch/geometry/1.0" xmlns:t="http://www.interlis.ch/xtf/2.4/ChbaseSurfaceTypes24">
+  <i:headersection><i:models><i:model>ChbaseSurfaces24</i:model></i:models></i:headersection>
+  <i:datasection>
+    <Data i:bid="fixture-b">
+      <LandCover i:tid="fixture-empty"/>
+      <LandCover i:tid="fixture-value">
+        <Shape><t:MultiSurface><t:Surfaces>
+          <t:SurfaceStructure><t:Surface><g:surface><g:exterior><g:polyline><g:coord><g:c1>600000</g:c1><g:c2>200000</g:c2></g:coord><g:arc><g:a1>600010</g:a1><g:a2>199995</g:a2><g:c1>600020</g:c1><g:c2>200000</g:c2></g:arc><g:coord><g:c1>600020</g:c1><g:c2>200020</g:c2></g:coord><g:coord><g:c1>600000</g:c1><g:c2>200020</g:c2></g:coord><g:coord><g:c1>600000</g:c1><g:c2>200000</g:c2></g:coord></g:polyline></g:exterior><g:interior><g:polyline><g:coord><g:c1>600005</g:c1><g:c2>200005</g:c2></g:coord><g:coord><g:c1>600005</g:c1><g:c2>200010</g:c2></g:coord><g:coord><g:c1>600010</g:c1><g:c2>200010</g:c2></g:coord><g:coord><g:c1>600010</g:c1><g:c2>200005</g:c2></g:coord><g:coord><g:c1>600005</g:c1><g:c2>200005</g:c2></g:coord></g:polyline></g:interior></g:surface></t:Surface></t:SurfaceStructure>
+          <t:SurfaceStructure><t:Surface><g:surface><g:exterior><g:polyline><g:coord><g:c1>600100</g:c1><g:c2>200100</g:c2></g:coord><g:coord><g:c1>600110</g:c1><g:c2>200100</g:c2></g:coord><g:coord><g:c1>600110</g:c1><g:c2>200110</g:c2></g:coord><g:coord><g:c1>600100</g:c1><g:c2>200100</g:c2></g:coord></g:polyline></g:exterior></g:surface></t:Surface></t:SurfaceStructure>
+        </t:Surfaces></t:MultiSurface></Shape>
+      </LandCover>
+    </Data>
+  </i:datasection>
+</i:transfer>

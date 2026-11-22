@@ -255,6 +255,10 @@ Komponenten und ihre Duplikate bleiben im XTF erhalten.
 aus CHBase V1 sowie gleich aufgebaute, mit
 `ili2db.mapping=MultiLine` markierte Strukturen in einer
 `MULTICURVE`-Spalte ab. Der Transfer erhält Kreisbogen und Linienrichtung.
+`--coalesceMultiSurface` verwendet für die CHBase-V1-Struktur
+`MultiSurface` und für entsprechend markierte Strukturen eine
+`MULTISURFACE`-Spalte. Die zweidimensionale Abbildung erhält
+Aussenringe, Innenringe und Kreisbogen.
 
 Für bestehende Smart1-Schemata unterstützt `interlis-db` den FULL-Import
 und -Export von Klassenhierarchien mit skalaren Attributen. Das

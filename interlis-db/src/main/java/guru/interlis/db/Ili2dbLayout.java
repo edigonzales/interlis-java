@@ -69,7 +69,8 @@ final class Ili2dbLayout {
         MULTILINGUAL("--expand-multilingual", "multilingualTrafo", "expand"),
         LOCALISED("--expand-localised", "localisedTrafo", "expand"),
         MULTIPOINT(null, "multiPointTrafo", COALESCE),
-        MULTILINE(null, "multiLineTrafo", COALESCE);
+        MULTILINE(null, "multiLineTrafo", COALESCE),
+        MULTISURFACE(null, "multiSurfaceTrafo", COALESCE);
 
         final String option;
         final String tag;

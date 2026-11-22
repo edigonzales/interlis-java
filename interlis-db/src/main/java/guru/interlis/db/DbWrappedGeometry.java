@@ -15,7 +15,9 @@ import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TransferGeometry.Coordinate;
 import guru.interlis.transfer.TransferGeometry.MultiCoordinate;
 import guru.interlis.transfer.TransferGeometry.MultiPolyline;
+import guru.interlis.transfer.TransferGeometry.MultiSurface;
 import guru.interlis.transfer.TransferGeometry.Polyline;
+import guru.interlis.transfer.TransferGeometry.Surface;
 import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferValue;
 import guru.interlis.transfer.TransferValue.Repeated;
@@ -42,7 +44,8 @@ record DbWrappedGeometry(AttributeTransformation transformation, SymbolRef struc
         for (var object : objects) {
             for (var field : DbMapping.attributes(object)) {
                 var recipe = transformation.apply(field);
-                if (recipe != AttributeTransformation.MULTIPOINT && recipe != AttributeTransformation.MULTILINE) continue;
+                if (recipe != AttributeTransformation.MULTIPOINT && recipe != AttributeTransformation.MULTILINE
+                        && recipe != AttributeTransformation.MULTISURFACE) continue;
                 var binding = describe(plan, field, recipe)
                         .orElseThrow(() -> DbMapping.unsupported("coalesced geometry at " + field.name().declared()));
                 result.put(field.symbol(), binding);
@@ -65,6 +68,7 @@ record DbWrappedGeometry(AttributeTransformation transformation, SymbolRef struc
             case MULTIPOINT -> type instanceof CoordinateType coordinate
                     && !coordinate.multiCoordinate() && coordinate.dimensions() == 2;
             case MULTILINE -> type instanceof GeometryType geometry && geometry.geometryKind() == GeometryKind.POLYLINE;
+            case MULTISURFACE -> type instanceof GeometryType geometry && geometry.geometryKind() == GeometryKind.SURFACE;
             default -> false;
         };
         if (!matches) return Optional.empty();
@@ -74,12 +78,16 @@ record DbWrappedGeometry(AttributeTransformation transformation, SymbolRef struc
     private static boolean matches(TransferPlan plan, ObjectDescriptor structure, AttributeTransformation transformation) {
         String marker = DbMapping.metaText(plan.symbol(structure.symbol()).known().orElseThrow(), "ili2db.mapping");
         if (transformation == AttributeTransformation.MULTIPOINT) return "MultiPoint".equals(marker);
-        if ("MultiLine".equals(marker)) return true;
+        if (transformation == AttributeTransformation.MULTILINE && "MultiLine".equals(marker)
+                || transformation == AttributeTransformation.MULTISURFACE && "MultiSurface".equals(marker)) return true;
         var root = structure;
         while (root.baseType().isPresent()) root = plan.object(root.baseType().orElseThrow()).orElseThrow();
         return switch (root.name().declared().toString()) {
             case "GeometryCHLV03_V1.MultiLine", "GeometryCHLV95_V1.MultiLine",
-                 "GeometryCHLV03_V1.MultiDirectedLine", "GeometryCHLV95_V1.MultiDirectedLine" -> true;
+                 "GeometryCHLV03_V1.MultiDirectedLine", "GeometryCHLV95_V1.MultiDirectedLine" ->
+                    transformation == AttributeTransformation.MULTILINE;
+            case "GeometryCHLV03_V1.MultiSurface", "GeometryCHLV95_V1.MultiSurface" ->
+                    transformation == AttributeTransformation.MULTISURFACE;
             default -> false;
         };
     }
@@ -90,13 +98,21 @@ record DbWrappedGeometry(AttributeTransformation transformation, SymbolRef struc
                 ? field : null;
     }
 
-    Kind kind() { return transformation == AttributeTransformation.MULTIPOINT ? Kind.MULTIPOINT : Kind.MULTICURVE; }
+    Kind kind() {
+        return switch (transformation) {
+            case MULTIPOINT -> Kind.MULTIPOINT;
+            case MULTILINE -> Kind.MULTICURVE;
+            case MULTISURFACE -> Kind.MULTISURFACE;
+            default -> throw new IllegalStateException("Expected a coalesced geometry transformation");
+        };
+    }
 
     TransferValue wrap(TransferGeometry stored) {
         if (stored == null) return null;
         List<? extends TransferGeometry> parts = switch (stored) {
             case MultiCoordinate points -> points.coordinates();
             case MultiPolyline lines -> lines.lines();
+            case MultiSurface surfaces -> surfaces.surfaces();
             default -> throw new IllegalStateException("Expected a stored geometry collection");
         };
         List<TransferValue> values = parts.stream()
@@ -114,6 +130,7 @@ record DbWrappedGeometry(AttributeTransformation transformation, SymbolRef struc
         return switch (transformation) {
             case MULTIPOINT -> new MultiCoordinate(parts(parts, Coordinate.class, context));
             case MULTILINE -> new MultiPolyline(parts(parts, Polyline.class, context));
+            case MULTISURFACE -> new MultiSurface(parts(parts, Surface.class, context));
             default -> throw new IllegalStateException("Expected a coalesced geometry transformation");
         };
     }

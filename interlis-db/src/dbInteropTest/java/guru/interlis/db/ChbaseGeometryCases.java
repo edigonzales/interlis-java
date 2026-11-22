@@ -12,9 +12,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
+import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
 import static guru.interlis.db.DbInteropTest.scalar;
@@ -77,6 +79,66 @@ final class ChbaseGeometryCases {
                         + " WHERE t_ili_tid='native-value' AND ST_HasArc(shape)"));
             }
         }
+    }
+
+    void surfaces(TestDatabase db) throws Exception {
+        String model = "ChbaseSurfaces" + version;
+        fixture(model + ".ili");
+        var input = fixture(model + ".xtf");
+        referenceSchema(db, model, "--coalesceMultiSurface");
+        referenceImport(db, "legacy", input);
+        var output = work.resolve("surfaces-output.xtf");
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertSurfaces(output, "fixture");
+        assertCliSuccess(db, "import", model, "native", withPrefix(input, "native"));
+        referenceExport(db, "native", output);
+        assertSurfaces(output, "native");
+        assertGeometryColumn(db, "landcover", "shape", "MULTISURFACE", 21781);
+        String problem;
+        try (var sql = db.connect()) {
+            assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("surfacestructure")));
+            String covers = db.table("landcover");
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + covers + " WHERE shape IS NULL"));
+            if (db.postgis()) {
+                assertEquals("2", scalar(sql, "SELECT ST_NumGeometries(shape) FROM " + covers
+                        + " WHERE t_ili_tid='native-value' AND ST_HasArc(shape)"));
+                execute(sql, "ALTER TABLE " + covers + " ALTER COLUMN shape TYPE geometry(MultiSurface, 2056)"
+                        + " USING ST_SetSRID(shape, 2056)");
+                problem = "Expected an EPSG:21781";
+            } else {
+                execute(sql, "UPDATE " + covers + " SET shape=X'00' WHERE t_ili_tid='native-value'");
+                problem = "GeoPackage";
+            }
+        }
+        String previous = Files.readString(output);
+        assertCliFailure(db, "export", model, "native", output, problem);
+        assertEquals(previous, Files.readString(output));
+    }
+
+    private void assertSurfaces(Path output, String prefix) throws Exception {
+        var objects = objects(output, prefix);
+        assertNull(child(objects.get(prefix + "-empty"), "Shape"));
+        String types = version == 23 ? "GeometryCHLV03_V1" : "ChbaseSurfaceTypes24";
+        var items = parts(objects.get(prefix + "-value"), types, "MultiSurface", "Surfaces", "SurfaceStructure");
+        assertEquals(2, items.size());
+        var first = children(children(child(items.getFirst(), "Surface")).getFirst());
+        assertEquals(2, first.size());
+        var exterior = children(children(first.getFirst()).getFirst());
+        assertEquals(5, exterior.size());
+        assertEquals(xy("600000", "200000"), coordinate(exterior.getFirst()));
+        var arc = exterior.get(1);
+        assertEquals(version == 23 ? "ARC" : "arc", arc.getLocalName());
+        assertEquals(xy("600010", "199995"), position(arc, version == 23 ? "A" : "a"));
+        assertEquals(xy("600020", "200000"), coordinate(arc));
+        assertEquals(xy("600000", "200000"), coordinate(exterior.getLast()));
+        var hole = children(children(first.getLast()).getFirst());
+        assertEquals(List.of(xy("600005", "200005"), xy("600005", "200010"), xy("600010", "200010"),
+                xy("600010", "200005"), xy("600005", "200005")), hole.stream().map(this::coordinate).toList());
+        var second = children(children(child(items.getLast(), "Surface")).getFirst());
+        assertEquals(1, second.size());
+        var vertices = children(children(second.getFirst()).getFirst());
+        assertEquals(List.of(xy("600100", "200100"), xy("600110", "200100"), xy("600110", "200110"), xy("600100", "200100")),
+                vertices.stream().map(this::coordinate).toList());
     }
 
     private void assertLines(Path output, String prefix) throws Exception {

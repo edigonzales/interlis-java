@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="test"><MODELS>
+    <MODEL NAME="ChbaseSurfaces23" VERSION="2026-01-01" URI="https://example.org"/>
+  </MODELS></HEADERSECTION>
+  <DATASECTION>
+    <ChbaseSurfaces23.Data BID="fixture-b">
+      <ChbaseSurfaces23.Data.LandCover TID="fixture-empty"/>
+      <ChbaseSurfaces23.Data.LandCover TID="fixture-value">
+        <Shape><GeometryCHLV03_V1.MultiSurface><Surfaces>
+          <GeometryCHLV03_V1.SurfaceStructure><Surface><SURFACE><BOUNDARY><POLYLINE><COORD><C1>600000</C1><C2>200000</C2></COORD><ARC><C1>600020</C1><C2>200000</C2><A1>600010</A1><A2>199995</A2></ARC><COORD><C1>600020</C1><C2>200020</C2></COORD><COORD><C1>600000</C1><C2>200020</C2></COORD><COORD><C1>600000</C1><C2>200000</C2></COORD></POLYLINE></BOUNDARY><BOUNDARY><POLYLINE><COORD><C1>600005</C1><C2>200005</C2></COORD><COORD><C1>600005</C1><C2>200010</C2></COORD><COORD><C1>600010</C1><C2>200010</C2></COORD><COORD><C1>600010</C1><C2>200005</C2></COORD><COORD><C1>600005</C1><C2>200005</C2></COORD></POLYLINE></BOUNDARY></SURFACE></Surface></GeometryCHLV03_V1.SurfaceStructure>
+          <GeometryCHLV03_V1.SurfaceStructure><Surface><SURFACE><BOUNDARY><POLYLINE><COORD><C1>600100</C1><C2>200100</C2></COORD><COORD><C1>600110</C1><C2>200100</C2></COORD><COORD><C1>600110</C1><C2>200110</C2></COORD><COORD><C1>600100</C1><C2>200100</C2></COORD></POLYLINE></BOUNDARY></SURFACE></Surface></GeometryCHLV03_V1.SurfaceStructure>
+        </Surfaces></GeometryCHLV03_V1.MultiSurface></Shape>
+      </ChbaseSurfaces23.Data.LandCover>
+    </ChbaseSurfaces23.Data>
+  </DATASECTION>
+</TRANSFER>
