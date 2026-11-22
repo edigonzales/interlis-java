@@ -441,6 +441,79 @@ final class StructureMappingCases {
         return db.postgis() ? column + "->>'" + key + "'" : "json_extract(" + column + ",'$." + key + "')";
     }
 
+    void jsonCollections(TestDatabase db) throws Exception {
+        String model = "JsonCollections" + version;
+        source(model, "STRUCTURE Wrapper = Detail : Entry; END Wrapper;", """
+                    CLASS Asset =
+                      !!@ili2db.mapping=JSON
+                      Items : LIST {0..3} OF Entry;
+                      !!@ili2db.mapping=JSON
+                      Bagged : BAG {0..3} OF Entry;
+                      !!@ili2db.mapping=JSON
+                      Nest : Wrapper;
+                    END Asset;
+                """);
+        referenceSchema(db, model, "--coalesceJson");
+        Path output = work.resolve("out.xtf");
+        referenceImport(db, "legacy", jsonCollectionDataset(model, "legacy", true));
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertJsonCollections(output, "legacy", true);
+        assertCliSuccess(db, "import", model, "native", jsonCollectionDataset(model, "native", true));
+        assertCliSuccess(db, "export", model, "native", output);
+        assertJsonCollections(output, "native", true);
+
+        // ili2db 5.5.2 writes a nested object but its JSON parser fails to advance the parent token.
+        reference.expectFailure(db, "%ILI_FROM_DB", "unexpected json token END_OBJECT; '}' expected",
+                "--export", "--dataset", "legacy", "--exportTid", work.resolve("nested-reference.xtf").toString());
+        assertCliSuccess(db, "import", model, "mixed", jsonCollectionDataset(model, "mixed", false));
+        referenceExport(db, "mixed", output);
+        assertJsonCollections(output, "mixed", false);
+        try (var sql = db.connect()) {
+            String itemsType = db.postgis() ? "jsonb_typeof(items)" : "json_type(items)";
+            String count = db.postgis() ? "jsonb_array_length(items)" : "json_array_length(items)";
+            String asset = db.table("asset");
+            for (String prefix : List.of("legacy", "native")) {
+                var one = " FROM " + asset + " WHERE t_ili_tid='" + prefix + "-one'";
+                assertEquals("array", scalar(sql, "SELECT " + itemsType + one));
+                assertEquals("1", scalar(sql, "SELECT " + count + one));
+                assertEquals("3", scalar(sql, "SELECT " + count + " FROM " + asset + " WHERE t_ili_tid='" + prefix + "-many'"));
+            }
+            String detailType = db.postgis() ? "nest->'Detail'->>'@type'" : "json_extract(nest, '$.Detail.@type')";
+            assertEquals(model + ".Data.Entry", scalar(sql, "SELECT " + detailType + " FROM " + asset + " WHERE t_ili_tid='legacy-many'"));
+            assertEquals(model + ".Data.Entry", scalar(sql, "SELECT " + detailType + " FROM " + asset + " WHERE t_ili_tid='native-many'"));
+            assertEquals(scalar(sql, "SELECT nest FROM " + asset + " WHERE t_ili_tid='legacy-many'"),
+                    scalar(sql, "SELECT nest FROM " + asset + " WHERE t_ili_tid='native-many'"));
+            execute(sql, "UPDATE " + asset + " SET items='[]' WHERE t_ili_tid='native-one'");
+        }
+        assertCliSuccess(db, "export", model, "native", output);
+        assertNull(child(objects(output, "native").get("native-one"), "Items"));
+    }
+
+    private Path jsonCollectionDataset(String model, String prefix, boolean includeNested) throws Exception {
+        var first = entry(model, field("Label", "z"));
+        var last = entry(model, field("Label", "a"));
+        var empty = entry(model, "");
+        var nested = field(type(model, "Wrapper"), field("Detail", empty));
+        return dataset(model, prefix, asset(model, prefix + "-many", field("Items", first + empty + last)
+                + field("Bagged", first + first + empty) + (includeNested ? field("Nest", nested) : ""))
+                + asset(model, prefix + "-one", field("Items", entry(model, VALUES)))
+                + asset(model, prefix + "-missing", ""));
+    }
+
+    private void assertJsonCollections(Path output, String prefix, boolean includeNested) throws Exception {
+        var objects = objects(output, prefix);
+        var many = objects.get(prefix + "-many");
+        assertEquals(List.of("z", "", "a"), members(many, "Items").stream().map(item -> item.getTextContent().strip()).toList());
+        assertEquals(List.of("", "z", "z"), members(many, "Bagged").stream().map(item -> item.getTextContent().strip()).sorted().toList());
+        if (includeNested) {
+            assertEquals(List.of(), children(members(members(many, "Nest").getFirst(), "Detail").getFirst()));
+        } else {
+            assertNull(child(many, "Nest"));
+        }
+        assertEntry(members(objects.get(prefix + "-one"), "Items").getFirst());
+        assertEquals(List.of(), children(objects.get(prefix + "-missing")));
+    }
+
     private Path singleDataset(String model, String prefix, String field) throws Exception {
         return dataset(model, prefix, asset(model, prefix + "-empty", field(field, entry(model, "")))
                 + asset(model, prefix + "-missing", "")

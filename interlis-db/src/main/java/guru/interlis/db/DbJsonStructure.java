@@ -5,15 +5,21 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import guru.interlis.db.DbMapping.Column;
+import guru.interlis.model.CardinalityUpper;
+import guru.interlis.model.CollectionKind;
+import guru.interlis.model.CollectionType;
 import guru.interlis.model.Modifier;
+import guru.interlis.model.StructureValueType;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
+import guru.interlis.model.TypeRef;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferValue;
 import guru.interlis.transfer.TransferValue.BooleanValue;
 import guru.interlis.transfer.TransferValue.Enumeration;
 import guru.interlis.transfer.TransferValue.NumberValue;
+import guru.interlis.transfer.TransferValue.Repeated;
 import guru.interlis.transfer.TransferValue.Structured;
 import guru.interlis.transfer.TransferValue.Text;
 import guru.interlis.transfer.TransferValue.Undefined;
@@ -21,13 +27,17 @@ import guru.interlis.transfer.TransferValue.Undefined;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /** Reads and writes the ili2db JSON representation of a structure value. */
-record DbJsonStructure(SymbolRef structure, String typeName, Map<String, Column> fields) {
+record DbJsonStructure(SymbolRef structure, String typeName, Map<String, Column> fields,
+                       Optional<CollectionKind> collection, boolean array) {
     static final int MAX_CODE_UNITS = 16_777_216;
     private static final String TYPE = "@type";
 
@@ -36,15 +46,34 @@ record DbJsonStructure(SymbolRef structure, String typeName, Map<String, Column>
     }
 
     static DbJsonStructure describe(TransferPlan plan, AttributeSlot outer) {
-        var object = DbStructureShape.target(plan, DbStructureShape.type(plan, outer))
+        return describe(plan, outer, false);
+    }
+
+    private static DbJsonStructure describe(TransferPlan plan, AttributeSlot outer, boolean nested) {
+        var type = DbStructureShape.type(plan, outer);
+        Optional<CollectionKind> collection = Optional.empty();
+        if (type instanceof CollectionType repeated) {
+            if (nested) throw DbMapping.unsupported("nested JSON collection at " + outer.name().declared());
+            collection = Optional.of(repeated.collectionKind());
+            type = plan.type(new TypeRef(plan.snapshotId(), repeated.elementType())).known().orElseThrow();
+        }
+        var object = DbStructureShape.target(plan, type)
                 .filter(target -> target.kind() == SymbolKind.STRUCTURE && !target.modifiers().contains(Modifier.ABSTRACT))
                 .orElseThrow(() -> DbMapping.unsupported("JSON structure at " + outer.name().declared()));
         var fields = new LinkedHashMap<String, Column>();
         for (var slot : object.slots()) {
             if (!(slot instanceof AttributeSlot field) || field.attribute().transientAttribute()) continue;
-            fields.put(field.name().declared().last(), DbMapping.structureScalar(plan, object, field));
+            String name = field.name().declared().last();
+            var member = DbStructureShape.type(plan, field);
+            if (member instanceof StructureValueType) {
+                if (nested) throw DbMapping.unsupported("nested JSON structure at " + field.name().declared());
+                fields.put(name, DbMapping.jsonColumn(plan, field, name, describe(plan, field, true)));
+            } else {
+                fields.put(name, DbMapping.structureScalar(plan, object, field));
+            }
         }
-        return new DbJsonStructure(object.symbol(), object.name().declared().toString(), fields);
+        boolean array = collection.isPresent() && !CardinalityUpper.finite(1).equals(outer.cardinality().upper());
+        return new DbJsonStructure(object.symbol(), object.name().declared().toString(), fields, collection, array);
     }
 
     TransferValue decode(String json, String context) {
@@ -52,7 +81,7 @@ record DbJsonStructure(SymbolRef structure, String typeName, Map<String, Column>
         if (json.isEmpty() || json.length() > MAX_CODE_UNITS) throw new DbException("Invalid or oversized ili2db JSON at " + context);
         try (var reader = new JsonReader(new StringReader(json))) {
             reader.setStrictness(Strictness.STRICT);
-            var value = readObject(reader);
+            var value = read(reader);
             requireToken(reader, JsonToken.END_DOCUMENT);
             return value;
         } catch (IOException | IllegalStateException | DbException failure) {
@@ -61,16 +90,46 @@ record DbJsonStructure(SymbolRef structure, String typeName, Map<String, Column>
     }
 
     String encode(TransferValue value, String context) {
-        if (value == null || value == Undefined.INSTANCE) return null;
+        if (value == null || value == Undefined.INSTANCE
+                || (value instanceof Repeated repeated && repeated.values().isEmpty())) return null;
         var output = new StringWriter();
         try (var writer = new JsonWriter(output)) {
             writer.setStrictness(Strictness.STRICT);
-            writeObject(writer, value);
+            write(writer, value);
         } catch (IOException | IllegalStateException | DbException failure) {
             throw new DbException("Cannot encode ili2db JSON at " + context + ": " + failure.getMessage(), failure);
         }
         if (output.getBuffer().length() > MAX_CODE_UNITS) throw new DbException("Oversized ili2db JSON at " + context);
         return output.toString();
+    }
+
+    private TransferValue read(JsonReader reader) throws IOException {
+        if (collection.isEmpty()) return readObject(reader);
+        if (!array) return new Repeated(collection.orElseThrow(), List.of(readObject(reader)));
+        requireToken(reader, JsonToken.BEGIN_ARRAY);
+        reader.beginArray();
+        var items = new ArrayList<TransferValue>();
+        while (reader.hasNext()) items.add(readObject(reader));
+        reader.endArray();
+        return items.isEmpty() ? null : new Repeated(collection.orElseThrow(), items);
+    }
+
+    private void write(JsonWriter writer, TransferValue value) throws IOException {
+        if (collection.isEmpty()) {
+            writeObject(writer, value);
+            return;
+        }
+        if (!(value instanceof Repeated items) || items.kind() != collection.orElseThrow()) {
+            throw new DbException("Expected JSON structure collection of " + typeName);
+        }
+        if (array) {
+            writer.beginArray();
+            for (var item : items.values()) writeObject(writer, item);
+            writer.endArray();
+        } else {
+            if (items.values().size() != 1) throw new DbException("Single-valued JSON collection of " + typeName);
+            writeObject(writer, items.values().getFirst());
+        }
     }
 
     private Structured readObject(JsonReader reader) throws IOException {
@@ -116,6 +175,8 @@ record DbJsonStructure(SymbolRef structure, String typeName, Map<String, Column>
                 case BooleanValue bool -> writer.value(bool.value());
                 case NumberValue number -> writer.value(DbTransfer.readInteger(number.lexeme(), field).exactValue());
                 case Enumeration enumeration -> writer.value(String.join(".", enumeration.path()));
+                case Structured child -> field.jsonStructure().orElseThrow(() ->
+                        new DbException("Expected scalar JSON structure member " + entry.getKey())).writeObject(writer, child);
                 default -> throw new DbException("Unsupported JSON structure member " + entry.getKey());
             }
         }
@@ -128,6 +189,7 @@ record DbJsonStructure(SymbolRef structure, String typeName, Map<String, Column>
             reader.nextNull();
             return null;
         }
+        if (field.jsonStructure().isPresent()) return field.jsonStructure().orElseThrow().readObject(reader);
         return switch (field.kind()) {
             case TEXT -> {
                 requireToken(reader, JsonToken.STRING);

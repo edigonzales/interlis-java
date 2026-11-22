@@ -105,6 +105,10 @@ prüfen zwei konkrete Eigentümertabellen, stabile IDs und freigewordene
 Spalten nach `update` sowie die Datensatzzeilen nach `replace` und `delete`.
 Die `*JsonStructure*`-Fälle prüfen `--coalesceJson` für Einzelstrukturen,
 typisierte Werte, SQL `NULL` und den Erhalt der XTF-Datei bei fehlerhaftem JSON.
+Die `*JsonCollections*`-Fälle prüfen flache Arrays in beiden
+Werkzeugrichtungen. Für innere JSON-Objekte vergleichen sie die
+gespeicherten Werte und prüfen den Export mit `interlis-db` sowie den
+bekannten Exportfehler von ili2db 5.5.2.
 
 `*DbInteropTest.*CatalogueReference*` prüft beide Werkzeugrichtungen
 für Katalogreferenzen mit `--coalesceCatalogueRef` auf GeoPackage und

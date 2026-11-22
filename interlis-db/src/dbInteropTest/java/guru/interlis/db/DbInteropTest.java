@@ -180,6 +180,16 @@ final class DbInteropTest {
         new StructureMappingCases(work, new ReferenceTool(db.postgis()), version).jsonSingle(db);
     }
 
+    @Test void geoPackageJsonCollections23() throws Exception { exchangeJsonCollections(23, null); }
+    @Test void geoPackageJsonCollections24() throws Exception { exchangeJsonCollections(24, null); }
+    @Test void postgisJsonCollections23() throws Exception { exchangeWithPostgis(23, this::exchangeJsonCollections); }
+    @Test void postgisJsonCollections24() throws Exception { exchangeWithPostgis(24, this::exchangeJsonCollections); }
+
+    private void exchangeJsonCollections(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "json_collections");
+        new StructureMappingCases(work, new ReferenceTool(db.postgis()), version).jsonCollections(db);
+    }
+
     @Test void geoPackageChbasePoints23() throws Exception { exchangeChbasePoints(23, null); }
     @Test void geoPackageChbasePoints24() throws Exception { exchangeChbasePoints(24, null); }
     @Test void geoPackageStrokePolyline23() throws Exception { exchangeStrokePolyline(23, null); }

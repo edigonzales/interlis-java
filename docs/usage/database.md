@@ -496,7 +496,12 @@ In bestehenden Schemata mit `--coalesceJson` speichert ili2db eine
 optionale flache Struktur als JSON-Objekt. GeoPackage verwendet `TEXT`,
 PostGIS `JSONB`. Der qualifizierte INTERLIS-Typ steht in `@type`. SQL
 `NULL` steht für den fehlenden Strukturwert. Eine vorhandene leere
-Struktur wird als Objekt mit `@type` übertragen.
+Struktur wird als Objekt mit `@type` übertragen. `LIST OF` und `BAG OF`
+mit einer Obergrenze über eins liegen als JSON-Arrays vor, auch bei einem
+einzigen Eintrag. Eine zusätzliche optionale Struktur liegt als inneres
+JSON-Objekt vor. `interlis-db` liest und schreibt diese Form. ili2db 5.5.2
+bricht seinen XTF-Export bei einem inneren JSON-Objekt auch nach einem
+eigenen Import ab.
 
 In XTF 2.3 und 2.4 FULL können Klassen und Strukturen optionale Strukturwerte
 sowie `LIST OF`- und `BAG OF`-Attribute mit einem Strukturtyp aus dem
