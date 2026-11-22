@@ -246,6 +246,12 @@ Bei `--expandLocalised` liegt der Text des Einzelwerts in der
 Basisspalte, die optionale Sprache in `<stamm>_lang`. Das gilt für
 `LocalisedText` und `LocalisedMText` beider CHBase-Versionen.
 
+Bei `--coalesceMultiPoint` verwendet der FULL-Transfer in bestehenden
+`newClass`-Schemata eine `MULTIPOINT`-Spalte für
+`ili2db.mapping=MultiPoint`. Das Einzelattribut enthält eine Struktur
+mit einem BAG aus zweidimensionalen Koordinatenstrukturen. Die
+Komponenten und ihre Duplikate bleiben im XTF erhalten.
+
 Für bestehende Smart1-Schemata unterstützt `interlis-db` den FULL-Import
 und -Export von Klassenhierarchien mit skalaren Attributen. Das
 Referenzschema lässt sich mit `--noSmartMapping --smart1Inheritance`

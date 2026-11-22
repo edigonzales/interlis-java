@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="test"><MODELS>
+    <MODEL NAME="ChbasePoints23" VERSION="2026-01-01" URI="https://example.org"/>
+  </MODELS></HEADERSECTION>
+  <DATASECTION>
+    <ChbasePoints23.Data BID="fixture-b">
+      <ChbasePoints23.Data.PinSet TID="fixture-empty"/>
+      <ChbasePoints23.Data.PinSet TID="fixture-value">
+        <Shape><ChbasePoints23.PinGroup><Members>
+          <ChbasePoints23.PinPart><Position><COORD><C1>2600000.125</C1><C2>1200000.250</C2></COORD></Position></ChbasePoints23.PinPart>
+          <ChbasePoints23.PinPart><Position><COORD><C1>2600000.125</C1><C2>1200000.250</C2></COORD></Position></ChbasePoints23.PinPart>
+          <ChbasePoints23.PinPart><Position><COORD><C1>2600400.500</C1><C2>1200200.750</C2></COORD></Position></ChbasePoints23.PinPart>
+        </Members></ChbasePoints23.PinGroup></Shape>
+      </ChbasePoints23.Data.PinSet>
+    </ChbasePoints23.Data>
+  </DATASECTION>
+</TRANSFER>

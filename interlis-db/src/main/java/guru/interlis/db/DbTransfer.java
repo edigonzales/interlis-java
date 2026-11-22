@@ -704,7 +704,7 @@ final class DbTransfer {
                         + " of object " + ownerTid);
             }
             if (checkGeometrySelection(rows, index, column, ownerTid, selection)) {
-                var value = db.readGeometry(rows, index, column);
+                var value = readGeometry(db, rows, index, column);
                 if (value != null) values.put(column.slot().symbol(), value);
             }
             index++;
@@ -1018,7 +1018,7 @@ final class DbTransfer {
     private static TransferValue readValue(Database db, DbMapping mapping, ResultSet rows, int index,
                                            Column column, String ownerTid) throws SQLException {
         return switch (column.kind()) {
-            case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> db.readGeometry(rows, index, column);
+            case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> readGeometry(db, rows, index, column);
             case BOOLEAN -> readBoolean(db, rows, index, column);
             case INTEGER -> readInteger(rows.getString(index), column);
             case ENUMERATION -> readEnumeration(rows.getString(index), column);
@@ -1062,6 +1062,18 @@ final class DbTransfer {
                         new Structured(binding.structure(), Map.of(binding.field().symbol(), reference))).orElse(reference);
             }
         };
+    }
+
+    private static TransferValue readGeometry(Database db, ResultSet rows, int index, Column column) throws SQLException {
+        var stored = db.readGeometry(rows, index, column);
+        return column.wrappedGeometry().isPresent() ? column.wrappedGeometry().orElseThrow().wrap(stored) : stored;
+    }
+
+    private static TransferGeometry storedGeometry(Column column, TransferValue value, String context) {
+        if (column.wrappedGeometry().isPresent()) {
+            return column.wrappedGeometry().orElseThrow().unwrap(value, column.slot().name().declared() + " of object " + context);
+        }
+        return (TransferGeometry) value;
     }
 
     private static Optional<BigInteger> readPosition(Object value, boolean hasTarget, String context) {
@@ -1440,8 +1452,8 @@ final class DbTransfer {
                 var value = basketGeometry.active(geometry.column()) ? object.value(geometry.column().slot().symbol())
                         : Optional.<TransferValue>empty();
                 if (value.isPresent()) found.add(geometry.column().slot().symbol());
-                writeSecondaryGeometry(geometry, (TransferGeometry) value.filter(item -> item != Undefined.INSTANCE)
-                        .orElse(null), id, context, update);
+                var stored = storedGeometry(geometry.column(), value.filter(item -> item != Undefined.INSTANCE).orElse(null), context);
+                writeSecondaryGeometry(geometry, stored, id, context, update);
             }
             return found.size();
         }
@@ -1690,6 +1702,7 @@ final class DbTransfer {
 
         private int bindColumn(PreparedStatement statement, int index, Table table, Column column, long id,
                                String context, BasketId basket, TransferValue value) throws SQLException {
+            if (column.kind().geometry()) value = storedGeometry(column, value, context);
             if (column.textExpansion().isPresent()) {
                 for (var text : column.textExpansion().orElseThrow().disassemble(value, column.slot().name().declared()
                         + " of object " + context)) {

@@ -139,6 +139,10 @@ final class DbSchemaReader {
         var attrNames = readAttributeNames(db, scope);
         var transformations = readTransformations(db, scope);
         var usedAttributeTransformations = new HashSet<String>();
+        var wrappedGeometries = DbWrappedGeometry.discover(plan, selected,
+                field -> transformations.attributes().get(field.name().declared().toString()));
+        var geometryComponents = wrappedGeometries.values().stream().map(binding -> binding.component().symbol())
+                .collect(Collectors.toSet());
         var inheritance = readInheritance(db, scope);
         var names = new HashMap<SymbolRef, String>();
         var usedNames = new HashSet<String>();
@@ -241,7 +245,9 @@ final class DbSchemaReader {
                         usedAttributeTransformations.add(path);
                         continue;
                     }
-                    var composition = DbMapping.describeComposition(plan, object, attr, path);
+                    var wrapped = wrappedGeometries.get(attr.symbol());
+                    var composition = wrapped == null ? DbMapping.describeComposition(plan, object, attr, path)
+                            : Optional.<Composition>empty();
                     if (composition.isPresent()) {
                         var binding = composition.orElseThrow();
                         var child = catalog.get(binding.childRoot());
@@ -254,7 +260,18 @@ final class DbSchemaReader {
                         continue;
                     }
                     var declaration = attr.member().overridden() ? object : contributor;
-                    for (var described : DbMapping.describeColumns(plan, declaration, attr, defaults, crsPair)) {
+                    List<Column> bindings;
+                    if (wrapped != null) {
+                        var componentModel = plan.object(wrapped.element()).orElseThrow().model();
+                        var componentCrs = settings.crs(plan.model(componentModel).orElseThrow().name().declared().last());
+                        bindings = List.of(DbMapping.wrappedGeometryColumn(plan, attr, wrapped, componentCrs));
+                        usedAttributeTransformations.add(path);
+                    } else if (geometryComponents.contains(attr.symbol())) {
+                        bindings = List.of(DbMapping.geometryComponentColumn(plan, declaration, attr, defaults));
+                    } else {
+                        bindings = DbMapping.describeColumns(plan, declaration, attr, defaults, crsPair);
+                    }
+                    for (var described : bindings) {
                         if (described.kind() == Kind.REFERENCE) {
                             columns.addAll(bindReferences(db, parent, attrNames, layout, names, described, false, settings));
                             continue;
