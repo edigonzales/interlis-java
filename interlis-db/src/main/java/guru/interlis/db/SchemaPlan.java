@@ -274,6 +274,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             case FORMATTED -> "FORMATTED";
             case UUID -> "OID";
             case BINARY -> "BINARY";
+            case XML -> "XML";
             case INTEGER, BIGINT, DECIMAL -> "NUMERIC";
             case ENUMERATION -> "ENUM";
             case POINT -> "COORD";

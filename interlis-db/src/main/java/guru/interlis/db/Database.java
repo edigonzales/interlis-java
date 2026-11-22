@@ -11,6 +11,7 @@ import org.sqlite.SQLiteOpenMode;
 import guru.interlis.transfer.TransferValue.Binary;
 import guru.interlis.transfer.TransferValue.NumberValue;
 import guru.interlis.transfer.TransferValue.Text;
+import guru.interlis.transfer.TransferValue.XmlFragment;
 import guru.interlis.xtf24.Xtf24Limits;
 
 import java.math.BigDecimal;
@@ -189,6 +190,27 @@ final class Database implements AutoCloseable {
         if (!(stored instanceof byte[] bytes)) throw new DbException("Expected binary SQL value at " + context);
         if (bytes.length > BLACKBOX_BINARY_LIMIT) throw new DbException("Oversized BLACKBOX BINARY at " + context);
         return new Binary(bytes);
+    }
+
+    String xmlProjection(String field) {
+        if (!gpkg()) return "substring(CAST(" + field + " AS text), 1, " + (BLACKBOX_TEXT_LIMIT + 1) + ")";
+        // Slicing bytes also preserves embedded NULs for the XTF writer to diagnose.
+        String bytes = "CAST(" + field + " AS BLOB)";
+        int limit = BLACKBOX_TEXT_LIMIT * 3 + 1;
+        return "CASE WHEN length(" + bytes + ") >= " + limit + " THEN CAST(substr(" + bytes
+                + ", 1, " + limit + ") AS TEXT) ELSE " + field + " END";
+    }
+
+    XmlFragment readXml(ResultSet rows, int index, String context) throws SQLException {
+        String value = rows.getString(index);
+        if (value == null) return null;
+        if (value.length() > BLACKBOX_TEXT_LIMIT) throw new DbException("Oversized BLACKBOX XML at " + context);
+        return new XmlFragment(value);
+    }
+
+    void bindXml(PreparedStatement statement, int index, XmlFragment value) throws SQLException {
+        if (gpkg()) statement.setString(index, value.xml());
+        else statement.setObject(index, value.xml(), Types.OTHER);
     }
 
     void bindUuid(PreparedStatement statement, int index, UUID value) throws SQLException {

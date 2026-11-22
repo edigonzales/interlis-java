@@ -397,6 +397,12 @@ XTF 2.4 den UUID-Wert als Text.
 `BLACKBOX BINARY` belegt `BLOB` in GeoPackage und `bytea` in PostGIS.
 Der Adapter unterscheidet leere Binärwerte und SQL `NULL` und begrenzt
 die gelesene Bytezahl anhand des Base64-Limits der XTF-Codecs.
+`BLACKBOX XML` belegt `TEXT` in GeoPackage und `xml` in PostGIS. Der
+Adapter speichert das XML-Fragment und erhält Namespaces innerhalb
+seiner Elemente. Der XTF-2.4-Export von ili2db 5.5.2 gibt dasselbe
+Fragment als maskierten Text aus. In XTF 2.3 kann ili2gpkg 5.5.2
+beim Export von XML-Payloads mit Nicht-ASCII-Zeichen mit einem
+UTF-8-Fehler abbrechen.
 
 `schemaimport --gpkg-multi-geom-per-table` verwendet das ili2gpkg-Profil
 `--gpkgMultiGeomPerTable` mit mehreren Geometriespalten in einer Tabelle.

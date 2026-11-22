@@ -109,6 +109,9 @@ Die `*ScalarUuid*`-Fälle prüfen UUID-Fachattribute mit beiden
 Schreibweisen, SQL `NULL` und den Rollback bei einer ungültigen UUID.
 Die `*ScalarBinary*`-Fälle prüfen die gespeicherten Bytes, leere Werte,
 SQL `NULL` und den Erhalt der Exportdatei bei einem übergrossen BLOB.
+Die `*ScalarXml*`-Fälle prüfen XML-Inhalt, Namespaces, SQL `NULL` und
+Exportgrenzen. Sie prüfen auch den maskierten Text des XTF-2.4-Referenzexports
+und reproduzieren den Unicode-Exportfehler von ili2gpkg in XTF 2.3.
 
 Die `*EnumItfCodes*`-Fälle prüfen den Austausch skalarer Aufzählungen
 mit ITF-Codes, einschliesslich Code `0`, SQL `NULL`, Rollback und

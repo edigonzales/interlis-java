@@ -66,7 +66,7 @@ import static guru.interlis.db.Ili2dbLayout.reservedTable;
 /** The SQL names and storage bindings for a checked transfer plan. */
 final class DbMapping {
     enum Kind {
-        TEXT, BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, UUID, BINARY, ENUMERATION, POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE;
+        TEXT, BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, UUID, BINARY, XML, ENUMERATION, POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE;
 
         boolean geometry() { return this == POINT || this == POLYLINE || this == SURFACE || collection(); }
 
@@ -1124,6 +1124,7 @@ final class DbMapping {
             case FormattedType ignored -> Kind.FORMATTED;
             case OidType oid when oid.oidKind() == OidKind.UUID -> Kind.UUID;
             case BlackboxType box when box.blackboxKind() == BlackboxKind.BINARY -> Kind.BINARY;
+            case BlackboxType box when box.blackboxKind() == BlackboxKind.XML -> Kind.XML;
             default -> type.kind() == TypeKind.BOOLEAN ? Kind.BOOLEAN : null;
         };
     }

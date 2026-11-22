@@ -3,7 +3,10 @@ package guru.interlis.db;
 import guru.interlis.db.DbInteropTest.ReferenceTool;
 import guru.interlis.db.DbInteropTest.TestDatabase;
 import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -274,6 +277,72 @@ final class ScalarCases {
         var payload = child(row, "Payload");
         String encoded = (version == 23 ? child(payload, "BINBLBOX") : payload).getTextContent();
         return Base64.getMimeDecoder().decode(encoded);
+    }
+
+    void xml(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ScalarXml" + version;
+        schemas(expected, own, model, "CLASS Asset = Payload : BLACKBOX XML; END Asset;");
+        String ascii = "<p:sample xmlns:p=\"urn:scalar\" p:code=\"x\">ascii</p:sample>";
+        var values = List.of(xmlField(ascii), "");
+        for (var db : List.of(expected, own)) {
+            Path output = work.resolve("out.xtf");
+            referenceImport(db, "legacy", data(model, "legacy", values));
+            assertCliSuccess(db, "export", model, "legacy", output);
+            var exported = rows(output, "legacy", 2);
+            assertFragment(children(xmlPayload(exported.getFirst())).getFirst(), "ascii");
+            assertNull(xmlPayload(exported.getLast()));
+
+            assertCliSuccess(db, "import", model, "native", data(model, "native", values));
+            referenceExport(db, "native", output);
+            var roundTrip = rows(output, "native", 2);
+            var payload = xmlPayload(roundTrip.getFirst());
+            assertFragment(version == 23 ? children(payload).getFirst() : parseFragment(payload.getTextContent()), "ascii");
+            assertNull(xmlPayload(roundTrip.getLast()));
+
+            String unicode = xmlField("<p:sample p:code=\"x\">Grüsse</p:sample>")
+                    .replace("<Payload>", "<Payload xmlns:p=\"urn:scalar\">");
+            assertCliSuccess(db, "import", model, "unicode", data(model, "unicode", List.of(unicode)));
+            assertCliSuccess(db, "export", model, "unicode", output);
+            assertFragment(children(xmlPayload(rows(output, "unicode", 1).getFirst())).getFirst(), "Grüsse");
+            if (version == 23 && !db.postgis()) {
+                reference.expectFailure(db, "%ILI_FROM_DB", "Invalid byte", "--export", "--dataset", "unicode",
+                        "--exportTid", work.resolve("reference-unicode.xtf").toString());
+                Files.deleteIfExists(work.resolve("reference-unicode.xtf"));
+            }
+            try (var sql = db.connect()) {
+                String xml = db.postgis() ? "payload::text" : "payload";
+                assertFragment(parseFragment(stored(db, sql, xml, "legacy", 0)), "ascii");
+                assertFragment(parseFragment(stored(db, sql, xml, "native", 0)), "ascii");
+                assertNull(stored(db, sql, "payload", "native", 1));
+                String large = db.postgis() ? "repeat('x', 1048577)::xml" : "printf('%01048577d', 0)";
+                execute(sql, "UPDATE " + db.table("asset") + " SET payload = " + large + " WHERE t_ili_tid = 'native-0'");
+                byte[] previous = Files.readAllBytes(output);
+                assertCliFailure(db, "export", model, "native", output, "Oversized BLACKBOX XML");
+                assertArrayEquals(previous, Files.readAllBytes(output));
+            }
+        }
+    }
+
+    private String xmlField(String fragment) {
+        return field("Payload", version == 23 ? field("XMLBLBOX", fragment) : fragment);
+    }
+
+    private Element xmlPayload(Element row) {
+        var payload = child(row, "Payload");
+        return payload != null && version == 23 ? child(payload, "XMLBLBOX") : payload;
+    }
+
+    private static Element parseFragment(String fragment) throws Exception {
+        var factory = DocumentBuilderFactory.newDefaultNSInstance();
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        return factory.newDocumentBuilder().parse(new InputSource(new StringReader(fragment))).getDocumentElement();
+    }
+
+    private static void assertFragment(Element element, String content) {
+        assertEquals("urn:scalar", element.getNamespaceURI());
+        assertEquals("sample", element.getLocalName());
+        assertEquals("x", element.getAttributeNS("urn:scalar", "code"));
+        assertEquals(content, element.getTextContent());
     }
 
     private void differentZones(TestDatabase db, String model, List<String> values, CheckRows check) throws Exception {
