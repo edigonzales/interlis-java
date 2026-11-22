@@ -223,6 +223,9 @@ aufgelöst.
 Referenzattribute und eingebettete 1:n-Rollen verwenden die gespeicherte
 physische Zieltabelle. Bei einem enger deklarierten Ziel wird auch der
 konkrete Typ der Zielzeile geprüft.
+Für Smart2-Schemata unterstützt der Transfer skalare Klassenattribute
+in den vollständigen Tabellen der konkreten Klassen. Das Referenzschema
+verwendet dazu `--noSmartMapping --smart2Inheritance`.
 
 Unterstützt sind Klassen eines eigenständigen Modells in
 INTERLIS 2.3 und 2.4 mit Text, Boolean, 32-Bit-Ganzzahlen und Aufzählungen als

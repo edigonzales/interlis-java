@@ -72,6 +72,43 @@ final class SmartCases {
         }
     }
 
+    void smart2Scalars(TestDatabase db) throws Exception {
+        String model = "SmartMeter" + version;
+        var source = fixture(model + ".ili");
+        referenceSchema(db, model, "smart2");
+        Files.delete(source);
+        try (var sql = db.connect()) {
+            execute(sql, "ALTER TABLE " + db.table("smartunit") + " RENAME COLUMN memo TO stored_memo");
+            execute(sql, "UPDATE " + db.table("t_ili2db_attrname") + " SET sqlname='stored_memo'"
+                    + " WHERE colowner='smartunit' AND iliname='" + model + ".Data.Instrument.Memo'");
+            execute(sql, "UPDATE " + db.table("t_ili2db_column_prop") + " SET columnname='stored_memo'"
+                    + " WHERE tablename='smartunit' AND columnname='memo'");
+            try (var columns = sql.getMetaData().getColumns(null, db.schema(), "smartunit", "%")) {
+                var names = new ArrayList<String>();
+                while (columns.next()) names.add(columns.getString("COLUMN_NAME").toLowerCase(java.util.Locale.ROOT));
+                org.junit.jupiter.api.Assertions.assertTrue(names.contains("stored_memo"));
+                org.junit.jupiter.api.Assertions.assertFalse(names.contains("t_type"));
+            }
+        }
+        var input = fixture(model + ".xtf");
+        var output = work.resolve("smart2-scalar-output.xtf");
+        referenceImport(db, "legacy", input);
+        restoreEmptyMemo(db);
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertScalarObjects(output, model, "fixture", true);
+        assertCliSuccess(db, "import", model, "native", transferWithPrefix(input, "native"));
+        referenceExport(db, "native", output);
+        assertScalarObjects(output, model, "native", false);
+        try (var sql = db.connect()) {
+            assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("smartunit")
+                    + " WHERE stored_memo='base' AND counter=7 AND badge='tag'"));
+            assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("meter")
+                    + " WHERE memo='' AND counter=5"));
+            assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + db.table("smartunit") + " s JOIN "
+                    + db.table("meter") + " m ON m.t_id=s.t_id"));
+        }
+    }
+
     void smart1References(TestDatabase db) throws Exception {
         String model = "SmartRefs" + version;
         var source = fixture(model + ".ili");

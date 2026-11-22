@@ -13,12 +13,15 @@ import java.util.Optional;
 
 /** Resolves the per-declaration ili2db strategies into physical relations. */
 final class DbInheritance {
-    enum Profile { NEW_CLASS, SMART1 }
+    enum Profile { NEW_CLASS, SMART1, SMART2 }
     enum Strategy {
-        NEW_CLASS("newClass"), SUPER_CLASS("superClass"), SUB_CLASS("subClass");
+        NEW_CLASS("newClass"), SUPER_CLASS("superClass"), SUB_CLASS("subClass"), NEW_AND_SUB_CLASS("newAndSubClass");
 
         final String value;
         Strategy(String value) { this.value = value; }
+
+        boolean createsTable() { return this == NEW_CLASS || this == NEW_AND_SUB_CLASS; }
+        boolean copiesFields() { return this == SUB_CLASS || this == NEW_AND_SUB_CLASS; }
     }
 
     record Declaration(ObjectDescriptor object, String sqlName, Strategy strategy) { }
@@ -47,15 +50,15 @@ final class DbInheritance {
             }
             SymbolRef owner = object.symbol();
             if (declaration.strategy() == Strategy.SUPER_CLASS) {
-                owner = nearestTable(plan, object, strategies).orElseThrow(() -> invalid(object));
+                owner = nearestTable(plan, object, strategies, true).orElseThrow(() -> invalid(object));
             }
             placements.put(object.symbol(), owner);
         }
         owners = Map.copyOf(placements);
         var bases = new LinkedHashMap<SymbolRef, Optional<SymbolRef>>();
         for (var declaration : declarations) {
-            if (declaration.strategy() == Strategy.NEW_CLASS) {
-                bases.put(declaration.object().symbol(), nearestTable(plan, declaration.object(), strategies));
+            if (declaration.strategy().createsTable()) {
+                bases.put(declaration.object().symbol(), nearestTable(plan, declaration.object(), strategies, false));
             }
         }
         var typesByRoot = new LinkedHashMap<SymbolRef, List<ObjectDescriptor>>();
@@ -68,12 +71,12 @@ final class DbInheritance {
         }
         var relations = new ArrayList<Relation>();
         for (var declaration : declarations) {
-            if (declaration.strategy() != Strategy.NEW_CLASS) continue;
+            if (!declaration.strategy().createsTable()) continue;
             var object = declaration.object();
             var ref = object.symbol();
             var contributors = new ArrayList<ObjectDescriptor>();
             contributors.add(object);
-            for (var parent = base(plan, object); parent != null && strategies.get(parent.symbol()) == Strategy.SUB_CLASS;
+            for (var parent = base(plan, object); parent != null && strategies.get(parent.symbol()).copiesFields();
                  parent = base(plan, parent)) {
                 contributors.add(parent);
             }
@@ -99,11 +102,13 @@ final class DbInheritance {
     }
 
     private static Optional<SymbolRef> nearestTable(TransferPlan plan, ObjectDescriptor object,
-                                                     Map<SymbolRef, Strategy> strategies) {
+                                                     Map<SymbolRef, Strategy> strategies, boolean includeFullTables) {
         for (var parent = base(plan, object); parent != null; parent = base(plan, parent)) {
             var strategy = strategies.get(parent.symbol());
             if (strategy == null) throw invalid(object);
-            if (strategy == Strategy.NEW_CLASS) return Optional.of(parent.symbol());
+            if (strategy == Strategy.NEW_CLASS || (includeFullTables && strategy.createsTable())) {
+                return Optional.of(parent.symbol());
+            }
         }
         return Optional.empty();
     }

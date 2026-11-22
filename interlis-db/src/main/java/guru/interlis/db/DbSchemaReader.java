@@ -172,6 +172,7 @@ final class DbSchemaReader {
                 case NEW_CLASS -> DbInheritance.Strategy.NEW_CLASS;
                 case "superClass" -> DbInheritance.Strategy.SUPER_CLASS;
                 case "subClass" -> DbInheritance.Strategy.SUB_CLASS;
+                case "newAndSubClass" -> DbInheritance.Strategy.NEW_AND_SUB_CLASS;
                 case null, default -> throw DbInheritance.invalid(object);
             };
             declarations.add(new DbInheritance.Declaration(object, name, strategy));
@@ -376,6 +377,7 @@ final class DbSchemaReader {
         var inheritance = switch (settings.get(PREFIX + "inheritanceTrafo")) {
             case null -> DbInheritance.Profile.NEW_CLASS;
             case "smart1" -> DbInheritance.Profile.SMART1;
+            case "smart2" -> DbInheritance.Profile.SMART2;
             default -> throw unsupported("SETTINGS.inheritanceTrafo");
         };
         for (String tag : List.of("createEnumColAsItfCode", "createEnumCols",
