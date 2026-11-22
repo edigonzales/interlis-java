@@ -119,6 +119,16 @@ final class DbInteropTest {
         new SchemaProfileCases(work, new ReferenceTool(expected.postgis()), version).modelNullability(expected);
     }
 
+    @Test void geoPackageProfileFkIndex23() throws Exception { exchangeProfileFkIndex(23, null); }
+    @Test void geoPackageProfileFkIndex24() throws Exception { exchangeProfileFkIndex(24, null); }
+    @Test void postgisProfileFkIndex23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileFkIndex); }
+    @Test void postgisProfileFkIndex24() throws Exception { exchangeWithPostgis(24, this::exchangeProfileFkIndex); }
+
+    private void exchangeProfileFkIndex(int version, PostgreSQLContainer postgres) throws Exception {
+        var expected = new TestDatabase(postgres, "profile_idx_ref");
+        new SchemaProfileCases(work, new ReferenceTool(expected.postgis()), version).foreignKeyIndexes(expected, expected.peer("profile_idx_own"));
+    }
+
     @Test void geoPackageScalarWide23() throws Exception { exchangeScalarWide(23, null); }
     @Test void geoPackageScalarWide24() throws Exception { exchangeScalarWide(24, null); }
     @Test void postgisScalarWide23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarWide); }

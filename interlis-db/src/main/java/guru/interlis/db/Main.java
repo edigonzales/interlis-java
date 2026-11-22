@@ -47,6 +47,7 @@ public final class Main {
                     [--coalesce-multi-point] [--coalesce-multi-line] [--coalesce-multi-surface] [--expand-struct] [--coalesce-json] [--coalesce-array]
                     [--create-enum-col-as-itf-code] [--create-enum-txt-col] [--beautify-enum-disp-name]
                     [--create-single-enum-tab | --create-enum-tabs | --create-enum-tabs-with-id]
+                    [--create-fk-idx]
                     [--stroke-arcs] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.
@@ -113,7 +114,8 @@ public final class Main {
         }
         var plan = SchemaPlan.read(options.models(), options.file(), options.modelFiles(), options.gpkg() != null,
                 options.splitGeometries(), options.defaultEpsg(), options.multiSrs(), options.srsModels(), new SqlNames(),
-                options.inheritance(), options.transformations(), options.strokeArcs(), options.enumOptions(), cancellation);
+                options.inheritance(), options.transformations(), options.strokeArcs(), options.enumOptions(),
+                options.schemaOptions(), cancellation);
         cancellation.throwIfCancellationRequested();
         if (options.gpkg() != null) {
             GeoPackageSchema.create(options.gpkg(), plan, options.createGeometryIndexes(), cancellation);
@@ -141,13 +143,15 @@ public final class Main {
                 || (options.explicitEpsg() && options.defaultEpsg() != settings.defaultEpsg())
                 || (options.explicitLayout() && options.splitGeometries() != settings.splitGeometries())
                 || (options.multiSrs() && !settings.multiSrs())
-                || (options.createGeometryIndexes() && !settings.createGeometryIndexes())) {
+                || (options.createGeometryIndexes() && !settings.createGeometryIndexes())
+                || !settings.schemaOptions().containsAll(options.schemaOptions())) {
             throw new DbException("Schema options conflict with the existing ili2db SETTINGS");
         }
         var names = DbSchemaReader.namesForExtension(db, options.models());
         var plan = SchemaPlan.read(options.models(), options.file(), options.modelFiles(), db.gpkg(),
                 settings.splitGeometries(), settings.defaultEpsg(), settings.multiSrs(), Optional.empty(), names,
-                settings.inheritance(), settings.structureTransformations(), settings.strokeArcs(), settings.enumOptions(), cancellation);
+                settings.inheritance(), settings.structureTransformations(), settings.strokeArcs(), settings.enumOptions(),
+                settings.schemaOptions(), cancellation);
         plan = plan.withModelFiles(DbSchemaReader.newModelFiles(db, plan.modelFiles(), cancellation));
         if (plan.addedTables().isEmpty() && plan.modelFiles().isEmpty()) {
             throw new DbException("No new model tables or sources to add");
@@ -221,7 +225,8 @@ public final class Main {
                            boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean addModels,
                            boolean explicitEpsg, boolean explicitLayout, boolean strokeArcs, DbEnumOptions enumOptions,
                            Optional<DbCrsPair.Models> srsModels, List<Path> modelFiles, Optional<String> exportModel,
-                           DbInheritance.Profile inheritance, Set<Ili2dbLayout.AttributeTransformation> transformations) {
+                           DbInheritance.Profile inheritance, Set<Ili2dbLayout.AttributeTransformation> transformations,
+                           Set<Ili2dbLayout.SchemaOption> schemaOptions) {
         private static final Set<String> NAMES = Set.of("--dataset", "--gpkg", "--pg-url", "--schema", "--user",
                 "--default-epsg", "--alt-srs-model", "--export-model", "--inheritance");
 
@@ -242,19 +247,22 @@ public final class Main {
             Path file = null;
             var schemaFlags = new HashSet<String>();
             var transformations = EnumSet.noneOf(Ili2dbLayout.AttributeTransformation.class);
+            var schemaOptions = EnumSet.noneOf(Ili2dbLayout.SchemaOption.class);
             var modelFiles = new ArrayList<Path>();
             var models = new ArrayList<String>();
             for (int i = 1; i < args.length; i++) {
                 String arg = args[i];
                 var transformation = Ili2dbLayout.AttributeTransformation.fromOption(arg);
+                var schemaOption = Ili2dbLayout.SchemaOption.fromOption(arg);
                 if (arg.equals("--stroke-arcs") || arg.equals("--create-geom-index") || arg.equals("--one-geom-per-table")
                         || arg.equals("--gpkg-multi-geom-per-table") || arg.equals("--multi-srs") || arg.equals("--add-models")
-                        || ENUM_OPTIONS.contains(arg) || transformation != null) {
+                        || ENUM_OPTIONS.contains(arg) || transformation != null || schemaOption != null) {
                     if (command != Command.SCHEMAIMPORT) {
                         throw new IllegalArgumentException(arg + " is only valid with schemaimport");
                     }
                     if (!schemaFlags.add(arg)) throw new IllegalArgumentException("Repeated option " + arg);
                     if (transformation != null) transformations.add(transformation);
+                    if (schemaOption != null) schemaOptions.add(schemaOption);
                 } else if (arg.equals("--model")) {
                     if (++i == args.length || args[i].isBlank() || args[i].startsWith("--")) {
                         throw new IllegalArgumentException("Missing value for " + arg);
@@ -384,7 +392,7 @@ public final class Main {
                     schemaFlags.contains("--create-geom-index"),
                     oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg, multiSrs, addModels,
                     epsg != null, oneGeometryPerTable || multipleGeoPackageGeometries, strokeArcs, enumOptions, srsModels,
-                    List.copyOf(modelFiles), exportModel, inheritance, Set.copyOf(transformations));
+                    List.copyOf(modelFiles), exportModel, inheritance, Set.copyOf(transformations), Set.copyOf(schemaOptions));
         }
 
         void checkPaths() throws IOException {

@@ -188,6 +188,9 @@ final class SchemaSql {
             }
         }
         if (newSchema) commands.addAll(metadataDdl(dialect));
+        if (plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.FOREIGN_KEY_INDEX)) {
+            for (var key : plan.foreignKeys(newSchema)) commands.add(dialect.index(key.table(), key.column()));
+        }
         return List.copyOf(commands);
     }
 
@@ -448,6 +451,9 @@ final class SchemaSql {
         for (var transformation : Ili2dbLayout.AttributeTransformation.values()) {
             if (plan.transformations().contains(transformation)) row(statement, transformation.tag, transformation.setting);
         }
+        for (var option : Ili2dbLayout.SchemaOption.values()) {
+            if (plan.schemaOptions().contains(option)) row(statement, option.tag, option.setting);
+        }
         row(statement, "ch.interlis.ili2c.ilidirs", "%ILI_FROM_DB");
         if (plan.multiSrs()) row(statement, Ili2dbLayout.USE_EPSG_IN_NAMES, "True");
         if (plan.strokeArcs()) row(statement, Ili2dbLayout.STROKE_ARCS, Ili2dbLayout.STROKE_ARCS_ENABLED);
@@ -526,6 +532,14 @@ final class SchemaSql {
         String uniqueIndex(String name, String table, String columns) {
             return "CREATE UNIQUE INDEX " + quote(Ili2dbLayout.foldedName(name)) + " ON " + table(table)
                     + " (" + columns + ")";
+        }
+
+        String index(String table, String column) {
+            if (gpkg) {
+                String name = table + "_" + Ili2dbLayout.foldedName(column) + "_idx";
+                return "CREATE INDEX " + quote(name) + " ON " + quote(table) + " (" + quote(column) + ")";
+            }
+            return "CREATE INDEX ON " + table(table) + " (" + quote(Ili2dbLayout.foldedName(column)) + ")";
         }
 
         String columnType(DbMapping.Column column, int index) {

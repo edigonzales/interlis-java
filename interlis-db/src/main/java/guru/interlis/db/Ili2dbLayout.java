@@ -72,6 +72,27 @@ final class Ili2dbLayout {
 
     private Ili2dbLayout() { }
 
+    enum SchemaOption {
+        FOREIGN_KEY_INDEX("--create-fk-idx", "createForeignKeyIndex", "yes");
+
+        final String option;
+        final String tag;
+        final String setting;
+
+        SchemaOption(String option, String name, String setting) {
+            this.option = option;
+            this.tag = PREFIX + name;
+            this.setting = setting;
+        }
+
+        static SchemaOption fromOption(String option) {
+            for (var candidate : values()) {
+                if (candidate.option.equals(option)) return candidate;
+            }
+            return null;
+        }
+    }
+
     enum AttributeTransformation {
         CATALOGUE_REFERENCE("--coalesce-catalogue-ref", "catalogueRefTrafo", COALESCE),
         MULTILINGUAL("--expand-multilingual", "multilingualTrafo", "expand"),

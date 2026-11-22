@@ -74,7 +74,8 @@ final class DbSchemaReader {
     record Settings(boolean splitGeometries, int defaultEpsg, String modelEpsgAssignments, boolean referenceEpsgHeader,
                     boolean multiSrs, Optional<DbCrsPair.Models> srsModels, boolean createGeometryIndexes, boolean sqlEnableNull,
                     DbInheritance.Profile inheritance, boolean strokeArcs,
-                    Set<Ili2dbLayout.AttributeTransformation> structureTransformations, DbEnumOptions enumOptions) {
+                    Set<Ili2dbLayout.AttributeTransformation> structureTransformations, DbEnumOptions enumOptions,
+                    Set<Ili2dbLayout.SchemaOption> schemaOptions) {
         CrsDefaults crs(String model) {
             return new CrsDefaults(defaultEpsg, modelEpsg(modelEpsgAssignments, model));
         }
@@ -563,16 +564,21 @@ final class DbSchemaReader {
             transformations.add(transformation);
         }
         var structureTransformations = Set.copyOf(transformations);
+        var schemaOptions = EnumSet.noneOf(Ili2dbLayout.SchemaOption.class);
+        for (var option : Ili2dbLayout.SchemaOption.values()) {
+            if (optionalSetting(settings, option.tag, option.setting)) schemaOptions.add(option);
+        }
+        var enabled = Set.copyOf(schemaOptions);
         if (Ili2dbLayout.MULTIPLE_GEOMETRIES.equals(geometryLayout)) {
             return new Settings(false, defaultEpsg, modelEpsg, referenceEpsgHeader, multiSrs, srsModels, indexes,
-                    sqlEnableNull, inheritance, strokeArcs, structureTransformations, enumOptions);
+                    sqlEnableNull, inheritance, strokeArcs, structureTransformations, enumOptions, enabled);
         }
         if (geometryLayout != null && !Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout)) {
             throw unsupported("SETTINGS.geomAttrPerTable=" + geometryLayout);
         }
         return new Settings(db.gpkg() || Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout), defaultEpsg, modelEpsg,
                 referenceEpsgHeader, multiSrs, srsModels, indexes, sqlEnableNull, inheritance, strokeArcs,
-                structureTransformations, enumOptions);
+                structureTransformations, enumOptions, enabled);
     }
 
     private static boolean optionalSetting(Map<String, String> settings, String key, String supported) {

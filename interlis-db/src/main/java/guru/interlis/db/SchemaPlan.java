@@ -1,6 +1,7 @@
 package guru.interlis.db;
 
 import guru.interlis.db.Ili2dbLayout.AttributeTransformation;
+import guru.interlis.db.Ili2dbLayout.SchemaOption;
 import guru.interlis.compiler.AnalysisBudget;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.DecimalLiteral;
@@ -48,10 +49,13 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                   List<DbMapping.Composition> addedCompositions,
                   List<ColumnProperty> columnProperties, Map<String, List<GeometryColumn>> geometryColumns,
                   boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean strokeArcs, DbEnumOptions enumOptions,
-                  Set<AttributeTransformation> transformations, List<DbEnumLookup> enumLookups) {
+                  Set<AttributeTransformation> transformations, List<DbEnumLookup> enumLookups,
+                  Set<SchemaOption> schemaOptions) {
     record ModelFile(String filename, LanguageVersion version, String modelNames, String content) { }
 
     record ColumnProperty(String table, String subtype, String column, String key, String value) { }
+
+    record ForeignKey(String table, String column, String target) { }
 
     /** A mapped geometry and its SQL catalog bounds, with null for an absent bound. */
     record GeometryColumn(DbMapping.Column column, Double minX, Double minY, Double maxX, Double maxY) { }
@@ -64,6 +68,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         columnProperties = List.copyOf(columnProperties);
         transformations = Set.copyOf(transformations);
         enumLookups = List.copyOf(enumLookups);
+        schemaOptions = Set.copyOf(schemaOptions);
         geometryColumns = geometryColumns.entrySet().stream().collect(java.util.stream.Collectors.toUnmodifiableMap(
                 Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
     }
@@ -71,13 +76,13 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     static SchemaPlan read(String modelName, Path file, boolean gpkg, boolean splitGeometries,
                            int defaultEpsg, CancellationToken token) throws IOException {
         return read(List.of(modelName), file, List.of(), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(),
-                new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), false, DbEnumOptions.DEFAULT, token);
+                new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), false, DbEnumOptions.DEFAULT, Set.of(), token);
     }
 
     static SchemaPlan read(List<String> models, Path file, List<Path> imports, boolean gpkg, boolean splitGeometries,
                            int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels, SqlNames names,
                            DbInheritance.Profile inheritance, Set<AttributeTransformation> transformations, boolean strokeArcs,
-                           DbEnumOptions enumOptions, CancellationToken token)
+                           DbEnumOptions enumOptions, Set<SchemaOption> schemaOptions, CancellationToken token)
             throws IOException {
         var files = new ArrayList<Path>();
         files.add(file);
@@ -143,10 +148,31 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         }
         return new SchemaPlan(mapping, modelFiles, addedTables, addedAssociations, addedCompositions, properties, geometries,
                 splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations,
-                DbEnumLookup.plan(mapping, names, enumOptions, compiled.syntax(), token));
+                DbEnumLookup.plan(mapping, names, enumOptions, compiled.syntax(), token), schemaOptions);
     }
 
     List<String> addedStorageTables() { return DbMapping.storageTables(addedTables); }
+
+    List<ForeignKey> foreignKeys(boolean newSchema) {
+        var keys = new ArrayList<ForeignKey>();
+        if (newSchema) keys.add(new ForeignKey(Ili2dbLayout.BASKET, "dataset", Ili2dbLayout.DATASET));
+        for (var table : addedTables) {
+            keys.add(new ForeignKey(table.name(), Ili2dbLayout.BASKET_COLUMN, Ili2dbLayout.BASKET));
+            for (var column : table.columns()) {
+                if (column.target().isPresent()) {
+                    keys.add(new ForeignKey(table.name(), column.name(), mapping.table(column.targetRelation()).name()));
+                }
+            }
+            for (var geometry : table.secondaryGeometries()) {
+                keys.add(new ForeignKey(geometry.table(), Ili2dbLayout.BASKET_COLUMN, Ili2dbLayout.BASKET));
+            }
+        }
+        for (var composition : addedCompositions) {
+            keys.add(new ForeignKey(mapping.table(composition.childRoot()).name(), composition.ownerColumn(),
+                    mapping.table(composition.parent()).name()));
+        }
+        return List.copyOf(keys);
+    }
 
     String tableKind(DbMapping.Table table) {
         return DbCatalogueReference.isCatalogueItem(mapping.plan(), table.object())
@@ -155,7 +181,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
 
     SchemaPlan withModelFiles(List<ModelFile> files) {
         return new SchemaPlan(mapping, files, addedTables, addedAssociations, addedCompositions, columnProperties,
-                geometryColumns, splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations, enumLookups);
+                geometryColumns, splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations, enumLookups,
+                schemaOptions);
     }
 
     private static Origin.DeclaredOrigin origin(ModelSymbol model) {

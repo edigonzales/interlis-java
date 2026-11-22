@@ -93,6 +93,8 @@ Prozesslogs und temporären Dateien des Referenzwerkzeugs auch bei Testfehlern.
 Die `*ProfileNullability*`-Fälle tauschen Pflichtskalare und optionale
 Werte in Referenzschemata ohne `--sqlEnableNull` aus. Sie prüfen den
 Rollback bei einer verletzten SQL-Pflichtspalte.
+Die `*ProfileFkIndex*`-Fälle prüfen die referenzierenden Indexspalten,
+gemischte Transfers und die Übernahme beim Ergänzen eines Modells.
 
 Die `*ScalarWide*`-Fälle vergleichen die SQL-Kodierung und prüfen
 64-Bit-Ganzzahlen oberhalb von `2^53`, beide 64-Bit-Grenzwerte, SQL
