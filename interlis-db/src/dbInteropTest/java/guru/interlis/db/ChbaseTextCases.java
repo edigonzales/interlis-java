@@ -2,6 +2,7 @@ package guru.interlis.db;
 
 import guru.interlis.db.DbInteropTest.ReferenceTool;
 import guru.interlis.db.DbInteropTest.TestDatabase;
+import guru.interlis.execution.CancellationToken;
 import org.w3c.dom.Element;
 
 import java.nio.file.Files;
@@ -15,6 +16,7 @@ import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
+import static guru.interlis.db.DbInteropTest.cli;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
@@ -123,6 +125,46 @@ final class ChbaseTextCases {
         var previous = Files.readString(output);
         assertCliFailure(db, "export", model, "legacy", output, "Missing physical column memocard.label_lang");
         assertEquals(previous, Files.readString(output));
+    }
+
+    void schema(TestDatabase baseline, TestDatabase own) throws Exception {
+        String multilingual = "ChbaseMultilingual" + version;
+        String localised = "ChbaseLocalised" + version;
+        var base = fixture("Localisation" + version + ".ili");
+        var source = fixture(multilingual + ".ili");
+        var other = fixture(localised + ".ili");
+        referenceSchema(baseline, multilingual + ";" + localised, "--expandMultilingual", "--expandLocalised");
+        var result = cli(own, "schemaimport", multilingual, null, source, CancellationToken.none(),
+                "--model", localised, "--model-file", other.toString(), "--model-file", base.toString(),
+                "--expand-multilingual", "--expand-localised");
+        assertEquals(0, result.code(), result::diagnostics);
+        try (var expected = baseline.connect(); var actual = own.connect()) {
+            DbSchemaCatalog.read(expected, baseline.postgis(), baseline.schema())
+                    .assertSameAs(DbSchemaCatalog.read(actual, own.postgis(), own.schema()));
+        }
+        for (String model : List.of(multilingual, localised)) {
+            var input = fixture(model + ".xtf");
+            var output = work.resolve(model + "-output.xtf");
+            referenceImport(own, model + "-legacy", input);
+            assertCliSuccess(own, "export", model, model + "-legacy", output);
+            assertText(output, model, "fixture");
+            assertCliSuccess(own, "import", model, model + "-native", withPrefix(input, model + "-native"));
+            referenceExport(own, model + "-native", output);
+            assertText(output, model, model + "-native");
+            referenceImport(own, model + "-tail", withPrefix(input, model + "-tail"));
+            assertCliSuccess(own, "export", model, model + "-tail", output);
+            assertText(output, model, model + "-tail");
+        }
+        try (var sql = own.connect()) {
+            var ids = List.of("plaque", "memocard", "t_ili2db_basket", "t_ili2db_dataset").stream()
+                    .map(table -> "SELECT t_id FROM " + own.table(table)).collect(Collectors.joining(" UNION ALL "));
+            assertEquals("24", scalar(sql, "SELECT count(DISTINCT t_id) FROM (" + ids + ") ids"));
+        }
+    }
+
+    private void assertText(Path output, String model, String prefix) throws Exception {
+        if (model.startsWith("ChbaseMultilingual")) assertMultilingual(output, prefix);
+        else assertLocalised(output, prefix, "Ponte");
     }
 
     private void assertLocalised(Path output, String prefix, String label) throws Exception {

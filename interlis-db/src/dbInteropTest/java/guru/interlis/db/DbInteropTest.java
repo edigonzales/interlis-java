@@ -116,6 +116,10 @@ final class DbInteropTest {
     @Test void geoPackageChbaseLocalised24() throws Exception { exchangeChbaseLocalised(24, null); }
     @Test void postgisChbaseLocalised23() throws Exception { exchangeWithPostgis(23, this::exchangeChbaseLocalised); }
     @Test void postgisChbaseLocalised24() throws Exception { exchangeWithPostgis(24, this::exchangeChbaseLocalised); }
+    @Test void geoPackageChbaseTextSchema23() throws Exception { exchangeChbaseTextSchema(23, null); }
+    @Test void geoPackageChbaseTextSchema24() throws Exception { exchangeChbaseTextSchema(24, null); }
+    @Test void postgisChbaseTextSchema23() throws Exception { exchangeWithPostgis(23, this::exchangeChbaseTextSchema); }
+    @Test void postgisChbaseTextSchema24() throws Exception { exchangeWithPostgis(24, this::exchangeChbaseTextSchema); }
 
     private void exchangeChbaseMultilingual(int version, PostgreSQLContainer postgres) throws Exception {
         var db = new TestDatabase(postgres, "chbase_multilingual");
@@ -125,6 +129,12 @@ final class DbInteropTest {
     private void exchangeChbaseLocalised(int version, PostgreSQLContainer postgres) throws Exception {
         var db = new TestDatabase(postgres, "chbase_localised");
         new ChbaseTextCases(work, new ReferenceTool(db.postgis()), version).localised(db);
+    }
+
+    private void exchangeChbaseTextSchema(int version, PostgreSQLContainer postgres) throws Exception {
+        var baseline = new TestDatabase(postgres, "chbase_text_ref");
+        new ChbaseTextCases(work, new ReferenceTool(baseline.postgis()), version)
+                .schema(baseline, new TestDatabase(postgres, "chbase_text_own"));
     }
 
     @Test void geoPackageCatalogueReference23() throws Exception { exchangeCatalogueReference(23, null); }

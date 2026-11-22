@@ -1,5 +1,6 @@
 package guru.interlis.db;
 
+import guru.interlis.db.Ili2dbLayout.AttributeTransformation;
 import guru.interlis.compiler.AnalysisBudget;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.CoordinateType;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -46,7 +48,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                   List<DbMapping.Table> addedTables, List<DbMapping.EmbeddedAssociation> addedAssociations,
                   List<DbMapping.Composition> addedCompositions,
                   List<ColumnProperty> columnProperties, Map<String, List<GeometryColumn>> geometryColumns,
-                  boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean coalesceCatalogueRef) {
+                  boolean splitGeometries, int defaultEpsg, boolean multiSrs,
+                  Set<AttributeTransformation> transformations) {
     record ModelFile(String filename, LanguageVersion version, String modelNames, String content) { }
 
     record ColumnProperty(String table, String subtype, String column, String key, String value) { }
@@ -60,6 +63,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         addedAssociations = List.copyOf(addedAssociations);
         addedCompositions = List.copyOf(addedCompositions);
         columnProperties = List.copyOf(columnProperties);
+        transformations = Set.copyOf(transformations);
         geometryColumns = geometryColumns.entrySet().stream().collect(java.util.stream.Collectors.toUnmodifiableMap(
                 Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
     }
@@ -79,12 +83,12 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                            int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels, SqlNames names,
                            CancellationToken token) throws IOException {
         return read(models, file, imports, gpkg, splitGeometries, defaultEpsg, multiSrs, srsModels, names,
-                DbInheritance.Profile.NEW_CLASS, false, token);
+                DbInheritance.Profile.NEW_CLASS, Set.of(), token);
     }
 
     static SchemaPlan read(List<String> models, Path file, List<Path> imports, boolean gpkg, boolean splitGeometries,
                            int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels, SqlNames names,
-                           DbInheritance.Profile inheritance, boolean coalesceCatalogueRef, CancellationToken token)
+                           DbInheritance.Profile inheritance, Set<AttributeTransformation> transformations, CancellationToken token)
             throws IOException {
         var files = new ArrayList<Path>();
         files.add(file);
@@ -103,7 +107,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             filenames.put(source.id(), path.getFileName().toString());
         }
         var mapping = DbMapping.planNew(models, sources.values(), gpkg, splitGeometries, defaultEpsg, multiSrs,
-                srsModels, names, inheritance, coalesceCatalogueRef, token);
+                srsModels, names, inheritance, transformations, token);
         var declarations = mapping.plan().models().stream()
                 .map(model -> (ModelSymbol) symbol(mapping, model.symbol()))
                 .collect(Collectors.groupingBy(model -> origin(model).range().source()));
@@ -147,7 +151,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                     Ili2dbLayout.PREFIX + "foreignKey", parent.name()));
         }
         return new SchemaPlan(mapping, modelFiles, addedTables, addedAssociations, addedCompositions, properties, geometries,
-                splitGeometries, defaultEpsg, multiSrs, coalesceCatalogueRef);
+                splitGeometries, defaultEpsg, multiSrs, transformations);
     }
 
     List<String> addedStorageTables() { return DbMapping.storageTables(addedTables); }
@@ -159,7 +163,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
 
     SchemaPlan withModelFiles(List<ModelFile> files) {
         return new SchemaPlan(mapping, files, addedTables, addedAssociations, addedCompositions, columnProperties,
-                geometryColumns, splitGeometries, defaultEpsg, multiSrs, coalesceCatalogueRef);
+                geometryColumns, splitGeometries, defaultEpsg, multiSrs, transformations);
     }
 
     private static Origin.DeclaredOrigin origin(ModelSymbol model) {
@@ -224,7 +228,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         if (column.target().isPresent()) {
             property(properties, table, null, column, "foreignKey", mapping.table(column.targetRelation()).name());
         }
-        if (!(column.slot() instanceof AttributeSlot attribute)) return;
+        if (!(column.slot() instanceof AttributeSlot attribute) || column.textExpansion().isPresent()) return;
 
         var declaringType = new SymbolRef(mapping.plan().snapshotId(), attribute.attribute().owner().orElseThrow());
         String subtype = !declaringType.equals(owner.object().symbol())
@@ -250,7 +254,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 domain = "INTERLIS.BOOLEAN";
             }
             if (domain != null) {
-                if (mapping.profile() == DbInheritance.Profile.NEW_CLASS) {
+                if (mapping.profile() == DbInheritance.Profile.NEW_CLASS && !DbTextExpansion.isLocalisationBase(owner.object())) {
                     property(properties, table, table, column, "enumDomain", domain);
                 } else {
                     for (var type : mapping.objectStorage()) {

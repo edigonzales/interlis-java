@@ -84,6 +84,10 @@ kompakte SQL-Abbildung für CHBase-V1-Katalogreferenzen, entsprechend
 `--coalesceCatalogueRef` in ili2db. Die Option gilt beim Anlegen eines
 `newClass`- oder Smart2-Schemas.
 
+Die Optionen `--expand-multilingual` und `--expand-localised`
+aktivieren die entsprechenden CHBase-Textabbildungen bei der
+Schemaerzeugung. Beide Optionen können kombiniert werden.
+
 ## Bestehendes Schema ergänzen
 
 ```sh

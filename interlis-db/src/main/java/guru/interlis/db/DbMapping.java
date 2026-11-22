@@ -33,6 +33,7 @@ import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.TransferEvent.DomainBinding;
 import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferSlot;
+import guru.interlis.db.Ili2dbLayout.AttributeTransformation;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -132,6 +133,11 @@ final class DbMapping {
             return textExpansion.map(expansion -> expansion.columns(name)).orElseGet(() -> List.of(name));
         }
 
+        AttributeTransformation transformation() {
+            if (catalogueReference.isPresent()) return AttributeTransformation.CATALOGUE_REFERENCE;
+            return textExpansion.map(DbTextExpansion::transformation).orElse(null);
+        }
+
         SymbolRef targetRelation() {
             return referenceTable.orElseGet(target::orElseThrow);
         }
@@ -176,8 +182,12 @@ final class DbMapping {
         Table {
             columns = List.copyOf(columns);
             secondaryGeometries = List.copyOf(secondaryGeometries);
-            var names = columns.stream().map(column -> foldedName(column.name()))
-                    .collect(Collectors.toCollection(HashSet::new));
+            var names = new HashSet<String>();
+            for (var column : columns) {
+                for (var field : column.physicalNames()) {
+                    if (!names.add(foldedName(field))) throw unsupported("column " + field + " collides in " + name);
+                }
+            }
             for (var column : columns) {
                 column.positionColumn().ifPresent(position -> {
                     if (!names.add(foldedName(position))) {
@@ -525,12 +535,12 @@ final class DbMapping {
     static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, CancellationToken token) {
         return planNew(List.of(modelName), List.of(source), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(),
-                new SqlNames(), DbInheritance.Profile.NEW_CLASS, false, token);
+                new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), token);
     }
 
     static DbMapping planNew(List<String> modelNames, Collection<SourceText> sources, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels,
-                             SqlNames allocator, DbInheritance.Profile profile, boolean coalesceCatalogueRef,
+                             SqlNames allocator, DbInheritance.Profile profile, Set<AttributeTransformation> transformations,
                              CancellationToken token) {
         var models = srsModels.map(DbCrsPair.Models::names).orElse(modelNames);
         TransferPlan plan = DbModelSources.compile(models, sources, "model files", token);
@@ -590,11 +600,21 @@ final class DbMapping {
             for (var contributor : relation.contributors()) {
                 for (var attribute : storageAttributes(object, contributor)) {
                     String attributeName = attribute.name().declared().last();
-                    var catalogue = coalesceCatalogueRef ? DbCatalogueReference.describe(plan, attribute)
+                    var catalogue = transformations.contains(AttributeTransformation.CATALOGUE_REFERENCE)
+                            ? DbCatalogueReference.describe(plan, attribute)
                             : Optional.<DbCatalogueReference>empty();
                     if (catalogue.isPresent()) {
                         var binding = catalogueColumn(plan, contributor, attribute, catalogue.orElseThrow());
                         columns.addAll(planReferences(allocator, names, inheritance, name, discriminator, gpkg, binding, false));
+                        continue;
+                    }
+                    var text = DbTextExpansion.plan(plan, attribute, transformations);
+                    if (text.isPresent()) {
+                        var column = textColumn(attribute, allocator.column(name, attributeName), text.orElseThrow());
+                        for (String field : column.physicalNames()) {
+                            checkColumnName(attribute, field, object.kind() == SymbolKind.STRUCTURE, discriminator, gpkg);
+                        }
+                        columns.add(column);
                         continue;
                     }
                     var composition = describeComposition(plan, object, attribute, child -> {

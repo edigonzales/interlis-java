@@ -1,5 +1,6 @@
 package guru.interlis.db;
 
+import guru.interlis.db.Ili2dbLayout.AttributeTransformation;
 import guru.interlis.model.CardinalityUpper;
 import guru.interlis.model.CollectionKind;
 import guru.interlis.model.EnumerationType;
@@ -22,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static guru.interlis.db.DbStructureShape.bagElement;
 import static guru.interlis.db.DbStructureShape.field;
@@ -33,12 +35,25 @@ record DbTextExpansion(SymbolRef structure, Optional<AttributeSlot> translations
                        AttributeSlot language, AttributeSlot text, TextType textType) {
     private static final List<String> LANGUAGES = List.of("", "de", "fr", "rm", "it", "en");
 
+    static Optional<DbTextExpansion> plan(TransferPlan plan, AttributeSlot outer, Set<AttributeTransformation> transformations) {
+        for (var transformation : List.of(AttributeTransformation.MULTILINGUAL, AttributeTransformation.LOCALISED)) {
+            if (!transformations.contains(transformation)) continue;
+            var binding = describe(plan, outer, transformation);
+            if (binding.isPresent()) return binding;
+        }
+        return Optional.empty();
+    }
+
+    AttributeTransformation transformation() {
+        return translations.isPresent() ? AttributeTransformation.MULTILINGUAL : AttributeTransformation.LOCALISED;
+    }
+
     static Optional<DbTextExpansion> describe(TransferPlan plan, AttributeSlot outer,
-                                               Ili2dbLayout.AttributeTransformation transformation) {
+                                               AttributeTransformation transformation) {
         if (!CardinalityUpper.finite(1).equals(outer.cardinality().upper())) return Optional.empty();
         var structure = target(plan, type(plan, outer)).orElse(null);
         if (structure == null || structure.modifiers().contains(Modifier.ABSTRACT)) return Optional.empty();
-        if (transformation == Ili2dbLayout.AttributeTransformation.LOCALISED) {
+        if (transformation == AttributeTransformation.LOCALISED) {
             if (!(chbaseLocalised(structure) || "Localised".equals(mapping(plan, structure)))) return Optional.empty();
             return describeEntry(plan, structure, Optional.empty(), structure);
         }
@@ -65,6 +80,14 @@ record DbTextExpansion(SymbolRef structure, Optional<AttributeSlot> translations
         return switch (structure.name().declared().toString()) {
             case "LocalisationCH_V1.LocalisedText", "LocalisationCH_V1.LocalisedMText",
                  "LocalisationCH_V2.LocalisedText", "LocalisationCH_V2.LocalisedMText" -> true;
+            default -> false;
+        };
+    }
+
+    static boolean isLocalisationBase(ObjectDescriptor structure) {
+        return switch (structure.name().declared().toString()) {
+            case "Localisation_V1.LocalisedText", "Localisation_V1.LocalisedMText",
+                 "Localisation_V2.LocalisedText", "Localisation_V2.LocalisedMText" -> true;
             default -> false;
         };
     }

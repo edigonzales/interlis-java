@@ -19,9 +19,7 @@ import static guru.interlis.db.Ili2dbLayout.ATTRNAME;
 import static guru.interlis.db.Ili2dbLayout.ATTRNAME_KEY;
 import static guru.interlis.db.Ili2dbLayout.BASKET;
 import static guru.interlis.db.Ili2dbLayout.BASKET_COLUMN;
-import static guru.interlis.db.Ili2dbLayout.AttributeTransformation.CATALOGUE_REFERENCE;
 import static guru.interlis.db.Ili2dbLayout.CLASSNAME;
-import static guru.interlis.db.Ili2dbLayout.COALESCE;
 import static guru.interlis.db.Ili2dbLayout.COLUMN_PROP;
 import static guru.interlis.db.Ili2dbLayout.DATASET;
 import static guru.interlis.db.Ili2dbLayout.DATASET_KEY;
@@ -152,7 +150,10 @@ final class SchemaSql {
                 columns.add(SEQ_COLUMN + " " + dialect.idType());
             }
             for (var column : table.columns()) {
-                columns.add(quote(column.name()) + " " + dialect.columnType(column));
+                var names = column.physicalNames();
+                for (int i = 0; i < names.size(); i++) {
+                    columns.add(quote(names.get(i)) + " " + dialect.columnType(column, i));
+                }
                 column.positionColumn().ifPresent(position -> columns.add(quote(position) + " " + dialect.idType()));
             }
             for (var composition : plan.addedCompositions()) {
@@ -164,7 +165,7 @@ final class SchemaSql {
             for (var geometry : table.secondaryGeometries()) {
                 commands.add(dialect.create(geometry.table(), dialect.primaryId()
                         + ", " + BASKET_COLUMN + " " + dialect.idType() + " NOT NULL, "
-                        + quote(geometry.column().name()) + " " + dialect.columnType(geometry.column())));
+                        + quote(geometry.column().name()) + " " + dialect.columnType(geometry.column(), 0)));
             }
         }
         for (var composition : plan.addedCompositions()) {
@@ -258,7 +259,7 @@ final class SchemaSql {
                     row(transformations, name, INHERITANCE_TAG, declaration.strategy().value);
                 }
             }
-            var catalogueAttributes = new HashSet<String>();
+            var transformedAttributes = new HashSet<String>();
             for (var table : plan.addedTables()) {
                 token.throwIfCancellationRequested();
                 String name = table.object().name().declared().toString();
@@ -285,8 +286,9 @@ final class SchemaSql {
                     String target = column.target().isPresent() ? plan.mapping().table(column.targetRelation()).name() : null;
                     String path = Ili2dbLayout.geometryAttribute(column.slot().name().declared().toString(), column.epsgCode(), plan.multiSrs());
                     row(attributes, path, column.name(), table.name(), target);
-                    if (column.catalogueReference().isPresent() && catalogueAttributes.add(path)) {
-                        row(transformations, path, CATALOGUE_REFERENCE.tag, COALESCE);
+                    var transformation = column.transformation();
+                    if (transformation != null && transformedAttributes.add(column.slot().name().declared().toString())) {
+                        row(transformations, column.slot().name().declared().toString(), transformation.tag, transformation.setting);
                     }
                 }
                 for (var secondary : table.secondaryGeometries()) {
@@ -334,7 +336,9 @@ final class SchemaSql {
         row(statement, PREFIX + "maxSqlNameLength", "60");
         String inheritance = plan.mapping().profile().setting;
         if (inheritance != null) row(statement, PREFIX + "inheritanceTrafo", inheritance);
-        if (plan.coalesceCatalogueRef()) row(statement, CATALOGUE_REFERENCE.tag, COALESCE);
+        for (var transformation : Ili2dbLayout.AttributeTransformation.values()) {
+            if (plan.transformations().contains(transformation)) row(statement, transformation.tag, transformation.setting);
+        }
         row(statement, "ch.interlis.ili2c.ilidirs", "%ILI_FROM_DB");
         if (plan.multiSrs()) row(statement, Ili2dbLayout.USE_EPSG_IN_NAMES, "True");
         if (plan.mapping().crsPair().isPresent()) {
@@ -409,7 +413,10 @@ final class SchemaSql {
                     + " (" + columns + ")";
         }
 
-        String columnType(DbMapping.Column column) {
+        String columnType(DbMapping.Column column, int index) {
+            if (column.textExpansion().isPresent()) {
+                return column.textExpansion().orElseThrow().translations().isEmpty() && index == 1 ? text(2) : "TEXT";
+            }
             return switch (column.kind()) {
                 case BOOLEAN -> "BOOLEAN";
                 case INTEGER -> "INTEGER";

@@ -108,6 +108,9 @@ mehrzeilige Inhalte sowie Rollback bei nicht abbildbaren Sprachwerten.
 `*DbInteropTest.*ChbaseLocalised*` prüft `--expandLocalised`, Sprache,
 mehrzeilige Inhalte, Leertext, SQL-`NULL` und den atomaren Export bei
 fehlender Sprachspalte.
+`*DbInteropTest.*ChbaseTextSchema*` vergleicht beide Textabbildungen
+im gemeinsamen Schema mit ili2db und prüft die ID-Vergabe mit einem
+weiteren Referenzimport.
 
 `*DbInteropTest.*Smart*` prüft Smart1 und Smart2 mit XTF 2.3 und 2.4.
 Die Fälle vergleichen beide Werkzeugrichtungen, physische Eigentümer

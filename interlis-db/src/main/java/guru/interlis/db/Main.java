@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -42,7 +43,7 @@ public final class Main {
                     [--add-models]
                     [--default-epsg CODE] [--multi-srs [--alt-srs-model ORIGINAL=ALTERNATE]]
                     [--model-file IMPORT.ili]...
-                    [--inheritance smart1|smart2] [--coalesce-catalogue-ref]
+                    [--inheritance smart1|smart2] [--coalesce-catalogue-ref] [--expand-multilingual] [--expand-localised]
                     [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.
@@ -109,7 +110,7 @@ public final class Main {
         }
         var plan = SchemaPlan.read(options.models(), options.file(), options.modelFiles(), options.gpkg() != null,
                 options.splitGeometries(), options.defaultEpsg(), options.multiSrs(), options.srsModels(), new SqlNames(),
-                options.inheritance(), options.coalesceCatalogueRef(), cancellation);
+                options.inheritance(), options.transformations(), cancellation);
         cancellation.throwIfCancellationRequested();
         if (options.gpkg() != null) {
             GeoPackageSchema.create(options.gpkg(), plan, options.createGeometryIndexes(), cancellation);
@@ -215,7 +216,7 @@ public final class Main {
                            boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean addModels,
                            boolean explicitEpsg, boolean explicitLayout,
                            Optional<DbCrsPair.Models> srsModels, List<Path> modelFiles, Optional<String> exportModel,
-                           DbInheritance.Profile inheritance, boolean coalesceCatalogueRef) {
+                           DbInheritance.Profile inheritance, Set<Ili2dbLayout.AttributeTransformation> transformations) {
         private static final Set<String> NAMES = Set.of("--dataset", "--gpkg", "--pg-url", "--schema", "--user",
                 "--default-epsg", "--alt-srs-model", "--export-model", "--inheritance");
 
@@ -232,17 +233,20 @@ public final class Main {
             var flags = new HashMap<String, String>();
             Path file = null;
             var schemaFlags = new HashSet<String>();
+            var transformations = EnumSet.noneOf(Ili2dbLayout.AttributeTransformation.class);
             var modelFiles = new ArrayList<Path>();
             var models = new ArrayList<String>();
             for (int i = 1; i < args.length; i++) {
                 String arg = args[i];
+                var transformation = Ili2dbLayout.AttributeTransformation.fromOption(arg);
                 if (arg.equals("--create-geom-index") || arg.equals("--one-geom-per-table")
                         || arg.equals("--gpkg-multi-geom-per-table") || arg.equals("--multi-srs") || arg.equals("--add-models")
-                        || arg.equals("--coalesce-catalogue-ref")) {
+                        || transformation != null) {
                     if (command != Command.SCHEMAIMPORT) {
                         throw new IllegalArgumentException(arg + " is only valid with schemaimport");
                     }
                     if (!schemaFlags.add(arg)) throw new IllegalArgumentException("Repeated option " + arg);
+                    if (transformation != null) transformations.add(transformation);
                 } else if (arg.equals("--model")) {
                     if (++i == args.length || args[i].isBlank() || args[i].startsWith("--")) {
                         throw new IllegalArgumentException("Missing value for " + arg);
@@ -341,16 +345,16 @@ public final class Main {
                 case "smart2" -> DbInheritance.Profile.SMART2;
                 default -> throw new IllegalArgumentException("Expected --inheritance smart1 or smart2");
             };
-            boolean coalesceCatalogueRef = schemaFlags.contains("--coalesce-catalogue-ref");
-            if (coalesceCatalogueRef && (addModels || inheritance == DbInheritance.Profile.SMART1)) {
-                throw new IllegalArgumentException("--coalesce-catalogue-ref requires a new schema with newClass or Smart2 inheritance");
+            if (!transformations.isEmpty() && (addModels || inheritance == DbInheritance.Profile.SMART1)) {
+                throw new IllegalArgumentException(transformations.iterator().next().option
+                        + " requires a new schema with newClass or Smart2 inheritance");
             }
             var srsModels = Optional.ofNullable(alternateSrsModel).map(value -> DbCrsPair.Models.parse(value, models.getFirst()));
             return new Options(command, List.copyOf(models), dataset, file, gpkg, pgUrl, schema, user,
                     schemaFlags.contains("--create-geom-index"),
                     oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg, multiSrs, addModels,
                     epsg != null, oneGeometryPerTable || multipleGeoPackageGeometries, srsModels,
-                    List.copyOf(modelFiles), exportModel, inheritance, coalesceCatalogueRef);
+                    List.copyOf(modelFiles), exportModel, inheritance, Set.copyOf(transformations));
         }
 
         void checkPaths() throws IOException {

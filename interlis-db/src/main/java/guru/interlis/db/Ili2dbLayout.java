@@ -65,14 +65,16 @@ final class Ili2dbLayout {
     private Ili2dbLayout() { }
 
     enum AttributeTransformation {
-        CATALOGUE_REFERENCE("catalogueRefTrafo", COALESCE),
-        MULTILINGUAL("multilingualTrafo", "expand"),
-        LOCALISED("localisedTrafo", "expand");
+        CATALOGUE_REFERENCE("--coalesce-catalogue-ref", "catalogueRefTrafo", COALESCE),
+        MULTILINGUAL("--expand-multilingual", "multilingualTrafo", "expand"),
+        LOCALISED("--expand-localised", "localisedTrafo", "expand");
 
+        final String option;
         final String tag;
         final String setting;
 
-        AttributeTransformation(String name, String setting) {
+        AttributeTransformation(String option, String name, String setting) {
+            this.option = option;
             this.tag = PREFIX + name;
             this.setting = setting;
         }
@@ -80,6 +82,13 @@ final class Ili2dbLayout {
         static AttributeTransformation fromTag(String tag) {
             for (var transformation : values()) {
                 if (transformation.tag.equals(tag)) return transformation;
+            }
+            return null;
+        }
+
+        static AttributeTransformation fromOption(String option) {
+            for (var transformation : values()) {
+                if (transformation.option.equals(option)) return transformation;
             }
             return null;
         }
