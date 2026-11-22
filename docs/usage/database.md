@@ -479,8 +479,8 @@ direkt in der Eigentümertabelle liegen. `TRAFO` weist die Expansion aus,
 `ATTRNAME` benennt je Feld die physische Spalte. Die Typmarkierung enthält
 den gespeicherten SQL-Namen der Struktur. Eine vorhandene, leere Struktur
 hat eine Typmarkierung und ausschliesslich `NULL`-Felder.
-Ein expandiertes `LIST OF` verwendet bis zu fünf nummerierte
-Spaltengruppen. Bei einer Obergrenze ab sechs verwendet ili2db für
+Expandierte `LIST OF`- und `BAG OF`-Attribute verwenden bis zu fünf
+nummerierte Spaltengruppen. Doppelte BAG-Einträge bleiben erhalten. Bei einer Obergrenze ab sechs verwendet ili2db für
 Strukturwerte die reguläre Strukturtabelle.
 
 In XTF 2.3 und 2.4 FULL können Klassen und Strukturen optionale Strukturwerte

@@ -118,6 +118,49 @@ final class StructureMappingCases {
                 .flatMap(value -> children(value).stream()).toList();
     }
 
+    void bag(TestDatabase db) throws Exception {
+        String model = "ExpandBag" + version;
+        source(model, """
+                    !!@ili2db.mapping=EXPAND
+                    Items : BAG {0..4} OF Entry;
+                """);
+        referenceSchema(db, model, "--expandStruct");
+        Path output = work.resolve("out.xtf");
+        referenceImport(db, "legacy", bagDataset(model, "legacy"));
+        referenceExport(db, "legacy", output);
+        if (version == 24) {
+            var object = objects(output, "legacy").get("legacy-value");
+            assertEquals(3, children(child(object, "Items")).size());
+        }
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertBag(output, "legacy");
+
+        assertCliSuccess(db, "import", model, "native", bagDataset(model, "native"));
+        referenceExport(db, "native", output);
+        assertBag(output, "native");
+        try (var sql = db.connect()) {
+            String asset = db.table("asset");
+            assertEquals("entry", scalar(sql, "SELECT items2_t_type FROM " + asset + " WHERE t_ili_tid='native-value'"));
+            assertNull(scalar(sql, "SELECT items2_label FROM " + asset + " WHERE t_ili_tid='native-value'"));
+            assertNull(scalar(sql, "SELECT items3_t_type FROM " + asset + " WHERE t_ili_tid='native-value'"));
+            assertNull(scalar(sql, "SELECT items0_t_type FROM " + asset + " WHERE t_ili_tid='native-missing'"));
+            assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("entry")));
+        }
+    }
+
+    private Path bagDataset(String model, String prefix) throws Exception {
+        String duplicate = entry(model, field("Label", "duplicate"));
+        return dataset(model, prefix, asset(model, prefix + "-value", field("Items", duplicate + duplicate + entry(model, "")))
+                + asset(model, prefix + "-missing", ""));
+    }
+
+    private void assertBag(Path output, String prefix) throws Exception {
+        var objects = objects(output, prefix);
+        assertNull(child(objects.get(prefix + "-missing"), "Items"));
+        var values = members(objects.get(prefix + "-value"), "Items");
+        assertEquals(List.of("", "duplicate", "duplicate"), values.stream().map(value -> value.getTextContent().strip()).sorted().toList());
+    }
+
     private Path singleDataset(String model, String prefix, String field) throws Exception {
         return dataset(model, prefix, asset(model, prefix + "-empty", field(field, entry(model, "")))
                 + asset(model, prefix + "-missing", "")

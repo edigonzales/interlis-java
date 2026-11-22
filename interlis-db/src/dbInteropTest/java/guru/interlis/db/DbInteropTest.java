@@ -128,6 +128,16 @@ final class DbInteropTest {
         new StructureMappingCases(work, new ReferenceTool(db.postgis()), version).list(db);
     }
 
+    @Test void geoPackageExpandBag23() throws Exception { exchangeExpandBag(23, null); }
+    @Test void geoPackageExpandBag24() throws Exception { exchangeExpandBag(24, null); }
+    @Test void postgisExpandBag23() throws Exception { exchangeWithPostgis(23, this::exchangeExpandBag); }
+    @Test void postgisExpandBag24() throws Exception { exchangeWithPostgis(24, this::exchangeExpandBag); }
+
+    private void exchangeExpandBag(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "expand_bag");
+        new StructureMappingCases(work, new ReferenceTool(db.postgis()), version).bag(db);
+    }
+
     @Test void geoPackageChbasePoints23() throws Exception { exchangeChbasePoints(23, null); }
     @Test void geoPackageChbasePoints24() throws Exception { exchangeChbasePoints(24, null); }
     @Test void geoPackageStrokePolyline23() throws Exception { exchangeStrokePolyline(23, null); }

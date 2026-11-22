@@ -46,8 +46,7 @@ record DbExpandedStructure(SymbolRef structure, String typeName, Optional<Collec
         Optional<CollectionKind> collection = Optional.empty();
         int count = 1;
         if (type instanceof CollectionType repeated) {
-            if (repeated.collectionKind() != CollectionKind.LIST
-                    || !(outer.cardinality().upper() instanceof CardinalityUpper.Finite upper)
+            if (!(outer.cardinality().upper() instanceof CardinalityUpper.Finite upper)
                     || upper.value().signum() <= 0 || upper.value().compareTo(MAX_GROUPS) > 0) {
                 throw DbMapping.unsupported("expanded collection at " + path);
             }
