@@ -10,14 +10,20 @@ import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.model.TypeRef;
 import guru.interlis.model.TypeKind;
-import guru.interlis.transfer.AttributeSlot;
+import guru.interlis.source.SourceRange;
+import guru.interlis.syntax.EnumerationTypeSyntax;
+import guru.interlis.syntax.SyntaxNode;
+import guru.interlis.syntax.SyntaxSnapshot;
 import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.TransferPlan;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /** Planned lookup rows. The transfer continues to use the stored attribute value. */
@@ -31,14 +37,16 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
 
     record Definition(Symbol declaration, EnumerationType type) { }
 
-    static List<DbEnumLookup> plan(DbMapping mapping, SqlNames names, DbEnumOptions options, CancellationToken token) {
+    static List<DbEnumLookup> plan(DbMapping mapping, SqlNames names, DbEnumOptions options, List<SyntaxSnapshot> syntax,
+                                   CancellationToken token) {
         if (options.lookup() == DbEnumOptions.Lookup.NONE) return List.of();
         var plan = mapping.plan();
         var objects = mapping.inheritance().declarations().stream().map(DbInheritance.Declaration::object).toList();
         var definitions = definitions(plan, DbMapping.storageRoots(plan, mapping.crsPair()), objects, token);
+        var orderedDeclarations = orderedDeclarations(syntax, token);
         if (options.lookup() == DbEnumOptions.Lookup.SINGLE) {
             var rows = new ArrayList<Row>();
-            for (var definition : definitions) rows.addAll(rows(plan, definition, options.beautify(), token));
+            for (var definition : definitions) rows.addAll(rows(plan, definition, orderedDeclarations, options.beautify(), token));
             return List.of(new DbEnumLookup(Ili2dbLayout.ENUM, Optional.empty(), !names.hasTable(Ili2dbLayout.ENUM), rows));
         }
         var lookups = new ArrayList<DbEnumLookup>();
@@ -48,15 +56,17 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
                     List.of(new Row(BOOLEAN_DEFINITION, null, "false", 0, null, "false", null),
                             new Row(BOOLEAN_DEFINITION, null, "true", 1, null, "true", null))));
         }
+        var byTable = new LinkedHashMap<Symbol, List<Row>>();
         for (var definition : definitions) {
-            if (options.lookup() == DbEnumOptions.Lookup.WITH_ID && DbEnumeration.base(plan, definition.declaration()) != null) {
-                throw DbMapping.unsupported("creation of enumeration ID tables for extended definitions");
-            }
-            String path = name(plan, definition.declaration());
-            String table = table(plan, names, definition.declaration(), path);
-            lookups.add(new DbEnumLookup(table, Optional.of(path), !names.hasClass(path),
-                    rows(plan, definition, options.beautify(), token)));
+            var declaration = options.lookup() == DbEnumOptions.Lookup.WITH_ID
+                    ? root(plan, definition.declaration()) : definition.declaration();
+            byTable.computeIfAbsent(declaration, ignored -> new ArrayList<>())
+                    .addAll(rows(plan, definition, orderedDeclarations, options.beautify(), token));
         }
+        byTable.forEach((declaration, rows) -> {
+            String path = name(plan, declaration);
+            lookups.add(new DbEnumLookup(table(plan, names, declaration, path), Optional.of(path), !names.hasClass(path), rows));
+        });
         return List.copyOf(lookups);
     }
 
@@ -65,7 +75,30 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
                 .anyMatch(slot -> plan.type(slot.effectiveType()).known().orElseThrow().kind() == TypeKind.BOOLEAN);
     }
 
-    private static List<Row> rows(TransferPlan plan, Definition definition, boolean beautify, CancellationToken token) {
+    static Symbol root(TransferPlan plan, Symbol declaration) {
+        for (var base = DbEnumeration.base(plan, declaration); base != null; base = DbEnumeration.base(plan, declaration)) {
+            declaration = base;
+        }
+        return declaration;
+    }
+
+    private static Set<SourceRange> orderedDeclarations(List<SyntaxSnapshot> syntax, CancellationToken token) {
+        var result = new HashSet<SourceRange>();
+        var pending = new ArrayDeque<SyntaxNode>();
+        syntax.forEach(snapshot -> pending.add(snapshot.root()));
+        while (!pending.isEmpty()) {
+            token.throwIfCancellationRequested();
+            var node = pending.removeLast();
+            if (node instanceof EnumerationTypeSyntax enumeration && (enumeration.ordered() || enumeration.circular())) {
+                result.add(enumeration.range());
+            }
+            pending.addAll(node.children());
+        }
+        return result;
+    }
+
+    private static List<Row> rows(TransferPlan plan, Definition definition, Set<SourceRange> orderedDeclarations,
+                                  boolean beautify, CancellationToken token) {
         var symbol = definition.declaration();
         var base = DbEnumeration.base(plan, symbol);
         var elements = DbEnumeration.elements(plan, symbol);
@@ -73,14 +106,18 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
         String parent = base == null ? null : name(plan, base);
         String language = DbEnumText.language(plan, symbol);
         var rows = new ArrayList<Row>();
+        // ili2db records the declared order separately from the model's effective order.
+        var type = definition.type();
+        boolean ordered = type.treeValues() ? type.ordered() : type.origin() instanceof Origin.DeclaredOrigin origin
+                && orderedDeclarations.contains(origin.range());
         int code = 0;
-        for (var value : DbEnumeration.values(definition.type())) {
+        for (var value : DbEnumeration.values(type)) {
             token.throwIfCancellationRequested();
             var element = elements.get(value.path());
             String label = element == null ? null : DbEnumText.displayName(element, language);
             String doc = element == null || element.header().documentation().isEmpty()
                     ? null : element.header().documentation().text();
-            rows.add(new Row(name, parent, value.path(), code, definition.type().ordered() ? code : null,
+            rows.add(new Row(name, parent, value.path(), code, ordered ? code : null,
                     label == null ? DbEnumText.fallback(value.path(), beautify) : label, doc));
             code++;
         }

@@ -264,6 +264,65 @@ final class EnumerationCases {
         }
     }
 
+    void idExtension(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "EnumExtended" + version;
+        var ili = source(model, BASE.replace("CLASS Asset", """
+                MoreGrade EXTENDS Grade = (Family (Extra), Final_Code);
+                OrderedGrade EXTENDS Grade = (Other) ORDERED;
+                CLASS Asset""").replace("GradeValue : Grade;", """
+                GradeValue : Grade;
+                  DerivedValue : MoreGrade;"""));
+        schema(expected, model, "--createEnumTabsWithId");
+        create(own, model, ili, "--create-enum-tabs-with-id");
+        assertSameCatalog(expected, own);
+        assertLookupContents(expected, own, "grade", "asset_directvalue");
+        var output = work.resolve("output.xtf");
+        for (var db : List.of(expected, own)) {
+            referenceImport(db, "legacy", extensionDataset(model, "legacy"));
+            assertCliSuccess(db, "export", model, "legacy", output);
+            assertExtension(output, "legacy");
+            assertCliSuccess(db, "import", model, "native", extensionDataset(model, "native"));
+            referenceExport(db, "native", output);
+            assertExtension(output, "native");
+
+            try (var sql = db.connect()) {
+                String table = db.table("grade");
+                String parent = model + ".Data.Grade";
+                String derived = model + ".Data.MoreGrade";
+                String inherited = " AND ilicode = 'Family.Alpha'";
+                String lookup = "SELECT t_id FROM " + table + " WHERE thisclass = '";
+                String baseId = scalar(sql, lookup + parent + "'" + inherited);
+                String derivedId = scalar(sql, lookup + derived + "'" + inherited);
+                assertNotEquals(baseId, derivedId);
+                assertNull(scalar(sql, "SELECT seq FROM " + table + " WHERE thisclass = '" + derived + "'" + inherited));
+                assertEquals("2", scalar(sql, "SELECT seq FROM " + table + " WHERE thisclass = '" + model
+                        + ".Data.OrderedGrade'" + inherited));
+                String assets = db.table("asset");
+                assertEquals(baseId, scalar(sql, "SELECT gradevalue FROM " + assets + " WHERE t_ili_tid = 'native-pair'"));
+                assertEquals(derivedId, scalar(sql, "SELECT derivedvalue FROM " + assets + " WHERE t_ili_tid = 'native-pair'"));
+                execute(sql, "UPDATE " + assets + " SET derivedvalue = " + baseId + " WHERE t_ili_tid = 'native-pair'");
+                byte[] previous = Files.readAllBytes(output);
+                assertCliFailure(db, "export", model, "native", output, "Unknown numeric enumeration value " + baseId);
+                assertArrayEquals(previous, Files.readAllBytes(output));
+            }
+        }
+    }
+
+    private Path extensionDataset(String model, String prefix) throws Exception {
+        return dataset(model, prefix, object(model, "Asset", prefix + "-pair",
+                "<GradeValue>Family.Alpha</GradeValue><DerivedValue>Family.Alpha</DerivedValue>")
+                + object(model, "Asset", prefix + "-extra", "<DerivedValue>Family.Extra</DerivedValue>"));
+    }
+
+    private void assertExtension(Path output, String prefix) throws Exception {
+        var basket = children(readDataSection(output, version)).getFirst();
+        assertEquals(prefix + "-basket", id(basket, version, "bid"));
+        var objects = children(basket).stream().collect(Collectors.toMap(row -> id(row, version, "tid"), row -> row));
+        assertEquals("Family.Alpha", child(objects.get(prefix + "-pair"), "GradeValue").getTextContent());
+        assertEquals("Family.Alpha", child(objects.get(prefix + "-pair"), "DerivedValue").getTextContent());
+        assertEquals("Family.Extra", child(objects.get(prefix + "-extra"), "DerivedValue").getTextContent());
+    }
+
     private static List<List<String>> rows(Connection sql, String query) throws Exception {
         var result = new ArrayList<List<String>>();
         try (var statement = sql.createStatement(); var rows = statement.executeQuery(query)) {

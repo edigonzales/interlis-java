@@ -44,12 +44,14 @@ import java.util.stream.Collectors;
 final class DbModelSources {
     private DbModelSources() { }
 
-    static TransferPlan compile(List<String> models, Collection<SourceText> input, String description,
+    record Compiled(TransferPlan plan, List<SyntaxSnapshot> syntax) { }
+
+    static Compiled compile(List<String> models, Collection<SourceText> input, String description,
                                 CancellationToken token) {
         return compile(models, input, description, false, token);
     }
 
-    static TransferPlan compile(List<String> models, Collection<SourceText> input, String description,
+    static Compiled compile(List<String> models, Collection<SourceText> input, String description,
                                 boolean originalWireModels, CancellationToken token) {
         var parser = SyntaxServices.create();
         var sources = new LinkedHashMap<SourceId, SourceText>();
@@ -126,7 +128,7 @@ final class DbModelSources {
                     "Compiler failed for " + target + " (" + failed.failureId() + ")");
         };
         return switch (TransferPlanner.plan(schema, TransferPlanner.Names.DECLARED)) {
-            case TransferPlanningResult.Ready ready -> ready.plan();
+            case TransferPlanningResult.Ready ready -> new Compiled(ready.plan(), List.copyOf(syntax.values()));
             case TransferPlanningResult.Unsupported rejected -> throw DbMapping.unsupported(rejected.issues().getFirst().toString());
         };
     }

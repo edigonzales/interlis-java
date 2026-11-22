@@ -141,6 +141,10 @@ gewählte Kodierung.
 Lookup-Tabellen mit `T_Id`, entsprechend ili2db
 `--createEnumTabsWithId`. PostgreSQL verwendet die Schema-Sequenz.
 Ein GeoPackage vergibt die Lookup-IDs innerhalb der jeweiligen Tabelle.
+Erweiterte Aufzählungsdomänen teilen die Tabelle ihrer Basisdefinition.
+`thisClass` unterscheidet die Zeilen für den jeweiligen Typ, auch
+wenn beide denselben XTF-Code enthalten. `seq` folgt der expliziten
+Ordnungsdeklaration des Typs.
 
 ## Bestehendes Schema ergänzen
 

@@ -129,17 +129,22 @@ final class DbSchemaReader {
         }
         var mappedModels = new HashSet<>(selectedModels);
         roots.stream().map(ref -> plan.model(ref).orElseThrow().name().declared().last()).forEach(mappedModels::add);
-        var enumDefinitions = new HashSet<String>();
+        var enumDefinitions = new LinkedHashMap<String, String>();
         var enumLookup = settings.enumOptions().lookup();
         if (enumLookup == DbEnumOptions.Lookup.PER_DEFINITION || enumLookup == DbEnumOptions.Lookup.WITH_ID) {
-            DbEnumLookup.definitions(plan, roots, selected, token).stream()
-                    .map(value -> DbEnumLookup.name(plan, value.declaration())).forEach(enumDefinitions::add);
+            for (var definition : DbEnumLookup.definitions(plan, roots, selected, token)) {
+                var declaration = definition.declaration();
+                var storedDefinition = enumLookup == DbEnumOptions.Lookup.WITH_ID
+                        ? DbEnumLookup.root(plan, declaration) : declaration;
+                enumDefinitions.put(DbEnumLookup.name(plan, declaration), DbEnumLookup.name(plan, storedDefinition));
+            }
             if (enumLookup == DbEnumOptions.Lookup.PER_DEFINITION && DbEnumLookup.hasBoolean(plan, selected)) {
-                enumDefinitions.add(DbEnumLookup.BOOLEAN_DEFINITION);
+                enumDefinitions.put(DbEnumLookup.BOOLEAN_DEFINITION, DbEnumLookup.BOOLEAN_DEFINITION);
             }
         }
+        var enumTableNames = new HashSet<>(enumDefinitions.values());
         var scope = new MetadataScope(mappedModels, selected.stream()
-                .map(object -> object.name().declared().toString()).collect(Collectors.toSet()), enumDefinitions);
+                .map(object -> object.name().declared().toString()).collect(Collectors.toSet()), enumTableNames);
         var classNames = readClassNames(db, scope);
         var unselectedOwners = new HashSet<String>();
         classNames.entrySet().removeIf(entry -> {
@@ -687,7 +692,7 @@ final class DbSchemaReader {
             sourceIds.put(model, source.id());
             pending.addAll(stored.imports());
         }
-        var plan = DbModelSources.compile(models, files.values(), "MODEL.content", true, token);
+        var plan = DbModelSources.compile(models, files.values(), "MODEL.content", true, token).plan();
         for (var model : plan.models()) {
             String name = model.name().declared().last();
             var symbol = plan.symbol(model.symbol()).known().orElseThrow();
@@ -1065,23 +1070,28 @@ final class DbSchemaReader {
     }
 
     private static Map<String, DbEnumeration> readEnumTables(Database db, Map<String, String> classNames, Set<String> usedNames,
-                                       Set<String> definitions, DbEnumOptions.Lookup mode, CancellationToken token) throws SQLException {
+                                       Map<String, String> definitions, DbEnumOptions.Lookup mode, CancellationToken token) throws SQLException {
         if (mode == DbEnumOptions.Lookup.SINGLE) {
             requireEnumTable(db, foldedName(Ili2dbLayout.ENUM), true);
         }
         var bindings = new HashMap<String, DbEnumeration>();
+        var tables = new HashMap<String, String>();
         boolean ids = mode == DbEnumOptions.Lookup.WITH_ID;
-        for (var definition : definitions.stream().sorted().toList()) {
+        for (var entry : definitions.entrySet()) {
             token.throwIfCancellationRequested();
-            String table = classNames.remove(definition);
-            if (table == null || !usedNames.add(key(db, table)) || Ili2dbLayout.reservedTable(foldedName(table), db.gpkg())) {
-                throw new DbException("Missing or inconsistent enumeration CLASSNAME mapping for " + definition);
+            String definition = entry.getKey();
+            String root = entry.getValue();
+            String table = tables.get(root);
+            if (table == null) {
+                table = classNames.remove(root);
+                if (table == null || !usedNames.add(key(db, table)) || Ili2dbLayout.reservedTable(foldedName(table), db.gpkg())) {
+                    throw new DbException("Missing or inconsistent enumeration CLASSNAME mapping for " + root);
+                }
+                requireEnumTable(db, table, ids);
+                if (ids) requireColumns(db, table, physicalColumns(db, table), Map.of(T_ID, Kind.REFERENCE));
+                tables.put(root, table);
             }
-            requireEnumTable(db, table, ids);
-            if (ids) {
-                requireColumns(db, table, physicalColumns(db, table), Map.of(T_ID, Kind.REFERENCE));
-                bindings.put(definition, readEnumerationIds(db, table, definition, token));
-            }
+            if (ids) bindings.put(definition, readEnumerationIds(db, table, definition, token));
         }
         return Map.copyOf(bindings);
     }

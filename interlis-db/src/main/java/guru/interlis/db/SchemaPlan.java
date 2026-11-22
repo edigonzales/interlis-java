@@ -95,7 +95,9 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             sources.put(source.id(), source);
             filenames.put(source.id(), path.getFileName().toString());
         }
-        var mapping = DbMapping.planNew(models, sources.values(), gpkg, splitGeometries, defaultEpsg, multiSrs,
+        var inputModels = srsModels.map(DbCrsPair.Models::names).orElse(models);
+        var compiled = DbModelSources.compile(inputModels, sources.values(), "model files", token);
+        var mapping = DbMapping.planNew(compiled.plan(), gpkg, splitGeometries, defaultEpsg, multiSrs,
                 srsModels, names, inheritance, transformations, strokeArcs, enumOptions, token);
         var declarations = mapping.plan().models().stream()
                 .map(model -> (ModelSymbol) symbol(mapping, model.symbol()))
@@ -141,7 +143,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         }
         return new SchemaPlan(mapping, modelFiles, addedTables, addedAssociations, addedCompositions, properties, geometries,
                 splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations,
-                DbEnumLookup.plan(mapping, names, enumOptions, token));
+                DbEnumLookup.plan(mapping, names, enumOptions, compiled.syntax(), token));
     }
 
     List<String> addedStorageTables() { return DbMapping.storageTables(addedTables); }

@@ -108,6 +108,9 @@ Die `*EnumStoredIds*`-Fälle prüfen beliebige gespeicherte Lookup-IDs,
 Die `*EnumIdSchema*`-Fälle vergleichen den Katalog und die Lookup-Daten
 neuer Schemata und prüfen die gespeicherten IDs bis zum nächsten
 Referenzimport.
+Die `*EnumIdExtension*`-Fälle prüfen gemeinsame Lookup-Tabellen für
+Domänenerweiterungen, geerbte und neue Codes, explizite Reihenfolge
+sowie die Diagnose einer ID aus der falschen Definition.
 
 Die `*ArrayText*`-Fälle prüfen Reihenfolge, Duplikate, Sonderzeichen,
 gespeicherte SQL-Spaltennamen und den bekannten Referenzfehler bei

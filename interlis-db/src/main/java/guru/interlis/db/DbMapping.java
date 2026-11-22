@@ -615,16 +615,15 @@ final class DbMapping {
 
     static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, CancellationToken token) {
-        return planNew(List.of(modelName), List.of(source), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(),
+        var plan = DbModelSources.compile(List.of(modelName), List.of(source), "model files", token).plan();
+        return planNew(plan, gpkg, splitGeometries, defaultEpsg, false, Optional.empty(),
                 new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), false, DbEnumOptions.DEFAULT, token);
     }
 
-    static DbMapping planNew(List<String> modelNames, Collection<SourceText> sources, boolean gpkg, boolean splitGeometries,
+    static DbMapping planNew(TransferPlan plan, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels,
                              SqlNames allocator, DbInheritance.Profile profile, Set<AttributeTransformation> transformations,
                              boolean strokeArcs, DbEnumOptions enumOptions, CancellationToken token) {
-        var models = srsModels.map(DbCrsPair.Models::names).orElse(modelNames);
-        TransferPlan plan = DbModelSources.compile(models, sources, "model files", token);
         var crs = new CrsDefaults(defaultEpsg, 0);
         var crsPair = srsModels.map(pair -> new DbCrsPair(plan, pair, crs, crs));
         var roots = storageRoots(plan, crsPair);
