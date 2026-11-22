@@ -88,7 +88,7 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
             return new DbArray(collection, wrapper, Kind.REFERENCE, type, Optional.of(symbol), Optional.empty());
         }
         var kind = DbMapping.scalarKind(type);
-        if (kind == Kind.BIGINT) throw DbMapping.unsupported("64-bit integer array at " + path);
+        if (kind == Kind.BIGINT || kind == Kind.DECIMAL) throw DbMapping.unsupported("numeric array element at " + path);
         if (kind == null) throw DbMapping.unsupported("coalesced array element at " + path);
         return new DbArray(collection, wrapper, kind, type, Optional.empty(), Optional.empty());
     }

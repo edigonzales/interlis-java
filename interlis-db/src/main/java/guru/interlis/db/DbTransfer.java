@@ -1043,7 +1043,7 @@ final class DbTransfer {
         }
         return switch (column.kind()) {
             case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> readGeometry(db, rows, index, column);
-            case BOOLEAN, INTEGER, BIGINT, ENUMERATION -> readScalar(db, rows, index, column);
+            case BOOLEAN, INTEGER, BIGINT, DECIMAL, ENUMERATION -> readScalar(db, rows, index, column);
             case TEXT -> {
                 if (column.textExpansion().isPresent()) {
                     var expansion = column.textExpansion().orElseThrow();
@@ -1120,6 +1120,7 @@ final class DbTransfer {
             case BOOLEAN -> readBoolean(db, rows, index, column);
             case INTEGER -> readInteger(rows.getString(index), column);
             case BIGINT -> readBigInt(rows.getString(index), column.slot().name().declared().toString());
+            case DECIMAL -> db.readDecimal(rows, index, column.slot().name().declared().toString());
             case ENUMERATION -> {
                 String value = rows.getString(index);
                 yield column.enumeration().isPresent()
@@ -1825,7 +1826,7 @@ final class DbTransfer {
             return bindScalar(statement, index, column, value);
         }
 
-        private static int bindScalar(PreparedStatement statement, int index, Column column, TransferValue value)
+        private int bindScalar(PreparedStatement statement, int index, Column column, TransferValue value)
                 throws SQLException {
             int next = index + 1;
             if (column.enumText().isPresent()) statement.setString(next++, column.enumText().orElseThrow().label(value));
@@ -1847,6 +1848,7 @@ final class DbTransfer {
                 }
                 case INTEGER -> statement.setInt(index, integerValue((NumberValue) value, column.slot().name().declared().toString()));
                 case BIGINT -> statement.setLong(index, bigIntValue((NumberValue) value, column.slot().name().declared().toString()));
+                case DECIMAL -> db.bindDecimal(statement, index, (NumberValue) value, column.slot().name().declared().toString());
                 case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE ->
                         throw new DbException("Unsupported value for " + column.slot().name().declared());
             }
@@ -1924,7 +1926,7 @@ final class DbTransfer {
             return index;
         }
 
-        private static int bindExpanded(PreparedStatement statement, int index, DbExpandedStructure expanded,
+        private int bindExpanded(PreparedStatement statement, int index, DbExpandedStructure expanded,
                                         TransferValue value, String context) throws SQLException {
             var items = expanded.items(value, context);
             for (int position = 0; position < expanded.groups().size(); position++) {

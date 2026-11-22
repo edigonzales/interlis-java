@@ -268,7 +268,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         String typeKind = column.jsonStructure().isPresent() ? "STRUCTURE" : switch (column.kind()) {
             case TEXT -> ((TextType) effective).textKind().name();
             case BOOLEAN -> "BOOLEAN";
-            case INTEGER, BIGINT -> "NUMERIC";
+            case INTEGER, BIGINT, DECIMAL -> "NUMERIC";
             case ENUMERATION -> "ENUM";
             case POINT -> "COORD";
             case MULTIPOINT -> "MULTICOORD";
@@ -304,7 +304,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         if (effective instanceof NumericType number) {
             number.range().unit().ifPresent(id -> {
                 var unit = symbol(mapping, new SymbolRef(mapping.plan().snapshotId(), id));
-                property(properties, table, subtype, column, "unit", unit.header().name().value());
+                String name = unit.name().value();
+                property(properties, table, subtype, column, "unit", name.substring(name.lastIndexOf('.') + 1));
             });
         }
         if (column.kind().geometry()) {

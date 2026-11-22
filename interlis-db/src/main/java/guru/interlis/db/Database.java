@@ -8,6 +8,9 @@ import guru.interlis.transfer.TransferGeometry.MultiSurface;
 import org.sqlite.SQLiteConfig;
 import org.sqlite.SQLiteOpenMode;
 
+import guru.interlis.transfer.TransferValue.NumberValue;
+
+import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -154,6 +157,33 @@ final class Database implements AutoCloseable {
     String jsonProjection(String field) {
         String text = gpkg() ? field : "CAST(" + field + " AS text)";
         return "CASE WHEN length(" + text + ") > " + DbJsonStructure.MAX_CODE_UNITS + " THEN '' ELSE " + text + " END";
+    }
+
+    NumberValue readDecimal(ResultSet rows, int index, String context) throws SQLException {
+        if (!gpkg()) {
+            var value = rows.getBigDecimal(index);
+            return value == null ? null : new NumberValue(value.toPlainString(), value);
+        }
+        var stored = rows.getObject(index);
+        if (stored == null) return null;
+        if (!(stored instanceof Number numeric) || !Double.isFinite(numeric.doubleValue())) {
+            throw new DbException("Invalid GeoPackage DOUBLE at " + context);
+        }
+        var value = BigDecimal.valueOf(numeric.doubleValue());
+        return new NumberValue(value.toPlainString(), value);
+    }
+
+    void bindDecimal(PreparedStatement statement, int index, NumberValue number, String context) throws SQLException {
+        if (!gpkg()) {
+            statement.setBigDecimal(index, number.exactValue());
+            return;
+        }
+        var value = number.exactValue();
+        double stored = value.doubleValue();
+        if (!Double.isFinite(stored) || (stored == 0 && value.signum() != 0)) {
+            throw new DbException("Value exceeds the GeoPackage DOUBLE encoding of " + context);
+        }
+        statement.setDouble(index, stored);
     }
 
     List<?> readArray(ResultSet rows, int index, DbArray binding, String context) throws SQLException {

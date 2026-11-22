@@ -544,6 +544,10 @@ final class SchemaSql {
                 case BOOLEAN -> "BOOLEAN";
                 case INTEGER -> "INTEGER";
                 case BIGINT -> idType();
+                case DECIMAL -> {
+                    var decimal = DbDecimal.describe((guru.interlis.model.NumericType) column.effectiveType().orElseThrow());
+                    yield gpkg ? "DOUBLE" : "numeric(" + decimal.precision() + "," + decimal.scale() + ")";
+                }
                 case ENUMERATION -> column.enumeration().isPresent() || enumOptions.lookup() == DbEnumOptions.Lookup.WITH_ID
                         ? idType() : text(255);
                 case REFERENCE -> idType();

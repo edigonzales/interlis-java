@@ -4,6 +4,7 @@ import guru.interlis.db.DbInteropTest.ReferenceTool;
 import guru.interlis.db.DbInteropTest.TestDatabase;
 import org.w3c.dom.Element;
 
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -21,6 +22,7 @@ import static guru.interlis.db.DbInteropTest.readDataSection;
 import static guru.interlis.db.DbInteropTest.referenceDatasetFixture;
 import static guru.interlis.db.DbInteropTest.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 final class ScalarCases {
@@ -63,6 +65,47 @@ final class ScalarCases {
                 assertCounts(db, sql, 8);
             }
         }
+    }
+
+    void decimals(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ScalarDecimal" + version;
+        schemas(expected, own, model, """
+                DOMAIN Length = -100.000 .. 100.000 [INTERLIS.m];
+                CLASS Asset =
+                  PriceValue : -9999999999999999.999 .. 9999999999999999.999;
+                  Measure : Length;
+                END Asset;
+                """);
+        var values = List.of(field("PriceValue", "-1.125") + field("Measure", "2.250"), "");
+        var high = new BigDecimal("9007199254740993.125");
+        for (var db : List.of(expected, own)) {
+            mixed(db, model, values, rows -> {
+                assertNumber("-1.125", child(rows.getFirst(), "PriceValue").getTextContent());
+                assertNumber("2.250", child(rows.getFirst(), "Measure").getTextContent());
+                assertNull(child(rows.getLast(), "PriceValue"));
+            });
+            try (var sql = db.connect()) {
+                assertNumber("-1.125", stored(db, sql, "pricevalue", "native", 0));
+                assertNull(stored(db, sql, "pricevalue", "native", 1));
+                assertEquals("m", scalar(sql, "SELECT setting FROM " + db.table("t_ili2db_column_prop")
+                        + " WHERE tablename = 'asset' AND columnname = 'measure' AND tag = 'ch.ehi.ili2db.unit'"));
+                if (db.postgis()) {
+                    assertEquals("19:3", scalar(sql, "SELECT numeric_precision || ':' || numeric_scale FROM information_schema.columns"
+                            + " WHERE table_schema = '" + db.schema() + "' AND table_name = 'asset' AND column_name = 'pricevalue'"));
+                }
+                referenceImport(db, "rounded", data(model, "rounded", List.of(field("PriceValue", high.toPlainString()))));
+                assertNotEquals(0, high.compareTo(new BigDecimal(stored(db, sql, "pricevalue", "rounded", 0))));
+                assertCliSuccess(db, "import", model, "precise", data(model, "precise", List.of(field("PriceValue", high.toPlainString()))));
+                var output = work.resolve("out.xtf");
+                assertCliSuccess(db, "export", model, "precise", output);
+                String exact = db.postgis() ? high.toPlainString() : BigDecimal.valueOf(high.doubleValue()).toPlainString();
+                assertNumber(exact, child(rows(output, "precise", 1).getFirst(), "PriceValue").getTextContent());
+            }
+        }
+    }
+
+    private static void assertNumber(String expected, String actual) {
+        assertEquals(new BigDecimal(expected).stripTrailingZeros(), new BigDecimal(actual).stripTrailingZeros());
     }
 
     @FunctionalInterface

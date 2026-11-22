@@ -93,6 +93,8 @@ Prozesslogs und temporären Dateien des Referenzwerkzeugs auch bei Testfehlern.
 Die `*ScalarWide*`-Fälle vergleichen die SQL-Kodierung und prüfen
 64-Bit-Ganzzahlen oberhalb von `2^53`, beide 64-Bit-Grenzwerte, SQL
 `NULL` und den Import-Rollback bei Überlauf.
+Die `*ScalarDecimal*`-Fälle prüfen Präzision, Skala, Einheiten und die
+beobachtete Rundung grosser Werte beim Referenzimport.
 
 Die `*EnumItfCodes*`-Fälle prüfen den Austausch skalarer Aufzählungen
 mit ITF-Codes, einschliesslich Code `0`, SQL `NULL`, Rollback und

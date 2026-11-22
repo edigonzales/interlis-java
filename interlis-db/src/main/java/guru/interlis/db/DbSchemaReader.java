@@ -1208,6 +1208,7 @@ final class DbSchemaReader {
                 case BOOLEAN -> type.equals("boolean") || type.equals("bool");
                 case INTEGER -> type.equals("integer") || type.equals("int4") || type.equals("int2")
                         || type.equals("smallint");
+                case DECIMAL -> db.gpkg() ? type.equals("double") : type.equals("numeric") || type.equals("decimal");
                 case BIGINT -> db.gpkg() ? type.equals("integer") : type.equals("int8") || type.equals("bigint");
                 case REFERENCE -> type.equals("integer") || type.equals("int4") || type.equals("int8")
                         || type.equals("bigint") || type.equals("bigserial") || type.equals("serial");

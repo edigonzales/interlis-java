@@ -61,7 +61,7 @@ import static guru.interlis.db.Ili2dbLayout.reservedTable;
 /** The SQL names and storage bindings for a checked transfer plan. */
 final class DbMapping {
     enum Kind {
-        TEXT, BOOLEAN, INTEGER, BIGINT, ENUMERATION, POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE;
+        TEXT, BOOLEAN, INTEGER, BIGINT, DECIMAL, ENUMERATION, POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE;
 
         boolean geometry() { return this == POINT || this == POLYLINE || this == SURFACE || collection(); }
 
@@ -1108,6 +1108,7 @@ final class DbMapping {
             case TextType text when text.textKind() == TextKind.TEXT || text.textKind() == TextKind.MTEXT -> Kind.TEXT;
             case NumericType number when integerRange(number, Integer.MIN_VALUE, Integer.MAX_VALUE) -> Kind.INTEGER;
             case NumericType number when integerRange(number, Long.MIN_VALUE, Long.MAX_VALUE) -> Kind.BIGINT;
+            case NumericType number when DbDecimal.fixedScale(number) -> Kind.DECIMAL;
             case EnumerationType ignored -> Kind.ENUMERATION;
             default -> type.kind() == TypeKind.BOOLEAN ? Kind.BOOLEAN : null;
         };

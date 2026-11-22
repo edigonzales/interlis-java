@@ -119,6 +119,17 @@ final class DbInteropTest {
         new ScalarCases(work, new ReferenceTool(own.postgis()), version).wideIntegers(expected, own);
     }
 
+    @Test void geoPackageScalarDecimal23() throws Exception { exchangeScalarDecimal(23, null); }
+    @Test void geoPackageScalarDecimal24() throws Exception { exchangeScalarDecimal(24, null); }
+    @Test void postgisScalarDecimal23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarDecimal); }
+    @Test void postgisScalarDecimal24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarDecimal); }
+
+    private void exchangeScalarDecimal(int version, PostgreSQLContainer postgres) throws Exception {
+        var expected = new TestDatabase(postgres, "scalar_decimal_ref");
+        var own = new TestDatabase(postgres, "scalar_decimal_own");
+        new ScalarCases(work, new ReferenceTool(own.postgis()), version).decimals(expected, own);
+    }
+
     @Test void geoPackageEnumItfCodes23() throws Exception { exchangeEnumItfCodes(23, null); }
     @Test void geoPackageEnumItfCodes24() throws Exception { exchangeEnumItfCodes(24, null); }
     @Test void postgisEnumItfCodes23() throws Exception { exchangeWithPostgis(23, this::exchangeEnumItfCodes); }

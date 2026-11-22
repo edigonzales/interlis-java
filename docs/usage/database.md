@@ -373,6 +373,12 @@ dieselbe Ablage mit `schemaimport --one-geom-per-table` (ili2pg `--oneGeomPerTab
 Jede Hilfszeile teilt `T_Id` und `T_Basket` mit ihrem Eigentümer und
 ist auch für `NULL` vorhanden.
 
+Skalare Dezimalwerte mit festen Nachkommastellen verwenden PostGIS
+`numeric(p,s)` und GeoPackage `DOUBLE`. PostgreSQL erhält beim Import
+mit `interlis-db` den exakten Dezimalwert innerhalb der SQL-Präzision.
+GeoPackage verwendet die Genauigkeit von Binary64. Der Referenzimport
+von ili2db 5.5.2 kann auf beiden Backends grosse Dezimalwerte runden.
+
 `schemaimport --gpkg-multi-geom-per-table` verwendet das ili2gpkg-Profil
 `--gpkgMultiGeomPerTable` mit mehreren Geometriespalten in einer Tabelle.
 `gpkg_contents` übernimmt die SRS-ID und die Grenzen der ersten
