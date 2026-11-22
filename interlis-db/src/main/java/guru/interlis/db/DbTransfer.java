@@ -429,11 +429,9 @@ final class DbTransfer {
             token.throwIfCancellationRequested();
             String sql = "SELECT obj." + T_ID + " FROM " + db.table(table.name()) + " obj JOIN "
                     + db.technicalTable(BASKET) + " basket ON basket." + T_ID + " = obj." + T_BASKET
-                    + " WHERE basket.dataset = ? AND basket.topic <> ? LIMIT 1";
+                    + " WHERE basket.dataset = ? AND basket.topic NOT IN " + topicNames(mapping, table) + " LIMIT 1";
             try (var statement = db.connection().prepareStatement(sql)) {
                 statement.setLong(1, datasetId);
-                statement.setString(2, table.object().topic().flatMap(mapping.plan()::topic).orElseThrow()
-                        .name().declared().toString());
                 try (var rows = statement.executeQuery()) {
                     if (rows.next()) {
                         throw new DbException("Inheritance row in " + table.name()
@@ -463,12 +461,9 @@ final class DbTransfer {
                     String sourceBasket = alias + "." + T_BASKET;
                     String baskets = db.technicalTable(BASKET);
                     if (column.external()) {
-                        String topic = root.object().topic().flatMap(mapping.plan()::topic).orElseThrow()
-                                .name().declared().toString();
                         from.append(" AND EXISTS (SELECT 1 FROM ").append(baskets).append(" dst WHERE dst.")
                                 .append(T_ID).append(" = ").append(targetBasket);
-                        from.append(" AND dst.topic = '")
-                                .append(topic.replace("'", "''")).append("')");
+                        from.append(" AND dst.topic IN ").append(topicNames(mapping, root)).append(')');
                     } else {
                         from.append(" AND ").append(targetBasket).append(" = ").append(sourceBasket);
                     }
@@ -546,12 +541,11 @@ final class DbTransfer {
             token.throwIfCancellationRequested();
             String sql = "SELECT 1 FROM " + db.table(table.name()) + " obj JOIN " + db.technicalTable(BASKET)
                     + " basket ON basket." + T_ID + " = obj." + T_BASKET
-                    + " WHERE basket.dataset = ? AND basket.topic = ? AND " + tidExpression(table, "obj") + " = ? LIMIT 1";
+                    + " WHERE basket.dataset = ? AND basket.topic IN " + topicNames(mapping, table)
+                    + " AND " + tidExpression(table, "obj") + " = ? LIMIT 1";
             try (var statement = db.connection().prepareStatement(sql)) {
                 statement.setLong(1, dataset);
-                statement.setString(2, mapping.plan().topic(table.object().topic().orElseThrow()).orElseThrow()
-                        .name().declared().toString());
-                statement.setString(3, tid);
+                statement.setString(2, tid);
                 try (var rows = statement.executeQuery()) {
                     if (rows.next()) return true;
                 }
@@ -569,13 +563,11 @@ final class DbTransfer {
                 + " leaf WHERE leaf." + T_ID + " = ref." + T_ID + " AND leaf." + T_BASKET + " = ref." + T_BASKET + ")";
         String sql = "SELECT ref." + T_ID + ", basket." + T_ILI_TID + discriminator
                 + " FROM " + db.table(root.name()) + " ref JOIN " + db.technicalTable(BASKET)
-                + " basket ON basket." + T_ID + " = ref." + T_BASKET + " WHERE basket.topic = ?"
+                + " basket ON basket." + T_ID + " = ref." + T_BASKET + " WHERE basket.topic IN " + topicNames(mapping, root)
                 + " AND " + tidExpression(root, "ref") + " = ?" + (bid.isPresent() ? " AND basket." + T_ILI_TID + " = ?" : "") + fragment;
         try (var statement = db.connection().prepareStatement(sql)) {
-            statement.setString(1, mapping.plan().topic(root.object().topic().orElseThrow()).orElseThrow()
-                    .name().declared().toString());
-            statement.setString(2, tid);
-            if (bid.isPresent()) statement.setString(3, bid.orElseThrow());
+            statement.setString(1, tid);
+            if (bid.isPresent()) statement.setString(2, bid.orElseThrow());
             try (var rows = statement.executeQuery()) {
                 StoredObject result = null;
                 while (rows.next()) {
@@ -591,6 +583,11 @@ final class DbTransfer {
                 return result;
             }
         }
+    }
+
+    private static String topicNames(DbMapping mapping, Table table) {
+        return mapping.storedTopicNames(table.object().topic().orElseThrow()).stream()
+                .map(name -> "'" + name.replace("'", "''") + "'").collect(Collectors.joining(", ", "(", ")"));
     }
 
     static String tidExpression(Table table, String alias) {
@@ -680,12 +677,10 @@ final class DbTransfer {
                     + " WHERE lb.dataset = ? OR pb.dataset = ? GROUP BY " + owner
                     + " HAVING COUNT(*) > 1 OR MAX(CASE WHEN parent." + T_ID + " IS NULL OR lb." + T_ID
                     + " IS NULL OR parent." + T_BASKET + " <> link." + T_BASKET
-                    + " OR lb.topic <> ? THEN 1 ELSE 0 END) > 0 LIMIT 1";
+                    + " OR lb.topic NOT IN " + topicNames(mapping, parent) + " THEN 1 ELSE 0 END) > 0 LIMIT 1";
             try (var statement = db.connection().prepareStatement(sql)) {
                 statement.setLong(1, datasetId);
                 statement.setLong(2, datasetId);
-                statement.setString(3, parent.object().topic().flatMap(mapping.plan()::topic).orElseThrow()
-                        .name().declared().toString());
                 try (var rows = statement.executeQuery()) {
                     if (rows.next()) {
                         String problem = rows.getLong(1) > 1 ? "Multiple link rows" : "Missing or inconsistent link owner";
@@ -705,16 +700,12 @@ final class DbTransfer {
             for (var composition : mapping.compositionsForChild(table.object().symbol())) {
                 ownerCount.add("CASE WHEN child." + quote(composition.ownerColumn()) + " IS NULL THEN 0 ELSE 1 END");
             }
-            var topic = table.object().topic().flatMap(mapping.plan()::topic);
-            String wrongTopic = topic.isPresent() ? " OR basket.topic <> ?" : "";
+            String wrongTopic = table.object().topic().isPresent() ? " OR basket.topic NOT IN " + topicNames(mapping, table) : "";
             String sql = "SELECT child." + T_ID + " FROM " + db.table(table.name()) + " child JOIN "
                     + db.technicalTable(BASKET) + " basket ON basket." + T_ID + " = child." + T_BASKET
                     + " WHERE basket.dataset = ? AND ((" + ownerCount + ") <> 1" + wrongTopic + ") LIMIT 1";
             try (var statement = db.connection().prepareStatement(sql)) {
                 statement.setLong(1, datasetId);
-                if (topic.isPresent()) {
-                    statement.setString(2, topic.orElseThrow().name().declared().toString());
-                }
                 try (var rows = statement.executeQuery()) {
                     if (rows.next()) {
                         throw new DbException("Expected exactly one structure owner in the correct topic for "

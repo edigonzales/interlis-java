@@ -116,6 +116,10 @@ final class DbInteropTest {
     @Test void geoPackageTranslationScalars24() throws Exception { exchangeTranslationScalars(24, null); }
     @Test void postgisTranslationScalars23() throws Exception { exchangeWithPostgis(23, this::exchangeTranslationScalars); }
     @Test void postgisTranslationScalars24() throws Exception { exchangeWithPostgis(24, this::exchangeTranslationScalars); }
+    @Test void geoPackageTranslationNested23() throws Exception { exchangeTranslationNested(23, null); }
+    @Test void geoPackageTranslationNested24() throws Exception { exchangeTranslationNested(24, null); }
+    @Test void postgisTranslationNested23() throws Exception { exchangeWithPostgis(23, this::exchangeTranslationNested); }
+    @Test void postgisTranslationNested24() throws Exception { exchangeWithPostgis(24, this::exchangeTranslationNested); }
 
     @Test void geoPackageSharedSource23() throws Exception { exchangeSharedSource(23, null); }
     @Test void geoPackageSharedSource24() throws Exception { exchangeSharedSource(24, null); }
@@ -462,6 +466,11 @@ final class DbInteropTest {
     private void exchangeTranslationScalars(int version, PostgreSQLContainer postgres) throws Exception {
         var db = new TestDatabase(postgres, "translation_scalars");
         new TranslationCases(work, new ReferenceTool(db.postgis()), version).scalars(db);
+    }
+
+    private void exchangeTranslationNested(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "translation_nested");
+        new TranslationCases(work, new ReferenceTool(db.postgis()), version).nested(db);
     }
 
     private void exchangeSharedSource(int version, PostgreSQLContainer postgres) throws Exception {

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="http://www.interlis.ch/xtf/2.4/NestedTown24"
+    xmlns:g="http://www.interlis.ch/geometry/1.0">
+  <i:headersection><i:models><i:model>NestedTown24</i:model></i:models></i:headersection>
+  <i:datasection>
+    <Survey i:bid="nested-b">
+      <Reading i:tid="nested-r">
+        <Payload><Details><Entry><Detail>
+          <Target i:ref="nested-s"/><Memo>inside</Memo>
+        </Detail></Entry></Details></Payload>
+        <Location><g:coord><g:c1>2600215.125</g:c1><g:c2>1200224.500</g:c2></g:coord></Location>
+        <AtSite i:ref="nested-s"/>
+      </Reading>
+      <Site i:tid="nested-s"/>
+    </Survey>
+  </i:datasection>
+</i:transfer>

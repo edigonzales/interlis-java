@@ -1,0 +1,22 @@
+INTERLIS 2.3;
+MODEL NestedTown23 AT "https://example.org/town" VERSION "1" =
+  TOPIC Survey =
+    CLASS Site =
+    END Site;
+    STRUCTURE Detail =
+      Target : REFERENCE TO Site;
+      Memo : TEXT*30;
+    END Detail;
+    STRUCTURE Details =
+      Entry : Detail;
+    END Details;
+    CLASS Reading =
+      Payload : Details;
+      Location : COORD 2480000.000 .. 2840000.000, 1070000.000 .. 1300000.000;
+    END Reading;
+    ASSOCIATION ReadingSite =
+      Readings -- {0..*} Reading;
+      AtSite -- {0..1} Site;
+    END ReadingSite;
+  END Survey;
+END NestedTown23.

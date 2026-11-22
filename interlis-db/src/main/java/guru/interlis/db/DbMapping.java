@@ -261,6 +261,11 @@ final class DbMapping {
         return crsPair.map(pair -> pair.originalTopic(topic)).orElseGet(() -> plan.topic(topic).orElseThrow().name().canonical());
     }
 
+    List<String> storedTopicNames(SymbolRef topic) {
+        return plan.topics().stream().filter(candidate -> originalTopic(candidate.symbol()).equals(topic))
+                .map(candidate -> candidate.name().declared().toString()).toList();
+    }
+
     DbTranslations translations() { return translations; }
 
     TransferPlan plan() { return plan; }

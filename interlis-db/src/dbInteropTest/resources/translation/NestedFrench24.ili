@@ -1,0 +1,22 @@
+INTERLIS 2.4;
+MODEL NestedFrench24 AT "https://example.org/town" VERSION "1" TRANSLATION OF NestedTown24 ["1"] =
+  TOPIC Releve =
+    CLASS Lieu =
+    END Lieu;
+    STRUCTURE Note =
+      Cible : REFERENCE TO Lieu;
+      Texte : TEXT*30;
+    END Note;
+    STRUCTURE Dossier =
+      Entree : Note;
+    END Dossier;
+    CLASS Mesure =
+      Infos : Dossier;
+      Position : COORD 2480000.000 .. 2840000.000, 1070000.000 .. 1300000.000;
+    END Mesure;
+    ASSOCIATION MesureLieu =
+      Mesures -- {0..*} Mesure;
+      AuLieu -- {0..1} Lieu;
+    END MesureLieu;
+  END Releve;
+END NestedFrench24.

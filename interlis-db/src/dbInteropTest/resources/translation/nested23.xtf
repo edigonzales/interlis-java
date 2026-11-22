@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION SENDER="translation fixture" VERSION="2.3">
+    <MODELS><MODEL NAME="NestedFrench23" VERSION="1" URI="https://example.org/town"/></MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <NestedFrench23.Releve BID="nested-b">
+      <NestedFrench23.Releve.Mesure TID="nested-r">
+        <Infos><NestedFrench23.Releve.Dossier><Entree><NestedFrench23.Releve.Note>
+          <Cible REF="nested-s"/><Texte>inside</Texte>
+        </NestedFrench23.Releve.Note></Entree></NestedFrench23.Releve.Dossier></Infos>
+        <Position><COORD><C1>2600215.125</C1><C2>1200224.500</C2></COORD></Position>
+        <AuLieu REF="nested-s"/>
+      </NestedFrench23.Releve.Mesure>
+      <NestedFrench23.Releve.Lieu TID="nested-s"/>
+    </NestedFrench23.Releve>
+  </DATASECTION>
+</TRANSFER>

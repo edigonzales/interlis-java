@@ -19,6 +19,9 @@ Bei XTF 2.3 führt die Datenbank die Sprache jedes Baskets in
 `T_ILI2DB_BASKET.topic`. Die Enum-Spalten verwenden die Codes des Originals.
 Bei XTF 2.4 verwendet der Transfer auch bei Auswahl eines übersetzten Modells
 die Originalsprache.
+Strukturwerte, Referenzen, Rollen und Punktgeometrien verwenden dieselbe
+SQL-Abbildung in jeder Übersetzung. Referenzen und Rückverweise bleiben
+dem tatsächlich gespeicherten Basket zugeordnet.
 Für den Datenaustausch sind die Tabellen und XTF-Baskets des Fachmodells
 massgeblich.
 Verwendete Strukturen aus importierten Modellen erhalten ihre Tabellen samt

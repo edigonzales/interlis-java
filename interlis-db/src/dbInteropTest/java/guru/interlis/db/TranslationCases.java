@@ -5,6 +5,7 @@ import guru.interlis.db.DbInteropTest.TestDatabase;
 import guru.interlis.execution.CancellationToken;
 import org.w3c.dom.Element;
 
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -99,6 +100,50 @@ final class TranslationCases {
             assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("t_ili2db_basket")
                     + " WHERE topic='" + topic + "' AND t_ili_tid IN ('" + label + "-b','own-b')"));
         }
+    }
+
+    void nested(TestDatabase db) throws Exception {
+        String translatedModel = "NestedFrench" + version;
+        fixture("NestedTown" + version + ".ili");
+        fixture(translatedModel + ".ili");
+        createReference(db, translatedModel);
+        var input = fixture("nested" + version + ".xtf");
+        referenceImport(db, "legacy", input);
+        var output = work.resolve("nested-output.xtf");
+        run(db, "export", translatedModel, "legacy", output);
+        assertNested(output, "nested");
+        var own = Files.writeString(work.resolve("nested-own.xtf"), Files.readString(input).replace("nested-", "own-"));
+        run(db, "import", translatedModel, "own", own);
+        referenceExport(db, "own", output);
+        assertNested(output, "own");
+        try (var sql = db.connect()) {
+            assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("reading") + " r JOIN "
+                    + db.table("details") + " p ON p.reading_payload=r.t_id AND p.t_basket=r.t_basket JOIN "
+                    + db.table("detail") + " d ON d.details_entry=p.t_id AND d.t_basket=r.t_basket JOIN "
+                    + db.table("site") + " s ON s.t_id=d.target AND s.t_id=r.atsite AND s.t_basket=r.t_basket"
+                    + " WHERE d.memo='inside'"));
+            assertEquals("2056", scalar(sql, db.postgis()
+                    ? "SELECT DISTINCT ST_SRID(location) FROM " + db.table("reading")
+                    : "SELECT srs_id FROM gpkg_geometry_columns WHERE table_name='reading' AND column_name='location'"));
+        }
+    }
+
+    private void assertNested(Path path, String prefix) throws Exception {
+        var basket = children(readDataSection(path, version)).getFirst();
+        assertEquals(prefix + "-b", id(basket, version, "bid"));
+        var reading = children(basket).stream().filter(record -> id(record, version, "tid").equals(prefix + "-r"))
+                .findFirst().orElseThrow();
+        boolean french = version == 23;
+        var outer = children(child(reading, french ? "Infos" : "Payload")).getFirst();
+        var inner = children(child(outer, french ? "Entree" : "Entry")).getFirst();
+        assertEquals(french ? "NestedFrench23.Releve.Note" : "Detail", inner.getLocalName());
+        assertEquals("inside", child(inner, french ? "Texte" : "Memo").getTextContent());
+        assertEquals(prefix + "-s", id(child(inner, french ? "Cible" : "Target"), version, "ref"));
+        assertEquals(prefix + "-s", id(child(reading, french ? "AuLieu" : "AtSite"), version, "ref"));
+        var coordinate = children(child(reading, french ? "Position" : "Location")).getFirst();
+        var axes = children(coordinate);
+        assertEquals(0, new BigDecimal("2600215.125").compareTo(new BigDecimal(axes.get(0).getTextContent())));
+        assertEquals(0, new BigDecimal("1200224.500").compareTo(new BigDecimal(axes.get(1).getTextContent())));
     }
 
     private void assertDelivery(Path output, boolean french, String prefix) throws Exception {
