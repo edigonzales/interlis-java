@@ -119,6 +119,10 @@ und gebogenen Segmenten sowie gerichteten Linien.
 `*DbInteropTest.*ChbaseSurfaces*` prüft `--coalesceMultiSurface` mit
 mehreren Flächen, Innenring, Kreisbogen, abweichendem SRID und atomarem
 Export bei einer beschädigten Geometrieabbildung.
+`*DbInteropTest.*ChbaseGeometrySchema*` vergleicht die erzeugten
+Schemata für die drei Geometrieabbildungen mit ili2db. Die Mischläufe
+prüfen danach Geometriewerte, SRID, die gemeinsamen IDs und einen
+weiteren Referenzimport.
 
 `*DbInteropTest.*Smart*` prüft Smart1 und Smart2 mit XTF 2.3 und 2.4.
 Die Fälle vergleichen beide Werkzeugrichtungen, physische Eigentümer

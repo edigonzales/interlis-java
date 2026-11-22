@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 import static guru.interlis.db.DbStructureShape.bagElement;
@@ -38,20 +39,34 @@ import static guru.interlis.db.DbStructureShape.type;
 /** A geometry collection stored as one SQL geometry and transferred in structure values. */
 record DbWrappedGeometry(AttributeTransformation transformation, SymbolRef structure, AttributeSlot bag,
                          SymbolRef element, AttributeSlot component) {
+    private static final List<AttributeTransformation> GEOMETRIES = List.of(
+            AttributeTransformation.MULTIPOINT, AttributeTransformation.MULTILINE, AttributeTransformation.MULTISURFACE);
+
+    static Map<SymbolRef, DbWrappedGeometry> plan(TransferPlan plan, List<ObjectDescriptor> objects,
+                                                  Set<AttributeTransformation> transformations) {
+        var enabled = GEOMETRIES.stream().filter(transformations::contains).toList();
+        if (enabled.isEmpty()) return Map.of();
+        return discover(plan, objects, field -> {
+            if (!CardinalityUpper.finite(1).equals(field.cardinality().upper())) return null;
+            var structure = target(plan, type(plan, field)).orElse(null);
+            if (structure == null) return null;
+            return enabled.stream().filter(recipe -> matches(plan, structure, recipe)).findFirst().orElse(null);
+        });
+    }
+
     static Map<SymbolRef, DbWrappedGeometry> discover(TransferPlan plan, List<ObjectDescriptor> objects,
                                                      Function<AttributeSlot, AttributeTransformation> transformation) {
         var result = new HashMap<SymbolRef, DbWrappedGeometry>();
         for (var object : objects) {
             for (var field : DbMapping.attributes(object)) {
                 var recipe = transformation.apply(field);
-                if (recipe != AttributeTransformation.MULTIPOINT && recipe != AttributeTransformation.MULTILINE
-                        && recipe != AttributeTransformation.MULTISURFACE) continue;
+                if (recipe == null || !GEOMETRIES.contains(recipe)) continue;
                 var binding = describe(plan, field, recipe)
                         .orElseThrow(() -> DbMapping.unsupported("coalesced geometry at " + field.name().declared()));
                 result.put(field.symbol(), binding);
             }
         }
-        return result;
+        return Map.copyOf(result);
     }
 
     private static Optional<DbWrappedGeometry> describe(TransferPlan plan, AttributeSlot outer,

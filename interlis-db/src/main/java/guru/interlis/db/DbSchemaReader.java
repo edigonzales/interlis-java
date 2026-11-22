@@ -260,18 +260,14 @@ final class DbSchemaReader {
                         continue;
                     }
                     var declaration = attr.member().overridden() ? object : contributor;
-                    List<Column> bindings;
+                    var columnCrs = defaults;
                     if (wrapped != null) {
                         var componentModel = plan.object(wrapped.element()).orElseThrow().model();
-                        var componentCrs = settings.crs(plan.model(componentModel).orElseThrow().name().declared().last());
-                        bindings = List.of(DbMapping.wrappedGeometryColumn(plan, attr, wrapped, componentCrs));
+                        columnCrs = settings.crs(plan.model(componentModel).orElseThrow().name().declared().last());
                         usedAttributeTransformations.add(path);
-                    } else if (geometryComponents.contains(attr.symbol())) {
-                        bindings = List.of(DbMapping.geometryComponentColumn(plan, declaration, attr, defaults));
-                    } else {
-                        bindings = DbMapping.describeColumns(plan, declaration, attr, defaults, crsPair);
                     }
-                    for (var described : bindings) {
+                    for (var described : DbMapping.storageColumns(plan, declaration, attr, columnCrs, crsPair, wrapped,
+                            geometryComponents.contains(attr.symbol()))) {
                         if (described.kind() == Kind.REFERENCE) {
                             columns.addAll(bindReferences(db, parent, attrNames, layout, names, described, false, settings));
                             continue;

@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static guru.interlis.db.Database.quote;
@@ -286,10 +287,7 @@ final class SchemaSql {
                     String target = column.target().isPresent() ? plan.mapping().table(column.targetRelation()).name() : null;
                     String path = Ili2dbLayout.geometryAttribute(column.slot().name().declared().toString(), column.epsgCode(), plan.multiSrs());
                     row(attributes, path, column.name(), table.name(), target);
-                    var transformation = column.transformation();
-                    if (transformation != null && transformedAttributes.add(column.slot().name().declared().toString())) {
-                        row(transformations, column.slot().name().declared().toString(), transformation.tag, transformation.setting);
-                    }
+                    writeAttributeTransformation(transformations, transformedAttributes, column);
                 }
                 for (var secondary : table.secondaryGeometries()) {
                     var column = secondary.column();
@@ -299,6 +297,7 @@ final class SchemaSql {
                     row(transformations, Ili2dbLayout.secondaryTransformation(path, name, column.epsgCode()),
                             Ili2dbLayout.SECONDARY_TABLE_TAG, secondary.table());
                     row(attributes, attribute, column.name(), secondary.table(), null);
+                    writeAttributeTransformation(transformations, transformedAttributes, column);
                 }
             }
             for (var composition : plan.addedCompositions()) {
@@ -319,6 +318,13 @@ final class SchemaSql {
                 row(colProps, property.table(), property.subtype(), property.column(), property.key(), property.value());
             }
         }
+    }
+
+    private static void writeAttributeTransformation(PreparedStatement statement, Set<String> used,
+                                                      DbMapping.Column column) throws SQLException {
+        var transformation = column.transformation();
+        String path = column.slot().name().declared().toString();
+        if (transformation != null && used.add(path)) row(statement, path, transformation.tag, transformation.setting);
     }
 
     private static String baseClass(SchemaPlan plan, guru.interlis.transfer.ObjectDescriptor type) {

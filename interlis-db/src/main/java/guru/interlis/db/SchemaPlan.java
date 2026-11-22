@@ -242,7 +242,9 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             case ENUMERATION -> "ENUM";
             case POINT -> "COORD";
             case MULTIPOINT -> "MULTICOORD";
-            case POLYLINE, SURFACE, MULTICURVE, MULTISURFACE -> ((GeometryType) effective).geometryKind().name();
+            case POLYLINE, SURFACE -> ((GeometryType) effective).geometryKind().name();
+            case MULTICURVE -> "MULTIPOLYLINE";
+            case MULTISURFACE -> column.wrappedGeometry().isPresent() ? "MULTISURFACE" : ((GeometryType) effective).geometryKind().name();
             case REFERENCE -> null;
         };
         if (typeKind != null) property(properties, table, subtype, column, "typeKind", typeKind);

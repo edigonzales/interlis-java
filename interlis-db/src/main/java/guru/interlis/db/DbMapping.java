@@ -137,6 +137,7 @@ final class DbMapping {
 
         AttributeTransformation transformation() {
             if (catalogueReference.isPresent()) return AttributeTransformation.CATALOGUE_REFERENCE;
+            if (wrappedGeometry.isPresent()) return wrappedGeometry.orElseThrow().transformation();
             return textExpansion.map(DbTextExpansion::transformation).orElse(null);
         }
 
@@ -551,6 +552,9 @@ final class DbMapping {
         var roots = storageRoots(plan, crsPair);
         var objects = storageObjects(plan, roots, token);
         checkLayout(plan, objects);
+        var wrappedGeometries = DbWrappedGeometry.plan(plan, objects, transformations);
+        var geometryComponents = wrappedGeometries.values().stream().map(binding -> binding.component().symbol())
+                .collect(Collectors.toSet());
         if (!multiSrs && plan.topics().stream()
                 .anyMatch(topic -> plan.rootModels().contains(topic.model()) && DbDomains.deferred(topic))) {
             throw unsupported("deferred generic domains require --multi-srs");
@@ -619,11 +623,12 @@ final class DbMapping {
                         columns.add(column);
                         continue;
                     }
-                    var composition = describeComposition(plan, object, attribute, child -> {
+                    var wrapped = wrappedGeometries.get(attribute.symbol());
+                    var composition = wrapped == null ? describeComposition(plan, object, attribute, child -> {
                         String childName = names.get(child);
                         if (childName == null) throw unsupported("structure storage at " + attribute.name().declared());
                         return allocator.reverseColumn(childName, name, attributeName);
-                    });
+                    }) : Optional.<Composition>empty();
                     if (composition.isPresent()) {
                         var edge = composition.orElseThrow();
                         checkColumnName(attribute, edge.ownerColumn(), true, discriminated.contains(edge.childRoot()), gpkg);
@@ -631,7 +636,8 @@ final class DbMapping {
                         continue;
                     }
                     var declaration = attribute.member().overridden() ? object : contributor;
-                    for (var binding : describeColumns(plan, declaration, attribute, crs, crsPair)) {
+                    for (var binding : storageColumns(plan, declaration, attribute, crs, crsPair, wrapped,
+                            geometryComponents.contains(attribute.symbol()))) {
                         if (binding.kind() == Kind.REFERENCE) {
                             columns.addAll(planReferences(allocator, names, inheritance, name, discriminator, gpkg, binding, false));
                             continue;
@@ -966,16 +972,21 @@ final class DbMapping {
                 0, 0, false, Optional.empty(), 0, Optional.empty(), Optional.empty(), Optional.of(binding), Optional.empty());
     }
 
-    static Column wrappedGeometryColumn(TransferPlan plan, AttributeSlot outer, DbWrappedGeometry binding, CrsDefaults defaults) {
-        var component = geometryComponentColumn(plan, plan.object(binding.element()).orElseThrow(), binding.component(), defaults);
+    private static Column wrappedGeometryColumn(TransferPlan plan, AttributeSlot outer, DbWrappedGeometry binding,
+                                                 CrsDefaults defaults) {
+        var component = describeColumn(plan, plan.object(binding.element()).orElseThrow(), binding.component(), defaults,
+                Optional.empty(), true);
         if (component.dimensions() != 2) throw unsupported("coalesced geometry dimensions at " + outer.name().declared());
         return new Column(outer, outer.name().declared().last(), binding.kind(), component.effectiveType(),
                 Optional.empty(), Optional.empty(), component.epsgCode(), component.srsId(), false, Optional.empty(),
                 component.dimensions(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.of(binding));
     }
 
-    static Column geometryComponentColumn(TransferPlan plan, ObjectDescriptor object, AttributeSlot field, CrsDefaults defaults) {
-        return describeColumn(plan, object, field, defaults, Optional.empty(), true);
+    static List<Column> storageColumns(TransferPlan plan, ObjectDescriptor object, AttributeSlot field, CrsDefaults defaults,
+                                       Optional<DbCrsPair> crsPair, DbWrappedGeometry wrapped, boolean component) {
+        if (wrapped != null) return List.of(wrappedGeometryColumn(plan, field, wrapped, defaults));
+        if (component) return List.of(describeColumn(plan, object, field, defaults, Optional.empty(), true));
+        return describeColumns(plan, object, field, defaults, crsPair);
     }
 
     private static Optional<Composition> describeComposition(TransferPlan plan, ObjectDescriptor parent,

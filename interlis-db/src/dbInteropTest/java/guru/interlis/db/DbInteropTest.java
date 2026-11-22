@@ -120,6 +120,10 @@ final class DbInteropTest {
     @Test void geoPackageChbaseSurfaces24() throws Exception { exchangeChbaseSurfaces(24, null); }
     @Test void postgisChbaseSurfaces23() throws Exception { exchangeWithPostgis(23, this::exchangeChbaseSurfaces); }
     @Test void postgisChbaseSurfaces24() throws Exception { exchangeWithPostgis(24, this::exchangeChbaseSurfaces); }
+    @Test void geoPackageChbaseGeometrySchema23() throws Exception { exchangeChbaseGeometrySchema(23, null); }
+    @Test void geoPackageChbaseGeometrySchema24() throws Exception { exchangeChbaseGeometrySchema(24, null); }
+    @Test void postgisChbaseGeometrySchema23() throws Exception { exchangeWithPostgis(23, this::exchangeChbaseGeometrySchema); }
+    @Test void postgisChbaseGeometrySchema24() throws Exception { exchangeWithPostgis(24, this::exchangeChbaseGeometrySchema); }
 
     private void exchangeChbasePoints(int version, PostgreSQLContainer postgres) throws Exception {
         var db = new TestDatabase(postgres, "chbase_points");
@@ -134,6 +138,12 @@ final class DbInteropTest {
     private void exchangeChbaseSurfaces(int version, PostgreSQLContainer postgres) throws Exception {
         var db = new TestDatabase(postgres, "chbase_surfaces");
         new ChbaseGeometryCases(work, new ReferenceTool(db.postgis()), version).surfaces(db);
+    }
+
+    private void exchangeChbaseGeometrySchema(int version, PostgreSQLContainer postgres) throws Exception {
+        var baseline = new TestDatabase(postgres, "chbase_geometry_ref");
+        new ChbaseGeometryCases(work, new ReferenceTool(baseline.postgis()), version)
+                .schema(baseline, new TestDatabase(postgres, "chbase_geometry_own"));
     }
 
     @Test void geoPackageChbaseMultilingual23() throws Exception { exchangeChbaseMultilingual(23, null); }

@@ -44,6 +44,7 @@ public final class Main {
                     [--default-epsg CODE] [--multi-srs [--alt-srs-model ORIGINAL=ALTERNATE]]
                     [--model-file IMPORT.ili]...
                     [--inheritance smart1|smart2] [--coalesce-catalogue-ref] [--expand-multilingual] [--expand-localised]
+                    [--coalesce-multi-point] [--coalesce-multi-line] [--coalesce-multi-surface]
                     [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.

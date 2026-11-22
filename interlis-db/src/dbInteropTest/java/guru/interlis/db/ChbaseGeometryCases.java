@@ -2,6 +2,7 @@ package guru.interlis.db;
 
 import guru.interlis.db.DbInteropTest.ReferenceTool;
 import guru.interlis.db.DbInteropTest.TestDatabase;
+import guru.interlis.execution.CancellationToken;
 import org.w3c.dom.Element;
 
 import java.math.BigDecimal;
@@ -16,6 +17,7 @@ import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
+import static guru.interlis.db.DbInteropTest.cli;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
@@ -113,6 +115,60 @@ final class ChbaseGeometryCases {
         String previous = Files.readString(output);
         assertCliFailure(db, "export", model, "native", output, problem);
         assertEquals(previous, Files.readString(output));
+    }
+
+    void schema(TestDatabase baseline, TestDatabase own) throws Exception {
+        String points = "ChbasePoints" + version;
+        String lines = "ChbaseLines" + version;
+        String surfaces = "ChbaseSurfaces" + version;
+        var source = fixture(points + ".ili");
+        var lineSource = fixture(lines + ".ili");
+        var surfaceSource = fixture(surfaces + ".ili");
+        referenceSchema(baseline, String.join(";", points, lines, surfaces),
+                "--coalesceMultiPoint", "--coalesceMultiLine", "--coalesceMultiSurface");
+        var result = cli(own, "schemaimport", points, null, source, CancellationToken.none(),
+                "--model", lines, "--model", surfaces, "--model-file", lineSource.toString(), "--model-file", surfaceSource.toString(),
+                "--coalesce-multi-point", "--coalesce-multi-line", "--coalesce-multi-surface");
+        assertEquals(0, result.code(), result::diagnostics);
+        try (var expected = baseline.connect(); var actual = own.connect()) {
+            var catalog = DbSchemaCatalog.read(expected, baseline.postgis(), baseline.schema());
+            if (!baseline.postgis()) {
+                catalog = catalog.expectGeoPackageGeometryExtension("piperoute", "shape", "MULTICURVE")
+                        .expectGeoPackageGeometryExtension("flowroute", "shape", "MULTICURVE")
+                        .expectGeoPackageGeometryExtension("linestructure", "line", "COMPOUNDCURVE")
+                        .expectGeoPackageGeometryExtension("directedlinestructure", "line", "COMPOUNDCURVE")
+                        .expectGeoPackageGeometryExtension("landcover", "shape", "MULTISURFACE")
+                        .expectGeoPackageGeometryExtension("surfacestructure", "surface", "CURVEPOLYGON");
+            }
+            catalog.assertSameAs(DbSchemaCatalog.read(actual, own.postgis(), own.schema()));
+        }
+        for (var model : List.of(points, lines, surfaces)) {
+            var input = fixture(model + ".xtf");
+            var output = work.resolve(model + "-output.xtf");
+            var legacy = model + "-legacy";
+            referenceImport(own, legacy, withPrefix(input, legacy));
+            assertCliSuccess(own, "export", model, legacy, output);
+            assertGeometry(output, model, legacy);
+            var nativeDataset = model + "-native";
+            assertCliSuccess(own, "import", model, nativeDataset, withPrefix(input, nativeDataset));
+            referenceExport(own, nativeDataset, output);
+            assertGeometry(output, model, nativeDataset);
+            var tail = model + "-tail";
+            referenceImport(own, tail, withPrefix(input, tail));
+            assertCliSuccess(own, "export", model, tail, output);
+            assertGeometry(output, model, tail);
+        }
+        try (var sql = own.connect()) {
+            var ids = List.of("pinset", "piperoute", "flowroute", "landcover", "t_ili2db_basket", "t_ili2db_dataset").stream()
+                    .map(table -> "SELECT t_id FROM " + own.table(table)).collect(Collectors.joining(" UNION ALL "));
+            assertEquals("39", scalar(sql, "SELECT count(DISTINCT t_id) FROM (" + ids + ") ids"));
+        }
+    }
+
+    private void assertGeometry(Path output, String model, String prefix) throws Exception {
+        if (model.startsWith("ChbasePoints")) assertPoints(output, model, prefix);
+        else if (model.startsWith("ChbaseLines")) assertLines(output, prefix);
+        else assertSurfaces(output, prefix);
     }
 
     private void assertSurfaces(Path output, String prefix) throws Exception {

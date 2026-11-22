@@ -87,6 +87,11 @@ kompakte SQL-Abbildung für CHBase-V1-Katalogreferenzen, entsprechend
 Die Optionen `--expand-multilingual` und `--expand-localised`
 aktivieren die entsprechenden CHBase-Textabbildungen bei der
 Schemaerzeugung. Beide Optionen können kombiniert werden.
+Mit `--coalesce-multi-point`, `--coalesce-multi-line` und
+`--coalesce-multi-surface` lassen sich die drei kompakten
+Geometrieabbildungen für zweidimensionale Strukturen einzeln aktivieren.
+Die Geometriespalte übernimmt den CRS und die Grenzen der Koordinatendomäne
+der inneren Struktur.
 
 ## Bestehendes Schema ergänzen
 
