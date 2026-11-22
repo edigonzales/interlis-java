@@ -97,6 +97,8 @@ Die `*ScalarDecimal*`-Fälle prüfen Präzision, Skala, Einheiten und die
 beobachtete Rundung grosser Werte beim Referenzimport.
 Die `*ScalarDate*`-Fälle prüfen Kalenderdatum, Schaltjahr, Domänenalias,
 SQL `NULL` und den Erhalt der Exportdatei bei einem ungültigen Datum.
+Die `*ScalarTime*`-Fälle prüfen Uhrzeiten mit Millisekunden und führen
+native Transferaufrufe mit abweichenden JVM-Zeitzonen aus.
 
 Die `*EnumItfCodes*`-Fälle prüfen den Austausch skalarer Aufzählungen
 mit ITF-Codes, einschliesslich Code `0`, SQL `NULL`, Rollback und

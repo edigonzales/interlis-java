@@ -20,10 +20,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 
@@ -35,6 +38,8 @@ import static guru.interlis.db.Ili2dbLayout.SEQUENCE;
 
 /** One JDBC connection and transaction against an existing ili2db schema. */
 final class Database implements AutoCloseable {
+    private static final DateTimeFormatter MILLISECOND_TIME = DateTimeFormatter.ofPattern("HH:mm:ss.SSS", Locale.ROOT);
+
     private final Connection connection;
     private final String schema;
     private final String postgisSchema;
@@ -181,6 +186,27 @@ final class Database implements AutoCloseable {
             throw new DbException("Invalid SQL date at " + context, failure);
         }
         throw new DbException("Invalid SQL date at " + context);
+    }
+
+    Text readTime(ResultSet rows, int index, String context) throws SQLException {
+        String value = rows.getString(index);
+        return value == null ? null : new Text(MILLISECOND_TIME.format(time(value, context)));
+    }
+
+    void bindTime(PreparedStatement statement, int index, Text value, String context) throws SQLException {
+        var time = time(value.value(), context);
+        if (gpkg()) statement.setString(index, MILLISECOND_TIME.format(time));
+        else statement.setObject(index, time);
+    }
+
+    private static LocalTime time(String value, String context) {
+        try {
+            var time = LocalTime.parse(value);
+            if (value.length() >= 8 && time.getNano() % 1_000_000 == 0) return time;
+        } catch (DateTimeParseException failure) {
+            throw new DbException("Invalid SQL time at " + context, failure);
+        }
+        throw new DbException("Expected a time with millisecond precision at " + context);
     }
 
     NumberValue readDecimal(ResultSet rows, int index, String context) throws SQLException {

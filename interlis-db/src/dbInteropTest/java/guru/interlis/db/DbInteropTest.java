@@ -31,6 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.zip.ZipInputStream;
@@ -139,6 +140,17 @@ final class DbInteropTest {
         var expected = new TestDatabase(postgres, "scalar_date_ref");
         var own = new TestDatabase(postgres, "scalar_date_own");
         new ScalarCases(work, new ReferenceTool(own.postgis()), version).calendarDate(expected, own);
+    }
+
+    @Test void geoPackageScalarTime23() throws Exception { exchangeScalarTime(23, null); }
+    @Test void geoPackageScalarTime24() throws Exception { exchangeScalarTime(24, null); }
+    @Test void postgisScalarTime23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarTime); }
+    @Test void postgisScalarTime24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarTime); }
+
+    private void exchangeScalarTime(int version, PostgreSQLContainer postgres) throws Exception {
+        var expected = new TestDatabase(postgres, "scalar_time_ref");
+        var own = new TestDatabase(postgres, "scalar_time_own");
+        new ScalarCases(work, new ReferenceTool(own.postgis(), "UTC"), version).localTime(expected, own);
     }
 
     @Test void geoPackageEnumItfCodes23() throws Exception { exchangeEnumItfCodes(23, null); }
@@ -5236,12 +5248,43 @@ final class DbInteropTest {
 
     record CliResult(int code, String diagnostics) {}
 
+    static void assertCliInZone(TestDatabase db, String operation, String model, String dataset, Path path, String zone)
+            throws Exception {
+        String modules = Main.class.getModule().getLayer().configuration().modules().stream()
+                .flatMap(module -> module.reference().location().stream())
+                .filter(uri -> "file".equals(uri.getScheme())).map(uri -> Path.of(uri).toString()).sorted()
+                .collect(Collectors.joining(System.getProperty("path.separator")));
+        var java = Path.of(System.getProperty("java.home"), "bin", "java");
+        var command = new ArrayList<>(List.of(java.toString(), "-Duser.timezone=" + zone,
+                "--enable-native-access=org.xerial.sqlitejdbc", "--module-path", modules,
+                "--module", "guru.interlis.db/guru.interlis.db.Main",
+                operation, "--model", model, "--dataset", dataset));
+        command.addAll(db.nativeOptions());
+        command.add(path.toString());
+        Path log = Files.createTempFile(path.getParent(), "native-zone-", ".log");
+        var builder = new ProcessBuilder(command).redirectErrorStream(true).redirectOutput(log.toFile());
+        builder.environment().put("INTERLIS_DB_PASSWORD", db.password);
+        var process = builder.start();
+        try {
+            assertTrue(process.waitFor(60, TimeUnit.SECONDS), () -> "Native CLI timed out in " + zone);
+            assertEquals(0, process.exitValue(), () -> logText(log, db.password));
+        } finally {
+            if (process.isAlive()) process.destroyForcibly().waitFor(5, TimeUnit.SECONDS);
+        }
+    }
+
     final class ReferenceTool {
         private final Path jar;
         private final Path home;
+        private final String timeZone;
         private int runs;
 
         private ReferenceTool(boolean postgis) throws IOException {
+            this(postgis, null);
+        }
+
+        private ReferenceTool(boolean postgis, String timeZone) throws IOException {
+            this.timeZone = timeZone;
             String version = System.getProperty("ili2db.reference.version");
             String directory = System.getProperty("ili2db.reference.dir");
             assertNotNull(version, "Gradle must provide ili2db.reference.version");
@@ -5275,7 +5318,9 @@ final class DbInteropTest {
         private void run(TestDatabase db, String modelDir, String expectedError, String[] args) throws Exception {
             Path java = Path.of(System.getProperty("java.home"), "bin", "java");
             var command = new ArrayList<>(List.of(java.toString(), "--enable-native-access=ALL-UNNAMED",
-                    "-Duser.home=" + home, "-Djava.io.tmpdir=" + work, "-jar", jar.toString(), "--modeldir", modelDir));
+                    "-Duser.home=" + home, "-Djava.io.tmpdir=" + work));
+            if (timeZone != null) command.add("-Duser.timezone=" + timeZone);
+            command.addAll(List.of("-jar", jar.toString(), "--modeldir", modelDir));
             command.addAll(db.referenceOptions());
             command.addAll(List.of(args));
             Path log = work.resolve("reference-" + ++runs + ".log");

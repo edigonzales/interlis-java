@@ -380,6 +380,9 @@ GeoPackage verwendet die Genauigkeit von Binary64. Der Referenzimport
 von ili2db 5.5.2 kann auf beiden Backends grosse Dezimalwerte runden.
 `INTERLIS.XMLDate` in XTF 2.3 und `DATE` in XTF 2.4 belegen eine
 SQL-`DATE`-Spalte. Der Adapter verwendet das Kalenderdatum ohne Zeitzone.
+`INTERLIS.XMLTime` beziehungsweise `TIMEOFDAY` verwendet eine
+SQL-`TIME`-Spalte mit Millisekunden. Der Transfer schreibt lokale Uhrzeiten
+unabhängig von der JVM-Zeitzone.
 
 `schemaimport --gpkg-multi-geom-per-table` verwendet das ili2gpkg-Profil
 `--gpkgMultiGeomPerTable` mit mehreren Geometriespalten in einer Tabelle.

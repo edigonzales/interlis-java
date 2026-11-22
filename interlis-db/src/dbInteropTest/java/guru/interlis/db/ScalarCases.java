@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static guru.interlis.db.DbInteropTest.assertCliFailure;
+import static guru.interlis.db.DbInteropTest.assertCliInZone;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
@@ -133,6 +134,31 @@ final class ScalarCases {
                 assertArrayEquals(previous, Files.readAllBytes(output));
             }
         }
+    }
+
+    void localTime(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ScalarClock" + version;
+        schemas(expected, own, model, "CLASS Asset = ReadingTime : "
+                + (version == 23 ? "INTERLIS.XMLTime" : "TIMEOFDAY") + "; END Asset;");
+        var values = List.of(field("ReadingTime", "00:00:00.000"), field("ReadingTime", "23:59:58.125"), "");
+        CheckRows check = rows -> assertTextValues(rows, "ReadingTime", "00:00:00.000", "23:59:58.125", null);
+        for (var db : List.of(expected, own)) {
+            mixed(db, model, values, check);
+            differentZones(db, model, values, check);
+            try (var sql = db.connect()) {
+                assertEquals("23:59:58.125", stored(db, sql, "readingtime", "zoned", 1));
+                assertNull(stored(db, sql, "readingtime", "native", 2));
+            }
+        }
+    }
+
+    private void differentZones(TestDatabase db, String model, List<String> values, CheckRows check) throws Exception {
+        Path output = work.resolve("zoned-out.xtf");
+        assertCliInZone(db, "export", model, "legacy", output, "Pacific/Auckland");
+        check.check(rows(output, "legacy", values.size()));
+        assertCliInZone(db, "import", model, "zoned", data(model, "zoned", values), "America/New_York");
+        referenceExport(db, "zoned", output);
+        check.check(rows(output, "zoned", values.size()));
     }
 
     private static void assertTextValues(List<Element> rows, String attribute, String... values) {

@@ -269,6 +269,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             case TEXT -> ((TextType) effective).textKind().name();
             case BOOLEAN -> "BOOLEAN";
             case DATE -> "DATE";
+            case TIME -> "TIMEOFDAY";
             case INTEGER, BIGINT, DECIMAL -> "NUMERIC";
             case ENUMERATION -> "ENUM";
             case POINT -> "COORD";
