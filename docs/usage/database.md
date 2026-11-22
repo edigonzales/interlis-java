@@ -397,6 +397,12 @@ eine `CIRCULARSTRING`-Komponente. Bei einem XYZ-Bogen tragen Anfang und
 Ende Z. Die XY-Zwischenposition wird wie in ili2db mit einem
 `NaN`-Platzhalter für Z gespeichert.
 
+Bestehende ili2db-Schemata mit `--strokeArcs` speichern XY-Polylinien in
+`LINESTRING`-Spalten. `interlis-db` liest die Option aus den
+Schemaeinstellungen und prüft den SQL-Typ im Katalog sowie in den
+Spaltenmetadaten. Gerade Polylinien bleiben in ihrer ursprünglichen
+Reihenfolge erhalten.
+
 In XTF 2.4 FULL unterstützen die folgenden Spaltentypen XY und XYZ.
 Alle Teile einer Geometrie liegen in Lieferreihenfolge in demselben
 Spaltenwert. `typeKind` weist den INTERLIS-Modelltyp aus.

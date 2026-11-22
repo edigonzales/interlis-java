@@ -300,7 +300,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                     .orElseGet(() -> DbMapping.vertexDomain(mapping.plan(), (GeometryType) effective));
             coordinates = (CoordinateType) type(mapping, new TypeRef(mapping.plan().snapshotId(), domain.typeId()));
         }
-        property(properties, table, subtype, column, "geomType", column.kind().geometryType());
+        property(properties, table, subtype, column, Ili2dbLayout.GEOMETRY_TYPE_PROPERTY, column.geometryType());
         property(properties, table, subtype, column, Ili2dbLayout.SRID_PROPERTY, Integer.toString(column.epsgCode()));
         property(properties, table, subtype, column, "coordDimension", Integer.toString(column.dimensions()));
         var x = coordinates.axes().get(0);

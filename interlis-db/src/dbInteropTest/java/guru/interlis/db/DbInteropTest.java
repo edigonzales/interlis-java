@@ -110,6 +110,16 @@ final class DbInteropTest {
 
     @Test void geoPackageChbasePoints23() throws Exception { exchangeChbasePoints(23, null); }
     @Test void geoPackageChbasePoints24() throws Exception { exchangeChbasePoints(24, null); }
+    @Test void geoPackageStrokePolyline23() throws Exception { exchangeStrokePolyline(23, null); }
+    @Test void geoPackageStrokePolyline24() throws Exception { exchangeStrokePolyline(24, null); }
+    @Test void postgisStrokePolyline23() throws Exception { exchangeWithPostgis(23, this::exchangeStrokePolyline); }
+    @Test void postgisStrokePolyline24() throws Exception { exchangeWithPostgis(24, this::exchangeStrokePolyline); }
+
+    private void exchangeStrokePolyline(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "stroke_polyline");
+        new StrokeCases(work, new ReferenceTool(db.postgis()), version).polyline(db);
+    }
+
     @Test void postgisChbasePoints23() throws Exception { exchangeWithPostgis(23, this::exchangeChbasePoints); }
     @Test void postgisChbasePoints24() throws Exception { exchangeWithPostgis(24, this::exchangeChbasePoints); }
     @Test void geoPackageChbaseLines23() throws Exception { exchangeChbaseLines(23, null); }

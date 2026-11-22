@@ -1,5 +1,6 @@
 package guru.interlis.db;
 
+import guru.interlis.db.DbMapping.GeometryEncoding;
 import guru.interlis.db.DbMapping.Kind;
 import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TransferGeometry.Arc;
@@ -113,6 +114,11 @@ final class GeometryBinary {
     }
 
     static TransferGeometry decode(byte[] bytes, boolean gpkg, int srsId, Kind kind, int dimensions, int legacySrsId) {
+        return decode(bytes, gpkg, srsId, kind, dimensions, legacySrsId, GeometryEncoding.STANDARD);
+    }
+
+    static TransferGeometry decode(byte[] bytes, boolean gpkg, int srsId, Kind kind, int dimensions, int legacySrsId,
+                                   GeometryEncoding encoding) {
         var data = ByteBuffer.wrap(bytes);
         boolean empty = false;
         if (gpkg) {
@@ -131,7 +137,7 @@ final class GeometryBinary {
                 yield readPoint(data, gpkg, dimensions);
             }
             case MULTIPOINT -> readMultiPoint(data, empty, gpkg, dimensions);
-            case POLYLINE -> readPolyline(data, gpkg, dimensions);
+            case POLYLINE -> readPolyline(data, gpkg, dimensions, encoding);
             case MULTICURVE -> readMultiCurve(data, empty, gpkg, dimensions);
             case SURFACE -> readSurface(data, gpkg, dimensions);
             case MULTISURFACE -> readMultiSurface(data, empty, gpkg, dimensions);
@@ -168,7 +174,7 @@ final class GeometryBinary {
         int type = storageType & ~EWKB_Z;
         if (type != POINT) {
             Kind kind = switch (type) {
-                case COMPOUNDCURVE -> Kind.POLYLINE;
+                case COMPOUNDCURVE, LINESTRING -> Kind.POLYLINE;
                 case CURVEPOLYGON -> Kind.SURFACE;
                 case MULTIPOINT -> Kind.MULTIPOINT;
                 case MULTICURVE -> Kind.MULTICURVE;
@@ -185,7 +191,9 @@ final class GeometryBinary {
                 }
                 return null;
             }
-            return header.envelope() ? headerEnvelope(bytes) : envelope(decode(bytes, true, header.srsId(), kind, dimensions));
+            var encoding = type == LINESTRING ? GeometryEncoding.LINEAR : GeometryEncoding.STANDARD;
+            return header.envelope() ? headerEnvelope(bytes)
+                    : envelope(decode(bytes, true, header.srsId(), kind, dimensions, 0, encoding));
         }
         if (data.remaining() != pointSize(dimensions)) {
             throw new DbException("Invalid WKB point size for GeoPackage RTree");
@@ -212,7 +220,12 @@ final class GeometryBinary {
     }
 
     static byte[] encodeIndexedGeoPackage(TransferGeometry geometry, int srsId, Kind kind, int dimensions) {
-        byte[] bytes = encode(geometry, true, srsId, kind, dimensions);
+        return encodeIndexedGeoPackage(geometry, srsId, kind, dimensions, GeometryEncoding.STANDARD);
+    }
+
+    static byte[] encodeIndexedGeoPackage(TransferGeometry geometry, int srsId, Kind kind, int dimensions,
+                                          GeometryEncoding encoding) {
+        byte[] bytes = encode(geometry, true, srsId, kind, dimensions, encoding);
         var bounds = envelope(geometry);
         if ((bytes[3] & 2) != 0) return bytes;
         var result = allocate(bytes.length - GPKG_HEADER_SIZE, true, srsId, true);
@@ -361,11 +374,12 @@ final class GeometryBinary {
         return new MultiCoordinate(points);
     }
 
-    private static Polyline readPolyline(ByteBuffer data, boolean gpkg, int dimensions) {
-        if (readType(data, gpkg, dimensions) != COMPOUNDCURVE) {
-            throw new DbException("Expected a " + dimensions + "D WKB COMPOUNDCURVE");
+    private static Polyline readPolyline(ByteBuffer data, boolean gpkg, int dimensions, GeometryEncoding encoding) {
+        int type = encoding == GeometryEncoding.LINEAR ? LINESTRING : COMPOUNDCURVE;
+        if (readType(data, gpkg, dimensions) != type) {
+            throw new DbException("Expected a " + dimensions + "D WKB " + encoding.sqlType(Kind.POLYLINE));
         }
-        var part = readCurve(data, COMPOUNDCURVE, new CoordinateBudget(Kind.POLYLINE), gpkg, dimensions);
+        var part = readCurve(data, type, new CoordinateBudget(Kind.POLYLINE), gpkg, dimensions);
         if (data.hasRemaining()) {
             throw new DbException("Invalid WKB polyline size");
         }
@@ -535,10 +549,14 @@ final class GeometryBinary {
     }
 
     static byte[] encode(TransferGeometry value, boolean gpkg, int srsId, Kind kind, int dimensions) {
+        return encode(value, gpkg, srsId, kind, dimensions, GeometryEncoding.STANDARD);
+    }
+
+    static byte[] encode(TransferGeometry value, boolean gpkg, int srsId, Kind kind, int dimensions, GeometryEncoding encoding) {
         return switch (kind) {
             case POINT -> writePoint(value, gpkg, srsId, dimensions);
             case MULTIPOINT -> writeMultiPoint(value, gpkg, srsId, dimensions);
-            case POLYLINE -> writePolyline(value, gpkg, srsId, dimensions);
+            case POLYLINE -> writePolyline(value, gpkg, srsId, dimensions, encoding);
             case MULTICURVE -> writeMultiCurve(value, gpkg, srsId, dimensions);
             case SURFACE -> writeSurface(value, gpkg, srsId, dimensions);
             case MULTISURFACE -> writeMultiSurface(value, gpkg, srsId, dimensions);
@@ -583,11 +601,23 @@ final class GeometryBinary {
         return data.array();
     }
 
-    private static byte[] writePolyline(TransferGeometry geometry, boolean gpkg, int srsId, int dimensions) {
+    private static byte[] writePolyline(TransferGeometry geometry, boolean gpkg, int srsId, int dimensions,
+                                         GeometryEncoding encoding) {
         if (!(geometry instanceof Polyline line)) {
             throw new DbException("Expected a polyline with one part and no line attributes");
         }
-        var curve = planCurve(linePart(line), new CoordinateBudget(Kind.POLYLINE), dimensions);
+        var part = linePart(line);
+        var budget = new CoordinateBudget(Kind.POLYLINE);
+        if (encoding == GeometryEncoding.LINEAR) {
+            int size = linearBodySize(part, budget, dimensions);
+            var data = allocate(TYPE_SIZE + size, gpkg, srsId, gpkg);
+            data.put((byte) 0).putInt(storageType(LINESTRING, gpkg, dimensions));
+            int start = data.position() + Integer.BYTES;
+            writeLinearBody(data, part, dimensions);
+            if (gpkg) writeEnvelope(data, start, dimensions);
+            return data.array();
+        }
+        var curve = planCurve(part, budget, dimensions);
         // Arc extrema can lie outside the bounds of the stored XY pairs.
         boolean envelope = gpkg && !curve.hasArcs();
         var data = allocate(curve.size(), gpkg, srsId, envelope);
@@ -597,6 +627,22 @@ final class GeometryBinary {
             writeEnvelope(data, firstCoordinate, dimensions);
         }
         return data.array();
+    }
+
+    private static int linearBodySize(CurvePart part, CoordinateBudget budget, int dimensions) {
+        if (part.segments().isEmpty()) throw new DbException("A polyline requires at least one segment");
+        if (part.segments().stream().anyMatch(Arc.class::isInstance)) {
+            throw new DbException("A linear geometry requires straight segments");
+        }
+        int count = part.segments().size() + 1;
+        budget.consume(count);
+        return Integer.BYTES + count * dimensions * Double.BYTES;
+    }
+
+    private static void writeLinearBody(ByteBuffer data, CurvePart part, int dimensions) {
+        data.putInt(part.segments().size() + 1);
+        writeCoordinate(data, part.start(), dimensions);
+        for (var segment : part.segments()) writeCoordinate(data, segment.end(), dimensions);
     }
 
     private static byte[] writeSurface(TransferGeometry geometry, boolean gpkg, int srsId, int dimensions) {

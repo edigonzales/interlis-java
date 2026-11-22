@@ -71,7 +71,7 @@ final class DbSchemaReader {
     private record AttributeName(String name, String owner, String target) { }
     record Settings(boolean splitGeometries, int defaultEpsg, String modelEpsgAssignments, boolean referenceEpsgHeader,
                     boolean multiSrs, Optional<DbCrsPair.Models> srsModels, boolean createGeometryIndexes,
-                    DbInheritance.Profile inheritance) {
+                    DbInheritance.Profile inheritance, boolean strokeArcs) {
         CrsDefaults crs(String model) {
             return new CrsDefaults(defaultEpsg, modelEpsg(modelEpsgAssignments, model));
         }
@@ -277,7 +277,7 @@ final class DbSchemaReader {
                         String secondaryKey = Ili2dbLayout.secondaryClass(attribute, owner);
                         String table = settings.splitGeometries() && described.kind().geometry() ? classNames.remove(secondaryKey) : null;
                         var mapping = attrNames.take(attribute, table == null ? parent.name() : table, null);
-                        var column = described.withName(mapping.name());
+                        var column = described.withName(mapping.name()).withStrokeArcs(settings.strokeArcs());
                         if (table != null) {
                             var secondaryTransformation = transformations.secondary()
                                     .remove(Ili2dbLayout.secondaryTransformation(path, owner, column.epsgCode()));
@@ -463,14 +463,18 @@ final class DbSchemaReader {
         String geometryLayout = settings.get(Ili2dbLayout.GEOMETRY_LAYOUT);
         boolean referenceEpsgHeader = db.gpkg() && isSender(sender, "ili2gpkg-5.5.2");
         boolean indexes = "True".equals(settings.get(Ili2dbLayout.CREATE_GEOMETRY_INDEX));
+        boolean strokeArcs = settings.containsKey(Ili2dbLayout.STROKE_ARCS);
+        if (strokeArcs && !Ili2dbLayout.STROKE_ARCS_ENABLED.equals(settings.get(Ili2dbLayout.STROKE_ARCS))) {
+            throw unsupported("SETTINGS.StrokeArcs");
+        }
         if (Ili2dbLayout.MULTIPLE_GEOMETRIES.equals(geometryLayout)) {
-            return new Settings(false, defaultEpsg, modelEpsg, referenceEpsgHeader, multiSrs, srsModels, indexes, inheritance);
+            return new Settings(false, defaultEpsg, modelEpsg, referenceEpsgHeader, multiSrs, srsModels, indexes, inheritance, strokeArcs);
         }
         if (geometryLayout != null && !Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout)) {
             throw unsupported("SETTINGS.geomAttrPerTable=" + geometryLayout);
         }
         return new Settings(db.gpkg() || Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout), defaultEpsg, modelEpsg,
-                referenceEpsgHeader, multiSrs, srsModels, indexes, inheritance);
+                referenceEpsgHeader, multiSrs, srsModels, indexes, inheritance, strokeArcs);
     }
 
     static SqlNames namesForExtension(Database db, List<String> models) throws SQLException {
@@ -811,13 +815,17 @@ final class DbSchemaReader {
         } else if (mapping.target() != null) {
             throw new DbException("Unexpected ATTRNAME.target for " + path);
         }
+        if (column.kind().geometry()) {
+            requireGeometryColumn(db, table.name(), table.columns(), column);
+            return bindGeometry(db, table.name(), column, settings);
+        }
         for (var name : column.physicalNames()) {
             if (!name.equals(column.name()) && !table.used().add(key(db, name))) {
                 throw new DbException("Inconsistent expanded column " + name + " for " + path);
             }
             requireColumns(db, table.name(), table.columns(), Map.of(name, column.kind()));
         }
-        return column.kind().geometry() ? bindGeometry(db, table.name(), column, settings) : column;
+        return column;
     }
 
     private static SecondaryGeometry bindSecondaryGeometry(Database db, Column column, AttributeName mapping,
@@ -827,7 +835,8 @@ final class DbSchemaReader {
             throw new DbException("Invalid secondary geometry column for " + path);
         }
         var physical = physicalColumns(db, table);
-        requireColumns(db, table, physical, Map.of(T_ID, Kind.REFERENCE, T_BASKET, Kind.REFERENCE, column.name(), column.kind()));
+        requireColumns(db, table, physical, Map.of(T_ID, Kind.REFERENCE, T_BASKET, Kind.REFERENCE));
+        requireGeometryColumn(db, table, physical, column);
         requireIdPrimaryKey(db, table);
         if (physical.size() != 3) throw new DbException("Unexpected physical columns in " + table);
 
@@ -849,23 +858,40 @@ final class DbSchemaReader {
     private static Column bindGeometry(Database db, String table, Column column, Settings settings) throws SQLException {
         var stored = db.geometryStorage(table, column, settings.referenceEpsgHeader());
         String names = db.gpkg() ? "lower(tablename) = ? AND lower(columnname) = ?" : "tablename = ? AND columnname = ?";
-        String sql = "SELECT setting FROM " + db.technicalTable(Ili2dbLayout.COLUMN_PROP)
-                + " WHERE " + names + " AND subtype IS NULL AND tag = ?";
+        String sql = "SELECT tag, setting FROM " + db.technicalTable(Ili2dbLayout.COLUMN_PROP)
+                + " WHERE " + names + " AND subtype IS NULL AND tag IN (?, ?)";
+        var seen = new HashSet<String>();
         try (var statement = db.connection().prepareStatement(sql)) {
             statement.setString(1, key(db, table));
             statement.setString(2, key(db, column.name()));
             statement.setString(3, PREFIX + Ili2dbLayout.SRID_PROPERTY);
+            statement.setString(4, PREFIX + Ili2dbLayout.GEOMETRY_TYPE_PROPERTY);
             try (var rows = statement.executeQuery()) {
-                if (rows.next()) {
-                    String property = "COLUMN_PROP.srid for " + table + "." + column.name();
-                    int epsg = Ili2dbLayout.parseEpsgCode(rows.getString(1), property);
-                    if (epsg != column.epsgCode() || rows.next()) {
-                        throw new DbException("Inconsistent " + property + ": expected one EPSG:" + column.epsgCode());
+                while (rows.next()) {
+                    String tag = rows.getString(1);
+                    boolean srid = tag.equals(PREFIX + Ili2dbLayout.SRID_PROPERTY);
+                    String property = "COLUMN_PROP." + tag.substring(PREFIX.length()) + " for " + table + "." + column.name();
+                    String value = rows.getString(2);
+                    boolean matches = srid ? Ili2dbLayout.parseEpsgCode(value, property) == column.epsgCode()
+                            : column.geometryType().equals(value);
+                    if (!seen.add(tag) || !matches) {
+                        throw new DbException("Inconsistent " + property + ": expected one "
+                                + (srid ? "EPSG:" + column.epsgCode() : column.geometryType()));
                     }
                 }
             }
         }
         return stored;
+    }
+
+    private static void requireGeometryColumn(Database db, String table, Map<String, String> physical, Column column) {
+        String name = table + "." + column.name();
+        String actual = physical.get(key(db, column.name()));
+        if (actual == null) throw new DbException("Missing physical column " + name);
+        String expected = db.gpkg() ? column.geometryType() : "geometry";
+        if (!expected.equalsIgnoreCase(actual)) {
+            throw new DbException("Unsupported SQL type for " + name + " (" + actual + "), expected " + expected);
+        }
     }
 
     private static void useColumn(Database db, CatalogTable table, AttributeName mapping, String path) {

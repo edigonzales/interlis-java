@@ -429,7 +429,7 @@ final class SchemaSql {
                 case ENUMERATION -> text(255);
                 case REFERENCE -> idType();
                 case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> {
-                    String type = column.kind().geometryType();
+                    String type = column.geometryType();
                     yield gpkg ? type : postgisGeometryType + "(" + type
                             + (column.dimensions() == 3 ? "Z" : "") + ", " + column.srsId() + ")";
                 }

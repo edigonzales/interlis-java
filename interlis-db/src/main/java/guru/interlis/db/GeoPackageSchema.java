@@ -154,11 +154,12 @@ final class GeoPackageSchema {
                         registerGeometry(geometry, table, column);
                         if (createGeometryIndexes) GeoPackageRtree.create(connection, table, column.name());
                         var kind = column.kind();
-                        if (kind == DbMapping.Kind.POLYLINE || kind == DbMapping.Kind.SURFACE
-                                || kind == DbMapping.Kind.MULTICURVE || kind == DbMapping.Kind.MULTISURFACE) {
+                        if (column.geometryEncoding() == DbMapping.GeometryEncoding.STANDARD
+                                && (kind == DbMapping.Kind.POLYLINE || kind == DbMapping.Kind.SURFACE
+                                    || kind == DbMapping.Kind.MULTICURVE || kind == DbMapping.Kind.MULTISURFACE)) {
                             extension.setString(1, table);
                             extension.setString(2, column.name());
-                            extension.setString(3, "gpkg_geom_" + kind.geometryType());
+                            extension.setString(3, "gpkg_geom_" + column.geometryType());
                             extension.executeUpdate();
                         }
                     }
@@ -189,7 +190,7 @@ final class GeoPackageSchema {
             throws SQLException {
         geometry.setString(1, table);
         geometry.setString(2, column.name());
-        geometry.setString(3, column.kind().geometryType());
+        geometry.setString(3, column.geometryType());
         geometry.setInt(4, column.srsId());
         geometry.setInt(5, column.dimensions() - 2);
         geometry.executeUpdate();

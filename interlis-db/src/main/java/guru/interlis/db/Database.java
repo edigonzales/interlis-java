@@ -182,7 +182,7 @@ final class Database implements AutoCloseable {
             statement.setString(1, schema);
             statement.setString(2, table);
             statement.setString(3, column.name());
-            statement.setString(4, column.kind().geometryType());
+            statement.setString(4, column.geometryType());
             statement.setInt(5, column.dimensions());
             statement.setInt(6, column.epsgCode());
             statement.setInt(7, column.epsgCode());
@@ -207,7 +207,7 @@ final class Database implements AutoCloseable {
         try (var statement = connection.prepareStatement(sql)) {
             statement.setString(1, table);
             statement.setString(2, column.name());
-            statement.setString(3, column.kind().geometryType());
+            statement.setString(3, column.geometryType());
             statement.setInt(4, column.dimensions() - 2);
             statement.setInt(5, column.epsgCode());
             try (var rows = statement.executeQuery()) {
@@ -246,7 +246,7 @@ final class Database implements AutoCloseable {
     }
 
     private static DbException unsupportedGeometry(String table, Column column) {
-        return new DbException("Expected an EPSG:" + column.epsgCode() + " " + column.dimensions() + "D " + column.kind().geometryType()
+        return new DbException("Expected an EPSG:" + column.epsgCode() + " " + column.dimensions() + "D " + column.geometryType()
                 + " column at " + table + "." + column.name());
     }
 
@@ -272,7 +272,7 @@ final class Database implements AutoCloseable {
                 return null;
             }
             var geometry = GeometryBinary.decode(bytes, gpkg(), column.srsId(), column.kind(), column.dimensions(),
-                    column.legacyEpsgHeader() ? column.epsgCode() : 0);
+                    column.legacyEpsgHeader() ? column.epsgCode() : 0, column.geometryEncoding());
             // The reference exporter omits attributes stored as empty collections.
             boolean empty = switch (geometry) {
                 case MultiCoordinate multi -> multi.coordinates().isEmpty();
@@ -291,8 +291,10 @@ final class Database implements AutoCloseable {
         byte[] bytes;
         try {
             bytes = value == null ? null : indexedGeometry.contains(new GeometryColumn(table, column.name()))
-                    ? GeometryBinary.encodeIndexedGeoPackage(value, column.srsId(), column.kind(), column.dimensions())
-                    : GeometryBinary.encode(value, gpkg(), column.srsId(), column.kind(), column.dimensions());
+                    ? GeometryBinary.encodeIndexedGeoPackage(value, column.srsId(), column.kind(), column.dimensions(),
+                            column.geometryEncoding())
+                    : GeometryBinary.encode(value, gpkg(), column.srsId(), column.kind(), column.dimensions(),
+                            column.geometryEncoding());
         } catch (DbException failure) {
             throw invalidGeometry(column, failure);
         }

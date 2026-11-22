@@ -80,6 +80,15 @@ final class DbMapping {
         }
     }
 
+    enum GeometryEncoding {
+        STANDARD, LINEAR;
+
+        String sqlType(Kind kind) {
+            if (this == LINEAR && kind == Kind.POLYLINE) return "LINESTRING";
+            return kind.geometryType();
+        }
+    }
+
     /** A zero code means the corresponding fallback was absent. */
     record CrsDefaults(int schemaEpsg, int modelEpsg) { }
 
@@ -87,12 +96,22 @@ final class DbMapping {
                   Optional<SymbolRef> target, Optional<SymbolRef> referenceTable, int epsgCode, int srsId, boolean legacyEpsgHeader,
                   Optional<String> positionColumn, int dimensions, Optional<DomainBinding> domainBinding,
                   Optional<DbCatalogueReference> catalogueReference, Optional<DbTextExpansion> textExpansion,
-                  Optional<DbWrappedGeometry> wrappedGeometry) {
+                  Optional<DbWrappedGeometry> wrappedGeometry, GeometryEncoding geometryEncoding) {
         Column {
             boolean role = slot instanceof RoleSlot;
             if (effectiveType.isEmpty() != role || (role && kind != Kind.REFERENCE)) {
                 throw new IllegalArgumentException("Only a role reference can omit the effective attribute type");
             }
+        }
+
+        Column(TransferSlot slot, String name, Kind kind, Optional<TypeDescriptor> effectiveType,
+               Optional<SymbolRef> target, Optional<SymbolRef> referenceTable, int epsgCode, int srsId,
+               boolean legacyEpsgHeader, Optional<String> positionColumn, int dimensions, Optional<DomainBinding> domainBinding,
+               Optional<DbCatalogueReference> catalogueReference, Optional<DbTextExpansion> textExpansion,
+               Optional<DbWrappedGeometry> wrappedGeometry) {
+            this(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry,
+                    GeometryEncoding.STANDARD);
         }
 
         Column(TransferSlot slot, String name, Kind kind, Optional<TypeDescriptor> effectiveType,
@@ -105,31 +124,43 @@ final class DbMapping {
 
         Column withName(String sqlName) {
             return new Column(slot, sqlName, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
-                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry);
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, geometryEncoding);
         }
 
         Column withEpsg(int epsg) {
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsg, epsg, false,
-                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry);
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, geometryEncoding);
         }
 
         Column withSrsId(int id, boolean acceptsEpsgHeader) {
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, id, acceptsEpsgHeader,
-                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry);
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, geometryEncoding);
         }
 
         Column withPositionColumn(boolean gpkg) {
             String position = name + "_" + (gpkg ? SEQ_COLUMN : T_SEQ);
             checkColumnName(slot, position, false, false, gpkg);
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
-                    Optional.of(position), dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry);
+                    Optional.of(position), dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, geometryEncoding);
         }
 
         Column withReferenceTable(SymbolRef table) {
             return new Column(slot, name, kind, effectiveType, target, Optional.of(table), epsgCode, srsId,
                     legacyEpsgHeader, positionColumn, dimensions, domainBinding, catalogueReference, textExpansion,
-                    wrappedGeometry);
+                    wrappedGeometry, geometryEncoding);
         }
+
+        Column withStrokeArcs(boolean strokeArcs) {
+            if (!strokeArcs || !kind.geometry() || kind == Kind.POINT || kind == Kind.MULTIPOINT) return this;
+            if (kind != Kind.POLYLINE || dimensions != 2) {
+                throw unsupported("linear geometry at " + slot.name().declared());
+            }
+            return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry,
+                    GeometryEncoding.LINEAR);
+        }
+
+        String geometryType() { return geometryEncoding.sqlType(kind); }
 
         List<String> physicalNames() {
             return textExpansion.map(expansion -> expansion.columns(name)).orElseGet(() -> List.of(name));

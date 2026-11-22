@@ -17,6 +17,9 @@ final class Ili2dbLayout {
     static final String COALESCE = "coalesce";
     static final String NEW_CLASS = "newClass";
     static final String SRID_PROPERTY = "srid";
+    static final String GEOMETRY_TYPE_PROPERTY = "geomType";
+    static final String STROKE_ARCS = PREFIX + "StrokeArcs";
+    static final String STROKE_ARCS_ENABLED = "enable";
     static final String EMBEDDED = "embedded";
     static final String SCHEMA_SENDER = "interlis-db/ili2db-5.5.2";
     static final int MAX_MODEL_CHARACTERS = 1_000_000;

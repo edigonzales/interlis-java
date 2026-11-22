@@ -245,6 +245,10 @@ den Basket des Links, beide Ziel-TIDs und die eigenständigen XTF-Objekte.
 ./gradlew :interlis-db:dbInteropTest
 ```
 
+Die `*StrokePolyline*`-Fälle prüfen den Austausch gerader XY-Polylinien
+mit ili2db-`--strokeArcs`, gespeicherte SQL-Namen und das Verhalten bei
+widersprüchlichen Spaltenmetadaten.
+
 Die Auswahl `--tests '*DbInteropTest.geoPackage*'` läuft ohne Docker.
 Die Tests vergleichen vor dem ersten Datenimport den SQL-Katalog und die
 Metadaten der erzeugten Schemata. Die GeoPackage-Erweiterungseinträge für
