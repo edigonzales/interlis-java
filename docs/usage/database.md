@@ -251,6 +251,10 @@ Bei `--coalesceMultiPoint` verwendet der FULL-Transfer in bestehenden
 `ili2db.mapping=MultiPoint`. Das Einzelattribut enthält eine Struktur
 mit einem BAG aus zweidimensionalen Koordinatenstrukturen. Die
 Komponenten und ihre Duplikate bleiben im XTF erhalten.
+`--coalesceMultiLine` bildet `MultiLine` und `MultiDirectedLine`
+aus CHBase V1 sowie gleich aufgebaute, mit
+`ili2db.mapping=MultiLine` markierte Strukturen in einer
+`MULTICURVE`-Spalte ab. Der Transfer erhält Kreisbogen und Linienrichtung.
 
 Für bestehende Smart1-Schemata unterstützt `interlis-db` den FULL-Import
 und -Export von Klassenhierarchien mit skalaren Attributen. Das

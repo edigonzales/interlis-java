@@ -112,10 +112,19 @@ final class DbInteropTest {
     @Test void geoPackageChbasePoints24() throws Exception { exchangeChbasePoints(24, null); }
     @Test void postgisChbasePoints23() throws Exception { exchangeWithPostgis(23, this::exchangeChbasePoints); }
     @Test void postgisChbasePoints24() throws Exception { exchangeWithPostgis(24, this::exchangeChbasePoints); }
+    @Test void geoPackageChbaseLines23() throws Exception { exchangeChbaseLines(23, null); }
+    @Test void geoPackageChbaseLines24() throws Exception { exchangeChbaseLines(24, null); }
+    @Test void postgisChbaseLines23() throws Exception { exchangeWithPostgis(23, this::exchangeChbaseLines); }
+    @Test void postgisChbaseLines24() throws Exception { exchangeWithPostgis(24, this::exchangeChbaseLines); }
 
     private void exchangeChbasePoints(int version, PostgreSQLContainer postgres) throws Exception {
         var db = new TestDatabase(postgres, "chbase_points");
         new ChbaseGeometryCases(work, new ReferenceTool(db.postgis()), version).points(db);
+    }
+
+    private void exchangeChbaseLines(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "chbase_lines");
+        new ChbaseGeometryCases(work, new ReferenceTool(db.postgis()), version).lines(db);
     }
 
     @Test void geoPackageChbaseMultilingual23() throws Exception { exchangeChbaseMultilingual(23, null); }

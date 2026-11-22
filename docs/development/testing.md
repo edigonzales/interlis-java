@@ -114,6 +114,8 @@ weiteren Referenzimport.
 `*DbInteropTest.*ChbasePoints*` prüft `--coalesceMultiPoint` in
 beiden Werkzeugrichtungen, einschliesslich doppelter Punkte, SRID,
 SQL-`NULL` und der leeren Strukturtabellen.
+`*DbInteropTest.*ChbaseLines*` prüft `--coalesceMultiLine` mit geraden
+und gebogenen Segmenten sowie gerichteten Linien.
 
 `*DbInteropTest.*Smart*` prüft Smart1 und Smart2 mit XTF 2.3 und 2.4.
 Die Fälle vergleichen beide Werkzeugrichtungen, physische Eigentümer

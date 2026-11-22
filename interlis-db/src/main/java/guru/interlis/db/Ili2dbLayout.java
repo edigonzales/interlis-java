@@ -68,7 +68,8 @@ final class Ili2dbLayout {
         CATALOGUE_REFERENCE("--coalesce-catalogue-ref", "catalogueRefTrafo", COALESCE),
         MULTILINGUAL("--expand-multilingual", "multilingualTrafo", "expand"),
         LOCALISED("--expand-localised", "localisedTrafo", "expand"),
-        MULTIPOINT(null, "multiPointTrafo", COALESCE);
+        MULTIPOINT(null, "multiPointTrafo", COALESCE),
+        MULTILINE(null, "multiLineTrafo", COALESCE);
 
         final String option;
         final String tag;

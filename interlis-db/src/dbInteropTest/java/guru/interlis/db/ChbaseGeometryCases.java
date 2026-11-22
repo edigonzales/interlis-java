@@ -55,6 +55,54 @@ final class ChbaseGeometryCases {
         }
     }
 
+    void lines(TestDatabase db) throws Exception {
+        String model = "ChbaseLines" + version;
+        fixture(model + ".ili");
+        var input = fixture(model + ".xtf");
+        referenceSchema(db, model, "--coalesceMultiLine");
+        referenceImport(db, "legacy", input);
+        var output = work.resolve("lines-output.xtf");
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertLines(output, "fixture");
+        assertCliSuccess(db, "import", model, "native", withPrefix(input, "native"));
+        referenceExport(db, "native", output);
+        assertLines(output, "native");
+        assertGeometryColumn(db, "piperoute", "shape", "MULTICURVE", 2056);
+        assertGeometryColumn(db, "flowroute", "shape", "MULTICURVE", 2056);
+        try (var sql = db.connect()) {
+            assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("linestructure")));
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("piperoute") + " WHERE shape IS NULL"));
+            if (db.postgis()) {
+                assertEquals("2", scalar(sql, "SELECT ST_NumGeometries(shape) FROM " + db.table("piperoute")
+                        + " WHERE t_ili_tid='native-value' AND ST_HasArc(shape)"));
+            }
+        }
+    }
+
+    private void assertLines(Path output, String prefix) throws Exception {
+        var objects = objects(output, prefix);
+        assertNull(child(objects.get(prefix + "-empty"), "Shape"));
+        String types = version == 23 ? "GeometryCHLV95_V1" : "ChbaseLineTypes24";
+        var lines = parts(objects.get(prefix + "-value"), types, "MultiLine", "Lines", "LineStructure");
+        assertEquals(2, lines.size());
+        var mixed = children(children(child(lines.getFirst(), "Line")).getFirst());
+        assertEquals(3, mixed.size());
+        assertEquals(xy("2600000", "1200000"), coordinate(mixed.getFirst()));
+        var arc = mixed.get(1);
+        assertEquals(version == 23 ? "ARC" : "arc", arc.getLocalName());
+        assertEquals(xy("2600005", "1200005"), position(arc, version == 23 ? "A" : "a"));
+        assertEquals(xy("2600010", "1200000"), coordinate(arc));
+        assertEquals(xy("2600020", "1200000"), coordinate(mixed.get(2)));
+        var straight = children(children(child(lines.getLast(), "Line")).getFirst());
+        assertEquals(List.of(xy("2600100", "1200100"), xy("2600110", "1200120")),
+                straight.stream().map(this::coordinate).toList());
+        var directed = parts(objects.get(prefix + "-directed"), types, "MultiDirectedLine", "Lines", "DirectedLineStructure");
+        assertEquals(1, directed.size());
+        var steps = children(children(child(directed.getFirst(), "Line")).getFirst());
+        assertEquals(List.of(xy("2600210", "1200200"), xy("2600200", "1200200")),
+                steps.stream().map(this::coordinate).toList());
+    }
+
     private void assertPoints(Path output, String model, String prefix) throws Exception {
         var objects = objects(output, prefix);
         assertNull(child(objects.get(prefix + "-empty"), "Shape"));
@@ -67,10 +115,15 @@ final class ChbaseGeometryCases {
     }
 
     private List<BigDecimal> coordinate(Element element) {
-        String x = version == 23 ? "C1" : "c1";
-        String y = version == 23 ? "C2" : "c2";
-        return List.of(new BigDecimal(child(element, x).getTextContent()).stripTrailingZeros(),
-                new BigDecimal(child(element, y).getTextContent()).stripTrailingZeros());
+        return position(element, version == 23 ? "C" : "c");
+    }
+
+    private static List<BigDecimal> position(Element element, String prefix) {
+        return xy(child(element, prefix + "1").getTextContent(), child(element, prefix + "2").getTextContent());
+    }
+
+    private static List<BigDecimal> xy(String x, String y) {
+        return List.of(new BigDecimal(x).stripTrailingZeros(), new BigDecimal(y).stripTrailingZeros());
     }
 
     private List<Element> parts(Element object, String structureModel, String type, String bag, String itemType) {
