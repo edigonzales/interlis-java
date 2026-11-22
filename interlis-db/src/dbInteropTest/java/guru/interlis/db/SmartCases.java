@@ -418,16 +418,68 @@ final class SmartCases {
         assertReferences(output, model, "native");
     }
 
-    private void createAndCompare(TestDatabase baseline, TestDatabase own, String model, String profile) throws Exception {
+    void smart2Schema(TestDatabase baseline, TestDatabase own) throws Exception {
+        String model = "SmartPoly" + version;
         var source = fixture(model + ".ili");
+        Files.writeString(source, Files.readString(source).replace("SmartTarget : REFERENCE TO SmartUnit",
+                "SmartTarget : REFERENCE TO Meter").replace("CLASS Survey = Details : Note; END Survey;",
+                "CLASS Survey = Details : Note; END Survey;\n    CLASS ExtraSurvey EXTENDS Survey = END ExtraSurvey;"));
+        createAndCompare(baseline, own, model, "smart2", source);
+        var input = fixture(model + ".xtf");
+        String closingSurvey = version == 23 ? "</" + model + ".Data.Survey>" : "</Survey>";
+        String extra = version == 23 ? "<" + model
+                + ".Data.ExtraSurvey TID=\"fixture-extra\"><Observed REF=\"fixture-m\"/></" + model + ".Data.ExtraSurvey>"
+                : "<ExtraSurvey i:tid=\"fixture-extra\"><Observed i:ref=\"fixture-m\"/></ExtraSurvey>";
+        Files.writeString(input, Files.readString(input).replace(closingSurvey, closingSurvey + "\n      " + extra));
+        var output = work.resolve("own-smart2.xtf");
+        referenceImport(own, "legacy", input);
+        assertCliSuccess(own, "export", model, "legacy", output);
+        assertPolymorphicReferences(output, model, "fixture");
+        assertExtraSurvey(output, model, "fixture");
+        assertCliSuccess(own, "import", model, "native", transferWithPrefix(input, "native"));
+        referenceExport(own, "native", output);
+        assertPolymorphicReferences(output, model, "native");
+        assertExtraSurvey(output, model, "native");
+        referenceImport(own, "tail", transferWithPrefix(input, "tail"));
+        assertCliSuccess(own, "export", model, "tail", output);
+        assertPolymorphicReferences(output, model, "tail");
+        assertExtraSurvey(output, model, "tail");
+        try (var sql = own.connect()) {
+            String ids = List.of("meter", "smartunit", "terminal", "survey", "extrasurvey", "note", "crosscheck",
+                    "t_ili2db_basket", "t_ili2db_dataset").stream()
+                    .map(table -> "SELECT t_id FROM " + own.table(table)).collect(Collectors.joining(" UNION ALL "));
+            assertEquals("30", scalar(sql, "SELECT COUNT(DISTINCT t_id) FROM (" + ids + ") ids"));
+            assertEquals("3", scalar(sql, "SELECT COUNT(*) FROM " + own.table("note") + " n JOIN "
+                    + own.table("smartunit") + " s ON n.smarttarget_smartunit=s.t_id AND n.t_basket=s.t_basket"
+                    + " WHERE n.smarttarget_meter IS NULL"));
+        }
+    }
+
+    private void assertExtraSurvey(Path path, String model, String prefix) throws Exception {
+        var basket = children(readDataSection(path, version)).getFirst();
+        var survey = object(basket, model, "ExtraSurvey", prefix + "-extra");
+        assertEquals(prefix + "-m", id(child(survey, "Observed"), version, "ref"));
+    }
+
+    private void createAndCompare(TestDatabase baseline, TestDatabase own, String model, String profile) throws Exception {
+        createAndCompare(baseline, own, model, profile, fixture(model + ".ili"));
+    }
+
+    private void createAndCompare(TestDatabase baseline, TestDatabase own, String model, String profile, Path source)
+            throws Exception {
         referenceSchema(baseline, model, profile);
         var result = cli(own, "schemaimport", model, null, source, guru.interlis.execution.CancellationToken.none(),
                 "--inheritance", profile);
         assertEquals(0, result.code(), result::diagnostics);
         Files.delete(source);
         try (var expected = baseline.connect(); var actual = own.connect()) {
-            DbSchemaCatalog.read(expected, baseline.postgis(), baseline.schema())
-                    .assertSameAs(DbSchemaCatalog.read(actual, own.postgis(), own.schema()));
+            var ref = DbSchemaCatalog.read(expected, baseline.postgis(), baseline.schema());
+            var nativeSchema = DbSchemaCatalog.read(actual, own.postgis(), own.schema());
+            if (profile.equals("smart2")) {
+                ref.canonicalReferenceAlternatives().assertSameAs(nativeSchema.canonicalReferenceAlternatives());
+            } else {
+                ref.assertSameAs(nativeSchema);
+            }
         }
     }
 

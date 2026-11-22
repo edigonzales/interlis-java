@@ -1213,7 +1213,7 @@ final class DbTransfer {
         private final Map<String, PreparedStatement> inserts = new HashMap<>();
         private final Map<String, PreparedStatement> objectUpdates = new HashMap<>();
         private final Map<Composition, PreparedStatement> structureInserts = new HashMap<>();
-        private final Map<Column, PreparedStatement> updates = new HashMap<>();
+        private final Map<ReferenceColumn, PreparedStatement> updates = new HashMap<>();
         private final Set<SymbolRef> referenceTargets;
         private final Set<SymbolRef> externalTargets;
         private final Map<String, StoredObject> objects = new HashMap<>();
@@ -1756,11 +1756,12 @@ final class DbTransfer {
                 }
                 checkReference(patch, target);
                 if (!mappedInColumn(patch.column(), target)) continue;
-                var statement = updates.get(patch.column());
+                var key = new ReferenceColumn(patch.table(), patch.column());
+                var statement = updates.get(key);
                 if (statement == null) {
                     statement = db.connection().prepareStatement("UPDATE " + db.table(patch.table().name())
                             + " SET " + quote(patch.column().name()) + " = ? WHERE " + T_ID + " = ?");
-                    updates.put(patch.column(), statement);
+                    updates.put(key, statement);
                 }
                 statement.setLong(1, target.id());
                 statement.setLong(2, patch.objectId());
@@ -1794,6 +1795,8 @@ final class DbTransfer {
     }
 
     private record StoredObject(long id, SymbolRef type, BasketId basket) { }
+
+    private record ReferenceColumn(Table table, Column column) { }
 
     private record Pending(Table table, Column column, long objectId, String objectTid, String targetTid,
                            Optional<BasketId> targetBasket) { }

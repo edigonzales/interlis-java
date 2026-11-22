@@ -3,6 +3,7 @@ package guru.interlis.db;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -116,6 +117,35 @@ record DbSchemaCatalog(Map<String, Set<List<String>>> relations) {
     void assertSameAs(DbSchemaCatalog actual) {
         assertEquals(relations.keySet(), actual.relations.keySet());
         relations.forEach((relation, expected) -> assertEquals(expected, actual.relations.get(relation), relation));
+    }
+
+    DbSchemaCatalog canonicalReferenceAlternatives() {
+        // ili2db enumerates some target classes from a set. Only the order within each
+        // alternative group may vary. Keep all column metadata and the group's positions.
+        var tables = new HashMap<List<String>, Set<String>>();
+        for (var attribute : relations.get("attrname")) {
+            if (attribute.get(3) != null) {
+                tables.computeIfAbsent(List.of(attribute.get(2), attribute.get(0)), key -> new HashSet<>())
+                        .add(attribute.get(1));
+            }
+        }
+        var columns = new HashSet<>(relations.get("columns"));
+        for (var group : tables.entrySet()) {
+            if (group.getValue().size() < 2) continue;
+            var alternatives = columns.stream().filter(row -> row.getFirst().equals(group.getKey().getFirst())
+                            && group.getValue().contains(row.get(2)))
+                    .sorted(Comparator.comparing(row -> row.get(2))).toList();
+            var positions = alternatives.stream().mapToInt(row -> Integer.parseInt(row.get(1))).sorted().toArray();
+            columns.removeAll(alternatives);
+            for (int i = 0; i < positions.length; i++) {
+                var column = new ArrayList<>(alternatives.get(i));
+                column.set(1, Integer.toString(positions[i]));
+                columns.add(column);
+            }
+        }
+        var result = new LinkedHashMap<>(relations);
+        result.put("columns", columns);
+        return new DbSchemaCatalog(result);
     }
 
     private static Set<List<String>> uniqueKeys(Set<List<String>> indexColumns) {

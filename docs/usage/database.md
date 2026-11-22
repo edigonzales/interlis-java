@@ -244,8 +244,9 @@ die tatsächlich belegten Tabellen. Updates behalten die internen IDs
 schützen die referenzierten Zeilen.
 Mit `schemaimport --inheritance smart1` lässt sich ein neues Smart1-Schema
 aus dem Modell erzeugen. Die Abbildung verwendet die deklarierte
-Hierarchie und die Assoziationsrollen. Der Standard für `schemaimport`
-ist die bisherige `newClass`-Abbildung.
+Hierarchie und die Assoziationsrollen. `schemaimport --inheritance smart2`
+erzeugt eine vollständige Tabelle pro konkretem Typ. Ohne die Option
+verwendet `schemaimport` die `newClass`-Abbildung.
 
 Unterstützt sind Klassen eines eigenständigen Modells in
 INTERLIS 2.3 und 2.4 mit Text, Boolean, 32-Bit-Ganzzahlen und Aufzählungen als

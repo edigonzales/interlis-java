@@ -279,7 +279,10 @@ final class DbSchemaReader {
         if (!classNames.isEmpty() || !transformations.secondary().isEmpty()) {
             throw new DbException("Extra CLASSNAME/TRAFO mappings for " + modelName);
         }
-        if (settings.inheritance() != DbInheritance.Profile.NEW_CLASS) attrNames.ignoreOwners(unselectedOwners);
+        if (settings.inheritance() != DbInheritance.Profile.NEW_CLASS) {
+            unselectedOwners.removeAll(usedNames);
+            attrNames.ignoreOwners(unselectedOwners);
+        }
         if (!attrNames.isEmpty()) throw new DbException("Extra ATTRNAME mappings for " + modelName);
         return new DbMapping(plan, version, tables, compositions, associations, crsPair, requestedRoots,
                 layout);

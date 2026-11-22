@@ -90,6 +90,14 @@ Jeder Fall entpackt sein Referenzwerkzeug in ein eigenes temporäres
 Arbeitsverzeichnis. JUnit löscht dieses Verzeichnis samt GeoPackage-Dateien,
 Prozesslogs und temporären Dateien des Referenzwerkzeugs auch bei Testfehlern.
 
+`*DbInteropTest.*Smart*` prüft Smart1 und Smart2 mit XTF 2.3 und 2.4.
+Die Fälle vergleichen beide Werkzeugrichtungen, physische Eigentümer
+und Zielspalten, Geometriezuordnungen und Datensatzmutationen. Die
+Schemaerzeugung wird gegen den Katalog von ili2db geprüft. Beim
+Smart2-Vergleich wird die Reihenfolge innerhalb eines Satzes
+alternativer Fremdschlüsselspalten normalisiert, da ili2db sie aus
+einer Menge ermittelt.
+
 `*DbInteropTest.*SharedSource*` prüft importierte Typen aus derselben
 gespeicherten Modelldatei, die Fachwerte und CRS sowie beide
 Werkzeugrichtungen mit dem Referenzschema.

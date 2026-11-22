@@ -42,7 +42,7 @@ public final class Main {
                     [--add-models]
                     [--default-epsg CODE] [--multi-srs [--alt-srs-model ORIGINAL=ALTERNATE]]
                     [--model-file IMPORT.ili]...
-                    [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
+                    [--inheritance smart1|smart2] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.
             """;
@@ -336,7 +336,8 @@ public final class Main {
             var inheritance = switch (inheritanceOption) {
                 case null -> DbInheritance.Profile.NEW_CLASS;
                 case "smart1" -> DbInheritance.Profile.SMART1;
-                default -> throw new IllegalArgumentException("Expected --inheritance smart1");
+                case "smart2" -> DbInheritance.Profile.SMART2;
+                default -> throw new IllegalArgumentException("Expected --inheritance smart1 or smart2");
             };
             var srsModels = Optional.ofNullable(alternateSrsModel).map(value -> DbCrsPair.Models.parse(value, models.getFirst()));
             return new Options(command, List.copyOf(models), dataset, file, gpkg, pgUrl, schema, user,

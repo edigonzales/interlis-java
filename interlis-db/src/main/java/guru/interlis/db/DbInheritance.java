@@ -121,7 +121,7 @@ final class DbInheritance {
             var strategy = switch (profile) {
                 case NEW_CLASS -> Strategy.NEW_CLASS;
                 case SMART1 -> smart1(plan, object, strategies, referenced);
-                case SMART2 -> throw DbMapping.unsupported("creating Smart2 schemas");
+                case SMART2 -> object.modifiers().contains(Modifier.ABSTRACT) ? Strategy.SUB_CLASS : Strategy.NEW_AND_SUB_CLASS;
             };
             declarations.add(new Declaration(object, names.get(object.symbol()), strategy));
         }
