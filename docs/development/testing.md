@@ -102,6 +102,9 @@ native Transferaufrufe mit abweichenden JVM-Zeitzonen aus.
 Die `*ScalarTimestamp*`-Fälle vergleichen lokale Zeitstempel und ihre
 SQL-Schreibweise. Die JVM-Zeitzonentests enthalten einen Wert in der
 Sommerzeitlücke.
+Die `*ScalarFormatted*`-Fälle vergleichen Texttypen und Metadaten.
+Sie prüfen führende Nullen in `FORMAT`, Namen, URI-Kodierung und
+einen gespeicherten SQL-Spaltennamen nach einer Umbenennung.
 
 Die `*EnumItfCodes*`-Fälle prüfen den Austausch skalarer Aufzählungen
 mit ITF-Codes, einschliesslich Code `0`, SQL `NULL`, Rollback und

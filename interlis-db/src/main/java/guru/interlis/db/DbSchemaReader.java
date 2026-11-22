@@ -1204,7 +1204,7 @@ final class DbSchemaReader {
             String type = physical.get(key(db, name));
             if (type == null) throw new DbException("Missing physical column " + table + "." + name);
             boolean supported = switch (kind) {
-                case TEXT, ENUMERATION -> type.equals("text") || type.equals("varchar");
+                case TEXT, FORMATTED, ENUMERATION -> type.equals("text") || type.equals("varchar");
                 case BOOLEAN -> type.equals("boolean") || type.equals("bool");
                 case INTEGER -> type.equals("integer") || type.equals("int4") || type.equals("int2")
                         || type.equals("smallint");

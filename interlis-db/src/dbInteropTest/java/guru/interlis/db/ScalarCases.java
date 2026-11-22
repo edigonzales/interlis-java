@@ -172,6 +172,40 @@ final class ScalarCases {
         }
     }
 
+    void formatted(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ScalarFormatted" + version;
+        schemas(expected, own, model, """
+                STRUCTURE Digits = Numeral : 0..9999; END Digits;
+                DOMAIN Ticket = FORMAT BASED ON Digits (Numeral/4) "0000" .. "9999";
+                       CalRange EXTENDS INTERLIS.XMLDate = "1900-01-01" .. "2100-12-31";
+                CLASS Asset =
+                  TicketCode : Ticket;
+                  RestrictedDay : CalRange;
+                  NameCode : NAME;
+                  UriCode : URI;
+                END Asset;
+                """);
+        String uri = "https://example.org/A%20B?x=1&y=2";
+        var values = List.of(field("TicketCode", "0012") + field("RestrictedDay", "2024-02-29")
+                + field("NameCode", "A_1") + field("UriCode", uri.replace("&", "&amp;")), "");
+        for (var db : List.of(expected, own)) {
+            try (var sql = db.connect()) {
+                execute(sql, "ALTER TABLE " + db.table("asset") + " RENAME COLUMN ticketcode TO stored_ticket");
+                execute(sql, "UPDATE " + db.table("t_ili2db_attrname") + " SET sqlname = 'stored_ticket' WHERE sqlname = 'ticketcode'");
+                execute(sql, "UPDATE " + db.table("t_ili2db_column_prop")
+                        + " SET columnname = 'stored_ticket' WHERE columnname = 'ticketcode'");
+                mixed(db, model, values, rows -> {
+                    assertTextValues(rows, "TicketCode", "0012", null);
+                    assertTextValues(rows, "RestrictedDay", "2024-02-29", null);
+                    assertTextValues(rows, "NameCode", "A_1", null);
+                    assertTextValues(rows, "UriCode", uri, null);
+                });
+                assertEquals("0012", stored(db, sql, "stored_ticket", "native", 0));
+                assertNull(stored(db, sql, "stored_ticket", "native", 1));
+            }
+        }
+    }
+
     private void differentZones(TestDatabase db, String model, List<String> values, CheckRows check) throws Exception {
         Path output = work.resolve("zoned-out.xtf");
         assertCliInZone(db, "export", model, "legacy", output, "Pacific/Auckland");

@@ -62,7 +62,7 @@ import static guru.interlis.db.Ili2dbLayout.reservedTable;
 /** The SQL names and storage bindings for a checked transfer plan. */
 final class DbMapping {
     enum Kind {
-        TEXT, BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, ENUMERATION, POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE;
+        TEXT, BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, ENUMERATION, POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE;
 
         boolean geometry() { return this == POINT || this == POLYLINE || this == SURFACE || collection(); }
 
@@ -1106,7 +1106,7 @@ final class DbMapping {
 
     static Kind scalarKind(TypeDescriptor type) {
         return switch (type) {
-            case TextType text when text.textKind() == TextKind.TEXT || text.textKind() == TextKind.MTEXT -> Kind.TEXT;
+            case TextType ignored -> Kind.TEXT;
             case NumericType number when integerRange(number, Integer.MIN_VALUE, Integer.MAX_VALUE) -> Kind.INTEGER;
             case NumericType number when integerRange(number, Long.MIN_VALUE, Long.MAX_VALUE) -> Kind.BIGINT;
             case NumericType number when DbDecimal.fixedScale(number) -> Kind.DECIMAL;
@@ -1115,8 +1115,9 @@ final class DbMapping {
                 case DATE -> Kind.DATE;
                 case TIMEOFDAY -> Kind.TIME;
                 case DATETIME -> Kind.DATETIME;
-                case null -> null;
+                case null -> Kind.FORMATTED;
             };
+            case FormattedType ignored -> Kind.FORMATTED;
             default -> type.kind() == TypeKind.BOOLEAN ? Kind.BOOLEAN : null;
         };
     }

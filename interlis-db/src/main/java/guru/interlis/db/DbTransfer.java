@@ -1043,7 +1043,7 @@ final class DbTransfer {
         }
         return switch (column.kind()) {
             case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> readGeometry(db, rows, index, column);
-            case BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, ENUMERATION -> readScalar(db, rows, index, column);
+            case BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, ENUMERATION -> readScalar(db, rows, index, column);
             case TEXT -> {
                 if (column.textExpansion().isPresent()) {
                     var expansion = column.textExpansion().orElseThrow();
@@ -1130,7 +1130,7 @@ final class DbTransfer {
                         ? column.enumeration().orElseThrow().read(value, column.slot().name().declared().toString())
                         : readEnumeration(value, column);
             }
-            case TEXT -> {
+            case TEXT, FORMATTED -> {
                 String value = rows.getString(index);
                 yield value == null ? null : new Text(value);
             }
@@ -1838,7 +1838,7 @@ final class DbTransfer {
                 return next;
             }
             switch (column.kind()) {
-                case TEXT -> statement.setString(index, ((Text) value).value());
+                case TEXT, FORMATTED -> statement.setString(index, ((Text) value).value());
                 case BOOLEAN -> statement.setBoolean(index, ((BooleanValue) value).value());
                 case ENUMERATION -> {
                     var enumeration = (Enumeration) value;

@@ -388,6 +388,8 @@ lokales Datum mit Uhrzeit. GeoPackage verwendet `DATETIME` in der
 ili2gpkg-Schreibweise mit `Z`. PostGIS verwendet einen
 `timestamp without time zone`. Das Kommando übernimmt die lokalen
 Felder einschliesslich Millisekunden.
+`FORMAT`, `NAME` und `URI` verwenden die ili2db-Textspalten und
+Typmetadaten. Dazu gehören eingeschränkte temporale Formatdomänen.
 
 `schemaimport --gpkg-multi-geom-per-table` verwendet das ili2gpkg-Profil
 `--gpkgMultiGeomPerTable` mit mehreren Geometriespalten in einer Tabelle.

@@ -271,6 +271,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             case DATE -> "DATE";
             case TIME -> "TIMEOFDAY";
             case DATETIME -> "DATETIME";
+            case FORMATTED -> "FORMATTED";
             case INTEGER, BIGINT, DECIMAL -> "NUMERIC";
             case ENUMERATION -> "ENUM";
             case POINT -> "COORD";
