@@ -9,6 +9,7 @@ import guru.interlis.transfer.TransferPlan;
 import guru.interlis.xtf24.Xtf24Exception;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -47,7 +48,6 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 final class ExplorerFrame extends JFrame {
@@ -58,7 +58,7 @@ final class ExplorerFrame extends JFrame {
     private final JTree tree = new JTree(new DefaultMutableTreeNode());
     private final JLabel classTitle = new JLabel("Select a class");
     private final JLabel count = new JLabel(" ");
-    private final JList<String> objectList = new JList<>();
+    private final JList<StoredObject> objectList = new JList<>();
     private final JLabel objectTitle = new JLabel("Select an object");
     private final DefaultTableModel attributes = new DefaultTableModel(new String[]{"Attribute", "Value"}, 0) {
         @Override
@@ -68,7 +68,6 @@ final class ExplorerFrame extends JFrame {
     };
 
     private ExplorerDataset dataset;
-    private List<StoredObject> objects = List.of();
     private volatile boolean closing;
 
     ExplorerFrame() {
@@ -110,6 +109,9 @@ final class ExplorerFrame extends JFrame {
 
         objectList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         objectList.setFixedCellHeight(26);
+        var objectRenderer = new DefaultListCellRenderer();
+        objectList.setCellRenderer((list, object, index, selected, focused) ->
+                objectRenderer.getListCellRendererComponent(list, objectLabel(object), index, selected, focused));
         objectList.addListSelectionListener(event -> {
             if (!event.getValueIsAdjusting()) {
                 inspectObject();
@@ -196,8 +198,7 @@ final class ExplorerFrame extends JFrame {
         try {
             var preferences = Preferences.userNodeForPackage(ExplorerFrame.class);
             preferences.put(LAST_TRANSFER_DIRECTORY, xtf.toAbsolutePath().getParent().toString());
-            preferences.flush();
-        } catch (BackingStoreException | SecurityException | IllegalStateException ignored) {
+        } catch (SecurityException | IllegalStateException ignored) {
             // A preferences failure does not affect the imported dataset.
         }
     }
@@ -294,8 +295,7 @@ final class ExplorerFrame extends JFrame {
     }
 
     private void selectClass() {
-        objects = List.of();
-        objectList.setListData(new String[0]);
+        objectList.setListData(new StoredObject[0]);
         inspectObject();
         classTitle.setText("Select a class");
         count.setText(" ");
@@ -303,8 +303,8 @@ final class ExplorerFrame extends JFrame {
                 && node.getUserObject() instanceof ObjectDescriptor type) {
             classTitle.setText(type.name().declared().toString());
             try {
-                objects = dataset.objects(type);
-                objectList.setListData(objects.stream().map(ExplorerFrame::objectLabel).toArray(String[]::new));
+                var objects = dataset.objects(type);
+                objectList.setListData(objects.toArray(StoredObject[]::new));
                 count.setText(objects.isEmpty() ? "No objects of this class."
                         : objects.size() + " shown (up to " + ExplorerDataset.OBJECT_LIMIT + ")");
             } catch (SQLException | RuntimeException failure) {
@@ -317,9 +317,8 @@ final class ExplorerFrame extends JFrame {
     private void inspectObject() {
         attributes.setRowCount(0);
         objectTitle.setText("Select an object");
-        int index = objectList.getSelectedIndex();
-        if (index >= 0 && index < objects.size()) {
-            var selected = objects.get(index);
+        var selected = objectList.getSelectedValue();
+        if (selected != null) {
             objectTitle.setText(objectLabel(selected));
             for (var attribute : dataset.attributes(selected.object())) {
                 attributes.addRow(new String[]{attribute.getKey(), attribute.getValue()});
