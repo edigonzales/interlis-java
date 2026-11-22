@@ -14,6 +14,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
@@ -152,6 +154,39 @@ final class Database implements AutoCloseable {
     String jsonProjection(String field) {
         String text = gpkg() ? field : "CAST(" + field + " AS text)";
         return "CASE WHEN length(" + text + ") > " + DbJsonStructure.MAX_CODE_UNITS + " THEN '' ELSE " + text + " END";
+    }
+
+    List<?> readArray(ResultSet rows, int index, DbArray binding, String context) throws SQLException {
+        if (gpkg()) return binding.readJson(rows.getString(index), context);
+        var array = rows.getArray(index);
+        if (array == null) return List.of();
+        try {
+            if (!(array.getArray() instanceof Object[] values)
+                    || values.getClass().getComponentType().isArray()) {
+                throw new DbException("Expected a one-dimensional PostgreSQL array at " + context);
+            }
+            DbArray.checkCount(values.length, context);
+            return Arrays.asList(values);
+        } finally {
+            array.free();
+        }
+    }
+
+    void bindArray(PreparedStatement statement, int index, DbArray binding, List<Object> values, String context)
+            throws SQLException {
+        if (gpkg()) {
+            statement.setString(index, values.isEmpty() ? null : binding.writeJson(values, context));
+        } else if (values.isEmpty()) {
+            statement.setNull(index, Types.ARRAY);
+        } else {
+            var array = connection.createArrayOf(binding.pgElementType(), values.toArray());
+            try {
+                // PostgreSQL JDBC encodes the parameter during setArray.
+                statement.setArray(index, array);
+            } finally {
+                array.free();
+            }
+        }
     }
 
     Column geometryStorage(String table, Column column, boolean referenceEpsgHeader) throws SQLException {

@@ -497,7 +497,9 @@ final class DbTransfer {
                     column.positionColumn().ifPresent(position -> projections.add(alias + "." + quote(position)));
                 }
                 default -> {
-                    if (column.jsonStructure().isPresent()) projections.add(db.jsonProjection(field));
+                    if (column.jsonStructure().isPresent() || (db.gpkg() && column.array().isPresent())) {
+                        projections.add(db.jsonProjection(field));
+                    }
                     else column.physicalNames().forEach(name -> projections.add(alias + "." + quote(name)));
                 }
             }
@@ -1024,6 +1026,11 @@ final class DbTransfer {
         }
         if (column.jsonStructure().isPresent()) {
             return column.jsonStructure().orElseThrow().decode(rows.getString(index), column.slot().name().declared() + " of object " + ownerTid);
+        }
+        if (column.array().isPresent()) {
+            var array = column.array().orElseThrow();
+            String context = column.slot().name().declared() + " of object " + ownerTid;
+            return array.assemble(db.readArray(rows, index, array, context), context);
         }
         return switch (column.kind()) {
             case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> readGeometry(db, rows, index, column);
@@ -1764,6 +1771,12 @@ final class DbTransfer {
             if (column.jsonStructure().isPresent()) {
                 statement.setString(index, column.jsonStructure().orElseThrow().encode(value,
                         column.slot().name().declared() + " of object " + context));
+                return index + 1;
+            }
+            if (column.array().isPresent()) {
+                var array = column.array().orElseThrow();
+                String path = column.slot().name().declared() + " of object " + context;
+                db.bindArray(statement, index, array, array.disassemble(value, path), path);
                 return index + 1;
             }
             if (column.textExpansion().isPresent()) {

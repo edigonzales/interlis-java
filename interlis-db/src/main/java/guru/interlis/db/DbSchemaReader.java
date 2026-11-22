@@ -273,6 +273,19 @@ final class DbSchemaReader {
                         usedAttributeTransformations.add(path);
                         continue;
                     }
+                    if (transformation == Ili2dbLayout.AttributeTransformation.ARRAY) {
+                        var binding = DbArray.describe(plan, attr);
+                        var stored = attrNames.take(path, parent.name(), null);
+                        useColumn(db, parent, stored, path);
+                        if (stored.target() != null) throw new DbException("Unexpected ATTRNAME.target for " + path);
+                        String expected = db.gpkg() ? "text" : "_" + binding.pgElementType();
+                        if (!expected.equals(parent.columns().get(key(db, stored.name())))) {
+                            throw new DbException("Expected " + expected + " for array column " + parent.name() + "." + stored.name());
+                        }
+                        columns.add(DbMapping.arrayColumn(plan, attr, stored.name(), binding));
+                        usedAttributeTransformations.add(path);
+                        continue;
+                    }
                     var wrapped = wrappedGeometries.get(attr.symbol());
                     var composition = wrapped == null ? DbMapping.describeComposition(plan, object, attr, path)
                             : Optional.<Composition>empty();

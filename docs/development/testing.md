@@ -90,6 +90,10 @@ Jeder Fall entpackt sein Referenzwerkzeug in ein eigenes temporäres
 Arbeitsverzeichnis. JUnit löscht dieses Verzeichnis samt GeoPackage-Dateien,
 Prozesslogs und temporären Dateien des Referenzwerkzeugs auch bei Testfehlern.
 
+Die `*ArrayText*`-Fälle prüfen Reihenfolge, Duplikate, Sonderzeichen,
+gespeicherte SQL-Spaltennamen und den bekannten Referenzfehler bei
+`NULL`-Elementen. Fehlerhafte Array-Werte lassen die XTF-Zieldatei intakt.
+
 Die `*ExpandSingle*`-Fälle prüfen den Austausch optionaler flacher
 Strukturen mit ili2db-`--expandStruct`, das Umbenennen einer SQL-Spalte
 und den Erhalt der XTF-Datei bei beschädigtem Strukturtyp. Die

@@ -108,6 +108,16 @@ final class DbInteropTest {
 
     @TempDir(cleanup = CleanupMode.ALWAYS) Path work;
 
+    @Test void geoPackageArrayText23() throws Exception { exchangeArrayText(23, null); }
+    @Test void geoPackageArrayText24() throws Exception { exchangeArrayText(24, null); }
+    @Test void postgisArrayText23() throws Exception { exchangeWithPostgis(23, this::exchangeArrayText); }
+    @Test void postgisArrayText24() throws Exception { exchangeWithPostgis(24, this::exchangeArrayText); }
+
+    private void exchangeArrayText(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "array_text");
+        new ArrayCases(work, new ReferenceTool(db.postgis()), version).text(db);
+    }
+
     @Test void geoPackageExpandSingle23() throws Exception { exchangeExpandSingle(23, null); }
     @Test void geoPackageExpandSingle24() throws Exception { exchangeExpandSingle(24, null); }
     @Test void postgisExpandSingle23() throws Exception { exchangeWithPostgis(23, this::exchangeExpandSingle); }
