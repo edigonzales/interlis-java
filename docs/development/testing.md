@@ -255,7 +255,10 @@ XTF-Datei bei beschädigtem WKB oder falschem Katalogtyp. Die
 `*StrokeArea*`-Fälle vergleichen die Koordinaten gemeinsamer gebogener
 Kanten und prüfen in XTF 2.3 einen mehrteiligen Rand. Die
 `*StrokeMultiPolyline*`-Fälle prüfen Reihenfolge und Richtung von
-`MULTIPOLYLINE`, `MultiLine` und `MultiDirectedLine`.
+`MULTIPOLYLINE`, `MultiLine` und `MultiDirectedLine`. Die
+`*StrokeMultiSurface*`-Fälle prüfen `MULTIPOLYGON`, Teilflächen und
+Innenringe bei `MULTISURFACE`, `MULTIAREA` und CHBase-`MultiSurface`
+sowie leere SQL-Sammlungen.
 
 Die Auswahl `--tests '*DbInteropTest.geoPackage*'` läuft ohne Docker.
 Die Tests vergleichen vor dem ersten Datenimport den SQL-Katalog und die

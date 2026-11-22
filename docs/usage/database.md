@@ -414,7 +414,10 @@ liefert die gespeicherten Geraden. Ein Import rollt zurück, wenn die
 Segmentierung das Koordinatenlimit überschreitet. In XTF 2.4 verwendet
 `MULTIPOLYLINE` dafür `MULTILINESTRING`. Dieselbe Speicherung gilt für
 die zusammengefassten CHBase-Strukturen `MultiLine` und `MultiDirectedLine`
-in beiden XTF-Versionen.
+in beiden XTF-Versionen. `MULTISURFACE` und `MULTIAREA` in XTF 2.4
+sowie die zusammengefasste CHBase-Struktur `MultiSurface` in beiden
+Versionen verwenden `MULTIPOLYGON`. Leere SQL-Sammlungen werden beim
+Export als fehlendes Attribut übertragen.
 
 In XTF 2.4 FULL unterstützen die folgenden Spaltentypen XY und XYZ.
 Alle Teile einer Geometrie liegen in Lieferreihenfolge in demselben

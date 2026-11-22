@@ -160,6 +160,16 @@ final class DbInteropTest {
         new StrokeCases(work, new ReferenceTool(db.postgis()), version).multiPolyline(db);
     }
 
+    @Test void geoPackageStrokeMultiSurface23() throws Exception { exchangeStrokeMultiSurface(23, null); }
+    @Test void geoPackageStrokeMultiSurface24() throws Exception { exchangeStrokeMultiSurface(24, null); }
+    @Test void postgisStrokeMultiSurface23() throws Exception { exchangeWithPostgis(23, this::exchangeStrokeMultiSurface); }
+    @Test void postgisStrokeMultiSurface24() throws Exception { exchangeWithPostgis(24, this::exchangeStrokeMultiSurface); }
+
+    private void exchangeStrokeMultiSurface(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "stroke_multi_surface");
+        new StrokeCases(work, new ReferenceTool(db.postgis()), version).multiSurface(db);
+    }
+
     @Test void postgisChbasePoints23() throws Exception { exchangeWithPostgis(23, this::exchangeChbasePoints); }
     @Test void postgisChbasePoints24() throws Exception { exchangeWithPostgis(24, this::exchangeChbasePoints); }
     @Test void geoPackageChbaseLines23() throws Exception { exchangeChbaseLines(23, null); }
@@ -3049,7 +3059,7 @@ final class DbInteropTest {
         }
     }
 
-    private static String emptyCollection(TestDatabase db, String geometryType, int wkbType) {
+    static String emptyCollection(TestDatabase db, String geometryType, int wkbType) {
         return db.postgis ? "st_geomfromtext('" + geometryType + " EMPTY', 2056)"
                 : "X'475000100000080800%08X00000000'".formatted(wkbType);
     }

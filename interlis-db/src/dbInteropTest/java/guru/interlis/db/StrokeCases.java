@@ -15,6 +15,7 @@ import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
+import static guru.interlis.db.DbInteropTest.emptyCollection;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
@@ -276,6 +277,86 @@ final class StrokeCases {
         assertEquals(List.of(List.of(2600210.0, 1200200.0), List.of(2600200.0, 1200200.0)), positions(directed.getFirst()));
     }
 
+    void multiSurface(TestDatabase db) throws Exception {
+        var model = "ChbaseSurfaces" + version;
+        fixture(model + ".ili");
+        var input = fixture(model + ".xtf");
+        var directModels = List.of("StrokeSurfaces", "StrokeAreas");
+        if (version == 24) {
+            source(directModels.getFirst(), "MULTISURFACE");
+            source(directModels.getLast(), "MULTIAREA");
+        }
+        var output = work.resolve("output.xtf");
+        referenceSchema(db, version == 24 ? model + ";" + String.join(";", directModels) : model, "--coalesceMultiSurface");
+        referenceImport(db, "legacy", input);
+        assertGeometryColumn(db, "landcover", "shape", "MULTIPOLYGON", 21781);
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertWrappedSurfaces(output, "fixture");
+        assertCliSuccess(db, "import", model, "native", withPrefix(input, "native"));
+        referenceExport(db, "native", output);
+        assertWrappedSurfaces(output, "native");
+        if (version != 24) return;
+
+        var first = surfaceValue(polyline(coord(600000, 200000) + arc(600005, 199995, 600010, 200000)
+                + coord(600010, 200010) + coord(600000, 200000)),
+                polyline(coord(600006, 200001) + coord(600008, 200003) + coord(600008, 200001) + coord(600006, 200001)));
+        var second = surfaceValue(polyline(coord(600020, 200020) + coord(600030, 200020)
+                + coord(600030, 200030) + coord(600020, 200020)));
+        var shape = geometry("multisurface", first + second);
+        for (var direct : directModels) {
+            String legacy = direct + "-legacy";
+            String nativeDataset = direct + "-native";
+            referenceImport(db, legacy, dataset(direct, legacy, shape));
+            assertCliSuccess(db, "export", direct, legacy, output);
+            assertMultiSurface(output, legacy);
+            assertCliSuccess(db, "import", direct, nativeDataset, dataset(direct, nativeDataset, shape));
+            referenceExport(db, nativeDataset, output);
+            assertMultiSurface(output, nativeDataset);
+            try (var sql = db.connect()) {
+                var table = scalar(sql, "SELECT sqlname FROM " + db.table("t_ili2db_classname")
+                        + " WHERE iliname='" + direct + ".Data.Route'");
+                assertGeometryColumn(db, table, "shape", "MULTIPOLYGON", 2056);
+                execute(sql, "UPDATE " + db.table(table) + " SET shape=" + emptyCollection(db, "MULTIPOLYGON", 6)
+                        + " WHERE t_ili_tid='" + nativeDataset + "-null'");
+                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table(table)
+                        + " WHERE t_ili_tid='" + nativeDataset + "-null' AND shape IS NOT NULL"));
+            }
+            assertCliSuccess(db, "export", direct, nativeDataset, output);
+            assertMultiSurface(output, nativeDataset);
+        }
+    }
+
+    private void assertWrappedSurfaces(Path output, String prefix) throws Exception {
+        var objects = objects(output, prefix);
+        assertNull(child(objects.get(prefix + "-empty"), "Shape"));
+        var members = wrapperMembers(objects.get(prefix + "-value"), "MultiSurface", "Surfaces", "Surface");
+        assertEquals(2, members.size());
+        var first = surfaceRings(members.getFirst());
+        assertEquals(2, first.size());
+        assertTrue(first.getFirst().contains(List.of(600010.0, 199995.0)));
+        assertEquals(List.of(600000.0, 200000.0), first.getFirst().getFirst());
+        assertEquals(first.getFirst().getFirst(), first.getFirst().getLast());
+        assertEquals(List.of(List.of(600005.0, 200005.0), List.of(600005.0, 200010.0),
+                List.of(600010.0, 200010.0), List.of(600010.0, 200005.0), List.of(600005.0, 200005.0)), first.getLast());
+        assertEquals(List.of(List.of(List.of(600100.0, 200100.0), List.of(600110.0, 200100.0),
+                List.of(600110.0, 200110.0), List.of(600100.0, 200100.0))), surfaceRings(members.getLast()));
+    }
+
+    private void assertMultiSurface(Path output, String prefix) throws Exception {
+        var objects = objects(output, prefix);
+        assertNull(child(objects.get(prefix + "-null"), "Shape"));
+        var parts = children(children(child(objects.get(prefix + "-value"), "Shape")).getFirst());
+        assertEquals(2, parts.size());
+        var first = surfaceRings(parts.getFirst());
+        assertEquals(2, first.size());
+        assertEquals(83, first.getFirst().size());
+        assertEquals(List.of(600005.0, 199995.0), first.getFirst().get(40));
+        assertEquals(List.of(List.of(600006.0, 200001.0), List.of(600008.0, 200003.0),
+                List.of(600008.0, 200001.0), List.of(600006.0, 200001.0)), first.getLast());
+        assertEquals(List.of(List.of(List.of(600020.0, 200020.0), List.of(600030.0, 200020.0),
+                List.of(600030.0, 200030.0), List.of(600020.0, 200020.0))), surfaceRings(parts.getLast()));
+    }
+
     private List<Element> wrapperMembers(Element object, String wrapperName, String bag, String field) {
         var wrapper = children(child(object, "Shape")).getFirst();
         assertTrue(wrapper.getLocalName().equals(wrapperName) || wrapper.getLocalName().endsWith("." + wrapperName));
@@ -312,6 +393,10 @@ final class StrokeCases {
 
     private List<List<List<Double>>> rings(Element object) {
         var surface = children(child(object, "Shape")).getFirst();
+        return surfaceRings(surface);
+    }
+
+    private List<List<List<Double>>> surfaceRings(Element surface) {
         return children(surface).stream().map(ring -> positions(children(ring).getFirst())).toList();
     }
 

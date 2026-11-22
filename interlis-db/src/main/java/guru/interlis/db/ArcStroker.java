@@ -7,6 +7,7 @@ import guru.interlis.transfer.TransferGeometry.Arc;
 import guru.interlis.transfer.TransferGeometry.Coordinate;
 import guru.interlis.transfer.TransferGeometry.CurvePart;
 import guru.interlis.transfer.TransferGeometry.MultiPolyline;
+import guru.interlis.transfer.TransferGeometry.MultiSurface;
 import guru.interlis.transfer.TransferGeometry.Polyline;
 import guru.interlis.transfer.TransferGeometry.Ring;
 import guru.interlis.transfer.TransferGeometry.Surface;
@@ -36,13 +37,18 @@ final class ArcStroker {
         return switch (value) {
             case Polyline line -> line(line);
             case MultiPolyline multi -> new MultiPolyline(multi.lines().stream().map(this::line).toList());
-            case Surface surface -> new Surface(ring(surface.shell()), surface.holes().stream().map(this::ring).toList());
+            case Surface surface -> surface(surface);
+            case MultiSurface multi -> new MultiSurface(multi.surfaces().stream().map(this::surface).toList());
             default -> throw new DbException("Expected a line or surface");
         };
     }
 
     private Polyline line(Polyline line) {
         return new Polyline(List.of(linearPart(GeometryBinary.linePart(line))));
+    }
+
+    private Surface surface(Surface surface) {
+        return new Surface(ring(surface.shell()), surface.holes().stream().map(this::ring).toList());
     }
 
     private Ring ring(Ring ring) {

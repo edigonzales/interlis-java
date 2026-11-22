@@ -33,6 +33,7 @@ final class GeometryBinary {
     private static final int POLYGON = 3;
     private static final int MULTIPOINT = 4;
     private static final int MULTILINESTRING = 5;
+    private static final int MULTIPOLYGON = 6;
     private static final int CIRCULARSTRING = 8;
     private static final int COMPOUNDCURVE = 9;
     private static final int CURVEPOLYGON = 10;
@@ -145,7 +146,7 @@ final class GeometryBinary {
             case POLYLINE -> readPolyline(data, gpkg, dimensions, encoding);
             case MULTICURVE -> readMultiCurve(data, empty, gpkg, dimensions, encoding);
             case SURFACE -> readSurface(data, gpkg, dimensions, encoding);
-            case MULTISURFACE -> readMultiSurface(data, empty, gpkg, dimensions);
+            case MULTISURFACE -> readMultiSurface(data, empty, gpkg, dimensions, encoding);
             default -> throw new IllegalArgumentException("Not a geometry kind: " + kind);
         };
     }
@@ -183,7 +184,7 @@ final class GeometryBinary {
                 case CURVEPOLYGON, POLYGON -> Kind.SURFACE;
                 case MULTIPOINT -> Kind.MULTIPOINT;
                 case MULTICURVE, MULTILINESTRING -> Kind.MULTICURVE;
-                case MULTISURFACE -> Kind.MULTISURFACE;
+                case MULTISURFACE, MULTIPOLYGON -> Kind.MULTISURFACE;
                 default -> throw new DbException("Unsupported WKB type for GeoPackage RTree: " + type);
             };
             if (data.remaining() < CURVE_HEADER_SIZE || bytes.length > maxGeoPackageSize(kind, dimensions)) {
@@ -196,7 +197,7 @@ final class GeometryBinary {
                 }
                 return null;
             }
-            var encoding = type == LINESTRING || type == POLYGON || type == MULTILINESTRING
+            var encoding = type == LINESTRING || type == POLYGON || type == MULTILINESTRING || type == MULTIPOLYGON
                     ? GeometryEncoding.LINEAR : GeometryEncoding.STANDARD;
             return header.envelope() ? headerEnvelope(bytes)
                     : envelope(decode(bytes, true, header.srsId(), kind, dimensions, 0, encoding));
@@ -430,14 +431,16 @@ final class GeometryBinary {
         return surface;
     }
 
-    private static MultiSurface readMultiSurface(ByteBuffer data, boolean empty, boolean gpkg, int dimensions) {
-        int count = readCollectionCount(data, MULTISURFACE, Kind.MULTISURFACE, empty, gpkg, dimensions, GeometryEncoding.STANDARD);
+    private static MultiSurface readMultiSurface(ByteBuffer data, boolean empty, boolean gpkg, int dimensions,
+                                                 GeometryEncoding encoding) {
+        boolean linear = encoding == GeometryEncoding.LINEAR;
+        int count = readCollectionCount(data, linear ? MULTIPOLYGON : MULTISURFACE, Kind.MULTISURFACE, empty, gpkg, dimensions, encoding);
         var budget = new CoordinateBudget(Kind.MULTISURFACE);
         var surfaces = new ArrayList<Surface>();
         for (int index = 0; index < count; index++) {
             int type = readType(data, gpkg, dimensions);
-            if (type != CURVEPOLYGON && type != POLYGON) {
-                throw new DbException("Expected a dimensional match for WKB CURVEPOLYGON or POLYGON in a multisurface");
+            if (type != POLYGON && (linear || type != CURVEPOLYGON)) {
+                throw new DbException("Unexpected WKB component in " + encoding.sqlType(Kind.MULTISURFACE));
             }
             surfaces.add(readSurface(data, type, budget, gpkg, dimensions));
         }
@@ -575,7 +578,7 @@ final class GeometryBinary {
             case POLYLINE -> writePolyline(value, gpkg, srsId, dimensions, encoding);
             case MULTICURVE -> writeMultiCurve(value, gpkg, srsId, dimensions, encoding);
             case SURFACE -> writeSurface(value, gpkg, srsId, dimensions, encoding);
-            case MULTISURFACE -> writeMultiSurface(value, gpkg, srsId, dimensions);
+            case MULTISURFACE -> writeMultiSurface(value, gpkg, srsId, dimensions, encoding);
             default -> throw new IllegalArgumentException("Not a geometry kind: " + kind);
         };
     }
@@ -704,7 +707,8 @@ final class GeometryBinary {
         return data.array();
     }
 
-    private static byte[] writeMultiSurface(TransferGeometry geometry, boolean gpkg, int srsId, int dimensions) {
+    private static byte[] writeMultiSurface(TransferGeometry geometry, boolean gpkg, int srsId, int dimensions,
+                                            GeometryEncoding encoding) {
         if (!(geometry instanceof MultiSurface multi)) {
             throw new DbException("Expected a multisurface");
         }
@@ -715,14 +719,15 @@ final class GeometryBinary {
         var polygons = new ArrayList<Polygon>();
         int size = CURVE_HEADER_SIZE;
         for (var surface : multi.surfaces()) {
-            var polygon = planSurface(surface, budget, dimensions, GeometryEncoding.STANDARD);
+            var polygon = planSurface(surface, budget, dimensions, encoding);
             polygons.add(polygon);
             size += polygon.size();
         }
         var data = allocate(size, gpkg, srsId, false);
-        data.put((byte) 0).putInt(storageType(MULTISURFACE, gpkg, dimensions)).putInt(polygons.size());
+        int type = encoding == GeometryEncoding.LINEAR ? MULTIPOLYGON : MULTISURFACE;
+        data.put((byte) 0).putInt(storageType(type, gpkg, dimensions)).putInt(polygons.size());
         for (var polygon : polygons) {
-            writeSurface(data, polygon, gpkg, dimensions, GeometryEncoding.STANDARD);
+            writeSurface(data, polygon, gpkg, dimensions, encoding);
         }
         return data.array();
     }
