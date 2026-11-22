@@ -100,7 +100,9 @@ gruppierte XTF-2.4-Referenzausgabe. Die `*ExpandNested*`-Fälle prüfen
 beide Typmarkierungen und erkennen innere Werte ohne äusseren Strukturtyp.
 Die `*ExpandSchema*`-Fälle vergleichen den Katalog mit der Referenz. Sie
 prüfen kollidierende Spaltennamen, die gemeinsame ID-Vergabe und
-`--add-models` mit der gespeicherten Option.
+`--add-models` mit der gespeicherten Option. Die `*ExpandSmart2*`-Fälle
+prüfen zwei konkrete Eigentümertabellen, stabile IDs und freigewordene
+Spalten nach `update` sowie die Datensatzzeilen nach `replace` und `delete`.
 
 `*DbInteropTest.*CatalogueReference*` prüft beide Werkzeugrichtungen
 für Katalogreferenzen mit `--coalesceCatalogueRef` auf GeoPackage und

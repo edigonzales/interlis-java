@@ -351,10 +351,6 @@ public final class Main {
                 throw new IllegalArgumentException(transformations.iterator().next().option
                         + " requires a new schema with newClass or Smart2 inheritance");
             }
-            if (transformations.contains(Ili2dbLayout.AttributeTransformation.EXPANDED_STRUCTURE)
-                    && inheritance != DbInheritance.Profile.NEW_CLASS) {
-                throw new IllegalArgumentException("--expand-struct requires a new schema with newClass inheritance");
-            }
             boolean strokeArcs = schemaFlags.contains("--stroke-arcs");
             if (strokeArcs && (addModels || inheritance == DbInheritance.Profile.SMART1)) {
                 throw new IllegalArgumentException("--stroke-arcs requires a new schema with newClass or Smart2 inheritance");

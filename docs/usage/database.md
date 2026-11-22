@@ -101,9 +101,12 @@ Geometrieabbildungen für zweidimensionale Strukturen einzeln aktivieren.
 Die Geometriespalte übernimmt den CRS und die Grenzen der Koordinatendomäne
 der inneren Struktur.
 
-Mit `schemaimport --expand-struct` legt das Kommando ein `newClass`-Schema
-mit den Fachspalten für `ili2db.mapping=EXPAND` an. Beim Ergänzen eines
-Modells übernimmt `--add-models` die gespeicherte Einstellung.
+Mit `schemaimport --expand-struct` legt das Kommando ein `newClass`- oder
+Smart2-Schema mit den Fachspalten für `ili2db.mapping=EXPAND` an. In
+Smart2 erhält jede konkrete Eigentümertabelle die zugehörigen Spalten
+für das geerbte Attribut. `update` leert die frei gewordenen Spalten
+einer gekürzten Liste. `--add-models` übernimmt die Einstellung des
+bestehenden `newClass`-Schemas.
 
 ## Bestehendes Schema ergänzen
 

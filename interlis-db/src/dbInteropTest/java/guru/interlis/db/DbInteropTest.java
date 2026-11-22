@@ -159,6 +159,17 @@ final class DbInteropTest {
         new StructureMappingCases(work, new ReferenceTool(own.postgis()), version).schema(baseline, own);
     }
 
+    @Test void geoPackageExpandSmart223() throws Exception { exchangeExpandSmart2(23, null); }
+    @Test void geoPackageExpandSmart224() throws Exception { exchangeExpandSmart2(24, null); }
+    @Test void postgisExpandSmart223() throws Exception { exchangeWithPostgis(23, this::exchangeExpandSmart2); }
+    @Test void postgisExpandSmart224() throws Exception { exchangeWithPostgis(24, this::exchangeExpandSmart2); }
+
+    private void exchangeExpandSmart2(int version, PostgreSQLContainer postgres) throws Exception {
+        var baseline = new TestDatabase(postgres, "expand_smart_baseline");
+        var own = new TestDatabase(postgres, "expand_smart_own");
+        new StructureMappingCases(work, new ReferenceTool(own.postgis()), version).smart2(baseline, own);
+    }
+
     @Test void geoPackageChbasePoints23() throws Exception { exchangeChbasePoints(23, null); }
     @Test void geoPackageChbasePoints24() throws Exception { exchangeChbasePoints(24, null); }
     @Test void geoPackageStrokePolyline23() throws Exception { exchangeStrokePolyline(23, null); }

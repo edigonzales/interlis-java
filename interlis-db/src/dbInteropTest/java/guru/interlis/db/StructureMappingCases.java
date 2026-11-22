@@ -24,6 +24,7 @@ import static guru.interlis.db.DbInteropTest.referenceDatasetFixture;
 import static guru.interlis.db.DbInteropTest.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 final class StructureMappingCases {
     private static final String VALUES = "<Label>é &amp; a</Label><Flag>true</Flag><Code>high</Code><Quantity>-2</Quantity>";
@@ -312,6 +313,86 @@ final class StructureMappingCases {
         assertEquals(count, scalar(sql, "SELECT count(DISTINCT t_id) FROM (" + ids + ") ids"));
     }
 
+    void smart2(TestDatabase baseline, TestDatabase own) throws Exception {
+        String model = "ExpandSmart" + version;
+        var ili = source(model, "", """
+                    CLASS AssetBase (ABSTRACT) =
+                      !!@ili2db.mapping=EXPAND
+                      Items : LIST {0..2} OF Entry;
+                    END AssetBase;
+                    CLASS FirstAsset EXTENDS AssetBase =
+                      Marker : TEXT*20;
+                    END FirstAsset;
+                    CLASS OtherAsset EXTENDS AssetBase =
+                      Caption : TEXT*20;
+                    END OtherAsset;
+                """);
+        referenceSchema(baseline, model, "--smart2Inheritance", "--expandStruct");
+        createSchema(own, model, ili, "--inheritance", "smart2", "--expand-struct");
+        assertSameCatalog(baseline, own);
+        Path output = work.resolve("out.xtf");
+        var initial = List.of("first", "second");
+        for (var db : List.of(baseline, own)) {
+            referenceImport(db, "legacy", smartDataset(model, "legacy", initial));
+            assertCliSuccess(db, "export", model, "legacy", output);
+            assertSmart(output, "legacy", initial);
+            assertCliSuccess(db, "import", model, "native", smartDataset(model, "native", initial));
+            referenceExport(db, "native", output);
+            assertSmart(output, "native", initial);
+            assertCliSuccess(db, "delete", model, "native", null);
+            try (var sql = db.connect()) {
+                String first = db.table("firstasset");
+                String other = db.table("otherasset");
+                String identity = "SELECT CAST(t_id AS text) || ':' || CAST(t_basket AS text) FROM ";
+                var beforeFirst = scalar(sql, identity + first);
+                var beforeOther = scalar(sql, identity + other);
+                var beforeDataset = scalar(sql, "SELECT t_id FROM " + db.table("t_ili2db_dataset"));
+                assertEquals("second", scalar(sql, "SELECT items1_label FROM " + first));
+                assertEquals("entry", scalar(sql, "SELECT items1_t_type FROM " + first));
+                assertEquals("other", scalar(sql, "SELECT items0_label FROM " + other));
+
+                var updated = List.of("updated");
+                assertCliSuccess(db, "update", model, "legacy", smartDataset(model, "legacy", updated));
+                assertEquals(beforeFirst, scalar(sql, identity + first));
+                assertEquals(beforeOther, scalar(sql, identity + other));
+                assertNull(scalar(sql, "SELECT items1_label FROM " + first));
+                assertNull(scalar(sql, "SELECT items1_t_type FROM " + first));
+                referenceExport(db, "legacy", output);
+                assertSmart(output, "legacy", updated);
+
+                assertCliSuccess(db, "replace", model, "legacy", smartDataset(model, "legacy", List.of()));
+                assertNotEquals(beforeFirst, scalar(sql, identity + first));
+                assertNotEquals(beforeOther, scalar(sql, identity + other));
+                assertEquals(beforeDataset, scalar(sql, "SELECT t_id FROM " + db.table("t_ili2db_dataset")));
+                assertNull(scalar(sql, "SELECT items0_t_type FROM " + first));
+                referenceExport(db, "legacy", output);
+                assertSmart(output, "legacy", List.of());
+                assertCliSuccess(db, "delete", model, "legacy", null);
+                for (var table : List.of(first, other, db.table("entry"), db.table("t_ili2db_basket"), db.table("t_ili2db_dataset"))) {
+                    assertEquals("0", scalar(sql, "SELECT count(*) FROM " + table), table);
+                }
+            }
+        }
+    }
+
+    private Path smartDataset(String model, String prefix, List<String> values) throws Exception {
+        var entries = values.stream().map(value -> entry(model, field("Label", value))).collect(Collectors.joining());
+        return dataset(model, prefix, object(model, "FirstAsset", prefix + "-first",
+                (entries.isEmpty() ? "" : field("Items", entries)) + field("Marker", "primary"))
+                + object(model, "OtherAsset", prefix + "-other", field("Items", entry(model, field("Label", "other")))
+                + field("Caption", "secondary")));
+    }
+
+    private void assertSmart(Path output, String prefix, List<String> labels) throws Exception {
+        var rows = objects(output, prefix);
+        assertEquals(2, rows.size());
+        assertEquals(labels, members(rows.get(prefix + "-first"), "Items").stream()
+                .map(value -> child(value, "Label").getTextContent()).toList());
+        assertEquals("other", child(members(rows.get(prefix + "-other"), "Items").getFirst(), "Label").getTextContent());
+        assertEquals("primary", child(rows.get(prefix + "-first"), "Marker").getTextContent());
+        assertEquals("secondary", child(rows.get(prefix + "-other"), "Caption").getTextContent());
+    }
+
     private Path singleDataset(String model, String prefix, String field) throws Exception {
         return dataset(model, prefix, asset(model, prefix + "-empty", field(field, entry(model, "")))
                 + asset(model, prefix + "-missing", "")
@@ -362,7 +443,11 @@ final class StructureMappingCases {
     private String type(String model, String type) { return version == 23 ? model + ".Data." + type : type; }
 
     private String asset(String model, String tid, String contents) {
-        String tag = type(model, "Asset");
+        return object(model, "Asset", tid, contents);
+    }
+
+    private String object(String model, String name, String tid, String contents) {
+        String tag = type(model, name);
         return "<" + tag + (version == 23 ? " TID=\"" : " i:tid=\"") + tid + "\">" + contents + "</" + tag + ">";
     }
 
