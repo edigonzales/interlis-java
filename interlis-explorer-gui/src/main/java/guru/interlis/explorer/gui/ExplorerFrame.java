@@ -164,23 +164,22 @@ final class ExplorerFrame extends JFrame {
     }
 
     private void chooseDataset() {
-        var chooser = new JFileChooser();
-        chooser.setDialogTitle("Select INTERLIS model files and their imports");
-        chooser.setMultiSelectionEnabled(true);
-        chooser.setAcceptAllFileFilterUsed(false);
-        var iliFilter = new FileNameExtensionFilter("INTERLIS models (*.ili)", "ili");
-        chooser.setFileFilter(iliFilter);
-        if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
+        var modelChooser = new JFileChooser();
+        modelChooser.setDialogTitle("Select INTERLIS model files and their imports");
+        modelChooser.setMultiSelectionEnabled(true);
+        modelChooser.setAcceptAllFileFilterUsed(false);
+        modelChooser.setFileFilter(new FileNameExtensionFilter("INTERLIS models (*.ili)", "ili"));
+        if (modelChooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
             return;
         }
-        var files = Arrays.stream(chooser.getSelectedFiles()).map(File::toPath).toList();
-        chooser.setSelectedFiles(new File[0]);
-        chooser.setMultiSelectionEnabled(false);
-        chooser.removeChoosableFileFilter(iliFilter);
-        chooser.setDialogTitle("Select an XTF 2.4 FULL transfer");
-        chooser.setFileFilter(new FileNameExtensionFilter("INTERLIS transfer (*.xtf)", "xtf"));
-        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            openDataset(files, chooser.getSelectedFile().toPath());
+        var files = Arrays.stream(modelChooser.getSelectedFiles()).map(File::toPath).toList();
+
+        var transferChooser = new JFileChooser(modelChooser.getCurrentDirectory());
+        transferChooser.setDialogTitle("Select an XTF 2.4 FULL transfer");
+        transferChooser.setAcceptAllFileFilterUsed(false);
+        transferChooser.setFileFilter(new FileNameExtensionFilter("INTERLIS transfer (*.xtf)", "xtf"));
+        if (transferChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            openDataset(files, transferChooser.getSelectedFile().toPath());
         }
     }
 
