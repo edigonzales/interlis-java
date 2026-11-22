@@ -107,6 +107,12 @@ die indizierte Spalte `T_datasetname` hinzu. Der Transfer befüllt sie auf
 Fachzeilen, Strukturzeilen und Geometriehilfszeilen aus dem gewählten
 Datensatz. Beim Export bestimmt die Verknüpfung über `T_Basket` die Auswahl.
 
+`schemaimport --create-std-cols` entspricht ili2db `--createStdCols`.
+Der Transfer pflegt `T_LastChange`, `T_CreateDate` und `T_User` auf den
+Fachtabellen und Geometriehilfstabellen. GeoPackage speichert die beiden
+Zeitwerte als Unix-Millisekunden, PostgreSQL als lokale SQL-Zeitstempel.
+Ein `update` erhält das Erstellungsdatum bestehender Zeilen.
+
 Mit `schemaimport --coalesce-catalogue-ref` erzeugt das Kommando die
 kompakte SQL-Abbildung für CHBase-V1-Katalogreferenzen, entsprechend
 `--coalesceCatalogueRef` in ili2db. Die Option gilt beim Anlegen eines

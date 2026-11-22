@@ -107,6 +107,9 @@ Werte durch den SQL-Check.
 Die `*ProfileDatasetColumn*`-Fälle prüfen `T_datasetname` und seine Indizes
 in zwei Datensätzen. Nach Import, `update` und `replace` vergleichen sie die
 Spalte mit der Datasetzuordnung über die Baskets.
+Die `*ProfileStandardColumns*`-Fälle prüfen Benutzer, Änderungs- und
+Erstellungszeitpunkt auf Fach-, Struktur- und Geometriehilfszeilen.
+Sie prüfen auch das erhaltene Erstellungsdatum nach einem Update.
 
 Die `*ScalarWide*`-Fälle vergleichen die SQL-Kodierung und prüfen
 64-Bit-Ganzzahlen oberhalb von `2^53`, beide 64-Bit-Grenzwerte, SQL

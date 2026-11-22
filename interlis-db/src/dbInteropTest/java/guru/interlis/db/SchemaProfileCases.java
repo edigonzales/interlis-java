@@ -359,6 +359,66 @@ final class SchemaProfileCases {
         }
     }
 
+    void standardColumns(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ProfileAudit" + version;
+        Path ili = linkedModel(model);
+        Files.writeString(ili, Files.readString(ili).replace("CLASS Asset = Label", """
+                DOMAIN Position = COORD 0.000 .. 100.000, 0.000 .. 100.000;
+                CLASS Asset = MainPoint : Position; CheckPoint : Position; Label"""));
+        var legacyOptions = new ArrayList<>(List.of("--sqlEnableNull", "--createStdCols", "--createDatasetCol"));
+        var nativeOptions = new ArrayList<>(List.of("--create-std-cols", "--create-dataset-col"));
+        if (own.postgis()) {
+            legacyOptions.add("--oneGeomPerTable");
+            nativeOptions.add("--one-geom-per-table");
+        }
+        referenceSchema(expected, ili, legacyOptions.toArray(String[]::new));
+        schema(own, model, ili, nativeOptions.toArray(String[]::new));
+        sameCatalog(expected, own);
+        for (var db : List.of(expected, own)) {
+            Path output = work.resolve("audit-output.xtf");
+            referenceImport(db, "legacy", auditData(model, "legacy"));
+            assertCliSuccess(db, "export", model, "legacy", output);
+            assertLink(rows(output, "legacy", 2).getFirst(), "legacy");
+            Path data = auditData(model, "native");
+            assertCliSuccess(db, "import", model, "native", data);
+            referenceExport(db, "native", output);
+            assertLink(rows(output, "native", 2).getFirst(), "native");
+            try (var sql = db.connect()) {
+                String user = db.postgis() ? sql.getMetaData().getUserName() : System.getProperty("user.name");
+                var tables = List.of("asset", "asset_checkpoint", "note", "target");
+                for (String table : tables) {
+                    assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table(table)
+                            + " WHERE t_createdate = t_lastchange AND t_user = '" + user.replace("'", "''") + "'"
+                            + (db.postgis() ? "" : " AND typeof(t_createdate) = 'integer'")));
+                }
+                String old = db.postgis() ? "TIMESTAMP '2000-02-03 00:00:00'" : "949536000000";
+                for (String table : List.of("asset", "asset_checkpoint")) {
+                    execute(sql, "UPDATE " + db.table(table) + " SET t_createdate=" + old + ", t_lastchange=" + old
+                            + ", t_user='previous' WHERE t_datasetname='native'");
+                }
+                assertCliSuccess(db, "update", model, "native", data);
+                for (String table : List.of("asset", "asset_checkpoint")) {
+                    assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table(table)
+                            + " WHERE t_datasetname='native' AND t_createdate=" + old + " AND t_lastchange>" + old
+                            + " AND t_user='" + user.replace("'", "''") + "'"));
+                }
+            }
+            String extra = "ProfileAuditExtra" + version;
+            schema(db, extra, source(extra, "CLASS Extra = Label : TEXT*24; END Extra;"), "--add-models");
+            try (var sql = db.connect()) {
+                assertThrows(SQLException.class, () -> execute(sql, "INSERT INTO " + db.table("extra")
+                        + " (t_id,t_basket,t_datasetname) VALUES (999,999,'native')"));
+            }
+        }
+    }
+
+    private Path auditData(String model, String prefix) throws Exception {
+        Path data = linkedData(model, prefix);
+        return Files.writeString(data, Files.readString(data).replace("<Label>linked</Label>",
+                "<MainPoint>" + point("12.000", "13.000") + "</MainPoint><CheckPoint>" + point("14.000", "15.000")
+                        + "</CheckPoint><Label>linked</Label>"));
+    }
+
     private Path linkedModel(String model) throws Exception {
         return source(model, """
                 STRUCTURE Note = Message : TEXT*24; END Note;

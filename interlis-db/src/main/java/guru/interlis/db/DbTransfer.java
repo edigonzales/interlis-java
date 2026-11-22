@@ -43,6 +43,7 @@ import java.math.BigInteger;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -62,11 +63,14 @@ import static guru.interlis.db.Database.quote;
 import static guru.interlis.db.Ili2dbLayout.BASKET;
 import static guru.interlis.db.Ili2dbLayout.DATASET;
 import static guru.interlis.db.Ili2dbLayout.T_BASKET;
+import static guru.interlis.db.Ili2dbLayout.T_CREATE_DATE;
 import static guru.interlis.db.Ili2dbLayout.T_DATASET_NAME;
 import static guru.interlis.db.Ili2dbLayout.T_ID;
 import static guru.interlis.db.Ili2dbLayout.T_ILI_TID;
+import static guru.interlis.db.Ili2dbLayout.T_LAST_CHANGE;
 import static guru.interlis.db.Ili2dbLayout.T_SEQ;
 import static guru.interlis.db.Ili2dbLayout.T_TYPE;
+import static guru.interlis.db.Ili2dbLayout.T_USER;
 
 final class DbTransfer {
     // The object tag is at depth four. Each structure adds an attribute tag and its value tag.
@@ -1402,6 +1406,8 @@ final class DbTransfer {
     }
 
     private static final class Import implements AutoCloseable {
+        private record AuditStamp(Timestamp time, String user) { }
+
         private final Database db;
         private final DbMapping mapping;
         private final CancellationToken token;
@@ -1424,13 +1430,17 @@ final class DbTransfer {
         private long basketId;
         private final String dataset;
         private final boolean datasetColumn;
+        private final AuditStamp audit;
         private GeometrySelection basketGeometry = new GeometrySelection(List.of(), Map.of());
 
-        Import(Database db, DbMapping mapping, String dataset, boolean updating, CancellationToken token) {
+        Import(Database db, DbMapping mapping, String dataset, boolean updating, CancellationToken token) throws SQLException {
             this.db = db;
             this.mapping = mapping;
             this.dataset = dataset;
             datasetColumn = mapping.schemaOptions().contains(Ili2dbLayout.SchemaOption.DATASET_COLUMN);
+            audit = mapping.schemaOptions().contains(Ili2dbLayout.SchemaOption.STANDARD_COLUMNS)
+                    ? new AuditStamp(new Timestamp(System.currentTimeMillis()), db.gpkg()
+                            ? System.getProperty("user.name") : db.connection().getMetaData().getUserName()) : null;
             this.token = token;
             this.updating = updating;
             referenceTargets = referenceTargets(false);
@@ -1586,7 +1596,7 @@ final class DbTransfer {
             int index = 1;
             if (!update) statement.setLong(index++, id);
             statement.setLong(index++, basketId);
-            index = bindDatasetColumn(statement, index);
+            index = bindRowMetadata(statement, index, update);
             if (table.hasDiscriminator()) {
                 statement.setString(index++, concreteName);
             }
@@ -1644,17 +1654,19 @@ final class DbTransfer {
                 String table = db.table(geometry.table());
                 String field = quote(geometry.column().name());
                 String parameter = db.geometryParameter();
-                String extraColumn = datasetColumn ? ", " + T_DATASET_NAME : "";
+                var metadata = writeMetadataColumns(update);
                 String sql = update
-                        ? "UPDATE " + table + " SET " + field + " = " + parameter + (datasetColumn ? extraColumn + " = ?" : "")
+                        ? "UPDATE " + table + " SET " + field + " = " + parameter
+                                + metadata.stream().map(name -> ", " + name + " = ?").collect(Collectors.joining())
                                 + " WHERE " + T_ID + " = ? AND " + T_BASKET + " = ?"
-                        : "INSERT INTO " + table + " (" + field + extraColumn + ", " + T_ID + ", " + T_BASKET
-                                + ") VALUES (" + parameter + (datasetColumn ? ", ?" : "") + ", ?, ?)";
+                        : "INSERT INTO " + table + " (" + field + ", "
+                                + String.join(", ", metadata) + (metadata.isEmpty() ? "" : ", ") + T_ID + ", " + T_BASKET
+                                + ") VALUES (" + parameter + ", ?".repeat(metadata.size()) + ", ?, ?)";
                 statement = db.connection().prepareStatement(sql);
                 statements.put(geometry.table(), statement);
             }
             int index = db.bindGeometry(statement, 1, geometry.table(), geometry.column(), value);
-            index = bindDatasetColumn(statement, index);
+            index = bindRowMetadata(statement, index, update);
             statement.setLong(index++, id);
             statement.setLong(index, basketId);
             if (statement.executeUpdate() != 1) {
@@ -1680,7 +1692,7 @@ final class DbTransfer {
             var statement = insertStatement(table);
             statement.setLong(1, id);
             statement.setLong(2, basketId);
-            int index = bindDatasetColumn(statement, 3);
+            int index = bindRowMetadata(statement, 3, false);
             if (table.hasDiscriminator()) statement.setString(index++, mapping.storage(table.object().symbol()).discriminator());
             var found = new HashSet<SymbolRef>();
             for (var column : table.columns()) {
@@ -1755,7 +1767,7 @@ final class DbTransfer {
             long id = db.nextId();
             statement.setLong(1, id);
             statement.setLong(2, basketId);
-            int index = bindDatasetColumn(statement, 3);
+            int index = bindRowMetadata(statement, 3, false);
             if (table.hasDiscriminator()) statement.setString(index++, actual.discriminator());
             statement.setNull(index++, Types.VARCHAR);
             statement.setInt(index++, sequence);
@@ -1768,7 +1780,7 @@ final class DbTransfer {
                 var fragment = insertStatement(part);
                 fragment.setLong(1, id);
                 fragment.setLong(2, basketId);
-                found += bindStructureFields(fragment, bindDatasetColumn(fragment, 3), part, structure, id, ownerTid, basket);
+                found += bindStructureFields(fragment, bindRowMetadata(fragment, 3, false), part, structure, id, ownerTid, basket);
                 fragment.executeUpdate();
             }
             var compositions = mapping.compositionsForObject(structure.type());
@@ -1813,9 +1825,30 @@ final class DbTransfer {
             return statement;
         }
 
-        private int bindDatasetColumn(PreparedStatement statement, int index) throws SQLException {
+        private int bindRowMetadata(PreparedStatement statement, int index, boolean update) throws SQLException {
             if (datasetColumn) statement.setString(index++, dataset);
+            if (audit != null) {
+                bindAuditTime(statement, index++);
+                if (!update) bindAuditTime(statement, index++);
+                statement.setString(index++, audit.user());
+            }
             return index;
+        }
+
+        private void bindAuditTime(PreparedStatement statement, int index) throws SQLException {
+            if (db.gpkg()) statement.setLong(index, audit.time().getTime());
+            else statement.setTimestamp(index, audit.time());
+        }
+
+        private List<String> writeMetadataColumns(boolean update) {
+            var columns = new ArrayList<String>(4);
+            if (datasetColumn) columns.add(T_DATASET_NAME);
+            if (audit != null) {
+                columns.add(T_LAST_CHANGE);
+                if (!update) columns.add(T_CREATE_DATE);
+                columns.add(T_USER);
+            }
+            return columns;
         }
 
         private PreparedStatement prepareWrite(Table table, Composition composition, boolean update) throws SQLException {
@@ -1827,8 +1860,8 @@ final class DbTransfer {
             }
             names.add(T_BASKET);
             values.add("?");
-            if (datasetColumn) {
-                names.add(T_DATASET_NAME);
+            for (String metadata : writeMetadataColumns(update)) {
+                names.add(metadata);
                 values.add("?");
             }
             if (table.hasDiscriminator()) {

@@ -50,6 +50,9 @@ final class Ili2dbLayout {
     static final String ID_COLUMN = "T_Id";
     static final String BASKET_COLUMN = "T_basket";
     static final String DATASET_NAME_COLUMN = "T_datasetname";
+    static final String LAST_CHANGE_COLUMN = "T_LastChange";
+    static final String CREATE_DATE_COLUMN = "T_CreateDate";
+    static final String USER_COLUMN = "T_User";
     static final String TYPE_COLUMN = "T_Type";
     static final String UUID_OID = "INTERLIS.UUIDOID";
     static final String STANDARD_OID = "INTERLIS.STANDARDOID";
@@ -59,6 +62,9 @@ final class Ili2dbLayout {
     static final String T_ID = ID_COLUMN.toLowerCase(Locale.ROOT);
     static final String T_BASKET = BASKET_COLUMN.toLowerCase(Locale.ROOT);
     static final String T_DATASET_NAME = DATASET_NAME_COLUMN.toLowerCase(Locale.ROOT);
+    static final String T_LAST_CHANGE = LAST_CHANGE_COLUMN.toLowerCase(Locale.ROOT);
+    static final String T_CREATE_DATE = CREATE_DATE_COLUMN.toLowerCase(Locale.ROOT);
+    static final String T_USER = USER_COLUMN.toLowerCase(Locale.ROOT);
     static final String T_TYPE = TYPE_COLUMN.toLowerCase(Locale.ROOT);
     static final String T_ILI_TID = TID_COLUMN.toLowerCase(Locale.ROOT);
     static final String T_SEQ = SEQ_COLUMN.toLowerCase(Locale.ROOT);
@@ -79,7 +85,8 @@ final class Ili2dbLayout {
         FOREIGN_KEY("--create-fk", "createForeignKey", "yes"),
         TYPE_DISCRIMINATOR("--create-type-discriminator", "typeDiscriminator", "always"),
         TYPE_CONSTRAINT("--create-type-constraint", "createTypeConstraint", "True"),
-        DATASET_COLUMN("--create-dataset-col", "createDatasetCols", "addDatasetCol");
+        DATASET_COLUMN("--create-dataset-col", "createDatasetCols", "addDatasetCol"),
+        STANDARD_COLUMNS("--create-std-cols", "createStdCols", "all");
 
         final String option;
         final String tag;

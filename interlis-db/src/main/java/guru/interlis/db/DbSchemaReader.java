@@ -60,10 +60,13 @@ import static guru.interlis.db.Ili2dbLayout.SETTINGS;
 import static guru.interlis.db.Ili2dbLayout.TRAFO;
 import static guru.interlis.db.Ili2dbLayout.T_BASKET;
 import static guru.interlis.db.Ili2dbLayout.T_DATASET_NAME;
+import static guru.interlis.db.Ili2dbLayout.T_CREATE_DATE;
 import static guru.interlis.db.Ili2dbLayout.T_ID;
 import static guru.interlis.db.Ili2dbLayout.T_ILI_TID;
+import static guru.interlis.db.Ili2dbLayout.T_LAST_CHANGE;
 import static guru.interlis.db.Ili2dbLayout.T_SEQ;
 import static guru.interlis.db.Ili2dbLayout.T_TYPE;
+import static guru.interlis.db.Ili2dbLayout.T_USER;
 import static guru.interlis.db.Ili2dbLayout.foldedName;
 
 /** Binds a checked model to the mappings and physical catalog of an existing ili2db schema. */
@@ -479,6 +482,11 @@ final class DbSchemaReader {
             requireColumns(db, table, physical, Map.of(T_DATASET_NAME, Kind.TEXT));
             used.add(T_DATASET_NAME);
         }
+        if (settings.schemaOptions().contains(Ili2dbLayout.SchemaOption.STANDARD_COLUMNS)) {
+            var columns = Map.of(T_LAST_CHANGE, Kind.DATETIME, T_CREATE_DATE, Kind.DATETIME, T_USER, Kind.TEXT);
+            requireColumns(db, table, physical, columns);
+            used.addAll(columns.keySet());
+        }
     }
 
     private static void requireIdentityColumn(Database db, String table, Map<String, String> physical, String domain)
@@ -535,7 +543,7 @@ final class DbSchemaReader {
             case "smart2" -> DbInheritance.Profile.SMART2;
             default -> throw unsupported("SETTINGS.inheritanceTrafo");
         };
-        for (String tag : List.of("createStdCols", "SqlColsAsText", "SqlExtRefCols")) {
+        for (String tag : List.of("SqlColsAsText", "SqlExtRefCols")) {
             if (settings.containsKey(PREFIX + tag)) throw unsupported("SETTINGS." + tag);
         }
         var enumOptions = new DbEnumOptions(optionalSetting(settings, Ili2dbLayout.ENUM_ITF_CODE, "yes"),
