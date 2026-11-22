@@ -194,6 +194,9 @@ final class SchemaSql {
             for (var key : plan.uniqueKeys().getOrDefault(table.name(), List.of())) {
                 columns.add("UNIQUE (" + key.stream().map(Database::quote).collect(Collectors.joining(", ")) + ")");
             }
+            for (var check : plan.numericChecks().getOrDefault(table.name(), List.of())) {
+                columns.add("CHECK (" + quote(check.column()) + " BETWEEN " + check.minimum() + " AND " + check.maximum() + ")");
+            }
             commands.add(dialect.create(table.name(), String.join(", ", columns), inlineKeys.getOrDefault(table.name(), List.of())));
             for (var geometry : table.secondaryGeometries()) {
                 commands.add(dialect.create(geometry.table(), dialect.primaryId()

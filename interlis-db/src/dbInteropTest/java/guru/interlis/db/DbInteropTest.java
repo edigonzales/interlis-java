@@ -189,6 +189,16 @@ final class DbInteropTest {
         new SchemaProfileCases(work, new ReferenceTool(expected.postgis()), version).uniqueConstraints(expected, expected.peer("profile_unique_own"));
     }
 
+    @Test void geoPackageProfileNumericChecks23() throws Exception { exchangeProfileNumericChecks(23, null); }
+    @Test void geoPackageProfileNumericChecks24() throws Exception { exchangeProfileNumericChecks(24, null); }
+    @Test void postgisProfileNumericChecks23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileNumericChecks); }
+    @Test void postgisProfileNumericChecks24() throws Exception { exchangeWithPostgis(24, this::exchangeProfileNumericChecks); }
+
+    private void exchangeProfileNumericChecks(int version, PostgreSQLContainer postgres) throws Exception {
+        var expected = new TestDatabase(postgres, "profile_numeric_ref");
+        new SchemaProfileCases(work, new ReferenceTool(expected.postgis()), version).numericChecks(expected, expected.peer("profile_numeric_own"));
+    }
+
     @Test void geoPackageScalarWide23() throws Exception { exchangeScalarWide(23, null); }
     @Test void geoPackageScalarWide24() throws Exception { exchangeScalarWide(24, null); }
     @Test void postgisScalarWide23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarWide); }

@@ -5,6 +5,7 @@ import guru.interlis.db.DbInteropTest.TestDatabase;
 import guru.interlis.execution.CancellationToken;
 import org.w3c.dom.Element;
 
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -493,6 +494,57 @@ final class SchemaProfileCases {
     private Path uniquenessData(String model, String prefix, String mark) throws Exception {
         return assetData(model, prefix, List.of("<RegistryNo>" + prefix + "</RegistryNo><LocalMark>" + mark
                 + "</LocalMark><VariantNo>5</VariantNo>", "", ""));
+    }
+
+    void numericChecks(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ProfileNumeric" + version;
+        Path ili = source(model, """
+                DOMAIN SmallReading = -20..30;
+                CLASS Asset =
+                  Rating : SmallReading;
+                  WideNo : -9223372036854775808..9223372036854775807;
+                  Fraction : -2.500..3.125;
+                  Precise : -9007199254740993.125..9007199254740993.125;
+                END Asset;
+                """);
+        referenceSchema(expected, ili, "--sqlEnableNull", "--createNumChecks");
+        schema(own, model, ili, "--create-num-checks");
+        sameCatalog(expected, own);
+        var min = "<Rating>-20</Rating><WideNo>-9007199254740992</WideNo><Fraction>-2.500</Fraction>";
+        var max = "<Rating>30</Rating><WideNo>9007199254740992</WideNo><Fraction>3.125</Fraction>";
+        for (var db : List.of(expected, own)) {
+            mixed(db, model, List.of(min, max, ""), rows -> {
+                assertEquals("-20", child(rows.getFirst(), "Rating").getTextContent());
+                assertEquals("30", child(rows.get(1), "Rating").getTextContent());
+                assertDecimal("-2.500", child(rows.getFirst(), "Fraction").getTextContent());
+                assertDecimal("3.125", child(rows.get(1), "Fraction").getTextContent());
+                assertNull(child(rows.getLast(), "Rating"));
+            });
+            try (var sql = db.connect()) {
+                var table = db.table("asset");
+                String row = " WHERE t_ili_tid = 'native-0'";
+                execute(sql, "UPDATE " + table + " SET wideno = -9223372036854775808, precise = 9007199254740994.0" + row);
+                assertEquals("-9223372036854775808", scalar(sql, "SELECT wideno FROM " + table + row));
+                assertDecimal("9007199254740994", scalar(sql, "SELECT precise FROM " + table + row));
+                assertThrows(SQLException.class, () -> execute(sql, "UPDATE " + table + " SET precise = 9007199254740996.0" + row));
+                String error = db.postgis() ? "SQL code 23514" : "Database operation failed (SQL code ";
+                assertCliFailure(db, "import", model, "broken", assetData(model, "broken", List.of(min, "<Rating>31</Rating>")), error);
+                assertCliFailure(db, "import", model, "broken-fraction", assetData(model, "broken-fraction",
+                        List.of(min, "<Fraction>-2.501</Fraction>")), error);
+                assertEquals("6", scalar(sql, "SELECT count(*) FROM " + table));
+                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
+            }
+            String extra = "ProfileNumericExtra" + version;
+            schema(db, extra, source(extra, "CLASS Extra = Reading : 0..1; END Extra;"), "--add-models");
+            try (var sql = db.connect()) {
+                assertThrows(SQLException.class, () -> execute(sql, "INSERT INTO " + db.table("extra")
+                        + " (t_id,t_basket,reading) VALUES (999,999,2)"));
+            }
+        }
+    }
+
+    private static void assertDecimal(String expected, String actual) {
+        assertEquals(0, new BigDecimal(expected).compareTo(new BigDecimal(actual)));
     }
 
     private Path linkedModel(String model) throws Exception {

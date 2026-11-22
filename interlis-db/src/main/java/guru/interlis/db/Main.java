@@ -49,7 +49,7 @@ public final class Main {
                     [--create-single-enum-tab | --create-enum-tabs | --create-enum-tabs-with-id]
                     [--create-fk] [--create-fk-idx]
                     [--create-type-discriminator] [--create-type-constraint] [--create-dataset-col] [--create-std-cols]
-                    [--create-unique]
+                    [--create-unique] [--create-num-checks]
                     [--stroke-arcs] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.

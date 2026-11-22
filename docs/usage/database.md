@@ -120,6 +120,11 @@ direkten, in derselben Tabelle gespeicherten Schlüsselspalten. Bei
 Basket-Regel mit `no table attached` ab. Beide Werkzeuge können mit dem
 von `interlis-db` erzeugten Schema Daten austauschen.
 
+`schemaimport --create-num-checks` erzeugt Bereichsprüfungen für direkte
+Ganzzahl- und Festkommaspalten. Wie bei ili2db `--createNumChecks` bleiben
+Ganzzahlgrenzen exakt. Grenzen von Festkommazahlen werden für das SQL-Check
+mit Binary64-Genauigkeit übernommen.
+
 Mit `schemaimport --coalesce-catalogue-ref` erzeugt das Kommando die
 kompakte SQL-Abbildung für CHBase-V1-Katalogreferenzen, entsprechend
 `--coalesceCatalogueRef` in ili2db. Die Option gilt beim Anlegen eines

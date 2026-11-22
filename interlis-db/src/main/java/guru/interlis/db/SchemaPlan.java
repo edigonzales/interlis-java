@@ -59,10 +59,12 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                   List<ColumnProperty> columnProperties, Map<String, List<GeometryColumn>> geometryColumns,
                   boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean strokeArcs, DbEnumOptions enumOptions,
                   Set<AttributeTransformation> transformations, List<DbEnumLookup> enumLookups,
-                  Map<String, List<List<String>>> uniqueKeys) {
+                  Map<String, List<List<String>>> uniqueKeys, Map<String, List<NumericCheck>> numericChecks) {
     record ModelFile(String filename, LanguageVersion version, String modelNames, String content) { }
 
     record ColumnProperty(String table, String subtype, String column, String key, String value) { }
+
+    record NumericCheck(String column, String minimum, String maximum) { }
 
     record ForeignKey(String table, String column, String target, boolean index) {
         ForeignKey(String table, String column, String target) { this(table, column, target, true); }
@@ -135,6 +137,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         var properties = new ArrayList<ColumnProperty>();
         var geometries = new HashMap<String, List<GeometryColumn>>();
         var uniqueKeys = new HashMap<String, List<List<String>>>();
+        var numericChecks = new HashMap<String, List<NumericCheck>>();
         Map<SymbolId, List<ConstraintSymbol>> constraints = schemaOptions.contains(SchemaOption.UNIQUE)
                 ? uniqueConstraints(mapping) : Map.of();
         for (var table : addedTables) {
@@ -153,6 +156,9 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             }
             var rules = constraints.get(table.object().symbol().symbol());
             if (rules != null) uniqueKeys.put(table.name(), uniqueKeys(mapping, table, rules));
+            if (schemaOptions.contains(SchemaOption.NUMERIC_CHECKS)) {
+                numericChecks.put(table.name(), table.columns().stream().flatMap(SchemaPlan::numericChecks).toList());
+            }
         }
         for (var composition : addedCompositions) {
             token.throwIfCancellationRequested();
@@ -163,12 +169,36 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         }
         return new SchemaPlan(mapping, modelFiles, addedTables, addedAssociations, addedCompositions, properties, geometries,
                 splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations,
-                DbEnumLookup.plan(mapping, names, enumOptions, compiled.syntax(), token), Map.copyOf(uniqueKeys));
+                DbEnumLookup.plan(mapping, names, enumOptions, compiled.syntax(), token), Map.copyOf(uniqueKeys),
+                Map.copyOf(numericChecks));
     }
 
     List<String> addedStorageTables() { return DbMapping.storageTables(addedTables); }
 
     Set<SchemaOption> schemaOptions() { return mapping.schemaOptions(); }
+
+    private static Stream<NumericCheck> numericChecks(DbMapping.Column column) {
+        if (column.expandedStructure().isPresent()) {
+            return column.expandedStructure().orElseThrow().groups().stream()
+                    .flatMap(group -> group.fields().stream()).flatMap(SchemaPlan::numericChecks);
+        }
+        if (column.array().isPresent() || !(column.effectiveType().orElse(null) instanceof NumericType type)) return Stream.empty();
+        var min = type.range().minimum().orElseThrow();
+        var max = type.range().maximum().orElseThrow();
+        return switch (column.kind()) {
+            case INTEGER, BIGINT -> Stream.of(new NumericCheck(column.name(), Long.toString(min.exactValue().longValueExact()),
+                    Long.toString(max.exactValue().longValueExact())));
+            case DECIMAL -> Stream.of(new NumericCheck(column.name(), decimalBound(min, column), decimalBound(max, column)));
+            default -> Stream.empty();
+        };
+    }
+
+    private static String decimalBound(DecimalLiteral bound, DbMapping.Column column) {
+        // ili2db 5.5.2 passes fixed-scale check bounds to its SQL generator as doubles.
+        double value = bound.exactValue().doubleValue();
+        if (!Double.isFinite(value)) throw DbMapping.unsupported("numeric CHECK limit at " + column.slot().name().declared());
+        return Double.toString(value);
+    }
 
     private static Map<SymbolId, List<ConstraintSymbol>> uniqueConstraints(DbMapping mapping) {
         var constraints = new HashMap<SymbolId, List<ConstraintSymbol>>();
@@ -257,7 +287,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     SchemaPlan withModelFiles(List<ModelFile> files) {
         return new SchemaPlan(mapping, files, addedTables, addedAssociations, addedCompositions, columnProperties,
                 geometryColumns, splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations, enumLookups,
-                uniqueKeys);
+                uniqueKeys, numericChecks);
     }
 
     private static Origin.DeclaredOrigin origin(ModelSymbol model) {
