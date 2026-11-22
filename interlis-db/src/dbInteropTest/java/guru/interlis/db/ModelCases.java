@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
@@ -424,13 +425,6 @@ final class ModelCases {
             referenceExport(db, "independent", output);
             assertEntryDelivery(output, warehouse, "warehouse", "fixture");
         }
-    }
-
-    private void assertCliFailure(TestDatabase db, String operation, String model, String dataset, Path file,
-                                  String diagnostic, String... options) {
-        var result = cli(db, operation, model, dataset, file, CancellationToken.none(), options);
-        assertEquals(1, result.code(), result::diagnostics);
-        assertTrue(result.diagnostics().contains(diagnostic), result::diagnostics);
     }
 
     void appendModels(TestDatabase db) throws Exception {

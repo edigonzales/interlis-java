@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
 import static guru.interlis.db.DbInteropTest.cli;
@@ -17,6 +18,7 @@ import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
 import static guru.interlis.db.DbInteropTest.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class TopicCases {
@@ -86,15 +88,20 @@ final class TopicCases {
     }
 
     private void assertFragments(Path file, String parent, String model, String prefix) throws Exception {
+        assertFragments(file, parent, model, prefix, "inherited", "base", "child");
+    }
+
+    private void assertFragments(Path file, String parent, String model, String prefix, String inheritedMemo,
+                                 String baseMemo, String localMemo) throws Exception {
         var basket = assertRegion(file, model, prefix + "-b");
         var station = assertObject(basket, model, "Region", "LocalStation", prefix + "-s");
         var memo = child(station, "Memo");
         var local = child(station, "LocalMemo");
         assertNamespace(memo, parent);
         assertNamespace(local, model);
-        assertEquals("base", memo.getTextContent());
-        assertEquals("child", local.getTextContent());
-        assertEquals("inherited", child(assertObject(basket, parent, "Core", "Marker", prefix + "-m"), "Memo").getTextContent());
+        assertEquals(baseMemo, memo.getTextContent());
+        assertEquals(localMemo, local.getTextContent());
+        assertEquals(inheritedMemo, child(assertObject(basket, parent, "Core", "Marker", prefix + "-m"), "Memo").getTextContent());
     }
 
     void refinement(TestDatabase baseline, TestDatabase own) throws Exception {
@@ -208,6 +215,81 @@ final class TopicCases {
         assertEquals(id(target, version, "tid"), id(child(note, "Entry"), version, "ref"));
     }
 
+    void mutation(TestDatabase db) throws Exception {
+        String parent = "TownParent" + version;
+        String model = "TownChild" + version;
+        String incoming = "TownIncoming" + version;
+        var baseSource = fixture(parent + ".ili");
+        var derivedSource = fixture(model + ".ili");
+        var incomingSource = fixture(incoming + ".ili");
+        referenceSchema(db, model + ";" + incoming);
+        for (var file : List.of(baseSource, derivedSource, incomingSource)) Files.delete(file);
+        var input = fixture("region" + version + ".xtf");
+        String source = Files.readString(input);
+        referenceImport(db, "inherited", input);
+        referenceImport(db, "incoming", fixture("incoming" + version + ".xtf"));
+        var independent = Files.writeString(work.resolve("region-independent.xtf"), source.replace("region-", "independent-"));
+        referenceImport(db, "independent", independent);
+        var updated = Files.writeString(work.resolve("region-updated.xtf"),
+                source.replace(">inherited<", ">new marker<").replace(">base<", ">new base<").replace(">child<", ">new child<"));
+        var removed = Files.writeString(work.resolve("region-removes-target.xtf"), updatedTextWithoutStation(source));
+        var output = work.resolve("region-mutation.xtf");
+        String station = db.table("station");
+        String ownStation = "SELECT t_id FROM " + station + " WHERE t_ili_tid='region-s'";
+        String fragment = "SELECT l.t_id FROM " + db.table("localstation") + " l JOIN " + station
+                + " s ON s.t_id=l.t_id AND s.t_basket=l.t_basket WHERE s.t_ili_tid='region-s'";
+        String marker = "SELECT t_id FROM " + db.table("marker") + " WHERE t_ili_tid='region-m'";
+        String basket = "SELECT t_id FROM " + db.table("t_ili2db_basket") + " WHERE t_ili_tid='region-b'";
+        String dataset = "SELECT t_id FROM " + db.table("t_ili2db_dataset") + " WHERE datasetname='inherited'";
+        try (var sql = db.connect()) {
+            String oldStation = scalar(sql, ownStation);
+            String oldMarker = scalar(sql, marker);
+            String oldBasket = scalar(sql, basket);
+            String oldDataset = scalar(sql, dataset);
+            assertEquals(oldStation, scalar(sql, "SELECT destination FROM " + db.table("incominglink")));
+            run(db, "update", model, "inherited", updated);
+            assertEquals(oldStation, scalar(sql, ownStation));
+            assertEquals(oldStation, scalar(sql, fragment));
+            assertEquals(oldMarker, scalar(sql, marker));
+            assertEquals(oldBasket, scalar(sql, basket));
+            referenceExport(db, "inherited", output);
+            assertFragments(output, parent, model, "region", "new marker", "new base", "new child");
+
+            execute(sql, "UPDATE " + station + " SET t_type='siblingstation' WHERE t_ili_tid='region-s'");
+            assertCliFailure(db, "update", model, "inherited", updated, "does not belong to basket topic " + model + ".Region");
+            execute(sql, "UPDATE " + station + " SET t_type='localstation' WHERE t_ili_tid='region-s'");
+            assertCliFailure(db, "update", model, "inherited", removed, "referenced object");
+            assertCliFailure(db, "replace", model, "inherited", input, "referenced object");
+            assertCliFailure(db, "delete", model, "inherited", null, "referenced object");
+            assertCliFailure(db, "delete", incoming, "inherited", null, "outside the selected model");
+            assertEquals(oldStation, scalar(sql, fragment));
+            assertEquals(oldMarker, scalar(sql, marker));
+            assertEquals(oldBasket, scalar(sql, basket));
+            run(db, "export", model, "inherited", output);
+            assertFragments(output, parent, model, "region", "new marker", "new base", "new child");
+
+            run(db, "delete", incoming, "incoming", null);
+            run(db, "replace", model, "inherited", input);
+            assertEquals(oldDataset, scalar(sql, dataset));
+            assertNotEquals(oldStation, scalar(sql, ownStation));
+            assertEquals(scalar(sql, ownStation), scalar(sql, fragment));
+            referenceExport(db, "inherited", output);
+            assertFragments(output, parent, model, "region");
+            run(db, "delete", model, "inherited", null);
+            assertEquals("independent", scalar(sql, "SELECT datasetname FROM " + db.table("t_ili2db_dataset")));
+            for (var table : List.of("station", "localstation", "marker", "t_ili2db_basket")) {
+                assertEquals("1", scalar(sql, "SELECT COUNT(*) FROM " + db.table(table)), table);
+            }
+            referenceExport(db, "independent", output);
+            assertFragments(output, parent, model, "independent");
+        }
+    }
+
+    private String updatedTextWithoutStation(String source) {
+        return source.lines().filter(line -> !line.contains("region-s")).collect(java.util.stream.Collectors.joining("\n"))
+                .replace(">inherited<", ">must roll back<");
+    }
+
     private void assertInherited(Path file, String parent, String model, String prefix) throws Exception {
         var basket = assertRegion(file, model, prefix + "-b");
         var marker = assertObject(basket, parent, "Core", "Marker", prefix + "-m");
@@ -248,8 +330,7 @@ final class TopicCases {
     private void schemas(TestDatabase baseline, TestDatabase own, String parent, String model) throws Exception {
         var base = fixture(parent + ".ili");
         var derived = fixture(model + ".ili");
-        reference.run(baseline, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
-                "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", "--models", model);
+        referenceSchema(baseline, model);
         run(own, "schemaimport", model, null, derived, "--model-file", base.toString());
         try (var refSql = baseline.connect(); var nativeSql = own.connect()) {
             DbSchemaCatalog.read(refSql, baseline.postgis(), baseline.schema())
@@ -257,6 +338,11 @@ final class TopicCases {
         }
         Files.delete(base);
         Files.delete(derived);
+    }
+
+    private void referenceSchema(TestDatabase db, String models) throws Exception {
+        reference.run(db, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
+                "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", "--models", models);
     }
 
     private Path fixture(String name) throws Exception {

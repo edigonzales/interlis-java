@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="http://www.interlis.ch/xtf/2.4/TownIncoming24">
+  <i:headersection><i:models><i:model>TownIncoming24</i:model></i:models><i:sender>incoming reference fixture</i:sender></i:headersection>
+  <i:datasection>
+    <Survey i:bid="incoming-basket">
+      <Record i:tid="incoming-record"><Details><IncomingLink><Destination i:ref="region-s"/></IncomingLink></Details></Record>
+    </Survey>
+  </i:datasection>
+</i:transfer>

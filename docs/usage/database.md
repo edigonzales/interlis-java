@@ -34,6 +34,8 @@ Ein mit `EXTENDS` abgeleitetes Topic übernimmt die Klassen seines Basistopics.
 Geerbte und lokal deklarierte Objekte belegen gemeinsam den konkreten
 Basket. Die geerbten Objekte behalten den XTF-Namen und die SQL-Tabelle
 ihrer Deklaration.
+Das DB-Profil verwendet pro Basket ein primäres Topic. Zusätzliche
+`TOPICS`-Angaben im XTF 2.3 werden beim Import abgewiesen.
 Ein abstraktes Basistopic liefert Tabellen für konkrete abgeleitete Baskets.
 Bei `CLASS (EXTENDED)` verwendet ein verengtes `TEXT`-Attribut die
 SQL-Spalte der Basisdeklaration. Der Export verwendet im XTF 2.4 ihren
@@ -141,6 +143,8 @@ Geometrien der bisherigen Baskets. PostGIS sperrt die betroffenen Tabellen für 
 GeoPackage verwendet seine bestehende Schreibtransaktion.
 Bei gemischten Datensätzen muss die Auswahl per `--model` die bisherigen
 Baskets vollständig abdecken.
+Bei abgeleiteten und bei übersetzten XTF-2.3-Baskets bestimmt das
+gespeicherte Topic die Modellauswahl für Ersatz und Löschung.
 Zeigt eine bestehen bleibende Referenz auf eine der alten internen Objekt-IDs,
 wird der Ersatz zurückgerollt. Ausgehende `EXTERNAL`-Referenzen der neuen
 Lieferung verwenden die bestehende Suche im selben Schema.

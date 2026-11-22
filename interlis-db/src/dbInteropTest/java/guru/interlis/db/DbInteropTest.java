@@ -144,6 +144,10 @@ final class DbInteropTest {
     @Test void geoPackageTopicReferences24() throws Exception { exchangeTopicReferences(24, null); }
     @Test void postgisTopicReferences23() throws Exception { exchangeWithPostgis(23, this::exchangeTopicReferences); }
     @Test void postgisTopicReferences24() throws Exception { exchangeWithPostgis(24, this::exchangeTopicReferences); }
+    @Test void geoPackageTopicMutations23() throws Exception { exchangeTopicMutations(23, null); }
+    @Test void geoPackageTopicMutations24() throws Exception { exchangeTopicMutations(24, null); }
+    @Test void postgisTopicMutations23() throws Exception { exchangeWithPostgis(23, this::exchangeTopicMutations); }
+    @Test void postgisTopicMutations24() throws Exception { exchangeWithPostgis(24, this::exchangeTopicMutations); }
 
     @Test void geoPackageSharedSource23() throws Exception { exchangeSharedSource(23, null); }
     @Test void geoPackageSharedSource24() throws Exception { exchangeSharedSource(24, null); }
@@ -531,6 +535,14 @@ final class DbInteropTest {
         var reference = new TestDatabase(postgres, "reference_topic_references");
         var own = new TestDatabase(postgres, "own_topic_references");
         new TopicCases(work, new ReferenceTool(reference.postgis()), version).references(reference, own);
+    }
+
+    private void exchangeTopicMutations(int version, PostgreSQLContainer postgres) throws Exception {
+        var translated = new TestDatabase(postgres, "translation_mutation");
+        var inherited = new TestDatabase(postgres, "topic_mutation");
+        var reference = new ReferenceTool(inherited.postgis());
+        new TranslationCases(work, reference, version).mutation(translated);
+        new TopicCases(work, reference, version).mutation(inherited);
     }
 
     private void exchangeSharedSource(int version, PostgreSQLContainer postgres) throws Exception {
@@ -4584,6 +4596,13 @@ final class DbInteropTest {
     static void assertCliSuccess(TestDatabase db, String operation, String model, String dataset, Path path) {
         var result = cli(db, operation, model, dataset, path, CancellationToken.none());
         assertEquals(0, result.code(), result::diagnostics);
+    }
+
+    static void assertCliFailure(TestDatabase db, String operation, String model, String dataset, Path path,
+                                 String diagnostic, String... options) {
+        var result = cli(db, operation, model, dataset, path, CancellationToken.none(), options);
+        assertEquals(1, result.code(), result::diagnostics);
+        assertTrue(result.diagnostics().contains(diagnostic), result::diagnostics);
     }
 
     static CliResult cli(TestDatabase db, String operation, String model, String dataset, Path path,

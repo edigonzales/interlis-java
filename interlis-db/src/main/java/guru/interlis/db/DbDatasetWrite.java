@@ -107,7 +107,8 @@ final class DbDatasetWrite {
                             throw new DbException("Missing stored TID at " + table.name() + " T_Id " + id);
                         }
                         String tid = DbTransfer.storedTid(table, raw);
-                        var concrete = table.hasDiscriminator() ? mapping.concreteType(table, rows.getString(3), id) : table;
+                        var concrete = table.hasDiscriminator()
+                                ? mapping.concreteType(table, rows.getString(3), id, topic.symbol()) : table;
                         if (objects.putIfAbsent(new ObjectKey(table, tid), new ExistingObject(concrete, basket, id)) != null) {
                             throw new DbException("Ambiguous stored object TID " + tid + " at " + table.name());
                         }

@@ -1,0 +1,14 @@
+INTERLIS 2.4;
+
+MODEL TownIncoming24 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  IMPORTS TownChild24;
+  TOPIC Survey =
+    DEPENDS ON TownChild24.Region;
+    STRUCTURE IncomingLink =
+      Destination : REFERENCE TO (EXTERNAL) TownChild24.Region.LocalStation;
+    END IncomingLink;
+    CLASS Record =
+      Details : IncomingLink;
+    END Record;
+  END Survey;
+END TownIncoming24.

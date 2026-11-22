@@ -127,6 +127,12 @@ den Werkzeugwechsel mit den bestehenden und neuen SQL-Zuordnungen.
 skalare und verschachtelte Werte, Schemaerstellung, Modellergänzung und
 die explizite Ausgabesprache. Die Fälle vergleichen XTF 2.3 mit übersetzten
 Baskets und XTF 2.4 mit den Namen des Originals.
+`*DbInteropTest.*Topic*` umfasst zusätzlich geerbte Klassen,
+basketübergreifende Abhängigkeiten und Klassenfragmente, abstrakte
+Basistopics mit verengten Textattributen sowie lokale Rollen und
+Referenzen in abgeleiteten Baskets. `*DbInteropTest.*TopicMutations*`
+prüft bei übersetzten und abgeleiteten Baskets die stabilen IDs beim
+Update, Ersatz und Löschung sowie Rollback bei eingehenden Referenzen.
 
 Die Fälle `*DbInteropTest.*Mutation*` prüfen `replace` und `update`
 in beiden Werkzeugrichtungen. Sie prüfen die internen IDs und den Bestand

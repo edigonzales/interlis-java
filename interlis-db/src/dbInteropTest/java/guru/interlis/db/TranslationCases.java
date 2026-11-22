@@ -13,11 +13,13 @@ import java.util.List;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
 import static guru.interlis.db.DbInteropTest.cli;
+import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
 import static guru.interlis.db.DbInteropTest.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class TranslationCases {
@@ -216,6 +218,51 @@ final class TranslationCases {
         }
     }
 
+    void mutation(TestDatabase db) throws Exception {
+        fixture(original + ".ili");
+        fixture(translated + ".ili");
+        createReference(db, translated);
+        boolean french = version == 23;
+        String prefix = french ? "translated" : "original";
+        var input = fixture(prefix + version + ".xtf");
+        referenceImport(db, "translation", input);
+        var changed = Files.writeString(work.resolve("translation-update.xtf"),
+                Files.readString(input).replace(">text<", ">updated<"));
+        var output = work.resolve("translation-mutation.xtf");
+        String object = "SELECT t_id FROM " + db.table("station");
+        String basket = "SELECT t_id FROM " + db.table("t_ili2db_basket");
+        String dataset = "SELECT t_id FROM " + db.table("t_ili2db_dataset");
+        try (var sql = db.connect()) {
+            String previousObject = scalar(sql, object);
+            String previousBasket = scalar(sql, basket);
+            String previousDataset = scalar(sql, dataset);
+            run(db, "update", translated, "translation", changed);
+            assertEquals(previousObject, scalar(sql, object));
+            assertEquals(previousBasket, scalar(sql, basket));
+            referenceExport(db, "translation", output);
+            assertDelivery(output, french, prefix, "updated");
+            if (french) {
+                var fromOriginal = Files.writeString(work.resolve("wrong-language.xtf"),
+                        Files.readString(fixture("original23.xtf")).replace("original-", "translated-"));
+                assertCliFailure(db, "update", original, "translation", fromOriginal, "another dataset or topic");
+                assertCliFailure(db, "delete", original, "translation", null, "outside the selected model");
+                assertEquals(previousObject, scalar(sql, object));
+                assertEquals(previousBasket, scalar(sql, basket));
+                run(db, "export", translated, "translation", output);
+                assertDelivery(output, true, prefix, "updated");
+            }
+            run(db, "replace", translated, "translation", input);
+            assertEquals(previousDataset, scalar(sql, dataset));
+            assertNotEquals(previousObject, scalar(sql, object));
+            referenceExport(db, "translation", output);
+            assertDelivery(output, french, prefix);
+            run(db, "delete", translated, "translation", null);
+            for (var table : List.of("station", "t_ili2db_basket", "t_ili2db_dataset")) {
+                assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + db.table(table)), table);
+            }
+        }
+    }
+
     private void assertLanguageRejected(TestDatabase db, String model, String dataset, String target, Path output,
                                         String reason) throws Exception {
         String published = Files.readString(output);
@@ -226,6 +273,10 @@ final class TranslationCases {
     }
 
     private void assertDelivery(Path output, boolean french, String prefix) throws Exception {
+        assertDelivery(output, french, prefix, "text");
+    }
+
+    private void assertDelivery(Path output, boolean french, String prefix, String memo) throws Exception {
         var data = readDataSection(output, version);
         String model = french ? translated : original;
         var header = child((Element) data.getParentNode(), version == 23 ? "HEADERSECTION" : "headersection");
@@ -241,7 +292,7 @@ final class TranslationCases {
         if (version == 24) assertEquals("http://www.interlis.ch/xtf/2.4/" + original, station.getNamespaceURI());
         assertEquals(prefix + "-b", id(basket, version, "bid"));
         assertEquals(prefix + "-o", id(station, version, "tid"));
-        assertEquals("text", child(station, french ? "Note" : "Memo").getTextContent());
+        assertEquals(memo, child(station, french ? "Note" : "Memo").getTextContent());
         assertEquals(french ? "ouvert" : "open", child(station, french ? "Statut" : "State").getTextContent());
     }
 

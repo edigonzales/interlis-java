@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="incoming reference fixture">
+    <MODELS><MODEL NAME="TownIncoming23" VERSION="1" URI="https://example.org/interlis/db"/></MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <TownIncoming23.Survey BID="incoming-basket">
+      <TownIncoming23.Survey.Record TID="incoming-record">
+        <Details><TownIncoming23.Survey.IncomingLink><Destination REF="region-s" BID="region-b"/></TownIncoming23.Survey.IncomingLink></Details>
+      </TownIncoming23.Survey.Record>
+    </TownIncoming23.Survey>
+  </DATASECTION>
+</TRANSFER>
