@@ -2,7 +2,9 @@ package guru.interlis.db;
 
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.Modifier;
+import guru.interlis.model.NumericType;
 import guru.interlis.model.TextType;
+import guru.interlis.model.TypeDescriptor;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -506,6 +508,11 @@ final class SchemaSql {
             return gpkg ? "DATETIME" : "timestamp";
         }
 
+        private static String numericType(TypeDescriptor type) {
+            var decimal = DbDecimal.describe((NumericType) type);
+            return "numeric(" + decimal.precision() + "," + decimal.scale() + ")";
+        }
+
         String sequenceDefault() {
             if (gpkg) return "";
             String name = table(SEQUENCE).replace("\\", "\\\\").replace("'", "''");
@@ -531,6 +538,7 @@ final class SchemaSql {
                     case ENUMERATION -> enumOptions.numeric() ? idType() : text(255);
                     case BOOLEAN -> "BOOLEAN";
                     case INTEGER -> "INTEGER";
+                    case DECIMAL -> numericType(array.type());
                     case REFERENCE -> "BIGINT";
                     default -> throw new IllegalStateException("Unsupported SQL array element " + array.kind());
                 };
@@ -551,10 +559,7 @@ final class SchemaSql {
                 case UUID -> gpkg ? text(36) : "uuid";
                 case BINARY -> gpkg ? "BLOB" : "bytea";
                 case XML -> gpkg ? "TEXT" : "xml";
-                case DECIMAL -> {
-                    var decimal = DbDecimal.describe((guru.interlis.model.NumericType) column.effectiveType().orElseThrow());
-                    yield gpkg ? "DOUBLE" : "numeric(" + decimal.precision() + "," + decimal.scale() + ")";
-                }
+                case DECIMAL -> gpkg ? "DOUBLE" : numericType(column.effectiveType().orElseThrow());
                 case ENUMERATION -> column.enumeration().isPresent() || enumOptions.lookup() == DbEnumOptions.Lookup.WITH_ID
                         ? idType() : text(255);
                 case REFERENCE -> idType();

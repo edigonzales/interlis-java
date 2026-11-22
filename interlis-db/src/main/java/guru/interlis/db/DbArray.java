@@ -45,6 +45,7 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
     record Wrapper(SymbolRef structure, AttributeSlot field) { }
 
     private static final int MAX_ELEMENTS = 1_000_000;
+    private static final int MAX_DECIMAL_LENGTH = 4_096;
 
     static DbArray describe(TransferPlan plan, DbInheritance layout, ObjectDescriptor owner, AttributeSlot outer) {
         String path = outer.name().declared().toString();
@@ -88,7 +89,8 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
             return new DbArray(collection, wrapper, Kind.REFERENCE, type, Optional.of(symbol), Optional.empty());
         }
         var kind = DbMapping.scalarKind(type);
-        if (kind != Kind.TEXT && kind != Kind.BOOLEAN && kind != Kind.INTEGER && kind != Kind.ENUMERATION) {
+        if (kind != Kind.TEXT && kind != Kind.BOOLEAN && kind != Kind.INTEGER && kind != Kind.DECIMAL
+                && kind != Kind.ENUMERATION) {
             throw DbMapping.unsupported("coalesced array element at " + path);
         }
         return new DbArray(collection, wrapper, kind, type, Optional.empty(), Optional.empty());
@@ -120,6 +122,7 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
             case ENUMERATION -> enumeration.isPresent() ? "int8" : "varchar";
             case BOOLEAN -> "bool";
             case INTEGER -> "int4";
+            case DECIMAL -> "numeric";
             case REFERENCE -> "int8";
             default -> throw new IllegalStateException("Unsupported PostgreSQL array element " + kind);
         };
@@ -184,6 +187,7 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
             case Long code when enumeration.isPresent() -> enumeration.orElseThrow().read(code.longValue(), context);
             case Boolean bool when kind == Kind.BOOLEAN -> new BooleanValue(bool);
             case Integer number when kind == Kind.INTEGER -> new NumberValue(number.toString(), BigDecimal.valueOf(number));
+            case BigDecimal number when kind == Kind.DECIMAL -> new NumberValue(number.toString(), number);
             case Reference reference when kind == Kind.REFERENCE -> reference;
             default -> throw unexpectedElement(context);
         };
@@ -196,6 +200,7 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
                     .orElseGet(() -> String.join(".", enumValue.path()));
             case BooleanValue bool when kind == Kind.BOOLEAN -> bool.value();
             case NumberValue number when kind == Kind.INTEGER -> DbTransfer.integerValue(number, context);
+            case NumberValue number when kind == Kind.DECIMAL -> number.exactValue();
             case Reference reference when kind == Kind.REFERENCE -> reference;
             default -> throw unexpectedElement(context);
         };
@@ -236,6 +241,7 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
                     case String text -> writer.value(text);
                     case Boolean bool -> writer.value(bool);
                     case Integer integer -> writer.value(integer);
+                    case BigDecimal number -> writer.value(number);
                     case Long id when kind == Kind.REFERENCE -> writer.value(id.toString());
                     case Long code when enumeration.isPresent() -> writer.value(code);
                     default -> throw unexpectedElement(context);
@@ -254,7 +260,7 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
             case TEXT, REFERENCE -> JsonToken.STRING;
             case ENUMERATION -> enumeration.isPresent() ? JsonToken.NUMBER : JsonToken.STRING;
             case BOOLEAN -> JsonToken.BOOLEAN;
-            case INTEGER -> JsonToken.NUMBER;
+            case INTEGER, DECIMAL -> JsonToken.NUMBER;
             default -> throw new IllegalStateException("Unsupported JSON array element " + kind);
         };
         if (reader.peek() != expected) throw unexpectedElement(context);
@@ -266,6 +272,7 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
             }
             case BOOLEAN -> reader.nextBoolean();
             case INTEGER -> DbTransfer.readInteger(reader.nextString(), context).exactValue().intValueExact();
+            case DECIMAL -> decimalElement(reader.nextString(), context);
             case REFERENCE -> numericElement(reader.nextString(), context);
             default -> throw new IllegalStateException("Unsupported JSON array element " + kind);
         };
@@ -278,6 +285,15 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
             return number;
         } catch (NumberFormatException failure) {
             throw unexpectedElement(context);
+        }
+    }
+
+    private static BigDecimal decimalElement(String value, String context) {
+        if (value.length() > MAX_DECIMAL_LENGTH) throw invalid("Oversized decimal array element", context);
+        try {
+            return new BigDecimal(value);
+        } catch (NumberFormatException failure) {
+            throw new DbException("Invalid decimal array element at " + context, failure);
         }
     }
 

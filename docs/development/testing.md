@@ -112,6 +112,9 @@ SQL `NULL` und den Erhalt der Exportdatei bei einem übergrossen BLOB.
 Die `*ScalarXml*`-Fälle prüfen XML-Inhalt, Namespaces, SQL `NULL` und
 Exportgrenzen. Sie prüfen auch den maskierten Text des XTF-2.4-Referenzexports
 und reproduzieren den Unicode-Exportfehler von ili2gpkg in XTF 2.3.
+Die `*ScalarDecimalArray*`-Fälle prüfen Dezimalarrays mit Strukturhülle
+in XTF 2.3 und als direkte Liste in XTF 2.4. Sie vergleichen den Katalog,
+Reihenfolge, Duplikate, SQL `NULL`, Präzision und den Import-Rollback.
 
 Die `*EnumItfCodes*`-Fälle prüfen den Austausch skalarer Aufzählungen
 mit ITF-Codes, einschliesslich Code `0`, SQL `NULL`, Rollback und

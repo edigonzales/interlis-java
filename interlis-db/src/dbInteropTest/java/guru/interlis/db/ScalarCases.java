@@ -2,6 +2,7 @@ package guru.interlis.db;
 
 import guru.interlis.db.DbInteropTest.ReferenceTool;
 import guru.interlis.db.DbInteropTest.TestDatabase;
+import guru.interlis.execution.CancellationToken;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 
@@ -22,6 +23,7 @@ import static guru.interlis.db.DbInteropTest.assertCliInZone;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
+import static guru.interlis.db.DbInteropTest.cli;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
@@ -343,6 +345,62 @@ final class ScalarCases {
         assertEquals("sample", element.getLocalName());
         assertEquals("x", element.getAttributeNS("urn:scalar", "code"));
         assertEquals(content, element.getTextContent());
+    }
+
+    void decimalArrays(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ScalarDecimalArray" + version;
+        String wrapper = version == 23 ? "STRUCTURE Measure = Entry : Price; END Measure;" : "";
+        var ili = source(model, """
+                DOMAIN Price = -9999999999999999.999 .. 9999999999999999.999;
+                %s
+                CLASS Asset =
+                  !!@ili2db.mapping=ARRAY
+                  Measurements : LIST OF %s;
+                END Asset;
+                """.formatted(wrapper, version == 23 ? "Measure" : "Price"));
+        referenceSchema(expected, model, "--coalesceArray");
+        var schema = cli(own, "schemaimport", model, null, ili, CancellationToken.none(), "--coalesce-array");
+        assertEquals(0, schema.code(), schema::diagnostics);
+        sameCatalog(expected, own);
+        var numbers = List.of("-1.125", "2.250", "-1.125");
+        var values = List.of(decimalItems(model, numbers), "");
+        for (var db : List.of(expected, own)) {
+            mixed(db, model, values, rows -> {
+                var found = decimalItems(rows.getFirst());
+                assertEquals(numbers.size(), found.size());
+                for (int i = 0; i < numbers.size(); i++) assertNumber(numbers.get(i), found.get(i));
+                assertNull(child(rows.getLast(), "Measurements"));
+            });
+            try (var sql = db.connect()) {
+                String size = db.postgis() ? "cardinality(measurements)" : "json_array_length(measurements)";
+                String type = db.postgis() ? "pg_typeof(measurements)::text" : "json_type(measurements, '$[0]')";
+                assertEquals("3", stored(db, sql, size, "native", 0));
+                assertEquals(db.postgis() ? "numeric[]" : "real", stored(db, sql, type, "native", 0));
+                assertNull(stored(db, sql, "measurements", "native", 1));
+                var broken = data(model, "broken", List.of(values.getFirst(), decimalItems(model, List.of("invalid"))));
+                assertCliFailure(db, "import", model, "broken", broken,
+                        version == 23 ? "Invalid XTF decimal value" : "Invalid XTF numeric lexeme");
+                assertCounts(db, sql, 4);
+            }
+            String large = "9007199254740993.125";
+            assertCliSuccess(db, "import", model, "exact", data(model, "exact", List.of(decimalItems(model, List.of(large)))));
+            Path output = work.resolve("out.xtf");
+            assertCliSuccess(db, "export", model, "exact", output);
+            assertEquals(List.of(large), decimalItems(rows(output, "exact", 1).getFirst()));
+        }
+    }
+
+    private String decimalItems(String model, List<String> values) {
+        if (version == 24) return values.stream().map(value -> field("Measurements", value)).collect(Collectors.joining());
+        return field("Measurements", values.stream().map(value -> field(model + ".Data.Measure", field("Entry", value)))
+                .collect(Collectors.joining()));
+    }
+
+    private List<String> decimalItems(Element object) {
+        if (version == 23) return children(child(object, "Measurements")).stream()
+                .map(item -> child(item, "Entry").getTextContent()).toList();
+        return children(object).stream().filter(item -> item.getLocalName().equals("Measurements"))
+                .map(Element::getTextContent).toList();
     }
 
     private void differentZones(TestDatabase db, String model, List<String> values, CheckRows check) throws Exception {
