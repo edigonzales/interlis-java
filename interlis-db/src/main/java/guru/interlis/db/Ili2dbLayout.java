@@ -14,7 +14,6 @@ final class Ili2dbLayout {
     static final String MULTIPLE_GEOMETRIES = "multipleGeomAttrPerTable";
     static final String SECONDARY_TABLE_TAG = PREFIX + "secondaryTable";
     static final String INHERITANCE_TAG = PREFIX + "inheritance";
-    static final String CATALOGUE_REF_TAG = PREFIX + "catalogueRefTrafo";
     static final String COALESCE = "coalesce";
     static final String NEW_CLASS = "newClass";
     static final String SRID_PROPERTY = "srid";
@@ -64,6 +63,26 @@ final class Ili2dbLayout {
             MODEL_KEY.toLowerCase(Locale.ROOT), ATTRNAME_KEY.toLowerCase(Locale.ROOT));
 
     private Ili2dbLayout() { }
+
+    enum AttributeTransformation {
+        CATALOGUE_REFERENCE("catalogueRefTrafo", COALESCE),
+        MULTILINGUAL("multilingualTrafo", "expand");
+
+        final String tag;
+        final String setting;
+
+        AttributeTransformation(String name, String setting) {
+            this.tag = PREFIX + name;
+            this.setting = setting;
+        }
+
+        static AttributeTransformation fromTag(String tag) {
+            for (var transformation : values()) {
+                if (transformation.tag.equals(tag)) return transformation;
+            }
+            return null;
+        }
+    }
 
     static String geometryAttribute(String attribute, int epsg, boolean multiSrs) {
         return multiSrs && epsg != 0 ? attribute + ":" + epsg : attribute;

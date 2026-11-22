@@ -85,7 +85,7 @@ final class DbMapping {
     record Column(TransferSlot slot, String name, Kind kind, Optional<TypeDescriptor> effectiveType,
                   Optional<SymbolRef> target, Optional<SymbolRef> referenceTable, int epsgCode, int srsId, boolean legacyEpsgHeader,
                   Optional<String> positionColumn, int dimensions, Optional<DomainBinding> domainBinding,
-                  Optional<DbCatalogueReference> catalogueReference) {
+                  Optional<DbCatalogueReference> catalogueReference, Optional<DbTextExpansion> textExpansion) {
         Column {
             boolean role = slot instanceof RoleSlot;
             if (effectiveType.isEmpty() != role || (role && kind != Kind.REFERENCE)) {
@@ -98,34 +98,38 @@ final class DbMapping {
                boolean legacyEpsgHeader, Optional<String> positionColumn, int dimensions,
                Optional<DomainBinding> domainBinding) {
             this(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
-                    positionColumn, dimensions, domainBinding, Optional.empty());
+                    positionColumn, dimensions, domainBinding, Optional.empty(), Optional.empty());
         }
 
         Column withName(String sqlName) {
             return new Column(slot, sqlName, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
-                    positionColumn, dimensions, domainBinding, catalogueReference);
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion);
         }
 
         Column withEpsg(int epsg) {
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsg, epsg, false,
-                    positionColumn, dimensions, domainBinding, catalogueReference);
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion);
         }
 
         Column withSrsId(int id, boolean acceptsEpsgHeader) {
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, id, acceptsEpsgHeader,
-                    positionColumn, dimensions, domainBinding, catalogueReference);
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion);
         }
 
         Column withPositionColumn(boolean gpkg) {
             String position = name + "_" + (gpkg ? SEQ_COLUMN : T_SEQ);
             checkColumnName(slot, position, false, false, gpkg);
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
-                    Optional.of(position), dimensions, domainBinding, catalogueReference);
+                    Optional.of(position), dimensions, domainBinding, catalogueReference, textExpansion);
         }
 
         Column withReferenceTable(SymbolRef table) {
             return new Column(slot, name, kind, effectiveType, target, Optional.of(table), epsgCode, srsId,
-                    legacyEpsgHeader, positionColumn, dimensions, domainBinding, catalogueReference);
+                    legacyEpsgHeader, positionColumn, dimensions, domainBinding, catalogueReference, textExpansion);
+        }
+
+        List<String> physicalNames() {
+            return textExpansion.map(expansion -> expansion.columns(name)).orElseGet(() -> List.of(name));
         }
 
         SymbolRef targetRelation() {
@@ -760,7 +764,9 @@ final class DbMapping {
             }
             for (var slot : object.slots()) {
                 if (!(slot instanceof AttributeSlot attribute)) continue;
-                if (attribute.member().overridden() && !(catalogueWrapper && DbCatalogueReference.isReferenceField(attribute))
+                boolean multilingual = DbTextExpansion.isInheritedCollection(plan, object, attribute);
+                if (attribute.member().overridden() && !multilingual
+                        && !(catalogueWrapper && DbCatalogueReference.isReferenceField(attribute))
                         && !(object.kind() == SymbolKind.CLASS
                         && !attribute.attribute().transientAttribute()
                         && plan.type(attribute.effectiveType()).known().orElseThrow() instanceof TextType text
@@ -769,7 +775,7 @@ final class DbMapping {
                 }
                 if (object.kind() != SymbolKind.STRUCTURE || attribute.attribute().transientAttribute()) continue;
                 var type = plan.type(attribute.effectiveType()).known().orElseThrow();
-                if (type instanceof StructureValueType || type instanceof CollectionType) {
+                if (!multilingual && (type instanceof StructureValueType || type instanceof CollectionType)) {
                     throw unsupported("composition in structure inheritance at " + attribute.name().declared());
                 }
             }
@@ -930,7 +936,12 @@ final class DbMapping {
         var target = referenceTarget(plan, object, outer, binding.reference());
         return new Column(outer, outer.name().declared().last(), Kind.REFERENCE, Optional.of(binding.reference()),
                 Optional.of(target), Optional.empty(), 0, 0, false, Optional.empty(), 0, Optional.empty(),
-                Optional.of(binding));
+                Optional.of(binding), Optional.empty());
+    }
+
+    static Column textColumn(AttributeSlot outer, String name, DbTextExpansion binding) {
+        return new Column(outer, name, Kind.TEXT, Optional.of(binding.textType()), Optional.empty(), Optional.empty(),
+                0, 0, false, Optional.empty(), 0, Optional.empty(), Optional.empty(), Optional.of(binding));
     }
 
     private static Optional<Composition> describeComposition(TransferPlan plan, ObjectDescriptor parent,

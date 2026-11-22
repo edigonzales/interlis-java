@@ -1,0 +1,12 @@
+INTERLIS 2.4;
+
+MODEL ChbaseMultilingual24 (en) AT "https://example.org" VERSION "2026-01-01" =
+  IMPORTS LocalisationCH_V2;
+
+  TOPIC Data =
+    CLASS Plaque =
+      Caption : LocalisationCH_V2.MultilingualText;
+      Notes : LocalisationCH_V2.MultilingualMText;
+    END Plaque;
+  END Data;
+END ChbaseMultilingual24.

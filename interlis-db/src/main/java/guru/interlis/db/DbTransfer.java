@@ -496,7 +496,7 @@ final class DbTransfer {
                     }
                     column.positionColumn().ifPresent(position -> projections.add(alias + "." + quote(position)));
                 }
-                default -> projections.add(field);
+                default -> column.physicalNames().forEach(name -> projections.add(alias + "." + quote(name)));
             }
         }
         for (var geometry : table.secondaryGeometries()) {
@@ -632,6 +632,7 @@ final class DbTransfer {
     }
 
     private static int projectionSize(DbMapping mapping, Column column) {
+        if (column.textExpansion().isPresent()) return column.textExpansion().orElseThrow().width();
         if (column.kind() != DbMapping.Kind.REFERENCE) return 1;
         int targetFields = mapping.referenceRoot(column).hasDiscriminator() ? 3 : 2;
         return targetFields + (projectsTargetBid(mapping, column) ? 1 : 0)
@@ -663,8 +664,11 @@ final class DbTransfer {
         var values = new LinkedHashMap<SymbolRef, TransferValue>();
         for (var column : table.columns()) {
             if (!mapping.applies(column, actual)) {
-                if (rows.getObject(index) != null) {
-                    throw new DbException("Column " + column.name() + " does not apply to object " + ownerTid);
+                int width = column.textExpansion().map(DbTextExpansion::width).orElse(1);
+                for (int offset = 0; offset < width; offset++) {
+                    if (rows.getObject(index + offset) != null) {
+                        throw new DbException("Column " + column.name() + " does not apply to object " + ownerTid);
+                    }
                 }
                 index += projectionSize(mapping, column);
                 continue;
@@ -1019,6 +1023,12 @@ final class DbTransfer {
             case INTEGER -> readInteger(rows.getString(index), column);
             case ENUMERATION -> readEnumeration(rows.getString(index), column);
             case TEXT -> {
+                if (column.textExpansion().isPresent()) {
+                    var expansion = column.textExpansion().orElseThrow();
+                    var values = new String[expansion.width()];
+                    for (int offset = 0; offset < values.length; offset++) values[offset] = rows.getString(index + offset);
+                    yield expansion.assemble(values);
+                }
                 String value = rows.getString(index);
                 yield value == null ? null : new Text(value);
             }
@@ -1632,8 +1642,10 @@ final class DbTransfer {
                 values.add("?");
             }
             for (var column : table.columns()) {
-                names.add(quote(column.name()));
-                values.add(column.kind().geometry() ? db.geometryParameter() : "?");
+                for (var name : column.physicalNames()) {
+                    names.add(quote(name));
+                    values.add(column.kind().geometry() ? db.geometryParameter() : "?");
+                }
                 column.positionColumn().ifPresent(position -> {
                     names.add(quote(position));
                     values.add("?");
@@ -1678,6 +1690,13 @@ final class DbTransfer {
 
         private int bindColumn(PreparedStatement statement, int index, Table table, Column column, long id,
                                String context, BasketId basket, TransferValue value) throws SQLException {
+            if (column.textExpansion().isPresent()) {
+                for (var text : column.textExpansion().orElseThrow().disassemble(value, column.slot().name().declared()
+                        + " of object " + context)) {
+                    statement.setString(index++, text);
+                }
+                return index;
+            }
             if (column.catalogueReference().isPresent() && value != null && value != Undefined.INSTANCE) {
                 var binding = column.catalogueReference().orElseThrow();
                 if (!(value instanceof Structured structure) || !binding.structure().equals(structure.type())

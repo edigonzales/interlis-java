@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="test"><MODELS>
+    <MODEL NAME="ChbaseMultilingual23" VERSION="2026-01-01" URI="https://example.org"/>
+  </MODELS></HEADERSECTION>
+  <DATASECTION>
+    <ChbaseMultilingual23.Data BID="fixture-b">
+      <ChbaseMultilingual23.Data.Plaque TID="fixture-empty"/>
+      <ChbaseMultilingual23.Data.Plaque TID="fixture-value">
+        <Caption><LocalisationCH_V1.MultilingualText><LocalisedText>
+            <LocalisationCH_V1.LocalisedText><Text>Default</Text></LocalisationCH_V1.LocalisedText>
+            <LocalisationCH_V1.LocalisedText><Language>de</Language><Text>Brücke</Text></LocalisationCH_V1.LocalisedText>
+            <LocalisationCH_V1.LocalisedText><Language>fr</Language><Text>Pont</Text></LocalisationCH_V1.LocalisedText>
+            <LocalisationCH_V1.LocalisedText><Language>rm</Language><Text>Punt</Text></LocalisationCH_V1.LocalisedText>
+            <LocalisationCH_V1.LocalisedText><Language>it</Language><Text>Ponte</Text></LocalisationCH_V1.LocalisedText>
+            <LocalisationCH_V1.LocalisedText><Language>en</Language><Text>Bridge</Text></LocalisationCH_V1.LocalisedText>
+          </LocalisedText></LocalisationCH_V1.MultilingualText></Caption>
+        <Notes><LocalisationCH_V1.MultilingualMText><LocalisedText>
+            <LocalisationCH_V1.LocalisedMText><Language>fr</Language><Text>Première ligne&#10;Deuxième ligne</Text></LocalisationCH_V1.LocalisedMText>
+          </LocalisedText></LocalisationCH_V1.MultilingualMText></Notes>
+      </ChbaseMultilingual23.Data.Plaque>
+    </ChbaseMultilingual23.Data>
+  </DATASECTION>
+</TRANSFER>

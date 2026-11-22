@@ -230,6 +230,14 @@ In Smart2-Schemata kann das Katalogziel in mehreren konkreten Tabellen liegen.
 Der Import befüllt die Fremdschlüsselspalte der passenden Tabelle. Mehrere
 passende Zielzeilen oder gleichzeitig befüllte Zielspalten werden abgewiesen.
 
+Für `--expandMultilingual` in bestehenden `newClass`-Schemata verwendet
+der FULL-Transfer die gespeicherte Basisspalte und ihre Sprachspalten
+`_de`, `_fr`, `_rm`, `_it` und `_en`. Die Basisspalte enthält den
+Text ohne Sprachangabe. Der Export baut daraus die CHBase-V1- oder
+CHBase-V2-Struktur `MultilingualText` beziehungsweise `MultilingualMText`.
+Mehrere Einträge für dieselbe Sprache oder Sprachen ohne zugehörige
+Spalte führen beim Import zu einer Diagnose.
+
 Für bestehende Smart1-Schemata unterstützt `interlis-db` den FULL-Import
 und -Export von Klassenhierarchien mit skalaren Attributen. Das
 Referenzschema lässt sich mit `--noSmartMapping --smart1Inheritance`

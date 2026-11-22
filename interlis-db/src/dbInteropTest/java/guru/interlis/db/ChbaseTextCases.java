@@ -1,0 +1,155 @@
+package guru.interlis.db;
+
+import guru.interlis.db.DbInteropTest.ReferenceTool;
+import guru.interlis.db.DbInteropTest.TestDatabase;
+import org.w3c.dom.Element;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static guru.interlis.db.DbInteropTest.assertCliFailure;
+import static guru.interlis.db.DbInteropTest.assertCliSuccess;
+import static guru.interlis.db.DbInteropTest.child;
+import static guru.interlis.db.DbInteropTest.children;
+import static guru.interlis.db.DbInteropTest.execute;
+import static guru.interlis.db.DbInteropTest.id;
+import static guru.interlis.db.DbInteropTest.readDataSection;
+import static guru.interlis.db.DbInteropTest.scalar;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+final class ChbaseTextCases {
+    private static final List<String> SUFFIXES = List.of("", "_de", "_fr", "_rm", "_it", "_en");
+    private static final Map<String, String> CAPTIONS = Map.of("", "Default", "de", "Brücke", "fr", "Pont",
+            "rm", "Punt", "it", "Ponte", "en", "Bridge");
+    private static final String NOTES = "Première ligne\nDeuxième ligne";
+
+    private final Path work;
+    private final ReferenceTool reference;
+    private final int version;
+
+    ChbaseTextCases(Path work, ReferenceTool reference, int version) {
+        this.work = work;
+        this.reference = reference;
+        this.version = version;
+    }
+
+    void multilingual(TestDatabase db) throws Exception {
+        String model = "ChbaseMultilingual" + version;
+        fixture("Localisation" + version + ".ili");
+        fixture(model + ".ili");
+        var input = fixture(model + ".xtf");
+        referenceSchema(db, model, "--expandMultilingual");
+        referenceImport(db, "legacy", input);
+
+        var output = work.resolve("output.xtf");
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertMultilingual(output, "fixture");
+        assertCliSuccess(db, "import", model, "native", withPrefix(input, "native"));
+        referenceExport(db, "native", output);
+        assertMultilingual(output, "native");
+
+        try (var sql = db.connect()) {
+            String plaque = db.table("plaque");
+            for (var suffix : SUFFIXES) {
+                String lang = suffix.isEmpty() ? "" : suffix.substring(1);
+                assertEquals(CAPTIONS.get(lang), scalar(sql, "SELECT caption" + suffix + " FROM " + plaque
+                        + " WHERE t_ili_tid='native-value'"));
+                execute(sql, "ALTER TABLE " + plaque + " RENAME COLUMN caption" + suffix + " TO stored_caption" + suffix);
+            }
+            String attrs = db.table("t_ili2db_attrname");
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + attrs + " WHERE colowner='plaque' AND sqlname='caption'"));
+            execute(sql, "UPDATE " + attrs + " SET sqlname='stored_caption' WHERE colowner='plaque' AND sqlname='caption'");
+            assertEquals(NOTES, scalar(sql, "SELECT notes_fr FROM " + plaque + " WHERE t_ili_tid='native-value'"));
+            assertNull(scalar(sql, "SELECT notes_de FROM " + plaque + " WHERE t_ili_tid='native-value'"));
+            for (String table : List.of("multilingualtext", "localisedtext", "multilingualmtext", "localisedmtext")) {
+                assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table(table)), table);
+            }
+        }
+        assertCliSuccess(db, "import", model, "renamed", withPrefix(input, "renamed"));
+        assertCliSuccess(db, "export", model, "renamed", output);
+        assertMultilingual(output, "renamed");
+
+        String language = version == 23 ? "Language" : "l:Language";
+        for (var code : List.of("de", "es")) {
+            var broken = withPrefix(input, code);
+            Files.writeString(broken, Files.readString(broken).replace("<" + language + ">en", "<" + language + ">" + code));
+            assertCliFailure(db, "import", model, code, broken, code.equals("de")
+                    ? "Multiple texts for language de" : "No stored language column for es");
+            try (var sql = db.connect()) {
+                assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("plaque") + " WHERE t_ili_tid LIKE '" + code + "-%'"));
+                assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket") + " WHERE t_ili_tid='" + code + "-b'"));
+                assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset") + " WHERE datasetname='" + code + "'"));
+            }
+        }
+    }
+
+    private void assertMultilingual(Path output, String prefix) throws Exception {
+        var samples = objects(output, prefix);
+        assertNull(child(samples.get(prefix + "-empty"), "Caption"));
+        assertNull(child(samples.get(prefix + "-empty"), "Notes"));
+        var plaque = samples.get(prefix + "-value");
+        assertEquals(CAPTIONS, translations(plaque, "Caption", "Text"));
+        assertEquals(Map.of("fr", NOTES), translations(plaque, "Notes", "MText"));
+    }
+
+    private Map<String, String> translations(Element object, String field, String type) {
+        var wrapper = children(child(object, field)).getFirst();
+        assertStructure(wrapper, "Multilingual" + type);
+        return children(wrapper).stream().flatMap(bag -> children(bag).stream()).collect(Collectors.toMap(entry -> {
+            assertStructure(entry, "Localised" + type);
+            var language = child(entry, "Language");
+            return language == null ? "" : language.getTextContent();
+        }, entry -> child(entry, "Text").getTextContent()));
+    }
+
+    private void assertStructure(Element element, String type) {
+        assertEquals(version == 23 ? "LocalisationCH_V1." + type : type, element.getLocalName());
+        if (version == 24) assertEquals("http://www.interlis.ch/xtf/2.4/LocalisationCH_V2", element.getNamespaceURI());
+    }
+
+    private Map<String, Element> objects(Path output, String prefix) throws Exception {
+        var baskets = children(readDataSection(output, version));
+        assertEquals(1, baskets.size());
+        var basket = baskets.getFirst();
+        assertEquals(prefix + "-b", id(basket, version, "bid"));
+        var objects = children(basket).stream().collect(Collectors.toMap(object -> id(object, version, "tid"), object -> object));
+        assertEquals(2, objects.size());
+        assertNotNull(objects.get(prefix + "-value"));
+        assertNotNull(objects.get(prefix + "-empty"));
+        return objects;
+    }
+
+    private Path fixture(String name) throws Exception {
+        var path = work.resolve(name);
+        try (var source = getClass().getResourceAsStream("/chbase/" + name)) {
+            Files.copy(source, path);
+        }
+        return path;
+    }
+
+    private Path withPrefix(Path input, String prefix) throws Exception {
+        return Files.writeString(work.resolve(prefix + ".xtf"), Files.readString(input).replace("fixture-", prefix + "-"));
+    }
+
+    private void referenceSchema(TestDatabase db, String model, String... flags) throws Exception {
+        var options = new ArrayList<>(List.of("--schemaimport", "--noSmartMapping", "--createBasketCol", "--createTidCol",
+                "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", "--models", model));
+        options.addAll(List.of(flags));
+        reference.run(db, work.toString(), options.toArray(String[]::new));
+    }
+
+    private void referenceImport(TestDatabase db, String dataset, Path input) throws Exception {
+        reference.run(db, "%ILI_FROM_DB", "--import", "--dataset", dataset, "--importBid", "--importTid", input.toString());
+    }
+
+    private void referenceExport(TestDatabase db, String dataset, Path output) throws Exception {
+        Files.deleteIfExists(output);
+        reference.run(db, "%ILI_FROM_DB", "--export", "--dataset", dataset, "--exportTid", output.toString());
+    }
+}

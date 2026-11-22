@@ -102,6 +102,10 @@ mehrdeutige Ziel-TIDs und den atomaren Export bei doppelt belegten Spalten.
 anschliessend die gemeinsame ID-Vergabe und den Schutz referenzierter
 Katalogdatensätze beim Löschen.
 
+`*DbInteropTest.*ChbaseMultilingual*` prüft beide Werkzeugrichtungen für
+`--expandMultilingual`, den gespeicherten Spaltenstamm, die Sprachspalten,
+mehrzeilige Inhalte sowie Rollback bei nicht abbildbaren Sprachwerten.
+
 `*DbInteropTest.*Smart*` prüft Smart1 und Smart2 mit XTF 2.3 und 2.4.
 Die Fälle vergleichen beide Werkzeugrichtungen, physische Eigentümer
 und Zielspalten, Geometriezuordnungen und Datensatzmutationen. Die

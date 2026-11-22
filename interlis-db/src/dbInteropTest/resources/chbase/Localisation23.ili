@@ -1,0 +1,41 @@
+INTERLIS 2.3;
+
+TYPE MODEL Localisation_V1 (en) AT "https://example.org" VERSION "2026-01-01" =
+  DOMAIN LanguageCode = (de, fr, rm, it, en, es);
+
+  STRUCTURE LocalisedText =
+    Language : LanguageCode;
+    Text : MANDATORY TEXT*120;
+  END LocalisedText;
+
+  STRUCTURE LocalisedMText =
+    Language : LanguageCode;
+    Text : MANDATORY MTEXT;
+  END LocalisedMText;
+
+  STRUCTURE MultilingualText =
+    LocalisedText : BAG {1..*} OF LocalisedText;
+  END MultilingualText;
+
+  STRUCTURE MultilingualMText =
+    LocalisedText : BAG {1..*} OF LocalisedMText;
+  END MultilingualMText;
+END Localisation_V1.
+
+TYPE MODEL LocalisationCH_V1 (en) AT "https://example.org" VERSION "2026-01-01" =
+  IMPORTS Localisation_V1;
+
+  STRUCTURE LocalisedText EXTENDS Localisation_V1.LocalisedText =
+  END LocalisedText;
+
+  STRUCTURE LocalisedMText EXTENDS Localisation_V1.LocalisedMText =
+  END LocalisedMText;
+
+  STRUCTURE MultilingualText EXTENDS Localisation_V1.MultilingualText =
+    LocalisedText (EXTENDED) : BAG {1..*} OF LocalisedText;
+  END MultilingualText;
+
+  STRUCTURE MultilingualMText EXTENDS Localisation_V1.MultilingualMText =
+    LocalisedText (EXTENDED) : BAG {1..*} OF LocalisedMText;
+  END MultilingualMText;
+END LocalisationCH_V1.

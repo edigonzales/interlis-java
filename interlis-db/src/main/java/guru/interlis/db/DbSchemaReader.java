@@ -77,7 +77,8 @@ final class DbSchemaReader {
         }
     }
 
-    private record Transformations(Map<String, String> classes, Map<String, String> secondary, Set<String> catalogue) { }
+    private record Transformations(Map<String, String> classes, Map<String, String> secondary,
+                                   Map<String, Ili2dbLayout.AttributeTransformation> attributes) { }
 
     private record CatalogTable(String name, Map<String, String> columns, Set<String> used) { }
 
@@ -137,7 +138,7 @@ final class DbSchemaReader {
         });
         var attrNames = readAttributeNames(db, scope);
         var transformations = readTransformations(db, scope);
-        var usedCatalogueMappings = new HashSet<String>();
+        var usedAttributeTransformations = new HashSet<String>();
         var inheritance = readInheritance(db, scope);
         var names = new HashMap<SymbolRef, String>();
         var usedNames = new HashSet<String>();
@@ -218,7 +219,8 @@ final class DbSchemaReader {
                 var defaults = settings.crs(plan.model(contributor.model()).orElseThrow().name().declared().last());
                 for (var attr : DbMapping.storageAttributes(object, contributor)) {
                     String path = attr.name().declared().toString();
-                    if (transformations.catalogue().contains(path)) {
+                    var transformation = transformations.attributes().get(path);
+                    if (transformation == Ili2dbLayout.AttributeTransformation.CATALOGUE_REFERENCE) {
                         var binding = DbCatalogueReference.describe(plan, attr)
                                 .orElseThrow(() -> unsupported("catalogue reference at " + path));
                         if (settings.inheritance() == DbInheritance.Profile.SMART1) {
@@ -226,7 +228,16 @@ final class DbSchemaReader {
                         }
                         columns.addAll(bindReferences(db, parent, attrNames, layout, names,
                                 DbMapping.catalogueColumn(plan, contributor, attr, binding), false, settings));
-                        usedCatalogueMappings.add(path);
+                        usedAttributeTransformations.add(path);
+                        continue;
+                    }
+                    if (transformation == Ili2dbLayout.AttributeTransformation.MULTILINGUAL) {
+                        var binding = DbTextExpansion.describe(plan, attr)
+                                .orElseThrow(() -> unsupported("multilingual text expansion at " + path));
+                        var mapping = attrNames.take(path, parent.name(), null);
+                        var column = DbMapping.textColumn(attr, mapping.name(), binding);
+                        columns.add(bindColumn(db, parent, names, column, mapping, path, settings));
+                        usedAttributeTransformations.add(path);
                         continue;
                     }
                     var composition = DbMapping.describeComposition(plan, object, attr, path);
@@ -254,9 +265,9 @@ final class DbSchemaReader {
                         var mapping = attrNames.take(attribute, table == null ? parent.name() : table, null);
                         var column = described.withName(mapping.name());
                         if (table != null) {
-                            var transformation = transformations.secondary()
+                            var secondaryTransformation = transformations.secondary()
                                     .remove(Ili2dbLayout.secondaryTransformation(path, owner, column.epsgCode()));
-                            if (transformation == null || !key(db, table).equals(key(db, transformation))
+                            if (secondaryTransformation == null || !key(db, table).equals(key(db, secondaryTransformation))
                                     || !usedNames.add(key(db, table)) || Ili2dbLayout.reservedTable(foldedName(table), db.gpkg())) {
                                 throw new DbException("Inconsistent secondary geometry CLASSNAME/TRAFO/ATTRNAME mapping for " + path);
                             }
@@ -292,8 +303,8 @@ final class DbSchemaReader {
         if (!classNames.isEmpty() || !transformations.secondary().isEmpty()) {
             throw new DbException("Extra CLASSNAME/TRAFO mappings for " + modelName);
         }
-        for (var path : transformations.catalogue()) {
-            if (!usedCatalogueMappings.contains(path)) throw unsupported("catalogue reference TRAFO entry for " + path);
+        for (var path : transformations.attributes().keySet()) {
+            if (!usedAttributeTransformations.contains(path)) throw unsupported("attribute TRAFO entry for " + path);
         }
         if (settings.inheritance() != DbInheritance.Profile.NEW_CLASS) {
             unselectedOwners.removeAll(usedNames);
@@ -700,7 +711,7 @@ final class DbSchemaReader {
         requireMetadataColumns(db, table, "iliname", "tag", "setting");
         var result = new HashMap<String, String>();
         var secondary = new HashMap<String, String>();
-        var catalogue = new HashSet<String>();
+        var attributes = new HashMap<String, Ili2dbLayout.AttributeTransformation>();
         try (var stmt = scopedMetadata(db, table, "iliname, tag, setting", "iliname", scope);
              var rows = stmt.executeQuery()) {
             while (rows.next()) {
@@ -708,18 +719,19 @@ final class DbSchemaReader {
                 if (!scope.includes(path)) continue;
                 String setting = required(rows, 3, "TRAFO.setting");
                 String tag = rows.getString(2);
+                var transformation = Ili2dbLayout.AttributeTransformation.fromTag(tag);
                 if (Ili2dbLayout.SECONDARY_TABLE_TAG.equals(tag)) {
                     if (secondary.putIfAbsent(path, setting) != null) throw unsupported("TRAFO entries for " + path);
-                } else if (Ili2dbLayout.CATALOGUE_REF_TAG.equals(tag)) {
-                    if (!Ili2dbLayout.COALESCE.equals(setting) || !catalogue.add(path)) {
-                        throw unsupported("catalogue reference TRAFO entry for " + path);
+                } else if (transformation != null) {
+                    if (!transformation.setting.equals(setting) || attributes.putIfAbsent(path, transformation) != null) {
+                        throw unsupported("attribute TRAFO entry for " + path);
                     }
                 } else if (!INHERITANCE_TAG.equals(tag) || result.putIfAbsent(path, setting) != null) {
                     throw unsupported("TRAFO entries for " + path);
                 }
             }
         }
-        return new Transformations(result, secondary, catalogue);
+        return new Transformations(result, secondary, attributes);
     }
 
     private static Map<String, String> readInheritance(Database db, MetadataScope scope) throws SQLException {
@@ -785,7 +797,12 @@ final class DbSchemaReader {
         } else if (mapping.target() != null) {
             throw new DbException("Unexpected ATTRNAME.target for " + path);
         }
-        requireColumns(db, table.name(), table.columns(), Map.of(column.name(), column.kind()));
+        for (var name : column.physicalNames()) {
+            if (!name.equals(column.name()) && !table.used().add(key(db, name))) {
+                throw new DbException("Inconsistent expanded column " + name + " for " + path);
+            }
+            requireColumns(db, table.name(), table.columns(), Map.of(name, column.kind()));
+        }
         return column.kind().geometry() ? bindGeometry(db, table.name(), column, settings) : column;
     }
 
