@@ -24,7 +24,7 @@ Die Gradle-Teilprojekte deklarieren die konkreten Abhängigkeiten und Scopes.
 | `interlis-validation-jts` | validation, JTS | Optionales JVM-Modul für analytische Geometrieoperationen |
 | `interlis-validation-mvstore` | validation, H2 MVStore | Optionaler JVM-Speicher für einen Datensatzlauf |
 | `interlis-xtf` | transfer, model | XML-Adapter für XTF 2.3 und 2.4 |
-| `interlis-db` | compiler, model, transfer, xtf | JVM-Host für Schemaerzeugung und Datenaustausch mit ili2db in GeoPackage und PostgreSQL/PostGIS |
+| `interlis-db` | compiler, model, transfer, xtf, Gson | JVM-Host für Schemaerzeugung und Datenaustausch mit ili2db in GeoPackage und PostgreSQL/PostGIS |
 | `interlis-compiler-cli` | compiler, model, repository, workspace, projection | CLI, Prozessgrenzen, Präsentation und Ausgabe |
 | `interlis-validator-cli` | compiler, workspace, repository, transfer, xtf, validation, validation-jts, validation-mvstore, Gson | JVM-Host für Modellbeschaffung, XTF-Dateien und Validatorausgabe |
 | `interlis-compiler-gui` | model, compiler, workspace, repository | Desktop-Modellprüfung, Diagnosen, Abhängigkeiten und Repositoryexplorer |

@@ -260,6 +260,18 @@ final class DbSchemaReader {
                         usedAttributeTransformations.add(path);
                         continue;
                     }
+                    if (transformation == Ili2dbLayout.AttributeTransformation.JSON_STRUCTURE) {
+                        var stored = attrNames.take(path, parent.name(), null);
+                        useColumn(db, parent, stored, path);
+                        if (stored.target() != null) throw new DbException("Unexpected ATTRNAME.target for " + path);
+                        String expected = db.gpkg() ? "text" : "jsonb";
+                        if (!expected.equals(parent.columns().get(key(db, stored.name())))) {
+                            throw new DbException("Expected " + expected + " for JSON column " + parent.name() + "." + stored.name());
+                        }
+                        columns.add(DbMapping.jsonColumn(plan, attr, stored.name(), DbJsonStructure.describe(plan, attr)));
+                        usedAttributeTransformations.add(path);
+                        continue;
+                    }
                     var wrapped = wrappedGeometries.get(attr.symbol());
                     var composition = wrapped == null ? DbMapping.describeComposition(plan, object, attr, path)
                             : Optional.<Composition>empty();

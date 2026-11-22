@@ -147,6 +147,13 @@ final class Database implements AutoCloseable {
         return quote(schema) + "." + quote(name);
     }
 
+    String jsonParameter() { return gpkg() ? "?" : "CAST(? AS jsonb)"; }
+
+    String jsonProjection(String field) {
+        String text = gpkg() ? field : "CAST(" + field + " AS text)";
+        return "CASE WHEN length(" + text + ") > " + DbJsonStructure.MAX_CODE_UNITS + " THEN '' ELSE " + text + " END";
+    }
+
     Column geometryStorage(String table, Column column, boolean referenceEpsgHeader) throws SQLException {
         int srsId = geometrySrs(table, column);
         boolean acceptsEpsgHeader = gpkg() && referenceEpsgHeader && srsId != column.epsgCode()

@@ -74,7 +74,8 @@ final class Ili2dbLayout {
         MULTIPOINT("--coalesce-multi-point", "multiPointTrafo", COALESCE),
         MULTILINE("--coalesce-multi-line", "multiLineTrafo", COALESCE),
         MULTISURFACE("--coalesce-multi-surface", "multiSurfaceTrafo", COALESCE),
-        EXPANDED_STRUCTURE("--expand-struct", "structTrafo", "expand");
+        EXPANDED_STRUCTURE("--expand-struct", "structTrafo", "expand"),
+        JSON_STRUCTURE(null, "jsonTrafo", COALESCE);
 
         final String option;
         final String tag;

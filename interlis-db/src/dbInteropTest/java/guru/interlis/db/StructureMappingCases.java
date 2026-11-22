@@ -7,6 +7,7 @@ import org.w3c.dom.Element;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -305,7 +306,7 @@ final class StructureMappingCases {
         }
     }
 
-    private static void assertSharedIds(TestDatabase db, java.sql.Connection sql, String count, String... tables) throws Exception {
+    private static void assertSharedIds(TestDatabase db, Connection sql, String count, String... tables) throws Exception {
         var allTables = new ArrayList<>(List.of(tables));
         allTables.addAll(List.of("t_ili2db_basket", "t_ili2db_dataset"));
         var ids = allTables.stream().map(table -> "SELECT t_id FROM " + db.table(table)).collect(Collectors.joining(" UNION ALL "));
@@ -391,6 +392,53 @@ final class StructureMappingCases {
         assertEquals("other", child(members(rows.get(prefix + "-other"), "Items").getFirst(), "Label").getTextContent());
         assertEquals("primary", child(rows.get(prefix + "-first"), "Marker").getTextContent());
         assertEquals("secondary", child(rows.get(prefix + "-other"), "Caption").getTextContent());
+    }
+
+    void jsonSingle(TestDatabase db) throws Exception {
+        String model = "JsonStructure" + version;
+        source(model, """
+                    !!@ili2db.mapping=JSON
+                    Doc : Entry;
+                """);
+        referenceSchema(db, model, "--coalesceJson");
+        var output = work.resolve("out.xtf");
+        referenceImport(db, "legacy", singleDataset(model, "legacy", "Doc"));
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertSingle(output, "legacy", "Doc");
+
+        assertCliSuccess(db, "import", model, "native", singleDataset(model, "native", "Doc"));
+        referenceExport(db, "native", output);
+        assertSingle(output, "native", "Doc");
+        String previous = Files.readString(output);
+        try (var sql = db.connect()) {
+            var asset = db.table("asset");
+            for (var prefix : List.of("legacy", "native")) {
+                var value = " FROM " + asset + " WHERE t_ili_tid='" + prefix + "-value'";
+                assertEquals("é & a", scalar(sql, "SELECT " + jsonKey(db, "doc", "Label") + value));
+                assertEquals("high", scalar(sql, "SELECT " + jsonKey(db, "doc", "Code") + value));
+                assertEquals(model + ".Data.Entry", scalar(sql, "SELECT " + jsonKey(db, "doc", "@type") + value));
+                String quantityKind = db.postgis() ? "jsonb_typeof(doc->'Quantity')" : "json_type(doc,'$.Quantity')";
+                assertEquals(db.postgis() ? "number" : "integer", scalar(sql, "SELECT " + quantityKind + value));
+                String flagKind = db.postgis() ? "jsonb_typeof(doc->'Flag')" : "json_type(doc,'$.Flag')";
+                assertEquals(db.postgis() ? "boolean" : "true", scalar(sql, "SELECT " + flagKind + value));
+                assertNull(scalar(sql, "SELECT doc FROM " + asset + " WHERE t_ili_tid='" + prefix + "-missing'"));
+                assertEquals(model + ".Data.Entry", scalar(sql, "SELECT " + jsonKey(db, "doc", "@type")
+                        + " FROM " + asset + " WHERE t_ili_tid='" + prefix + "-empty'"));
+            }
+            assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("entry")));
+            execute(sql, """
+                    UPDATE %s SET doc='{"@type":"Unknown"}' WHERE t_ili_tid='native-value'
+                    """.formatted(asset));
+            assertCliFailure(db, "export", model, "native", output, "Unexpected JSON structure type Unknown");
+            assertEquals(previous, Files.readString(output));
+            execute(sql, "UPDATE " + asset + " SET doc='" + (db.postgis() ? "[]" : "{") + "' WHERE t_ili_tid='native-value'");
+        }
+        assertCliFailure(db, "export", model, "native", output, "Invalid ili2db JSON");
+        assertEquals(previous, Files.readString(output));
+    }
+
+    private static String jsonKey(TestDatabase db, String column, String key) {
+        return db.postgis() ? column + "->>'" + key + "'" : "json_extract(" + column + ",'$." + key + "')";
     }
 
     private Path singleDataset(String model, String prefix, String field) throws Exception {

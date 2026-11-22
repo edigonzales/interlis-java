@@ -103,6 +103,8 @@ prüfen kollidierende Spaltennamen, die gemeinsame ID-Vergabe und
 `--add-models` mit der gespeicherten Option. Die `*ExpandSmart2*`-Fälle
 prüfen zwei konkrete Eigentümertabellen, stabile IDs und freigewordene
 Spalten nach `update` sowie die Datensatzzeilen nach `replace` und `delete`.
+Die `*JsonStructure*`-Fälle prüfen `--coalesceJson` für Einzelstrukturen,
+typisierte Werte, SQL `NULL` und den Erhalt der XTF-Datei bei fehlerhaftem JSON.
 
 `*DbInteropTest.*CatalogueReference*` prüft beide Werkzeugrichtungen
 für Katalogreferenzen mit `--coalesceCatalogueRef` auf GeoPackage und

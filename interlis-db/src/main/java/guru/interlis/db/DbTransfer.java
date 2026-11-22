@@ -496,7 +496,10 @@ final class DbTransfer {
                     }
                     column.positionColumn().ifPresent(position -> projections.add(alias + "." + quote(position)));
                 }
-                default -> column.physicalNames().forEach(name -> projections.add(alias + "." + quote(name)));
+                default -> {
+                    if (column.jsonStructure().isPresent()) projections.add(db.jsonProjection(field));
+                    else column.physicalNames().forEach(name -> projections.add(alias + "." + quote(name)));
+                }
             }
         }
         for (var geometry : table.secondaryGeometries()) {
@@ -1019,6 +1022,9 @@ final class DbTransfer {
         if (column.expandedStructure().isPresent()) {
             return readExpanded(db, rows, index, column.expandedStructure().orElseThrow(), ownerTid);
         }
+        if (column.jsonStructure().isPresent()) {
+            return column.jsonStructure().orElseThrow().decode(rows.getString(index), column.slot().name().declared() + " of object " + ownerTid);
+        }
         return switch (column.kind()) {
             case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> readGeometry(db, rows, index, column);
             case BOOLEAN, INTEGER, ENUMERATION -> readScalar(db, rows, index, column);
@@ -1143,7 +1149,7 @@ final class DbTransfer {
         throw new DbException("Invalid SQLite boolean in " + column.slot().name().declared());
     }
 
-    private static NumberValue readInteger(String value, Column column) {
+    static NumberValue readInteger(String value, Column column) {
         if (value == null) {
             return null;
         }
@@ -1155,7 +1161,7 @@ final class DbTransfer {
         }
     }
 
-    private static Enumeration readEnumeration(String value, Column column) {
+    static Enumeration readEnumeration(String value, Column column) {
         if (value == null) {
             return null;
         }
@@ -1698,7 +1704,8 @@ final class DbTransfer {
             for (var column : table.columns()) {
                 for (var name : column.physicalNames()) {
                     names.add(quote(name));
-                    values.add(column.kind().geometry() ? db.geometryParameter() : "?");
+                    values.add(column.kind().geometry() ? db.geometryParameter()
+                            : column.jsonStructure().isPresent() ? db.jsonParameter() : "?");
                 }
                 column.positionColumn().ifPresent(position -> {
                     names.add(quote(position));
@@ -1753,6 +1760,11 @@ final class DbTransfer {
             if (column.expandedStructure().isPresent()) {
                 return bindExpanded(statement, index, column.expandedStructure().orElseThrow(), value,
                         column.slot().name().declared() + " of object " + context);
+            }
+            if (column.jsonStructure().isPresent()) {
+                statement.setString(index, column.jsonStructure().orElseThrow().encode(value,
+                        column.slot().name().declared() + " of object " + context));
+                return index + 1;
             }
             if (column.textExpansion().isPresent()) {
                 for (var text : column.textExpansion().orElseThrow().disassemble(value, column.slot().name().declared()

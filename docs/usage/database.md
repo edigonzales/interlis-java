@@ -492,6 +492,12 @@ Strukturwerte die reguläre Strukturtabelle. Ein optionaler, ebenfalls
 expandierter innerer Strukturwert erhält eine eigene Typmarkierung und
 eigene Feldspalten in derselben Tabelle.
 
+In bestehenden Schemata mit `--coalesceJson` speichert ili2db eine
+optionale flache Struktur als JSON-Objekt. GeoPackage verwendet `TEXT`,
+PostGIS `JSONB`. Der qualifizierte INTERLIS-Typ steht in `@type`. SQL
+`NULL` steht für den fehlenden Strukturwert. Eine vorhandene leere
+Struktur wird als Objekt mit `@type` übertragen.
+
 In XTF 2.3 und 2.4 FULL können Klassen und Strukturen optionale Strukturwerte
 sowie `LIST OF`- und `BAG OF`-Attribute mit einem Strukturtyp aus dem
 Modell oder dem eigenen Topic enthalten. Verschachtelungen sind azyklisch.
