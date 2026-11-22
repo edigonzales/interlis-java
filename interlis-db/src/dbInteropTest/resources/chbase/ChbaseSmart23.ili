@@ -1,0 +1,39 @@
+INTERLIS 2.3;
+
+MODEL ChbaseSmart23 (en) AT "https://example.org" VERSION "2026-01-01" =
+  DOMAIN
+    !!@CRS=EPSG:2056
+    Location = COORD 2460000.000 .. 2870000.000, 1045000.000 .. 1310000.000;
+    LanguageCode = (de, fr, rm, it, en);
+
+  STRUCTURE TranslationEntry =
+    Language : LanguageCode;
+    Text : MANDATORY TEXT*120;
+  END TranslationEntry;
+
+  !!@ili2db.mapping=Multilingual
+  STRUCTURE Captions =
+    LocalisedText : BAG {1..*} OF TranslationEntry;
+  END Captions;
+
+  STRUCTURE PinPart =
+    Position : Location;
+  END PinPart;
+
+  !!@ili2db.mapping=MultiPoint
+  STRUCTURE PinGroup =
+    Members : BAG {1..*} OF PinPart;
+  END PinGroup;
+
+  TOPIC Data =
+    CLASS AssetBase (ABSTRACT) =
+      Caption : Captions;
+      Anchor : Location;
+      Shape : PinGroup;
+    END AssetBase;
+
+    CLASS SurveyAsset EXTENDS AssetBase =
+      Marker : TEXT*20;
+    END SurveyAsset;
+  END Data;
+END ChbaseSmart23.

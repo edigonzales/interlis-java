@@ -265,6 +265,13 @@ aus CHBase V1 sowie gleich aufgebaute, mit
 `MULTISURFACE`-Spalte. Die zweidimensionale Abbildung erhält
 Aussenringe, Innenringe und Kreisbogen.
 
+Das kombinierte Smart2-Profil ist mit flachen, über `ili2db.mapping`
+markierten Strukturtypen geprüft. Ein geerbtes mehrsprachiges Attribut
+liegt in der Tabelle seines konkreten Typs. Die kompakte Geometrie kann
+in der Hilfstabelle liegen. `update` behält Objekt- und Basket-ID und
+setzt weggefallene Sprachen auf `NULL`. `delete` entfernt auch die
+Hilfszeilen und die zugehörigen Einträge im GeoPackage-RTree.
+
 Für bestehende Smart1-Schemata unterstützt `interlis-db` den FULL-Import
 und -Export von Klassenhierarchien mit skalaren Attributen. Das
 Referenzschema lässt sich mit `--noSmartMapping --smart1Inheritance`

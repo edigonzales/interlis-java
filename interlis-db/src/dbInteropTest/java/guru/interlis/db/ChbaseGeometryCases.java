@@ -8,6 +8,7 @@ import org.w3c.dom.Element;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,7 @@ import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
 import static guru.interlis.db.DbInteropTest.scalar;
+import static guru.interlis.db.SpatialIndexCases.assertIndex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -163,6 +165,92 @@ final class ChbaseGeometryCases {
                     .map(table -> "SELECT t_id FROM " + own.table(table)).collect(Collectors.joining(" UNION ALL "));
             assertEquals("39", scalar(sql, "SELECT count(DISTINCT t_id) FROM (" + ids + ") ids"));
         }
+    }
+
+    void smart2(TestDatabase baseline, TestDatabase own) throws Exception {
+        String model = "ChbaseSmart" + version;
+        var source = fixture(model + ".ili");
+        var input = fixture(model + ".xtf");
+        var update = fixture(model + "-update.xtf");
+        var referenceOptions = new ArrayList<>(List.of("--smart2Inheritance", "--coalesceMultiPoint",
+                "--expandMultilingual", "--createGeomIdx"));
+        var nativeOptions = new ArrayList<>(List.of("--inheritance", "smart2", "--coalesce-multi-point",
+                "--expand-multilingual", "--create-geom-index"));
+        if (own.postgis()) {
+            referenceOptions.add("--oneGeomPerTable");
+            nativeOptions.add("--one-geom-per-table");
+        }
+        referenceSchema(baseline, model, referenceOptions.toArray(String[]::new));
+        var result = cli(own, "schemaimport", model, null, source, CancellationToken.none(), nativeOptions.toArray(String[]::new));
+        assertEquals(0, result.code(), result::diagnostics);
+        try (var expected = baseline.connect(); var actual = own.connect()) {
+            DbSchemaCatalog.read(expected, baseline.postgis(), baseline.schema())
+                    .assertSameAs(DbSchemaCatalog.read(actual, own.postgis(), own.schema()));
+        }
+        for (var db : List.of(baseline, own)) {
+            var output = work.resolve("smart2-output.xtf");
+            referenceImport(db, "legacy", input);
+            assertCliSuccess(db, "export", model, "legacy", output);
+            assertSmart2(output, model, "fixture", "Alt", "Pont", 2600100, 1200100);
+            assertCliSuccess(db, "import", model, "native", withPrefix(input, "native"));
+            referenceExport(db, "native", output);
+            assertSmart2(output, model, "native", "Alt", "Pont", 2600100, 1200100);
+            assertCliSuccess(db, "delete", model, "native", null);
+
+            try (var sql = db.connect()) {
+                assertIndex(db, sql, "surveyasset", "anchor");
+                assertIndex(db, sql, "surveyasset_shape", "shape");
+                var asset = db.table("surveyasset");
+                var shape = db.table("surveyasset_shape");
+                String object = scalar(sql, "SELECT t_id FROM " + asset);
+                String basket = scalar(sql, "SELECT t_basket FROM " + asset);
+                assertEquals(object, scalar(sql, "SELECT t_id FROM " + shape));
+                assertEquals(basket, scalar(sql, "SELECT t_basket FROM " + shape));
+                assertSpatialHit(db, sql, "surveyasset_shape", "shape", 2600100, true);
+                assertCliSuccess(db, "update", model, "legacy", update);
+                assertEquals(object, scalar(sql, "SELECT t_id FROM " + asset));
+                assertEquals(object, scalar(sql, "SELECT t_id FROM " + shape));
+                assertEquals(basket, scalar(sql, "SELECT t_basket FROM " + shape));
+                assertEquals("Neu", scalar(sql, "SELECT caption_de FROM " + asset));
+                assertNull(scalar(sql, "SELECT caption_fr FROM " + asset));
+                assertSpatialHit(db, sql, "surveyasset_shape", "shape", 2600100, false);
+                assertSpatialHit(db, sql, "surveyasset_shape", "shape", 2600300, true);
+
+                referenceExport(db, "legacy", output);
+                assertSmart2(output, model, "fixture", "Neu", null, 2600300, 1200300);
+                assertCliSuccess(db, "delete", model, "legacy", null);
+                for (var table : List.of("surveyasset", "surveyasset_shape", "t_ili2db_basket", "t_ili2db_dataset")) {
+                    assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table(table)), table);
+                }
+                assertSpatialHit(db, sql, "surveyasset_shape", "shape", 2600300, false);
+                if (!db.postgis()) {
+                    assertEquals("0", scalar(sql, "SELECT count(*) FROM rtree_surveyasset_shape_shape"));
+                    assertEquals("0", scalar(sql, "SELECT count(*) FROM rtree_surveyasset_anchor"));
+                }
+            }
+        }
+    }
+
+    private void assertSmart2(Path output, String model, String prefix, String german, String french, int x, int y) throws Exception {
+        var object = objects(output, prefix).get(prefix + "-value");
+        assertEquals("survey", child(object, "Marker").getTextContent());
+        var wrapper = children(child(object, "Caption")).getFirst();
+        var texts = children(wrapper).stream().flatMap(field -> children(field).stream())
+                .collect(Collectors.toMap(entry -> child(entry, "Language").getTextContent(), entry -> child(entry, "Text").getTextContent()));
+        assertEquals(french == null ? Map.of("de", german) : Map.of("de", german, "fr", french), texts);
+        assertEquals(xy(Integer.toString(x), Integer.toString(y)), coordinate(children(child(object, "Anchor")).getFirst()));
+        var components = parts(object, model, "PinGroup", "Members", "PinPart");
+        assertEquals(List.of(xy(Integer.toString(x), Integer.toString(y)), xy(Integer.toString(x + 10), Integer.toString(y + 10))),
+                components.stream().map(part -> coordinate(children(child(part, "Position")).getFirst())).toList());
+    }
+
+    private static void assertSpatialHit(TestDatabase db, Connection sql, String table, String column, int x, boolean expected)
+            throws Exception {
+        String query = db.postgis()
+                ? "SELECT count(*) FROM " + db.table(table) + " WHERE " + column
+                    + " && ST_MakeEnvelope(" + (x - 1) + ", 1200000, " + (x + 1) + ", 1201000, 2056)"
+                : "SELECT count(*) FROM rtree_" + table + "_" + column + " WHERE minx <= " + (x + 1) + " AND maxx >= " + (x - 1);
+        assertEquals(expected ? "1" : "0", scalar(sql, query));
     }
 
     private void assertGeometry(Path output, String model, String prefix) throws Exception {

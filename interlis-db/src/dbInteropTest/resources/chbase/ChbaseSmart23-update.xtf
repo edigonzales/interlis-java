@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="test"><MODELS>
+    <MODEL NAME="ChbaseSmart23" VERSION="2026-01-01" URI="https://example.org"/>
+  </MODELS></HEADERSECTION>
+  <DATASECTION>
+    <ChbaseSmart23.Data BID="fixture-b">
+      <ChbaseSmart23.Data.SurveyAsset TID="fixture-value">
+        <Caption><ChbaseSmart23.Captions><LocalisedText><ChbaseSmart23.TranslationEntry><Language>de</Language><Text>Neu</Text></ChbaseSmart23.TranslationEntry></LocalisedText></ChbaseSmart23.Captions></Caption>
+        <Anchor><COORD><C1>2600300</C1><C2>1200300</C2></COORD></Anchor>
+        <Shape><ChbaseSmart23.PinGroup><Members><ChbaseSmart23.PinPart><Position><COORD><C1>2600300</C1><C2>1200300</C2></COORD></Position></ChbaseSmart23.PinPart><ChbaseSmart23.PinPart><Position><COORD><C1>2600310</C1><C2>1200310</C2></COORD></Position></ChbaseSmart23.PinPart></Members></ChbaseSmart23.PinGroup></Shape>
+        <Marker>survey</Marker>
+      </ChbaseSmart23.Data.SurveyAsset>
+    </ChbaseSmart23.Data>
+  </DATASECTION>
+</TRANSFER>

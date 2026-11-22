@@ -111,6 +111,10 @@ fehlender Sprachspalte.
 `*DbInteropTest.*ChbaseTextSchema*` vergleicht beide Textabbildungen
 im gemeinsamen Schema mit ili2db und prüft die ID-Vergabe mit einem
 weiteren Referenzimport.
+`*DbInteropTest.*ChbaseSmart2*` prüft die geerbten Textspalten und die
+ausgelagerte Multipunkt-Geometrie gemeinsam. Die Fälle vergleichen die
+Schemata, prüfen beide Werkzeugrichtungen und kontrollieren beim
+Aktualisieren und Löschen IDs, Hilfszeilen und Raumindizes.
 `*DbInteropTest.*ChbasePoints*` prüft `--coalesceMultiPoint` in
 beiden Werkzeugrichtungen, einschliesslich doppelter Punkte, SRID,
 SQL-`NULL` und der leeren Strukturtabellen.

@@ -124,6 +124,10 @@ final class DbInteropTest {
     @Test void geoPackageChbaseGeometrySchema24() throws Exception { exchangeChbaseGeometrySchema(24, null); }
     @Test void postgisChbaseGeometrySchema23() throws Exception { exchangeWithPostgis(23, this::exchangeChbaseGeometrySchema); }
     @Test void postgisChbaseGeometrySchema24() throws Exception { exchangeWithPostgis(24, this::exchangeChbaseGeometrySchema); }
+    @Test void geoPackageChbaseSmart223() throws Exception { exchangeChbaseSmart2(23, null); }
+    @Test void geoPackageChbaseSmart224() throws Exception { exchangeChbaseSmart2(24, null); }
+    @Test void postgisChbaseSmart223() throws Exception { exchangeWithPostgis(23, this::exchangeChbaseSmart2); }
+    @Test void postgisChbaseSmart224() throws Exception { exchangeWithPostgis(24, this::exchangeChbaseSmart2); }
 
     private void exchangeChbasePoints(int version, PostgreSQLContainer postgres) throws Exception {
         var db = new TestDatabase(postgres, "chbase_points");
@@ -144,6 +148,12 @@ final class DbInteropTest {
         var baseline = new TestDatabase(postgres, "chbase_geometry_ref");
         new ChbaseGeometryCases(work, new ReferenceTool(baseline.postgis()), version)
                 .schema(baseline, new TestDatabase(postgres, "chbase_geometry_own"));
+    }
+
+    private void exchangeChbaseSmart2(int version, PostgreSQLContainer postgres) throws Exception {
+        var baseline = new TestDatabase(postgres, "chbase_smart2_ref");
+        new ChbaseGeometryCases(work, new ReferenceTool(baseline.postgis()), version)
+                .smart2(baseline, new TestDatabase(postgres, "chbase_smart2_own"));
     }
 
     @Test void geoPackageChbaseMultilingual23() throws Exception { exchangeChbaseMultilingual(23, null); }

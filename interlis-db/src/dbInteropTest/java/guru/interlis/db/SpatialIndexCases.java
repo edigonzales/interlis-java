@@ -421,7 +421,7 @@ final class SpatialIndexCases {
         assertEquals(0, new BigDecimal(x).compareTo(new BigDecimal(actual)));
     }
 
-    private static void assertIndex(TestDatabase db, Connection sql, String table, String field) throws SQLException {
+    static void assertIndex(TestDatabase db, Connection sql, String table, String field) throws SQLException {
         String query = db.postgis()
                 ? "SELECT count(*) FROM pg_indexes WHERE schemaname='" + db.schema() + "' AND tablename='" + table
                    + "' AND indexdef LIKE '%USING gist%' AND indexdef LIKE '%(" + field + ")%'"

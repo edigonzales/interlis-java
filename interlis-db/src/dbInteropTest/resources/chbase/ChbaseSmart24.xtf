@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="http://www.interlis.ch/xtf/2.4/ChbaseSmart24"
+  xmlns:g="http://www.interlis.ch/geometry/1.0">
+  <i:headersection><i:models><i:model>ChbaseSmart24</i:model></i:models></i:headersection>
+  <i:datasection>
+    <Data i:bid="fixture-b">
+      <SurveyAsset i:tid="fixture-value">
+        <Caption><Captions><LocalisedText><TranslationEntry><Language>de</Language><Text>Alt</Text></TranslationEntry><TranslationEntry><Language>fr</Language><Text>Pont</Text></TranslationEntry></LocalisedText></Captions></Caption>
+        <Anchor><g:coord><g:c1>2600100</g:c1><g:c2>1200100</g:c2></g:coord></Anchor>
+        <Shape><PinGroup><Members><PinPart><Position><g:coord><g:c1>2600100</g:c1><g:c2>1200100</g:c2></g:coord></Position></PinPart><PinPart><Position><g:coord><g:c1>2600110</g:c1><g:c2>1200110</g:c2></g:coord></Position></PinPart></Members></PinGroup></Shape>
+        <Marker>survey</Marker>
+      </SurveyAsset>
+    </Data>
+  </i:datasection>
+</i:transfer>
