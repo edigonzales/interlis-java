@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns:a="http://www.interlis.ch/xtf/2.4/TownBase24">
+  <i:headersection>
+    <i:models>
+      <i:model>TownBase24</i:model>
+    </i:models>
+  </i:headersection>
+  <i:datasection>
+    <a:Survey i:bid="original-b">
+      <a:Station i:tid="original-o">
+        <a:Memo>text</a:Memo>
+        <a:State>open</a:State>
+      </a:Station>
+    </a:Survey>
+  </i:datasection>
+</i:transfer>

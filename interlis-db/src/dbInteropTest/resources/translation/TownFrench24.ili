@@ -1,0 +1,5 @@
+INTERLIS 2.4;
+MODEL TownFrench24 AT "https://example.org/town" VERSION "1" TRANSLATION OF TownBase24 ["1"] =
+DOMAIN Etat = (ouvert, ferme);
+TOPIC Releve = CLASS Poste = Note : TEXT*30; Statut : Etat; END Poste; END Releve;
+END TownFrench24.

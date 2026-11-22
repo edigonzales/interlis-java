@@ -1,0 +1,5 @@
+INTERLIS 2.4;
+MODEL TownBase24 AT "https://example.org/town" VERSION "1" =
+DOMAIN Mood = (open, closed);
+TOPIC Survey = CLASS Station = Memo : TEXT*30; State : Mood; END Station; END Survey;
+END TownBase24.

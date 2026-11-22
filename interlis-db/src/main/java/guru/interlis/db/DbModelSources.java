@@ -14,6 +14,7 @@ import guru.interlis.compiler.ResolutionFingerprint;
 import guru.interlis.compiler.ResolutionProblem;
 import guru.interlis.compiler.ResolutionReason;
 import guru.interlis.compiler.SourceSet;
+import guru.interlis.compiler.TranslationBinding;
 import guru.interlis.diagnostics.DiagnosticId;
 import guru.interlis.diagnostics.DiagnosticLanguage;
 import guru.interlis.diagnostics.DiagnosticMessageFormatter;
@@ -61,9 +62,21 @@ final class DbModelSources {
             }
         }
         var imports = new ArrayList<ImportBinding>();
+        var translations = new ArrayList<TranslationBinding>();
         for (var parsed : syntax.values()) {
             for (var importer : parsed.root().models()) {
                 token.throwIfCancellationRequested();
+                importer.translationSource().ifPresent(original -> {
+                    var candidates = locations.getOrDefault(original.text(), List.of()).stream()
+                            .filter(candidate -> importer.translationVersion().isEmpty()
+                                    || importer.translationVersion().equals(candidate.modelVersion())).toList();
+                    if (candidates.size() == 1) {
+                        var source = parsed.source();
+                        var translated = new ModelLocation(source.id(), source.revision(), importer.name(),
+                                Optional.of(importer.modelVersion()), importer.range().startOffset());
+                        translations.add(new TranslationBinding(translated, candidates.getFirst()));
+                    }
+                });
                 for (var imported : importer.imports()) {
                     String name = imported.modelName();
                     if ("INTERLIS".equals(name)) continue;
@@ -79,7 +92,7 @@ final class DbModelSources {
                 }
             }
         }
-        var sourceSet = SourceSet.of(sources, imports, List.of(), ResolutionFingerprint.none());
+        var sourceSet = SourceSet.of(sources, imports, List.of(), ResolutionFingerprint.none(), translations);
         var request = new CompilationRequest(selectors, sourceSet, CompilerOptions.defaults());
         var outcome = CompilerEngines.create().compile(request, new AnalysisReuse(Optional.empty(), syntax), token);
         String target = description + " for " + String.join(", ", models);

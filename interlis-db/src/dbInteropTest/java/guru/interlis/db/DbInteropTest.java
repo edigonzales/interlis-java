@@ -108,6 +108,11 @@ final class DbInteropTest {
 
     @TempDir(cleanup = CleanupMode.ALWAYS) Path work;
 
+    @Test void geoPackageTranslationSources23() throws Exception { exchangeTranslationSources(23, null); }
+    @Test void geoPackageTranslationSources24() throws Exception { exchangeTranslationSources(24, null); }
+    @Test void postgisTranslationSources23() throws Exception { exchangeWithPostgis(23, this::exchangeTranslationSources); }
+    @Test void postgisTranslationSources24() throws Exception { exchangeWithPostgis(24, this::exchangeTranslationSources); }
+
     @Test void geoPackageSharedSource23() throws Exception { exchangeSharedSource(23, null); }
     @Test void geoPackageSharedSource24() throws Exception { exchangeSharedSource(24, null); }
     @Test void postgisSharedSource23() throws Exception { exchangeWithPostgis(23, this::exchangeSharedSource); }
@@ -443,6 +448,11 @@ final class DbInteropTest {
             postgres.start();
             test.run(version, postgres);
         }
+    }
+
+    private void exchangeTranslationSources(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "translation_sources");
+        new TranslationCases(work, new ReferenceTool(db.postgis()), version).sources(db);
     }
 
     private void exchangeSharedSource(int version, PostgreSQLContainer postgres) throws Exception {

@@ -351,6 +351,11 @@ final class DbMapping {
         return plan.objects().stream().filter(object -> selected.contains(object.symbol())).toList();
     }
 
+    static List<SymbolRef> storageRoots(TransferPlan plan, Optional<DbCrsPair> crsPair) {
+        return crsPair.map(pair -> List.of(pair.models().getFirst())).orElseGet(() -> plan.rootModels().stream()
+                .map(ref -> plan.model(ref).orElseThrow().name().canonical()).distinct().toList());
+    }
+
     private static void include(ObjectDescriptor object, Set<SymbolRef> selected, ArrayDeque<ObjectDescriptor> pending) {
         if (selected.add(object.symbol())) pending.addLast(object);
     }

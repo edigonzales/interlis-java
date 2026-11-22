@@ -96,14 +96,16 @@ final class DbSchemaReader {
 
         var crsPair = settings.srsModels().map(pair -> new DbCrsPair(plan, pair, settings.crs(pair.original()),
                 settings.crs(pair.alternate())));
-        var roots = crsPair.map(pair -> List.of(pair.models().getFirst())).orElseGet(plan::rootModels);
+        var roots = DbMapping.storageRoots(plan, crsPair);
         var selected = DbMapping.storageObjects(plan, roots, token);
         DbMapping.checkLayout(plan, selected);
         if (!settings.multiSrs() && plan.topics().stream()
                 .anyMatch(topic -> plan.rootModels().contains(topic.model()) && DbDomains.deferred(topic))) {
             throw unsupported("deferred generic domains require SETTINGS.useEpsgInNames");
         }
-        var scope = new MetadataScope(Set.copyOf(selectedModels), selected.stream()
+        var mappedModels = new HashSet<>(selectedModels);
+        roots.stream().map(ref -> plan.model(ref).orElseThrow().name().declared().last()).forEach(mappedModels::add);
+        var scope = new MetadataScope(mappedModels, selected.stream()
                 .map(object -> object.name().declared().toString()).collect(Collectors.toSet()));
         var classNames = readClassNames(db, scope);
         var attrNames = readAttributeNames(db, scope);

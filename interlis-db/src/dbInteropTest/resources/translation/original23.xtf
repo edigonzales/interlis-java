@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="probe">
+    <MODELS>
+      <MODEL NAME="TownBase23" VERSION="1" URI="https://example.org/town"/>
+    </MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <TownBase23.Survey BID="original-b">
+      <TownBase23.Survey.Station TID="original-o">
+        <Memo>text</Memo>
+        <State>open</State>
+      </TownBase23.Survey.Station>
+    </TownBase23.Survey>
+  </DATASECTION>
+</TRANSFER>

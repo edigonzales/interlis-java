@@ -12,6 +12,9 @@ weiterer Modelle verwenden. Das Kommando lädt die benötigten gespeicherten
 Dateien über die Importangaben in `T_ILI2DB_MODEL` und prüft die
 tatsächlichen Importe beim Kompilieren. Fehlende oder mehrdeutige
 Quellen werden mit Modellnamen gemeldet.
+Gespeicherte `TRANSLATION OF`-Beziehungen werden mit dem angegebenen
+Original und seiner Modellversion kompiliert. Die physische Abbildung
+der Übersetzungsfamilie verwendet die gespeicherten SQL-Namen des Originals.
 Für den Datenaustausch sind die Tabellen und XTF-Baskets des Fachmodells
 massgeblich.
 Verwendete Strukturen aus importierten Modellen erhalten ihre Tabellen samt
