@@ -304,6 +304,7 @@ final class DbMapping {
 
     private final TransferPlan plan;
     private final DbInheritance inheritance;
+    private final Set<Ili2dbLayout.SchemaOption> schemaOptions;
     private final LanguageVersion version;
     private final Optional<DbCrsPair> crsPair;
     private final DbTranslations translations;
@@ -323,8 +324,9 @@ final class DbMapping {
 
     DbMapping(TransferPlan plan, LanguageVersion version, List<Table> tables, List<Composition> compositions,
               List<EmbeddedAssociation> associations, Optional<DbCrsPair> crsPair, List<SymbolRef> selectedModels,
-              DbInheritance inheritance) {
+              DbInheritance inheritance, Set<Ili2dbLayout.SchemaOption> schemaOptions) {
         this.plan = plan;
+        this.schemaOptions = Set.copyOf(schemaOptions);
         this.inheritance = inheritance;
         this.crsPair = crsPair;
         translations = new DbTranslations(plan);
@@ -450,6 +452,8 @@ final class DbMapping {
     LanguageVersion version() { return version; }
     List<Table> tables() { return tables; }
     Collection<ObjectStorage> objectStorage() { return storage.values(); }
+
+    Set<Ili2dbLayout.SchemaOption> schemaOptions() { return schemaOptions; }
 
     List<String> storageTables() { return storageTables(tables); }
 
@@ -622,13 +626,13 @@ final class DbMapping {
                              int defaultEpsg, CancellationToken token) {
         var plan = DbModelSources.compile(List.of(modelName), List.of(source), "model files", token).plan();
         return planNew(plan, gpkg, splitGeometries, defaultEpsg, false, Optional.empty(),
-                new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), false, DbEnumOptions.DEFAULT, false, token);
+                new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), false, DbEnumOptions.DEFAULT, Set.of(), token);
     }
 
     static DbMapping planNew(TransferPlan plan, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels,
                              SqlNames allocator, DbInheritance.Profile profile, Set<AttributeTransformation> transformations,
-                             boolean strokeArcs, DbEnumOptions enumOptions, boolean alwaysDiscriminate,
+                             boolean strokeArcs, DbEnumOptions enumOptions, Set<Ili2dbLayout.SchemaOption> schemaOptions,
                              CancellationToken token) {
         var crs = new CrsDefaults(defaultEpsg, 0);
         var crsPair = srsModels.map(pair -> new DbCrsPair(plan, pair, crs, crs));
@@ -668,7 +672,8 @@ final class DbMapping {
         var referenced = new HashSet<SymbolRef>();
         linkRoles.values().forEach(roles -> roles.forEach(role -> referenced.add(role.target())));
         associations.forEach(association -> referenced.add(association.target()));
-        var inheritance = DbInheritance.plan(plan, objects, names, profile, referenced, alwaysDiscriminate);
+        var inheritance = DbInheritance.plan(plan, objects, names, profile, referenced,
+                schemaOptions.contains(Ili2dbLayout.SchemaOption.TYPE_DISCRIMINATOR));
         var discriminated = inheritance.relations().stream().filter(DbInheritance.Relation::discriminator)
                 .map(relation -> relation.object().symbol()).collect(Collectors.toSet());
         var tables = new ArrayList<Table>();
@@ -787,7 +792,7 @@ final class DbMapping {
             tables.add(new Table(object, name, relation.base(), columns, discriminator, oidDomain(plan, object), secondary));
         }
         var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
-        return new DbMapping(plan, version, tables, compositions, associations, crsPair, plan.rootModels(), inheritance);
+        return new DbMapping(plan, version, tables, compositions, associations, crsPair, plan.rootModels(), inheritance, schemaOptions);
     }
 
     private static List<Column> planReferences(SqlNames allocator, Map<SymbolRef, String> names, DbInheritance inheritance,

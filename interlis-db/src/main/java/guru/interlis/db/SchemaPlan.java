@@ -50,8 +50,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                   List<DbMapping.Composition> addedCompositions,
                   List<ColumnProperty> columnProperties, Map<String, List<GeometryColumn>> geometryColumns,
                   boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean strokeArcs, DbEnumOptions enumOptions,
-                  Set<AttributeTransformation> transformations, List<DbEnumLookup> enumLookups,
-                  Set<SchemaOption> schemaOptions) {
+                  Set<AttributeTransformation> transformations, List<DbEnumLookup> enumLookups) {
     record ModelFile(String filename, LanguageVersion version, String modelNames, String content) { }
 
     record ColumnProperty(String table, String subtype, String column, String key, String value) { }
@@ -71,7 +70,6 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         columnProperties = List.copyOf(columnProperties);
         transformations = Set.copyOf(transformations);
         enumLookups = List.copyOf(enumLookups);
-        schemaOptions = Set.copyOf(schemaOptions);
         geometryColumns = geometryColumns.entrySet().stream().collect(java.util.stream.Collectors.toUnmodifiableMap(
                 Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
     }
@@ -106,8 +104,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         var inputModels = srsModels.map(DbCrsPair.Models::names).orElse(models);
         var compiled = DbModelSources.compile(inputModels, sources.values(), "model files", token);
         var mapping = DbMapping.planNew(compiled.plan(), gpkg, splitGeometries, defaultEpsg, multiSrs,
-                srsModels, names, inheritance, transformations, strokeArcs, enumOptions,
-                schemaOptions.contains(SchemaOption.TYPE_DISCRIMINATOR), token);
+                srsModels, names, inheritance, transformations, strokeArcs, enumOptions, schemaOptions, token);
         var declarations = mapping.plan().models().stream()
                 .map(model -> (ModelSymbol) symbol(mapping, model.symbol()))
                 .collect(Collectors.groupingBy(model -> origin(model).range().source()));
@@ -152,10 +149,12 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         }
         return new SchemaPlan(mapping, modelFiles, addedTables, addedAssociations, addedCompositions, properties, geometries,
                 splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations,
-                DbEnumLookup.plan(mapping, names, enumOptions, compiled.syntax(), token), schemaOptions);
+                DbEnumLookup.plan(mapping, names, enumOptions, compiled.syntax(), token));
     }
 
     List<String> addedStorageTables() { return DbMapping.storageTables(addedTables); }
+
+    Set<SchemaOption> schemaOptions() { return mapping.schemaOptions(); }
 
     List<String> discriminatorTypes(DbMapping.Table table) {
         return mapping.objectStorage().stream()
@@ -199,8 +198,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
 
     SchemaPlan withModelFiles(List<ModelFile> files) {
         return new SchemaPlan(mapping, files, addedTables, addedAssociations, addedCompositions, columnProperties,
-                geometryColumns, splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations, enumLookups,
-                schemaOptions);
+                geometryColumns, splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations, enumLookups);
     }
 
     private static Origin.DeclaredOrigin origin(ModelSymbol model) {

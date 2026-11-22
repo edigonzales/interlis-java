@@ -26,6 +26,7 @@ import static guru.interlis.db.Ili2dbLayout.CLASSNAME;
 import static guru.interlis.db.Ili2dbLayout.COLUMN_PROP;
 import static guru.interlis.db.Ili2dbLayout.DATASET;
 import static guru.interlis.db.Ili2dbLayout.DATASET_KEY;
+import static guru.interlis.db.Ili2dbLayout.DATASET_NAME_COLUMN;
 import static guru.interlis.db.Ili2dbLayout.EMBEDDED;
 import static guru.interlis.db.Ili2dbLayout.ID_COLUMN;
 import static guru.interlis.db.Ili2dbLayout.INHERITANCE;
@@ -140,6 +141,8 @@ final class SchemaSql {
         var commands = new ArrayList<String>();
         boolean createForeignKeys = plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.FOREIGN_KEY);
         boolean createForeignKeyIndexes = plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.FOREIGN_KEY_INDEX);
+        boolean createDatasetColumn = plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.DATASET_COLUMN);
+        String datasetColumn = createDatasetColumn ? DATASET_NAME_COLUMN + " " + dialect.text(200) + " NOT NULL" : "";
         var keys = createForeignKeys || createForeignKeyIndexes ? plan.foreignKeys(newSchema) : List.<SchemaPlan.ForeignKey>of();
         Map<String, List<SchemaPlan.ForeignKey>> inlineKeys = createForeignKeys && dialect.gpkg()
                 ? keys.stream().collect(Collectors.groupingBy(SchemaPlan.ForeignKey::table)) : Map.of();
@@ -152,6 +155,7 @@ final class SchemaSql {
             var columns = new ArrayList<String>();
             columns.add(dialect.primaryId() + (table.subtype() ? "" : dialect.sequenceDefault()));
             columns.add(BASKET_COLUMN + " " + dialect.idType() + " NOT NULL");
+            if (createDatasetColumn) columns.add(datasetColumn);
             if (table.hasDiscriminator()) {
                 String constraint = "";
                 if (plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.TYPE_CONSTRAINT)) {
@@ -185,6 +189,7 @@ final class SchemaSql {
             for (var geometry : table.secondaryGeometries()) {
                 commands.add(dialect.create(geometry.table(), dialect.primaryId()
                         + ", " + BASKET_COLUMN + " " + dialect.idType() + " NOT NULL, "
+                        + (createDatasetColumn ? datasetColumn + ", " : "")
                         + quote(geometry.column().name()) + " " + dialect.columnType(geometry.column(), 0),
                         inlineKeys.getOrDefault(geometry.table(), List.of())));
             }
@@ -212,6 +217,9 @@ final class SchemaSql {
         }
         if (createForeignKeyIndexes) {
             for (var key : keys) if (key.index()) commands.add(dialect.index(key.table(), key.column()));
+        }
+        if (createDatasetColumn) {
+            for (String table : plan.addedStorageTables()) commands.add(dialect.index(table, DATASET_NAME_COLUMN));
         }
         return List.copyOf(commands);
     }

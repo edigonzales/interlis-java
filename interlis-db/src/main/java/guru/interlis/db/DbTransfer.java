@@ -62,6 +62,7 @@ import static guru.interlis.db.Database.quote;
 import static guru.interlis.db.Ili2dbLayout.BASKET;
 import static guru.interlis.db.Ili2dbLayout.DATASET;
 import static guru.interlis.db.Ili2dbLayout.T_BASKET;
+import static guru.interlis.db.Ili2dbLayout.T_DATASET_NAME;
 import static guru.interlis.db.Ili2dbLayout.T_ID;
 import static guru.interlis.db.Ili2dbLayout.T_ILI_TID;
 import static guru.interlis.db.Ili2dbLayout.T_SEQ;
@@ -1263,7 +1264,7 @@ final class DbTransfer {
         if (mode == WriteMode.IMPORT && existing.isPresent()) {
             throw new DbException("Dataset already exists: " + dataset);
         }
-        try (var importer = new Import(db, mapping, mode == WriteMode.UPDATE, token)) {
+        try (var importer = new Import(db, mapping, dataset, mode == WriteMode.UPDATE, token)) {
             long datasetId = 0;
             boolean sawBasket = false;
             for (var next = reader.readNext(token); next.isPresent(); next = reader.readNext(token)) {
@@ -1421,11 +1422,15 @@ final class DbTransfer {
         private Map<DbDatasetWrite.ObjectKey, DbDatasetWrite.ExistingObject> existingObjects = Map.of();
         private long datasetId;
         private long basketId;
+        private final String dataset;
+        private final boolean datasetColumn;
         private GeometrySelection basketGeometry = new GeometrySelection(List.of(), Map.of());
 
-        Import(Database db, DbMapping mapping, boolean updating, CancellationToken token) {
+        Import(Database db, DbMapping mapping, String dataset, boolean updating, CancellationToken token) {
             this.db = db;
             this.mapping = mapping;
+            this.dataset = dataset;
+            datasetColumn = mapping.schemaOptions().contains(Ili2dbLayout.SchemaOption.DATASET_COLUMN);
             this.token = token;
             this.updating = updating;
             referenceTargets = referenceTargets(false);
@@ -1581,6 +1586,7 @@ final class DbTransfer {
             int index = 1;
             if (!update) statement.setLong(index++, id);
             statement.setLong(index++, basketId);
+            index = bindDatasetColumn(statement, index);
             if (table.hasDiscriminator()) {
                 statement.setString(index++, concreteName);
             }
@@ -1638,13 +1644,17 @@ final class DbTransfer {
                 String table = db.table(geometry.table());
                 String field = quote(geometry.column().name());
                 String parameter = db.geometryParameter();
+                String extraColumn = datasetColumn ? ", " + T_DATASET_NAME : "";
                 String sql = update
-                        ? "UPDATE " + table + " SET " + field + " = " + parameter + " WHERE " + T_ID + " = ? AND " + T_BASKET + " = ?"
-                        : "INSERT INTO " + table + " (" + field + ", " + T_ID + ", " + T_BASKET + ") VALUES (" + parameter + ", ?, ?)";
+                        ? "UPDATE " + table + " SET " + field + " = " + parameter + (datasetColumn ? extraColumn + " = ?" : "")
+                                + " WHERE " + T_ID + " = ? AND " + T_BASKET + " = ?"
+                        : "INSERT INTO " + table + " (" + field + extraColumn + ", " + T_ID + ", " + T_BASKET
+                                + ") VALUES (" + parameter + (datasetColumn ? ", ?" : "") + ", ?, ?)";
                 statement = db.connection().prepareStatement(sql);
                 statements.put(geometry.table(), statement);
             }
             int index = db.bindGeometry(statement, 1, geometry.table(), geometry.column(), value);
+            index = bindDatasetColumn(statement, index);
             statement.setLong(index++, id);
             statement.setLong(index, basketId);
             if (statement.executeUpdate() != 1) {
@@ -1670,7 +1680,7 @@ final class DbTransfer {
             var statement = insertStatement(table);
             statement.setLong(1, id);
             statement.setLong(2, basketId);
-            int index = 3;
+            int index = bindDatasetColumn(statement, 3);
             if (table.hasDiscriminator()) statement.setString(index++, mapping.storage(table.object().symbol()).discriminator());
             var found = new HashSet<SymbolRef>();
             for (var column : table.columns()) {
@@ -1745,7 +1755,7 @@ final class DbTransfer {
             long id = db.nextId();
             statement.setLong(1, id);
             statement.setLong(2, basketId);
-            int index = 3;
+            int index = bindDatasetColumn(statement, 3);
             if (table.hasDiscriminator()) statement.setString(index++, actual.discriminator());
             statement.setNull(index++, Types.VARCHAR);
             statement.setInt(index++, sequence);
@@ -1758,7 +1768,7 @@ final class DbTransfer {
                 var fragment = insertStatement(part);
                 fragment.setLong(1, id);
                 fragment.setLong(2, basketId);
-                found += bindStructureFields(fragment, 3, part, structure, id, ownerTid, basket);
+                found += bindStructureFields(fragment, bindDatasetColumn(fragment, 3), part, structure, id, ownerTid, basket);
                 fragment.executeUpdate();
             }
             var compositions = mapping.compositionsForObject(structure.type());
@@ -1803,6 +1813,11 @@ final class DbTransfer {
             return statement;
         }
 
+        private int bindDatasetColumn(PreparedStatement statement, int index) throws SQLException {
+            if (datasetColumn) statement.setString(index++, dataset);
+            return index;
+        }
+
         private PreparedStatement prepareWrite(Table table, Composition composition, boolean update) throws SQLException {
             var names = new ArrayList<String>();
             var values = new ArrayList<String>();
@@ -1812,6 +1827,10 @@ final class DbTransfer {
             }
             names.add(T_BASKET);
             values.add("?");
+            if (datasetColumn) {
+                names.add(T_DATASET_NAME);
+                values.add("?");
+            }
             if (table.hasDiscriminator()) {
                 names.add(T_TYPE);
                 values.add("?");

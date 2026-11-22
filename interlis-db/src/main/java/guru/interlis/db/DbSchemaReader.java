@@ -59,6 +59,7 @@ import static guru.interlis.db.Ili2dbLayout.SCHEMA_SENDER;
 import static guru.interlis.db.Ili2dbLayout.SETTINGS;
 import static guru.interlis.db.Ili2dbLayout.TRAFO;
 import static guru.interlis.db.Ili2dbLayout.T_BASKET;
+import static guru.interlis.db.Ili2dbLayout.T_DATASET_NAME;
 import static guru.interlis.db.Ili2dbLayout.T_ID;
 import static guru.interlis.db.Ili2dbLayout.T_ILI_TID;
 import static guru.interlis.db.Ili2dbLayout.T_SEQ;
@@ -222,7 +223,7 @@ final class DbSchemaReader {
                 throw unsupported("embedded link table with multiple owner tables at " + association.object().name().declared());
             }
         }
-        var catalog = readCatalog(db, plan, layout.relations(), token);
+        var catalog = readCatalog(db, plan, layout.relations(), settings, token);
         var tables = new ArrayList<Table>();
         var compositions = new ArrayList<Composition>();
         for (var relation : layout.relations()) {
@@ -409,7 +410,7 @@ final class DbSchemaReader {
         }
         if (!attrNames.isEmpty()) throw new DbException("Extra ATTRNAME mappings for " + modelName);
         return new DbMapping(plan, version, tables, compositions, associations, crsPair, requestedRoots,
-                layout);
+                layout, settings.schemaOptions());
     }
 
     private static void bindOtherStructureOwners(Database db, MetadataScope scope, CatalogTable table) throws SQLException {
@@ -435,7 +436,8 @@ final class DbSchemaReader {
     }
 
     private static Map<SymbolRef, CatalogTable> readCatalog(Database db, TransferPlan plan,
-                                                           List<DbInheritance.Relation> relations, CancellationToken token)
+                                                           List<DbInheritance.Relation> relations, Settings settings,
+                                                           CancellationToken token)
             throws SQLException {
         var result = new HashMap<SymbolRef, CatalogTable>();
         for (var relation : relations) {
@@ -446,6 +448,7 @@ final class DbSchemaReader {
             requireColumns(db, name, physical, Map.of(T_ID, Kind.REFERENCE, T_BASKET, Kind.REFERENCE));
             requireIdPrimaryKey(db, name);
             var used = new HashSet<>(Set.of(T_ID, T_BASKET));
+            bindAdditionalColumns(db, name, physical, used, settings);
             boolean subtype = relation.base().isPresent();
             var domain = DbMapping.oidDomain(plan, object);
             if (!subtype && (object.kind() != SymbolKind.ASSOCIATION || domain.isPresent())) {
@@ -468,6 +471,14 @@ final class DbSchemaReader {
             result.put(object.symbol(), new CatalogTable(name, physical, used));
         }
         return result;
+    }
+
+    private static void bindAdditionalColumns(Database db, String table, Map<String, String> physical, Set<String> used,
+                                              Settings settings) {
+        if (settings.schemaOptions().contains(Ili2dbLayout.SchemaOption.DATASET_COLUMN)) {
+            requireColumns(db, table, physical, Map.of(T_DATASET_NAME, Kind.TEXT));
+            used.add(T_DATASET_NAME);
+        }
     }
 
     private static void requireIdentityColumn(Database db, String table, Map<String, String> physical, String domain)
@@ -524,7 +535,7 @@ final class DbSchemaReader {
             case "smart2" -> DbInheritance.Profile.SMART2;
             default -> throw unsupported("SETTINGS.inheritanceTrafo");
         };
-        for (String tag : List.of("createDatasetCols", "createStdCols", "SqlColsAsText", "SqlExtRefCols")) {
+        for (String tag : List.of("createStdCols", "SqlColsAsText", "SqlExtRefCols")) {
             if (settings.containsKey(PREFIX + tag)) throw unsupported("SETTINGS." + tag);
         }
         var enumOptions = new DbEnumOptions(optionalSetting(settings, Ili2dbLayout.ENUM_ITF_CODE, "yes"),
@@ -956,7 +967,9 @@ final class DbSchemaReader {
         requireColumns(db, table, physical, Map.of(T_ID, Kind.REFERENCE, T_BASKET, Kind.REFERENCE));
         requireGeometryColumn(db, table, physical, column);
         requireIdPrimaryKey(db, table);
-        if (physical.size() != 3) throw new DbException("Unexpected physical columns in " + table);
+        var used = new HashSet<>(Set.of(T_ID, T_BASKET, key(db, column.name())));
+        bindAdditionalColumns(db, table, physical, used, settings);
+        if (!physical.keySet().equals(used)) throw new DbException("Unexpected physical columns in " + table);
 
         String query = "SELECT setting FROM " + db.technicalTable(Ili2dbLayout.COLUMN_PROP)
                 + " WHERE tablename = ? AND subtype IS NULL AND lower(columnname) = ? AND tag = ?";

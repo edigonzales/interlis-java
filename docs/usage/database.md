@@ -102,6 +102,11 @@ Wurzeltabellen auch bei nur einem konkreten Typ hinzu.
 SQL-Check über die zulässigen Typen ab. Beide Optionen entsprechen
 ili2db `--createTypeDiscriminator` und `--createTypeConstraint`.
 
+`schemaimport --create-dataset-col` fügt gemäss ili2db `--createDatasetCol`
+die indizierte Spalte `T_datasetname` hinzu. Der Transfer befüllt sie auf
+Fachzeilen, Strukturzeilen und Geometriehilfszeilen aus dem gewählten
+Datensatz. Beim Export bestimmt die Verknüpfung über `T_Basket` die Auswahl.
+
 Mit `schemaimport --coalesce-catalogue-ref` erzeugt das Kommando die
 kompakte SQL-Abbildung für CHBase-V1-Katalogreferenzen, entsprechend
 `--coalesceCatalogueRef` in ili2db. Die Option gilt beim Anlegen eines

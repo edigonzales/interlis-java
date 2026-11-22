@@ -311,6 +311,54 @@ final class SchemaProfileCases {
         assertEquals("7", child(rows.getLast(), "NumberValue").getTextContent());
     }
 
+    void datasetColumn(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ProfileDataset" + version;
+        Path ili = linkedModel(model);
+        referenceSchema(expected, ili, "--sqlEnableNull", "--createDatasetCol");
+        schema(own, model, ili, "--create-dataset-col");
+        sameCatalog(expected, own);
+        for (var db : List.of(expected, own)) {
+            Path output = work.resolve("dataset-output.xtf");
+            referenceImport(db, "legacy", linkedData(model, "legacy"));
+            assertCliSuccess(db, "export", model, "legacy", output);
+            assertLink(rows(output, "legacy", 2).getFirst(), "legacy");
+            Path nativeData = linkedData(model, "native");
+            assertCliSuccess(db, "import", model, "native", nativeData);
+            referenceExport(db, "native", output);
+            assertLink(rows(output, "native", 2).getFirst(), "native");
+            try (var sql = db.connect()) {
+                assertEquals(Set.of("asset:t_datasetname", "target:t_datasetname", "note:t_datasetname"), indexColumns(db, sql));
+                assertDatasetColumns(db, sql);
+                Path changed = Files.writeString(work.resolve("changed.xtf"), Files.readString(nativeData).replace(">linked<", ">changed<"));
+                String row = " FROM " + db.table("asset") + " WHERE t_datasetname = 'native'";
+                String id = scalar(sql, "SELECT t_id" + row);
+                assertCliSuccess(db, "update", model, "native", changed);
+                assertEquals(id, scalar(sql, "SELECT t_id" + row));
+                assertEquals("changed", scalar(sql, "SELECT label" + row));
+                assertDatasetColumns(db, sql);
+                assertCliSuccess(db, "replace", model, "native", nativeData);
+                assertNotEquals(id, scalar(sql, "SELECT t_id" + row));
+                assertEquals("linked", scalar(sql, "SELECT label" + row));
+                assertDatasetColumns(db, sql);
+            }
+            String add = "ProfileDatasetExtra" + version;
+            schema(db, add, source(add, "CLASS Extra = Label : TEXT*24; END Extra;"), "--add-models");
+            try (var sql = db.connect()) {
+                assertTrue(indexColumns(db, sql).contains("extra:t_datasetname"));
+            }
+        }
+    }
+
+    private static void assertDatasetColumns(TestDatabase db, Connection sql) throws Exception {
+        for (String table : List.of("asset", "target", "note")) {
+            assertEquals(Set.of("legacy:legacy", "native:native"), catalogKeys(sql,
+                    "SELECT a.t_datasetname || ':' || d.datasetname FROM " + db.table(table) + " a JOIN "
+                            + db.table("t_ili2db_basket") + " b ON b.t_id = a.t_basket JOIN "
+                            + db.table("t_ili2db_dataset") + " d ON d.t_id = b.dataset"));
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table(table)));
+        }
+    }
+
     private Path linkedModel(String model) throws Exception {
         return source(model, """
                 STRUCTURE Note = Message : TEXT*24; END Note;
