@@ -105,6 +105,9 @@ und in XTF 2.3 die entsprechende Einfeldstruktur.
 Die `*ArraySchema*`-Fälle vergleichen den SQL-Katalog und die Metadaten
 mit ili2db und prüfen den gemischten Datenaustausch, die gemeinsame
 ID-Vergabe und `--add-models` mit kombinierter EXPAND- und JSON-Abbildung.
+Die `*ArraySmart2*`-Fälle prüfen geerbte Spalten, das Kürzen und Entfernen
+von Listen per `update`, stabile IDs sowie `replace` und `delete` neben
+einem zweiten Datensatz.
 
 Die `*ExpandSingle*`-Fälle prüfen den Austausch optionaler flacher
 Strukturen mit ili2db-`--expandStruct`, das Umbenennen einer SQL-Spalte

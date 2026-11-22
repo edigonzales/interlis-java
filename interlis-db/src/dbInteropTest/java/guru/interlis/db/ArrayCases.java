@@ -25,6 +25,7 @@ import static guru.interlis.db.DbInteropTest.readDataSection;
 import static guru.interlis.db.DbInteropTest.referenceDatasetFixture;
 import static guru.interlis.db.DbInteropTest.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 final class ArrayCases {
@@ -335,6 +336,91 @@ final class ArrayCases {
             assertEquals("coalesce", scalar(sql, "SELECT setting FROM " + db.table("t_ili2db_trafo")
                     + " WHERE iliname='" + added + ".Data.Asset.Items' AND tag='ch.ehi.ili2db.arrayTrafo'"));
         }
+    }
+
+    void smart2(TestDatabase baseline, TestDatabase own) throws Exception {
+        String model = "ArraySmart" + version;
+        var ili = source(model, "STRUCTURE Elem = Entry : TEXT*40; END Elem;", """
+                CLASS AssetBase (ABSTRACT) =
+                  !!@ili2db.mapping=ARRAY
+                  Items : LIST OF Elem;
+                END AssetBase;
+                CLASS FirstAsset EXTENDS AssetBase =
+                  Marker : TEXT*20;
+                END FirstAsset;
+                CLASS OtherAsset EXTENDS AssetBase =
+                  Caption : TEXT*20;
+                END OtherAsset;
+                """);
+        schema(baseline, model, "--smart2Inheritance");
+        create(own, model, ili, "--inheritance", "smart2", "--coalesce-array");
+        assertSameCatalog(baseline, own);
+
+        var initial = List.of("first", "second", "second");
+        var updated = List.of("shortened");
+        var output = work.resolve("output.xtf");
+        for (var db : List.of(baseline, own)) {
+            referenceImport(db, "legacy", smartDataset(model, "legacy", initial, true));
+            assertCliSuccess(db, "export", model, "legacy", output);
+            assertSmart(output, "legacy", initial, true);
+            assertCliSuccess(db, "import", model, "native", smartDataset(model, "native", initial, true));
+            referenceExport(db, "native", output);
+            assertSmart(output, "native", initial, true);
+
+            try (var sql = db.connect()) {
+                String first = db.table("firstasset");
+                String other = db.table("otherasset");
+                String identity = "SELECT CAST(t_id AS text) || ':' || CAST(t_basket AS text) FROM ";
+                String nativeFirst = first + " WHERE t_ili_tid = 'native-first'";
+                String nativeOther = other + " WHERE t_ili_tid = 'native-other'";
+                String dataset = "SELECT t_id FROM " + db.table("t_ili2db_dataset") + " WHERE datasetname = 'native'";
+                var beforeFirst = scalar(sql, identity + nativeFirst);
+                var beforeOther = scalar(sql, identity + nativeOther);
+                var beforeDataset = scalar(sql, dataset);
+                var legacyFirst = scalar(sql, identity + first + " WHERE t_ili_tid = 'legacy-first'");
+                assertCliSuccess(db, "update", model, "native", smartDataset(model, "native", updated, false));
+                assertEquals(beforeFirst, scalar(sql, identity + nativeFirst));
+                assertEquals(beforeOther, scalar(sql, identity + nativeOther));
+                String length = db.postgis() ? "cardinality(items)" : "json_array_length(items)";
+                assertEquals("1", scalar(sql, "SELECT " + length + " FROM " + nativeFirst));
+                assertNull(scalar(sql, "SELECT items FROM " + nativeOther));
+                referenceExport(db, "native", output);
+                assertSmart(output, "native", updated, false);
+
+                assertCliSuccess(db, "replace", model, "native", smartDataset(model, "native", List.of(), true));
+                assertNotEquals(beforeFirst, scalar(sql, identity + nativeFirst));
+                assertNotEquals(beforeOther, scalar(sql, identity + nativeOther));
+                assertEquals(beforeDataset, scalar(sql, dataset));
+                assertNull(scalar(sql, "SELECT items FROM " + nativeFirst));
+                referenceExport(db, "native", output);
+                assertSmart(output, "native", List.of(), true);
+                assertCliSuccess(db, "delete", model, "native", null);
+                assertEquals("0", scalar(sql, "SELECT count(*) FROM " + nativeFirst));
+                assertEquals("0", scalar(sql, "SELECT count(*) FROM " + nativeOther));
+                assertEquals(legacyFirst, scalar(sql, identity + first + " WHERE t_ili_tid = 'legacy-first'"));
+                assertCliSuccess(db, "export", model, "legacy", output);
+                assertSmart(output, "legacy", initial, true);
+            }
+        }
+    }
+
+    private Path smartDataset(String model, String prefix, List<String> values, boolean other) throws Exception {
+        var entries = values.stream().map(value -> entry(model, value)).collect(Collectors.joining());
+        return transfer(model, prefix, object(model, "FirstAsset", prefix + "-first",
+                (entries.isEmpty() ? "" : element("Items", entries)) + element("Marker", "primary"))
+                + object(model, "OtherAsset", prefix + "-other", (other ? element("Items", entry(model, "other")) : "")
+                + element("Caption", "secondary")));
+    }
+
+    private void assertSmart(Path output, String prefix, List<String> values, boolean other) throws Exception {
+        var rows = objects(output, prefix);
+        assertEquals(2, rows.size());
+        var firstRow = rows.get(prefix + "-first");
+        var otherRow = rows.get(prefix + "-other");
+        assertEquals(values, items(firstRow, "Items"));
+        assertEquals(other ? List.of("other") : List.of(), items(otherRow, "Items"));
+        assertEquals("primary", child(firstRow, "Marker").getTextContent());
+        assertEquals("secondary", child(otherRow, "Caption").getTextContent());
     }
 
     private Path schemaDataset(String model, String prefix) throws Exception {

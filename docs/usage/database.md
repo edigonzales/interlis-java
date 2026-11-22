@@ -113,11 +113,14 @@ Mit `schemaimport --coalesce-json` legt das Kommando in einem neuen
 Option lässt sich mit `--expand-struct` kombinieren. `--add-models`
 übernimmt beide gespeicherten Einstellungen.
 
-Mit `schemaimport --coalesce-array` erzeugt das Kommando in `newClass`
+Mit `schemaimport --coalesce-array` erzeugt das Kommando in `newClass` und Smart2
 die Spalten für `ili2db.mapping=ARRAY`. GeoPackage speichert die Arrays
 als JSON-Text, PostGIS als typisierte SQL-Arrays. Die Option ist mit
 `--expand-struct` und `--coalesce-json` kombinierbar. `--add-models`
-übernimmt die gespeicherte Array-Einstellung.
+übernimmt im bestehenden `newClass`-Schema die Array-Einstellung.
+In Smart2 liegen geerbte Arrays in den konkreten Eigentümertabellen.
+Beim Kürzen oder Entfernen einer Liste ersetzt `update` ihren SQL-Wert
+und behält die Identität des Objekts bei.
 
 ## Bestehendes Schema ergänzen
 

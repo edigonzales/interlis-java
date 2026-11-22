@@ -355,10 +355,6 @@ public final class Main {
                     && inheritance != DbInheritance.Profile.NEW_CLASS) {
                 throw new IllegalArgumentException("--coalesce-json requires a new schema with newClass inheritance");
             }
-            if (transformations.contains(Ili2dbLayout.AttributeTransformation.ARRAY)
-                    && inheritance != DbInheritance.Profile.NEW_CLASS) {
-                throw new IllegalArgumentException("--coalesce-array requires a new schema with newClass inheritance");
-            }
             boolean strokeArcs = schemaFlags.contains("--stroke-arcs");
             if (strokeArcs && (addModels || inheritance == DbInheritance.Profile.SMART1)) {
                 throw new IllegalArgumentException("--stroke-arcs requires a new schema with newClass or Smart2 inheritance");
