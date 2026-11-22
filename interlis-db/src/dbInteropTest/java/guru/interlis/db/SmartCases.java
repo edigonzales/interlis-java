@@ -72,6 +72,48 @@ final class SmartCases {
         }
     }
 
+    void smart1References(TestDatabase db) throws Exception {
+        String model = "SmartRefs" + version;
+        var source = fixture(model + ".ili");
+        referenceSchema(db, model, "smart1");
+        Files.delete(source);
+        var input = fixture(model + ".xtf");
+        var output = work.resolve("refs-output.xtf");
+        referenceImport(db, "legacy", input);
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertReferences(output, model, "fixture");
+        var nativeInput = transferWithPrefix(input, "native");
+        assertCliSuccess(db, "import", model, "native", nativeInput);
+        referenceExport(db, "native", output);
+        assertReferences(output, model, "native");
+        var bad = Files.writeString(work.resolve("bad.xtf"), Files.readString(input)
+                .replace("fixture-", "bad-").replace("ref=\"bad-s\"", "ref=\"bad-t\"").replace("REF=\"bad-s\"", "REF=\"bad-t\""));
+        assertCliFailure(db, "import", model, "bad", bad, "Cannot encode reference from bad-survey");
+        try (var sql = db.connect()) {
+            String instrument = db.table("instrument");
+            assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("note") + " n JOIN " + instrument
+                    + " t ON t.t_id=n.anyinstrument AND t.t_basket=n.t_basket JOIN " + instrument
+                    + " s ON s.t_id=n.smarttarget AND s.t_basket=n.t_basket JOIN "
+                    + db.table("survey") + " a ON a.t_id=n.survey_details JOIN " + instrument
+                    + " m ON m.t_id=a.observed WHERE t.t_type='terminal' AND s.t_type='smartunit' AND m.t_type='meter'"));
+            assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("note")));
+            assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + db.table("t_ili2db_dataset") + " WHERE datasetname='bad'"));
+            assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + db.table("t_ili2db_basket") + " WHERE t_ili_tid='bad-b'"));
+        }
+    }
+
+    private void assertReferences(Path file, String model, String prefix) throws Exception {
+        var basket = children(readDataSection(file, version)).getFirst();
+        assertEquals(prefix + "-b", id(basket, version, "bid"));
+        var owner = object(basket, model, "Survey", prefix + "-survey");
+        var note = children(child(owner, "Details")).getFirst();
+        assertEquals(prefix + "-t", id(child(note, "AnyInstrument"), version, "ref"));
+        assertEquals(prefix + "-s", id(child(note, "SmartTarget"), version, "ref"));
+        assertEquals(prefix + "-m", id(child(owner, "Observed"), version, "ref"));
+        object(basket, model, "SmartUnit", prefix + "-s");
+        object(basket, model, "Terminal", prefix + "-t");
+    }
+
     private void assertScalarObjects(Path path, String model, String prefix, boolean emptyMemo) throws Exception {
         var basket = children(readDataSection(path, version)).getFirst();
         assertEquals(prefix + "-b", id(basket, version, "bid"));

@@ -1,0 +1,19 @@
+INTERLIS 2.4;
+
+MODEL SmartRefs24 AT "https://example.org/smart" VERSION "1" =
+  TOPIC Data =
+    CLASS Instrument (ABSTRACT) = Memo : TEXT*30; END Instrument;
+    CLASS Meter EXTENDS Instrument = Counter : 0..100; END Meter;
+    CLASS SmartUnit EXTENDS Meter = Badge : TEXT*12; END SmartUnit;
+    CLASS Terminal EXTENDS Instrument = Socket : TEXT*12; END Terminal;
+    STRUCTURE Note =
+      AnyInstrument : REFERENCE TO Instrument;
+      SmartTarget : REFERENCE TO SmartUnit;
+    END Note;
+    CLASS Survey = Details : Note; END Survey;
+    ASSOCIATION Observation =
+      Observed -- {0..1} Instrument;
+      Surveyed -- {0..*} Survey;
+    END Observation;
+  END Data;
+END SmartRefs24.

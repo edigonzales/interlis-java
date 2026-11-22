@@ -220,6 +220,9 @@ Referenzschema lässt sich mit `--noSmartMapping --smart1Inheritance`
 und den übrigen Optionen des Referenzprofils erzeugen. Tabellen und
 konkrete Typen werden über die gespeicherten Zuordnungen und `T_Type`
 aufgelöst.
+Referenzattribute und eingebettete 1:n-Rollen verwenden die gespeicherte
+physische Zieltabelle. Bei einem enger deklarierten Ziel wird auch der
+konkrete Typ der Zielzeile geprüft.
 
 Unterstützt sind Klassen eines eigenständigen Modells in
 INTERLIS 2.3 und 2.4 mit Text, Boolean, 32-Bit-Ganzzahlen und Aufzählungen als

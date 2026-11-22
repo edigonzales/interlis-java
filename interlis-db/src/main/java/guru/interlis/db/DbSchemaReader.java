@@ -182,6 +182,9 @@ final class DbSchemaReader {
         }
         checkSystemTables(db);
         var layout = new DbInheritance(plan, declarations, settings.inheritance());
+        for (var alias : layout.aliases()) {
+            names.put(alias.object().symbol(), names.get(alias.owner()));
+        }
         var catalog = readCatalog(db, plan, layout.relations(), token);
         var tables = new ArrayList<Table>();
         var compositions = new ArrayList<Composition>();

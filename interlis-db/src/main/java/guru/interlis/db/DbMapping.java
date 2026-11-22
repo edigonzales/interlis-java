@@ -200,6 +200,7 @@ final class DbMapping {
     private final Map<SymbolRef, List<Composition>> byParent;
     private final Map<SymbolRef, List<Composition>> byChild;
     private final List<EmbeddedAssociation> associations;
+    private final Map<SymbolRef, SymbolRef> roleOwners;
 
     DbMapping(TransferPlan plan, LanguageVersion version, List<Table> tables, List<Composition> compositions,
               List<EmbeddedAssociation> associations, Optional<DbCrsPair> crsPair, List<SymbolRef> selectedModels) {
@@ -265,6 +266,8 @@ final class DbMapping {
         byChild = indexCompositions(this.compositions, Composition::childRoot);
         checkCompositionCycles();
         this.associations = List.copyOf(associations);
+        roleOwners = associations.stream().filter(association -> !association.linkTable())
+                .collect(Collectors.toUnmodifiableMap(association -> association.role().symbol(), EmbeddedAssociation::owner));
     }
 
     private static Map<SymbolRef, List<Composition>> indexCompositions(List<Composition> compositions,
@@ -327,6 +330,7 @@ final class DbMapping {
     DbInheritance.Profile profile() { return profile; }
     LanguageVersion version() { return version; }
     List<Table> tables() { return tables; }
+    Collection<ObjectStorage> objectStorage() { return storage.values(); }
 
     List<String> storageTables() { return storageTables(tables); }
 
@@ -358,8 +362,11 @@ final class DbMapping {
     }
 
     boolean applies(Column column, SymbolRef actual) {
-        return profile == DbInheritance.Profile.NEW_CLASS || !(column.slot() instanceof AttributeSlot attribute)
-                || isAssignableTo(actual, new SymbolRef(plan.snapshotId(), attribute.attribute().owner().orElseThrow()));
+        if (profile == DbInheritance.Profile.NEW_CLASS) return true;
+        var owner = column.slot() instanceof AttributeSlot attribute
+                ? new SymbolRef(plan.snapshotId(), attribute.attribute().owner().orElseThrow())
+                : roleOwners.get(column.slot().symbol());
+        return owner == null || isAssignableTo(actual, owner);
     }
     List<Table> hierarchy(Table root) { return hierarchies.getOrDefault(root, List.of()); }
 

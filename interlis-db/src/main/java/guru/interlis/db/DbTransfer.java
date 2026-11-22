@@ -474,7 +474,7 @@ final class DbTransfer {
                     if (column.external()) {
                         from.append(" AND EXISTS (SELECT 1 FROM ").append(baskets).append(" dst WHERE dst.")
                                 .append(T_ID).append(" = ").append(targetBasket);
-                        from.append(" AND dst.topic IN ").append(topicNames(mapping, target)).append(')');
+                        from.append(" AND dst.topic IN ").append(topicNames(mapping, declared)).append(')');
                     } else {
                         from.append(" AND ").append(targetBasket).append(" = ").append(sourceBasket);
                     }
@@ -567,14 +567,15 @@ final class DbTransfer {
 
     private static StoredObject findReference(Database db, DbMapping mapping, Column column,
                                               String tid, Optional<String> bid) throws SQLException {
-        var target = mapping.table(column.target().orElseThrow());
-        var root = mapping.rootTable(target.object().symbol());
+        var declared = column.target().orElseThrow();
+        var target = mapping.table(declared);
+        var root = mapping.rootTable(declared);
         String discriminator = root.hasDiscriminator() ? ", ref." + T_TYPE : "";
         String fragment = target.equals(root) ? "" : " AND EXISTS (SELECT 1 FROM " + db.table(target.name())
                 + " leaf WHERE leaf." + T_ID + " = ref." + T_ID + " AND leaf." + T_BASKET + " = ref." + T_BASKET + ")";
         String sql = "SELECT ref." + T_ID + ", basket." + T_ILI_TID + discriminator
                 + " FROM " + db.table(root.name()) + " ref JOIN " + db.technicalTable(BASKET)
-                + " basket ON basket." + T_ID + " = ref." + T_BASKET + " WHERE basket.topic IN " + topicNames(mapping, target)
+                + " basket ON basket." + T_ID + " = ref." + T_BASKET + " WHERE basket.topic IN " + topicNames(mapping, declared)
                 + " AND " + tidExpression(root, "ref") + " = ?" + (bid.isPresent() ? " AND basket." + T_ILI_TID + " = ?" : "") + fragment;
         try (var statement = db.connection().prepareStatement(sql)) {
             statement.setString(1, tid);
@@ -585,7 +586,7 @@ final class DbTransfer {
                     long id = rows.getLong(1);
                     var type = root.hasDiscriminator() ? mapping.concreteType(root, rows.getString(3), id).object().symbol()
                             : root.object().symbol();
-                    if (!mapping.isAssignableTo(type, target.object().symbol())) continue;
+                    if (!mapping.isAssignableTo(type, declared)) continue;
                     String context = column.slot().name().declared().toString();
                     if (result != null) throw new DbException("Ambiguous stored reference target " + tid + " at " + context);
                     var basket = new BasketId(identifier(rows.getString(2), "reference target BID", context), IdOrigin.SOURCE);
@@ -597,7 +598,12 @@ final class DbTransfer {
     }
 
     private static String topicNames(DbMapping mapping, Table table) {
-        return mapping.storedTopicNames(table.object().topic().orElseThrow()).stream()
+        return topicNames(mapping, table.object().symbol());
+    }
+
+    private static String topicNames(DbMapping mapping, SymbolRef type) {
+        var object = mapping.plan().object(type).orElseThrow();
+        return mapping.storedTopicNames(object.topic().orElseThrow()).stream()
                 .map(name -> "'" + name.replace("'", "''") + "'").collect(Collectors.joining(", ", "(", ")"));
     }
 
@@ -1205,10 +1211,9 @@ final class DbTransfer {
             var declaredTargets = mapping.tables().stream().flatMap(table -> table.columns().stream())
                     .filter(column -> column.external() == external)
                     .flatMap(column -> column.target().stream()).collect(Collectors.toSet());
-            return mapping.tables().stream().filter(table -> table.object().transferable())
-                    .map(table -> table.object().symbol())
-                    .filter(type -> mapping.tableChain(type).stream()
-                            .anyMatch(part -> declaredTargets.contains(part.object().symbol())))
+            return mapping.objectStorage().stream().filter(storage -> storage.object().transferable())
+                    .map(storage -> storage.object().symbol())
+                    .filter(type -> declaredTargets.stream().anyMatch(declared -> mapping.isAssignableTo(type, declared)))
                     .collect(Collectors.toSet());
         }
 
