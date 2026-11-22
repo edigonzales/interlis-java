@@ -383,6 +383,11 @@ SQL-`DATE`-Spalte. Der Adapter verwendet das Kalenderdatum ohne Zeitzone.
 `INTERLIS.XMLTime` beziehungsweise `TIMEOFDAY` verwendet eine
 SQL-`TIME`-Spalte mit Millisekunden. Der Transfer schreibt lokale Uhrzeiten
 unabhängig von der JVM-Zeitzone.
+`INTERLIS.XMLDateTime` beziehungsweise `DATETIME` überträgt ein
+lokales Datum mit Uhrzeit. GeoPackage verwendet `DATETIME` in der
+ili2gpkg-Schreibweise mit `Z`. PostGIS verwendet einen
+`timestamp without time zone`. Das Kommando übernimmt die lokalen
+Felder einschliesslich Millisekunden.
 
 `schemaimport --gpkg-multi-geom-per-table` verwendet das ili2gpkg-Profil
 `--gpkgMultiGeomPerTable` mit mehreren Geometriespalten in einer Tabelle.

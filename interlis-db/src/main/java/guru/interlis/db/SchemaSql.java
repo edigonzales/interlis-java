@@ -546,6 +546,7 @@ final class SchemaSql {
                 case BIGINT -> idType();
                 case DATE -> "DATE";
                 case TIME -> "TIME";
+                case DATETIME -> timestamp();
                 case DECIMAL -> {
                     var decimal = DbDecimal.describe((guru.interlis.model.NumericType) column.effectiveType().orElseThrow());
                     yield gpkg ? "DOUBLE" : "numeric(" + decimal.precision() + "," + decimal.scale() + ")";

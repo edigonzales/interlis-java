@@ -20,6 +20,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -39,6 +40,8 @@ import static guru.interlis.db.Ili2dbLayout.SEQUENCE;
 /** One JDBC connection and transaction against an existing ili2db schema. */
 final class Database implements AutoCloseable {
     private static final DateTimeFormatter MILLISECOND_TIME = DateTimeFormatter.ofPattern("HH:mm:ss.SSS", Locale.ROOT);
+    private static final DateTimeFormatter MILLISECOND_TIMESTAMP =
+            DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSS", Locale.ROOT);
 
     private final Connection connection;
     private final String schema;
@@ -207,6 +210,35 @@ final class Database implements AutoCloseable {
             throw new DbException("Invalid SQL time at " + context, failure);
         }
         throw new DbException("Expected a time with millisecond precision at " + context);
+    }
+
+    Text readTimestamp(ResultSet rows, int index, String context) throws SQLException {
+        String value = rows.getString(index);
+        if (value == null) return null;
+        if (gpkg()) {
+            if (!value.endsWith("Z")) throw new DbException("Expected a GeoPackage datetime ending in Z at " + context);
+            value = value.substring(0, value.length() - 1);
+        } else {
+            value = value.replace(' ', 'T');
+        }
+        return new Text(MILLISECOND_TIMESTAMP.format(timestamp(value, context)));
+    }
+
+    void bindTimestamp(PreparedStatement statement, int index, Text value, String context) throws SQLException {
+        var timestamp = timestamp(value.value(), context);
+        if (gpkg()) statement.setString(index, MILLISECOND_TIMESTAMP.format(timestamp) + "Z");
+        else statement.setObject(index, timestamp);
+    }
+
+    private static LocalDateTime timestamp(String value, String context) {
+        try {
+            var timestamp = LocalDateTime.parse(value);
+            if (value.length() >= 19 && timestamp.getYear() > 0 && timestamp.getYear() <= 9999
+                    && timestamp.getNano() % 1_000_000 == 0) return timestamp;
+        } catch (DateTimeParseException failure) {
+            throw new DbException("Invalid SQL datetime at " + context, failure);
+        }
+        throw new DbException("Expected a datetime with millisecond precision at " + context);
     }
 
     NumberValue readDecimal(ResultSet rows, int index, String context) throws SQLException {

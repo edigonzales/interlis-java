@@ -1210,6 +1210,7 @@ final class DbSchemaReader {
                         || type.equals("smallint");
                 case DATE -> type.equals("date");
                 case TIME -> type.equals("time");
+                case DATETIME -> db.gpkg() ? type.equals("datetime") : type.equals("timestamp") || type.equals("timestamp without time zone");
                 case DECIMAL -> db.gpkg() ? type.equals("double") : type.equals("numeric") || type.equals("decimal");
                 case BIGINT -> db.gpkg() ? type.equals("integer") : type.equals("int8") || type.equals("bigint");
                 case REFERENCE -> type.equals("integer") || type.equals("int4") || type.equals("int8")

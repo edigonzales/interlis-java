@@ -153,6 +153,17 @@ final class DbInteropTest {
         new ScalarCases(work, new ReferenceTool(own.postgis(), "UTC"), version).localTime(expected, own);
     }
 
+    @Test void geoPackageScalarTimestamp23() throws Exception { exchangeScalarTimestamp(23, null); }
+    @Test void geoPackageScalarTimestamp24() throws Exception { exchangeScalarTimestamp(24, null); }
+    @Test void postgisScalarTimestamp23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarTimestamp); }
+    @Test void postgisScalarTimestamp24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarTimestamp); }
+
+    private void exchangeScalarTimestamp(int version, PostgreSQLContainer postgres) throws Exception {
+        var expected = new TestDatabase(postgres, "scalar_timestamp_ref");
+        var own = new TestDatabase(postgres, "scalar_timestamp_own");
+        new ScalarCases(work, new ReferenceTool(own.postgis(), "UTC"), version).localTimestamp(expected, own);
+    }
+
     @Test void geoPackageEnumItfCodes23() throws Exception { exchangeEnumItfCodes(23, null); }
     @Test void geoPackageEnumItfCodes24() throws Exception { exchangeEnumItfCodes(24, null); }
     @Test void postgisEnumItfCodes23() throws Exception { exchangeWithPostgis(23, this::exchangeEnumItfCodes); }

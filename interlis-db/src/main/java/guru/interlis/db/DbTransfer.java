@@ -1043,7 +1043,7 @@ final class DbTransfer {
         }
         return switch (column.kind()) {
             case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> readGeometry(db, rows, index, column);
-            case BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, ENUMERATION -> readScalar(db, rows, index, column);
+            case BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, ENUMERATION -> readScalar(db, rows, index, column);
             case TEXT -> {
                 if (column.textExpansion().isPresent()) {
                     var expansion = column.textExpansion().orElseThrow();
@@ -1123,6 +1123,7 @@ final class DbTransfer {
             case DECIMAL -> db.readDecimal(rows, index, column.slot().name().declared().toString());
             case DATE -> db.readDate(rows, index, column.slot().name().declared().toString());
             case TIME -> db.readTime(rows, index, column.slot().name().declared().toString());
+            case DATETIME -> db.readTimestamp(rows, index, column.slot().name().declared().toString());
             case ENUMERATION -> {
                 String value = rows.getString(index);
                 yield column.enumeration().isPresent()
@@ -1853,6 +1854,7 @@ final class DbTransfer {
                 case DECIMAL -> db.bindDecimal(statement, index, (NumberValue) value, column.slot().name().declared().toString());
                 case DATE -> db.bindDate(statement, index, (Text) value, column.slot().name().declared().toString());
                 case TIME -> db.bindTime(statement, index, (Text) value, column.slot().name().declared().toString());
+                case DATETIME -> db.bindTimestamp(statement, index, (Text) value, column.slot().name().declared().toString());
                 case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE ->
                         throw new DbException("Unsupported value for " + column.slot().name().declared());
             }

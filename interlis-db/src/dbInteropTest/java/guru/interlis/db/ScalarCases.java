@@ -152,6 +152,26 @@ final class ScalarCases {
         }
     }
 
+    void localTimestamp(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ScalarTimestamp" + version;
+        schemas(expected, own, model, "CLASS Asset = ReadingStamp : "
+                + (version == 23 ? "INTERLIS.XMLDateTime" : "DATETIME") + "; END Asset;");
+        String gap = "2024-03-10T02:30:15.125";
+        String spring = "2024-03-31T01:59:58.375";
+        var values = List.of(field("ReadingStamp", gap), field("ReadingStamp", spring), "");
+        CheckRows check = rows -> assertTextValues(rows, "ReadingStamp", gap, spring, null);
+        for (var db : List.of(expected, own)) {
+            mixed(db, model, values, check);
+            differentZones(db, model, values, check);
+            try (var sql = db.connect()) {
+                String stored = db.postgis() ? "readingstamp::text" : "readingstamp";
+                assertEquals(db.postgis() ? gap.replace('T', ' ') : gap + "Z", stored(db, sql, stored, "zoned", 0));
+                assertEquals(db.postgis() ? spring.replace('T', ' ') : spring + "Z", stored(db, sql, stored, "native", 1));
+                assertNull(stored(db, sql, stored, "legacy", 2));
+            }
+        }
+    }
+
     private void differentZones(TestDatabase db, String model, List<String> values, CheckRows check) throws Exception {
         Path output = work.resolve("zoned-out.xtf");
         assertCliInZone(db, "export", model, "legacy", output, "Pacific/Auckland");
