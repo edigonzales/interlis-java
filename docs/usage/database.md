@@ -411,7 +411,10 @@ bilden Anfang und Stützpunkt die Enden des Durchmessers. Zwei benachbarte
 `AREA`-Objekte mit entgegengesetzt gelieferten gemeinsamen Bögen erhalten
 dieselben Stützpunkte in umgekehrter Reihenfolge. Der Export
 liefert die gespeicherten Geraden. Ein Import rollt zurück, wenn die
-Segmentierung das Koordinatenlimit überschreitet.
+Segmentierung das Koordinatenlimit überschreitet. In XTF 2.4 verwendet
+`MULTIPOLYLINE` dafür `MULTILINESTRING`. Dieselbe Speicherung gilt für
+die zusammengefassten CHBase-Strukturen `MultiLine` und `MultiDirectedLine`
+in beiden XTF-Versionen.
 
 In XTF 2.4 FULL unterstützen die folgenden Spaltentypen XY und XYZ.
 Alle Teile einer Geometrie liegen in Lieferreihenfolge in demselben

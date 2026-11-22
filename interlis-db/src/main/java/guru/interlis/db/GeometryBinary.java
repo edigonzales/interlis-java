@@ -32,6 +32,7 @@ final class GeometryBinary {
     private static final int LINESTRING = 2;
     private static final int POLYGON = 3;
     private static final int MULTIPOINT = 4;
+    private static final int MULTILINESTRING = 5;
     private static final int CIRCULARSTRING = 8;
     private static final int COMPOUNDCURVE = 9;
     private static final int CURVEPOLYGON = 10;
@@ -142,7 +143,7 @@ final class GeometryBinary {
             }
             case MULTIPOINT -> readMultiPoint(data, empty, gpkg, dimensions);
             case POLYLINE -> readPolyline(data, gpkg, dimensions, encoding);
-            case MULTICURVE -> readMultiCurve(data, empty, gpkg, dimensions);
+            case MULTICURVE -> readMultiCurve(data, empty, gpkg, dimensions, encoding);
             case SURFACE -> readSurface(data, gpkg, dimensions, encoding);
             case MULTISURFACE -> readMultiSurface(data, empty, gpkg, dimensions);
             default -> throw new IllegalArgumentException("Not a geometry kind: " + kind);
@@ -181,7 +182,7 @@ final class GeometryBinary {
                 case COMPOUNDCURVE, LINESTRING -> Kind.POLYLINE;
                 case CURVEPOLYGON, POLYGON -> Kind.SURFACE;
                 case MULTIPOINT -> Kind.MULTIPOINT;
-                case MULTICURVE -> Kind.MULTICURVE;
+                case MULTICURVE, MULTILINESTRING -> Kind.MULTICURVE;
                 case MULTISURFACE -> Kind.MULTISURFACE;
                 default -> throw new DbException("Unsupported WKB type for GeoPackage RTree: " + type);
             };
@@ -195,7 +196,8 @@ final class GeometryBinary {
                 }
                 return null;
             }
-            var encoding = type == LINESTRING || type == POLYGON ? GeometryEncoding.LINEAR : GeometryEncoding.STANDARD;
+            var encoding = type == LINESTRING || type == POLYGON || type == MULTILINESTRING
+                    ? GeometryEncoding.LINEAR : GeometryEncoding.STANDARD;
             return header.envelope() ? headerEnvelope(bytes)
                     : envelope(decode(bytes, true, header.srsId(), kind, dimensions, 0, encoding));
         }
@@ -374,7 +376,7 @@ final class GeometryBinary {
     }
 
     private static MultiCoordinate readMultiPoint(ByteBuffer data, boolean empty, boolean gpkg, int dimensions) {
-        int count = readCollectionCount(data, MULTIPOINT, Kind.MULTIPOINT, empty, gpkg, dimensions);
+        int count = readCollectionCount(data, MULTIPOINT, Kind.MULTIPOINT, empty, gpkg, dimensions, GeometryEncoding.STANDARD);
         if (data.remaining() != count * pointSize(dimensions)) {
             throw new DbException("Invalid WKB multipoint size");
         }
@@ -397,14 +399,16 @@ final class GeometryBinary {
         return new Polyline(List.of(part));
     }
 
-    private static MultiPolyline readMultiCurve(ByteBuffer data, boolean empty, boolean gpkg, int dimensions) {
-        int count = readCollectionCount(data, MULTICURVE, Kind.MULTICURVE, empty, gpkg, dimensions);
+    private static MultiPolyline readMultiCurve(ByteBuffer data, boolean empty, boolean gpkg, int dimensions,
+                                               GeometryEncoding encoding) {
+        boolean linear = encoding == GeometryEncoding.LINEAR;
+        int count = readCollectionCount(data, linear ? MULTILINESTRING : MULTICURVE, Kind.MULTICURVE, empty, gpkg, dimensions, encoding);
         var budget = new CoordinateBudget(Kind.MULTICURVE);
         var lines = new ArrayList<Polyline>();
         for (int index = 0; index < count; index++) {
             int type = readType(data, gpkg, dimensions);
-            if (type != COMPOUNDCURVE && type != LINESTRING) {
-                throw new DbException("Expected a dimensional match for WKB COMPOUNDCURVE or LINESTRING in a multicurve");
+            if (type != LINESTRING && (linear || type != COMPOUNDCURVE)) {
+                throw new DbException("Unexpected WKB component in " + encoding.sqlType(Kind.MULTICURVE));
             }
             lines.add(new Polyline(List.of(readCurve(data, type, budget, gpkg, dimensions))));
         }
@@ -427,7 +431,7 @@ final class GeometryBinary {
     }
 
     private static MultiSurface readMultiSurface(ByteBuffer data, boolean empty, boolean gpkg, int dimensions) {
-        int count = readCollectionCount(data, MULTISURFACE, Kind.MULTISURFACE, empty, gpkg, dimensions);
+        int count = readCollectionCount(data, MULTISURFACE, Kind.MULTISURFACE, empty, gpkg, dimensions, GeometryEncoding.STANDARD);
         var budget = new CoordinateBudget(Kind.MULTISURFACE);
         var surfaces = new ArrayList<Surface>();
         for (int index = 0; index < count; index++) {
@@ -539,17 +543,17 @@ final class GeometryBinary {
     }
 
     private static int readCollectionCount(ByteBuffer data, int type, Kind kind, boolean empty,
-                                           boolean gpkg, int dimensions) {
+                                           boolean gpkg, int dimensions, GeometryEncoding encoding) {
         if (readType(data, gpkg, dimensions) != type) {
-            throw new DbException("Expected a " + dimensions + "D WKB " + kind.geometryType());
+            throw new DbException("Expected a " + dimensions + "D WKB " + encoding.sqlType(kind));
         }
         int count = readCount(data);
         int limit = kind == Kind.MULTIPOINT ? MAX_VERTICES : MAX_COMPONENTS;
         if (count < 0 || count > limit) {
-            throw new DbException("Invalid WKB " + kind.geometryType() + " count");
+            throw new DbException("Invalid WKB " + encoding.sqlType(kind) + " count");
         }
         if (empty && count != 0) {
-            throw new DbException("GeoPackage empty flag disagrees with WKB " + kind.geometryType() + " count");
+            throw new DbException("GeoPackage empty flag disagrees with WKB " + encoding.sqlType(kind) + " count");
         }
         return count;
     }
@@ -569,7 +573,7 @@ final class GeometryBinary {
             case POINT -> writePoint(value, gpkg, srsId, dimensions);
             case MULTIPOINT -> writeMultiPoint(value, gpkg, srsId, dimensions);
             case POLYLINE -> writePolyline(value, gpkg, srsId, dimensions, encoding);
-            case MULTICURVE -> writeMultiCurve(value, gpkg, srsId, dimensions);
+            case MULTICURVE -> writeMultiCurve(value, gpkg, srsId, dimensions, encoding);
             case SURFACE -> writeSurface(value, gpkg, srsId, dimensions, encoding);
             case MULTISURFACE -> writeMultiSurface(value, gpkg, srsId, dimensions);
             default -> throw new IllegalArgumentException("Not a geometry kind: " + kind);
@@ -623,9 +627,8 @@ final class GeometryBinary {
         if (encoding == GeometryEncoding.LINEAR) {
             var linePlan = planLinearCurve(part, budget, dimensions);
             var data = allocate(linePlan.size(), gpkg, srsId, gpkg);
-            data.put((byte) 0).putInt(storageType(LINESTRING, gpkg, dimensions));
-            int start = data.position() + Integer.BYTES;
-            writeLinearBody(data, part, dimensions);
+            int start = data.position() + CURVE_HEADER_SIZE;
+            writeLineString(data, part, gpkg, dimensions);
             if (gpkg) writeEnvelope(data, start, dimensions);
             return data.array();
         }
@@ -651,6 +654,11 @@ final class GeometryBinary {
         return new Curve(part, 1, CURVE_HEADER_SIZE + count * dimensions * Double.BYTES, false);
     }
 
+    private static void writeLineString(ByteBuffer data, CurvePart part, boolean gpkg, int dimensions) {
+        data.put((byte) 0).putInt(storageType(LINESTRING, gpkg, dimensions));
+        writeLinearBody(data, part, dimensions);
+    }
+
     private static void writeLinearBody(ByteBuffer data, CurvePart part, int dimensions) {
         data.putInt(part.segments().size() + 1);
         writeCoordinate(data, part.start(), dimensions);
@@ -668,25 +676,30 @@ final class GeometryBinary {
         return data.array();
     }
 
-    private static byte[] writeMultiCurve(TransferGeometry geometry, boolean gpkg, int srsId, int dimensions) {
+    private static byte[] writeMultiCurve(TransferGeometry geometry, boolean gpkg, int srsId, int dimensions,
+                                          GeometryEncoding encoding) {
         if (!(geometry instanceof MultiPolyline multi)) {
             throw new DbException("Expected a multicurve");
         }
         if (multi.lines().isEmpty()) {
             throw new DbException("An empty multicurve cannot be imported");
         }
+        boolean linear = encoding == GeometryEncoding.LINEAR;
         var budget = new CoordinateBudget(Kind.MULTICURVE);
         var curves = new ArrayList<Curve>();
         int size = CURVE_HEADER_SIZE;
         for (var line : multi.lines()) {
-            var curve = planCurve(linePart(line), budget, dimensions);
+            var part = linePart(line);
+            var curve = linear ? planLinearCurve(part, budget, dimensions) : planCurve(part, budget, dimensions);
             curves.add(curve);
             size += curve.size();
         }
         var data = allocate(size, gpkg, srsId, false);
-        data.put((byte) 0).putInt(storageType(MULTICURVE, gpkg, dimensions)).putInt(curves.size());
+        int type = linear ? MULTILINESTRING : MULTICURVE;
+        data.put((byte) 0).putInt(storageType(type, gpkg, dimensions)).putInt(curves.size());
         for (var curve : curves) {
-            writeCurve(data, curve, gpkg, dimensions);
+            if (linear) writeLineString(data, curve.part(), gpkg, dimensions);
+            else writeCurve(data, curve, gpkg, dimensions);
         }
         return data.array();
     }

@@ -150,6 +150,16 @@ final class DbInteropTest {
         new StrokeCases(work, new ReferenceTool(db.postgis()), version).area(db);
     }
 
+    @Test void geoPackageStrokeMultiPolyline23() throws Exception { exchangeStrokeMultiPolyline(23, null); }
+    @Test void geoPackageStrokeMultiPolyline24() throws Exception { exchangeStrokeMultiPolyline(24, null); }
+    @Test void postgisStrokeMultiPolyline23() throws Exception { exchangeWithPostgis(23, this::exchangeStrokeMultiPolyline); }
+    @Test void postgisStrokeMultiPolyline24() throws Exception { exchangeWithPostgis(24, this::exchangeStrokeMultiPolyline); }
+
+    private void exchangeStrokeMultiPolyline(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "stroke_multi_line");
+        new StrokeCases(work, new ReferenceTool(db.postgis()), version).multiPolyline(db);
+    }
+
     @Test void postgisChbasePoints23() throws Exception { exchangeWithPostgis(23, this::exchangeChbasePoints); }
     @Test void postgisChbasePoints24() throws Exception { exchangeWithPostgis(24, this::exchangeChbasePoints); }
     @Test void geoPackageChbaseLines23() throws Exception { exchangeChbaseLines(23, null); }

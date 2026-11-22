@@ -217,6 +217,86 @@ final class StrokeCases {
         assertEquals(upper.subList(0, 81), lower.subList(0, 81).reversed());
     }
 
+    void multiPolyline(TestDatabase db) throws Exception {
+        var model = "ChbaseLines" + version;
+        fixture(model + ".ili");
+        var input = fixture(model + ".xtf");
+        String direct = "StrokeMultiLine" + version;
+        var output = work.resolve("output.xtf");
+        if (version == 24) source(direct, "MULTIPOLYLINE");
+        referenceSchema(db, version == 24 ? model + ";" + direct : model, "--coalesceMultiLine");
+        referenceImport(db, "legacy", input);
+        assertGeometryColumn(db, "piperoute", "shape", "MULTILINESTRING", 2056);
+        assertGeometryColumn(db, "flowroute", "shape", "MULTILINESTRING", 2056);
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertWrappedLines(output, "fixture");
+        assertCliSuccess(db, "import", model, "native", withPrefix(input, "native"));
+        referenceExport(db, "native", output);
+        assertWrappedLines(output, "native");
+        if (version != 24) return;
+
+        var multi = geometry("multipolyline", polyline(coord(600000, 200000) + arc(600005, 200005, 600010, 200000))
+                + polyline(coord(600020, 200020) + coord(600030, 200010)));
+        referenceImport(db, "legacy-direct", dataset(direct, "legacy-direct", multi));
+        assertGeometryColumn(db, "route", "shape", "MULTILINESTRING", 2056);
+        assertCliSuccess(db, "export", direct, "legacy-direct", output);
+        assertMultiLine(output, "legacy-direct");
+        assertCliSuccess(db, "import", direct, "native-direct", dataset(direct, "native-direct", multi));
+        referenceExport(db, "native-direct", output);
+        assertMultiLine(output, "native-direct");
+    }
+
+    private void assertMultiLine(Path output, String prefix) throws Exception {
+        var objects = objects(output, prefix);
+        assertNull(child(objects.get(prefix + "-null"), "Shape"));
+        var geometry = children(child(objects.get(prefix + "-value"), "Shape")).getFirst();
+        assertEquals("multipolyline", geometry.getLocalName());
+        var lines = children(geometry).stream().map(this::positions).toList();
+        assertEquals(2, lines.size());
+        assertEquals(81, lines.getFirst().size());
+        assertEquals(List.of(600000.0, 200000.0), lines.getFirst().getFirst());
+        assertEquals(List.of(600005.0, 200005.0), lines.getFirst().get(40));
+        assertEquals(List.of(600010.0, 200000.0), lines.getFirst().getLast());
+        assertEquals(List.of(List.of(600020.0, 200020.0), List.of(600030.0, 200010.0)), lines.getLast());
+    }
+
+    private void assertWrappedLines(Path output, String prefix) throws Exception {
+        var objects = objects(output, prefix);
+        assertNull(child(objects.get(prefix + "-empty"), "Shape"));
+        var lines = wrapperMembers(objects.get(prefix + "-value"), "MultiLine", "Lines", "Line").stream()
+                .map(this::positions).toList();
+        assertEquals(2, lines.size());
+        assertEquals(82, lines.getFirst().size());
+        assertEquals(List.of(2600000.0, 1200000.0), lines.getFirst().getFirst());
+        assertEquals(List.of(2600005.0, 1200005.0), lines.getFirst().get(40));
+        assertEquals(List.of(2600020.0, 1200000.0), lines.getFirst().getLast());
+        assertEquals(List.of(List.of(2600100.0, 1200100.0), List.of(2600110.0, 1200120.0)), lines.getLast());
+        var directed = wrapperMembers(objects.get(prefix + "-directed"), "MultiDirectedLine", "Lines", "Line");
+        assertEquals(1, directed.size());
+        assertEquals(List.of(List.of(2600210.0, 1200200.0), List.of(2600200.0, 1200200.0)), positions(directed.getFirst()));
+    }
+
+    private List<Element> wrapperMembers(Element object, String wrapperName, String bag, String field) {
+        var wrapper = children(child(object, "Shape")).getFirst();
+        assertTrue(wrapper.getLocalName().equals(wrapperName) || wrapper.getLocalName().endsWith("." + wrapperName));
+        return children(wrapper).stream().flatMap(element -> {
+            assertEquals(bag, element.getLocalName());
+            return children(element).stream();
+        }).map(member -> children(child(member, field)).getFirst()).toList();
+    }
+
+    private Path fixture(String name) throws Exception {
+        var path = work.resolve(name);
+        try (var source = getClass().getResourceAsStream("/chbase/" + name)) {
+            Files.copy(source, path);
+        }
+        return path;
+    }
+
+    private Path withPrefix(Path input, String prefix) throws Exception {
+        return Files.writeString(work.resolve(prefix + ".xtf"), Files.readString(input).replace("fixture-", prefix + "-"));
+    }
+
     private void assertPolygon(Path output, String prefix) throws Exception {
         var objects = objects(output, prefix);
         assertNull(child(objects.get(prefix + "-null"), "Shape"));

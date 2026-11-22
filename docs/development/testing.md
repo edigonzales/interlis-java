@@ -253,7 +253,9 @@ prüfen grosse Bögen, Vollkreise und den Rollback am Koordinatenlimit. Die
 `*StrokeSurface*`-Fälle prüfen `POLYGON`, Innenringe und den Erhalt der
 XTF-Datei bei beschädigtem WKB oder falschem Katalogtyp. Die
 `*StrokeArea*`-Fälle vergleichen die Koordinaten gemeinsamer gebogener
-Kanten und prüfen in XTF 2.3 einen mehrteiligen Rand.
+Kanten und prüfen in XTF 2.3 einen mehrteiligen Rand. Die
+`*StrokeMultiPolyline*`-Fälle prüfen Reihenfolge und Richtung von
+`MULTIPOLYLINE`, `MultiLine` und `MultiDirectedLine`.
 
 Die Auswahl `--tests '*DbInteropTest.geoPackage*'` läuft ohne Docker.
 Die Tests vergleichen vor dem ersten Datenimport den SQL-Katalog und die

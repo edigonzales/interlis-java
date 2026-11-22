@@ -88,6 +88,7 @@ final class DbMapping {
             return switch (kind) {
                 case POLYLINE -> "LINESTRING";
                 case SURFACE -> "POLYGON";
+                case MULTICURVE -> "MULTILINESTRING";
                 default -> throw new IllegalArgumentException("No linear encoding for " + kind);
             };
         }
@@ -156,7 +157,7 @@ final class DbMapping {
 
         Column withStrokeArcs(TransferPlan plan, boolean strokeArcs) {
             if (!strokeArcs || !kind.geometry() || kind == Kind.POINT || kind == Kind.MULTIPOINT) return this;
-            if (dimensions != 2 || (kind != Kind.POLYLINE && kind != Kind.SURFACE)) {
+            if (dimensions != 2 || kind == Kind.MULTISURFACE) {
                 throw unsupported("linear geometry at " + slot.name().declared());
             }
             int digits = vertexCoordinates(plan).axes().getFirst().maximum()
