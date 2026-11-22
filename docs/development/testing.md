@@ -247,7 +247,9 @@ den Basket des Links, beide Ziel-TIDs und die eigenständigen XTF-Objekte.
 
 Die `*StrokePolyline*`-Fälle prüfen den Austausch gerader XY-Polylinien
 mit ili2db-`--strokeArcs`, gespeicherte SQL-Namen und das Verhalten bei
-widersprüchlichen Spaltenmetadaten.
+widersprüchlichen Spaltenmetadaten. Die `*StrokeArcs*`-Fälle vergleichen
+die Stützpunktfolge eines gewöhnlichen Kreisbogens mit der Referenz und
+prüfen grosse Bögen, Vollkreise und den Rollback am Koordinatenlimit.
 
 Die Auswahl `--tests '*DbInteropTest.geoPackage*'` läuft ohne Docker.
 Die Tests vergleichen vor dem ersten Datenimport den SQL-Katalog und die

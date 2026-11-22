@@ -277,7 +277,7 @@ final class DbSchemaReader {
                         String secondaryKey = Ili2dbLayout.secondaryClass(attribute, owner);
                         String table = settings.splitGeometries() && described.kind().geometry() ? classNames.remove(secondaryKey) : null;
                         var mapping = attrNames.take(attribute, table == null ? parent.name() : table, null);
-                        var column = described.withName(mapping.name()).withStrokeArcs(settings.strokeArcs());
+                        var column = described.withName(mapping.name()).withStrokeArcs(plan, settings.strokeArcs());
                         if (table != null) {
                             var secondaryTransformation = transformations.secondary()
                                     .remove(Ili2dbLayout.secondaryTransformation(path, owner, column.epsgCode()));

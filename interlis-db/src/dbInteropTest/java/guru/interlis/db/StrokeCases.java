@@ -22,6 +22,7 @@ import static guru.interlis.db.DbInteropTest.referenceDatasetFixture;
 import static guru.interlis.db.DbInteropTest.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class StrokeCases {
     private final Path work;
@@ -66,29 +67,105 @@ final class StrokeCases {
         assertEquals(previous, Files.readString(output));
     }
 
+    void arcs(TestDatabase db) throws Exception {
+        String model = "StrokeArc" + version;
+        source(model, "POLYLINE");
+        source("Fine" + version, "POLYLINE", "00000000000");
+        referenceSchema(db, model + ";Fine" + version);
+        String normal = polyline(coord(600000, 200000) + arc(600005, 200005, 600010, 200000) + coord(600020, 200000));
+        var output = work.resolve("output.xtf");
+        referenceImport(db, "legacy", dataset(model, "legacy", normal));
+        assertCliSuccess(db, "export", model, "legacy", output);
+        var expected = linePositions(objects(output, "legacy").get("legacy-value"));
+        assertEquals(82, expected.size());
+        assertEquals(List.of(600005.0, 200005.0), expected.get(40));
+
+        assertCliSuccess(db, "import", model, "native", transfer(model, "native",
+                route(model, "native-value", normal)
+                        + route(model, "native-major", polyline(coord(600010, 200000) + arc(600000, 200010, 600008, 199994)))
+                        + route(model, "native-circle", polyline(coord(600010, 200000) + arc(599990, 200000, 600010, 200000)))
+                        + route(model, "native-collinear", polyline(coord(600000, 200000) + arc(600005, 200000, 600010, 200000)))));
+        assertCliSuccess(db, "export", model, "native", output);
+        var objects = objects(output, "native");
+        var actual = linePositions(objects.get("native-value"));
+        assertEquals(expected.size(), actual.size());
+        for (int i = 0; i < expected.size(); i++) {
+            for (int axis = 0; axis < 2; axis++) assertEquals(expected.get(i).get(axis), actual.get(i).get(axis), 0.000001);
+        }
+        var major = linePositions(objects.get("native-major"));
+        assertCircularPath(major, List.of(600010.0, 200000.0), List.of(600000.0, 200010.0), List.of(600008.0, 199994.0));
+        var circle = linePositions(objects.get("native-circle"));
+        assertCircularPath(circle, List.of(600010.0, 200000.0), List.of(599990.0, 200000.0), List.of(600010.0, 200000.0));
+        assertEquals(List.of(List.of(600000.0, 200000.0), List.of(600010.0, 200000.0)), linePositions(objects.get("native-collinear")));
+
+        referenceExport(db, "native", output);
+        var rounded = linePositions(objects(output, "native").get("native-value"));
+        assertEquals(expected.size(), rounded.size());
+        for (int i = 0; i < expected.size(); i++) {
+            for (int axis = 0; axis < 2; axis++) assertEquals(expected.get(i).get(axis), rounded.get(i).get(axis), 0.000500001);
+        }
+
+        var fine = "Fine" + version;
+        var failing = transfer(fine, "rollback", object(fine, "Route", "written", "")
+                + route(fine, "over-limit", normal));
+        assertCliFailure(db, "import", fine, "rollback", failing, "100000 stored XY pairs");
+        try (var sql = db.connect()) {
+            assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset") + " WHERE datasetname='rollback'"));
+            assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket") + " WHERE t_ili_tid='rollback-b'"));
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket")));
+            var table = scalar(sql, "SELECT sqlname FROM " + db.table("t_ili2db_classname") + " WHERE iliname='" + fine + ".Data.Route'");
+            assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table(table)));
+        }
+    }
+
+    private static void assertCircularPath(List<List<Double>> positions, List<Double> start, List<Double> support, List<Double> end) {
+        assertEquals(start, positions.getFirst());
+        assertEquals(end, positions.getLast());
+        assertTrue(positions.contains(support));
+        for (int i = 1; i < positions.size(); i++) {
+            var a = positions.get(i - 1);
+            var b = positions.get(i);
+            assertEquals(10, Math.hypot(b.get(0) - 600000, b.get(1) - 200000), 0.000001);
+            double midpointRadius = Math.hypot((a.get(0) + b.get(0)) / 2 - 600000, (a.get(1) + b.get(1)) / 2 - 200000);
+            assertTrue(10 - midpointRadius <= 0.001000001, "Chord exceeds model tolerance");
+        }
+    }
+
     private void assertStraightLine(Path output, String prefix) throws Exception {
         var objects = objects(output, prefix);
         assertNull(child(objects.get(prefix + "-null"), "Shape"));
-        var line = children(child(objects.get(prefix + "-value"), "Shape")).getFirst();
-        assertEquals(List.of(List.of(600000.0, 200000.0), List.of(600010.0, 200000.0), List.of(600020.0, 200010.0)), positions(line));
+        assertEquals(List.of(List.of(600000.0, 200000.0), List.of(600010.0, 200000.0), List.of(600020.0, 200010.0)),
+                linePositions(objects.get(prefix + "-value")));
+    }
+
+    private List<List<Double>> linePositions(Element object) {
+        return positions(children(child(object, "Shape")).getFirst());
+    }
+
+    private String route(String model, String tid, String shape) {
+        return object(model, "Route", tid, "<Shape>" + shape + "</Shape>");
     }
 
     private Path source(String model, String kind) throws Exception {
+        return source(model, kind, "000");
+    }
+
+    private Path source(String model, String kind, String precision) throws Exception {
         return Files.writeString(work.resolve(model + ".ili"), """
-                INTERLIS 2.%d;
-                MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
-                  DOMAIN Vertex = COORD 400000.000 .. 900000.000, 0.000 .. 400000.000;
+                INTERLIS 2.%1$d;
+                MODEL %2$s (en) AT "https://example.org/interlis/db" VERSION "1" =
+                  DOMAIN Vertex = COORD 400000.%3$s .. 900000.%3$s, 0.%3$s .. 400000.%3$s;
                   TOPIC Data =
                     CLASS Route =
-                      Shape : %s WITH (STRAIGHTS, ARCS) VERTEX Vertex;
+                      Shape : %4$s WITH (STRAIGHTS, ARCS) VERTEX Vertex;
                     END Route;
                   END Data;
-                END %s.
-                """.formatted(version - 20, model, kind, model));
+                END %2$s.
+                """.formatted(version - 20, model, precision, kind));
     }
 
     private Path dataset(String model, String prefix, String shape) throws Exception {
-        return transfer(model, prefix, object(model, "Route", prefix + "-value", "<Shape>" + shape + "</Shape>")
+        return transfer(model, prefix, route(model, prefix + "-value", shape)
                 + object(model, "Route", prefix + "-null", ""));
     }
 
@@ -106,6 +183,12 @@ final class StrokeCases {
     private String polyline(String contents) { return geometry("polyline", contents); }
 
     private String coord(int x, int y) { return geometry("coord", geometry("c1", Integer.toString(x)) + geometry("c2", Integer.toString(y))); }
+
+    private String arc(int ax, int ay, int x, int y) {
+        String support = geometry("a1", Integer.toString(ax)) + geometry("a2", Integer.toString(ay));
+        String end = geometry("c1", Integer.toString(x)) + geometry("c2", Integer.toString(y));
+        return geometry("arc", version == 23 ? end + support : support + end);
+    }
 
     private String geometry(String name, String contents) {
         String tag = version == 23 ? name.toUpperCase(java.util.Locale.ROOT) : "g:" + name;

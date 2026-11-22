@@ -401,7 +401,14 @@ Bestehende ili2db-Schemata mit `--strokeArcs` speichern XY-Polylinien in
 `LINESTRING`-Spalten. `interlis-db` liest die Option aus den
 Schemaeinstellungen und prüft den SQL-Typ im Katalog sowie in den
 Spaltenmetadaten. Gerade Polylinien bleiben in ihrer ursprünglichen
-Reihenfolge erhalten.
+Reihenfolge erhalten. Beim Import bleiben Anfang, Stützpunkt und Ende
+eines Kreisbogens erhalten. Die Sehnenabweichung richtet sich nach den
+Nachkommastellen der ersten Achse der Koordinatendomäne. Bei ganzzahligen
+Achsen beträgt die Toleranz eine halbe Koordinateneinheit. Grosse Bögen
+folgen der durch den Stützpunkt bestimmten Seite. Bei einem Vollkreis
+bilden Anfang und Stützpunkt die Enden des Durchmessers. Der Export
+liefert die gespeicherten Geraden. Ein Import rollt zurück, wenn die
+Segmentierung das Koordinatenlimit überschreitet.
 
 In XTF 2.4 FULL unterstützen die folgenden Spaltentypen XY und XYZ.
 Alle Teile einer Geometrie liegen in Lieferreihenfolge in demselben

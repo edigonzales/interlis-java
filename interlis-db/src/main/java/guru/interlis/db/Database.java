@@ -290,6 +290,9 @@ final class Database implements AutoCloseable {
             throws SQLException {
         byte[] bytes;
         try {
+            if (value != null && column.geometryEncoding() == DbMapping.GeometryEncoding.LINEAR) {
+                value = new ArcStroker(column.strokeTolerance(), column.kind()).line((TransferGeometry.Polyline) value);
+            }
             bytes = value == null ? null : indexedGeometry.contains(new GeometryColumn(table, column.name()))
                     ? GeometryBinary.encodeIndexedGeoPackage(value, column.srsId(), column.kind(), column.dimensions(),
                             column.geometryEncoding())

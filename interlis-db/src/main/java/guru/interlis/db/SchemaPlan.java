@@ -3,7 +3,6 @@ package guru.interlis.db;
 import guru.interlis.db.Ili2dbLayout.AttributeTransformation;
 import guru.interlis.compiler.AnalysisBudget;
 import guru.interlis.execution.CancellationToken;
-import guru.interlis.model.CoordinateType;
 import guru.interlis.model.DecimalLiteral;
 import guru.interlis.model.DomainReferenceType;
 import guru.interlis.model.GeometryType;
@@ -291,15 +290,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
 
     private static GeometryColumn geometryColumn(List<ColumnProperty> properties, DbMapping mapping,
                                                  String table, String subtype, DbMapping.Column column) {
-        CoordinateType coordinates;
-        var effective = column.effectiveType().orElseThrow();
-        if (effective instanceof CoordinateType coordinateType) {
-            coordinates = coordinateType;
-        } else {
-            var domain = column.domainBinding().map(binding -> DbDomains.domain(mapping.plan(), binding.concrete().symbol()))
-                    .orElseGet(() -> DbMapping.vertexDomain(mapping.plan(), (GeometryType) effective));
-            coordinates = (CoordinateType) type(mapping, new TypeRef(mapping.plan().snapshotId(), domain.typeId()));
-        }
+        var coordinates = column.vertexCoordinates(mapping.plan());
         property(properties, table, subtype, column, Ili2dbLayout.GEOMETRY_TYPE_PROPERTY, column.geometryType());
         property(properties, table, subtype, column, Ili2dbLayout.SRID_PROPERTY, Integer.toString(column.epsgCode()));
         property(properties, table, subtype, column, "coordDimension", Integer.toString(column.dimensions()));

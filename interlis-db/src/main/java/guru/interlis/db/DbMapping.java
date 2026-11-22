@@ -96,7 +96,7 @@ final class DbMapping {
                   Optional<SymbolRef> target, Optional<SymbolRef> referenceTable, int epsgCode, int srsId, boolean legacyEpsgHeader,
                   Optional<String> positionColumn, int dimensions, Optional<DomainBinding> domainBinding,
                   Optional<DbCatalogueReference> catalogueReference, Optional<DbTextExpansion> textExpansion,
-                  Optional<DbWrappedGeometry> wrappedGeometry, GeometryEncoding geometryEncoding) {
+                  Optional<DbWrappedGeometry> wrappedGeometry, double strokeTolerance) {
         Column {
             boolean role = slot instanceof RoleSlot;
             if (effectiveType.isEmpty() != role || (role && kind != Kind.REFERENCE)) {
@@ -111,7 +111,7 @@ final class DbMapping {
                Optional<DbWrappedGeometry> wrappedGeometry) {
             this(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
                     positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry,
-                    GeometryEncoding.STANDARD);
+                    0);
         }
 
         Column(TransferSlot slot, String name, Kind kind, Optional<TypeDescriptor> effectiveType,
@@ -124,43 +124,56 @@ final class DbMapping {
 
         Column withName(String sqlName) {
             return new Column(slot, sqlName, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
-                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, geometryEncoding);
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance);
         }
 
         Column withEpsg(int epsg) {
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsg, epsg, false,
-                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, geometryEncoding);
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance);
         }
 
         Column withSrsId(int id, boolean acceptsEpsgHeader) {
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, id, acceptsEpsgHeader,
-                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, geometryEncoding);
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance);
         }
 
         Column withPositionColumn(boolean gpkg) {
             String position = name + "_" + (gpkg ? SEQ_COLUMN : T_SEQ);
             checkColumnName(slot, position, false, false, gpkg);
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
-                    Optional.of(position), dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, geometryEncoding);
+                    Optional.of(position), dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance);
         }
 
         Column withReferenceTable(SymbolRef table) {
             return new Column(slot, name, kind, effectiveType, target, Optional.of(table), epsgCode, srsId,
                     legacyEpsgHeader, positionColumn, dimensions, domainBinding, catalogueReference, textExpansion,
-                    wrappedGeometry, geometryEncoding);
+                    wrappedGeometry, strokeTolerance);
         }
 
-        Column withStrokeArcs(boolean strokeArcs) {
+        Column withStrokeArcs(TransferPlan plan, boolean strokeArcs) {
             if (!strokeArcs || !kind.geometry() || kind == Kind.POINT || kind == Kind.MULTIPOINT) return this;
             if (kind != Kind.POLYLINE || dimensions != 2) {
                 throw unsupported("linear geometry at " + slot.name().declared());
             }
+            int digits = vertexCoordinates(plan).axes().getFirst().maximum()
+                    .map(limit -> limit.precision().fractionalDigits()).orElse(0);
+            double tolerance = digits == 0 ? 0.5 : Math.pow(10, -digits);
+            if (tolerance == 0) throw unsupported("arc precision at " + slot.name().declared());
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
-                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry,
-                    GeometryEncoding.LINEAR);
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, tolerance);
         }
 
-        String geometryType() { return geometryEncoding.sqlType(kind); }
+        CoordinateType vertexCoordinates(TransferPlan plan) {
+            var effective = effectiveType.orElseThrow();
+            if (effective instanceof CoordinateType coordinates) return coordinates;
+            var domain = domainBinding.map(binding -> DbDomains.domain(plan, binding.concrete().symbol()))
+                    .orElseGet(() -> vertexDomain(plan, (GeometryType) effective));
+            return (CoordinateType) plan.type(new TypeRef(plan.snapshotId(), domain.typeId())).known().orElseThrow();
+        }
+
+        GeometryEncoding geometryEncoding() { return strokeTolerance > 0 ? GeometryEncoding.LINEAR : GeometryEncoding.STANDARD; }
+
+        String geometryType() { return geometryEncoding().sqlType(kind); }
 
         List<String> physicalNames() {
             return textExpansion.map(expansion -> expansion.columns(name)).orElseGet(() -> List.of(name));

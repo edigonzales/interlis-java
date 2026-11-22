@@ -66,7 +66,7 @@ final class GeometryBinary {
     private record CompoundCurve(CurvePart part, int components, int size, boolean hasArcs) { }
     private record CurvePolygon(List<CompoundCurve> rings, int size) { }
 
-    private static final class CoordinateBudget {
+    static final class CoordinateBudget {
         private final Kind kind;
         private int remaining = MAX_VERTICES;
 
@@ -75,10 +75,14 @@ final class GeometryBinary {
         }
 
         void consume(int count) {
-            if (count > remaining) {
+            consume((double) count);
+        }
+
+        void consume(double count) {
+            if (!(count <= remaining)) {
                 throw exceeded();
             }
-            remaining -= count;
+            remaining -= (int) count;
         }
 
         DbException exceeded() {
@@ -286,23 +290,10 @@ final class GeometryBinary {
             var chordX = binaryOrdinate(end, 0).subtract(originX);
             var chordY = binaryOrdinate(end, 1).subtract(originY);
             var side = cross(chordX, chordY, supportX, supportY);
-            BigDecimal centerX;
-            BigDecimal centerY;
-            if (chordX.signum() == 0 && chordY.signum() == 0) {
-                if (supportX.signum() == 0 && supportY.signum() == 0) return;
-                // A closed WKB circular string with three positions uses the diameter.
-                centerX = supportX.divide(BigDecimal.TWO);
-                centerY = supportY.divide(BigDecimal.TWO);
-            } else {
-                if (side.signum() == 0) return; // Start, support and end supply the straight bounds.
-                var denominator = side.negate().multiply(BigDecimal.TWO);
-                var supportSquared = squaredLength(supportX, supportY);
-                var chordSquared = squaredLength(chordX, chordY);
-                centerX = supportSquared.multiply(chordY).subtract(chordSquared.multiply(supportY))
-                        .divide(denominator, MathContext.DECIMAL128);
-                centerY = supportX.multiply(chordSquared).subtract(chordX.multiply(supportSquared))
-                        .divide(denominator, MathContext.DECIMAL128);
-            }
+            var center = circleCenter(supportX, supportY, chordX, chordY, side);
+            if (center == null) return; // Start, support and end supply the straight bounds.
+            var centerX = center.x();
+            var centerY = center.y();
             var radius = squaredLength(centerX, centerY).sqrt(MathContext.DECIMAL128);
             // The chord divides the circle. Only extrema on the support point's side lie on this arc.
             addExtreme(originX, originY, chordX, chordY, side.signum(), centerX.subtract(radius), centerY);
@@ -324,18 +315,6 @@ final class GeometryBinary {
             maxY = Math.max(maxY, Math.nextUp(worldY));
         }
 
-        private static BigDecimal cross(BigDecimal ax, BigDecimal ay, BigDecimal bx, BigDecimal by) {
-            return ax.multiply(by).subtract(ay.multiply(bx));
-        }
-
-        private static BigDecimal squaredLength(BigDecimal x, BigDecimal y) {
-            return x.multiply(x).add(y.multiply(y));
-        }
-
-        private static BigDecimal binaryOrdinate(Coordinate point, int axis) {
-            return new BigDecimal(point.ordinates().get(axis).exactValue().doubleValue());
-        }
-
         private void addPoint(Coordinate point) {
             double x = point.ordinates().get(0).exactValue().doubleValue();
             double y = point.ordinates().get(1).exactValue().doubleValue();
@@ -344,6 +323,38 @@ final class GeometryBinary {
             minY = Math.min(minY, y);
             maxY = Math.max(maxY, y);
         }
+    }
+
+    record Center(BigDecimal x, BigDecimal y) { }
+
+    // The input coordinates are relative to the start of the arc.
+    static Center circleCenter(BigDecimal supportX, BigDecimal supportY, BigDecimal chordX, BigDecimal chordY,
+                               BigDecimal side) {
+        if (chordX.signum() == 0 && chordY.signum() == 0) {
+            if (supportX.signum() == 0 && supportY.signum() == 0) return null;
+            return new Center(supportX.divide(BigDecimal.TWO), supportY.divide(BigDecimal.TWO));
+        }
+        if (side.signum() == 0) return null;
+        var denominator = side.negate().multiply(BigDecimal.TWO);
+        var supportSquared = squaredLength(supportX, supportY);
+        var chordSquared = squaredLength(chordX, chordY);
+        var x = supportSquared.multiply(chordY).subtract(chordSquared.multiply(supportY))
+                .divide(denominator, MathContext.DECIMAL128);
+        var y = supportX.multiply(chordSquared).subtract(chordX.multiply(supportSquared))
+                .divide(denominator, MathContext.DECIMAL128);
+        return new Center(x, y);
+    }
+
+    static BigDecimal cross(BigDecimal ax, BigDecimal ay, BigDecimal bx, BigDecimal by) {
+        return ax.multiply(by).subtract(ay.multiply(bx));
+    }
+
+    private static BigDecimal squaredLength(BigDecimal x, BigDecimal y) {
+        return x.multiply(x).add(y.multiply(y));
+    }
+
+    static BigDecimal binaryOrdinate(Coordinate point, int axis) {
+        return new BigDecimal(finite(point.ordinates().get(axis).exactValue().doubleValue()));
     }
 
     private static int pointSize(int dimensions) {
@@ -747,7 +758,7 @@ final class GeometryBinary {
         return new CurvePart(first.start(), segments);
     }
 
-    private static CurvePart linePart(Polyline line) {
+    static CurvePart linePart(Polyline line) {
         if (line.parts().size() != 1 || line.lineAttributes().isPresent()) {
             throw new DbException("Expected a polyline with one part and no line attributes");
         }
@@ -868,7 +879,7 @@ final class GeometryBinary {
         };
     }
 
-    private static NumberValue number(double value) {
+    static NumberValue number(double value) {
         // XTF 2.3 accepts decimal lexemes without an exponent.
         String decimal = BigDecimal.valueOf(finite(value)).toPlainString();
         return new NumberValue(decimal, new BigDecimal(decimal));
