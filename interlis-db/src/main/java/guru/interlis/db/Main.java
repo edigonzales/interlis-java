@@ -352,8 +352,8 @@ public final class Main {
                         + " requires a new schema with newClass or Smart2 inheritance");
             }
             boolean strokeArcs = schemaFlags.contains("--stroke-arcs");
-            if (strokeArcs && (addModels || inheritance != DbInheritance.Profile.NEW_CLASS)) {
-                throw new IllegalArgumentException("--stroke-arcs requires a new schema with newClass inheritance");
+            if (strokeArcs && (addModels || inheritance == DbInheritance.Profile.SMART1)) {
+                throw new IllegalArgumentException("--stroke-arcs requires a new schema with newClass or Smart2 inheritance");
             }
             var srsModels = Optional.ofNullable(alternateSrsModel).map(value -> DbCrsPair.Models.parse(value, models.getFirst()));
             return new Options(command, List.copyOf(models), dataset, file, gpkg, pgUrl, schema, user,

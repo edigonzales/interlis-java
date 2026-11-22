@@ -7,6 +7,7 @@ import org.w3c.dom.Element;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +24,9 @@ import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
 import static guru.interlis.db.DbInteropTest.referenceDatasetFixture;
 import static guru.interlis.db.DbInteropTest.scalar;
+import static guru.interlis.db.SpatialIndexCases.assertIndex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -447,6 +450,115 @@ final class StrokeCases {
         try (var expected = baseline.connect(); var actual = own.connect()) {
             DbSchemaCatalog.read(expected, baseline.postgis(), baseline.schema())
                     .assertSameAs(DbSchemaCatalog.read(actual, own.postgis(), own.schema()));
+        }
+    }
+
+    void smart2(TestDatabase baseline, TestDatabase own) throws Exception {
+        String model = "StrokeSmart" + version;
+        var ili = Files.writeString(work.resolve(model + ".ili"), """
+                INTERLIS 2.%d;
+                MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
+                  DOMAIN Vertex = COORD 400000.000 .. 900000.000, 0.000 .. 400000.000;
+                  TOPIC Data =
+                    CLASS AssetBase (ABSTRACT) =
+                      Anchor : Vertex;
+                      Shape : POLYLINE WITH (STRAIGHTS, ARCS) VERTEX Vertex;
+                    END AssetBase;
+                    CLASS SurveyAsset EXTENDS AssetBase =
+                      Marker : TEXT*20;
+                    END SurveyAsset;
+                  END Data;
+                END %s.
+                """.formatted(version - 20, model, model));
+        var referenceOptions = new ArrayList<>(List.of("--smart2Inheritance", "--createGeomIdx"));
+        var nativeOptions = new ArrayList<>(List.of("--inheritance", "smart2", "--stroke-arcs", "--create-geom-index"));
+        if (own.postgis()) {
+            referenceOptions.add("--oneGeomPerTable");
+            nativeOptions.add("--one-geom-per-table");
+        }
+        referenceSchema(baseline, model, referenceOptions.toArray(String[]::new));
+        var created = cli(own, "schemaimport", model, null, ili, CancellationToken.none(), nativeOptions.toArray(String[]::new));
+        assertEquals(0, created.code(), created::diagnostics);
+        assertSameCatalog(baseline, own);
+        var output = work.resolve("output.xtf");
+        for (var db : List.of(baseline, own)) {
+            assertGeometryColumn(db, "surveyasset_shape", "shape", "LINESTRING", 2056);
+            referenceImport(db, "legacy", transfer(model, "legacy", surveyAsset(model, "legacy", 600000, "first")));
+            assertCliSuccess(db, "export", model, "legacy", output);
+            assertAsset(output, "legacy", 600000, "first");
+            assertCliSuccess(db, "import", model, "native",
+                    transfer(model, "native", surveyAsset(model, "native", 600200, "second")));
+            referenceExport(db, "native", output);
+            assertAsset(output, "native", 600200, "second");
+            assertCliSuccess(db, "delete", model, "native", null);
+            try (var sql = db.connect()) {
+                assertIndex(db, sql, "surveyasset", "anchor");
+                assertIndex(db, sql, "surveyasset_shape", "shape");
+                var identity = "SELECT CAST(t_id AS text) || ':' || CAST(t_basket AS text) FROM ";
+                var asset = db.table("surveyasset");
+                var shape = db.table("surveyasset_shape");
+                var before = scalar(sql, identity + asset);
+                assertNotNull(before);
+                assertEquals(before, scalar(sql, identity + shape));
+                assertSpatialHit(db, sql, 600005, true);
+
+                assertCliSuccess(db, "update", model, "legacy",
+                        transfer(model, "legacy", surveyAsset(model, "legacy", 600100, "updated")));
+                assertEquals(before, scalar(sql, identity + asset));
+                assertEquals(before, scalar(sql, identity + shape));
+                assertSpatialHit(db, sql, 600005, false);
+                assertSpatialHit(db, sql, 600105, true);
+                referenceExport(db, "legacy", output);
+                assertAsset(output, "legacy", 600100, "updated");
+
+                assertCliSuccess(db, "delete", model, "legacy", null);
+                for (var table : List.of("surveyasset", "surveyasset_shape", "t_ili2db_basket", "t_ili2db_dataset")) {
+                    assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table(table)), table);
+                }
+                assertSpatialHit(db, sql, 600105, false);
+                if (!db.postgis()) {
+                    assertEquals("0", scalar(sql, "SELECT count(*) FROM rtree_surveyasset_anchor"));
+                    assertEquals("0", scalar(sql, "SELECT count(*) FROM rtree_surveyasset_shape_shape"));
+                }
+            }
+        }
+    }
+
+    private String surveyAsset(String model, String prefix, int x, String marker) {
+        var line = polyline(coord(x, 200000) + arc(x + 5, 199995, x + 10, 200000));
+        return object(model, "SurveyAsset", prefix + "-value",
+                "<Anchor>" + coord(x, 200000) + "</Anchor><Shape>" + line + "</Shape><Marker>" + marker + "</Marker>");
+    }
+
+    private void assertAsset(Path output, String prefix, int x, String marker) throws Exception {
+        var asset = objects(output, prefix).get(prefix + "-value");
+        assertEquals(marker, child(asset, "Marker").getTextContent());
+        var line = linePositions(asset);
+        assertEquals(81, line.size());
+        assertEquals(List.of((double) x, 200000.0), line.getFirst());
+        assertEquals(List.of((double) x + 5, 199995.0), line.get(40));
+        assertEquals(List.of((double) x + 10, 200000.0), line.getLast());
+    }
+
+    private static void assertSpatialHit(TestDatabase db, Connection sql, int x, boolean expected) throws Exception {
+        if (!db.postgis()) {
+            assertEquals(expected ? "1" : "0", scalar(sql, "SELECT count(*) FROM rtree_surveyasset_shape_shape"
+                    + " WHERE minx <= " + x + " AND maxx >= " + x + " AND miny <= 199995 AND maxy >= 199994"));
+            return;
+        }
+        String query = "SELECT count(*) FROM " + db.table("surveyasset_shape")
+                + " WHERE shape && ST_MakeEnvelope(" + (x - 1) + ",199994," + (x + 1) + ",199995,2056)";
+        assertEquals(expected ? "1" : "0", scalar(sql, query));
+        var index = scalar(sql, "SELECT indexname FROM pg_indexes WHERE schemaname='" + db.schema()
+                + "' AND tablename='surveyasset_shape' AND indexdef LIKE '%USING gist%'");
+        try (var statement = sql.createStatement()) {
+            statement.execute("SET enable_seqscan = off");
+            try (var rows = statement.executeQuery("EXPLAIN " + query)) {
+                var plan = new ArrayList<String>();
+                while (rows.next()) plan.add(rows.getString(1));
+                assertTrue(plan.stream().anyMatch(line -> line.contains(" using " + index + " ") || line.endsWith(" on " + index)),
+                        () -> String.join("\n", plan));
+            }
         }
     }
 

@@ -181,6 +181,17 @@ final class DbInteropTest {
         new StrokeCases(work, new ReferenceTool(own.postgis()), version).schema(baseline, own);
     }
 
+    @Test void geoPackageStrokeSmart223() throws Exception { exchangeStrokeSmart2(23, null); }
+    @Test void geoPackageStrokeSmart224() throws Exception { exchangeStrokeSmart2(24, null); }
+    @Test void postgisStrokeSmart223() throws Exception { exchangeWithPostgis(23, this::exchangeStrokeSmart2); }
+    @Test void postgisStrokeSmart224() throws Exception { exchangeWithPostgis(24, this::exchangeStrokeSmart2); }
+
+    private void exchangeStrokeSmart2(int version, PostgreSQLContainer postgres) throws Exception {
+        var baseline = new TestDatabase(postgres, "stroke_smart_baseline");
+        var own = new TestDatabase(postgres, "stroke_smart_own");
+        new StrokeCases(work, new ReferenceTool(own.postgis()), version).smart2(baseline, own);
+    }
+
     @Test void postgisChbasePoints23() throws Exception { exchangeWithPostgis(23, this::exchangeChbasePoints); }
     @Test void postgisChbasePoints24() throws Exception { exchangeWithPostgis(24, this::exchangeChbasePoints); }
     @Test void geoPackageChbaseLines23() throws Exception { exchangeChbaseLines(23, null); }

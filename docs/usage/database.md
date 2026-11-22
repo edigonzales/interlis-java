@@ -75,10 +75,12 @@ veröffentlicht. Ein vorhandener Schemaname oder Zielpfad führt zu einem
 Fehler. Für GeoPackage muss das Ziel-Dateisystem Hardlinks unterstützen.
 
 Mit `schemaimport --stroke-arcs` legt `interlis-db` ein neues
-`newClass`-Schema mit der linearen XY-Speicherung von ili2db
+`newClass`- oder Smart2-Schema mit der linearen XY-Speicherung von ili2db
 `--strokeArcs` an. Die Option gilt für Linien und Flächen, einschliesslich
 ihrer Sammlungen. Punkte und Punktsammlungen behalten ihre SQL-Typen.
-`schemaimport --add-models` übernimmt die gespeicherte Einstellung.
+`schemaimport --add-models` übernimmt die Einstellung des bestehenden
+`newClass`-Schemas. Ausgelagerte Geometriespalten können mit einem RTree-
+oder GiST-Index verwendet werden.
 
 Mit `schemaimport --create-geom-index` erhält jede Geometriespalte
 einen Raumindex. GeoPackage registriert `gpkg_rtree_index` mit der

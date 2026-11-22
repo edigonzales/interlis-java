@@ -260,7 +260,10 @@ Kanten und prüfen in XTF 2.3 einen mehrteiligen Rand. Die
 Innenringe bei `MULTISURFACE`, `MULTIAREA` und CHBase-`MultiSurface`
 sowie leere SQL-Sammlungen. Die `*StrokeSchema*`-Fälle vergleichen
 den Katalog mit einem ili2db-Schema, prüfen die gemeinsame ID-Vergabe
-und ergänzen ein Modell mit der gespeicherten Option.
+und ergänzen ein Modell mit der gespeicherten Option. Die
+`*StrokeSmart2*`-Fälle prüfen eine geerbte Geometrie in einer indizierten
+Hilfstabelle. Sie vergleichen SQL-IDs und räumliche Abfragen vor und
+nach `update` und `delete`.
 
 Die Auswahl `--tests '*DbInteropTest.geoPackage*'` läuft ohne Docker.
 Die Tests vergleichen vor dem ersten Datenimport den SQL-Katalog und die
