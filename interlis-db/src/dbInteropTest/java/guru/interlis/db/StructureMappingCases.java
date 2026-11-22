@@ -70,6 +70,54 @@ final class StructureMappingCases {
         assertEquals(previous, Files.readString(output));
     }
 
+    void list(TestDatabase db) throws Exception {
+        String model = "ExpandList" + version;
+        source(model, """
+                    !!@ili2db.mapping=EXPAND
+                    Items : LIST {0..5} OF Entry;
+                    !!@ili2db.mapping=EXPAND
+                    Larger : LIST {0..6} OF Entry;
+                """);
+        referenceSchema(db, model, "--expandStruct");
+        String entries = entry(model, field("Label", "c")) + entry(model, field("Label", "a")) + entry(model, "")
+                + entry(model, field("Label", "d")) + entry(model, field("Label", "b"));
+        String payload = field("Items", entries) + field("Larger", entry(model, field("Label", "separate row")));
+        var output = work.resolve("out.xtf");
+        referenceImport(db, "legacy", dataset(model, "legacy", asset(model, "legacy-value", payload)));
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertList(output, "legacy");
+        assertCliSuccess(db, "import", model, "native", dataset(model, "native", asset(model, "native-value", payload)));
+        referenceExport(db, "native", output);
+        assertList(output, "native");
+        try (var sql = db.connect()) {
+            String table = db.table("asset");
+            assertEquals("b", scalar(sql, "SELECT items4_label FROM " + table + " WHERE t_ili_tid='native-value'"));
+            assertEquals("entry", scalar(sql, "SELECT items2_t_type FROM " + table + " WHERE t_ili_tid='native-value'"));
+            assertNull(scalar(sql, "SELECT items2_label FROM " + table + " WHERE t_ili_tid='native-value'"));
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("entry") + " WHERE asset_larger IS NOT NULL"));
+        }
+        var failing = dataset(model, "rollback", asset(model, "first-row", field("Items", entry(model, "")))
+                + asset(model, "last-row", field("Items", entries + entry(model, ""))));
+        assertCliFailure(db, "import", model, "rollback", failing, "Expanded collection exceeds 5 stored positions");
+        try (var sql = db.connect()) {
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("asset")));
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket")));
+            assertNull(scalar(sql, "SELECT datasetname FROM " + db.table("t_ili2db_dataset") + " WHERE datasetname='rollback'"));
+        }
+    }
+
+    private void assertList(Path output, String prefix) throws Exception {
+        var object = objects(output, prefix).get(prefix + "-value");
+        assertEquals(List.of("c", "a", "", "d", "b"), members(object, "Items").stream()
+                .map(item -> item.getTextContent().strip()).toList());
+        assertEquals("separate row", child(members(object, "Larger").getFirst(), "Label").getTextContent());
+    }
+
+    private static List<Element> members(Element object, String field) {
+        return children(object).stream().filter(value -> value.getLocalName().equals(field))
+                .flatMap(value -> children(value).stream()).toList();
+    }
+
     private Path singleDataset(String model, String prefix, String field) throws Exception {
         return dataset(model, prefix, asset(model, prefix + "-empty", field(field, entry(model, "")))
                 + asset(model, prefix + "-missing", "")

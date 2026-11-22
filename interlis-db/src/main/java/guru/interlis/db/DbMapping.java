@@ -1029,7 +1029,7 @@ final class DbMapping {
     }
 
     static Column expandedColumn(TransferPlan plan, AttributeSlot outer, DbExpandedStructure binding) {
-        return new Column(outer, binding.typeColumn(), Kind.TEXT, Optional.of(DbStructureShape.type(plan, outer)),
+        return new Column(outer, binding.groups().getFirst().typeColumn(), Kind.TEXT, Optional.of(DbStructureShape.type(plan, outer)),
                 Optional.empty(), Optional.empty(), 0, 0, false, Optional.empty(), 0, Optional.empty(),
                 Optional.empty(), Optional.empty(), Optional.empty(), 0, Optional.of(binding));
     }

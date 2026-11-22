@@ -92,7 +92,9 @@ Prozesslogs und temporären Dateien des Referenzwerkzeugs auch bei Testfehlern.
 
 Die `*ExpandSingle*`-Fälle prüfen den Austausch optionaler flacher
 Strukturen mit ili2db-`--expandStruct`, das Umbenennen einer SQL-Spalte
-und den Erhalt der XTF-Datei bei beschädigtem Strukturtyp.
+und den Erhalt der XTF-Datei bei beschädigtem Strukturtyp. Die
+`*ExpandList*`-Fälle prüfen fünf Positionen, den Wechsel zur
+Strukturtabelle bei Obergrenze sechs und Rollback bei einer zu langen Liste.
 
 `*DbInteropTest.*CatalogueReference*` prüft beide Werkzeugrichtungen
 für Katalogreferenzen mit `--coalesceCatalogueRef` auf GeoPackage und
