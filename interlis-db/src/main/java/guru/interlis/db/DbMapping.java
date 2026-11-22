@@ -14,6 +14,8 @@ import guru.interlis.model.GeometryType;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.Modifier;
 import guru.interlis.model.NumericType;
+import guru.interlis.model.OidKind;
+import guru.interlis.model.OidType;
 import guru.interlis.model.Origin;
 import guru.interlis.model.ReferenceType;
 import guru.interlis.model.RoleAggregation;
@@ -62,7 +64,7 @@ import static guru.interlis.db.Ili2dbLayout.reservedTable;
 /** The SQL names and storage bindings for a checked transfer plan. */
 final class DbMapping {
     enum Kind {
-        TEXT, BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, ENUMERATION, POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE;
+        TEXT, BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, UUID, ENUMERATION, POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE;
 
         boolean geometry() { return this == POINT || this == POLYLINE || this == SURFACE || collection(); }
 
@@ -1118,6 +1120,7 @@ final class DbMapping {
                 case null -> Kind.FORMATTED;
             };
             case FormattedType ignored -> Kind.FORMATTED;
+            case OidType oid when oid.oidKind() == OidKind.UUID -> Kind.UUID;
             default -> type.kind() == TypeKind.BOOLEAN ? Kind.BOOLEAN : null;
         };
     }

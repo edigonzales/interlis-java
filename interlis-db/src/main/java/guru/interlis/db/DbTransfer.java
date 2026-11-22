@@ -28,6 +28,7 @@ import guru.interlis.transfer.TransferValue;
 import guru.interlis.transfer.TransferValue.BooleanValue;
 import guru.interlis.transfer.TransferValue.Enumeration;
 import guru.interlis.transfer.TransferValue.NumberValue;
+import guru.interlis.transfer.TransferValue.Oid;
 import guru.interlis.transfer.TransferValue.Reference;
 import guru.interlis.transfer.TransferValue.Repeated;
 import guru.interlis.transfer.TransferValue.Structured;
@@ -1043,7 +1044,7 @@ final class DbTransfer {
         }
         return switch (column.kind()) {
             case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> readGeometry(db, rows, index, column);
-            case BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, ENUMERATION -> readScalar(db, rows, index, column);
+            case BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, UUID, ENUMERATION -> readScalar(db, rows, index, column);
             case TEXT -> {
                 if (column.textExpansion().isPresent()) {
                     var expansion = column.textExpansion().orElseThrow();
@@ -1129,6 +1130,10 @@ final class DbTransfer {
                 yield column.enumeration().isPresent()
                         ? column.enumeration().orElseThrow().read(value, column.slot().name().declared().toString())
                         : readEnumeration(value, column);
+            }
+            case UUID -> {
+                String value = rows.getString(index);
+                yield value == null ? null : new Oid(canonicalUuid(value, column.slot().name().declared().toString()));
             }
             case TEXT, FORMATTED -> {
                 String value = rows.getString(index);
@@ -1335,9 +1340,13 @@ final class DbTransfer {
     }
 
     private static String canonicalUuid(String tid, String context) {
+        return uuid(tid, context).toString();
+    }
+
+    private static UUID uuid(String tid, String context) {
         try {
-            String canonical = UUID.fromString(tid).toString();
-            if (canonical.equalsIgnoreCase(tid)) return canonical;
+            var parsed = UUID.fromString(tid);
+            if (parsed.toString().equalsIgnoreCase(tid)) return parsed;
         } catch (IllegalArgumentException ignored) {
             // UUID.fromString also accepts abbreviated segments, which are not the ili2db wire form.
         }
@@ -1839,6 +1848,8 @@ final class DbTransfer {
             }
             switch (column.kind()) {
                 case TEXT, FORMATTED -> statement.setString(index, ((Text) value).value());
+                case UUID -> db.bindUuid(statement, index,
+                        uuid(((Oid) value).lexeme(), column.slot().name().declared().toString()));
                 case BOOLEAN -> statement.setBoolean(index, ((BooleanValue) value).value());
                 case ENUMERATION -> {
                     var enumeration = (Enumeration) value;

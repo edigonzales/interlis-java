@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 
 import static guru.interlis.db.Ili2dbLayout.BASKET;
 import static guru.interlis.db.Ili2dbLayout.DATASET;
@@ -168,6 +169,11 @@ final class Database implements AutoCloseable {
     String jsonProjection(String field) {
         String text = gpkg() ? field : "CAST(" + field + " AS text)";
         return "CASE WHEN length(" + text + ") > " + DbJsonStructure.MAX_CODE_UNITS + " THEN '' ELSE " + text + " END";
+    }
+
+    void bindUuid(PreparedStatement statement, int index, UUID value) throws SQLException {
+        if (gpkg()) statement.setString(index, value.toString());
+        else statement.setObject(index, value);
     }
 
     Text readDate(ResultSet rows, int index, String context) throws SQLException {

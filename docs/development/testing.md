@@ -105,6 +105,8 @@ Sommerzeitlücke.
 Die `*ScalarFormatted*`-Fälle vergleichen Texttypen und Metadaten.
 Sie prüfen führende Nullen in `FORMAT`, Namen, URI-Kodierung und
 einen gespeicherten SQL-Spaltennamen nach einer Umbenennung.
+Die `*ScalarUuid*`-Fälle prüfen UUID-Fachattribute mit beiden
+Schreibweisen, SQL `NULL` und den Rollback bei einer ungültigen UUID.
 
 Die `*EnumItfCodes*`-Fälle prüfen den Austausch skalarer Aufzählungen
 mit ITF-Codes, einschliesslich Code `0`, SQL `NULL`, Rollback und

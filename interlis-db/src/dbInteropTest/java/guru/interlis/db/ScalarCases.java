@@ -206,6 +206,34 @@ final class ScalarCases {
         }
     }
 
+    void uuidAttribute(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ScalarUuid" + version;
+        schemas(expected, own, model, "CLASS Asset = ExternalId : INTERLIS.UUIDOID; END Asset;");
+        String upper = "80EB846C-F951-4084-9B05-03F596CC03EE";
+        String lower = "80eb846c-f951-4084-9b05-03f596cc03ee";
+        var values = List.of(uuidField(upper), uuidField(lower), "");
+        for (var db : List.of(expected, own)) {
+            mixed(db, model, values, rows -> {
+                for (int i = 0; i < 2; i++) {
+                    var value = child(rows.get(i), "ExternalId");
+                    assertEquals(lower, version == 23 ? value.getAttribute("OID") : value.getTextContent());
+                }
+                assertNull(child(rows.getLast(), "ExternalId"));
+            });
+            try (var sql = db.connect()) {
+                assertEquals(lower, stored(db, sql, "externalid", "native", 0));
+                assertNull(stored(db, sql, "externalid", "native", 2));
+                var broken = data(model, "broken", List.of(values.getFirst(), uuidField("not-a-uuid")));
+                assertCliFailure(db, "import", model, "broken", broken, "Invalid UUID");
+                assertCounts(db, sql, 6);
+            }
+        }
+    }
+
+    private String uuidField(String value) {
+        return version == 23 ? "<ExternalId OID=\"" + value + "\"/>" : field("ExternalId", value);
+    }
+
     private void differentZones(TestDatabase db, String model, List<String> values, CheckRows check) throws Exception {
         Path output = work.resolve("zoned-out.xtf");
         assertCliInZone(db, "export", model, "legacy", output, "Pacific/Auckland");

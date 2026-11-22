@@ -390,6 +390,10 @@ ili2gpkg-Schreibweise mit `Z`. PostGIS verwendet einen
 Felder einschliesslich Millisekunden.
 `FORMAT`, `NAME` und `URI` verwenden die ili2db-Textspalten und
 Typmetadaten. Dazu gehören eingeschränkte temporale Formatdomänen.
+Fachattribute vom Typ `INTERLIS.UUIDOID` liegen als `TEXT(36)` in
+GeoPackage und als `uuid` in PostGIS. Das Kommando normalisiert die
+Schreibweise auf Kleinbuchstaben. XTF 2.3 verwendet das `OID`-Attribut,
+XTF 2.4 den UUID-Wert als Text.
 
 `schemaimport --gpkg-multi-geom-per-table` verwendet das ili2gpkg-Profil
 `--gpkgMultiGeomPerTable` mit mehreren Geometriespalten in einer Tabelle.
