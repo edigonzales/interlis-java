@@ -104,7 +104,7 @@ final class DbMapping {
                   Optional<DbCatalogueReference> catalogueReference, Optional<DbTextExpansion> textExpansion,
                   Optional<DbWrappedGeometry> wrappedGeometry, double strokeTolerance,
                   Optional<DbExpandedStructure> expandedStructure, Optional<DbJsonStructure> jsonStructure,
-                  Optional<DbArray> array, Optional<DbEnumeration> enumeration) {
+                  Optional<DbArray> array, Optional<DbEnumeration> enumeration, Optional<DbEnumText> enumText) {
         Column {
             boolean role = slot instanceof RoleSlot;
             if (effectiveType.isEmpty() != role || (role && kind != Kind.REFERENCE)) {
@@ -118,7 +118,7 @@ final class DbMapping {
                Optional<DbCatalogueReference> catalogueReference, Optional<DbTextExpansion> textExpansion,
                Optional<DbWrappedGeometry> wrappedGeometry) {
             this(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
-                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, 0, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, 0, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
         }
 
         Column(TransferSlot slot, String name, Kind kind, Optional<TypeDescriptor> effectiveType,
@@ -131,7 +131,7 @@ final class DbMapping {
 
         Column withName(String sqlName) {
             return new Column(slot, sqlName, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
-                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance, expandedStructure, jsonStructure, array, enumeration);
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance, expandedStructure, jsonStructure, array, enumeration, enumText);
         }
 
         Column withItfCodes() {
@@ -141,30 +141,36 @@ final class DbMapping {
         Column withEnumeration(DbEnumeration binding) {
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
                     positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry,
-                    strokeTolerance, expandedStructure, jsonStructure, array, Optional.of(binding));
+                    strokeTolerance, expandedStructure, jsonStructure, array, Optional.of(binding), enumText);
+        }
+
+        Column withEnumText(DbEnumText binding) {
+            return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry,
+                    strokeTolerance, expandedStructure, jsonStructure, array, enumeration, Optional.of(binding));
         }
 
         Column withEpsg(int epsg) {
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsg, epsg, false,
-                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance, expandedStructure, jsonStructure, array, enumeration);
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance, expandedStructure, jsonStructure, array, enumeration, enumText);
         }
 
         Column withSrsId(int id, boolean acceptsEpsgHeader) {
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, id, acceptsEpsgHeader,
-                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance, expandedStructure, jsonStructure, array, enumeration);
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance, expandedStructure, jsonStructure, array, enumeration, enumText);
         }
 
         Column withPositionColumn(boolean gpkg) {
             String position = name + "_" + (gpkg ? SEQ_COLUMN : T_SEQ);
             checkColumnName(slot, position, false, false, gpkg);
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
-                    Optional.of(position), dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance, expandedStructure, jsonStructure, array, enumeration);
+                    Optional.of(position), dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance, expandedStructure, jsonStructure, array, enumeration, enumText);
         }
 
         Column withReferenceTable(SymbolRef table) {
             return new Column(slot, name, kind, effectiveType, target, Optional.of(table), epsgCode, srsId,
                     legacyEpsgHeader, positionColumn, dimensions, domainBinding, catalogueReference, textExpansion,
-                    wrappedGeometry, strokeTolerance, expandedStructure, jsonStructure, array, enumeration);
+                    wrappedGeometry, strokeTolerance, expandedStructure, jsonStructure, array, enumeration, enumText);
         }
 
         Column withStrokeArcs(TransferPlan plan, boolean strokeArcs) {
@@ -177,7 +183,7 @@ final class DbMapping {
             double tolerance = digits == 0 ? 0.5 : Math.pow(10, -digits);
             if (tolerance == 0) throw unsupported("arc precision at " + slot.name().declared());
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
-                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, tolerance, expandedStructure, jsonStructure, array, enumeration);
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, tolerance, expandedStructure, jsonStructure, array, enumeration, enumText);
         }
 
         CoordinateType vertexCoordinates(TransferPlan plan) {
@@ -194,11 +200,13 @@ final class DbMapping {
 
         List<String> physicalNames() {
             if (expandedStructure.isPresent()) return expandedStructure.orElseThrow().physicalNames();
+            if (enumText.isPresent()) return List.of(name, enumText.orElseThrow().column());
             return textExpansion.map(expansion -> expansion.columns(name)).orElseGet(() -> List.of(name));
         }
 
         int physicalWidth() {
             if (expandedStructure.isPresent()) return expandedStructure.orElseThrow().width();
+            if (enumText.isPresent()) return 2;
             return textExpansion.map(DbTextExpansion::width).orElse(1);
         }
 
@@ -608,13 +616,13 @@ final class DbMapping {
     static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, CancellationToken token) {
         return planNew(List.of(modelName), List.of(source), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(),
-                new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), false, false, token);
+                new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), false, DbEnumOptions.DEFAULT, token);
     }
 
     static DbMapping planNew(List<String> modelNames, Collection<SourceText> sources, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels,
                              SqlNames allocator, DbInheritance.Profile profile, Set<AttributeTransformation> transformations,
-                             boolean strokeArcs, boolean enumItfCodes, CancellationToken token) {
+                             boolean strokeArcs, DbEnumOptions enumOptions, CancellationToken token) {
         var models = srsModels.map(DbCrsPair.Models::names).orElse(modelNames);
         TransferPlan plan = DbModelSources.compile(models, sources, "model files", token);
         var crs = new CrsDefaults(defaultEpsg, 0);
@@ -714,7 +722,7 @@ final class DbMapping {
                         String field = allocator.column(name, attributeName);
                         checkColumnName(attribute, field, object.kind() == SymbolKind.STRUCTURE, discriminator, gpkg);
                         var array = DbArray.describe(plan, inheritance, object, attribute);
-                        if (enumItfCodes && array.kind() == Kind.ENUMERATION) {
+                        if (enumOptions.itfCodes() && array.kind() == Kind.ENUMERATION) {
                             throw unsupported("ITF codes in array " + attribute.name().declared());
                         }
                         columns.add(arrayColumn(plan, attribute, field, array));
@@ -750,7 +758,13 @@ final class DbMapping {
                         String column = allocator.column(owner, storageName);
                         checkColumnName(attribute, column, object.kind() == SymbolKind.STRUCTURE, !split && discriminator, gpkg);
                         var named = binding.withName(column).withStrokeArcs(plan, strokeArcs);
-                        if (enumItfCodes && named.kind() == Kind.ENUMERATION) named = named.withItfCodes();
+                        if (enumOptions.itfCodes() && named.kind() == Kind.ENUMERATION) named = named.withItfCodes();
+                        if (enumOptions.textColumns() && (named.kind() == Kind.ENUMERATION || named.kind() == Kind.BOOLEAN)) {
+                            var textLabel = DbEnumText.describe(plan, named, enumOptions.beautify());
+                            checkColumnName(attribute, textLabel.column(), object.kind() == SymbolKind.STRUCTURE, discriminator, gpkg);
+                            allocator.reserveColumn(owner, textLabel.column());
+                            named = named.withEnumText(textLabel);
+                        }
                         if (binding.kind().geometry()) geometrySeen = true;
                         if (split) secondary.add(new SecondaryGeometry(owner, named));
                         else columns.add(named);
@@ -1073,19 +1087,19 @@ final class DbMapping {
     static Column expandedColumn(TransferPlan plan, AttributeSlot outer, DbExpandedStructure binding) {
         return new Column(outer, binding.groups().getFirst().typeColumn(), Kind.TEXT, Optional.of(DbStructureShape.type(plan, outer)),
                 Optional.empty(), Optional.empty(), 0, 0, false, Optional.empty(), 0, Optional.empty(),
-                Optional.empty(), Optional.empty(), Optional.empty(), 0, Optional.of(binding), Optional.empty(), Optional.empty(), Optional.empty());
+                Optional.empty(), Optional.empty(), Optional.empty(), 0, Optional.of(binding), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     static Column jsonColumn(TransferPlan plan, AttributeSlot outer, String name, DbJsonStructure binding) {
         return new Column(outer, name, Kind.TEXT, Optional.of(DbStructureShape.type(plan, outer)),
                 Optional.empty(), Optional.empty(), 0, 0, false, Optional.empty(), 0, Optional.empty(),
-                Optional.empty(), Optional.empty(), Optional.empty(), 0, Optional.empty(), Optional.of(binding), Optional.empty(), Optional.empty());
+                Optional.empty(), Optional.empty(), Optional.empty(), 0, Optional.empty(), Optional.of(binding), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     static Column arrayColumn(TransferPlan plan, AttributeSlot outer, String name, DbArray binding) {
         return new Column(outer, name, Kind.TEXT, Optional.of(DbStructureShape.type(plan, outer)),
                 Optional.empty(), Optional.empty(), 0, 0, false, Optional.empty(), 0, Optional.empty(),
-                Optional.empty(), Optional.empty(), Optional.empty(), 0, Optional.empty(), Optional.empty(), Optional.of(binding), Optional.empty());
+                Optional.empty(), Optional.empty(), Optional.empty(), 0, Optional.empty(), Optional.empty(), Optional.of(binding), Optional.empty(), Optional.empty());
     }
 
     static Kind scalarKind(TypeDescriptor type) {

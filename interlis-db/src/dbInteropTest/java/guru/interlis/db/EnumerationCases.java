@@ -93,6 +93,51 @@ final class EnumerationCases {
         }
     }
 
+    void enumText(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "EnumLabels" + version;
+        var ili = source(model, BASE.replace("Zed, Alpha", """
+                Zed,
+                  !!@ili2db.dispName="Alpine label"
+                  Alpha"""));
+        schema(expected, model, "--createEnumTxtCol", "--beautifyEnumDispName");
+        create(own, model, ili, "--create-enum-txt-col", "--beautify-enum-disp-name");
+        assertSameCatalog(expected, own);
+        textRoundtrip(expected, model, "Family.Alpha");
+        textRoundtrip(own, model, "Family.Alpha");
+
+        var integerReference = own.peer("enum_txt_itf_ref");
+        var integerOwn = own.peer("enum_txt_itf_own");
+        schema(integerReference, model, "--createEnumTxtCol", "--beautifyEnumDispName", "--createEnumColAsItfCode");
+        create(integerOwn, model, ili, "--create-enum-txt-col", "--beautify-enum-disp-name", "--create-enum-col-as-itf-code");
+        assertSameCatalog(integerReference, integerOwn);
+        textRoundtrip(integerReference, model, "2");
+        textRoundtrip(integerOwn, model, "2");
+    }
+
+    private void textRoundtrip(TestDatabase db, String model, String storedGrade) throws Exception {
+        mixScalars(db, model);
+        var output = work.resolve("output.xtf");
+        try (var sql = db.connect()) {
+            String table = db.table("asset");
+            for (var prefix : List.of("legacy", "native")) {
+                String row = " FROM " + table + " WHERE t_ili_tid = '" + prefix + "-value'";
+                assertEquals(storedGrade, scalar(sql, "SELECT gradevalue" + row));
+                assertEquals("Alpine label", scalar(sql, "SELECT gradevalue_txt" + row));
+                assertEquals("No Sign", scalar(sql, "SELECT directvalue_txt" + row));
+                assertEquals("true", scalar(sql, "SELECT aactive_txt" + row));
+            }
+            execute(sql, "UPDATE " + table + " SET gradevalue_txt = 'editor label' WHERE t_ili_tid = 'native-value'");
+            assertCliSuccess(db, "export", model, "native", output);
+            assertScalars(output, "native");
+            var empty = dataset(model, "native", object(model, "Asset", "native-value", "")
+                    + object(model, "Asset", "native-missing", ""));
+            assertCliSuccess(db, "update", model, "native", empty);
+            for (var column : List.of("gradevalue", "gradevalue_txt", "directvalue_txt", "aactive_txt")) {
+                assertNull(scalar(sql, "SELECT " + column + " FROM " + table + " WHERE t_ili_tid = 'native-value'"), column);
+            }
+        }
+    }
+
     private static void create(TestDatabase db, String model, Path ili, String... options) {
         var result = cli(db, "schemaimport", model, null, ili, CancellationToken.none(), options);
         assertEquals(0, result.code(), result::diagnostics);

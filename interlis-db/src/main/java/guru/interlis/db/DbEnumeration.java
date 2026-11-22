@@ -2,6 +2,15 @@ package guru.interlis.db;
 
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.EnumerationValue;
+import guru.interlis.model.AttributeSymbol;
+import guru.interlis.model.DomainReferenceType;
+import guru.interlis.model.DomainSymbol;
+import guru.interlis.model.EnumElementSymbol;
+import guru.interlis.model.Symbol;
+import guru.interlis.model.SymbolRef;
+import guru.interlis.model.TypeRef;
+import guru.interlis.transfer.AttributeSlot;
+import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferValue.Enumeration;
 
 import java.util.HashMap;
@@ -24,6 +33,40 @@ record DbEnumeration(Map<String, Long> numbers, Map<Long, String> paths) {
             if (separator >= 0) parents.add(value.path().substring(0, separator));
         }
         return type.values().stream().filter(value -> !parents.contains(value.path())).toList();
+    }
+
+    static Symbol definition(TransferPlan plan, AttributeSlot slot) {
+        Symbol symbol = slot.attribute();
+        var type = plan.type(slot.declaredType()).known().orElseThrow();
+        while (type instanceof DomainReferenceType alias) {
+            var domain = DbDomains.domain(plan, alias.targetDomain());
+            symbol = domain;
+            type = plan.type(new TypeRef(plan.snapshotId(), domain.typeId())).known().orElseThrow();
+        }
+        return symbol;
+    }
+
+    static Map<String, EnumElementSymbol> elements(TransferPlan plan, Symbol definition) {
+        var elements = new HashMap<String, EnumElementSymbol>();
+        var queries = plan.schema().queries();
+        for (Symbol declaration = definition; declaration != null; declaration = base(plan, declaration)) {
+            var ref = new SymbolRef(plan.snapshotId(), declaration.id());
+            for (var member : queries.membersOf(ref).known().orElseThrow()) {
+                if (plan.symbol(member).known().orElseThrow() instanceof EnumElementSymbol element) {
+                    elements.putIfAbsent(String.join(".", element.path()), element);
+                }
+            }
+        }
+        return elements;
+    }
+
+    static Symbol base(TransferPlan plan, Symbol definition) {
+        var base = switch (definition) {
+            case AttributeSymbol attribute -> attribute.overrides();
+            case DomainSymbol domain -> domain.baseDomain();
+            default -> throw new IllegalArgumentException("Expected an enumeration declaration");
+        };
+        return base.map(id -> plan.symbol(new SymbolRef(plan.snapshotId(), id)).known().orElseThrow()).orElse(null);
     }
 
     static DbEnumeration itfCodes(EnumerationType type, String path) {

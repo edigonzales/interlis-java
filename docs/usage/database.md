@@ -125,6 +125,10 @@ und behält die Identität des Objekts bei.
 `schemaimport --create-enum-col-as-itf-code` erzeugt numerische
 SQL-Spalten für skalare Aufzählungen, entsprechend ili2db
 `--createEnumColAsItfCode`. Boolean bleibt eine eigene SQL-Abbildung.
+Mit `--create-enum-txt-col` kommen `_txt`-Spalten für skalare
+Aufzählungen und Boolean hinzu. `--beautify-enum-disp-name` ersetzt im
+Standardlabel Unterstriche durch Leerzeichen. Explizite Anzeigenamen aus
+dem Modell haben Vorrang. Der Export liest den Fachwert aus der Hauptspalte.
 
 ## Bestehendes Schema ergänzen
 

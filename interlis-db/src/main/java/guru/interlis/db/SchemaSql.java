@@ -371,7 +371,9 @@ final class SchemaSql {
         row(statement, PREFIX + "defaultSrsAuthority", "EPSG");
         row(statement, PREFIX + "defaultSrsCode", Integer.toString(plan.defaultEpsg()));
         row(statement, PREFIX + "maxSqlNameLength", "60");
-        if (plan.enumItfCodes()) row(statement, Ili2dbLayout.ENUM_ITF_CODE, "yes");
+        if (plan.enumOptions().itfCodes()) row(statement, Ili2dbLayout.ENUM_ITF_CODE, "yes");
+        if (plan.enumOptions().textColumns()) row(statement, Ili2dbLayout.ENUM_TEXT_COLUMN, "addTxtCol");
+        if (plan.enumOptions().beautify()) row(statement, Ili2dbLayout.ENUM_BEAUTIFY, "underscore");
         String inheritance = plan.mapping().profile().setting;
         if (inheritance != null) row(statement, PREFIX + "inheritanceTrafo", inheritance);
         for (var transformation : Ili2dbLayout.AttributeTransformation.values()) {
@@ -453,6 +455,7 @@ final class SchemaSql {
         }
 
         String columnType(DbMapping.Column column, int index) {
+            if (index == 1 && column.enumText().isPresent()) return text(255);
             if (column.array().isPresent()) {
                 if (gpkg) return "TEXT";
                 var array = column.array().orElseThrow();

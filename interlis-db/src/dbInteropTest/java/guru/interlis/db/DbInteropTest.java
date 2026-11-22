@@ -129,6 +129,17 @@ final class DbInteropTest {
         new EnumerationCases(work, new ReferenceTool(db.postgis()), version).itfSchema(expected, db);
     }
 
+    @Test void geoPackageEnumText23() throws Exception { exchangeEnumText(23, null); }
+    @Test void geoPackageEnumText24() throws Exception { exchangeEnumText(24, null); }
+    @Test void postgisEnumText23() throws Exception { exchangeWithPostgis(23, this::exchangeEnumText); }
+    @Test void postgisEnumText24() throws Exception { exchangeWithPostgis(24, this::exchangeEnumText); }
+
+    private void exchangeEnumText(int version, PostgreSQLContainer postgres) throws Exception {
+        var expected = new TestDatabase(postgres, "enum_txt_ref");
+        var db = new TestDatabase(postgres, "enum_txt_own");
+        new EnumerationCases(work, new ReferenceTool(db.postgis()), version).enumText(expected, db);
+    }
+
     @Test void geoPackageArrayText23() throws Exception { exchangeArrayText(23, null); }
     @Test void geoPackageArrayText24() throws Exception { exchangeArrayText(24, null); }
     @Test void postgisArrayText23() throws Exception { exchangeWithPostgis(23, this::exchangeArrayText); }
@@ -5211,6 +5222,8 @@ final class DbInteropTest {
         }
 
         boolean postgis() { return postgis; }
+
+        TestDatabase peer(String name) { return new TestDatabase(postgres, name); }
 
         String schema() { return schema; }
 

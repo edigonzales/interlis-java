@@ -95,6 +95,8 @@ mit ITF-Codes, einschliesslich Code `0`, SQL `NULL`, Rollback und
 dem Erhalt einer vorhandenen Exportdatei.
 Die `*EnumItfSchema*`-Fälle vergleichen den SQL-Katalog und prüfen den
 Werkzeugwechsel in Referenz- und eigenen Schemata.
+Die `*EnumText*`-Fälle prüfen SQL-Typen, Modelllabels, Boolean-Labels,
+manuell geänderte Anzeigetexte und das Leeren der Spalten per `update`.
 
 Die `*ArrayText*`-Fälle prüfen Reihenfolge, Duplikate, Sonderzeichen,
 gespeicherte SQL-Spaltennamen und den bekannten Referenzfehler bei

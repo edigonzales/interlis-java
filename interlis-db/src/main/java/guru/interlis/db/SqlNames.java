@@ -91,6 +91,12 @@ final class SqlNames {
         return allocateColumn(table, preferred(attribute));
     }
 
+    void reserveColumn(String table, String name) {
+        if (!columns.computeIfAbsent(table, ignored -> new HashSet<>()).add(name)) {
+            throw new DbException("Duplicate derived column " + table + "." + name);
+        }
+    }
+
     String expandedColumn(String table, String path) {
         int position = path.indexOf('[');
         String stem = path.substring(path.lastIndexOf('.', position) + 1);

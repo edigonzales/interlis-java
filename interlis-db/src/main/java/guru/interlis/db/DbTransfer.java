@@ -1808,9 +1808,11 @@ final class DbTransfer {
 
         private static int bindScalar(PreparedStatement statement, int index, Column column, TransferValue value)
                 throws SQLException {
+            int next = index + 1;
+            if (column.enumText().isPresent()) statement.setString(next++, column.enumText().orElseThrow().label(value));
             if (value == null || value == Undefined.INSTANCE) {
                 statement.setNull(index, Types.NULL);
-                return index + 1;
+                return next;
             }
             switch (column.kind()) {
                 case TEXT -> statement.setString(index, ((Text) value).value());
@@ -1828,7 +1830,7 @@ final class DbTransfer {
                 case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE ->
                         throw new DbException("Unsupported value for " + column.slot().name().declared());
             }
-            return index + 1;
+            return next;
         }
 
         private int bindColumn(PreparedStatement statement, int index, Table table, Column column, long id,
