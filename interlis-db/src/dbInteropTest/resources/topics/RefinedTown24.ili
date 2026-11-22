@@ -1,0 +1,10 @@
+INTERLIS 2.4;
+MODEL RefinedTown24 AT "https://example.org/town" VERSION "1" =
+  IMPORTS AbstractTown24;
+  TOPIC Region EXTENDS AbstractTown24.Core =
+    CLASS Item (EXTENDED) =
+      Label (EXTENDED) : TEXT*20;
+      Extra : TEXT*10;
+    END Item;
+  END Region;
+END RefinedTown24.

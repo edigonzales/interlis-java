@@ -97,6 +97,62 @@ final class TopicCases {
         assertEquals("inherited", child(assertObject(basket, parent, "Core", "Marker", prefix + "-m"), "Memo").getTextContent());
     }
 
+    void refinement(TestDatabase baseline, TestDatabase own) throws Exception {
+        String parent = "AbstractTown" + version;
+        String model = "RefinedTown" + version;
+        schemas(baseline, own, parent, model);
+        var input = fixture("refine" + version + ".xtf");
+        var nativeInput = Files.writeString(work.resolve("refine-native.xtf"),
+                Files.readString(input).replace("refine-", "native-").replace(">text<", ">updated<"));
+        var output = work.resolve("refine-out.xtf");
+        for (var db : List.of(baseline, own)) {
+            referenceImport(db, "legacy", input);
+            run(db, "export", model, "legacy", output);
+            assertRefinement(output, parent, model, "refine", "text");
+            run(db, "import", model, "own", nativeInput);
+            referenceExport(db, "own", output);
+            assertRefinement(output, parent, model, "native", "updated");
+            try (var sql = db.connect()) {
+                String attr = db.table("t_ili2db_attrname");
+                assertEquals("label", scalar(sql, "SELECT sqlname FROM " + attr + " WHERE iliname='"
+                        + parent + ".Core.Item.Label' AND colowner='item'"));
+                assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + attr + " WHERE iliname='"
+                        + model + ".Region.Item.Label'"));
+                String refined = scalar(sql, "SELECT sqlname FROM " + db.table("t_ili2db_classname")
+                        + " WHERE iliname='" + model + ".Region.Item'");
+                assertEquals("1", scalar(sql, "SELECT COUNT(*) FROM " + db.table("item") + " i JOIN "
+                        + db.table(refined) + " r ON r.t_id=i.t_id AND r.t_basket=i.t_basket"
+                        + " WHERE i.t_ili_tid='native-i' AND i.t_type='" + refined
+                        + "' AND i.label='updated' AND i.asize=4 AND r.extra='added'"));
+                String baskets = db.table("t_ili2db_basket");
+                execute(sql, "INSERT INTO " + baskets + " (t_id, topic, t_ili_tid, attachmentkey, dataset)"
+                        + " SELECT 100000, '" + parent + ".Core', 'abstract-b', 'abstract-b', dataset FROM " + baskets
+                        + " WHERE t_ili_tid='native-b'");
+            }
+            String previous = Files.readString(output);
+            var result = cli(db, "export", model, "own", output, CancellationToken.none(), "--model", parent);
+            assertEquals(1, result.code(), result::diagnostics);
+            assertTrue(result.diagnostics().contains("Basket uses an abstract topic: " + parent + ".Core"),
+                    result::diagnostics);
+            assertEquals(previous, Files.readString(output));
+        }
+    }
+
+    private void assertRefinement(Path file, String parent, String model, String prefix, String text) throws Exception {
+        var basket = assertRegion(file, model, prefix + "-b");
+        var item = assertObject(basket, model, "Region", "Item", prefix + "-i");
+        var label = child(item, "Label");
+        var size = child(item, "Size");
+        var extra = child(item, "Extra");
+        assertNamespace(label, parent);
+        assertNamespace(size, parent);
+        assertNamespace(extra, model);
+        assertEquals(text, label.getTextContent());
+        assertEquals("4", size.getTextContent());
+        assertEquals("added", extra.getTextContent());
+        assertObject(basket, parent, "Core", "Marker", prefix + "-m");
+    }
+
     private void assertInherited(Path file, String parent, String model, String prefix) throws Exception {
         var basket = assertRegion(file, model, prefix + "-b");
         var marker = assertObject(basket, parent, "Core", "Marker", prefix + "-m");

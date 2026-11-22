@@ -1,5 +1,6 @@
 package guru.interlis.xtf24;
 
+import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.QualifiedName;
 import guru.interlis.model.Modifier;
@@ -105,13 +106,7 @@ final class Xtf24Names {
     }
 
     QualifiedName originalName(SymbolRef ref) {
-        var seen = new HashSet<SymbolRef>();
-        while (originals.containsKey(ref)) {
-            if (!seen.add(ref)) {
-                throw failure(UNSUPPORTED, "Cyclic checked translation correspondence");
-            }
-            ref = originals.get(ref);
-        }
+        ref = original(ref);
         Symbol current = symbol(ref);
         var segments = new java.util.ArrayDeque<String>();
         segments.addFirst(current.name().value());
@@ -120,6 +115,18 @@ final class Xtf24Names {
             segments.addFirst(current.name().value());
         }
         return new QualifiedName(List.copyOf(segments));
+    }
+
+    private SymbolRef original(SymbolRef ref) {
+        if (!originals.containsKey(ref)) return ref;
+        var seen = new HashSet<SymbolRef>();
+        while (originals.containsKey(ref)) {
+            if (!seen.add(ref)) {
+                throw failure(UNSUPPORTED, "Cyclic checked translation correspondence");
+            }
+            ref = originals.get(ref);
+        }
+        return ref;
     }
 
     ModelDescriptor model(String name) {
@@ -167,7 +174,12 @@ final class Xtf24Names {
     }
 
     QName slotName(TransferSlot slot) {
-        return declarationName(slot.name().canonical());
+        var canonical = slot.name().canonical();
+        for (var declaration = symbol(canonical); declaration instanceof AttributeSymbol attribute
+                && attribute.overrides().isPresent(); declaration = symbol(canonical)) {
+            canonical = original(new SymbolRef(plan.snapshotId(), attribute.overrides().orElseThrow()));
+        }
+        return declarationName(canonical);
     }
 
     QName objectName(ObjectDescriptor object) {

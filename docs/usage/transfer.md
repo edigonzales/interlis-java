@@ -79,6 +79,8 @@ Beide XTF-Codecs lesen die Vererbung aus dem gebundenen Modell. Die
 Transferdeskriptoren liefern das Wire-Layout der übertragbaren Deklarationen.
 Eine vordefinierte Basisklasse wie `INTERLIS.REFSYSTEM` braucht deshalb
 keinen eigenen Transferdeskriptor.
+Im XTF 2.4 behält ein vererbtes Attribut auch bei `EXTENDED` den
+Namensraum seiner Basisdeklaration.
 
 Die XTF-2.3-Fabriken `forIli2db` verwenden das FULL-Profil von ili2db.
 Es deklariert übersetzte Tag-Namen über das vorab gebundene Modell und

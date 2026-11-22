@@ -136,6 +136,10 @@ final class DbInteropTest {
     @Test void geoPackageTopicFragments24() throws Exception { exchangeTopicFragments(24, null); }
     @Test void postgisTopicFragments23() throws Exception { exchangeWithPostgis(23, this::exchangeTopicFragments); }
     @Test void postgisTopicFragments24() throws Exception { exchangeWithPostgis(24, this::exchangeTopicFragments); }
+    @Test void geoPackageTopicRefinement23() throws Exception { exchangeTopicRefinement(23, null); }
+    @Test void geoPackageTopicRefinement24() throws Exception { exchangeTopicRefinement(24, null); }
+    @Test void postgisTopicRefinement23() throws Exception { exchangeWithPostgis(23, this::exchangeTopicRefinement); }
+    @Test void postgisTopicRefinement24() throws Exception { exchangeWithPostgis(24, this::exchangeTopicRefinement); }
 
     @Test void geoPackageSharedSource23() throws Exception { exchangeSharedSource(23, null); }
     @Test void geoPackageSharedSource24() throws Exception { exchangeSharedSource(24, null); }
@@ -511,6 +515,12 @@ final class DbInteropTest {
         var reference = new TestDatabase(postgres, "reference_topic_fragments");
         var own = new TestDatabase(postgres, "own_topic_fragments");
         new TopicCases(work, new ReferenceTool(reference.postgis()), version).fragments(reference, own);
+    }
+
+    private void exchangeTopicRefinement(int version, PostgreSQLContainer postgres) throws Exception {
+        var reference = new TestDatabase(postgres, "reference_topic_refinement");
+        var own = new TestDatabase(postgres, "own_topic_refinement");
+        new TopicCases(work, new ReferenceTool(reference.postgis()), version).refinement(reference, own);
     }
 
     private void exchangeSharedSource(int version, PostgreSQLContainer postgres) throws Exception {

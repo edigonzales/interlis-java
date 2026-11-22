@@ -133,6 +133,7 @@ final class DbTransfer {
     private static TopicDescriptor selectedTopic(Map<String, TopicDescriptor> topics, String name) {
         var topic = topics.get(name);
         if (topic == null) throw new DbException("Basket topic is outside the selected model: " + name);
+        if (topic.abstractTopic()) throw new DbException("Basket uses an abstract topic: " + name);
         return topic;
     }
 
@@ -281,6 +282,10 @@ final class DbTransfer {
                     var values = readFields(db, mapping, rows, field, root, tid);
                     fragments.readFor(actual, id, tid, values);
                     structures.readFor(id, tid, values);
+                    mapping.extendedFields(actual.object().symbol()).forEach((base, effective) -> {
+                        var value = values.remove(base);
+                        if (value != null) values.put(effective, value);
+                    });
                     var identity = objectIdentity(mapping, root, bid, tid);
                     var object = new TransferObject(identity, new Structured(actual.object().symbol(), values));
                     object = mapping.translations().inTopic(object, topic);
@@ -1340,8 +1345,10 @@ final class DbTransfer {
                 }
             }
             int found = 0;
+            var extendedFields = mapping.extendedFields(object.type());
             for (var column : table.columns()) {
-                var value = basketGeometry.active(column) ? object.value(column.slot().symbol())
+                var slot = column.slot().symbol();
+                var value = basketGeometry.active(column) ? object.value(extendedFields.getOrDefault(slot, slot))
                         : Optional.<TransferValue>empty();
                 if (value.isPresent()) {
                     found++;

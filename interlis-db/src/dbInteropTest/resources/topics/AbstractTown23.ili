@@ -1,0 +1,7 @@
+INTERLIS 2.3;
+MODEL AbstractTown23 AT "https://example.org/town" VERSION "1" =
+  TOPIC Core (ABSTRACT) =
+    CLASS Item = Label : TEXT*30; Size : 0..100; END Item;
+    CLASS Marker = END Marker;
+  END Core;
+END AbstractTown23.

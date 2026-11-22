@@ -1,6 +1,7 @@
 package guru.interlis.db;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.CardinalityUpper;
 import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CollectionType;
@@ -183,6 +184,7 @@ final class DbMapping {
     private final Map<String, Table> byName;
     private final Map<SymbolRef, List<Table>> chains;
     private final Map<Table, List<Table>> hierarchies;
+    private final Map<SymbolRef, Map<SymbolRef, SymbolRef>> extendedFields;
     private final List<Composition> compositions;
     private final Map<SymbolRef, List<Composition>> byParent;
     private final Map<SymbolRef, List<Composition>> byChild;
@@ -216,6 +218,23 @@ final class DbMapping {
         chains = Map.copyOf(paths);
         hierarchies = families.entrySet().stream().collect(Collectors.toUnmodifiableMap(
                 Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
+        var extensions = new HashMap<SymbolRef, Map<SymbolRef, SymbolRef>>();
+        for (var table : this.tables) {
+            var fields = new HashMap<SymbolRef, SymbolRef>();
+            for (var slot : table.object().slots()) {
+                if (slot instanceof AttributeSlot attribute && attribute.attribute().overrides().isPresent()
+                        && !attribute.attribute().transientAttribute()) {
+                    var base = attribute.attribute();
+                    while (base.overrides().isPresent()) {
+                        var ref = new SymbolRef(plan.snapshotId(), base.overrides().orElseThrow());
+                        base = (AttributeSymbol) plan.symbol(ref).known().orElseThrow();
+                    }
+                    fields.put(new SymbolRef(plan.snapshotId(), base.id()), slot.symbol());
+                }
+            }
+            if (!fields.isEmpty()) extensions.put(table.object().symbol(), Map.copyOf(fields));
+        }
+        extendedFields = Map.copyOf(extensions);
         this.compositions = List.copyOf(compositions);
         byParent = indexCompositions(this.compositions, Composition::parent);
         byChild = indexCompositions(this.compositions, Composition::childRoot);
@@ -304,6 +323,10 @@ final class DbMapping {
         return tableChain(actual).stream().anyMatch(part -> part.object().symbol().equals(declared));
     }
     List<Table> hierarchy(Table root) { return hierarchies.getOrDefault(root, List.of()); }
+
+    Map<SymbolRef, SymbolRef> extendedFields(SymbolRef type) {
+        return extendedFields.getOrDefault(type, Map.of());
+    }
 
     Table concreteType(Table root, String discriminator, long id) {
         var actual = discriminator == null ? null : byName.get(discriminator);
@@ -524,8 +547,7 @@ final class DbMapping {
         var topics = objects.stream().flatMap(object -> object.topic().stream()).collect(Collectors.toSet());
         for (var topic : plan.topics()) {
             if (!topics.contains(topic.symbol()) && !plan.rootModels().contains(topic.model())) continue;
-            if (topic.abstractTopic()
-                    || topic.oidRules().stream().anyMatch(rule -> !Ili2dbLayout.UUID_OID.equals(oidDomain(plan, rule)))
+            if (topic.oidRules().stream().anyMatch(rule -> !Ili2dbLayout.UUID_OID.equals(oidDomain(plan, rule)))
                     || topic.genericBindings().stream().anyMatch(binding -> binding.state() == TopicSymbol.BindingState.ABSTRACT)) {
                 throw unsupported("topic " + topic.name().declared());
             }
@@ -606,7 +628,10 @@ final class DbMapping {
             }
             for (var slot : object.slots()) {
                 if (!(slot instanceof AttributeSlot attribute)) continue;
-                if (attribute.member().overridden()) {
+                if (attribute.member().overridden() && !(object.kind() == SymbolKind.CLASS
+                        && !attribute.attribute().transientAttribute()
+                        && plan.type(attribute.effectiveType()).known().orElseThrow() instanceof TextType text
+                        && text.textKind() == TextKind.TEXT)) {
                     throw unsupported("extended attribute in inheritance at " + attribute.name().declared());
                 }
                 if (object.kind() != SymbolKind.STRUCTURE || attribute.attribute().transientAttribute()) continue;
@@ -623,7 +648,7 @@ final class DbMapping {
         for (var slot : object.slots()) {
             if (object.kind() == SymbolKind.ASSOCIATION && slot instanceof RoleSlot) continue;
             if (!(slot instanceof AttributeSlot attribute)) throw unsupported(slot.name().declared().toString());
-            if (!attribute.attribute().transientAttribute()
+            if (!attribute.attribute().transientAttribute() && !attribute.member().overridden()
                     && attribute.member().inheritancePath().getFirst().equals(object.symbol().symbol())) {
                 attributes.add(attribute);
             }

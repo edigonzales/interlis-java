@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
+            xmlns:p="http://www.interlis.ch/xtf/2.4/AbstractTown24"
+            xmlns:d="http://www.interlis.ch/xtf/2.4/RefinedTown24">
+  <i:headersection><i:models><i:model>RefinedTown24</i:model></i:models></i:headersection>
+  <i:datasection>
+    <d:Region i:bid="refine-b">
+      <d:Item i:tid="refine-i"><p:Label>text</p:Label><p:Size>4</p:Size><d:Extra>added</d:Extra></d:Item>
+      <p:Marker i:tid="refine-m"/>
+    </d:Region>
+  </i:datasection>
+</i:transfer>

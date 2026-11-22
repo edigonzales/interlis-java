@@ -34,6 +34,10 @@ Ein mit `EXTENDS` abgeleitetes Topic übernimmt die Klassen seines Basistopics.
 Geerbte und lokal deklarierte Objekte belegen gemeinsam den konkreten
 Basket. Die geerbten Objekte behalten den XTF-Namen und die SQL-Tabelle
 ihrer Deklaration.
+Ein abstraktes Basistopic liefert Tabellen für konkrete abgeleitete Baskets.
+Bei `CLASS (EXTENDED)` verwendet ein verengtes `TEXT`-Attribut die
+SQL-Spalte der Basisdeklaration. Der Export verwendet im XTF 2.4 ihren
+Namensraum.
 [Referenzhandbuch](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst)
 
 ## Schemaerzeugung

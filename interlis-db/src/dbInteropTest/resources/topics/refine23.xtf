@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="test"><MODELS>
+    <MODEL NAME="RefinedTown23" VERSION="1" URI="https://example.org/town"/>
+  </MODELS></HEADERSECTION>
+  <DATASECTION>
+    <RefinedTown23.Region BID="refine-b">
+      <RefinedTown23.Region.Item TID="refine-i"><Label>text</Label><Size>4</Size><Extra>added</Extra></RefinedTown23.Region.Item>
+      <AbstractTown23.Core.Marker TID="refine-m"/>
+    </RefinedTown23.Region>
+  </DATASECTION>
+</TRANSFER>
