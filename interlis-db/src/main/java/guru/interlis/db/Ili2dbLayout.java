@@ -74,7 +74,9 @@ final class Ili2dbLayout {
 
     enum SchemaOption {
         FOREIGN_KEY_INDEX("--create-fk-idx", "createForeignKeyIndex", "yes"),
-        FOREIGN_KEY("--create-fk", "createForeignKey", "yes");
+        FOREIGN_KEY("--create-fk", "createForeignKey", "yes"),
+        TYPE_DISCRIMINATOR("--create-type-discriminator", "typeDiscriminator", "always"),
+        TYPE_CONSTRAINT("--create-type-constraint", "createTypeConstraint", "True");
 
         final String option;
         final String tag;

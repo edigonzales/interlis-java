@@ -149,6 +149,16 @@ final class DbInteropTest {
         new SchemaProfileCases(work, new ReferenceTool(expected.postgis()), version).hierarchyKeys(expected, expected.peer("profile_hierarchy_own"));
     }
 
+    @Test void geoPackageProfileDiscriminator23() throws Exception { exchangeProfileDiscriminator(23, null); }
+    @Test void geoPackageProfileDiscriminator24() throws Exception { exchangeProfileDiscriminator(24, null); }
+    @Test void postgisProfileDiscriminator23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileDiscriminator); }
+    @Test void postgisProfileDiscriminator24() throws Exception { exchangeWithPostgis(24, this::exchangeProfileDiscriminator); }
+
+    private void exchangeProfileDiscriminator(int version, PostgreSQLContainer postgres) throws Exception {
+        var expected = new TestDatabase(postgres, "profile_type_ref");
+        new SchemaProfileCases(work, new ReferenceTool(expected.postgis()), version).discriminator(expected, expected.peer("profile_type_own"));
+    }
+
     @Test void geoPackageScalarWide23() throws Exception { exchangeScalarWide(23, null); }
     @Test void geoPackageScalarWide24() throws Exception { exchangeScalarWide(24, null); }
     @Test void postgisScalarWide23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarWide); }

@@ -158,7 +158,7 @@ final class DbTransfer {
                 continue;
             }
             if (table.hasDiscriminator() && table.object().kind() != SymbolKind.STRUCTURE && !mapping.isEmbeddedLink(table)) {
-                writeHierarchyObjects(db, mapping, table, basketId, bid, topic.symbol(), writer, token);
+                writeHierarchyObjects(db, mapping, table, basketId, bid, topic.symbol(), selection, writer, token);
             } else if (table.object().transferable() && !mapping.isEmbeddedLink(table)) {
                 writeObjects(db, mapping, table, basketId, bid, topic.symbol(), selection, writer, token);
             }
@@ -256,7 +256,8 @@ final class DbTransfer {
     }
 
     private static void writeHierarchyObjects(Database db, DbMapping mapping, Table root, long basketId,
-                                               BasketId bid, SymbolRef topic, TransferWriter writer, CancellationToken token)
+                                               BasketId bid, SymbolRef topic, GeometrySelection selection,
+                                               TransferWriter writer, CancellationToken token)
             throws SQLException {
         boolean hasTid = root.hasTidColumn();
         var fields = new StringJoiner(", ").add("obj." + T_ID);
@@ -264,6 +265,8 @@ final class DbTransfer {
         fields.add("obj." + T_TYPE);
         var from = new StringBuilder(db.table(root.name())).append(" obj");
         appendColumns(db, mapping, root, "obj", fields, from);
+        var links = mapping.linkFields(root.object().symbol());
+        appendEmbeddedLinks(db, mapping, links, "obj", fields, from);
         String sql = "SELECT " + fields + " FROM " + from + " WHERE obj." + T_BASKET
                 + " = ? ORDER BY obj." + T_ID;
         try (var fragments = new HierarchyRows(db, mapping, basketId, token);
@@ -284,7 +287,8 @@ final class DbTransfer {
                     int field = 2;
                     String tid = hasTid ? identifier(rows.getString(field++), "TID", root.name()) : null;
                     var actual = mapping.concreteType(root, rows.getString(field++), id, topic);
-                    var values = readFields(db, mapping, rows, field, root, tid, ALL_GEOMETRIES, actual.object().symbol());
+                    var values = readFields(db, mapping, rows, field, root, tid, selection, actual.object().symbol());
+                    readEmbeddedLinks(db, mapping, rows, field + projectionSize(mapping, root), links, tid, values);
                     fragments.readFor(actual, id, tid, values);
                     structures.readFor(id, tid, values, actual.object().symbol());
                     mapping.extendedFields(actual.object().symbol()).forEach((base, effective) -> {
@@ -292,7 +296,12 @@ final class DbTransfer {
                         if (value != null) values.put(effective, value);
                     });
                     var identity = objectIdentity(mapping, root, bid, tid);
-                    var object = new TransferObject(identity, new Structured(actual.object().symbol(), values));
+                    var alternate = mapping.crsPair().flatMap(pair -> pair.alternateClass(topic, actual.object().symbol()));
+                    var data = alternate.isPresent()
+                            ? new Structured(alternate.orElseThrow().symbol(),
+                                    mapping.crsPair().orElseThrow().alternateValues(actual.object().symbol(), values))
+                            : new Structured(actual.object().symbol(), values);
+                    var object = new TransferObject(identity, data);
                     object = mapping.translations().inTopic(object, topic);
                     writer.write(new TransferEvent.ObjectEvent(object, Optional.empty(), Consistency.COMPLETE), token);
                 }
@@ -1662,6 +1671,7 @@ final class DbTransfer {
             statement.setLong(1, id);
             statement.setLong(2, basketId);
             int index = 3;
+            if (table.hasDiscriminator()) statement.setString(index++, mapping.storage(table.object().symbol()).discriminator());
             var found = new HashSet<SymbolRef>();
             for (var column : table.columns()) {
                 var field = column.slot().symbol();

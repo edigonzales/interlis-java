@@ -96,6 +96,12 @@ erfolgt beim Commit der Transaktion.
 Das gilt auch für gemeinsam verwendete `T_Id` in Basistabellen und
 Geometriehilfstabellen, Beziehungstabellen und alternative Smart2-Ziele.
 
+`schemaimport --create-type-discriminator` fügt `T_Type` auf den
+Wurzeltabellen auch bei nur einem konkreten Typ hinzu.
+`--create-type-constraint` sichert vorhandene `T_Type`-Spalten mit einem
+SQL-Check über die zulässigen Typen ab. Beide Optionen entsprechen
+ili2db `--createTypeDiscriminator` und `--createTypeConstraint`.
+
 Mit `schemaimport --coalesce-catalogue-ref` erzeugt das Kommando die
 kompakte SQL-Abbildung für CHBase-V1-Katalogreferenzen, entsprechend
 `--coalesceCatalogueRef` in ili2db. Die Option gilt beim Anlegen eines

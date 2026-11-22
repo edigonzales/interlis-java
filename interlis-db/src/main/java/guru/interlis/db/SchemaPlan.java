@@ -8,6 +8,7 @@ import guru.interlis.model.DecimalLiteral;
 import guru.interlis.model.DomainReferenceType;
 import guru.interlis.model.GeometryType;
 import guru.interlis.model.LanguageVersion;
+import guru.interlis.model.Modifier;
 import guru.interlis.model.ModelImport;
 import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.ModelTranslation;
@@ -105,7 +106,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         var inputModels = srsModels.map(DbCrsPair.Models::names).orElse(models);
         var compiled = DbModelSources.compile(inputModels, sources.values(), "model files", token);
         var mapping = DbMapping.planNew(compiled.plan(), gpkg, splitGeometries, defaultEpsg, multiSrs,
-                srsModels, names, inheritance, transformations, strokeArcs, enumOptions, token);
+                srsModels, names, inheritance, transformations, strokeArcs, enumOptions,
+                schemaOptions.contains(SchemaOption.TYPE_DISCRIMINATOR), token);
         var declarations = mapping.plan().models().stream()
                 .map(model -> (ModelSymbol) symbol(mapping, model.symbol()))
                 .collect(Collectors.groupingBy(model -> origin(model).range().source()));
@@ -154,6 +156,12 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     }
 
     List<String> addedStorageTables() { return DbMapping.storageTables(addedTables); }
+
+    List<String> discriminatorTypes(DbMapping.Table table) {
+        return mapping.objectStorage().stream()
+                .filter(type -> type.root().equals(table) && !type.object().modifiers().contains(Modifier.ABSTRACT))
+                .map(DbMapping.ObjectStorage::discriminator).sorted().toList();
+    }
 
     List<ForeignKey> foreignKeys(boolean newSchema) {
         var keys = new ArrayList<ForeignKey>();

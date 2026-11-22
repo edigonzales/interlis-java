@@ -259,6 +259,58 @@ final class SchemaProfileCases {
         return destination;
     }
 
+    void discriminator(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ProfileType" + version;
+        Path ili = source(model, """
+                STRUCTURE Note = Message : TEXT*24; END Note;
+                CLASS Asset = Label : TEXT*24; Notes : LIST OF Note; END Asset;
+                CLASS Base (ABSTRACT) = Caption : TEXT*24; END Base;
+                CLASS Leaf EXTENDS Base = NumberValue : 0..12; END Leaf;
+                ASSOCIATION Survey =
+                  AssetTarget -- {0..1} Leaf;
+                  Surveyed -- {0..*} Asset;
+                  Detail : TEXT*20;
+                END Survey;
+                """);
+        referenceSchema(expected, ili, "--sqlEnableNull", "--createTypeDiscriminator", "--createTypeConstraint");
+        schema(own, model, ili, "--create-type-discriminator", "--create-type-constraint");
+        sameCatalog(expected, own);
+        for (var db : List.of(expected, own)) {
+            referenceImport(db, "legacy", typedData(model, "legacy"));
+            Path output = work.resolve("type-output.xtf");
+            assertCliSuccess(db, "export", model, "legacy", output);
+            assertTypedRows(rows(output, "legacy", 2), "legacy");
+            assertCliSuccess(db, "import", model, "native", typedData(model, "native"));
+            referenceExport(db, "native", output);
+            assertTypedRows(rows(output, "native", 2), "native");
+            String extra = "ProfileTypeExtra" + version;
+            schema(db, extra, source(extra, "CLASS Other = Label : TEXT*24; END Other;"), "--add-models");
+            try (var sql = db.connect()) {
+                assertEquals("asset", scalar(sql, "SELECT t_type FROM " + db.table("asset") + " WHERE t_ili_tid='native-asset'"));
+                assertEquals("leaf", scalar(sql, "SELECT t_type FROM " + db.table("base") + " WHERE t_ili_tid='native-leaf'"));
+                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("survey") + " WHERE t_type='survey'"));
+                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("note") + " WHERE t_type='note'"));
+                assertThrows(SQLException.class, () -> execute(sql, "UPDATE " + db.table("asset") + " SET t_type='unknown'"));
+                assertThrows(SQLException.class, () -> execute(sql, "INSERT INTO " + db.table("other")
+                        + " (t_id,t_basket,t_type) VALUES (999,999,'unknown')"));
+            }
+        }
+    }
+
+    private Path typedData(String model, String prefix) throws Exception {
+        String note = version == 23 ? model + ".Data.Note" : "Note";
+        return data(model, prefix, object(model, "Asset", prefix + "-asset",
+                "<Label>typed</Label><Notes><" + note + "><Message>present</Message></" + note + "></Notes>"
+                        + reference("AssetTarget", prefix + "-leaf"))
+                + object(model, "Leaf", prefix + "-leaf", "<Caption>subtype</Caption><NumberValue>7</NumberValue>"));
+    }
+
+    private void assertTypedRows(List<Element> rows, String prefix) {
+        assertEquals("typed", child(rows.getFirst(), "Label").getTextContent());
+        assertEquals(prefix + "-leaf", id(child(rows.getFirst(), "AssetTarget"), version, "ref"));
+        assertEquals("7", child(rows.getLast(), "NumberValue").getTextContent());
+    }
+
     private Path linkedModel(String model) throws Exception {
         return source(model, """
                 STRUCTURE Note = Message : TEXT*24; END Note;

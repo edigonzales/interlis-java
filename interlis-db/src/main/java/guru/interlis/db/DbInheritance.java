@@ -48,7 +48,7 @@ final class DbInheritance {
     private final Map<SymbolRef, Strategy> strategies;
     private final Map<SymbolRef, List<SymbolRef>> children;
 
-    DbInheritance(TransferPlan plan, List<Declaration> declarations, Profile profile) {
+    DbInheritance(TransferPlan plan, List<Declaration> declarations, Profile profile, boolean alwaysDiscriminate) {
         this.declarations = List.copyOf(declarations);
         this.profile = profile;
         var strategies = new LinkedHashMap<SymbolRef, Strategy>();
@@ -105,15 +105,15 @@ final class DbInheritance {
                 }
             }
             var physicalBase = bases.get(ref);
-            boolean discriminator = physicalBase.isEmpty() && typesByRoot.get(ref).stream().anyMatch(type ->
-                    !ref.equals(type.symbol()) && (profile == Profile.NEW_CLASS || !type.modifiers().contains(Modifier.ABSTRACT)));
+            boolean discriminator = physicalBase.isEmpty() && (alwaysDiscriminate || typesByRoot.get(ref).stream().anyMatch(type ->
+                    !ref.equals(type.symbol()) && (profile == Profile.NEW_CLASS || !type.modifiers().contains(Modifier.ABSTRACT))));
             relations.add(new Relation(declaration, physicalBase, contributors, discriminator));
         }
         this.relations = List.copyOf(relations);
     }
 
     static DbInheritance plan(TransferPlan plan, List<ObjectDescriptor> objects, Map<SymbolRef, String> names,
-                              Profile profile, Set<SymbolRef> referenced) {
+                              Profile profile, Set<SymbolRef> referenced, boolean alwaysDiscriminate) {
         var strategies = new LinkedHashMap<SymbolRef, Strategy>();
         var declarations = new ArrayList<Declaration>();
         for (var object : objects) {
@@ -125,7 +125,7 @@ final class DbInheritance {
             };
             declarations.add(new Declaration(object, names.get(object.symbol()), strategy));
         }
-        return new DbInheritance(plan, declarations, profile);
+        return new DbInheritance(plan, declarations, profile, alwaysDiscriminate);
     }
 
     private static Strategy smart1(TransferPlan plan, ObjectDescriptor object, Map<SymbolRef, Strategy> strategies,

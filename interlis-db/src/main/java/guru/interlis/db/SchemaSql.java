@@ -1,7 +1,6 @@
 package guru.interlis.db;
 
 import guru.interlis.execution.CancellationToken;
-import guru.interlis.model.Modifier;
 import guru.interlis.model.NumericType;
 import guru.interlis.model.TextType;
 import guru.interlis.model.TypeDescriptor;
@@ -154,7 +153,15 @@ final class SchemaSql {
             columns.add(dialect.primaryId() + (table.subtype() ? "" : dialect.sequenceDefault()));
             columns.add(BASKET_COLUMN + " " + dialect.idType() + " NOT NULL");
             if (table.hasDiscriminator()) {
-                columns.add(TYPE_COLUMN + " " + dialect.text(60) + " NOT NULL");
+                String constraint = "";
+                if (plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.TYPE_CONSTRAINT)) {
+                    var types = plan.discriminatorTypes(table);
+                    if (!types.isEmpty()) {
+                        constraint = " CHECK (" + TYPE_COLUMN + " IN (" + types.stream().map(SchemaSql::literal)
+                                .collect(Collectors.joining(", ")) + "))";
+                    }
+                }
+                columns.add(TYPE_COLUMN + " " + dialect.text(60) + " NOT NULL" + constraint);
             }
             if (table.hasTidColumn()) {
                 columns.add(TID_COLUMN + " " + dialect.tidType(table.uuidIdentity()));
@@ -304,9 +311,8 @@ final class SchemaSql {
                     row(tableProps, table.name(), PREFIX + "tableKind", plan.tableKind(table));
                 }
                 if (table.hasDiscriminator()) {
-                    String types = plan.mapping().objectStorage().stream()
-                            .filter(type -> type.root().equals(table) && !type.object().modifiers().contains(Modifier.ABSTRACT))
-                            .map(DbMapping.ObjectStorage::discriminator).sorted().collect(Collectors.joining("\",\"", "[\"", "\"]"));
+                    String types = plan.discriminatorTypes(table).stream().map(type -> "\"" + type + "\"")
+                            .collect(Collectors.joining(",", "[", "]"));
                     row(colProps, table.name(), null, TYPE_COLUMN, PREFIX + "types", types);
                 }
                 String displayName = plan.displayName(table);
@@ -446,6 +452,10 @@ final class SchemaSql {
     private static String baseClass(SchemaPlan plan, guru.interlis.transfer.ObjectDescriptor type) {
         return type.baseType().flatMap(plan.mapping().plan()::object)
                 .map(value -> value.name().declared().toString()).orElse(null);
+    }
+
+    private static String literal(String value) {
+        return "'" + value.replace("'", "''") + "'";
     }
 
     private static void writeSettings(PreparedStatement statement, boolean gpkg, SchemaPlan plan) throws SQLException {

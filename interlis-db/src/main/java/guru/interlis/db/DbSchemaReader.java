@@ -212,7 +212,8 @@ final class DbSchemaReader {
             throw new DbException("Extra CLASSNAME/TRAFO/INHERITANCE mappings for " + modelName);
         }
         checkSystemTables(db);
-        var layout = new DbInheritance(plan, declarations, settings.inheritance());
+        var layout = new DbInheritance(plan, declarations, settings.inheritance(),
+                settings.schemaOptions().contains(Ili2dbLayout.SchemaOption.TYPE_DISCRIMINATOR));
         for (var alias : layout.aliases()) {
             names.put(alias.object().symbol(), names.get(alias.owner()));
         }
@@ -523,7 +524,7 @@ final class DbSchemaReader {
             case "smart2" -> DbInheritance.Profile.SMART2;
             default -> throw unsupported("SETTINGS.inheritanceTrafo");
         };
-        for (String tag : List.of("createDatasetCols", "typeDiscriminator", "createStdCols", "SqlColsAsText", "SqlExtRefCols")) {
+        for (String tag : List.of("createDatasetCols", "createStdCols", "SqlColsAsText", "SqlExtRefCols")) {
             if (settings.containsKey(PREFIX + tag)) throw unsupported("SETTINGS." + tag);
         }
         var enumOptions = new DbEnumOptions(optionalSetting(settings, Ili2dbLayout.ENUM_ITF_CODE, "yes"),
@@ -566,6 +567,7 @@ final class DbSchemaReader {
         var structureTransformations = Set.copyOf(transformations);
         var schemaOptions = EnumSet.noneOf(Ili2dbLayout.SchemaOption.class);
         for (var option : Ili2dbLayout.SchemaOption.values()) {
+            if ("True".equals(option.setting) && "False".equals(settings.get(option.tag))) continue;
             if (optionalSetting(settings, option.tag, option.setting)) schemaOptions.add(option);
         }
         var enabled = Set.copyOf(schemaOptions);
