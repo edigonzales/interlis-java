@@ -89,6 +89,58 @@ final class ChbaseTextCases {
         }
     }
 
+    void localised(TestDatabase db) throws Exception {
+        String model = "ChbaseLocalised" + version;
+        fixture("Localisation" + version + ".ili");
+        fixture(model + ".ili");
+        var input = fixture(model + ".xtf");
+        referenceSchema(db, model, "--expandLocalised");
+        referenceImport(db, "legacy", input);
+        var output = work.resolve("localised.xtf");
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertLocalised(output, "fixture", "Ponte");
+
+        assertCliSuccess(db, "import", model, "native", withPrefix(input, "native"));
+        referenceExport(db, "native", output);
+        assertLocalised(output, "native", "Ponte");
+
+        var empty = withPrefix(input, "empty-text");
+        Files.writeString(empty, Files.readString(empty).replace(">Ponte<", "><"));
+        assertCliSuccess(db, "import", model, "empty-text", empty);
+        assertCliSuccess(db, "export", model, "empty-text", output);
+        assertLocalised(output, "empty-text", "");
+
+        try (var sql = db.connect()) {
+            var cards = db.table("memocard");
+            assertEquals("", scalar(sql, "SELECT label FROM " + cards + " WHERE t_ili_tid='empty-text-value'"));
+            assertEquals("it", scalar(sql, "SELECT label_lang FROM " + cards + " WHERE t_ili_tid='empty-text-value'"));
+            assertEquals(NOTES, scalar(sql, "SELECT adescription FROM " + cards + " WHERE t_ili_tid='native-value'"));
+            assertNull(scalar(sql, "SELECT adescription_lang FROM " + cards + " WHERE t_ili_tid='native-value'"));
+            assertNull(scalar(sql, "SELECT label FROM " + cards + " WHERE t_ili_tid='native-empty'"));
+            assertNull(scalar(sql, "SELECT label_lang FROM " + cards + " WHERE t_ili_tid='native-empty'"));
+            execute(sql, "ALTER TABLE " + cards + " RENAME COLUMN label_lang TO missing_language");
+        }
+        var previous = Files.readString(output);
+        assertCliFailure(db, "export", model, "legacy", output, "Missing physical column memocard.label_lang");
+        assertEquals(previous, Files.readString(output));
+    }
+
+    private void assertLocalised(Path output, String prefix, String label) throws Exception {
+        var objects = objects(output, prefix);
+        var present = objects.get(prefix + "-value");
+        var missing = objects.get(prefix + "-empty");
+        var caption = children(child(present, "Label")).getFirst();
+        assertStructure(caption, "LocalisedText");
+        assertEquals(label, child(caption, "Text").getTextContent());
+        assertEquals("it", child(caption, "Language").getTextContent());
+        var description = children(child(present, "Description")).getFirst();
+        assertStructure(description, "LocalisedMText");
+        assertEquals(NOTES, child(description, "Text").getTextContent());
+        assertNull(child(description, "Language"));
+        assertNull(child(missing, "Label"));
+        assertNull(child(missing, "Description"));
+    }
+
     private void assertMultilingual(Path output, String prefix) throws Exception {
         var samples = objects(output, prefix);
         assertNull(child(samples.get(prefix + "-empty"), "Caption"));

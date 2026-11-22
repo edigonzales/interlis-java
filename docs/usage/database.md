@@ -238,6 +238,10 @@ CHBase-V2-Struktur `MultilingualText` beziehungsweise `MultilingualMText`.
 Mehrere Einträge für dieselbe Sprache oder Sprachen ohne zugehörige
 Spalte führen beim Import zu einer Diagnose.
 
+Bei `--expandLocalised` liegt der Text des Einzelwerts in der
+Basisspalte, die optionale Sprache in `<stamm>_lang`. Das gilt für
+`LocalisedText` und `LocalisedMText` beider CHBase-Versionen.
+
 Für bestehende Smart1-Schemata unterstützt `interlis-db` den FULL-Import
 und -Export von Klassenhierarchien mit skalaren Attributen. Das
 Referenzschema lässt sich mit `--noSmartMapping --smart1Inheritance`

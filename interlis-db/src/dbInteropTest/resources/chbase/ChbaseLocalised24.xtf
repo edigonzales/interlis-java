@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="http://www.interlis.ch/xtf/2.4/ChbaseLocalised24"
+  xmlns:l="http://www.interlis.ch/xtf/2.4/Localisation_V2" xmlns:s="http://www.interlis.ch/xtf/2.4/LocalisationCH_V2">
+  <i:headersection><i:models><i:model>ChbaseLocalised24</i:model></i:models></i:headersection>
+  <i:datasection>
+    <Data i:bid="fixture-b">
+      <MemoCard i:tid="fixture-empty"/>
+      <MemoCard i:tid="fixture-value">
+        <Label><s:LocalisedText><l:Language>it</l:Language><l:Text>Ponte</l:Text></s:LocalisedText></Label>
+        <Description><s:LocalisedMText><l:Text>Première ligne&#10;Deuxième ligne</l:Text></s:LocalisedMText></Description>
+      </MemoCard>
+    </Data>
+  </i:datasection>
+</i:transfer>

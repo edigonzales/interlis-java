@@ -231,9 +231,10 @@ final class DbSchemaReader {
                         usedAttributeTransformations.add(path);
                         continue;
                     }
-                    if (transformation == Ili2dbLayout.AttributeTransformation.MULTILINGUAL) {
-                        var binding = DbTextExpansion.describe(plan, attr)
-                                .orElseThrow(() -> unsupported("multilingual text expansion at " + path));
+                    if (transformation == Ili2dbLayout.AttributeTransformation.MULTILINGUAL
+                            || transformation == Ili2dbLayout.AttributeTransformation.LOCALISED) {
+                        var binding = DbTextExpansion.describe(plan, attr, transformation)
+                                .orElseThrow(() -> unsupported("text expansion at " + path));
                         var mapping = attrNames.take(path, parent.name(), null);
                         var column = DbMapping.textColumn(attr, mapping.name(), binding);
                         columns.add(bindColumn(db, parent, names, column, mapping, path, settings));

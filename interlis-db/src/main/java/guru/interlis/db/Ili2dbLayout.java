@@ -66,7 +66,8 @@ final class Ili2dbLayout {
 
     enum AttributeTransformation {
         CATALOGUE_REFERENCE("catalogueRefTrafo", COALESCE),
-        MULTILINGUAL("multilingualTrafo", "expand");
+        MULTILINGUAL("multilingualTrafo", "expand"),
+        LOCALISED("localisedTrafo", "expand");
 
         final String tag;
         final String setting;

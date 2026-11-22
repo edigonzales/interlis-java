@@ -105,6 +105,9 @@ Katalogdatensätze beim Löschen.
 `*DbInteropTest.*ChbaseMultilingual*` prüft beide Werkzeugrichtungen für
 `--expandMultilingual`, den gespeicherten Spaltenstamm, die Sprachspalten,
 mehrzeilige Inhalte sowie Rollback bei nicht abbildbaren Sprachwerten.
+`*DbInteropTest.*ChbaseLocalised*` prüft `--expandLocalised`, Sprache,
+mehrzeilige Inhalte, Leertext, SQL-`NULL` und den atomaren Export bei
+fehlender Sprachspalte.
 
 `*DbInteropTest.*Smart*` prüft Smart1 und Smart2 mit XTF 2.3 und 2.4.
 Die Fälle vergleichen beide Werkzeugrichtungen, physische Eigentümer

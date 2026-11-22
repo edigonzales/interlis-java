@@ -1,0 +1,12 @@
+INTERLIS 2.4;
+
+MODEL ChbaseLocalised24 (en) AT "https://example.org" VERSION "2026-01-01" =
+  IMPORTS LocalisationCH_V2;
+
+  TOPIC Data =
+    CLASS MemoCard =
+      Label : LocalisationCH_V2.LocalisedText;
+      Description : LocalisationCH_V2.LocalisedMText;
+    END MemoCard;
+  END Data;
+END ChbaseLocalised24.
