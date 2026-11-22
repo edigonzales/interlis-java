@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 
 /** The ordered columns of an ili2db expanded structure attribute. */
 record DbExpandedStructure(SymbolRef structure, String typeName, Optional<CollectionKind> collection, List<Group> groups) {
@@ -32,7 +33,7 @@ record DbExpandedStructure(SymbolRef structure, String typeName, Optional<Collec
             fields = List.copyOf(fields);
         }
 
-        int width() { return 1 + fields.size(); }
+        int width() { return 1 + fields.stream().mapToInt(Column::physicalWidth).sum(); }
     }
 
     DbExpandedStructure {
@@ -40,13 +41,18 @@ record DbExpandedStructure(SymbolRef structure, String typeName, Optional<Collec
     }
 
     static DbExpandedStructure bind(TransferPlan plan, AttributeSlot outer, Map<SymbolRef, String> tableNames,
-                                    BiFunction<String, Kind, String> bindColumn) {
-        String path = outer.name().declared().toString();
+                                    Predicate<AttributeSlot> isExpanded, BiFunction<String, Kind, String> bindColumn) {
+        return bind(plan, outer, tableNames, isExpanded, bindColumn, outer.name().declared().toString(), false);
+    }
+
+    private static DbExpandedStructure bind(TransferPlan plan, AttributeSlot outer, Map<SymbolRef, String> tableNames,
+                                             Predicate<AttributeSlot> isExpanded, BiFunction<String, Kind, String> bindColumn,
+                                             String path, boolean nested) {
         var type = DbStructureShape.type(plan, outer);
         Optional<CollectionKind> collection = Optional.empty();
         int count = 1;
         if (type instanceof CollectionType repeated) {
-            if (!(outer.cardinality().upper() instanceof CardinalityUpper.Finite upper)
+            if (nested || !(outer.cardinality().upper() instanceof CardinalityUpper.Finite upper)
                     || upper.value().signum() <= 0 || upper.value().compareTo(MAX_GROUPS) > 0) {
                 throw DbMapping.unsupported("expanded collection at " + path);
             }
@@ -59,19 +65,22 @@ record DbExpandedStructure(SymbolRef structure, String typeName, Optional<Collec
                 .orElseThrow(() -> DbMapping.unsupported("expanded structure at " + path));
         String typeName = tableNames.get(object.symbol());
         if (typeName == null) throw DbMapping.unsupported("expanded structure type at " + path);
-        var leaves = new ArrayList<Column>();
-        for (var slot : object.slots()) {
-            if (!(slot instanceof AttributeSlot field) || field.attribute().transientAttribute()) continue;
-            leaves.add(DbMapping.structureScalar(plan, object, field));
-        }
         var groups = new ArrayList<Group>(count);
         for (int index = 0; index < count; index++) {
             String position = path + "[" + index + "]";
             String marker = bindColumn.apply(position + "._type", Kind.TEXT);
             var fields = new ArrayList<Column>();
-            for (var column : leaves) {
-                String name = bindColumn.apply(position + "." + column.slot().name().declared().last(), column.kind());
-                fields.add(column.withName(name));
+            for (var slot : object.slots()) {
+                if (!(slot instanceof AttributeSlot field) || field.attribute().transientAttribute()) continue;
+                String fieldPath = position + "." + field.name().declared().last();
+                if (isExpanded.test(field)) {
+                    if (nested) throw DbMapping.unsupported("nested expanded structure at " + fieldPath);
+                    var child = bind(plan, field, tableNames, isExpanded, bindColumn, fieldPath, true);
+                    fields.add(DbMapping.expandedColumn(plan, field, child));
+                } else {
+                    var column = DbMapping.structureScalar(plan, object, field);
+                    fields.add(column.withName(bindColumn.apply(fieldPath, column.kind())));
+                }
             }
             groups.add(new Group(position, marker, fields));
         }
@@ -82,7 +91,7 @@ record DbExpandedStructure(SymbolRef structure, String typeName, Optional<Collec
         var names = new ArrayList<String>(width());
         for (var group : groups) {
             names.add(group.typeColumn());
-            for (var field : group.fields()) names.add(field.name());
+            for (var field : group.fields()) names.addAll(field.physicalNames());
         }
         return names;
     }

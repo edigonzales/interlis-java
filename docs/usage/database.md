@@ -481,7 +481,9 @@ den gespeicherten SQL-Namen der Struktur. Eine vorhandene, leere Struktur
 hat eine Typmarkierung und ausschliesslich `NULL`-Felder.
 Expandierte `LIST OF`- und `BAG OF`-Attribute verwenden bis zu fünf
 nummerierte Spaltengruppen. Doppelte BAG-Einträge bleiben erhalten. Bei einer Obergrenze ab sechs verwendet ili2db für
-Strukturwerte die reguläre Strukturtabelle.
+Strukturwerte die reguläre Strukturtabelle. Ein optionaler, ebenfalls
+expandierter innerer Strukturwert erhält eine eigene Typmarkierung und
+eigene Feldspalten in derselben Tabelle.
 
 In XTF 2.3 und 2.4 FULL können Klassen und Strukturen optionale Strukturwerte
 sowie `LIST OF`- und `BAG OF`-Attribute mit einem Strukturtyp aus dem

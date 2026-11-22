@@ -246,7 +246,9 @@ final class DbSchemaReader {
                         continue;
                     }
                     if (transformation == Ili2dbLayout.AttributeTransformation.EXPANDED_STRUCTURE) {
-                        var binding = DbExpandedStructure.bind(plan, attr, names, (field, kind) -> {
+                        var binding = DbExpandedStructure.bind(plan, attr, names,
+                                field -> transformations.attributes().get(field.name().declared().toString())
+                                        == Ili2dbLayout.AttributeTransformation.EXPANDED_STRUCTURE, (field, kind) -> {
                             var stored = attrNames.take(field, parent.name(), null);
                             useColumn(db, parent, stored, field);
                             if (stored.target() != null) throw new DbException("Unexpected ATTRNAME.target for " + field);

@@ -138,6 +138,16 @@ final class DbInteropTest {
         new StructureMappingCases(work, new ReferenceTool(db.postgis()), version).bag(db);
     }
 
+    @Test void geoPackageExpandNested23() throws Exception { exchangeExpandNested(23, null); }
+    @Test void geoPackageExpandNested24() throws Exception { exchangeExpandNested(24, null); }
+    @Test void postgisExpandNested23() throws Exception { exchangeWithPostgis(23, this::exchangeExpandNested); }
+    @Test void postgisExpandNested24() throws Exception { exchangeWithPostgis(24, this::exchangeExpandNested); }
+
+    private void exchangeExpandNested(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "expand_nested");
+        new StructureMappingCases(work, new ReferenceTool(db.postgis()), version).nested(db);
+    }
+
     @Test void geoPackageChbasePoints23() throws Exception { exchangeChbasePoints(23, null); }
     @Test void geoPackageChbasePoints24() throws Exception { exchangeChbasePoints(24, null); }
     @Test void geoPackageStrokePolyline23() throws Exception { exchangeStrokePolyline(23, null); }

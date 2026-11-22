@@ -1075,7 +1075,10 @@ final class DbTransfer {
             }
             var values = new LinkedHashMap<SymbolRef, TransferValue>();
             for (var field : group.fields()) {
-                var value = readScalar(db, rows, index++, field);
+                var value = field.expandedStructure().isPresent()
+                        ? readExpanded(db, rows, index, field.expandedStructure().orElseThrow(), ownerTid)
+                        : readScalar(db, rows, index, field);
+                index += field.physicalWidth();
                 if (value != null) values.put(field.slot().symbol(), value);
             }
             if (type == null) {
@@ -1748,18 +1751,8 @@ final class DbTransfer {
                                String context, BasketId basket, TransferValue value) throws SQLException {
             if (column.kind().geometry()) value = storedGeometry(column, value, context);
             if (column.expandedStructure().isPresent()) {
-                var expanded = column.expandedStructure().orElseThrow();
-                String fieldContext = column.slot().name().declared() + " of object " + context;
-                var items = expanded.items(value, fieldContext);
-                for (int position = 0; position < expanded.groups().size(); position++) {
-                    var group = expanded.groups().get(position);
-                    var item = position < items.size() ? expanded.checked(items.get(position), fieldContext) : null;
-                    statement.setString(index++, item == null ? null : expanded.typeName());
-                    for (var field : group.fields()) {
-                        index = bindScalar(statement, index, field, item == null ? null : item.values().get(field.slot().symbol()));
-                    }
-                }
-                return index;
+                return bindExpanded(statement, index, column.expandedStructure().orElseThrow(), value,
+                        column.slot().name().declared() + " of object " + context);
             }
             if (column.textExpansion().isPresent()) {
                 for (var text : column.textExpansion().orElseThrow().disassemble(value, column.slot().name().declared()
@@ -1792,6 +1785,24 @@ final class DbTransfer {
                 bindPosition(statement, index++, position, column);
             } else if (position.isPresent()) {
                 throw new DbException("Unexpected role position at " + column.slot().name().declared());
+            }
+            return index;
+        }
+
+        private static int bindExpanded(PreparedStatement statement, int index, DbExpandedStructure expanded,
+                                        TransferValue value, String context) throws SQLException {
+            var items = expanded.items(value, context);
+            for (int position = 0; position < expanded.groups().size(); position++) {
+                var group = expanded.groups().get(position);
+                var item = position < items.size() ? expanded.checked(items.get(position), context) : null;
+                statement.setString(index++, item == null ? null : expanded.typeName());
+                for (var field : group.fields()) {
+                    var fieldValue = item == null ? null : item.values().get(field.slot().symbol());
+                    index = field.expandedStructure().isPresent()
+                            ? bindExpanded(statement, index, field.expandedStructure().orElseThrow(), fieldValue,
+                                    group.path() + "." + field.slot().name().declared().last())
+                            : bindScalar(statement, index, field, fieldValue);
+                }
             }
             return index;
         }

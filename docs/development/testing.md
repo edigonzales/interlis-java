@@ -96,7 +96,8 @@ und den Erhalt der XTF-Datei bei beschädigtem Strukturtyp. Die
 `*ExpandList*`-Fälle prüfen fünf Positionen, den Wechsel zur
 Strukturtabelle bei Obergrenze sechs und Rollback bei einer zu langen Liste.
 Die `*ExpandBag*`-Fälle prüfen doppelte und leere Einträge sowie die
-gruppierte XTF-2.4-Referenzausgabe.
+gruppierte XTF-2.4-Referenzausgabe. Die `*ExpandNested*`-Fälle prüfen
+beide Typmarkierungen und erkennen innere Werte ohne äusseren Strukturtyp.
 
 `*DbInteropTest.*CatalogueReference*` prüft beide Werkzeugrichtungen
 für Katalogreferenzen mit `--coalesceCatalogueRef` auf GeoPackage und

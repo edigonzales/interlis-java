@@ -161,6 +161,58 @@ final class StructureMappingCases {
         assertEquals(List.of("", "duplicate", "duplicate"), values.stream().map(value -> value.getTextContent().strip()).sorted().toList());
     }
 
+    void nested(TestDatabase db) throws Exception {
+        String model = "ExpandNested" + version;
+        source(model, """
+                    STRUCTURE Wrapper =
+                      !!@ili2db.mapping=EXPAND
+                      Detail : Entry;
+                    END Wrapper;
+                """, """
+                    CLASS Asset =
+                      !!@ili2db.mapping=EXPAND
+                      Nest : Wrapper;
+                    END Asset;
+                """);
+        referenceSchema(db, model, "--expandStruct");
+        var output = work.resolve("out.xtf");
+        referenceImport(db, "legacy", nestedDataset(model, "legacy", "Nest"));
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertNested(output, "legacy", "Nest");
+        assertCliSuccess(db, "import", model, "native", nestedDataset(model, "native", "Nest"));
+        referenceExport(db, "native", output);
+        assertNested(output, "native", "Nest");
+        try (var sql = db.connect()) {
+            var asset = db.table("asset");
+            var wrapper = scalar(sql, "SELECT sqlname FROM " + db.table("t_ili2db_classname")
+                    + " WHERE iliname='" + model + ".Data.Wrapper'");
+            assertEquals(wrapper, scalar(sql, "SELECT nest0_t_type FROM " + asset + " WHERE t_ili_tid='native-without-inner'"));
+            assertNull(scalar(sql, "SELECT nest0_detail0_t_type FROM " + asset + " WHERE t_ili_tid='native-without-inner'"));
+            assertEquals("entry", scalar(sql, "SELECT nest0_detail0_t_type FROM " + asset + " WHERE t_ili_tid='native-empty'"));
+            assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table(wrapper)));
+            execute(sql, "UPDATE " + asset + " SET nest0_t_type=NULL WHERE t_ili_tid='native-value'");
+        }
+        String previous = Files.readString(output);
+        assertCliFailure(db, "export", model, "native", output, "Missing expanded structure type at " + model + ".Data.Asset.Nest[0]");
+        assertEquals(previous, Files.readString(output));
+    }
+
+    private Path nestedDataset(String model, String prefix, String field) throws Exception {
+        String wrapper = type(model, "Wrapper");
+        return dataset(model, prefix, asset(model, prefix + "-without-inner", field(field, field(wrapper, "")))
+                + asset(model, prefix + "-empty", field(field, field(wrapper, field("Detail", entry(model, "")))))
+                + asset(model, prefix + "-missing", "")
+                + asset(model, prefix + "-value", field(field, field(wrapper, field("Detail", entry(model, VALUES))))));
+    }
+
+    private void assertNested(Path output, String prefix, String field) throws Exception {
+        var objects = objects(output, prefix);
+        assertNull(child(objects.get(prefix + "-missing"), field));
+        assertNull(child(members(objects.get(prefix + "-without-inner"), field).getFirst(), "Detail"));
+        assertEquals(List.of(), children(members(members(objects.get(prefix + "-empty"), field).getFirst(), "Detail").getFirst()));
+        assertEntry(members(members(objects.get(prefix + "-value"), field).getFirst(), "Detail").getFirst());
+    }
+
     private Path singleDataset(String model, String prefix, String field) throws Exception {
         return dataset(model, prefix, asset(model, prefix + "-empty", field(field, entry(model, "")))
                 + asset(model, prefix + "-missing", "")
