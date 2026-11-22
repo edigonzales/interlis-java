@@ -531,6 +531,12 @@ erhält Reihenfolge und Duplikate. Im GeoPackage stehen die internen
 gespeicherte Arrays zeigen.
 [ili2db-Abbildung](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/src/ch/ehi/ili2db/fromili/FromIliRecordConverter.java#L766-L813)
 
+In bestehenden Schemata mit `--createEnumColAsItfCode` liegen skalare
+Aufzählungen als numerische Codes vor. Die Blattwerte werden in der
+effektiven Baumreihenfolge ab null nummeriert. Der XTF-Transfer verwendet
+weiterhin die qualifizierten XTF-Codes. Unbekannte Codes werden am
+betroffenen Attribut diagnostiziert.
+
 In bestehenden Schemata mit `--coalesceJson` speichert ili2db eine
 optionale flache Struktur als JSON-Objekt. GeoPackage verwendet `TEXT`,
 PostGIS `JSONB`. Der qualifizierte INTERLIS-Typ steht in `@type`. SQL

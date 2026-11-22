@@ -90,6 +90,10 @@ Jeder Fall entpackt sein Referenzwerkzeug in ein eigenes temporäres
 Arbeitsverzeichnis. JUnit löscht dieses Verzeichnis samt GeoPackage-Dateien,
 Prozesslogs und temporären Dateien des Referenzwerkzeugs auch bei Testfehlern.
 
+Die `*EnumItfCodes*`-Fälle prüfen den Austausch skalarer Aufzählungen
+mit ITF-Codes, einschliesslich Code `0`, SQL `NULL`, Rollback und
+dem Erhalt einer vorhandenen Exportdatei.
+
 Die `*ArrayText*`-Fälle prüfen Reihenfolge, Duplikate, Sonderzeichen,
 gespeicherte SQL-Spaltennamen und den bekannten Referenzfehler bei
 `NULL`-Elementen. Die `*ArrayBoolean*`-Fälle prüfen die SQL- und

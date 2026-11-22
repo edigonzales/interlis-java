@@ -25,6 +25,7 @@ final class Ili2dbLayout {
     static final int MAX_MODEL_CHARACTERS = 1_000_000;
     static final int LV95 = 2056;
     static final String CREATE_GEOMETRY_INDEX = "ch.ehi.sqlgen.createGeomIndex";
+    static final String ENUM_ITF_CODE = PREFIX + "createEnumColAsItfCode";
 
     static final String BASKET = "T_ILI2DB_BASKET";
     static final String DATASET = "T_ILI2DB_DATASET";

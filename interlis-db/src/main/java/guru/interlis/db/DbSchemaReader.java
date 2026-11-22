@@ -73,7 +73,7 @@ final class DbSchemaReader {
     record Settings(boolean splitGeometries, int defaultEpsg, String modelEpsgAssignments, boolean referenceEpsgHeader,
                     boolean multiSrs, Optional<DbCrsPair.Models> srsModels, boolean createGeometryIndexes,
                     DbInheritance.Profile inheritance, boolean strokeArcs,
-                    Set<Ili2dbLayout.AttributeTransformation> structureTransformations) {
+                    Set<Ili2dbLayout.AttributeTransformation> structureTransformations, boolean enumItfCodes) {
         CrsDefaults crs(String model) {
             return new CrsDefaults(defaultEpsg, modelEpsg(modelEpsgAssignments, model));
         }
@@ -488,10 +488,13 @@ final class DbSchemaReader {
             case "smart2" -> DbInheritance.Profile.SMART2;
             default -> throw unsupported("SETTINGS.inheritanceTrafo");
         };
-        for (String tag : List.of("createEnumColAsItfCode", "createEnumCols",
+        for (String tag : List.of("createEnumCols",
                 "createDatasetCols", "typeDiscriminator", "createStdCols", "SqlColsAsText", "SqlExtRefCols")) {
             if (settings.containsKey(PREFIX + tag)) throw unsupported("SETTINGS." + tag);
         }
+        String enumEncoding = settings.get(Ili2dbLayout.ENUM_ITF_CODE);
+        boolean enumItfCodes = enumEncoding != null;
+        if (enumItfCodes && !"yes".equals(enumEncoding)) throw unsupported("SETTINGS.createEnumColAsItfCode");
         if ("multiTableWithId".equals(settings.get(PREFIX + "createEnumDefs"))) {
             throw unsupported("enumerations stored as SQL IDs");
         }
@@ -525,13 +528,13 @@ final class DbSchemaReader {
         }
         var structureTransformations = Set.copyOf(transformations);
         if (Ili2dbLayout.MULTIPLE_GEOMETRIES.equals(geometryLayout)) {
-            return new Settings(false, defaultEpsg, modelEpsg, referenceEpsgHeader, multiSrs, srsModels, indexes, inheritance, strokeArcs, structureTransformations);
+            return new Settings(false, defaultEpsg, modelEpsg, referenceEpsgHeader, multiSrs, srsModels, indexes, inheritance, strokeArcs, structureTransformations, enumItfCodes);
         }
         if (geometryLayout != null && !Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout)) {
             throw unsupported("SETTINGS.geomAttrPerTable=" + geometryLayout);
         }
         return new Settings(db.gpkg() || Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout), defaultEpsg, modelEpsg,
-                referenceEpsgHeader, multiSrs, srsModels, indexes, inheritance, strokeArcs, structureTransformations);
+                referenceEpsgHeader, multiSrs, srsModels, indexes, inheritance, strokeArcs, structureTransformations, enumItfCodes);
     }
 
     static SqlNames namesForExtension(Database db, List<String> models) throws SQLException {
@@ -876,6 +879,11 @@ final class DbSchemaReader {
         if (column.kind().geometry()) {
             requireGeometryColumn(db, table.name(), table.columns(), column);
             return bindGeometry(db, table.name(), column, settings);
+        }
+        if (column.kind() == Kind.ENUMERATION && settings.enumItfCodes()) {
+            var type = (guru.interlis.model.EnumerationType) column.effectiveType().orElseThrow();
+            requireColumns(db, table.name(), table.columns(), Map.of(column.name(), Kind.REFERENCE));
+            return column.withEnumeration(DbEnumeration.itfCodes(type, path));
         }
         for (var name : column.physicalNames()) {
             if (!name.equals(column.name()) && !table.used().add(key(db, name))) {

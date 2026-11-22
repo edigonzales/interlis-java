@@ -108,6 +108,16 @@ final class DbInteropTest {
 
     @TempDir(cleanup = CleanupMode.ALWAYS) Path work;
 
+    @Test void geoPackageEnumItfCodes23() throws Exception { exchangeEnumItfCodes(23, null); }
+    @Test void geoPackageEnumItfCodes24() throws Exception { exchangeEnumItfCodes(24, null); }
+    @Test void postgisEnumItfCodes23() throws Exception { exchangeWithPostgis(23, this::exchangeEnumItfCodes); }
+    @Test void postgisEnumItfCodes24() throws Exception { exchangeWithPostgis(24, this::exchangeEnumItfCodes); }
+
+    private void exchangeEnumItfCodes(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "enum_itf");
+        new EnumerationCases(work, new ReferenceTool(db.postgis()), version).itfCodes(db);
+    }
+
     @Test void geoPackageArrayText23() throws Exception { exchangeArrayText(23, null); }
     @Test void geoPackageArrayText24() throws Exception { exchangeArrayText(24, null); }
     @Test void postgisArrayText23() throws Exception { exchangeWithPostgis(23, this::exchangeArrayText); }

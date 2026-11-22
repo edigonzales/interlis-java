@@ -1119,7 +1119,12 @@ final class DbTransfer {
         return switch (column.kind()) {
             case BOOLEAN -> readBoolean(db, rows, index, column);
             case INTEGER -> readInteger(rows.getString(index), column);
-            case ENUMERATION -> readEnumeration(rows.getString(index), column);
+            case ENUMERATION -> {
+                String value = rows.getString(index);
+                yield column.enumeration().isPresent()
+                        ? column.enumeration().orElseThrow().read(value, column.slot().name().declared().toString())
+                        : readEnumeration(value, column);
+            }
             case TEXT -> {
                 String value = rows.getString(index);
                 yield value == null ? null : new Text(value);
@@ -1810,7 +1815,15 @@ final class DbTransfer {
             switch (column.kind()) {
                 case TEXT -> statement.setString(index, ((Text) value).value());
                 case BOOLEAN -> statement.setBoolean(index, ((BooleanValue) value).value());
-                case ENUMERATION -> statement.setString(index, String.join(".", ((Enumeration) value).path()));
+                case ENUMERATION -> {
+                    var enumeration = (Enumeration) value;
+                    if (column.enumeration().isPresent()) {
+                        statement.setLong(index, column.enumeration().orElseThrow().number(enumeration,
+                                column.slot().name().declared().toString()));
+                    } else {
+                        statement.setString(index, String.join(".", enumeration.path()));
+                    }
+                }
                 case INTEGER -> statement.setInt(index, integerValue((NumberValue) value, column.slot().name().declared().toString()));
                 case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE ->
                         throw new DbException("Unsupported value for " + column.slot().name().declared());
