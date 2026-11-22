@@ -234,6 +234,10 @@ Optionale Strukturen und `LIST OF` können in beiden Smart-Profilen
 von einer Basisklasse geerbt werden. Die gespeicherte Rückverweisspalte
 gehört zur tatsächlichen Eigentümertabelle. Jede Strukturzeile hat
 genau einen Eigentümer und behält ihre Listenposition.
+Bei geerbten Punkten bestimmen die gespeicherten Zuordnungen die
+Geometriespalte und ihren CRS. GeoPackage kann die geerbte oder die
+lokal deklarierte Geometrie in eine Hilfstabelle auslagern. Die Hilfszeile
+gehört zum konkreten Typ und teilt dessen Objekt- und Basket-ID.
 
 Unterstützt sind Klassen eines eigenständigen Modells in
 INTERLIS 2.3 und 2.4 mit Text, Boolean, 32-Bit-Ganzzahlen und Aufzählungen als

@@ -685,12 +685,20 @@ final class DbTransfer {
         }
         for (var geometry : table.secondaryGeometries()) {
             boolean sameBasket = rows.getBoolean(index++);
+            var column = geometry.column();
+            if (!mapping.applies(column, actual)) {
+                if (!rows.wasNull()) {
+                    throw new DbException("Unexpected secondary geometry row for " + column.slot().name().declared()
+                            + " of object " + ownerTid);
+                }
+                index++;
+                continue;
+            }
             if (!sameBasket) {
                 String problem = rows.wasNull() ? "Missing secondary geometry row" : "Secondary geometry belongs to a different basket";
                 throw new DbException(problem + " for " + geometry.column().slot().name().declared()
                         + " of object " + ownerTid);
             }
-            var column = geometry.column();
             if (checkGeometrySelection(rows, index, column, ownerTid, selection)) {
                 var value = db.readGeometry(rows, index, column);
                 if (value != null) values.put(column.slot().symbol(), value);
@@ -1414,6 +1422,7 @@ final class DbTransfer {
             if (statement.executeUpdate() != 1) throw new DbException("Could not write object " + context + " in " + table.name());
             for (var geometry : table.secondaryGeometries()) {
                 token.throwIfCancellationRequested();
+                if (!mapping.applies(geometry.column(), object.type())) continue;
                 var value = basketGeometry.active(geometry.column()) ? object.value(geometry.column().slot().symbol())
                         : Optional.<TransferValue>empty();
                 if (value.isPresent()) found.add(geometry.column().slot().symbol());

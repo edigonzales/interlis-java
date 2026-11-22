@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="test"><MODELS><MODEL NAME="SmartGeometry23" VERSION="1" URI="https://example.org/smart"/></MODELS></HEADERSECTION>
+  <DATASECTION>
+    <SmartGeometry23.Data BID="fixture-b">
+      <SmartGeometry23.Data.Meter TID="fixture-m"><Location><COORD><C1>2600123.125</C1><C2>1200456.375</C2></COORD></Location></SmartGeometry23.Data.Meter>
+      <SmartGeometry23.Data.SmartUnit TID="fixture-s"><Location><COORD><C1>2600124.125</C1><C2>1200457.375</C2></COORD></Location><ExtraLocation><COORD><C1>2600125.125</C1><C2>1200458.375</C2></COORD></ExtraLocation></SmartGeometry23.Data.SmartUnit>
+      <SmartGeometry23.Data.SmartUnit TID="fixture-n"><Location><COORD><C1>2600126.125</C1><C2>1200459.375</C2></COORD></Location></SmartGeometry23.Data.SmartUnit>
+      <SmartGeometry23.Data.Terminal TID="fixture-t"></SmartGeometry23.Data.Terminal>
+    </SmartGeometry23.Data>
+  </DATASECTION>
+</TRANSFER>

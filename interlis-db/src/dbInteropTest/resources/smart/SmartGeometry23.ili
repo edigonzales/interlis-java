@@ -1,0 +1,11 @@
+INTERLIS 2.3;
+
+MODEL SmartGeometry23 AT "https://example.org/smart" VERSION "1" =
+  TOPIC Data =
+    DOMAIN Swiss = COORD 2480000.000 .. 2840000.000, 1070000.000 .. 1300000.000;
+    CLASS Instrument (ABSTRACT) = Location : Swiss; END Instrument;
+    CLASS Meter EXTENDS Instrument = Memo : TEXT*20; END Meter;
+    CLASS SmartUnit EXTENDS Meter = ExtraLocation : Swiss; END SmartUnit;
+    CLASS Terminal EXTENDS Instrument = END Terminal;
+  END Data;
+END SmartGeometry23.

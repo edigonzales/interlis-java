@@ -4,6 +4,7 @@ import guru.interlis.db.DbInteropTest.ReferenceTool;
 import guru.interlis.db.DbInteropTest.TestDatabase;
 import org.w3c.dom.Element;
 
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -246,6 +247,73 @@ final class SmartCases {
     private static List<String> notes(Element object) {
         return children(object).stream().filter(e -> e.getLocalName().equals("Notes")).flatMap(e -> children(e).stream())
                 .map(note -> child(note, "Memo").getTextContent()).toList();
+    }
+
+    void geometries(TestDatabase smart1, TestDatabase smart2) throws Exception {
+        String model = "SmartGeometry" + version;
+        var source = fixture(model + ".ili");
+        referenceSchema(smart1, model, "smart1");
+        referenceSchema(smart2, model, "smart2");
+        Files.delete(source);
+        var input = fixture(model + ".xtf");
+        var nativeInput = transferWithPrefix(input, "native");
+        var output = work.resolve("geometry-output.xtf");
+        for (var db : List.of(smart1, smart2)) {
+            referenceImport(db, "legacy", input);
+            assertCliSuccess(db, "export", model, "legacy", output);
+            assertGeometries(output, model, "fixture");
+            assertCliSuccess(db, "import", model, "native", nativeInput);
+            referenceExport(db, "native", output);
+            assertGeometries(output, model, "native");
+            boolean shared = db == smart1;
+            try (var sql = db.connect()) {
+                String parent = shared ? "meter" : "smartunit";
+                if (db.postgis()) {
+                    assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table(parent)
+                            + " WHERE st_srid(location)=2056 AND st_srid(extralocation)=2056"));
+                    assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table(parent)
+                            + " WHERE t_ili_tid LIKE '%-n' AND st_srid(location)=2056 AND extralocation IS NULL"));
+                } else {
+                    String helper = shared ? "meter_extralocation" : "smartunit_location";
+                    String field = shared ? "extralocation" : "location";
+                    assertEquals("2056", scalar(sql, "SELECT srs_id FROM gpkg_geometry_columns WHERE table_name='"
+                            + helper + "' AND column_name='" + field + "'"));
+                    assertEquals("4", scalar(sql, "SELECT COUNT(*) FROM " + db.table(helper) + " g JOIN "
+                            + db.table(parent) + " p ON g.t_id=p.t_id AND g.t_basket=p.t_basket"
+                            + " WHERE p.t_ili_tid LIKE '%-s' OR p.t_ili_tid LIKE '%-n'"));
+                    assertEquals("4", scalar(sql, "SELECT COUNT(*) FROM " + db.table(helper)));
+                    execute(sql, "DELETE FROM " + db.table(helper) + " WHERE t_id=(SELECT t_id FROM "
+                            + db.table(parent) + " WHERE t_ili_tid='native-s')");
+                }
+            }
+            if (!db.postgis()) {
+                var saved = Files.readString(output);
+                assertCliFailure(db, "export", model, "native", output, "Missing secondary geometry row");
+                assertEquals(saved, Files.readString(output));
+            }
+        }
+    }
+
+    private void assertGeometries(Path file, String model, String prefix) throws Exception {
+        var basket = children(readDataSection(file, version)).getFirst();
+        assertEquals(prefix + "-b", id(basket, version, "bid"));
+        var meter = object(basket, model, "Meter", prefix + "-m");
+        var smart = object(basket, model, "SmartUnit", prefix + "-s");
+        var absent = object(basket, model, "SmartUnit", prefix + "-n");
+        var terminal = object(basket, model, "Terminal", prefix + "-t");
+        assertPoint(child(meter, "Location"), "2600123.125", "1200456.375");
+        assertPoint(child(smart, "Location"), "2600124.125", "1200457.375");
+        assertPoint(child(smart, "ExtraLocation"), "2600125.125", "1200458.375");
+        assertPoint(child(absent, "Location"), "2600126.125", "1200459.375");
+        assertNull(child(meter, "ExtraLocation"));
+        assertNull(child(absent, "ExtraLocation"));
+        assertNull(child(terminal, "Location"));
+    }
+
+    private static void assertPoint(Element point, String x, String y) {
+        var coordinates = children(children(point).getFirst());
+        assertEquals(0, new BigDecimal(x).compareTo(new BigDecimal(coordinates.get(0).getTextContent())));
+        assertEquals(0, new BigDecimal(y).compareTo(new BigDecimal(coordinates.get(1).getTextContent())));
     }
 
     private void assertScalarObjects(Path path, String model, String prefix, boolean emptyMemo) throws Exception {

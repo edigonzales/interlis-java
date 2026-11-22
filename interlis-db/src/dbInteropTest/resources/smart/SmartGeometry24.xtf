@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns:g="http://www.interlis.ch/geometry/1.0" xmlns="http://www.interlis.ch/xtf/2.4/SmartGeometry24">
+  <i:headersection><i:models><i:model>SmartGeometry24</i:model></i:models></i:headersection>
+  <i:datasection>
+    <Data i:bid="fixture-b">
+      <Meter i:tid="fixture-m"><Location><g:coord><g:c1>2600123.125</g:c1><g:c2>1200456.375</g:c2></g:coord></Location></Meter>
+      <SmartUnit i:tid="fixture-s"><Location><g:coord><g:c1>2600124.125</g:c1><g:c2>1200457.375</g:c2></g:coord></Location><ExtraLocation><g:coord><g:c1>2600125.125</g:c1><g:c2>1200458.375</g:c2></g:coord></ExtraLocation></SmartUnit>
+      <SmartUnit i:tid="fixture-n"><Location><g:coord><g:c1>2600126.125</g:c1><g:c2>1200459.375</g:c2></g:coord></Location></SmartUnit>
+      <Terminal i:tid="fixture-t"></Terminal>
+    </Data>
+  </i:datasection>
+</i:transfer>
