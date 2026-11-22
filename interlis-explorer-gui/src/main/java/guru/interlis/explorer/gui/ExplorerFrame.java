@@ -8,6 +8,7 @@ import guru.interlis.transfer.TopicDescriptor;
 import guru.interlis.transfer.TransferPlan;
 import guru.interlis.xtf24.Xtf24Exception;
 
+import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
@@ -23,13 +24,14 @@ import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
+import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
@@ -39,6 +41,10 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -60,12 +66,7 @@ final class ExplorerFrame extends JFrame {
     private final JLabel count = new JLabel(" ");
     private final JList<StoredObject> objectList = new JList<>();
     private final JLabel objectTitle = new JLabel("Select an object");
-    private final DefaultTableModel attributes = new DefaultTableModel(new String[]{"Attribute", "Value"}, 0) {
-        @Override
-        public boolean isCellEditable(int row, int column) {
-            return false;
-        }
-    };
+    private final InspectorTableModel attributes = new InspectorTableModel();
 
     private ExplorerDataset dataset;
     private volatile boolean closing;
@@ -118,22 +119,10 @@ final class ExplorerFrame extends JFrame {
             }
         });
 
-        var table = new JTable(attributes);
-        table.setFillsViewportHeight(true);
-        table.setRowHeight(28);
-        table.setShowGrid(false);
-        table.setCellSelectionEnabled(true);
-        table.getTableHeader().setReorderingAllowed(false);
-        table.getColumnModel().getColumn(0).setPreferredWidth(175);
-        table.getColumnModel().getColumn(1).setPreferredWidth(420);
-        var plain = new DefaultTableCellRenderer();
-        plain.putClientProperty("html.disable", true);
-        table.setDefaultRenderer(Object.class, plain);
-
         var navigation = section(new JLabel("Model"), tree);
         var instances = section(classTitle, objectList);
         instances.add(count, BorderLayout.SOUTH);
-        var inspector = section(objectTitle, table);
+        var inspector = section(objectTitle, inspectorTable());
         var content = split(JSplitPane.HORIZONTAL_SPLIT, navigation,
                 split(JSplitPane.VERTICAL_SPLIT, instances, inspector, 230, 0.35), 250, 0.25);
 
@@ -150,6 +139,56 @@ final class ExplorerFrame extends JFrame {
         setMinimumSize(new Dimension(640, 470));
         setSize(1000, 690);
         setLocationByPlatform(true);
+    }
+
+    private JTable inspectorTable() {
+        var table = new JTable(attributes);
+        table.setFillsViewportHeight(true);
+        table.setRowHeight(28);
+        table.setShowGrid(false);
+        table.setCellSelectionEnabled(true);
+        table.getTableHeader().setReorderingAllowed(false);
+        table.getColumnModel().getColumn(0).setPreferredWidth(175);
+        table.getColumnModel().getColumn(1).setPreferredWidth(420);
+        var plain = new DefaultTableCellRenderer();
+        plain.putClientProperty("html.disable", true);
+        table.setDefaultRenderer(Object.class, plain);
+        var attributeRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean selected,
+                                                            boolean focused, int row, int column) {
+                var label = (JLabel) super.getTableCellRendererComponent(table, value, selected, focused, row, column);
+                int indent = 6 + attributes.depth(row) * 18;
+                if (attributes.expandable(row)) {
+                    label.setText((attributes.expanded(row) ? "▾ " : "▸ ") + value);
+                } else {
+                    indent += 14;
+                }
+                var border = label.getBorder();
+                label.setBorder(BorderFactory.createCompoundBorder(border,
+                        BorderFactory.createEmptyBorder(0, indent, 0, 0)));
+                return label;
+            }
+        };
+        attributeRenderer.putClientProperty("html.disable", true);
+        table.getColumnModel().getColumn(0).setCellRenderer(attributeRenderer);
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent event) {
+                if (SwingUtilities.isLeftMouseButton(event) && event.getClickCount() == 1
+                        && table.columnAtPoint(event.getPoint()) == 0) {
+                    attributes.toggle(table.rowAtPoint(event.getPoint()));
+                }
+            }
+        });
+        table.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "toggleAttribute");
+        table.getActionMap().put("toggleAttribute", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                attributes.toggle(table.getSelectedRow());
+            }
+        });
+        return table;
     }
 
     private static JPanel section(JLabel title, JComponent view) {
@@ -315,15 +354,14 @@ final class ExplorerFrame extends JFrame {
     }
 
     private void inspectObject() {
-        attributes.setRowCount(0);
-        objectTitle.setText("Select an object");
         var selected = objectList.getSelectedValue();
-        if (selected != null) {
-            objectTitle.setText(objectLabel(selected));
-            for (var attribute : dataset.attributes(selected.object())) {
-                attributes.addRow(new String[]{attribute.getKey(), attribute.getValue()});
-            }
+        if (selected == null) {
+            attributes.clear();
+            objectTitle.setText("Select an object");
+            return;
         }
+        objectTitle.setText(objectLabel(selected));
+        attributes.show(dataset.plan(), selected.object().data());
     }
 
     private static String objectLabel(StoredObject entry) {

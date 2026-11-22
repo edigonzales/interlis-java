@@ -304,8 +304,11 @@ merkt sich den Ordner des letzten erfolgreichen Imports auch über einen
 Neustart hinweg. Wähle im Modellbaum eine Klasse und danach ein Objekt.
 Die Liste zeigt bis zu 100 Instanzen der gewählten Klasse in
 Transferreihenfolge. Der Inspektor zeigt die Attribute in effektiver
-Modellreihenfolge. Beim Schliessen wird die temporäre DuckDB-Datenbank
-entfernt.
+Modellreihenfolge. Ein Klick auf ein aufklappbares Attribut oder die
+Leertaste auf seiner Zeile zeigt Struktur- und Sammlungseinträge direkt
+darunter. LIST-Einträge sind nummeriert. BAG-Einträge behalten Duplikate
+und erscheinen ohne Nummer. Beim Schliessen wird die temporäre
+DuckDB-Datenbank entfernt.
 
 ## Objektspeicher in DuckDB
 

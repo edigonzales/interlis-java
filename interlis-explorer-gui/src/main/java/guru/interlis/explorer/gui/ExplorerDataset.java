@@ -13,26 +13,13 @@ import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
 import guru.interlis.explorer.DuckDbStore;
 import guru.interlis.explorer.DuckDbStore.StoredObject;
-import guru.interlis.model.CollectionType;
-import guru.interlis.model.CoordinateType;
-import guru.interlis.model.GeometryType;
-import guru.interlis.model.StructureValueType;
-import guru.interlis.model.SymbolRef;
-import guru.interlis.model.TypeDescriptor;
-import guru.interlis.model.TypeRef;
-import guru.interlis.model.query.TypeRelations;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
-import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
-import guru.interlis.transfer.TransferGeometry;
-import guru.interlis.transfer.TransferIdentity;
-import guru.interlis.transfer.TransferObject;
 import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferPlanner;
 import guru.interlis.transfer.TransferPlanningResult;
-import guru.interlis.transfer.TransferValue;
 import guru.interlis.xtf24.Xtf24Reader;
 
 import java.io.IOException;
@@ -42,7 +29,6 @@ import java.sql.SQLException;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -115,58 +101,6 @@ record ExplorerDataset(TransferPlan plan, DuckDbStore store, Path directory) imp
 
     List<StoredObject> objects(ObjectDescriptor type) throws SQLException {
         return store.objects(type.name().declared(), OBJECT_LIMIT);
-    }
-
-    List<Map.Entry<String, String>> attributes(TransferObject object) {
-        return plan.object(object.type()).orElseThrow().slots().stream()
-                .filter(AttributeSlot.class::isInstance)
-                .map(AttributeSlot.class::cast)
-                .map(slot -> Map.entry(slot.name().declared().last(),
-                        object.value(slot.symbol()).map(value -> displayValue(slot, value)).orElse("Absent")))
-                .toList();
-    }
-
-    private String displayValue(AttributeSlot slot, TransferValue value) {
-        return switch (value) {
-            case TransferValue.Undefined ignored -> "Undefined";
-            case TransferValue.Text text -> text.value();
-            case TransferValue.BooleanValue flag -> flag.value() ? "TRUE" : "FALSE";
-            case TransferValue.Enumeration enumeration -> String.join(".", enumeration.path());
-            case TransferValue.NumberValue number -> number.lexeme();
-            case TransferValue.Oid oid -> oid.lexeme();
-            case TransferValue.ClassName name -> name.name().toString();
-            case TransferValue.AttributePath path -> path.name().toString();
-            case TransferValue.Binary binary -> "BINARY (" + binary.size() + " bytes)";
-            case TransferValue.XmlFragment ignored -> "XML";
-            case TransferValue.Structured structure -> plan.object(structure.type()).orElseThrow().name().declared().toString();
-            case TransferValue.Repeated repeated -> {
-                var collection = (CollectionType) plan.type(slot.effectiveType()).known().orElseThrow();
-                var ref = new TypeRef(plan.snapshotId(), collection.elementType());
-                var element = new TypeRelations(plan.schema().semanticGraph()).resolveAliases(ref).known()
-                        .map(type -> new TypeRef(plan.snapshotId(), type.effectiveType())).orElse(ref);
-                yield repeated.kind() + " OF " + typeName(plan.type(element).known().orElseThrow())
-                        + " (" + repeated.values().size() + ")";
-            }
-            case TransferValue.Reference reference -> {
-                var target = reference.target();
-                String label = (target instanceof TransferIdentity.TransferId ? "TID " : "OID ") + target.value();
-                yield reference.targetBasket().map(basket -> label + " (BID " + basket.value() + ")").orElse(label);
-            }
-            case TransferGeometry.Coordinate ignored -> "COORD";
-            case TransferGeometry.MultiCoordinate ignored -> "MULTICOORD";
-            case TransferGeometry ignored -> typeName(plan.type(slot.effectiveType()).known().orElseThrow());
-        };
-    }
-
-    private String typeName(TypeDescriptor type) {
-        return switch (type) {
-            case CoordinateType coordinate -> coordinate.multiCoordinate() ? "MULTICOORD" : "COORD";
-            case GeometryType geometry -> geometry.geometryKind().name();
-            case StructureValueType structure -> structure.target()
-                    .map(id -> plan.object(new SymbolRef(plan.snapshotId(), id)).orElseThrow())
-                    .map(descriptor -> descriptor.name().declared().toString()).orElse("ANYSTRUCTURE");
-            default -> type.kind().name();
-        };
     }
 
     @Override
