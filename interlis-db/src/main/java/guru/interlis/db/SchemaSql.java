@@ -347,6 +347,7 @@ final class SchemaSql {
         }
         row(statement, "ch.interlis.ili2c.ilidirs", "%ILI_FROM_DB");
         if (plan.multiSrs()) row(statement, Ili2dbLayout.USE_EPSG_IN_NAMES, "True");
+        if (plan.strokeArcs()) row(statement, Ili2dbLayout.STROKE_ARCS, Ili2dbLayout.STROKE_ARCS_ENABLED);
         if (plan.mapping().crsPair().isPresent()) {
             row(statement, Ili2dbLayout.SRS_MODEL_ASSIGNMENT, plan.mapping().crsPair().orElseThrow().assignment().setting());
         }

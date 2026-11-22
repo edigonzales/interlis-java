@@ -159,7 +159,7 @@ final class DbMapping {
         Column withStrokeArcs(TransferPlan plan, boolean strokeArcs) {
             if (!strokeArcs || !kind.geometry() || kind == Kind.POINT || kind == Kind.MULTIPOINT) return this;
             if (dimensions != 2) {
-                throw unsupported("linear geometry at " + slot.name().declared());
+                throw unsupported("strokeArcs requires XY at " + slot.name().declared());
             }
             int digits = vertexCoordinates(plan).axes().getFirst().maximum()
                     .map(limit -> limit.precision().fractionalDigits()).orElse(0);
@@ -588,13 +588,13 @@ final class DbMapping {
     static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, CancellationToken token) {
         return planNew(List.of(modelName), List.of(source), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(),
-                new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), token);
+                new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), false, token);
     }
 
     static DbMapping planNew(List<String> modelNames, Collection<SourceText> sources, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels,
                              SqlNames allocator, DbInheritance.Profile profile, Set<AttributeTransformation> transformations,
-                             CancellationToken token) {
+                             boolean strokeArcs, CancellationToken token) {
         var models = srsModels.map(DbCrsPair.Models::names).orElse(modelNames);
         TransferPlan plan = DbModelSources.compile(models, sources, "model files", token);
         var crs = new CrsDefaults(defaultEpsg, 0);
@@ -702,7 +702,7 @@ final class DbMapping {
                         }
                         String column = allocator.column(owner, storageName);
                         checkColumnName(attribute, column, object.kind() == SymbolKind.STRUCTURE, !split && discriminator, gpkg);
-                        var named = binding.withName(column);
+                        var named = binding.withName(column).withStrokeArcs(plan, strokeArcs);
                         if (binding.kind().geometry()) geometrySeen = true;
                         if (split) secondary.add(new SecondaryGeometry(owner, named));
                         else columns.add(named);

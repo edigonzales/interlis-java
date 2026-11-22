@@ -2,6 +2,7 @@ package guru.interlis.db;
 
 import guru.interlis.db.DbInteropTest.ReferenceTool;
 import guru.interlis.db.DbInteropTest.TestDatabase;
+import guru.interlis.execution.CancellationToken;
 import org.w3c.dom.Element;
 
 import java.nio.file.Files;
@@ -15,6 +16,7 @@ import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
+import static guru.interlis.db.DbInteropTest.cli;
 import static guru.interlis.db.DbInteropTest.emptyCollection;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
@@ -376,6 +378,76 @@ final class StrokeCases {
 
     private Path withPrefix(Path input, String prefix) throws Exception {
         return Files.writeString(work.resolve(prefix + ".xtf"), Files.readString(input).replace("fixture-", prefix + "-"));
+    }
+
+    void schema(TestDatabase baseline, TestDatabase own) throws Exception {
+        String model = "StrokeSchema" + version;
+        var ili = source(model, "POLYLINE");
+        Files.writeString(ili, Files.readString(ili).replace("END Route;", """
+                END Route;
+                    CLASS Marker =
+                      Anchor : Vertex;
+                    END Marker;
+                """));
+        var xyz = "StrokeXyz" + version;
+        var xyzFile = source(xyz, "POLYLINE");
+        Files.writeString(xyzFile, Files.readString(xyzFile).replace("0.000 .. 400000.000;",
+                "0.000 .. 400000.000, -1000.000 .. 10000.000;"));
+        assertCliFailure(own, "schemaimport", xyz, null, xyzFile, "strokeArcs requires XY at " + xyz + ".Data.Route.Shape",
+                "--stroke-arcs");
+
+        referenceSchema(baseline, model);
+        var result = cli(own, "schemaimport", model, null, ili, CancellationToken.none(), "--stroke-arcs");
+        assertEquals(0, result.code(), result::diagnostics);
+        assertSameCatalog(baseline, own);
+        assertGeometryColumn(own, "marker", "anchor", "POINT", 2056);
+        var line = polyline(coord(600000, 200000) + arc(600005, 200005, 600010, 200000));
+        var output = work.resolve("output.xtf");
+        referenceImport(own, "legacy", dataset(model, "legacy", line));
+        assertCliSuccess(own, "export", model, "legacy", output);
+        assertSchemaLine(output, "legacy");
+        assertCliSuccess(own, "import", model, "native", dataset(model, "native", line));
+        referenceExport(own, "native", output);
+        assertSchemaLine(output, "native");
+        referenceImport(own, "tail", dataset(model, "tail", line));
+        assertCliSuccess(own, "export", model, "tail", output);
+        assertSchemaLine(output, "tail");
+        try (var sql = own.connect()) {
+            var ids = List.of("route", "t_ili2db_basket", "t_ili2db_dataset").stream()
+                    .map(table -> "SELECT t_id FROM " + own.table(table)).collect(Collectors.joining(" UNION ALL "));
+            assertEquals("12", scalar(sql, "SELECT count(DISTINCT t_id) FROM (" + ids + ") ids"));
+        }
+
+        var next = "StrokeAppend" + version;
+        var extra = source(next, "SURFACE");
+        var append = cli(own, "schemaimport", next, null, extra, CancellationToken.none(), "--add-models");
+        assertEquals(0, append.code(), append::diagnostics);
+        try (var sql = own.connect()) {
+            var table = scalar(sql, "SELECT sqlname FROM " + own.table("t_ili2db_classname")
+                    + " WHERE iliname='" + next + ".Data.Route'");
+            assertGeometryColumn(own, table, "shape", "POLYGON", 2056);
+        }
+        var polygon = surfaceValue(polyline(coord(600000, 200000) + arc(600005, 199995, 600010, 200000)
+                + coord(600010, 200010) + coord(600000, 200000)));
+        assertCliSuccess(own, "import", next, "appended", dataset(next, "appended", polygon));
+        referenceExport(own, "appended", output);
+        assertEquals(List.of(600005.0, 199995.0), rings(objects(output, "appended").get("appended-value")).getFirst().get(40));
+    }
+
+    private void assertSchemaLine(Path output, String prefix) throws Exception {
+        var objects = objects(output, prefix);
+        assertNull(child(objects.get(prefix + "-null"), "Shape"));
+        var line = linePositions(objects.get(prefix + "-value"));
+        assertEquals(81, line.size());
+        assertEquals(List.of(600005.0, 200005.0), line.get(40));
+        assertEquals(List.of(600010.0, 200000.0), line.getLast());
+    }
+
+    private static void assertSameCatalog(TestDatabase baseline, TestDatabase own) throws Exception {
+        try (var expected = baseline.connect(); var actual = own.connect()) {
+            DbSchemaCatalog.read(expected, baseline.postgis(), baseline.schema())
+                    .assertSameAs(DbSchemaCatalog.read(actual, own.postgis(), own.schema()));
+        }
     }
 
     private void assertPolygon(Path output, String prefix) throws Exception {

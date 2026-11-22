@@ -74,6 +74,12 @@ neben dem Ziel und wird nach erfolgreichem Abschluss per Hardlink
 veröffentlicht. Ein vorhandener Schemaname oder Zielpfad führt zu einem
 Fehler. Für GeoPackage muss das Ziel-Dateisystem Hardlinks unterstützen.
 
+Mit `schemaimport --stroke-arcs` legt `interlis-db` ein neues
+`newClass`-Schema mit der linearen XY-Speicherung von ili2db
+`--strokeArcs` an. Die Option gilt für Linien und Flächen, einschliesslich
+ihrer Sammlungen. Punkte und Punktsammlungen behalten ihre SQL-Typen.
+`schemaimport --add-models` übernimmt die gespeicherte Einstellung.
+
 Mit `schemaimport --create-geom-index` erhält jede Geometriespalte
 einen Raumindex. GeoPackage registriert `gpkg_rtree_index` mit der
 virtuellen Tabelle und ihren Standardtriggern. PostGIS legt einen GiST-Index an.

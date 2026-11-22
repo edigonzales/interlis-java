@@ -258,7 +258,9 @@ Kanten und prüfen in XTF 2.3 einen mehrteiligen Rand. Die
 `MULTIPOLYLINE`, `MultiLine` und `MultiDirectedLine`. Die
 `*StrokeMultiSurface*`-Fälle prüfen `MULTIPOLYGON`, Teilflächen und
 Innenringe bei `MULTISURFACE`, `MULTIAREA` und CHBase-`MultiSurface`
-sowie leere SQL-Sammlungen.
+sowie leere SQL-Sammlungen. Die `*StrokeSchema*`-Fälle vergleichen
+den Katalog mit einem ili2db-Schema, prüfen die gemeinsame ID-Vergabe
+und ergänzen ein Modell mit der gespeicherten Option.
 
 Die Auswahl `--tests '*DbInteropTest.geoPackage*'` läuft ohne Docker.
 Die Tests vergleichen vor dem ersten Datenimport den SQL-Katalog und die

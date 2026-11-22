@@ -45,7 +45,7 @@ public final class Main {
                     [--model-file IMPORT.ili]...
                     [--inheritance smart1|smart2] [--coalesce-catalogue-ref] [--expand-multilingual] [--expand-localised]
                     [--coalesce-multi-point] [--coalesce-multi-line] [--coalesce-multi-surface]
-                    [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
+                    [--stroke-arcs] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.
             """;
@@ -111,7 +111,7 @@ public final class Main {
         }
         var plan = SchemaPlan.read(options.models(), options.file(), options.modelFiles(), options.gpkg() != null,
                 options.splitGeometries(), options.defaultEpsg(), options.multiSrs(), options.srsModels(), new SqlNames(),
-                options.inheritance(), options.transformations(), cancellation);
+                options.inheritance(), options.transformations(), options.strokeArcs(), cancellation);
         cancellation.throwIfCancellationRequested();
         if (options.gpkg() != null) {
             GeoPackageSchema.create(options.gpkg(), plan, options.createGeometryIndexes(), cancellation);
@@ -143,7 +143,8 @@ public final class Main {
         }
         var names = DbSchemaReader.namesForExtension(db, options.models());
         var plan = SchemaPlan.read(options.models(), options.file(), options.modelFiles(), db.gpkg(),
-                settings.splitGeometries(), settings.defaultEpsg(), settings.multiSrs(), Optional.empty(), names, cancellation);
+                settings.splitGeometries(), settings.defaultEpsg(), settings.multiSrs(), Optional.empty(), names,
+                settings.inheritance(), Set.of(), settings.strokeArcs(), cancellation);
         plan = plan.withModelFiles(DbSchemaReader.newModelFiles(db, plan.modelFiles(), cancellation));
         if (plan.addedTables().isEmpty() && plan.modelFiles().isEmpty()) {
             throw new DbException("No new model tables or sources to add");
@@ -215,7 +216,7 @@ public final class Main {
     private record Options(Command command, List<String> models, String dataset, Path file, Path gpkg,
                            String pgUrl, String schema, String user, boolean createGeometryIndexes,
                            boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean addModels,
-                           boolean explicitEpsg, boolean explicitLayout,
+                           boolean explicitEpsg, boolean explicitLayout, boolean strokeArcs,
                            Optional<DbCrsPair.Models> srsModels, List<Path> modelFiles, Optional<String> exportModel,
                            DbInheritance.Profile inheritance, Set<Ili2dbLayout.AttributeTransformation> transformations) {
         private static final Set<String> NAMES = Set.of("--dataset", "--gpkg", "--pg-url", "--schema", "--user",
@@ -240,7 +241,7 @@ public final class Main {
             for (int i = 1; i < args.length; i++) {
                 String arg = args[i];
                 var transformation = Ili2dbLayout.AttributeTransformation.fromOption(arg);
-                if (arg.equals("--create-geom-index") || arg.equals("--one-geom-per-table")
+                if (arg.equals("--stroke-arcs") || arg.equals("--create-geom-index") || arg.equals("--one-geom-per-table")
                         || arg.equals("--gpkg-multi-geom-per-table") || arg.equals("--multi-srs") || arg.equals("--add-models")
                         || transformation != null) {
                     if (command != Command.SCHEMAIMPORT) {
@@ -350,11 +351,15 @@ public final class Main {
                 throw new IllegalArgumentException(transformations.iterator().next().option
                         + " requires a new schema with newClass or Smart2 inheritance");
             }
+            boolean strokeArcs = schemaFlags.contains("--stroke-arcs");
+            if (strokeArcs && (addModels || inheritance != DbInheritance.Profile.NEW_CLASS)) {
+                throw new IllegalArgumentException("--stroke-arcs requires a new schema with newClass inheritance");
+            }
             var srsModels = Optional.ofNullable(alternateSrsModel).map(value -> DbCrsPair.Models.parse(value, models.getFirst()));
             return new Options(command, List.copyOf(models), dataset, file, gpkg, pgUrl, schema, user,
                     schemaFlags.contains("--create-geom-index"),
                     oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg, multiSrs, addModels,
-                    epsg != null, oneGeometryPerTable || multipleGeoPackageGeometries, srsModels,
+                    epsg != null, oneGeometryPerTable || multipleGeoPackageGeometries, strokeArcs, srsModels,
                     List.copyOf(modelFiles), exportModel, inheritance, Set.copyOf(transformations));
         }
 

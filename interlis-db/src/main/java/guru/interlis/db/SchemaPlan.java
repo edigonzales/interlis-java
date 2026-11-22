@@ -47,7 +47,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                   List<DbMapping.Table> addedTables, List<DbMapping.EmbeddedAssociation> addedAssociations,
                   List<DbMapping.Composition> addedCompositions,
                   List<ColumnProperty> columnProperties, Map<String, List<GeometryColumn>> geometryColumns,
-                  boolean splitGeometries, int defaultEpsg, boolean multiSrs,
+                  boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean strokeArcs,
                   Set<AttributeTransformation> transformations) {
     record ModelFile(String filename, LanguageVersion version, String modelNames, String content) { }
 
@@ -69,25 +69,14 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
 
     static SchemaPlan read(String modelName, Path file, boolean gpkg, boolean splitGeometries,
                            int defaultEpsg, CancellationToken token) throws IOException {
-        return read(List.of(modelName), file, List.of(), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(), token);
-    }
-
-    static SchemaPlan read(List<String> models, Path file, List<Path> imports, boolean gpkg, boolean splitGeometries,
-                           int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels,
-                           CancellationToken token) throws IOException {
-        return read(models, file, imports, gpkg, splitGeometries, defaultEpsg, multiSrs, srsModels, new SqlNames(), token);
+        return read(List.of(modelName), file, List.of(), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(),
+                new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), false, token);
     }
 
     static SchemaPlan read(List<String> models, Path file, List<Path> imports, boolean gpkg, boolean splitGeometries,
                            int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels, SqlNames names,
-                           CancellationToken token) throws IOException {
-        return read(models, file, imports, gpkg, splitGeometries, defaultEpsg, multiSrs, srsModels, names,
-                DbInheritance.Profile.NEW_CLASS, Set.of(), token);
-    }
-
-    static SchemaPlan read(List<String> models, Path file, List<Path> imports, boolean gpkg, boolean splitGeometries,
-                           int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels, SqlNames names,
-                           DbInheritance.Profile inheritance, Set<AttributeTransformation> transformations, CancellationToken token)
+                           DbInheritance.Profile inheritance, Set<AttributeTransformation> transformations, boolean strokeArcs,
+                           CancellationToken token)
             throws IOException {
         var files = new ArrayList<Path>();
         files.add(file);
@@ -106,7 +95,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             filenames.put(source.id(), path.getFileName().toString());
         }
         var mapping = DbMapping.planNew(models, sources.values(), gpkg, splitGeometries, defaultEpsg, multiSrs,
-                srsModels, names, inheritance, transformations, token);
+                srsModels, names, inheritance, transformations, strokeArcs, token);
         var declarations = mapping.plan().models().stream()
                 .map(model -> (ModelSymbol) symbol(mapping, model.symbol()))
                 .collect(Collectors.groupingBy(model -> origin(model).range().source()));
@@ -150,7 +139,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                     Ili2dbLayout.PREFIX + "foreignKey", parent.name()));
         }
         return new SchemaPlan(mapping, modelFiles, addedTables, addedAssociations, addedCompositions, properties, geometries,
-                splitGeometries, defaultEpsg, multiSrs, transformations);
+                splitGeometries, defaultEpsg, multiSrs, strokeArcs, transformations);
     }
 
     List<String> addedStorageTables() { return DbMapping.storageTables(addedTables); }
@@ -162,7 +151,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
 
     SchemaPlan withModelFiles(List<ModelFile> files) {
         return new SchemaPlan(mapping, files, addedTables, addedAssociations, addedCompositions, columnProperties,
-                geometryColumns, splitGeometries, defaultEpsg, multiSrs, transformations);
+                geometryColumns, splitGeometries, defaultEpsg, multiSrs, strokeArcs, transformations);
     }
 
     private static Origin.DeclaredOrigin origin(ModelSymbol model) {
