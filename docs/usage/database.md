@@ -129,6 +129,10 @@ Mit `--create-enum-txt-col` kommen `_txt`-Spalten für skalare
 Aufzählungen und Boolean hinzu. `--beautify-enum-disp-name` ersetzt im
 Standardlabel Unterstriche durch Leerzeichen. Explizite Anzeigenamen aus
 dem Modell haben Vorrang. Der Export liest den Fachwert aus der Hauptspalte.
+Mit `--create-single-enum-tab` werden die Aufzählungswerte und
+ihre Metadaten in `T_ILI2DB_ENUM` abgelegt, entsprechend ili2db
+`--createSingleEnumTab`. Die Tabelle führt jede Definition mit ihrer
+eigenen Zuordnung von XTF- und ITF-Codes.
 
 ## Bestehendes Schema ergänzen
 

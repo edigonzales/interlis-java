@@ -140,6 +140,17 @@ final class DbInteropTest {
         new EnumerationCases(work, new ReferenceTool(db.postgis()), version).enumText(expected, db);
     }
 
+    @Test void geoPackageEnumSingleLookup23() throws Exception { exchangeEnumSingleLookup(23, null); }
+    @Test void geoPackageEnumSingleLookup24() throws Exception { exchangeEnumSingleLookup(24, null); }
+    @Test void postgisEnumSingleLookup23() throws Exception { exchangeWithPostgis(23, this::exchangeEnumSingleLookup); }
+    @Test void postgisEnumSingleLookup24() throws Exception { exchangeWithPostgis(24, this::exchangeEnumSingleLookup); }
+
+    private void exchangeEnumSingleLookup(int version, PostgreSQLContainer postgres) throws Exception {
+        var expected = new TestDatabase(postgres, "enum_single_ref");
+        var db = new TestDatabase(postgres, "enum_single_own");
+        new EnumerationCases(work, new ReferenceTool(db.postgis()), version).singleLookup(expected, db);
+    }
+
     @Test void geoPackageArrayText23() throws Exception { exchangeArrayText(23, null); }
     @Test void geoPackageArrayText24() throws Exception { exchangeArrayText(24, null); }
     @Test void postgisArrayText23() throws Exception { exchangeWithPostgis(23, this::exchangeArrayText); }

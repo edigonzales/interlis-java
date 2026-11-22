@@ -1,5 +1,13 @@
 package guru.interlis.db;
 
-record DbEnumOptions(boolean itfCodes, boolean textColumns, boolean beautify) {
-    static final DbEnumOptions DEFAULT = new DbEnumOptions(false, false, false);
+record DbEnumOptions(boolean itfCodes, boolean textColumns, boolean beautify, Lookup lookup) {
+    static final DbEnumOptions DEFAULT = new DbEnumOptions(false, false, false, Lookup.NONE);
+
+    enum Lookup {
+        NONE(null), SINGLE("singleTable");
+
+        final String setting;
+
+        Lookup(String setting) { this.setting = setting; }
+    }
 }

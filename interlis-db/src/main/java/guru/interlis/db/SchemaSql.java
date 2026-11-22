@@ -131,11 +131,19 @@ final class SchemaSql {
         }
         token.throwIfCancellationRequested();
         writeMetadata(connection, plan, dialect, newSchema, createGeometryIndexes, token);
+        writeEnumLookups(connection, plan, dialect, newSchema, token);
     }
 
     private static List<String> ddl(SchemaPlan plan, Dialect dialect, boolean newSchema, boolean createGeometryIndexes) {
         var commands = new ArrayList<String>();
         if (newSchema && !dialect.gpkg()) commands.add("CREATE SEQUENCE " + dialect.table(SEQUENCE));
+        if (newSchema && plan.enumOptions().lookup() == DbEnumOptions.Lookup.SINGLE) {
+            commands.add(dialect.create(Ili2dbLayout.ENUM,
+                    "thisClass " + dialect.text(1024) + " NOT NULL, baseClass " + dialect.text(1024)
+                            + ", seq INTEGER, inactive BOOLEAN NOT NULL, iliCode " + dialect.text(1024)
+                            + " NOT NULL, itfCode INTEGER NOT NULL, dispName " + dialect.text(250)
+                            + " NOT NULL, description TEXT"));
+        }
         var storage = new java.util.HashSet<>(plan.addedStorageTables());
         for (var table : plan.addedTables()) {
             var columns = new ArrayList<String>();
@@ -323,6 +331,36 @@ final class SchemaSql {
         }
     }
 
+    private static void writeEnumLookups(Connection connection, SchemaPlan plan, Dialect dialect, boolean newSchema,
+                                         CancellationToken token) throws SQLException {
+        for (var lookup : plan.enumLookups()) {
+            String table = dialect.table(lookup.table());
+            String sql = "INSERT INTO " + table
+                    + " (thisClass, baseClass, iliCode, itfCode, seq, dispName, description, inactive)"
+                    + (newSchema ? " VALUES (?, ?, ?, ?, ?, ?, ?, ?)" : " SELECT ?, ?, ?, ?, ?, ?, ?, ?"
+                            + " WHERE NOT EXISTS (SELECT 1 FROM " + table + " WHERE thisClass = ? AND iliCode = ?)");
+            try (var statement = connection.prepareStatement(sql)) {
+                for (var row : lookup.rows()) {
+                    token.throwIfCancellationRequested();
+                    statement.setString(1, row.definition());
+                    statement.setString(2, row.base());
+                    statement.setString(3, row.path());
+                    statement.setInt(4, row.itfCode());
+                    statement.setObject(5, row.sequence(), java.sql.Types.INTEGER);
+                    statement.setString(6, row.label());
+                    statement.setString(7, row.documentation());
+                    statement.setBoolean(8, false);
+                    if (!newSchema) {
+                        statement.setString(9, row.definition());
+                        statement.setString(10, row.path());
+                    }
+                    statement.addBatch();
+                }
+                statement.executeBatch();
+            }
+        }
+    }
+
     private static void addColumnDefinitions(List<String> columns, DbMapping.Column column, Dialect dialect) {
         if (column.expandedStructure().isPresent()) {
             for (var group : column.expandedStructure().orElseThrow().groups()) {
@@ -374,6 +412,9 @@ final class SchemaSql {
         if (plan.enumOptions().itfCodes()) row(statement, Ili2dbLayout.ENUM_ITF_CODE, "yes");
         if (plan.enumOptions().textColumns()) row(statement, Ili2dbLayout.ENUM_TEXT_COLUMN, "addTxtCol");
         if (plan.enumOptions().beautify()) row(statement, Ili2dbLayout.ENUM_BEAUTIFY, "underscore");
+        if (plan.enumOptions().lookup() != DbEnumOptions.Lookup.NONE) {
+            row(statement, Ili2dbLayout.ENUM_DEFINITIONS, plan.enumOptions().lookup().setting);
+        }
         String inheritance = plan.mapping().profile().setting;
         if (inheritance != null) row(statement, PREFIX + "inheritanceTrafo", inheritance);
         for (var transformation : Ili2dbLayout.AttributeTransformation.values()) {

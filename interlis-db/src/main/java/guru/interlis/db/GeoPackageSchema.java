@@ -140,6 +140,9 @@ final class GeoPackageSchema {
                     registerAttributes(attributes, table);
                 }
                 registerAttributes(attributes, Ili2dbLayout.KEY_OBJECT);
+                if (plan.enumOptions().lookup() == DbEnumOptions.Lookup.SINGLE) {
+                    registerAttributes(attributes, Ili2dbLayout.ENUM);
+                }
             }
             for (String table : plan.addedStorageTables()) {
                 token.throwIfCancellationRequested();

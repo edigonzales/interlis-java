@@ -195,6 +195,12 @@ final class DbSchemaReader {
             throw new DbException("Extra CLASSNAME/TRAFO/INHERITANCE mappings for " + modelName);
         }
         checkSystemTables(db);
+        if (settings.enumOptions().lookup() == DbEnumOptions.Lookup.SINGLE) {
+            String table = foldedName(Ili2dbLayout.ENUM);
+            requireColumns(db, table, physicalColumns(db, table), Map.of("thisclass", Kind.TEXT, "baseclass", Kind.TEXT,
+                    "ilicode", Kind.TEXT, "itfcode", Kind.INTEGER, "seq", Kind.INTEGER, "dispname", Kind.TEXT,
+                    "description", Kind.TEXT, "inactive", Kind.BOOLEAN));
+        }
         var layout = new DbInheritance(plan, declarations, settings.inheritance());
         for (var alias : layout.aliases()) {
             names.put(alias.object().symbol(), names.get(alias.owner()));
@@ -496,8 +502,10 @@ final class DbSchemaReader {
         }
         var enumOptions = new DbEnumOptions(optionalSetting(settings, Ili2dbLayout.ENUM_ITF_CODE, "yes"),
                 optionalSetting(settings, Ili2dbLayout.ENUM_TEXT_COLUMN, "addTxtCol"),
-                optionalSetting(settings, Ili2dbLayout.ENUM_BEAUTIFY, "underscore"));
-        if ("multiTableWithId".equals(settings.get(PREFIX + "createEnumDefs"))) {
+                optionalSetting(settings, Ili2dbLayout.ENUM_BEAUTIFY, "underscore"),
+                DbEnumOptions.Lookup.SINGLE.setting.equals(settings.get(Ili2dbLayout.ENUM_DEFINITIONS))
+                        ? DbEnumOptions.Lookup.SINGLE : DbEnumOptions.Lookup.NONE);
+        if ("multiTableWithId".equals(settings.get(Ili2dbLayout.ENUM_DEFINITIONS))) {
             throw unsupported("enumerations stored as SQL IDs");
         }
         String epsgNames = settings.get(Ili2dbLayout.USE_EPSG_IN_NAMES);

@@ -48,7 +48,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                   List<DbMapping.Composition> addedCompositions,
                   List<ColumnProperty> columnProperties, Map<String, List<GeometryColumn>> geometryColumns,
                   boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean strokeArcs, DbEnumOptions enumOptions,
-                  Set<AttributeTransformation> transformations) {
+                  Set<AttributeTransformation> transformations, List<DbEnumLookup> enumLookups) {
     record ModelFile(String filename, LanguageVersion version, String modelNames, String content) { }
 
     record ColumnProperty(String table, String subtype, String column, String key, String value) { }
@@ -63,6 +63,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         addedCompositions = List.copyOf(addedCompositions);
         columnProperties = List.copyOf(columnProperties);
         transformations = Set.copyOf(transformations);
+        enumLookups = List.copyOf(enumLookups);
         geometryColumns = geometryColumns.entrySet().stream().collect(java.util.stream.Collectors.toUnmodifiableMap(
                 Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
     }
@@ -139,7 +140,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                     Ili2dbLayout.PREFIX + "foreignKey", parent.name()));
         }
         return new SchemaPlan(mapping, modelFiles, addedTables, addedAssociations, addedCompositions, properties, geometries,
-                splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations);
+                splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations,
+                DbEnumLookup.plan(mapping, enumOptions, token));
     }
 
     List<String> addedStorageTables() { return DbMapping.storageTables(addedTables); }
@@ -151,7 +153,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
 
     SchemaPlan withModelFiles(List<ModelFile> files) {
         return new SchemaPlan(mapping, files, addedTables, addedAssociations, addedCompositions, columnProperties,
-                geometryColumns, splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations);
+                geometryColumns, splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations, enumLookups);
     }
 
     private static Origin.DeclaredOrigin origin(ModelSymbol model) {

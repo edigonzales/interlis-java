@@ -114,6 +114,59 @@ final class EnumerationCases {
         textRoundtrip(integerOwn, model, "2");
     }
 
+    void singleLookup(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "EnumSingle" + version;
+        var ili = source(model, BASE.replace("Zed, Alpha", """
+                Zed,
+                  /** Alpine documentation */
+                  !!@ili2db.dispName="Alpine label"
+                  Alpha""").replace("CLASS Asset", """
+                ExtraGrade = (Zulu, Spare);
+                ExtendedGrade EXTENDS ExtraGrade = (Other_Value);
+                CLASS Asset"""));
+        schema(expected, model, "--createSingleEnumTab", "--beautifyEnumDispName");
+        create(own, model, ili, "--create-single-enum-tab", "--beautify-enum-disp-name");
+        assertSameCatalog(expected, own);
+        try (var left = expected.connect(); var right = own.connect()) {
+            String columns = "thisclass, baseclass, ilicode, itfcode, seq, dispname, description, inactive";
+            String order = " ORDER BY thisclass, itfcode";
+            String table = own.table("t_ili2db_enum");
+            String query = "SELECT " + columns + " FROM " + table + order;
+            var initial = rows(right, query);
+            assertEquals(rows(left, "SELECT " + columns + " FROM " + expected.table("t_ili2db_enum") + order), initial);
+            assertEquals(11, initial.size());
+            assertEquals("Alpine label", scalar(right, "SELECT dispname FROM " + table
+                    + " WHERE ilicode = 'Family.Alpha'"));
+            assertEquals("2", scalar(right, "SELECT seq FROM " + table + " WHERE ilicode = 'Family.Alpha'"));
+            assertEquals(model + ".Data.ExtraGrade", scalar(right, "SELECT baseclass FROM " + table
+                    + " WHERE thisclass = '" + model + ".Data.ExtendedGrade' AND ilicode = 'Other_Value'"));
+            assertEquals("3", scalar(right, "SELECT count(*) FROM " + table + " WHERE ilicode = 'Zulu'"));
+        }
+        for (var db : List.of(expected, own)) {
+            try (var sql = db.connect()) {
+                String table = db.table("t_ili2db_enum");
+                execute(sql, "UPDATE " + table + " SET dispname = 'editor label', inactive = TRUE WHERE ilicode = 'Family.Alpha'");
+                String query = "SELECT thisclass, ilicode, itfcode, dispname, inactive FROM " + table + " ORDER BY thisclass, itfcode";
+                var before = rows(sql, query);
+                mixScalars(db, model);
+                assertEquals(before, rows(sql, query));
+            }
+        }
+    }
+
+    private static List<List<String>> rows(Connection sql, String query) throws Exception {
+        var result = new ArrayList<List<String>>();
+        try (var statement = sql.createStatement(); var rows = statement.executeQuery(query)) {
+            int width = rows.getMetaData().getColumnCount();
+            while (rows.next()) {
+                var row = new ArrayList<String>(width);
+                for (int i = 1; i <= width; i++) row.add(rows.getString(i));
+                result.add(row);
+            }
+        }
+        return result;
+    }
+
     private void textRoundtrip(TestDatabase db, String model, String storedGrade) throws Exception {
         mixScalars(db, model);
         var output = work.resolve("output.xtf");

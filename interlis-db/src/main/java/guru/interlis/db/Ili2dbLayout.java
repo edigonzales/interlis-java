@@ -28,6 +28,7 @@ final class Ili2dbLayout {
     static final String ENUM_ITF_CODE = PREFIX + "createEnumColAsItfCode";
     static final String ENUM_TEXT_COLUMN = PREFIX + "createEnumCols";
     static final String ENUM_BEAUTIFY = PREFIX + "beautifyEnumDispName";
+    static final String ENUM_DEFINITIONS = PREFIX + "createEnumDefs";
 
     static final String BASKET = "T_ILI2DB_BASKET";
     static final String DATASET = "T_ILI2DB_DATASET";
@@ -39,6 +40,7 @@ final class Ili2dbLayout {
     static final String ATTRNAME = "T_ILI2DB_ATTRNAME";
     static final String COLUMN_PROP = "T_ILI2DB_COLUMN_PROP";
     static final String TABLE_PROP = "T_ILI2DB_TABLE_PROP";
+    static final String ENUM = "T_ILI2DB_ENUM";
     static final String KEY_OBJECT = "T_KEY_OBJECT";
     static final String SEQUENCE = "t_ili2db_seq";
     static final String DATASET_KEY = DATASET + "_datasetName_key";
@@ -140,7 +142,7 @@ final class Ili2dbLayout {
 
     /** The input name has already been normalized by the name allocator. */
     static boolean reservedTable(String name, boolean gpkg) {
-        return METADATA_TABLES.stream().anyMatch(name::equalsIgnoreCase)
+        return name.equalsIgnoreCase(ENUM) || METADATA_TABLES.stream().anyMatch(name::equalsIgnoreCase)
                 || (gpkg ? GPKG_TABLES.contains(name) || name.startsWith("sqlite_") : PG_RELATIONS.contains(name));
     }
 }
