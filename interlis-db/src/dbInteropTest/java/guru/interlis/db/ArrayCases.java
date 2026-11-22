@@ -125,6 +125,27 @@ final class ArrayCases {
         }
     }
 
+    void enumeration(TestDatabase db) throws Exception {
+        String model = "ArrayEnum" + version;
+        source(model, """
+                DOMAIN Grade = (Low, Family (High, Higher));
+                STRUCTURE Elem = Entry : Grade; END Elem;
+                """, """
+                CLASS Asset =
+                  !!@ili2db.mapping=ARRAY
+                  Items : LIST OF Elem;
+                END Asset;
+                """);
+        mixedLists(db, model, List.of("Family.High", "Low", "Family.High", "Family.Higher"));
+        try (var sql = db.connect()) {
+            var first = db.postgis() ? "items[1]" : "json_extract(items,'$[0]')";
+            assertEquals("Family.High", scalar(sql, "SELECT " + first + " FROM "
+                    + db.table("asset") + " WHERE t_ili_tid='native-value'"));
+            assertEquals(model + ".Data.Grade", scalar(sql, "SELECT setting FROM " + db.table("t_ili2db_column_prop")
+                    + " WHERE tablename='asset' AND columnname='items' AND subtype IS NULL AND tag='ch.ehi.ili2db.enumDomain'"));
+        }
+    }
+
     private Path mixedLists(TestDatabase db, String model, List<String> expected) throws Exception {
         schema(db, model);
         var output = work.resolve("output.xtf");

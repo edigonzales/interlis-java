@@ -1181,13 +1181,17 @@ final class DbTransfer {
     }
 
     static Enumeration readEnumeration(String value, Column column) {
+        return readEnumeration(value, column.slot().name().declared().toString());
+    }
+
+    static Enumeration readEnumeration(String value, String context) {
         if (value == null) {
             return null;
         }
         try {
             return new Enumeration(List.of(value.split("\\.", -1)));
         } catch (IllegalArgumentException e) {
-            throw new DbException("Invalid enumeration encoding in " + column.slot().name().declared(), e);
+            throw new DbException("Invalid enumeration encoding in " + context, e);
         }
     }
 

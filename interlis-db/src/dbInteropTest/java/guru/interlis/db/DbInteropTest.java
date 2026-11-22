@@ -138,6 +138,16 @@ final class DbInteropTest {
         new ArrayCases(work, new ReferenceTool(db.postgis()), version).integer(db);
     }
 
+    @Test void geoPackageArrayEnumeration23() throws Exception { exchangeArrayEnumeration(23, null); }
+    @Test void geoPackageArrayEnumeration24() throws Exception { exchangeArrayEnumeration(24, null); }
+    @Test void postgisArrayEnumeration23() throws Exception { exchangeWithPostgis(23, this::exchangeArrayEnumeration); }
+    @Test void postgisArrayEnumeration24() throws Exception { exchangeWithPostgis(24, this::exchangeArrayEnumeration); }
+
+    private void exchangeArrayEnumeration(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "array_enumeration");
+        new ArrayCases(work, new ReferenceTool(db.postgis()), version).enumeration(db);
+    }
+
     @Test void geoPackageExpandSingle23() throws Exception { exchangeExpandSingle(23, null); }
     @Test void geoPackageExpandSingle24() throws Exception { exchangeExpandSingle(24, null); }
     @Test void postgisExpandSingle23() throws Exception { exchangeWithPostgis(23, this::exchangeExpandSingle); }

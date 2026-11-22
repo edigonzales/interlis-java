@@ -16,6 +16,7 @@ import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferValue;
 import guru.interlis.transfer.TransferValue.BooleanValue;
+import guru.interlis.transfer.TransferValue.Enumeration;
 import guru.interlis.transfer.TransferValue.NumberValue;
 import guru.interlis.transfer.TransferValue.Repeated;
 import guru.interlis.transfer.TransferValue.Structured;
@@ -50,13 +51,16 @@ record DbArray(CollectionKind collection, SymbolRef structure, AttributeSlot fie
         }
         var field = fields.getFirst();
         var scalar = DbMapping.structureScalar(plan, structure, field);
-        if (scalar.kind() != Kind.TEXT && scalar.kind() != Kind.BOOLEAN && scalar.kind() != Kind.INTEGER) throw DbMapping.unsupported("coalesced array element at " + path);
+        var kind = scalar.kind();
+        if (kind != Kind.TEXT && kind != Kind.BOOLEAN && kind != Kind.INTEGER && kind != Kind.ENUMERATION) {
+            throw DbMapping.unsupported("coalesced array element at " + path);
+        }
         return new DbArray(repeated.collectionKind(), structure.symbol(), field, scalar.kind(), scalar.effectiveType().orElseThrow());
     }
 
     String pgElementType() {
         return switch (kind) {
-            case TEXT -> "varchar";
+            case TEXT, ENUMERATION -> "varchar";
             case BOOLEAN -> "bool";
             case INTEGER -> "int4";
             default -> throw new IllegalStateException("Unsupported PostgreSQL array element " + kind);
@@ -94,6 +98,7 @@ record DbArray(CollectionKind collection, SymbolRef structure, AttributeSlot fie
     private TransferValue readElement(Object value, String context) {
         return switch (value) {
             case String text when kind == Kind.TEXT -> new Text(text);
+            case String text when kind == Kind.ENUMERATION -> DbTransfer.readEnumeration(text, context);
             case Boolean bool when kind == Kind.BOOLEAN -> new BooleanValue(bool);
             case Integer number when kind == Kind.INTEGER -> new NumberValue(number.toString(), BigDecimal.valueOf(number));
             default -> throw unexpectedElement(context);
@@ -103,6 +108,7 @@ record DbArray(CollectionKind collection, SymbolRef structure, AttributeSlot fie
     private Object writeElement(TransferValue value, String context) {
         return switch (value) {
             case Text text when kind == Kind.TEXT -> text.value();
+            case Enumeration enumeration when kind == Kind.ENUMERATION -> String.join(".", enumeration.path());
             case BooleanValue bool when kind == Kind.BOOLEAN -> bool.value();
             case NumberValue number when kind == Kind.INTEGER -> DbTransfer.integerValue(number, context);
             default -> throw unexpectedElement(context);
@@ -157,14 +163,14 @@ record DbArray(CollectionKind collection, SymbolRef structure, AttributeSlot fie
 
     private Object readJsonElement(JsonReader reader, String context) throws IOException {
         var expected = switch (kind) {
-            case TEXT -> JsonToken.STRING;
+            case TEXT, ENUMERATION -> JsonToken.STRING;
             case BOOLEAN -> JsonToken.BOOLEAN;
             case INTEGER -> JsonToken.NUMBER;
             default -> throw new IllegalStateException("Unsupported JSON array element " + kind);
         };
         if (reader.peek() != expected) throw unexpectedElement(context);
         return switch (kind) {
-            case TEXT -> reader.nextString();
+            case TEXT, ENUMERATION -> reader.nextString();
             case BOOLEAN -> reader.nextBoolean();
             case INTEGER -> DbTransfer.readInteger(reader.nextString(), context).exactValue().intValueExact();
             default -> throw new IllegalStateException("Unsupported JSON array element " + kind);
