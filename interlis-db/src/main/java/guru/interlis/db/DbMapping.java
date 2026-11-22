@@ -267,8 +267,11 @@ final class DbMapping {
     }
 
     boolean includesTopic(SymbolRef basket, SymbolRef declared) {
-        for (var topic = originalTopic(basket); topic != null; topic = plan.topic(topic).orElseThrow().baseTopic()
-                .map(this::originalTopic).orElse(null)) {
+        return includesTopic(plan, originalTopic(basket), declared);
+    }
+
+    private static boolean includesTopic(TransferPlan plan, SymbolRef basket, SymbolRef declared) {
+        for (var topic = basket; topic != null; topic = plan.topic(topic).orElseThrow().baseTopic().orElse(null)) {
             if (topic.equals(declared)) return true;
         }
         return false;
@@ -308,6 +311,15 @@ final class DbMapping {
                 || !rootTable(actual.object().symbol()).equals(root)) {
             throw new DbException("Unknown or abstract T_Type " + discriminator + " in " + root.name()
                     + " for T_Id " + id);
+        }
+        return actual;
+    }
+
+    Table concreteType(Table root, String discriminator, long id, SymbolRef topic) {
+        var actual = concreteType(root, discriminator, id);
+        if (!plan.topic(originalTopic(topic)).orElseThrow().objectTypes().contains(actual.object().symbol())) {
+            throw new DbException("T_Type " + discriminator + " in " + root.name() + " does not belong to basket topic "
+                    + plan.topic(topic).orElseThrow().name().declared() + " for T_Id " + id);
         }
         return actual;
     }
@@ -587,7 +599,9 @@ final class DbMapping {
             if (!hierarchy.contains(object.symbol())) continue;
             if (object.baseType().isPresent()
                     && plan.object(object.baseType().orElseThrow()).filter(base -> base.kind() == object.kind()
-                    && base.topic().equals(object.topic())).isEmpty()) {
+                    && (base.topic().equals(object.topic()) || (object.kind() == SymbolKind.CLASS
+                    && base.topic().isPresent() && object.topic().isPresent()
+                    && includesTopic(plan, object.topic().orElseThrow(), base.topic().orElseThrow())))).isEmpty()) {
                 throw unsupported("base type outside the current topic or of a different kind at " + object.name().declared());
             }
             for (var slot : object.slots()) {

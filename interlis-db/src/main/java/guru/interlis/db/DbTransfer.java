@@ -277,7 +277,7 @@ final class DbTransfer {
                     long id = rows.getLong(1);
                     int field = 2;
                     String tid = hasTid ? identifier(rows.getString(field++), "TID", root.name()) : null;
-                    var actual = mapping.concreteType(root, rows.getString(field++), id);
+                    var actual = mapping.concreteType(root, rows.getString(field++), id, topic);
                     var values = readFields(db, mapping, rows, field, root, tid);
                     fragments.readFor(actual, id, tid, values);
                     structures.readFor(id, tid, values);

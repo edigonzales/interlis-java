@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="test"><MODELS>
+    <MODEL NAME="TownChild23" VERSION="1" URI="https://example.org/town"/>
+  </MODELS></HEADERSECTION>
+  <DATASECTION>
+    <TownChild23.Region BID="region-b">
+      <TownParent23.Core.Marker TID="region-m"><Memo>inherited</Memo></TownParent23.Core.Marker>
+      <TownChild23.Region.LocalStation TID="region-s"><Memo>base</Memo><LocalMemo>child</LocalMemo></TownChild23.Region.LocalStation>
+    </TownChild23.Region>
+  </DATASECTION>
+</TRANSFER>

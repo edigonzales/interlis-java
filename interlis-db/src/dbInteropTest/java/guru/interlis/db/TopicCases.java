@@ -12,10 +12,12 @@ import java.util.List;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
 import static guru.interlis.db.DbInteropTest.cli;
+import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
 import static guru.interlis.db.DbInteropTest.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class TopicCases {
     private final Path work;
@@ -52,6 +54,49 @@ final class TopicCases {
         }
     }
 
+    void fragments(TestDatabase baseline, TestDatabase own) throws Exception {
+        String parent = "TownParent" + version;
+        String model = "TownChild" + version;
+        schemas(baseline, own, parent, model);
+        var input = fixture("region" + version + ".xtf");
+        var nativeInput = Files.writeString(work.resolve("region-native.xtf"),
+                Files.readString(input).replace("region-", "native-"));
+        var output = work.resolve("region-out.xtf");
+        for (var db : List.of(baseline, own)) {
+            referenceImport(db, "legacy", input);
+            run(db, "export", model, "legacy", output);
+            assertFragments(output, parent, model, "region");
+            run(db, "import", model, "own", nativeInput);
+            referenceExport(db, "own", output);
+            assertFragments(output, parent, model, "native");
+            try (var sql = db.connect()) {
+                assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("station") + " s JOIN "
+                        + db.table("localstation") + " l ON l.t_id=s.t_id AND l.t_basket=s.t_basket JOIN "
+                        + db.table("t_ili2db_basket") + " b ON b.t_id=s.t_basket WHERE b.topic='" + model
+                        + ".Region' AND s.t_type='localstation' AND s.memo='base' AND l.localmemo='child'"));
+                execute(sql, "UPDATE " + db.table("station") + " SET t_type='siblingstation' WHERE t_ili_tid='native-s'");
+            }
+            String previous = Files.readString(output);
+            var result = cli(db, "export", model, "own", output, CancellationToken.none());
+            assertEquals(1, result.code(), result::diagnostics);
+            assertTrue(result.diagnostics().contains("does not belong to basket topic " + model + ".Region"),
+                    result::diagnostics);
+            assertEquals(previous, Files.readString(output));
+        }
+    }
+
+    private void assertFragments(Path file, String parent, String model, String prefix) throws Exception {
+        var basket = assertRegion(file, model, prefix + "-b");
+        var station = assertObject(basket, model, "Region", "LocalStation", prefix + "-s");
+        var memo = child(station, "Memo");
+        var local = child(station, "LocalMemo");
+        assertNamespace(memo, parent);
+        assertNamespace(local, model);
+        assertEquals("base", memo.getTextContent());
+        assertEquals("child", local.getTextContent());
+        assertEquals("inherited", child(assertObject(basket, parent, "Core", "Marker", prefix + "-m"), "Memo").getTextContent());
+    }
+
     private void assertInherited(Path file, String parent, String model, String prefix) throws Exception {
         var basket = assertRegion(file, model, prefix + "-b");
         var marker = assertObject(basket, parent, "Core", "Marker", prefix + "-m");
@@ -82,7 +127,11 @@ final class TopicCases {
     private void assertName(Element object, String model, String local) {
         assertEquals(version == 23 ? model + "." + local : local.substring(local.lastIndexOf('.') + 1),
                 object.getLocalName());
-        if (version == 24) assertEquals("http://www.interlis.ch/xtf/2.4/" + model, object.getNamespaceURI());
+        assertNamespace(object, model);
+    }
+
+    private void assertNamespace(Element element, String model) {
+        if (version == 24) assertEquals("http://www.interlis.ch/xtf/2.4/" + model, element.getNamespaceURI());
     }
 
     private void schemas(TestDatabase baseline, TestDatabase own, String parent, String model) throws Exception {

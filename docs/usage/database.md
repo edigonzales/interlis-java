@@ -466,7 +466,8 @@ die Position sowohl bei einer direkten Referenz als auch bei einer
 Referenz mit eingebetteten Attributwerten.
 
 XTF 2.3 und 2.4 FULL unterstützen Klassenvererbung mit `--noSmartMapping`
-innerhalb eines Topics. Abstrakte Basisklassen können ihre Attribute an
+innerhalb eines Topics und von einem Basistopic zu einem abgeleiteten Topic.
+Abstrakte Basisklassen können ihre Attribute an
 mehrere konkrete Nachfolger vererben. Pro Klasse entsteht eine Tabelle mit deren deklarierten
 Feldern. Ein Objekt belegt je eine Zeile in der Wurzeltabelle und in jeder
 Tabelle seines Vererbungspfads. Diese Zeilen teilen `T_Id` und `T_Basket`.

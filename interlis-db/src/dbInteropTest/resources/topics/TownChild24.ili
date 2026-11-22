@@ -1,0 +1,10 @@
+INTERLIS 2.4;
+MODEL TownChild24 AT "https://example.org/town" VERSION "1" =
+  IMPORTS TownParent24;
+  TOPIC Region EXTENDS TownParent24.Core =
+    CLASS LocalStation EXTENDS TownParent24.Core.Station = LocalMemo : TEXT*30; END LocalStation;
+  END Region;
+  TOPIC Sibling EXTENDS TownParent24.Core =
+    CLASS SiblingStation EXTENDS TownParent24.Core.Station = END SiblingStation;
+  END Sibling;
+END TownChild24.

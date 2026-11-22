@@ -132,6 +132,10 @@ final class DbInteropTest {
     @Test void geoPackageTopicInherited24() throws Exception { exchangeTopicInherited(24, null); }
     @Test void postgisTopicInherited23() throws Exception { exchangeWithPostgis(23, this::exchangeTopicInherited); }
     @Test void postgisTopicInherited24() throws Exception { exchangeWithPostgis(24, this::exchangeTopicInherited); }
+    @Test void geoPackageTopicFragments23() throws Exception { exchangeTopicFragments(23, null); }
+    @Test void geoPackageTopicFragments24() throws Exception { exchangeTopicFragments(24, null); }
+    @Test void postgisTopicFragments23() throws Exception { exchangeWithPostgis(23, this::exchangeTopicFragments); }
+    @Test void postgisTopicFragments24() throws Exception { exchangeWithPostgis(24, this::exchangeTopicFragments); }
 
     @Test void geoPackageSharedSource23() throws Exception { exchangeSharedSource(23, null); }
     @Test void geoPackageSharedSource24() throws Exception { exchangeSharedSource(24, null); }
@@ -501,6 +505,12 @@ final class DbInteropTest {
         var reference = new TestDatabase(postgres, "reference_topic_inherited");
         var own = new TestDatabase(postgres, "own_topic_inherited");
         new TopicCases(work, new ReferenceTool(reference.postgis()), version).inherited(reference, own);
+    }
+
+    private void exchangeTopicFragments(int version, PostgreSQLContainer postgres) throws Exception {
+        var reference = new TestDatabase(postgres, "reference_topic_fragments");
+        var own = new TestDatabase(postgres, "own_topic_fragments");
+        new TopicCases(work, new ReferenceTool(reference.postgis()), version).fragments(reference, own);
     }
 
     private void exchangeSharedSource(int version, PostgreSQLContainer postgres) throws Exception {
