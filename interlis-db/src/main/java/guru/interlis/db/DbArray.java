@@ -37,8 +37,7 @@ record DbArray(CollectionKind collection, SymbolRef structure, AttributeSlot fie
 
     static DbArray describe(TransferPlan plan, AttributeSlot outer) {
         String path = outer.name().declared().toString();
-        if (!(DbStructureShape.type(plan, outer) instanceof CollectionType repeated)
-                || repeated.collectionKind() != CollectionKind.LIST) {
+        if (!(DbStructureShape.type(plan, outer) instanceof CollectionType repeated)) {
             throw DbMapping.unsupported("coalesced array at " + path);
         }
         var type = plan.type(new TypeRef(plan.snapshotId(), repeated.elementType())).known().orElseThrow();

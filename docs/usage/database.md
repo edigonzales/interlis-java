@@ -498,9 +498,9 @@ expandierter innerer Strukturwert erhält eine eigene Typmarkierung und
 eigene Feldspalten in derselben Tabelle.
 
 In bestehenden Schemata mit ili2db-`--coalesceArray` kann eine
-`LIST OF`-Sammlung mit genau einem Feld je Strukturelement in einer
+`LIST OF`- oder `BAG OF`-Sammlung mit genau einem Feld je Strukturelement in einer
 Spalte liegen. Unterstützt sind Text, Boolean, 32-Bit-Ganzzahlen und
-Aufzählungen als XTF-Code. GeoPackage speichert ein
+Aufzählungen als XTF-Code. Duplikate bleiben erhalten. GeoPackage speichert ein
 JSON-Array in `TEXT`, PostGIS verwendet `varchar[]`, `boolean[]` oder
 `integer[]`. SQL `NULL` und leere Arrays ergeben ein fehlendes
 Attribut. Ein einzelnes `NULL`-Element ergibt bei `interlis-db` eine

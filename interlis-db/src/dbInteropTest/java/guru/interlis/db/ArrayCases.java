@@ -146,6 +146,34 @@ final class ArrayCases {
         }
     }
 
+    void bag(TestDatabase db) throws Exception {
+        String model = "ArrayBag" + version;
+        arraySource(model, "TEXT*40", "BAG");
+        schema(db, model);
+        var output = work.resolve("output.xtf");
+        var values = List.of("repeat", "other", "repeat");
+        referenceImport(db, "legacy", dataset(model, "legacy", values));
+        if (version == 24) {
+            referenceExport(db, "legacy", output);
+            var value = objects(output, "legacy").get("legacy-value");
+            var fields = children(value).stream().filter(field -> field.getLocalName().equals("Items")).toList();
+            assertEquals(1, fields.size());
+            assertEquals(3, children(fields.getFirst()).size());
+        }
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertBag(output, "legacy");
+        assertCliSuccess(db, "import", model, "native", dataset(model, "native", values));
+        referenceExport(db, "native", output);
+        assertBag(output, "native");
+    }
+
+    private void assertBag(Path output, String prefix) throws Exception {
+        var objects = objects(output, prefix);
+        assertNull(child(objects.get(prefix + "-missing"), "Items"));
+        assertEquals(List.of("other", "repeat", "repeat"),
+                items(objects.get(prefix + "-value"), "Items").stream().sorted().toList());
+    }
+
     private Path mixedLists(TestDatabase db, String model, List<String> expected) throws Exception {
         schema(db, model);
         var output = work.resolve("output.xtf");

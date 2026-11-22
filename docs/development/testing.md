@@ -96,7 +96,9 @@ gespeicherte SQL-Spaltennamen und den bekannten Referenzfehler bei
 JSON-Typen. Fehlerhafte Array-Werte lassen die XTF-Zieldatei intakt.
 Die `*ArrayInteger*`-Fälle prüfen typisierte Ganzzahlen und den Rollback,
 wenn ein Wert die 32-Bit-Kodierung übersteigt. Die `*ArrayEnumeration*`-Fälle
-prüfen benannte Aufzählungen und qualifizierte XTF-Codes.
+prüfen benannte Aufzählungen und qualifizierte XTF-Codes. Die
+`*ArrayBag*`-Fälle prüfen Duplikate, fehlende Werte und die gruppierte
+XTF-2.4-Ausgabe von ili2db.
 
 Die `*ExpandSingle*`-Fälle prüfen den Austausch optionaler flacher
 Strukturen mit ili2db-`--expandStruct`, das Umbenennen einer SQL-Spalte
