@@ -129,8 +129,14 @@ final class DbSchemaReader {
         }
         var mappedModels = new HashSet<>(selectedModels);
         roots.stream().map(ref -> plan.model(ref).orElseThrow().name().declared().last()).forEach(mappedModels::add);
+        var enumDefinitions = new HashSet<String>();
+        if (settings.enumOptions().lookup() == DbEnumOptions.Lookup.PER_DEFINITION) {
+            DbEnumLookup.definitions(plan, roots, selected, token).stream()
+                    .map(value -> DbEnumLookup.name(plan, value.declaration())).forEach(enumDefinitions::add);
+            if (DbEnumLookup.hasBoolean(plan, selected)) enumDefinitions.add(DbEnumLookup.BOOLEAN_DEFINITION);
+        }
         var scope = new MetadataScope(mappedModels, selected.stream()
-                .map(object -> object.name().declared().toString()).collect(Collectors.toSet()));
+                .map(object -> object.name().declared().toString()).collect(Collectors.toSet()), enumDefinitions);
         var classNames = readClassNames(db, scope);
         var unselectedOwners = new HashSet<String>();
         classNames.entrySet().removeIf(entry -> {
@@ -148,6 +154,7 @@ final class DbSchemaReader {
         var inheritance = readInheritance(db, scope);
         var names = new HashMap<SymbolRef, String>();
         var usedNames = new HashSet<String>();
+        readEnumTables(db, classNames, usedNames, enumDefinitions, settings.enumOptions().lookup(), token);
         var declarations = new ArrayList<DbInheritance.Declaration>();
         var associations = new ArrayList<EmbeddedAssociation>();
         var linkRoles = new HashMap<SymbolRef, List<AssociationRole>>();
@@ -195,12 +202,6 @@ final class DbSchemaReader {
             throw new DbException("Extra CLASSNAME/TRAFO/INHERITANCE mappings for " + modelName);
         }
         checkSystemTables(db);
-        if (settings.enumOptions().lookup() == DbEnumOptions.Lookup.SINGLE) {
-            String table = foldedName(Ili2dbLayout.ENUM);
-            requireColumns(db, table, physicalColumns(db, table), Map.of("thisclass", Kind.TEXT, "baseclass", Kind.TEXT,
-                    "ilicode", Kind.TEXT, "itfcode", Kind.INTEGER, "seq", Kind.INTEGER, "dispname", Kind.TEXT,
-                    "description", Kind.TEXT, "inactive", Kind.BOOLEAN));
-        }
         var layout = new DbInheritance(plan, declarations, settings.inheritance());
         for (var alias : layout.aliases()) {
             names.put(alias.object().symbol(), names.get(alias.owner()));
@@ -503,8 +504,11 @@ final class DbSchemaReader {
         var enumOptions = new DbEnumOptions(optionalSetting(settings, Ili2dbLayout.ENUM_ITF_CODE, "yes"),
                 optionalSetting(settings, Ili2dbLayout.ENUM_TEXT_COLUMN, "addTxtCol"),
                 optionalSetting(settings, Ili2dbLayout.ENUM_BEAUTIFY, "underscore"),
-                DbEnumOptions.Lookup.SINGLE.setting.equals(settings.get(Ili2dbLayout.ENUM_DEFINITIONS))
-                        ? DbEnumOptions.Lookup.SINGLE : DbEnumOptions.Lookup.NONE);
+                switch (settings.get(Ili2dbLayout.ENUM_DEFINITIONS)) {
+                    case "singleTable" -> DbEnumOptions.Lookup.SINGLE;
+                    case "multiTable" -> DbEnumOptions.Lookup.PER_DEFINITION;
+                    case null, default -> DbEnumOptions.Lookup.NONE;
+                });
         if ("multiTableWithId".equals(settings.get(Ili2dbLayout.ENUM_DEFINITIONS))) {
             throw unsupported("enumerations stored as SQL IDs");
         }
@@ -845,17 +849,18 @@ final class DbSchemaReader {
         return result;
     }
 
-    private record MetadataScope(Set<String> roots, Set<String> objects) {
+    private record MetadataScope(Set<String> roots, Set<String> objects, Set<String> enums) {
         List<String> models() {
             var models = new HashSet<>(roots);
             for (var object : objects) models.add(modelName(object));
+            for (var definition : enums) models.add(modelName(definition));
             return models.stream().sorted().toList();
         }
 
         boolean includes(String path) {
             int owner = path.indexOf('(');
             if (owner >= 0 && path.endsWith(")")) return includes(path.substring(owner + 1, path.length() - 1));
-            if (roots.contains(modelName(path)) || objects.contains(path)) return true;
+            if (roots.contains(modelName(path)) || objects.contains(path) || enums.contains(path)) return true;
             int position = path.indexOf('[');
             int member = position < 0 ? path.lastIndexOf('.') : path.lastIndexOf('.', position);
             return member >= 0 && objects.contains(path.substring(0, member));
@@ -1049,6 +1054,28 @@ final class DbSchemaReader {
         if (expected == null || mapping.target() == null || !key(db, expected).equals(key(db, mapping.target()))) {
             throw new DbException("Inconsistent ATTRNAME.target for " + path);
         }
+    }
+
+    private static void readEnumTables(Database db, Map<String, String> classNames, Set<String> usedNames,
+                                       Set<String> definitions, DbEnumOptions.Lookup mode, CancellationToken token) throws SQLException {
+        if (mode == DbEnumOptions.Lookup.SINGLE) {
+            requireEnumTable(db, foldedName(Ili2dbLayout.ENUM), true);
+        }
+        for (var definition : definitions.stream().sorted().toList()) {
+            token.throwIfCancellationRequested();
+            String table = classNames.remove(definition);
+            if (table == null || !usedNames.add(key(db, table)) || Ili2dbLayout.reservedTable(foldedName(table), db.gpkg())) {
+                throw new DbException("Missing or inconsistent enumeration CLASSNAME mapping for " + definition);
+            }
+            requireEnumTable(db, table, false);
+        }
+    }
+
+    private static void requireEnumTable(Database db, String table, boolean shared) throws SQLException {
+        var physical = physicalColumns(db, table);
+        requireColumns(db, table, physical, Map.of("ilicode", Kind.TEXT, "itfcode", Kind.INTEGER, "seq", Kind.INTEGER,
+                "dispname", Kind.TEXT, "description", Kind.TEXT, "inactive", Kind.BOOLEAN));
+        if (shared) requireColumns(db, table, physical, Map.of("thisclass", Kind.TEXT, "baseclass", Kind.TEXT));
     }
 
     private static void checkSystemTables(Database db) throws SQLException {

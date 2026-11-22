@@ -4,7 +4,7 @@ record DbEnumOptions(boolean itfCodes, boolean textColumns, boolean beautify, Lo
     static final DbEnumOptions DEFAULT = new DbEnumOptions(false, false, false, Lookup.NONE);
 
     enum Lookup {
-        NONE(null), SINGLE("singleTable");
+        NONE(null), SINGLE("singleTable"), PER_DEFINITION("multiTable");
 
         final String setting;
 

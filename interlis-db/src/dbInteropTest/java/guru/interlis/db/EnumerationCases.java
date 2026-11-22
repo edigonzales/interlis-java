@@ -23,6 +23,7 @@ import static guru.interlis.db.DbInteropTest.referenceDatasetFixture;
 import static guru.interlis.db.DbInteropTest.scalar;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 final class EnumerationCases {
@@ -152,6 +153,44 @@ final class EnumerationCases {
                 assertEquals(before, rows(sql, query));
             }
         }
+    }
+
+    void perLookup(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "EnumTables" + version;
+        var ili = source(model, BASE + "CLASS Asset_DirectValue = Memo : TEXT*40; END Asset_DirectValue;");
+        schema(expected, model, "--createEnumTabs");
+        create(own, model, ili, "--create-enum-tabs");
+        assertSameCatalog(expected, own);
+        for (var db : List.of(expected, own)) {
+            try (var sql = db.connect()) {
+                String direct = mappedTable(db, sql, model + ".Data.Asset.DirectValue");
+                String collision = mappedTable(db, sql, model + ".Data.Asset_DirectValue");
+                assertEquals("asset_directvalue", collision);
+                assertNotEquals(collision, direct);
+                assertEquals("No_Sign", scalar(sql, "SELECT ilicode FROM " + db.table(direct) + " WHERE itfcode = 0"));
+                String bool = mappedTable(db, sql, "INTERLIS.BOOLEAN");
+                assertEquals(List.of(List.of("false", "0"), List.of("true", "1")),
+                        rows(sql, "SELECT ilicode, itfcode FROM " + db.table(bool) + " ORDER BY itfcode"));
+                String grade = mappedTable(db, sql, model + ".Data.Grade");
+                assertEquals("Family.Alpha", scalar(sql, "SELECT ilicode FROM " + db.table(grade) + " WHERE itfcode = 2"));
+                execute(sql, "ALTER TABLE " + db.table(grade) + " RENAME TO stored_grade");
+                execute(sql, "UPDATE " + db.table("t_ili2db_classname") + " SET sqlname = 'stored_grade' WHERE sqlname = '" + grade + "'");
+                execute(sql, "UPDATE " + db.table("t_ili2db_table_prop") + " SET tablename = 'stored_grade' WHERE tablename = '" + grade + "'");
+                if (!db.postgis()) {
+                    execute(sql, "UPDATE gpkg_contents SET table_name = 'stored_grade', identifier = 'stored_grade' WHERE table_name = '" + grade + "'");
+                }
+            }
+            mixScalars(db, model);
+            try (var sql = db.connect()) {
+                assertEquals("Family.Alpha", scalar(sql, "SELECT gradevalue FROM " + db.table("asset")
+                        + " WHERE t_ili_tid = 'native-value'"));
+                assertEquals("4", scalar(sql, "SELECT count(*) FROM " + db.table("stored_grade")));
+            }
+        }
+    }
+
+    private static String mappedTable(TestDatabase db, Connection sql, String path) throws Exception {
+        return scalar(sql, "SELECT sqlname FROM " + db.table("t_ili2db_classname") + " WHERE iliname = '" + path + "'");
     }
 
     private static List<List<String>> rows(Connection sql, String query) throws Exception {

@@ -137,12 +137,8 @@ final class SchemaSql {
     private static List<String> ddl(SchemaPlan plan, Dialect dialect, boolean newSchema, boolean createGeometryIndexes) {
         var commands = new ArrayList<String>();
         if (newSchema && !dialect.gpkg()) commands.add("CREATE SEQUENCE " + dialect.table(SEQUENCE));
-        if (newSchema && plan.enumOptions().lookup() == DbEnumOptions.Lookup.SINGLE) {
-            commands.add(dialect.create(Ili2dbLayout.ENUM,
-                    "thisClass " + dialect.text(1024) + " NOT NULL, baseClass " + dialect.text(1024)
-                            + ", seq INTEGER, inactive BOOLEAN NOT NULL, iliCode " + dialect.text(1024)
-                            + " NOT NULL, itfCode INTEGER NOT NULL, dispName " + dialect.text(250)
-                            + " NOT NULL, description TEXT"));
+        for (var lookup : plan.enumLookups()) {
+            if (lookup.create()) commands.add(enumTable(lookup, dialect));
         }
         var storage = new java.util.HashSet<>(plan.addedStorageTables());
         for (var table : plan.addedTables()) {
@@ -265,6 +261,13 @@ final class SchemaSql {
                     row(transformations, name, INHERITANCE_TAG, declaration.strategy().value);
                 }
             }
+            for (var lookup : plan.enumLookups()) {
+                token.throwIfCancellationRequested();
+                if (lookup.create() && lookup.mappedName().isPresent()) {
+                    row(classes, lookup.mappedName().orElseThrow(), lookup.table());
+                    row(tableProps, lookup.table(), PREFIX + "tableKind", "ENUM");
+                }
+            }
             var transformedAttributes = new HashSet<String>();
             for (var table : plan.addedTables()) {
                 token.throwIfCancellationRequested();
@@ -331,26 +334,43 @@ final class SchemaSql {
         }
     }
 
+    private static String enumTable(DbEnumLookup lookup, Dialect dialect) {
+        String fields = "seq INTEGER, inactive BOOLEAN NOT NULL, iliCode " + dialect.text(1024) + " NOT NULL";
+        String label = ", dispName " + dialect.text(250) + " NOT NULL, description TEXT";
+        String columns = lookup.mappedName().isEmpty()
+                ? "thisClass " + dialect.text(1024) + " NOT NULL, baseClass " + dialect.text(1024) + ", "
+                    + fields + ", itfCode INTEGER NOT NULL"
+                : "itfCode INTEGER" + dialect.primary() + ", iliCode " + dialect.text(1024)
+                    + " NOT NULL, seq INTEGER, inactive BOOLEAN NOT NULL";
+        return dialect.create(lookup.table(), columns + label);
+    }
+
     private static void writeEnumLookups(Connection connection, SchemaPlan plan, Dialect dialect, boolean newSchema,
                                          CancellationToken token) throws SQLException {
         for (var lookup : plan.enumLookups()) {
+            boolean shared = lookup.mappedName().isEmpty();
+            if (!lookup.create() && !shared) continue;
             String table = dialect.table(lookup.table());
-            String sql = "INSERT INTO " + table
-                    + " (thisClass, baseClass, iliCode, itfCode, seq, dispName, description, inactive)"
-                    + (newSchema ? " VALUES (?, ?, ?, ?, ?, ?, ?, ?)" : " SELECT ?, ?, ?, ?, ?, ?, ?, ?"
-                            + " WHERE NOT EXISTS (SELECT 1 FROM " + table + " WHERE thisClass = ? AND iliCode = ?)");
+            boolean add = shared && !newSchema && !lookup.create();
+            String sql = "INSERT INTO " + table + " (iliCode, itfCode, seq, dispName, description, inactive"
+                    + (shared ? ", thisClass, baseClass)" : ")")
+                    + (add ? " SELECT ?, ?, ?, ?, ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM " + table
+                            + " WHERE thisClass = ? AND iliCode = ?)"
+                            : shared ? " VALUES (?, ?, ?, ?, ?, ?, ?, ?)" : " VALUES (?, ?, ?, ?, ?, ?)");
             try (var statement = connection.prepareStatement(sql)) {
                 for (var row : lookup.rows()) {
                     token.throwIfCancellationRequested();
-                    statement.setString(1, row.definition());
-                    statement.setString(2, row.base());
-                    statement.setString(3, row.path());
-                    statement.setInt(4, row.itfCode());
-                    statement.setObject(5, row.sequence(), java.sql.Types.INTEGER);
-                    statement.setString(6, row.label());
-                    statement.setString(7, row.documentation());
-                    statement.setBoolean(8, false);
-                    if (!newSchema) {
+                    statement.setString(1, row.path());
+                    statement.setInt(2, row.itfCode());
+                    statement.setObject(3, row.sequence(), java.sql.Types.INTEGER);
+                    statement.setString(4, row.label());
+                    statement.setString(5, row.documentation());
+                    statement.setBoolean(6, false);
+                    if (shared) {
+                        statement.setString(7, row.definition());
+                        statement.setString(8, row.base());
+                    }
+                    if (add) {
                         statement.setString(9, row.definition());
                         statement.setString(10, row.path());
                     }

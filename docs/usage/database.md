@@ -133,6 +133,10 @@ Mit `--create-single-enum-tab` werden die Aufzählungswerte und
 ihre Metadaten in `T_ILI2DB_ENUM` abgelegt, entsprechend ili2db
 `--createSingleEnumTab`. Die Tabelle führt jede Definition mit ihrer
 eigenen Zuordnung von XTF- und ITF-Codes.
+Mit `--create-enum-tabs` erhält jede Definition eine eigene
+Lookup-Tabelle, entsprechend ili2db `--createEnumTabs`. `CLASSNAME`
+enthält ihren SQL-Namen. Fachspalten verwenden weiterhin die separat
+gewählte Kodierung.
 
 ## Bestehendes Schema ergänzen
 

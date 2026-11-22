@@ -141,7 +141,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         }
         return new SchemaPlan(mapping, modelFiles, addedTables, addedAssociations, addedCompositions, properties, geometries,
                 splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations,
-                DbEnumLookup.plan(mapping, enumOptions, token));
+                DbEnumLookup.plan(mapping, names, enumOptions, token));
     }
 
     List<String> addedStorageTables() { return DbMapping.storageTables(addedTables); }

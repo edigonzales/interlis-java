@@ -46,7 +46,7 @@ public final class Main {
                     [--inheritance smart1|smart2] [--coalesce-catalogue-ref] [--expand-multilingual] [--expand-localised]
                     [--coalesce-multi-point] [--coalesce-multi-line] [--coalesce-multi-surface] [--expand-struct] [--coalesce-json] [--coalesce-array]
                     [--create-enum-col-as-itf-code] [--create-enum-txt-col] [--beautify-enum-disp-name]
-                    [--create-single-enum-tab]
+                    [--create-single-enum-tab | --create-enum-tabs]
                     [--stroke-arcs] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.
@@ -225,7 +225,7 @@ public final class Main {
                 "--default-epsg", "--alt-srs-model", "--export-model", "--inheritance");
 
         private static final Set<String> ENUM_OPTIONS = Set.of("--create-enum-col-as-itf-code",
-                "--create-enum-txt-col", "--beautify-enum-disp-name", "--create-single-enum-tab");
+                "--create-enum-txt-col", "--beautify-enum-disp-name", "--create-single-enum-tab", "--create-enum-tabs");
 
         static Options parse(String[] args) {
             Command command = switch (args.length == 0 ? "" : args[0]) {
@@ -367,9 +367,12 @@ public final class Main {
             if (addModels && schemaFlags.stream().anyMatch(ENUM_OPTIONS::contains)) {
                 throw new IllegalArgumentException("--add-models uses the existing schema's enumeration settings");
             }
+            boolean singleEnum = schemaFlags.contains("--create-single-enum-tab");
+            boolean enumTables = schemaFlags.contains("--create-enum-tabs");
+            if (singleEnum && enumTables) throw new IllegalArgumentException("Choose one enumeration lookup table option");
             var enumOptions = new DbEnumOptions(schemaFlags.contains("--create-enum-col-as-itf-code"),
                     schemaFlags.contains("--create-enum-txt-col"), schemaFlags.contains("--beautify-enum-disp-name"),
-                    schemaFlags.contains("--create-single-enum-tab") ? DbEnumOptions.Lookup.SINGLE : DbEnumOptions.Lookup.NONE);
+                    singleEnum ? DbEnumOptions.Lookup.SINGLE : enumTables ? DbEnumOptions.Lookup.PER_DEFINITION : DbEnumOptions.Lookup.NONE);
             var srsModels = Optional.ofNullable(alternateSrsModel).map(value -> DbCrsPair.Models.parse(value, models.getFirst()));
             return new Options(command, List.copyOf(models), dataset, file, gpkg, pgUrl, schema, user,
                     schemaFlags.contains("--create-geom-index"),

@@ -100,6 +100,9 @@ manuell geänderte Anzeigetexte und das Leeren der Spalten per `update`.
 Die `*EnumSingleLookup*`-Fälle vergleichen Katalog, Reihenfolge, Texte
 und Vererbungsmetadaten der gemeinsamen Lookup-Tabelle. Gemischte
 Transfers erhalten manuell geänderte Lookup-Zeilen.
+Die `*EnumPerLookup*`-Fälle prüfen den Katalog für Lookup-Tabellen pro
+Definition, eine Namenskollision und einen gespeicherten SQL-Namen
+nach dem Umbenennen einer Lookup-Tabelle.
 
 Die `*ArrayText*`-Fälle prüfen Reihenfolge, Duplikate, Sonderzeichen,
 gespeicherte SQL-Spaltennamen und den bekannten Referenzfehler bei

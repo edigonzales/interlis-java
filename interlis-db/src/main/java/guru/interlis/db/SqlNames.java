@@ -40,6 +40,10 @@ final class SqlNames {
 
     boolean hasClass(String name) { return storedClasses.containsKey(name); }
 
+    String storedClass(String name) { return storedClasses.get(name); }
+
+    boolean hasTable(String name) { return tables.contains(Ili2dbLayout.foldedName(name)); }
+
     boolean hasAttribute(String name) { return storedAttributes.contains(name); }
 
     String mappedTable(String declared, String model, String topic, String className) {
