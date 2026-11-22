@@ -79,6 +79,11 @@ einen Raumindex. GeoPackage registriert `gpkg_rtree_index` mit der
 virtuellen Tabelle und ihren Standardtriggern. PostGIS legt einen GiST-Index an.
 Die entsprechende Option in ili2db 5.5.2 ist `--createGeomIdx`.
 
+Mit `schemaimport --coalesce-catalogue-ref` erzeugt das Kommando die
+kompakte SQL-Abbildung für CHBase-V1-Katalogreferenzen, entsprechend
+`--coalesceCatalogueRef` in ili2db. Die Option gilt beim Anlegen eines
+`newClass`- oder Smart2-Schemas.
+
 ## Bestehendes Schema ergänzen
 
 ```sh

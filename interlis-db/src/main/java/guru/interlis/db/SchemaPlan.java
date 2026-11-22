@@ -46,7 +46,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                   List<DbMapping.Table> addedTables, List<DbMapping.EmbeddedAssociation> addedAssociations,
                   List<DbMapping.Composition> addedCompositions,
                   List<ColumnProperty> columnProperties, Map<String, List<GeometryColumn>> geometryColumns,
-                  boolean splitGeometries, int defaultEpsg, boolean multiSrs) {
+                  boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean coalesceCatalogueRef) {
     record ModelFile(String filename, LanguageVersion version, String modelNames, String content) { }
 
     record ColumnProperty(String table, String subtype, String column, String key, String value) { }
@@ -79,12 +79,13 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                            int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels, SqlNames names,
                            CancellationToken token) throws IOException {
         return read(models, file, imports, gpkg, splitGeometries, defaultEpsg, multiSrs, srsModels, names,
-                DbInheritance.Profile.NEW_CLASS, token);
+                DbInheritance.Profile.NEW_CLASS, false, token);
     }
 
     static SchemaPlan read(List<String> models, Path file, List<Path> imports, boolean gpkg, boolean splitGeometries,
                            int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels, SqlNames names,
-                           DbInheritance.Profile inheritance, CancellationToken token) throws IOException {
+                           DbInheritance.Profile inheritance, boolean coalesceCatalogueRef, CancellationToken token)
+            throws IOException {
         var files = new ArrayList<Path>();
         files.add(file);
         files.addAll(imports);
@@ -102,7 +103,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             filenames.put(source.id(), path.getFileName().toString());
         }
         var mapping = DbMapping.planNew(models, sources.values(), gpkg, splitGeometries, defaultEpsg, multiSrs,
-                srsModels, names, inheritance, token);
+                srsModels, names, inheritance, coalesceCatalogueRef, token);
         var declarations = mapping.plan().models().stream()
                 .map(model -> (ModelSymbol) symbol(mapping, model.symbol()))
                 .collect(Collectors.groupingBy(model -> origin(model).range().source()));
@@ -146,14 +147,19 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                     Ili2dbLayout.PREFIX + "foreignKey", parent.name()));
         }
         return new SchemaPlan(mapping, modelFiles, addedTables, addedAssociations, addedCompositions, properties, geometries,
-                splitGeometries, defaultEpsg, multiSrs);
+                splitGeometries, defaultEpsg, multiSrs, coalesceCatalogueRef);
     }
 
     List<String> addedStorageTables() { return DbMapping.storageTables(addedTables); }
 
+    String tableKind(DbMapping.Table table) {
+        return DbCatalogueReference.isCatalogueItem(mapping.plan(), table.object())
+                ? "CATALOGUE" : table.object().kind().name();
+    }
+
     SchemaPlan withModelFiles(List<ModelFile> files) {
         return new SchemaPlan(mapping, files, addedTables, addedAssociations, addedCompositions, columnProperties,
-                geometryColumns, splitGeometries, defaultEpsg, multiSrs);
+                geometryColumns, splitGeometries, defaultEpsg, multiSrs, coalesceCatalogueRef);
     }
 
     private static Origin.DeclaredOrigin origin(ModelSymbol model) {

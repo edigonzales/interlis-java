@@ -521,12 +521,13 @@ final class DbMapping {
     static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, CancellationToken token) {
         return planNew(List.of(modelName), List.of(source), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(),
-                new SqlNames(), DbInheritance.Profile.NEW_CLASS, token);
+                new SqlNames(), DbInheritance.Profile.NEW_CLASS, false, token);
     }
 
     static DbMapping planNew(List<String> modelNames, Collection<SourceText> sources, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels,
-                             SqlNames allocator, DbInheritance.Profile profile, CancellationToken token) {
+                             SqlNames allocator, DbInheritance.Profile profile, boolean coalesceCatalogueRef,
+                             CancellationToken token) {
         var models = srsModels.map(DbCrsPair.Models::names).orElse(modelNames);
         TransferPlan plan = DbModelSources.compile(models, sources, "model files", token);
         var crs = new CrsDefaults(defaultEpsg, 0);
@@ -583,8 +584,15 @@ final class DbMapping {
                         roleColumn(role.slot(), role.target(), role.slot().name().declared().last()), role.slot().role().ordered()));
             }
             for (var contributor : relation.contributors()) {
-                for (var attribute : attributes(contributor)) {
+                for (var attribute : storageAttributes(object, contributor)) {
                     String attributeName = attribute.name().declared().last();
+                    var catalogue = coalesceCatalogueRef ? DbCatalogueReference.describe(plan, attribute)
+                            : Optional.<DbCatalogueReference>empty();
+                    if (catalogue.isPresent()) {
+                        var binding = catalogueColumn(plan, contributor, attribute, catalogue.orElseThrow());
+                        columns.addAll(planReferences(allocator, names, inheritance, name, discriminator, gpkg, binding, false));
+                        continue;
+                    }
                     var composition = describeComposition(plan, object, attribute, child -> {
                         String childName = names.get(child);
                         if (childName == null) throw unsupported("structure storage at " + attribute.name().declared());
@@ -596,7 +604,8 @@ final class DbMapping {
                         compositions.add(edge);
                         continue;
                     }
-                    for (var binding : describeColumns(plan, contributor, attribute, crs, crsPair)) {
+                    var declaration = attribute.member().overridden() ? object : contributor;
+                    for (var binding : describeColumns(plan, declaration, attribute, crs, crsPair)) {
                         if (binding.kind() == Kind.REFERENCE) {
                             columns.addAll(planReferences(allocator, names, inheritance, name, discriminator, gpkg, binding, false));
                             continue;

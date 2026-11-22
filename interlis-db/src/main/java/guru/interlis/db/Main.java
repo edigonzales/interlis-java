@@ -42,7 +42,8 @@ public final class Main {
                     [--add-models]
                     [--default-epsg CODE] [--multi-srs [--alt-srs-model ORIGINAL=ALTERNATE]]
                     [--model-file IMPORT.ili]...
-                    [--inheritance smart1|smart2] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
+                    [--inheritance smart1|smart2] [--coalesce-catalogue-ref]
+                    [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.
             """;
@@ -108,7 +109,7 @@ public final class Main {
         }
         var plan = SchemaPlan.read(options.models(), options.file(), options.modelFiles(), options.gpkg() != null,
                 options.splitGeometries(), options.defaultEpsg(), options.multiSrs(), options.srsModels(), new SqlNames(),
-                options.inheritance(), cancellation);
+                options.inheritance(), options.coalesceCatalogueRef(), cancellation);
         cancellation.throwIfCancellationRequested();
         if (options.gpkg() != null) {
             GeoPackageSchema.create(options.gpkg(), plan, options.createGeometryIndexes(), cancellation);
@@ -214,7 +215,7 @@ public final class Main {
                            boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean addModels,
                            boolean explicitEpsg, boolean explicitLayout,
                            Optional<DbCrsPair.Models> srsModels, List<Path> modelFiles, Optional<String> exportModel,
-                           DbInheritance.Profile inheritance) {
+                           DbInheritance.Profile inheritance, boolean coalesceCatalogueRef) {
         private static final Set<String> NAMES = Set.of("--dataset", "--gpkg", "--pg-url", "--schema", "--user",
                 "--default-epsg", "--alt-srs-model", "--export-model", "--inheritance");
 
@@ -236,7 +237,8 @@ public final class Main {
             for (int i = 1; i < args.length; i++) {
                 String arg = args[i];
                 if (arg.equals("--create-geom-index") || arg.equals("--one-geom-per-table")
-                        || arg.equals("--gpkg-multi-geom-per-table") || arg.equals("--multi-srs") || arg.equals("--add-models")) {
+                        || arg.equals("--gpkg-multi-geom-per-table") || arg.equals("--multi-srs") || arg.equals("--add-models")
+                        || arg.equals("--coalesce-catalogue-ref")) {
                     if (command != Command.SCHEMAIMPORT) {
                         throw new IllegalArgumentException(arg + " is only valid with schemaimport");
                     }
@@ -339,12 +341,16 @@ public final class Main {
                 case "smart2" -> DbInheritance.Profile.SMART2;
                 default -> throw new IllegalArgumentException("Expected --inheritance smart1 or smart2");
             };
+            boolean coalesceCatalogueRef = schemaFlags.contains("--coalesce-catalogue-ref");
+            if (coalesceCatalogueRef && (addModels || inheritance == DbInheritance.Profile.SMART1)) {
+                throw new IllegalArgumentException("--coalesce-catalogue-ref requires a new schema with newClass or Smart2 inheritance");
+            }
             var srsModels = Optional.ofNullable(alternateSrsModel).map(value -> DbCrsPair.Models.parse(value, models.getFirst()));
             return new Options(command, List.copyOf(models), dataset, file, gpkg, pgUrl, schema, user,
                     schemaFlags.contains("--create-geom-index"),
                     oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg, multiSrs, addModels,
                     epsg != null, oneGeometryPerTable || multipleGeoPackageGeometries, srsModels,
-                    List.copyOf(modelFiles), exportModel, inheritance);
+                    List.copyOf(modelFiles), exportModel, inheritance, coalesceCatalogueRef);
         }
 
         void checkPaths() throws IOException {

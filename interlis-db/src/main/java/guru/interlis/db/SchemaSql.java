@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,7 +19,9 @@ import static guru.interlis.db.Ili2dbLayout.ATTRNAME;
 import static guru.interlis.db.Ili2dbLayout.ATTRNAME_KEY;
 import static guru.interlis.db.Ili2dbLayout.BASKET;
 import static guru.interlis.db.Ili2dbLayout.BASKET_COLUMN;
+import static guru.interlis.db.Ili2dbLayout.CATALOGUE_REF_TAG;
 import static guru.interlis.db.Ili2dbLayout.CLASSNAME;
+import static guru.interlis.db.Ili2dbLayout.COALESCE;
 import static guru.interlis.db.Ili2dbLayout.COLUMN_PROP;
 import static guru.interlis.db.Ili2dbLayout.DATASET;
 import static guru.interlis.db.Ili2dbLayout.DATASET_KEY;
@@ -255,6 +258,7 @@ final class SchemaSql {
                     row(transformations, name, INHERITANCE_TAG, declaration.strategy().value);
                 }
             }
+            var catalogueAttributes = new HashSet<String>();
             for (var table : plan.addedTables()) {
                 token.throwIfCancellationRequested();
                 String name = table.object().name().declared().toString();
@@ -266,7 +270,7 @@ final class SchemaSql {
                     row(colProps, table.name(), null, ID_COLUMN, PREFIX + "foreignKey",
                             base.orElseThrow().name());
                 } else {
-                    row(tableProps, table.name(), PREFIX + "tableKind", table.object().kind().name());
+                    row(tableProps, table.name(), PREFIX + "tableKind", plan.tableKind(table));
                 }
                 if (table.hasDiscriminator()) {
                     String types = plan.mapping().objectStorage().stream()
@@ -281,6 +285,9 @@ final class SchemaSql {
                     String target = column.target().isPresent() ? plan.mapping().table(column.targetRelation()).name() : null;
                     String path = Ili2dbLayout.geometryAttribute(column.slot().name().declared().toString(), column.epsgCode(), plan.multiSrs());
                     row(attributes, path, column.name(), table.name(), target);
+                    if (column.catalogueReference().isPresent() && catalogueAttributes.add(path)) {
+                        row(transformations, path, CATALOGUE_REF_TAG, COALESCE);
+                    }
                 }
                 for (var secondary : table.secondaryGeometries()) {
                     var column = secondary.column();
@@ -327,6 +334,7 @@ final class SchemaSql {
         row(statement, PREFIX + "maxSqlNameLength", "60");
         String inheritance = plan.mapping().profile().setting;
         if (inheritance != null) row(statement, PREFIX + "inheritanceTrafo", inheritance);
+        if (plan.coalesceCatalogueRef()) row(statement, CATALOGUE_REF_TAG, COALESCE);
         row(statement, "ch.interlis.ili2c.ilidirs", "%ILI_FROM_DB");
         if (plan.multiSrs()) row(statement, Ili2dbLayout.USE_EPSG_IN_NAMES, "True");
         if (plan.mapping().crsPair().isPresent()) {

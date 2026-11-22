@@ -31,10 +31,18 @@ record DbCatalogueReference(SymbolRef structure, AttributeSlot field, ReferenceT
     }
 
     static boolean isWrapper(TransferPlan plan, ObjectDescriptor structure) {
-        for (var current = structure; ; current = plan.object(current.baseType().orElseThrow()).orElseThrow()) {
-            if (isBase(current)) return true;
-            if (current.baseType().isEmpty()) return false;
+        return isBase(root(plan, structure));
+    }
+
+    static boolean isCatalogueItem(TransferPlan plan, ObjectDescriptor object) {
+        return root(plan, object).name().declared().toString().equals("CatalogueObjects_V1.Catalogues.Item");
+    }
+
+    private static ObjectDescriptor root(TransferPlan plan, ObjectDescriptor object) {
+        while (object.baseType().isPresent()) {
+            object = plan.object(object.baseType().orElseThrow()).orElseThrow();
         }
+        return object;
     }
 
     static boolean isBase(ObjectDescriptor structure) {

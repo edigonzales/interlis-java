@@ -116,6 +116,10 @@ final class DbInteropTest {
     @Test void geoPackageCatalogueSmart224() throws Exception { exchangeCatalogueSmart2(24, null); }
     @Test void postgisCatalogueSmart223() throws Exception { exchangeWithPostgis(23, this::exchangeCatalogueSmart2); }
     @Test void postgisCatalogueSmart224() throws Exception { exchangeWithPostgis(24, this::exchangeCatalogueSmart2); }
+    @Test void geoPackageCatalogueSchema23() throws Exception { exchangeCatalogueSchema(23, null); }
+    @Test void geoPackageCatalogueSchema24() throws Exception { exchangeCatalogueSchema(24, null); }
+    @Test void postgisCatalogueSchema23() throws Exception { exchangeWithPostgis(23, this::exchangeCatalogueSchema); }
+    @Test void postgisCatalogueSchema24() throws Exception { exchangeWithPostgis(24, this::exchangeCatalogueSchema); }
 
     private void exchangeCatalogueReference(int version, PostgreSQLContainer postgres) throws Exception {
         var db = new TestDatabase(postgres, "catalogue_reference");
@@ -127,6 +131,13 @@ final class DbInteropTest {
     private void exchangeCatalogueSmart2(int version, PostgreSQLContainer postgres) throws Exception {
         var db = new TestDatabase(postgres, "catalogue_smart2");
         new CatalogueCases(work, new ReferenceTool(db.postgis()), version).smart2(db);
+    }
+
+    private void exchangeCatalogueSchema(int version, PostgreSQLContainer postgres) throws Exception {
+        var baseline = new TestDatabase(postgres, "catalogue_reference_newclass");
+        new CatalogueCases(work, new ReferenceTool(baseline.postgis()), version).schema(baseline,
+                new TestDatabase(postgres, "catalogue_native_newclass"), new TestDatabase(postgres, "catalogue_reference_smart2"),
+                new TestDatabase(postgres, "catalogue_native_smart2"));
     }
 
     @Test void geoPackageSmart1Scalars23() throws Exception { exchangeSmart1Scalars(23, null); }

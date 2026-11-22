@@ -97,6 +97,10 @@ Sprachversionen. Die Fälle prüfen die Ziel-ID im separaten Katalogdatensatz,
 leere Strukturen, Rollback bei fehlendem Ziel und fehlerhafte Metadaten.
 `*DbInteropTest.*CatalogueSmart2*` prüft zusätzlich alternative Zielspalten,
 mehrdeutige Ziel-TIDs und den atomaren Export bei doppelt belegten Spalten.
+`*DbInteropTest.*CatalogueSchema*` vergleicht den SQL-Katalog der
+`newClass`- und Smart2-Schemata mit ili2db. Die Mischläufe prüfen
+anschliessend die gemeinsame ID-Vergabe und den Schutz referenzierter
+Katalogdatensätze beim Löschen.
 
 `*DbInteropTest.*Smart*` prüft Smart1 und Smart2 mit XTF 2.3 und 2.4.
 Die Fälle vergleichen beide Werkzeugrichtungen, physische Eigentümer

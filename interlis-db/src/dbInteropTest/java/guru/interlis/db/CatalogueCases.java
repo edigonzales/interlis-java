@@ -2,6 +2,7 @@ package guru.interlis.db;
 
 import guru.interlis.db.DbInteropTest.ReferenceTool;
 import guru.interlis.db.DbInteropTest.TestDatabase;
+import guru.interlis.execution.CancellationToken;
 import org.w3c.dom.Element;
 
 import java.nio.file.Files;
@@ -16,6 +17,7 @@ import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
+import static guru.interlis.db.DbInteropTest.cli;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
@@ -152,6 +154,63 @@ final class CatalogueCases {
         assertNoFailedImport(db, "ambiguous");
     }
 
+    void schema(TestDatabase referenceNewClass, TestDatabase ownNewClass,
+                TestDatabase referenceSmart2, TestDatabase ownSmart2) throws Exception {
+        String model = "CatalogueSurvey" + version;
+        var source = fixture(model + ".ili");
+        var catalog = fixture(model + "-catalog.xtf");
+        var survey = fixture(model + "-survey.xtf");
+        createAndCompare(referenceNewClass, ownNewClass, model, source, false);
+        exchangeInOwnSchema(ownNewClass, model, catalog, survey, "material-a", false);
+        createAndCompare(referenceSmart2, ownSmart2, model, source, true);
+        Files.writeString(survey, Files.readString(survey).replaceFirst("material-a", "secondary-a"));
+        exchangeInOwnSchema(ownSmart2, model, catalog, survey, "secondary-a", true);
+    }
+
+    private void createAndCompare(TestDatabase baseline, TestDatabase own, String model, Path source, boolean smart2)
+            throws Exception {
+        referenceSchema(baseline, model, smart2);
+        String[] options = smart2 ? new String[]{"--coalesce-catalogue-ref", "--inheritance", "smart2"}
+                : new String[]{"--coalesce-catalogue-ref"};
+        var result = cli(own, "schemaimport", model, null, source, CancellationToken.none(), options);
+        assertEquals(0, result.code(), result::diagnostics);
+        try (var expected = baseline.connect(); var actual = own.connect()) {
+            var ref = DbSchemaCatalog.read(expected, baseline.postgis(), baseline.schema());
+            var nativeSchema = DbSchemaCatalog.read(actual, own.postgis(), own.schema());
+            if (smart2) {
+                ref.canonicalReferenceAlternatives().assertSameAs(nativeSchema.canonicalReferenceAlternatives());
+            } else {
+                ref.assertSameAs(nativeSchema);
+            }
+        }
+    }
+
+    private void exchangeInOwnSchema(TestDatabase db, String model, Path catalog, Path survey, String target, boolean smart2)
+            throws Exception {
+        var output = work.resolve("schema-output.xtf");
+        referenceImport(db, "catalog", catalog);
+        referenceImport(db, "legacy", survey);
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertSurvey(output, model, "survey", target);
+        assertCliSuccess(db, "import", model, "native", surveyWithPrefix(survey, "native"));
+        referenceExport(db, "native", output);
+        assertSurvey(output, model, "native", target);
+        referenceImport(db, "tail", surveyWithPrefix(survey, "tail"));
+        assertCliSuccess(db, "export", model, "tail", output);
+        assertSurvey(output, model, "tail", target);
+
+        assertCliFailure(db, "delete", model, "catalog", null, "Cannot delete referenced object T_Id");
+        try (var sql = db.connect()) {
+            String targets = smart2 ? "material" : "item";
+            var tables = List.of(targets, "asset", "t_ili2db_dataset", "t_ili2db_basket");
+            var ids = new ArrayList<>(tables.stream().map(table -> "SELECT t_id FROM " + db.table(table)).toList());
+            if (smart2) ids.add("SELECT t_id FROM " + db.table("asecondary"));
+            assertEquals("19", scalar(sql, "SELECT count(DISTINCT t_id) FROM (" + String.join(" UNION ALL ", ids) + ") ids"));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")
+                    + " WHERE datasetName='catalog'"));
+        }
+    }
+
     private void assertDirectReference(Path output, String prefix) throws Exception {
         var basket = children(readDataSection(output, version)).getFirst();
         assertEquals(prefix + "-b", id(basket, version, "bid"));
@@ -218,7 +277,7 @@ final class CatalogueCases {
     }
 
     private void referenceImport(TestDatabase db, String dataset, Path input) throws Exception {
-        reference.run(db, work.toString(), "--import", "--dataset", dataset, "--importBid", "--importTid", input.toString());
+        reference.run(db, "%ILI_FROM_DB", "--import", "--dataset", dataset, "--importBid", "--importTid", input.toString());
     }
 
     private void referenceExport(TestDatabase db, String dataset, Path output) throws Exception {
