@@ -230,6 +230,10 @@ Bei polymorphen Referenzattributen und ungeordneten Rollen verwendet
 Smart2 alternative Fremdschlüsselspalten. Der Import befüllt die
 passende Zielspalte. Mehrere gleichzeitig belegte Zielspalten für
 eine Referenz führen zu einer Diagnose.
+Optionale Strukturen und `LIST OF` können in beiden Smart-Profilen
+von einer Basisklasse geerbt werden. Die gespeicherte Rückverweisspalte
+gehört zur tatsächlichen Eigentümertabelle. Jede Strukturzeile hat
+genau einen Eigentümer und behält ihre Listenposition.
 
 Unterstützt sind Klassen eines eigenständigen Modells in
 INTERLIS 2.3 und 2.4 mit Text, Boolean, 32-Bit-Ganzzahlen und Aufzählungen als

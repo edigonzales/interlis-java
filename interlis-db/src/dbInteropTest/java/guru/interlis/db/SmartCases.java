@@ -195,6 +195,59 @@ final class SmartCases {
         for (var link : links) assertEquals(prefix + "-survey", id(child(link, "CheckedSurvey"), version, "ref"));
     }
 
+    void structures(TestDatabase smart1, TestDatabase smart2) throws Exception {
+        String model = "SmartStructures" + version;
+        var source = fixture(model + ".ili");
+        referenceSchema(smart1, model, "smart1");
+        referenceSchema(smart2, model, "smart2");
+        Files.delete(source);
+        var input = fixture(model + ".xtf");
+        var nativeInput = transferWithPrefix(input, "native");
+        var output = work.resolve("structures-output.xtf");
+        for (var db : List.of(smart1, smart2)) {
+            referenceImport(db, "legacy", input);
+            assertCliSuccess(db, "export", model, "legacy", output);
+            assertStructures(output, model, "fixture");
+            assertCliSuccess(db, "import", model, "native", nativeInput);
+            referenceExport(db, "native", output);
+            assertStructures(output, model, "native");
+            try (var sql = db.connect()) {
+                String note = db.table("note");
+                String owner = db.table(db == smart1 ? "survey" : "detailedsurvey");
+                String column = db == smart1 ? "survey_notes" : "detailedsurvey_notes";
+                assertEquals("4", scalar(sql, "SELECT COUNT(*) FROM " + note + " n JOIN " + owner
+                        + " s ON n." + column + "=s.t_id AND n.t_basket=s.t_basket WHERE "
+                        + "(n.t_seq=0 AND n.memo='three') OR (n.t_seq=1 AND n.memo='four')"));
+                assertEquals(db == smart1 ? "8" : "4",
+                        scalar(sql, "SELECT COUNT(*) FROM " + note + " WHERE survey_notes IS NOT NULL"));
+                String secondOwner = db == smart1 ? "survey_details" : "detailedsurvey_notes";
+                execute(sql, "UPDATE " + note + " SET " + secondOwner + "=(SELECT t_id FROM " + owner
+                        + " WHERE t_ili_tid='native-d') WHERE survey_notes=(SELECT t_id FROM " + db.table("survey")
+                        + " WHERE t_ili_tid='native-s') AND t_seq=0");
+            }
+            var saved = Files.readString(output);
+            assertCliFailure(db, "export", model, "native", output, "Expected exactly one structure owner");
+            assertEquals(saved, Files.readString(output));
+        }
+    }
+
+    private void assertStructures(Path file, String model, String prefix) throws Exception {
+        var basket = children(readDataSection(file, version)).getFirst();
+        assertEquals(prefix + "-b", id(basket, version, "bid"));
+        var base = object(basket, model, "Survey", prefix + "-s");
+        var derived = object(basket, model, "DetailedSurvey", prefix + "-d");
+        assertEquals("solo", child(children(child(base, "Details")).getFirst(), "Memo").getTextContent());
+        assertNull(child(derived, "Details"));
+        assertEquals("derived", child(derived, "Label").getTextContent());
+        assertEquals(List.of("one", "two"), notes(base));
+        assertEquals(List.of("three", "four"), notes(derived));
+    }
+
+    private static List<String> notes(Element object) {
+        return children(object).stream().filter(e -> e.getLocalName().equals("Notes")).flatMap(e -> children(e).stream())
+                .map(note -> child(note, "Memo").getTextContent()).toList();
+    }
+
     private void assertScalarObjects(Path path, String model, String prefix, boolean emptyMemo) throws Exception {
         var basket = children(readDataSection(path, version)).getFirst();
         assertEquals(prefix + "-b", id(basket, version, "bid"));

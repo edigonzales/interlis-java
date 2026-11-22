@@ -198,7 +198,7 @@ final class DbTransfer {
                     int start = table.hasTidColumn() ? 3 : 2;
                     var values = readFields(db, mapping, rows, start, table, ownerTid, selection);
                     readEmbeddedLinks(db, mapping, rows, start + projectionSize(mapping, table), links, ownerTid, values);
-                    structures.readFor(rows.getLong(1), ownerTid, values);
+                    structures.readFor(rows.getLong(1), ownerTid, values, table.object().symbol());
                     var identity = objectIdentity(mapping, table, bid, ownerTid);
                     var data = alternate.isPresent()
                             ? new Structured(alternate.orElseThrow().symbol(),
@@ -282,7 +282,7 @@ final class DbTransfer {
                     var actual = mapping.concreteType(root, rows.getString(field++), id, topic);
                     var values = readFields(db, mapping, rows, field, root, tid, ALL_GEOMETRIES, actual.object().symbol());
                     fragments.readFor(actual, id, tid, values);
-                    structures.readFor(id, tid, values);
+                    structures.readFor(id, tid, values, actual.object().symbol());
                     mapping.extendedFields(actual.object().symbol()).forEach((base, effective) -> {
                         var value = values.remove(base);
                         if (value != null) values.put(effective, value);
@@ -763,11 +763,11 @@ final class DbTransfer {
                 }
             }
         }
-        // Nested lookups cannot reach orphans. Within class hierarchies, the owner must exist
-        // in the declaring table even though the root and its fragments share the same ID.
+        // Nested lookups cannot reach orphans. Check the actual SQL owner, including inherited fields.
         for (var composition : mapping.compositions()) {
             var parent = mapping.table(composition.parent());
-            if (parent.object().kind() != SymbolKind.STRUCTURE && !parent.hasDiscriminator() && !parent.subtype()) continue;
+            if (mapping.profile() == DbInheritance.Profile.NEW_CLASS && parent.object().kind() != SymbolKind.STRUCTURE
+                    && !parent.hasDiscriminator() && !parent.subtype()) continue;
             token.throwIfCancellationRequested();
             var child = mapping.table(composition.childRoot());
             String owner = "child." + quote(composition.ownerColumn());
@@ -845,15 +845,18 @@ final class DbTransfer {
             return statement;
         }
 
-        void readFor(long parentId, String parentTid, Map<SymbolRef, TransferValue> values) throws SQLException {
+        void readFor(long parentId, String parentTid, Map<SymbolRef, TransferValue> values, SymbolRef actual) throws SQLException {
             for (var cursor : cursors) {
+                if (cursor.available && cursor.ownerId == parentId && !mapping.applies(cursor.composition, actual)) {
+                    throw cursor.problem("Structure field does not apply to object " + parentTid);
+                }
                 read(cursor, parentId, parentTid, 1, values);
             }
         }
 
         private void readNested(SymbolRef parent, long parentId, String parentTid, int depth,
                                 Map<SymbolRef, TransferValue> values) throws SQLException {
-            for (var composition : mapping.compositionsForParent(parent)) {
+            for (var composition : mapping.compositionsForObject(parent)) {
                 token.throwIfCancellationRequested();
                 var statement = nestedStatements.get(composition);
                 if (statement == null) {
@@ -871,12 +874,12 @@ final class DbTransfer {
         private void read(StructureCursor cursor, long parentId, String parentTid, int depth,
                           Map<SymbolRef, TransferValue> values) throws SQLException {
             var value = cursor.readFor(parentId, parentTid, depth);
-            if (value != null) {
-                values.put(cursor.composition.slot().symbol(), value);
+            if (value != null && values.putIfAbsent(cursor.composition.slot().symbol(), value) != null) {
+                throw cursor.problem("Multiple stored structure values for object " + parentTid);
             }
         }
 
-        private void readSubtype(Table table, long id, String parentTid, Map<SymbolRef, TransferValue> values)
+        private void readSubtype(Table table, long id, String parentTid, Map<SymbolRef, TransferValue> values, SymbolRef actual)
                 throws SQLException {
             token.throwIfCancellationRequested();
             var statement = subtypeStatements.get(table);
@@ -895,7 +898,7 @@ final class DbTransfer {
                 if (!rows.next()) {
                     throw new DbException("Missing inheritance fragment in " + table.name() + " for T_Id " + id);
                 }
-                values.putAll(readFields(db, mapping, rows, 2, table, parentTid));
+                values.putAll(readFields(db, mapping, rows, 2, table, parentTid, ALL_GEOMETRIES, actual));
             }
         }
 
@@ -964,9 +967,10 @@ final class DbTransfer {
                 if (!mapping.isAssignableTo(actual.object().symbol(), composition.child())) {
                     throw problem("Unexpected structure type " + actual.discriminator());
                 }
-                var values = readFields(db, mapping, rows, child.hasDiscriminator() ? 6 : 5, child, parentTid);
+                var values = readFields(db, mapping, rows, child.hasDiscriminator() ? 6 : 5, child, parentTid,
+                        ALL_GEOMETRIES, actual.object().symbol());
                 for (var part : actual.rows()) {
-                    if (part.subtype()) readSubtype(part, id, parentTid, values);
+                    if (part.subtype()) readSubtype(part, id, parentTid, values, actual.object().symbol());
                 }
                 readNested(actual.object().symbol(), id, parentTid, depth + 1, values);
                 advance();
@@ -1336,8 +1340,7 @@ final class DbTransfer {
                 token.throwIfCancellationRequested();
                 found += writeObjectRow(part, storage.discriminator(), object, id, context, tid, previous != null);
             }
-            var compositions = chain.stream()
-                    .flatMap(part -> mapping.compositionsForParent(part.object().symbol()).stream()).toList();
+            var compositions = mapping.compositionsForObject(object.type());
             for (var composition : compositions) {
                 if (object.value(composition.slot().symbol()).isPresent()) {
                     found++;
@@ -1550,7 +1553,7 @@ final class DbTransfer {
                 found += bindStructureFields(fragment, 3, part, structure, id, ownerTid, basket);
                 fragment.executeUpdate();
             }
-            var compositions = mapping.compositionsForParent(structure.type());
+            var compositions = mapping.compositionsForObject(structure.type());
             for (var nested : compositions) {
                 if (structure.value(nested.slot().symbol()).isPresent()) found++;
             }
@@ -1565,7 +1568,8 @@ final class DbTransfer {
                                         long id, String ownerTid, BasketId basket) throws SQLException {
             var found = new HashSet<SymbolRef>();
             for (var column : table.columns()) {
-                var field = structure.value(column.slot().symbol());
+                var field = mapping.applies(column, structure.type())
+                        ? structure.value(column.slot().symbol()) : Optional.<TransferValue>empty();
                 if (field.isPresent()) found.add(column.slot().symbol());
                 var payload = field.filter(item -> item != Undefined.INSTANCE).orElse(null);
                 index = bindColumn(statement, index, table, column, id, ownerTid, basket, payload);

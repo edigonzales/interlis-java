@@ -1,0 +1,12 @@
+INTERLIS 2.3;
+
+MODEL SmartStructures23 AT "https://example.org/smart" VERSION "1" =
+  TOPIC Data =
+    STRUCTURE Note = Memo : TEXT*30; END Note;
+    CLASS Survey =
+      Details : Note;
+      Notes : LIST {0..*} OF Note;
+    END Survey;
+    CLASS DetailedSurvey EXTENDS Survey = Label : TEXT*20; END DetailedSurvey;
+  END Data;
+END SmartStructures23.

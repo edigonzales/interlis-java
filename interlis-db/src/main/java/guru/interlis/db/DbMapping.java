@@ -359,6 +359,10 @@ final class DbMapping {
     }
     List<Composition> compositions() { return compositions; }
     List<Composition> compositionsForParent(SymbolRef parent) { return byParent.getOrDefault(parent, List.of()); }
+    List<Composition> compositionsForObject(SymbolRef type) {
+        return tableChain(type).stream().flatMap(table -> compositionsForParent(table.object().symbol()).stream())
+                .filter(composition -> applies(composition, type)).toList();
+    }
     List<Composition> compositionsForChild(SymbolRef child) { return byChild.getOrDefault(child, List.of()); }
     List<EmbeddedAssociation> associations() { return associations; }
     ObjectStorage storage(SymbolRef type) {
@@ -387,9 +391,17 @@ final class DbMapping {
     boolean applies(Column column, SymbolRef actual) {
         if (profile == DbInheritance.Profile.NEW_CLASS) return true;
         var owner = column.slot() instanceof AttributeSlot attribute
-                ? new SymbolRef(plan.snapshotId(), attribute.attribute().owner().orElseThrow())
+                ? attributeOwner(attribute)
                 : roleOwners.get(column.slot().symbol());
         return owner == null || isAssignableTo(actual, owner);
+    }
+
+    boolean applies(Composition composition, SymbolRef actual) {
+        return profile == DbInheritance.Profile.NEW_CLASS || isAssignableTo(actual, attributeOwner(composition.slot()));
+    }
+
+    private SymbolRef attributeOwner(AttributeSlot attribute) {
+        return new SymbolRef(plan.snapshotId(), attribute.attribute().owner().orElseThrow());
     }
     List<Table> hierarchy(Table root) { return hierarchies.getOrDefault(root, List.of()); }
 

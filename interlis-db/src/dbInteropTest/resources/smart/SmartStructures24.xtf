@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="http://www.interlis.ch/xtf/2.4/SmartStructures24">
+  <i:headersection><i:models><i:model>SmartStructures24</i:model></i:models></i:headersection>
+  <i:datasection>
+    <Data i:bid="fixture-b">
+      <Survey i:tid="fixture-s"><Details><Note><Memo>solo</Memo></Note></Details><Notes><Note><Memo>one</Memo></Note></Notes><Notes><Note><Memo>two</Memo></Note></Notes></Survey>
+      <DetailedSurvey i:tid="fixture-d"><Notes><Note><Memo>three</Memo></Note></Notes><Notes><Note><Memo>four</Memo></Note></Notes><Label>derived</Label></DetailedSurvey>
+    </Data>
+  </i:datasection>
+</i:transfer>

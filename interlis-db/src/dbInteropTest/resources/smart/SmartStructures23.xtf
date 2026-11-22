@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="test"><MODELS><MODEL NAME="SmartStructures23" VERSION="1" URI="https://example.org/smart"/></MODELS></HEADERSECTION>
+  <DATASECTION>
+    <SmartStructures23.Data BID="fixture-b">
+      <SmartStructures23.Data.Survey TID="fixture-s"><Details><SmartStructures23.Data.Note><Memo>solo</Memo></SmartStructures23.Data.Note></Details><Notes><SmartStructures23.Data.Note><Memo>one</Memo></SmartStructures23.Data.Note><SmartStructures23.Data.Note><Memo>two</Memo></SmartStructures23.Data.Note></Notes></SmartStructures23.Data.Survey>
+      <SmartStructures23.Data.DetailedSurvey TID="fixture-d"><Notes><SmartStructures23.Data.Note><Memo>three</Memo></SmartStructures23.Data.Note><SmartStructures23.Data.Note><Memo>four</Memo></SmartStructures23.Data.Note></Notes><Label>derived</Label></SmartStructures23.Data.DetailedSurvey>
+    </SmartStructures23.Data>
+  </DATASECTION>
+</TRANSFER>
