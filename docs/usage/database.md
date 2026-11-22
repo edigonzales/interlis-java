@@ -504,9 +504,32 @@ PostGIS `JSONB`. Der qualifizierte INTERLIS-Typ steht in `@type`. SQL
 Struktur wird als Objekt mit `@type` übertragen. `LIST OF` und `BAG OF`
 mit einer Obergrenze über eins liegen als JSON-Arrays vor, auch bei einem
 einzigen Eintrag. Eine zusätzliche optionale Struktur liegt als inneres
-JSON-Objekt vor. `interlis-db` liest und schreibt diese Form. ili2db 5.5.2
-bricht seinen XTF-Export bei einem inneren JSON-Objekt auch nach einem
-eigenen Import ab.
+JSON-Objekt vor.
+
+<a id="ili2db-json-exportfehler"></a>
+
+**Exportfehler bei verschachteltem JSON in ili2db 5.5.2.** ili2gpkg und
+ili2pg importieren mit `--coalesceJson` auch Strukturwerte mit einem
+inneren Objekt. Beim anschliessenden Export desselben Datensatzes meldet
+ili2db `unexpected json token END_OBJECT; '}' expected`. Betroffen sind
+GeoPackage und PostGIS mit XTF 2.3 und 2.4 FULL. Bereits eine leere
+innere Struktur genügt. So sieht der gespeicherte Wert im XTF-2.4-Test aus.
+
+```json
+{
+  "@type": "JsonCollections24.Data.Wrapper",
+  "Detail": { "@type": "JsonCollections24.Data.Entry" }
+}
+```
+
+Beim rekursiven Lesen des inneren Objekts behält
+`Iox2jsonUtility.readOneObject` das alte Token des äusseren Objekts.
+`interlis-db` verwendet dieselbe JSON-Abbildung und kann den betroffenen
+Datensatz aus der bestehenden Datenbank exportieren. Flache JSON-Objekte
+und Arrays flacher Strukturen wurden mit beiden Werkzeugen in beiden
+Richtungen geprüft.
+[ili2db-Quellcode](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/src/ch/ehi/ili2db/json/Iox2jsonUtility.java#L309-L339) ·
+[Reproduktion](../development/testing.md#ili2db-json-export-reproduzieren)
 
 In XTF 2.3 und 2.4 FULL können Klassen und Strukturen optionale Strukturwerte
 sowie `LIST OF`- und `BAG OF`-Attribute mit einem Strukturtyp aus dem

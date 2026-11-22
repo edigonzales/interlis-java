@@ -113,6 +113,19 @@ vergleichen den Katalog, kombinieren JSON und expandierte Spalten in
 derselben Tabelle und prüfen `update`, `--add-models` sowie die
 gemeinsame ID-Vergabe.
 
+<a id="ili2db-json-export-reproduzieren"></a>
+
+Für die Reproduktion des JSON-Exportfehlers genügen die vier Fälle unten.
+Das jeweilige Referenzwerkzeug erstellt das Schema mit `--coalesceJson`,
+importiert den Datensatz mit einer leeren inneren Struktur und versucht,
+ihn mit `--exportTid` zu exportieren. Der Test bestätigt den Fehlertext
+und prüft den erfolgreichen Export aus derselben Datenbank mit
+`interlis-db`. [Fehlerbeschreibung und Beispielwert](../usage/database.md#ili2db-json-exportfehler)
+
+```sh
+./gradlew :interlis-db:dbInteropTest --tests '*DbInteropTest.*JsonCollections*'
+```
+
 `*DbInteropTest.*CatalogueReference*` prüft beide Werkzeugrichtungen
 für Katalogreferenzen mit `--coalesceCatalogueRef` auf GeoPackage und
 PostGIS. Die Fixtures verwenden die CHBase-V1-Strukturform in beiden
