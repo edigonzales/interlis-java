@@ -1,10 +1,16 @@
 package guru.interlis.compiler;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.AssociationSymbol;
 import guru.interlis.model.BindingResolution;
+import guru.interlis.model.DomainSymbol;
+import guru.interlis.model.QualifiedName;
 import guru.interlis.model.ReferenceUsage;
 import guru.interlis.model.SymbolId;
+import guru.interlis.model.TopicSymbol;
 import guru.interlis.model.UnresolvedReason;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -26,6 +32,50 @@ class ScopeNamespaceContractTest {
             assertEquals(Set.of(RejectionReason.SOURCE_ERRORS),out.rejection().reasons());
             assertTrue(out.analysis().diagnostics().stream().anyMatch(d->d.code().value().equals("ILI-SEM-0010")&&d.arguments().toString().contains("SCOPE_TYPE_NAME_UNIQUE")),out.analysis().diagnostics().toString());
         }
+    }
+
+    @Test
+    void publishedIlisMeta16KeepsBasketOidDomainAndAssociationDistinct() throws Exception {
+        var model = Path.of("../testdata/conformance/metamodel/IlisMeta16.ili");
+        var source = CompilerTestSupport.source(model.toAbsolutePath().normalize().toUri().toString(), Files.readString(model));
+        var request = CompilerTestSupport.request(List.of("IlisMeta16"), Map.of(source.id(), source),
+                List.of(), CompilerOptions.defaults());
+        var outcome = CompilerEngines.create().compile(request, CancellationToken.none());
+        var schema = assertInstanceOf(CompilationOutcome.Succeeded.class, outcome,
+                () -> outcome instanceof CompilationOutcome.Rejected rejected
+                        ? rejected.analysis().diagnostics().toString() : outcome.toString()).schema();
+        var queries = schema.queries();
+        var domain = queries.findQualifiedName(QualifiedName.of("IlisMeta16", "BasketOID")).getFirst();
+        assertInstanceOf(DomainSymbol.class, queries.symbol(domain).known().orElseThrow());
+        var topicRef = queries.findQualifiedName(QualifiedName.of("IlisMeta16", "ModelData")).getFirst();
+        var topic = assertInstanceOf(TopicSymbol.class, queries.symbol(topicRef).known().orElseThrow());
+        var associationRef = queries.findQualifiedName(QualifiedName.of("IlisMeta16", "ModelData", "BasketOID")).getFirst();
+        var association = assertInstanceOf(AssociationSymbol.class, queries.symbol(associationRef).known().orElseThrow());
+        assertEquals(List.of("ForDataUnit", "Oid"), association.roles().stream()
+                .map(id -> schema.semanticGraph().symbol(id).orElseThrow().name().value()).toList());
+        var basketRule = topic.header().oidRules().stream().filter(rule -> rule.basket()).findFirst().orElseThrow();
+        assertEquals(Optional.of(domain.symbol()), basketRule.domain());
+    }
+
+    @Test
+    void basketOidCompatibilityDoesNotAllowSameScopeCollisionsOrChangeInterlis23() {
+        String topic = """
+                TOPIC T =
+                  %s
+                  CLASS A = END A;
+                  CLASS B = END B;
+                  ASSOCIATION Id = a -- A; b -- B; END Id;
+                END T;
+                """;
+        var engine = CompilerEngines.create();
+        var oldVersion = assertInstanceOf(CompilationOutcome.Rejected.class, engine.compile(
+                request("2.3", "DOMAIN Id = OID TEXT;" + topic.formatted("")), CancellationToken.none()));
+        var sameScope = assertInstanceOf(CompilationOutcome.Rejected.class, engine.compile(
+                request("2.4", topic.formatted("DOMAIN Id = OID TEXT;")), CancellationToken.none()));
+        assertTrue(oldVersion.analysis().requestDiagnostics().stream()
+                .anyMatch(diagnostic -> diagnostic.arguments().toString().contains("SCOPE_OUTER_TYPE_NAME")));
+        assertTrue(sameScope.analysis().requestDiagnostics().stream()
+                .anyMatch(diagnostic -> diagnostic.arguments().toString().contains("SCOPE_TYPE_NAME_UNIQUE")));
     }
     @Test void typeAndRuntimeParameterNamesRemainDifferentNamespaces() {
         for(String version:List.of("2.3","2.4"))assertInstanceOf(CompilationOutcome.Succeeded.class,CompilerEngines.create().compile(request(version,"DOMAIN Value=TEXT;PARAMETER Value:TEXT;TOPIC T=CLASS C=Value:TEXT;END C;END T;"),CancellationToken.none()));

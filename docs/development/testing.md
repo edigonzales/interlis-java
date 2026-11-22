@@ -46,6 +46,15 @@ abgelehnte Warnungen, Abbruch und interne Fehler. Semantische Goldens halten
 Typen, Referenzen, effektive Reihenfolge, Übersetzungen, Rollen und Projektionen
 fest. Nur Akzeptanz oder Exitcode genügen dafür nicht.
 
+Der Compiler-Regressionstest verwendet [IlisMeta16, Version 2022-10-10](../../testdata/conformance/metamodel/IlisMeta16.ili)
+aus dem [INTERLIS-Modellrepository](https://models.interlis.ch/core/IlisMeta16.ili)
+bytegetreu (SHA-256 `a6aecc507b8000f3cead3ae593200491153540ae4c74e033a4af4af8e3935dda`).
+Derselbe Modelltext liegt mit LF-Zeilenenden im
+[ili2c-Quellstand b93884b](https://github.com/claeis/ili2c/blob/b93884b2a12ce294e563738c7e901f800e3719b5/standard/IlisMeta16.ili).
+Die [LGPL 2.1](../../testdata/conformance/metamodel/LICENSE.lgpl) liegt bei der Fixture.
+Der Test prüft die Bindung von `BASKET OID AS` an die Modelldomäne und
+die Rollen der gleichnamigen Topic-Assoziation.
+
 Workspace- und Editorprüfungen vergleichen frische und wiederverwendete
 Analyse, späte Abhängigkeiten, Unicode-Deltas, Abbruch, stale Resultate,
 Cachegrenzen und dokumentübergreifende Edits. Projektionsprüfungen kontrollieren

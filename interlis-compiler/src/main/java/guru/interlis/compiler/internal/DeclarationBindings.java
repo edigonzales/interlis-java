@@ -16,6 +16,7 @@ import guru.interlis.model.EnumElementSymbol;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.EnumerationValue;
 import guru.interlis.model.ExpressionId;
+import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.MetaAttributeSet;
 import guru.interlis.model.ModelImport;
 import guru.interlis.model.ModelSymbol;
@@ -141,9 +142,7 @@ final class DeclarationBindings {
             while (outer.isPresent()) {
                 work.checkpoint();
                 var prior = names.getOrDefault(outer.orElseThrow(), Map.of()).get(declaration.name());
-                // A class may share the name of its own topic.
-                if (prior != null && !(declaration.kind() == SymbolKind.CLASS
-                        && prior.kind() == SymbolKind.TOPIC && prior.id().equals(owner))) {
+                if (prior != null && !allowsOuterTypeName(declaration, prior, owner)) {
                     emitNamespaceRule(declaration, prior,
                             "local type names must not shadow an enclosing type name", "SCOPE_OUTER_TYPE_NAME");
                     break;
@@ -162,6 +161,14 @@ final class DeclarationBindings {
                 }
             }
         }
+    }
+
+    private static boolean allowsOuterTypeName(DeclInfo declaration, DeclInfo prior, SymbolId owner) {
+        if (declaration.kind() == SymbolKind.CLASS
+                && prior.kind() == SymbolKind.TOPIC && prior.id().equals(owner)) return true;
+        // IlisMeta16 declares a topic association with the name of a model domain.
+        return declaration.language() == LanguageVersion.ILI24
+                && declaration.kind() == SymbolKind.ASSOCIATION && prior.kind() == SymbolKind.DOMAIN;
     }
 
     private void emitNamespaceRule(DeclInfo declaration, DeclInfo prior, String rule, String reason) {
