@@ -94,6 +94,8 @@ Die `*ArrayText*`-Fälle prüfen Reihenfolge, Duplikate, Sonderzeichen,
 gespeicherte SQL-Spaltennamen und den bekannten Referenzfehler bei
 `NULL`-Elementen. Die `*ArrayBoolean*`-Fälle prüfen die SQL- und
 JSON-Typen. Fehlerhafte Array-Werte lassen die XTF-Zieldatei intakt.
+Die `*ArrayInteger*`-Fälle prüfen typisierte Ganzzahlen und den Rollback,
+wenn ein Wert die 32-Bit-Kodierung übersteigt.
 
 Die `*ExpandSingle*`-Fälle prüfen den Austausch optionaler flacher
 Strukturen mit ili2db-`--expandStruct`, das Umbenennen einer SQL-Spalte

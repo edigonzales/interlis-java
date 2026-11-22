@@ -16,6 +16,7 @@ import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferValue;
 import guru.interlis.transfer.TransferValue.BooleanValue;
+import guru.interlis.transfer.TransferValue.NumberValue;
 import guru.interlis.transfer.TransferValue.Repeated;
 import guru.interlis.transfer.TransferValue.Structured;
 import guru.interlis.transfer.TransferValue.Text;
@@ -24,6 +25,7 @@ import guru.interlis.transfer.TransferValue.Undefined;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -48,11 +50,18 @@ record DbArray(CollectionKind collection, SymbolRef structure, AttributeSlot fie
         }
         var field = fields.getFirst();
         var scalar = DbMapping.structureScalar(plan, structure, field);
-        if (scalar.kind() != Kind.TEXT && scalar.kind() != Kind.BOOLEAN) throw DbMapping.unsupported("coalesced array element at " + path);
+        if (scalar.kind() != Kind.TEXT && scalar.kind() != Kind.BOOLEAN && scalar.kind() != Kind.INTEGER) throw DbMapping.unsupported("coalesced array element at " + path);
         return new DbArray(repeated.collectionKind(), structure.symbol(), field, scalar.kind(), scalar.effectiveType().orElseThrow());
     }
 
-    String pgElementType() { return kind == Kind.BOOLEAN ? "bool" : "varchar"; }
+    String pgElementType() {
+        return switch (kind) {
+            case TEXT -> "varchar";
+            case BOOLEAN -> "bool";
+            case INTEGER -> "int4";
+            default -> throw new IllegalStateException("Unsupported PostgreSQL array element " + kind);
+        };
+    }
 
     TransferValue assemble(List<?> values, String context) {
         if (values.isEmpty()) return null;
@@ -83,21 +92,21 @@ record DbArray(CollectionKind collection, SymbolRef structure, AttributeSlot fie
     }
 
     private TransferValue readElement(Object value, String context) {
-        if (kind == Kind.BOOLEAN) {
-            if (value instanceof Boolean bool) return new BooleanValue(bool);
-            throw invalid("Expected a boolean array element", context);
-        }
-        if (value instanceof String text) return new Text(text);
-        throw invalid("Expected a text array element", context);
+        return switch (value) {
+            case String text when kind == Kind.TEXT -> new Text(text);
+            case Boolean bool when kind == Kind.BOOLEAN -> new BooleanValue(bool);
+            case Integer number when kind == Kind.INTEGER -> new NumberValue(number.toString(), BigDecimal.valueOf(number));
+            default -> throw unexpectedElement(context);
+        };
     }
 
     private Object writeElement(TransferValue value, String context) {
-        if (kind == Kind.BOOLEAN) {
-            if (value instanceof BooleanValue bool) return bool.value();
-            throw invalid("Expected a boolean array element", context);
-        }
-        if (value instanceof Text text) return text.value();
-        throw invalid("Expected a text array element", context);
+        return switch (value) {
+            case Text text when kind == Kind.TEXT -> text.value();
+            case BooleanValue bool when kind == Kind.BOOLEAN -> bool.value();
+            case NumberValue number when kind == Kind.INTEGER -> DbTransfer.integerValue(number, context);
+            default -> throw unexpectedElement(context);
+        };
     }
 
     List<Object> readJson(String json, String context) {
@@ -112,12 +121,8 @@ record DbArray(CollectionKind collection, SymbolRef structure, AttributeSlot fie
                 if (reader.peek() == JsonToken.NULL) {
                     reader.nextNull();
                     values.add(null);
-                } else if (kind == Kind.BOOLEAN) {
-                    if (reader.peek() != JsonToken.BOOLEAN) throw invalid("Expected a boolean array element", context);
-                    values.add(reader.nextBoolean());
                 } else {
-                    if (reader.peek() != JsonToken.STRING) throw invalid("Expected a text array element", context);
-                    values.add(reader.nextString());
+                    values.add(readJsonElement(reader, context));
                 }
             }
             reader.endArray();
@@ -134,8 +139,13 @@ record DbArray(CollectionKind collection, SymbolRef structure, AttributeSlot fie
             writer.setStrictness(Strictness.STRICT);
             writer.beginArray();
             for (var item : values) {
-                if (kind == Kind.BOOLEAN) writer.value((Boolean) item);
-                else writer.value((String) item);
+                switch (item) {
+                    case null -> writer.nullValue();
+                    case String text -> writer.value(text);
+                    case Boolean bool -> writer.value(bool);
+                    case Integer integer -> writer.value(integer);
+                    default -> throw unexpectedElement(context);
+                }
             }
             writer.endArray();
         } catch (IOException failure) {
@@ -143,6 +153,26 @@ record DbArray(CollectionKind collection, SymbolRef structure, AttributeSlot fie
         }
         if (output.getBuffer().length() > DbJsonStructure.MAX_CODE_UNITS) throw invalid("Oversized array JSON", context);
         return output.toString();
+    }
+
+    private Object readJsonElement(JsonReader reader, String context) throws IOException {
+        var expected = switch (kind) {
+            case TEXT -> JsonToken.STRING;
+            case BOOLEAN -> JsonToken.BOOLEAN;
+            case INTEGER -> JsonToken.NUMBER;
+            default -> throw new IllegalStateException("Unsupported JSON array element " + kind);
+        };
+        if (reader.peek() != expected) throw unexpectedElement(context);
+        return switch (kind) {
+            case TEXT -> reader.nextString();
+            case BOOLEAN -> reader.nextBoolean();
+            case INTEGER -> DbTransfer.readInteger(reader.nextString(), context).exactValue().intValueExact();
+            default -> throw new IllegalStateException("Unsupported JSON array element " + kind);
+        };
+    }
+
+    private DbException unexpectedElement(String context) {
+        return invalid("Expected a " + kind.name().toLowerCase(java.util.Locale.ROOT) + " array element", context);
     }
 
     static void checkCount(int size, String context) {

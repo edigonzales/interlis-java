@@ -1157,6 +1157,10 @@ final class DbTransfer {
     }
 
     static NumberValue readInteger(String value, Column column) {
+        return readInteger(value, column.slot().name().declared().toString());
+    }
+
+    static NumberValue readInteger(String value, String context) {
         if (value == null) {
             return null;
         }
@@ -1164,7 +1168,15 @@ final class DbTransfer {
             int integer = new BigDecimal(value).intValueExact();
             return new NumberValue(Integer.toString(integer), BigDecimal.valueOf(integer));
         } catch (NumberFormatException | ArithmeticException e) {
-            throw new DbException("Invalid 32-bit integer in " + column.slot().name().declared(), e);
+            throw new DbException("Invalid 32-bit integer in " + context, e);
+        }
+    }
+
+    static int integerValue(NumberValue value, String context) {
+        try {
+            return value.exactValue().intValueExact();
+        } catch (ArithmeticException failure) {
+            throw new DbException("Value exceeds the 32-bit integer encoding of " + context, failure);
         }
     }
 
@@ -1747,14 +1759,7 @@ final class DbTransfer {
                 case TEXT -> statement.setString(index, ((Text) value).value());
                 case BOOLEAN -> statement.setBoolean(index, ((BooleanValue) value).value());
                 case ENUMERATION -> statement.setString(index, String.join(".", ((Enumeration) value).path()));
-                case INTEGER -> {
-                    try {
-                        statement.setInt(index, ((NumberValue) value).exactValue().intValueExact());
-                    } catch (ArithmeticException e) {
-                        throw new DbException("Value exceeds the 32-bit integer encoding of "
-                                + column.slot().name().declared(), e);
-                    }
-                }
+                case INTEGER -> statement.setInt(index, integerValue((NumberValue) value, column.slot().name().declared().toString()));
                 case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE ->
                         throw new DbException("Unsupported value for " + column.slot().name().declared());
             }

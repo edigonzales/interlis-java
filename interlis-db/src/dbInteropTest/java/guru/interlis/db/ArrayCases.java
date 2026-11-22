@@ -107,6 +107,24 @@ final class ArrayCases {
         assertEquals(previous, Files.readString(output));
     }
 
+    void integer(TestDatabase db) throws Exception {
+        String model = "ArrayInteger" + version;
+        arraySource(model, "-20 .. 20", "LIST");
+        mixedLists(db, model, List.of("-5", "0", "12", "-5"));
+
+        var first = object(model, "Asset", "rollback-first", element("Items", entry(model, "3")));
+        var last = object(model, "Asset", "rollback-last", element("Items", entry(model, "2147483648")));
+        assertCliFailure(db, "import", model, "rollback", transfer(model, "rollback", first + last), "32-bit integer encoding");
+        try (var sql = db.connect()) {
+            var asset = db.table("asset");
+            var firstElement = db.postgis() ? "items[1]" : "json_extract(items, '$[0]')";
+            assertEquals("-5", scalar(sql, "SELECT " + firstElement + " FROM " + asset + " WHERE t_ili_tid='native-value'"));
+            assertEquals("0", scalar(sql, "SELECT count(*) FROM " + asset + " WHERE t_ili_tid LIKE 'rollback-%'"));
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket")));
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
+        }
+    }
+
     private Path mixedLists(TestDatabase db, String model, List<String> expected) throws Exception {
         schema(db, model);
         var output = work.resolve("output.xtf");

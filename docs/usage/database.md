@@ -498,9 +498,10 @@ expandierter innerer Strukturwert erhält eine eigene Typmarkierung und
 eigene Feldspalten in derselben Tabelle.
 
 In bestehenden Schemata mit ili2db-`--coalesceArray` kann eine
-`LIST OF`-Sammlung mit genau einem Text- oder Boolean-Feld je
-Strukturelement in einer Spalte liegen. GeoPackage speichert ein
-JSON-Array in `TEXT`, PostGIS verwendet `varchar[]` oder `boolean[]`. SQL `NULL` und leere Arrays ergeben ein fehlendes
+`LIST OF`-Sammlung mit genau einem Text-, Boolean- oder 32-Bit-Ganzzahlfeld
+je Strukturelement in einer Spalte liegen. GeoPackage speichert ein
+JSON-Array in `TEXT`, PostGIS verwendet `varchar[]`, `boolean[]` oder
+`integer[]`. SQL `NULL` und leere Arrays ergeben ein fehlendes
 Attribut. Ein einzelnes `NULL`-Element ergibt bei `interlis-db` eine
 leere Struktur. ili2db 5.5.2 importiert dieselbe Form, bricht aber beim
 eigenen Export mit `illegal value null for Entry` ab, wenn das Textfeld

@@ -128,6 +128,16 @@ final class DbInteropTest {
         new ArrayCases(work, new ReferenceTool(db.postgis()), version).bool(db);
     }
 
+    @Test void geoPackageArrayInteger23() throws Exception { exchangeArrayInteger(23, null); }
+    @Test void geoPackageArrayInteger24() throws Exception { exchangeArrayInteger(24, null); }
+    @Test void postgisArrayInteger23() throws Exception { exchangeWithPostgis(23, this::exchangeArrayInteger); }
+    @Test void postgisArrayInteger24() throws Exception { exchangeWithPostgis(24, this::exchangeArrayInteger); }
+
+    private void exchangeArrayInteger(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "array_integer");
+        new ArrayCases(work, new ReferenceTool(db.postgis()), version).integer(db);
+    }
+
     @Test void geoPackageExpandSingle23() throws Exception { exchangeExpandSingle(23, null); }
     @Test void geoPackageExpandSingle24() throws Exception { exchangeExpandSingle(24, null); }
     @Test void postgisExpandSingle23() throws Exception { exchangeWithPostgis(23, this::exchangeExpandSingle); }
