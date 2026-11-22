@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -138,6 +139,11 @@ final class SchemaSql {
 
     private static List<String> ddl(SchemaPlan plan, Dialect dialect, boolean newSchema, boolean createGeometryIndexes) {
         var commands = new ArrayList<String>();
+        boolean createForeignKeys = plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.FOREIGN_KEY);
+        boolean createForeignKeyIndexes = plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.FOREIGN_KEY_INDEX);
+        var keys = createForeignKeys || createForeignKeyIndexes ? plan.foreignKeys(newSchema) : List.<SchemaPlan.ForeignKey>of();
+        Map<String, List<SchemaPlan.ForeignKey>> inlineKeys = createForeignKeys && dialect.gpkg()
+                ? keys.stream().collect(Collectors.groupingBy(SchemaPlan.ForeignKey::table)) : Map.of();
         if (newSchema && !dialect.gpkg()) commands.add("CREATE SEQUENCE " + dialect.table(SEQUENCE));
         for (var lookup : plan.enumLookups()) {
             if (lookup.create()) commands.add(enumTable(lookup, dialect));
@@ -165,18 +171,21 @@ final class SchemaSql {
                     columns.add(quote(composition.ownerColumn()) + " " + dialect.idType());
                 }
             }
-            commands.add(dialect.create(table.name(), String.join(", ", columns)));
+            commands.add(dialect.create(table.name(), String.join(", ", columns), inlineKeys.getOrDefault(table.name(), List.of())));
             for (var geometry : table.secondaryGeometries()) {
                 commands.add(dialect.create(geometry.table(), dialect.primaryId()
                         + ", " + BASKET_COLUMN + " " + dialect.idType() + " NOT NULL, "
-                        + quote(geometry.column().name()) + " " + dialect.columnType(geometry.column(), 0)));
+                        + quote(geometry.column().name()) + " " + dialect.columnType(geometry.column(), 0),
+                        inlineKeys.getOrDefault(geometry.table(), List.of())));
             }
         }
         for (var composition : plan.addedCompositions()) {
             String child = plan.mapping().table(composition.childRoot()).name();
             if (!storage.contains(child)) {
+                String reference = createForeignKeys && dialect.gpkg()
+                        ? " " + dialect.references(plan.mapping().table(composition.parent()).name()) : "";
                 commands.add("ALTER TABLE " + dialect.table(child) + " ADD COLUMN "
-                        + quote(composition.ownerColumn()) + " " + dialect.idType());
+                        + quote(composition.ownerColumn()) + " " + dialect.idType() + reference);
             }
         }
         if (createGeometryIndexes) {
@@ -187,21 +196,25 @@ final class SchemaSql {
                 }
             }
         }
-        if (newSchema) commands.addAll(metadataDdl(dialect));
-        if (plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.FOREIGN_KEY_INDEX)) {
-            for (var key : plan.foreignKeys(newSchema)) commands.add(dialect.index(key.table(), key.column()));
+        if (newSchema) commands.addAll(metadataDdl(dialect, inlineKeys.getOrDefault(BASKET, List.of())));
+        if (createForeignKeys && !dialect.gpkg()) {
+            for (var key : keys) commands.add("ALTER TABLE " + dialect.table(key.table()) + " ADD " + dialect.foreignKey(key));
+        }
+        if (createForeignKeyIndexes) {
+            for (var key : keys) commands.add(dialect.index(key.table(), key.column()));
         }
         return List.copyOf(commands);
     }
 
-    private static List<String> metadataDdl(Dialect d) {
+    private static List<String> metadataDdl(Dialect d, List<SchemaPlan.ForeignKey> basketKeys) {
         String t200 = d.text(200);
         String t255 = d.text(255);
         String t1024 = d.text(1024);
         String t8000 = d.text(8000);
         var ddl = new ArrayList<>(List.of(
                 d.create(BASKET, d.primaryId() + ", dataset " + d.idType() + ", topic " + t200
-                        + " NOT NULL, " + TID_COLUMN + " " + t200 + ", attachmentKey " + t200 + " NOT NULL, domains " + t1024),
+                        + " NOT NULL, " + TID_COLUMN + " " + t200 + ", attachmentKey " + t200 + " NOT NULL, domains " + t1024,
+                        basketKeys),
                 d.create(DATASET, d.primaryId() + ", datasetName " + t200
                         + d.uniqueConstraint(DATASET_KEY, "datasetName")),
                 d.create(INHERITANCE, "thisClass " + t1024 + d.primary() + ", baseClass " + t1024),
@@ -492,6 +505,20 @@ final class SchemaSql {
 
         String create(String table, String columns) {
             return "CREATE TABLE " + table(table) + " (" + columns + ")";
+        }
+
+        String create(String table, String columns, List<SchemaPlan.ForeignKey> foreignKeys) {
+            String constraints = foreignKeys.stream().map(key -> ", " + foreignKey(key)).collect(Collectors.joining());
+            return create(table, columns + constraints);
+        }
+
+        String foreignKey(SchemaPlan.ForeignKey key) {
+            String column = gpkg ? key.column() : Ili2dbLayout.foldedName(key.column());
+            return "FOREIGN KEY (" + quote(column) + ") " + references(key.target());
+        }
+
+        String references(String target) {
+            return "REFERENCES " + (gpkg ? quote(target) : table(target)) + " DEFERRABLE INITIALLY DEFERRED";
         }
 
         String primaryId() {

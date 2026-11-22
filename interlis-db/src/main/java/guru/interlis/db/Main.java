@@ -47,7 +47,7 @@ public final class Main {
                     [--coalesce-multi-point] [--coalesce-multi-line] [--coalesce-multi-surface] [--expand-struct] [--coalesce-json] [--coalesce-array]
                     [--create-enum-col-as-itf-code] [--create-enum-txt-col] [--beautify-enum-disp-name]
                     [--create-single-enum-tab | --create-enum-tabs | --create-enum-tabs-with-id]
-                    [--create-fk-idx]
+                    [--create-fk] [--create-fk-idx]
                     [--stroke-arcs] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.

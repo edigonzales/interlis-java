@@ -95,6 +95,9 @@ Werte in Referenzschemata ohne `--sqlEnableNull` aus. Sie prüfen den
 Rollback bei einer verletzten SQL-Pflichtspalte.
 Die `*ProfileFkIndex*`-Fälle prüfen die referenzierenden Indexspalten,
 gemischte Transfers und die Übernahme beim Ergänzen eines Modells.
+Die `*ProfileForeignKeys*`-Fälle prüfen die Fremdschlüsselziele,
+Vorwärtsreferenzen, Strukturzeilen und den Rollback bei verletzten
+Referenzen. Sie prüfen auch die Prüfung aufgeschobener Schlüssel beim Commit.
 
 Die `*ScalarWide*`-Fälle vergleichen die SQL-Kodierung und prüfen
 64-Bit-Ganzzahlen oberhalb von `2^53`, beide 64-Bit-Grenzwerte, SQL

@@ -90,6 +90,9 @@ Die entsprechende Option in ili2db 5.5.2 ist `--createGeomIdx`.
 `schemaimport --create-fk-idx` entspricht ili2db `--createFkIdx`.
 Es erzeugt Indizes für Basket-, Dataset-, Rollen- und Strukturverweise.
 `--add-models` übernimmt die Einstellung des bestehenden Schemas.
+`schemaimport --create-fk` entspricht ili2db `--createFk` und legt
+aufgeschobene SQL-Fremdschlüssel an. Die Referenzprüfung der Datenbank
+erfolgt beim Commit der Transaktion.
 
 Mit `schemaimport --coalesce-catalogue-ref` erzeugt das Kommando die
 kompakte SQL-Abbildung für CHBase-V1-Katalogreferenzen, entsprechend

@@ -8,6 +8,7 @@ import org.w3c.dom.Element;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -19,12 +20,14 @@ import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
 import static guru.interlis.db.DbInteropTest.cli;
+import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
 import static guru.interlis.db.DbInteropTest.referenceDatasetFixture;
 import static guru.interlis.db.DbInteropTest.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class SchemaProfileCases {
@@ -86,6 +89,67 @@ final class SchemaProfileCases {
                 assertEquals(extended, indexColumns(db, sql));
             }
         }
+    }
+
+    void foreignKeys(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ProfileFk" + version;
+        Path ili = linkedModel(model);
+        referenceSchema(expected, ili, "--sqlEnableNull", "--createFk");
+        schema(own, model, ili, "--create-fk");
+        sameCatalog(expected, own);
+        var keys = Set.of("asset:t_basket:t_ili2db_basket", "asset:refasset:target", "target:t_basket:t_ili2db_basket",
+                "note:t_basket:t_ili2db_basket", "note:asset_notes:asset", "t_ili2db_basket:dataset:t_ili2db_dataset");
+        for (var db : List.of(expected, own)) {
+            String legacy = "legacy";
+            referenceImport(db, legacy, linkedData(model, legacy));
+            Path output = work.resolve("output.xtf");
+            assertCliSuccess(db, "export", model, legacy, output);
+            assertLink(rows(output, legacy, 2).getFirst(), legacy);
+            String dataset = "native";
+            assertCliSuccess(db, "import", model, dataset, linkedData(model, dataset));
+            referenceExport(db, dataset, output);
+            assertLink(rows(output, dataset, 2).getFirst(), dataset);
+            try (var sql = db.connect()) {
+                assertEquals(keys, foreignKeyColumns(db, sql));
+                if (!db.postgis()) execute(sql, "PRAGMA foreign_keys = ON");
+                sql.setAutoCommit(false);
+                execute(sql, "UPDATE " + db.table("asset") + " SET refasset = -123 WHERE t_ili_tid = 'native-asset'");
+                assertThrows(SQLException.class, sql::commit);
+                sql.rollback();
+                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("asset") + " a JOIN "
+                        + db.table("target") + " t ON t.t_id = a.refasset"));
+                sql.setAutoCommit(true);
+                Path bad = data(model, "broken", object(model, "Asset", "broken-asset", reference("RefAsset", "missing")));
+                assertCliFailure(db, "import", model, "broken", bad, "Cannot encode reference from broken-asset");
+                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
+            }
+            String more = "ProfileFkMore" + version;
+            schema(db, more, source(more, "CLASS Extra = Label : TEXT*12; END Extra;"), "--add-models");
+            try (var sql = db.connect()) {
+                var extended = new HashSet<>(keys);
+                extended.add("extra:t_basket:t_ili2db_basket");
+                assertEquals(extended, foreignKeyColumns(db, sql));
+            }
+        }
+    }
+
+    private Path linkedData(String model, String prefix) throws Exception {
+        String note = version == 23 ? model + ".Data.Note" : "Note";
+        return data(model, prefix, object(model, "Asset", prefix + "-asset",
+                "<Label>linked</Label><Notes><" + note + "><Message>present</Message></" + note + "></Notes>"
+                        + reference("RefAsset", prefix + "-target"))
+                + object(model, "Target", prefix + "-target", "<Label>target</Label>"));
+    }
+
+    private String reference(String field, String tid) {
+        return "<" + field + (version == 23 ? " REF=\"" : " i:ref=\"") + tid + "\"/>";
+    }
+
+    private void assertLink(Element row, String prefix) {
+        assertEquals(prefix + "-asset", id(row, version, "tid"));
+        var role = child(row, "RefAsset");
+        assertEquals(prefix + "-target", id(role, version, "ref"));
+        assertEquals("present", child(children(child(row, "Notes")).getFirst(), "Message").getTextContent());
     }
 
     private Path linkedModel(String model) throws Exception {
