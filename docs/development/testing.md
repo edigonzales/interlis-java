@@ -90,6 +90,10 @@ Jeder Fall entpackt sein Referenzwerkzeug in ein eigenes temporäres
 Arbeitsverzeichnis. JUnit löscht dieses Verzeichnis samt GeoPackage-Dateien,
 Prozesslogs und temporären Dateien des Referenzwerkzeugs auch bei Testfehlern.
 
+Die `*ProfileNullability*`-Fälle tauschen Pflichtskalare und optionale
+Werte in Referenzschemata ohne `--sqlEnableNull` aus. Sie prüfen den
+Rollback bei einer verletzten SQL-Pflichtspalte.
+
 Die `*ScalarWide*`-Fälle vergleichen die SQL-Kodierung und prüfen
 64-Bit-Ganzzahlen oberhalb von `2^53`, beide 64-Bit-Grenzwerte, SQL
 `NULL` und den Import-Rollback bei Überlauf.

@@ -136,6 +136,7 @@ public final class Main {
             }
         }
         var settings = DbSchemaReader.readSettings(db, options.models());
+        if (!settings.sqlEnableNull()) throw new DbException("--add-models requires a schema with SqlNull=enable");
         if (settings.inheritance() != DbInheritance.Profile.NEW_CLASS || settings.defaultEpsg() == 0
                 || (options.explicitEpsg() && options.defaultEpsg() != settings.defaultEpsg())
                 || (options.explicitLayout() && options.splitGeometries() != settings.splitGeometries())

@@ -285,6 +285,10 @@ benötigt die gespeicherten BID/TID und bewahrt sie beim Werkzeugwechsel.
 Ein Datensatz enthält mindestens einen Basket. Baskets ohne Objekte sind
 zulässig.
 
+Der Transfer liest auch Referenzschemata ohne `--sqlEnableNull`. Bei direkt
+gespeicherten Pflichtwerten setzt die Datenbank die vorhandenen `NOT NULL`-
+Bedingungen durch. `schemaimport --add-models` setzt `SqlNull=enable` voraus.
+
 In bestehenden `newClass`-Schemata aus ili2db 5.5.2 mit
 `--coalesceCatalogueRef` verwendet der FULL-Transfer die Fremdschlüsselspalte
 des Fachattributs für CHBase-V1-Katalogreferenzen. Dies gilt für Einzelwerte

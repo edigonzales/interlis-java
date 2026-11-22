@@ -109,6 +109,16 @@ final class DbInteropTest {
 
     @TempDir(cleanup = CleanupMode.ALWAYS) Path work;
 
+    @Test void geoPackageProfileNullability23() throws Exception { exchangeProfileNullability(23, null); }
+    @Test void geoPackageProfileNullability24() throws Exception { exchangeProfileNullability(24, null); }
+    @Test void postgisProfileNullability23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileNullability); }
+    @Test void postgisProfileNullability24() throws Exception { exchangeWithPostgis(24, this::exchangeProfileNullability); }
+
+    private void exchangeProfileNullability(int version, PostgreSQLContainer postgres) throws Exception {
+        var expected = new TestDatabase(postgres, "profile_nullability_ref");
+        new SchemaProfileCases(work, new ReferenceTool(expected.postgis()), version).modelNullability(expected);
+    }
+
     @Test void geoPackageScalarWide23() throws Exception { exchangeScalarWide(23, null); }
     @Test void geoPackageScalarWide24() throws Exception { exchangeScalarWide(24, null); }
     @Test void postgisScalarWide23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarWide); }

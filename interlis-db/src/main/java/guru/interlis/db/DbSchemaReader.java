@@ -72,7 +72,7 @@ final class DbSchemaReader {
     private record StoredModel(String names, LanguageVersion version, String content, List<String> imports) { }
     private record AttributeName(String name, String owner, String target) { }
     record Settings(boolean splitGeometries, int defaultEpsg, String modelEpsgAssignments, boolean referenceEpsgHeader,
-                    boolean multiSrs, Optional<DbCrsPair.Models> srsModels, boolean createGeometryIndexes,
+                    boolean multiSrs, Optional<DbCrsPair.Models> srsModels, boolean createGeometryIndexes, boolean sqlEnableNull,
                     DbInheritance.Profile inheritance, boolean strokeArcs,
                     Set<Ili2dbLayout.AttributeTransformation> structureTransformations, DbEnumOptions enumOptions) {
         CrsDefaults crs(String model) {
@@ -511,7 +511,7 @@ final class DbSchemaReader {
         }
         requireSetting(settings, "BasketHandling", "readWrite");
         requireSetting(settings, "TidHandling", "property");
-        requireSetting(settings, "SqlNull", "enable");
+        boolean sqlEnableNull = optionalSetting(settings, PREFIX + "SqlNull", "enable");
         requireSetting(settings, "defaultSrsAuthority", "EPSG");
         String value = settings.get(PREFIX + "defaultSrsCode");
         int defaultEpsg = value == null ? 0 : Ili2dbLayout.parseEpsgCode(value, "SETTINGS.defaultSrsCode");
@@ -564,13 +564,15 @@ final class DbSchemaReader {
         }
         var structureTransformations = Set.copyOf(transformations);
         if (Ili2dbLayout.MULTIPLE_GEOMETRIES.equals(geometryLayout)) {
-            return new Settings(false, defaultEpsg, modelEpsg, referenceEpsgHeader, multiSrs, srsModels, indexes, inheritance, strokeArcs, structureTransformations, enumOptions);
+            return new Settings(false, defaultEpsg, modelEpsg, referenceEpsgHeader, multiSrs, srsModels, indexes,
+                    sqlEnableNull, inheritance, strokeArcs, structureTransformations, enumOptions);
         }
         if (geometryLayout != null && !Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout)) {
             throw unsupported("SETTINGS.geomAttrPerTable=" + geometryLayout);
         }
         return new Settings(db.gpkg() || Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout), defaultEpsg, modelEpsg,
-                referenceEpsgHeader, multiSrs, srsModels, indexes, inheritance, strokeArcs, structureTransformations, enumOptions);
+                referenceEpsgHeader, multiSrs, srsModels, indexes, sqlEnableNull, inheritance, strokeArcs,
+                structureTransformations, enumOptions);
     }
 
     private static boolean optionalSetting(Map<String, String> settings, String key, String supported) {
