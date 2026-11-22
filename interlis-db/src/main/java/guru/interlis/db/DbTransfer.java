@@ -360,14 +360,14 @@ final class DbTransfer {
             }
         }
 
-        void readFor(Table actual, long id, String tid, Map<SymbolRef, TransferValue> values) throws SQLException {
-            for (var part : mapping.tableChain(actual.object().symbol())) {
+        void readFor(DbMapping.ObjectStorage actual, long id, String tid, Map<SymbolRef, TransferValue> values) throws SQLException {
+            for (var part : actual.rows()) {
                 if (part.subtype()) fragments.get(part).readFor(id, tid, values);
             }
         }
 
-        void verifyFor(Table actual, long id) throws SQLException {
-            for (var part : mapping.tableChain(actual.object().symbol())) {
+        void verifyFor(DbMapping.ObjectStorage actual, long id) throws SQLException {
+            for (var part : actual.rows()) {
                 if (!part.subtype()) continue;
                 var fragment = fragments.get(part);
                 fragment.requireRow(id);
@@ -920,14 +920,13 @@ final class DbTransfer {
 
             private Structured readChild(String parentTid, int depth) throws SQLException {
                 long id = integer(4, T_ID);
-                var actual = child;
-                if (child.hasDiscriminator()) actual = mapping.concreteType(child, rows.getString(5), id);
-                var chain = mapping.tableChain(actual.object().symbol());
-                if (chain.stream().noneMatch(part -> part.object().symbol().equals(composition.child()))) {
-                    throw problem("Unexpected structure type " + actual.name());
+                var actual = child.hasDiscriminator() ? mapping.concreteType(child, rows.getString(5), id)
+                        : mapping.storage(child.object().symbol());
+                if (!mapping.isAssignableTo(actual.object().symbol(), composition.child())) {
+                    throw problem("Unexpected structure type " + actual.discriminator());
                 }
                 var values = readFields(db, mapping, rows, child.hasDiscriminator() ? 6 : 5, child, parentTid);
-                for (var part : chain) {
+                for (var part : actual.rows()) {
                     if (part.subtype()) readSubtype(part, id, parentTid, values);
                 }
                 readNested(actual.object().symbol(), id, parentTid, depth + 1, values);
@@ -988,7 +987,7 @@ final class DbTransfer {
                 if (root.hasDiscriminator()) {
                     var actual = mapping.concreteType(root, rows.getString(next++), rows.getLong(index));
                     if (!mapping.isAssignableTo(actual.object().symbol(), declared)) {
-                        throw new DbException("Unexpected reference type " + actual.name() + " at " + context);
+                        throw new DbException("Unexpected reference type " + actual.discriminator() + " at " + context);
                     }
                 }
                 var bid = projectsTargetBid(mapping, column) ? Optional.ofNullable(rows.getString(next))
@@ -1259,12 +1258,13 @@ final class DbTransfer {
                     || identity.originalBasket().isPresent()) {
                 throw new DbException("Unsupported object metadata for " + object.type());
             }
-            var table = mapping.table(object.type());
+            var storage = mapping.storage(object.type());
+            var table = storage.rows().getLast();
             if (mapping.isEmbeddedLink(table)) {
                 throw new DbException("Expected an embedded association at " + table.object().name().declared());
             }
-            var chain = mapping.tableChain(object.type());
-            var root = chain.getFirst();
+            var chain = storage.rows();
+            var root = storage.root();
             boolean hasTid = root.hasTidColumn();
             var sourceTid = identity.tid().filter(value -> value.origin() == IdOrigin.SOURCE).map(TransferId::value);
             var expectedOid = hasWireOid(mapping, root)
@@ -1284,9 +1284,9 @@ final class DbTransfer {
             }
             DbDatasetWrite.ExistingObject previous = updating && tid.isPresent()
                     ? existingObjects.remove(new DbDatasetWrite.ObjectKey(root, tid.orElseThrow())) : null;
-            if (previous != null && !previous.type().equals(table)) {
+            if (previous != null && !previous.type().equals(storage)) {
                 throw new DbException("Cannot change concrete class for TID " + tid.orElseThrow() + " from "
-                        + previous.type().object().name().declared() + " to " + table.object().name().declared());
+                        + previous.type().object().name().declared() + " to " + storage.object().name().declared());
             }
             if (updating && previous == null && root.oidDomain().isPresent()) {
                 DbDatasetWrite.checkStableObjectBasket(db, root, datasetId, basketId, tid.orElseThrow());
@@ -1296,7 +1296,7 @@ final class DbTransfer {
             int found = 0;
             for (var part : chain) {
                 token.throwIfCancellationRequested();
-                found += writeObjectRow(part, table.name(), object, id, context, tid, previous != null);
+                found += writeObjectRow(part, storage.discriminator(), object, id, context, tid, previous != null);
             }
             var compositions = chain.stream()
                     .flatMap(part -> mapping.compositionsForParent(part.object().symbol()).stream()).toList();
@@ -1481,14 +1481,14 @@ final class DbTransfer {
             if (!(value instanceof Structured structure)) {
                 throw new DbException("Cannot encode structure type at " + composition.slot().name().declared());
             }
-            var actual = mapping.table(structure.type());
-            var chain = mapping.tableChain(structure.type());
+            var actual = mapping.storage(structure.type());
+            var chain = actual.rows();
             if (actual.object().modifiers().contains(Modifier.ABSTRACT)
-                    || chain.stream().noneMatch(part -> part.object().symbol().equals(composition.child()))) {
-                throw new DbException("Cannot encode structure type " + actual.name() + " at "
+                    || !mapping.isAssignableTo(actual.object().symbol(), composition.child())) {
+                throw new DbException("Cannot encode structure type " + actual.discriminator() + " at "
                         + composition.slot().name().declared());
             }
-            var table = chain.getFirst();
+            var table = actual.root();
             var statement = structureInserts.get(composition);
             if (statement == null) {
                 statement = prepareWrite(table, composition, false);
@@ -1498,7 +1498,7 @@ final class DbTransfer {
             statement.setLong(1, id);
             statement.setLong(2, basketId);
             int index = 3;
-            if (table.hasDiscriminator()) statement.setString(index++, actual.name());
+            if (table.hasDiscriminator()) statement.setString(index++, actual.discriminator());
             statement.setNull(index++, Types.VARCHAR);
             statement.setInt(index++, sequence);
             statement.setLong(index++, ownerId);

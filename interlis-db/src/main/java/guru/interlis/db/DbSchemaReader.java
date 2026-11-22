@@ -233,7 +233,7 @@ final class DbSchemaReader {
             if (settings.splitGeometries()) DbMapping.requireSingleGeometry(object, columns);
             db.checkGeometryTable(parent.name(), columns.stream().filter(column -> column.kind().geometry()).toList());
             for (var geometry : secondary) db.checkGeometryTable(geometry.table(), List.of(geometry.column()));
-            tables.add(new Table(object, parent.name(), columns, hasDiscriminator(object, bases),
+            tables.add(new Table(object, parent.name(), object.baseType(), columns, hasDiscriminator(object, bases),
                     DbMapping.oidDomain(plan, object), secondary));
         }
         for (var table : tables) {

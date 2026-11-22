@@ -84,7 +84,7 @@ final class DbDatasetWrite {
     }
 
     record ObjectKey(Table root, String tid) { }
-    record ExistingObject(Table type, long basket, long id) { }
+    record ExistingObject(DbMapping.ObjectStorage type, long basket, long id) { }
 
     static Map<ObjectKey, ExistingObject> readObjects(Database db, DbMapping mapping, TopicDescriptor topic, long basket,
                                                        CancellationToken token) throws SQLException {
@@ -108,7 +108,8 @@ final class DbDatasetWrite {
                         }
                         String tid = DbTransfer.storedTid(table, raw);
                         var concrete = table.hasDiscriminator()
-                                ? mapping.concreteType(table, rows.getString(3), id, topic.symbol()) : table;
+                                ? mapping.concreteType(table, rows.getString(3), id, topic.symbol())
+                                : mapping.storage(table.object().symbol());
                         if (objects.putIfAbsent(new ObjectKey(table, tid), new ExistingObject(concrete, basket, id)) != null) {
                             throw new DbException("Ambiguous stored object TID " + tid + " at " + table.name());
                         }
@@ -150,7 +151,7 @@ final class DbDatasetWrite {
         if (removed.isEmpty()) return;
         var byRoot = new HashMap<Table, Set<Long>>();
         for (var object : removed) {
-            var root = mapping.rootTable(object.type().object().symbol());
+            var root = object.type().root();
             byRoot.computeIfAbsent(root, ignored -> new HashSet<>()).add(object.id());
         }
         for (var table : mapping.tables()) {
@@ -176,7 +177,7 @@ final class DbDatasetWrite {
         }
         for (var removedObject : removed) {
             token.throwIfCancellationRequested();
-            deleteObject(db, mapping, removedObject);
+            deleteObject(db, removedObject);
         }
     }
 
@@ -204,8 +205,8 @@ final class DbDatasetWrite {
         }
     }
 
-    private static void deleteObject(Database db, DbMapping mapping, ExistingObject object) throws SQLException {
-        for (var table : mapping.tableChain(object.type().object().symbol()).reversed()) {
+    private static void deleteObject(Database db, ExistingObject object) throws SQLException {
+        for (var table : object.type().rows().reversed()) {
             for (var secondary : table.secondaryGeometries()) deleteObjectRow(db, secondary.table(), object);
             deleteObjectRow(db, table.name(), object);
         }

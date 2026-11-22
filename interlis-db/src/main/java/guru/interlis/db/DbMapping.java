@@ -148,7 +148,8 @@ final class DbMapping {
     /** A geometry stored in a table that shares its owner's identity and basket. */
     record SecondaryGeometry(String table, Column column) { }
 
-    record Table(ObjectDescriptor object, String name, List<Column> columns, boolean hasDiscriminator,
+    /** The declaration that names the table and its physical parent, when the rows share an ID. */
+    record Table(ObjectDescriptor object, String name, Optional<SymbolRef> baseTable, List<Column> columns, boolean hasDiscriminator,
                  Optional<String> oidDomain, List<SecondaryGeometry> secondaryGeometries) {
         Table {
             columns = List.copyOf(columns);
@@ -164,7 +165,7 @@ final class DbMapping {
             }
         }
 
-        boolean subtype() { return object.baseType().isPresent(); }
+        boolean subtype() { return baseTable.isPresent(); }
         boolean hasTidColumn() { return !subtype() && (object.kind() != SymbolKind.ASSOCIATION || oidDomain.isPresent()); }
         boolean uuidIdentity() { return oidDomain.filter(Ili2dbLayout.UUID_OID::equals).isPresent(); }
         boolean hasSequenceColumn() { return !subtype() && object.kind() == SymbolKind.STRUCTURE; }
@@ -174,6 +175,13 @@ final class DbMapping {
         }
     }
 
+    record ObjectStorage(ObjectDescriptor object, String discriminator, List<Table> rows) {
+        ObjectStorage {
+            rows = List.copyOf(rows);
+        }
+        Table root() { return rows.getFirst(); }
+    }
+
     private final TransferPlan plan;
     private final LanguageVersion version;
     private final Optional<DbCrsPair> crsPair;
@@ -181,8 +189,8 @@ final class DbMapping {
     private final List<SymbolRef> models;
     private final List<Table> tables;
     private final Map<SymbolRef, Table> bySymbol;
-    private final Map<String, Table> byName;
-    private final Map<SymbolRef, List<Table>> chains;
+    private final Map<String, ObjectStorage> byDiscriminator;
+    private final Map<SymbolRef, ObjectStorage> storage;
     private final Map<Table, List<Table>> hierarchies;
     private final Map<SymbolRef, Map<SymbolRef, SymbolRef>> extendedFields;
     private final List<Composition> compositions;
@@ -202,20 +210,22 @@ final class DbMapping {
         this.tables = List.copyOf(tables);
         bySymbol = this.tables.stream().collect(Collectors.toUnmodifiableMap(
                 table -> table.object().symbol(), Function.identity()));
-        byName = this.tables.stream().collect(Collectors.toUnmodifiableMap(Table::name, Function.identity()));
-        var paths = new HashMap<SymbolRef, List<Table>>();
+        var paths = new HashMap<SymbolRef, ObjectStorage>();
         var families = new HashMap<Table, List<Table>>();
         for (var table : this.tables) {
-            if (!table.subtype() && !table.hasDiscriminator()) continue;
             var path = new ArrayDeque<Table>();
-            for (var part = table; part != null; part = part.object().baseType().map(this::table).orElse(null)) {
+            for (var part = table; part != null; part = part.baseTable().map(this::table).orElse(null)) {
                 path.addFirst(part);
             }
-            var chain = List.copyOf(path);
-            paths.put(table.object().symbol(), chain);
-            families.computeIfAbsent(chain.getFirst(), unused -> new ArrayList<>()).add(table);
+            var binding = new ObjectStorage(table.object(), table.name(), List.copyOf(path));
+            paths.put(table.object().symbol(), binding);
+            if (binding.root().hasDiscriminator()) {
+                families.computeIfAbsent(binding.root(), unused -> new ArrayList<>()).add(table);
+            }
         }
-        chains = Map.copyOf(paths);
+        storage = Map.copyOf(paths);
+        byDiscriminator = storage.values().stream().collect(Collectors.toUnmodifiableMap(
+                ObjectStorage::discriminator, Function.identity()));
         hierarchies = families.entrySet().stream().collect(Collectors.toUnmodifiableMap(
                 Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
         var extensions = new HashMap<SymbolRef, Map<SymbolRef, SymbolRef>>();
@@ -316,11 +326,19 @@ final class DbMapping {
     List<Composition> compositionsForParent(SymbolRef parent) { return byParent.getOrDefault(parent, List.of()); }
     List<Composition> compositionsForChild(SymbolRef child) { return byChild.getOrDefault(child, List.of()); }
     List<EmbeddedAssociation> associations() { return associations; }
-    List<Table> tableChain(SymbolRef type) { return chains.getOrDefault(type, List.of(table(type))); }
-    Table rootTable(SymbolRef type) { return tableChain(type).getFirst(); }
+    ObjectStorage storage(SymbolRef type) {
+        var binding = storage.get(type);
+        if (binding == null) throw new DbException("No table for transfer class " + type);
+        return binding;
+    }
+    List<Table> tableChain(SymbolRef type) { return storage(type).rows(); }
+    Table rootTable(SymbolRef type) { return storage(type).root(); }
 
     boolean isAssignableTo(SymbolRef actual, SymbolRef declared) {
-        return tableChain(actual).stream().anyMatch(part -> part.object().symbol().equals(declared));
+        for (var type = actual; type != null; type = plan.object(type).orElseThrow().baseType().orElse(null)) {
+            if (type.equals(declared)) return true;
+        }
+        return false;
     }
     List<Table> hierarchy(Table root) { return hierarchies.getOrDefault(root, List.of()); }
 
@@ -328,17 +346,17 @@ final class DbMapping {
         return extendedFields.getOrDefault(type, Map.of());
     }
 
-    Table concreteType(Table root, String discriminator, long id) {
-        var actual = discriminator == null ? null : byName.get(discriminator);
+    ObjectStorage concreteType(Table root, String discriminator, long id) {
+        var actual = discriminator == null ? null : byDiscriminator.get(discriminator);
         if (actual == null || actual.object().modifiers().contains(Modifier.ABSTRACT)
-                || !rootTable(actual.object().symbol()).equals(root)) {
+                || !actual.root().equals(root)) {
             throw new DbException("Unknown or abstract T_Type " + discriminator + " in " + root.name()
                     + " for T_Id " + id);
         }
         return actual;
     }
 
-    Table concreteType(Table root, String discriminator, long id, SymbolRef topic) {
+    ObjectStorage concreteType(Table root, String discriminator, long id, SymbolRef topic) {
         var actual = concreteType(root, discriminator, id);
         if (!plan.topic(originalTopic(topic)).orElseThrow().objectTypes().contains(actual.object().symbol())) {
             throw new DbException("T_Type " + discriminator + " in " + root.name() + " does not belong to basket topic "
@@ -522,7 +540,7 @@ final class DbMapping {
                 var binding = roleColumn(role, association.target(), column);
                 columns.add(association.ordered() ? binding.withPositionColumn(gpkg) : binding);
             }
-            tables.add(new Table(object, name, columns, discriminator, oidDomain(plan, object), secondary));
+            tables.add(new Table(object, name, object.baseType(), columns, discriminator, oidDomain(plan, object), secondary));
         }
         var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
         return new DbMapping(plan, version, tables, compositions, associations, crsPair, plan.rootModels());

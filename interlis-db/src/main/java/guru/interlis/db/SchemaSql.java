@@ -252,8 +252,9 @@ final class SchemaSql {
                 token.throwIfCancellationRequested();
                 String name = table.object().name().declared().toString();
                 row(classes, name, table.name());
-                var base = table.object().baseType().map(plan.mapping()::table);
-                row(inheritance, name, base.map(value -> value.object().name().declared().toString()).orElse(null));
+                var base = table.baseTable().map(plan.mapping()::table);
+                row(inheritance, name, table.object().baseType().flatMap(plan.mapping().plan()::object)
+                        .map(value -> value.name().declared().toString()).orElse(null));
                 row(transformations, name, INHERITANCE_TAG, NEW_CLASS);
                 if (base.isPresent()) {
                     row(colProps, table.name(), null, ID_COLUMN, PREFIX + "foreignKey",
