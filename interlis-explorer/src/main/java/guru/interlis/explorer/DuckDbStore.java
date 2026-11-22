@@ -245,6 +245,24 @@ public final class DuckDbStore implements AutoCloseable {
     }
 
     /**
+     * Returns an immutable list of up to {@code limit} occurrences of the nonnull exact
+     * declared type in transfer order. A zero limit returns an empty list.
+     * @throws IllegalArgumentException if the limit is negative
+     * @throws SQLException if the query fails
+     */
+    public List<StoredObject> objects(QualifiedName type, int limit) throws SQLException {
+        if (limit < 0) {
+            throw new IllegalArgumentException("The object limit must be nonnegative");
+        }
+        try (var query = connection.prepareStatement(
+                "SELECT * FROM object WHERE type_name = ? ORDER BY position LIMIT ?")) {
+            query.setString(1, type.toString());
+            query.setInt(2, limit);
+            return readObjects(query);
+        }
+    }
+
+    /**
      * Looks up a TID or OID in the supplied basket by identifier spelling.
      * Returns empty for an absent object and throws IllegalStateException for an ambiguous identity.
      */

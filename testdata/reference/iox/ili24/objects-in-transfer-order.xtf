@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="urn:reference24">
+  <i:headersection>
+    <i:models><i:model>Reference24</i:model></i:models>
+    <i:sender>interlis-java handwritten fixture</i:sender>
+  </i:headersection>
+  <i:datasection>
+    <Data i:bid="b1">
+      <Parent i:tid="p1"><title>Parent</title></Parent>
+      <Item i:tid="i2"><required>yes</required></Item>
+      <Item i:tid="i1"><required>yes</required></Item>
+    </Data>
+  </i:datasection>
+</i:transfer>

@@ -121,6 +121,24 @@ class DuckDbStoreTest {
     }
 
     @Test
+    void limitsExactTypeInTransferOrder() throws Exception {
+        var plan = compile();
+        try (var store = DuckDbStore.open(temp.resolve("limited.duckdb"), plan);
+             var input = Files.newInputStream(fixture("objects-in-transfer-order.xtf"));
+             var reader = new Xtf24Reader(plan, input)) {
+            store.importTransfer(reader, RUN);
+
+            var items = store.objects(ITEM, 2);
+            assertEquals(List.of("i2", "i1"), items.stream()
+                    .map(item -> item.object().identity().tid().orElseThrow().value())
+                    .toList());
+            assertEquals(List.of(items.getFirst()), store.objects(ITEM, 1));
+            assertEquals(List.of(), store.objects(ITEM, 0));
+            assertThrows(IllegalArgumentException.class, () -> store.objects(ITEM, -1));
+        }
+    }
+
+    @Test
     void exportsExactGeometryAfterReopening() throws Exception {
         var file = temp.resolve("geometry.duckdb");
         var plan = compile();
