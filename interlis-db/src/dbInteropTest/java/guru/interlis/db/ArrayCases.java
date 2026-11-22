@@ -81,6 +81,44 @@ final class ArrayCases {
         assertEquals(previous, Files.readString(output));
     }
 
+    void bool(TestDatabase db) throws Exception {
+        String model = "ArrayBoolean" + version;
+        arraySource(model, "BOOLEAN", "LIST");
+        var values = List.of("true", "false", "true");
+        var output = mixedLists(db, model, values);
+        var table = db.table("asset");
+        String diagnostic;
+        try (var sql = db.connect()) {
+            if (db.postgis()) {
+                assertEquals("true", scalar(sql, "SELECT CAST(items[1] AS text) FROM " + table + " WHERE t_ili_tid='native-value'"));
+                execute(sql, "ALTER TABLE " + table + " ALTER COLUMN items TYPE integer[] USING NULL");
+                diagnostic = "Expected _bool for array column";
+            } else {
+                assertEquals("[true,false,true]", scalar(sql, "SELECT items FROM " + table + " WHERE t_ili_tid='native-value'"));
+                execute(sql, """
+                        UPDATE %s SET items='["true"]' WHERE t_ili_tid='native-value'
+                        """.formatted(table));
+                diagnostic = "Expected a boolean array element";
+            }
+            assertNull(scalar(sql, "SELECT items FROM " + table + " WHERE t_ili_tid='native-missing'"));
+        }
+        var previous = Files.readString(output);
+        assertCliFailure(db, "export", model, "native", output, diagnostic);
+        assertEquals(previous, Files.readString(output));
+    }
+
+    private Path mixedLists(TestDatabase db, String model, List<String> expected) throws Exception {
+        schema(db, model);
+        var output = work.resolve("output.xtf");
+        referenceImport(db, "legacy", dataset(model, "legacy", expected));
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertItems(output, "legacy", expected);
+        assertCliSuccess(db, "import", model, "native", dataset(model, "native", expected));
+        referenceExport(db, "native", output);
+        assertItems(output, "native", expected);
+        return output;
+    }
+
     private Path arraySource(String model, String scalar, String collection) throws Exception {
         return source(model, "STRUCTURE Elem = Entry : " + scalar + "; END Elem;", """
                 CLASS Asset =

@@ -15,6 +15,7 @@ import guru.interlis.model.TypeRef;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferValue;
+import guru.interlis.transfer.TransferValue.BooleanValue;
 import guru.interlis.transfer.TransferValue.Repeated;
 import guru.interlis.transfer.TransferValue.Structured;
 import guru.interlis.transfer.TransferValue.Text;
@@ -47,11 +48,11 @@ record DbArray(CollectionKind collection, SymbolRef structure, AttributeSlot fie
         }
         var field = fields.getFirst();
         var scalar = DbMapping.structureScalar(plan, structure, field);
-        if (scalar.kind() != Kind.TEXT) throw DbMapping.unsupported("coalesced array element at " + path);
+        if (scalar.kind() != Kind.TEXT && scalar.kind() != Kind.BOOLEAN) throw DbMapping.unsupported("coalesced array element at " + path);
         return new DbArray(repeated.collectionKind(), structure.symbol(), field, scalar.kind(), scalar.effectiveType().orElseThrow());
     }
 
-    String pgElementType() { return "varchar"; }
+    String pgElementType() { return kind == Kind.BOOLEAN ? "bool" : "varchar"; }
 
     TransferValue assemble(List<?> values, String context) {
         if (values.isEmpty()) return null;
@@ -81,12 +82,20 @@ record DbArray(CollectionKind collection, SymbolRef structure, AttributeSlot fie
         return result;
     }
 
-    private static TransferValue readElement(Object value, String context) {
+    private TransferValue readElement(Object value, String context) {
+        if (kind == Kind.BOOLEAN) {
+            if (value instanceof Boolean bool) return new BooleanValue(bool);
+            throw invalid("Expected a boolean array element", context);
+        }
         if (value instanceof String text) return new Text(text);
         throw invalid("Expected a text array element", context);
     }
 
-    private static Object writeElement(TransferValue value, String context) {
+    private Object writeElement(TransferValue value, String context) {
+        if (kind == Kind.BOOLEAN) {
+            if (value instanceof BooleanValue bool) return bool.value();
+            throw invalid("Expected a boolean array element", context);
+        }
         if (value instanceof Text text) return text.value();
         throw invalid("Expected a text array element", context);
     }
@@ -103,6 +112,9 @@ record DbArray(CollectionKind collection, SymbolRef structure, AttributeSlot fie
                 if (reader.peek() == JsonToken.NULL) {
                     reader.nextNull();
                     values.add(null);
+                } else if (kind == Kind.BOOLEAN) {
+                    if (reader.peek() != JsonToken.BOOLEAN) throw invalid("Expected a boolean array element", context);
+                    values.add(reader.nextBoolean());
                 } else {
                     if (reader.peek() != JsonToken.STRING) throw invalid("Expected a text array element", context);
                     values.add(reader.nextString());
@@ -121,7 +133,10 @@ record DbArray(CollectionKind collection, SymbolRef structure, AttributeSlot fie
         try (var writer = new JsonWriter(output)) {
             writer.setStrictness(Strictness.STRICT);
             writer.beginArray();
-            for (var item : values) writer.value((String) item);
+            for (var item : values) {
+                if (kind == Kind.BOOLEAN) writer.value((Boolean) item);
+                else writer.value((String) item);
+            }
             writer.endArray();
         } catch (IOException failure) {
             throw new DbException("Cannot encode array JSON at " + context, failure);
