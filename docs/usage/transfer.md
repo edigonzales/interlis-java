@@ -301,14 +301,16 @@ Starte den lokalen Explorer mit `./gradlew :interlis-explorer-gui:run`.
 Wähle unter **Open dataset…** die lokalen ILI-Dateien einschliesslich
 ihrer Modellimporte und anschliessend eine XTF-2.4-FULL-Datei. Der Explorer
 merkt sich den Ordner des letzten erfolgreichen Imports auch über einen
-Neustart hinweg. Wähle im Modellbaum eine Klasse und danach ein Objekt.
+Neustart hinweg. Im Modellbaum kennzeichnen **M**, **T** und **C**
+Modelle, Topics und Klassen. Wähle eine Klasse und danach ein Objekt.
 Die Liste zeigt bis zu 100 Instanzen der gewählten Klasse in
 Transferreihenfolge. Der Inspektor zeigt die Attribute in effektiver
 Modellreihenfolge. Ein Klick auf ein aufklappbares Attribut oder die
 Leertaste auf seiner Zeile zeigt Struktur- und Sammlungseinträge direkt
 darunter. LIST-Einträge sind nummeriert. BAG-Einträge behalten Duplikate
-und erscheinen ohne Nummer. Beim Schliessen wird die temporäre
-DuckDB-Datenbank entfernt.
+und erscheinen ohne Nummer. Mit **⌘C** unter macOS bzw. **Strg+C** auf den
+anderen Plattformen kopierst du den angezeigten Wert der ausgewählten
+Zeile. Beim Schliessen wird die temporäre DuckDB-Datenbank entfernt.
 
 ## Objektspeicher in DuckDB
 

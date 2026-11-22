@@ -11,6 +11,7 @@ import guru.interlis.xtf24.Xtf24Exception;
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -28,6 +29,7 @@ import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
+import javax.swing.TransferHandler;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
@@ -37,10 +39,15 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -91,17 +98,32 @@ final class ExplorerFrame extends JFrame {
         tree.setRowHeight(26);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         tree.setCellRenderer(new DefaultTreeCellRenderer() {
+            private final Icon modelIcon = new LetterIcon("M");
+            private final Icon topicIcon = new LetterIcon("T");
+            private final Icon classIcon = new LetterIcon("C");
+
             @Override
             public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected,
                                                           boolean expanded, boolean leaf, int row, boolean focused) {
                 super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, focused);
-                setIcon(null);
                 var node = (DefaultMutableTreeNode) value;
-                setText(switch (node.getUserObject()) {
-                    case ModelDescriptor model -> model.name().declared().last();
-                    case TopicDescriptor topic -> topic.name().declared().last();
-                    case ObjectDescriptor type -> type.name().declared().last();
-                    case null, default -> "";
+                setIcon(switch (node.getUserObject()) {
+                    case ModelDescriptor model -> {
+                        setText(model.name().declared().last());
+                        yield modelIcon;
+                    }
+                    case TopicDescriptor topic -> {
+                        setText(topic.name().declared().last());
+                        yield topicIcon;
+                    }
+                    case ObjectDescriptor type -> {
+                        setText(type.name().declared().last());
+                        yield classIcon;
+                    }
+                    case null, default -> {
+                        setText("");
+                        yield null;
+                    }
                 });
                 return this;
             }
@@ -146,7 +168,9 @@ final class ExplorerFrame extends JFrame {
         table.setFillsViewportHeight(true);
         table.setRowHeight(28);
         table.setShowGrid(false);
-        table.setCellSelectionEnabled(true);
+        table.setRowSelectionAllowed(true);
+        table.setColumnSelectionAllowed(false);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getTableHeader().setReorderingAllowed(false);
         table.getColumnModel().getColumn(0).setPreferredWidth(175);
         table.getColumnModel().getColumn(1).setPreferredWidth(420);
@@ -188,7 +212,53 @@ final class ExplorerFrame extends JFrame {
                 attributes.toggle(table.getSelectedRow());
             }
         });
+        table.setTransferHandler(new TransferHandler() {
+            @Override
+            public int getSourceActions(JComponent source) {
+                return COPY;
+            }
+
+            @Override
+            protected Transferable createTransferable(JComponent source) {
+                int row = table.getSelectedRow();
+                if (row < 0) {
+                    return null;
+                }
+                return new StringSelection(attributes.getValueAt(table.convertRowIndexToModel(row), 1));
+            }
+        });
+        int shortcut = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
+        table.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_C, shortcut), "copy");
+        table.getActionMap().put("copy", TransferHandler.getCopyAction());
         return table;
+    }
+
+    private record LetterIcon(String letter) implements Icon {
+        @Override
+        public int getIconWidth() {
+            return 16;
+        }
+
+        @Override
+        public int getIconHeight() {
+            return 16;
+        }
+
+        @Override
+        public void paintIcon(Component component, Graphics graphics, int x, int y) {
+            var paint = graphics.create();
+            try {
+                var foreground = component.getForeground();
+                paint.setColor(new Color(foreground.getRed(), foreground.getGreen(), foreground.getBlue(), 204));
+                paint.setFont(component.getFont().deriveFont(Font.PLAIN, 11f));
+                var metrics = paint.getFontMetrics();
+                int left = x + (getIconWidth() - metrics.stringWidth(letter)) / 2;
+                int baseline = y + (getIconHeight() - metrics.getHeight()) / 2 + metrics.getAscent();
+                paint.drawString(letter, left, baseline);
+            } finally {
+                paint.dispose();
+            }
+        }
     }
 
     private static JPanel section(JLabel title, JComponent view) {
