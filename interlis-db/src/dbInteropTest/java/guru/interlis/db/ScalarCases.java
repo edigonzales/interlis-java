@@ -17,11 +17,13 @@ import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
+import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
 import static guru.interlis.db.DbInteropTest.referenceDatasetFixture;
 import static guru.interlis.db.DbInteropTest.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -106,6 +108,39 @@ final class ScalarCases {
 
     private static void assertNumber(String expected, String actual) {
         assertEquals(new BigDecimal(expected).stripTrailingZeros(), new BigDecimal(actual).stripTrailingZeros());
+    }
+
+    void calendarDate(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ScalarCalendar" + version;
+        String dateDomain = version == 23 ? "" : "DOMAIN DayValue = DATE;";
+        schemas(expected, own, model, """
+                %s
+                CLASS Asset = CalendarDay : %s; END Asset;
+                """.formatted(dateDomain, version == 23 ? "INTERLIS.XMLDate" : "DayValue"));
+        var dates = List.of("2024-02-29", "1999-12-31");
+        var values = new ArrayList<>(dates.stream().map(value -> field("CalendarDay", value)).toList());
+        values.add("");
+        for (var db : List.of(expected, own)) {
+            mixed(db, model, values, rows -> assertTextValues(rows, "CalendarDay", "2024-02-29", "1999-12-31", null));
+            try (var sql = db.connect()) {
+                assertEquals("2024-02-29", stored(db, sql, "calendarday", "native", 0));
+                assertNull(stored(db, sql, "calendarday", "native", 2));
+                execute(sql, "UPDATE " + db.table("asset") + " SET calendarday = "
+                        + (db.postgis() ? "'infinity'::date" : "'2024-02-30'") + " WHERE t_ili_tid = 'native-0'");
+                var output = work.resolve("out.xtf");
+                byte[] previous = Files.readAllBytes(output);
+                assertCliFailure(db, "export", model, "native", output, "Invalid SQL date");
+                assertArrayEquals(previous, Files.readAllBytes(output));
+            }
+        }
+    }
+
+    private static void assertTextValues(List<Element> rows, String attribute, String... values) {
+        assertEquals(values.length, rows.size());
+        for (int i = 0; i < values.length; i++) {
+            var value = child(rows.get(i), attribute);
+            assertEquals(values[i], value == null ? null : value.getTextContent(), attribute + " in object " + i);
+        }
     }
 
     @FunctionalInterface

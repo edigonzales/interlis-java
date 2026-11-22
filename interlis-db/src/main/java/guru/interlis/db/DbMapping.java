@@ -9,6 +9,7 @@ import guru.interlis.model.CoordinateType;
 import guru.interlis.model.DomainReferenceType;
 import guru.interlis.model.DomainSymbol;
 import guru.interlis.model.EnumerationType;
+import guru.interlis.model.FormattedType;
 import guru.interlis.model.GeometryType;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.Modifier;
@@ -20,6 +21,7 @@ import guru.interlis.model.StructureValueType;
 import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
+import guru.interlis.model.TemporalKind;
 import guru.interlis.model.TextKind;
 import guru.interlis.model.TextType;
 import guru.interlis.model.TypeDescriptor;
@@ -61,7 +63,7 @@ import static guru.interlis.db.Ili2dbLayout.reservedTable;
 /** The SQL names and storage bindings for a checked transfer plan. */
 final class DbMapping {
     enum Kind {
-        TEXT, BOOLEAN, INTEGER, BIGINT, DECIMAL, ENUMERATION, POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE;
+        TEXT, BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, ENUMERATION, POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE;
 
         boolean geometry() { return this == POINT || this == POLYLINE || this == SURFACE || collection(); }
 
@@ -1110,6 +1112,8 @@ final class DbMapping {
             case NumericType number when integerRange(number, Long.MIN_VALUE, Long.MAX_VALUE) -> Kind.BIGINT;
             case NumericType number when DbDecimal.fixedScale(number) -> Kind.DECIMAL;
             case EnumerationType ignored -> Kind.ENUMERATION;
+            case FormattedType format when format.origin() instanceof Origin.PredefinedOrigin
+                    && format.predefined().orElse(null) == TemporalKind.DATE -> Kind.DATE;
             default -> type.kind() == TypeKind.BOOLEAN ? Kind.BOOLEAN : null;
         };
     }

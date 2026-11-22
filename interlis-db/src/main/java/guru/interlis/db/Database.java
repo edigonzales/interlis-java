@@ -9,6 +9,7 @@ import org.sqlite.SQLiteConfig;
 import org.sqlite.SQLiteOpenMode;
 
 import guru.interlis.transfer.TransferValue.NumberValue;
+import guru.interlis.transfer.TransferValue.Text;
 
 import java.math.BigDecimal;
 import java.nio.file.Path;
@@ -18,6 +19,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -157,6 +160,27 @@ final class Database implements AutoCloseable {
     String jsonProjection(String field) {
         String text = gpkg() ? field : "CAST(" + field + " AS text)";
         return "CASE WHEN length(" + text + ") > " + DbJsonStructure.MAX_CODE_UNITS + " THEN '' ELSE " + text + " END";
+    }
+
+    Text readDate(ResultSet rows, int index, String context) throws SQLException {
+        String value = rows.getString(index);
+        return value == null ? null : new Text(date(value, context).toString());
+    }
+
+    void bindDate(PreparedStatement statement, int index, Text value, String context) throws SQLException {
+        var date = date(value.value(), context);
+        if (gpkg()) statement.setString(index, date.toString());
+        else statement.setObject(index, date);
+    }
+
+    private static LocalDate date(String value, String context) {
+        try {
+            var date = LocalDate.parse(value);
+            if (value.length() == 10 && date.getYear() > 0) return date;
+        } catch (DateTimeParseException failure) {
+            throw new DbException("Invalid SQL date at " + context, failure);
+        }
+        throw new DbException("Invalid SQL date at " + context);
     }
 
     NumberValue readDecimal(ResultSet rows, int index, String context) throws SQLException {

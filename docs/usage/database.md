@@ -378,6 +378,8 @@ Skalare Dezimalwerte mit festen Nachkommastellen verwenden PostGIS
 mit `interlis-db` den exakten Dezimalwert innerhalb der SQL-Präzision.
 GeoPackage verwendet die Genauigkeit von Binary64. Der Referenzimport
 von ili2db 5.5.2 kann auf beiden Backends grosse Dezimalwerte runden.
+`INTERLIS.XMLDate` in XTF 2.3 und `DATE` in XTF 2.4 belegen eine
+SQL-`DATE`-Spalte. Der Adapter verwendet das Kalenderdatum ohne Zeitzone.
 
 `schemaimport --gpkg-multi-geom-per-table` verwendet das ili2gpkg-Profil
 `--gpkgMultiGeomPerTable` mit mehreren Geometriespalten in einer Tabelle.
