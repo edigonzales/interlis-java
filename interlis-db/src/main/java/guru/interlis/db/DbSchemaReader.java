@@ -590,6 +590,9 @@ final class DbSchemaReader {
             if (optionalSetting(settings, option.tag, option.setting)) schemaOptions.add(option);
         }
         var enabled = Set.copyOf(schemaOptions);
+        if (enabled.contains(Ili2dbLayout.SchemaOption.META_INFO)) {
+            requireMetadataColumns(db, foldedName(Ili2dbLayout.META_ATTRS), "ilielement", "attr_name", "attr_value");
+        }
         if (Ili2dbLayout.MULTIPLE_GEOMETRIES.equals(geometryLayout)) {
             return new Settings(false, defaultEpsg, modelEpsg, referenceEpsgHeader, multiSrs, srsModels, indexes,
                     sqlEnableNull, inheritance, strokeArcs, structureTransformations, enumOptions, enabled);

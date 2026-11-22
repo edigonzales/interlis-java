@@ -34,6 +34,7 @@ import static guru.interlis.db.Ili2dbLayout.INHERITANCE;
 import static guru.interlis.db.Ili2dbLayout.INHERITANCE_TAG;
 import static guru.interlis.db.Ili2dbLayout.KEY_OBJECT;
 import static guru.interlis.db.Ili2dbLayout.LAST_CHANGE_COLUMN;
+import static guru.interlis.db.Ili2dbLayout.META_ATTRS;
 import static guru.interlis.db.Ili2dbLayout.MODEL;
 import static guru.interlis.db.Ili2dbLayout.MODEL_KEY;
 import static guru.interlis.db.Ili2dbLayout.PREFIX;
@@ -138,6 +139,7 @@ final class SchemaSql {
         token.throwIfCancellationRequested();
         writeMetadata(connection, plan, dialect, newSchema, createGeometryIndexes, token);
         writeEnumLookups(connection, plan, dialect, newSchema, token);
+        writeMetaInformation(connection, plan, dialect, newSchema, token);
     }
 
     private static List<String> ddl(SchemaPlan plan, Dialect dialect, boolean newSchema, boolean createGeometryIndexes) {
@@ -225,6 +227,10 @@ final class SchemaSql {
             }
         }
         if (newSchema) commands.addAll(metadataDdl(dialect, inlineKeys.getOrDefault(BASKET, List.of())));
+        if (newSchema && plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.META_INFO)) {
+            commands.add(dialect.create(META_ATTRS, "ilielement " + dialect.text(255) + " NOT NULL, attr_name "
+                    + dialect.text(1024) + " NOT NULL, attr_value " + dialect.text(8000) + " NOT NULL"));
+        }
         if (createForeignKeys && !dialect.gpkg()) {
             for (var key : keys) commands.add("ALTER TABLE " + dialect.table(key.table()) + " ADD " + dialect.foreignKey(key));
         }
@@ -274,6 +280,27 @@ final class SchemaSql {
             ddl.add(d.uniqueIndex(ATTRNAME_KEY, ATTRNAME, "ColOwner, SqlName"));
         }
         return ddl;
+    }
+
+    private static void writeMetaInformation(Connection connection, SchemaPlan plan, Dialect dialect, boolean newSchema,
+                                             CancellationToken token) throws SQLException {
+        if (plan.metaInformation().isEmpty()) return;
+        String table = dialect.table(META_ATTRS);
+        String query = "INSERT INTO " + table + " (ilielement, attr_name, attr_value) " + (newSchema ? "VALUES (?, ?, ?)"
+                : "SELECT ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM " + table + " WHERE ilielement = ? AND attr_name = ?)");
+        try (var statement = connection.prepareStatement(query)) {
+            for (var entry : plan.metaInformation()) {
+                token.throwIfCancellationRequested();
+                statement.setString(1, entry.element());
+                statement.setString(2, entry.key());
+                statement.setString(3, entry.value());
+                if (!newSchema) {
+                    statement.setString(4, entry.element());
+                    statement.setString(5, entry.key());
+                }
+                statement.executeUpdate();
+            }
+        }
     }
 
     private static void writeMetadata(Connection connection, SchemaPlan plan, Dialect d, boolean newSchema,

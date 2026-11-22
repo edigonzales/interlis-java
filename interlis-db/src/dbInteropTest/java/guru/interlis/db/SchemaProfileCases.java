@@ -547,6 +547,93 @@ final class SchemaProfileCases {
         assertEquals(0, new BigDecimal(expected).compareTo(new BigDecimal(actual)));
     }
 
+    void metaInformation(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ProfileMeta" + version;
+        Path ili = source(model, """
+                DOMAIN Position = COORD 0.000 .. 100.000, 0.000 .. 100.000;
+                DOMAIN StatusValue = (in_progress, done);
+                STRUCTURE Note = Message : MANDATORY TEXT*24; END Note;
+                CLASS Root (ABSTRACT) = Memo : TEXT*24; END Root;
+                CLASS Target = Label : TEXT*24; END Target;
+                !!@example.class = "asset"
+                CLASS Asset EXTENDS Root =
+                  !!@example.field = "label"
+                  Label : TEXT*24;
+                  Notes : LIST OF Note;
+                  PositionValue : Position;
+                  LevelNo : 0..20;
+                  Phase : StatusValue;
+                  UNIQUE Label;
+                END Asset;
+                ASSOCIATION Assignment =
+                  RefAsset -- {0..1} Target;
+                  !!@example.inverse = "no column"
+                  Sources -- {0..*} Asset;
+                END Assignment;
+                """);
+        Files.writeString(ili, Files.readString(ili).replace("MODEL " + model,
+                "!!@example.model = \"profile\"\nMODEL " + model));
+        referenceSchema(expected, ili, "--sqlEnableNull", "--smart2Inheritance", "--createMetaInfo", "--createFk",
+                "--createFkIdx", "--createUnique", "--createNumChecks", "--createGeomIdx", "--strokeArcs", "--createEnumTabs",
+                "--beautifyEnumDispName");
+        schema(own, model, ili, "--inheritance", "smart2", "--create-meta-info", "--create-fk", "--create-fk-idx",
+                "--create-unique", "--create-num-checks", "--create-geom-index", "--stroke-arcs", "--create-enum-tabs",
+                "--beautify-enum-disp-name");
+        sameCatalog(expected, own);
+        String relation = "t_ili2db_meta_attrs";
+        try (var left = expected.connect(); var right = own.connect()) {
+            String fields = "SELECT ilielement || '|' || attr_name || '|' || attr_value FROM ";
+            var metadata = catalogKeys(left, fields + expected.table(relation));
+            assertEquals(metadata, catalogKeys(right, fields + own.table(relation)));
+            assertTrue(metadata.containsAll(Set.of(model + "|example.model|profile", model + "|ili2db.ili.lang|en",
+                    model + ".Data|ili2db.ili.topicClasses|asset target", model + ".Data.Asset|example.class|asset",
+                    model + ".Data.Asset.Label|example.field|label", model + ".Data.Note.Message|ili2db.ili.attrCardinalityMin|1",
+                    model + ".Data.Asset.Notes|ili2db.ili.attrCardinalityMax|*",
+                    model + ".Data.Assignment.Sources|example.inverse|no column")));
+            assertNull(scalar(right, "SELECT sqlname FROM " + own.table("t_ili2db_attrname")
+                    + " WHERE iliname='" + model + ".Data.Assignment.Sources'"));
+            assertEquals(foreignKeyColumns(expected, left), foreignKeyColumns(own, right));
+        }
+        for (var db : List.of(expected, own)) {
+            Path output = work.resolve("meta-output.xtf");
+            referenceImport(db, "legacy", metaData(model, "legacy"));
+            assertCliSuccess(db, "export", model, "legacy", output);
+            assertMetaData(rows(output, "legacy", 2).getFirst(), "legacy");
+            assertCliSuccess(db, "import", model, "native", metaData(model, "native"));
+            referenceExport(db, "native", output);
+            assertMetaData(rows(output, "native", 2).getFirst(), "native");
+        }
+        var extended = own.peer("profile_meta_extension");
+        schema(extended, model, ili, "--create-meta-info");
+        String next = "ProfileMetaAdded" + version;
+        Path extra = source(next, "CLASS Extra = Label : TEXT*24; END Extra;");
+        Files.writeString(extra, Files.readString(extra).replace("  TOPIC Data =",
+                "  IMPORTS " + model + ";\n  TOPIC Data ="));
+        try (var sql = extended.connect()) {
+            execute(sql, "UPDATE " + extended.table(relation) + " SET attr_value='custom' WHERE ilielement='"
+                    + model + "' AND attr_name='example.model'");
+            schema(extended, next, extra, "--add-models", "--model-file", ili.toString());
+            assertEquals("custom", scalar(sql, "SELECT attr_value FROM " + extended.table(relation)
+                    + " WHERE ilielement='" + model + "' AND attr_name='example.model'"));
+            assertEquals("extra", scalar(sql, "SELECT attr_value FROM " + extended.table(relation)
+                    + " WHERE ilielement='" + next + ".Data' AND attr_name='ili2db.ili.topicClasses'"));
+        }
+    }
+
+    private Path metaData(String model, String prefix) throws Exception {
+        Path xtf = linkedData(model, prefix);
+        return Files.writeString(xtf, Files.readString(xtf).replace("<Label>linked</Label>", "<Label>" + prefix + "</Label>")
+                .replace("</Notes>", "</Notes><PositionValue>" + point("12.000", "13.000")
+                        + "</PositionValue><LevelNo>15</LevelNo><Phase>in_progress</Phase>"));
+    }
+
+    private void assertMetaData(Element row, String prefix) {
+        assertLink(row, prefix);
+        assertEquals(prefix, child(row, "Label").getTextContent());
+        assertEquals("in_progress", child(row, "Phase").getTextContent());
+        assertEquals("15", child(row, "LevelNo").getTextContent());
+    }
+
     private Path linkedModel(String model) throws Exception {
         return source(model, """
                 STRUCTURE Note = Message : TEXT*24; END Note;

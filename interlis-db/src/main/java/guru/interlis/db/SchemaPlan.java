@@ -59,7 +59,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                   List<ColumnProperty> columnProperties, Map<String, List<GeometryColumn>> geometryColumns,
                   boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean strokeArcs, DbEnumOptions enumOptions,
                   Set<AttributeTransformation> transformations, List<DbEnumLookup> enumLookups,
-                  Map<String, List<List<String>>> uniqueKeys, Map<String, List<NumericCheck>> numericChecks) {
+                  Map<String, List<List<String>>> uniqueKeys, Map<String, List<NumericCheck>> numericChecks,
+                  List<DbMetaInfo.Row> metaInformation) {
     record ModelFile(String filename, LanguageVersion version, String modelNames, String content) { }
 
     record ColumnProperty(String table, String subtype, String column, String key, String value) { }
@@ -170,7 +171,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         return new SchemaPlan(mapping, modelFiles, addedTables, addedAssociations, addedCompositions, properties, geometries,
                 splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations,
                 DbEnumLookup.plan(mapping, names, enumOptions, compiled.syntax(), token), Map.copyOf(uniqueKeys),
-                Map.copyOf(numericChecks));
+                Map.copyOf(numericChecks), schemaOptions.contains(SchemaOption.META_INFO) ? DbMetaInfo.plan(mapping, token) : List.of());
     }
 
     List<String> addedStorageTables() { return DbMapping.storageTables(addedTables); }
@@ -287,7 +288,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     SchemaPlan withModelFiles(List<ModelFile> files) {
         return new SchemaPlan(mapping, files, addedTables, addedAssociations, addedCompositions, columnProperties,
                 geometryColumns, splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations, enumLookups,
-                uniqueKeys, numericChecks);
+                uniqueKeys, numericChecks, metaInformation);
     }
 
     private static Origin.DeclaredOrigin origin(ModelSymbol model) {
@@ -341,7 +342,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         return mapping.plan().symbol(ref).known().orElseThrow();
     }
 
-    private static String qualifiedName(DbMapping mapping, Symbol symbol) {
+    static String qualifiedName(DbMapping mapping, Symbol symbol) {
         String name = symbol.name().value();
         return symbol.owner().map(id -> qualifiedName(mapping, symbol(mapping,
                 new SymbolRef(mapping.plan().snapshotId(), id))) + "." + name).orElse(name);

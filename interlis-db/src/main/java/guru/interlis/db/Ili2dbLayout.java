@@ -40,6 +40,7 @@ final class Ili2dbLayout {
     static final String ATTRNAME = "T_ILI2DB_ATTRNAME";
     static final String COLUMN_PROP = "T_ILI2DB_COLUMN_PROP";
     static final String TABLE_PROP = "T_ILI2DB_TABLE_PROP";
+    static final String META_ATTRS = "T_ILI2DB_META_ATTRS";
     static final String ENUM = "T_ILI2DB_ENUM";
     static final String KEY_OBJECT = "T_KEY_OBJECT";
     static final String SEQUENCE = "t_ili2db_seq";
@@ -88,7 +89,8 @@ final class Ili2dbLayout {
         DATASET_COLUMN("--create-dataset-col", "createDatasetCols", "addDatasetCol"),
         STANDARD_COLUMNS("--create-std-cols", "createStdCols", "all"),
         UNIQUE("--create-unique", "uniqueConstraints", "create"),
-        NUMERIC_CHECKS("--create-num-checks", "numericCheckConstraints", "create");
+        NUMERIC_CHECKS("--create-num-checks", "numericCheckConstraints", "create"),
+        META_INFO("--create-meta-info", "createMetaInfo", "True");
 
         final String option;
         final String tag;
@@ -178,7 +180,7 @@ final class Ili2dbLayout {
 
     /** The input name has already been normalized by the name allocator. */
     static boolean reservedTable(String name, boolean gpkg) {
-        return name.equalsIgnoreCase(ENUM) || METADATA_TABLES.stream().anyMatch(name::equalsIgnoreCase)
+        return name.equalsIgnoreCase(ENUM) || name.equalsIgnoreCase(META_ATTRS) || METADATA_TABLES.stream().anyMatch(name::equalsIgnoreCase)
                 || (gpkg ? GPKG_TABLES.contains(name) || name.startsWith("sqlite_") : PG_RELATIONS.contains(name));
     }
 }

@@ -140,6 +140,9 @@ final class GeoPackageSchema {
                     registerAttributes(attributes, table);
                 }
                 registerAttributes(attributes, Ili2dbLayout.KEY_OBJECT);
+                if (plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.META_INFO)) {
+                    registerAttributes(attributes, Ili2dbLayout.META_ATTRS);
+                }
             }
             for (var lookup : plan.enumLookups()) {
                 token.throwIfCancellationRequested();

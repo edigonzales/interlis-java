@@ -117,6 +117,9 @@ mit `interlis-db` erzeugten Schema aus.
 Die `*ProfileNumericChecks*`-Fälle prüfen SQL-Bereichsprüfungen mit
 Ganzzahlen, Festkommawerten und `NULL`. Sie vergleichen auch eine gerundete
 Dezimalgrenze oberhalb von `2^53` und prüfen den Import-Rollback.
+Die `*ProfileMetaInformation*`-Fälle vergleichen `T_ILI2DB_META_ATTRS`
+einschliesslich einer inversen Rolle. Die Mischläufe kombinieren Smart2,
+Fremdschlüssel, Indizes, SQL-Checks und Aufzählungsmetadaten.
 
 Die `*ScalarWide*`-Fälle vergleichen die SQL-Kodierung und prüfen
 64-Bit-Ganzzahlen oberhalb von `2^53`, beide 64-Bit-Grenzwerte, SQL

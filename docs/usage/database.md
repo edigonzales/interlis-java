@@ -122,8 +122,14 @@ von `interlis-db` erzeugten Schema Daten austauschen.
 
 `schemaimport --create-num-checks` erzeugt Bereichsprüfungen für direkte
 Ganzzahl- und Festkommaspalten. Wie bei ili2db `--createNumChecks` bleiben
-Ganzzahlgrenzen exakt. Grenzen von Festkommazahlen werden für das SQL-Check
+Ganzzahlgrenzen exakt. Grenzen von Festkommazahlen werden für den SQL-Check
 mit Binary64-Genauigkeit übernommen.
+
+`schemaimport --create-meta-info` schreibt die Modellmetadaten in
+`T_ILI2DB_META_ATTRS`. Dazu gehören deklarierte Meta-Attribute,
+Kardinalitäten, Rollenarten und die SQL-Namen der Klassen eines Topics.
+Metadaten von Rollen ohne eigene SQL-Spalte werden ebenfalls gespeichert.
+`--add-models` ergänzt fehlende Einträge und erhält gespeicherte Werte.
 
 Mit `schemaimport --coalesce-catalogue-ref` erzeugt das Kommando die
 kompakte SQL-Abbildung für CHBase-V1-Katalogreferenzen, entsprechend
