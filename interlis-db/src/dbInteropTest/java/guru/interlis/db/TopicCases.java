@@ -153,6 +153,61 @@ final class TopicCases {
         assertObject(basket, parent, "Core", "Marker", prefix + "-m");
     }
 
+    void references(TestDatabase baseline, TestDatabase own) throws Exception {
+        String parent = "LinksBase" + version;
+        String model = "LinksTown" + version;
+        schemas(baseline, own, parent, model);
+        var input = fixture("links" + version + ".xtf");
+        var source = Files.readString(input);
+        var nativeInput = Files.writeString(work.resolve("links-native.xtf"), source.replace("links-", "native-"));
+        String depot = version == 23 ? "<LinksBase23.Core.Depot TID=\"bad-depot\"/>" : "<p:Depot i:tid=\"bad-depot\"/>";
+        String region = version == 23 ? "</LinksTown23.Region>" : "</d:Region>";
+        String sibling = version == 23 ? "<LinksTown23.Sibling BID=\"bad-sibling\">" + depot + "</LinksTown23.Sibling>"
+                : "<d:Sibling i:bid=\"bad-sibling\">" + depot + "</d:Sibling>";
+        var bad = Files.writeString(work.resolve("links-wrong-basket.xtf"), source.replace("links-", "bad-")
+                .replace(depot, "").replace(region, region + "\n" + sibling));
+        var output = work.resolve("links-out.xtf");
+        for (var db : List.of(baseline, own)) {
+            referenceImport(db, "legacy", input);
+            run(db, "export", model, "legacy", output);
+            assertReferences(output, parent, model, "links");
+            run(db, "import", model, "own", nativeInput);
+            referenceExport(db, "own", output);
+            assertReferences(output, parent, model, "native");
+            var result = cli(db, "import", model, "wrong-basket", bad, CancellationToken.none());
+            assertEquals(1, result.code(), result::diagnostics);
+            assertTrue(result.diagnostics().contains("to bad-depot as an ID in the mapped target table in this basket"),
+                    result::diagnostics);
+            try (var sql = db.connect()) {
+                assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("note") + " n JOIN "
+                        + db.table("delivery") + " d ON d.t_id=n.delivery_details AND d.t_basket=n.t_basket JOIN "
+                        + db.table("depot") + " p ON p.t_id=n.receivingdepot AND p.t_id=d.deliveredat AND p.t_basket=n.t_basket JOIN "
+                        + db.table("crate") + " c ON c.stockedat=p.t_id AND c.t_basket=p.t_basket JOIN "
+                        + db.table("registerentry") + " e ON e.t_id=n.entry AND e.t_basket<>n.t_basket"));
+                assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("note")));
+                assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + db.table("t_ili2db_dataset") + " WHERE datasetname='wrong-basket'"));
+                assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + db.table("t_ili2db_basket") + " WHERE t_ili_tid LIKE 'bad-%'"));
+                assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + db.table("delivery") + " WHERE t_ili_tid LIKE 'bad-%'"));
+            }
+        }
+    }
+
+    private void assertReferences(Path file, String parent, String model, String prefix) throws Exception {
+        var basket = assertRegion(file, model, prefix + "-b");
+        var delivery = assertObject(basket, model, "Region", "Delivery", prefix + "-delivery");
+        var crate = assertObject(basket, parent, "Core", "Crate", prefix + "-crate");
+        assertObject(basket, parent, "Core", "Depot", prefix + "-depot");
+        var note = children(child(delivery, "Details")).getFirst();
+        assertEquals(prefix + "-depot", id(child(note, "ReceivingDepot"), version, "ref"));
+        assertEquals(prefix + "-depot", id(child(delivery, "DeliveredAt"), version, "ref"));
+        assertEquals(prefix + "-depot", id(child(crate, "StockedAt"), version, "ref"));
+        var registry = children(readDataSection(file, version)).getLast();
+        assertName(registry, model, "Registry");
+        assertEquals(prefix + "-registry", id(registry, version, "bid"));
+        var target = assertObject(registry, model, "Registry", "RegisterEntry", prefix + "-entry");
+        assertEquals(id(target, version, "tid"), id(child(note, "Entry"), version, "ref"));
+    }
+
     private void assertInherited(Path file, String parent, String model, String prefix) throws Exception {
         var basket = assertRegion(file, model, prefix + "-b");
         var marker = assertObject(basket, parent, "Core", "Marker", prefix + "-m");

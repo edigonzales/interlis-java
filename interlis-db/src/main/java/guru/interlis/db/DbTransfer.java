@@ -473,7 +473,7 @@ final class DbTransfer {
                     if (column.external()) {
                         from.append(" AND EXISTS (SELECT 1 FROM ").append(baskets).append(" dst WHERE dst.")
                                 .append(T_ID).append(" = ").append(targetBasket);
-                        from.append(" AND dst.topic IN ").append(topicNames(mapping, root)).append(')');
+                        from.append(" AND dst.topic IN ").append(topicNames(mapping, target)).append(')');
                     } else {
                         from.append(" AND ").append(targetBasket).append(" = ").append(sourceBasket);
                     }
@@ -573,7 +573,7 @@ final class DbTransfer {
                 + " leaf WHERE leaf." + T_ID + " = ref." + T_ID + " AND leaf." + T_BASKET + " = ref." + T_BASKET + ")";
         String sql = "SELECT ref." + T_ID + ", basket." + T_ILI_TID + discriminator
                 + " FROM " + db.table(root.name()) + " ref JOIN " + db.technicalTable(BASKET)
-                + " basket ON basket." + T_ID + " = ref." + T_BASKET + " WHERE basket.topic IN " + topicNames(mapping, root)
+                + " basket ON basket." + T_ID + " = ref." + T_BASKET + " WHERE basket.topic IN " + topicNames(mapping, target)
                 + " AND " + tidExpression(root, "ref") + " = ?" + (bid.isPresent() ? " AND basket." + T_ILI_TID + " = ?" : "") + fragment;
         try (var statement = db.connection().prepareStatement(sql)) {
             statement.setString(1, tid);

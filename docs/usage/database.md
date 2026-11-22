@@ -38,6 +38,10 @@ Ein abstraktes Basistopic liefert Tabellen für konkrete abgeleitete Baskets.
 Bei `CLASS (EXTENDED)` verwendet ein verengtes `TEXT`-Attribut die
 SQL-Spalte der Basisdeklaration. Der Export verwendet im XTF 2.4 ihren
 Namensraum.
+Lokale Referenzen dürfen auf Objekte geerbter Klassen im selben Basket
+zeigen. Der Basket kann eingebettete Rollen des Basistopics übernehmen.
+Eine in einem abgeleiteten Topic deklarierte eingebettete 1:n-Rolle mit
+lokal deklarierter n-Klasse darf auf eine geerbte Klasse zeigen.
 [Referenzhandbuch](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst)
 
 ## Schemaerzeugung

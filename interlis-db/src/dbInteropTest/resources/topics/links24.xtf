@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
+            xmlns:p="http://www.interlis.ch/xtf/2.4/LinksBase24"
+            xmlns:d="http://www.interlis.ch/xtf/2.4/LinksTown24">
+  <i:headersection><i:models><i:model>LinksTown24</i:model></i:models></i:headersection>
+  <i:datasection>
+    <d:Region i:bid="links-b">
+      <d:Delivery i:tid="links-delivery">
+        <d:Details><d:Note><d:ReceivingDepot i:ref="links-depot"/><d:Entry i:ref="links-entry"/></d:Note></d:Details>
+        <d:DeliveredAt i:ref="links-depot"/>
+      </d:Delivery>
+      <p:Crate i:tid="links-crate"><p:StockedAt i:ref="links-depot"/></p:Crate>
+      <p:Depot i:tid="links-depot"/>
+    </d:Region>
+    <d:Registry i:bid="links-registry"><d:RegisterEntry i:tid="links-entry"/></d:Registry>
+  </i:datasection>
+</i:transfer>

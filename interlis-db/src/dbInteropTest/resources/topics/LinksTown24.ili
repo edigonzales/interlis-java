@@ -1,0 +1,20 @@
+INTERLIS 2.4;
+MODEL LinksTown24 AT "https://example.org/town" VERSION "1" =
+  IMPORTS LinksBase24;
+  TOPIC Registry =
+    CLASS RegisterEntry = END RegisterEntry;
+  END Registry;
+  TOPIC Region EXTENDS LinksBase24.Core =
+    DEPENDS ON Registry;
+    STRUCTURE Note =
+      ReceivingDepot : REFERENCE TO LinksBase24.Core.Depot;
+      Entry : REFERENCE TO (EXTERNAL) LinksTown24.Registry.RegisterEntry;
+    END Note;
+    CLASS Delivery = Details : Note; END Delivery;
+    ASSOCIATION Destination =
+      DeliveredAt -- {0..1} LinksBase24.Core.Depot;
+      DeliveredItem -- {0..*} Delivery;
+    END Destination;
+  END Region;
+  TOPIC Sibling EXTENDS LinksBase24.Core = END Sibling;
+END LinksTown24.

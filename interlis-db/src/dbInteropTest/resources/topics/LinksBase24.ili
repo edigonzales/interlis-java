@@ -1,0 +1,11 @@
+INTERLIS 2.4;
+MODEL LinksBase24 AT "https://example.org/town" VERSION "1" =
+  TOPIC Core =
+    CLASS Depot = END Depot;
+    CLASS Crate = END Crate;
+    ASSOCIATION Stock =
+      StockedAt -- {0..1} Depot;
+      StockedCrate -- {0..*} Crate;
+    END Stock;
+  END Core;
+END LinksBase24.

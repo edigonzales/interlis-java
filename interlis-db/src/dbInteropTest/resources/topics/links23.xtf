@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="test"><MODELS>
+    <MODEL NAME="LinksTown23" VERSION="1" URI="https://example.org/town"/>
+  </MODELS></HEADERSECTION>
+  <DATASECTION>
+    <LinksTown23.Region BID="links-b">
+      <LinksTown23.Region.Delivery TID="links-delivery">
+        <Details><LinksTown23.Region.Note>
+          <ReceivingDepot REF="links-depot"/><Entry REF="links-entry" BID="links-registry"/>
+        </LinksTown23.Region.Note></Details>
+        <DeliveredAt REF="links-depot"/>
+      </LinksTown23.Region.Delivery>
+      <LinksBase23.Core.Crate TID="links-crate"><StockedAt REF="links-depot"/></LinksBase23.Core.Crate>
+      <LinksBase23.Core.Depot TID="links-depot"/>
+    </LinksTown23.Region>
+    <LinksTown23.Registry BID="links-registry"><LinksTown23.Registry.RegisterEntry TID="links-entry"/></LinksTown23.Registry>
+  </DATASECTION>
+</TRANSFER>

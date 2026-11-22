@@ -622,8 +622,7 @@ final class DbMapping {
             if (object.baseType().isPresent()
                     && plan.object(object.baseType().orElseThrow()).filter(base -> base.kind() == object.kind()
                     && (base.topic().equals(object.topic()) || (object.kind() == SymbolKind.CLASS
-                    && base.topic().isPresent() && object.topic().isPresent()
-                    && includesTopic(plan, object.topic().orElseThrow(), base.topic().orElseThrow())))).isEmpty()) {
+                    && localTopic(plan, object, base)))).isEmpty()) {
                 throw unsupported("base type outside the current topic or of a different kind at " + object.name().declared());
             }
             for (var slot : object.slots()) {
@@ -701,8 +700,19 @@ final class DbMapping {
     }
 
     private static boolean inDependentTopic(TransferPlan plan, ObjectDescriptor source, ObjectDescriptor target) {
-        return source.topic().flatMap(plan::topic).filter(topic ->
-                target.topic().filter(topic.dependencies()::contains).isPresent()).isPresent();
+        if (target.topic().isEmpty()) return false;
+        var destination = target.topic().orElseThrow();
+        for (var current = source.topic(); current.isPresent(); ) {
+            var topic = plan.topic(current.orElseThrow()).orElseThrow();
+            if (topic.dependencies().contains(destination)) return true;
+            current = topic.baseTopic();
+        }
+        return false;
+    }
+
+    private static boolean localTopic(TransferPlan plan, ObjectDescriptor source, ObjectDescriptor target) {
+        return source.topic().isPresent() && target.topic().isPresent()
+                && includesTopic(plan, source.topic().orElseThrow(), target.topic().orElseThrow());
     }
 
     static Optional<EmbeddedAssociation> embeddedAssociation(TransferPlan plan, ObjectDescriptor association, String name,
@@ -723,6 +733,9 @@ final class DbMapping {
             throw unsupported("one-to-one associations between topics at " + association.name().declared());
         }
         if (crossesTopic && owner.external()) return Optional.empty();
+        if (!plan.object(owner.target()).orElseThrow().topic().equals(association.topic())) {
+            throw unsupported("embedded association on an inherited owner at " + association.name().declared());
+        }
         if (owner.external() || (target.external() && linkTable && owner.single())) {
             throw unsupported("external roles on this embedded association at " + association.name().declared());
         }
@@ -745,7 +758,7 @@ final class DbMapping {
         }
         var target = new SymbolRef(plan.snapshotId(), role.targets().getFirst().base());
         if (plan.object(target).filter(object -> object.kind() == SymbolKind.CLASS
-                && (object.topic().equals(association.topic()) || (role.external() && inDependentTopic(plan, association, object))))
+                && (localTopic(plan, association, object) || (role.external() && inDependentTopic(plan, association, object))))
                 .isEmpty()) {
             throw unsupported(feature + " requires a class in an allowed topic");
         }
@@ -864,7 +877,7 @@ final class DbMapping {
         if (type instanceof ReferenceType ref) {
             var symbol = new SymbolRef(plan.snapshotId(), ref.target().orElseThrow());
             if (plan.object(symbol).filter(obj -> obj.kind() == SymbolKind.CLASS
-                    && (obj.topic().equals(object.topic()) || (ref.external() && inDependentTopic(plan, object, obj))))
+                    && (localTopic(plan, object, obj) || (ref.external() && inDependentTopic(plan, object, obj))))
                     .isEmpty()) {
                 throw unsupported("reference outside the supported topic or class at " + path);
             }
