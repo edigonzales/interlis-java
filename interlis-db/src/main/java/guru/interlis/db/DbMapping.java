@@ -1065,6 +1065,15 @@ final class DbMapping {
                 Optional.empty(), Optional.empty(), Optional.empty(), 0, Optional.empty(), Optional.empty(), Optional.of(binding));
     }
 
+    static Kind scalarKind(TypeDescriptor type) {
+        return switch (type) {
+            case TextType text when text.textKind() == TextKind.TEXT || text.textKind() == TextKind.MTEXT -> Kind.TEXT;
+            case NumericType number when int32(number) -> Kind.INTEGER;
+            case EnumerationType ignored -> Kind.ENUMERATION;
+            default -> type.kind() == TypeKind.BOOLEAN ? Kind.BOOLEAN : null;
+        };
+    }
+
     static Column structureScalar(TransferPlan plan, ObjectDescriptor structure, AttributeSlot field) {
         var column = describeColumn(plan, structure, field, new CrsDefaults(0, 0), Optional.empty(), false);
         if (column.kind() == Kind.REFERENCE || column.kind().geometry()) {
@@ -1166,10 +1175,8 @@ final class DbMapping {
         boolean geometrySupported = optional(attr) || geometryComponent;
         var curve = type instanceof GeometryType geometry && geometrySupported
                 ? describeCurve(plan, geometry, path, defaults, concrete) : null;
-        Kind kind = switch (type) {
-            case TextType text when text.textKind() == TextKind.TEXT || text.textKind() == TextKind.MTEXT -> Kind.TEXT;
-            case NumericType number when int32(number) -> Kind.INTEGER;
-            case EnumerationType enumeration -> Kind.ENUMERATION;
+        Kind scalar = scalarKind(type);
+        Kind kind = scalar != null ? scalar : switch (type) {
             case CoordinateType coordinates when geometrySupported && storageDimensions(coordinates) ->
                     coordinates.multiCoordinate() ? Kind.MULTIPOINT : Kind.POINT;
             case GeometryType ignored when curve != null -> curve.kind();
@@ -1177,10 +1184,7 @@ final class DbMapping {
                     && reference.restrictions().isEmpty() && (optional(attr)
                     || (DbCatalogueReference.isReferenceField(attr) && DbCatalogueReference.isWrapper(plan, object))) ->
                     Kind.REFERENCE;
-            default -> {
-                if (type.kind() == TypeKind.BOOLEAN) yield Kind.BOOLEAN;
-                throw unsupported("attribute " + path + " (" + type.kind() + ")");
-            }
+            default -> throw unsupported("attribute " + path + " (" + type.kind() + ")");
         };
         if ((object.kind() == SymbolKind.STRUCTURE && kind.geometry() && !geometryComponent)
                 || (object.kind() == SymbolKind.ASSOCIATION && (kind.geometry() || kind == Kind.REFERENCE))) {

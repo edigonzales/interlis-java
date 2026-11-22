@@ -196,6 +196,83 @@ final class ArrayCases {
         assertEquals(previous, Files.readString(output));
     }
 
+    void direct(TestDatabase db) throws Exception {
+        String model = "ArrayDirect" + version;
+        source(model, """
+                DOMAIN Score = -20 .. 20;
+                DOMAIN Grade = (Low, Family (High, Higher));
+                """ + (version == 23 ? """
+                STRUCTURE LabelElem = Entry : TEXT*40; END LabelElem;
+                STRUCTURE FlagElem = Entry : BOOLEAN; END FlagElem;
+                STRUCTURE NumberElem = Entry : Score; END NumberElem;
+                STRUCTURE GradeElem = Entry : Grade; END GradeElem;
+                """ : ""), """
+                CLASS Asset =
+                  !!@ili2db.mapping=ARRAY
+                  Labels : LIST OF %s;
+                  !!@ili2db.mapping=ARRAY
+                  Flags : BAG OF %s;
+                  !!@ili2db.mapping=ARRAY
+                  Numbers : LIST OF %s;
+                  !!@ili2db.mapping=ARRAY
+                  Grades : LIST OF %s;
+                END Asset;
+                """.formatted(version == 23 ? new Object[]{"LabelElem", "FlagElem", "NumberElem", "GradeElem"}
+                        : new Object[]{"TEXT*40", "BOOLEAN", "Score", "Grade"}));
+
+        String values = directValues(model, "Labels", "LabelElem", "a & b", "a & b", "last")
+                + directValues(model, "Flags", "FlagElem", "true", "false", "true")
+                + directValues(model, "Numbers", "NumberElem", "-5", "0", "8")
+                + directValues(model, "Grades", "GradeElem", "Family.High", "Low");
+        schema(db, model);
+        var output = work.resolve("output.xtf");
+        referenceImport(db, "legacy", directDataset(model, "legacy", values));
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertDirect(output, "legacy");
+        assertCliSuccess(db, "import", model, "native", directDataset(model, "native", values));
+        referenceExport(db, "native", output);
+        assertDirect(output, "native");
+        if (version == 24) {
+            try (var sql = db.connect()) {
+                String invalid = db.postgis() ? "'{value,NULL}'" : """
+                        '["value",null]'
+                        """.strip();
+                execute(sql, "UPDATE " + db.table("asset") + " SET labels=" + invalid + " WHERE t_ili_tid='native-value'");
+            }
+            String previous = Files.readString(output);
+            assertCliFailure(db, "export", model, "native", output, "Null element in direct coalesced array");
+            assertEquals(previous, Files.readString(output));
+        }
+    }
+
+    private String directValues(String model, String attribute, String wrapper, String... values) {
+        if (version == 24) {
+            return Arrays.stream(values).map(value -> element(attribute, xmlText(value))).collect(Collectors.joining());
+        }
+        return element(attribute, Arrays.stream(values).map(value -> element(tag(model, wrapper), element("Entry", xmlText(value))))
+                .collect(Collectors.joining()));
+    }
+
+    private Path directDataset(String model, String prefix, String values) throws Exception {
+        return transfer(model, prefix, object(model, "Asset", prefix + "-value", values)
+                + object(model, "Asset", prefix + "-missing", ""));
+    }
+
+    private void assertDirect(Path output, String prefix) throws Exception {
+        var found = objects(output, prefix);
+        assertEquals(List.of(), children(found.get(prefix + "-missing")));
+        var asset = found.get(prefix + "-value");
+        assertEquals(List.of("a & b", "a & b", "last"), scalarItems(asset, "Labels"));
+        assertEquals(List.of("false", "true", "true"), scalarItems(asset, "Flags").stream().sorted().toList());
+        assertEquals(List.of("-5", "0", "8"), scalarItems(asset, "Numbers"));
+        assertEquals(List.of("Family.High", "Low"), scalarItems(asset, "Grades"));
+    }
+
+    private List<String> scalarItems(Element object, String name) {
+        if (version == 23) return items(object, name);
+        return children(object).stream().filter(value -> value.getLocalName().equals(name)).map(Element::getTextContent).toList();
+    }
+
     private Path mixedLists(TestDatabase db, String model, List<String> expected) throws Exception {
         schema(db, model);
         var output = work.resolve("output.xtf");

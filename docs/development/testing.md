@@ -99,7 +99,9 @@ wenn ein Wert die 32-Bit-Kodierung übersteigt. Die `*ArrayEnumeration*`-Fälle
 prüfen benannte Aufzählungen und qualifizierte XTF-Codes. Die
 `*ArrayBag*`-Fälle prüfen Duplikate, fehlende Werte und die gruppierte
 XTF-2.4-Ausgabe von ili2db. Die `*ArraySingle*`-Fälle prüfen optionale
-Einzelwerte und diagnostizieren mehrere gespeicherte Elemente.
+Einzelwerte und diagnostizieren mehrere gespeicherte Elemente. Die
+`*ArrayDirect*`-Fälle prüfen in XTF 2.4 direkte skalare Array-Werte
+und in XTF 2.3 die entsprechende Einfeldstruktur.
 
 Die `*ExpandSingle*`-Fälle prüfen den Austausch optionaler flacher
 Strukturen mit ili2db-`--expandStruct`, das Umbenennen einer SQL-Spalte

@@ -7,6 +7,8 @@ import com.google.gson.stream.JsonWriter;
 import guru.interlis.db.DbMapping.Kind;
 import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CollectionType;
+import guru.interlis.model.DomainReferenceType;
+import guru.interlis.model.StructureValueType;
 import guru.interlis.model.Modifier;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
@@ -33,7 +35,9 @@ import java.util.Map;
 import java.util.Optional;
 
 /** The ili2db representation of single-field values stored together in one column. */
-record DbArray(Optional<CollectionKind> collection, SymbolRef structure, AttributeSlot field, Kind kind, TypeDescriptor type) {
+record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, Kind kind, TypeDescriptor type) {
+    record Wrapper(SymbolRef structure, AttributeSlot field) { }
+
     private static final int MAX_ELEMENTS = 1_000_000;
 
     static DbArray describe(TransferPlan plan, AttributeSlot outer) {
@@ -44,20 +48,28 @@ record DbArray(Optional<CollectionKind> collection, SymbolRef structure, Attribu
             collection = Optional.of(repeated.collectionKind());
             type = plan.type(new TypeRef(plan.snapshotId(), repeated.elementType())).known().orElseThrow();
         }
-        var structure = DbStructureShape.target(plan, type)
-                .filter(target -> target.kind() == SymbolKind.STRUCTURE && !target.modifiers().contains(Modifier.ABSTRACT))
-                .orElseThrow(() -> DbMapping.unsupported("coalesced array structure at " + path));
-        var fields = DbMapping.attributes(structure);
-        if (fields.size() != 1 || structure.baseType().isPresent()) {
-            throw DbMapping.unsupported("coalesced array requires one structure field at " + path);
+        Optional<Wrapper> wrapper = Optional.empty();
+        if (type instanceof StructureValueType) {
+            var structure = DbStructureShape.target(plan, type)
+                    .filter(target -> target.kind() == SymbolKind.STRUCTURE && !target.modifiers().contains(Modifier.ABSTRACT))
+                    .orElseThrow(() -> DbMapping.unsupported("coalesced array structure at " + path));
+            var fields = DbMapping.attributes(structure);
+            if (fields.size() != 1 || structure.baseType().isPresent()) {
+                throw DbMapping.unsupported("coalesced array requires one structure field at " + path);
+            }
+            var field = fields.getFirst();
+            wrapper = Optional.of(new Wrapper(structure.symbol(), field));
+            type = DbStructureShape.type(plan, field);
+        } else if (collection.isEmpty()) {
+            throw DbMapping.unsupported("direct coalesced array of " + path);
         }
-        var field = fields.getFirst();
-        var scalar = DbMapping.structureScalar(plan, structure, field);
-        var kind = scalar.kind();
-        if (kind != Kind.TEXT && kind != Kind.BOOLEAN && kind != Kind.INTEGER && kind != Kind.ENUMERATION) {
-            throw DbMapping.unsupported("coalesced array element at " + path);
+        while (type instanceof DomainReferenceType alias) {
+            var domain = DbDomains.domain(plan, alias.targetDomain());
+            type = plan.type(new TypeRef(plan.snapshotId(), domain.typeId())).known().orElseThrow();
         }
-        return new DbArray(collection, structure.symbol(), field, scalar.kind(), scalar.effectiveType().orElseThrow());
+        var kind = DbMapping.scalarKind(type);
+        if (kind == null) throw DbMapping.unsupported("coalesced array element at " + path);
+        return new DbArray(collection, wrapper, kind, type);
     }
 
     String pgElementType() {
@@ -77,7 +89,14 @@ record DbArray(Optional<CollectionKind> collection, SymbolRef structure, Attribu
         var items = new ArrayList<TransferValue>(values.size());
         for (var value : values) {
             var element = value == null ? null : readElement(value, context);
-            items.add(new Structured(structure, element == null ? Map.of() : Map.of(field.symbol(), element)));
+            if (wrapper.isPresent()) {
+                var structureType = wrapper.orElseThrow();
+                items.add(new Structured(structureType.structure(), element == null ? Map.of()
+                        : Map.of(structureType.field().symbol(), element)));
+            } else {
+                if (element == null) throw invalid("Null element in direct coalesced array", context);
+                items.add(element);
+            }
         }
         return collection.<TransferValue>map(kind -> new Repeated(kind, items)).orElseGet(items::getFirst);
     }
@@ -95,11 +114,16 @@ record DbArray(Optional<CollectionKind> collection, SymbolRef structure, Attribu
         checkCount(items.size(), context);
         var result = new ArrayList<>(items.size());
         for (var item : items) {
-            if (!(item instanceof Structured structureValue) || !structure.equals(structureValue.type())
-                    || structureValue.values().keySet().stream().anyMatch(key -> !key.equals(field.symbol()))) {
-                throw invalid("Unexpected array structure", context);
+            var element = item;
+            if (wrapper.isPresent()) {
+                var structureType = wrapper.orElseThrow();
+                var field = structureType.field().symbol();
+                if (!(item instanceof Structured structureValue) || !structureType.structure().equals(structureValue.type())
+                        || structureValue.values().keySet().stream().anyMatch(key -> !key.equals(field))) {
+                    throw invalid("Unexpected array structure", context);
+                }
+                element = structureValue.values().get(field);
             }
-            var element = structureValue.values().get(field.symbol());
             result.add(element == null || element == Undefined.INSTANCE ? null : writeElement(element, context));
         }
         return result;

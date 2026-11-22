@@ -507,7 +507,10 @@ Attribut. Ein einzelnes `NULL`-Element ergibt bei `interlis-db` eine
 leere Struktur. ili2db 5.5.2 importiert dieselbe Form, bricht aber beim
 eigenen Export mit `illegal value null for Entry` ab, wenn das Textfeld
 `Entry` heisst. Ein optionaler Struktureinzelwert mit `ili2db.mapping=ARRAY`
-verwendet dieselbe Kodierung mit höchstens einem Element.
+verwendet dieselbe Kodierung mit höchstens einem Element. In XTF 2.4
+können `LIST OF` und `BAG OF` die unterstützten Skalare direkt übertragen.
+Ein gespeichertes `NULL`-Element ist in dieser direkten XTF-Form nicht
+darstellbar und wird am Attribut diagnostiziert.
 
 In bestehenden Schemata mit `--coalesceJson` speichert ili2db eine
 optionale flache Struktur als JSON-Objekt. GeoPackage verwendet `TEXT`,
