@@ -632,8 +632,7 @@ final class DbTransfer {
     }
 
     private static int projectionSize(DbMapping mapping, Column column) {
-        if (column.textExpansion().isPresent()) return column.textExpansion().orElseThrow().width();
-        if (column.kind() != DbMapping.Kind.REFERENCE) return 1;
+        if (column.kind() != DbMapping.Kind.REFERENCE) return column.physicalWidth();
         int targetFields = mapping.referenceRoot(column).hasDiscriminator() ? 3 : 2;
         return targetFields + (projectsTargetBid(mapping, column) ? 1 : 0)
                 + (column.positionColumn().isPresent() ? 1 : 0);
@@ -664,7 +663,7 @@ final class DbTransfer {
         var values = new LinkedHashMap<SymbolRef, TransferValue>();
         for (var column : table.columns()) {
             if (!mapping.applies(column, actual)) {
-                int width = column.textExpansion().map(DbTextExpansion::width).orElse(1);
+                int width = column.physicalWidth();
                 for (int offset = 0; offset < width; offset++) {
                     if (rows.getObject(index + offset) != null) {
                         throw new DbException("Column " + column.name() + " does not apply to object " + ownerTid);
@@ -1017,11 +1016,24 @@ final class DbTransfer {
 
     private static TransferValue readValue(Database db, DbMapping mapping, ResultSet rows, int index,
                                            Column column, String ownerTid) throws SQLException {
+        if (column.expandedStructure().isPresent()) {
+            var expanded = column.expandedStructure().orElseThrow();
+            String type = rows.getString(index++);
+            String context = column.slot().name().declared() + " of object " + ownerTid;
+            if (type != null && !expanded.typeName().equals(type)) {
+                throw new DbException("Unexpected expanded structure type " + type + " at " + context);
+            }
+            var values = new LinkedHashMap<SymbolRef, TransferValue>();
+            for (var field : expanded.fields()) {
+                var value = readScalar(db, rows, index++, field);
+                if (value != null) values.put(field.slot().symbol(), value);
+            }
+            if (type == null && !values.isEmpty()) throw new DbException("Missing expanded structure type at " + context);
+            return type == null ? null : new Structured(expanded.structure(), values);
+        }
         return switch (column.kind()) {
             case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> readGeometry(db, rows, index, column);
-            case BOOLEAN -> readBoolean(db, rows, index, column);
-            case INTEGER -> readInteger(rows.getString(index), column);
-            case ENUMERATION -> readEnumeration(rows.getString(index), column);
+            case BOOLEAN, INTEGER, ENUMERATION -> readScalar(db, rows, index, column);
             case TEXT -> {
                 if (column.textExpansion().isPresent()) {
                     var expansion = column.textExpansion().orElseThrow();
@@ -1029,8 +1041,7 @@ final class DbTransfer {
                     for (int offset = 0; offset < values.length; offset++) values[offset] = rows.getString(index + offset);
                     yield expansion.assemble(values);
                 }
-                String value = rows.getString(index);
-                yield value == null ? null : new Text(value);
+                yield readScalar(db, rows, index, column);
             }
             case REFERENCE -> {
                 String path = column.slot().name().declared().toString();
@@ -1061,6 +1072,19 @@ final class DbTransfer {
                 yield catalogue.<TransferValue>map(binding ->
                         new Structured(binding.structure(), Map.of(binding.field().symbol(), reference))).orElse(reference);
             }
+        };
+    }
+
+    private static TransferValue readScalar(Database db, ResultSet rows, int index, Column column) throws SQLException {
+        return switch (column.kind()) {
+            case BOOLEAN -> readBoolean(db, rows, index, column);
+            case INTEGER -> readInteger(rows.getString(index), column);
+            case ENUMERATION -> readEnumeration(rows.getString(index), column);
+            case TEXT -> {
+                String value = rows.getString(index);
+                yield value == null ? null : new Text(value);
+            }
+            default -> throw new IllegalArgumentException("Expected a scalar column");
         };
     }
 
@@ -1678,7 +1702,12 @@ final class DbTransfer {
             if (column.kind().geometry()) {
                 return db.bindGeometry(statement, index, table.name(), column, (TransferGeometry) value);
             }
-            if (value == null) {
+            return bindScalar(statement, index, column, value);
+        }
+
+        private static int bindScalar(PreparedStatement statement, int index, Column column, TransferValue value)
+                throws SQLException {
+            if (value == null || value == Undefined.INSTANCE) {
                 statement.setNull(index, Types.NULL);
                 return index + 1;
             }
@@ -1703,6 +1732,15 @@ final class DbTransfer {
         private int bindColumn(PreparedStatement statement, int index, Table table, Column column, long id,
                                String context, BasketId basket, TransferValue value) throws SQLException {
             if (column.kind().geometry()) value = storedGeometry(column, value, context);
+            if (column.expandedStructure().isPresent()) {
+                var expanded = column.expandedStructure().orElseThrow();
+                var item = expanded.checked(value, column.slot().name().declared() + " of object " + context);
+                statement.setString(index++, item == null ? null : expanded.typeName());
+                for (var field : expanded.fields()) {
+                    index = bindScalar(statement, index, field, item == null ? null : item.values().get(field.slot().symbol()));
+                }
+                return index;
+            }
             if (column.textExpansion().isPresent()) {
                 for (var text : column.textExpansion().orElseThrow().disassemble(value, column.slot().name().declared()
                         + " of object " + context)) {

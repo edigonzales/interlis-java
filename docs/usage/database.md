@@ -473,6 +473,13 @@ Endpunkt vor dem Zwischenpunkt. Der Leser akzeptiert auch die umgekehrte
 Reihenfolge aus Exporten von ili2db 5.5.2.
 [INTERLIS 2.4, Anhang C](https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=133)
 
+In bestehenden Schemata mit ili2db-`--expandStruct` kann ein optionaler
+flacher Strukturwert mit Text, Boolean, 32-Bit-Ganzzahlen und Aufzählungen
+direkt in der Eigentümertabelle liegen. `TRAFO` weist die Expansion aus,
+`ATTRNAME` benennt je Feld die physische Spalte. Die Typmarkierung enthält
+den gespeicherten SQL-Namen der Struktur. Eine vorhandene, leere Struktur
+hat eine Typmarkierung und ausschliesslich `NULL`-Felder.
+
 In XTF 2.3 und 2.4 FULL können Klassen und Strukturen optionale Strukturwerte
 sowie `LIST OF`- und `BAG OF`-Attribute mit einem Strukturtyp aus dem
 Modell oder dem eigenen Topic enthalten. Verschachtelungen sind azyklisch.

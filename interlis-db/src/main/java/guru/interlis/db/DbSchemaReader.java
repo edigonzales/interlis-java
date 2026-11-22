@@ -245,6 +245,18 @@ final class DbSchemaReader {
                         usedAttributeTransformations.add(path);
                         continue;
                     }
+                    if (transformation == Ili2dbLayout.AttributeTransformation.EXPANDED_STRUCTURE) {
+                        var binding = DbExpandedStructure.bind(plan, attr, names, (field, kind) -> {
+                            var stored = attrNames.take(field, parent.name(), null);
+                            useColumn(db, parent, stored, field);
+                            if (stored.target() != null) throw new DbException("Unexpected ATTRNAME.target for " + field);
+                            requireColumns(db, parent.name(), parent.columns(), Map.of(stored.name(), kind));
+                            return stored.name();
+                        });
+                        columns.add(DbMapping.expandedColumn(plan, attr, binding));
+                        usedAttributeTransformations.add(path);
+                        continue;
+                    }
                     var wrapped = wrappedGeometries.get(attr.symbol());
                     var composition = wrapped == null ? DbMapping.describeComposition(plan, object, attr, path)
                             : Optional.<Composition>empty();
@@ -779,7 +791,8 @@ final class DbSchemaReader {
             int owner = path.indexOf('(');
             if (owner >= 0 && path.endsWith(")")) return includes(path.substring(owner + 1, path.length() - 1));
             if (roots.contains(modelName(path)) || objects.contains(path)) return true;
-            int member = path.lastIndexOf('.');
+            int position = path.indexOf('[');
+            int member = position < 0 ? path.lastIndexOf('.') : path.lastIndexOf('.', position);
             return member >= 0 && objects.contains(path.substring(0, member));
         }
 

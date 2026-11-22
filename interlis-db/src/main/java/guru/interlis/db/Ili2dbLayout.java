@@ -73,7 +73,8 @@ final class Ili2dbLayout {
         LOCALISED("--expand-localised", "localisedTrafo", "expand"),
         MULTIPOINT("--coalesce-multi-point", "multiPointTrafo", COALESCE),
         MULTILINE("--coalesce-multi-line", "multiLineTrafo", COALESCE),
-        MULTISURFACE("--coalesce-multi-surface", "multiSurfaceTrafo", COALESCE);
+        MULTISURFACE("--coalesce-multi-surface", "multiSurfaceTrafo", COALESCE),
+        EXPANDED_STRUCTURE(null, "structTrafo", "expand");
 
         final String option;
         final String tag;

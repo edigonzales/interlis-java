@@ -102,7 +102,8 @@ final class DbMapping {
                   Optional<SymbolRef> target, Optional<SymbolRef> referenceTable, int epsgCode, int srsId, boolean legacyEpsgHeader,
                   Optional<String> positionColumn, int dimensions, Optional<DomainBinding> domainBinding,
                   Optional<DbCatalogueReference> catalogueReference, Optional<DbTextExpansion> textExpansion,
-                  Optional<DbWrappedGeometry> wrappedGeometry, double strokeTolerance) {
+                  Optional<DbWrappedGeometry> wrappedGeometry, double strokeTolerance,
+                  Optional<DbExpandedStructure> expandedStructure) {
         Column {
             boolean role = slot instanceof RoleSlot;
             if (effectiveType.isEmpty() != role || (role && kind != Kind.REFERENCE)) {
@@ -116,8 +117,7 @@ final class DbMapping {
                Optional<DbCatalogueReference> catalogueReference, Optional<DbTextExpansion> textExpansion,
                Optional<DbWrappedGeometry> wrappedGeometry) {
             this(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
-                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry,
-                    0);
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, 0, Optional.empty());
         }
 
         Column(TransferSlot slot, String name, Kind kind, Optional<TypeDescriptor> effectiveType,
@@ -130,30 +130,30 @@ final class DbMapping {
 
         Column withName(String sqlName) {
             return new Column(slot, sqlName, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
-                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance);
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance, expandedStructure);
         }
 
         Column withEpsg(int epsg) {
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsg, epsg, false,
-                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance);
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance, expandedStructure);
         }
 
         Column withSrsId(int id, boolean acceptsEpsgHeader) {
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, id, acceptsEpsgHeader,
-                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance);
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance, expandedStructure);
         }
 
         Column withPositionColumn(boolean gpkg) {
             String position = name + "_" + (gpkg ? SEQ_COLUMN : T_SEQ);
             checkColumnName(slot, position, false, false, gpkg);
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
-                    Optional.of(position), dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance);
+                    Optional.of(position), dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance, expandedStructure);
         }
 
         Column withReferenceTable(SymbolRef table) {
             return new Column(slot, name, kind, effectiveType, target, Optional.of(table), epsgCode, srsId,
                     legacyEpsgHeader, positionColumn, dimensions, domainBinding, catalogueReference, textExpansion,
-                    wrappedGeometry, strokeTolerance);
+                    wrappedGeometry, strokeTolerance, expandedStructure);
         }
 
         Column withStrokeArcs(TransferPlan plan, boolean strokeArcs) {
@@ -166,7 +166,7 @@ final class DbMapping {
             double tolerance = digits == 0 ? 0.5 : Math.pow(10, -digits);
             if (tolerance == 0) throw unsupported("arc precision at " + slot.name().declared());
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
-                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, tolerance);
+                    positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, tolerance, expandedStructure);
         }
 
         CoordinateType vertexCoordinates(TransferPlan plan) {
@@ -182,7 +182,13 @@ final class DbMapping {
         String geometryType() { return geometryEncoding().sqlType(kind); }
 
         List<String> physicalNames() {
+            if (expandedStructure.isPresent()) return expandedStructure.orElseThrow().physicalNames();
             return textExpansion.map(expansion -> expansion.columns(name)).orElseGet(() -> List.of(name));
+        }
+
+        int physicalWidth() {
+            if (expandedStructure.isPresent()) return expandedStructure.orElseThrow().width();
+            return textExpansion.map(DbTextExpansion::width).orElse(1);
         }
 
         AttributeTransformation transformation() {
@@ -1020,6 +1026,20 @@ final class DbMapping {
     static Column textColumn(AttributeSlot outer, String name, DbTextExpansion binding) {
         return new Column(outer, name, Kind.TEXT, Optional.of(binding.textType()), Optional.empty(), Optional.empty(),
                 0, 0, false, Optional.empty(), 0, Optional.empty(), Optional.empty(), Optional.of(binding), Optional.empty());
+    }
+
+    static Column expandedColumn(TransferPlan plan, AttributeSlot outer, DbExpandedStructure binding) {
+        return new Column(outer, binding.typeColumn(), Kind.TEXT, Optional.of(DbStructureShape.type(plan, outer)),
+                Optional.empty(), Optional.empty(), 0, 0, false, Optional.empty(), 0, Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(), 0, Optional.of(binding));
+    }
+
+    static Column structureScalar(TransferPlan plan, ObjectDescriptor structure, AttributeSlot field) {
+        var column = describeColumn(plan, structure, field, new CrsDefaults(0, 0), Optional.empty(), false);
+        if (column.kind() == Kind.REFERENCE || column.kind().geometry()) {
+            throw unsupported("expanded scalar field " + field.name().declared());
+        }
+        return column;
     }
 
     private static Column wrappedGeometryColumn(TransferPlan plan, AttributeSlot outer, DbWrappedGeometry binding,

@@ -108,6 +108,16 @@ final class DbInteropTest {
 
     @TempDir(cleanup = CleanupMode.ALWAYS) Path work;
 
+    @Test void geoPackageExpandSingle23() throws Exception { exchangeExpandSingle(23, null); }
+    @Test void geoPackageExpandSingle24() throws Exception { exchangeExpandSingle(24, null); }
+    @Test void postgisExpandSingle23() throws Exception { exchangeWithPostgis(23, this::exchangeExpandSingle); }
+    @Test void postgisExpandSingle24() throws Exception { exchangeWithPostgis(24, this::exchangeExpandSingle); }
+
+    private void exchangeExpandSingle(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "expand_single");
+        new StructureMappingCases(work, new ReferenceTool(db.postgis()), version).single(db);
+    }
+
     @Test void geoPackageChbasePoints23() throws Exception { exchangeChbasePoints(23, null); }
     @Test void geoPackageChbasePoints24() throws Exception { exchangeChbasePoints(24, null); }
     @Test void geoPackageStrokePolyline23() throws Exception { exchangeStrokePolyline(23, null); }
