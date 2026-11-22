@@ -131,6 +131,62 @@ final class StrokeCases {
         }
     }
 
+    void surface(TestDatabase db) throws Exception {
+        String model = "StrokeSurface" + version;
+        source(model, "SURFACE");
+        referenceSchema(db, model);
+        var outer = polyline(coord(600000, 200000) + arc(600005, 199995, 600010, 200000) + coord(600010, 200010)
+                + coord(600000, 200010) + coord(600000, 200000));
+        var inner = polyline(coord(600002, 200002) + coord(600002, 200004) + coord(600004, 200002) + coord(600002, 200002));
+        String surface = surfaceValue(outer, inner);
+        referenceImport(db, "legacy", dataset(model, "legacy", surface));
+        assertGeometryColumn(db, "route", "shape", "POLYGON", 2056);
+        var output = work.resolve("output.xtf");
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertPolygon(output, "legacy");
+        assertCliSuccess(db, "import", model, "native", dataset(model, "native", surface));
+        referenceExport(db, "native", output);
+        assertPolygon(output, "native");
+
+        String diagnostic;
+        try (var sql = db.connect()) {
+            var table = db.table("route");
+            if (db.postgis()) {
+                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + table + " WHERE t_ili_tid='native-value'"
+                        + " AND ST_IsValid(shape) AND ST_NumInteriorRings(shape)=1 AND ST_SRID(shape)=2056"));
+                execute(sql, "ALTER TABLE " + table + " ALTER COLUMN shape TYPE geometry(CurvePolygon,2056) USING ST_ForceCurve(shape)");
+                diagnostic = "2D POLYGON column at route.shape";
+            } else {
+                execute(sql, "UPDATE " + table + " SET shape=CAST(substr(shape,1,9)||X'0000000A'||substr(shape,14) AS BLOB)"
+                        + " WHERE t_ili_tid='native-value'");
+                diagnostic = "2D WKB POLYGON";
+            }
+        }
+        String previous = Files.readString(output);
+        assertCliFailure(db, "export", model, "native", output, diagnostic);
+        assertEquals(previous, Files.readString(output));
+    }
+
+    private void assertPolygon(Path output, String prefix) throws Exception {
+        var objects = objects(output, prefix);
+        assertNull(child(objects.get(prefix + "-null"), "Shape"));
+        var surface = children(child(objects.get(prefix + "-value"), "Shape")).getFirst();
+        var rings = children(surface).stream().map(ring -> positions(children(ring).getFirst())).toList();
+        assertEquals(2, rings.size());
+        assertEquals(84, rings.getFirst().size());
+        assertEquals(List.of(600000.0, 200000.0), rings.getFirst().getFirst());
+        assertEquals(rings.getFirst().getFirst(), rings.getFirst().getLast());
+        assertEquals(List.of(600005.0, 199995.0), rings.getFirst().get(40));
+        assertEquals(List.of(List.of(600002.0, 200002.0), List.of(600002.0, 200004.0), List.of(600004.0, 200002.0),
+                List.of(600002.0, 200002.0)), rings.getLast());
+    }
+
+    private String surfaceValue(String exterior, String... interiors) {
+        String contents = geometry(version == 23 ? "boundary" : "exterior", exterior);
+        for (String interior : interiors) contents += geometry(version == 23 ? "boundary" : "interior", interior);
+        return geometry("surface", contents);
+    }
+
     private void assertStraightLine(Path output, String prefix) throws Exception {
         var objects = objects(output, prefix);
         assertNull(child(objects.get(prefix + "-null"), "Shape"));
@@ -157,11 +213,12 @@ final class StrokeCases {
                   DOMAIN Vertex = COORD 400000.%3$s .. 900000.%3$s, 0.%3$s .. 400000.%3$s;
                   TOPIC Data =
                     CLASS Route =
-                      Shape : %4$s WITH (STRAIGHTS, ARCS) VERTEX Vertex;
+                      Shape : %4$s WITH (STRAIGHTS, ARCS) VERTEX Vertex%5$s;
                     END Route;
                   END Data;
                 END %2$s.
-                """.formatted(version - 20, model, precision, kind));
+                """.formatted(version - 20, model, precision, kind,
+                        kind.endsWith("LINE") ? "" : " WITHOUT OVERLAPS > 0.001"));
     }
 
     private Path dataset(String model, String prefix, String shape) throws Exception {

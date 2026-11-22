@@ -398,7 +398,8 @@ Ende Z. Die XY-Zwischenposition wird wie in ili2db mit einem
 `NaN`-Platzhalter für Z gespeichert.
 
 Bestehende ili2db-Schemata mit `--strokeArcs` speichern XY-Polylinien in
-`LINESTRING`-Spalten. `interlis-db` liest die Option aus den
+`LINESTRING`-Spalten und XY-`SURFACE` mit Aussen- und Innenringen in
+`POLYGON`-Spalten. `interlis-db` liest die Option aus den
 Schemaeinstellungen und prüft den SQL-Typ im Katalog sowie in den
 Spaltenmetadaten. Gerade Polylinien bleiben in ihrer ursprünglichen
 Reihenfolge erhalten. Beim Import bleiben Anfang, Stützpunkt und Ende

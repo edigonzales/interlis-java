@@ -2,10 +2,13 @@ package guru.interlis.db;
 
 import guru.interlis.db.DbMapping.Kind;
 import guru.interlis.db.GeometryBinary.CoordinateBudget;
+import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TransferGeometry.Arc;
 import guru.interlis.transfer.TransferGeometry.Coordinate;
 import guru.interlis.transfer.TransferGeometry.CurvePart;
 import guru.interlis.transfer.TransferGeometry.Polyline;
+import guru.interlis.transfer.TransferGeometry.Ring;
+import guru.interlis.transfer.TransferGeometry.Surface;
 import guru.interlis.transfer.TransferGeometry.Segment;
 import guru.interlis.transfer.TransferGeometry.Straight;
 
@@ -28,8 +31,20 @@ final class ArcStroker {
         budget = new CoordinateBudget(kind);
     }
 
-    Polyline line(Polyline line) {
-        var part = GeometryBinary.linePart(line);
+    TransferGeometry stroke(TransferGeometry value) {
+        return switch (value) {
+            case Polyline line -> new Polyline(List.of(linearPart(GeometryBinary.linePart(line))));
+            case Surface surface -> new Surface(ring(surface.shell()), surface.holes().stream().map(this::ring).toList());
+            default -> throw new DbException("Expected a line or surface");
+        };
+    }
+
+    private Ring ring(Ring ring) {
+        var part = linearPart(GeometryBinary.ringPart(ring, budget));
+        return new Ring(List.of(new Polyline(List.of(part))));
+    }
+
+    private CurvePart linearPart(CurvePart part) {
         var segments = new ArrayList<Segment>();
         Coordinate start = part.start();
         budget.consume(1);
@@ -41,7 +56,7 @@ final class ArcStroker {
             }
             start = segment.end();
         }
-        return new Polyline(List.of(new CurvePart(part.start(), segments)));
+        return new CurvePart(part.start(), segments);
     }
 
     private void appendArc(List<Segment> segments, Coordinate start, Arc arc) {

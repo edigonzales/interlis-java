@@ -63,8 +63,8 @@ final class GeometryBinary {
 
     private record GeoPackageHeader(int srsId, boolean empty, boolean envelope) { }
 
-    private record CompoundCurve(CurvePart part, int components, int size, boolean hasArcs) { }
-    private record CurvePolygon(List<CompoundCurve> rings, int size) { }
+    private record Curve(CurvePart part, int components, int size, boolean hasArcs) { }
+    private record Polygon(List<Curve> rings, int size) { }
 
     static final class CoordinateBudget {
         private final Kind kind;
@@ -143,7 +143,7 @@ final class GeometryBinary {
             case MULTIPOINT -> readMultiPoint(data, empty, gpkg, dimensions);
             case POLYLINE -> readPolyline(data, gpkg, dimensions, encoding);
             case MULTICURVE -> readMultiCurve(data, empty, gpkg, dimensions);
-            case SURFACE -> readSurface(data, gpkg, dimensions);
+            case SURFACE -> readSurface(data, gpkg, dimensions, encoding);
             case MULTISURFACE -> readMultiSurface(data, empty, gpkg, dimensions);
             default -> throw new IllegalArgumentException("Not a geometry kind: " + kind);
         };
@@ -179,7 +179,7 @@ final class GeometryBinary {
         if (type != POINT) {
             Kind kind = switch (type) {
                 case COMPOUNDCURVE, LINESTRING -> Kind.POLYLINE;
-                case CURVEPOLYGON -> Kind.SURFACE;
+                case CURVEPOLYGON, POLYGON -> Kind.SURFACE;
                 case MULTIPOINT -> Kind.MULTIPOINT;
                 case MULTICURVE -> Kind.MULTICURVE;
                 case MULTISURFACE -> Kind.MULTISURFACE;
@@ -195,7 +195,7 @@ final class GeometryBinary {
                 }
                 return null;
             }
-            var encoding = type == LINESTRING ? GeometryEncoding.LINEAR : GeometryEncoding.STANDARD;
+            var encoding = type == LINESTRING || type == POLYGON ? GeometryEncoding.LINEAR : GeometryEncoding.STANDARD;
             return header.envelope() ? headerEnvelope(bytes)
                     : envelope(decode(bytes, true, header.srsId(), kind, dimensions, 0, encoding));
         }
@@ -414,13 +414,14 @@ final class GeometryBinary {
         return new MultiPolyline(lines);
     }
 
-    private static Surface readSurface(ByteBuffer data, boolean gpkg, int dimensions) {
-        if (readType(data, gpkg, dimensions) != CURVEPOLYGON) {
-            throw new DbException("Expected a " + dimensions + "D WKB CURVEPOLYGON");
+    private static Surface readSurface(ByteBuffer data, boolean gpkg, int dimensions, GeometryEncoding encoding) {
+        int type = encoding == GeometryEncoding.LINEAR ? POLYGON : CURVEPOLYGON;
+        if (readType(data, gpkg, dimensions) != type) {
+            throw new DbException("Expected a " + dimensions + "D WKB " + encoding.sqlType(Kind.SURFACE));
         }
-        var surface = readSurface(data, CURVEPOLYGON, new CoordinateBudget(Kind.SURFACE), gpkg, dimensions);
+        var surface = readSurface(data, type, new CoordinateBudget(Kind.SURFACE), gpkg, dimensions);
         if (data.hasRemaining()) {
-            throw new DbException("Invalid WKB curve polygon size");
+            throw new DbException("Invalid WKB polygon size");
         }
         return surface;
     }
@@ -569,7 +570,7 @@ final class GeometryBinary {
             case MULTIPOINT -> writeMultiPoint(value, gpkg, srsId, dimensions);
             case POLYLINE -> writePolyline(value, gpkg, srsId, dimensions, encoding);
             case MULTICURVE -> writeMultiCurve(value, gpkg, srsId, dimensions);
-            case SURFACE -> writeSurface(value, gpkg, srsId, dimensions);
+            case SURFACE -> writeSurface(value, gpkg, srsId, dimensions, encoding);
             case MULTISURFACE -> writeMultiSurface(value, gpkg, srsId, dimensions);
             default -> throw new IllegalArgumentException("Not a geometry kind: " + kind);
         };
@@ -620,8 +621,8 @@ final class GeometryBinary {
         var part = linePart(line);
         var budget = new CoordinateBudget(Kind.POLYLINE);
         if (encoding == GeometryEncoding.LINEAR) {
-            int size = linearBodySize(part, budget, dimensions);
-            var data = allocate(TYPE_SIZE + size, gpkg, srsId, gpkg);
+            var linePlan = planLinearCurve(part, budget, dimensions);
+            var data = allocate(linePlan.size(), gpkg, srsId, gpkg);
             data.put((byte) 0).putInt(storageType(LINESTRING, gpkg, dimensions));
             int start = data.position() + Integer.BYTES;
             writeLinearBody(data, part, dimensions);
@@ -640,14 +641,14 @@ final class GeometryBinary {
         return data.array();
     }
 
-    private static int linearBodySize(CurvePart part, CoordinateBudget budget, int dimensions) {
+    private static Curve planLinearCurve(CurvePart part, CoordinateBudget budget, int dimensions) {
         if (part.segments().isEmpty()) throw new DbException("A polyline requires at least one segment");
         if (part.segments().stream().anyMatch(Arc.class::isInstance)) {
             throw new DbException("A linear geometry requires straight segments");
         }
         int count = part.segments().size() + 1;
         budget.consume(count);
-        return Integer.BYTES + count * dimensions * Double.BYTES;
+        return new Curve(part, 1, CURVE_HEADER_SIZE + count * dimensions * Double.BYTES, false);
     }
 
     private static void writeLinearBody(ByteBuffer data, CurvePart part, int dimensions) {
@@ -656,13 +657,14 @@ final class GeometryBinary {
         for (var segment : part.segments()) writeCoordinate(data, segment.end(), dimensions);
     }
 
-    private static byte[] writeSurface(TransferGeometry geometry, boolean gpkg, int srsId, int dimensions) {
+    private static byte[] writeSurface(TransferGeometry geometry, boolean gpkg, int srsId, int dimensions,
+                                       GeometryEncoding encoding) {
         if (!(geometry instanceof Surface surface)) {
             throw new DbException("Expected a surface");
         }
-        var polygon = planSurface(surface, new CoordinateBudget(Kind.SURFACE), dimensions);
+        var polygon = planSurface(surface, new CoordinateBudget(Kind.SURFACE), dimensions, encoding);
         var data = allocate(polygon.size(), gpkg, srsId, false);
-        writeSurface(data, polygon, gpkg, dimensions);
+        writeSurface(data, polygon, gpkg, dimensions, encoding);
         return data.array();
     }
 
@@ -674,7 +676,7 @@ final class GeometryBinary {
             throw new DbException("An empty multicurve cannot be imported");
         }
         var budget = new CoordinateBudget(Kind.MULTICURVE);
-        var curves = new ArrayList<CompoundCurve>();
+        var curves = new ArrayList<Curve>();
         int size = CURVE_HEADER_SIZE;
         for (var line : multi.lines()) {
             var curve = planCurve(linePart(line), budget, dimensions);
@@ -697,47 +699,55 @@ final class GeometryBinary {
             throw new DbException("An empty multisurface cannot be imported");
         }
         var budget = new CoordinateBudget(Kind.MULTISURFACE);
-        var polygons = new ArrayList<CurvePolygon>();
+        var polygons = new ArrayList<Polygon>();
         int size = CURVE_HEADER_SIZE;
         for (var surface : multi.surfaces()) {
-            var polygon = planSurface(surface, budget, dimensions);
+            var polygon = planSurface(surface, budget, dimensions, GeometryEncoding.STANDARD);
             polygons.add(polygon);
             size += polygon.size();
         }
         var data = allocate(size, gpkg, srsId, false);
         data.put((byte) 0).putInt(storageType(MULTISURFACE, gpkg, dimensions)).putInt(polygons.size());
         for (var polygon : polygons) {
-            writeSurface(data, polygon, gpkg, dimensions);
+            writeSurface(data, polygon, gpkg, dimensions, GeometryEncoding.STANDARD);
         }
         return data.array();
     }
 
-    private static CurvePolygon planSurface(Surface surface, CoordinateBudget budget, int dimensions) {
-        var rings = new ArrayList<CompoundCurve>();
+    private static Polygon planSurface(Surface surface, CoordinateBudget budget, int dimensions, GeometryEncoding encoding) {
+        var rings = new ArrayList<Curve>();
         int size = CURVE_HEADER_SIZE;
-        var shell = planRing(surface.shell(), budget, dimensions);
+        int omittedHeader = encoding == GeometryEncoding.LINEAR ? TYPE_SIZE : 0;
+        var shell = planRing(surface.shell(), budget, dimensions, encoding);
         rings.add(shell);
-        size += shell.size();
+        size += shell.size() - omittedHeader;
         for (var hole : surface.holes()) {
-            var ring = planRing(hole, budget, dimensions);
+            var ring = planRing(hole, budget, dimensions, encoding);
             rings.add(ring);
-            size += ring.size();
+            size += ring.size() - omittedHeader;
         }
-        return new CurvePolygon(rings, size);
+        return new Polygon(rings, size);
     }
 
-    private static void writeSurface(ByteBuffer data, CurvePolygon polygon, boolean gpkg, int dimensions) {
-        data.put((byte) 0).putInt(storageType(CURVEPOLYGON, gpkg, dimensions)).putInt(polygon.rings().size());
+    private static void writeSurface(ByteBuffer data, Polygon polygon, boolean gpkg, int dimensions, GeometryEncoding encoding) {
+        int type = encoding == GeometryEncoding.LINEAR ? POLYGON : CURVEPOLYGON;
+        data.put((byte) 0).putInt(storageType(type, gpkg, dimensions)).putInt(polygon.rings().size());
         for (var ring : polygon.rings()) {
-            writeCurve(data, ring, gpkg, dimensions);
+            if (encoding == GeometryEncoding.LINEAR) writeLinearBody(data, ring.part(), dimensions);
+            else writeCurve(data, ring, gpkg, dimensions);
         }
     }
 
-    private static CompoundCurve planRing(Ring ring, CoordinateBudget budget, int dimensions) {
+    private static Curve planRing(Ring ring, CoordinateBudget budget, int dimensions, GeometryEncoding encoding) {
+        var part = ringPart(ring, budget);
+        return encoding == GeometryEncoding.LINEAR ? planLinearCurve(part, budget, dimensions) : planCurve(part, budget, dimensions);
+    }
+
+    static CurvePart ringPart(Ring ring, CoordinateBudget budget) {
         var first = linePart(ring.lines().getFirst());
         var part = ring.lines().size() == 1 ? first : joinRingLines(ring, first, budget);
         requireClosedRing(part);
-        return planCurve(part, budget, dimensions);
+        return part;
     }
 
     private static CurvePart joinRingLines(Ring ring, CurvePart first, CoordinateBudget budget) {
@@ -781,7 +791,7 @@ final class GeometryBinary {
         return true;
     }
 
-    private static CompoundCurve planCurve(CurvePart part, CoordinateBudget budget, int dimensions) {
+    private static Curve planCurve(CurvePart part, CoordinateBudget budget, int dimensions) {
         var segments = part.segments();
         if (segments.isEmpty()) {
             throw new DbException("A polyline requires at least one segment");
@@ -805,10 +815,10 @@ final class GeometryBinary {
             hasArcs |= circular;
         }
         int size = CURVE_HEADER_SIZE * (1 + components) + (before - budget.remaining) * dimensions * Double.BYTES;
-        return new CompoundCurve(part, components, size, hasArcs);
+        return new Curve(part, components, size, hasArcs);
     }
 
-    private static void writeCurve(ByteBuffer data, CompoundCurve curve, boolean gpkg, int dimensions) {
+    private static void writeCurve(ByteBuffer data, Curve curve, boolean gpkg, int dimensions) {
         data.put((byte) 0).putInt(storageType(COMPOUNDCURVE, gpkg, dimensions)).putInt(curve.components());
         var segments = curve.part().segments();
         var componentStart = curve.part().start();

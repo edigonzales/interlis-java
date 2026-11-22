@@ -84,8 +84,12 @@ final class DbMapping {
         STANDARD, LINEAR;
 
         String sqlType(Kind kind) {
-            if (this == LINEAR && kind == Kind.POLYLINE) return "LINESTRING";
-            return kind.geometryType();
+            if (this == STANDARD) return kind.geometryType();
+            return switch (kind) {
+                case POLYLINE -> "LINESTRING";
+                case SURFACE -> "POLYGON";
+                default -> throw new IllegalArgumentException("No linear encoding for " + kind);
+            };
         }
     }
 
@@ -152,7 +156,8 @@ final class DbMapping {
 
         Column withStrokeArcs(TransferPlan plan, boolean strokeArcs) {
             if (!strokeArcs || !kind.geometry() || kind == Kind.POINT || kind == Kind.MULTIPOINT) return this;
-            if (kind != Kind.POLYLINE || dimensions != 2) {
+            var geometry = (GeometryType) effectiveType.orElseThrow();
+            if (dimensions != 2 || !(kind == Kind.POLYLINE || geometry.geometryKind() == guru.interlis.model.GeometryKind.SURFACE)) {
                 throw unsupported("linear geometry at " + slot.name().declared());
             }
             int digits = vertexCoordinates(plan).axes().getFirst().maximum()
