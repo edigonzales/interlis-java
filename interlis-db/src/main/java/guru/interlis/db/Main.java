@@ -107,7 +107,8 @@ public final class Main {
             return;
         }
         var plan = SchemaPlan.read(options.models(), options.file(), options.modelFiles(), options.gpkg() != null,
-                options.splitGeometries(), options.defaultEpsg(), options.multiSrs(), options.srsModels(), cancellation);
+                options.splitGeometries(), options.defaultEpsg(), options.multiSrs(), options.srsModels(), new SqlNames(),
+                options.inheritance(), cancellation);
         cancellation.throwIfCancellationRequested();
         if (options.gpkg() != null) {
             GeoPackageSchema.create(options.gpkg(), plan, options.createGeometryIndexes(), cancellation);
@@ -212,9 +213,10 @@ public final class Main {
                            String pgUrl, String schema, String user, boolean createGeometryIndexes,
                            boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean addModels,
                            boolean explicitEpsg, boolean explicitLayout,
-                           Optional<DbCrsPair.Models> srsModels, List<Path> modelFiles, Optional<String> exportModel) {
+                           Optional<DbCrsPair.Models> srsModels, List<Path> modelFiles, Optional<String> exportModel,
+                           DbInheritance.Profile inheritance) {
         private static final Set<String> NAMES = Set.of("--dataset", "--gpkg", "--pg-url", "--schema", "--user",
-                "--default-epsg", "--alt-srs-model", "--export-model");
+                "--default-epsg", "--alt-srs-model", "--export-model", "--inheritance");
 
         static Options parse(String[] args) {
             Command command = switch (args.length == 0 ? "" : args[0]) {
@@ -327,12 +329,21 @@ public final class Main {
             if (addModels && alternateSrsModel != null) {
                 throw new IllegalArgumentException("--add-models uses the existing schema's CRS settings");
             }
+            String inheritanceOption = flags.get("--inheritance");
+            if (inheritanceOption != null && (command != Command.SCHEMAIMPORT || addModels)) {
+                throw new IllegalArgumentException("--inheritance requires creation of a new schema");
+            }
+            var inheritance = switch (inheritanceOption) {
+                case null -> DbInheritance.Profile.NEW_CLASS;
+                case "smart1" -> DbInheritance.Profile.SMART1;
+                default -> throw new IllegalArgumentException("Expected --inheritance smart1");
+            };
             var srsModels = Optional.ofNullable(alternateSrsModel).map(value -> DbCrsPair.Models.parse(value, models.getFirst()));
             return new Options(command, List.copyOf(models), dataset, file, gpkg, pgUrl, schema, user,
                     schemaFlags.contains("--create-geom-index"),
                     oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg, multiSrs, addModels,
                     epsg != null, oneGeometryPerTable || multipleGeoPackageGeometries, srsModels,
-                    List.copyOf(modelFiles), exportModel);
+                    List.copyOf(modelFiles), exportModel, inheritance);
         }
 
         void checkPaths() throws IOException {

@@ -12,10 +12,16 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /** Resolves the per-declaration ili2db strategies into physical relations. */
 final class DbInheritance {
-    enum Profile { NEW_CLASS, SMART1, SMART2 }
+    enum Profile {
+        NEW_CLASS(null), SMART1("smart1"), SMART2("smart2");
+
+        final String setting;
+        Profile(String setting) { this.setting = setting; }
+    }
     enum Strategy {
         NEW_CLASS("newClass"), SUPER_CLASS("superClass"), SUB_CLASS("subClass"), NEW_AND_SUB_CLASS("newAndSubClass");
 
@@ -36,6 +42,7 @@ final class DbInheritance {
     }
 
     private final List<Declaration> declarations;
+    private final Profile profile;
     private final List<Relation> relations;
     private final Map<SymbolRef, SymbolRef> owners;
     private final Map<SymbolRef, Strategy> strategies;
@@ -43,6 +50,7 @@ final class DbInheritance {
 
     DbInheritance(TransferPlan plan, List<Declaration> declarations, Profile profile) {
         this.declarations = List.copyOf(declarations);
+        this.profile = profile;
         var strategies = new LinkedHashMap<SymbolRef, Strategy>();
         var children = new LinkedHashMap<SymbolRef, List<SymbolRef>>();
         for (var declaration : declarations) {
@@ -104,7 +112,49 @@ final class DbInheritance {
         this.relations = List.copyOf(relations);
     }
 
+    static DbInheritance plan(TransferPlan plan, List<ObjectDescriptor> objects, Map<SymbolRef, String> names,
+                              Profile profile, Set<SymbolRef> referenced) {
+        var strategies = new LinkedHashMap<SymbolRef, Strategy>();
+        var declarations = new ArrayList<Declaration>();
+        for (var object : objects) {
+            if (!names.containsKey(object.symbol())) continue;
+            var strategy = switch (profile) {
+                case NEW_CLASS -> Strategy.NEW_CLASS;
+                case SMART1 -> smart1(plan, object, strategies, referenced);
+                case SMART2 -> throw DbMapping.unsupported("creating Smart2 schemas");
+            };
+            declarations.add(new Declaration(object, names.get(object.symbol()), strategy));
+        }
+        return new DbInheritance(plan, declarations, profile);
+    }
+
+    private static Strategy smart1(TransferPlan plan, ObjectDescriptor object, Map<SymbolRef, Strategy> strategies,
+                                   Set<SymbolRef> referenced) {
+        var pending = new ArrayDeque<ObjectDescriptor>();
+        for (var current = object; current != null && !strategies.containsKey(current.symbol()); current = base(plan, current)) {
+            pending.addFirst(current);
+        }
+        for (var current : pending) {
+            var ref = current.symbol();
+            Strategy strategy;
+            if (referenced.contains(ref) && nearestTable(plan, current, strategies, false).isEmpty()) {
+                strategy = Strategy.NEW_CLASS;
+            } else if (current.modifiers().contains(Modifier.ABSTRACT)) {
+                strategy = Strategy.SUB_CLASS;
+            } else if (current.baseType().isEmpty() || strategies.get(current.baseType().orElseThrow()) == Strategy.SUB_CLASS) {
+                strategy = Strategy.NEW_CLASS;
+            } else {
+                strategy = Strategy.SUPER_CLASS;
+            }
+            strategies.put(ref, strategy);
+        }
+        return strategies.get(object.symbol());
+    }
+
+    Profile profile() { return profile; }
+    List<Declaration> declarations() { return declarations; }
     List<Relation> relations() { return relations; }
+    Strategy strategy(SymbolRef type) { return strategies.get(type); }
 
     List<SymbolRef> referenceTables(SymbolRef declared) {
         var tables = new LinkedHashSet<SymbolRef>();

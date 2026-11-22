@@ -100,6 +100,11 @@ final class SqlNames {
         return allocateColumn(child, preferred(prefix + shorten(attribute, REVERSE_LENGTH - prefix.length())));
     }
 
+    String polymorphicColumn(String table, String field, String target) {
+        String prefix = shorten(field, REVERSE_PARENT_LENGTH) + "_";
+        return allocateColumn(table, preferred(prefix + shorten(target, REVERSE_LENGTH - prefix.length())));
+    }
+
     private String allocateColumn(String table, String base) {
         Set<String> used = columns.computeIfAbsent(table, ignored -> new HashSet<>());
         String candidate = base;

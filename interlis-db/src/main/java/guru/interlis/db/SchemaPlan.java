@@ -78,6 +78,13 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     static SchemaPlan read(List<String> models, Path file, List<Path> imports, boolean gpkg, boolean splitGeometries,
                            int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels, SqlNames names,
                            CancellationToken token) throws IOException {
+        return read(models, file, imports, gpkg, splitGeometries, defaultEpsg, multiSrs, srsModels, names,
+                DbInheritance.Profile.NEW_CLASS, token);
+    }
+
+    static SchemaPlan read(List<String> models, Path file, List<Path> imports, boolean gpkg, boolean splitGeometries,
+                           int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels, SqlNames names,
+                           DbInheritance.Profile inheritance, CancellationToken token) throws IOException {
         var files = new ArrayList<Path>();
         files.add(file);
         files.addAll(imports);
@@ -95,7 +102,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             filenames.put(source.id(), path.getFileName().toString());
         }
         var mapping = DbMapping.planNew(models, sources.values(), gpkg, splitGeometries, defaultEpsg, multiSrs,
-                srsModels, names, token);
+                srsModels, names, inheritance, token);
         var declarations = mapping.plan().models().stream()
                 .map(model -> (ModelSymbol) symbol(mapping, model.symbol()))
                 .collect(Collectors.groupingBy(model -> origin(model).range().source()));
@@ -123,10 +130,10 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                         Ili2dbLayout.TID_COLUMN, Ili2dbLayout.OID_DOMAIN_PROPERTY, domain)));
             }
             for (var column : table.columns()) {
-                addProperties(properties, geometries, mapping, table.name(), column);
+                addProperties(properties, geometries, mapping, table, table.name(), column);
             }
             for (var secondary : table.secondaryGeometries()) {
-                addProperties(properties, geometries, mapping, secondary.table(), secondary.column());
+                addProperties(properties, geometries, mapping, table, secondary.table(), secondary.column());
                 properties.add(new ColumnProperty(secondary.table(), null, Ili2dbLayout.ID_COLUMN,
                         Ili2dbLayout.PREFIX + "foreignKey", table.name()));
             }
@@ -207,11 +214,16 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     }
 
     private static void addProperties(List<ColumnProperty> properties, Map<String, List<GeometryColumn>> geometries,
-                                      DbMapping mapping, String table, DbMapping.Column column) {
-        column.target().ifPresent(target ->
-                property(properties, table, null, column, "foreignKey", mapping.table(target).name()));
+                                      DbMapping mapping, DbMapping.Table owner, String table, DbMapping.Column column) {
+        if (column.target().isPresent()) {
+            property(properties, table, null, column, "foreignKey", mapping.table(column.targetRelation()).name());
+        }
         if (!(column.slot() instanceof AttributeSlot attribute)) return;
 
+        var declaringType = new SymbolRef(mapping.plan().snapshotId(), attribute.attribute().owner().orElseThrow());
+        String subtype = !declaringType.equals(owner.object().symbol())
+                && mapping.isAssignableTo(declaringType, owner.object().symbol())
+                ? mapping.storage(declaringType).discriminator() : null;
         var effective = column.effectiveType().orElseThrow();
         String typeKind = switch (column.kind()) {
             case TEXT -> ((TextType) effective).textKind().name();
@@ -223,31 +235,42 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             case POLYLINE, SURFACE, MULTICURVE, MULTISURFACE -> ((GeometryType) effective).geometryKind().name();
             case REFERENCE -> null;
         };
-        if (typeKind != null) property(properties, table, null, column, "typeKind", typeKind);
+        if (typeKind != null) property(properties, table, subtype, column, "typeKind", typeKind);
         if (column.kind() == DbMapping.Kind.BOOLEAN || column.kind() == DbMapping.Kind.ENUMERATION) {
+            String domain = null;
             if (declaredType(mapping, column) instanceof DomainReferenceType alias) {
-                var ref = new SymbolRef(mapping.plan().snapshotId(), alias.targetDomain());
-                String domain = qualifiedName(mapping, symbol(mapping, ref));
-                property(properties, table, table, column, "enumDomain", domain);
+                domain = qualifiedName(mapping, symbol(mapping, new SymbolRef(mapping.plan().snapshotId(), alias.targetDomain())));
             } else if (column.kind() == DbMapping.Kind.BOOLEAN) {
-                property(properties, table, table, column, "enumDomain", "INTERLIS.BOOLEAN");
+                domain = "INTERLIS.BOOLEAN";
+            }
+            if (domain != null) {
+                if (mapping.profile() == DbInheritance.Profile.NEW_CLASS) {
+                    property(properties, table, table, column, "enumDomain", domain);
+                } else {
+                    for (var type : mapping.objectStorage()) {
+                        if (type.rows().contains(owner) && !type.object().modifiers().contains(guru.interlis.model.Modifier.ABSTRACT)
+                                && mapping.applies(column, type.object().symbol())) {
+                            property(properties, table, type.discriminator(), column, "enumDomain", domain);
+                        }
+                    }
+                }
             }
         }
         if (effective instanceof TextType text && text.textKind() == TextKind.MTEXT) {
-            property(properties, table, null, column, "textKind", "MTEXT");
+            property(properties, table, subtype, column, "textKind", "MTEXT");
         }
         if (effective instanceof NumericType number) {
             number.range().unit().ifPresent(id -> {
                 var unit = symbol(mapping, new SymbolRef(mapping.plan().snapshotId(), id));
-                property(properties, table, null, column, "unit", unit.header().name().value());
+                property(properties, table, subtype, column, "unit", unit.header().name().value());
             });
         }
         if (column.kind().geometry()) {
             geometries.computeIfAbsent(table, ignored -> new ArrayList<>())
-                    .add(geometryColumn(properties, mapping, table, column));
+                    .add(geometryColumn(properties, mapping, table, subtype, column));
         }
         String caption = metaText(attribute.attribute(), "ili2db.dispName");
-        if (caption != null) property(properties, table, null, column, "dispName", caption);
+        if (caption != null) property(properties, table, subtype, column, "dispName", caption);
     }
 
     String displayName(DbMapping.Table table) {
@@ -255,7 +278,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     }
 
     private static GeometryColumn geometryColumn(List<ColumnProperty> properties, DbMapping mapping,
-                                                 String table, DbMapping.Column column) {
+                                                 String table, String subtype, DbMapping.Column column) {
         CoordinateType coordinates;
         var effective = column.effectiveType().orElseThrow();
         if (effective instanceof CoordinateType coordinateType) {
@@ -265,24 +288,24 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                     .orElseGet(() -> DbMapping.vertexDomain(mapping.plan(), (GeometryType) effective));
             coordinates = (CoordinateType) type(mapping, new TypeRef(mapping.plan().snapshotId(), domain.typeId()));
         }
-        property(properties, table, null, column, "geomType", column.kind().geometryType());
-        property(properties, table, null, column, Ili2dbLayout.SRID_PROPERTY, Integer.toString(column.epsgCode()));
-        property(properties, table, null, column, "coordDimension", Integer.toString(column.dimensions()));
+        property(properties, table, subtype, column, "geomType", column.kind().geometryType());
+        property(properties, table, subtype, column, Ili2dbLayout.SRID_PROPERTY, Integer.toString(column.epsgCode()));
+        property(properties, table, subtype, column, "coordDimension", Integer.toString(column.dimensions()));
         var x = coordinates.axes().get(0);
         var y = coordinates.axes().get(1);
-        Double minX = bound(properties, table, column, "c1Min", x.minimum());
-        Double maxX = bound(properties, table, column, "c1Max", x.maximum());
-        Double minY = bound(properties, table, column, "c2Min", y.minimum());
-        Double maxY = bound(properties, table, column, "c2Max", y.maximum());
+        Double minX = bound(properties, table, subtype, column, "c1Min", x.minimum());
+        Double maxX = bound(properties, table, subtype, column, "c1Max", x.maximum());
+        Double minY = bound(properties, table, subtype, column, "c2Min", y.minimum());
+        Double maxY = bound(properties, table, subtype, column, "c2Max", y.maximum());
         if (column.dimensions() == 3) {
             var z = coordinates.axes().get(2);
-            bound(properties, table, column, "c3Min", z.minimum());
-            bound(properties, table, column, "c3Max", z.maximum());
+            bound(properties, table, subtype, column, "c3Min", z.minimum());
+            bound(properties, table, subtype, column, "c3Max", z.maximum());
         }
         return new GeometryColumn(column, minX, minY, maxX, maxY);
     }
 
-    private static Double bound(List<ColumnProperty> properties, String table, DbMapping.Column column,
+    private static Double bound(List<ColumnProperty> properties, String table, String subtype, DbMapping.Column column,
                                 String key, Optional<DecimalLiteral> limit) {
         if (limit.isEmpty()) return null;
         var value = limit.get();
@@ -293,7 +316,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         int exponent = value.precision().exponent();
         String spelling = value.exactValue().scaleByPowerOfTen(-exponent).toPlainString();
         if (exponent != 0) spelling += "e" + exponent;
-        property(properties, table, null, column, key, spelling);
+        property(properties, table, subtype, column, key, spelling);
         return extent;
     }
 

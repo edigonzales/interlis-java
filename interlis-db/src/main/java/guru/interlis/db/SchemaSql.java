@@ -29,7 +29,6 @@ import static guru.interlis.db.Ili2dbLayout.INHERITANCE_TAG;
 import static guru.interlis.db.Ili2dbLayout.KEY_OBJECT;
 import static guru.interlis.db.Ili2dbLayout.MODEL;
 import static guru.interlis.db.Ili2dbLayout.MODEL_KEY;
-import static guru.interlis.db.Ili2dbLayout.NEW_CLASS;
 import static guru.interlis.db.Ili2dbLayout.PREFIX;
 import static guru.interlis.db.Ili2dbLayout.SCHEMA_SENDER;
 import static guru.interlis.db.Ili2dbLayout.SEQUENCE;
@@ -247,15 +246,22 @@ final class SchemaSql {
             if (newSchema) {
                 writeSettings(settings, d.gpkg(), plan);
                 if (createGeometryIndexes) row(settings, Ili2dbLayout.CREATE_GEOMETRY_INDEX, "True");
+                for (var declaration : plan.mapping().inheritance().declarations()) {
+                    if (declaration.strategy().createsTable()) continue;
+                    token.throwIfCancellationRequested();
+                    String name = declaration.object().name().declared().toString();
+                    row(classes, name, declaration.sqlName());
+                    row(inheritance, name, baseClass(plan, declaration.object()));
+                    row(transformations, name, INHERITANCE_TAG, declaration.strategy().value);
+                }
             }
             for (var table : plan.addedTables()) {
                 token.throwIfCancellationRequested();
                 String name = table.object().name().declared().toString();
                 row(classes, name, table.name());
                 var base = table.baseTable().map(plan.mapping()::table);
-                row(inheritance, name, table.object().baseType().flatMap(plan.mapping().plan()::object)
-                        .map(value -> value.name().declared().toString()).orElse(null));
-                row(transformations, name, INHERITANCE_TAG, NEW_CLASS);
+                row(inheritance, name, baseClass(plan, table.object()));
+                row(transformations, name, INHERITANCE_TAG, plan.mapping().inheritance().strategy(table.object().symbol()).value);
                 if (base.isPresent()) {
                     row(colProps, table.name(), null, ID_COLUMN, PREFIX + "foreignKey",
                             base.orElseThrow().name());
@@ -263,16 +269,16 @@ final class SchemaSql {
                     row(tableProps, table.name(), PREFIX + "tableKind", table.object().kind().name());
                 }
                 if (table.hasDiscriminator()) {
-                    String types = plan.mapping().hierarchy(table).stream()
-                            .filter(type -> !type.object().modifiers().contains(Modifier.ABSTRACT))
-                            .map(DbMapping.Table::name).sorted().collect(Collectors.joining("\",\"", "[\"", "\"]"));
+                    String types = plan.mapping().objectStorage().stream()
+                            .filter(type -> type.root().equals(table) && !type.object().modifiers().contains(Modifier.ABSTRACT))
+                            .map(DbMapping.ObjectStorage::discriminator).sorted().collect(Collectors.joining("\",\"", "[\"", "\"]"));
                     row(colProps, table.name(), null, TYPE_COLUMN, PREFIX + "types", types);
                 }
                 String displayName = plan.displayName(table);
                 if (displayName != null) row(tableProps, table.name(), PREFIX + "dispName", displayName);
                 for (var column : table.columns()) {
                     token.throwIfCancellationRequested();
-                    String target = column.target().map(plan.mapping()::table).map(DbMapping.Table::name).orElse(null);
+                    String target = column.target().isPresent() ? plan.mapping().table(column.targetRelation()).name() : null;
                     String path = Ili2dbLayout.geometryAttribute(column.slot().name().declared().toString(), column.epsgCode(), plan.multiSrs());
                     row(attributes, path, column.name(), table.name(), target);
                 }
@@ -306,6 +312,11 @@ final class SchemaSql {
         }
     }
 
+    private static String baseClass(SchemaPlan plan, guru.interlis.transfer.ObjectDescriptor type) {
+        return type.baseType().flatMap(plan.mapping().plan()::object)
+                .map(value -> value.name().declared().toString()).orElse(null);
+    }
+
     private static void writeSettings(PreparedStatement statement, boolean gpkg, SchemaPlan plan) throws SQLException {
         row(statement, PREFIX + "sender", SCHEMA_SENDER);
         row(statement, PREFIX + "BasketHandling", "readWrite");
@@ -314,6 +325,8 @@ final class SchemaSql {
         row(statement, PREFIX + "defaultSrsAuthority", "EPSG");
         row(statement, PREFIX + "defaultSrsCode", Integer.toString(plan.defaultEpsg()));
         row(statement, PREFIX + "maxSqlNameLength", "60");
+        String inheritance = plan.mapping().profile().setting;
+        if (inheritance != null) row(statement, PREFIX + "inheritanceTrafo", inheritance);
         row(statement, "ch.interlis.ili2c.ilidirs", "%ILI_FROM_DB");
         if (plan.multiSrs()) row(statement, Ili2dbLayout.USE_EPSG_IN_NAMES, "True");
         if (plan.mapping().crsPair().isPresent()) {

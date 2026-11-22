@@ -194,7 +194,7 @@ final class DbMapping {
     record StorageAlias(ObjectDescriptor object, String discriminator, SymbolRef owner) { }
 
     private final TransferPlan plan;
-    private final DbInheritance.Profile profile;
+    private final DbInheritance inheritance;
     private final LanguageVersion version;
     private final Optional<DbCrsPair> crsPair;
     private final DbTranslations translations;
@@ -213,16 +213,10 @@ final class DbMapping {
     private final Map<SymbolRef, SymbolRef> roleOwners;
 
     DbMapping(TransferPlan plan, LanguageVersion version, List<Table> tables, List<Composition> compositions,
-              List<EmbeddedAssociation> associations, Optional<DbCrsPair> crsPair, List<SymbolRef> selectedModels) {
-        this(plan, version, tables, compositions, associations, crsPair, selectedModels, DbInheritance.Profile.NEW_CLASS,
-                List.of());
-    }
-
-    DbMapping(TransferPlan plan, LanguageVersion version, List<Table> tables, List<Composition> compositions,
               List<EmbeddedAssociation> associations, Optional<DbCrsPair> crsPair, List<SymbolRef> selectedModels,
-              DbInheritance.Profile profile, List<StorageAlias> aliases) {
+              DbInheritance inheritance) {
         this.plan = plan;
-        this.profile = profile;
+        this.inheritance = inheritance;
         this.crsPair = crsPair;
         translations = new DbTranslations(plan);
         this.version = version;
@@ -245,7 +239,7 @@ final class DbMapping {
                 families.computeIfAbsent(binding.root(), unused -> new ArrayList<>()).add(table);
             }
         }
-        for (var alias : aliases) {
+        for (var alias : inheritance.aliases()) {
             var owner = paths.get(alias.owner());
             paths.put(alias.object().symbol(), new ObjectStorage(alias.object(), alias.discriminator(), owner.rows()));
         }
@@ -342,7 +336,8 @@ final class DbMapping {
     DbTranslations translations() { return translations; }
 
     TransferPlan plan() { return plan; }
-    DbInheritance.Profile profile() { return profile; }
+    DbInheritance.Profile profile() { return inheritance.profile(); }
+    DbInheritance inheritance() { return inheritance; }
     LanguageVersion version() { return version; }
     List<Table> tables() { return tables; }
     Collection<ObjectStorage> objectStorage() { return storage.values(); }
@@ -382,7 +377,7 @@ final class DbMapping {
     }
 
     SymbolRef identityFamily(SymbolRef type) {
-        if (profile == DbInheritance.Profile.NEW_CLASS) return rootTable(type).object().symbol();
+        if (profile() == DbInheritance.Profile.NEW_CLASS) return rootTable(type).object().symbol();
         var object = plan.object(type).orElseThrow();
         while (object.baseType().isPresent()) object = plan.object(object.baseType().orElseThrow()).orElseThrow();
         return object.symbol();
@@ -396,7 +391,7 @@ final class DbMapping {
     }
 
     boolean applies(Column column, SymbolRef actual) {
-        if (profile == DbInheritance.Profile.NEW_CLASS) return true;
+        if (profile() == DbInheritance.Profile.NEW_CLASS) return true;
         var owner = column.slot() instanceof AttributeSlot attribute
                 ? attributeOwner(attribute)
                 : roleOwners.get(column.slot().symbol());
@@ -404,7 +399,7 @@ final class DbMapping {
     }
 
     boolean applies(Composition composition, SymbolRef actual) {
-        return profile == DbInheritance.Profile.NEW_CLASS || isAssignableTo(actual, attributeOwner(composition.slot()));
+        return profile() == DbInheritance.Profile.NEW_CLASS || isAssignableTo(actual, attributeOwner(composition.slot()));
     }
 
     private SymbolRef attributeOwner(AttributeSlot attribute) {
@@ -511,12 +506,12 @@ final class DbMapping {
     static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, CancellationToken token) {
         return planNew(List.of(modelName), List.of(source), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(),
-                new SqlNames(), token);
+                new SqlNames(), DbInheritance.Profile.NEW_CLASS, token);
     }
 
     static DbMapping planNew(List<String> modelNames, Collection<SourceText> sources, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels,
-                             SqlNames allocator, CancellationToken token) {
+                             SqlNames allocator, DbInheritance.Profile profile, CancellationToken token) {
         var models = srsModels.map(DbCrsPair.Models::names).orElse(modelNames);
         TransferPlan plan = DbModelSources.compile(models, sources, "model files", token);
         var crs = new CrsDefaults(defaultEpsg, 0);
@@ -551,67 +546,94 @@ final class DbMapping {
             }
             names.put(object.symbol(), name);
         }
-        var bases = baseTables(objects);
+        var referenced = new HashSet<SymbolRef>();
+        linkRoles.values().forEach(roles -> roles.forEach(role -> referenced.add(role.target())));
+        associations.forEach(association -> referenced.add(association.target()));
+        var inheritance = DbInheritance.plan(plan, objects, names, profile, referenced);
+        var discriminated = inheritance.relations().stream().filter(DbInheritance.Relation::discriminator)
+                .map(relation -> relation.object().symbol()).collect(Collectors.toSet());
         var tables = new ArrayList<Table>();
         var compositions = new ArrayList<Composition>();
-        for (var object : objects) {
+        for (var relation : inheritance.relations()) {
             token.throwIfCancellationRequested();
-            String name = names.get(object.symbol());
-            if (name == null) continue;
-            boolean discriminator = object.baseType().isEmpty() && bases.contains(object.symbol());
+            var object = relation.object();
+            String name = relation.declaration().sqlName();
+            boolean discriminator = relation.discriminator();
             var columns = new ArrayList<Column>();
             var secondary = new ArrayList<SecondaryGeometry>();
             boolean geometrySeen = false;
-            var roles = linkRoles.get(object.symbol());
-            if (roles != null) {
-                for (var role : roles) {
-                    String column = allocator.roleColumn(name, role.slot().name().declared().last());
-                    checkColumnName(role.slot(), column, false, discriminator, gpkg);
-                    var binding = roleColumn(role.slot(), role.target(), column);
-                    columns.add(role.slot().role().ordered() ? binding.withPositionColumn(gpkg) : binding);
-                }
+            var roles = linkRoles.getOrDefault(object.symbol(), List.of());
+            for (var role : roles) {
+                columns.addAll(planReferences(allocator, names, inheritance, name, discriminator, gpkg,
+                        roleColumn(role.slot(), role.target(), role.slot().name().declared().last()), role.slot().role().ordered()));
             }
-            for (var attribute : attributes(object)) {
-                String attributeName = attribute.name().declared().last();
-                var composition = describeComposition(plan, object, attribute, child ->
-                        allocator.reverseColumn(names.get(child), name, attributeName));
-                if (composition.isPresent()) {
-                    var edge = composition.get();
-                    checkColumnName(attribute, edge.ownerColumn(), true, bases.contains(edge.childRoot()), gpkg);
-                    compositions.add(edge);
-                    continue;
-                }
-                for (var binding : describeColumns(plan, object, attribute, crs, crsPair)) {
-                    String storageName = multiSrs && binding.kind().geometry() ? attributeName + "_" + binding.epsgCode() : attributeName;
-                    boolean split = splitGeometries && geometrySeen && binding.kind().geometry();
-                    String owner = split ? allocator.geometryTable(plan.model(object.model()).orElseThrow().name().declared().last(),
-                            object.topic().flatMap(plan::topic).orElseThrow().name().declared().last(),
-                            object.name().declared().last(), storageName) : name;
-                    if (split && reservedTable(owner, gpkg)) {
-                        throw unsupported("geometry " + attribute.name().declared() + " maps to technical table " + owner);
+            for (var contributor : relation.contributors()) {
+                for (var attribute : attributes(contributor)) {
+                    String attributeName = attribute.name().declared().last();
+                    var composition = describeComposition(plan, object, attribute, child -> {
+                        String childName = names.get(child);
+                        if (childName == null) throw unsupported("structure storage at " + attribute.name().declared());
+                        return allocator.reverseColumn(childName, name, attributeName);
+                    });
+                    if (composition.isPresent()) {
+                        var edge = composition.orElseThrow();
+                        checkColumnName(attribute, edge.ownerColumn(), true, discriminated.contains(edge.childRoot()), gpkg);
+                        compositions.add(edge);
+                        continue;
                     }
-                    String column = allocator.column(owner, storageName);
-                    checkColumnName(attribute, column, object.kind() == SymbolKind.STRUCTURE, !split && discriminator, gpkg);
-                    var named = binding.withName(column);
-                    if (binding.kind().geometry()) {
-                        geometrySeen = true;
+                    for (var binding : describeColumns(plan, contributor, attribute, crs, crsPair)) {
+                        if (binding.kind() == Kind.REFERENCE) {
+                            columns.addAll(planReferences(allocator, names, inheritance, name, discriminator, gpkg, binding, false));
+                            continue;
+                        }
+                        String storageName = multiSrs && binding.kind().geometry() ? attributeName + "_" + binding.epsgCode() : attributeName;
+                        boolean split = splitGeometries && geometrySeen && binding.kind().geometry();
+                        String owner = split ? allocator.geometryTable(plan.model(object.model()).orElseThrow().name().declared().last(),
+                                object.topic().flatMap(plan::topic).orElseThrow().name().declared().last(),
+                                object.name().declared().last(), storageName) : name;
+                        if (split && reservedTable(owner, gpkg)) {
+                            throw unsupported("geometry " + attribute.name().declared() + " maps to technical table " + owner);
+                        }
+                        String column = allocator.column(owner, storageName);
+                        checkColumnName(attribute, column, object.kind() == SymbolKind.STRUCTURE, !split && discriminator, gpkg);
+                        var named = binding.withName(column);
+                        if (binding.kind().geometry()) geometrySeen = true;
+                        if (split) secondary.add(new SecondaryGeometry(owner, named));
+                        else columns.add(named);
                     }
-                    if (split) secondary.add(new SecondaryGeometry(owner, named));
-                    else columns.add(named);
+                }
+                for (var association : associationsForOwner(associations, contributor.symbol())) {
+                    if (association.linkTable()) continue;
+                    var role = association.role();
+                    columns.addAll(planReferences(allocator, names, inheritance, name, discriminator, gpkg,
+                            roleColumn(role, association.target(), role.name().declared().last()), association.ordered()));
                 }
             }
-            for (var association : associationsForOwner(associations, object.symbol())) {
-                if (association.linkTable()) continue;
-                var role = association.role();
-                String column = allocator.roleColumn(name, role.name().declared().last());
-                checkColumnName(role, column, false, discriminator, gpkg);
-                var binding = roleColumn(role, association.target(), column);
-                columns.add(association.ordered() ? binding.withPositionColumn(gpkg) : binding);
-            }
-            tables.add(new Table(object, name, object.baseType(), columns, discriminator, oidDomain(plan, object), secondary));
+            tables.add(new Table(object, name, relation.base(), columns, discriminator, oidDomain(plan, object), secondary));
         }
         var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
-        return new DbMapping(plan, version, tables, compositions, associations, crsPair, plan.rootModels());
+        return new DbMapping(plan, version, tables, compositions, associations, crsPair, plan.rootModels(), inheritance);
+    }
+
+    private static List<Column> planReferences(SqlNames allocator, Map<SymbolRef, String> names, DbInheritance inheritance,
+                                                String owner, boolean discriminator, boolean gpkg, Column reference,
+                                                boolean ordered) {
+        var declared = reference.target().orElseThrow();
+        var targets = inheritance.referenceTables(declared);
+        if (targets.isEmpty() || (ordered && targets.size() > 1)) {
+            throw unsupported("reference storage at " + reference.slot().name().declared());
+        }
+        var result = new ArrayList<Column>();
+        String field = reference.slot().name().declared().last();
+        for (var target : targets) {
+            String name = targets.size() > 1 ? allocator.polymorphicColumn(owner, field, names.get(target))
+                    : reference.slot() instanceof RoleSlot ? allocator.roleColumn(owner, field) : allocator.column(owner, field);
+            checkColumnName(reference.slot(), name, false, discriminator, gpkg);
+            var column = reference.withName(name);
+            if (!target.equals(declared) || targets.size() > 1) column = column.withReferenceTable(target);
+            result.add(ordered ? column.withPositionColumn(gpkg) : column);
+        }
+        return result;
     }
 
     private static void checkColumnName(TransferSlot slot, String column, boolean structure, boolean discriminator,

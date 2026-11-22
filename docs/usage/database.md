@@ -242,6 +242,10 @@ gehört zum konkreten Typ und teilt dessen Objekt- und Basket-ID.
 die tatsächlich belegten Tabellen. Updates behalten die internen IDs
 überlebender Objekte. Eingehende Referenzen aus verbleibenden Datensätzen
 schützen die referenzierten Zeilen.
+Mit `schemaimport --inheritance smart1` lässt sich ein neues Smart1-Schema
+aus dem Modell erzeugen. Die Abbildung verwendet die deklarierte
+Hierarchie und die Assoziationsrollen. Der Standard für `schemaimport`
+ist die bisherige `newClass`-Abbildung.
 
 Unterstützt sind Klassen eines eigenständigen Modells in
 INTERLIS 2.3 und 2.4 mit Text, Boolean, 32-Bit-Ganzzahlen und Aufzählungen als

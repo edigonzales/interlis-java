@@ -16,6 +16,7 @@ import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
+import static guru.interlis.db.DbInteropTest.cli;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
@@ -402,6 +403,32 @@ final class SmartCases {
                 .findFirst().orElseThrow();
         assertEquals(memo, child(station, "LocalMemo").getTextContent());
         assertEquals("base", child(station, "Memo").getTextContent());
+    }
+
+    void smart1Schema(TestDatabase baseline, TestDatabase own) throws Exception {
+        String model = "SmartRefs" + version;
+        createAndCompare(baseline, own, model, "smart1");
+        var input = fixture(model + ".xtf");
+        var output = work.resolve("own-smart1.xtf");
+        referenceImport(own, "legacy", input);
+        assertCliSuccess(own, "export", model, "legacy", output);
+        assertReferences(output, model, "fixture");
+        assertCliSuccess(own, "import", model, "native", transferWithPrefix(input, "native"));
+        referenceExport(own, "native", output);
+        assertReferences(output, model, "native");
+    }
+
+    private void createAndCompare(TestDatabase baseline, TestDatabase own, String model, String profile) throws Exception {
+        var source = fixture(model + ".ili");
+        referenceSchema(baseline, model, profile);
+        var result = cli(own, "schemaimport", model, null, source, guru.interlis.execution.CancellationToken.none(),
+                "--inheritance", profile);
+        assertEquals(0, result.code(), result::diagnostics);
+        Files.delete(source);
+        try (var expected = baseline.connect(); var actual = own.connect()) {
+            DbSchemaCatalog.read(expected, baseline.postgis(), baseline.schema())
+                    .assertSameAs(DbSchemaCatalog.read(actual, own.postgis(), own.schema()));
+        }
     }
 
     private void assertScalarObjects(Path path, String model, String prefix, boolean emptyMemo) throws Exception {

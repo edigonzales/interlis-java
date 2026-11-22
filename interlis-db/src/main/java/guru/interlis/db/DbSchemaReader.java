@@ -282,7 +282,7 @@ final class DbSchemaReader {
         if (settings.inheritance() != DbInheritance.Profile.NEW_CLASS) attrNames.ignoreOwners(unselectedOwners);
         if (!attrNames.isEmpty()) throw new DbException("Extra ATTRNAME mappings for " + modelName);
         return new DbMapping(plan, version, tables, compositions, associations, crsPair, requestedRoots,
-                settings.inheritance(), layout.aliases());
+                layout);
     }
 
     private static void bindOtherStructureOwners(Database db, MetadataScope scope, CatalogTable table) throws SQLException {
