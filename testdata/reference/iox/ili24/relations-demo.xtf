@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="urn:relations-demo">
+  <i:headersection>
+    <i:models><i:model>RelationsDemo</i:model></i:models>
+    <i:sender>INTERLIS Object Explorer local fixture</i:sender>
+  </i:headersection>
+  <i:datasection>
+    <Data i:bid="b1">
+      <Parent i:tid="p1"><title>Parent</title></Parent>
+      <Item i:tid="i1">
+        <title>Item with relationships</title>
+        <details><Detail><owner i:ref="p1"/></Detail></details>
+        <parent i:ref="p1"><Link><note>linked</note></Link></parent>
+      </Item>
+      <Item i:tid="i2">
+        <title>Item with an unresolved reference</title>
+        <details><Detail><owner i:ref="p404"/></Detail></details>
+      </Item>
+      <Review i:tid="r1">
+        <subject i:ref="i1"/>
+        <reviewer i:ref="p1"/>
+        <remark>reviewed</remark>
+      </Review>
+    </Data>
+  </i:datasection>
+</i:transfer>

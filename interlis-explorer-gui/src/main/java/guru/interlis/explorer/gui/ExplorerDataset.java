@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -101,6 +102,17 @@ record ExplorerDataset(TransferPlan plan, DuckDbStore store, Path directory) imp
 
     List<StoredObject> objects(ObjectDescriptor type) throws SQLException {
         return store.objects(type.name().declared(), OBJECT_LIMIT);
+    }
+
+    List<StoredObject> objectsIncluding(ObjectDescriptor type, StoredObject selected) throws SQLException {
+        var objects = objects(type);
+        if (objects.stream().anyMatch(object -> object.position() == selected.position())) {
+            return objects;
+        }
+        var visible = new ArrayList<StoredObject>();
+        visible.add(selected);
+        visible.addAll(objects.subList(0, Math.min(objects.size(), OBJECT_LIMIT - 1)));
+        return List.copyOf(visible);
     }
 
     @Override

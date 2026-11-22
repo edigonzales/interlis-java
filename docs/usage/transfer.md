@@ -310,7 +310,11 @@ Leertaste auf seiner Zeile zeigt Struktur- und Sammlungseinträge direkt
 darunter. LIST-Einträge sind nummeriert. BAG-Einträge behalten Duplikate
 und erscheinen ohne Nummer. Mit **⌘C** unter macOS bzw. **Strg+C** auf den
 anderen Plattformen kopierst du den angezeigten Wert der ausgewählten
-Zeile. Beim Schliessen wird die temporäre DuckDB-Datenbank entfernt.
+Zeile. Unterstrichene Referenz- und Rollenwerte öffnen ihr Ziel mit
+Doppelklick oder **Enter**. **Back** kehrt zum Ausgangsobjekt und zur
+Referenzzeile zurück. Der Abschnitt **Beziehungen** zeigt aufklappbare
+Assoziationen mit Rollennamen, Zielen und eigenen Attributen. Beim
+Schliessen wird die temporäre DuckDB-Datenbank entfernt.
 
 ## Objektspeicher in DuckDB
 
@@ -353,7 +357,12 @@ fehlende oder mehrdeutige Deklarationen beim Lesen der betroffenen Werte.
 `find(basketId, objectKey)` sucht nach TID oder OID im angegebenen Basket.
 Vorkommen ohne TID oder OID bleiben über `objects(type)` zugänglich.
 `objects(type, limit)` liest höchstens die angegebene Anzahl Vorkommen des
-exakten Typs in Transferreihenfolge. Die Positionsnummern gelten innerhalb der Datei.
+exakten Typs in Transferreihenfolge. `objectAt(position)` öffnet ein
+Vorkommen direkt. `referencePositions(sourcePosition)` liefert die
+indizierten Referenzen mit ihren aufgelösten Positionen.
+`incomingRoleSources(targetPosition, limit)` liefert bis zum angegebenen
+Limit die Quellvorkommen eingehender Assoziationsrollen in
+Transferreihenfolge. Die Positionsnummern gelten innerhalb der Datei.
 
 | Tabelle | Inhalt |
 |---|---|

@@ -1,0 +1,26 @@
+INTERLIS 2.4;
+MODEL RelationsDemo AT "https://example.org" VERSION "1" =
+  XMLNS "urn:relations-demo";
+  TOPIC Data =
+    CLASS Parent =
+      title : TEXT;
+    END Parent;
+    STRUCTURE Detail =
+      owner : REFERENCE TO Parent;
+    END Detail;
+    CLASS Item =
+      title : TEXT;
+      details : Detail;
+    END Item;
+    ASSOCIATION Link =
+      parent -- {0..1} Parent;
+      items -- {0..*} Item;
+      note : TEXT;
+    END Link;
+    ASSOCIATION Review (OID) =
+      subject -- {0..*} Item;
+      reviewer -- {0..*} Parent;
+      remark : TEXT;
+    END Review;
+  END Data;
+END RelationsDemo.

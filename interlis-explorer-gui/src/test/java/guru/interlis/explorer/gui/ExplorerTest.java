@@ -1,6 +1,7 @@
 package guru.interlis.explorer.gui;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.explorer.DuckDbStore.StoredObject;
 import guru.interlis.model.QualifiedName;
 import guru.interlis.transfer.ModelDescriptor;
 import guru.interlis.transfer.ObjectDescriptor;
@@ -13,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalLong;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -45,7 +47,7 @@ class ExplorerTest {
             var object = objects.getFirst().object();
             assertEquals("i1", object.identity().tid().orElseThrow().value());
             var inspector = new InspectorTableModel();
-            inspector.show(dataset.plan(), object.data());
+            inspector.show(dataset.plan(), object.data(), InspectorRelationships.EMPTY);
             var collapsed = List.of(
                     Map.entry("required", "yes"),
                     Map.entry("details", "LIST OF Reference24.Detail (2)"),
@@ -75,7 +77,7 @@ class ExplorerTest {
             assertEquals(collapsed, rows(inspector));
             inspector.toggle(1);
             assertFalse(inspector.expanded(2));
-            inspector.show(dataset.plan(), object.data());
+            inspector.show(dataset.plan(), object.data(), InspectorRelationships.EMPTY);
             assertFalse(inspector.expanded(1));
         }
         assertFalse(Files.exists(dataset.directory()));
@@ -118,7 +120,7 @@ class ExplorerTest {
                     .filter(type -> type.name().declared().equals(QualifiedName.of("Nested", "Data", "Item")))
                     .findFirst().orElseThrow();
             var inspector = new InspectorTableModel();
-            inspector.show(dataset.plan(), dataset.objects(item).getFirst().object().data());
+            inspector.show(dataset.plan(), dataset.objects(item).getFirst().object().data(), InspectorRelationships.EMPTY);
             var collapsed = List.of(Map.entry("payload", "Nested.Child"), Map.entry("tail", "after"));
             assertEquals(collapsed, rows(inspector));
 
@@ -137,6 +139,76 @@ class ExplorerTest {
             inspector.toggle(0);
             assertEquals(collapsed, rows(inspector));
         }
+    }
+
+    @Test
+    void navigatesNestedReferenceAndShowsBothAssociationFormsOnEachEnd() throws Exception {
+        var fixtures = Path.of(System.getProperty("testdata.dir"), "reference", "iox", "ili24");
+        try (var dataset = ExplorerDataset.open(List.of(fixtures.resolve("RelationsDemo.ili")),
+                fixtures.resolve("relations-demo.xtf"), CancellationToken.none())) {
+            var items = dataset.store().objects(QualifiedName.of("RelationsDemo", "Data", "Item"), 2);
+            var item = items.getFirst();
+            var inspector = new InspectorTableModel();
+            show(dataset, inspector, item);
+            inspector.toggle(1);
+            assertEquals(Map.entry("owner", "TID p1"), rows(inspector).get(2));
+            var path = inspector.pathTo(2);
+            var parent = dataset.store().objectAt(inspector.target(2).orElseThrow()).orElseThrow();
+
+            show(dataset, inspector, parent);
+            assertEquals(List.of(Map.entry("title", "Parent"), Map.entry("Beziehungen", "2"),
+                    Map.entry("Link", ""), Map.entry("Review", "")), rows(inspector));
+            inspector.toggle(2);
+            inspector.toggle(6);
+            assertEquals(List.of(Map.entry("parent", "TID p1"), Map.entry("items", "TID i1"),
+                    Map.entry("note", "linked")), rows(inspector).subList(3, 6));
+            assertEquals(List.of(Map.entry("subject", "TID i1"), Map.entry("reviewer", "TID p1"),
+                    Map.entry("remark", "reviewed")), rows(inspector).subList(7, 10));
+            assertEquals(OptionalLong.of(item.position()), inspector.target(4));
+            assertEquals(OptionalLong.of(item.position()), inspector.target(7));
+
+            show(dataset, inspector, item);
+            int restored = inspector.reveal(path);
+            assertEquals(Map.entry("owner", "TID p1"), rows(inspector).get(restored));
+            assertEquals(OptionalLong.of(parent.position()), inspector.target(restored));
+            assertEquals(List.of(Map.entry("Beziehungen", "2"), Map.entry("Link", ""), Map.entry("Review", "")),
+                    rows(inspector).subList(3, 6));
+
+            show(dataset, inspector, items.getLast());
+            inspector.toggle(1);
+            assertEquals(Map.entry("owner", "TID p404"), rows(inspector).getLast());
+            assertEquals(OptionalLong.empty(), inspector.target(2));
+        }
+    }
+
+    @Test
+    void includesTheExactReferenceTargetOutsideTheVisibleClassLimit() throws Exception {
+        var fixtures = Path.of(System.getProperty("testdata.dir"), "reference", "iox", "ili24");
+        var extraParents = IntStream.rangeClosed(1, 101)
+                .mapToObj(index -> "<Parent i:tid=\"extra" + index + "\"/>").toList();
+        var transfer = Files.readString(fixtures.resolve("relations-demo.xtf"));
+        var xtf = Files.writeString(temp.resolve("beyond-list.xtf"),
+                transfer.replace("<Parent i:tid=\"p1\">", String.join("\n", extraParents) + "<Parent i:tid=\"p1\">"));
+        try (var dataset = ExplorerDataset.open(List.of(fixtures.resolve("RelationsDemo.ili")), xtf,
+                CancellationToken.none())) {
+            var item = dataset.store().objects(QualifiedName.of("RelationsDemo", "Data", "Item"), 1).getFirst();
+            var inspector = new InspectorTableModel();
+            show(dataset, inspector, item);
+            inspector.toggle(1);
+            var target = dataset.store().objectAt(inspector.target(2).orElseThrow()).orElseThrow();
+            var parentType = dataset.plan().object(target.object().type()).orElseThrow();
+            assertFalse(dataset.objects(parentType).contains(target));
+            var visible = dataset.objectsIncluding(parentType, target);
+            assertEquals(100, visible.size());
+            assertEquals(target, visible.getFirst());
+            assertEquals(dataset.objects(parentType).subList(0, 99), visible.subList(1, 100));
+        }
+    }
+
+    private static void show(ExplorerDataset dataset, InspectorTableModel inspector,
+                             StoredObject object) throws Exception {
+        var relationships = InspectorRelationships.read(dataset.plan(), dataset.store(), object);
+        inspector.show(dataset.plan(), object.object().data(), relationships);
     }
 
     private static List<Map.Entry<String, String>> rows(InspectorTableModel inspector) {

@@ -2,6 +2,7 @@ package guru.interlis.explorer;
 
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.QualifiedName;
+import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.TransferEvent.*;
 import guru.interlis.transfer.TransferIdentity.BasketId;
 import guru.interlis.transfer.TransferIdentity.ObjectKey;
@@ -22,10 +23,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 /**
  * A single XTF 2.4 FULL transfer in a local DuckDB file. Use one caller at a time.
@@ -54,6 +57,7 @@ public final class DuckDbStore implements AutoCloseable {
     private final Connection connection;
     private final TransferPlan plan;
     private final StoreCodec codec;
+    private final List<String> roleNames;
 
     /** A stored occurrence and its database-local position, including occurrences without a TID or OID. */
     public record StoredObject(long position, TransferObject object) {}
@@ -61,11 +65,17 @@ public final class DuckDbStore implements AutoCloseable {
     /** A reference at its declaring slot. The target is empty when there is no unique local match. */
     public record ReferenceLink(QualifiedName slot, Reference reference, Optional<StoredObject> target) {}
 
+    /** An indexed reference and its database-local target position, if uniquely resolved. */
+    public record ReferencePosition(Reference reference, OptionalLong targetPosition) {}
+
     private DuckDbStore(String url, Connection connection, TransferPlan plan) {
         this.url = url;
         this.connection = connection;
         this.plan = plan;
         codec = new StoreCodec(plan);
+        roleNames = plan.objects().stream().flatMap(type -> type.slots().stream())
+                .filter(RoleSlot.class::isInstance).map(slot -> slot.name().declared().toString())
+                .distinct().toList();
     }
 
     /** Opens or creates a local DuckDB file. Both arguments are nonnull. */
@@ -258,6 +268,71 @@ public final class DuckDbStore implements AutoCloseable {
                 "SELECT * FROM object WHERE type_name = ? ORDER BY position LIMIT ?")) {
             query.setString(1, type.toString());
             query.setInt(2, limit);
+            return readObjects(query);
+        }
+    }
+
+    /**
+     * Reads the occurrence at a database-local position, or returns empty if it is absent.
+     * @throws SQLException if the query fails
+     */
+    public Optional<StoredObject> objectAt(long position) throws SQLException {
+        try (var query = connection.prepareStatement("SELECT * FROM object WHERE position = ?")) {
+            query.setLong(1, position);
+            try (var rows = query.executeQuery()) {
+                return rows.next() ? Optional.of(storedObject(rows)) : Optional.empty();
+            }
+        }
+    }
+
+    /**
+     * Returns the source's indexed references in stored order, including duplicates and
+     * unresolved references, without loading the target objects. The list is immutable.
+     * @throws SQLException if the query fails
+     */
+    public List<ReferencePosition> referencePositions(long sourcePosition) throws SQLException {
+        try (var query = connection.prepareStatement("""
+                SELECT value, target_position FROM reference
+                WHERE source_position = ? ORDER BY position
+                """)) {
+            query.setLong(1, sourcePosition);
+            var result = new ArrayList<ReferencePosition>();
+            try (var rows = query.executeQuery()) {
+                while (rows.next()) {
+                    long target = rows.getLong("target_position");
+                    var position = rows.wasNull() ? OptionalLong.empty() : OptionalLong.of(target);
+                    result.add(new ReferencePosition(StoreCodec.reference(rows.getString("value")), position));
+                }
+            }
+            return List.copyOf(result);
+        }
+    }
+
+    /**
+     * Returns up to the given number of distinct occurrences with association roles
+     * referring to the target. The list is immutable and in transfer order. Positions
+     * are local to this file. A zero limit returns an empty list.
+     * @throws IllegalArgumentException if the limit is negative
+     * @throws SQLException if the query fails
+     */
+    public List<StoredObject> incomingRoleSources(long targetPosition, int limit) throws SQLException {
+        if (limit < 0) {
+            throw new IllegalArgumentException("The source limit must be nonnegative");
+        }
+        if (roleNames.isEmpty() || limit == 0) {
+            return List.of();
+        }
+        var parameters = String.join(", ", Collections.nCopies(roleNames.size(), "?"));
+        try (var query = connection.prepareStatement("""
+                SELECT * FROM object WHERE position IN (
+                    SELECT source_position FROM reference WHERE target_position = ? AND slot IN (%s)
+                ) ORDER BY position LIMIT ?
+                """.formatted(parameters))) {
+            query.setLong(1, targetPosition);
+            for (int index = 0; index < roleNames.size(); index++) {
+                query.setString(index + 2, roleNames.get(index));
+            }
+            query.setInt(roleNames.size() + 2, limit);
             return readObjects(query);
         }
     }

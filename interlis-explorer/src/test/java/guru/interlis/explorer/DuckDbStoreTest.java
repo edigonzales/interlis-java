@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -135,6 +136,41 @@ class DuckDbStoreTest {
             assertEquals(List.of(items.getFirst()), store.objects(ITEM, 1));
             assertEquals(List.of(), store.objects(ITEM, 0));
             assertThrows(IllegalArgumentException.class, () -> store.objects(ITEM, -1));
+        }
+    }
+
+    @Test
+    void readsIndexedPositionsAndOnlyIncomingAssociationSources() throws Exception {
+        var plan = compile(Files.readString(fixture("RelationsDemo.ili")), "RelationsDemo");
+        var xml = Files.readString(fixture("relations-demo.xtf")).replace("</Data>", """
+                <Item i:tid="only-attribute">
+                  <details><Detail><owner i:ref="p1"/></Detail></details>
+                </Item>
+                <Item i:tid="plain-embedded"><parent i:ref="p1"/></Item>
+                </Data>
+                """);
+        try (var store = DuckDbStore.open(temp.resolve("relations.duckdb"), plan);
+             var input = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
+             var reader = new Xtf24Reader(plan, input)) {
+            store.importTransfer(reader, RUN);
+            var parent = store.find(BASKET, new TransferId("p1", IdOrigin.SOURCE)).orElseThrow();
+            var item = store.find(BASKET, new TransferId("i1", IdOrigin.SOURCE)).orElseThrow();
+            assertEquals(Optional.of(parent), store.objectAt(parent.position()));
+            assertTrue(store.objectAt(999).isEmpty());
+            assertEquals(List.of(OptionalLong.of(parent.position()), OptionalLong.of(parent.position())),
+                    store.referencePositions(item.position()).stream()
+                            .map(DuckDbStore.ReferencePosition::targetPosition).toList());
+            var missing = store.find(BASKET, new TransferId("i2", IdOrigin.SOURCE)).orElseThrow();
+            var unresolved = store.referencePositions(missing.position()).getFirst();
+            assertEquals("p404", unresolved.reference().target().value());
+            assertTrue(unresolved.targetPosition().isEmpty());
+
+            assertEquals(List.of("i1", "r1", "plain-embedded"),
+                    store.incomingRoleSources(parent.position(), 10).stream()
+                            .map(source -> source.object().identity().tid().orElseThrow().value()).toList());
+            assertEquals(List.of(item), store.incomingRoleSources(parent.position(), 1));
+            assertEquals(List.of(), store.incomingRoleSources(parent.position(), 0));
+            assertThrows(IllegalArgumentException.class, () -> store.incomingRoleSources(parent.position(), -1));
         }
     }
 
@@ -240,8 +276,12 @@ class DuckDbStoreTest {
     }
 
     private static TransferPlan compile(String model) {
-        var source = new SourceText(new SourceId("fixture:/Reference24.ili"), new SourceRevision(1), model);
-        var root = new ModelSelector.ByName("Reference24", Optional.empty(), Optional.empty());
+        return compile(model, "Reference24");
+    }
+
+    private static TransferPlan compile(String model, String modelName) {
+        var source = new SourceText(new SourceId("fixture:/" + modelName + ".ili"), new SourceRevision(1), model);
+        var root = new ModelSelector.ByName(modelName, Optional.empty(), Optional.empty());
         var request = new CompilationRequest(List.of(root), SourceSet.of(Map.of(source.id(), source)), CompilerOptions.defaults());
         var outcome = CompilerEngines.create().compile(request, RUN);
         var schema = assertInstanceOf(CompilationOutcome.Succeeded.class, outcome, outcome::toString).schema();

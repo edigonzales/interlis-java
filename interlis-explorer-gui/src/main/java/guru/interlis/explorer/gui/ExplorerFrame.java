@@ -10,6 +10,7 @@ import guru.interlis.xtf24.Xtf24Exception;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -37,6 +38,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -54,18 +56,25 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.font.TextAttribute;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.prefs.Preferences;
 
 final class ExplorerFrame extends JFrame {
     private static final String LAST_TRANSFER_DIRECTORY = "lastTransferDirectory";
 
+    private record Visit(long objectPosition, List<Integer> rowPath) {}
+
+    private final JButton back = new JButton("Back");
+    private final ArrayDeque<Visit> history = new ArrayDeque<>();
     private final JButton open = new JButton("Open dataset…");
     private final JLabel status = new JLabel("Choose the local model files and an XTF 2.4 FULL transfer.");
     private final JTree tree = new JTree(new DefaultMutableTreeNode());
@@ -74,8 +83,10 @@ final class ExplorerFrame extends JFrame {
     private final JList<StoredObject> objectList = new JList<>();
     private final JLabel objectTitle = new JLabel("Select an object");
     private final InspectorTableModel attributes = new InspectorTableModel();
+    private final JTable inspector = inspectorTable();
 
     private ExplorerDataset dataset;
+    private boolean navigating;
     private volatile boolean closing;
 
     ExplorerFrame() {
@@ -128,7 +139,11 @@ final class ExplorerFrame extends JFrame {
                 return this;
             }
         });
-        tree.addTreeSelectionListener(event -> selectClass());
+        tree.addTreeSelectionListener(event -> {
+            if (!navigating) {
+                selectClass();
+            }
+        });
 
         objectList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         objectList.setFixedCellHeight(26);
@@ -144,13 +159,19 @@ final class ExplorerFrame extends JFrame {
         var navigation = section(new JLabel("Model"), tree);
         var instances = section(classTitle, objectList);
         instances.add(count, BorderLayout.SOUTH);
-        var inspector = section(objectTitle, inspectorTable());
+        var inspection = section(objectTitle, inspector);
         var content = split(JSplitPane.HORIZONTAL_SPLIT, navigation,
-                split(JSplitPane.VERTICAL_SPLIT, instances, inspector, 230, 0.35), 250, 0.25);
+                split(JSplitPane.VERTICAL_SPLIT, instances, inspection, 230, 0.35), 250, 0.25);
 
         var toolbar = new JPanel(new BorderLayout());
-        toolbar.add(open, BorderLayout.WEST);
+        var actions = Box.createHorizontalBox();
+        actions.add(open);
+        actions.add(Box.createHorizontalStrut(8));
+        actions.add(back);
+        toolbar.add(actions, BorderLayout.WEST);
         open.addActionListener(event -> chooseDataset());
+        back.setEnabled(false);
+        back.addActionListener(event -> goBack());
         status.putClientProperty("html.disable", true);
         var panel = new JPanel(new BorderLayout(0, 14));
         panel.setBorder(BorderFactory.createEmptyBorder(16, 18, 14, 18));
@@ -174,9 +195,21 @@ final class ExplorerFrame extends JFrame {
         table.getTableHeader().setReorderingAllowed(false);
         table.getColumnModel().getColumn(0).setPreferredWidth(175);
         table.getColumnModel().getColumn(1).setPreferredWidth(420);
-        var plain = new DefaultTableCellRenderer();
-        plain.putClientProperty("html.disable", true);
-        table.setDefaultRenderer(Object.class, plain);
+        var valueRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean selected,
+                                                            boolean focused, int row, int column) {
+                var label = (JLabel) super.getTableCellRendererComponent(table, value, selected, focused, row, column);
+                boolean linked = attributes.target(row).isPresent();
+                if (linked) {
+                    label.setFont(table.getFont().deriveFont(Map.of(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON)));
+                }
+                label.setToolTipText(linked ? "Double-click or press Enter to open" : null);
+                return label;
+            }
+        };
+        valueRenderer.putClientProperty("html.disable", true);
+        table.getColumnModel().getColumn(1).setCellRenderer(valueRenderer);
         var attributeRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean selected,
@@ -199,9 +232,15 @@ final class ExplorerFrame extends JFrame {
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent event) {
-                if (SwingUtilities.isLeftMouseButton(event) && event.getClickCount() == 1
-                        && table.columnAtPoint(event.getPoint()) == 0) {
-                    attributes.toggle(table.rowAtPoint(event.getPoint()));
+                if (!SwingUtilities.isLeftMouseButton(event)) {
+                    return;
+                }
+                int row = table.rowAtPoint(event.getPoint());
+                int column = table.columnAtPoint(event.getPoint());
+                if (column == 0 && event.getClickCount() == 1) {
+                    attributes.toggle(row);
+                } else if (column == 1 && event.getClickCount() == 2) {
+                    followReference(row);
                 }
             }
         });
@@ -210,6 +249,13 @@ final class ExplorerFrame extends JFrame {
             @Override
             public void actionPerformed(ActionEvent event) {
                 attributes.toggle(table.getSelectedRow());
+            }
+        });
+        table.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "openReference");
+        table.getActionMap().put("openReference", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                followReference(table.getSelectedRow());
             }
         });
         table.setTransferHandler(new TransferHandler() {
@@ -353,6 +399,8 @@ final class ExplorerFrame extends JFrame {
                     } else {
                         var previous = dataset;
                         dataset = opened;
+                        history.clear();
+                        back.setEnabled(false);
                         tree.setModel(new DefaultTreeModel(modelTree(opened.plan())));
                         selectClass();
                         status.setText("Opened " + xtf.getFileName());
@@ -413,9 +461,7 @@ final class ExplorerFrame extends JFrame {
             classTitle.setText(type.name().declared().toString());
             try {
                 var objects = dataset.objects(type);
-                objectList.setListData(objects.toArray(StoredObject[]::new));
-                count.setText(objects.isEmpty() ? "No objects of this class."
-                        : objects.size() + " shown (up to " + ExplorerDataset.OBJECT_LIMIT + ")");
+                showObjects(type, objects);
             } catch (SQLException | RuntimeException failure) {
                 count.setText("Object list could not be loaded.");
                 showError("Read objects", failure.getMessage());
@@ -431,10 +477,84 @@ final class ExplorerFrame extends JFrame {
             return;
         }
         objectTitle.setText(objectLabel(selected));
-        attributes.show(dataset.plan(), selected.object().data());
+        try {
+            var relationships = InspectorRelationships.read(dataset.plan(), dataset.store(), selected);
+            attributes.show(dataset.plan(), selected.object().data(), relationships);
+        } catch (SQLException | RuntimeException failure) {
+            attributes.show(dataset.plan(), selected.object().data(), InspectorRelationships.EMPTY);
+            showError("Read relationships", failure.getMessage());
+        }
     }
 
-    private static String objectLabel(StoredObject entry) {
+    private void showObjects(ObjectDescriptor type, List<StoredObject> objects) {
+        classTitle.setText(type.name().declared().toString());
+        objectList.setListData(objects.toArray(StoredObject[]::new));
+        count.setText(objects.isEmpty() ? "No objects of this class."
+                : objects.size() + " shown (up to " + ExplorerDataset.OBJECT_LIMIT + ")");
+    }
+
+    private void followReference(int row) {
+        var target = attributes.target(row);
+        var source = objectList.getSelectedValue();
+        if (source == null || target.isEmpty() || target.getAsLong() == source.position()) {
+            return;
+        }
+        var visit = new Visit(source.position(), attributes.pathTo(row));
+        if (openOccurrence(target.getAsLong())) {
+            history.push(visit);
+            back.setEnabled(true);
+        }
+    }
+
+    private void goBack() {
+        var visit = history.peek();
+        if (visit == null || !openOccurrence(visit.objectPosition())) {
+            return;
+        }
+        history.pop();
+        back.setEnabled(!history.isEmpty());
+        int row = attributes.reveal(visit.rowPath());
+        if (row >= 0) {
+            inspector.setRowSelectionInterval(row, row);
+            inspector.scrollRectToVisible(inspector.getCellRect(row, 1, true));
+            inspector.requestFocusInWindow();
+        }
+    }
+
+    private boolean openOccurrence(long position) {
+        try {
+            var target = dataset.store().objectAt(position).orElse(null);
+            if (target == null) {
+                showError("Open reference", "The target object is unavailable.");
+                return false;
+            }
+            var type = dataset.plan().object(target.object().type()).orElseThrow();
+            var root = (DefaultMutableTreeNode) tree.getModel().getRoot();
+            for (var nodes = root.depthFirstEnumeration(); nodes.hasMoreElements();) {
+                var node = (DefaultMutableTreeNode) nodes.nextElement();
+                if (type.equals(node.getUserObject())) {
+                    var objects = dataset.objectsIncluding(type, target);
+                    var path = new TreePath(node.getPath());
+                    navigating = true;
+                    try {
+                        tree.setSelectionPath(path);
+                        tree.scrollPathToVisible(path);
+                    } finally {
+                        navigating = false;
+                    }
+                    showObjects(type, objects);
+                    objectList.setSelectedValue(target, true);
+                    return true;
+                }
+            }
+            showError("Open reference", "The target is outside the class browser.");
+        } catch (SQLException | RuntimeException failure) {
+            showError("Open reference", failure.getMessage());
+        }
+        return false;
+    }
+
+    static String objectLabel(StoredObject entry) {
         var identity = entry.object().identity();
         if (identity.tid().isPresent()) {
             return "TID " + identity.tid().orElseThrow().value();
