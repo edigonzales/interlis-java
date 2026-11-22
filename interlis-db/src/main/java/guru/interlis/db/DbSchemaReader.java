@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -83,11 +84,17 @@ final class DbSchemaReader {
     private DbSchemaReader() { }
 
     static DbMapping read(Database db, List<String> selectedModels, CancellationToken token) throws SQLException {
+        return read(db, selectedModels, Optional.empty(), token);
+    }
+
+    static DbMapping read(Database db, List<String> selectedModels, Optional<String> outputModel, CancellationToken token)
+            throws SQLException {
         token.throwIfCancellationRequested();
         String modelName = String.join(", ", selectedModels);
         var settings = readSettings(db, selectedModels);
-        var models = settings.srsModels().map(DbCrsPair.Models::names).orElse(selectedModels);
-        TransferPlan plan = readModelPlan(db, models, token);
+        var models = new LinkedHashSet<>(settings.srsModels().map(DbCrsPair.Models::names).orElse(selectedModels));
+        outputModel.ifPresent(models::add);
+        TransferPlan plan = readModelPlan(db, List.copyOf(models), token);
         var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
         if (plan.rootModels().stream().map(ref -> plan.model(ref).orElseThrow().languageVersion())
                 .anyMatch(language -> language != version)) {
@@ -96,6 +103,20 @@ final class DbSchemaReader {
 
         var crsPair = settings.srsModels().map(pair -> new DbCrsPair(plan, pair, settings.crs(pair.original()),
                 settings.crs(pair.alternate())));
+        var requestedRoots = plan.rootModels().stream().filter(ref ->
+                selectedModels.contains(plan.model(ref).orElseThrow().name().declared().last())).toList();
+        if (outputModel.isPresent()) {
+            String output = outputModel.orElseThrow();
+            var target = plan.models().stream().filter(model -> model.name().declared().last().equals(output))
+                    .findFirst().orElseThrow();
+            if (version == LanguageVersion.ILI24 && !target.symbol().equals(target.name().canonical())) {
+                throw unsupported("XTF 2.4 exports require the original model instead of " + output);
+            }
+            if (requestedRoots.stream().map(ref -> plan.model(ref).orElseThrow().name().canonical())
+                    .noneMatch(target.name().canonical()::equals)) {
+                throw unsupported("export model " + output + " is outside the selected translation families");
+            }
+        }
         var roots = DbMapping.storageRoots(plan, crsPair);
         var selected = DbMapping.storageObjects(plan, roots, token);
         DbMapping.checkLayout(plan, selected);
@@ -229,7 +250,7 @@ final class DbSchemaReader {
             throw new DbException("Extra CLASSNAME/TRAFO mappings for " + modelName);
         }
         if (!attrNames.isEmpty()) throw new DbException("Extra ATTRNAME mappings for " + modelName);
-        return new DbMapping(plan, version, tables, compositions, associations, crsPair);
+        return new DbMapping(plan, version, tables, compositions, associations, crsPair, requestedRoots);
     }
 
     private static boolean hasDiscriminator(ObjectDescriptor object, Set<SymbolRef> bases) {

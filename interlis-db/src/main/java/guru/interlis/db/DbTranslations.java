@@ -7,6 +7,7 @@ import guru.interlis.model.SymbolRef;
 import guru.interlis.model.TypeRef;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
+import guru.interlis.transfer.TopicDescriptor;
 import guru.interlis.transfer.TransferObject;
 import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferSlot;
@@ -56,6 +57,13 @@ final class DbTranslations {
         if (type == null) throw new DbException("No translated object type for " + object.type() + " in "
                 + destination.name().declared());
         return remap(object, type.symbol());
+    }
+
+    TopicDescriptor outputTopic(TopicDescriptor source, SymbolRef model) {
+        if (source.model().equals(model)) return source;
+        return plan.topics().stream().filter(candidate -> candidate.model().equals(model)
+                        && candidate.name().canonical().equals(source.name().canonical())).findFirst()
+                .orElseThrow(() -> new DbException("Export model has no translation of " + source.name().declared()));
     }
 
     private TransferObject remap(TransferObject object, SymbolRef type) {

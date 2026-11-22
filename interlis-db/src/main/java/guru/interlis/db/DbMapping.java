@@ -177,6 +177,7 @@ final class DbMapping {
     private final LanguageVersion version;
     private final Optional<DbCrsPair> crsPair;
     private final DbTranslations translations;
+    private final List<SymbolRef> models;
     private final List<Table> tables;
     private final Map<SymbolRef, Table> bySymbol;
     private final Map<String, Table> byName;
@@ -188,11 +189,14 @@ final class DbMapping {
     private final List<EmbeddedAssociation> associations;
 
     DbMapping(TransferPlan plan, LanguageVersion version, List<Table> tables, List<Composition> compositions,
-              List<EmbeddedAssociation> associations, Optional<DbCrsPair> crsPair) {
+              List<EmbeddedAssociation> associations, Optional<DbCrsPair> crsPair, List<SymbolRef> selectedModels) {
         this.plan = plan;
         this.crsPair = crsPair;
         translations = new DbTranslations(plan);
         this.version = version;
+        models = crsPair.map(DbCrsPair::models).orElseGet(() -> version == LanguageVersion.ILI24
+                ? selectedModels.stream().map(ref -> plan.model(ref).orElseThrow().name().canonical()).distinct().toList()
+                : List.copyOf(selectedModels));
         this.tables = List.copyOf(tables);
         bySymbol = this.tables.stream().collect(Collectors.toUnmodifiableMap(
                 table -> table.object().symbol(), Function.identity()));
@@ -251,11 +255,7 @@ final class DbMapping {
 
     Optional<DbCrsPair> crsPair() { return crsPair; }
 
-    List<SymbolRef> models() {
-        if (crsPair.isPresent()) return crsPair.orElseThrow().models();
-        return version != LanguageVersion.ILI24 ? plan.rootModels() : plan.rootModels().stream()
-                .map(ref -> plan.model(ref).orElseThrow().name().canonical()).distinct().toList();
-    }
+    List<SymbolRef> models() { return models; }
 
     SymbolRef originalTopic(SymbolRef topic) {
         return crsPair.map(pair -> pair.originalTopic(topic)).orElseGet(() -> plan.topic(topic).orElseThrow().name().canonical());
@@ -478,7 +478,7 @@ final class DbMapping {
             tables.add(new Table(object, name, columns, discriminator, oidDomain(plan, object), secondary));
         }
         var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
-        return new DbMapping(plan, version, tables, compositions, associations, crsPair);
+        return new DbMapping(plan, version, tables, compositions, associations, crsPair, plan.rootModels());
     }
 
     private static void checkColumnName(TransferSlot slot, String column, boolean structure, boolean discriminator,

@@ -124,6 +124,10 @@ final class DbInteropTest {
     @Test void geoPackageTranslationSchema24() throws Exception { exchangeTranslationSchema(24, null); }
     @Test void postgisTranslationSchema23() throws Exception { exchangeWithPostgis(23, this::exchangeTranslationSchema); }
     @Test void postgisTranslationSchema24() throws Exception { exchangeWithPostgis(24, this::exchangeTranslationSchema); }
+    @Test void geoPackageTranslationExport23() throws Exception { exchangeTranslationExport(23, null); }
+    @Test void geoPackageTranslationExport24() throws Exception { exchangeTranslationExport(24, null); }
+    @Test void postgisTranslationExport23() throws Exception { exchangeWithPostgis(23, this::exchangeTranslationExport); }
+    @Test void postgisTranslationExport24() throws Exception { exchangeWithPostgis(24, this::exchangeTranslationExport); }
 
     @Test void geoPackageSharedSource23() throws Exception { exchangeSharedSource(23, null); }
     @Test void geoPackageSharedSource24() throws Exception { exchangeSharedSource(24, null); }
@@ -482,6 +486,11 @@ final class DbInteropTest {
         var own = new TestDatabase(postgres, "own_translation");
         var extended = new TestDatabase(postgres, "extended_translation");
         new TranslationCases(work, new ReferenceTool(reference.postgis()), version).schema(reference, own, extended);
+    }
+
+    private void exchangeTranslationExport(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "translation_export");
+        new TranslationCases(work, new ReferenceTool(db.postgis()), version).exportLanguage(db);
     }
 
     private void exchangeSharedSource(int version, PostgreSQLContainer postgres) throws Exception {

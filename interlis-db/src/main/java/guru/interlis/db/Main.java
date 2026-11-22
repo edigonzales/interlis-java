@@ -32,7 +32,9 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public final class Main {
     private static final String USAGE = """
-            Usage: interlis-db <export|import|replace|update> --model NAME [--model NAME]... --dataset NAME
+            Usage: interlis-db export --model NAME [--model NAME]... [--export-model NAME] --dataset NAME
+                    (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
+                   interlis-db <import|replace|update> --model NAME [--model NAME]... --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
                    interlis-db delete --model NAME [--model NAME]... --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME)
@@ -187,13 +189,13 @@ public final class Main {
         Path temporary = Files.createTempFile(options.file().getParent(), ".interlis-db-", ".xtf");
         try {
             try (var database = options.open(password)) {
-                var mapping = DbSchemaReader.read(database, options.models(), cancellation);
+                var mapping = DbSchemaReader.read(database, options.models(), options.exportModel(), cancellation);
                 try (var output = Files.newOutputStream(temporary);
                      TransferWriter writer = switch (mapping.version()) {
                          case ILI23 -> Xtf23Writer.forIli2db(mapping.plan(), output);
                          case ILI24 -> new Xtf24Writer(mapping.plan(), output);
                      }) {
-                    DbTransfer.exportData(database, mapping, options.dataset(), writer, cancellation);
+                    DbTransfer.exportData(database, mapping, options.dataset(), options.exportModel(), writer, cancellation);
                 }
                 database.commit();
             }
@@ -210,9 +212,9 @@ public final class Main {
                            String pgUrl, String schema, String user, boolean createGeometryIndexes,
                            boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean addModels,
                            boolean explicitEpsg, boolean explicitLayout,
-                           Optional<DbCrsPair.Models> srsModels, List<Path> modelFiles) {
+                           Optional<DbCrsPair.Models> srsModels, List<Path> modelFiles, Optional<String> exportModel) {
         private static final Set<String> NAMES = Set.of("--dataset", "--gpkg", "--pg-url", "--schema", "--user",
-                "--default-epsg", "--alt-srs-model");
+                "--default-epsg", "--alt-srs-model", "--export-model");
 
         static Options parse(String[] args) {
             Command command = switch (args.length == 0 ? "" : args[0]) {
@@ -271,6 +273,10 @@ public final class Main {
                 }
             }
             String dataset = flags.get("--dataset");
+            var exportModel = Optional.ofNullable(flags.get("--export-model"));
+            if (exportModel.isPresent() && command != Command.EXPORT) {
+                throw new IllegalArgumentException("--export-model is only valid with export");
+            }
             if (command == Command.SCHEMAIMPORT) {
                 if (file == null || file.getParent() == null || models.isEmpty()) {
                     throw new IllegalArgumentException("An .ili path and --model are required");
@@ -326,7 +332,7 @@ public final class Main {
                     schemaFlags.contains("--create-geom-index"),
                     oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg, multiSrs, addModels,
                     epsg != null, oneGeometryPerTable || multipleGeoPackageGeometries, srsModels,
-                    List.copyOf(modelFiles));
+                    List.copyOf(modelFiles), exportModel);
         }
 
         void checkPaths() throws IOException {

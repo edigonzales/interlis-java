@@ -123,6 +123,11 @@ mit einer Namenskollision und einer gemeinsam genutzten Struktur. Es
 vergleicht den Katalog nach einem Abbruch während der DDL und prüft danach
 den Werkzeugwechsel mit den bestehenden und neuen SQL-Zuordnungen.
 
+`*DbInteropTest.*Translation*` prüft Quellenbindung, Originaltabellen,
+skalare und verschachtelte Werte, Schemaerstellung, Modellergänzung und
+die explizite Ausgabesprache. Die Fälle vergleichen XTF 2.3 mit übersetzten
+Baskets und XTF 2.4 mit den Namen des Originals.
+
 Die Fälle `*DbInteropTest.*Mutation*` prüfen `replace` und `update`
 in beiden Werkzeugrichtungen. Sie prüfen die internen IDs und den Bestand
 in SQL, exportiertes XTF, besitzende Datensätze, Referenzen und Rollback.

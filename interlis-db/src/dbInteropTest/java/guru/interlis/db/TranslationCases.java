@@ -184,6 +184,47 @@ final class TranslationCases {
         }
     }
 
+    void exportLanguage(TestDatabase db) throws Exception {
+        fixture(original + ".ili");
+        fixture(translated + ".ili");
+        createReference(db, translated);
+        referenceImport(db, "original", fixture("original" + version + ".xtf"));
+        var output = work.resolve("language-output.xtf");
+        var expected = work.resolve("language-reference.xtf");
+        if (version == 23) {
+            referenceImport(db, "translated", fixture("translated23.xtf"));
+            referenceExport(db, "original", expected, "--exportModels", translated);
+            assertDelivery(expected, true, "original");
+            run(db, "export", original, "original", output, "--export-model", translated);
+            assertDelivery(output, true, "original");
+            var converted = Files.writeString(work.resolve("converted.xtf"), Files.readString(output)
+                    .replace("original-", "converted-"));
+            referenceImport(db, "converted", converted);
+            run(db, "export", translated, "converted", output);
+            assertDelivery(output, true, "converted");
+            referenceExport(db, "translated", expected, "--exportModels", original);
+            assertDelivery(expected, false, "translated");
+            run(db, "export", translated, "translated", output, "--export-model", original);
+            assertDelivery(output, false, "translated");
+            assertLanguageRejected(db, original, "translated", translated, output, "outside the selected model");
+        } else {
+            referenceExport(db, "original", expected, "--exportModels", original);
+            assertDelivery(expected, false, "original");
+            run(db, "export", translated, "original", output, "--export-model", original);
+            assertDelivery(output, false, "original");
+            assertLanguageRejected(db, original, "original", translated, output, "require the original model");
+        }
+    }
+
+    private void assertLanguageRejected(TestDatabase db, String model, String dataset, String target, Path output,
+                                        String reason) throws Exception {
+        String published = Files.readString(output);
+        var result = cli(db, "export", model, dataset, output, CancellationToken.none(), "--export-model", target);
+        assertEquals(1, result.code(), result::diagnostics);
+        assertTrue(result.diagnostics().contains(reason), result::diagnostics);
+        assertEquals(published, Files.readString(output));
+    }
+
     private void assertDelivery(Path output, boolean french, String prefix) throws Exception {
         var data = readDataSection(output, version);
         String model = french ? translated : original;

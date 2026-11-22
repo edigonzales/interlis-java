@@ -69,7 +69,7 @@ final class DbTransfer {
 
     private DbTransfer() { }
 
-    static void exportData(Database db, DbMapping mapping, String dataset,
+    static void exportData(Database db, DbMapping mapping, String dataset, Optional<String> outputModel,
                            TransferWriter writer, CancellationToken token) throws SQLException {
         token.throwIfCancellationRequested();
         long datasetId = DbDatasetWrite.findDataset(db, dataset)
@@ -79,6 +79,8 @@ final class DbTransfer {
         checkHierarchyTopics(db, mapping, datasetId, token);
         checkCrossDatasetReferences(db, mapping, datasetId, token);
         var plan = mapping.plan();
+        var output = outputModel.map(name -> plan.models().stream().filter(model -> model.name().declared().last().equals(name))
+                .findFirst().orElseThrow().symbol());
         var topics = plan.topics().stream().filter(topic -> mapping.models().contains(topic.model()))
                 .collect(Collectors.toMap(topic -> topic.name().declared().toString(), Function.identity()));
         var exported = new HashSet<SymbolRef>();
@@ -88,13 +90,14 @@ final class DbTransfer {
             try (var rows = statement.executeQuery()) {
                 while (rows.next()) {
                     token.throwIfCancellationRequested();
-                    exported.add(selectedTopic(topics, rows.getString(1)).model());
+                    var stored = selectedTopic(topics, rows.getString(1));
+                    exported.add(output.map(model -> mapping.translations().outputTopic(stored, model)).orElse(stored).model());
                 }
             }
         }
         if (exported.isEmpty()) throw new DbException("Dataset has no baskets: " + dataset);
         boolean ili23 = mapping.version() == LanguageVersion.ILI23;
-        var declarations = mapping.models().stream().filter(exported::contains).map(ref -> {
+        var declarations = (output.isPresent() ? output.stream() : mapping.models().stream()).filter(exported::contains).map(ref -> {
             var model = plan.model(ref).orElseThrow();
             var symbol = (ModelSymbol) plan.symbol(ref).known().orElseThrow();
             return new TransferEvent.ModelDeclaration(ref, mapping.version(),
@@ -115,10 +118,11 @@ final class DbTransfer {
                 do {
                     token.throwIfCancellationRequested();
                     var topicName = rows.getString(2);
-                    var topic = selectedTopic(topics, topicName);
+                    var stored = selectedTopic(topics, topicName);
+                    var topic = output.map(model -> mapping.translations().outputTopic(stored, model)).orElse(stored);
                     String domains = rows.getString(4);
                     var bid = new BasketId(identifier(rows.getString(3), "BID", topicName), IdOrigin.SOURCE);
-                    var bindings = DbDomains.read(plan, topic, domains, bid.value());
+                    var bindings = DbDomains.read(plan, stored, domains, bid.value());
                     writeBasket(db, mapping, topic, rows.getLong(1), bid, bindings, writer, token);
                 } while (rows.next());
             }
