@@ -101,6 +101,10 @@ Geometrieabbildungen für zweidimensionale Strukturen einzeln aktivieren.
 Die Geometriespalte übernimmt den CRS und die Grenzen der Koordinatendomäne
 der inneren Struktur.
 
+Mit `schemaimport --expand-struct` legt das Kommando ein `newClass`-Schema
+mit den Fachspalten für `ili2db.mapping=EXPAND` an. Beim Ergänzen eines
+Modells übernimmt `--add-models` die gespeicherte Einstellung.
+
 ## Bestehendes Schema ergänzen
 
 ```sh

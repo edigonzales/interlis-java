@@ -151,10 +151,7 @@ final class SchemaSql {
                 columns.add(SEQ_COLUMN + " " + dialect.idType());
             }
             for (var column : table.columns()) {
-                var names = column.physicalNames();
-                for (int i = 0; i < names.size(); i++) {
-                    columns.add(quote(names.get(i)) + " " + dialect.columnType(column, i));
-                }
+                addColumnDefinitions(columns, column, dialect);
                 column.positionColumn().ifPresent(position -> columns.add(quote(position) + " " + dialect.idType()));
             }
             for (var composition : plan.addedCompositions()) {
@@ -286,7 +283,11 @@ final class SchemaSql {
                     token.throwIfCancellationRequested();
                     String target = column.target().isPresent() ? plan.mapping().table(column.targetRelation()).name() : null;
                     String path = Ili2dbLayout.geometryAttribute(column.slot().name().declared().toString(), column.epsgCode(), plan.multiSrs());
-                    row(attributes, path, column.name(), table.name(), target);
+                    if (column.expandedStructure().isPresent()) {
+                        writeExpandedAttributes(attributes, table.name(), column.expandedStructure().orElseThrow());
+                    } else {
+                        row(attributes, path, column.name(), table.name(), target);
+                    }
                     writeAttributeTransformation(transformations, transformedAttributes, column);
                 }
                 for (var secondary : table.secondaryGeometries()) {
@@ -316,6 +317,34 @@ final class SchemaSql {
             for (var property : plan.columnProperties()) {
                 token.throwIfCancellationRequested();
                 row(colProps, property.table(), property.subtype(), property.column(), property.key(), property.value());
+            }
+        }
+    }
+
+    private static void addColumnDefinitions(List<String> columns, DbMapping.Column column, Dialect dialect) {
+        if (column.expandedStructure().isPresent()) {
+            for (var group : column.expandedStructure().orElseThrow().groups()) {
+                columns.add(quote(group.typeColumn()) + " " + dialect.text(60));
+                for (var field : group.fields()) addColumnDefinitions(columns, field, dialect);
+            }
+        } else {
+            var names = column.physicalNames();
+            for (int i = 0; i < names.size(); i++) {
+                columns.add(quote(names.get(i)) + " " + dialect.columnType(column, i));
+            }
+        }
+    }
+
+    private static void writeExpandedAttributes(PreparedStatement statement, String table, DbExpandedStructure expansion)
+            throws SQLException {
+        for (var group : expansion.groups()) {
+            row(statement, group.path() + "._type", group.typeColumn(), table, null);
+            for (var field : group.fields()) {
+                if (field.expandedStructure().isPresent()) {
+                    writeExpandedAttributes(statement, table, field.expandedStructure().orElseThrow());
+                } else {
+                    row(statement, group.path() + "." + field.slot().name().declared().last(), field.name(), table, null);
+                }
             }
         }
     }

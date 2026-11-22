@@ -71,7 +71,8 @@ final class DbSchemaReader {
     private record AttributeName(String name, String owner, String target) { }
     record Settings(boolean splitGeometries, int defaultEpsg, String modelEpsgAssignments, boolean referenceEpsgHeader,
                     boolean multiSrs, Optional<DbCrsPair.Models> srsModels, boolean createGeometryIndexes,
-                    DbInheritance.Profile inheritance, boolean strokeArcs) {
+                    DbInheritance.Profile inheritance, boolean strokeArcs,
+                    Set<Ili2dbLayout.AttributeTransformation> structureTransformations) {
         CrsDefaults crs(String model) {
             return new CrsDefaults(defaultEpsg, modelEpsg(modelEpsgAssignments, model));
         }
@@ -249,12 +250,12 @@ final class DbSchemaReader {
                         var binding = DbExpandedStructure.bind(plan, attr, names,
                                 field -> transformations.attributes().get(field.name().declared().toString())
                                         == Ili2dbLayout.AttributeTransformation.EXPANDED_STRUCTURE, (field, kind) -> {
-                            var stored = attrNames.take(field, parent.name(), null);
-                            useColumn(db, parent, stored, field);
-                            if (stored.target() != null) throw new DbException("Unexpected ATTRNAME.target for " + field);
-                            requireColumns(db, parent.name(), parent.columns(), Map.of(stored.name(), kind));
-                            return stored.name();
-                        });
+                                    var stored = attrNames.take(field, parent.name(), null);
+                                    useColumn(db, parent, stored, field);
+                                    if (stored.target() != null) throw new DbException("Unexpected ATTRNAME.target for " + field);
+                                    requireColumns(db, parent.name(), parent.columns(), Map.of(stored.name(), kind));
+                                    return stored.name();
+                                });
                         columns.add(DbMapping.expandedColumn(plan, attr, binding));
                         usedAttributeTransformations.add(path);
                         continue;
@@ -481,14 +482,20 @@ final class DbSchemaReader {
         if (strokeArcs && !Ili2dbLayout.STROKE_ARCS_ENABLED.equals(settings.get(Ili2dbLayout.STROKE_ARCS))) {
             throw unsupported("SETTINGS.StrokeArcs");
         }
+        var expansion = Ili2dbLayout.AttributeTransformation.EXPANDED_STRUCTURE;
+        var structureTransformations = Set.<Ili2dbLayout.AttributeTransformation>of();
+        if (settings.containsKey(expansion.tag)) {
+            if (!expansion.setting.equals(settings.get(expansion.tag))) throw unsupported("SETTINGS.structTrafo");
+            structureTransformations = Set.of(expansion);
+        }
         if (Ili2dbLayout.MULTIPLE_GEOMETRIES.equals(geometryLayout)) {
-            return new Settings(false, defaultEpsg, modelEpsg, referenceEpsgHeader, multiSrs, srsModels, indexes, inheritance, strokeArcs);
+            return new Settings(false, defaultEpsg, modelEpsg, referenceEpsgHeader, multiSrs, srsModels, indexes, inheritance, strokeArcs, structureTransformations);
         }
         if (geometryLayout != null && !Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout)) {
             throw unsupported("SETTINGS.geomAttrPerTable=" + geometryLayout);
         }
         return new Settings(db.gpkg() || Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout), defaultEpsg, modelEpsg,
-                referenceEpsgHeader, multiSrs, srsModels, indexes, inheritance, strokeArcs);
+                referenceEpsgHeader, multiSrs, srsModels, indexes, inheritance, strokeArcs, structureTransformations);
     }
 
     static SqlNames namesForExtension(Database db, List<String> models) throws SQLException {

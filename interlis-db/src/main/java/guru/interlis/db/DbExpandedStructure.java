@@ -40,6 +40,12 @@ record DbExpandedStructure(SymbolRef structure, String typeName, Optional<Collec
         groups = List.copyOf(groups);
     }
 
+    static boolean planned(AttributeSlot field) {
+        return "EXPAND".equals(DbMapping.metaText(field.attribute(), "ili2db.mapping"))
+                && field.cardinality().upper() instanceof CardinalityUpper.Finite upper
+                && upper.value().signum() > 0 && upper.value().compareTo(MAX_GROUPS) <= 0;
+    }
+
     static DbExpandedStructure bind(TransferPlan plan, AttributeSlot outer, Map<SymbolRef, String> tableNames,
                                     Predicate<AttributeSlot> isExpanded, BiFunction<String, Kind, String> bindColumn) {
         return bind(plan, outer, tableNames, isExpanded, bindColumn, outer.name().declared().toString(), false);

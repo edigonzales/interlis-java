@@ -192,6 +192,7 @@ final class DbMapping {
         }
 
         AttributeTransformation transformation() {
+            if (expandedStructure.isPresent()) return AttributeTransformation.EXPANDED_STRUCTURE;
             if (catalogueReference.isPresent()) return AttributeTransformation.CATALOGUE_REFERENCE;
             if (wrappedGeometry.isPresent()) return wrappedGeometry.orElseThrow().transformation();
             return textExpansion.map(DbTextExpansion::transformation).orElse(null);
@@ -677,6 +678,15 @@ final class DbMapping {
                             checkColumnName(attribute, field, object.kind() == SymbolKind.STRUCTURE, discriminator, gpkg);
                         }
                         columns.add(column);
+                        continue;
+                    }
+                    if (transformations.contains(AttributeTransformation.EXPANDED_STRUCTURE) && DbExpandedStructure.planned(attribute)) {
+                        var binding = DbExpandedStructure.bind(plan, attribute, names, DbExpandedStructure::planned, (path, kind) -> {
+                            String field = allocator.expandedColumn(name, path);
+                            checkColumnName(attribute, field, object.kind() == SymbolKind.STRUCTURE, discriminator, gpkg);
+                            return field;
+                        });
+                        columns.add(expandedColumn(plan, attribute, binding));
                         continue;
                     }
                     var wrapped = wrappedGeometries.get(attribute.symbol());

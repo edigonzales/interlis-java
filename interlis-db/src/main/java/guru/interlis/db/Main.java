@@ -44,7 +44,7 @@ public final class Main {
                     [--default-epsg CODE] [--multi-srs [--alt-srs-model ORIGINAL=ALTERNATE]]
                     [--model-file IMPORT.ili]...
                     [--inheritance smart1|smart2] [--coalesce-catalogue-ref] [--expand-multilingual] [--expand-localised]
-                    [--coalesce-multi-point] [--coalesce-multi-line] [--coalesce-multi-surface]
+                    [--coalesce-multi-point] [--coalesce-multi-line] [--coalesce-multi-surface] [--expand-struct]
                     [--stroke-arcs] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.
@@ -144,7 +144,7 @@ public final class Main {
         var names = DbSchemaReader.namesForExtension(db, options.models());
         var plan = SchemaPlan.read(options.models(), options.file(), options.modelFiles(), db.gpkg(),
                 settings.splitGeometries(), settings.defaultEpsg(), settings.multiSrs(), Optional.empty(), names,
-                settings.inheritance(), Set.of(), settings.strokeArcs(), cancellation);
+                settings.inheritance(), settings.structureTransformations(), settings.strokeArcs(), cancellation);
         plan = plan.withModelFiles(DbSchemaReader.newModelFiles(db, plan.modelFiles(), cancellation));
         if (plan.addedTables().isEmpty() && plan.modelFiles().isEmpty()) {
             throw new DbException("No new model tables or sources to add");
@@ -350,6 +350,10 @@ public final class Main {
             if (!transformations.isEmpty() && (addModels || inheritance == DbInheritance.Profile.SMART1)) {
                 throw new IllegalArgumentException(transformations.iterator().next().option
                         + " requires a new schema with newClass or Smart2 inheritance");
+            }
+            if (transformations.contains(Ili2dbLayout.AttributeTransformation.EXPANDED_STRUCTURE)
+                    && inheritance != DbInheritance.Profile.NEW_CLASS) {
+                throw new IllegalArgumentException("--expand-struct requires a new schema with newClass inheritance");
             }
             boolean strokeArcs = schemaFlags.contains("--stroke-arcs");
             if (strokeArcs && (addModels || inheritance == DbInheritance.Profile.SMART1)) {

@@ -213,6 +213,21 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
 
     private static void addProperties(List<ColumnProperty> properties, Map<String, List<GeometryColumn>> geometries,
                                       DbMapping mapping, DbMapping.Table owner, String table, DbMapping.Column column) {
+        addProperties(properties, geometries, mapping, owner, table, column, false);
+    }
+
+    private static void addProperties(List<ColumnProperty> properties, Map<String, List<GeometryColumn>> geometries,
+                                      DbMapping mapping, DbMapping.Table owner, String table, DbMapping.Column column,
+                                      boolean expandedField) {
+        if (column.expandedStructure().isPresent()) {
+            var expansion = column.expandedStructure().orElseThrow();
+            for (var group : expansion.groups()) {
+                properties.add(new ColumnProperty(table, null, group.typeColumn(), Ili2dbLayout.PREFIX + "types",
+                        "[\"" + expansion.typeName() + "\"]"));
+                for (var field : group.fields()) addProperties(properties, geometries, mapping, owner, table, field, true);
+            }
+            return;
+        }
         if (column.target().isPresent()) {
             property(properties, table, null, column, "foreignKey", mapping.table(column.targetRelation()).name());
         }
@@ -236,7 +251,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             case REFERENCE -> null;
         };
         if (typeKind != null) property(properties, table, subtype, column, "typeKind", typeKind);
-        if (column.kind() == DbMapping.Kind.BOOLEAN || column.kind() == DbMapping.Kind.ENUMERATION) {
+        if (!expandedField && (column.kind() == DbMapping.Kind.BOOLEAN || column.kind() == DbMapping.Kind.ENUMERATION)) {
             String domain = null;
             if (declaredType(mapping, column) instanceof DomainReferenceType alias) {
                 domain = qualifiedName(mapping, symbol(mapping, new SymbolRef(mapping.plan().snapshotId(), alias.targetDomain())));

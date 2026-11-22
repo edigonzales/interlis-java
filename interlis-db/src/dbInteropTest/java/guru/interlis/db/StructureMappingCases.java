@@ -2,6 +2,7 @@ package guru.interlis.db;
 
 import guru.interlis.db.DbInteropTest.ReferenceTool;
 import guru.interlis.db.DbInteropTest.TestDatabase;
+import guru.interlis.execution.CancellationToken;
 import org.w3c.dom.Element;
 
 import java.nio.file.Files;
@@ -15,6 +16,7 @@ import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
+import static guru.interlis.db.DbInteropTest.cli;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
@@ -211,6 +213,103 @@ final class StructureMappingCases {
         assertNull(child(members(objects.get(prefix + "-without-inner"), field).getFirst(), "Detail"));
         assertEquals(List.of(), children(members(members(objects.get(prefix + "-empty"), field).getFirst(), "Detail").getFirst()));
         assertEntry(members(members(objects.get(prefix + "-value"), field).getFirst(), "Detail").getFirst());
+    }
+
+    void schema(TestDatabase baseline, TestDatabase own) throws Exception {
+        String model = "ExpandSchema" + version;
+        var ili = source(model, """
+                    STRUCTURE Wrapper =
+                      !!@ili2db.mapping=EXPAND
+                      Detail : Entry;
+                    END Wrapper;
+                """, """
+                    CLASS Asset =
+                      Detail0_Label : TEXT*31;
+                      !!@ili2db.mapping=EXPAND
+                      Detail : Entry;
+                      !!@ili2db.mapping=EXPAND
+                      Items : LIST {0..2} OF Entry;
+                      !!@ili2db.mapping=EXPAND
+                      Bagged : BAG {0..2} OF Entry;
+                      !!@ili2db.mapping=EXPAND
+                      Larger : LIST {0..6} OF Entry;
+                      !!@ili2db.mapping=EXPAND
+                      Nest : Wrapper;
+                    END Asset;
+                """);
+        referenceSchema(baseline, model, "--expandStruct");
+        createSchema(own, model, ili, "--expand-struct");
+        assertSameCatalog(baseline, own);
+        var output = work.resolve("out.xtf");
+        referenceImport(own, "legacy", schemaDataset(model, "legacy"));
+        assertCliSuccess(own, "export", model, "legacy", output);
+        assertSchemaData(output, "legacy");
+        assertCliSuccess(own, "import", model, "native", schemaDataset(model, "native"));
+        referenceExport(own, "native", output);
+        assertSchemaData(output, "native");
+        referenceImport(own, "tail", schemaDataset(model, "tail"));
+        assertCliSuccess(own, "export", model, "tail", output);
+        assertSchemaData(output, "tail");
+        try (var sql = own.connect()) {
+            assertEquals("ordinary", scalar(sql, "SELECT detail0_label FROM " + own.table("asset") + " WHERE t_ili_tid='native-value'"));
+            assertEquals("é & a", scalar(sql, "SELECT detail0_label1 FROM " + own.table("asset") + " WHERE t_ili_tid='native-value'"));
+            assertSharedIds(own, sql, "15", "asset", "entry");
+        }
+
+        var appended = "ExpandAppend" + version;
+        var extra = source(appended, """
+                    !!@ili2db.mapping=EXPAND
+                    Detail : Entry;
+                """);
+        createSchema(own, appended, extra, "--add-models");
+        referenceImport(own, "added", singleDataset(appended, "added", "Detail"));
+        assertCliSuccess(own, "export", appended, "added", output);
+        assertSingle(output, "added", "Detail");
+        try (var sql = own.connect()) {
+            assertEquals("expand", scalar(sql, "SELECT setting FROM " + own.table("t_ili2db_trafo")
+                    + " WHERE iliname='" + appended + ".Data.Asset.Detail' AND tag='ch.ehi.ili2db.structTrafo'"));
+        }
+    }
+
+    private Path schemaDataset(String model, String prefix) throws Exception {
+        var entry = entry(model, VALUES);
+        String payload = field("Detail0_Label", "ordinary") + field("Detail", entry)
+                + field("Items", entry + entry(model, "")) + field("Bagged", entry + entry)
+                + field("Larger", entry) + field("Nest", field(type(model, "Wrapper"), field("Detail", entry)));
+        return dataset(model, prefix, asset(model, prefix + "-value", payload) + asset(model, prefix + "-absent", ""));
+    }
+
+    private void assertSchemaData(Path output, String prefix) throws Exception {
+        var objects = objects(output, prefix);
+        var value = objects.get(prefix + "-value");
+        assertEquals("ordinary", child(value, "Detail0_Label").getTextContent());
+        assertEntry(members(value, "Detail").getFirst());
+        assertEntry(members(value, "Larger").getFirst());
+        assertEntry(members(members(value, "Nest").getFirst(), "Detail").getFirst());
+        assertEquals(2, members(value, "Bagged").size());
+        assertEquals(2, members(value, "Items").size());
+        assertEquals(List.of(), children(members(value, "Items").getLast()));
+        assertEquals(List.of(), children(objects.get(prefix + "-absent")));
+    }
+
+    private static void createSchema(TestDatabase db, String model, Path ili, String... options) {
+        var result = cli(db, "schemaimport", model, null, ili, CancellationToken.none(), options);
+        assertEquals(0, result.code(), result::diagnostics);
+    }
+
+    private static void assertSameCatalog(TestDatabase baseline, TestDatabase own) throws Exception {
+        try (var expected = baseline.connect(); var actual = own.connect()) {
+            DbSchemaCatalog.read(expected, baseline.postgis(), baseline.schema())
+                    .assertSameAs(DbSchemaCatalog.read(actual, own.postgis(), own.schema()));
+        }
+    }
+
+    private static void assertSharedIds(TestDatabase db, java.sql.Connection sql, String count, String... tables) throws Exception {
+        var allTables = new ArrayList<>(List.of(tables));
+        allTables.addAll(List.of("t_ili2db_basket", "t_ili2db_dataset"));
+        var ids = allTables.stream().map(table -> "SELECT t_id FROM " + db.table(table)).collect(Collectors.joining(" UNION ALL "));
+        assertEquals(count, scalar(sql, "SELECT count(*) FROM (" + ids + ") ids"));
+        assertEquals(count, scalar(sql, "SELECT count(DISTINCT t_id) FROM (" + ids + ") ids"));
     }
 
     private Path singleDataset(String model, String prefix, String field) throws Exception {

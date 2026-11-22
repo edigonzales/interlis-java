@@ -74,7 +74,7 @@ final class Ili2dbLayout {
         MULTIPOINT("--coalesce-multi-point", "multiPointTrafo", COALESCE),
         MULTILINE("--coalesce-multi-line", "multiLineTrafo", COALESCE),
         MULTISURFACE("--coalesce-multi-surface", "multiSurfaceTrafo", COALESCE),
-        EXPANDED_STRUCTURE(null, "structTrafo", "expand");
+        EXPANDED_STRUCTURE("--expand-struct", "structTrafo", "expand");
 
         final String option;
         final String tag;

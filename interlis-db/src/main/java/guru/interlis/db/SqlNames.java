@@ -91,6 +91,15 @@ final class SqlNames {
         return allocateColumn(table, preferred(attribute));
     }
 
+    String expandedColumn(String table, String path) {
+        int position = path.indexOf('[');
+        String stem = path.substring(path.lastIndexOf('.', position) + 1);
+        if (stem.endsWith("._type")) {
+            stem = stem.substring(0, stem.length() - "._type".length()) + "." + Ili2dbLayout.TYPE_COLUMN;
+        }
+        return column(table, stem.replace("[", "").replace("]", "").replace('.', '_'));
+    }
+
     String roleColumn(String table, String role) {
         return allocateColumn(table, preferred(shorten(role, NAME_LENGTH - 6)));
     }

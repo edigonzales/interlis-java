@@ -98,6 +98,9 @@ Strukturtabelle bei Obergrenze sechs und Rollback bei einer zu langen Liste.
 Die `*ExpandBag*`-Fälle prüfen doppelte und leere Einträge sowie die
 gruppierte XTF-2.4-Referenzausgabe. Die `*ExpandNested*`-Fälle prüfen
 beide Typmarkierungen und erkennen innere Werte ohne äusseren Strukturtyp.
+Die `*ExpandSchema*`-Fälle vergleichen den Katalog mit der Referenz. Sie
+prüfen kollidierende Spaltennamen, die gemeinsame ID-Vergabe und
+`--add-models` mit der gespeicherten Option.
 
 `*DbInteropTest.*CatalogueReference*` prüft beide Werkzeugrichtungen
 für Katalogreferenzen mit `--coalesceCatalogueRef` auf GeoPackage und
