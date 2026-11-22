@@ -61,7 +61,7 @@ import static guru.interlis.db.Ili2dbLayout.reservedTable;
 /** The SQL names and storage bindings for a checked transfer plan. */
 final class DbMapping {
     enum Kind {
-        TEXT, BOOLEAN, INTEGER, ENUMERATION, POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE;
+        TEXT, BOOLEAN, INTEGER, BIGINT, ENUMERATION, POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE;
 
         boolean geometry() { return this == POINT || this == POLYLINE || this == SURFACE || collection(); }
 
@@ -1106,7 +1106,8 @@ final class DbMapping {
     static Kind scalarKind(TypeDescriptor type) {
         return switch (type) {
             case TextType text when text.textKind() == TextKind.TEXT || text.textKind() == TextKind.MTEXT -> Kind.TEXT;
-            case NumericType number when int32(number) -> Kind.INTEGER;
+            case NumericType number when integerRange(number, Integer.MIN_VALUE, Integer.MAX_VALUE) -> Kind.INTEGER;
+            case NumericType number when integerRange(number, Long.MIN_VALUE, Long.MAX_VALUE) -> Kind.BIGINT;
             case EnumerationType ignored -> Kind.ENUMERATION;
             default -> type.kind() == TypeKind.BOOLEAN ? Kind.BOOLEAN : null;
         };
@@ -1349,13 +1350,13 @@ final class DbMapping {
         return attr.cardinality().lower().equals(BigInteger.ZERO);
     }
 
-    private static boolean int32(NumericType type) {
+    private static boolean integerRange(NumericType type, long min, long max) {
         return type.range().minimum().filter(bound -> bound.precision().fractionalDigits() == 0
                 && bound.exactValue().scale() <= 0
-                && bound.exactValue().compareTo(BigDecimal.valueOf(Integer.MIN_VALUE)) >= 0).isPresent()
+                && bound.exactValue().compareTo(BigDecimal.valueOf(min)) >= 0).isPresent()
                 && type.range().maximum().filter(bound -> bound.precision().fractionalDigits() == 0
                 && bound.exactValue().scale() <= 0
-                && bound.exactValue().compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) <= 0).isPresent();
+                && bound.exactValue().compareTo(BigDecimal.valueOf(max)) <= 0).isPresent();
     }
 
     static DbException unsupported(String feature) {

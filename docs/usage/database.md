@@ -364,7 +364,7 @@ erzeugt eine vollständige Tabelle pro konkretem Typ. Ohne die Option
 verwendet `schemaimport` die `newClass`-Abbildung.
 
 Unterstützt sind Klassen eines eigenständigen Modells in
-INTERLIS 2.3 und 2.4 mit Text, Boolean, 32-Bit-Ganzzahlen und Aufzählungen als
+INTERLIS 2.3 und 2.4 mit Text, Boolean, 32- und 64-Bit-Ganzzahlen und Aufzählungen als
 XTF-Code. PostGIS speichert mehrere optionale Geometrieattribute in der
 Klassentabelle und erhält mit `--create-geom-index` für jede Geometriespalte
 einen GiST-Index. GeoPackage speichert die erste Geometrie in der

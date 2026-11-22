@@ -69,7 +69,11 @@ record DbJsonStructure(SymbolRef structure, String typeName, Map<String, Column>
                 if (nested) throw DbMapping.unsupported("nested JSON structure at " + field.name().declared());
                 fields.put(name, DbMapping.jsonColumn(plan, field, name, describe(plan, field, true)));
             } else {
-                fields.put(name, DbMapping.structureScalar(plan, object, field));
+                var scalar = DbMapping.structureScalar(plan, object, field);
+                switch (scalar.kind()) {
+                    case TEXT, BOOLEAN, INTEGER, ENUMERATION -> fields.put(name, scalar);
+                    default -> throw DbMapping.unsupported("JSON structure member " + field.name().declared());
+                }
             }
         }
         boolean array = collection.isPresent() && !CardinalityUpper.finite(1).equals(outer.cardinality().upper());

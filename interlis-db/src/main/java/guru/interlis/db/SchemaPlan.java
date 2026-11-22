@@ -268,7 +268,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         String typeKind = column.jsonStructure().isPresent() ? "STRUCTURE" : switch (column.kind()) {
             case TEXT -> ((TextType) effective).textKind().name();
             case BOOLEAN -> "BOOLEAN";
-            case INTEGER -> "NUMERIC";
+            case INTEGER, BIGINT -> "NUMERIC";
             case ENUMERATION -> "ENUM";
             case POINT -> "COORD";
             case MULTIPOINT -> "MULTICOORD";

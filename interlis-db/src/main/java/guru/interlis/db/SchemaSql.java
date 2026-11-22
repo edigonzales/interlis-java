@@ -543,6 +543,7 @@ final class SchemaSql {
             return switch (column.kind()) {
                 case BOOLEAN -> "BOOLEAN";
                 case INTEGER -> "INTEGER";
+                case BIGINT -> idType();
                 case ENUMERATION -> column.enumeration().isPresent() || enumOptions.lookup() == DbEnumOptions.Lookup.WITH_ID
                         ? idType() : text(255);
                 case REFERENCE -> idType();

@@ -1043,7 +1043,7 @@ final class DbTransfer {
         }
         return switch (column.kind()) {
             case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> readGeometry(db, rows, index, column);
-            case BOOLEAN, INTEGER, ENUMERATION -> readScalar(db, rows, index, column);
+            case BOOLEAN, INTEGER, BIGINT, ENUMERATION -> readScalar(db, rows, index, column);
             case TEXT -> {
                 if (column.textExpansion().isPresent()) {
                     var expansion = column.textExpansion().orElseThrow();
@@ -1119,6 +1119,7 @@ final class DbTransfer {
         return switch (column.kind()) {
             case BOOLEAN -> readBoolean(db, rows, index, column);
             case INTEGER -> readInteger(rows.getString(index), column);
+            case BIGINT -> readBigInt(rows.getString(index), column.slot().name().declared().toString());
             case ENUMERATION -> {
                 String value = rows.getString(index);
                 yield column.enumeration().isPresent()
@@ -1183,6 +1184,24 @@ final class DbTransfer {
             return new NumberValue(Integer.toString(integer), BigDecimal.valueOf(integer));
         } catch (NumberFormatException | ArithmeticException e) {
             throw new DbException("Invalid 32-bit integer in " + context, e);
+        }
+    }
+
+    private static NumberValue readBigInt(String value, String context) {
+        if (value == null) return null;
+        try {
+            long integer = new BigDecimal(value).longValueExact();
+            return new NumberValue(Long.toString(integer), BigDecimal.valueOf(integer));
+        } catch (NumberFormatException | ArithmeticException failure) {
+            throw new DbException("Invalid 64-bit integer in " + context, failure);
+        }
+    }
+
+    private static long bigIntValue(NumberValue value, String context) {
+        try {
+            return value.exactValue().longValueExact();
+        } catch (ArithmeticException failure) {
+            throw new DbException("Value exceeds the 64-bit integer encoding of " + context, failure);
         }
     }
 
@@ -1827,6 +1846,7 @@ final class DbTransfer {
                     }
                 }
                 case INTEGER -> statement.setInt(index, integerValue((NumberValue) value, column.slot().name().declared().toString()));
+                case BIGINT -> statement.setLong(index, bigIntValue((NumberValue) value, column.slot().name().declared().toString()));
                 case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE ->
                         throw new DbException("Unsupported value for " + column.slot().name().declared());
             }

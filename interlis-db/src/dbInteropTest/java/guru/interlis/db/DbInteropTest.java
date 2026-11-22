@@ -108,6 +108,17 @@ final class DbInteropTest {
 
     @TempDir(cleanup = CleanupMode.ALWAYS) Path work;
 
+    @Test void geoPackageScalarWide23() throws Exception { exchangeScalarWide(23, null); }
+    @Test void geoPackageScalarWide24() throws Exception { exchangeScalarWide(24, null); }
+    @Test void postgisScalarWide23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarWide); }
+    @Test void postgisScalarWide24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarWide); }
+
+    private void exchangeScalarWide(int version, PostgreSQLContainer postgres) throws Exception {
+        var expected = new TestDatabase(postgres, "scalar_wide_ref");
+        var own = new TestDatabase(postgres, "scalar_wide_own");
+        new ScalarCases(work, new ReferenceTool(own.postgis()), version).wideIntegers(expected, own);
+    }
+
     @Test void geoPackageEnumItfCodes23() throws Exception { exchangeEnumItfCodes(23, null); }
     @Test void geoPackageEnumItfCodes24() throws Exception { exchangeEnumItfCodes(24, null); }
     @Test void postgisEnumItfCodes23() throws Exception { exchangeWithPostgis(23, this::exchangeEnumItfCodes); }
