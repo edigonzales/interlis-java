@@ -42,6 +42,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -499,8 +500,10 @@ final class DbTransfer {
                 default -> {
                     if (column.jsonStructure().isPresent() || (db.gpkg() && column.array().isPresent())) {
                         projections.add(db.jsonProjection(field));
+                    } else {
+                        column.physicalNames().forEach(name -> projections.add(alias + "." + quote(name)));
                     }
-                    else column.physicalNames().forEach(name -> projections.add(alias + "." + quote(name)));
+                    if (column.array().flatMap(DbArray::target).isPresent()) projections.add(alias + "." + T_BASKET);
                 }
             }
         }
@@ -637,6 +640,7 @@ final class DbTransfer {
     }
 
     private static int projectionSize(DbMapping mapping, Column column) {
+        if (column.array().flatMap(DbArray::target).isPresent()) return 2;
         if (column.kind() != DbMapping.Kind.REFERENCE) return column.physicalWidth();
         int targetFields = mapping.referenceRoot(column).hasDiscriminator() ? 3 : 2;
         return targetFields + (projectsTargetBid(mapping, column) ? 1 : 0)
@@ -1030,7 +1034,12 @@ final class DbTransfer {
         if (column.array().isPresent()) {
             var array = column.array().orElseThrow();
             String context = column.slot().name().declared() + " of object " + ownerTid;
-            return array.assemble(db.readArray(rows, index, array, context), context);
+            var values = db.readArray(rows, index, array, context);
+            if (array.target().isPresent()) {
+                values = readArrayReferences(db, mapping, mapping.table(array.target().orElseThrow()),
+                        rows.getLong(index + 1), values, context);
+            }
+            return array.assemble(values, context);
         }
         return switch (column.kind()) {
             case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> readGeometry(db, rows, index, column);
@@ -1240,6 +1249,43 @@ final class DbTransfer {
         }
     }
 
+    private static List<Reference> readArrayReferences(Database db, DbMapping mapping, Table target, long basket,
+                                                       List<?> values, String context) throws SQLException {
+        var distinct = new HashSet<Long>();
+        for (var value : values) {
+            if (!(value instanceof Long id)) throw new DbException("Missing or invalid array reference ID at " + context);
+            distinct.add(id);
+        }
+        var ids = new ArrayList<>(distinct);
+        var references = new HashMap<Long, Reference>();
+        final int batchSize = 256;
+        for (int offset = 0; offset < ids.size(); offset += batchSize) {
+            int size = Math.min(batchSize, ids.size() - offset);
+            String sql = "SELECT " + T_ID + ", " + T_ILI_TID + " FROM " + db.table(target.name())
+                    + " WHERE " + T_BASKET + " = ? AND " + T_ID + " IN ("
+                    + String.join(", ", Collections.nCopies(size, "?")) + ")";
+            try (var statement = db.connection().prepareStatement(sql)) {
+                statement.setLong(1, basket);
+                for (int i = 0; i < size; i++) statement.setLong(i + 2, ids.get(offset + i));
+                try (var rows = statement.executeQuery()) {
+                    while (rows.next()) {
+                        String tid = storedTid(target, identifier(rows.getString(2), "array reference target TID", context));
+                        TransferIdentity.ObjectKey key = hasWireOid(mapping, target)
+                                ? new ObjectOid(tid) : new TransferId(tid, IdOrigin.SOURCE);
+                        references.put(rows.getLong(1), new Reference(key, Optional.empty(), false, Optional.empty()));
+                    }
+                }
+            }
+        }
+        var result = new ArrayList<Reference>(values.size());
+        for (var id : values) {
+            var reference = references.get(id);
+            if (reference == null) throw new DbException("Missing same-basket array target T_Id " + id + " at " + context);
+            result.add(reference);
+        }
+        return result;
+    }
+
     private static TransferIdentity objectIdentity(DbMapping mapping, Table root, BasketId bid, String tid) {
         var value = Optional.ofNullable(tid).map(id -> storedTid(root, id));
         return new TransferIdentity(bid, Optional.empty(), value.map(id -> new TransferId(id, IdOrigin.SOURCE)),
@@ -1316,6 +1362,7 @@ final class DbTransfer {
         private final Optional<Set<String>> storedTids;
         private final Map<String, StoredObject> externalObjects = new HashMap<>();
         private final List<Pending> pending = new ArrayList<>();
+        private final List<PendingArray> pendingArrays = new ArrayList<>();
         private final List<Pending> externalPending = new ArrayList<>();
         private final List<DbDatasetWrite.ExistingObject> removedObjects = new ArrayList<>();
         private Map<DbDatasetWrite.ObjectKey, DbDatasetWrite.ExistingObject> existingObjects = Map.of();
@@ -1337,7 +1384,8 @@ final class DbTransfer {
         private Set<SymbolRef> referenceTargets(boolean external) {
             var declaredTargets = mapping.tables().stream().flatMap(table -> table.columns().stream())
                     .filter(column -> column.external() == external)
-                    .flatMap(column -> column.target().stream()).collect(Collectors.toSet());
+                    .flatMap(column -> column.target().or(() -> column.array().flatMap(DbArray::target)).stream())
+                    .collect(Collectors.toSet());
             return mapping.objectStorage().stream().filter(storage -> storage.object().transferable())
                     .map(storage -> storage.object().symbol())
                     .filter(type -> declaredTargets.stream().anyMatch(declared -> mapping.isAssignableTo(type, declared)))
@@ -1785,7 +1833,25 @@ final class DbTransfer {
             if (column.array().isPresent()) {
                 var array = column.array().orElseThrow();
                 String path = column.slot().name().declared() + " of object " + context;
-                db.bindArray(statement, index, array, array.disassemble(value, path), path);
+                var values = array.disassemble(value, path);
+                if (array.target().isPresent() && !values.isEmpty()) {
+                    var target = mapping.table(array.target().orElseThrow());
+                    var tids = new ArrayList<String>(values.size());
+                    for (var item : values) {
+                        token.throwIfCancellationRequested();
+                        var reference = (Reference) item;
+                        if (reference.external() || reference.orderPosition().isPresent()
+                                || reference.targetBasket().filter(bid -> !bid.value().equals(basket.value())).isPresent()
+                                || (reference.target() instanceof ObjectOid) != hasWireOid(mapping, target)) {
+                            throw new DbException("Unsupported array reference at " + path);
+                        }
+                        tids.add(storedTid(target, reference.target().value()));
+                    }
+                    pendingArrays.add(new PendingArray(new ReferenceColumn(table, column), id, path, tids));
+                    db.bindArray(statement, index, array, List.of(), path);
+                } else {
+                    db.bindArray(statement, index, array, values, path);
+                }
                 return index + 1;
             }
             if (column.textExpansion().isPresent()) {
@@ -1882,6 +1948,8 @@ final class DbTransfer {
         void finishBasket() throws SQLException {
             patchReferences(pending, objects);
             pending.clear();
+            patchArrayReferences();
+            pendingArrays.clear();
             objects.clear();
             removedObjects.addAll(existingObjects.values());
             existingObjects = Map.of();
@@ -1903,18 +1971,43 @@ final class DbTransfer {
                 checkReference(patch, target);
                 if (!mappedInColumn(patch.column(), target)) continue;
                 var key = new ReferenceColumn(patch.table(), patch.column());
-                var statement = updates.get(key);
-                if (statement == null) {
-                    statement = db.connection().prepareStatement("UPDATE " + db.table(patch.table().name())
-                            + " SET " + quote(patch.column().name()) + " = ? WHERE " + T_ID + " = ?");
-                    updates.put(key, statement);
-                }
+                var statement = referenceUpdate(key);
                 statement.setLong(1, target.id());
                 statement.setLong(2, patch.objectId());
                 if (statement.executeUpdate() != 1) {
                     throw new DbException("Could not patch reference on object " + patch.objectTid());
                 }
             }
+        }
+
+        private void patchArrayReferences() throws SQLException {
+            for (var patch : pendingArrays) {
+                var array = patch.column().column().array().orElseThrow();
+                var targetType = array.target().orElseThrow();
+                var ids = new ArrayList<Object>(patch.targetTids().size());
+                for (var tid : patch.targetTids()) {
+                    token.throwIfCancellationRequested();
+                    var target = objects.get(tid);
+                    if (target == null || !targetType.equals(target.type())) {
+                        throw new DbException("Cannot encode array reference to " + tid + " in this basket at " + patch.path());
+                    }
+                    ids.add(target.id());
+                }
+                var statement = referenceUpdate(patch.column());
+                db.bindArray(statement, 1, array, ids, patch.path());
+                statement.setLong(2, patch.objectId());
+                if (statement.executeUpdate() != 1) throw new DbException("Could not patch array at " + patch.path());
+            }
+        }
+
+        private PreparedStatement referenceUpdate(ReferenceColumn key) throws SQLException {
+            var statement = updates.get(key);
+            if (statement == null) {
+                statement = db.connection().prepareStatement("UPDATE " + db.table(key.table().name())
+                        + " SET " + quote(key.column().name()) + " = ? WHERE " + T_ID + " = ?");
+                updates.put(key, statement);
+            }
+            return statement;
         }
 
         private void checkReference(Pending patch, StoredObject target) {
@@ -1943,6 +2036,8 @@ final class DbTransfer {
     private record StoredObject(long id, SymbolRef type, BasketId basket) { }
 
     private record ReferenceColumn(Table table, Column column) { }
+
+    private record PendingArray(ReferenceColumn column, long objectId, String path, List<String> targetTids) { }
 
     private record Pending(Table table, Column column, long objectId, String objectTid, String targetTid,
                            Optional<BasketId> targetBasket) { }

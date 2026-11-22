@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import static guru.interlis.db.Ili2dbLayout.ATTRNAME;
 import static guru.interlis.db.Ili2dbLayout.BASKET;
 import static guru.interlis.db.Ili2dbLayout.COLUMN_PROP;
 import static guru.interlis.db.Ili2dbLayout.DATASET;
@@ -29,6 +30,7 @@ import static guru.interlis.db.Ili2dbLayout.T_BASKET;
 import static guru.interlis.db.Ili2dbLayout.T_ID;
 import static guru.interlis.db.Ili2dbLayout.T_ILI_TID;
 import static guru.interlis.db.Ili2dbLayout.T_TYPE;
+import static guru.interlis.db.Ili2dbLayout.TRAFO;
 
 /** Operations on rows of existing datasets. All writes belong to the caller's transaction. */
 final class DbDatasetWrite {
@@ -160,11 +162,13 @@ final class DbDatasetWrite {
             var sourceRoot = mapping.rootTable(table.object().symbol());
             var removedSources = byRoot.getOrDefault(sourceRoot, Set.of());
             for (var column : table.columns()) {
-                if (column.kind() != DbMapping.Kind.REFERENCE) continue;
-                var targetRoot = mapping.referenceRoot(column);
+                var arrayTarget = column.array().flatMap(DbArray::target);
+                if (column.kind() != DbMapping.Kind.REFERENCE && arrayTarget.isEmpty()) continue;
+                var targetRoot = arrayTarget.map(mapping::table).orElseGet(() -> mapping.referenceRoot(column));
                 var targets = byRoot.get(targetRoot);
                 if (targets != null) checkUpdateReferences(db, table.name(), column.name(),
-                        column.slot().name().declared().toString(), List.copyOf(targets), removedSources, token);
+                        column.slot().name().declared().toString(), arrayTarget.isPresent(),
+                        List.copyOf(targets), removedSources, token);
             }
         }
         for (var reference : incomingReferences(db, mapping)) {
@@ -174,7 +178,7 @@ final class DbDatasetWrite {
                 boolean target = catalogName(db, root.name()).equals(targetName)
                         || mapping.hierarchy(root).stream().anyMatch(table -> catalogName(db, table.name()).equals(targetName));
                 if (target) checkUpdateReferences(db, reference.source(), reference.column(), reference.path(),
-                        List.copyOf(entry.getValue()), Set.of(), token);
+                        reference.array(), List.copyOf(entry.getValue()), Set.of(), token);
             }
         }
         for (var removedObject : removed) {
@@ -183,15 +187,17 @@ final class DbDatasetWrite {
         }
     }
 
-    private static void checkUpdateReferences(Database db, String table, String column, String path, List<Long> targetIds,
-                                               Set<Long> removedSources, CancellationToken token) throws SQLException {
+    private static void checkUpdateReferences(Database db, String table, String column, String path, boolean array,
+                                              List<Long> targetIds, Set<Long> removedSources, CancellationToken token) throws SQLException {
         // Bound parameter counts on both databases when many objects disappear from a basket.
         final int batchSize = 256;
-        String field = Database.quote(column);
+        String field = "src." + Database.quote(column);
+        String relation = db.table(table) + " src" + (array ? db.referenceArrayJoin(field) : "");
+        String value = array ? db.referenceArrayElement() : field;
         for (int offset = 0; offset < targetIds.size(); offset += batchSize) {
             token.throwIfCancellationRequested();
             int batch = Math.min(batchSize, targetIds.size() - offset);
-            String sql = "SELECT " + T_ID + ", " + field + " FROM " + db.table(table) + " WHERE " + field
+            String sql = "SELECT src." + T_ID + ", " + value + " FROM " + relation + " WHERE " + value
                     + " IN (" + String.join(", ", Collections.nCopies(batch, "?")) + ")";
             try (var statement = db.connection().prepareStatement(sql)) {
                 for (int i = 0; i < batch; i++) statement.setLong(i + 1, targetIds.get(offset + i));
@@ -229,23 +235,33 @@ final class DbDatasetWrite {
         }
     }
 
-    private record IncomingReference(String source, String column, String target) {
+    private record IncomingReference(String source, String column, String target, boolean array) {
         String path() { return source + "." + column; }
     }
 
     private static List<IncomingReference> incomingReferences(Database db, DbMapping mapping) throws SQLException {
         var tables = mapping.storageTables().stream().map(table -> catalogName(db, table)).collect(Collectors.toSet());
         var references = new ArrayList<IncomingReference>();
-        String sql = "SELECT tablename, columnname, setting FROM " + db.technicalTable(COLUMN_PROP) + " WHERE tag = ?";
+        String owner = db.gpkg() ? "lower(attr.colowner) = lower(prop.tablename)" : "attr.colowner = prop.tablename";
+        String columnName = db.gpkg() ? "lower(attr.sqlname) = lower(prop.columnname)" : "attr.sqlname = prop.columnname";
+        String sql = """
+                SELECT prop.tablename, prop.columnname, prop.setting,
+                  EXISTS (SELECT 1 FROM %s attr JOIN %s trafo ON trafo.iliname = attr.iliname
+                    WHERE %s AND %s AND trafo.tag = ? AND trafo.setting = ?)
+                FROM %s prop WHERE prop.tag = ?
+                """.formatted(db.technicalTable(ATTRNAME), db.technicalTable(TRAFO), owner, columnName,
+                db.technicalTable(COLUMN_PROP));
         try (var statement = db.connection().prepareStatement(sql)) {
-            statement.setString(1, PREFIX + "foreignKey");
+            statement.setString(1, Ili2dbLayout.AttributeTransformation.ARRAY.tag);
+            statement.setString(2, Ili2dbLayout.AttributeTransformation.ARRAY.setting);
+            statement.setString(3, PREFIX + "foreignKey");
             try (var rows = statement.executeQuery()) {
                 while (rows.next()) {
                     if (tables.contains(catalogName(db, rows.getString(3)))
                             && !tables.contains(catalogName(db, rows.getString(1)))) {
                         String column = rows.getString(2);
                         references.add(new IncomingReference(rows.getString(1), T_ID.equalsIgnoreCase(column) ? T_ID : column,
-                                rows.getString(3)));
+                                rows.getString(3), rows.getBoolean(4)));
                     }
                 }
             }
@@ -361,31 +377,35 @@ final class DbDatasetWrite {
                                                CancellationToken token) throws SQLException {
         for (var table : mapping.tables()) {
             for (var column : table.columns()) {
-                if (column.kind() != DbMapping.Kind.REFERENCE) continue;
-                var root = mapping.referenceRoot(column);
+                var arrayTarget = column.array().flatMap(DbArray::target);
+                if (column.kind() != DbMapping.Kind.REFERENCE && arrayTarget.isEmpty()) continue;
+                var root = arrayTarget.map(mapping::table).orElseGet(() -> mapping.referenceRoot(column));
                 checkDatasetReference(db, table.name(), column.name(), root.name(), column.slot().name().declared().toString(),
-                        dataset, operation, true, token);
+                        arrayTarget.isPresent(), dataset, operation, true, token);
             }
         }
         for (var reference : incomingReferences(db, mapping)) {
             checkDatasetReference(db, reference.source(), reference.column(), reference.target(), reference.path(),
-                    dataset, operation, false, token);
+                    reference.array(), dataset, operation, false, token);
         }
     }
 
     private static void checkDatasetReference(Database db, String source, String column, String target, String path,
-                                              long dataset, String operation, boolean mapped, CancellationToken token)
+                                              boolean array, long dataset, String operation, boolean mapped, CancellationToken token)
             throws SQLException {
         token.throwIfCancellationRequested();
         String baskets = db.technicalTable(BASKET);
         String surviving = mapped ? " AND NOT EXISTS (SELECT 1 FROM " + baskets
                 + " own WHERE own.t_id = src.t_basket AND own.dataset = ?)" : "";
+        String field = "src." + Database.quote(column);
+        String relation = db.table(source) + " src" + (array ? db.referenceArrayJoin(field) : "");
+        String value = array ? db.referenceArrayElement() : field;
         String sql = """
-                SELECT ref.t_id FROM %s src JOIN %s ref ON ref.t_id = src.%s
+                SELECT ref.t_id FROM %s JOIN %s ref ON ref.t_id = %s
                 JOIN %s dst ON dst.t_id = ref.t_basket
                 WHERE dst.dataset = ?%s
                 LIMIT 1
-                """.formatted(db.table(source), db.table(target), Database.quote(column), baskets, surviving);
+                """.formatted(relation, db.table(target), value, baskets, surviving);
         try (var statement = db.connection().prepareStatement(sql)) {
             statement.setLong(1, dataset);
             if (mapped) statement.setLong(2, dataset);

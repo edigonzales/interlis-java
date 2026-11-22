@@ -281,7 +281,9 @@ final class SchemaSql {
                 if (displayName != null) row(tableProps, table.name(), PREFIX + "dispName", displayName);
                 for (var column : table.columns()) {
                     token.throwIfCancellationRequested();
-                    String target = column.target().isPresent() ? plan.mapping().table(column.targetRelation()).name() : null;
+                    String target = column.target().map(ignored -> column.targetRelation())
+                            .or(() -> column.array().flatMap(DbArray::target))
+                            .map(relation -> plan.mapping().table(relation).name()).orElse(null);
                     String path = Ili2dbLayout.geometryAttribute(column.slot().name().declared().toString(), column.epsgCode(), plan.multiSrs());
                     if (column.expandedStructure().isPresent()) {
                         writeExpandedAttributes(attributes, table.name(), column.expandedStructure().orElseThrow());
@@ -458,6 +460,7 @@ final class SchemaSql {
                     case ENUMERATION -> text(255);
                     case BOOLEAN -> "BOOLEAN";
                     case INTEGER -> "INTEGER";
+                    case REFERENCE -> "BIGINT";
                     default -> throw new IllegalStateException("Unsupported SQL array element " + array.kind());
                 };
                 return element + "[]";

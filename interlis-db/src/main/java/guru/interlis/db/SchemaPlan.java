@@ -240,6 +240,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         var effective = column.effectiveType().orElseThrow();
         if (column.array().isPresent()) {
             var binding = column.array().orElseThrow();
+            binding.target().ifPresent(target ->
+                    property(properties, table, null, column, "foreignKey", mapping.table(target).name()));
             if (binding.kind() == DbMapping.Kind.ENUMERATION || binding.kind() == DbMapping.Kind.BOOLEAN) {
                 String domain = null;
                 if (binding.declaredElement(mapping.plan(), attribute) instanceof DomainReferenceType alias) {

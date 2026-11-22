@@ -703,7 +703,7 @@ final class DbMapping {
                             && "ARRAY".equals(metaText(attribute.attribute(), "ili2db.mapping"))) {
                         String field = allocator.column(name, attributeName);
                         checkColumnName(attribute, field, object.kind() == SymbolKind.STRUCTURE, discriminator, gpkg);
-                        columns.add(arrayColumn(plan, attribute, field, DbArray.describe(plan, attribute)));
+                        columns.add(arrayColumn(plan, attribute, field, DbArray.describe(plan, inheritance, object, attribute)));
                         continue;
                     }
                     var wrapped = wrappedGeometries.get(attribute.symbol());

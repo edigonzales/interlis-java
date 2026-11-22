@@ -108,6 +108,11 @@ ID-Vergabe und `--add-models` mit kombinierter EXPAND- und JSON-Abbildung.
 Die `*ArraySmart2*`-Fälle prüfen geerbte Spalten, das Kürzen und Entfernen
 von Listen per `update`, stabile IDs sowie `replace` und `delete` neben
 einem zweiten Datensatz.
+Die `*ArrayReferences*`-Fälle vergleichen den Referenzkatalog, prüfen
+Vorwärtsreferenzen, doppelte Ziele und die gespeicherten ID-Arrays. Bei
+fehlerhaften Referenzen prüfen sie Rollback und den Erhalt einer
+bestehenden XTF-Datei. Datensatzoperationen werden auch mit gespeicherten
+Verweisen aus einem Modell ausserhalb der CLI-Auswahl geprüft.
 
 Die `*ExpandSingle*`-Fälle prüfen den Austausch optionaler flacher
 Strukturen mit ili2db-`--expandStruct`, das Umbenennen einer SQL-Spalte

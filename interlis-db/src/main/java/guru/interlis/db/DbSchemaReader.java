@@ -274,10 +274,16 @@ final class DbSchemaReader {
                         continue;
                     }
                     if (transformation == Ili2dbLayout.AttributeTransformation.ARRAY) {
-                        var binding = DbArray.describe(plan, attr);
+                        var binding = DbArray.describe(plan, layout, object, attr);
                         var stored = attrNames.take(path, parent.name(), null);
                         useColumn(db, parent, stored, path);
-                        if (stored.target() != null) throw new DbException("Unexpected ATTRNAME.target for " + path);
+                        if (binding.target().isPresent()) {
+                            String target = names.get(binding.target().orElseThrow());
+                            requireTarget(db, target, stored, path);
+                            requireForeignKey(db, parent.name(), stored.name(), target, path);
+                        } else if (stored.target() != null) {
+                            throw new DbException("Unexpected ATTRNAME.target for " + path);
+                        }
                         String expected = db.gpkg() ? "text" : "_" + binding.pgElementType();
                         if (!expected.equals(parent.columns().get(key(db, stored.name())))) {
                             throw new DbException("Expected " + expected + " for array column " + parent.name() + "." + stored.name());

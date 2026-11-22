@@ -521,6 +521,16 @@ können `LIST OF` und `BAG OF` die unterstützten Skalare direkt übertragen.
 Ein gespeichertes `NULL`-Element ist in dieser direkten XTF-Form nicht
 darstellbar und wird am Attribut diagnostiziert.
 
+Referenzlisten können auf eine konkrete Klasse desselben Topics und
+Baskets mit einer eigenen SQL-Tabelle zeigen. XTF 2.3 verwendet dafür eine
+Struktur mit einem Referenzfeld, XTF 2.4 unterstützt auch die direkte
+Referenzliste. Der Import löst Vorwärtsreferenzen am Basketende auf und
+erhält Reihenfolge und Duplikate. Im GeoPackage stehen die internen
+`T_Id`-Werte als Dezimalstrings im JSON-Array, in PostGIS als `bigint[]`.
+`update`, `replace` und `delete` schützen Ziele, auf die weiterhin
+gespeicherte Arrays zeigen.
+[ili2db-Abbildung](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/src/ch/ehi/ili2db/fromili/FromIliRecordConverter.java#L766-L813)
+
 In bestehenden Schemata mit `--coalesceJson` speichert ili2db eine
 optionale flache Struktur als JSON-Objekt. GeoPackage verwendet `TEXT`,
 PostGIS `JSONB`. Der qualifizierte INTERLIS-Typ steht in `@type`. SQL

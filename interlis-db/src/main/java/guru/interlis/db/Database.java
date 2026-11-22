@@ -189,6 +189,17 @@ final class Database implements AutoCloseable {
         }
     }
 
+    String referenceArrayJoin(String field) {
+        return gpkg()
+                ? " JOIN json_each(" + field + ") element ON element.type = 'text'"
+                    + " AND element.value = CAST(CAST(element.value AS INTEGER) AS TEXT)"
+                : " JOIN LATERAL unnest(" + field + ") element(id) ON TRUE";
+    }
+
+    String referenceArrayElement() {
+        return gpkg() ? "CAST(element.value AS INTEGER)" : "element.id";
+    }
+
     Column geometryStorage(String table, Column column, boolean referenceEpsgHeader) throws SQLException {
         int srsId = geometrySrs(table, column);
         boolean acceptsEpsgHeader = gpkg() && referenceEpsgHeader && srsId != column.epsgCode()

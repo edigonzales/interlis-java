@@ -8,6 +8,7 @@ import guru.interlis.db.DbMapping.Kind;
 import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.DomainReferenceType;
+import guru.interlis.model.ReferenceType;
 import guru.interlis.model.StructureValueType;
 import guru.interlis.model.TextType;
 import guru.interlis.model.Modifier;
@@ -16,11 +17,13 @@ import guru.interlis.model.SymbolRef;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeRef;
 import guru.interlis.transfer.AttributeSlot;
+import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferValue;
 import guru.interlis.transfer.TransferValue.BooleanValue;
 import guru.interlis.transfer.TransferValue.Enumeration;
 import guru.interlis.transfer.TransferValue.NumberValue;
+import guru.interlis.transfer.TransferValue.Reference;
 import guru.interlis.transfer.TransferValue.Repeated;
 import guru.interlis.transfer.TransferValue.Structured;
 import guru.interlis.transfer.TransferValue.Text;
@@ -36,12 +39,13 @@ import java.util.Map;
 import java.util.Optional;
 
 /** The ili2db representation of single-field values stored together in one column. */
-record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, Kind kind, TypeDescriptor type) {
+record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, Kind kind, TypeDescriptor type,
+               Optional<SymbolRef> target) {
     record Wrapper(SymbolRef structure, AttributeSlot field) { }
 
     private static final int MAX_ELEMENTS = 1_000_000;
 
-    static DbArray describe(TransferPlan plan, AttributeSlot outer) {
+    static DbArray describe(TransferPlan plan, DbInheritance layout, ObjectDescriptor owner, AttributeSlot outer) {
         String path = outer.name().declared().toString();
         var type = DbStructureShape.type(plan, outer);
         Optional<CollectionKind> collection = Optional.empty();
@@ -68,9 +72,23 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
             var domain = DbDomains.domain(plan, alias.targetDomain());
             type = plan.type(new TypeRef(plan.snapshotId(), domain.typeId())).known().orElseThrow();
         }
+        if (type instanceof ReferenceType reference) {
+            var target = reference.target().map(id -> new SymbolRef(plan.snapshotId(), id)).flatMap(plan::object).orElse(null);
+            if (reference.external() || !reference.restrictions().isEmpty() || target == null
+                    || target.kind() != SymbolKind.CLASS || !target.topic().equals(owner.topic())
+                    || target.modifiers().contains(Modifier.ABSTRACT)) {
+                throw DbMapping.unsupported("coalesced array requires a concrete local reference target at " + path);
+            }
+            var symbol = target.symbol();
+            if (layout.relations().stream().noneMatch(relation -> relation.object().symbol().equals(symbol)
+                    && relation.base().isEmpty() && !relation.discriminator())) {
+                throw DbMapping.unsupported("coalesced array requires a single target table at " + path);
+            }
+            return new DbArray(collection, wrapper, Kind.REFERENCE, type, Optional.of(symbol));
+        }
         var kind = DbMapping.scalarKind(type);
         if (kind == null) throw DbMapping.unsupported("coalesced array element at " + path);
-        return new DbArray(collection, wrapper, kind, type);
+        return new DbArray(collection, wrapper, kind, type, Optional.empty());
     }
 
     TypeDescriptor declaredElement(TransferPlan plan, AttributeSlot outer) {
@@ -90,6 +108,7 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
             case ENUMERATION -> "varchar";
             case BOOLEAN -> "bool";
             case INTEGER -> "int4";
+            case REFERENCE -> "int8";
             default -> throw new IllegalStateException("Unsupported PostgreSQL array element " + kind);
         };
     }
@@ -137,7 +156,11 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
                 }
                 element = structureValue.values().get(field);
             }
-            result.add(element == null || element == Undefined.INSTANCE ? null : writeElement(element, context));
+            boolean missing = element == null || element == Undefined.INSTANCE;
+            if (target.isPresent() && missing) {
+                throw invalid("Missing reference in coalesced array", context);
+            }
+            result.add(missing ? null : writeElement(element, context));
         }
         return result;
     }
@@ -148,6 +171,7 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
             case String text when kind == Kind.ENUMERATION -> DbTransfer.readEnumeration(text, context);
             case Boolean bool when kind == Kind.BOOLEAN -> new BooleanValue(bool);
             case Integer number when kind == Kind.INTEGER -> new NumberValue(number.toString(), BigDecimal.valueOf(number));
+            case Reference reference when kind == Kind.REFERENCE -> reference;
             default -> throw unexpectedElement(context);
         };
     }
@@ -158,6 +182,7 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
             case Enumeration enumeration when kind == Kind.ENUMERATION -> String.join(".", enumeration.path());
             case BooleanValue bool when kind == Kind.BOOLEAN -> bool.value();
             case NumberValue number when kind == Kind.INTEGER -> DbTransfer.integerValue(number, context);
+            case Reference reference when kind == Kind.REFERENCE -> reference;
             default -> throw unexpectedElement(context);
         };
     }
@@ -197,6 +222,7 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
                     case String text -> writer.value(text);
                     case Boolean bool -> writer.value(bool);
                     case Integer integer -> writer.value(integer);
+                    case Long id when kind == Kind.REFERENCE -> writer.value(id.toString());
                     default -> throw unexpectedElement(context);
                 }
             }
@@ -210,7 +236,7 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
 
     private Object readJsonElement(JsonReader reader, String context) throws IOException {
         var expected = switch (kind) {
-            case TEXT, ENUMERATION -> JsonToken.STRING;
+            case TEXT, ENUMERATION, REFERENCE -> JsonToken.STRING;
             case BOOLEAN -> JsonToken.BOOLEAN;
             case INTEGER -> JsonToken.NUMBER;
             default -> throw new IllegalStateException("Unsupported JSON array element " + kind);
@@ -220,6 +246,16 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
             case TEXT, ENUMERATION -> reader.nextString();
             case BOOLEAN -> reader.nextBoolean();
             case INTEGER -> DbTransfer.readInteger(reader.nextString(), context).exactValue().intValueExact();
+            case REFERENCE -> {
+                String id = reader.nextString();
+                try {
+                    long number = Long.parseLong(id);
+                    if (!id.equals(Long.toString(number))) throw unexpectedElement(context);
+                    yield number;
+                } catch (NumberFormatException failure) {
+                    throw unexpectedElement(context);
+                }
+            }
             default -> throw new IllegalStateException("Unsupported JSON array element " + kind);
         };
     }
