@@ -1,0 +1,9 @@
+INTERLIS 2.3;
+MODEL TownFlat23 AT "https://example.org/town" VERSION "1" =
+  IMPORTS TownParent23;
+  TOPIC Region EXTENDS TownParent23.Core =
+    CLASS Desk =
+      LocalMemo : TEXT*30;
+    END Desk;
+  END Region;
+END TownFlat23.

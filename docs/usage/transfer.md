@@ -83,6 +83,8 @@ keinen eigenen Transferdeskriptor.
 Die XTF-2.3-Fabriken `forIli2db` verwenden das FULL-Profil von ili2db.
 Es deklariert übersetzte Tag-Namen über das vorab gebundene Modell und
 kommt ohne `ALIAS`-Einträge aus.
+Ein Basket eines abgeleiteten Topics kann geerbte Objekte aus einem
+importierten Modell enthalten, wenn der Header das abgeleitete Modell nennt.
 
 Die Codecs prüfen XML-/Protokollsyntax, Dekodierbarkeit, Reihenfolge und
 Ressourcenlimits. Modellbereiche, Pflichtwerte, Kardinalitäten, Zielobjektexistenz,

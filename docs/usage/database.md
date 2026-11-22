@@ -30,6 +30,10 @@ denselben Strukturtyp und behalten dessen qualifizierten XTF-Namen.
 Ein `DEPENDS ON` übernimmt die Abbildung des importierten Zieltopics.
 `EXTERNAL`-Attribute und Rollen können dessen Objekte auch in separaten
 Datensätzen referenzieren.
+Ein mit `EXTENDS` abgeleitetes Topic übernimmt die Klassen seines Basistopics.
+Geerbte und lokal deklarierte Objekte belegen gemeinsam den konkreten
+Basket. Die geerbten Objekte behalten den XTF-Namen und die SQL-Tabelle
+ihrer Deklaration.
 [Referenzhandbuch](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst)
 
 ## Schemaerzeugung

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
+    xmlns:p="http://www.interlis.ch/xtf/2.4/TownParent24" xmlns:c="http://www.interlis.ch/xtf/2.4/TownFlat24">
+  <i:headersection><i:models><i:model>TownFlat24</i:model></i:models></i:headersection>
+  <i:datasection>
+    <c:Region i:bid="flat-b">
+      <p:Marker i:tid="flat-m"><p:Memo>inherited</p:Memo></p:Marker>
+      <c:Desk i:tid="flat-d"><c:LocalMemo>local</c:LocalMemo></c:Desk>
+    </c:Region>
+  </i:datasection>
+</i:transfer>

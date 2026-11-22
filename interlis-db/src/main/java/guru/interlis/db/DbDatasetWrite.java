@@ -89,10 +89,9 @@ final class DbDatasetWrite {
     static Map<ObjectKey, ExistingObject> readObjects(Database db, DbMapping mapping, TopicDescriptor topic, long basket,
                                                        CancellationToken token) throws SQLException {
         var objects = new HashMap<ObjectKey, ExistingObject>();
-        var owner = mapping.originalTopic(topic.symbol());
         for (var table : mapping.tables()) {
             if (!table.hasTidColumn() || table.object().kind() == SymbolKind.STRUCTURE
-                    || table.object().topic().filter(owner::equals).isEmpty()) continue;
+                    || table.object().topic().filter(declared -> mapping.includesTopic(topic.symbol(), declared)).isEmpty()) continue;
             token.throwIfCancellationRequested();
             String discriminator = table.hasDiscriminator() ? ", " + T_TYPE : "";
             String sql = "SELECT " + T_ID + ", " + T_ILI_TID + discriminator + " FROM " + db.table(table.name())

@@ -107,7 +107,7 @@ public final class Xtf23Reader extends TransferReader {
     }
 
     private Xtf23Reader(TransferPlan plan, InputStream input, Optional<SourceId> source, boolean ili2db) {
-        super(plan);
+        super(plan, ili2db);
         this.plan = plan;
         this.ili2db = ili2db;
         this.source = Objects.requireNonNull(source, "source");

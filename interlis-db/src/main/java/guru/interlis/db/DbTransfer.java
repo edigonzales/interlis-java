@@ -142,14 +142,15 @@ final class DbTransfer {
         var stableOid = basketOid(mapping, topic, bid);
         writer.write(new TransferEvent.StartBasket(bid, topic.symbol(), List.of(), BasketKind.FULL,
                 Consistency.COMPLETE, Optional.empty(), Optional.empty(), stableOid, bindings), token);
-        var owner = mapping.originalTopic(topic.symbol());
         var selection = new GeometrySelection(bindings,
                 mapping.crsPair().map(pair -> pair.epsgCodes(topic.symbol())).orElse(Map.of()));
         for (var table : mapping.tables()) {
             if (table.hasDiscriminator() && table.object().kind() == SymbolKind.STRUCTURE) {
                 checkStructureHierarchy(db, mapping, table, basketId, token);
             }
-            if (table.subtype() || table.object().topic().filter(owner::equals).isEmpty()) continue;
+            if (table.subtype() || table.object().topic().filter(declared -> mapping.includesTopic(topic.symbol(), declared)).isEmpty()) {
+                continue;
+            }
             if (table.hasDiscriminator() && table.object().kind() != SymbolKind.STRUCTURE && !mapping.isEmbeddedLink(table)) {
                 writeHierarchyObjects(db, mapping, table, basketId, bid, topic.symbol(), writer, token);
             } else if (table.object().transferable() && !mapping.isEmbeddedLink(table)) {
@@ -1059,7 +1060,7 @@ final class DbTransfer {
             for (var next = reader.readNext(token); next.isPresent(); next = reader.readNext(token)) {
                 switch (next.orElseThrow()) {
                     case TransferEvent.StartTransfer start -> {
-                        var models = mapping.models();
+                        var models = mapping.plan().modelImportClosure(Set.copyOf(mapping.models()));
                         if (start.models().isEmpty() || start.models().stream().anyMatch(model -> !models.contains(model.model()))
                                 || !reader.stableIdentityNamespaces().isEmpty()) {
                             throw new DbException("Expected the selected model and transfer-scoped identities in XTF");

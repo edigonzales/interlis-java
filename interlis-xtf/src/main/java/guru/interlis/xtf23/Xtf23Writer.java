@@ -86,7 +86,7 @@ public final class Xtf23Writer extends TransferWriter {
     }
 
     private Xtf23Writer(TransferPlan plan, OutputStream output, List<Xtf23OidSpace> oidSpaces, boolean ili2db) {
-        super(plan);
+        super(plan, ili2db);
         this.plan = plan;
         this.ili2db = ili2db;
         this.layout = new Xtf23Layout(plan);

@@ -262,8 +262,16 @@ final class DbMapping {
     }
 
     List<String> storedTopicNames(SymbolRef topic) {
-        return plan.topics().stream().filter(candidate -> originalTopic(candidate.symbol()).equals(topic))
+        return plan.topics().stream().filter(candidate -> includesTopic(candidate.symbol(), topic))
                 .map(candidate -> candidate.name().declared().toString()).toList();
+    }
+
+    boolean includesTopic(SymbolRef basket, SymbolRef declared) {
+        for (var topic = originalTopic(basket); topic != null; topic = plan.topic(topic).orElseThrow().baseTopic()
+                .map(this::originalTopic).orElse(null)) {
+            if (topic.equals(declared)) return true;
+        }
+        return false;
     }
 
     DbTranslations translations() { return translations; }
@@ -338,7 +346,11 @@ final class DbMapping {
         while (!dependencies.isEmpty()) {
             token.throwIfCancellationRequested();
             var topic = dependencies.removeFirst();
-            if (topics.add(topic)) dependencies.addAll(plan.topic(topic).orElseThrow().dependencies());
+            if (topics.add(topic)) {
+                var declaration = plan.topic(topic).orElseThrow();
+                dependencies.addAll(declaration.dependencies());
+                declaration.baseTopic().ifPresent(dependencies::addLast);
+            }
         }
         var selected = new HashSet<SymbolRef>();
         var pending = new ArrayDeque<ObjectDescriptor>();
@@ -500,7 +512,7 @@ final class DbMapping {
         var topics = objects.stream().flatMap(object -> object.topic().stream()).collect(Collectors.toSet());
         for (var topic : plan.topics()) {
             if (!topics.contains(topic.symbol()) && !plan.rootModels().contains(topic.model())) continue;
-            if (topic.abstractTopic() || topic.baseTopic().isPresent()
+            if (topic.abstractTopic()
                     || topic.oidRules().stream().anyMatch(rule -> !Ili2dbLayout.UUID_OID.equals(oidDomain(plan, rule)))
                     || topic.genericBindings().stream().anyMatch(binding -> binding.state() == TopicSymbol.BindingState.ABSTRACT)) {
                 throw unsupported("topic " + topic.name().declared());

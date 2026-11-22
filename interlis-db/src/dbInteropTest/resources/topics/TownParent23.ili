@@ -1,0 +1,5 @@
+INTERLIS 2.3;
+MODEL TownParent23 AT "https://example.org/town" VERSION "1" =
+TOPIC Core = CLASS Marker = Memo : TEXT*30; END Marker; CLASS Station = Memo : TEXT*30; END Station; END Core;
+TOPIC Other = CLASS Spare = END Spare; END Other;
+END TownParent23.

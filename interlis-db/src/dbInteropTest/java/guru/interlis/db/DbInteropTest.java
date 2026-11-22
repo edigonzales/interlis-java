@@ -128,6 +128,10 @@ final class DbInteropTest {
     @Test void geoPackageTranslationExport24() throws Exception { exchangeTranslationExport(24, null); }
     @Test void postgisTranslationExport23() throws Exception { exchangeWithPostgis(23, this::exchangeTranslationExport); }
     @Test void postgisTranslationExport24() throws Exception { exchangeWithPostgis(24, this::exchangeTranslationExport); }
+    @Test void geoPackageTopicInherited23() throws Exception { exchangeTopicInherited(23, null); }
+    @Test void geoPackageTopicInherited24() throws Exception { exchangeTopicInherited(24, null); }
+    @Test void postgisTopicInherited23() throws Exception { exchangeWithPostgis(23, this::exchangeTopicInherited); }
+    @Test void postgisTopicInherited24() throws Exception { exchangeWithPostgis(24, this::exchangeTopicInherited); }
 
     @Test void geoPackageSharedSource23() throws Exception { exchangeSharedSource(23, null); }
     @Test void geoPackageSharedSource24() throws Exception { exchangeSharedSource(24, null); }
@@ -491,6 +495,12 @@ final class DbInteropTest {
     private void exchangeTranslationExport(int version, PostgreSQLContainer postgres) throws Exception {
         var db = new TestDatabase(postgres, "translation_export");
         new TranslationCases(work, new ReferenceTool(db.postgis()), version).exportLanguage(db);
+    }
+
+    private void exchangeTopicInherited(int version, PostgreSQLContainer postgres) throws Exception {
+        var reference = new TestDatabase(postgres, "reference_topic_inherited");
+        var own = new TestDatabase(postgres, "own_topic_inherited");
+        new TopicCases(work, new ReferenceTool(reference.postgis()), version).inherited(reference, own);
     }
 
     private void exchangeSharedSource(int version, PostgreSQLContainer postgres) throws Exception {
