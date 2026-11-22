@@ -722,8 +722,9 @@ final class DbMapping {
                         String field = allocator.column(name, attributeName);
                         checkColumnName(attribute, field, object.kind() == SymbolKind.STRUCTURE, discriminator, gpkg);
                         var array = DbArray.describe(plan, inheritance, object, attribute);
-                        if (enumOptions.itfCodes() && array.kind() == Kind.ENUMERATION) {
-                            throw unsupported("ITF codes in array " + attribute.name().declared());
+                        if ((enumOptions.itfCodes() || enumOptions.lookup() == DbEnumOptions.Lookup.WITH_ID)
+                                && array.kind() == Kind.ENUMERATION) {
+                            throw unsupported("numeric enumeration codes in array " + attribute.name().declared());
                         }
                         columns.add(arrayColumn(plan, attribute, field, array));
                         continue;

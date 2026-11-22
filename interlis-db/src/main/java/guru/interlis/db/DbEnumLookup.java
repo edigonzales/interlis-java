@@ -33,7 +33,6 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
 
     static List<DbEnumLookup> plan(DbMapping mapping, SqlNames names, DbEnumOptions options, CancellationToken token) {
         if (options.lookup() == DbEnumOptions.Lookup.NONE) return List.of();
-        if (options.lookup() == DbEnumOptions.Lookup.WITH_ID) throw DbMapping.unsupported("creation of enumeration ID tables");
         var plan = mapping.plan();
         var objects = mapping.inheritance().declarations().stream().map(DbInheritance.Declaration::object).toList();
         var definitions = definitions(plan, DbMapping.storageRoots(plan, mapping.crsPair()), objects, token);
@@ -43,13 +42,16 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
             return List.of(new DbEnumLookup(Ili2dbLayout.ENUM, Optional.empty(), !names.hasTable(Ili2dbLayout.ENUM), rows));
         }
         var lookups = new ArrayList<DbEnumLookup>();
-        if (hasBoolean(plan, objects)) {
+        if (options.lookup() == DbEnumOptions.Lookup.PER_DEFINITION && hasBoolean(plan, objects)) {
             String table = names.mappedTable(BOOLEAN_DEFINITION, "INTERLIS", null, "BOOLEAN");
             lookups.add(new DbEnumLookup(table, Optional.of(BOOLEAN_DEFINITION), !names.hasClass(BOOLEAN_DEFINITION),
                     List.of(new Row(BOOLEAN_DEFINITION, null, "false", 0, null, "false", null),
                             new Row(BOOLEAN_DEFINITION, null, "true", 1, null, "true", null))));
         }
         for (var definition : definitions) {
+            if (options.lookup() == DbEnumOptions.Lookup.WITH_ID && DbEnumeration.base(plan, definition.declaration()) != null) {
+                throw DbMapping.unsupported("creation of enumeration ID tables for extended definitions");
+            }
             String path = name(plan, definition.declaration());
             String table = table(plan, names, definition.declaration(), path);
             lookups.add(new DbEnumLookup(table, Optional.of(path), !names.hasClass(path),

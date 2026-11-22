@@ -228,6 +228,42 @@ final class EnumerationCases {
         }
     }
 
+    void idSchema(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "EnumIdSchema" + version;
+        var ili = source(model, BASE);
+        schema(expected, model, "--createEnumTabsWithId");
+        create(own, model, ili, "--create-enum-tabs-with-id");
+        assertSameCatalog(expected, own);
+        assertLookupContents(expected, own, "grade", "asset_directvalue");
+        for (var db : List.of(expected, own)) {
+            mixScalars(db, model);
+            referenceImport(db, "tail", scalars(model, "tail"));
+            var output = work.resolve("output.xtf");
+            assertCliSuccess(db, "export", model, "tail", output);
+            assertScalars(output, "tail");
+            try (var sql = db.connect()) {
+                String gradeId = scalar(sql, "SELECT t_id FROM " + db.table("grade") + " WHERE ilicode = 'Family.Alpha'");
+                String directId = scalar(sql, "SELECT t_id FROM " + db.table("asset_directvalue") + " WHERE ilicode = 'No_Sign'");
+                for (var prefix : List.of("legacy", "native", "tail")) {
+                    String row = " FROM " + db.table("asset") + " WHERE t_ili_tid = '" + prefix + "-value'";
+                    assertEquals(gradeId, scalar(sql, "SELECT gradevalue" + row));
+                    assertEquals(directId, scalar(sql, "SELECT directvalue" + row));
+                }
+            }
+        }
+    }
+
+    private static void assertLookupContents(TestDatabase expected, TestDatabase own, String... tables) throws Exception {
+        try (var left = expected.connect(); var right = own.connect()) {
+            for (var table : tables) {
+                String columns = "SELECT thisclass, baseclass, ilicode, itfcode, seq, dispname, description, inactive FROM ";
+                String order = " ORDER BY thisclass, itfcode";
+                assertEquals(rows(left, columns + expected.table(table) + order),
+                        rows(right, columns + own.table(table) + order), table);
+            }
+        }
+    }
+
     private static List<List<String>> rows(Connection sql, String query) throws Exception {
         var result = new ArrayList<List<String>>();
         try (var statement = sql.createStatement(); var rows = statement.executeQuery(query)) {

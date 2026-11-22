@@ -105,6 +105,9 @@ Definition, eine Namenskollision und einen gespeicherten SQL-Namen
 nach dem Umbenennen einer Lookup-Tabelle.
 Die `*EnumStoredIds*`-Fälle prüfen beliebige gespeicherte Lookup-IDs,
 `NULL`, unbekannte IDs und mehrdeutige Zuordnungen.
+Die `*EnumIdSchema*`-Fälle vergleichen den Katalog und die Lookup-Daten
+neuer Schemata und prüfen die gespeicherten IDs bis zum nächsten
+Referenzimport.
 
 Die `*ArrayText*`-Fälle prüfen Reihenfolge, Duplikate, Sonderzeichen,
 gespeicherte SQL-Spaltennamen und den bekannten Referenzfehler bei

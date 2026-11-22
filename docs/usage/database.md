@@ -137,6 +137,10 @@ Mit `--create-enum-tabs` erhält jede Definition eine eigene
 Lookup-Tabelle, entsprechend ili2db `--createEnumTabs`. `CLASSNAME`
 enthält ihren SQL-Namen. Fachspalten verwenden weiterhin die separat
 gewählte Kodierung.
+`--create-enum-tabs-with-id` erzeugt numerische Fachspalten und
+Lookup-Tabellen mit `T_Id`, entsprechend ili2db
+`--createEnumTabsWithId`. PostgreSQL verwendet die Schema-Sequenz.
+Ein GeoPackage vergibt die Lookup-IDs innerhalb der jeweiligen Tabelle.
 
 ## Bestehendes Schema ergänzen
 

@@ -4,10 +4,16 @@ record DbEnumOptions(boolean itfCodes, boolean textColumns, boolean beautify, Lo
     static final DbEnumOptions DEFAULT = new DbEnumOptions(false, false, false, Lookup.NONE);
 
     enum Lookup {
-        NONE(null), SINGLE("singleTable"), PER_DEFINITION("multiTable"), WITH_ID("multiTableWithId");
+        NONE(null, null), SINGLE("singleTable", "--create-single-enum-tab"),
+        PER_DEFINITION("multiTable", "--create-enum-tabs"), WITH_ID("multiTableWithId", "--create-enum-tabs-with-id");
 
         final String setting;
 
-        Lookup(String setting) { this.setting = setting; }
+        final String option;
+
+        Lookup(String setting, String option) {
+            this.setting = setting;
+            this.option = option;
+        }
     }
 }

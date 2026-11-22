@@ -68,7 +68,7 @@ final class SchemaSql {
             checkPostgresSrs(db, epsg);
         }
         if (plan.addedTables().stream().anyMatch(DbMapping.Table::uuidIdentity)) requireUuidDefault(db.connection());
-        return new Dialect(false, db.schema(), db.postgisObject("geometry"));
+        return new Dialect(false, db.schema(), db.postgisObject("geometry"), plan.enumOptions());
     }
 
     private static void checkPostgresSchemaName(Connection connection, String schema) throws SQLException {
@@ -111,13 +111,13 @@ final class SchemaSql {
     static void createGeoPackageTables(Connection connection, SchemaPlan plan, boolean createGeometryIndexes,
                                        CancellationToken token)
             throws SQLException {
-        var dialect = new Dialect(true, "main", "");
+        var dialect = new Dialect(true, "main", "", plan.enumOptions());
         apply(connection, plan, dialect, true, createGeometryIndexes, token);
     }
 
     static void addTables(Database db, SchemaPlan plan, boolean createGeometryIndexes, CancellationToken token)
             throws SQLException {
-        var dialect = db.gpkg() ? new Dialect(true, "main", "") : postgresDialect(db, plan, token);
+        var dialect = db.gpkg() ? new Dialect(true, "main", "", plan.enumOptions()) : postgresDialect(db, plan, token);
         apply(db.connection(), plan, dialect, false, createGeometryIndexes, token);
     }
 
@@ -335,20 +335,24 @@ final class SchemaSql {
     }
 
     private static String enumTable(DbEnumLookup lookup, Dialect dialect) {
-        String fields = "seq INTEGER, inactive BOOLEAN NOT NULL, iliCode " + dialect.text(1024) + " NOT NULL";
+        String code = "iliCode " + dialect.text(1024) + " NOT NULL";
+        String sequence = "seq INTEGER, inactive BOOLEAN NOT NULL";
         String label = ", dispName " + dialect.text(250) + " NOT NULL, description TEXT";
-        String columns = lookup.mappedName().isEmpty()
-                ? "thisClass " + dialect.text(1024) + " NOT NULL, baseClass " + dialect.text(1024) + ", "
-                    + fields + ", itfCode INTEGER NOT NULL"
-                : "itfCode INTEGER" + dialect.primary() + ", iliCode " + dialect.text(1024)
-                    + " NOT NULL, seq INTEGER, inactive BOOLEAN NOT NULL";
+        String definition = "thisClass " + dialect.text(1024) + " NOT NULL, baseClass " + dialect.text(1024);
+        String columns = switch (dialect.enumOptions().lookup()) {
+            case SINGLE -> definition + ", " + sequence + ", " + code + ", itfCode INTEGER NOT NULL";
+            case PER_DEFINITION -> "itfCode INTEGER" + dialect.primary() + ", " + code + ", " + sequence;
+            case WITH_ID -> dialect.primaryId() + dialect.sequenceDefault() + ", " + definition
+                    + ", itfCode INTEGER NOT NULL, " + code + ", " + sequence;
+            case NONE -> throw new IllegalStateException("No enumeration lookup table was planned");
+        };
         return dialect.create(lookup.table(), columns + label);
     }
 
     private static void writeEnumLookups(Connection connection, SchemaPlan plan, Dialect dialect, boolean newSchema,
                                          CancellationToken token) throws SQLException {
         for (var lookup : plan.enumLookups()) {
-            boolean shared = lookup.mappedName().isEmpty();
+            boolean shared = plan.enumOptions().lookup() != DbEnumOptions.Lookup.PER_DEFINITION;
             if (!lookup.create() && !shared) continue;
             String table = dialect.table(lookup.table());
             boolean add = shared && !newSchema && !lookup.create();
@@ -466,7 +470,7 @@ final class SchemaSql {
         statement.executeUpdate();
     }
 
-    private record Dialect(boolean gpkg, String schema, String postgisGeometryType) {
+    private record Dialect(boolean gpkg, String schema, String postgisGeometryType, DbEnumOptions enumOptions) {
         String tidType(boolean uuid) {
             if (!uuid) return text(200);
             return gpkg ? text(36) : "uuid DEFAULT " + UUID_DEFAULT;
@@ -537,7 +541,8 @@ final class SchemaSql {
             return switch (column.kind()) {
                 case BOOLEAN -> "BOOLEAN";
                 case INTEGER -> "INTEGER";
-                case ENUMERATION -> column.enumeration().isPresent() ? idType() : text(255);
+                case ENUMERATION -> column.enumeration().isPresent() || enumOptions.lookup() == DbEnumOptions.Lookup.WITH_ID
+                        ? idType() : text(255);
                 case REFERENCE -> idType();
                 case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> {
                     String type = column.geometryType();
