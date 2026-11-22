@@ -108,6 +108,17 @@ final class DbInteropTest {
 
     @TempDir(cleanup = CleanupMode.ALWAYS) Path work;
 
+    @Test void geoPackageSmart1Scalars23() throws Exception { exchangeSmart1Scalars(23, null); }
+    @Test void geoPackageSmart1Scalars24() throws Exception { exchangeSmart1Scalars(24, null); }
+    @Test void postgisSmart1Scalars23() throws Exception { exchangeWithPostgis(23, this::exchangeSmart1Scalars); }
+    @Test void postgisSmart1Scalars24() throws Exception { exchangeWithPostgis(24, this::exchangeSmart1Scalars); }
+
+    private void exchangeSmart1Scalars(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "smart1_scalars");
+        new SmartCases(work, new ReferenceTool(db.postgis()), version)
+                .smart1Scalars(db, new TestDatabase(postgres, "smart1_defaults"));
+    }
+
     @Test void geoPackageTranslationSources23() throws Exception { exchangeTranslationSources(23, null); }
     @Test void geoPackageTranslationSources24() throws Exception { exchangeTranslationSources(24, null); }
     @Test void postgisTranslationSources23() throws Exception { exchangeWithPostgis(23, this::exchangeTranslationSources); }

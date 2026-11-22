@@ -71,7 +71,8 @@ final class DbSchemaReader {
     private record StoredModel(String names, LanguageVersion version, String content, List<String> imports) { }
     private record AttributeName(String name, String owner, String target) { }
     record Settings(boolean splitGeometries, int defaultEpsg, String modelEpsgAssignments, boolean referenceEpsgHeader,
-                    boolean multiSrs, Optional<DbCrsPair.Models> srsModels, boolean createGeometryIndexes) {
+                    boolean multiSrs, Optional<DbCrsPair.Models> srsModels, boolean createGeometryIndexes,
+                    DbInheritance.Profile inheritance) {
         CrsDefaults crs(String model) {
             return new CrsDefaults(defaultEpsg, modelEpsg(modelEpsgAssignments, model));
         }
@@ -134,7 +135,7 @@ final class DbSchemaReader {
         var inheritance = readInheritance(db, scope);
         var names = new HashMap<SymbolRef, String>();
         var usedNames = new HashSet<String>();
-        var objects = new ArrayList<ObjectDescriptor>();
+        var declarations = new ArrayList<DbInheritance.Declaration>();
         var associations = new ArrayList<EmbeddedAssociation>();
         var linkRoles = new HashMap<SymbolRef, List<AssociationRole>>();
         for (ObjectDescriptor object : selected) {
@@ -164,24 +165,30 @@ final class DbSchemaReader {
                 }
                 if (object.baseType().isEmpty()) linkRoles.put(object.symbol(), roles);
             }
-            if (!NEW_CLASS.equals(transformation)) {
+            if (settings.inheritance() == DbInheritance.Profile.NEW_CLASS && !NEW_CLASS.equals(transformation)) {
                 throw new DbException("Missing or inconsistent CLASSNAME/TRAFO mapping for " + path);
             }
-            objects.add(object);
+            var strategy = switch (transformation) {
+                case NEW_CLASS -> DbInheritance.Strategy.NEW_CLASS;
+                case "superClass" -> DbInheritance.Strategy.SUPER_CLASS;
+                case "subClass" -> DbInheritance.Strategy.SUB_CLASS;
+                case null, default -> throw DbInheritance.invalid(object);
+            };
+            declarations.add(new DbInheritance.Declaration(object, name, strategy));
             names.put(object.symbol(), name);
         }
         if (!transformations.classes().isEmpty() || !inheritance.isEmpty()) {
             throw new DbException("Extra CLASSNAME/TRAFO/INHERITANCE mappings for " + modelName);
         }
         checkSystemTables(db);
-        var bases = DbMapping.baseTables(objects);
-        var catalog = readCatalog(db, plan, objects, names, bases, token);
+        var layout = new DbInheritance(plan, declarations, settings.inheritance());
+        var catalog = readCatalog(db, plan, layout.relations(), token);
         var tables = new ArrayList<Table>();
         var compositions = new ArrayList<Composition>();
-        for (ObjectDescriptor object : objects) {
+        for (var relation : layout.relations()) {
             token.throwIfCancellationRequested();
+            var object = relation.object();
             var parent = catalog.get(object.symbol());
-            var defaults = settings.crs(plan.model(object.model()).orElseThrow().name().declared().last());
             var columns = new ArrayList<Column>();
             var secondary = new ArrayList<SecondaryGeometry>();
             var roles = linkRoles.get(object.symbol());
@@ -191,49 +198,52 @@ final class DbSchemaReader {
                     columns.add(role.slot().role().ordered() ? bindPosition(db, parent, column) : column);
                 }
             }
-            for (var attr : DbMapping.attributes(object)) {
-                String path = attr.name().declared().toString();
-                var ordinary = attrNames.get(path);
-                var composition = DbMapping.describeComposition(plan, object, attr, ordinary == null ? path : ordinary.name());
-                if (composition.isPresent()) {
-                    var mapping = takeAttributeName(attrNames, path);
-                    var binding = composition.orElseThrow();
-                    var child = catalog.get(binding.childRoot());
-                    useColumn(db, child, mapping, path);
-                    requireTarget(db, parent.name(), mapping, path);
-                    requireColumns(db, child.name(), child.columns(), Map.of(binding.ownerColumn(), Kind.REFERENCE));
-                    compositions.add(binding);
-                    continue;
-                }
-                for (var described : DbMapping.describeColumns(plan, object, attr, defaults, crsPair)) {
-                    String attribute = Ili2dbLayout.geometryAttribute(path, described.epsgCode(), settings.multiSrs());
-                    var mapping = takeAttributeName(attrNames, attribute);
-                    var column = described.withName(mapping.name());
-                    if (settings.splitGeometries() && !key(db, parent.name()).equals(key(db, mapping.owner()))) {
+            for (var contributor : relation.contributors()) {
+                var defaults = settings.crs(plan.model(contributor.model()).orElseThrow().name().declared().last());
+                for (var attr : DbMapping.attributes(contributor)) {
+                    String path = attr.name().declared().toString();
+                    var composition = DbMapping.describeComposition(plan, object, attr, path);
+                    if (composition.isPresent()) {
+                        var binding = composition.orElseThrow();
+                        var child = catalog.get(binding.childRoot());
+                        if (child == null) throw unsupported("structure storage at " + path);
+                        var mapping = attrNames.take(path, child.name(), parent.name());
+                        useColumn(db, child, mapping, path);
+                        requireColumns(db, child.name(), child.columns(), Map.of(mapping.name(), Kind.REFERENCE));
+                        compositions.add(new Composition(attr, binding.parent(), binding.child(), binding.childRoot(),
+                                mapping.name(), binding.collectionKind()));
+                        continue;
+                    }
+                    for (var described : DbMapping.describeColumns(plan, contributor, attr, defaults, crsPair)) {
+                        String attribute = Ili2dbLayout.geometryAttribute(path, described.epsgCode(), settings.multiSrs());
                         String owner = object.name().declared().toString();
-                        var table = classNames.remove(Ili2dbLayout.secondaryClass(attribute, owner));
-                        var transformation = transformations.secondary()
-                                .remove(Ili2dbLayout.secondaryTransformation(path, owner, column.epsgCode()));
-                        if (table == null || transformation == null || !key(db, table).equals(key(db, transformation))
-                                || !key(db, table).equals(key(db, mapping.owner())) || !usedNames.add(key(db, table))
-                                || Ili2dbLayout.reservedTable(foldedName(table), db.gpkg())) {
-                            throw new DbException("Inconsistent secondary geometry CLASSNAME/TRAFO/ATTRNAME mapping for " + path);
+                        String secondaryKey = Ili2dbLayout.secondaryClass(attribute, owner);
+                        String table = settings.splitGeometries() && described.kind().geometry() ? classNames.remove(secondaryKey) : null;
+                        var mapping = attrNames.take(attribute, table == null ? parent.name() : table, null);
+                        var column = described.withName(mapping.name());
+                        if (table != null) {
+                            var transformation = transformations.secondary()
+                                    .remove(Ili2dbLayout.secondaryTransformation(path, owner, column.epsgCode()));
+                            if (transformation == null || !key(db, table).equals(key(db, transformation))
+                                    || !usedNames.add(key(db, table)) || Ili2dbLayout.reservedTable(foldedName(table), db.gpkg())) {
+                                throw new DbException("Inconsistent secondary geometry CLASSNAME/TRAFO/ATTRNAME mapping for " + path);
+                            }
+                            secondary.add(bindSecondaryGeometry(db, column, mapping, parent.name(), table, path, settings));
+                        } else {
+                            columns.add(bindColumn(db, parent, names, column, mapping, path, settings));
                         }
-                        secondary.add(bindSecondaryGeometry(db, column, mapping, parent.name(), table, path, settings));
-                    } else {
-                        columns.add(bindColumn(db, parent, names, column, mapping, path, settings));
                     }
                 }
-            }
-            for (var association : DbMapping.associationsForOwner(associations, object.symbol())) {
-                if (association.linkTable()) continue;
-                var column = bindRole(db, parent, attrNames, association.role(), association.target(), names);
-                columns.add(association.ordered() ? bindPosition(db, parent, column) : column);
+                for (var association : DbMapping.associationsForOwner(associations, contributor.symbol())) {
+                    if (association.linkTable()) continue;
+                    var column = bindRole(db, parent, attrNames, association.role(), association.target(), names);
+                    columns.add(association.ordered() ? bindPosition(db, parent, column) : column);
+                }
             }
             if (settings.splitGeometries()) DbMapping.requireSingleGeometry(object, columns);
             db.checkGeometryTable(parent.name(), columns.stream().filter(column -> column.kind().geometry()).toList());
             for (var geometry : secondary) db.checkGeometryTable(geometry.table(), List.of(geometry.column()));
-            tables.add(new Table(object, parent.name(), object.baseType(), columns, hasDiscriminator(object, bases),
+            tables.add(new Table(object, parent.name(), relation.base(), columns, relation.discriminator(),
                     DbMapping.oidDomain(plan, object), secondary));
         }
         for (var table : tables) {
@@ -250,11 +260,8 @@ final class DbSchemaReader {
             throw new DbException("Extra CLASSNAME/TRAFO mappings for " + modelName);
         }
         if (!attrNames.isEmpty()) throw new DbException("Extra ATTRNAME mappings for " + modelName);
-        return new DbMapping(plan, version, tables, compositions, associations, crsPair, requestedRoots);
-    }
-
-    private static boolean hasDiscriminator(ObjectDescriptor object, Set<SymbolRef> bases) {
-        return object.baseType().isEmpty() && bases.contains(object.symbol());
+        return new DbMapping(plan, version, tables, compositions, associations, crsPair, requestedRoots,
+                settings.inheritance(), layout.aliases());
     }
 
     private static void bindOtherStructureOwners(Database db, MetadataScope scope, CatalogTable table) throws SQLException {
@@ -279,19 +286,19 @@ final class DbSchemaReader {
         }
     }
 
-    private static Map<SymbolRef, CatalogTable> readCatalog(Database db, TransferPlan plan, List<ObjectDescriptor> objects,
-                                                           Map<SymbolRef, String> names, Set<SymbolRef> bases,
-                                                           CancellationToken token)
+    private static Map<SymbolRef, CatalogTable> readCatalog(Database db, TransferPlan plan,
+                                                           List<DbInheritance.Relation> relations, CancellationToken token)
             throws SQLException {
         var result = new HashMap<SymbolRef, CatalogTable>();
-        for (var object : objects) {
+        for (var relation : relations) {
             token.throwIfCancellationRequested();
-            String name = names.get(object.symbol());
+            var object = relation.object();
+            String name = relation.declaration().sqlName();
             var physical = physicalColumns(db, name);
             requireColumns(db, name, physical, Map.of(T_ID, Kind.REFERENCE, T_BASKET, Kind.REFERENCE));
             requireIdPrimaryKey(db, name);
             var used = new HashSet<>(Set.of(T_ID, T_BASKET));
-            boolean subtype = object.baseType().isPresent();
+            boolean subtype = relation.base().isPresent();
             var domain = DbMapping.oidDomain(plan, object);
             if (!subtype && (object.kind() != SymbolKind.ASSOCIATION || domain.isPresent())) {
                 if (domain.isPresent()) {
@@ -301,7 +308,7 @@ final class DbSchemaReader {
                 }
                 used.add(T_ILI_TID);
             }
-            if (hasDiscriminator(object, bases)) {
+            if (relation.discriminator()) {
                 requireColumns(db, name, physical, Map.of(T_TYPE, Kind.TEXT));
                 requireDiscriminator(db, name);
                 used.add(T_TYPE);
@@ -363,7 +370,12 @@ final class DbSchemaReader {
         String value = settings.get(PREFIX + "defaultSrsCode");
         int defaultEpsg = value == null ? 0 : Ili2dbLayout.parseEpsgCode(value, "SETTINGS.defaultSrsCode");
         String modelEpsg = settings.get(PREFIX + "modelSrsCode");
-        for (String tag : List.of("inheritanceTrafo", "createEnumColAsItfCode", "createEnumCols",
+        var inheritance = switch (settings.get(PREFIX + "inheritanceTrafo")) {
+            case null -> DbInheritance.Profile.NEW_CLASS;
+            case "smart1" -> DbInheritance.Profile.SMART1;
+            default -> throw unsupported("SETTINGS.inheritanceTrafo");
+        };
+        for (String tag : List.of("createEnumColAsItfCode", "createEnumCols",
                 "createDatasetCols", "typeDiscriminator", "createStdCols", "SqlColsAsText", "SqlExtRefCols")) {
             if (settings.containsKey(PREFIX + tag)) throw unsupported("SETTINGS." + tag);
         }
@@ -386,13 +398,13 @@ final class DbSchemaReader {
         boolean referenceEpsgHeader = db.gpkg() && isSender(sender, "ili2gpkg-5.5.2");
         boolean indexes = "True".equals(settings.get(Ili2dbLayout.CREATE_GEOMETRY_INDEX));
         if (Ili2dbLayout.MULTIPLE_GEOMETRIES.equals(geometryLayout)) {
-            return new Settings(false, defaultEpsg, modelEpsg, referenceEpsgHeader, multiSrs, srsModels, indexes);
+            return new Settings(false, defaultEpsg, modelEpsg, referenceEpsgHeader, multiSrs, srsModels, indexes, inheritance);
         }
         if (geometryLayout != null && !Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout)) {
             throw unsupported("SETTINGS.geomAttrPerTable=" + geometryLayout);
         }
         return new Settings(db.gpkg() || Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout), defaultEpsg, modelEpsg,
-                referenceEpsgHeader, multiSrs, srsModels, indexes);
+                referenceEpsgHeader, multiSrs, srsModels, indexes, inheritance);
     }
 
     static SqlNames namesForExtension(Database db, List<String> models) throws SQLException {
@@ -592,10 +604,39 @@ final class DbSchemaReader {
         return result;
     }
 
-    private static Map<String, AttributeName> readAttributeNames(Database db, MetadataScope scope) throws SQLException {
+    private static final class AttributeNames {
+        private final Database db;
+        private final Map<String, List<AttributeName>> mappings = new LinkedHashMap<>();
+
+        AttributeNames(Database db) { this.db = db; }
+
+        void add(String path, AttributeName name) {
+            var alternatives = mappings.computeIfAbsent(path, unused -> new ArrayList<>());
+            if (alternatives.stream().anyMatch(existing -> key(db, existing.owner()).equals(key(db, name.owner()))
+                    && Objects.equals(existing.target(), name.target()))) {
+                throw new DbException("Ambiguous ATTRNAME mapping for " + path);
+            }
+            alternatives.add(name);
+        }
+
+        AttributeName take(String path, String owner, String target) {
+            var alternatives = mappings.getOrDefault(path, List.of());
+            var matches = alternatives.stream().filter(value -> key(db, owner).equals(key(db, value.owner()))
+                    && (target == null || value.target() != null && key(db, target).equals(key(db, value.target())))).toList();
+            if (matches.size() != 1) throw new DbException("Missing or inconsistent ATTRNAME mapping for " + path);
+            var selected = matches.getFirst();
+            alternatives.remove(selected);
+            if (alternatives.isEmpty()) mappings.remove(path);
+            return selected;
+        }
+
+        boolean isEmpty() { return mappings.isEmpty(); }
+    }
+
+    private static AttributeNames readAttributeNames(Database db, MetadataScope scope) throws SQLException {
         String table = foldedName(ATTRNAME);
         requireMetadataColumns(db, table, "iliname", "sqlname", "colowner", "target");
-        var result = new LinkedHashMap<String, AttributeName>();
+        var result = new AttributeNames(db);
         try (var stmt = scopedMetadata(db, table, "iliname, sqlname, colowner, target", "iliname", scope);
              var rows = stmt.executeQuery()) {
             while (rows.next()) {
@@ -603,9 +644,7 @@ final class DbSchemaReader {
                 if (!scope.includes(path)) continue;
                 var name = new AttributeName(required(rows, 2, "ATTRNAME.sqlname"),
                         required(rows, 3, "ATTRNAME.colowner"), rows.getString(4));
-                if (result.putIfAbsent(path, name) != null) {
-                    throw new DbException("Ambiguous ATTRNAME mapping for " + path);
-                }
+                result.add(path, name);
             }
         }
         return result;
@@ -625,8 +664,7 @@ final class DbSchemaReader {
                 String tag = rows.getString(2);
                 if (Ili2dbLayout.SECONDARY_TABLE_TAG.equals(tag)) {
                     if (secondary.putIfAbsent(path, setting) != null) throw unsupported("TRAFO entries for " + path);
-                } else if (!INHERITANCE_TAG.equals(tag) || !(NEW_CLASS.equals(setting) || EMBEDDED.equals(setting))
-                        || result.putIfAbsent(path, setting) != null) {
+                } else if (!INHERITANCE_TAG.equals(tag) || result.putIfAbsent(path, setting) != null) {
                     throw unsupported("TRAFO entries for " + path);
                 }
             }
@@ -755,10 +793,10 @@ final class DbSchemaReader {
         }
     }
 
-    private static Column bindRole(Database db, CatalogTable table, Map<String, AttributeName> names,
+    private static Column bindRole(Database db, CatalogTable table, AttributeNames names,
                                    RoleSlot role, SymbolRef target, Map<SymbolRef, String> tables) {
         String path = role.name().declared().toString();
-        var mapping = takeAttributeName(names, path);
+        var mapping = names.take(path, table.name(), null);
         useColumn(db, table, mapping, path);
         requireTarget(db, tables.get(target), mapping, path);
         requireColumns(db, table.name(), table.columns(), Map.of(mapping.name(), Kind.REFERENCE));
@@ -785,12 +823,6 @@ final class DbSchemaReader {
         }
         throw new DbException("Expected distinct nullable ID column " + table.name() + "." + position
                 + " for role position at " + role.slot().name().declared());
-    }
-
-    private static AttributeName takeAttributeName(Map<String, AttributeName> names, String path) {
-        var name = names.remove(path);
-        if (name == null) throw new DbException("Missing or inconsistent ATTRNAME mapping for " + path);
-        return name;
     }
 
     private static void requireTarget(Database db, String expected, AttributeName mapping, String path) {

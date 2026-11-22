@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="test"><MODELS><MODEL NAME="SmartMeter23" VERSION="1" URI="https://example.org/smart"/></MODELS></HEADERSECTION>
+  <DATASECTION>
+    <SmartMeter23.Data BID="fixture-b">
+      <SmartMeter23.Data.Meter TID="fixture-m"><Memo/><State>idle</State><Counter>5</Counter></SmartMeter23.Data.Meter>
+      <SmartMeter23.Data.SmartUnit TID="fixture-s"><Memo>base</Memo><State>active</State><Counter>7</Counter><Badge>tag</Badge></SmartMeter23.Data.SmartUnit>
+      <SmartMeter23.Data.Terminal TID="fixture-t"><Socket>p1</Socket></SmartMeter23.Data.Terminal>
+    </SmartMeter23.Data>
+  </DATASECTION>
+</TRANSFER>

@@ -214,6 +214,13 @@ benötigt die gespeicherten BID/TID und bewahrt sie beim Werkzeugwechsel.
 Ein Datensatz enthält mindestens einen Basket. Baskets ohne Objekte sind
 zulässig.
 
+Für bestehende Smart1-Schemata unterstützt `interlis-db` den FULL-Import
+und -Export von Klassenhierarchien mit skalaren Attributen. Das
+Referenzschema lässt sich mit `--noSmartMapping --smart1Inheritance`
+und den übrigen Optionen des Referenzprofils erzeugen. Tabellen und
+konkrete Typen werden über die gespeicherten Zuordnungen und `T_Type`
+aufgelöst.
+
 Unterstützt sind Klassen eines eigenständigen Modells in
 INTERLIS 2.3 und 2.4 mit Text, Boolean, 32-Bit-Ganzzahlen und Aufzählungen als
 XTF-Code. PostGIS speichert mehrere optionale Geometrieattribute in der

@@ -182,7 +182,10 @@ final class DbMapping {
         Table root() { return rows.getFirst(); }
     }
 
+    record StorageAlias(ObjectDescriptor object, String discriminator, SymbolRef owner) { }
+
     private final TransferPlan plan;
+    private final DbInheritance.Profile profile;
     private final LanguageVersion version;
     private final Optional<DbCrsPair> crsPair;
     private final DbTranslations translations;
@@ -200,7 +203,15 @@ final class DbMapping {
 
     DbMapping(TransferPlan plan, LanguageVersion version, List<Table> tables, List<Composition> compositions,
               List<EmbeddedAssociation> associations, Optional<DbCrsPair> crsPair, List<SymbolRef> selectedModels) {
+        this(plan, version, tables, compositions, associations, crsPair, selectedModels, DbInheritance.Profile.NEW_CLASS,
+                List.of());
+    }
+
+    DbMapping(TransferPlan plan, LanguageVersion version, List<Table> tables, List<Composition> compositions,
+              List<EmbeddedAssociation> associations, Optional<DbCrsPair> crsPair, List<SymbolRef> selectedModels,
+              DbInheritance.Profile profile, List<StorageAlias> aliases) {
         this.plan = plan;
+        this.profile = profile;
         this.crsPair = crsPair;
         translations = new DbTranslations(plan);
         this.version = version;
@@ -214,7 +225,7 @@ final class DbMapping {
         var families = new HashMap<Table, List<Table>>();
         for (var table : this.tables) {
             var path = new ArrayDeque<Table>();
-            for (var part = table; part != null; part = part.baseTable().map(this::table).orElse(null)) {
+            for (var part = table; part != null; part = part.baseTable().map(bySymbol::get).orElse(null)) {
                 path.addFirst(part);
             }
             var binding = new ObjectStorage(table.object(), table.name(), List.copyOf(path));
@@ -223,15 +234,19 @@ final class DbMapping {
                 families.computeIfAbsent(binding.root(), unused -> new ArrayList<>()).add(table);
             }
         }
+        for (var alias : aliases) {
+            var owner = paths.get(alias.owner());
+            paths.put(alias.object().symbol(), new ObjectStorage(alias.object(), alias.discriminator(), owner.rows()));
+        }
         storage = Map.copyOf(paths);
         byDiscriminator = storage.values().stream().collect(Collectors.toUnmodifiableMap(
                 ObjectStorage::discriminator, Function.identity()));
         hierarchies = families.entrySet().stream().collect(Collectors.toUnmodifiableMap(
                 Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
         var extensions = new HashMap<SymbolRef, Map<SymbolRef, SymbolRef>>();
-        for (var table : this.tables) {
+        for (var binding : storage.values()) {
             var fields = new HashMap<SymbolRef, SymbolRef>();
-            for (var slot : table.object().slots()) {
+            for (var slot : binding.object().slots()) {
                 if (slot instanceof AttributeSlot attribute && attribute.attribute().overrides().isPresent()
                         && !attribute.attribute().transientAttribute()) {
                     var base = attribute.attribute();
@@ -242,7 +257,7 @@ final class DbMapping {
                     fields.put(new SymbolRef(plan.snapshotId(), base.id()), slot.symbol());
                 }
             }
-            if (!fields.isEmpty()) extensions.put(table.object().symbol(), Map.copyOf(fields));
+            if (!fields.isEmpty()) extensions.put(binding.object().symbol(), Map.copyOf(fields));
         }
         extendedFields = Map.copyOf(extensions);
         this.compositions = List.copyOf(compositions);
@@ -309,6 +324,7 @@ final class DbMapping {
     DbTranslations translations() { return translations; }
 
     TransferPlan plan() { return plan; }
+    DbInheritance.Profile profile() { return profile; }
     LanguageVersion version() { return version; }
     List<Table> tables() { return tables; }
 
@@ -339,6 +355,11 @@ final class DbMapping {
             if (type.equals(declared)) return true;
         }
         return false;
+    }
+
+    boolean applies(Column column, SymbolRef actual) {
+        return profile == DbInheritance.Profile.NEW_CLASS || !(column.slot() instanceof AttributeSlot attribute)
+                || isAssignableTo(actual, new SymbolRef(plan.snapshotId(), attribute.attribute().owner().orElseThrow()));
     }
     List<Table> hierarchy(Table root) { return hierarchies.getOrDefault(root, List.of()); }
 
@@ -385,9 +406,7 @@ final class DbMapping {
     }
 
     Table table(SymbolRef ref) {
-        Table table = bySymbol.get(ref);
-        if (table == null) throw new DbException("No table for transfer class " + ref);
-        return table;
+        return storage(ref).rows().getLast();
     }
 
     static List<ObjectDescriptor> storageObjects(TransferPlan plan, List<SymbolRef> roots, CancellationToken token) {

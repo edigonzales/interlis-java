@@ -66,6 +66,7 @@ import static guru.interlis.db.Ili2dbLayout.T_TYPE;
 final class DbTransfer {
     // The object tag is at depth four. Each structure adds an attribute tag and its value tag.
     private static final int MAX_STRUCTURE_DEPTH = (128 - 4) / 2;
+    private static final GeometrySelection ALL_GEOMETRIES = new GeometrySelection(List.of(), Map.of());
 
     private DbTransfer() { }
 
@@ -279,7 +280,7 @@ final class DbTransfer {
                     int field = 2;
                     String tid = hasTid ? identifier(rows.getString(field++), "TID", root.name()) : null;
                     var actual = mapping.concreteType(root, rows.getString(field++), id, topic);
-                    var values = readFields(db, mapping, rows, field, root, tid);
+                    var values = readFields(db, mapping, rows, field, root, tid, ALL_GEOMETRIES, actual.object().symbol());
                     fragments.readFor(actual, id, tid, values);
                     structures.readFor(id, tid, values);
                     mapping.extendedFields(actual.object().symbol()).forEach((base, effective) -> {
@@ -362,7 +363,7 @@ final class DbTransfer {
 
         void readFor(DbMapping.ObjectStorage actual, long id, String tid, Map<SymbolRef, TransferValue> values) throws SQLException {
             for (var part : actual.rows()) {
-                if (part.subtype()) fragments.get(part).readFor(id, tid, values);
+                if (part.subtype()) fragments.get(part).readFor(id, tid, values, actual.object().symbol());
             }
         }
 
@@ -400,9 +401,9 @@ final class DbTransfer {
                 advance();
             }
 
-            void readFor(long rootId, String tid, Map<SymbolRef, TransferValue> values) throws SQLException {
+            void readFor(long rootId, String tid, Map<SymbolRef, TransferValue> values, SymbolRef actual) throws SQLException {
                 requireRow(rootId);
-                values.putAll(readFields(db, mapping, rows, 3, table, tid));
+                values.putAll(readFields(db, mapping, rows, 3, table, tid, ALL_GEOMETRIES, actual));
                 if (!links.isEmpty()) {
                     readEmbeddedLinks(db, mapping, rows, 3 + projectionSize(mapping, table), links, tid, values);
                 }
@@ -627,14 +628,27 @@ final class DbTransfer {
 
     private static Map<SymbolRef, TransferValue> readFields(Database db, DbMapping mapping, ResultSet rows,
                                                             int index, Table table, String ownerTid) throws SQLException {
-        return readFields(db, mapping, rows, index, table, ownerTid, new GeometrySelection(List.of(), Map.of()));
+        return readFields(db, mapping, rows, index, table, ownerTid, ALL_GEOMETRIES);
     }
 
     private static Map<SymbolRef, TransferValue> readFields(Database db, DbMapping mapping, ResultSet rows,
                                                             int index, Table table, String ownerTid,
                                                             GeometrySelection selection) throws SQLException {
+        return readFields(db, mapping, rows, index, table, ownerTid, selection, table.object().symbol());
+    }
+
+    private static Map<SymbolRef, TransferValue> readFields(Database db, DbMapping mapping, ResultSet rows,
+                                                            int index, Table table, String ownerTid,
+                                                            GeometrySelection selection, SymbolRef actual) throws SQLException {
         var values = new LinkedHashMap<SymbolRef, TransferValue>();
         for (var column : table.columns()) {
+            if (!mapping.applies(column, actual)) {
+                if (rows.getObject(index) != null) {
+                    throw new DbException("Column " + column.name() + " does not apply to object " + ownerTid);
+                }
+                index += projectionSize(mapping, column);
+                continue;
+            }
             var value = checkGeometrySelection(rows, index, column, ownerTid, selection)
                     ? readValue(db, mapping, rows, index, column, ownerTid) : null;
             if (value != null) {
@@ -1348,7 +1362,8 @@ final class DbTransfer {
             var extendedFields = mapping.extendedFields(object.type());
             for (var column : table.columns()) {
                 var slot = column.slot().symbol();
-                var value = basketGeometry.active(column) ? object.value(extendedFields.getOrDefault(slot, slot))
+                var value = basketGeometry.active(column) && mapping.applies(column, object.type())
+                        ? object.value(extendedFields.getOrDefault(slot, slot))
                         : Optional.<TransferValue>empty();
                 if (value.isPresent()) {
                     found++;
