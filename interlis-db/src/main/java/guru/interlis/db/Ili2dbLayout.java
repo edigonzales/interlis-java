@@ -86,7 +86,8 @@ final class Ili2dbLayout {
         TYPE_DISCRIMINATOR("--create-type-discriminator", "typeDiscriminator", "always"),
         TYPE_CONSTRAINT("--create-type-constraint", "createTypeConstraint", "True"),
         DATASET_COLUMN("--create-dataset-col", "createDatasetCols", "addDatasetCol"),
-        STANDARD_COLUMNS("--create-std-cols", "createStdCols", "all");
+        STANDARD_COLUMNS("--create-std-cols", "createStdCols", "all"),
+        UNIQUE("--create-unique", "uniqueConstraints", "create");
 
         final String option;
         final String tag;

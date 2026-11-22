@@ -4,8 +4,11 @@ import guru.interlis.db.Ili2dbLayout.AttributeTransformation;
 import guru.interlis.db.Ili2dbLayout.SchemaOption;
 import guru.interlis.compiler.AnalysisBudget;
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.ConstraintSymbol;
 import guru.interlis.model.DecimalLiteral;
 import guru.interlis.model.DomainReferenceType;
+import guru.interlis.model.ExpressionId;
+import guru.interlis.model.ExpressionRef;
 import guru.interlis.model.GeometryType;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.Modifier;
@@ -14,12 +17,17 @@ import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.ModelTranslation;
 import guru.interlis.model.NumericType;
 import guru.interlis.model.Origin;
+import guru.interlis.model.PathExpression;
+import guru.interlis.model.PathStep;
 import guru.interlis.model.Symbol;
+import guru.interlis.model.SymbolId;
+import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.model.TextKind;
 import guru.interlis.model.TextType;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeRef;
+import guru.interlis.model.UniquenessConstraint;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
@@ -50,7 +58,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                   List<DbMapping.Composition> addedCompositions,
                   List<ColumnProperty> columnProperties, Map<String, List<GeometryColumn>> geometryColumns,
                   boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean strokeArcs, DbEnumOptions enumOptions,
-                  Set<AttributeTransformation> transformations, List<DbEnumLookup> enumLookups) {
+                  Set<AttributeTransformation> transformations, List<DbEnumLookup> enumLookups,
+                  Map<String, List<List<String>>> uniqueKeys) {
     record ModelFile(String filename, LanguageVersion version, String modelNames, String content) { }
 
     record ColumnProperty(String table, String subtype, String column, String key, String value) { }
@@ -125,6 +134,9 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 .filter(composition -> !names.hasAttribute(composition.slot().name().declared().toString())).toList();
         var properties = new ArrayList<ColumnProperty>();
         var geometries = new HashMap<String, List<GeometryColumn>>();
+        var uniqueKeys = new HashMap<String, List<List<String>>>();
+        Map<SymbolId, List<ConstraintSymbol>> constraints = schemaOptions.contains(SchemaOption.UNIQUE)
+                ? uniqueConstraints(mapping) : Map.of();
         for (var table : addedTables) {
             token.throwIfCancellationRequested();
             if (table.hasTidColumn()) {
@@ -139,6 +151,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 properties.add(new ColumnProperty(secondary.table(), null, Ili2dbLayout.ID_COLUMN,
                         Ili2dbLayout.PREFIX + "foreignKey", table.name()));
             }
+            var rules = constraints.get(table.object().symbol().symbol());
+            if (rules != null) uniqueKeys.put(table.name(), uniqueKeys(mapping, table, rules));
         }
         for (var composition : addedCompositions) {
             token.throwIfCancellationRequested();
@@ -149,12 +163,56 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         }
         return new SchemaPlan(mapping, modelFiles, addedTables, addedAssociations, addedCompositions, properties, geometries,
                 splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations,
-                DbEnumLookup.plan(mapping, names, enumOptions, compiled.syntax(), token));
+                DbEnumLookup.plan(mapping, names, enumOptions, compiled.syntax(), token), Map.copyOf(uniqueKeys));
     }
 
     List<String> addedStorageTables() { return DbMapping.storageTables(addedTables); }
 
     Set<SchemaOption> schemaOptions() { return mapping.schemaOptions(); }
+
+    private static Map<SymbolId, List<ConstraintSymbol>> uniqueConstraints(DbMapping mapping) {
+        var constraints = new HashMap<SymbolId, List<ConstraintSymbol>>();
+        for (var symbol : mapping.plan().schema().semanticGraph().declarationsInOrder()) {
+            if (symbol instanceof ConstraintSymbol constraint && constraint.definition() instanceof UniquenessConstraint) {
+                constraint.target().or(constraint.header()::owner).ifPresent(owner ->
+                        constraints.computeIfAbsent(owner, ignored -> new ArrayList<>()).add(constraint));
+            }
+        }
+        return constraints;
+    }
+
+    private static List<List<String>> uniqueKeys(DbMapping mapping, DbMapping.Table table, List<ConstraintSymbol> constraints) {
+        if (table.object().kind() == SymbolKind.STRUCTURE) return List.of();
+        var keys = new ArrayList<List<String>>();
+        for (var constraint : constraints) {
+            var rule = (UniquenessConstraint) constraint.definition();
+            if (rule.where().isPresent() || rule.keys().isEmpty()) continue;
+            var columns = rule.keys().stream().map(expression -> uniqueColumn(mapping, table, expression)).toList();
+            if (columns.stream().anyMatch(java.util.Objects::isNull)) continue;
+            var key = new ArrayList<>(columns);
+            if (rule.basket()) key.add(Ili2dbLayout.T_BASKET);
+            keys.add(List.copyOf(key));
+        }
+        return List.copyOf(keys);
+    }
+
+    private static String uniqueColumn(DbMapping mapping, DbMapping.Table table, ExpressionId id) {
+        var expression = mapping.plan().schema().queries().expression(new ExpressionRef(mapping.plan().snapshotId(), id))
+                .known().orElseThrow();
+        if (!(expression instanceof PathExpression path) || path.path().steps().size() != 1) return null;
+        var target = switch (path.path().steps().getFirst()) {
+            case PathStep.AttributeStep attribute -> attribute.target();
+            case PathStep.RoleStep role -> role.target();
+            default -> null;
+        };
+        if (target == null) return null;
+        var columns = table.columns().stream().filter(column -> column.slot().symbol().symbol().equals(target)).toList();
+        if (columns.size() != 1) return null;
+        var column = columns.getFirst();
+        if (column.array().isPresent() || column.jsonStructure().isPresent() || column.expandedStructure().isPresent()
+                || column.textExpansion().isPresent() || column.kind().geometry() || column.kind() == DbMapping.Kind.XML) return null;
+        return column.name();
+    }
 
     List<String> discriminatorTypes(DbMapping.Table table) {
         return mapping.objectStorage().stream()
@@ -198,7 +256,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
 
     SchemaPlan withModelFiles(List<ModelFile> files) {
         return new SchemaPlan(mapping, files, addedTables, addedAssociations, addedCompositions, columnProperties,
-                geometryColumns, splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations, enumLookups);
+                geometryColumns, splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations, enumLookups,
+                uniqueKeys);
     }
 
     private static Origin.DeclaredOrigin origin(ModelSymbol model) {

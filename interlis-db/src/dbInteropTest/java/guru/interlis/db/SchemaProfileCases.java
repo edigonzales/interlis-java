@@ -419,6 +419,82 @@ final class SchemaProfileCases {
                         + "</CheckPoint><Label>linked</Label>"));
     }
 
+    void uniqueConstraints(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ProfileUnique" + version;
+        String definition = """
+                CLASS Asset =
+                  RegistryNo : TEXT*24;
+                  LocalMark : TEXT*24;
+                  VariantNo : 0..10;
+                  UNIQUE RegistryNo;
+                  UNIQUE %sLocalMark, VariantNo;
+                END Asset;
+                """;
+        Path ili = source(model, definition.formatted(""));
+        referenceSchema(expected, ili, "--sqlEnableNull", "--createUnique");
+        schema(own, model, ili, "--create-unique");
+        sameCatalog(expected, own);
+        for (var db : List.of(expected, own)) {
+            Path output = work.resolve("unique-output.xtf");
+            referenceImport(db, "legacy", uniquenessData(model, "legacy", "legacy"));
+            assertCliSuccess(db, "export", model, "legacy", output);
+            assertEquals("legacy", child(rows(output, "legacy", 3).getFirst(), "RegistryNo").getTextContent());
+            assertCliSuccess(db, "import", model, "native", uniquenessData(model, "native", "native"));
+            referenceExport(db, "native", output);
+            var rows = rows(output, "native", 3);
+            assertEquals("native", child(rows.getFirst(), "RegistryNo").getTextContent());
+            assertNull(child(rows.getLast(), "RegistryNo"));
+            try (var sql = db.connect()) {
+                var keys = DbSchemaCatalog.read(sql, db.postgis(), db.schema()).relations().get("unique keys");
+                assertTrue(keys.contains(List.of("asset", "registryno")));
+                assertTrue(keys.contains(List.of("asset", "localmark", "variantno")));
+                String duplicate = "<LocalMark>duplicate</LocalMark><VariantNo>7</VariantNo>";
+                String valid = "<RegistryNo>tentative</RegistryNo>";
+                String error = db.postgis() ? "SQL code 23505" : "Database operation failed (SQL code ";
+                assertCliFailure(db, "import", model, "broken", assetData(model, "broken", List.of(valid, duplicate, duplicate)), error);
+                assertCliFailure(db, "import", model, "broken-global", assetData(model, "broken-global",
+                        List.of(valid, "<RegistryNo>legacy</RegistryNo>")), error);
+                assertEquals("6", scalar(sql, "SELECT count(*) FROM " + db.table("asset")));
+                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
+            }
+            String extra = "ProfileUniqueExtra" + version;
+            schema(db, extra, source(extra, "CLASS Extra = Badge : TEXT*24; UNIQUE Badge; END Extra;"), "--add-models");
+            try (var sql = db.connect()) {
+                assertTrue(DbSchemaCatalog.read(sql, db.postgis(), db.schema()).relations().get("unique keys")
+                        .contains(List.of("extra", "badge")));
+            }
+        }
+        if (version == 24) {
+            String basket = "ProfileUniqueBasket";
+            Path source = source(basket, definition.formatted("(BASKET) "));
+            var ref = expected.peer("profile_unique_basket_ref");
+            reference.expectFailure(ref, work.toString(), "no table attached", "--schemaimport", "--noSmartMapping",
+                    "--createBasketCol", "--createTidCol", "--sqlEnableNull", "--createUnique", source.toString());
+            var db = own.peer("profile_unique_basket_own");
+            schema(db, basket, source, "--create-unique");
+            Path output = work.resolve("basket-unique-output.xtf");
+            referenceImport(db, "legacy", uniquenessData(basket, "legacy", "shared"));
+            assertCliSuccess(db, "export", basket, "legacy", output);
+            assertEquals("shared", child(rows(output, "legacy", 3).getFirst(), "LocalMark").getTextContent());
+            assertCliSuccess(db, "import", basket, "native", uniquenessData(basket, "native", "shared"));
+            referenceExport(db, "native", output);
+            assertEquals("shared", child(rows(output, "native", 3).getFirst(), "LocalMark").getTextContent());
+            try (var sql = db.connect()) {
+                assertTrue(DbSchemaCatalog.read(sql, db.postgis(), db.schema()).relations().get("unique keys")
+                        .contains(List.of("asset", "localmark", "t_basket", "variantno")));
+                String duplicate = "<LocalMark>shared</LocalMark><VariantNo>5</VariantNo>";
+                assertCliFailure(db, "import", basket, "broken", assetData(basket, "broken", List.of(duplicate, duplicate)),
+                        db.postgis() ? "SQL code 23505" : "Database operation failed (SQL code ");
+                assertEquals("6", scalar(sql, "SELECT count(*) FROM " + db.table("asset")));
+            }
+        }
+    }
+
+    private Path uniquenessData(String model, String prefix, String mark) throws Exception {
+        return assetData(model, prefix, List.of("<RegistryNo>" + prefix + "</RegistryNo><LocalMark>" + mark
+                + "</LocalMark><VariantNo>5</VariantNo>", "", ""));
+    }
+
     private Path linkedModel(String model) throws Exception {
         return source(model, """
                 STRUCTURE Note = Message : TEXT*24; END Note;

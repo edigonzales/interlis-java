@@ -191,6 +191,9 @@ final class SchemaSql {
             if (createForeignKeys) {
                 for (String owner : plan.linkOwnerColumns(table)) columns.add("UNIQUE (" + quote(owner) + ")");
             }
+            for (var key : plan.uniqueKeys().getOrDefault(table.name(), List.of())) {
+                columns.add("UNIQUE (" + key.stream().map(Database::quote).collect(Collectors.joining(", ")) + ")");
+            }
             commands.add(dialect.create(table.name(), String.join(", ", columns), inlineKeys.getOrDefault(table.name(), List.of())));
             for (var geometry : table.secondaryGeometries()) {
                 commands.add(dialect.create(geometry.table(), dialect.primaryId()

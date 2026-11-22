@@ -110,6 +110,10 @@ Spalte mit der Datasetzuordnung über die Baskets.
 Die `*ProfileStandardColumns*`-Fälle prüfen Benutzer, Änderungs- und
 Erstellungszeitpunkt auf Fach-, Struktur- und Geometriehilfszeilen.
 Sie prüfen auch das erhaltene Erstellungsdatum nach einem Update.
+Die `*ProfileUnique*`-Fälle prüfen globale Ein- und Mehrspaltenschlüssel,
+SQL `NULL` und Rollback. In INTERLIS 2.4 reproduzieren sie den Fehler bei
+der ili2db-Schemaerzeugung für `UNIQUE (BASKET)` und tauschen Daten in einem
+mit `interlis-db` erzeugten Schema aus.
 
 Die `*ScalarWide*`-Fälle vergleichen die SQL-Kodierung und prüfen
 64-Bit-Ganzzahlen oberhalb von `2^53`, beide 64-Bit-Grenzwerte, SQL

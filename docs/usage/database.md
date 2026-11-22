@@ -113,6 +113,13 @@ Fachtabellen und Geometriehilfstabellen. GeoPackage speichert die beiden
 Zeitwerte als Unix-Millisekunden, PostgreSQL als lokale SQL-Zeitstempel.
 Ein `update` erhält das Erstellungsdatum bestehender Zeilen.
 
+`schemaimport --create-unique` übernimmt unbedingte `UNIQUE`-Regeln mit
+direkten, in derselben Tabelle gespeicherten Schlüsselspalten. Bei
+`UNIQUE (BASKET)` in INTERLIS 2.4 enthält der SQL-Schlüssel zusätzlich
+`T_Basket`. ili2db 5.5.2 bricht bei der Schemaerzeugung für die geprüfte
+Basket-Regel mit `no table attached` ab. Beide Werkzeuge können mit dem
+von `interlis-db` erzeugten Schema Daten austauschen.
+
 Mit `schemaimport --coalesce-catalogue-ref` erzeugt das Kommando die
 kompakte SQL-Abbildung für CHBase-V1-Katalogreferenzen, entsprechend
 `--coalesceCatalogueRef` in ili2db. Die Option gilt beim Anlegen eines
