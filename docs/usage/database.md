@@ -122,6 +122,10 @@ In Smart2 liegen geerbte Arrays in den konkreten Eigentümertabellen.
 Beim Kürzen oder Entfernen einer Liste ersetzt `update` ihren SQL-Wert
 und behält die Identität des Objekts bei.
 
+`schemaimport --create-enum-col-as-itf-code` erzeugt numerische
+SQL-Spalten für skalare Aufzählungen, entsprechend ili2db
+`--createEnumColAsItfCode`. Boolean bleibt eine eigene SQL-Abbildung.
+
 ## Bestehendes Schema ergänzen
 
 ```sh

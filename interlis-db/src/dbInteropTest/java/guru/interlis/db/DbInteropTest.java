@@ -118,6 +118,17 @@ final class DbInteropTest {
         new EnumerationCases(work, new ReferenceTool(db.postgis()), version).itfCodes(db);
     }
 
+    @Test void geoPackageEnumItfSchema23() throws Exception { exchangeEnumItfSchema(23, null); }
+    @Test void geoPackageEnumItfSchema24() throws Exception { exchangeEnumItfSchema(24, null); }
+    @Test void postgisEnumItfSchema23() throws Exception { exchangeWithPostgis(23, this::exchangeEnumItfSchema); }
+    @Test void postgisEnumItfSchema24() throws Exception { exchangeWithPostgis(24, this::exchangeEnumItfSchema); }
+
+    private void exchangeEnumItfSchema(int version, PostgreSQLContainer postgres) throws Exception {
+        var expected = new TestDatabase(postgres, "enum_itf_ddl_ref");
+        var db = new TestDatabase(postgres, "enum_itf_ddl_own");
+        new EnumerationCases(work, new ReferenceTool(db.postgis()), version).itfSchema(expected, db);
+    }
+
     @Test void geoPackageArrayText23() throws Exception { exchangeArrayText(23, null); }
     @Test void geoPackageArrayText24() throws Exception { exchangeArrayText(24, null); }
     @Test void postgisArrayText23() throws Exception { exchangeWithPostgis(23, this::exchangeArrayText); }

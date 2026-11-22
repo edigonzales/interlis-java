@@ -371,6 +371,7 @@ final class SchemaSql {
         row(statement, PREFIX + "defaultSrsAuthority", "EPSG");
         row(statement, PREFIX + "defaultSrsCode", Integer.toString(plan.defaultEpsg()));
         row(statement, PREFIX + "maxSqlNameLength", "60");
+        if (plan.enumItfCodes()) row(statement, Ili2dbLayout.ENUM_ITF_CODE, "yes");
         String inheritance = plan.mapping().profile().setting;
         if (inheritance != null) row(statement, PREFIX + "inheritanceTrafo", inheritance);
         for (var transformation : Ili2dbLayout.AttributeTransformation.values()) {
@@ -472,7 +473,7 @@ final class SchemaSql {
             return switch (column.kind()) {
                 case BOOLEAN -> "BOOLEAN";
                 case INTEGER -> "INTEGER";
-                case ENUMERATION -> text(255);
+                case ENUMERATION -> column.enumeration().isPresent() ? idType() : text(255);
                 case REFERENCE -> idType();
                 case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> {
                     String type = column.geometryType();

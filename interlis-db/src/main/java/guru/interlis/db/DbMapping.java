@@ -134,6 +134,10 @@ final class DbMapping {
                     positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry, strokeTolerance, expandedStructure, jsonStructure, array, enumeration);
         }
 
+        Column withItfCodes() {
+            return withEnumeration(DbEnumeration.itfCodes((EnumerationType) effectiveType.orElseThrow(), slot.name().declared().toString()));
+        }
+
         Column withEnumeration(DbEnumeration binding) {
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
                     positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry,
@@ -604,13 +608,13 @@ final class DbMapping {
     static DbMapping planNew(String modelName, SourceText source, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, CancellationToken token) {
         return planNew(List.of(modelName), List.of(source), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(),
-                new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), false, token);
+                new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), false, false, token);
     }
 
     static DbMapping planNew(List<String> modelNames, Collection<SourceText> sources, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels,
                              SqlNames allocator, DbInheritance.Profile profile, Set<AttributeTransformation> transformations,
-                             boolean strokeArcs, CancellationToken token) {
+                             boolean strokeArcs, boolean enumItfCodes, CancellationToken token) {
         var models = srsModels.map(DbCrsPair.Models::names).orElse(modelNames);
         TransferPlan plan = DbModelSources.compile(models, sources, "model files", token);
         var crs = new CrsDefaults(defaultEpsg, 0);
@@ -709,7 +713,11 @@ final class DbMapping {
                             && "ARRAY".equals(metaText(attribute.attribute(), "ili2db.mapping"))) {
                         String field = allocator.column(name, attributeName);
                         checkColumnName(attribute, field, object.kind() == SymbolKind.STRUCTURE, discriminator, gpkg);
-                        columns.add(arrayColumn(plan, attribute, field, DbArray.describe(plan, inheritance, object, attribute)));
+                        var array = DbArray.describe(plan, inheritance, object, attribute);
+                        if (enumItfCodes && array.kind() == Kind.ENUMERATION) {
+                            throw unsupported("ITF codes in array " + attribute.name().declared());
+                        }
+                        columns.add(arrayColumn(plan, attribute, field, array));
                         continue;
                     }
                     var wrapped = wrappedGeometries.get(attribute.symbol());
@@ -742,6 +750,7 @@ final class DbMapping {
                         String column = allocator.column(owner, storageName);
                         checkColumnName(attribute, column, object.kind() == SymbolKind.STRUCTURE, !split && discriminator, gpkg);
                         var named = binding.withName(column).withStrokeArcs(plan, strokeArcs);
+                        if (enumItfCodes && named.kind() == Kind.ENUMERATION) named = named.withItfCodes();
                         if (binding.kind().geometry()) geometrySeen = true;
                         if (split) secondary.add(new SecondaryGeometry(owner, named));
                         else columns.add(named);

@@ -93,6 +93,8 @@ Prozesslogs und temporären Dateien des Referenzwerkzeugs auch bei Testfehlern.
 Die `*EnumItfCodes*`-Fälle prüfen den Austausch skalarer Aufzählungen
 mit ITF-Codes, einschliesslich Code `0`, SQL `NULL`, Rollback und
 dem Erhalt einer vorhandenen Exportdatei.
+Die `*EnumItfSchema*`-Fälle vergleichen den SQL-Katalog und prüfen den
+Werkzeugwechsel in Referenz- und eigenen Schemata.
 
 Die `*ArrayText*`-Fälle prüfen Reihenfolge, Duplikate, Sonderzeichen,
 gespeicherte SQL-Spaltennamen und den bekannten Referenzfehler bei

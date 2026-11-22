@@ -2,6 +2,7 @@ package guru.interlis.db;
 
 import guru.interlis.db.DbInteropTest.ReferenceTool;
 import guru.interlis.db.DbInteropTest.TestDatabase;
+import guru.interlis.execution.CancellationToken;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,6 +15,7 @@ import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
+import static guru.interlis.db.DbInteropTest.cli;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
@@ -65,6 +67,35 @@ final class EnumerationCases {
             assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket")));
             assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
         }
+    }
+
+    void itfSchema(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "EnumItfSchema" + version;
+        var ili = source(model, BASE);
+        schema(expected, model, "--createEnumColAsItfCode");
+        create(own, model, ili, "--create-enum-col-as-itf-code");
+        assertSameCatalog(expected, own);
+        for (var db : List.of(expected, own)) {
+            mixScalars(db, model);
+            try (var sql = db.connect()) {
+                assertItfRows(db, sql, "legacy");
+                assertItfRows(db, sql, "native");
+                assertEquals("1", scalar(sql, "SELECT CASE WHEN aactive THEN 1 ELSE 0 END FROM "
+                        + db.table("asset") + " WHERE t_ili_tid = 'native-value'"));
+            }
+        }
+    }
+
+    private static void assertSameCatalog(TestDatabase expected, TestDatabase actual) throws Exception {
+        try (var left = expected.connect(); var right = actual.connect()) {
+            DbSchemaCatalog.read(left, expected.postgis(), expected.schema())
+                    .assertSameAs(DbSchemaCatalog.read(right, actual.postgis(), actual.schema()));
+        }
+    }
+
+    private static void create(TestDatabase db, String model, Path ili, String... options) {
+        var result = cli(db, "schemaimport", model, null, ili, CancellationToken.none(), options);
+        assertEquals(0, result.code(), result::diagnostics);
     }
 
     private static void assertItfRows(TestDatabase db, Connection sql, String prefix) throws Exception {

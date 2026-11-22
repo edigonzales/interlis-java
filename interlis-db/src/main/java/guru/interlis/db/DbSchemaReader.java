@@ -881,9 +881,8 @@ final class DbSchemaReader {
             return bindGeometry(db, table.name(), column, settings);
         }
         if (column.kind() == Kind.ENUMERATION && settings.enumItfCodes()) {
-            var type = (guru.interlis.model.EnumerationType) column.effectiveType().orElseThrow();
             requireColumns(db, table.name(), table.columns(), Map.of(column.name(), Kind.REFERENCE));
-            return column.withEnumeration(DbEnumeration.itfCodes(type, path));
+            return column.withItfCodes();
         }
         for (var name : column.physicalNames()) {
             if (!name.equals(column.name()) && !table.used().add(key(db, name))) {
