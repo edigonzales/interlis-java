@@ -19,7 +19,6 @@ import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
-import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.TransferPlan;
 
 import java.sql.DatabaseMetaData;
@@ -186,6 +185,11 @@ final class DbSchemaReader {
         for (var alias : layout.aliases()) {
             names.put(alias.object().symbol(), names.get(alias.owner()));
         }
+        for (var association : associations) {
+            if (association.linkTable() && layout.referenceTables(association.owner()).size() != 1) {
+                throw unsupported("embedded link table with multiple owner tables at " + association.object().name().declared());
+            }
+        }
         var catalog = readCatalog(db, plan, layout.relations(), token);
         var tables = new ArrayList<Table>();
         var compositions = new ArrayList<Composition>();
@@ -198,8 +202,9 @@ final class DbSchemaReader {
             var roles = linkRoles.get(object.symbol());
             if (roles != null) {
                 for (var role : roles) {
-                    var column = bindRole(db, parent, attrNames, role.slot(), role.target(), names);
-                    columns.add(role.slot().role().ordered() ? bindPosition(db, parent, column) : column);
+                    columns.addAll(bindReferences(db, parent, attrNames, layout, names,
+                            DbMapping.roleColumn(role.slot(), role.target(), role.slot().name().declared().last()),
+                            role.slot().role().ordered(), settings));
                 }
             }
             for (var contributor : relation.contributors()) {
@@ -219,6 +224,10 @@ final class DbSchemaReader {
                         continue;
                     }
                     for (var described : DbMapping.describeColumns(plan, contributor, attr, defaults, crsPair)) {
+                        if (described.kind() == Kind.REFERENCE) {
+                            columns.addAll(bindReferences(db, parent, attrNames, layout, names, described, false, settings));
+                            continue;
+                        }
                         String attribute = Ili2dbLayout.geometryAttribute(path, described.epsgCode(), settings.multiSrs());
                         String owner = object.name().declared().toString();
                         String secondaryKey = Ili2dbLayout.secondaryClass(attribute, owner);
@@ -240,8 +249,9 @@ final class DbSchemaReader {
                 }
                 for (var association : DbMapping.associationsForOwner(associations, contributor.symbol())) {
                     if (association.linkTable()) continue;
-                    var column = bindRole(db, parent, attrNames, association.role(), association.target(), names);
-                    columns.add(association.ordered() ? bindPosition(db, parent, column) : column);
+                    columns.addAll(bindReferences(db, parent, attrNames, layout, names,
+                            DbMapping.roleColumn(association.role(), association.target(), association.role().name().declared().last()),
+                            association.ordered(), settings));
                 }
             }
             if (settings.splitGeometries()) DbMapping.requireSingleGeometry(object, columns);
@@ -736,7 +746,7 @@ final class DbSchemaReader {
             throws SQLException {
         useColumn(db, table, mapping, path);
         if (column.target().isPresent()) {
-            requireTarget(db, tables.get(column.target().orElseThrow()), mapping, path);
+            requireTarget(db, tables.get(column.targetRelation()), mapping, path);
         } else if (mapping.target() != null) {
             throw new DbException("Unexpected ATTRNAME.target for " + path);
         }
@@ -798,14 +808,43 @@ final class DbSchemaReader {
         }
     }
 
-    private static Column bindRole(Database db, CatalogTable table, AttributeNames names,
-                                   RoleSlot role, SymbolRef target, Map<SymbolRef, String> tables) {
-        String path = role.name().declared().toString();
-        var mapping = names.take(path, table.name(), null);
-        useColumn(db, table, mapping, path);
-        requireTarget(db, tables.get(target), mapping, path);
-        requireColumns(db, table.name(), table.columns(), Map.of(mapping.name(), Kind.REFERENCE));
-        return DbMapping.roleColumn(role, target, mapping.name());
+    private static List<Column> bindReferences(Database db, CatalogTable table, AttributeNames names,
+                                                DbInheritance layout, Map<SymbolRef, String> tableNames,
+                                                Column reference, boolean ordered, Settings settings) throws SQLException {
+        String path = reference.slot().name().declared().toString();
+        var declared = reference.target().orElseThrow();
+        var targets = layout.referenceTables(declared);
+        if (targets.isEmpty() || (ordered && targets.size() > 1)) throw unsupported("reference storage at " + path);
+        var columns = new ArrayList<Column>();
+        for (var target : targets) {
+            String targetName = tableNames.get(target);
+            var binding = names.take(path, table.name(), targetName);
+            var described = reference.withName(binding.name());
+            if (!target.equals(declared) || targets.size() > 1) described = described.withReferenceTable(target);
+            var column = bindColumn(db, table, tableNames, described, binding, path, settings);
+            if (settings.inheritance() == DbInheritance.Profile.SMART2) {
+                requireForeignKey(db, table.name(), binding.name(), targetName, path);
+            }
+            columns.add(ordered ? bindPosition(db, table, column) : column);
+        }
+        return columns;
+    }
+
+    private static void requireForeignKey(Database db, String owner, String column, String target, String path)
+            throws SQLException {
+        String fields = db.gpkg() ? "lower(tablename) = ? AND lower(columnname) = ?" : "tablename = ? AND columnname = ?";
+        String sql = "SELECT setting FROM " + db.technicalTable(Ili2dbLayout.COLUMN_PROP) + " WHERE "
+                + fields + " AND subtype IS NULL AND tag = ?";
+        try (var statement = db.connection().prepareStatement(sql)) {
+            statement.setString(1, key(db, owner));
+            statement.setString(2, key(db, column));
+            statement.setString(3, PREFIX + "foreignKey");
+            try (var rows = statement.executeQuery()) {
+                if (!rows.next() || !key(db, target).equals(key(db, required(rows, 1, "COLUMN_PROP.setting"))) || rows.next()) {
+                    throw new DbException("Inconsistent COLUMN_PROP.foreignKey for " + path + " in " + owner + "." + column);
+                }
+            }
+        }
     }
 
     private static Column bindPosition(Database db, CatalogTable table, Column role) throws SQLException {
@@ -831,7 +870,7 @@ final class DbSchemaReader {
     }
 
     private static void requireTarget(Database db, String expected, AttributeName mapping, String path) {
-        if (mapping.target() == null || !key(db, expected).equals(key(db, mapping.target()))) {
+        if (expected == null || mapping.target() == null || !key(db, expected).equals(key(db, mapping.target()))) {
             throw new DbException("Inconsistent ATTRNAME.target for " + path);
         }
     }

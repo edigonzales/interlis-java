@@ -464,8 +464,8 @@ final class DbTransfer {
                 case REFERENCE -> {
                     String ref = alias + "ref" + refIndex++;
                     SymbolRef declared = column.target().orElseThrow();
-                    var target = mapping.table(declared);
-                    var root = mapping.rootTable(declared);
+                    var target = mapping.table(column.targetRelation());
+                    var root = mapping.referenceRoot(column);
                     from.append(" LEFT JOIN ").append(db.table(root.name())).append(' ').append(ref)
                             .append(" ON ").append(ref).append('.').append(T_ID).append(" = ").append(field);
                     String targetBasket = ref + "." + T_BASKET;
@@ -515,7 +515,7 @@ final class DbTransfer {
             for (var column : table.columns()) {
                 if (!column.external()) continue;
                 token.throwIfCancellationRequested();
-                var root = mapping.rootTable(column.target().orElseThrow());
+                var root = mapping.referenceRoot(column);
                 String sql = "SELECT DISTINCT ref." + T_ID + ", ref." + T_ILI_TID + ", dst." + T_ILI_TID
                         + " FROM " + db.table(table.name()) + " obj JOIN " + baskets
                         + " src ON src." + T_ID + " = obj." + T_BASKET + " JOIN " + db.table(root.name())
@@ -568,8 +568,19 @@ final class DbTransfer {
     private static StoredObject findReference(Database db, DbMapping mapping, Column column,
                                               String tid, Optional<String> bid) throws SQLException {
         var declared = column.target().orElseThrow();
-        var target = mapping.table(declared);
-        var root = mapping.rootTable(declared);
+        StoredObject result = null;
+        for (var target : mapping.referenceTables(declared)) {
+            var match = findReference(db, mapping, declared, target, tid, bid, column.slot().name().declared().toString());
+            if (match == null) continue;
+            if (result != null) throw ambiguousTarget(tid, column.slot().name().declared().toString());
+            result = match;
+        }
+        return result;
+    }
+
+    private static StoredObject findReference(Database db, DbMapping mapping, SymbolRef declared, Table target,
+                                              String tid, Optional<String> bid, String context) throws SQLException {
+        var root = mapping.rootTable(target.object().symbol());
         String discriminator = root.hasDiscriminator() ? ", ref." + T_TYPE : "";
         String fragment = target.equals(root) ? "" : " AND EXISTS (SELECT 1 FROM " + db.table(target.name())
                 + " leaf WHERE leaf." + T_ID + " = ref." + T_ID + " AND leaf." + T_BASKET + " = ref." + T_BASKET + ")";
@@ -587,14 +598,17 @@ final class DbTransfer {
                     var type = root.hasDiscriminator() ? mapping.concreteType(root, rows.getString(3), id).object().symbol()
                             : root.object().symbol();
                     if (!mapping.isAssignableTo(type, declared)) continue;
-                    String context = column.slot().name().declared().toString();
-                    if (result != null) throw new DbException("Ambiguous stored reference target " + tid + " at " + context);
+                    if (result != null) throw ambiguousTarget(tid, context);
                     var basket = new BasketId(identifier(rows.getString(2), "reference target BID", context), IdOrigin.SOURCE);
                     result = new StoredObject(id, type, basket);
                 }
                 return result;
             }
         }
+    }
+
+    private static DbException ambiguousTarget(String tid, String context) {
+        return new DbException("Ambiguous stored reference target " + tid + " at " + context);
     }
 
     private static String topicNames(DbMapping mapping, Table table) {
@@ -619,7 +633,7 @@ final class DbTransfer {
 
     private static int projectionSize(DbMapping mapping, Column column) {
         if (column.kind() != DbMapping.Kind.REFERENCE) return 1;
-        int targetFields = mapping.rootTable(column.target().orElseThrow()).hasDiscriminator() ? 3 : 2;
+        int targetFields = mapping.referenceRoot(column).hasDiscriminator() ? 3 : 2;
         return targetFields + (projectsTargetBid(mapping, column) ? 1 : 0)
                 + (column.positionColumn().isPresent() ? 1 : 0);
     }
@@ -657,12 +671,17 @@ final class DbTransfer {
             }
             var value = checkGeometrySelection(rows, index, column, ownerTid, selection)
                     ? readValue(db, mapping, rows, index, column, ownerTid) : null;
-            if (value != null) {
-                values.put(column.slot().symbol(), value);
-            } else if (table.object().kind() == SymbolKind.ASSOCIATION && column.slot() instanceof RoleSlot) {
-                throw new DbException("Missing link endpoint at " + column.slot().name().declared());
+            if (value != null && values.putIfAbsent(column.slot().symbol(), value) != null) {
+                throw new DbException("Multiple stored values for " + column.slot().name().declared() + " of object " + ownerTid);
             }
             index += projectionSize(mapping, column);
+        }
+        if (table.object().kind() == SymbolKind.ASSOCIATION) {
+            for (var column : table.columns()) {
+                if (column.slot() instanceof RoleSlot && !values.containsKey(column.slot().symbol())) {
+                    throw new DbException("Missing link endpoint at " + column.slot().name().declared());
+                }
+            }
         }
         for (var geometry : table.secondaryGeometries()) {
             boolean sameBasket = rows.getBoolean(index++);
@@ -1002,7 +1021,7 @@ final class DbTransfer {
                 String tid = identifier(rows.getString(index + 1), column.external()
                         ? "same-dataset reference target TID" : "same-basket reference target TID", context);
                 SymbolRef declared = column.target().orElseThrow();
-                Table root = mapping.rootTable(declared);
+                Table root = mapping.referenceRoot(column);
                 int next = index + 2;
                 if (root.hasDiscriminator()) {
                     var actual = mapping.concreteType(root, rows.getString(next++), rows.getLong(index));
@@ -1363,16 +1382,14 @@ final class DbTransfer {
                     statement.setString(index++, tid.orElseThrow());
                 }
             }
-            int found = 0;
+            var found = new HashSet<SymbolRef>();
             var extendedFields = mapping.extendedFields(object.type());
             for (var column : table.columns()) {
                 var slot = column.slot().symbol();
                 var value = basketGeometry.active(column) && mapping.applies(column, object.type())
                         ? object.value(extendedFields.getOrDefault(slot, slot))
                         : Optional.<TransferValue>empty();
-                if (value.isPresent()) {
-                    found++;
-                }
+                if (value.isPresent()) found.add(slot);
                 var payload = value.filter(val -> val != Undefined.INSTANCE).orElse(null);
                 if (link && column.slot() instanceof RoleSlot && !(payload instanceof Reference)) {
                     throw new DbException("Missing link endpoint at " + column.slot().name().declared());
@@ -1396,11 +1413,11 @@ final class DbTransfer {
                 token.throwIfCancellationRequested();
                 var value = basketGeometry.active(geometry.column()) ? object.value(geometry.column().slot().symbol())
                         : Optional.<TransferValue>empty();
-                if (value.isPresent()) found++;
+                if (value.isPresent()) found.add(geometry.column().slot().symbol());
                 writeSecondaryGeometry(geometry, (TransferGeometry) value.filter(item -> item != Undefined.INSTANCE)
                         .orElse(null), id, context, update);
             }
-            return found;
+            return found.size();
         }
 
         private void writeSecondaryGeometry(SecondaryGeometry geometry, TransferGeometry value, long id,
@@ -1444,7 +1461,7 @@ final class DbTransfer {
             statement.setLong(1, id);
             statement.setLong(2, basketId);
             int index = 3;
-            int found = 0;
+            var found = new HashSet<SymbolRef>();
             for (var column : table.columns()) {
                 var field = column.slot().symbol();
                 if (field.equals(association.ownerRole().slot().symbol())) {
@@ -1454,7 +1471,7 @@ final class DbTransfer {
                     }
                 } else {
                     var payload = fields.get(field);
-                    if (payload != null) found++;
+                    if (payload != null) found.add(field);
                     if (field.equals(role) && association.ordered() && target.orderPosition().isPresent()) {
                         payload = withOrderPosition(target, Optional.empty());
                     }
@@ -1462,7 +1479,7 @@ final class DbTransfer {
                             payload == Undefined.INSTANCE ? null : payload);
                 }
             }
-            if (found != fields.size()) {
+            if (found.size() != fields.size()) {
                 throw new DbException("Embedded association contains a field without a stored mapping at " + context);
             }
             statement.executeUpdate();
@@ -1546,14 +1563,14 @@ final class DbTransfer {
 
         private int bindStructureFields(PreparedStatement statement, int index, Table table, Structured structure,
                                         long id, String ownerTid, BasketId basket) throws SQLException {
-            int found = 0;
+            var found = new HashSet<SymbolRef>();
             for (var column : table.columns()) {
                 var field = structure.value(column.slot().symbol());
-                if (field.isPresent()) found++;
+                if (field.isPresent()) found.add(column.slot().symbol());
                 var payload = field.filter(item -> item != Undefined.INSTANCE).orElse(null);
                 index = bindColumn(statement, index, table, column, id, ownerTid, basket, payload);
             }
-            return found;
+            return found.size();
         }
 
         private PreparedStatement insertStatement(Table table) throws SQLException {
@@ -1681,7 +1698,7 @@ final class DbTransfer {
         private StoredObject bindReference(Table table, Column column, long id, String tid, BasketId basket,
                                            Reference reference) {
             boolean external = column.external();
-            var root = mapping.rootTable(column.target().orElseThrow());
+            var root = mapping.referenceRoot(column);
             if (reference.external() != external
                     || (!external && reference.targetBasket().filter(target -> !target.value().equals(basket.value())).isPresent())
                     || (reference.target() instanceof ObjectOid) != hasWireOid(mapping, root)) {
@@ -1695,7 +1712,11 @@ final class DbTransfer {
             } else {
                 checkReference(patch, target);
             }
-            return target;
+            return target != null && mappedInColumn(column, target) ? target : null;
+        }
+
+        private boolean mappedInColumn(Column column, StoredObject target) {
+            return column.referenceTable().isEmpty() || mapping.occupies(target.type(), column.referenceTable().orElseThrow());
         }
 
         void finishBasket() throws SQLException {
@@ -1720,6 +1741,7 @@ final class DbTransfer {
                             patch.targetBasket().map(BasketId::value));
                 }
                 checkReference(patch, target);
+                if (!mappedInColumn(patch.column(), target)) continue;
                 var statement = updates.get(patch.column());
                 if (statement == null) {
                     statement = db.connection().prepareStatement("UPDATE " + db.table(patch.table().name())

@@ -120,6 +120,10 @@ final class DbInteropTest {
     @Test void geoPackageSmart2Scalars24() throws Exception { exchangeSmart2Scalars(24, null); }
     @Test void postgisSmart2Scalars23() throws Exception { exchangeWithPostgis(23, this::exchangeSmart2Scalars); }
     @Test void postgisSmart2Scalars24() throws Exception { exchangeWithPostgis(24, this::exchangeSmart2Scalars); }
+    @Test void geoPackageSmart2References23() throws Exception { exchangeSmart2References(23, null); }
+    @Test void geoPackageSmart2References24() throws Exception { exchangeSmart2References(24, null); }
+    @Test void postgisSmart2References23() throws Exception { exchangeWithPostgis(23, this::exchangeSmart2References); }
+    @Test void postgisSmart2References24() throws Exception { exchangeWithPostgis(24, this::exchangeSmart2References); }
 
     private void exchangeSmart1Scalars(int version, PostgreSQLContainer postgres) throws Exception {
         var db = new TestDatabase(postgres, "smart1_scalars");
@@ -135,6 +139,11 @@ final class DbInteropTest {
     private void exchangeSmart2Scalars(int version, PostgreSQLContainer postgres) throws Exception {
         var db = new TestDatabase(postgres, "smart2_scalars");
         new SmartCases(work, new ReferenceTool(db.postgis()), version).smart2Scalars(db);
+    }
+
+    private void exchangeSmart2References(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "smart2_references");
+        new SmartCases(work, new ReferenceTool(db.postgis()), version).smart2References(db);
     }
 
     @Test void geoPackageTranslationSources23() throws Exception { exchangeTranslationSources(23, null); }

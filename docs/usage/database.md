@@ -226,6 +226,10 @@ konkrete Typ der Zielzeile geprüft.
 Für Smart2-Schemata unterstützt der Transfer skalare Klassenattribute
 in den vollständigen Tabellen der konkreten Klassen. Das Referenzschema
 verwendet dazu `--noSmartMapping --smart2Inheritance`.
+Bei polymorphen Referenzattributen und ungeordneten Rollen verwendet
+Smart2 alternative Fremdschlüsselspalten. Der Import befüllt die
+passende Zielspalte. Mehrere gleichzeitig belegte Zielspalten für
+eine Referenz führen zu einer Diagnose.
 
 Unterstützt sind Klassen eines eigenständigen Modells in
 INTERLIS 2.3 und 2.4 mit Text, Boolean, 32-Bit-Ganzzahlen und Aufzählungen als

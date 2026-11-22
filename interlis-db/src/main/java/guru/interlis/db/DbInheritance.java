@@ -6,7 +6,9 @@ import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.TransferPlan;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,11 +38,20 @@ final class DbInheritance {
     private final List<Declaration> declarations;
     private final List<Relation> relations;
     private final Map<SymbolRef, SymbolRef> owners;
+    private final Map<SymbolRef, Strategy> strategies;
+    private final Map<SymbolRef, List<SymbolRef>> children;
 
     DbInheritance(TransferPlan plan, List<Declaration> declarations, Profile profile) {
         this.declarations = List.copyOf(declarations);
         var strategies = new LinkedHashMap<SymbolRef, Strategy>();
-        for (var declaration : declarations) strategies.put(declaration.object().symbol(), declaration.strategy());
+        var children = new LinkedHashMap<SymbolRef, List<SymbolRef>>();
+        for (var declaration : declarations) {
+            var object = declaration.object();
+            strategies.put(object.symbol(), declaration.strategy());
+            object.baseType().ifPresent(base -> children.computeIfAbsent(base, unused -> new ArrayList<>()).add(object.symbol()));
+        }
+        this.strategies = Map.copyOf(strategies);
+        this.children = Map.copyOf(children);
         var placements = new LinkedHashMap<SymbolRef, SymbolRef>();
         for (var declaration : declarations) {
             var object = declaration.object();
@@ -94,6 +105,21 @@ final class DbInheritance {
     }
 
     List<Relation> relations() { return relations; }
+
+    List<SymbolRef> referenceTables(SymbolRef declared) {
+        var tables = new LinkedHashSet<SymbolRef>();
+        var pending = new ArrayDeque<SymbolRef>();
+        pending.add(declared);
+        while (!pending.isEmpty()) {
+            var candidate = pending.removeFirst();
+            var strategy = strategies.get(candidate);
+            if (strategy == null) continue;
+            var owner = owners.get(candidate);
+            if (owner != null) tables.add(owner);
+            if (strategy.copiesFields()) pending.addAll(children.getOrDefault(candidate, List.of()));
+        }
+        return List.copyOf(tables);
+    }
 
     List<DbMapping.StorageAlias> aliases() {
         return declarations.stream().filter(entry -> entry.strategy() == Strategy.SUPER_CLASS)

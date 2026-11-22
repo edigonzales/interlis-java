@@ -8,6 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
@@ -149,6 +151,48 @@ final class SmartCases {
         assertEquals(prefix + "-m", id(child(owner, "Observed"), version, "ref"));
         object(basket, model, "SmartUnit", prefix + "-s");
         object(basket, model, "Terminal", prefix + "-t");
+    }
+
+    void smart2References(TestDatabase db) throws Exception {
+        String model = "SmartPoly" + version;
+        var source = fixture(model + ".ili");
+        referenceSchema(db, model, "smart2");
+        Files.delete(source);
+        var input = fixture(model + ".xtf");
+        var output = work.resolve("smart2-refs-output.xtf");
+        referenceImport(db, "legacy", input);
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertPolymorphicReferences(output, model, "fixture");
+        assertCliSuccess(db, "import", model, "native", transferWithPrefix(input, "native"));
+        referenceExport(db, "native", output);
+        assertPolymorphicReferences(output, model, "native");
+        try (var sql = db.connect()) {
+            assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("note") + " n JOIN "
+                    + db.table("terminal") + " t ON n.anyinstrument_terminal=t.t_id JOIN "
+                    + db.table("smartunit") + " s ON n.smarttarget=s.t_id WHERE n.anyinstrument_meter IS NULL"
+                    + " AND n.anyinstrument_smartunit IS NULL AND t.t_basket=s.t_basket AND n.t_basket=t.t_basket"));
+            assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("survey") + " s JOIN "
+                    + db.table("meter") + " m ON s.observed_meter=m.t_id WHERE s.observed_terminal IS NULL"
+                    + " AND s.observed_smartunit IS NULL AND s.t_basket=m.t_basket"));
+            assertEquals("4", scalar(sql, "SELECT COUNT(*) FROM " + db.table("crosscheck")
+                    + " WHERE checkedinstrument_meter IS NULL AND ((checkedinstrument_smartunit IS NULL)"
+                    + " <> (checkedinstrument_terminal IS NULL))"));
+            execute(sql, "UPDATE " + db.table("survey") + " SET observed_terminal=(SELECT t_id FROM "
+                    + db.table("terminal") + " WHERE t_ili_tid='native-t') WHERE t_ili_tid='native-survey'");
+        }
+        var saved = Files.readString(output);
+        assertCliFailure(db, "export", model, "native", output, "Multiple stored values for " + model + ".Data.Observation.Observed");
+        assertEquals(saved, Files.readString(output));
+    }
+
+    private void assertPolymorphicReferences(Path file, String model, String prefix) throws Exception {
+        assertReferences(file, model, prefix);
+        var basket = children(readDataSection(file, version)).getFirst();
+        var links = children(basket).stream().filter(element -> element.getLocalName().endsWith("CrossCheck")).toList();
+        assertEquals(2, links.size());
+        assertEquals(Set.of(prefix + "-t", prefix + "-s"), links.stream()
+                .map(link -> id(child(link, "CheckedInstrument"), version, "ref")).collect(Collectors.toSet()));
+        for (var link : links) assertEquals(prefix + "-survey", id(child(link, "CheckedSurvey"), version, "ref"));
     }
 
     private void assertScalarObjects(Path path, String model, String prefix, boolean emptyMemo) throws Exception {

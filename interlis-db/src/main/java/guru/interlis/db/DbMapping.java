@@ -83,7 +83,7 @@ final class DbMapping {
     record CrsDefaults(int schemaEpsg, int modelEpsg) { }
 
     record Column(TransferSlot slot, String name, Kind kind, Optional<TypeDescriptor> effectiveType,
-                  Optional<SymbolRef> target, int epsgCode, int srsId, boolean legacyEpsgHeader,
+                  Optional<SymbolRef> target, Optional<SymbolRef> referenceTable, int epsgCode, int srsId, boolean legacyEpsgHeader,
                   Optional<String> positionColumn, int dimensions, Optional<DomainBinding> domainBinding) {
         Column {
             boolean role = slot instanceof RoleSlot;
@@ -93,25 +93,34 @@ final class DbMapping {
         }
 
         Column withName(String sqlName) {
-            return new Column(slot, sqlName, kind, effectiveType, target, epsgCode, srsId, legacyEpsgHeader,
+            return new Column(slot, sqlName, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
                     positionColumn, dimensions, domainBinding);
         }
 
         Column withEpsg(int epsg) {
-            return new Column(slot, name, kind, effectiveType, target, epsg, epsg, false,
+            return new Column(slot, name, kind, effectiveType, target, referenceTable, epsg, epsg, false,
                     positionColumn, dimensions, domainBinding);
         }
 
         Column withSrsId(int id, boolean acceptsEpsgHeader) {
-            return new Column(slot, name, kind, effectiveType, target, epsgCode, id, acceptsEpsgHeader,
+            return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, id, acceptsEpsgHeader,
                     positionColumn, dimensions, domainBinding);
         }
 
         Column withPositionColumn(boolean gpkg) {
             String position = name + "_" + (gpkg ? SEQ_COLUMN : T_SEQ);
             checkColumnName(slot, position, false, false, gpkg);
-            return new Column(slot, name, kind, effectiveType, target, epsgCode, srsId, legacyEpsgHeader,
+            return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
                     Optional.of(position), dimensions, domainBinding);
+        }
+
+        Column withReferenceTable(SymbolRef table) {
+            return new Column(slot, name, kind, effectiveType, target, Optional.of(table), epsgCode, srsId,
+                    legacyEpsgHeader, positionColumn, dimensions, domainBinding);
+        }
+
+        SymbolRef targetRelation() {
+            return referenceTable.orElseGet(target::orElseThrow);
         }
 
         boolean external() {
@@ -194,6 +203,7 @@ final class DbMapping {
     private final Map<SymbolRef, Table> bySymbol;
     private final Map<String, ObjectStorage> byDiscriminator;
     private final Map<SymbolRef, ObjectStorage> storage;
+    private final Map<SymbolRef, List<Table>> referenceTables;
     private final Map<Table, List<Table>> hierarchies;
     private final Map<SymbolRef, Map<SymbolRef, SymbolRef>> extendedFields;
     private final List<Composition> compositions;
@@ -240,6 +250,11 @@ final class DbMapping {
             paths.put(alias.object().symbol(), new ObjectStorage(alias.object(), alias.discriminator(), owner.rows()));
         }
         storage = Map.copyOf(paths);
+        referenceTables = this.tables.stream().flatMap(table -> table.columns().stream())
+                .filter(column -> column.target().isPresent())
+                .collect(Collectors.groupingBy(column -> column.target().orElseThrow(),
+                        Collectors.mapping(column -> table(column.targetRelation()), Collectors.collectingAndThen(
+                                Collectors.toCollection(java.util.LinkedHashSet::new), List::copyOf))));
         byDiscriminator = storage.values().stream().collect(Collectors.toUnmodifiableMap(
                 ObjectStorage::discriminator, Function.identity()));
         hierarchies = families.entrySet().stream().collect(Collectors.toUnmodifiableMap(
@@ -353,6 +368,14 @@ final class DbMapping {
     }
     List<Table> tableChain(SymbolRef type) { return storage(type).rows(); }
     Table rootTable(SymbolRef type) { return storage(type).root(); }
+
+    Table referenceRoot(Column column) { return rootTable(column.targetRelation()); }
+
+    List<Table> referenceTables(SymbolRef target) { return referenceTables.getOrDefault(target, List.of()); }
+
+    boolean occupies(SymbolRef actual, SymbolRef relation) {
+        return storage(actual).rows().stream().anyMatch(row -> row.object().symbol().equals(relation));
+    }
 
     boolean isAssignableTo(SymbolRef actual, SymbolRef declared) {
         for (var type = actual; type != null; type = plan.object(type).orElseThrow().baseType().orElse(null)) {
@@ -815,7 +838,7 @@ final class DbMapping {
     }
 
     static Column roleColumn(RoleSlot role, SymbolRef target, String name) {
-        return new Column(role, name, Kind.REFERENCE, Optional.empty(), Optional.of(target), 0, 0, false,
+        return new Column(role, name, Kind.REFERENCE, Optional.empty(), Optional.of(target), Optional.empty(), 0, 0, false,
                 Optional.empty(), 0, Optional.empty());
     }
 
@@ -937,7 +960,7 @@ final class DbMapping {
             epsg = concrete.isPresent() ? explicitEpsg(coordinates, concrete.orElseThrow(), path)
                     : pointEpsg(plan, attr, coordinates, defaults, path);
         }
-        return new Column(attr, name, kind, Optional.of(type), target, epsg, epsg, false, Optional.empty(), dimensions, selection);
+        return new Column(attr, name, kind, Optional.of(type), target, Optional.empty(), epsg, epsg, false, Optional.empty(), dimensions, selection);
     }
 
     private record Curve(Kind kind, int dimensions, int epsg) { }

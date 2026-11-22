@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="test"><MODELS><MODEL NAME="SmartPoly23" VERSION="1" URI="https://example.org/smart"/></MODELS></HEADERSECTION>
+  <DATASECTION>
+    <SmartPoly23.Data BID="fixture-b">
+      <SmartPoly23.Data.Survey TID="fixture-survey">
+        <Details><SmartPoly23.Data.Note><AnyInstrument REF="fixture-t"/><SmartTarget REF="fixture-s"/></SmartPoly23.Data.Note></Details>
+        <Observed REF="fixture-m"/>
+      </SmartPoly23.Data.Survey>
+      <SmartPoly23.Data.Meter TID="fixture-m"><Memo>meter</Memo><Counter>5</Counter></SmartPoly23.Data.Meter>
+      <SmartPoly23.Data.SmartUnit TID="fixture-s"><Memo>smart</Memo><Counter>7</Counter><Badge>tag</Badge></SmartPoly23.Data.SmartUnit>
+      <SmartPoly23.Data.Terminal TID="fixture-t"><Memo>terminal</Memo><Socket>p1</Socket></SmartPoly23.Data.Terminal>
+      <SmartPoly23.Data.CrossCheck><CheckedInstrument REF="fixture-t"/><CheckedSurvey REF="fixture-survey"/></SmartPoly23.Data.CrossCheck>
+      <SmartPoly23.Data.CrossCheck><CheckedInstrument REF="fixture-s"/><CheckedSurvey REF="fixture-survey"/></SmartPoly23.Data.CrossCheck>
+    </SmartPoly23.Data>
+  </DATASECTION>
+</TRANSFER>

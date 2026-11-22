@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="http://www.interlis.ch/xtf/2.4/SmartPoly24">
+  <i:headersection><i:models><i:model>SmartPoly24</i:model></i:models></i:headersection>
+  <i:datasection>
+    <Data i:bid="fixture-b">
+      <Survey i:tid="fixture-survey">
+        <Details><Note><AnyInstrument i:ref="fixture-t"/><SmartTarget i:ref="fixture-s"/></Note></Details>
+        <Observed i:ref="fixture-m"/>
+      </Survey>
+      <Meter i:tid="fixture-m"><Memo>meter</Memo><Counter>5</Counter></Meter>
+      <SmartUnit i:tid="fixture-s"><Memo>smart</Memo><Counter>7</Counter><Badge>tag</Badge></SmartUnit>
+      <Terminal i:tid="fixture-t"><Memo>terminal</Memo><Socket>p1</Socket></Terminal>
+      <CrossCheck><CheckedInstrument i:ref="fixture-t"/><CheckedSurvey i:ref="fixture-survey"/></CrossCheck>
+      <CrossCheck><CheckedInstrument i:ref="fixture-s"/><CheckedSurvey i:ref="fixture-survey"/></CrossCheck>
+    </Data>
+  </i:datasection>
+</i:transfer>
