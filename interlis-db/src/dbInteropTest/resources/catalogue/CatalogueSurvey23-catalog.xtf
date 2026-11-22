@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION SENDER="test" VERSION="2.3">
+    <MODELS><MODEL NAME="CatalogueSurvey23" VERSION="2026-01-01" URI="https://example.org"/></MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <CatalogueSurvey23.Catalog BID="cat-b">
+      <CatalogueSurvey23.Catalog.Material TID="material-a"><Label>Timber</Label></CatalogueSurvey23.Catalog.Material>
+    </CatalogueSurvey23.Catalog>
+  </DATASECTION>
+</TRANSFER>

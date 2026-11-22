@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="http://www.interlis.ch/xtf/2.4/CatalogueDirect24">
+  <i:headersection><i:models><i:model>CatalogueDirect24</i:model></i:models></i:headersection>
+  <i:datasection>
+    <Survey i:bid="survey-b"><Asset i:tid="survey-a"><Material i:ref="material-a"/></Asset></Survey>
+  </i:datasection>
+</i:transfer>

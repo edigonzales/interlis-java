@@ -214,6 +214,14 @@ benötigt die gespeicherten BID/TID und bewahrt sie beim Werkzeugwechsel.
 Ein Datensatz enthält mindestens einen Basket. Baskets ohne Objekte sind
 zulässig.
 
+In bestehenden `newClass`-Schemata aus ili2db 5.5.2 mit
+`--coalesceCatalogueRef` verwendet der FULL-Transfer die Fremdschlüsselspalte
+des Fachattributs für CHBase-V1-Katalogreferenzen. Dies gilt für Einzelwerte
+aus `CatalogueReference` und `MandatoryCatalogueReference` mit dem einzigen
+Feld `Reference`. Das XTF behält die Struktur. Ein fehlender Verweis wird als
+SQL-`NULL` gespeichert und das Feld beim Export weggelassen. Das Ziel kann
+in einem separaten Datensatz desselben Schemas liegen.
+
 Für bestehende Smart1-Schemata unterstützt `interlis-db` den FULL-Import
 und -Export von Klassenhierarchien mit skalaren Attributen. Das
 Referenzschema lässt sich mit `--noSmartMapping --smart1Inheritance`

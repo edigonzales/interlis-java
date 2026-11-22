@@ -1046,7 +1046,10 @@ final class DbTransfer {
                         : Optional.<BasketId>empty();
                 String value = storedTid(root, tid);
                 TransferIdentity.ObjectKey key = hasWireOid(mapping, root) ? new ObjectOid(value) : new TransferId(value, IdOrigin.SOURCE);
-                yield new Reference(key, bid, column.external(), position);
+                var reference = new Reference(key, bid, column.external(), position);
+                var catalogue = column.catalogueReference();
+                yield catalogue.<TransferValue>map(binding ->
+                        new Structured(binding.structure(), Map.of(binding.field().symbol(), reference))).orElse(reference);
             }
         };
     }
@@ -1675,6 +1678,14 @@ final class DbTransfer {
 
         private int bindColumn(PreparedStatement statement, int index, Table table, Column column, long id,
                                String context, BasketId basket, TransferValue value) throws SQLException {
+            if (column.catalogueReference().isPresent() && value != null && value != Undefined.INSTANCE) {
+                var binding = column.catalogueReference().orElseThrow();
+                if (!(value instanceof Structured structure) || !binding.structure().equals(structure.type())
+                        || structure.values().keySet().stream().anyMatch(field -> !binding.field().symbol().equals(field))) {
+                    throw new DbException("Unsupported catalogue reference in " + context + " at " + column.slot().name().declared());
+                }
+                value = structure.values().get(binding.field().symbol());
+            }
             Optional<BigInteger> position = Optional.empty();
             if (column.kind() == DbMapping.Kind.REFERENCE && value instanceof Reference reference) {
                 var target = bindReference(table, column, id, context, basket, reference);

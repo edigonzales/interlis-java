@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION SENDER="test" VERSION="2.3">
+    <MODELS><MODEL NAME="CatalogueSurvey23" VERSION="2026-01-01" URI="https://example.org"/></MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <CatalogueSurvey23.Survey BID="survey-b">
+      <CatalogueSurvey23.Survey.Asset TID="survey-a">
+        <MainMaterial><CatalogueSurvey23.Catalog.MaterialRef><Reference REF="material-a" BID="cat-b"/></CatalogueSurvey23.Catalog.MaterialRef></MainMaterial>
+        <RequiredMaterial><CatalogueSurvey23.Catalog.MaterialMandatory><Reference REF="material-a" BID="cat-b"/></CatalogueSurvey23.Catalog.MaterialMandatory></RequiredMaterial>
+      </CatalogueSurvey23.Survey.Asset>
+      <CatalogueSurvey23.Survey.Asset TID="survey-empty"><MainMaterial><CatalogueSurvey23.Catalog.MaterialRef/></MainMaterial></CatalogueSurvey23.Survey.Asset>
+      <CatalogueSurvey23.Survey.Asset TID="survey-absent"/>
+    </CatalogueSurvey23.Survey>
+  </DATASECTION>
+</TRANSFER>

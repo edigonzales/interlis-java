@@ -1,0 +1,42 @@
+INTERLIS 2.4;
+
+MODEL CatalogueObjects_V1 (en) AT "https://example.org" VERSION "2026-01-01" =
+  TOPIC Catalogues (ABSTRACT) =
+    CLASS Item (ABSTRACT) =
+    END Item;
+
+    STRUCTURE CatalogueReference (ABSTRACT) =
+      Reference : REFERENCE TO (EXTERNAL) Item;
+    END CatalogueReference;
+
+    STRUCTURE MandatoryCatalogueReference (ABSTRACT) =
+      Reference : MANDATORY REFERENCE TO (EXTERNAL) Item;
+    END MandatoryCatalogueReference;
+  END Catalogues;
+END CatalogueObjects_V1.
+
+MODEL CatalogueSurvey24 (en) AT "https://example.org" VERSION "2026-01-01" =
+  IMPORTS CatalogueObjects_V1;
+
+  TOPIC Catalog EXTENDS CatalogueObjects_V1.Catalogues =
+    CLASS Material EXTENDS CatalogueObjects_V1.Catalogues.Item =
+      Label : TEXT*40;
+    END Material;
+
+    STRUCTURE MaterialRef EXTENDS CatalogueObjects_V1.Catalogues.CatalogueReference =
+      Reference (EXTENDED) : REFERENCE TO (EXTERNAL) Material;
+    END MaterialRef;
+
+    STRUCTURE MaterialMandatory EXTENDS CatalogueObjects_V1.Catalogues.MandatoryCatalogueReference =
+      Reference (EXTENDED) : MANDATORY REFERENCE TO (EXTERNAL) Material;
+    END MaterialMandatory;
+  END Catalog;
+
+  TOPIC Survey =
+    DEPENDS ON Catalog;
+    CLASS Asset =
+      MainMaterial : CatalogueSurvey24.Catalog.MaterialRef;
+      RequiredMaterial : CatalogueSurvey24.Catalog.MaterialMandatory;
+    END Asset;
+  END Survey;
+END CatalogueSurvey24.

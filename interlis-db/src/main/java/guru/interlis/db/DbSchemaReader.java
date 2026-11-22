@@ -77,7 +77,7 @@ final class DbSchemaReader {
         }
     }
 
-    private record Transformations(Map<String, String> classes, Map<String, String> secondary) { }
+    private record Transformations(Map<String, String> classes, Map<String, String> secondary, Set<String> catalogue) { }
 
     private record CatalogTable(String name, Map<String, String> columns, Set<String> used) { }
 
@@ -137,6 +137,7 @@ final class DbSchemaReader {
         });
         var attrNames = readAttributeNames(db, scope);
         var transformations = readTransformations(db, scope);
+        var usedCatalogueMappings = new HashSet<String>();
         var inheritance = readInheritance(db, scope);
         var names = new HashMap<SymbolRef, String>();
         var usedNames = new HashSet<String>();
@@ -217,6 +218,17 @@ final class DbSchemaReader {
                 var defaults = settings.crs(plan.model(contributor.model()).orElseThrow().name().declared().last());
                 for (var attr : DbMapping.attributes(contributor)) {
                     String path = attr.name().declared().toString();
+                    if (transformations.catalogue().contains(path)) {
+                        var binding = DbCatalogueReference.describe(plan, attr)
+                                .orElseThrow(() -> unsupported("catalogue reference at " + path));
+                        if (settings.inheritance() != DbInheritance.Profile.NEW_CLASS) {
+                            throw unsupported("catalogue reference inheritance at " + path);
+                        }
+                        columns.addAll(bindReferences(db, parent, attrNames, layout, names,
+                                DbMapping.catalogueColumn(plan, contributor, attr, binding), false, settings));
+                        usedCatalogueMappings.add(path);
+                        continue;
+                    }
                     var composition = DbMapping.describeComposition(plan, object, attr, path);
                     if (composition.isPresent()) {
                         var binding = composition.orElseThrow();
@@ -278,6 +290,9 @@ final class DbSchemaReader {
         }
         if (!classNames.isEmpty() || !transformations.secondary().isEmpty()) {
             throw new DbException("Extra CLASSNAME/TRAFO mappings for " + modelName);
+        }
+        for (var path : transformations.catalogue()) {
+            if (!usedCatalogueMappings.contains(path)) throw unsupported("catalogue reference TRAFO entry for " + path);
         }
         if (settings.inheritance() != DbInheritance.Profile.NEW_CLASS) {
             unselectedOwners.removeAll(usedNames);
@@ -684,6 +699,7 @@ final class DbSchemaReader {
         requireMetadataColumns(db, table, "iliname", "tag", "setting");
         var result = new HashMap<String, String>();
         var secondary = new HashMap<String, String>();
+        var catalogue = new HashSet<String>();
         try (var stmt = scopedMetadata(db, table, "iliname, tag, setting", "iliname", scope);
              var rows = stmt.executeQuery()) {
             while (rows.next()) {
@@ -693,12 +709,16 @@ final class DbSchemaReader {
                 String tag = rows.getString(2);
                 if (Ili2dbLayout.SECONDARY_TABLE_TAG.equals(tag)) {
                     if (secondary.putIfAbsent(path, setting) != null) throw unsupported("TRAFO entries for " + path);
+                } else if (Ili2dbLayout.CATALOGUE_REF_TAG.equals(tag)) {
+                    if (!Ili2dbLayout.COALESCE.equals(setting) || !catalogue.add(path)) {
+                        throw unsupported("catalogue reference TRAFO entry for " + path);
+                    }
                 } else if (!INHERITANCE_TAG.equals(tag) || result.putIfAbsent(path, setting) != null) {
                     throw unsupported("TRAFO entries for " + path);
                 }
             }
         }
-        return new Transformations(result, secondary);
+        return new Transformations(result, secondary, catalogue);
     }
 
     private static Map<String, String> readInheritance(Database db, MetadataScope scope) throws SQLException {
@@ -836,7 +856,7 @@ final class DbSchemaReader {
             var described = reference.withName(binding.name());
             if (!target.equals(declared) || targets.size() > 1) described = described.withReferenceTable(target);
             var column = bindColumn(db, table, tableNames, described, binding, path, settings);
-            if (settings.inheritance() == DbInheritance.Profile.SMART2) {
+            if (settings.inheritance() == DbInheritance.Profile.SMART2 || reference.catalogueReference().isPresent()) {
                 requireForeignKey(db, table.name(), binding.name(), targetName, path);
             }
             columns.add(ordered ? bindPosition(db, table, column) : column);

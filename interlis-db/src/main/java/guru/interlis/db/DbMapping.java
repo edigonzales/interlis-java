@@ -84,7 +84,8 @@ final class DbMapping {
 
     record Column(TransferSlot slot, String name, Kind kind, Optional<TypeDescriptor> effectiveType,
                   Optional<SymbolRef> target, Optional<SymbolRef> referenceTable, int epsgCode, int srsId, boolean legacyEpsgHeader,
-                  Optional<String> positionColumn, int dimensions, Optional<DomainBinding> domainBinding) {
+                  Optional<String> positionColumn, int dimensions, Optional<DomainBinding> domainBinding,
+                  Optional<DbCatalogueReference> catalogueReference) {
         Column {
             boolean role = slot instanceof RoleSlot;
             if (effectiveType.isEmpty() != role || (role && kind != Kind.REFERENCE)) {
@@ -92,31 +93,39 @@ final class DbMapping {
             }
         }
 
+        Column(TransferSlot slot, String name, Kind kind, Optional<TypeDescriptor> effectiveType,
+               Optional<SymbolRef> target, Optional<SymbolRef> referenceTable, int epsgCode, int srsId,
+               boolean legacyEpsgHeader, Optional<String> positionColumn, int dimensions,
+               Optional<DomainBinding> domainBinding) {
+            this(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
+                    positionColumn, dimensions, domainBinding, Optional.empty());
+        }
+
         Column withName(String sqlName) {
             return new Column(slot, sqlName, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
-                    positionColumn, dimensions, domainBinding);
+                    positionColumn, dimensions, domainBinding, catalogueReference);
         }
 
         Column withEpsg(int epsg) {
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsg, epsg, false,
-                    positionColumn, dimensions, domainBinding);
+                    positionColumn, dimensions, domainBinding, catalogueReference);
         }
 
         Column withSrsId(int id, boolean acceptsEpsgHeader) {
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, id, acceptsEpsgHeader,
-                    positionColumn, dimensions, domainBinding);
+                    positionColumn, dimensions, domainBinding, catalogueReference);
         }
 
         Column withPositionColumn(boolean gpkg) {
             String position = name + "_" + (gpkg ? SEQ_COLUMN : T_SEQ);
             checkColumnName(slot, position, false, false, gpkg);
             return new Column(slot, name, kind, effectiveType, target, referenceTable, epsgCode, srsId, legacyEpsgHeader,
-                    Optional.of(position), dimensions, domainBinding);
+                    Optional.of(position), dimensions, domainBinding, catalogueReference);
         }
 
         Column withReferenceTable(SymbolRef table) {
             return new Column(slot, name, kind, effectiveType, target, Optional.of(table), epsgCode, srsId,
-                    legacyEpsgHeader, positionColumn, dimensions, domainBinding);
+                    legacyEpsgHeader, positionColumn, dimensions, domainBinding, catalogueReference);
         }
 
         SymbolRef targetRelation() {
@@ -487,8 +496,14 @@ final class DbMapping {
                 }
             }
             for (var slot : attributes(object)) {
-                describeComposition(plan, object, slot, slot.name().declared().last()).ifPresent(binding ->
-                        include(plan.object(binding.child()).orElseThrow(), selected, pending));
+                var type = plan.type(slot.effectiveType()).known().orElseThrow();
+                if (type instanceof CollectionType collection) {
+                    type = plan.type(new TypeRef(plan.snapshotId(), collection.elementType())).known().orElseThrow();
+                }
+                if (type instanceof StructureValueType structure) {
+                    structure.target().flatMap(id -> plan.object(new SymbolRef(plan.snapshotId(), id)))
+                            .ifPresent(child -> include(child, selected, pending));
+                }
             }
         }
         return plan.objects().stream().filter(object -> selected.contains(object.symbol())).toList();
@@ -727,15 +742,17 @@ final class DbMapping {
     private static void checkInheritance(TransferPlan plan, List<ObjectDescriptor> objects, Set<SymbolRef> hierarchy) {
         for (var object : objects) {
             if (!hierarchy.contains(object.symbol())) continue;
+            boolean catalogueWrapper = object.kind() == SymbolKind.STRUCTURE && DbCatalogueReference.isWrapper(plan, object);
             if (object.baseType().isPresent()
                     && plan.object(object.baseType().orElseThrow()).filter(base -> base.kind() == object.kind()
-                    && (base.topic().equals(object.topic()) || (object.kind() == SymbolKind.CLASS
+                    && (catalogueWrapper || base.topic().equals(object.topic()) || (object.kind() == SymbolKind.CLASS
                     && localTopic(plan, object, base)))).isEmpty()) {
                 throw unsupported("base type outside the current topic or of a different kind at " + object.name().declared());
             }
             for (var slot : object.slots()) {
                 if (!(slot instanceof AttributeSlot attribute)) continue;
-                if (attribute.member().overridden() && !(object.kind() == SymbolKind.CLASS
+                if (attribute.member().overridden() && !(catalogueWrapper && DbCatalogueReference.isReferenceField(attribute))
+                        && !(object.kind() == SymbolKind.CLASS
                         && !attribute.attribute().transientAttribute()
                         && plan.type(attribute.effectiveType()).known().orElseThrow() instanceof TextType text
                         && text.textKind() == TextKind.TEXT)) {
@@ -888,6 +905,14 @@ final class DbMapping {
         return describeComposition(plan, parent, slot, child -> ownerColumn);
     }
 
+    static Column catalogueColumn(TransferPlan plan, ObjectDescriptor object, AttributeSlot outer,
+                                  DbCatalogueReference binding) {
+        var target = referenceTarget(plan, object, outer, binding.reference());
+        return new Column(outer, outer.name().declared().last(), Kind.REFERENCE, Optional.of(binding.reference()),
+                Optional.of(target), Optional.empty(), 0, 0, false, Optional.empty(), 0, Optional.empty(),
+                Optional.of(binding));
+    }
+
     private static Optional<Composition> describeComposition(TransferPlan plan, ObjectDescriptor parent,
                                                              AttributeSlot slot, Function<SymbolRef, String> ownerColumn) {
         String path = slot.name().declared().toString();
@@ -971,7 +996,9 @@ final class DbMapping {
                     coordinates.multiCoordinate() ? Kind.MULTIPOINT : Kind.POINT;
             case GeometryType ignored when curve != null -> curve.kind();
             case ReferenceType reference when reference.target().isPresent()
-                    && reference.restrictions().isEmpty() && optional(attr) -> Kind.REFERENCE;
+                    && reference.restrictions().isEmpty() && (optional(attr)
+                    || (DbCatalogueReference.isReferenceField(attr) && DbCatalogueReference.isWrapper(plan, object))) ->
+                    Kind.REFERENCE;
             default -> {
                 if (type.kind() == TypeKind.BOOLEAN) yield Kind.BOOLEAN;
                 throw unsupported("attribute " + path + " (" + type.kind() + ")");
@@ -983,13 +1010,7 @@ final class DbMapping {
         }
         Optional<SymbolRef> target = Optional.empty();
         if (type instanceof ReferenceType ref) {
-            var symbol = new SymbolRef(plan.snapshotId(), ref.target().orElseThrow());
-            if (plan.object(symbol).filter(obj -> obj.kind() == SymbolKind.CLASS
-                    && (localTopic(plan, object, obj) || (ref.external() && inDependentTopic(plan, object, obj))))
-                    .isEmpty()) {
-                throw unsupported("reference outside the supported topic or class at " + path);
-            }
-            target = Optional.of(symbol);
+            target = Optional.of(referenceTarget(plan, object, attr, ref));
         }
         int dimensions = curve != null ? curve.dimensions()
                 : kind.geometry() ? ((CoordinateType) type).dimensions() : 0;
@@ -1002,6 +1023,15 @@ final class DbMapping {
                     : pointEpsg(plan, attr, coordinates, defaults, path);
         }
         return new Column(attr, name, kind, Optional.of(type), target, Optional.empty(), epsg, epsg, false, Optional.empty(), dimensions, selection);
+    }
+
+    private static SymbolRef referenceTarget(TransferPlan plan, ObjectDescriptor object, AttributeSlot attr, ReferenceType ref) {
+        var symbol = new SymbolRef(plan.snapshotId(), ref.target().orElseThrow());
+        if (plan.object(symbol).filter(obj -> obj.kind() == SymbolKind.CLASS
+                && (localTopic(plan, object, obj) || (ref.external() && inDependentTopic(plan, object, obj)))).isEmpty()) {
+            throw unsupported("reference outside the supported topic or class at " + attr.name().declared());
+        }
+        return symbol;
     }
 
     private record Curve(Kind kind, int dimensions, int epsg) { }

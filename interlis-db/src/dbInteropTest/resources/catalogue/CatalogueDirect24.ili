@@ -1,0 +1,24 @@
+INTERLIS 2.4;
+
+MODEL CatalogueObjects_V2 (en) AT "https://example.org" VERSION "2026-01-01" =
+  TOPIC Catalogues (ABSTRACT) =
+    CLASS Item (ABSTRACT) =
+    END Item;
+  END Catalogues;
+END CatalogueObjects_V2.
+
+MODEL CatalogueDirect24 (en) AT "https://example.org" VERSION "2026-01-01" =
+  IMPORTS CatalogueObjects_V2;
+
+  TOPIC Catalog EXTENDS CatalogueObjects_V2.Catalogues =
+    CLASS Material EXTENDS CatalogueObjects_V2.Catalogues.Item =
+    END Material;
+  END Catalog;
+
+  TOPIC Survey =
+    DEPENDS ON Catalog;
+    CLASS Asset =
+      Material : REFERENCE TO (EXTERNAL) CatalogueDirect24.Catalog.Material;
+    END Asset;
+  END Survey;
+END CatalogueDirect24.

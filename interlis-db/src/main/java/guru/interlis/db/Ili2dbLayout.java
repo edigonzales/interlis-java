@@ -14,6 +14,8 @@ final class Ili2dbLayout {
     static final String MULTIPLE_GEOMETRIES = "multipleGeomAttrPerTable";
     static final String SECONDARY_TABLE_TAG = PREFIX + "secondaryTable";
     static final String INHERITANCE_TAG = PREFIX + "inheritance";
+    static final String CATALOGUE_REF_TAG = PREFIX + "catalogueRefTrafo";
+    static final String COALESCE = "coalesce";
     static final String NEW_CLASS = "newClass";
     static final String SRID_PROPERTY = "srid";
     static final String EMBEDDED = "embedded";
