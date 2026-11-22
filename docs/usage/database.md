@@ -145,6 +145,10 @@ Erweiterte Aufzählungsdomänen teilen die Tabelle ihrer Basisdefinition.
 `thisClass` unterscheidet die Zeilen für den jeweiligen Typ, auch
 wenn beide denselben XTF-Code enthalten. `seq` folgt der expliziten
 Ordnungsdeklaration des Typs.
+`--add-models` übernimmt die gespeicherten Aufzählungsoptionen.
+Lookup-Zeilen für neue Definitionen werden in derselben Transaktion
+ergänzt. Vorhandene IDs, Anzeigenamen und Inaktiv-Markierungen bleiben
+erhalten.
 
 ## Bestehendes Schema ergänzen
 

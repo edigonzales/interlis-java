@@ -111,6 +111,10 @@ Referenzimport.
 Die `*EnumIdExtension*`-Fälle prüfen gemeinsame Lookup-Tabellen für
 Domänenerweiterungen, geerbte und neue Codes, explizite Reihenfolge
 sowie die Diagnose einer ID aus der falschen Definition.
+Die `*EnumAppend*`-Fälle prüfen ein unabhängiges Modell und die
+Erweiterung einer bestehenden Aufzählungsdomäne. Ein SQL-Konflikt beim
+Einfügen der Lookup-Zeilen muss auch Modellmetadaten und Fachtabellen
+zurückrollen.
 
 Die `*ArrayText*`-Fälle prüfen Reihenfolge, Duplikate, Sonderzeichen,
 gespeicherte SQL-Spaltennamen und den bekannten Referenzfehler bei

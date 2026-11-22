@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class EnumerationCases {
     private static final String BASE = """
@@ -323,6 +324,96 @@ final class EnumerationCases {
         assertEquals("Family.Extra", child(objects.get(prefix + "-extra"), "DerivedValue").getTextContent());
     }
 
+    void appendEnums(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "EnumBase" + version;
+        int domainEnd = BASE.indexOf("CLASS Asset");
+        Path base = source(model, BASE.substring(0, domainEnd), BASE.substring(domainEnd));
+        schema(expected, model, "--createEnumTabsWithId");
+        create(own, model, base, "--create-enum-tabs-with-id");
+        String added = "EnumAppend" + version;
+        Path addition = source(added, """
+                IMPORTS %s;
+                DOMAIN MoreGrade EXTENDS %s.Grade = (Family (Extra), Final_Code);
+                       Status = (Open_Code, Closed_Code) ORDERED;
+                """.formatted(model, model), """
+                CLASS Detail =
+                  Comparison : %s.Grade;
+                  Choice : MoreGrade;
+                  StatusValue : Status;
+                END Detail;
+                """.formatted(model));
+        String independent = "EnumIndependent" + version;
+        Path standalone = source(independent, """
+                DOMAIN Stage = (Start_Code, End_Code);
+                CLASS IndependentAsset = StageValue : Stage; END IndependentAsset;
+                """);
+        String broken = "EnumBrokenAppend" + version;
+        Path conflict = source(broken, """
+                IMPORTS %s;
+                DOMAIN BrokenGrade EXTENDS %s.Grade = (Unstorable);
+                """.formatted(model, model), "CLASS AbortAsset = Value : BrokenGrade; END AbortAsset;");
+        var output = work.resolve("output.xtf");
+        for (var db : List.of(expected, own)) {
+            referenceImport(db, "base", scalars(model, "base"));
+            try (var sql = db.connect()) {
+                String grade = db.table("grade");
+                String original = " WHERE thisclass = '" + model + ".Grade'";
+                execute(sql, "UPDATE " + grade + " SET dispname = 'kept editor label'" + original + " AND ilicode = 'Family.Alpha'");
+                String existing = "SELECT t_id, ilicode, itfcode, dispname FROM " + grade + original + " ORDER BY itfcode";
+                var before = rows(sql, existing);
+                create(db, independent, standalone, "--add-models");
+                create(db, added, addition, "--add-models", "--model-file", base.toString());
+                assertEquals(before, rows(sql, existing));
+                String status = mappedTable(db, sql, added + ".Status");
+                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table(status)
+                        + " WHERE thisclass = '" + added + ".Status'"));
+                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("stage")
+                        + " WHERE thisclass = '" + independent + ".Data.Stage'"));
+
+                String fields = "<Comparison>Family.Alpha</Comparison><Choice>Family.Extra</Choice><StatusValue>Closed_Code</StatusValue>";
+                referenceImport(db, "legacy", dataset(added, "legacy", object(added, "Detail", "legacy-value", fields)));
+                assertCliSuccess(db, "export", added, "legacy", output);
+                assertAppended(output, "legacy");
+                assertCliSuccess(db, "import", added, "native", dataset(added, "native", object(added, "Detail", "native-value", fields)));
+                referenceExport(db, "native", output);
+                assertAppended(output, "native");
+
+                String column = db.postgis()
+                        ? "ADD CONSTRAINT blocked_enum CHECK (thisclass <> '" + broken + ".BrokenGrade')"
+                        : "ADD COLUMN blocked_enum INTEGER CONSTRAINT blocked_enum CHECK (thisclass <> '" + broken + ".BrokenGrade')";
+                execute(sql, "ALTER TABLE " + grade + " " + column);
+                var result = cli(db, "schemaimport", broken, null, conflict, CancellationToken.none(),
+                        "--add-models", "--model-file", base.toString());
+                assertEquals(1, result.code(), result::diagnostics);
+                assertTrue(result.diagnostics().contains("Cannot write enumeration lookup rows for grade"), result::diagnostics);
+                String abortTable = db.postgis()
+                        ? "information_schema.tables WHERE table_schema = '" + db.schema() + "' AND table_name = 'abortasset'"
+                        : "sqlite_schema WHERE type = 'table' AND name = 'abortasset'";
+                assertEquals("0", scalar(sql, "SELECT count(*) FROM " + abortTable));
+                assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_classname")
+                        + " WHERE iliname LIKE '" + broken + ".%'"));
+                assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_model")
+                        + " WHERE modelname LIKE '" + broken + "%'"));
+                assertEquals("0", scalar(sql, "SELECT count(*) FROM " + grade + " WHERE thisclass = '" + broken + ".BrokenGrade'"));
+                assertEquals(before, rows(sql, existing));
+            }
+            assertCliSuccess(db, "export", model, "base", output);
+            assertScalars(output, "base");
+            referenceExport(db, "base", output);
+            assertScalars(output, "base");
+        }
+    }
+
+    private void assertAppended(Path output, String prefix) throws Exception {
+        var basket = children(readDataSection(output, version)).getFirst();
+        assertEquals(prefix + "-basket", id(basket, version, "bid"));
+        var row = children(basket).getFirst();
+        assertEquals(prefix + "-value", id(row, version, "tid"));
+        assertEquals("Family.Alpha", child(row, "Comparison").getTextContent());
+        assertEquals("Family.Extra", child(row, "Choice").getTextContent());
+        assertEquals("Closed_Code", child(row, "StatusValue").getTextContent());
+    }
+
     private static List<List<String>> rows(Connection sql, String query) throws Exception {
         var result = new ArrayList<List<String>>();
         try (var statement = sql.createStatement(); var rows = statement.executeQuery(query)) {
@@ -403,14 +494,19 @@ final class EnumerationCases {
     }
 
     private Path source(String model, String declarations) throws Exception {
+        return source(model, "", declarations);
+    }
+
+    private Path source(String model, String header, String declarations) throws Exception {
         return Files.writeString(work.resolve(model + ".ili"), """
                 INTERLIS 2.%d;
                 MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
+                %s
                   TOPIC Data =
                 %s
                   END Data;
                 END %s.
-                """.formatted(version - 20, model, declarations, model));
+                """.formatted(version - 20, model, header, declarations, model));
     }
 
     private Path dataset(String model, String prefix, String objects) throws Exception {

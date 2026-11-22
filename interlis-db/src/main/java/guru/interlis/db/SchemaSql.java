@@ -381,6 +381,8 @@ final class SchemaSql {
                     statement.addBatch();
                 }
                 statement.executeBatch();
+            } catch (SQLException failure) {
+                throw new DbException("Cannot write enumeration lookup rows for " + lookup.table(), failure);
             }
         }
     }
