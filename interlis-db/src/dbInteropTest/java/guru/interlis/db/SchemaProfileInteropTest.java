@@ -22,16 +22,6 @@ final class SchemaProfileInteropTest {
         new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version).modelNullability(expected);
     }
 
-    @Test void geoPackageProfileFkIndex23() throws Exception { exchangeProfileFkIndex(23, null); }
-    @Test void geoPackageProfileFkIndex24() throws Exception { exchangeProfileFkIndex(24, null); }
-    @Test void postgisProfileFkIndex23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileFkIndex); }
-    @Test void postgisProfileFkIndex24() throws Exception { exchangeWithPostgis(24, this::exchangeProfileFkIndex); }
-
-    private void exchangeProfileFkIndex(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(work, postgres, "profile_idx_ref");
-        new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version).foreignKeyIndexes(expected, expected.peer("profile_idx_own"));
-    }
-
     @Test void geoPackageProfileForeignKeys23() throws Exception { exchangeProfileForeignKeys(23, null); }
     @Test void geoPackageProfileForeignKeys24() throws Exception { exchangeProfileForeignKeys(24, null); }
     @Test void postgisProfileForeignKeys23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileForeignKeys); }
@@ -39,7 +29,7 @@ final class SchemaProfileInteropTest {
 
     private void exchangeProfileForeignKeys(int version, PostgreSQLContainer postgres) throws Exception {
         var expected = new TestDatabase(work, postgres, "profile_fk_ref");
-        new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version).foreignKeys(expected, expected.peer("profile_fk_own"));
+        new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version).foreignKeyProfiles(expected, expected.peer("profile_fk_own"));
     }
 
     @Test void geoPackageProfileHierarchyKeys23() throws Exception { exchangeProfileHierarchyKeys(23, null); }

@@ -9,23 +9,25 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
 import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
+import static guru.interlis.db.DbTestSupport.catalogKeys;
 import static guru.interlis.db.DbTestSupport.child;
 import static guru.interlis.db.DbTestSupport.children;
 import static guru.interlis.db.DbTestSupport.execute;
+import static guru.interlis.db.DbTestSupport.foreignKeyColumns;
 import static guru.interlis.db.DbTestSupport.id;
-import static guru.interlis.db.DbTestSupport.readDataSection;
-import static guru.interlis.db.DbTestSupport.referenceDatasetFixture;
+import static guru.interlis.db.DbTestSupport.indexColumns;
 import static guru.interlis.db.DbTestSupport.scalar;
+import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
+import static guru.interlis.db.ProfileFixtures.LINKED_INDEXES;
+import static guru.interlis.db.ProfileFixtures.LINKED_KEYS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -36,16 +38,18 @@ final class SchemaProfileCases {
     private final Path work;
     private final ReferenceTool reference;
     private final int version;
+    private final ProfileFixtures fixtures;
 
     SchemaProfileCases(Path work, ReferenceTool reference, int version) {
         this.work = work;
         this.reference = reference;
         this.version = version;
+        fixtures = new ProfileFixtures(work, version);
     }
 
     void modelNullability(TestDatabase db) throws Exception {
         String model = "ProfileNullability" + version;
-        Path ili = source(model, "CLASS Asset = Label : MANDATORY TEXT*24; Remark : TEXT*20; END Asset;");
+        Path ili = fixtures.source(model, "CLASS Asset = Label : MANDATORY TEXT*24; Remark : TEXT*20; END Asset;");
         referenceSchema(db, ili);
         mixed(db, model, List.of("<Label>first</Label>", "<Label>second</Label><Remark>present</Remark>"), rows -> {
             assertEquals("first", child(rows.getFirst(), "Label").getTextContent());
@@ -67,91 +71,44 @@ final class SchemaProfileCases {
         }
     }
 
-    void foreignKeyIndexes(TestDatabase expected, TestDatabase own) throws Exception {
-        String model = "ProfileFkIndex" + version;
-        Path ili = linkedModel(model);
-        referenceSchema(expected, ili, "--sqlEnableNull", "--createFkIdx");
-        schema(own, model, ili, "--create-fk-idx");
-        sameCatalog(expected, own);
-        Set<String> indexes = Set.of("asset:t_basket", "asset:refasset", "target:t_basket",
-                "note:t_basket", "note:asset_notes", "t_ili2db_basket:dataset");
-        for (var db : List.of(expected, own)) {
-            try (var sql = db.connect()) {
-                assertEquals(indexes, indexColumns(db, sql));
-                assertTrue(foreignKeyColumns(db, sql).isEmpty());
-            }
-            mixed(db, model, List.of("<Label>indexed</Label>"), rows ->
-                    assertEquals("indexed", child(rows.getFirst(), "Label").getTextContent()));
-            String next = "ProfileFkExtra" + version;
-            Path extra = source(next, "CLASS Extra = Label : TEXT*24; END Extra;");
-            schema(db, next, extra, "--add-models");
-            try (var sql = db.connect()) {
-                var extended = new HashSet<>(indexes);
-                extended.add("extra:t_basket");
-                assertEquals(extended, indexColumns(db, sql));
-            }
-        }
-    }
-
-    void foreignKeys(TestDatabase expected, TestDatabase own) throws Exception {
+    void foreignKeyProfiles(TestDatabase expected, TestDatabase own) throws Exception {
         String model = "ProfileFk" + version;
-        Path ili = linkedModel(model);
+        Path ili = fixtures.linkedModel(model);
         referenceSchema(expected, ili, "--sqlEnableNull", "--createFk");
         schema(own, model, ili, "--create-fk");
         sameCatalog(expected, own);
-        var keys = Set.of("asset:t_basket:t_ili2db_basket", "asset:refasset:target", "target:t_basket:t_ili2db_basket",
-                "note:t_basket:t_ili2db_basket", "note:asset_notes:asset", "t_ili2db_basket:dataset:t_ili2db_dataset");
+        var extendedKeys = new HashSet<>(LINKED_KEYS);
+        extendedKeys.add("extra:t_basket:t_ili2db_basket");
+        String more = "ProfileFkMore" + version;
+        Path extra = fixtures.source(more, "CLASS Extra = Label : TEXT*12; END Extra;");
         for (var db : List.of(expected, own)) {
-            String legacy = "legacy";
-            referenceImport(db, legacy, linkedData(model, legacy));
-            Path output = work.resolve("output.xtf");
-            assertCliSuccess(db, "export", model, legacy, output);
-            assertLink(rows(output, legacy, 2).getFirst(), legacy);
-            String dataset = "native";
-            assertCliSuccess(db, "import", model, dataset, linkedData(model, dataset));
-            referenceExport(db, dataset, output);
-            assertLink(rows(output, dataset, 2).getFirst(), dataset);
             try (var sql = db.connect()) {
-                assertEquals(keys, foreignKeyColumns(db, sql));
-                if (!db.postgis()) execute(sql, "PRAGMA foreign_keys = ON");
-                sql.setAutoCommit(false);
-                execute(sql, "UPDATE " + db.table("asset") + " SET refasset = -123 WHERE t_ili_tid = 'native-asset'");
-                assertThrows(SQLException.class, sql::commit);
-                sql.rollback();
-                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("asset") + " a JOIN "
-                        + db.table("target") + " t ON t.t_id = a.refasset"));
-                sql.setAutoCommit(true);
-                Path bad = data(model, "broken", object(model, "Asset", "broken-asset", reference("RefAsset", "missing")));
-                assertCliFailure(db, "import", model, "broken", bad, "Cannot encode reference from broken-asset");
-                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
-            }
-            String more = "ProfileFkMore" + version;
-            schema(db, more, source(more, "CLASS Extra = Label : TEXT*12; END Extra;"), "--add-models");
-            try (var sql = db.connect()) {
-                var extended = new HashSet<>(keys);
-                extended.add("extra:t_basket:t_ili2db_basket");
-                assertEquals(extended, foreignKeyColumns(db, sql));
+                assertEquals(LINKED_KEYS, foreignKeyColumns(db, sql));
+                schema(db, more, extra, "--add-models");
+                assertEquals(extendedKeys, foreignKeyColumns(db, sql));
             }
         }
-    }
+        sameCatalog(expected, own);
 
-    private Path linkedData(String model, String prefix) throws Exception {
-        String note = version == 23 ? model + ".Data.Note" : "Note";
-        return data(model, prefix, object(model, "Asset", prefix + "-asset",
-                "<Label>linked</Label><Notes><" + note + "><Message>present</Message></" + note + "></Notes>"
-                        + reference("RefAsset", prefix + "-target"))
-                + object(model, "Target", prefix + "-target", "<Label>target</Label>"));
-    }
-
-    private String reference(String field, String tid) {
-        return "<" + field + (version == 23 ? " REF=\"" : " i:ref=\"") + tid + "\"/>";
-    }
-
-    private void assertLink(Element row, String prefix) {
-        assertEquals(prefix + "-asset", id(row, version, "tid"));
-        var role = child(row, "RefAsset");
-        assertEquals(prefix + "-target", id(role, version, "ref"));
-        assertEquals("present", child(children(child(row, "Notes")).getFirst(), "Message").getTextContent());
+        var indexExpected = expected.peer("profile_idx_ref");
+        var indexOwn = own.peer("profile_idx_own");
+        String indexModel = "ProfileFkIndex" + version;
+        Path indexed = fixtures.linkedModel(indexModel);
+        referenceSchema(indexExpected, indexed, "--sqlEnableNull", "--createFkIdx");
+        schema(indexOwn, indexModel, indexed, "--create-fk-idx");
+        sameCatalog(indexExpected, indexOwn);
+        var extendedIndexes = new HashSet<>(LINKED_INDEXES);
+        extendedIndexes.add("extra:t_basket");
+        for (var db : List.of(indexExpected, indexOwn)) {
+            try (var sql = db.connect()) {
+                assertEquals(LINKED_INDEXES, indexColumns(db, sql));
+                assertTrue(foreignKeyColumns(db, sql).isEmpty());
+                schema(db, more, extra, "--add-models");
+                assertEquals(extendedIndexes, indexColumns(db, sql));
+                assertTrue(foreignKeyColumns(db, sql).isEmpty());
+            }
+        }
+        sameCatalog(indexExpected, indexOwn);
     }
 
     void hierarchyKeys(TestDatabase expected, TestDatabase own) throws Exception {
@@ -170,16 +127,16 @@ final class SchemaProfileCases {
                   END Data;"""));
         Path input = fixture(model + ".xtf");
         String endBasket = version == 23 ? "</" + model + ".Data>" : "</Data>";
-        String marker = object(model, "Marker", "fixture-point", "<MainPoint>" + point("12.000", "13.000")
-                + "</MainPoint><CheckPoint>" + point("14.000", "15.000") + "</CheckPoint>"
-                + reference("Applying", "fixture-t"));
+        String marker = fixtures.object(model, "Marker", "fixture-point", "<MainPoint>" + fixtures.point("12.000", "13.000")
+                + "</MainPoint><CheckPoint>" + fixtures.point("14.000", "15.000") + "</CheckPoint>"
+                + fixtures.reference("Applying", "fixture-t"));
         Files.writeString(input, Files.readString(input).replace(endBasket, marker + endBasket));
         Path nativeData = Files.writeString(work.resolve("hierarchy-native.xtf"), Files.readString(input).replace("fixture-", "native-"));
         Path update = Files.writeString(work.resolve("hierarchy-update.xtf"), Files.readString(nativeData).replace(">smart<", ">changed<"));
         String structure = version == 23 ? model + ".Data.PointerValue" : "PointerValue";
         String destination = version == 23 ? "<Destination REF=\"native-s\" BID=\"native-b\"/>"
                 : "<Destination i:ref=\"native-s\"/>";
-        Path incoming = data(model, "incoming", object(model, "Pointer", "incoming-p",
+        Path incoming = fixtures.data(model, "incoming", fixtures.object(model, "Pointer", "incoming-p",
                 "<Link><" + structure + ">" + destination + "</" + structure + "></Link>"));
         for (boolean smart : List.of(false, true)) {
             var baseline = smart ? expected.peer("profile_smart_keys_ref") : expected;
@@ -211,10 +168,10 @@ final class SchemaProfileCases {
                 Path output = work.resolve("hierarchy-output.xtf");
                 referenceImport(db, "legacy", input);
                 assertCliSuccess(db, "export", model, "legacy", output);
-                assertHierarchy(basketRows(output, "fixture-b", 7), "fixture", "smart");
+                assertHierarchy(fixtures.basketRows(output, "fixture-b", 7), "fixture", "smart");
                 assertCliSuccess(db, "import", model, "native", nativeData);
                 referenceExport(db, "native", output);
-                assertHierarchy(basketRows(output, "native-b", 7), "native", "smart");
+                assertHierarchy(fixtures.basketRows(output, "native-b", 7), "native", "smart");
                 try (var sql = db.connect()) {
                     String row = " FROM " + db.table(smart ? "smartunit" : "instrument") + " WHERE t_ili_tid='native-s'";
                     String original = scalar(sql, "SELECT t_id" + row);
@@ -224,7 +181,7 @@ final class SchemaProfileCases {
                     assertCliFailure(db, "delete", model, "native", null, "referenced object");
                     assertCliFailure(db, "replace", model, "native", nativeData, "referenced object");
                     referenceExport(db, "native", output);
-                    assertHierarchy(basketRows(output, "native-b", 7), "native", "changed");
+                    assertHierarchy(fixtures.basketRows(output, "native-b", 7), "native", "changed");
                     assertCliSuccess(db, "delete", model, "incoming", null);
                     assertCliSuccess(db, "replace", model, "native", nativeData);
                     assertNotEquals(original, scalar(sql, "SELECT t_id" + row));
@@ -247,11 +204,6 @@ final class SchemaProfileCases {
                 .map(row -> id(child(row, "CheckedInstrument"), version, "ref")).collect(java.util.stream.Collectors.toSet()));
     }
 
-    private String point(String x, String y) {
-        return version == 23 ? "<COORD><C1>" + x + "</C1><C2>" + y + "</C2></COORD>"
-                : "<g:coord xmlns:g=\"http://www.interlis.ch/geometry/1.0\"><g:c1>" + x + "</g:c1><g:c2>" + y + "</g:c2></g:coord>";
-    }
-
     private Path fixture(String name) throws Exception {
         Path destination = work.resolve(name);
         try (var input = SchemaProfileCases.class.getResourceAsStream("/smart/" + name)) {
@@ -262,7 +214,7 @@ final class SchemaProfileCases {
 
     void discriminator(TestDatabase expected, TestDatabase own) throws Exception {
         String model = "ProfileType" + version;
-        Path ili = source(model, """
+        Path ili = fixtures.source(model, """
                 STRUCTURE Note = Message : TEXT*24; END Note;
                 CLASS Asset = Label : TEXT*24; Notes : LIST OF Note; END Asset;
                 CLASS Base (ABSTRACT) = Caption : TEXT*24; END Base;
@@ -280,12 +232,12 @@ final class SchemaProfileCases {
             referenceImport(db, "legacy", typedData(model, "legacy"));
             Path output = work.resolve("type-output.xtf");
             assertCliSuccess(db, "export", model, "legacy", output);
-            assertTypedRows(rows(output, "legacy", 2), "legacy");
+            assertTypedRows(fixtures.rows(output, "legacy", 2), "legacy");
             assertCliSuccess(db, "import", model, "native", typedData(model, "native"));
             referenceExport(db, "native", output);
-            assertTypedRows(rows(output, "native", 2), "native");
+            assertTypedRows(fixtures.rows(output, "native", 2), "native");
             String extra = "ProfileTypeExtra" + version;
-            schema(db, extra, source(extra, "CLASS Other = Label : TEXT*24; END Other;"), "--add-models");
+            schema(db, extra, fixtures.source(extra, "CLASS Other = Label : TEXT*24; END Other;"), "--add-models");
             try (var sql = db.connect()) {
                 assertEquals("asset", scalar(sql, "SELECT t_type FROM " + db.table("asset") + " WHERE t_ili_tid='native-asset'"));
                 assertEquals("leaf", scalar(sql, "SELECT t_type FROM " + db.table("base") + " WHERE t_ili_tid='native-leaf'"));
@@ -300,10 +252,10 @@ final class SchemaProfileCases {
 
     private Path typedData(String model, String prefix) throws Exception {
         String note = version == 23 ? model + ".Data.Note" : "Note";
-        return data(model, prefix, object(model, "Asset", prefix + "-asset",
+        return fixtures.data(model, prefix, fixtures.object(model, "Asset", prefix + "-asset",
                 "<Label>typed</Label><Notes><" + note + "><Message>present</Message></" + note + "></Notes>"
-                        + reference("AssetTarget", prefix + "-leaf"))
-                + object(model, "Leaf", prefix + "-leaf", "<Caption>subtype</Caption><NumberValue>7</NumberValue>"));
+                        + fixtures.reference("AssetTarget", prefix + "-leaf"))
+                + fixtures.object(model, "Leaf", prefix + "-leaf", "<Caption>subtype</Caption><NumberValue>7</NumberValue>"));
     }
 
     private void assertTypedRows(List<Element> rows, String prefix) {
@@ -314,19 +266,19 @@ final class SchemaProfileCases {
 
     void datasetColumn(TestDatabase expected, TestDatabase own) throws Exception {
         String model = "ProfileDataset" + version;
-        Path ili = linkedModel(model);
+        Path ili = fixtures.linkedModel(model);
         referenceSchema(expected, ili, "--sqlEnableNull", "--createDatasetCol");
         schema(own, model, ili, "--create-dataset-col");
         sameCatalog(expected, own);
         for (var db : List.of(expected, own)) {
             Path output = work.resolve("dataset-output.xtf");
-            referenceImport(db, "legacy", linkedData(model, "legacy"));
+            referenceImport(db, "legacy", fixtures.linkedData(model, "legacy"));
             assertCliSuccess(db, "export", model, "legacy", output);
-            assertLink(rows(output, "legacy", 2).getFirst(), "legacy");
-            Path nativeData = linkedData(model, "native");
+            fixtures.assertLink(fixtures.rows(output, "legacy", 2).getFirst(), "legacy");
+            Path nativeData = fixtures.linkedData(model, "native");
             assertCliSuccess(db, "import", model, "native", nativeData);
             referenceExport(db, "native", output);
-            assertLink(rows(output, "native", 2).getFirst(), "native");
+            fixtures.assertLink(fixtures.rows(output, "native", 2).getFirst(), "native");
             try (var sql = db.connect()) {
                 assertEquals(Set.of("asset:t_datasetname", "target:t_datasetname", "note:t_datasetname"), indexColumns(db, sql));
                 assertDatasetColumns(db, sql);
@@ -343,7 +295,7 @@ final class SchemaProfileCases {
                 assertDatasetColumns(db, sql);
             }
             String add = "ProfileDatasetExtra" + version;
-            schema(db, add, source(add, "CLASS Extra = Label : TEXT*24; END Extra;"), "--add-models");
+            schema(db, add, fixtures.source(add, "CLASS Extra = Label : TEXT*24; END Extra;"), "--add-models");
             try (var sql = db.connect()) {
                 assertTrue(indexColumns(db, sql).contains("extra:t_datasetname"));
             }
@@ -362,7 +314,7 @@ final class SchemaProfileCases {
 
     void standardColumns(TestDatabase expected, TestDatabase own) throws Exception {
         String model = "ProfileAudit" + version;
-        Path ili = linkedModel(model);
+        Path ili = fixtures.linkedModel(model);
         Files.writeString(ili, Files.readString(ili).replace("CLASS Asset = Label", """
                 DOMAIN Position = COORD 0.000 .. 100.000, 0.000 .. 100.000;
                 CLASS Asset = MainPoint : Position; CheckPoint : Position; Label"""));
@@ -379,11 +331,11 @@ final class SchemaProfileCases {
             Path output = work.resolve("audit-output.xtf");
             referenceImport(db, "legacy", auditData(model, "legacy"));
             assertCliSuccess(db, "export", model, "legacy", output);
-            assertLink(rows(output, "legacy", 2).getFirst(), "legacy");
+            fixtures.assertLink(fixtures.rows(output, "legacy", 2).getFirst(), "legacy");
             Path data = auditData(model, "native");
             assertCliSuccess(db, "import", model, "native", data);
             referenceExport(db, "native", output);
-            assertLink(rows(output, "native", 2).getFirst(), "native");
+            fixtures.assertLink(fixtures.rows(output, "native", 2).getFirst(), "native");
             try (var sql = db.connect()) {
                 String user = db.postgis() ? sql.getMetaData().getUserName() : System.getProperty("user.name");
                 var tables = List.of("asset", "asset_checkpoint", "note", "target");
@@ -405,7 +357,7 @@ final class SchemaProfileCases {
                 }
             }
             String extra = "ProfileAuditExtra" + version;
-            schema(db, extra, source(extra, "CLASS Extra = Label : TEXT*24; END Extra;"), "--add-models");
+            schema(db, extra, fixtures.source(extra, "CLASS Extra = Label : TEXT*24; END Extra;"), "--add-models");
             try (var sql = db.connect()) {
                 assertThrows(SQLException.class, () -> execute(sql, "INSERT INTO " + db.table("extra")
                         + " (t_id,t_basket,t_datasetname) VALUES (999,999,'native')"));
@@ -414,15 +366,15 @@ final class SchemaProfileCases {
     }
 
     private Path auditData(String model, String prefix) throws Exception {
-        Path data = linkedData(model, prefix);
+        Path data = fixtures.linkedData(model, prefix);
         return Files.writeString(data, Files.readString(data).replace("<Label>linked</Label>",
-                "<MainPoint>" + point("12.000", "13.000") + "</MainPoint><CheckPoint>" + point("14.000", "15.000")
+                "<MainPoint>" + fixtures.point("12.000", "13.000") + "</MainPoint><CheckPoint>" + fixtures.point("14.000", "15.000")
                         + "</CheckPoint><Label>linked</Label>"));
     }
 
     void basketUniqueConstraints(TestDatabase expected, TestDatabase own) throws Exception {
         String basket = "ProfileUniqueBasket";
-        Path source = source(basket, """
+        Path source = fixtures.source(basket, """
                 CLASS Asset =
                   RegistryNo : TEXT*24;
                   LocalMark : TEXT*24;
@@ -437,10 +389,10 @@ final class SchemaProfileCases {
         Path output = work.resolve("basket-unique-output.xtf");
         referenceImport(own, "legacy", uniquenessData(basket, "legacy", "shared"));
         assertCliSuccess(own, "export", basket, "legacy", output);
-        assertEquals("shared", child(rows(output, "legacy", 3).getFirst(), "LocalMark").getTextContent());
+        assertEquals("shared", child(fixtures.rows(output, "legacy", 3).getFirst(), "LocalMark").getTextContent());
         assertCliSuccess(own, "import", basket, "native", uniquenessData(basket, "native", "shared"));
         referenceExport(own, "native", output);
-        assertEquals("shared", child(rows(output, "native", 3).getFirst(), "LocalMark").getTextContent());
+        assertEquals("shared", child(fixtures.rows(output, "native", 3).getFirst(), "LocalMark").getTextContent());
         try (var sql = own.connect()) {
             assertTrue(DbSchemaCatalog.read(sql, own.postgis(), own.schema()).relations().get("unique keys")
                     .contains(List.of("asset", "localmark", "t_basket", "variantno")));
@@ -462,7 +414,7 @@ final class SchemaProfileCases {
 
     void metaInformation(TestDatabase expected, TestDatabase own) throws Exception {
         String model = "ProfileMeta" + version;
-        Path ili = source(model, """
+        Path ili = fixtures.source(model, """
                 DOMAIN Position = COORD 0.000 .. 100.000, 0.000 .. 100.000;
                 DOMAIN StatusValue = (in_progress, done);
                 DOMAIN SmallReading = -20..30;
@@ -514,7 +466,17 @@ final class SchemaProfileCases {
                     model + ".Data.Assignment.Sources|example.inverse|no column")));
             assertNull(scalar(right, "SELECT sqlname FROM " + own.table("t_ili2db_attrname")
                     + " WHERE iliname='" + model + ".Data.Assignment.Sources'"));
-            assertEquals(foreignKeyColumns(expected, left), foreignKeyColumns(own, right));
+            var keys = foreignKeyColumns(expected, left);
+            assertTrue(keys.containsAll(LINKED_KEYS), keys::toString);
+            assertEquals(keys, foreignKeyColumns(own, right));
+            var referencingColumns = keys.stream().map(key -> key.substring(0, key.lastIndexOf(':')))
+                    .collect(Collectors.toSet());
+            var referenceIndexes = indexColumns(expected, left);
+            referenceIndexes.retainAll(referencingColumns);
+            var ownIndexes = indexColumns(own, right);
+            ownIndexes.retainAll(referencingColumns);
+            assertTrue(referenceIndexes.containsAll(LINKED_INDEXES), referenceIndexes::toString);
+            assertEquals(referenceIndexes, ownIndexes);
         }
         for (var db : List.of(expected, own)) {
             Path output = work.resolve("meta-output.xtf");
@@ -541,7 +503,7 @@ final class SchemaProfileCases {
         var extended = own.peer("profile_meta_extension");
         schema(extended, model, ili, "--create-meta-info");
         String next = "ProfileMetaAdded" + version;
-        Path extra = source(next, "CLASS Extra = Label : TEXT*24; END Extra;");
+        Path extra = fixtures.source(next, "CLASS Extra = Label : TEXT*24; END Extra;");
         Files.writeString(extra, Files.readString(extra).replace("  TOPIC Data =",
                 "  IMPORTS " + model + ";\n  TOPIC Data ="));
         try (var sql = extended.connect()) {
@@ -558,24 +520,24 @@ final class SchemaProfileCases {
     private Path metaData(String model, String prefix) throws Exception {
         String note = version == 23 ? model + ".Data.Note" : "Note";
         String asset = "<Label>" + prefix + "</Label><Notes><" + note + "><Message>present</Message></" + note
-                + "></Notes><PositionValue>" + point("12.000", "13.000")
+                + "></Notes><PositionValue>" + fixtures.point("12.000", "13.000")
                 + "</PositionValue><LevelNo>15</LevelNo><Phase>in_progress</Phase>"
-                + reference("RefAsset", prefix + "-target");
+                + fixtures.reference("RefAsset", prefix + "-target");
         String mark = "<LocalMark>" + prefix + "-site</LocalMark>";
-        return data(model, prefix, object(model, "Asset", prefix + "-asset", asset)
-                + object(model, "Target", prefix + "-target", "<Label>target</Label>")
-                + object(model, "Measurement", prefix + "-reading-min", mark
+        return fixtures.data(model, prefix, fixtures.object(model, "Asset", prefix + "-asset", asset)
+                + fixtures.object(model, "Target", prefix + "-target", "<Label>target</Label>")
+                + fixtures.object(model, "Measurement", prefix + "-reading-min", mark
                         + "<VariantNo>1</VariantNo><Rating>-20</Rating><WideNo>-9007199254740992</WideNo><Fraction>-2.500</Fraction>")
-                + object(model, "Measurement", prefix + "-reading-max", mark
+                + fixtures.object(model, "Measurement", prefix + "-reading-max", mark
                         + "<VariantNo>2</VariantNo><Rating>30</Rating><WideNo>9007199254740992</WideNo><Fraction>3.125</Fraction>")
-                + object(model, "Measurement", prefix + "-reading-missing", ""));
+                + fixtures.object(model, "Measurement", prefix + "-reading-missing", ""));
     }
 
     private void assertMetaData(Path output, String prefix) throws Exception {
-        var objects = rows(output, prefix, 5).stream().collect(Collectors.toMap(
+        var objects = fixtures.rows(output, prefix, 5).stream().collect(Collectors.toMap(
                 row -> id(row, version, "tid"), Function.identity()));
         var row = objects.get(prefix + "-asset");
-        assertLink(row, prefix);
+        fixtures.assertLink(row, prefix);
         assertEquals(prefix, child(row, "Label").getTextContent());
         assertEquals("in_progress", child(row, "Phase").getTextContent());
         assertEquals("15", child(row, "LevelNo").getTextContent());
@@ -595,52 +557,6 @@ final class SchemaProfileCases {
         assertEquals(List.of(), children(objects.get(prefix + "-reading-missing")));
     }
 
-    private Path linkedModel(String model) throws Exception {
-        return source(model, """
-                STRUCTURE Note = Message : TEXT*24; END Note;
-                CLASS Target = Label : TEXT*24; END Target;
-                CLASS Asset = Label : TEXT*24; Notes : LIST OF Note; END Asset;
-                ASSOCIATION Assignment =
-                  RefAsset -- {0..1} Target;
-                  Sources -- {0..*} Asset;
-                END Assignment;
-                """);
-    }
-
-    private static Set<String> indexColumns(TestDatabase db, Connection sql) throws Exception {
-        return catalogKeys(sql, db.postgis() ? """
-                SELECT t.relname || ':' || a.attname FROM pg_index i
-                JOIN pg_class t ON t.oid = i.indrelid JOIN pg_namespace n ON n.oid = t.relnamespace
-                JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(i.indkey)
-                WHERE n.nspname = '%s' AND NOT i.indisunique
-                """.formatted(db.schema()) : """
-                SELECT lower(t.name || ':' || col.name) FROM sqlite_schema t
-                JOIN pragma_index_list(t.name) idx JOIN pragma_index_info(idx.name) col
-                WHERE t.type = 'table' AND NOT idx."unique"
-                """);
-    }
-
-    private static Set<String> foreignKeyColumns(TestDatabase db, Connection sql) throws Exception {
-        return catalogKeys(sql, db.postgis() ? """
-                SELECT t.relname || ':' || a.attname || ':' || target.relname FROM pg_constraint fk
-                JOIN pg_class t ON t.oid = fk.conrelid JOIN pg_namespace n ON n.oid = t.relnamespace
-                JOIN pg_class target ON target.oid = fk.confrelid
-                JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(fk.conkey)
-                WHERE n.nspname = '%s' AND fk.contype = 'f'
-                """.formatted(db.schema()) : """
-                SELECT lower(t.name || ':' || fk."from" || ':' || fk."table") FROM sqlite_schema t
-                JOIN pragma_foreign_key_list(t.name) fk WHERE t.type = 'table' AND substr(t.name, 1, 5) <> 'gpkg_'
-                """);
-    }
-
-    private static Set<String> catalogKeys(Connection sql, String query) throws Exception {
-        var keys = new HashSet<String>();
-        try (var statement = sql.createStatement(); var rows = statement.executeQuery(query)) {
-            while (rows.next()) keys.add(rows.getString(1));
-        }
-        return keys;
-    }
-
     private static void schema(TestDatabase db, String model, Path ili, String... options) {
         var result = schemaWithIdentityColumns(db, model, ili, CancellationToken.none(), options);
         assertEquals(0, result.code(), result::diagnostics);
@@ -653,17 +569,6 @@ final class SchemaProfileCases {
         }
     }
 
-    private Path source(String model, String declarations) throws Exception {
-        return Files.writeString(work.resolve(model + ".ili"), """
-                INTERLIS 2.%d;
-                MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
-                  TOPIC Data =
-                %s
-                  END Data;
-                END %s.
-                """.formatted(version - 20, model, declarations, model));
-    }
-
     private void referenceSchema(TestDatabase db, Path ili, String... extra) throws Exception {
         var options = new ArrayList<>(List.of("--schemaimport", "--noSmartMapping", "--createBasketCol", "--createTidCol",
                 "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056"));
@@ -672,20 +577,10 @@ final class SchemaProfileCases {
         reference.run(db, work.toString(), options.toArray(String[]::new));
     }
 
-    private String object(String model, String type, String tid, String fields) {
-        String tag = version == 23 ? model + ".Data." + type : type;
-        String attribute = version == 23 ? "TID" : "i:tid";
-        return "<" + tag + " " + attribute + "=\"" + tid + "\">" + fields + "</" + tag + ">";
-    }
-
     private Path assetData(String model, String prefix, List<String> fields) throws Exception {
         var objects = new StringBuilder();
-        for (int i = 0; i < fields.size(); i++) objects.append(object(model, "Asset", prefix + "-" + i, fields.get(i)));
-        return data(model, prefix, objects.toString());
-    }
-
-    private Path data(String model, String prefix, String objects) throws Exception {
-        return Files.writeString(work.resolve(prefix + ".xtf"), referenceDatasetFixture(model, version, prefix + "-basket", objects));
+        for (int i = 0; i < fields.size(); i++) objects.append(fixtures.object(model, "Asset", prefix + "-" + i, fields.get(i)));
+        return fixtures.data(model, prefix, objects.toString());
     }
 
     private void referenceImport(TestDatabase db, String dataset, Path path) throws Exception {
@@ -701,23 +596,10 @@ final class SchemaProfileCases {
         Path output = work.resolve("output.xtf");
         referenceImport(db, "legacy", assetData(model, "legacy", fields));
         assertCliSuccess(db, "export", model, "legacy", output);
-        check.check(rows(output, "legacy", fields.size()));
+        check.check(fixtures.rows(output, "legacy", fields.size()));
         assertCliSuccess(db, "import", model, "native", assetData(model, "native", fields));
         referenceExport(db, "native", output);
-        check.check(rows(output, "native", fields.size()));
-    }
-
-    private List<Element> rows(Path path, String prefix, int count) throws Exception {
-        return basketRows(path, prefix + "-basket", count);
-    }
-
-    private List<Element> basketRows(Path path, String bid, int count) throws Exception {
-        var baskets = children(readDataSection(path, version));
-        assertEquals(1, baskets.size());
-        assertEquals(bid, id(baskets.getFirst(), version, "bid"));
-        var rows = children(baskets.getFirst()).stream().sorted(Comparator.comparing(row -> id(row, version, "tid"))).toList();
-        assertEquals(count, rows.size());
-        return rows;
+        check.check(fixtures.rows(output, "native", fields.size()));
     }
 
     @FunctionalInterface

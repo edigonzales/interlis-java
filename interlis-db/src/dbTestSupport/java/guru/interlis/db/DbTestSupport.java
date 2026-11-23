@@ -13,9 +13,11 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -117,6 +119,40 @@ final class DbTestSupport {
             assertFalse(result.next(), query);
             return value;
         }
+    }
+
+    static Set<String> indexColumns(Target db, Connection sql) throws SQLException {
+        return catalogKeys(sql, db.postgis() ? """
+                SELECT t.relname || ':' || a.attname FROM pg_index i
+                JOIN pg_class t ON t.oid = i.indrelid JOIN pg_namespace n ON n.oid = t.relnamespace
+                JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(i.indkey)
+                WHERE n.nspname = '%s' AND NOT i.indisunique
+                """.formatted(db.schema()) : """
+                SELECT lower(t.name || ':' || col.name) FROM sqlite_schema t
+                JOIN pragma_index_list(t.name) idx JOIN pragma_index_info(idx.name) col
+                WHERE t.type = 'table' AND NOT idx."unique"
+                """);
+    }
+
+    static Set<String> foreignKeyColumns(Target db, Connection sql) throws SQLException {
+        return catalogKeys(sql, db.postgis() ? """
+                SELECT t.relname || ':' || a.attname || ':' || target.relname FROM pg_constraint fk
+                JOIN pg_class t ON t.oid = fk.conrelid JOIN pg_namespace n ON n.oid = t.relnamespace
+                JOIN pg_class target ON target.oid = fk.confrelid
+                JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(fk.conkey)
+                WHERE n.nspname = '%s' AND fk.contype = 'f'
+                """.formatted(db.schema()) : """
+                SELECT lower(t.name || ':' || fk."from" || ':' || fk."table") FROM sqlite_schema t
+                JOIN pragma_foreign_key_list(t.name) fk WHERE t.type = 'table' AND substr(t.name, 1, 5) <> 'gpkg_'
+                """);
+    }
+
+    static Set<String> catalogKeys(Connection sql, String query) throws SQLException {
+        var keys = new HashSet<String>();
+        try (var statement = sql.createStatement(); var rows = statement.executeQuery(query)) {
+            while (rows.next()) keys.add(rows.getString(1));
+        }
+        return keys;
     }
 
     static void execute(Connection sql, String query) throws SQLException {

@@ -110,6 +110,11 @@ Schlüssel, SQL `NULL`, Ganzzahl- und Festkommabereiche sowie die gerundete
 Dezimalgrenze oberhalb von `2^53`. Die Fälle prüfen Rollback und die
 Constraint-Wirkung für neu hinzugefügte Modelle direkt in der Datenbank.
 
+`ForeignKeyProfileTest` prüft für beide XTF-Versionen die genauen
+Fremdschlüsselziele, Vorwärtsreferenzen, Strukturzeilen und den Rollback
+beim Import und beim Commit. Ein zweiter Fall vergleicht Indexspalten im
+Profil ohne Fremdschlüssel. Beide Fälle prüfen den Zuwachs bei `--add-models`.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -149,11 +154,10 @@ verwende `./gradlew :interlis-db:dbInteropTest --tests '*SchemaProfileInteropTes
 Die `*ProfileNullability*`-Fälle tauschen Pflichtskalare und optionale
 Werte in Referenzschemata ohne `--sqlEnableNull` aus. Sie prüfen den
 Rollback bei einer verletzten SQL-Pflichtspalte.
-Die `*ProfileFkIndex*`-Fälle prüfen die referenzierenden Indexspalten,
-gemischte Transfers und die Übernahme beim Ergänzen eines Modells.
-Die `*ProfileForeignKeys*`-Fälle prüfen die Fremdschlüsselziele,
-Vorwärtsreferenzen, Strukturzeilen und den Rollback bei verletzten
-Referenzen. Sie prüfen auch die Prüfung aufgeschobener Schlüssel beim Commit.
+Die `*ProfileForeignKeys*`-Fälle vergleichen die beiden Einzelprofile für
+Fremdschlüssel und referenzierende Indizes, auch nach `--add-models`.
+Der gemeinsame Austausch für beide Optionen läuft in
+`*ProfileMetaInformation*`.
 Die `*ProfileHierarchyKeys*`-Fälle vergleichen Fremdschlüssel in
 `newClass`- und Smart2-Schemata. Sie prüfen auch Geometriehilfszeilen,
 Beziehungstabellen und eingehende Verweise bei `update`, `replace` und `delete`.
