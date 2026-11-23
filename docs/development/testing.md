@@ -138,6 +138,9 @@ geerbte Objekt-OIDs, Assoziations-OIDs und ein skalares `OID TEXT`-Attribut.
 Sie vergleichen die SQL-Kataloge und prüfen den XTF-Roundtrip in
 Referenzschemata und eigenen Schemata auf beiden Backends.
 
+Die SQL-Profilfälle liegen in `SchemaProfileInteropTest`. Für diese Auswahl
+verwende `./gradlew :interlis-db:dbInteropTest --tests '*SchemaProfileInteropTest'`.
+
 Die `*ProfileNullability*`-Fälle tauschen Pflichtskalare und optionale
 Werte in Referenzschemata ohne `--sqlEnableNull` aus. Sie prüfen den
 Rollback bei einer verletzten SQL-Pflichtspalte.

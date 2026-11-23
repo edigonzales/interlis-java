@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.zip.ZipInputStream;
 
 import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
@@ -40,11 +39,12 @@ import static guru.interlis.db.DbTestSupport.children;
 import static guru.interlis.db.DbTestSupport.cli;
 import static guru.interlis.db.DbTestSupport.execute;
 import static guru.interlis.db.DbTestSupport.id;
-import static guru.interlis.db.DbTestSupport.postgisContainer;
 import static guru.interlis.db.DbTestSupport.readDataSection;
 import static guru.interlis.db.DbTestSupport.referenceDatasetFixture;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
+import static guru.interlis.db.ReferenceTool.logText;
+import static guru.interlis.db.TestDatabase.exchangeWithPostgis;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -117,115 +117,15 @@ final class DbInteropTest {
 
     @TempDir(cleanup = CleanupMode.ALWAYS) Path work;
 
-    @Test void geoPackageProfileNullability23() throws Exception { exchangeProfileNullability(23, null); }
-    @Test void geoPackageProfileNullability24() throws Exception { exchangeProfileNullability(24, null); }
-    @Test void postgisProfileNullability23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileNullability); }
-    @Test void postgisProfileNullability24() throws Exception { exchangeWithPostgis(24, this::exchangeProfileNullability); }
-
-    private void exchangeProfileNullability(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "profile_nullability_ref");
-        new SchemaProfileCases(work, new ReferenceTool(expected.postgis()), version).modelNullability(expected);
-    }
-
-    @Test void geoPackageProfileFkIndex23() throws Exception { exchangeProfileFkIndex(23, null); }
-    @Test void geoPackageProfileFkIndex24() throws Exception { exchangeProfileFkIndex(24, null); }
-    @Test void postgisProfileFkIndex23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileFkIndex); }
-    @Test void postgisProfileFkIndex24() throws Exception { exchangeWithPostgis(24, this::exchangeProfileFkIndex); }
-
-    private void exchangeProfileFkIndex(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "profile_idx_ref");
-        new SchemaProfileCases(work, new ReferenceTool(expected.postgis()), version).foreignKeyIndexes(expected, expected.peer("profile_idx_own"));
-    }
-
-    @Test void geoPackageProfileForeignKeys23() throws Exception { exchangeProfileForeignKeys(23, null); }
-    @Test void geoPackageProfileForeignKeys24() throws Exception { exchangeProfileForeignKeys(24, null); }
-    @Test void postgisProfileForeignKeys23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileForeignKeys); }
-    @Test void postgisProfileForeignKeys24() throws Exception { exchangeWithPostgis(24, this::exchangeProfileForeignKeys); }
-
-    private void exchangeProfileForeignKeys(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "profile_fk_ref");
-        new SchemaProfileCases(work, new ReferenceTool(expected.postgis()), version).foreignKeys(expected, expected.peer("profile_fk_own"));
-    }
-
-    @Test void geoPackageProfileHierarchyKeys23() throws Exception { exchangeProfileHierarchyKeys(23, null); }
-    @Test void geoPackageProfileHierarchyKeys24() throws Exception { exchangeProfileHierarchyKeys(24, null); }
-    @Test void postgisProfileHierarchyKeys23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileHierarchyKeys); }
-    @Test void postgisProfileHierarchyKeys24() throws Exception { exchangeWithPostgis(24, this::exchangeProfileHierarchyKeys); }
-
-    private void exchangeProfileHierarchyKeys(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "profile_hierarchy_ref");
-        new SchemaProfileCases(work, new ReferenceTool(expected.postgis()), version).hierarchyKeys(expected, expected.peer("profile_hierarchy_own"));
-    }
-
-    @Test void geoPackageProfileDiscriminator23() throws Exception { exchangeProfileDiscriminator(23, null); }
-    @Test void geoPackageProfileDiscriminator24() throws Exception { exchangeProfileDiscriminator(24, null); }
-    @Test void postgisProfileDiscriminator23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileDiscriminator); }
-    @Test void postgisProfileDiscriminator24() throws Exception { exchangeWithPostgis(24, this::exchangeProfileDiscriminator); }
-
-    private void exchangeProfileDiscriminator(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "profile_type_ref");
-        new SchemaProfileCases(work, new ReferenceTool(expected.postgis()), version).discriminator(expected, expected.peer("profile_type_own"));
-    }
-
-    @Test void geoPackageProfileDatasetColumn23() throws Exception { exchangeProfileDatasetColumn(23, null); }
-    @Test void geoPackageProfileDatasetColumn24() throws Exception { exchangeProfileDatasetColumn(24, null); }
-    @Test void postgisProfileDatasetColumn23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileDatasetColumn); }
-    @Test void postgisProfileDatasetColumn24() throws Exception { exchangeWithPostgis(24, this::exchangeProfileDatasetColumn); }
-
-    private void exchangeProfileDatasetColumn(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "profile_dataset_ref");
-        new SchemaProfileCases(work, new ReferenceTool(expected.postgis()), version).datasetColumn(expected, expected.peer("profile_dataset_own"));
-    }
-
-    @Test void geoPackageProfileStandardColumns23() throws Exception { exchangeProfileStandardColumns(23, null); }
-    @Test void geoPackageProfileStandardColumns24() throws Exception { exchangeProfileStandardColumns(24, null); }
-    @Test void postgisProfileStandardColumns23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileStandardColumns); }
-    @Test void postgisProfileStandardColumns24() throws Exception { exchangeWithPostgis(24, this::exchangeProfileStandardColumns); }
-
-    private void exchangeProfileStandardColumns(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "profile_audit_ref");
-        new SchemaProfileCases(work, new ReferenceTool(expected.postgis()), version).standardColumns(expected, expected.peer("profile_audit_own"));
-    }
-
-    @Test void geoPackageProfileUnique23() throws Exception { exchangeProfileUnique(23, null); }
-    @Test void geoPackageProfileUnique24() throws Exception { exchangeProfileUnique(24, null); }
-    @Test void postgisProfileUnique23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileUnique); }
-    @Test void postgisProfileUnique24() throws Exception { exchangeWithPostgis(24, this::exchangeProfileUnique); }
-
-    private void exchangeProfileUnique(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "profile_unique_ref");
-        new SchemaProfileCases(work, new ReferenceTool(expected.postgis()), version).uniqueConstraints(expected, expected.peer("profile_unique_own"));
-    }
-
-    @Test void geoPackageProfileNumericChecks23() throws Exception { exchangeProfileNumericChecks(23, null); }
-    @Test void geoPackageProfileNumericChecks24() throws Exception { exchangeProfileNumericChecks(24, null); }
-    @Test void postgisProfileNumericChecks23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileNumericChecks); }
-    @Test void postgisProfileNumericChecks24() throws Exception { exchangeWithPostgis(24, this::exchangeProfileNumericChecks); }
-
-    private void exchangeProfileNumericChecks(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "profile_numeric_ref");
-        new SchemaProfileCases(work, new ReferenceTool(expected.postgis()), version).numericChecks(expected, expected.peer("profile_numeric_own"));
-    }
-
-    @Test void geoPackageProfileMetaInformation23() throws Exception { exchangeProfileMetaInformation(23, null); }
-    @Test void geoPackageProfileMetaInformation24() throws Exception { exchangeProfileMetaInformation(24, null); }
-    @Test void postgisProfileMetaInformation23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileMetaInformation); }
-    @Test void postgisProfileMetaInformation24() throws Exception { exchangeWithPostgis(24, this::exchangeProfileMetaInformation); }
-
-    private void exchangeProfileMetaInformation(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "profile_meta_ref");
-        new SchemaProfileCases(work, new ReferenceTool(expected.postgis()), version).metaInformation(expected, expected.peer("profile_meta_own"));
-    }
-
     @Test void geoPackageScalarWide23() throws Exception { exchangeScalarWide(23, null); }
     @Test void geoPackageScalarWide24() throws Exception { exchangeScalarWide(24, null); }
     @Test void postgisScalarWide23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarWide); }
     @Test void postgisScalarWide24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarWide); }
 
     private void exchangeScalarWide(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "scalar_wide_ref");
-        var own = new TestDatabase(postgres, "scalar_wide_own");
-        new ScalarCases(work, new ReferenceTool(own.postgis()), version).wideIntegers(expected, own);
+        var expected = new TestDatabase(work, postgres, "scalar_wide_ref");
+        var own = new TestDatabase(work, postgres, "scalar_wide_own");
+        new ScalarCases(work, new ReferenceTool(work, own.postgis()), version).wideIntegers(expected, own);
     }
 
     @Test void geoPackageScalarDecimal23() throws Exception { exchangeScalarDecimal(23, null); }
@@ -234,9 +134,9 @@ final class DbInteropTest {
     @Test void postgisScalarDecimal24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarDecimal); }
 
     private void exchangeScalarDecimal(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "scalar_decimal_ref");
-        var own = new TestDatabase(postgres, "scalar_decimal_own");
-        new ScalarCases(work, new ReferenceTool(own.postgis()), version).decimals(expected, own);
+        var expected = new TestDatabase(work, postgres, "scalar_decimal_ref");
+        var own = new TestDatabase(work, postgres, "scalar_decimal_own");
+        new ScalarCases(work, new ReferenceTool(work, own.postgis()), version).decimals(expected, own);
     }
 
     @Test void geoPackageScalarDate23() throws Exception { exchangeScalarDate(23, null); }
@@ -245,9 +145,9 @@ final class DbInteropTest {
     @Test void postgisScalarDate24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarDate); }
 
     private void exchangeScalarDate(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "scalar_date_ref");
-        var own = new TestDatabase(postgres, "scalar_date_own");
-        new ScalarCases(work, new ReferenceTool(own.postgis()), version).calendarDate(expected, own);
+        var expected = new TestDatabase(work, postgres, "scalar_date_ref");
+        var own = new TestDatabase(work, postgres, "scalar_date_own");
+        new ScalarCases(work, new ReferenceTool(work, own.postgis()), version).calendarDate(expected, own);
     }
 
     @Test void geoPackageScalarTime23() throws Exception { exchangeScalarTime(23, null); }
@@ -256,9 +156,9 @@ final class DbInteropTest {
     @Test void postgisScalarTime24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarTime); }
 
     private void exchangeScalarTime(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "scalar_time_ref");
-        var own = new TestDatabase(postgres, "scalar_time_own");
-        new ScalarCases(work, new ReferenceTool(own.postgis(), "UTC"), version).localTime(expected, own);
+        var expected = new TestDatabase(work, postgres, "scalar_time_ref");
+        var own = new TestDatabase(work, postgres, "scalar_time_own");
+        new ScalarCases(work, new ReferenceTool(work, own.postgis(), "UTC"), version).localTime(expected, own);
     }
 
     @Test void geoPackageScalarTimestamp23() throws Exception { exchangeScalarTimestamp(23, null); }
@@ -267,9 +167,9 @@ final class DbInteropTest {
     @Test void postgisScalarTimestamp24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarTimestamp); }
 
     private void exchangeScalarTimestamp(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "scalar_timestamp_ref");
-        var own = new TestDatabase(postgres, "scalar_timestamp_own");
-        new ScalarCases(work, new ReferenceTool(own.postgis(), "UTC"), version).localTimestamp(expected, own);
+        var expected = new TestDatabase(work, postgres, "scalar_timestamp_ref");
+        var own = new TestDatabase(work, postgres, "scalar_timestamp_own");
+        new ScalarCases(work, new ReferenceTool(work, own.postgis(), "UTC"), version).localTimestamp(expected, own);
     }
 
     @Test void geoPackageScalarFormatted23() throws Exception { exchangeScalarFormatted(23, null); }
@@ -278,9 +178,9 @@ final class DbInteropTest {
     @Test void postgisScalarFormatted24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarFormatted); }
 
     private void exchangeScalarFormatted(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "scalar_formatted_ref");
-        var own = new TestDatabase(postgres, "scalar_formatted_own");
-        new ScalarCases(work, new ReferenceTool(own.postgis()), version).formatted(expected, own);
+        var expected = new TestDatabase(work, postgres, "scalar_formatted_ref");
+        var own = new TestDatabase(work, postgres, "scalar_formatted_own");
+        new ScalarCases(work, new ReferenceTool(work, own.postgis()), version).formatted(expected, own);
     }
 
     @Test void geoPackageScalarUuid23() throws Exception { exchangeScalarUuid(23, null); }
@@ -289,9 +189,9 @@ final class DbInteropTest {
     @Test void postgisScalarUuid24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarUuid); }
 
     private void exchangeScalarUuid(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "scalar_uuid_ref");
-        var own = new TestDatabase(postgres, "scalar_uuid_own");
-        new ScalarCases(work, new ReferenceTool(own.postgis()), version).uuidAttribute(expected, own);
+        var expected = new TestDatabase(work, postgres, "scalar_uuid_ref");
+        var own = new TestDatabase(work, postgres, "scalar_uuid_own");
+        new ScalarCases(work, new ReferenceTool(work, own.postgis()), version).uuidAttribute(expected, own);
     }
 
     @Test void geoPackageScalarBinary23() throws Exception { exchangeScalarBinary(23, null); }
@@ -300,9 +200,9 @@ final class DbInteropTest {
     @Test void postgisScalarBinary24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarBinary); }
 
     private void exchangeScalarBinary(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "scalar_binary_ref");
-        var own = new TestDatabase(postgres, "scalar_binary_own");
-        new ScalarCases(work, new ReferenceTool(own.postgis()), version).binary(expected, own);
+        var expected = new TestDatabase(work, postgres, "scalar_binary_ref");
+        var own = new TestDatabase(work, postgres, "scalar_binary_own");
+        new ScalarCases(work, new ReferenceTool(work, own.postgis()), version).binary(expected, own);
     }
 
     @Test void geoPackageScalarXml23() throws Exception { exchangeScalarXml(23, null); }
@@ -311,9 +211,9 @@ final class DbInteropTest {
     @Test void postgisScalarXml24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarXml); }
 
     private void exchangeScalarXml(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "scalar_xml_ref");
-        var own = new TestDatabase(postgres, "scalar_xml_own");
-        new ScalarCases(work, new ReferenceTool(own.postgis()), version).xml(expected, own);
+        var expected = new TestDatabase(work, postgres, "scalar_xml_ref");
+        var own = new TestDatabase(work, postgres, "scalar_xml_own");
+        new ScalarCases(work, new ReferenceTool(work, own.postgis()), version).xml(expected, own);
     }
 
     @Test void geoPackageScalarDecimalArray23() throws Exception { exchangeScalarDecimalArray(23, null); }
@@ -322,9 +222,9 @@ final class DbInteropTest {
     @Test void postgisScalarDecimalArray24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarDecimalArray); }
 
     private void exchangeScalarDecimalArray(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "scalar_decimal_array_ref");
-        var own = new TestDatabase(postgres, "scalar_decimal_array_own");
-        new ScalarCases(work, new ReferenceTool(own.postgis()), version).decimalArrays(expected, own);
+        var expected = new TestDatabase(work, postgres, "scalar_decimal_array_ref");
+        var own = new TestDatabase(work, postgres, "scalar_decimal_array_own");
+        new ScalarCases(work, new ReferenceTool(work, own.postgis()), version).decimalArrays(expected, own);
     }
 
     @Test void geoPackageEnumItfCodes23() throws Exception { exchangeEnumItfCodes(23, null); }
@@ -333,8 +233,8 @@ final class DbInteropTest {
     @Test void postgisEnumItfCodes24() throws Exception { exchangeWithPostgis(24, this::exchangeEnumItfCodes); }
 
     private void exchangeEnumItfCodes(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "enum_itf");
-        new EnumerationCases(work, new ReferenceTool(db.postgis()), version).itfCodes(db);
+        var db = new TestDatabase(work, postgres, "enum_itf");
+        new EnumerationCases(work, new ReferenceTool(work, db.postgis()), version).itfCodes(db);
     }
 
     @Test void geoPackageEnumItfSchema23() throws Exception { exchangeEnumItfSchema(23, null); }
@@ -343,9 +243,9 @@ final class DbInteropTest {
     @Test void postgisEnumItfSchema24() throws Exception { exchangeWithPostgis(24, this::exchangeEnumItfSchema); }
 
     private void exchangeEnumItfSchema(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "enum_itf_ddl_ref");
-        var db = new TestDatabase(postgres, "enum_itf_ddl_own");
-        new EnumerationCases(work, new ReferenceTool(db.postgis()), version).itfSchema(expected, db);
+        var expected = new TestDatabase(work, postgres, "enum_itf_ddl_ref");
+        var db = new TestDatabase(work, postgres, "enum_itf_ddl_own");
+        new EnumerationCases(work, new ReferenceTool(work, db.postgis()), version).itfSchema(expected, db);
     }
 
     @Test void geoPackageEnumText23() throws Exception { exchangeEnumText(23, null); }
@@ -354,9 +254,9 @@ final class DbInteropTest {
     @Test void postgisEnumText24() throws Exception { exchangeWithPostgis(24, this::exchangeEnumText); }
 
     private void exchangeEnumText(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "enum_txt_ref");
-        var db = new TestDatabase(postgres, "enum_txt_own");
-        new EnumerationCases(work, new ReferenceTool(db.postgis()), version).enumText(expected, db);
+        var expected = new TestDatabase(work, postgres, "enum_txt_ref");
+        var db = new TestDatabase(work, postgres, "enum_txt_own");
+        new EnumerationCases(work, new ReferenceTool(work, db.postgis()), version).enumText(expected, db);
     }
 
     @Test void geoPackageEnumSingleLookup23() throws Exception { exchangeEnumSingleLookup(23, null); }
@@ -365,9 +265,9 @@ final class DbInteropTest {
     @Test void postgisEnumSingleLookup24() throws Exception { exchangeWithPostgis(24, this::exchangeEnumSingleLookup); }
 
     private void exchangeEnumSingleLookup(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "enum_single_ref");
-        var db = new TestDatabase(postgres, "enum_single_own");
-        new EnumerationCases(work, new ReferenceTool(db.postgis()), version).singleLookup(expected, db);
+        var expected = new TestDatabase(work, postgres, "enum_single_ref");
+        var db = new TestDatabase(work, postgres, "enum_single_own");
+        new EnumerationCases(work, new ReferenceTool(work, db.postgis()), version).singleLookup(expected, db);
     }
 
     @Test void geoPackageEnumPerLookup23() throws Exception { exchangeEnumPerLookup(23, null); }
@@ -376,9 +276,9 @@ final class DbInteropTest {
     @Test void postgisEnumPerLookup24() throws Exception { exchangeWithPostgis(24, this::exchangeEnumPerLookup); }
 
     private void exchangeEnumPerLookup(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "enum_per_ref");
-        var db = new TestDatabase(postgres, "enum_per_own");
-        new EnumerationCases(work, new ReferenceTool(db.postgis()), version).perLookup(expected, db);
+        var expected = new TestDatabase(work, postgres, "enum_per_ref");
+        var db = new TestDatabase(work, postgres, "enum_per_own");
+        new EnumerationCases(work, new ReferenceTool(work, db.postgis()), version).perLookup(expected, db);
     }
 
     @Test void geoPackageEnumStoredIds23() throws Exception { exchangeEnumStoredIds(23, null); }
@@ -387,8 +287,8 @@ final class DbInteropTest {
     @Test void postgisEnumStoredIds24() throws Exception { exchangeWithPostgis(24, this::exchangeEnumStoredIds); }
 
     private void exchangeEnumStoredIds(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "enum_stored_id");
-        new EnumerationCases(work, new ReferenceTool(db.postgis()), version).storedIds(db);
+        var db = new TestDatabase(work, postgres, "enum_stored_id");
+        new EnumerationCases(work, new ReferenceTool(work, db.postgis()), version).storedIds(db);
     }
 
     @Test void geoPackageEnumIdSchema23() throws Exception { exchangeEnumIdSchema(23, null); }
@@ -397,9 +297,9 @@ final class DbInteropTest {
     @Test void postgisEnumIdSchema24() throws Exception { exchangeWithPostgis(24, this::exchangeEnumIdSchema); }
 
     private void exchangeEnumIdSchema(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "enum_id_ddl_ref");
-        var db = new TestDatabase(postgres, "enum_id_ddl_own");
-        new EnumerationCases(work, new ReferenceTool(db.postgis()), version).idSchema(expected, db);
+        var expected = new TestDatabase(work, postgres, "enum_id_ddl_ref");
+        var db = new TestDatabase(work, postgres, "enum_id_ddl_own");
+        new EnumerationCases(work, new ReferenceTool(work, db.postgis()), version).idSchema(expected, db);
     }
 
     @Test void geoPackageEnumIdExtension23() throws Exception { exchangeEnumIdExtension(23, null); }
@@ -408,9 +308,9 @@ final class DbInteropTest {
     @Test void postgisEnumIdExtension24() throws Exception { exchangeWithPostgis(24, this::exchangeEnumIdExtension); }
 
     private void exchangeEnumIdExtension(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "enum_id_ext_ref");
-        var db = new TestDatabase(postgres, "enum_id_ext_own");
-        new EnumerationCases(work, new ReferenceTool(db.postgis()), version).idExtension(expected, db);
+        var expected = new TestDatabase(work, postgres, "enum_id_ext_ref");
+        var db = new TestDatabase(work, postgres, "enum_id_ext_own");
+        new EnumerationCases(work, new ReferenceTool(work, db.postgis()), version).idExtension(expected, db);
     }
 
     @Test void geoPackageEnumAppend23() throws Exception { exchangeEnumAppend(23, null); }
@@ -419,9 +319,9 @@ final class DbInteropTest {
     @Test void postgisEnumAppend24() throws Exception { exchangeWithPostgis(24, this::exchangeEnumAppend); }
 
     private void exchangeEnumAppend(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "enum_append_ref");
-        var db = new TestDatabase(postgres, "enum_append_own");
-        new EnumerationCases(work, new ReferenceTool(db.postgis()), version).appendEnums(expected, db);
+        var expected = new TestDatabase(work, postgres, "enum_append_ref");
+        var db = new TestDatabase(work, postgres, "enum_append_own");
+        new EnumerationCases(work, new ReferenceTool(work, db.postgis()), version).appendEnums(expected, db);
     }
 
     @Test void geoPackageEnumNumericArrays23() throws Exception { exchangeEnumNumericArrays(23, null); }
@@ -430,9 +330,9 @@ final class DbInteropTest {
     @Test void postgisEnumNumericArrays24() throws Exception { exchangeWithPostgis(24, this::exchangeEnumNumericArrays); }
 
     private void exchangeEnumNumericArrays(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(postgres, "enum_numeric_array_ref");
-        var db = new TestDatabase(postgres, "enum_numeric_array_own");
-        new EnumerationCases(work, new ReferenceTool(db.postgis()), version).numericArrays(expected, db);
+        var expected = new TestDatabase(work, postgres, "enum_numeric_array_ref");
+        var db = new TestDatabase(work, postgres, "enum_numeric_array_own");
+        new EnumerationCases(work, new ReferenceTool(work, db.postgis()), version).numericArrays(expected, db);
     }
 
     @Test void geoPackageArrayEnumeration23() throws Exception { exchangeArrayEnumeration(23, null); }
@@ -441,8 +341,8 @@ final class DbInteropTest {
     @Test void postgisArrayEnumeration24() throws Exception { exchangeWithPostgis(24, this::exchangeArrayEnumeration); }
 
     private void exchangeArrayEnumeration(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "array_enumeration");
-        new ArrayCases(work, new ReferenceTool(db.postgis()), version).enumeration(db);
+        var db = new TestDatabase(work, postgres, "array_enumeration");
+        new ArrayCases(work, new ReferenceTool(work, db.postgis()), version).enumeration(db);
     }
 
     @Test void geoPackageArrayBag23() throws Exception { exchangeArrayBag(23, null); }
@@ -451,8 +351,8 @@ final class DbInteropTest {
     @Test void postgisArrayBag24() throws Exception { exchangeWithPostgis(24, this::exchangeArrayBag); }
 
     private void exchangeArrayBag(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "array_bag");
-        new ArrayCases(work, new ReferenceTool(db.postgis()), version).bag(db);
+        var db = new TestDatabase(work, postgres, "array_bag");
+        new ArrayCases(work, new ReferenceTool(work, db.postgis()), version).bag(db);
     }
 
     @Test void geoPackageArraySingle23() throws Exception { exchangeArraySingle(23, null); }
@@ -461,8 +361,8 @@ final class DbInteropTest {
     @Test void postgisArraySingle24() throws Exception { exchangeWithPostgis(24, this::exchangeArraySingle); }
 
     private void exchangeArraySingle(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "array_single");
-        new ArrayCases(work, new ReferenceTool(db.postgis()), version).single(db);
+        var db = new TestDatabase(work, postgres, "array_single");
+        new ArrayCases(work, new ReferenceTool(work, db.postgis()), version).single(db);
     }
 
     @Test void geoPackageArrayScalars23() throws Exception { exchangeArrayScalars(23, null); }
@@ -471,8 +371,8 @@ final class DbInteropTest {
     @Test void postgisArrayScalars24() throws Exception { exchangeWithPostgis(24, this::exchangeArrayScalars); }
 
     private void exchangeArrayScalars(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "array_scalars");
-        new ArrayCases(work, new ReferenceTool(db.postgis()), version).scalars(db);
+        var db = new TestDatabase(work, postgres, "array_scalars");
+        new ArrayCases(work, new ReferenceTool(work, db.postgis()), version).scalars(db);
     }
 
     @Test void geoPackageArraySchema23() throws Exception { exchangeArraySchema(23, null); }
@@ -481,9 +381,9 @@ final class DbInteropTest {
     @Test void postgisArraySchema24() throws Exception { exchangeWithPostgis(24, this::exchangeArraySchema); }
 
     private void exchangeArraySchema(int version, PostgreSQLContainer postgres) throws Exception {
-        var baseline = new TestDatabase(postgres, "array_schema_reference");
-        var db = new TestDatabase(postgres, "array_schema_native");
-        new ArrayCases(work, new ReferenceTool(db.postgis()), version).createSchema(baseline, db);
+        var baseline = new TestDatabase(work, postgres, "array_schema_reference");
+        var db = new TestDatabase(work, postgres, "array_schema_native");
+        new ArrayCases(work, new ReferenceTool(work, db.postgis()), version).createSchema(baseline, db);
     }
 
     @Test void geoPackageArraySmart223() throws Exception { exchangeArraySmart2(23, null); }
@@ -492,9 +392,9 @@ final class DbInteropTest {
     @Test void postgisArraySmart224() throws Exception { exchangeWithPostgis(24, this::exchangeArraySmart2); }
 
     private void exchangeArraySmart2(int version, PostgreSQLContainer postgres) throws Exception {
-        var baseline = new TestDatabase(postgres, "array_smart_reference");
-        var db = new TestDatabase(postgres, "array_smart_native");
-        new ArrayCases(work, new ReferenceTool(db.postgis()), version).smart2(baseline, db);
+        var baseline = new TestDatabase(work, postgres, "array_smart_reference");
+        var db = new TestDatabase(work, postgres, "array_smart_native");
+        new ArrayCases(work, new ReferenceTool(work, db.postgis()), version).smart2(baseline, db);
     }
 
     @Test void geoPackageArrayReferences23() throws Exception { exchangeArrayReferences(23, null); }
@@ -503,9 +403,9 @@ final class DbInteropTest {
     @Test void postgisArrayReferences24() throws Exception { exchangeWithPostgis(24, this::exchangeArrayReferences); }
 
     private void exchangeArrayReferences(int version, PostgreSQLContainer postgres) throws Exception {
-        var baseline = new TestDatabase(postgres, "array_refs_reference");
-        var db = new TestDatabase(postgres, "array_refs_native");
-        new ArrayCases(work, new ReferenceTool(db.postgis()), version).references(baseline, db);
+        var baseline = new TestDatabase(work, postgres, "array_refs_reference");
+        var db = new TestDatabase(work, postgres, "array_refs_native");
+        new ArrayCases(work, new ReferenceTool(work, db.postgis()), version).references(baseline, db);
     }
 
     @Test void geoPackageExpandSingle23() throws Exception { exchangeExpandSingle(23, null); }
@@ -514,8 +414,8 @@ final class DbInteropTest {
     @Test void postgisExpandSingle24() throws Exception { exchangeWithPostgis(24, this::exchangeExpandSingle); }
 
     private void exchangeExpandSingle(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "expand_single");
-        new StructureMappingCases(work, new ReferenceTool(db.postgis()), version).single(db);
+        var db = new TestDatabase(work, postgres, "expand_single");
+        new StructureMappingCases(work, new ReferenceTool(work, db.postgis()), version).single(db);
     }
 
     @Test void geoPackageExpandList23() throws Exception { exchangeExpandList(23, null); }
@@ -524,8 +424,8 @@ final class DbInteropTest {
     @Test void postgisExpandList24() throws Exception { exchangeWithPostgis(24, this::exchangeExpandList); }
 
     private void exchangeExpandList(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "expand_list");
-        new StructureMappingCases(work, new ReferenceTool(db.postgis()), version).list(db);
+        var db = new TestDatabase(work, postgres, "expand_list");
+        new StructureMappingCases(work, new ReferenceTool(work, db.postgis()), version).list(db);
     }
 
     @Test void geoPackageExpandBag23() throws Exception { exchangeExpandBag(23, null); }
@@ -534,8 +434,8 @@ final class DbInteropTest {
     @Test void postgisExpandBag24() throws Exception { exchangeWithPostgis(24, this::exchangeExpandBag); }
 
     private void exchangeExpandBag(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "expand_bag");
-        new StructureMappingCases(work, new ReferenceTool(db.postgis()), version).bag(db);
+        var db = new TestDatabase(work, postgres, "expand_bag");
+        new StructureMappingCases(work, new ReferenceTool(work, db.postgis()), version).bag(db);
     }
 
     @Test void geoPackageExpandNested23() throws Exception { exchangeExpandNested(23, null); }
@@ -544,8 +444,8 @@ final class DbInteropTest {
     @Test void postgisExpandNested24() throws Exception { exchangeWithPostgis(24, this::exchangeExpandNested); }
 
     private void exchangeExpandNested(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "expand_nested");
-        new StructureMappingCases(work, new ReferenceTool(db.postgis()), version).nested(db);
+        var db = new TestDatabase(work, postgres, "expand_nested");
+        new StructureMappingCases(work, new ReferenceTool(work, db.postgis()), version).nested(db);
     }
 
     @Test void geoPackageExpandSchema23() throws Exception { exchangeExpandSchema(23, null); }
@@ -554,9 +454,9 @@ final class DbInteropTest {
     @Test void postgisExpandSchema24() throws Exception { exchangeWithPostgis(24, this::exchangeExpandSchema); }
 
     private void exchangeExpandSchema(int version, PostgreSQLContainer postgres) throws Exception {
-        var baseline = new TestDatabase(postgres, "expand_baseline");
-        var own = new TestDatabase(postgres, "expand_own");
-        new StructureMappingCases(work, new ReferenceTool(own.postgis()), version).schema(baseline, own);
+        var baseline = new TestDatabase(work, postgres, "expand_baseline");
+        var own = new TestDatabase(work, postgres, "expand_own");
+        new StructureMappingCases(work, new ReferenceTool(work, own.postgis()), version).schema(baseline, own);
     }
 
     @Test void geoPackageExpandSmart223() throws Exception { exchangeExpandSmart2(23, null); }
@@ -565,9 +465,9 @@ final class DbInteropTest {
     @Test void postgisExpandSmart224() throws Exception { exchangeWithPostgis(24, this::exchangeExpandSmart2); }
 
     private void exchangeExpandSmart2(int version, PostgreSQLContainer postgres) throws Exception {
-        var baseline = new TestDatabase(postgres, "expand_smart_baseline");
-        var own = new TestDatabase(postgres, "expand_smart_own");
-        new StructureMappingCases(work, new ReferenceTool(own.postgis()), version).smart2(baseline, own);
+        var baseline = new TestDatabase(work, postgres, "expand_smart_baseline");
+        var own = new TestDatabase(work, postgres, "expand_smart_own");
+        new StructureMappingCases(work, new ReferenceTool(work, own.postgis()), version).smart2(baseline, own);
     }
 
     @Test void geoPackageJsonStructure23() throws Exception { exchangeJsonStructure(23, null); }
@@ -576,8 +476,8 @@ final class DbInteropTest {
     @Test void postgisJsonStructure24() throws Exception { exchangeWithPostgis(24, this::exchangeJsonStructure); }
 
     private void exchangeJsonStructure(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "json_structure");
-        new StructureMappingCases(work, new ReferenceTool(db.postgis()), version).jsonSingle(db);
+        var db = new TestDatabase(work, postgres, "json_structure");
+        new StructureMappingCases(work, new ReferenceTool(work, db.postgis()), version).jsonSingle(db);
     }
 
     @Test void geoPackageJsonCollections23() throws Exception { exchangeJsonCollections(23, null); }
@@ -586,8 +486,8 @@ final class DbInteropTest {
     @Test void postgisJsonCollections24() throws Exception { exchangeWithPostgis(24, this::exchangeJsonCollections); }
 
     private void exchangeJsonCollections(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "json_collections");
-        new StructureMappingCases(work, new ReferenceTool(db.postgis()), version).jsonCollections(db);
+        var db = new TestDatabase(work, postgres, "json_collections");
+        new StructureMappingCases(work, new ReferenceTool(work, db.postgis()), version).jsonCollections(db);
     }
 
     @Test void geoPackageJsonSchema23() throws Exception { exchangeJsonSchema(23, null); }
@@ -596,9 +496,9 @@ final class DbInteropTest {
     @Test void postgisJsonSchema24() throws Exception { exchangeWithPostgis(24, this::exchangeJsonSchema); }
 
     private void exchangeJsonSchema(int version, PostgreSQLContainer postgres) throws Exception {
-        var baseline = new TestDatabase(postgres, "json_schema_baseline");
-        var own = new TestDatabase(postgres, "json_schema_own");
-        new StructureMappingCases(work, new ReferenceTool(own.postgis()), version).jsonSchema(baseline, own);
+        var baseline = new TestDatabase(work, postgres, "json_schema_baseline");
+        var own = new TestDatabase(work, postgres, "json_schema_own");
+        new StructureMappingCases(work, new ReferenceTool(work, own.postgis()), version).jsonSchema(baseline, own);
     }
 
     @Test void geoPackageChbasePoints23() throws Exception { exchangeChbasePoints(23, null); }
@@ -609,8 +509,8 @@ final class DbInteropTest {
     @Test void postgisStrokePolyline24() throws Exception { exchangeWithPostgis(24, this::exchangeStrokePolyline); }
 
     private void exchangeStrokePolyline(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "stroke_polyline");
-        new StrokeCases(work, new ReferenceTool(db.postgis()), version).polyline(db);
+        var db = new TestDatabase(work, postgres, "stroke_polyline");
+        new StrokeCases(work, new ReferenceTool(work, db.postgis()), version).polyline(db);
     }
 
     @Test void geoPackageStrokeArcs23() throws Exception { exchangeStrokeArcs(23, null); }
@@ -619,8 +519,8 @@ final class DbInteropTest {
     @Test void postgisStrokeArcs24() throws Exception { exchangeWithPostgis(24, this::exchangeStrokeArcs); }
 
     private void exchangeStrokeArcs(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "stroke_arcs");
-        new StrokeCases(work, new ReferenceTool(db.postgis()), version).arcs(db);
+        var db = new TestDatabase(work, postgres, "stroke_arcs");
+        new StrokeCases(work, new ReferenceTool(work, db.postgis()), version).arcs(db);
     }
 
     @Test void geoPackageStrokeSurface23() throws Exception { exchangeStrokeSurface(23, null); }
@@ -629,8 +529,8 @@ final class DbInteropTest {
     @Test void postgisStrokeSurface24() throws Exception { exchangeWithPostgis(24, this::exchangeStrokeSurface); }
 
     private void exchangeStrokeSurface(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "stroke_surface");
-        new StrokeCases(work, new ReferenceTool(db.postgis()), version).surface(db);
+        var db = new TestDatabase(work, postgres, "stroke_surface");
+        new StrokeCases(work, new ReferenceTool(work, db.postgis()), version).surface(db);
     }
 
     @Test void geoPackageStrokeArea23() throws Exception { exchangeStrokeArea(23, null); }
@@ -639,8 +539,8 @@ final class DbInteropTest {
     @Test void postgisStrokeArea24() throws Exception { exchangeWithPostgis(24, this::exchangeStrokeArea); }
 
     private void exchangeStrokeArea(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "stroke_area");
-        new StrokeCases(work, new ReferenceTool(db.postgis()), version).area(db);
+        var db = new TestDatabase(work, postgres, "stroke_area");
+        new StrokeCases(work, new ReferenceTool(work, db.postgis()), version).area(db);
     }
 
     @Test void geoPackageStrokeMultiPolyline23() throws Exception { exchangeStrokeMultiPolyline(23, null); }
@@ -649,8 +549,8 @@ final class DbInteropTest {
     @Test void postgisStrokeMultiPolyline24() throws Exception { exchangeWithPostgis(24, this::exchangeStrokeMultiPolyline); }
 
     private void exchangeStrokeMultiPolyline(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "stroke_multi_line");
-        new StrokeCases(work, new ReferenceTool(db.postgis()), version).multiPolyline(db);
+        var db = new TestDatabase(work, postgres, "stroke_multi_line");
+        new StrokeCases(work, new ReferenceTool(work, db.postgis()), version).multiPolyline(db);
     }
 
     @Test void geoPackageStrokeMultiSurface23() throws Exception { exchangeStrokeMultiSurface(23, null); }
@@ -659,8 +559,8 @@ final class DbInteropTest {
     @Test void postgisStrokeMultiSurface24() throws Exception { exchangeWithPostgis(24, this::exchangeStrokeMultiSurface); }
 
     private void exchangeStrokeMultiSurface(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "stroke_multi_surface");
-        new StrokeCases(work, new ReferenceTool(db.postgis()), version).multiSurface(db);
+        var db = new TestDatabase(work, postgres, "stroke_multi_surface");
+        new StrokeCases(work, new ReferenceTool(work, db.postgis()), version).multiSurface(db);
     }
 
     @Test void geoPackageStrokeSchema23() throws Exception { exchangeStrokeSchema(23, null); }
@@ -669,9 +569,9 @@ final class DbInteropTest {
     @Test void postgisStrokeSchema24() throws Exception { exchangeWithPostgis(24, this::exchangeStrokeSchema); }
 
     private void exchangeStrokeSchema(int version, PostgreSQLContainer postgres) throws Exception {
-        var baseline = new TestDatabase(postgres, "stroke_baseline");
-        var own = new TestDatabase(postgres, "stroke_own");
-        new StrokeCases(work, new ReferenceTool(own.postgis()), version).schema(baseline, own);
+        var baseline = new TestDatabase(work, postgres, "stroke_baseline");
+        var own = new TestDatabase(work, postgres, "stroke_own");
+        new StrokeCases(work, new ReferenceTool(work, own.postgis()), version).schema(baseline, own);
     }
 
     @Test void geoPackageStrokeSmart223() throws Exception { exchangeStrokeSmart2(23, null); }
@@ -680,9 +580,9 @@ final class DbInteropTest {
     @Test void postgisStrokeSmart224() throws Exception { exchangeWithPostgis(24, this::exchangeStrokeSmart2); }
 
     private void exchangeStrokeSmart2(int version, PostgreSQLContainer postgres) throws Exception {
-        var baseline = new TestDatabase(postgres, "stroke_smart_baseline");
-        var own = new TestDatabase(postgres, "stroke_smart_own");
-        new StrokeCases(work, new ReferenceTool(own.postgis()), version).smart2(baseline, own);
+        var baseline = new TestDatabase(work, postgres, "stroke_smart_baseline");
+        var own = new TestDatabase(work, postgres, "stroke_smart_own");
+        new StrokeCases(work, new ReferenceTool(work, own.postgis()), version).smart2(baseline, own);
     }
 
     @Test void postgisChbasePoints23() throws Exception { exchangeWithPostgis(23, this::exchangeChbasePoints); }
@@ -705,30 +605,30 @@ final class DbInteropTest {
     @Test void postgisChbaseSmart224() throws Exception { exchangeWithPostgis(24, this::exchangeChbaseSmart2); }
 
     private void exchangeChbasePoints(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "chbase_points");
-        new ChbaseGeometryCases(work, new ReferenceTool(db.postgis()), version).points(db);
+        var db = new TestDatabase(work, postgres, "chbase_points");
+        new ChbaseGeometryCases(work, new ReferenceTool(work, db.postgis()), version).points(db);
     }
 
     private void exchangeChbaseLines(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "chbase_lines");
-        new ChbaseGeometryCases(work, new ReferenceTool(db.postgis()), version).lines(db);
+        var db = new TestDatabase(work, postgres, "chbase_lines");
+        new ChbaseGeometryCases(work, new ReferenceTool(work, db.postgis()), version).lines(db);
     }
 
     private void exchangeChbaseSurfaces(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "chbase_surfaces");
-        new ChbaseGeometryCases(work, new ReferenceTool(db.postgis()), version).surfaces(db);
+        var db = new TestDatabase(work, postgres, "chbase_surfaces");
+        new ChbaseGeometryCases(work, new ReferenceTool(work, db.postgis()), version).surfaces(db);
     }
 
     private void exchangeChbaseGeometrySchema(int version, PostgreSQLContainer postgres) throws Exception {
-        var baseline = new TestDatabase(postgres, "chbase_geometry_ref");
-        new ChbaseGeometryCases(work, new ReferenceTool(baseline.postgis()), version)
-                .schema(baseline, new TestDatabase(postgres, "chbase_geometry_own"));
+        var baseline = new TestDatabase(work, postgres, "chbase_geometry_ref");
+        new ChbaseGeometryCases(work, new ReferenceTool(work, baseline.postgis()), version)
+                .schema(baseline, new TestDatabase(work, postgres, "chbase_geometry_own"));
     }
 
     private void exchangeChbaseSmart2(int version, PostgreSQLContainer postgres) throws Exception {
-        var baseline = new TestDatabase(postgres, "chbase_smart2_ref");
-        new ChbaseGeometryCases(work, new ReferenceTool(baseline.postgis()), version)
-                .smart2(baseline, new TestDatabase(postgres, "chbase_smart2_own"));
+        var baseline = new TestDatabase(work, postgres, "chbase_smart2_ref");
+        new ChbaseGeometryCases(work, new ReferenceTool(work, baseline.postgis()), version)
+                .smart2(baseline, new TestDatabase(work, postgres, "chbase_smart2_own"));
     }
 
     @Test void geoPackageChbaseMultilingual23() throws Exception { exchangeChbaseMultilingual(23, null); }
@@ -745,19 +645,19 @@ final class DbInteropTest {
     @Test void postgisChbaseTextSchema24() throws Exception { exchangeWithPostgis(24, this::exchangeChbaseTextSchema); }
 
     private void exchangeChbaseMultilingual(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "chbase_multilingual");
-        new ChbaseTextCases(work, new ReferenceTool(db.postgis()), version).multilingual(db);
+        var db = new TestDatabase(work, postgres, "chbase_multilingual");
+        new ChbaseTextCases(work, new ReferenceTool(work, db.postgis()), version).multilingual(db);
     }
 
     private void exchangeChbaseLocalised(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "chbase_localised");
-        new ChbaseTextCases(work, new ReferenceTool(db.postgis()), version).localised(db);
+        var db = new TestDatabase(work, postgres, "chbase_localised");
+        new ChbaseTextCases(work, new ReferenceTool(work, db.postgis()), version).localised(db);
     }
 
     private void exchangeChbaseTextSchema(int version, PostgreSQLContainer postgres) throws Exception {
-        var baseline = new TestDatabase(postgres, "chbase_text_ref");
-        new ChbaseTextCases(work, new ReferenceTool(baseline.postgis()), version)
-                .schema(baseline, new TestDatabase(postgres, "chbase_text_own"));
+        var baseline = new TestDatabase(work, postgres, "chbase_text_ref");
+        new ChbaseTextCases(work, new ReferenceTool(work, baseline.postgis()), version)
+                .schema(baseline, new TestDatabase(work, postgres, "chbase_text_own"));
     }
 
     @Test void geoPackageCatalogueReference23() throws Exception { exchangeCatalogueReference(23, null); }
@@ -774,22 +674,22 @@ final class DbInteropTest {
     @Test void postgisCatalogueSchema24() throws Exception { exchangeWithPostgis(24, this::exchangeCatalogueSchema); }
 
     private void exchangeCatalogueReference(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "catalogue_reference");
-        var cases = new CatalogueCases(work, new ReferenceTool(db.postgis()), version);
+        var db = new TestDatabase(work, postgres, "catalogue_reference");
+        var cases = new CatalogueCases(work, new ReferenceTool(work, db.postgis()), version);
         cases.singleTarget(db);
-        if (version == 24) cases.directReference(new TestDatabase(postgres, "catalogue_direct"));
+        if (version == 24) cases.directReference(new TestDatabase(work, postgres, "catalogue_direct"));
     }
 
     private void exchangeCatalogueSmart2(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "catalogue_smart2");
-        new CatalogueCases(work, new ReferenceTool(db.postgis()), version).smart2(db);
+        var db = new TestDatabase(work, postgres, "catalogue_smart2");
+        new CatalogueCases(work, new ReferenceTool(work, db.postgis()), version).smart2(db);
     }
 
     private void exchangeCatalogueSchema(int version, PostgreSQLContainer postgres) throws Exception {
-        var baseline = new TestDatabase(postgres, "catalogue_reference_newclass");
-        new CatalogueCases(work, new ReferenceTool(baseline.postgis()), version).schema(baseline,
-                new TestDatabase(postgres, "catalogue_native_newclass"), new TestDatabase(postgres, "catalogue_reference_smart2"),
-                new TestDatabase(postgres, "catalogue_native_smart2"));
+        var baseline = new TestDatabase(work, postgres, "catalogue_reference_newclass");
+        new CatalogueCases(work, new ReferenceTool(work, baseline.postgis()), version).schema(baseline,
+                new TestDatabase(work, postgres, "catalogue_native_newclass"), new TestDatabase(work, postgres, "catalogue_reference_smart2"),
+                new TestDatabase(work, postgres, "catalogue_native_smart2"));
     }
 
     @Test void geoPackageSmart1Scalars23() throws Exception { exchangeSmart1Scalars(23, null); }
@@ -839,17 +739,17 @@ final class DbInteropTest {
     @Test void postgisIdentityColumns23() throws Exception { exchangeWithPostgis(23, this::exchangeIdentityColumns); }
 
     private void exchangeIdentityColumns(int version, PostgreSQLContainer postgres) throws Exception {
-        new IdentityColumnCases(work, new ReferenceTool(postgres != null), version)
-                .exercise(new TestDatabase(postgres, "identity"));
+        new IdentityColumnCases(work, new ReferenceTool(work, postgres != null), version)
+                .exercise(new TestDatabase(work, postgres, "identity"));
     }
 
     private void checkIlisMeta16Schema(int version, PostgreSQLContainer postgres) throws Exception {
         var source = Path.of("../testdata/conformance/metamodel/IlisMeta16.ili");
         var ili = Files.copy(source, work.resolve(source.getFileName()));
-        var reference = new ReferenceTool(postgres != null);
+        var reference = new ReferenceTool(work, postgres != null);
         for (String profile : List.of("newclass", "smart1", "smart2")) {
             boolean newClass = profile.equals("newclass");
-            var referenceDb = new TestDatabase(postgres, "meta_ref_" + profile);
+            var referenceDb = new TestDatabase(work, postgres, "meta_ref_" + profile);
             var args = new ArrayList<>(List.of("--schemaimport", "--createBasketCol", "--noSmartMapping"));
             if (!newClass) args.add("--" + profile + "Inheritance");
             args.add(ili.toString());
@@ -867,7 +767,7 @@ final class DbInteropTest {
                         + " from " + referenceDb.table("dataunit") + " where 1 = 0"), profile);
             }
 
-            var nativeDb = new TestDatabase(postgres, "meta_native_" + profile);
+            var nativeDb = new TestDatabase(work, postgres, "meta_native_" + profile);
             var nativeArgs = newClass ? new String[0] : new String[]{"--inheritance", profile};
             assertCliFailure(nativeDb, "schemaimport", "IlisMeta16", null, ili,
                     "IlisMeta16.ModelData requires --create-basket-col", nativeArgs);
@@ -896,17 +796,17 @@ final class DbInteropTest {
                 Files.copy(resource, path);
             }
         }
-        var reference = new ReferenceTool(postgres != null);
+        var reference = new ReferenceTool(work, postgres != null);
         for (String profile : List.of("newclass", "smart1", "smart2")) {
             boolean newClass = profile.equals("newclass");
-            var legacyDb = new TestDatabase(postgres, "textoid_ref_" + profile);
+            var legacyDb = new TestDatabase(work, postgres, "textoid_ref_" + profile);
             var args = new ArrayList<>(List.of("--schemaimport", "--createBasketCol", "--createTidCol", "--sqlEnableNull",
                     "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", "--noSmartMapping"));
             if (!newClass) args.add("--" + profile + "Inheritance");
             args.add(ili.toString());
             reference.run(legacyDb, work.toString(), args.toArray(String[]::new));
 
-            var ownDb = new TestDatabase(postgres, "textoid_own_" + profile);
+            var ownDb = new TestDatabase(work, postgres, "textoid_own_" + profile);
             var nativeArgs = newClass ? new String[0] : new String[]{"--inheritance", profile};
             var result = schemaWithIdentityColumns(ownDb, model, ili, CancellationToken.none(), nativeArgs);
             assertEquals(0, result.code(), result::diagnostics);
@@ -946,54 +846,54 @@ final class DbInteropTest {
     }
 
     private void exchangeSmart1Scalars(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "smart1_scalars");
-        new SmartCases(work, new ReferenceTool(db.postgis()), version)
-                .smart1Scalars(db, new TestDatabase(postgres, "smart1_defaults"));
+        var db = new TestDatabase(work, postgres, "smart1_scalars");
+        new SmartCases(work, new ReferenceTool(work, db.postgis()), version)
+                .smart1Scalars(db, new TestDatabase(work, postgres, "smart1_defaults"));
     }
 
     private void exchangeSmart1References(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "smart1_references");
-        new SmartCases(work, new ReferenceTool(db.postgis()), version).smart1References(db);
+        var db = new TestDatabase(work, postgres, "smart1_references");
+        new SmartCases(work, new ReferenceTool(work, db.postgis()), version).smart1References(db);
     }
 
     private void exchangeSmart2Scalars(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "smart2_scalars");
-        new SmartCases(work, new ReferenceTool(db.postgis()), version).smart2Scalars(db);
+        var db = new TestDatabase(work, postgres, "smart2_scalars");
+        new SmartCases(work, new ReferenceTool(work, db.postgis()), version).smart2Scalars(db);
     }
 
     private void exchangeSmart2References(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "smart2_references");
-        new SmartCases(work, new ReferenceTool(db.postgis()), version).smart2References(db);
+        var db = new TestDatabase(work, postgres, "smart2_references");
+        new SmartCases(work, new ReferenceTool(work, db.postgis()), version).smart2References(db);
     }
 
     private void exchangeSmartStructures(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "smart1_structures");
-        new SmartCases(work, new ReferenceTool(db.postgis()), version)
-                .structures(db, new TestDatabase(postgres, "smart2_structures"));
+        var db = new TestDatabase(work, postgres, "smart1_structures");
+        new SmartCases(work, new ReferenceTool(work, db.postgis()), version)
+                .structures(db, new TestDatabase(work, postgres, "smart2_structures"));
     }
 
     private void exchangeSmartGeometries(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "smart1_geometries");
-        new SmartCases(work, new ReferenceTool(db.postgis()), version)
-                .geometries(db, new TestDatabase(postgres, "smart2_geometries"));
+        var db = new TestDatabase(work, postgres, "smart1_geometries");
+        new SmartCases(work, new ReferenceTool(work, db.postgis()), version)
+                .geometries(db, new TestDatabase(work, postgres, "smart2_geometries"));
     }
 
     private void exchangeSmartMutations(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "smart1_mutations");
-        new SmartCases(work, new ReferenceTool(db.postgis()), version)
-                .mutations(db, new TestDatabase(postgres, "smart2_mutations"));
+        var db = new TestDatabase(work, postgres, "smart1_mutations");
+        new SmartCases(work, new ReferenceTool(work, db.postgis()), version)
+                .mutations(db, new TestDatabase(work, postgres, "smart2_mutations"));
     }
 
     private void exchangeSmart1Schema(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "smart1_schema_reference");
-        new SmartCases(work, new ReferenceTool(db.postgis()), version)
-                .smart1Schema(db, new TestDatabase(postgres, "smart1_schema_native"));
+        var db = new TestDatabase(work, postgres, "smart1_schema_reference");
+        new SmartCases(work, new ReferenceTool(work, db.postgis()), version)
+                .smart1Schema(db, new TestDatabase(work, postgres, "smart1_schema_native"));
     }
 
     private void exchangeSmart2Schema(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "smart2_schema_reference");
-        new SmartCases(work, new ReferenceTool(db.postgis()), version)
-                .smart2Schema(db, new TestDatabase(postgres, "smart2_schema_native"));
+        var db = new TestDatabase(work, postgres, "smart2_schema_reference");
+        new SmartCases(work, new ReferenceTool(work, db.postgis()), version)
+                .smart2Schema(db, new TestDatabase(work, postgres, "smart2_schema_native"));
     }
 
     @Test void geoPackageTranslationSources23() throws Exception { exchangeTranslationSources(23, null); }
@@ -1107,8 +1007,8 @@ final class DbInteropTest {
     @Test void postgisXyz24() throws Exception { exchangeWithPostgis(24, this::exchangeXyz); }
 
     private void exchangeXyz(int version, PostgreSQLContainer postgres) throws Exception {
-        new XyzGeometryCases(work, version, new ReferenceTool(postgres != null))
-                .exchange(new TestDatabase(postgres, "xyz_reference"), new TestDatabase(postgres, "xyz_own"));
+        new XyzGeometryCases(work, version, new ReferenceTool(work, postgres != null))
+                .exchange(new TestDatabase(work, postgres, "xyz_reference"), new TestDatabase(work, postgres, "xyz_own"));
     }
 
     @Test void geoPackageGeometryLayout23() throws Exception { exchangeGeometryLayout(23, null); }
@@ -1117,16 +1017,16 @@ final class DbInteropTest {
     @Test void postgisGeometryLayout24() throws Exception { exchangeWithPostgis(24, this::exchangeGeometryLayout); }
 
     private void exchangeGeometryLayout(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new GeometryLayoutCases(work, version, new ReferenceTool(postgres != null));
+        var cases = new GeometryLayoutCases(work, version, new ReferenceTool(work, postgres != null));
         if (postgres != null) {
-            cases.sameTable(new TestDatabase(postgres, "geometry_layout_reference"),
-                    new TestDatabase(postgres, "geometry_layout_own"));
+            cases.sameTable(new TestDatabase(work, postgres, "geometry_layout_reference"),
+                    new TestDatabase(work, postgres, "geometry_layout_own"));
         } else {
-            cases.wideGeoPackage(new TestDatabase(null, "wide_geometry_reference"),
-                    new TestDatabase(null, "wide_geometry_own"));
+            cases.wideGeoPackage(new TestDatabase(work, null, "wide_geometry_reference"),
+                    new TestDatabase(work, null, "wide_geometry_own"));
         }
-        cases.split(new TestDatabase(postgres, "split_geometry_reference"),
-                new TestDatabase(postgres, "split_geometry_own"));
+        cases.split(new TestDatabase(work, postgres, "split_geometry_reference"),
+                new TestDatabase(work, postgres, "split_geometry_own"));
     }
 
     @Test void geoPackageGeometryHierarchy23() throws Exception { exchangeGeometryHierarchy(23, null); }
@@ -1135,11 +1035,11 @@ final class DbInteropTest {
     @Test void postgisGeometryHierarchy24() throws Exception { exchangeWithPostgis(24, this::exchangeGeometryHierarchy); }
 
     private void exchangeGeometryHierarchy(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new GeometryLayoutCases(work, version, new ReferenceTool(postgres != null));
-        cases.hierarchy(new TestDatabase(postgres, "hierarchy_geometry_reference"),
-                new TestDatabase(postgres, "hierarchy_geometry_own"), postgres == null);
-        cases.hierarchy(new TestDatabase(postgres, "alternate_hierarchy_reference"),
-                new TestDatabase(postgres, "alternate_hierarchy_own"), postgres != null);
+        var cases = new GeometryLayoutCases(work, version, new ReferenceTool(work, postgres != null));
+        cases.hierarchy(new TestDatabase(work, postgres, "hierarchy_geometry_reference"),
+                new TestDatabase(work, postgres, "hierarchy_geometry_own"), postgres == null);
+        cases.hierarchy(new TestDatabase(work, postgres, "alternate_hierarchy_reference"),
+                new TestDatabase(work, postgres, "alternate_hierarchy_own"), postgres != null);
     }
 
     @Test void geoPackageCrs23() throws Exception { exchangeCrs(23, null); }
@@ -1148,17 +1048,17 @@ final class DbInteropTest {
     @Test void postgisCrs24() throws Exception { exchangeWithPostgis(24, this::exchangeCrs); }
 
     private void exchangeCrs(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new CrsCases(work, version, new ReferenceTool(postgres != null));
+        var cases = new CrsCases(work, version, new ReferenceTool(work, postgres != null));
         for (int epsg : List.of(21781, 4326)) {
-            cases.defaults(new TestDatabase(postgres, "crs_reference_" + epsg),
-                    new TestDatabase(postgres, "crs_own_" + epsg), epsg);
+            cases.defaults(new TestDatabase(work, postgres, "crs_reference_" + epsg),
+                    new TestDatabase(work, postgres, "crs_own_" + epsg), epsg);
         }
-        cases.rejectMissingDefault(new TestDatabase(postgres, "crs_missing"));
-        cases.declaredPointCrs(new TestDatabase(postgres, "declared_crs_reference"),
-                new TestDatabase(postgres, "declared_crs_own"));
-        cases.vertexCrs(new TestDatabase(postgres, "vertex_crs_reference"),
-                new TestDatabase(postgres, "vertex_crs_own"));
-        cases.modelOverride(new TestDatabase(postgres, "model_crs_reference"));
+        cases.rejectMissingDefault(new TestDatabase(work, postgres, "crs_missing"));
+        cases.declaredPointCrs(new TestDatabase(work, postgres, "declared_crs_reference"),
+                new TestDatabase(work, postgres, "declared_crs_own"));
+        cases.vertexCrs(new TestDatabase(work, postgres, "vertex_crs_reference"),
+                new TestDatabase(work, postgres, "vertex_crs_own"));
+        cases.modelOverride(new TestDatabase(work, postgres, "model_crs_reference"));
     }
 
     @Test void geoPackageMixedSrid23() throws Exception { exchangeMixedSrid(23, null); }
@@ -1167,11 +1067,11 @@ final class DbInteropTest {
     @Test void postgisMixedSrid24() throws Exception { exchangeWithPostgis(24, this::exchangeMixedSrid); }
 
     private void exchangeMixedSrid(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new CrsCases(work, version, new ReferenceTool(postgres != null));
-        cases.mixedSrid(new TestDatabase(postgres, "mixed_split_reference"),
-                new TestDatabase(postgres, "mixed_split_own"), true);
-        cases.mixedSrid(new TestDatabase(postgres, "mixed_wide_reference"),
-                new TestDatabase(postgres, "mixed_wide_own"), false);
+        var cases = new CrsCases(work, version, new ReferenceTool(work, postgres != null));
+        cases.mixedSrid(new TestDatabase(work, postgres, "mixed_split_reference"),
+                new TestDatabase(work, postgres, "mixed_split_own"), true);
+        cases.mixedSrid(new TestDatabase(work, postgres, "mixed_wide_reference"),
+                new TestDatabase(work, postgres, "mixed_wide_own"), false);
     }
 
     @Test void geoPackageBasketCrsMutation23() throws Exception { exchangeBasketCrsMutation(23, null); }
@@ -1180,8 +1080,8 @@ final class DbInteropTest {
     @Test void postgisBasketCrsMutation24() throws Exception { exchangeWithPostgis(24, this::exchangeBasketCrsMutation); }
 
     private void exchangeBasketCrsMutation(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "basket_crs_mutation");
-        var reference = new ReferenceTool(postgres != null);
+        var db = new TestDatabase(work, postgres, "basket_crs_mutation");
+        var reference = new ReferenceTool(work, postgres != null);
         if (version == 23) new AlternateCrsCases(work, reference).mutate(db);
         else new CrsCases(work, version, reference).mutateDeferred(db);
     }
@@ -1190,69 +1090,69 @@ final class DbInteropTest {
     @Test void postgisAlternateCrsExchange23() throws Exception { exchangeWithPostgis(23, this::exchangeAlternateCrs); }
 
     private void exchangeAlternateCrs(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new AlternateCrsCases(work, new ReferenceTool(postgres != null));
-        cases.exchange(new TestDatabase(postgres, "alternate_crs_legacy"),
-                new TestDatabase(postgres, "alternate_crs_own"), new TestDatabase(postgres, "alternate_crs_invalid"));
+        var cases = new AlternateCrsCases(work, new ReferenceTool(work, postgres != null));
+        cases.exchange(new TestDatabase(work, postgres, "alternate_crs_legacy"),
+                new TestDatabase(work, postgres, "alternate_crs_own"), new TestDatabase(work, postgres, "alternate_crs_invalid"));
     }
 
     @Test void geoPackageAlternateCrsExport23() throws Exception { exchangeAlternateCrsExport(23, null); }
     @Test void postgisAlternateCrsExport23() throws Exception { exchangeWithPostgis(23, this::exchangeAlternateCrsExport); }
 
     private void exchangeAlternateCrsExport(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new AlternateCrsCases(work, new ReferenceTool(postgres != null));
-        cases.export(new TestDatabase(postgres, "alternate_crs_reference"));
+        var cases = new AlternateCrsCases(work, new ReferenceTool(work, postgres != null));
+        cases.export(new TestDatabase(work, postgres, "alternate_crs_reference"));
     }
 
     @Test void geoPackageDeferredMulti24() throws Exception { exchangeDeferredMulti(24, null); }
     @Test void postgisDeferredMulti24() throws Exception { exchangeWithPostgis(24, this::exchangeDeferredMulti); }
 
     private void exchangeDeferredMulti(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new CrsCases(work, version, new ReferenceTool(postgres != null));
-        cases.deferredMulti(new TestDatabase(postgres, "deferred_multi_reference"),
-                new TestDatabase(postgres, "deferred_multi_own"));
+        var cases = new CrsCases(work, version, new ReferenceTool(work, postgres != null));
+        cases.deferredMulti(new TestDatabase(work, postgres, "deferred_multi_reference"),
+                new TestDatabase(work, postgres, "deferred_multi_own"));
     }
 
     @Test void geoPackageDeferredCurves24() throws Exception { exchangeDeferredCurves(24, null); }
     @Test void postgisDeferredCurves24() throws Exception { exchangeWithPostgis(24, this::exchangeDeferredCurves); }
 
     private void exchangeDeferredCurves(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new CrsCases(work, version, new ReferenceTool(postgres != null));
-        cases.deferredCurves(new TestDatabase(postgres, "deferred_curves_reference"),
-                new TestDatabase(postgres, "deferred_curves_own"));
+        var cases = new CrsCases(work, version, new ReferenceTool(work, postgres != null));
+        cases.deferredCurves(new TestDatabase(work, postgres, "deferred_curves_reference"),
+                new TestDatabase(work, postgres, "deferred_curves_own"));
     }
 
     @Test void geoPackageCreateDeferred24() throws Exception { exchangeCreateDeferred(24, null); }
     @Test void postgisCreateDeferred24() throws Exception { exchangeWithPostgis(24, this::exchangeCreateDeferred); }
 
     private void exchangeCreateDeferred(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new CrsCases(work, version, new ReferenceTool(postgres != null));
-        cases.createDeferred(new TestDatabase(postgres, "deferred_native_ddl"),
-                new TestDatabase(postgres, "deferred_reference_ddl"), new TestDatabase(postgres, "deferred_rejected_ddl"));
+        var cases = new CrsCases(work, version, new ReferenceTool(work, postgres != null));
+        cases.createDeferred(new TestDatabase(work, postgres, "deferred_native_ddl"),
+                new TestDatabase(work, postgres, "deferred_reference_ddl"), new TestDatabase(work, postgres, "deferred_rejected_ddl"));
     }
 
     @Test void geoPackageImportDeferred24() throws Exception { exchangeImportDeferred(24, null); }
     @Test void postgisImportDeferred24() throws Exception { exchangeWithPostgis(24, this::exchangeImportDeferred); }
 
     private void exchangeImportDeferred(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new CrsCases(work, version, new ReferenceTool(postgres != null));
-        cases.importDeferred(new TestDatabase(postgres, "deferred_import"));
+        var cases = new CrsCases(work, version, new ReferenceTool(work, postgres != null));
+        cases.importDeferred(new TestDatabase(work, postgres, "deferred_import"));
     }
 
     @Test void geoPackageExportDeferred24() throws Exception { exchangeExportDeferred(24, null); }
     @Test void postgisExportDeferred24() throws Exception { exchangeWithPostgis(24, this::exchangeExportDeferred); }
 
     private void exchangeExportDeferred(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new CrsCases(work, version, new ReferenceTool(postgres != null));
-        cases.exportDeferred(new TestDatabase(postgres, "deferred_reference"));
+        var cases = new CrsCases(work, version, new ReferenceTool(work, postgres != null));
+        cases.exportDeferred(new TestDatabase(work, postgres, "deferred_reference"));
     }
 
     @Test void geoPackageStaticGeneric24() throws Exception { exchangeStaticGeneric(24, null); }
     @Test void postgisStaticGeneric24() throws Exception { exchangeWithPostgis(24, this::exchangeStaticGeneric); }
 
     private void exchangeStaticGeneric(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new CrsCases(work, version, new ReferenceTool(postgres != null));
-        cases.staticGeneric(new TestDatabase(postgres, "static_crs_reference"),
-                new TestDatabase(postgres, "static_crs_own"));
+        var cases = new CrsCases(work, version, new ReferenceTool(work, postgres != null));
+        cases.staticGeneric(new TestDatabase(work, postgres, "static_crs_reference"),
+                new TestDatabase(work, postgres, "static_crs_own"));
     }
 
     @Test void geoPackageFixedMultiSrs23() throws Exception { exchangeFixedMultiSrs(23, null); }
@@ -1261,11 +1161,11 @@ final class DbInteropTest {
     @Test void postgisFixedMultiSrs24() throws Exception { exchangeWithPostgis(24, this::exchangeFixedMultiSrs); }
 
     private void exchangeFixedMultiSrs(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new CrsCases(work, version, new ReferenceTool(postgres != null));
-        cases.fixedMultiSrs(new TestDatabase(postgres, "suffix_split_reference"),
-                new TestDatabase(postgres, "suffix_split_own"), true);
-        cases.fixedMultiSrs(new TestDatabase(postgres, "suffix_wide_reference"),
-                new TestDatabase(postgres, "suffix_wide_own"), false);
+        var cases = new CrsCases(work, version, new ReferenceTool(work, postgres != null));
+        cases.fixedMultiSrs(new TestDatabase(work, postgres, "suffix_split_reference"),
+                new TestDatabase(work, postgres, "suffix_split_own"), true);
+        cases.fixedMultiSrs(new TestDatabase(work, postgres, "suffix_wide_reference"),
+                new TestDatabase(work, postgres, "suffix_wide_own"), false);
     }
 
     @Test void geoPackageLocalSrid23() throws Exception { exchangeLocalSrid(23, null); }
@@ -1274,50 +1174,50 @@ final class DbInteropTest {
     @Test void postgisLocalSrid24() throws Exception { exchangeWithPostgis(24, this::exchangeLocalSrid); }
 
     private void exchangeLocalSrid(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new CrsCases(work, version, new ReferenceTool(postgres != null));
-        cases.localSrid(new TestDatabase(postgres, "local_srid"));
+        var cases = new CrsCases(work, version, new ReferenceTool(work, postgres != null));
+        cases.localSrid(new TestDatabase(work, postgres, "local_srid"));
     }
 
     private void exchangeSpatial(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new SpatialIndexCases(work, version, new ReferenceTool(postgres != null));
-        cases.points(new TestDatabase(postgres, "spatial_points"));
-        cases.straightGeometries(new TestDatabase(postgres, "spatial_straight"));
-        cases.circularGeometries(new TestDatabase(postgres, "spatial_arcs"));
-        if (version == 24) cases.collections(new TestDatabase(postgres, "spatial_collections"));
-        cases.createdSchemas(new TestDatabase(postgres, "spatial_created_reference"),
-                new TestDatabase(postgres, "spatial_created_native"));
+        var cases = new SpatialIndexCases(work, version, new ReferenceTool(work, postgres != null));
+        cases.points(new TestDatabase(work, postgres, "spatial_points"));
+        cases.straightGeometries(new TestDatabase(work, postgres, "spatial_straight"));
+        cases.circularGeometries(new TestDatabase(work, postgres, "spatial_arcs"));
+        if (version == 24) cases.collections(new TestDatabase(work, postgres, "spatial_collections"));
+        cases.createdSchemas(new TestDatabase(work, postgres, "spatial_created_reference"),
+                new TestDatabase(work, postgres, "spatial_created_native"));
     }
 
     private void exchangeDelete(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new DatasetWriteCases(work, version, new ReferenceTool(postgres != null));
-        cases.deleteRelations(new TestDatabase(postgres, "delete_reference"), true);
-        cases.deleteRelations(new TestDatabase(postgres, "delete_native"), false);
-        cases.deleteReferenced(new TestDatabase(postgres, "delete_references"));
+        var cases = new DatasetWriteCases(work, version, new ReferenceTool(work, postgres != null));
+        cases.deleteRelations(new TestDatabase(work, postgres, "delete_reference"), true);
+        cases.deleteRelations(new TestDatabase(work, postgres, "delete_native"), false);
+        cases.deleteReferenced(new TestDatabase(work, postgres, "delete_references"));
     }
 
     private void exchangeMutation(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new ReferenceTool(postgres != null);
+        var reference = new ReferenceTool(work, postgres != null);
         var cases = new DatasetWriteCases(work, version, reference);
-        cases.replace(new TestDatabase(postgres, "mutation_reference"), true);
-        cases.replace(new TestDatabase(postgres, "mutation_native"), false);
-        cases.replaceRelations(new TestDatabase(postgres, "replace_rel_reference"), true);
-        cases.replaceRelations(new TestDatabase(postgres, "replace_rel_native"), false);
-        cases.replaceExternal(new TestDatabase(postgres, "replace_ext_reference"), true);
-        cases.replaceExternal(new TestDatabase(postgres, "replace_ext_native"), false);
-        cases.updateFlat(new TestDatabase(postgres, "update_stable_reference"), true, true);
-        cases.updateFlat(new TestDatabase(postgres, "update_stable_native"), false, true);
-        cases.updateFlat(new TestDatabase(postgres, "update_stored_reference"), true, false);
-        cases.updateFlat(new TestDatabase(postgres, "update_stored_native"), false, false);
-        cases.updateGeometry(new TestDatabase(postgres, "update_geom_reference"), true);
-        cases.updateGeometry(new TestDatabase(postgres, "update_geom_native"), false);
-        cases.updateStructures(new TestDatabase(postgres, "update_struct_reference"), true);
-        cases.updateStructures(new TestDatabase(postgres, "update_struct_native"), false);
-        cases.updateLocalReferences(new TestDatabase(postgres, "update_local_reference"), true);
-        cases.updateLocalReferences(new TestDatabase(postgres, "update_local_native"), false);
-        cases.updateAssociations(new TestDatabase(postgres, "update_link_reference"), true);
-        cases.updateAssociations(new TestDatabase(postgres, "update_link_native"), false);
-        cases.updateExternalReferences(new TestDatabase(postgres, "update_ext_reference"), true);
-        cases.updateExternalReferences(new TestDatabase(postgres, "update_ext_native"), false);
+        cases.replace(new TestDatabase(work, postgres, "mutation_reference"), true);
+        cases.replace(new TestDatabase(work, postgres, "mutation_native"), false);
+        cases.replaceRelations(new TestDatabase(work, postgres, "replace_rel_reference"), true);
+        cases.replaceRelations(new TestDatabase(work, postgres, "replace_rel_native"), false);
+        cases.replaceExternal(new TestDatabase(work, postgres, "replace_ext_reference"), true);
+        cases.replaceExternal(new TestDatabase(work, postgres, "replace_ext_native"), false);
+        cases.updateFlat(new TestDatabase(work, postgres, "update_stable_reference"), true, true);
+        cases.updateFlat(new TestDatabase(work, postgres, "update_stable_native"), false, true);
+        cases.updateFlat(new TestDatabase(work, postgres, "update_stored_reference"), true, false);
+        cases.updateFlat(new TestDatabase(work, postgres, "update_stored_native"), false, false);
+        cases.updateGeometry(new TestDatabase(work, postgres, "update_geom_reference"), true);
+        cases.updateGeometry(new TestDatabase(work, postgres, "update_geom_native"), false);
+        cases.updateStructures(new TestDatabase(work, postgres, "update_struct_reference"), true);
+        cases.updateStructures(new TestDatabase(work, postgres, "update_struct_native"), false);
+        cases.updateLocalReferences(new TestDatabase(work, postgres, "update_local_reference"), true);
+        cases.updateLocalReferences(new TestDatabase(work, postgres, "update_local_native"), false);
+        cases.updateAssociations(new TestDatabase(work, postgres, "update_link_reference"), true);
+        cases.updateAssociations(new TestDatabase(work, postgres, "update_link_native"), false);
+        cases.updateExternalReferences(new TestDatabase(work, postgres, "update_ext_reference"), true);
+        cases.updateExternalReferences(new TestDatabase(work, postgres, "update_ext_native"), false);
     }
 
     private void assertWidePolymorphicProjection() throws Exception {
@@ -1347,7 +1247,7 @@ final class DbInteropTest {
                     <Target i:tid="target"/></Data></i:datasection>
                 </i:transfer>
                 """.formatted(values));
-        var db = new TestDatabase(null, "wide");
+        var db = new TestDatabase(work, null, "wide");
         assertSchemaWithIdentityColumns(db, "WideRefs", model);
         assertCliSuccess(db, "import", "WideRefs", "wide", input);
         Path output = work.resolve("wide-output.xtf");
@@ -1359,130 +1259,118 @@ final class DbInteropTest {
         }
     }
 
-    @FunctionalInterface
-    private interface PostgisCase {
-        void run(int version, PostgreSQLContainer postgres) throws Exception;
-    }
-
-    private void exchangeWithPostgis(int version, PostgisCase test) throws Exception {
-        try (var postgres = postgisContainer()) {
-            postgres.start();
-            test.run(version, postgres);
-        }
-    }
-
     private void exchangeTranslationSources(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "translation_sources");
-        new TranslationCases(work, new ReferenceTool(db.postgis()), version).sources(db);
+        var db = new TestDatabase(work, postgres, "translation_sources");
+        new TranslationCases(work, new ReferenceTool(work, db.postgis()), version).sources(db);
     }
 
     private void exchangeTranslationScalars(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "translation_scalars");
-        new TranslationCases(work, new ReferenceTool(db.postgis()), version).scalars(db);
+        var db = new TestDatabase(work, postgres, "translation_scalars");
+        new TranslationCases(work, new ReferenceTool(work, db.postgis()), version).scalars(db);
     }
 
     private void exchangeTranslationNested(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "translation_nested");
-        new TranslationCases(work, new ReferenceTool(db.postgis()), version).nested(db);
+        var db = new TestDatabase(work, postgres, "translation_nested");
+        new TranslationCases(work, new ReferenceTool(work, db.postgis()), version).nested(db);
     }
 
     private void exchangeTranslationSchema(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(postgres, "reference_translation");
-        var own = new TestDatabase(postgres, "own_translation");
-        var extended = new TestDatabase(postgres, "extended_translation");
-        new TranslationCases(work, new ReferenceTool(reference.postgis()), version).schema(reference, own, extended);
+        var reference = new TestDatabase(work, postgres, "reference_translation");
+        var own = new TestDatabase(work, postgres, "own_translation");
+        var extended = new TestDatabase(work, postgres, "extended_translation");
+        new TranslationCases(work, new ReferenceTool(work, reference.postgis()), version).schema(reference, own, extended);
     }
 
     private void exchangeTranslationExport(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "translation_export");
-        new TranslationCases(work, new ReferenceTool(db.postgis()), version).exportLanguage(db);
+        var db = new TestDatabase(work, postgres, "translation_export");
+        new TranslationCases(work, new ReferenceTool(work, db.postgis()), version).exportLanguage(db);
     }
 
     private void exchangeTopicInherited(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(postgres, "reference_topic_inherited");
-        var own = new TestDatabase(postgres, "own_topic_inherited");
-        new TopicCases(work, new ReferenceTool(reference.postgis()), version).inherited(reference, own);
+        var reference = new TestDatabase(work, postgres, "reference_topic_inherited");
+        var own = new TestDatabase(work, postgres, "own_topic_inherited");
+        new TopicCases(work, new ReferenceTool(work, reference.postgis()), version).inherited(reference, own);
     }
 
     private void exchangeTopicFragments(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(postgres, "reference_topic_fragments");
-        var own = new TestDatabase(postgres, "own_topic_fragments");
-        new TopicCases(work, new ReferenceTool(reference.postgis()), version).fragments(reference, own);
+        var reference = new TestDatabase(work, postgres, "reference_topic_fragments");
+        var own = new TestDatabase(work, postgres, "own_topic_fragments");
+        new TopicCases(work, new ReferenceTool(work, reference.postgis()), version).fragments(reference, own);
     }
 
     private void exchangeTopicRefinement(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(postgres, "reference_topic_refinement");
-        var own = new TestDatabase(postgres, "own_topic_refinement");
-        new TopicCases(work, new ReferenceTool(reference.postgis()), version).refinement(reference, own);
+        var reference = new TestDatabase(work, postgres, "reference_topic_refinement");
+        var own = new TestDatabase(work, postgres, "own_topic_refinement");
+        new TopicCases(work, new ReferenceTool(work, reference.postgis()), version).refinement(reference, own);
     }
 
     private void exchangeTopicReferences(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(postgres, "reference_topic_references");
-        var own = new TestDatabase(postgres, "own_topic_references");
-        new TopicCases(work, new ReferenceTool(reference.postgis()), version).references(reference, own);
+        var reference = new TestDatabase(work, postgres, "reference_topic_references");
+        var own = new TestDatabase(work, postgres, "own_topic_references");
+        new TopicCases(work, new ReferenceTool(work, reference.postgis()), version).references(reference, own);
     }
 
     private void exchangeTopicMutations(int version, PostgreSQLContainer postgres) throws Exception {
-        var translated = new TestDatabase(postgres, "translation_mutation");
-        var inherited = new TestDatabase(postgres, "topic_mutation");
-        var reference = new ReferenceTool(inherited.postgis());
+        var translated = new TestDatabase(work, postgres, "translation_mutation");
+        var inherited = new TestDatabase(work, postgres, "topic_mutation");
+        var reference = new ReferenceTool(work, inherited.postgis());
         new TranslationCases(work, reference, version).mutation(translated);
         new TopicCases(work, reference, version).mutation(inherited);
     }
 
     private void exchangeSharedSource(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "shared_source");
-        new ModelCases(work, new ReferenceTool(db.postgis()), version).sharedSource(db);
+        var db = new TestDatabase(work, postgres, "shared_source");
+        new ModelCases(work, new ReferenceTool(work, db.postgis()), version).sharedSource(db);
     }
 
     private void exchangeStoredImports(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "stored_imports");
-        new ModelCases(work, new ReferenceTool(db.postgis()), version).storedImports(db);
+        var db = new TestDatabase(work, postgres, "stored_imports");
+        new ModelCases(work, new ReferenceTool(work, db.postgis()), version).storedImports(db);
     }
 
     private void exchangeLocalImports(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(postgres, "reference_imports");
-        var nativeSchema = new TestDatabase(postgres, "native_imports");
-        new ModelCases(work, new ReferenceTool(reference.postgis()), version).localImports(reference, nativeSchema);
+        var reference = new TestDatabase(work, postgres, "reference_imports");
+        var nativeSchema = new TestDatabase(work, postgres, "native_imports");
+        new ModelCases(work, new ReferenceTool(work, reference.postgis()), version).localImports(reference, nativeSchema);
     }
 
     private void exchangeImportedStruct(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(postgres, "reference_detail");
-        var nativeSchema = new TestDatabase(postgres, "native_detail");
-        new ModelCases(work, new ReferenceTool(reference.postgis()), version).importedStructures(reference, nativeSchema);
+        var reference = new TestDatabase(work, postgres, "reference_detail");
+        var nativeSchema = new TestDatabase(work, postgres, "native_detail");
+        new ModelCases(work, new ReferenceTool(work, reference.postgis()), version).importedStructures(reference, nativeSchema);
     }
 
     private void exchangeImportedTopic(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(postgres, "reference_topic");
-        var nativeSchema = new TestDatabase(postgres, "native_topic");
-        new ModelCases(work, new ReferenceTool(reference.postgis()), version).importedTopics(reference, nativeSchema);
+        var reference = new TestDatabase(work, postgres, "reference_topic");
+        var nativeSchema = new TestDatabase(work, postgres, "native_topic");
+        new ModelCases(work, new ReferenceTool(work, reference.postgis()), version).importedTopics(reference, nativeSchema);
     }
 
     private void exchangeJointSchema(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(postgres, "reference_joint");
-        var nativeSchema = new TestDatabase(postgres, "native_joint");
-        new ModelCases(work, new ReferenceTool(reference.postgis()), version).jointSchema(reference, nativeSchema);
+        var reference = new TestDatabase(work, postgres, "reference_joint");
+        var nativeSchema = new TestDatabase(work, postgres, "native_joint");
+        new ModelCases(work, new ReferenceTool(work, reference.postgis()), version).jointSchema(reference, nativeSchema);
     }
 
     private void exchangeMixedExport(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "mixed_export");
-        new ModelCases(work, new ReferenceTool(db.postgis()), version).mixedExport(db);
+        var db = new TestDatabase(work, postgres, "mixed_export");
+        new ModelCases(work, new ReferenceTool(work, db.postgis()), version).mixedExport(db);
     }
 
     private void exchangeMixedImport(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(postgres, "reference_mixed");
-        var nativeSchema = new TestDatabase(postgres, "native_mixed");
-        new ModelCases(work, new ReferenceTool(reference.postgis()), version).mixedImport(reference, nativeSchema);
+        var reference = new TestDatabase(work, postgres, "reference_mixed");
+        var nativeSchema = new TestDatabase(work, postgres, "native_mixed");
+        new ModelCases(work, new ReferenceTool(work, reference.postgis()), version).mixedImport(reference, nativeSchema);
     }
 
     private void exchangeMixedMutation(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "mixed_mutation");
-        new ModelCases(work, new ReferenceTool(db.postgis()), version).mixedMutation(db);
+        var db = new TestDatabase(work, postgres, "mixed_mutation");
+        new ModelCases(work, new ReferenceTool(work, db.postgis()), version).mixedMutation(db);
     }
 
     private void exchangeAppendModels(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "append_models");
-        new ModelCases(work, new ReferenceTool(db.postgis()), version).appendModels(db);
+        var db = new TestDatabase(work, postgres, "append_models");
+        new ModelCases(work, new ReferenceTool(work, db.postgis()), version).appendModels(db);
     }
 
     private void exchange(int version, PostgreSQLContainer postgres) throws Exception {
@@ -1496,8 +1384,8 @@ final class DbInteropTest {
             fixture = new String(resource.readAllBytes(), StandardCharsets.UTF_8);
         }
 
-        var reference = new ReferenceTool(postgres != null);
-        var db = new TestDatabase(postgres, "reference");
+        var reference = new ReferenceTool(work, postgres != null);
+        var db = new TestDatabase(work, postgres, "reference");
         reference.run(db, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
                 "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056",
                 ili.toString());
@@ -1621,11 +1509,11 @@ final class DbInteropTest {
         try (var resource = DbInteropTest.class.getResourceAsStream("/" + model + ".xtf")) {
             fixture = new String(resource.readAllBytes(), StandardCharsets.UTF_8);
         }
-        var referenceDb = new TestDatabase(postgres, "external_reference");
+        var referenceDb = new TestDatabase(work, postgres, "external_reference");
         reference.run(referenceDb, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
                 "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056",
                 ili.toString());
-        var nativeDb = new TestDatabase(postgres, "external_native");
+        var nativeDb = new TestDatabase(work, postgres, "external_native");
         assertSchemaWithIdentityColumns(nativeDb, model, ili);
         try (var referenceSql = referenceDb.connect(); var nativeSql = nativeDb.connect()) {
             DbSchemaCatalog.read(referenceSql, referenceDb.postgis, referenceDb.schema)
@@ -1658,10 +1546,10 @@ final class DbInteropTest {
         try (var resource = DbInteropTest.class.getResourceAsStream("/" + ili.getFileName())) {
             Files.copy(resource, ili);
         }
-        var referenceDb = new TestDatabase(postgres, "oid_reference");
+        var referenceDb = new TestDatabase(work, postgres, "oid_reference");
         reference.run(referenceDb, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
                 "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", ili.toString());
-        var nativeDb = new TestDatabase(postgres, "oid_native");
+        var nativeDb = new TestDatabase(work, postgres, "oid_native");
         assertSchemaWithIdentityColumns(nativeDb, model, ili);
         try (var legacy = referenceDb.connect(); var own = nativeDb.connect()) {
             DbSchemaCatalog.read(legacy, referenceDb.postgis, referenceDb.schema)
@@ -2246,10 +2134,10 @@ final class DbInteropTest {
         Path tailInput = Files.writeString(work.resolve("topics-tail-input.xtf"), fixture.replace("fixture-", "tail-"));
         Path ownOutput = work.resolve("topics-own-output.xtf");
         Path referenceOutput = work.resolve("topics-reference-output.xtf");
-        var referenceDb = new TestDatabase(postgres, "topics_reference");
+        var referenceDb = new TestDatabase(work, postgres, "topics_reference");
         reference.run(referenceDb, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
                 "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", ili.toString());
-        var nativeDb = new TestDatabase(postgres, "topics_native");
+        var nativeDb = new TestDatabase(work, postgres, "topics_native");
         assertSchemaWithIdentityColumns(nativeDb, model, ili);
         try (var referenceSql = referenceDb.connect(); var nativeSql = nativeDb.connect()) {
             DbSchemaCatalog.read(referenceSql, referenceDb.postgis, referenceDb.schema)
@@ -3325,7 +3213,7 @@ final class DbInteropTest {
     private void assertSchemaCreation(ReferenceTool reference, PostgreSQLContainer postgres, String model, int version,
                                       Path ili, String fixture, DbSchemaCatalog catalog) throws Exception {
         boolean postgis = postgres != null;
-        var db = new TestDatabase(postgres, "native");
+        var db = new TestDatabase(work, postgres, "native");
         CliResult creation = schemaWithIdentityColumns(db, model, ili, CancellationToken.none());
         assertEquals(0, creation.code(), creation::diagnostics);
         try (var sql = db.connect()) {
@@ -3344,14 +3232,14 @@ final class DbInteropTest {
             }
         }
 
-        var invalidDb = new TestDatabase(postgres, "invalid");
+        var invalidDb = new TestDatabase(work, postgres, "invalid");
         Path invalid = Files.writeString(work.resolve("invalid.ili"), "INTERLIS 2.4; MODEL");
         var failure = schemaWithIdentityColumns(invalidDb, model, invalid, CancellationToken.none());
         assertNotEquals(0, failure.code(), failure::diagnostics);
         assertMissingTarget(invalidDb);
 
         assertExistingTargetPreserved(postgres, model, ili);
-        var cancelledDb = new TestDatabase(postgres, "cancelled");
+        var cancelledDb = new TestDatabase(work, postgres, "cancelled");
         var plan = SchemaPlan.read(List.of(model), ili, List.of(), !postgis, !postgis, 2056, false,
                 java.util.Optional.empty(), new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), false,
                 DbEnumOptions.DEFAULT, Set.of(Ili2dbLayout.SchemaOption.BASKET_COLUMN, Ili2dbLayout.SchemaOption.TID_COLUMN),
@@ -3392,7 +3280,7 @@ final class DbInteropTest {
     }
 
     private void assertExistingTargetPreserved(PostgreSQLContainer postgres, String model, Path ili) throws Exception {
-        var db = new TestDatabase(postgres, "occupied");
+        var db = new TestDatabase(work, postgres, "occupied");
         if (db.postgis) {
             try (var sql = db.connect()) {
                 execute(sql, "create schema " + db.schema);
@@ -5184,8 +5072,8 @@ final class DbInteropTest {
         Path input = copyOrderedFixture(model + ".xtf");
         String fixture = Files.readString(input);
         Path nativeInput = Files.writeString(work.resolve("ordered-native.xtf"), fixture.replace("ordered-", "native-"));
-        var referenceSchema = new TestDatabase(postgres, "ordered_reference");
-        var nativeSchema = new TestDatabase(postgres, "ordered_native");
+        var referenceSchema = new TestDatabase(work, postgres, "ordered_reference");
+        var nativeSchema = new TestDatabase(work, postgres, "ordered_native");
 
         reference.run(referenceSchema, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
                 "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056",
@@ -5447,97 +5335,6 @@ final class DbInteropTest {
             assertEquals(0, process.exitValue(), () -> logText(log, db.password));
         } finally {
             if (process.isAlive()) process.destroyForcibly().waitFor(5, TimeUnit.SECONDS);
-        }
-    }
-
-    final class ReferenceTool {
-        private final Path jar;
-        private final Path home;
-        private final String timeZone;
-        private int runs;
-
-        private ReferenceTool(boolean postgis) throws IOException {
-            this(postgis, null);
-        }
-
-        private ReferenceTool(boolean postgis, String timeZone) throws IOException {
-            this.timeZone = timeZone;
-            String version = System.getProperty("ili2db.reference.version");
-            String directory = System.getProperty("ili2db.reference.dir");
-            assertNotNull(version, "Gradle must provide ili2db.reference.version");
-            assertNotNull(directory, "Gradle must provide ili2db.reference.dir");
-            String name = (postgis ? "ili2pg" : "ili2gpkg") + "-" + version;
-            Path archive = Path.of(directory).resolve(name + ".zip");
-            Path dist = Files.createDirectory(work.resolve("reference"));
-            home = Files.createDirectory(work.resolve("reference-home"));
-            try (var zip = new ZipInputStream(Files.newInputStream(archive))) {
-                for (var entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry()) {
-                    Path file = dist.resolve(entry.getName()).normalize();
-                    if (!file.startsWith(dist)) throw new IOException("Invalid reference ZIP entry");
-                    if (entry.isDirectory()) Files.createDirectories(file);
-                    else {
-                        Files.createDirectories(file.getParent());
-                        Files.copy(zip, file);
-                    }
-                }
-            }
-            jar = dist.resolve(name + ".jar");
-        }
-
-        void run(TestDatabase db, String modelDir, String... args) throws Exception {
-            run(db, modelDir, null, args);
-        }
-
-        void expectFailure(TestDatabase db, String modelDir, String error, String... args) throws Exception {
-            run(db, modelDir, error, args);
-        }
-
-        private void run(TestDatabase db, String modelDir, String expectedError, String[] args) throws Exception {
-            Path java = Path.of(System.getProperty("java.home"), "bin", "java");
-            var command = new ArrayList<>(List.of(java.toString(), "--enable-native-access=ALL-UNNAMED",
-                    "-Duser.home=" + home, "-Djava.io.tmpdir=" + work));
-            if (timeZone != null) command.add("-Duser.timezone=" + timeZone);
-            command.addAll(List.of("-jar", jar.toString(), "--modeldir", modelDir));
-            command.addAll(db.referenceOptions());
-            command.addAll(List.of(args));
-            Path log = work.resolve("reference-" + ++runs + ".log");
-            Process process = new ProcessBuilder(command).directory(work.toFile()).redirectErrorStream(true)
-                    .redirectOutput(log.toFile()).start();
-            try {
-                assertTrue(process.waitFor(60, TimeUnit.SECONDS), () -> "Reference timed out: " + args[0]);
-                if (expectedError == null) {
-                    assertEquals(0, process.exitValue(), () -> logText(log, db.password));
-                } else {
-                    String output = logText(log, db.password);
-                    assertNotEquals(0, process.exitValue(), output);
-                    assertTrue(output.contains(expectedError), output);
-                }
-            } finally {
-                if (process.isAlive()) process.destroyForcibly().waitFor(5, TimeUnit.SECONDS);
-            }
-        }
-    }
-
-    final class TestDatabase extends DbTestSupport.Target {
-        private TestDatabase(PostgreSQLContainer postgres, String name) {
-            super(work.resolve(name + ".gpkg"), postgres, "db_interop_" + name);
-        }
-
-        private List<String> referenceOptions() {
-            if (!postgis) return List.of("--dbfile", file.toString());
-            return List.of("--dbhost", postgres.getHost(), "--dbport", postgres.getFirstMappedPort().toString(),
-                    "--dbdatabase", postgres.getDatabaseName(), "--dbschema", schema, "--dbusr", user, "--dbpwd", password);
-        }
-
-        TestDatabase peer(String name) { return new TestDatabase(postgres, name); }
-    }
-
-    private static String logText(Path log, String password) {
-        try {
-            String text = Files.readString(log);
-            return password.isEmpty() ? text : text.replace(password, "[redacted]");
-        } catch (IOException failure) {
-            return log + ": " + failure.getMessage();
         }
     }
 }

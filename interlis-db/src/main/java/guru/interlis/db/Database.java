@@ -579,8 +579,12 @@ final class Database implements AutoCloseable {
         // SQLite assigns an omitted INTEGER PRIMARY KEY per table. Advance the ili2db counter
         // past rows inserted directly in SQL before reserving IDs in this write transaction.
         var tables = new HashSet<String>();
-        String sql = "SELECT DISTINCT s.name FROM sqlite_schema s JOIN " + technicalTable(CLASSNAME)
-                + " c ON lower(c.sqlname) = lower(s.name) WHERE s.type = 'table'";
+        String sql = """
+                SELECT DISTINCT s.name FROM sqlite_schema s
+                JOIN %s c ON lower(c.sqlname) = lower(s.name)
+                JOIN pragma_table_info(s.name) p ON p.name = '%s' COLLATE NOCASE AND p.pk = 1
+                WHERE s.type = 'table'
+                """.formatted(technicalTable(CLASSNAME), ID_COLUMN);
         try (var statement = connection.createStatement(); var rows = statement.executeQuery(sql)) {
             while (rows.next()) tables.add(table(rows.getString(1)));
         }

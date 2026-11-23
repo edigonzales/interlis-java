@@ -1,7 +1,5 @@
 package guru.interlis.db;
 
-import guru.interlis.db.DbInteropTest.ReferenceTool;
-import guru.interlis.db.DbInteropTest.TestDatabase;
 import guru.interlis.execution.CancellationToken;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;

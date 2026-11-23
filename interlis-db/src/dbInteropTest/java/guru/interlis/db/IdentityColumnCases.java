@@ -27,18 +27,18 @@ final class IdentityColumnCases {
     private static final String SOURCE_TID = "dbid0.o.6d61726b6572.1";
     private static final String UUID_OID = "c09b1740-5c5a-48ea-b095-938d1c946974";
     private final Path work;
-    private final DbInteropTest.ReferenceTool reference;
+    private final ReferenceTool reference;
     private final int version;
     private final String model;
 
-    IdentityColumnCases(Path work, DbInteropTest.ReferenceTool reference, int version) {
+    IdentityColumnCases(Path work, ReferenceTool reference, int version) {
         this.work = work;
         this.reference = reference;
         this.version = version;
         model = "IdentityColumns" + version;
     }
 
-    void exercise(DbInteropTest.TestDatabase server) throws Exception {
+    void exercise(TestDatabase server) throws Exception {
         if (server.postgis()) {
             try (var sql = server.connect()) {
                 execute(sql, "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"");
@@ -78,7 +78,7 @@ final class IdentityColumnCases {
         if (version == 24) checkAbstractOid(server);
     }
 
-    private void createSchemas(DbInteropTest.TestDatabase legacy, DbInteropTest.TestDatabase own,
+    private void createSchemas(TestDatabase legacy, TestDatabase own,
                                Path ili, String profile, boolean baskets, boolean tids) throws Exception {
         var refOptions = new ArrayList<>(List.of("--schemaimport", "--noSmartMapping", "--sqlEnableNull",
                 "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056"));
@@ -105,7 +105,7 @@ final class IdentityColumnCases {
         }
     }
 
-    private Path exchange(DbInteropTest.TestDatabase db, Path input, String label, boolean baskets, boolean tids)
+    private Path exchange(TestDatabase db, Path input, String label, boolean baskets, boolean tids)
             throws Exception {
         String dataset = baskets ? "objects" : null;
         if (!baskets) insertDirectly(db);
@@ -152,7 +152,7 @@ final class IdentityColumnCases {
         return output;
     }
 
-    private void insertDirectly(DbInteropTest.TestDatabase db) throws Exception {
+    private void insertDirectly(TestDatabase db) throws Exception {
         try (var sql = db.connect()) {
             String basket = scalar(sql, "select t_id from " + db.table("t_ili2db_basket") + " where t_ili_tid='source-basket'");
             // Query returns null when the schema does not track baskets.
@@ -189,7 +189,7 @@ final class IdentityColumnCases {
                 </%1$s.Data></DATASECTION>""".formatted(model, UUID_OID));
     }
 
-    private void appendModel(DbInteropTest.TestDatabase db) throws Exception {
+    private void appendModel(TestDatabase db) throws Exception {
         String name = "Extra" + version;
         var ili = Files.writeString(work.resolve(name + ".ili"), """
                 INTERLIS 2.%s;
@@ -204,7 +204,7 @@ final class IdentityColumnCases {
         }
     }
 
-    private void verifyRollback(DbInteropTest.TestDatabase db) throws Exception {
+    private void verifyRollback(TestDatabase db) throws Exception {
         var bad = Files.writeString(work.resolve("broken.xtf"), fixture().replace("next-basket", "source-basket"));
         var result = cli(db, "import", model, null, bad, CancellationToken.none());
         assertNotEquals(0, result.code(), result::diagnostics);
@@ -214,7 +214,7 @@ final class IdentityColumnCases {
         assertCliFailure(db, "import", model, "named", bad, "require a schema created with --create-basket-col");
     }
 
-    private void checkAbstractOid(DbInteropTest.TestDatabase server) throws Exception {
+    private void checkAbstractOid(TestDatabase server) throws Exception {
         var ili = Files.writeString(work.resolve("AbstractOid.ili"), """
                 INTERLIS 2.4;
                 MODEL AbstractOid (en) AT "https://example.org/interlis/db" VERSION "1" =
