@@ -91,6 +91,10 @@ mit PostGIS 3.4 über Testcontainers. Der
 mit Docker aus. `dbTest` benötigt keine ili2db-Distributionen. Der reguläre
 `check` bleibt dienstfrei.
 
+Jede eigene DB-Testklasse startet PostgreSQL beim ersten PostGIS-Fall und
+entfernt den Container am Klassenende. Die Fälle verwenden getrennte
+PostgreSQL-Schemata oder temporäre GeoPackage-Dateien.
+
 `ArrayStorageTest` prüft XTF 2.3 und 2.4. Die Fälle vergleichen Text und
 Leertext, SQL `NULL`, leere Arrays, Boolean- und Integer-Werte direkt in der
 Datenbank. Für Exportprüfungen setzen sie die Arraywerte per JDBC. Sie prüfen
@@ -98,6 +102,8 @@ auch den Erhalt einer bestehenden XTF-Datei bei falschen SQL-Typen,
 beschädigten Elementen oder einem `NULL`-Element in einem direkten XTF-2.4-Array.
 Der Integerfall prüft den Rollback von Objektzeilen, Basket und Datensatz,
 wenn ein späteres Element die 32-Bit-Kodierung übersteigt.
+Ein paralleler Import mit denselben IDs in einem zweiten PostgreSQL-Schema
+prüft, dass der Rollback die dort gespeicherten Zeilen intakt lässt.
 
 ## ili2db-Interoperabilität
 

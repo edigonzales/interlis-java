@@ -2,6 +2,8 @@ package guru.interlis.db;
 
 import guru.interlis.db.DbTestSupport.Target;
 import guru.interlis.execution.CancellationToken;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -14,6 +16,9 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -23,7 +28,6 @@ import static guru.interlis.db.DbTestSupport.child;
 import static guru.interlis.db.DbTestSupport.children;
 import static guru.interlis.db.DbTestSupport.execute;
 import static guru.interlis.db.DbTestSupport.id;
-import static guru.interlis.db.DbTestSupport.postgisContainer;
 import static guru.interlis.db.DbTestSupport.readDataSection;
 import static guru.interlis.db.DbTestSupport.referenceDatasetFixture;
 import static guru.interlis.db.DbTestSupport.scalar;
@@ -34,10 +38,16 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 final class ArrayStorageTest {
     private static final String MODEL = "ArrayStorage";
+    private static final PostgisTestServer POSTGIS = new PostgisTestServer();
 
     private enum Backend { GEOPACKAGE, POSTGIS }
 
     @TempDir Path work;
+
+    @AfterAll
+    static void stopPostgis() {
+        POSTGIS.close();
+    }
 
     private static Stream<Arguments> fullTransfers() {
         return Arrays.stream(Backend.values()).flatMap(backend ->
@@ -147,6 +157,46 @@ final class ArrayStorageTest {
         });
     }
 
+    @Test
+    void failedImportLeavesConcurrentPostgisSchemaIntact() throws Exception {
+        var file = work.resolve("array.gpkg");
+        try (var good = POSTGIS.target(file); var bad = POSTGIS.target(file);
+             var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            createSchema(good, "2.4", "-20 .. 20", true);
+            createSchema(bad, "2.4", "-20 .. 20", true);
+            String first = asset("2.4", "first", List.of("3"));
+            var goodInput = Files.writeString(work.resolve("good.xtf"), referenceDatasetFixture(MODEL, 24,
+                    "same-basket", first + asset("2.4", "last", List.of("7"))));
+            var badInput = Files.writeString(work.resolve("bad.xtf"), referenceDatasetFixture(MODEL, 24,
+                    "same-basket", first + asset("2.4", "last", List.of("2147483648"))));
+            var start = new CyclicBarrier(2);
+            var success = executor.submit(() -> {
+                start.await(60, TimeUnit.SECONDS);
+                assertCliSuccess(good, "import", MODEL, "same", goodInput);
+                return null;
+            });
+            var failure = executor.submit(() -> {
+                start.await(60, TimeUnit.SECONDS);
+                assertCliFailure(bad, "import", MODEL, "same", badInput, "32-bit integer encoding");
+                return null;
+            });
+            success.get(60, TimeUnit.SECONDS);
+            failure.get(60, TimeUnit.SECONDS);
+            try (var sql = good.connect()) {
+                assertEquals("3", scalar(sql, "SELECT items[1] FROM " + good.table("asset") + " WHERE t_ili_tid='first'"));
+                assertEquals("7", scalar(sql, "SELECT items[1] FROM " + good.table("asset") + " WHERE t_ili_tid='last'"));
+                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + good.table("asset")));
+                assertEquals("same-basket", scalar(sql, "SELECT t_ili_tid FROM " + good.table("t_ili2db_basket")));
+                assertEquals("same", scalar(sql, "SELECT datasetname FROM " + good.table("t_ili2db_dataset")));
+            }
+            try (var sql = bad.connect()) {
+                assertEquals("0", scalar(sql, "SELECT count(*) FROM " + bad.table("asset")));
+                assertEquals("0", scalar(sql, "SELECT count(*) FROM " + bad.table("t_ili2db_basket")));
+                assertEquals("0", scalar(sql, "SELECT count(*) FROM " + bad.table("t_ili2db_dataset")));
+            }
+        }
+    }
+
     private void createSchema(Target db, String version, String type, boolean wrapped) throws Exception {
         var ili = Files.writeString(work.resolve(MODEL + ".ili"), """
                 INTERLIS %s;
@@ -236,9 +286,8 @@ final class ArrayStorageTest {
         if (backend == Backend.GEOPACKAGE) {
             test.run(new Target(file, null, "array_storage"));
         } else {
-            try (var postgres = postgisContainer()) {
-                postgres.start();
-                test.run(new Target(file, postgres, "array_storage"));
+            try (var db = POSTGIS.target(file)) {
+                test.run(db);
             }
         }
     }
