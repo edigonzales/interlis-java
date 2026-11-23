@@ -1,6 +1,7 @@
 package guru.interlis.db;
 
 import guru.interlis.db.DbTestSupport.Target;
+import org.w3c.dom.Element;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -15,8 +16,14 @@ import java.util.Objects;
 
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
+import static guru.interlis.db.DbTestSupport.child;
+import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.scalar;
+import static guru.interlis.db.DbTestSupport.text;
+import static guru.interlis.db.DbTestSupport.transferredStructures;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class BaseDbFixture {
     private final Path work;
@@ -42,9 +49,13 @@ final class BaseDbFixture {
     void seed(Target db) throws IOException {
         assertSchemaWithIdentityColumns(db, model, source());
         for (String dataset : List.of("legacy", "native", "tail")) {
-            Path input = Files.writeString(work.resolve(dataset + ".xtf"), transfer.replace("legacy-", dataset + "-"));
-            assertCliSuccess(db, "import", model, dataset, input);
+            importDataset(db, dataset);
         }
+    }
+
+    void importDataset(Target db, String dataset) throws IOException {
+        Path input = Files.writeString(work.resolve(dataset + ".xtf"), transfer.replace("legacy-", dataset + "-"));
+        assertCliSuccess(db, "import", model, dataset, input);
     }
 
     private static byte[] resource(String name) throws IOException {
@@ -135,5 +146,30 @@ final class BaseDbFixture {
 
     private static void assertTableRows(Target db, Connection sql, String table, int count) throws SQLException {
         assertEquals(Integer.toString(count), scalar(sql, "select count(*) from " + db.table(table)), table);
+    }
+
+    static void assertTransferredNestedTree(Element record, int version, List<String> values) {
+        String prefix = version == 23 ? "DbInterop23.Data." : "";
+        assertEquals(prefix + "NestedRecord", record.getLocalName());
+        var tree = transferredStructures(record, "Tree");
+        assertEquals(List.of(prefix + "NestedOuter"), tree.stream().map(Element::getLocalName).toList());
+        var items = transferredStructures(tree.getFirst(), "Items");
+        assertEquals(List.of(prefix + "NestedInner", prefix + "NestedInner"),
+                items.stream().map(Element::getLocalName).toList());
+        assertEquals("populated", text(items.getFirst(), "Headline"));
+        assertEquals("empty", text(items.getLast(), "Headline"));
+        for (var entry : List.of(Map.entry("Main", List.of("1")), Map.entry("Values", values),
+                Map.entry("Extras", List.of("4", "4")))) {
+            assertTransferredAmounts(items.getFirst(), entry.getKey(), version, prefix, entry.getValue());
+            assertNull(child(items.getLast(), entry.getKey()));
+        }
+    }
+
+    static void assertTransferredAmounts(Element owner, String attribute, int version, String prefix,
+                                                  List<String> amounts) {
+        var leaves = transferredStructures(owner, attribute);
+        assertEquals(amounts, leaves.stream().map(leaf -> text(leaf, "Amount")).toList());
+        assertTrue(leaves.stream().allMatch(leaf -> leaf.getLocalName().equals(prefix + "NestedLeaf")
+                && id(leaf, version, "tid").isEmpty()));
     }
 }

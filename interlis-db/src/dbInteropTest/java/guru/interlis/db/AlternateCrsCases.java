@@ -9,7 +9,7 @@ import java.util.List;
 
 import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
-import static guru.interlis.db.DbInteropTest.assertMissingTarget;
+import static guru.interlis.db.DbTestSupport.assertMissingTarget;
 import static guru.interlis.db.DbTestSupport.child;
 import static guru.interlis.db.DbTestSupport.children;
 import static guru.interlis.db.DbTestSupport.cli;

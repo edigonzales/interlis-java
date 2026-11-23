@@ -133,6 +133,12 @@ XTF-2.4-Geometriesammlungen nach bereits geschriebenen Objekten. Beim
 Rollback prüft er Zeilen und ID-Vergabe. Beschädigte gespeicherte Geometrien
 führen zur Attributdiagnose und lassen die bestehende Exportdatei intakt.
 
+`BaseMappingStorageTest` prüft den Abbruch der Schemaerzeugung, den Erhalt
+belegter Ziele und den Rollback nach bereits geschriebenen Objekten.
+SQL-Gegenproben prüfen beschädigte Strukturzeilen, Sequenzen, Rollenziele,
+Vererbungsfragmente und Zuordnungen. Der GeoPackage-Fall für XTF 2.4 prüft
+die Projektion mit 32 polymorphen Referenzen.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -488,19 +494,19 @@ Hilfstabelle. Sie vergleichen SQL-IDs und räumliche Abfragen vor und
 nach `update` und `delete`.
 
 Die Auswahl `--tests '*DbInteropTest.geoPackage*'` läuft ohne Docker.
-Die Tests vergleichen vor dem ersten Datenimport den SQL-Katalog und die
+Der Basislauf vergleicht vor dem ersten Datenimport den SQL-Katalog und die
 Metadaten der erzeugten Schemata. Die GeoPackage-Erweiterungseinträge für
 Polylinien und Flächen werden separat geprüft. Die Tests vergleichen Punkte,
 gerade und gebogene Segmente, Aussen- und Innenringe, die gemeinsame Kante
 benachbarter `AREA`-Objekte, SRS und `NULL` für XTF 2.3 und 2.4 in beiden
 Werkzeugrichtungen. In 2.3 prüfen sie auch die Zusammenführung eines
 geteilten Randes. In 2.4 prüfen sie die geordneten Teile von
-`MULTICOORD`, `MULTIPOLYLINE`, `MULTISURFACE` und `MULTIAREA` sowie den
-Export leerer SQL-Sammlungen. Die Suite prüft den Import-Rollback bei
-einem expliziten Bogenradius, offenem Ring oder einer leeren XTF-Sammlung,
-den Erhalt der bisherigen XTF-Datei bei beschädigter Geometrie und einen
-weiteren Referenzimport nach dem neuen Import. In beiden Sprachversionen
-prüft sie auch optionale Einzelstrukturen, `LIST OF` und `BAG OF` mit demselben
+`MULTICOORD`, `MULTIPOLYLINE`, `MULTISURFACE` und `MULTIAREA`. Ein weiterer
+Referenzimport prüft die gemeinsame ID-Vergabe. `GeometryStorageTest` übernimmt
+Rollback und Exportfehler für Geometrien sowie den Export leerer SQL-Sammlungen.
+
+Der Basislauf und `BaseMappingStorageTest` prüfen gemeinsam optionale
+Einzelstrukturen, `LIST OF` und `BAG OF` mit demselben
 Strukturtyp, Rückverweisspalten, `T_Seq`, Reihenfolge und Duplikate.
 Bei verschachtelten Strukturen prüft sie Rückverweise auf den direkten
 Elternteil, die Reihenfolge bei vertauschten SQL-IDs und den Rollback

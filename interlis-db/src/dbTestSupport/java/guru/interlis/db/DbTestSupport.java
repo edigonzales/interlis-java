@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class DbTestSupport {
@@ -216,5 +217,33 @@ final class DbTestSupport {
     static String emptyCollection(Target db, String geometryType, int wkbType) {
         return db.postgis ? "st_geomfromtext('" + geometryType + " EMPTY', 2056)"
                 : "X'475000100000080800%08X00000000'".formatted(wkbType);
+    }
+
+    static void assertLocalReference(Element owner, String field, int version, String tid) {
+        var value = child(owner, field);
+        assertNotNull(value, field);
+        assertEquals(tid, id(value, version, "ref"));
+        assertEquals("", id(value, version, "bid"));
+    }
+
+    static List<Element> transferredStructures(Element owner, String attribute) {
+        // The reference groups the children. The XTF 2.4 writer emits consecutive wrappers.
+        return children(owner).stream().filter(element -> element.getLocalName().equals(attribute))
+                .flatMap(element -> children(element).stream()).toList();
+    }
+
+    static String text(Element parent, String name) {
+        var child = child(parent, name);
+        return child == null ? null : child.getTextContent();
+    }
+
+    static void assertMissingTarget(Target db) throws SQLException {
+        if (db.postgis) {
+            try (var sql = db.connect()) {
+                assertNull(scalar(sql, "select nspname from pg_namespace where nspname='" + db.schema + "'"));
+            }
+        } else {
+            assertFalse(Files.exists(db.file), db.file::toString);
+        }
     }
 }
