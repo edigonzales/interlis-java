@@ -131,6 +131,44 @@ class Xtf24AssociationTest {
     }
 
     @Test
+    void topicOidDomainDoesNotMakeAnAssociationRequireAnIdentifier() {
+        var oidPlan = plan("""
+                INTERLIS 2.4;
+                MODEL Relations AT "https://example.org" VERSION "1" =
+                  TOPIC Data =
+                    OID AS INTERLIS.UUIDOID;
+                    CLASS Parent = END Parent;
+                    CLASS Item = END Item;
+                    ASSOCIATION Embedded =
+                      parent -- {0..1} Parent;
+                      item -- {0..*} Item;
+                    END Embedded;
+                    ASSOCIATION Tracked (OID) =
+                      trackedParent -- {0..1} Parent;
+                      trackedItem -- {0..*} Item;
+                    END Tracked;
+                  END Data;
+                END Relations.
+                """, "Relations");
+        var xml = transfer("""
+                <Parent ili:tid="19fbd580-ca85-4526-b319-703edafd2331"/>
+                <Item ili:tid="19fbd580-ca85-4526-b319-703edafd2332">
+                  <parent ili:ref="19fbd580-ca85-4526-b319-703edafd2331"/>
+                </Item>
+                <Tracked ili:tid="19fbd580-ca85-4526-b319-703edafd2333">
+                  <trackedParent ili:ref="19fbd580-ca85-4526-b319-703edafd2331"/>
+                  <trackedItem ili:ref="19fbd580-ca85-4526-b319-703edafd2332"/>
+                </Tracked>
+                """);
+        var events = read(oidPlan, xml);
+        var item = assertInstanceOf(ObjectEvent.class, events.get(3)).object();
+        assertInstanceOf(Reference.class, item.data().values().values().stream().findFirst().orElseThrow());
+        var tracked = assertInstanceOf(ObjectEvent.class, events.get(4)).object();
+        assertEquals("19fbd580-ca85-4526-b319-703edafd2333", tracked.identity().tid().orElseThrow().value());
+        assertEquals(events, read(oidPlan, write(oidPlan, events)));
+    }
+
+    @Test
     void ordersEmbeddedFieldsAlphabeticallyWithinTheirInheritanceLevel() {
         var fixture = plan("""
                 INTERLIS 2.4;

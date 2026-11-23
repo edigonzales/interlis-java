@@ -1,6 +1,7 @@
 package guru.interlis.explorer.gui;
 
 import guru.interlis.explorer.DuckDbStore.StoredObject;
+import guru.interlis.explorer.ExplorerQueries;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.transfer.ModelDescriptor;
 import guru.interlis.transfer.ObjectDescriptor;
@@ -24,6 +25,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
 import javax.swing.KeyStroke;
@@ -78,6 +80,8 @@ final class ExplorerFrame extends JFrame {
 
     private record Visit(long objectPosition, List<Integer> rowPath) {}
 
+    private record OpenedDataset(ExplorerDataset dataset, ExplorerQueries queries, ExplorerQueries.SqlCatalog catalog) {}
+
     private final JButton back = new JButton("Back");
     private final ArrayDeque<Visit> history = new ArrayDeque<>();
     private final JButton open = new JButton("Open dataset…");
@@ -89,6 +93,7 @@ final class ExplorerFrame extends JFrame {
     private final JLabel objectTitle = new JLabel("Select an object");
     private final InspectorTableModel attributes = new InspectorTableModel();
     private final JTable inspector = inspectorTable();
+    private final QueryPanel queryPanel = new QueryPanel();
 
     private ExplorerDataset dataset;
     private boolean navigating;
@@ -181,7 +186,11 @@ final class ExplorerFrame extends JFrame {
         var panel = new JPanel(new BorderLayout(0, 14));
         panel.setBorder(BorderFactory.createEmptyBorder(16, 18, 14, 18));
         panel.add(toolbar, BorderLayout.NORTH);
-        panel.add(content, BorderLayout.CENTER);
+        var tabs = new JTabbedPane();
+        tabs.addTab("Objects", content);
+        tabs.addTab("Query", queryPanel);
+        tabs.addChangeListener(event -> back.setVisible(tabs.getSelectedIndex() == 0));
+        panel.add(tabs, BorderLayout.CENTER);
         panel.add(status, BorderLayout.SOUTH);
         setContentPane(panel);
         setMinimumSize(new Dimension(640, 470));
@@ -353,7 +362,7 @@ final class ExplorerFrame extends JFrame {
         return panel;
     }
 
-    private static JSplitPane split(int direction, JComponent first, JComponent second, int divider, double weight) {
+    static JSplitPane split(int direction, JComponent first, JComponent second, int divider, double weight) {
         var pane = new JSplitPane(direction, first, second);
         pane.setBorder(BorderFactory.createEmptyBorder());
         pane.setDividerLocation(divider);
@@ -417,29 +426,41 @@ final class ExplorerFrame extends JFrame {
         var previousCursor = getCursor();
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         status.setText("Compiling models and importing " + xtf.getFileName() + "…");
-        new SwingWorker<ExplorerDataset, Void>() {
+        new SwingWorker<OpenedDataset, Void>() {
             @Override
-            protected ExplorerDataset doInBackground() throws Exception {
-                return ExplorerDataset.open(files, xtf, () -> closing);
+            protected OpenedDataset doInBackground() throws Exception {
+                var opened = ExplorerDataset.openWithSpatial(files, xtf, () -> closing);
+                try {
+                    var queries = new ExplorerQueries(opened.store());
+                    return new OpenedDataset(opened, queries, queries.sqlCatalog());
+                } catch (SQLException | RuntimeException | Error failure) {
+                    try {
+                        opened.close();
+                    } catch (IOException | SQLException cleanup) {
+                        failure.addSuppressed(cleanup);
+                    }
+                    throw failure;
+                }
             }
 
             @Override
             protected void done() {
                 setCursor(previousCursor);
                 try {
-                    var opened = get();
+                    var result = get();
+                    var opened = result.dataset();
                     if (closing) {
                         release(opened);
                     } else {
                         var previous = dataset;
                         dataset = opened;
+                        queryPanel.setDataset(result.queries(), result.catalog(), () -> release(previous));
                         history.clear();
                         back.setEnabled(false);
                         tree.setModel(new DefaultTreeModel(modelTree(opened.plan())));
                         selectClass();
                         status.setText("Opened " + xtf.getFileName());
                         rememberTransferDirectory(xtf);
-                        release(previous);
                     }
                 } catch (ExecutionException failure) {
                     if (!closing) {
@@ -624,9 +645,13 @@ final class ExplorerFrame extends JFrame {
     }
 
     private void closeWindow() {
-        release(dataset);
+        var previous = dataset;
         dataset = null;
-        dispose();
+        open.setEnabled(false);
+        queryPanel.setDataset(null, null, () -> {
+            release(previous);
+            dispose();
+        });
     }
 
     private void release(ExplorerDataset toClose) {

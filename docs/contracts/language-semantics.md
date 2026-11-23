@@ -762,6 +762,14 @@ bleiben in 2.3 unzulässig. Funktionen mit OBJECTS-Parametern bleiben in
 MANDATORY-/Plausibilitätsbedingungen auch in 2.4 wie in ili2c zulässig
 (bewusste Abweichung von §3.12/PDF77). Die TEXT-Pfadprüfung bleibt erhalten.
 
+Ein direktes `THIS` in einer Struktur darf in INTERLIS 2.4 an den
+uneingeschränkten Formalparameter `OBJECTS OF ANYCLASS` einer deklarierten
+Funktion übergeben werden. Diese Kompatibilitätsregel entspricht ili2c 5.6.8
+bei der Funktion `covers` im Modell `DMAV_Rohrleitungen_V1_1`. Der Ausdruck
+behält seinen Strukturtyp. Allgemeine Zuweisungen, Strukturattribute als
+Argumente und einschränkende Objektformalparameter folgen ihren bisherigen
+Typregeln.
+
 Vordefinierte OID-Domänen besitzen innerhalb eines Sprachprofils eine kanonische
 Identität, `PredefinedOrigin` und keine künstliche Benutzermodell-Eigentümerschaft.
 Vordefinierte Symbole besitzen den Owner `INTERLIS` je Sprachversion:

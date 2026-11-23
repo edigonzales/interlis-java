@@ -82,11 +82,22 @@ final class Xtf24Layout {
         return object.kind() == SymbolKind.CLASS || identified(object);
     }
 
-    boolean identified(ObjectDescriptor association) {
-        if (!association.oidRules().isEmpty()) {
-            return association.oidRules().stream().anyMatch(rule -> !rule.basket() && rule.domain().isPresent());
+    boolean identified(ObjectDescriptor descriptor) {
+        if (descriptor.kind() != SymbolKind.ASSOCIATION) {
+            return descriptor.oidRules().stream().anyMatch(rule -> !rule.basket() && rule.domain().isPresent());
         }
-        return ancestors(association).stream().anyMatch(descriptor -> descriptor.modifiers().contains(Modifier.OID));
+        var hierarchy = ancestors(descriptor);
+        boolean requestsOid = hierarchy.stream().anyMatch(ancestor -> ancestor.modifiers().contains(Modifier.OID));
+        if (descriptor.oidRules().isEmpty()) {
+            return requestsOid;
+        }
+        // eCH-0031 §§3.7.1 and 4.3.9: a topic default provides a domain
+        // when a link requests an identifier. It does not identify every link.
+        var topicRules = hierarchy.stream().flatMap(ancestor -> ancestor.topic().stream())
+                .distinct().flatMap(topic -> plan.topic(topic).stream()).flatMap(topic -> topic.oidRules().stream())
+                .collect(java.util.stream.Collectors.toSet());
+        return descriptor.oidRules().stream().anyMatch(rule -> !rule.basket() && rule.domain().isPresent()
+                && (requestsOid || !topicRules.contains(rule)));
     }
 
     List<Field> fields(ObjectDescriptor descriptor) {

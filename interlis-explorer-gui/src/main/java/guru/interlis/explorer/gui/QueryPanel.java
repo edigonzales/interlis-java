@@ -1,0 +1,290 @@
+package guru.interlis.explorer.gui;
+
+import guru.interlis.explorer.ExplorerQueries;
+import guru.interlis.explorer.ExplorerQueries.Mode;
+import guru.interlis.explorer.ExplorerQueries.SqlCatalog;
+import guru.interlis.explorer.ExplorerQueries.Suggestion;
+import guru.interlis.explorer.Iql;
+import org.fife.ui.autocomplete.AutoCompletion;
+import org.fife.ui.autocomplete.BasicCompletion;
+import org.fife.ui.autocomplete.Completion;
+import org.fife.ui.autocomplete.DefaultCompletionProvider;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+import org.fife.ui.rtextarea.RTextScrollPane;
+
+import javax.swing.AbstractAction;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.KeyStroke;
+import javax.swing.SwingWorker;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.text.JTextComponent;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
+final class QueryPanel extends JPanel {
+    private static final SqlCatalog EMPTY_CATALOG = new SqlCatalog(Map.of(), List.of());
+
+    private final JComboBox<Mode> mode = new JComboBox<>(Mode.values());
+    private final RSyntaxTextArea editor = new RSyntaxTextArea(8, 60);
+    private final JButton run = new JButton("Run");
+    private final JButton cancel = new JButton("Cancel");
+    private final JLabel status = new JLabel("Open a dataset to run a query.");
+    private final JTable results = new JTable();
+    private final EnumMap<Mode, String> drafts = new EnumMap<>(Mode.class);
+    private final AutoCompletion completion = new AutoCompletion(new QueryCompletions());
+
+    private Mode currentMode = Mode.IQL;
+    private ExplorerQueries queries;
+    private SqlCatalog catalog = EMPTY_CATALOG;
+    private QueryWork active;
+
+    QueryPanel() {
+        super(new BorderLayout(0, 8));
+        mode.setName("queryMode");
+        editor.setName("queryEditor");
+        editor.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_SQL);
+        editor.setTabsEmulated(true);
+        editor.setTabSize(4);
+        editor.setHyperlinksEnabled(false);
+        editor.setHighlightCurrentLine(false);
+        editor.getAccessibleContext().setAccessibleName("Query editor");
+        completion.setAutoActivationEnabled(true);
+        completion.setAutoActivationDelay(250);
+        completion.setAutoCompleteSingleChoices(false);
+        int menuShortcut = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
+        if ((menuShortcut & InputEvent.META_DOWN_MASK) != 0) {
+            completion.setTriggerKey(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, menuShortcut | InputEvent.SHIFT_DOWN_MASK));
+        }
+        completion.install(editor);
+
+        run.setName("runQuery");
+        cancel.setName("cancelQuery");
+        run.addActionListener(event -> runQuery());
+        cancel.addActionListener(event -> cancelQuery());
+        mode.addActionListener(event -> switchMode());
+        editor.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, menuShortcut), "runQuery");
+        editor.getActionMap().put("runQuery", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                runQuery();
+            }
+        });
+
+        status.setName("queryStatus");
+        status.putClientProperty("html.disable", true);
+        results.setName("queryResults");
+        results.setFillsViewportHeight(true);
+        results.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        var renderer = new DefaultTableCellRenderer();
+        renderer.putClientProperty("html.disable", true);
+        results.setDefaultRenderer(Object.class, renderer);
+
+        var actions = new JPanel(new FlowLayout(FlowLayout.LEADING, 6, 0));
+        actions.add(mode);
+        actions.add(run);
+        actions.add(cancel);
+        var body = ExplorerFrame.split(javax.swing.JSplitPane.VERTICAL_SPLIT, new RTextScrollPane(editor),
+                new JScrollPane(results), 200, 0.4);
+        body.setContinuousLayout(true);
+        add(actions, BorderLayout.NORTH);
+        add(body, BorderLayout.CENTER);
+        add(status, BorderLayout.SOUTH);
+        setReady();
+    }
+
+    void setDataset(ExplorerQueries replacement, SqlCatalog replacementCatalog, Runnable releasePrevious) {
+        completion.hideChildWindows();
+        var previous = active;
+        active = null;
+        queries = replacement;
+        catalog = replacementCatalog == null ? EMPTY_CATALOG : replacementCatalog;
+        showResult(new ExplorerQueries.Result(List.of(), List.of(), false));
+        status.setToolTipText(null);
+        status.setText(queries == null ? "Open a dataset to run a query." : " ");
+        setReady();
+        if (previous == null) {
+            releasePrevious.run();
+        } else {
+            previous.release = releasePrevious;
+            previous.requestCancellation();
+        }
+    }
+
+    private void switchMode() {
+        completion.hideChildWindows();
+        drafts.put(currentMode, editor.getText());
+        currentMode = (Mode) mode.getSelectedItem();
+        editor.setText(drafts.getOrDefault(currentMode, ""));
+        editor.setCaretPosition(0);
+        showResult(new ExplorerQueries.Result(List.of(), List.of(), false));
+        status.setToolTipText(null);
+        status.setText(queries == null ? "Open a dataset to run a query." : " ");
+    }
+
+    private void setReady() {
+        run.setEnabled(queries != null && active == null);
+        mode.setEnabled(active == null);
+        cancel.setEnabled(active != null);
+    }
+
+    private void runQuery() {
+        if (queries == null || active != null) {
+            return;
+        }
+        completion.hideChildWindows();
+        if (editor.getText().isBlank()) {
+            status.setText("Enter a query.");
+            editor.requestFocusInWindow();
+            return;
+        }
+        active = new QueryWork(queries, currentMode, editor.getText());
+        setReady();
+        status.setToolTipText(null);
+        status.setText("Running query…");
+        active.execute();
+    }
+
+    private void cancelQuery() {
+        if (active != null) {
+            cancel.setEnabled(false);
+            status.setText("Cancelling query…");
+            active.requestCancellation();
+        }
+    }
+
+    private List<Suggestion> suggestions(JTextComponent component) {
+        if (queries == null || active != null) {
+            return List.of();
+        }
+        int caret = component.getCaretPosition();
+        var text = component.getText();
+        return currentMode == Mode.IQL ? queries.completeIql(text, caret) : catalog.complete(text, caret);
+    }
+
+    private final class QueryCompletions extends DefaultCompletionProvider {
+        private QueryCompletions() {
+            setAutoActivationRules(true, ".");
+        }
+
+        @Override
+        public String getAlreadyEnteredText(JTextComponent component) {
+            var items = suggestions(component);
+            return items.isEmpty() ? "" : component.getText()
+                    .substring(items.getFirst().start(), component.getCaretPosition());
+        }
+
+        @Override
+        protected List<Completion> getCompletionsImpl(JTextComponent component) {
+            var choices = new ArrayList<Completion>();
+            for (var item : suggestions(component)) {
+                choices.add(new BasicCompletion(this, item.text(), item.description()));
+            }
+            return choices;
+        }
+    }
+
+    private final class QueryWork extends SwingWorker<ExplorerQueries.Result, Void> {
+        private final ExplorerQueries source;
+        private final Mode language;
+        private final String text;
+        private final ExplorerQueries.Cancellation cancellation = new ExplorerQueries.Cancellation();
+        private Runnable release;
+
+        private QueryWork(ExplorerQueries source, Mode language, String text) {
+            this.source = source;
+            this.language = language;
+            this.text = text;
+        }
+
+        private void requestCancellation() {
+            Thread.startVirtualThread(cancellation::cancel);
+        }
+
+        @Override
+        protected ExplorerQueries.Result doInBackground() throws Exception {
+            return source.execute(language, text, cancellation);
+        }
+
+        @Override
+        protected void done() {
+            if (active != this) {
+                if (release != null) {
+                    release.run();
+                }
+                return;
+            }
+            active = null;
+            setReady();
+            try {
+                var result = get();
+                if (cancellation.requested()) {
+                    status.setText("Query cancelled.");
+                    return;
+                }
+                showResult(result);
+                status.setText(result.rows().size() + (result.rows().size() == 1 ? " row" : " rows")
+                        + (result.truncated() ? " shown. More rows are available." : "."));
+            } catch (ExecutionException failure) {
+                if (cancellation.requested()) {
+                    status.setText("Query cancelled.");
+                    return;
+                }
+                var cause = failure.getCause();
+                status.setText(cause.getMessage());
+                status.setToolTipText(cause.getMessage());
+                if (cause instanceof Iql.QueryException problem && text.equals(editor.getText())) {
+                    var length = editor.getDocument().getLength();
+                    editor.requestFocusInWindow();
+                    editor.select(Math.clamp(problem.start(), 0, length), Math.clamp(problem.end(), 0, length));
+                }
+            } catch (InterruptedException failure) {
+                Thread.currentThread().interrupt();
+                status.setText("Query interrupted.");
+            }
+        }
+    }
+
+    private void showResult(ExplorerQueries.Result result) {
+        results.setModel(new AbstractTableModel() {
+            @Override
+            public int getRowCount() {
+                return result.rows().size();
+            }
+
+            @Override
+            public int getColumnCount() {
+                return result.columns().size();
+            }
+
+            @Override
+            public String getColumnName(int column) {
+                return result.columns().get(column);
+            }
+
+            @Override
+            public Object getValueAt(int row, int column) {
+                return result.rows().get(row).get(column);
+            }
+        });
+        for (int column = 0; column < result.columns().size(); column++) {
+            int width = Math.clamp(result.columns().get(column).length() * 8 + 32, 110, 400);
+            results.getColumnModel().getColumn(column).setPreferredWidth(width);
+        }
+    }
+}

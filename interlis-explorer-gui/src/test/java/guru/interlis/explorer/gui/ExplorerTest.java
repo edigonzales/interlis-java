@@ -26,6 +26,46 @@ class ExplorerTest {
     @TempDir Path temp;
 
     @Test
+    void resolvesLocalModelImportsFromNeighbouringSources() throws Exception {
+        Files.writeString(temp.resolve("Dependency.ili"), """
+                INTERLIS 2.4;
+                TYPE MODEL Dependency AT "https://example.org" VERSION "1" =
+                  DOMAIN Counter = 0 .. 10;
+                END Dependency.
+                TYPE MODEL OtherHeaderModel AT "https://example.org" VERSION "1" =
+                END OtherHeaderModel.
+                """);
+        var model = Files.writeString(temp.resolve("Root.ili"), """
+                INTERLIS 2.4;
+                MODEL Root AT "https://example.org" VERSION "1" =
+                  XMLNS "urn:explorer-import";
+                  IMPORTS Dependency;
+                  TOPIC Data =
+                    CLASS Item =
+                      count: MANDATORY Dependency.Counter;
+                    END Item;
+                  END Data;
+                END Root.
+                """);
+        var transfer = Files.writeString(temp.resolve("import.xtf"), """
+                <i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="urn:explorer-import">
+                  <i:headersection><i:models><i:model>Dependency</i:model><i:model>Root</i:model>
+                    <i:model>OtherHeaderModel</i:model></i:models>
+                    <i:sender>test</i:sender></i:headersection>
+                  <i:datasection><Data i:bid="basket"><Item i:tid="example"><count>5</count></Item></Data></i:datasection>
+                </i:transfer>
+                """);
+        try (var dataset = ExplorerDataset.open(List.of(model), transfer, CancellationToken.none())) {
+            assertTrue(dataset.plan().models().stream()
+                    .anyMatch(descriptor -> descriptor.name().declared().equals(QualifiedName.of("OtherHeaderModel"))));
+            var type = dataset.plan().objects().stream()
+                    .filter(descriptor -> descriptor.name().declared().equals(QualifiedName.of("Root", "Data", "Item")))
+                    .findFirst().orElseThrow();
+            assertEquals("example", dataset.objects(type).getFirst().object().identity().tid().orElseThrow().value());
+        }
+    }
+
+    @Test
     void browsesImportedObjectsInModelOrder() throws Exception {
         var fixtures = Path.of(System.getProperty("testdata.dir"), "reference", "iox", "ili24");
         var dataset = ExplorerDataset.open(List.of(fixtures.resolve("Reference24.ili")),

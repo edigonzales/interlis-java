@@ -298,8 +298,14 @@ derselben unveränderlichen Schemainstanz geplant sein.
 ## INTERLIS Object Explorer
 
 Starte den lokalen Explorer mit `./gradlew :interlis-explorer-gui:run`.
-Wähle unter **Open dataset…** die lokalen ILI-Dateien einschliesslich
-ihrer Modellimporte und anschliessend eine XTF-2.4-FULL-Datei. Der Explorer
+Wähle unter **Open dataset…** die zum Transfer gehörenden lokalen ILI-Dateien
+und anschliessend eine XTF-2.4-FULL-Datei. Der Explorer sucht fehlende
+Modellimporte in benachbarten ILI-Dateien und danach in den öffentlichen
+Modellrepos `models.geo.admin.ch` und `models.interlis.ch`. Er löst auch
+weitere Modellnamen aus dem XTF-Kopf auf. Für die Codierung im amtlichen
+DMAV-1.1-Testtransfer akzeptiert der Import einen Bogen-Zwischenpunkt vor dem
+Endpunkt, mehrere Struktureinträge pro Attributelement einer Sammlung und
+ausgeschriebene Topic-Namen vor Objekttypen. Der Explorer
 merkt sich den Ordner des letzten erfolgreichen Imports auch über einen
 Neustart hinweg. Im Modellbaum kennzeichnen **M**, **T** und **C**
 Modelle, Topics und Klassen. Wähle eine Klasse und danach ein Objekt.
@@ -316,6 +322,53 @@ das auch mit **Enter**. **Back** kehrt zum Ausgangsobjekt und zur
 Referenzzeile zurück. Der Abschnitt **Beziehungen** zeigt aufklappbare
 Assoziationen mit Rollennamen, Zielen und eigenen Attributen. Beim
 Schliessen wird die temporäre DuckDB-Datenbank entfernt.
+
+### Daten abfragen
+
+Im Tab **Query** wählst du **IQL** oder **SQL**. **Run** führt die Abfrage aus.
+Auf macOS geht das auch mit **⌘Enter**, auf den übrigen Plattformen mit
+**Strg+Enter**. Vorschläge erscheinen beim Tippen und auf **⌘⇧Leertaste**
+unter macOS bzw. **Strg+Leertaste**.
+Mit **Cancel** kannst du eine laufende Abfrage abbrechen. Die Ergebnistabelle
+zeigt bis zu 1000 Zeilen und meldet, wenn weitere Treffer vorhanden sind.
+
+IQL verwendet die deklarierten Namen aus dem Modell. Mit `RelationsDemo.ili`
+und `relations-demo.xtf` liefert diese Abfrage den Namen des aufgelösten
+Zielobjekts.
+
+```sql
+SELECT i.details.owner.title
+FROM RelationsDemo.Data.Item AS i
+WHERE i.title = 'Item with relationships'
+```
+
+Bei Sammlungen bindet `EXISTS` die Bedingungen an ein einzelnes Vorkommen.
+Mit `Reference24.ili` und `structures-and-link.xtf` findest du das Objekt, das
+einen Eintrag mit dem Namen `first` enthält.
+
+```sql
+SELECT i.count
+FROM Reference24.Data.Item AS i
+WHERE EXISTS(i.details AS detail WHERE detail.label = 'first')
+```
+
+`IS MISSING` fragt nach einem im Transfer fehlenden Attribut.
+`IS UNDEFINED` prüft einen explizit undefinierten Wert. Mit
+`INTERSECTS(pfad, BOX(xmin, ymin, xmax, ymax))` suchst du Geometrien im
+Koordinatenreferenzsystem des Attributs. Die räumliche Abfrage benötigt
+DuckDB Spatial. Der Explorer lädt die signierte Extension aus dem lokalen
+Cache oder bezieht sie beim Öffnen aus dem offiziellen DuckDB-Repository.
+
+SQL arbeitet mit Tabellen und Spalten aus dem DuckDB-Katalog. Der Datensatz
+ist für diese Abfragen schreibgeschützt. Die folgende Abfrage zählt Objekte je
+konkreter Klasse.
+
+```sql
+SELECT type_name, count(*) AS objects
+FROM object
+GROUP BY type_name
+ORDER BY type_name
+```
 
 ## Objektspeicher in DuckDB
 

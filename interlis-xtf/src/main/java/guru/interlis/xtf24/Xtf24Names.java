@@ -195,6 +195,21 @@ final class Xtf24Names {
         return unique(name, objectCandidates(name, availableTypes));
     }
 
+    ObjectDescriptor objectOccurrence(QName name, Set<SymbolRef> availableTypes, Xtf24ReadProfile profile) {
+        var candidates = objectCandidates(name, availableTypes);
+        String local = name.getLocalPart();
+        int separator = local.indexOf('.');
+        if (profile == Xtf24ReadProfile.DMAV_1_1 && candidates.isEmpty() && separator > 0) {
+            String topic = local.substring(0, separator);
+            var unqualified = new QName(name.getNamespaceURI(), local.substring(separator + 1));
+            candidates = objectCandidates(unqualified, availableTypes).stream()
+                    .filter(object -> object.topic().flatMap(plan::topic)
+                            .filter(descriptor -> topicName(descriptor).getLocalPart().equals(topic)).isPresent())
+                    .toList();
+        }
+        return unique(name, candidates);
+    }
+
     List<ObjectDescriptor> objectCandidates(QName name, Set<SymbolRef> availableTypes) {
         return objects.getOrDefault(name, List.of()).stream()
                 .filter(object -> availableTypes.contains(object.symbol())).toList();

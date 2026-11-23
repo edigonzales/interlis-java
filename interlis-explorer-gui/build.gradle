@@ -11,10 +11,20 @@ application {
 dependencies {
     implementation project(':interlis-model')
     implementation project(':interlis-compiler')
+    implementation project(':interlis-workspace')
+    implementation project(':interlis-repository')
     implementation project(':interlis-transfer')
     implementation project(':interlis-xtf')
     implementation project(':interlis-explorer')
     implementation 'com.formdev:flatlaf:3.7'
+    implementation 'com.fifesoft:rsyntaxtextarea:4.0.1'
+    implementation 'com.fifesoft:autocomplete:4.0.0'
+}
+
+apply plugin: 'org.gradlex.extra-java-module-info'
+extraJavaModuleInfo {
+    failOnMissingModuleInfo = false
+    automaticModule('com.fifesoft:autocomplete', 'org.fife.AutoComplete')
 }
 
 tasks.named('test') {

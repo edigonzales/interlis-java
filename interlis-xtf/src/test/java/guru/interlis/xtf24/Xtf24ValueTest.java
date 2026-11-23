@@ -142,6 +142,21 @@ class Xtf24ValueTest {
     }
 
     @Test
+    void dmavProfileAcceptsGroupedStructureCollectionItemsInWireOrder() {
+        var first = "<Detail><label>before</label></Detail>";
+        var second = "<Detail><label>after</label></Detail>";
+        var document = document("<detail>" + first + first + second + "</detail>");
+        var canonical = document("<detail>" + first + "</detail><detail>" + first + "</detail><detail>" + second + "</detail>");
+        var decoded = read(plan, document, Xtf24ReadProfile.DMAV_1_1);
+        assertEquals(read(plan, canonical), decoded);
+        assertEquals(read(plan, canonical), read(plan, write(plan, decoded)));
+        assertEquals(Xtf24Exception.Reason.INVALID_WIRE,
+                assertThrows(Xtf24Exception.class, () -> read(plan, document)).reason());
+        assertEquals(Xtf24Exception.Reason.INVALID_WIRE,
+                assertThrows(Xtf24Exception.class, () -> read(plan, document("<detail/>"), Xtf24ReadProfile.DMAV_1_1)).reason());
+    }
+
+    @Test
     void rejectsWireGrammarAndAmbiguousMultiplicity() {
         for (String fields : List.of("<enabled>maybe</enabled>", "<exact>twelve</exact>", "<choice>root..a</choice>",
                 "<title>x</title><title>y</title>", "<enabled>true</enabled><title>out of order</title>",

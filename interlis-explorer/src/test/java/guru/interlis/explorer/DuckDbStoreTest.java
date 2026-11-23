@@ -15,6 +15,8 @@ import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
 import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferGeometry.Arc;
+import guru.interlis.transfer.TransferGeometry.Coordinate;
+import guru.interlis.transfer.TransferGeometry.CurvePart;
 import guru.interlis.transfer.TransferGeometry.Polyline;
 import guru.interlis.transfer.TransferIdentity.BasketId;
 import guru.interlis.transfer.TransferIdentity.IdOrigin;
@@ -32,6 +34,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -199,6 +203,158 @@ class DuckDbStoreTest {
         try (var original = Files.newInputStream(fixture("geometry.xtf"))) {
             assertEquals(read(rebound, original), read(rebound, new ByteArrayInputStream(output.toByteArray())));
         }
+
+        try (var store = DuckDbStore.openReadOnly(file, rebound);
+             var connection = store.duplicateForQuery();
+             var statement = connection.createStatement();
+             var rows = statement.executeQuery("""
+                     SELECT value_path, CAST(geom AS VARCHAR), projection_error
+                     FROM geometry ORDER BY value_path
+                     """)) {
+            assertTrue(rows.next());
+            assertEquals("/Reference24.Data.Item.points", rows.getString(1));
+            assertTrue(rows.getString(2).startsWith("MULTIPOINT"));
+            assertNull(rows.getString(3));
+            assertTrue(rows.next());
+            assertTrue(rows.getString(2).startsWith("POLYGON"));
+            assertTrue(rows.next());
+            assertTrue(rows.getString(2).startsWith("MULTIPOLYGON"));
+            assertTrue(rows.next());
+            assertEquals("/Reference24.Data.Item.trace", rows.getString(1));
+            assertNull(rows.getString(2));
+            assertTrue(rows.getString(3).contains("explicit radius"));
+            assertTrue(rows.next());
+            assertTrue(rows.getString(2).startsWith("MULTILINESTRING"));
+            assertFalse(rows.next());
+        }
+    }
+
+    @Test
+    void derivesGeometryAtTheExactCollectionOccurrenceAndUsesModelCrs() throws Exception {
+        var file = temp.resolve("nested-geometry.duckdb");
+        var plan = compile(model().replace("    P = ", "    !!@CRS=EPSG:2056\n    P = ")
+                .replace("    label : TEXT*20;", "    label : TEXT*20;\n    point : P;"));
+        var xml = Files.readString(fixture("structures-and-link.xtf"))
+                .replace("<label>second</label>",
+                        "<label>second</label><point><g:coord><g:c1>1.00</g:c1><g:c2>2.00</g:c2></g:coord></point>")
+                .replace("<label>first</label>",
+                        "<label>first</label><point><g:coord><g:c1>3.00</g:c1><g:c2>4.00</g:c2></g:coord></point>")
+                .replace("xmlns=\"urn:reference24\"", "xmlns=\"urn:reference24\" xmlns:g=\"http://www.interlis.ch/geometry/1.0\"");
+        try (var store = DuckDbStore.open(file, plan);
+             var reader = new Xtf24Reader(plan, new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)))) {
+            store.importTransfer(reader, RUN);
+        }
+        try (var store = DuckDbStore.openReadOnly(file, plan);
+             var connection = store.duplicateForQuery();
+             var statement = connection.createStatement();
+             var rows = statement.executeQuery("""
+                     SELECT s.text_value, g.crs, CAST(g.geom AS VARCHAR)
+                     FROM scalar s JOIN geometry g ON g.source_position = s.source_position
+                       AND replace(g.value_path, '/Reference24.Detail.point', '/Reference24.Detail.label') = s.value_path
+                     ORDER BY g.value_path
+                     """)) {
+            assertTrue(rows.next());
+            assertEquals("second", rows.getString(1));
+            assertEquals("EPSG:2056", rows.getString(2));
+            assertEquals("POINT (1 2)", rows.getString(3));
+            assertTrue(rows.next());
+            assertEquals("first", rows.getString(1));
+            assertEquals("POINT (3 4)", rows.getString(3));
+            assertFalse(rows.next());
+        }
+    }
+
+    @Test
+    void segmentsSharedArcsIdenticallyInEitherDirection() {
+        var start = coordinate(0, 0);
+        var support = coordinate(1, 1);
+        var end = coordinate(2, 0);
+        var forward = new Polyline(List.of(new CurvePart(start, List.of(new Arc(support, end, Optional.empty())))));
+        var reverse = new Polyline(List.of(new CurvePart(end, List.of(new Arc(support, start, Optional.empty())))));
+        double tolerance = 0.001;
+        var points = linePoints(GeometryProjection.encode(forward, tolerance));
+        assertEquals(points.reversed(), linePoints(GeometryProjection.encode(reverse, tolerance)));
+        assertEquals(List.of(0.0, 0.0), points.getFirst());
+        assertTrue(points.contains(List.of(1.0, 1.0)));
+        assertEquals(List.of(2.0, 0.0), points.getLast());
+        for (int index = 1; index < points.size(); index++) {
+            var a = points.get(index - 1);
+            var b = points.get(index);
+            double radiusAtMidpoint = Math.hypot((a.get(0) + b.get(0)) / 2 - 1, (a.get(1) + b.get(1)) / 2);
+            assertTrue(1 - radiusAtMidpoint <= tolerance);
+        }
+    }
+
+    private static Coordinate coordinate(int x, int y) {
+        return new Coordinate(List.of(new NumberValue(Integer.toString(x), BigDecimal.valueOf(x)),
+                new NumberValue(Integer.toString(y), BigDecimal.valueOf(y))));
+    }
+
+    private static List<List<Double>> linePoints(byte[] wkb) {
+        var data = ByteBuffer.wrap(wkb).order(ByteOrder.LITTLE_ENDIAN);
+        assertEquals(1, data.get());
+        assertEquals(2, data.getInt());
+        int size = data.getInt();
+        var points = new ArrayList<List<Double>>(size);
+        for (int index = 0; index < size; index++) {
+            points.add(List.of(data.getDouble(), data.getDouble()));
+        }
+        assertFalse(data.hasRemaining());
+        return points;
+    }
+
+    @Test
+    void backfillsReferencePathsAndTypedValuesBeforeReadOnlyQueries() throws Exception {
+        var file = temp.resolve("old-store.duckdb");
+        var plan = compile();
+        try (var store = DuckDbStore.open(file, plan);
+             var input = Files.newInputStream(fixture("structures-and-link.xtf"));
+             var reader = new Xtf24Reader(plan, input)) {
+            store.importTransfer(reader, RUN);
+        }
+        try (var connection = DriverManager.getConnection("jdbc:duckdb:" + file);
+             var statement = connection.createStatement()) {
+            statement.execute("DROP INDEX reference_target");
+            statement.execute("ALTER TABLE reference DROP COLUMN value_path");
+            for (var table : List.of("projection_version", "association_role", "association", "geometry", "scalar")) {
+                statement.execute("DROP TABLE " + table);
+            }
+        }
+        try (var store = DuckDbStore.open(file, plan)) {
+            assertTrue(store.hasTransfer());
+        }
+        try (var store = DuckDbStore.openReadOnly(file, plan);
+             var connection = store.duplicateForQuery();
+             var statement = connection.createStatement()) {
+            try (var rows = statement.executeQuery("""
+                    SELECT value_path, decimal_value, integer_value, number_text FROM scalar
+                    WHERE value_path = '/Reference24.Data.Item.count'
+                    """)) {
+                assertTrue(rows.next());
+                assertEquals(new BigDecimal("5.000000000000000000"), rows.getBigDecimal("decimal_value"));
+                assertEquals(5, rows.getLong("integer_value"));
+                assertEquals("5", rows.getString("number_text"));
+                assertFalse(rows.next());
+            }
+            try (var rows = statement.executeQuery("""
+                    SELECT a.value_path, r.slot, o.tid
+                    FROM association a JOIN association_role r ON a.id = r.association_id
+                    JOIN object o ON r.target_position = o.position ORDER BY r.slot
+                    """)) {
+                assertTrue(rows.next());
+                assertEquals("/Reference24.Data.Link.parent", rows.getString(1));
+                assertEquals("Reference24.Data.Link.items", rows.getString(2));
+                assertEquals("i1", rows.getString(3));
+                assertTrue(rows.next());
+                assertEquals("Reference24.Data.Link.parent", rows.getString(2));
+                assertEquals("p1", rows.getString(3));
+                assertFalse(rows.next());
+            }
+            assertThrows(SQLException.class, () -> statement.execute("DELETE FROM object"));
+            try (var configuration = connection.createStatement()) {
+                assertThrows(SQLException.class, () -> configuration.execute("SET enable_external_access = true"));
+            }
+        }
     }
 
     @Test
@@ -259,7 +415,8 @@ class DuckDbStoreTest {
 
     private static void assertEmptyStore(DuckDbStore store, Statement statement) throws SQLException {
         assertFalse(store.hasTransfer());
-        for (var table : List.of("transfer", "basket", "object", "reference")) {
+        for (var table : List.of("transfer", "basket", "object", "reference", "geometry", "scalar",
+                "association", "association_role", "projection_version")) {
             try (var rows = statement.executeQuery("SELECT count(*) FROM " + table)) {
                 assertTrue(rows.next());
                 assertEquals(0L, rows.getLong(1), table);
