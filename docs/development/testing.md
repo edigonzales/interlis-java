@@ -144,6 +144,11 @@ und Datensatzgrenzen. Es vergleicht TIDs und BID-Zuordnungen in SQL und XTF
 und prüft fehlende, mehrdeutige und typfremde Ziele. Abgewiesene Imports
 erhalten die gespeicherten Zeilen. Fehler beim Export erhalten die Datei.
 
+`OrderedRoleStorageTest` prüft die Positionsspalten eigenständiger,
+eingebetteter und attributierter Rollen direkt per JDBC. Es prüft den
+64-Bit-Grenzwert, fehlende Positionen, den Rollback bei Überlauf und den
+Erhalt der Ausgabedatei bei verwaisten oder ungültigen Positionswerten.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -166,6 +171,9 @@ und getrennte Schemata pro Fall. Die Option
 `--tests '*CoreTransferInteropTest.*External*'` prüft externe Referenzen in
 beiden Werkzeugrichtungen und Schematypen, auch bei getrennt gelieferten
 Topics. Ein Folgeimport mit ili2db prüft die ID-Vergabe im eigenen Schema.
+Mit `--tests '*CoreTransferInteropTest.*Ordered*'` prüft dieselbe Klasse
+Katalog und Rollen in beiden Richtungen. Die Referenzfälle halten fest,
+welche Positionswerte ili2db 5.5.2 beim Import und Export auslässt.
 
 Die `*IdentityColumns*`-Fälle vergleichen alle Kombinationen von
 `--create-basket-col` und `--create-tid-col` mit den Referenzschemata.
@@ -544,10 +552,9 @@ Bei eigenständigen Links mit drei Rollen prüft die Suite die Spalten und
 die XTF-Reihenfolge aller Rollen sowie die skalaren Werte. Ein Ziel ausserhalb
 des deklarierten Zweigs der dritten Rolle führt zu Rollback oder Exportabbruch.
 Für binäre n:m-Links mit einer oder zwei `ORDERED`-Rollen prüft die Suite
-die Sequenzspalten und die Rollenziele in beiden Werkzeugrichtungen. Sie
-speichert Positionen zusätzlich direkt im SQL-Schema und prüft Import und
-Export mit `interlis-db` auf exakte Positionswerte, SQL `NULL`, Rollback bei
-einem Überlauf und Erhalt der Ausgabedatei bei einer ungültigen SQL-Position.
+die Sequenzspalten und die Rollenziele in beiden Werkzeugrichtungen.
+`OrderedRoleStorageTest` setzt Positionen direkt im SQL-Schema und prüft
+exakte Werte, SQL `NULL`, Rollback und Erhalt der Ausgabedatei.
 Bei eingebetteten 1:n-Rollen ohne eigene Attribute prüft sie die
 Sequenzspalte auf der n-Seite, die Position auf der Gegenrolle im XTF,
 ein vorwärts aufgelöstes Ziel und die Diagnose einer Position ohne Referenz.

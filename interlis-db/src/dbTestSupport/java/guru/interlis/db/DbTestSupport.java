@@ -14,6 +14,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -251,5 +252,15 @@ final class DbTestSupport {
         assertNotNull(reference);
         assertEquals(tid, id(reference, version, "ref"));
         assertEquals(version == 23 ? bid : "", id(reference, version, "bid"));
+    }
+
+    static Map<String, Element> orderedOwners(Element basket, String objectName, int version) {
+        var owners = new HashMap<String, Element>();
+        for (var object : children(basket)) {
+            if (object.getLocalName().equals(objectName)) {
+                assertNull(owners.put(id(object, version, "tid"), object));
+            }
+        }
+        return owners;
     }
 }

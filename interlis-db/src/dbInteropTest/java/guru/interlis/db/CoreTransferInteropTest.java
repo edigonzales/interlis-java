@@ -29,4 +29,13 @@ final class CoreTransferInteropTest {
         cases.exchangeExternal(version, db, reference);
         cases.exchangeExternalTopics(version, db.peer("topics_reference"), reference);
     }
+    @Test void geoPackageOrdered23() throws Exception { ordered(23, null); }
+    @Test void geoPackageOrdered24() throws Exception { ordered(24, null); }
+    @Test void postgisOrdered23() throws Exception { ordered(23, POSTGIS.container()); }
+    @Test void postgisOrdered24() throws Exception { ordered(24, POSTGIS.container()); }
+
+    private void ordered(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(work, postgres, "ordered_reference", "order_" + version + "_");
+        new CoreOrderedCases(work).exchangeOrdered(new ReferenceTool(work, db.postgis()), db, version);
+    }
 }
