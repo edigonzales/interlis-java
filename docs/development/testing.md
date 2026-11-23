@@ -128,6 +128,11 @@ Verweises prüft der Test den erfolgreichen Replace und Delete sowie den
 Erhalt des unabhängigen Datensatzes. Die `T_Type`-Fälle prüfen die Werte
 auf Fach-, Struktur- und Linkzeilen und die SQL-Checks nach `--add-models`.
 
+`GeometryStorageTest` prüft explizite Radien, offene Flächenringe und leere
+XTF-2.4-Geometriesammlungen nach bereits geschriebenen Objekten. Beim
+Rollback prüft er Zeilen und ID-Vergabe. Beschädigte gespeicherte Geometrien
+führen zur Attributdiagnose und lassen die bestehende Exportdatei intakt.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg

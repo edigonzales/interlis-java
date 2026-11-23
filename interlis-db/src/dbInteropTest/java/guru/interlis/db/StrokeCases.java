@@ -16,7 +16,7 @@ import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.child;
 import static guru.interlis.db.DbTestSupport.children;
-import static guru.interlis.db.DbInteropTest.emptyCollection;
+import static guru.interlis.db.DbTestSupport.emptyCollection;
 import static guru.interlis.db.DbTestSupport.execute;
 import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.readDataSection;

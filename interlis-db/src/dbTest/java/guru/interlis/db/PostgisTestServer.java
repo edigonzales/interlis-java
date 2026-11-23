@@ -9,7 +9,13 @@ import java.util.UUID;
 import static guru.interlis.db.DbTestSupport.postgisContainer;
 
 final class PostgisTestServer implements AutoCloseable {
+    enum Backend { GEOPACKAGE, POSTGIS }
+
     private PostgreSQLContainer postgres;
+
+    Target target(Path file, Backend backend) {
+        return backend == Backend.POSTGIS ? target(file) : new Target(file, null, "geo_package");
+    }
 
     Target target(Path file) {
         String schema = "db_test_" + UUID.randomUUID().toString().replace("-", "");

@@ -5,9 +5,10 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 import org.w3c.dom.Element;
 
-import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -18,9 +19,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import javax.xml.parsers.DocumentBuilderFactory;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -199,4 +203,18 @@ final class DbTestSupport {
     }
 
     record CliResult(int code, String diagnostics) {}
+
+    static void assertExportRejected(Target db, String model, String dataset, Path output, String... diagnostics)
+            throws IOException {
+        byte[] original = Files.readAllBytes(output);
+        var rejected = cli(db, "export", model, dataset, output, CancellationToken.none());
+        assertNotEquals(0, rejected.code(), rejected::diagnostics);
+        assertTrue(java.util.Arrays.stream(diagnostics).anyMatch(rejected.diagnostics()::contains), rejected::diagnostics);
+        assertArrayEquals(original, Files.readAllBytes(output));
+    }
+
+    static String emptyCollection(Target db, String geometryType, int wkbType) {
+        return db.postgis ? "st_geomfromtext('" + geometryType + " EMPTY', 2056)"
+                : "X'475000100000080800%08X00000000'".formatted(wkbType);
+    }
 }
