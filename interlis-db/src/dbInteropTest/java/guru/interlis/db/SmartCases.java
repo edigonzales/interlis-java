@@ -12,11 +12,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static guru.interlis.db.DbInteropTest.schemaWithIdentityColumns;
 import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
-import static guru.interlis.db.DbInteropTest.cli;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
@@ -468,7 +468,7 @@ final class SmartCases {
     private void createAndCompare(TestDatabase baseline, TestDatabase own, String model, String profile, Path source)
             throws Exception {
         referenceSchema(baseline, model, profile);
-        var result = cli(own, "schemaimport", model, null, source, guru.interlis.execution.CancellationToken.none(),
+        var result = schemaWithIdentityColumns(own, model, source, guru.interlis.execution.CancellationToken.none(),
                 "--inheritance", profile);
         assertEquals(0, result.code(), result::diagnostics);
         Files.delete(source);

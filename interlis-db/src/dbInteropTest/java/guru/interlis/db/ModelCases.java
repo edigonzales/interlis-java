@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static guru.interlis.db.DbInteropTest.schemaWithIdentityColumns;
 import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
@@ -94,10 +95,10 @@ final class ModelCases {
         var middle = fixture("DbStoredMiddle" + version + ".ili");
         var leaf = fixture("DbStoredTypes" + version + ".ili");
         createReference(baseline, model, main);
-        var missing = cli(db, "schemaimport", model, null, main, CancellationToken.none(), "--model-file", middle.toString());
+        var missing = schemaWithIdentityColumns(db, model, main, CancellationToken.none(), "--model-file", middle.toString());
         assertEquals(1, missing.code(), missing::diagnostics);
         assertTrue(missing.diagnostics().contains("DbStoredTypes" + version), missing::diagnostics);
-        var created = cli(db, "schemaimport", model, null, main, CancellationToken.none(),
+        var created = schemaWithIdentityColumns(db, model, main, CancellationToken.none(),
                 "--model-file", middle.toString(), "--model-file", leaf.toString());
         assertEquals(0, created.code(), created::diagnostics);
         for (var source : List.of(main, middle, leaf)) Files.delete(source);
@@ -114,7 +115,7 @@ final class ModelCases {
         var source = fixture(model + ".ili");
         var types = fixture(library + ".ili");
         createReference(baseline, model, source);
-        var result = cli(nativeSchema, "schemaimport", model, null, source, CancellationToken.none(),
+        var result = schemaWithIdentityColumns(nativeSchema, model, source, CancellationToken.none(),
                 "--model-file", types.toString());
         assertEquals(0, result.code(), result::diagnostics);
         try (var refSql = baseline.connect(); var sql = nativeSchema.connect()) {
@@ -175,7 +176,7 @@ final class ModelCases {
         var modelFile = fixture(model + ".ili");
         var libraryFile = fixture(library + ".ili");
         createReference(baseline, model, modelFile);
-        var schema = cli(nativeSchema, "schemaimport", model, null, modelFile, CancellationToken.none(),
+        var schema = schemaWithIdentityColumns(nativeSchema, model, modelFile, CancellationToken.none(),
                 "--model-file", libraryFile.toString());
         assertEquals(0, schema.code(), schema::diagnostics);
         try (var refSql = baseline.connect(); var sql = nativeSchema.connect()) {
@@ -241,7 +242,7 @@ final class ModelCases {
         var first = fixture(warehouse + ".ili");
         var second = fixture(workshop + ".ili");
         createReference(baseline, warehouse + ";" + workshop);
-        var created = cli(nativeSchema, "schemaimport", warehouse, null, first, CancellationToken.none(),
+        var created = schemaWithIdentityColumns(nativeSchema, warehouse, first, CancellationToken.none(),
                 "--model", workshop, "--model-file", second.toString());
         assertEquals(0, created.code(), created::diagnostics);
         Files.delete(first);
@@ -319,7 +320,7 @@ final class ModelCases {
         var first = fixture(warehouse + ".ili");
         var second = fixture(workshop + ".ili");
         createReference(baseline, warehouse + ";" + workshop);
-        var created = cli(nativeSchema, "schemaimport", warehouse, null, first, CancellationToken.none(),
+        var created = schemaWithIdentityColumns(nativeSchema, warehouse, first, CancellationToken.none(),
                 "--model", workshop, "--model-file", second.toString());
         assertEquals(0, created.code(), created::diagnostics);
         Files.delete(first);
@@ -452,14 +453,14 @@ final class ModelCases {
             CancellationToken duringDdl = () -> walker.walk(frames -> frames.anyMatch(frame ->
                     frame.getClassName().equals(SchemaSql.class.getName()) && frame.getMethodName().equals("apply")))
                     && checks.incrementAndGet() == 2;
-            var cancelled = cli(db, "schemaimport", added, null, newFile, duringDdl, "--add-models",
+            var cancelled = schemaWithIdentityColumns(db, added, newFile, duringDdl, "--add-models",
                     "--model-file", sharedFile.toString());
             assertEquals(130, cancelled.code(), cancelled::diagnostics);
             assertEquals(2, checks.get());
             before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
             assertEquals(oldId, scalar(sql, "SELECT t_id FROM " + db.table("report")));
 
-            var extended = cli(db, "schemaimport", added, null, newFile, CancellationToken.none(), "--add-models",
+            var extended = schemaWithIdentityColumns(db, added, newFile, CancellationToken.none(), "--add-models",
                     "--model-file", sharedFile.toString());
             assertEquals(0, extended.code(), extended::diagnostics);
             assertEquals(before.relations().get("settings"), DbSchemaCatalog.read(sql, db.postgis(), db.schema())

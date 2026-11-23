@@ -11,6 +11,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import static guru.interlis.db.DbInteropTest.schemaWithIdentityColumns;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
@@ -283,7 +284,7 @@ final class GeometryLayoutCases {
         }
         options.add(ili.toString());
         reference.run(old, work.toString(), options.toArray(String[]::new));
-        var create = cli(own, "schemaimport", model, null, ili, CancellationToken.none(), nativeOptions.toArray(String[]::new));
+        var create = schemaWithIdentityColumns(own, model, ili, CancellationToken.none(), nativeOptions.toArray(String[]::new));
         assertEquals(0, create.code(), create::diagnostics);
         try (var oldSql = old.connect(); var sql = own.connect()) {
             var expected = DbSchemaCatalog.read(oldSql, old.postgis(), old.schema());

@@ -12,11 +12,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static guru.interlis.db.DbInteropTest.schemaWithIdentityColumns;
 import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
-import static guru.interlis.db.DbInteropTest.cli;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
@@ -134,7 +134,7 @@ final class ChbaseTextCases {
         var source = fixture(multilingual + ".ili");
         var other = fixture(localised + ".ili");
         referenceSchema(baseline, multilingual + ";" + localised, "--expandMultilingual", "--expandLocalised");
-        var result = cli(own, "schemaimport", multilingual, null, source, CancellationToken.none(),
+        var result = schemaWithIdentityColumns(own, multilingual, source, CancellationToken.none(),
                 "--model", localised, "--model-file", other.toString(), "--model-file", base.toString(),
                 "--expand-multilingual", "--expand-localised");
         assertEquals(0, result.code(), result::diagnostics);

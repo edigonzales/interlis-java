@@ -147,6 +147,8 @@ final class SchemaSql {
         boolean createForeignKeys = plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.FOREIGN_KEY);
         boolean createForeignKeyIndexes = plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.FOREIGN_KEY_INDEX);
         boolean createDatasetColumn = plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.DATASET_COLUMN);
+        boolean createBasketColumn = plan.mapping().hasBasketColumn();
+        String basketColumn = BASKET_COLUMN + " " + dialect.idType() + " NOT NULL";
         String datasetColumn = createDatasetColumn ? DATASET_NAME_COLUMN + " " + dialect.text(200) + " NOT NULL" : "";
         var auditColumns = plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.STANDARD_COLUMNS)
                 ? dialect.auditColumns() : List.<String>of();
@@ -161,7 +163,7 @@ final class SchemaSql {
         for (var table : plan.addedTables()) {
             var columns = new ArrayList<String>();
             columns.add(dialect.primaryId() + (table.subtype() ? "" : dialect.sequenceDefault()));
-            columns.add(BASKET_COLUMN + " " + dialect.idType() + " NOT NULL");
+            if (createBasketColumn) columns.add(basketColumn);
             if (createDatasetColumn) columns.add(datasetColumn);
             if (table.hasDiscriminator()) {
                 String constraint = "";
@@ -202,7 +204,7 @@ final class SchemaSql {
             commands.add(dialect.create(table.name(), String.join(", ", columns), inlineKeys.getOrDefault(table.name(), List.of())));
             for (var geometry : table.secondaryGeometries()) {
                 commands.add(dialect.create(geometry.table(), dialect.primaryId()
-                        + ", " + BASKET_COLUMN + " " + dialect.idType() + " NOT NULL, "
+                        + (createBasketColumn ? ", " + basketColumn : "") + ", "
                         + (createDatasetColumn ? datasetColumn + ", " : "")
                         + quote(geometry.column().name()) + " " + dialect.columnType(geometry.column(), 0)
                         + (auditColumns.isEmpty() ? "" : ", " + String.join(", ", auditColumns)),
@@ -508,8 +510,6 @@ final class SchemaSql {
 
     private static void writeSettings(PreparedStatement statement, boolean gpkg, SchemaPlan plan) throws SQLException {
         row(statement, PREFIX + "sender", SCHEMA_SENDER);
-        row(statement, PREFIX + "BasketHandling", "readWrite");
-        row(statement, PREFIX + "TidHandling", "property");
         row(statement, PREFIX + "SqlNull", "enable");
         row(statement, PREFIX + "defaultSrsAuthority", "EPSG");
         row(statement, PREFIX + "defaultSrsCode", Integer.toString(plan.defaultEpsg()));
@@ -662,7 +662,7 @@ final class SchemaSql {
                 case DATE -> "DATE";
                 case TIME -> "TIME";
                 case DATETIME -> timestamp();
-                case FORMATTED -> text(255);
+                case FORMATTED, OID_TEXT -> text(255);
                 case UUID -> gpkg ? text(36) : "uuid";
                 case BINARY -> gpkg ? "BLOB" : "bytea";
                 case XML -> gpkg ? "TEXT" : "xml";

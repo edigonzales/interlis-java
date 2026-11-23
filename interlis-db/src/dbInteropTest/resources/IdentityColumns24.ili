@@ -1,0 +1,28 @@
+INTERLIS 2.4;
+MODEL IdentityColumns24 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  DOMAIN TextOid = OID TEXT*40;
+  TOPIC Data =
+    CLASS Marker =
+      Label: TEXT*20;
+    END Marker;
+    STRUCTURE Detail =
+      Memo: TEXT*20;
+      Target: REFERENCE TO Marker;
+    END Detail;
+    CLASS Holder =
+      Note: Detail;
+    END Holder;
+    CLASS Base (ABSTRACT) =
+      Description: TEXT*20;
+    END Base;
+    CLASS Entry EXTENDS Base =
+      Amount: 0..99;
+    END Entry;
+    CLASS StableText =
+      OID AS IdentityColumns24.TextOid;
+    END StableText;
+    CLASS StableUuid =
+      OID AS INTERLIS.UUIDOID;
+    END StableUuid;
+  END Data;
+END IdentityColumns24.

@@ -33,14 +33,16 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public final class Main {
     private static final String USAGE = """
-            Usage: interlis-db export --model NAME [--model NAME]... [--export-model NAME] --dataset NAME
+            Usage: interlis-db export --model NAME [--model NAME]... [--export-model NAME] [--dataset NAME]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
-                   interlis-db <import|replace|update> --model NAME [--model NAME]... --dataset NAME
+                   interlis-db import --model NAME [--model NAME]... [--dataset NAME]
+                    (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
+                   interlis-db <replace|update> --model NAME [--model NAME]... --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
                    interlis-db delete --model NAME [--model NAME]... --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME)
                    interlis-db schemaimport --model NAME [--model NAME]...
-                    [--add-models]
+                    [--add-models] [--create-basket-col] [--create-tid-col]
                     [--default-epsg CODE] [--multi-srs [--alt-srs-model ORIGINAL=ALTERNATE]]
                     [--model-file IMPORT.ili]...
                     [--inheritance smart1|smart2] [--coalesce-catalogue-ref] [--expand-multilingual] [--expand-localised]
@@ -52,6 +54,8 @@ public final class Main {
                     [--create-unique] [--create-num-checks] [--create-meta-info]
                     [--stroke-arcs] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
+            Use --dataset for transfers against schemas with T_basket.
+            --create-tid-col preserves ordinary transfer IDs. Concrete object OIDs are always stored.
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.
             """;
 
@@ -172,6 +176,7 @@ public final class Main {
             throws IOException, SQLException {
         try (var database = options.open(password)) {
             var mapping = DbSchemaReader.read(database, options.models(), cancellation);
+            checkTransferOptions(mapping, options);
             try (var input = Files.newInputStream(options.file());
                  TransferReader reader = switch (mapping.version()) {
                      case ILI23 -> Xtf23Reader.forIli2db(mapping.plan(), input);
@@ -192,6 +197,7 @@ public final class Main {
     private static void deleteData(Options options, String password, CancellationToken cancellation) throws SQLException {
         try (var database = options.open(password)) {
             var mapping = DbSchemaReader.read(database, options.models(), cancellation);
+            checkTransferOptions(mapping, options);
             DbDatasetWrite.deleteDataset(database, mapping, options.dataset(), cancellation);
             cancellation.throwIfCancellationRequested();
             database.commit();
@@ -204,6 +210,7 @@ public final class Main {
         try {
             try (var database = options.open(password)) {
                 var mapping = DbSchemaReader.read(database, options.models(), options.exportModel(), cancellation);
+                checkTransferOptions(mapping, options);
                 try (var output = Files.newOutputStream(temporary);
                      TransferWriter writer = switch (mapping.version()) {
                          case ILI23 -> Xtf23Writer.forIli2db(mapping.plan(), output);
@@ -221,6 +228,18 @@ public final class Main {
     }
 
     private enum Command { IMPORT, REPLACE, UPDATE, DELETE, EXPORT, SCHEMAIMPORT }
+
+    private static void checkTransferOptions(DbMapping mapping, Options options) {
+        if (!mapping.hasBasketColumn() && options.dataset() != null) {
+            throw new DbException("Dataset operations require a schema created with --create-basket-col");
+        }
+        if (mapping.hasBasketColumn() && options.dataset() == null) {
+            throw new DbException("--dataset is required for schemas with T_basket");
+        }
+        if (options.command() == Command.UPDATE && !mapping.storesTransferTids()) {
+            throw new DbException("update requires a schema created with --create-tid-col");
+        }
+    }
 
     private record Options(Command command, List<String> models, String dataset, Path file, Path gpkg,
                            String pgUrl, String schema, String user, boolean createGeometryIndexes,
@@ -313,8 +332,10 @@ public final class Main {
                 if (file != null || models.isEmpty() || dataset == null) {
                     throw new IllegalArgumentException("delete requires --model and --dataset without a file");
                 }
-            } else if (file == null || file.getParent() == null || models.isEmpty() || dataset == null) {
-                throw new IllegalArgumentException("An XTF path, --model and --dataset are required");
+            } else if (file == null || file.getParent() == null || models.isEmpty()) {
+                throw new IllegalArgumentException("An XTF path and --model are required");
+            } else if ((command == Command.UPDATE || command == Command.REPLACE) && dataset == null) {
+                throw new IllegalArgumentException("update and replace require --dataset");
             }
             String gpkgPath = flags.get("--gpkg");
             String pgUrl = flags.get("--pg-url");

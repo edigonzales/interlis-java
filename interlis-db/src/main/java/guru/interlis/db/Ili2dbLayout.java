@@ -82,6 +82,8 @@ final class Ili2dbLayout {
     private Ili2dbLayout() { }
 
     enum SchemaOption {
+        BASKET_COLUMN("--create-basket-col", "BasketHandling", "readWrite"),
+        TID_COLUMN("--create-tid-col", "TidHandling", "property"),
         FOREIGN_KEY_INDEX("--create-fk-idx", "createForeignKeyIndex", "yes"),
         FOREIGN_KEY("--create-fk", "createForeignKey", "yes"),
         TYPE_DISCRIMINATOR("--create-type-discriminator", "typeDiscriminator", "always"),

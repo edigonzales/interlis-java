@@ -11,6 +11,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
+import static guru.interlis.db.DbInteropTest.schemaWithIdentityColumns;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
@@ -258,7 +259,7 @@ final class SpatialIndexCases {
         String model = "DbSpatial" + version;
         createReferenceSchema(old, model);
         var ili = work.resolve(model + ".ili");
-        var result = cli(own, "schemaimport", model, null, ili, CancellationToken.none(), "--create-geom-index");
+        var result = schemaWithIdentityColumns(own, model, ili, CancellationToken.none(), "--create-geom-index");
         assertEquals(0, result.code(), result::diagnostics);
 
         try (var oldSql = old.connect(); var ownSql = own.connect()) {

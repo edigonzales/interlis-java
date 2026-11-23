@@ -17,6 +17,7 @@ import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.Modifier;
 import guru.interlis.model.NumericType;
 import guru.interlis.model.OidKind;
+import guru.interlis.model.OidRule;
 import guru.interlis.model.OidType;
 import guru.interlis.model.Origin;
 import guru.interlis.model.ReferenceType;
@@ -66,7 +67,7 @@ import static guru.interlis.db.Ili2dbLayout.reservedTable;
 /** The SQL names and storage bindings for a checked transfer plan. */
 final class DbMapping {
     enum Kind {
-        TEXT, BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, UUID, BINARY, XML, ENUMERATION, POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE;
+        TEXT, BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, UUID, OID_TEXT, BINARY, XML, ENUMERATION, POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE;
 
         boolean geometry() { return this == POINT || this == POLYLINE || this == SURFACE || collection(); }
 
@@ -264,7 +265,7 @@ final class DbMapping {
 
     /** The declaration that names the table and its physical parent, when the rows share an ID. */
     record Table(ObjectDescriptor object, String name, Optional<SymbolRef> baseTable, List<Column> columns, boolean hasDiscriminator,
-                 Optional<String> oidDomain, List<SecondaryGeometry> secondaryGeometries) {
+                 Optional<String> oidDomain, boolean storesTransferTid, List<SecondaryGeometry> secondaryGeometries) {
         Table {
             columns = List.copyOf(columns);
             secondaryGeometries = List.copyOf(secondaryGeometries);
@@ -284,7 +285,14 @@ final class DbMapping {
         }
 
         boolean subtype() { return baseTable.isPresent(); }
-        boolean hasTidColumn() { return !subtype() && (object.kind() != SymbolKind.ASSOCIATION || oidDomain.isPresent()); }
+        boolean hasTidColumn() {
+            return carriesObjectId() && (oidDomain.isPresent() || storesTransferTid)
+                    || !subtype() && storesTransferTid && object.kind() == SymbolKind.STRUCTURE;
+        }
+        boolean carriesObjectId() {
+            return !subtype() && (object.kind() == SymbolKind.CLASS
+                    || object.kind() == SymbolKind.ASSOCIATION && oidDomain.isPresent());
+        }
         boolean uuidIdentity() { return oidDomain.filter(Ili2dbLayout.UUID_OID::equals).isPresent(); }
         boolean hasSequenceColumn() { return !subtype() && object.kind() == SymbolKind.STRUCTURE; }
 
@@ -454,6 +462,8 @@ final class DbMapping {
     Collection<ObjectStorage> objectStorage() { return storage.values(); }
 
     Set<Ili2dbLayout.SchemaOption> schemaOptions() { return schemaOptions; }
+    boolean hasBasketColumn() { return schemaOptions.contains(Ili2dbLayout.SchemaOption.BASKET_COLUMN); }
+    boolean storesTransferTids() { return schemaOptions.contains(Ili2dbLayout.SchemaOption.TID_COLUMN); }
 
     List<String> storageTables() { return storageTables(tables); }
 
@@ -638,6 +648,7 @@ final class DbMapping {
         var crsPair = srsModels.map(pair -> new DbCrsPair(plan, pair, crs, crs));
         var roots = storageRoots(plan, crsPair);
         var objects = storageObjects(plan, roots, token);
+        checkBasketLayout(plan, objects, schemaOptions);
         checkLayout(plan, objects);
         var wrappedGeometries = DbWrappedGeometry.plan(plan, objects, transformations);
         var geometryComponents = wrappedGeometries.values().stream().map(binding -> binding.component().symbol())
@@ -789,7 +800,8 @@ final class DbMapping {
                             roleColumn(role, association.target(), role.name().declared().last()), association.ordered()));
                 }
             }
-            tables.add(new Table(object, name, relation.base(), columns, discriminator, oidDomain(plan, object), secondary));
+            tables.add(new Table(object, name, relation.base(), columns, discriminator, relation.oidDomain(),
+                    schemaOptions.contains(Ili2dbLayout.SchemaOption.TID_COLUMN), secondary));
         }
         var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
         return new DbMapping(plan, version, tables, compositions, associations, crsPair, plan.rootModels(), inheritance, schemaOptions);
@@ -835,7 +847,8 @@ final class DbMapping {
         var topics = objects.stream().flatMap(object -> object.topic().stream()).collect(Collectors.toSet());
         for (var topic : plan.topics()) {
             if (!topics.contains(topic.symbol()) && !plan.rootModels().contains(topic.model())) continue;
-            if (topic.oidRules().stream().anyMatch(rule -> !Ili2dbLayout.UUID_OID.equals(oidDomain(plan, rule)))
+            if (topic.oidRules().stream().anyMatch(rule -> !Ili2dbLayout.UUID_OID.equals(oidDomain(plan, rule))
+                    && !isTextOid(plan, rule))
                     || topic.genericBindings().stream().anyMatch(binding -> binding.state() == TopicSymbol.BindingState.ABSTRACT)) {
                 throw unsupported("topic " + topic.name().declared());
             }
@@ -854,10 +867,12 @@ final class DbMapping {
             boolean uuid = domain.filter(Ili2dbLayout.UUID_OID::equals).isPresent();
             boolean flat = object.baseType().isEmpty() && !bases.contains(object.symbol());
             boolean standard = domain.filter(Ili2dbLayout.STANDARD_OID::equals).isPresent();
+            boolean text = !standard && objectOidRule(object).filter(rule -> isTextOid(plan, rule)).isPresent();
             boolean supportedIdentity = object.oidRules().isEmpty() || switch (object.kind()) {
-                case CLASS -> (standard && flat) || (uuid && object.baseType().flatMap(plan::object)
-                        .map(base -> oidDomain(plan, base).equals(domain)).orElse(true));
-                case ASSOCIATION -> uuid && flat;
+                case CLASS -> domain.isEmpty() || abstractAnyOid(plan, object) || (standard && flat)
+                        || ((uuid || text || standard) && object.baseType().flatMap(plan::object)
+                        .map(base -> oidDomain(plan, base).equals(domain) || abstractAnyOid(plan, base)).orElse(!standard));
+                case ASSOCIATION -> (uuid || text) && flat;
                 default -> false;
             };
             if (!flat && object.topic().flatMap(plan::topic).filter(DbDomains::deferred).isPresent()) {
@@ -870,16 +885,54 @@ final class DbMapping {
         if (!hierarchy.isEmpty()) checkInheritance(plan, objects, hierarchy);
     }
 
-    static Optional<String> oidDomain(TransferPlan plan, ObjectDescriptor object) {
-        return object.oidRules().stream().filter(rule -> !rule.basket()).findFirst()
-                .filter(rule -> rule.domain().isPresent()).map(rule -> oidDomain(plan, rule));
+    static void checkBasketLayout(TransferPlan plan, List<ObjectDescriptor> objects,
+                                  Set<Ili2dbLayout.SchemaOption> options) {
+        if (options.contains(Ili2dbLayout.SchemaOption.BASKET_COLUMN)) return;
+        if (options.contains(Ili2dbLayout.SchemaOption.DATASET_COLUMN)) {
+            throw new DbException("--create-dataset-col requires --create-basket-col");
+        }
+        var topics = objects.stream().flatMap(object -> object.topic().stream()).collect(Collectors.toSet());
+        for (var topic : plan.topics()) {
+            if (!topics.contains(topic.symbol()) && !plan.rootModels().contains(topic.model())) continue;
+            if (topic.baseTopic().isPresent() || DbDomains.deferred(topic) || topic.oidRules().stream().anyMatch(OidRule::basket)) {
+                throw new DbException(topic.name().declared() + " requires --create-basket-col");
+            }
+        }
     }
 
-    private static String oidDomain(TransferPlan plan, guru.interlis.model.OidRule rule) {
-        var domain = plan.symbol(new SymbolRef(plan.snapshotId(), rule.domain().orElseThrow())).known().orElseThrow();
+    static Optional<String> concreteOidDomain(TransferPlan plan, ObjectDescriptor object) {
+        return abstractAnyOid(plan, object) ? Optional.empty() : oidDomain(plan, object);
+    }
+
+    private static boolean abstractAnyOid(TransferPlan plan, ObjectDescriptor object) {
+        return object.modifiers().contains(Modifier.ABSTRACT)
+                && objectOidRule(object).filter(rule -> oidKind(plan, rule).filter(OidKind.ANY::equals).isPresent()).isPresent();
+    }
+
+    static Optional<String> oidDomain(TransferPlan plan, ObjectDescriptor object) {
+        return objectOidRule(object).map(rule -> oidDomain(plan, rule));
+    }
+
+    private static Optional<OidRule> objectOidRule(ObjectDescriptor object) {
+        return object.oidRules().stream().filter(rule -> !rule.basket() && rule.domain().isPresent()).findFirst();
+    }
+
+    static String oidDomain(TransferPlan plan, OidRule rule) {
+        var ref = new SymbolRef(plan.snapshotId(), rule.domain().orElseThrow());
+        var domain = plan.symbol(ref).known().orElseThrow();
         if (domain.header().origin() instanceof Origin.PredefinedOrigin predefined) return predefined.key();
-        var owner = plan.symbol(new SymbolRef(plan.snapshotId(), domain.owner().orElseThrow())).known().orElseThrow();
-        return owner.name().value() + "." + domain.name().value();
+        return DbDomains.name(plan, ref);
+    }
+
+    private static boolean isTextOid(TransferPlan plan, OidRule rule) {
+        return oidKind(plan, rule).filter(OidKind.TEXT::equals).isPresent();
+    }
+
+    private static Optional<OidKind> oidKind(TransferPlan plan, OidRule rule) {
+        return rule.domain().map(id -> new SymbolRef(plan.snapshotId(), id))
+                .flatMap(ref -> plan.schema().queries().effectiveType(ref).known())
+                .flatMap(type -> plan.type(new TypeRef(plan.snapshotId(), type.effectiveType())).known())
+                .filter(OidType.class::isInstance).map(OidType.class::cast).map(OidType::oidKind);
     }
 
     private static boolean supportsAssociation(TransferPlan plan, ObjectDescriptor object, Set<SymbolRef> bases) {
@@ -961,7 +1014,10 @@ final class DbMapping {
     static List<AssociationRole> describeRoles(TransferPlan plan, ObjectDescriptor association) {
         String feature = "association " + association.name().declared();
         var roles = roleSlots(association);
-        boolean identified = oidDomain(plan, association).filter(Ili2dbLayout.UUID_OID::equals).isPresent();
+        var domain = oidDomain(plan, association);
+        boolean uuid = domain.filter(Ili2dbLayout.UUID_OID::equals).isPresent();
+        boolean identified = uuid || (domain.filter(Ili2dbLayout.STANDARD_OID::equals).isEmpty()
+                && objectOidRule(association).filter(rule -> isTextOid(plan, rule)).isPresent());
         if (association.kind() != SymbolKind.ASSOCIATION || (!identified && (!association.oidRules().isEmpty()
                 || association.modifiers().contains(Modifier.OID))) || (roles.size() != 2 && roles.size() != 3)) {
             throw unsupported(feature);
@@ -969,7 +1025,7 @@ final class DbMapping {
         if (identified && (roles.size() != 2 || roles.stream().anyMatch(role ->
                 CardinalityUpper.finite(1).equals(role.role().cardinality().upper()) || role.role().external()
                         || role.role().ordered() || role.role().aggregation() != RoleAggregation.NONE))) {
-            throw unsupported("UUID identity on " + feature);
+            throw unsupported((uuid ? "UUID" : "OID TEXT") + " identity on " + feature);
         }
         if (roles.stream().anyMatch(role -> role.role().cardinality().upper().equals(CardinalityUpper.finite(0)))) {
             throw unsupported(feature + " requires every role to admit a target");
@@ -1129,6 +1185,7 @@ final class DbMapping {
             };
             case FormattedType ignored -> Kind.FORMATTED;
             case OidType oid when oid.oidKind() == OidKind.UUID -> Kind.UUID;
+            case OidType oid when oid.oidKind() == OidKind.TEXT -> Kind.OID_TEXT;
             case BlackboxType box when box.blackboxKind() == BlackboxKind.BINARY -> Kind.BINARY;
             case BlackboxType box when box.blackboxKind() == BlackboxKind.XML -> Kind.XML;
             default -> type.kind() == TypeKind.BOOLEAN ? Kind.BOOLEAN : null;

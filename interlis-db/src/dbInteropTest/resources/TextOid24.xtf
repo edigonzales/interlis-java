@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="http://www.interlis.ch/xtf/2.4/TextOid24">
+  <i:headersection><i:models><i:model>TextOid24</i:model></i:models><i:sender>interop fixture</i:sender></i:headersection>
+  <i:datasection>
+    <Data i:bid="Basket.Mixed-Case">
+      <Entry i:tid="Entry.Mixed-Case">
+        <CodeValue>Code.Mixed-Case</CodeValue>
+        <PreviousEntry i:ref="Entry.mixed-case"/>
+      </Entry>
+      <Entry i:tid="Entry.mixed-case"/>
+      <Plain i:tid="Plain-1"/>
+      <EntryPair i:tid="Pair.Mixed-Case">
+        <SourceEntry i:ref="Entry.Mixed-Case"/>
+        <TargetEntry i:ref="Entry.mixed-case"/>
+      </EntryPair>
+    </Data>
+    <Registry i:bid="Registry-Basket">
+      <Register i:tid="Register.Mixed-Case"/>
+    </Registry>
+  </i:datasection>
+</i:transfer>

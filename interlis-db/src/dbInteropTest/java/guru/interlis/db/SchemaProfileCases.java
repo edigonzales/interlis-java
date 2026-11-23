@@ -16,11 +16,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static guru.interlis.db.DbInteropTest.schemaWithIdentityColumns;
 import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
-import static guru.interlis.db.DbInteropTest.cli;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
@@ -681,7 +681,7 @@ final class SchemaProfileCases {
     }
 
     private static void schema(TestDatabase db, String model, Path ili, String... options) {
-        var result = cli(db, "schemaimport", model, null, ili, CancellationToken.none(), options);
+        var result = schemaWithIdentityColumns(db, model, ili, CancellationToken.none(), options);
         assertEquals(0, result.code(), result::diagnostics);
     }
 

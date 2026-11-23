@@ -13,11 +13,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static guru.interlis.db.DbInteropTest.schemaWithIdentityColumns;
 import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
-import static guru.interlis.db.DbInteropTest.cli;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
@@ -295,7 +295,7 @@ final class StructureMappingCases {
     }
 
     private static void createSchema(TestDatabase db, String model, Path ili, String... options) {
-        var result = cli(db, "schemaimport", model, null, ili, CancellationToken.none(), options);
+        var result = schemaWithIdentityColumns(db, model, ili, CancellationToken.none(), options);
         assertEquals(0, result.code(), result::diagnostics);
     }
 

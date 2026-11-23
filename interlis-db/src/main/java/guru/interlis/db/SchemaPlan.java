@@ -86,12 +86,6 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
     }
 
-    static SchemaPlan read(String modelName, Path file, boolean gpkg, boolean splitGeometries,
-                           int defaultEpsg, CancellationToken token) throws IOException {
-        return read(List.of(modelName), file, List.of(), gpkg, splitGeometries, defaultEpsg, false, Optional.empty(),
-                new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), false, DbEnumOptions.DEFAULT, Set.of(), token);
-    }
-
     static SchemaPlan read(List<String> models, Path file, List<Path> imports, boolean gpkg, boolean splitGeometries,
                            int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels, SqlNames names,
                            DbInheritance.Profile inheritance, Set<AttributeTransformation> transformations, boolean strokeArcs,
@@ -221,7 +215,10 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             var columns = rule.keys().stream().map(expression -> uniqueColumn(mapping, table, expression)).toList();
             if (columns.stream().anyMatch(java.util.Objects::isNull)) continue;
             var key = new ArrayList<>(columns);
-            if (rule.basket()) key.add(Ili2dbLayout.T_BASKET);
+            if (rule.basket()) {
+                if (!mapping.hasBasketColumn()) throw new DbException("UNIQUE (BASKET) requires --create-basket-col");
+                key.add(Ili2dbLayout.T_BASKET);
+            }
             keys.add(List.copyOf(key));
         }
         return List.copyOf(keys);
@@ -257,7 +254,9 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         for (var table : addedTables) {
             table.baseTable().ifPresent(base -> keys.add(new ForeignKey(table.name(), Ili2dbLayout.ID_COLUMN,
                     mapping.table(base).name(), false)));
-            keys.add(new ForeignKey(table.name(), Ili2dbLayout.BASKET_COLUMN, Ili2dbLayout.BASKET));
+            if (mapping.hasBasketColumn()) {
+                keys.add(new ForeignKey(table.name(), Ili2dbLayout.BASKET_COLUMN, Ili2dbLayout.BASKET));
+            }
             for (var column : table.columns()) {
                 if (column.target().isPresent()) {
                     keys.add(new ForeignKey(table.name(), column.name(), mapping.table(column.targetRelation()).name()));
@@ -265,7 +264,9 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             }
             for (var geometry : table.secondaryGeometries()) {
                 keys.add(new ForeignKey(geometry.table(), Ili2dbLayout.ID_COLUMN, table.name(), false));
-                keys.add(new ForeignKey(geometry.table(), Ili2dbLayout.BASKET_COLUMN, Ili2dbLayout.BASKET));
+                if (mapping.hasBasketColumn()) {
+                    keys.add(new ForeignKey(geometry.table(), Ili2dbLayout.BASKET_COLUMN, Ili2dbLayout.BASKET));
+                }
             }
         }
         for (var composition : addedCompositions) {
@@ -405,7 +406,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             case TIME -> "TIMEOFDAY";
             case DATETIME -> "DATETIME";
             case FORMATTED -> "FORMATTED";
-            case UUID -> "OID";
+            case UUID, OID_TEXT -> "OID";
             case BINARY -> "BINARY";
             case XML -> "XML";
             case INTEGER, BIGINT, DECIMAL -> "NUMERIC";

@@ -13,11 +13,11 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static guru.interlis.db.DbInteropTest.schemaWithIdentityColumns;
 import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
-import static guru.interlis.db.DbInteropTest.cli;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
@@ -172,7 +172,7 @@ final class CatalogueCases {
         referenceSchema(baseline, model, smart2);
         String[] options = smart2 ? new String[]{"--coalesce-catalogue-ref", "--inheritance", "smart2"}
                 : new String[]{"--coalesce-catalogue-ref"};
-        var result = cli(own, "schemaimport", model, null, source, CancellationToken.none(), options);
+        var result = schemaWithIdentityColumns(own, model, source, CancellationToken.none(), options);
         assertEquals(0, result.code(), result::diagnostics);
         try (var expected = baseline.connect(); var actual = own.connect()) {
             var ref = DbSchemaCatalog.read(expected, baseline.postgis(), baseline.schema());

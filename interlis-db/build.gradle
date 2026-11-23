@@ -5,6 +5,8 @@ plugins {
     id 'application'
 }
 
+version = '0.3.0-SNAPSHOT'
+
 application {
     mainModule = 'guru.interlis.db'
     mainClass = 'guru.interlis.db.Main'
@@ -84,6 +86,7 @@ testing.suites {
             testTask.configure {
                 javaLauncher = javaToolchains.launcherFor(java.toolchain)
                 inputs.files(downloadIli2dbReferences).withPathSensitivity(PathSensitivity.NONE)
+                inputs.file(rootProject.file('testdata/conformance/metamodel/IlisMeta16.ili')).withPathSensitivity(PathSensitivity.RELATIVE)
                 systemProperty 'ili2db.reference.version', ili2dbReferenceVersion
                 systemProperty 'ili2db.reference.dir', ili2dbReferenceDirectory.get().asFile.absolutePath
                 systemProperty 'junit.jupiter.execution.parallel.enabled', 'true'

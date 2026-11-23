@@ -13,11 +13,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static guru.interlis.db.DbInteropTest.schemaWithIdentityColumns;
 import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
-import static guru.interlis.db.DbInteropTest.cli;
 import static guru.interlis.db.DbInteropTest.emptyCollection;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
@@ -400,7 +400,7 @@ final class StrokeCases {
                 "--stroke-arcs");
 
         referenceSchema(baseline, model);
-        var result = cli(own, "schemaimport", model, null, ili, CancellationToken.none(), "--stroke-arcs");
+        var result = schemaWithIdentityColumns(own, model, ili, CancellationToken.none(), "--stroke-arcs");
         assertEquals(0, result.code(), result::diagnostics);
         assertSameCatalog(baseline, own);
         assertGeometryColumn(own, "marker", "anchor", "POINT", 2056);
@@ -423,7 +423,7 @@ final class StrokeCases {
 
         var next = "StrokeAppend" + version;
         var extra = source(next, "SURFACE");
-        var append = cli(own, "schemaimport", next, null, extra, CancellationToken.none(), "--add-models");
+        var append = schemaWithIdentityColumns(own, next, extra, CancellationToken.none(), "--add-models");
         assertEquals(0, append.code(), append::diagnostics);
         try (var sql = own.connect()) {
             var table = scalar(sql, "SELECT sqlname FROM " + own.table("t_ili2db_classname")
@@ -477,7 +477,7 @@ final class StrokeCases {
             nativeOptions.add("--one-geom-per-table");
         }
         referenceSchema(baseline, model, referenceOptions.toArray(String[]::new));
-        var created = cli(own, "schemaimport", model, null, ili, CancellationToken.none(), nativeOptions.toArray(String[]::new));
+        var created = schemaWithIdentityColumns(own, model, ili, CancellationToken.none(), nativeOptions.toArray(String[]::new));
         assertEquals(0, created.code(), created::diagnostics);
         assertSameCatalog(baseline, own);
         var output = work.resolve("output.xtf");

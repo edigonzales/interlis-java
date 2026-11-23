@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static guru.interlis.db.DbInteropTest.schemaWithIdentityColumns;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.assertMissingTarget;
 import static guru.interlis.db.DbInteropTest.child;
@@ -158,7 +159,7 @@ final class AlternateCrsCases {
         int alternate = content.indexOf("MODEL Old23");
         Path invalidModel = Files.writeString(work.resolve("Incompatible.ili"), content.substring(0, alternate)
                 + content.substring(alternate).replace("TEXT*32", "TEXT*16"));
-        var result = cli(rejected, "schemaimport", "Current23", null, invalidModel, CancellationToken.none(),
+        var result = schemaWithIdentityColumns(rejected, "Current23", invalidModel, CancellationToken.none(),
                 "--multi-srs", "--alt-srs-model", "Current23=Old23");
         assertNotEquals(0, result.code(), result::diagnostics);
         assertTrue(result.diagnostics().contains("structurally incompatible"), result::diagnostics);
@@ -168,7 +169,7 @@ final class AlternateCrsCases {
     private static void createOwn(TestDatabase db, Path model, String... extra) {
         var options = new java.util.ArrayList<>(List.of("--multi-srs", "--alt-srs-model", "Current23=Old23"));
         options.addAll(List.of(extra));
-        var result = cli(db, "schemaimport", "Current23", null, model, CancellationToken.none(), options.toArray(String[]::new));
+        var result = schemaWithIdentityColumns(db, "Current23", model, CancellationToken.none(), options.toArray(String[]::new));
         assertEquals(0, result.code(), result::diagnostics);
     }
 

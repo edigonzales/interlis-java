@@ -1,0 +1,38 @@
+INTERLIS 2.4;
+MODEL TextOid24 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  DOMAIN
+    ObjectKey = OID TEXT*40;
+    BasketKey = OID TEXT*40;
+
+  TOPIC Data =
+    BASKET OID AS TextOid24.BasketKey;
+
+    DOMAIN LinkKey = OID TEXT*40;
+
+    CLASS RecordRoot (ABSTRACT) =
+      OID AS TextOid24.ObjectKey;
+      CodeValue: TextOid24.ObjectKey;
+    END RecordRoot;
+
+    CLASS Entry EXTENDS RecordRoot =
+      PreviousEntry: REFERENCE TO RecordRoot;
+    END Entry;
+
+    CLASS Plain =
+      NO OID;
+    END Plain;
+
+    ASSOCIATION EntryPair =
+      OID AS LinkKey;
+      SourceEntry -- Entry;
+      TargetEntry -- Entry;
+    END EntryPair;
+  END Data;
+
+  TOPIC Registry =
+    BASKET OID AS TextOid24.BasketKey;
+    OID AS TextOid24.ObjectKey;
+    CLASS Register =
+    END Register;
+  END Registry;
+END TextOid24.

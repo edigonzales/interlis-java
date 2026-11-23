@@ -14,6 +14,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import static guru.interlis.db.DbInteropTest.schemaWithIdentityColumns;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.assertMissingTarget;
 import static guru.interlis.db.DbInteropTest.child;
@@ -454,7 +455,7 @@ final class CrsCases {
         String model = "DeferredCrs24";
         Path ili = deferredPoints(model);
         createReference(referenceDb, ili, 2056, "--multiSrs", "--createGeomIdx");
-        var withoutOption = cli(rejected, "schemaimport", model, null, ili, CancellationToken.none());
+        var withoutOption = schemaWithIdentityColumns(rejected, model, ili, CancellationToken.none());
         assertNotEquals(0, withoutOption.code(), withoutOption::diagnostics);
         assertTrue(withoutOption.diagnostics().contains("require --multi-srs"), withoutOption::diagnostics);
         assertMissingTarget(rejected);
@@ -467,7 +468,7 @@ final class CrsCases {
 
         Path ambiguous = Files.writeString(work.resolve("ambiguous.ili"),
                 Files.readString(ili).replace("EPSG:21781", "EPSG:2056"));
-        var result = cli(rejected, "schemaimport", model, null, ambiguous, CancellationToken.none(), "--multi-srs");
+        var result = schemaWithIdentityColumns(rejected, model, ambiguous, CancellationToken.none(), "--multi-srs");
         assertNotEquals(0, result.code(), result::diagnostics);
         assertTrue(result.diagnostics().contains("multiple concrete domains with EPSG:2056"), result::diagnostics);
         assertMissingTarget(rejected);
@@ -880,7 +881,7 @@ final class CrsCases {
     void rejectMissingDefault(TestDatabase db) throws Exception {
         String model = "MissingCrs" + version;
         Path ili = defaultModel(model, 4326);
-        var result = cli(db, "schemaimport", model, null, ili, CancellationToken.none(), "--default-epsg", "999999");
+        var result = schemaWithIdentityColumns(db, model, ili, CancellationToken.none(), "--default-epsg", "999999");
         assertNotEquals(0, result.code(), result::diagnostics);
         assertTrue(result.diagnostics().contains("missing the EPSG:999999 SRS"), result::diagnostics);
         assertMissingTarget(db);
@@ -961,7 +962,7 @@ final class CrsCases {
     }
 
     private void createOwn(TestDatabase db, String model, Path ili, String... options) {
-        var creation = cli(db, "schemaimport", model, null, ili, CancellationToken.none(), options);
+        var creation = schemaWithIdentityColumns(db, model, ili, CancellationToken.none(), options);
         assertEquals(0, creation.code(), creation::diagnostics);
     }
 

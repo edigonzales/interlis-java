@@ -18,12 +18,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static guru.interlis.db.DbInteropTest.assertSchemaWithIdentityColumns;
+import static guru.interlis.db.DbInteropTest.schemaWithIdentityColumns;
 import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliInZone;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
-import static guru.interlis.db.DbInteropTest.cli;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
@@ -359,7 +360,7 @@ final class ScalarCases {
                 END Asset;
                 """.formatted(wrapper, version == 23 ? "Measure" : "Price"));
         referenceSchema(expected, model, "--coalesceArray");
-        var schema = cli(own, "schemaimport", model, null, ili, CancellationToken.none(), "--coalesce-array");
+        var schema = schemaWithIdentityColumns(own, model, ili, CancellationToken.none(), "--coalesce-array");
         assertEquals(0, schema.code(), schema::diagnostics);
         sameCatalog(expected, own);
         var numbers = List.of("-1.125", "2.250", "-1.125");
@@ -438,7 +439,7 @@ final class ScalarCases {
     private void schemas(TestDatabase expected, TestDatabase own, String model, String declarations) throws Exception {
         Path ili = source(model, declarations);
         referenceSchema(expected, model);
-        assertCliSuccess(own, "schemaimport", model, null, ili);
+        assertSchemaWithIdentityColumns(own, model, ili);
         sameCatalog(expected, own);
     }
 

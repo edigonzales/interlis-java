@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static guru.interlis.db.Ili2dbLayout.BASKET;
+import static guru.interlis.db.Ili2dbLayout.CLASSNAME;
 import static guru.interlis.db.Ili2dbLayout.DATASET;
 import static guru.interlis.db.Ili2dbLayout.ID_COLUMN;
 import static guru.interlis.db.Ili2dbLayout.KEY_OBJECT;
@@ -545,6 +546,7 @@ final class Database implements AutoCloseable {
             return statement;
         }
         String counter = technicalTable(KEY_OBJECT);
+        long highestStoredId = highestGeoPackageId();
         try (var statement = connection.createStatement()) {
             // ili2gpkg creates the counter row on the first import into a fresh schema.
             statement.executeUpdate("""
@@ -556,6 +558,14 @@ final class Database implements AutoCloseable {
                         AND NOT EXISTS (SELECT 1 FROM %4$s)
                     """.formatted(counter, ID_COLUMN, technicalTable(DATASET), technicalTable(BASKET)));
         }
+        try (var statement = connection.prepareStatement("UPDATE " + counter
+                + " SET T_LastUniqueId = ? WHERE T_Key = ? AND typeof(T_LastUniqueId) = 'integer'"
+                + " AND T_LastUniqueId >= 0 AND T_LastUniqueId < ?")) {
+            statement.setLong(1, highestStoredId);
+            statement.setString(2, ID_COLUMN);
+            statement.setLong(3, highestStoredId);
+            statement.executeUpdate();
+        }
         return connection.prepareStatement("""
                 UPDATE %s SET T_LastUniqueId = T_LastUniqueId + 1,
                     T_LastChange = CURRENT_TIMESTAMP, T_User = 'interlis-db'
@@ -563,6 +573,28 @@ final class Database implements AutoCloseable {
                     AND T_LastUniqueId >= 0 AND T_LastUniqueId < 9223372036854775807
                 RETURNING T_LastUniqueId
                 """.formatted(counter, ID_COLUMN));
+    }
+
+    private long highestGeoPackageId() throws SQLException {
+        // SQLite assigns an omitted INTEGER PRIMARY KEY per table. Advance the ili2db counter
+        // past rows inserted directly in SQL before reserving IDs in this write transaction.
+        var tables = new HashSet<String>();
+        String sql = "SELECT DISTINCT s.name FROM sqlite_schema s JOIN " + technicalTable(CLASSNAME)
+                + " c ON lower(c.sqlname) = lower(s.name) WHERE s.type = 'table'";
+        try (var statement = connection.createStatement(); var rows = statement.executeQuery(sql)) {
+            while (rows.next()) tables.add(table(rows.getString(1)));
+        }
+        tables.add(technicalTable(BASKET));
+        tables.add(technicalTable(DATASET));
+        long highest = 0;
+        try (var statement = connection.createStatement()) {
+            for (String table : tables) {
+                try (var rows = statement.executeQuery("SELECT MAX(" + ID_COLUMN + ") FROM " + table)) {
+                    if (rows.next()) highest = Math.max(highest, rows.getLong(1));
+                }
+            }
+        }
+        return highest;
     }
 
     void commit() throws SQLException {

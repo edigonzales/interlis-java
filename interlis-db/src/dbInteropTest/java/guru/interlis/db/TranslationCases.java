@@ -152,7 +152,8 @@ final class TranslationCases {
         var originalFile = fixture(original + ".ili");
         var translatedFile = fixture(translated + ".ili");
         createReference(baseline, translated);
-        run(own, "schemaimport", translated, null, translatedFile, "--model-file", originalFile.toString());
+        run(own, "schemaimport", translated, null, translatedFile, "--create-basket-col", "--create-tid-col",
+                "--model-file", originalFile.toString());
         createReference(extended, original);
         var input = fixture("original" + version + ".xtf");
         referenceImport(extended, "existing", input);

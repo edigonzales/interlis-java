@@ -14,11 +14,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static guru.interlis.db.DbInteropTest.schemaWithIdentityColumns;
 import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
-import static guru.interlis.db.DbInteropTest.cli;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
@@ -128,7 +128,7 @@ final class ChbaseGeometryCases {
         var surfaceSource = fixture(surfaces + ".ili");
         referenceSchema(baseline, String.join(";", points, lines, surfaces),
                 "--coalesceMultiPoint", "--coalesceMultiLine", "--coalesceMultiSurface");
-        var result = cli(own, "schemaimport", points, null, source, CancellationToken.none(),
+        var result = schemaWithIdentityColumns(own, points, source, CancellationToken.none(),
                 "--model", lines, "--model", surfaces, "--model-file", lineSource.toString(), "--model-file", surfaceSource.toString(),
                 "--coalesce-multi-point", "--coalesce-multi-line", "--coalesce-multi-surface");
         assertEquals(0, result.code(), result::diagnostics);
@@ -181,7 +181,7 @@ final class ChbaseGeometryCases {
             nativeOptions.add("--one-geom-per-table");
         }
         referenceSchema(baseline, model, referenceOptions.toArray(String[]::new));
-        var result = cli(own, "schemaimport", model, null, source, CancellationToken.none(), nativeOptions.toArray(String[]::new));
+        var result = schemaWithIdentityColumns(own, model, source, CancellationToken.none(), nativeOptions.toArray(String[]::new));
         assertEquals(0, result.code(), result::diagnostics);
         try (var expected = baseline.connect(); var actual = own.connect()) {
             DbSchemaCatalog.read(expected, baseline.postgis(), baseline.schema())

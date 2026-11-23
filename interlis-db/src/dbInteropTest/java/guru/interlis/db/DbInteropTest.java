@@ -851,6 +851,122 @@ final class DbInteropTest {
     @Test void postgisSmart2Schema23() throws Exception { exchangeWithPostgis(23, this::exchangeSmart2Schema); }
     @Test void postgisSmart2Schema24() throws Exception { exchangeWithPostgis(24, this::exchangeSmart2Schema); }
 
+    @Test void geoPackageIlisMeta16Schema() throws Exception { checkIlisMeta16Schema(24, null); }
+    @Test void postgisIlisMeta16Schema() throws Exception { exchangeWithPostgis(24, this::checkIlisMeta16Schema); }
+    @Test void geoPackageTextOid24() throws Exception { exchangeTextOid(24, null); }
+    @Test void postgisTextOid24() throws Exception { exchangeWithPostgis(24, this::exchangeTextOid); }
+    @Test void geoPackageIdentityColumns24() throws Exception { exchangeIdentityColumns(24, null); }
+    @Test void postgisIdentityColumns24() throws Exception { exchangeWithPostgis(24, this::exchangeIdentityColumns); }
+    @Test void geoPackageIdentityColumns23() throws Exception { exchangeIdentityColumns(23, null); }
+    @Test void postgisIdentityColumns23() throws Exception { exchangeWithPostgis(23, this::exchangeIdentityColumns); }
+
+    private void exchangeIdentityColumns(int version, PostgreSQLContainer postgres) throws Exception {
+        new IdentityColumnCases(work, new ReferenceTool(postgres != null), version)
+                .exercise(new TestDatabase(postgres, "identity"));
+    }
+
+    private void checkIlisMeta16Schema(int version, PostgreSQLContainer postgres) throws Exception {
+        var source = Path.of("../testdata/conformance/metamodel/IlisMeta16.ili");
+        var ili = Files.copy(source, work.resolve(source.getFileName()));
+        var reference = new ReferenceTool(postgres != null);
+        for (String profile : List.of("newclass", "smart1", "smart2")) {
+            boolean newClass = profile.equals("newclass");
+            var referenceDb = new TestDatabase(postgres, "meta_ref_" + profile);
+            var args = new ArrayList<>(List.of("--schemaimport", "--createBasketCol", "--noSmartMapping"));
+            if (!newClass) args.add("--" + profile + "Inheritance");
+            args.add(ili.toString());
+            reference.run(referenceDb, work.toString(), args.toArray(String[]::new));
+            try (var sql = referenceDb.connect()) {
+                var inheritance = "select setting from " + referenceDb.table("t_ili2db_trafo")
+                        + " where tag = 'ch.ehi.ili2db.inheritance' and iliname = 'IlisMeta16.ModelData.";
+                assertEquals("embedded", scalar(sql, inheritance + "BasketOID'"), profile);
+                assertEquals(newClass ? "newClass" : "subClass", scalar(sql, inheritance + "Factor'"), profile);
+                assertEquals(profile.equals("smart2") ? "newAndSubClass" : "newClass",
+                        scalar(sql, inheritance + "Model'"), profile);
+
+                String oidColumn = newClass ? "oid" : "oid_texttype";
+                assertNull(scalar(sql, "select t_basket, " + oidColumn
+                        + " from " + referenceDb.table("dataunit") + " where 1 = 0"), profile);
+            }
+
+            var nativeDb = new TestDatabase(postgres, "meta_native_" + profile);
+            var nativeArgs = newClass ? new String[0] : new String[]{"--inheritance", profile};
+            assertCliFailure(nativeDb, "schemaimport", "IlisMeta16", null, ili,
+                    "IlisMeta16.ModelData requires --create-basket-col", nativeArgs);
+            var result = schemaWithIdentityColumns(nativeDb, "IlisMeta16", ili, CancellationToken.none(), nativeArgs);
+            assertEquals(1, result.code(), result::diagnostics);
+            assertTrue(result.diagnostics().contains(
+                    "Unsupported ili2db mapping (composition in structure inheritance at "
+                            + "IlisMeta16.ModelData.UnaryExpr.SubExpression)"), result::diagnostics);
+            if (nativeDb.postgis()) {
+                try (var sql = nativeDb.connect()) {
+                    assertEquals("0", scalar(sql, "select count(*) from information_schema.schemata where schema_name = '"
+                            + nativeDb.schema() + "'"), profile);
+                }
+            } else {
+                assertFalse(Files.exists(nativeDb.file), profile);
+            }
+        }
+    }
+
+    private void exchangeTextOid(int version, PostgreSQLContainer postgres) throws Exception {
+        String model = "TextOid24";
+        var ili = work.resolve(model + ".ili");
+        var xtf = work.resolve(model + ".xtf");
+        for (var path : List.of(ili, xtf)) {
+            try (var resource = DbInteropTest.class.getResourceAsStream("/" + path.getFileName())) {
+                Files.copy(resource, path);
+            }
+        }
+        var reference = new ReferenceTool(postgres != null);
+        for (String profile : List.of("newclass", "smart1", "smart2")) {
+            boolean newClass = profile.equals("newclass");
+            var legacyDb = new TestDatabase(postgres, "textoid_ref_" + profile);
+            var args = new ArrayList<>(List.of("--schemaimport", "--createBasketCol", "--createTidCol", "--sqlEnableNull",
+                    "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", "--noSmartMapping"));
+            if (!newClass) args.add("--" + profile + "Inheritance");
+            args.add(ili.toString());
+            reference.run(legacyDb, work.toString(), args.toArray(String[]::new));
+
+            var ownDb = new TestDatabase(postgres, "textoid_own_" + profile);
+            var nativeArgs = newClass ? new String[0] : new String[]{"--inheritance", profile};
+            var result = schemaWithIdentityColumns(ownDb, model, ili, CancellationToken.none(), nativeArgs);
+            assertEquals(0, result.code(), result::diagnostics);
+            try (var legacy = legacyDb.connect(); var own = ownDb.connect()) {
+                DbSchemaCatalog.read(legacy, legacyDb.postgis(), legacyDb.schema())
+                        .assertSameAs(DbSchemaCatalog.read(own, ownDb.postgis(), ownDb.schema()));
+            }
+            for (var db : List.of(legacyDb, ownDb)) {
+                var output = work.resolve(db.schema() + ".xtf");
+                assertCliSuccess(db, "import", model, "text-oid", xtf);
+                assertCliSuccess(db, "export", model, "text-oid", output);
+                var data = readDataSection(output, version);
+                var basket = child(data, "Data");
+                assertEquals("Basket.Mixed-Case", id(basket, version, "bid"));
+                var entries = orderedOwners(basket, "Entry", version);
+                assertEquals(Set.of("Entry.Mixed-Case", "Entry.mixed-case"), entries.keySet());
+                var entry = entries.get("Entry.Mixed-Case");
+                assertEquals("Code.Mixed-Case", text(entry, "CodeValue"));
+                assertLocalReference(entry, "PreviousEntry", version, "Entry.mixed-case");
+                assertEquals("Plain-1", id(child(basket, "Plain"), version, "tid"));
+                var link = child(basket, "EntryPair");
+                assertEquals("Pair.Mixed-Case", id(link, version, "tid"));
+                assertLocalReference(link, "SourceEntry", version, "Entry.Mixed-Case");
+                assertLocalReference(link, "TargetEntry", version, "Entry.mixed-case");
+                var registry = child(data, "Registry");
+                assertEquals("Registry-Basket", id(registry, version, "bid"));
+                assertEquals("Register.Mixed-Case", id(child(registry, "Register"), version, "tid"));
+            }
+            if (newClass) {
+                try (var sql = ownDb.connect()) {
+                    execute(sql, "update " + ownDb.table("recordroot") + " set codevalue=' ' where t_ili_tid='Entry.Mixed-Case'");
+                }
+                var output = work.resolve(ownDb.schema() + ".xtf");
+                assertCliFailure(ownDb, "export", model, "text-oid", output, "Missing OID value at TextOid24.Data.RecordRoot.CodeValue");
+            }
+        }
+    }
+
     private void exchangeSmart1Scalars(int version, PostgreSQLContainer postgres) throws Exception {
         var db = new TestDatabase(postgres, "smart1_scalars");
         new SmartCases(work, new ReferenceTool(db.postgis()), version)
@@ -1254,7 +1370,7 @@ final class DbInteropTest {
                 </i:transfer>
                 """.formatted(values));
         var db = new TestDatabase(null, "wide");
-        assertCliSuccess(db, "schemaimport", "WideRefs", null, model);
+        assertSchemaWithIdentityColumns(db, "WideRefs", model);
         assertCliSuccess(db, "import", "WideRefs", "wide", input);
         Path output = work.resolve("wide-output.xtf");
         assertCliSuccess(db, "export", "WideRefs", "wide", output);
@@ -1535,7 +1651,7 @@ final class DbInteropTest {
                 "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056",
                 ili.toString());
         var nativeDb = new TestDatabase(postgres, "external_native");
-        assertCliSuccess(nativeDb, "schemaimport", model, null, ili);
+        assertSchemaWithIdentityColumns(nativeDb, model, ili);
         try (var referenceSql = referenceDb.connect(); var nativeSql = nativeDb.connect()) {
             DbSchemaCatalog.read(referenceSql, referenceDb.postgis, referenceDb.schema)
                     .assertSameAs(DbSchemaCatalog.read(nativeSql, nativeDb.postgis, nativeDb.schema));
@@ -1571,7 +1687,7 @@ final class DbInteropTest {
         reference.run(referenceDb, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
                 "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", ili.toString());
         var nativeDb = new TestDatabase(postgres, "oid_native");
-        assertCliSuccess(nativeDb, "schemaimport", model, null, ili);
+        assertSchemaWithIdentityColumns(nativeDb, model, ili);
         try (var legacy = referenceDb.connect(); var own = nativeDb.connect()) {
             DbSchemaCatalog.read(legacy, referenceDb.postgis, referenceDb.schema)
                     .assertSameAs(DbSchemaCatalog.read(own, nativeDb.postgis, nativeDb.schema));
@@ -2175,7 +2291,7 @@ final class DbInteropTest {
         reference.run(referenceDb, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
                 "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", ili.toString());
         var nativeDb = new TestDatabase(postgres, "topics_native");
-        assertCliSuccess(nativeDb, "schemaimport", model, null, ili);
+        assertSchemaWithIdentityColumns(nativeDb, model, ili);
         try (var referenceSql = referenceDb.connect(); var nativeSql = nativeDb.connect()) {
             DbSchemaCatalog.read(referenceSql, referenceDb.postgis, referenceDb.schema)
                     .assertSameAs(DbSchemaCatalog.read(nativeSql, nativeDb.postgis, nativeDb.schema));
@@ -3251,11 +3367,11 @@ final class DbInteropTest {
                                       Path ili, String fixture, DbSchemaCatalog catalog) throws Exception {
         boolean postgis = postgres != null;
         var db = new TestDatabase(postgres, "native");
-        CliResult creation = cli(db, "schemaimport", model, null, ili, CancellationToken.none());
+        CliResult creation = schemaWithIdentityColumns(db, model, ili, CancellationToken.none());
         assertEquals(0, creation.code(), creation::diagnostics);
         try (var sql = db.connect()) {
             catalog.assertSameAs(DbSchemaCatalog.read(sql, postgis, db.schema));
-            var duplicate = cli(db, "schemaimport", model, null, ili, CancellationToken.none());
+            var duplicate = schemaWithIdentityColumns(db, model, ili, CancellationToken.none());
             assertNotEquals(0, duplicate.code(), duplicate::diagnostics);
             catalog.assertSameAs(DbSchemaCatalog.read(sql, postgis, db.schema));
             assertEmptySchema(sql, db, version);
@@ -3271,13 +3387,16 @@ final class DbInteropTest {
 
         var invalidDb = new TestDatabase(postgres, "invalid");
         Path invalid = Files.writeString(work.resolve("invalid.ili"), "INTERLIS 2.4; MODEL");
-        var failure = cli(invalidDb, "schemaimport", model, null, invalid, CancellationToken.none());
+        var failure = schemaWithIdentityColumns(invalidDb, model, invalid, CancellationToken.none());
         assertNotEquals(0, failure.code(), failure::diagnostics);
         assertMissingTarget(invalidDb);
 
         assertExistingTargetPreserved(postgres, model, ili);
         var cancelledDb = new TestDatabase(postgres, "cancelled");
-        var plan = SchemaPlan.read(model, ili, !postgis, !postgis, 2056, CancellationToken.none());
+        var plan = SchemaPlan.read(List.of(model), ili, List.of(), !postgis, !postgis, 2056, false,
+                java.util.Optional.empty(), new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), false,
+                DbEnumOptions.DEFAULT, Set.of(Ili2dbLayout.SchemaOption.BASKET_COLUMN, Ili2dbLayout.SchemaOption.TID_COLUMN),
+                CancellationToken.none());
         if (postgis) {
             try (var reserved = Database.openPostgres(cancelledDb.url, "select", cancelledDb.user,
                     cancelledDb.password, true)) {
@@ -3318,7 +3437,7 @@ final class DbInteropTest {
         if (db.postgis) {
             try (var sql = db.connect()) {
                 execute(sql, "create schema " + db.schema);
-                var failure = cli(db, "schemaimport", model, null, ili, CancellationToken.none());
+                var failure = schemaWithIdentityColumns(db, model, ili, CancellationToken.none());
                 assertNotEquals(0, failure.code(), failure::diagnostics);
                 assertEquals(db.schema, scalar(sql, "select nspname from pg_namespace where nspname='"
                         + db.schema + "'"));
@@ -3328,7 +3447,7 @@ final class DbInteropTest {
         } else {
             String original = "Existing unrelated file";
             Files.writeString(db.file, original);
-            var failure = cli(db, "schemaimport", model, null, ili, CancellationToken.none());
+            var failure = schemaWithIdentityColumns(db, model, ili, CancellationToken.none());
             assertNotEquals(0, failure.code(), failure::diagnostics);
             assertEquals(original, Files.readString(db.file));
         }
@@ -5121,7 +5240,7 @@ final class DbInteropTest {
         reference.run(referenceSchema, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
                 "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056",
                 ili.toString());
-        assertCliSuccess(nativeSchema, "schemaimport", model, null, ili);
+        assertSchemaWithIdentityColumns(nativeSchema, model, ili);
         try (var original = referenceSchema.connect(); var own = nativeSchema.connect()) {
             DbSchemaCatalog.read(original, referenceSchema.postgis, referenceSchema.schema)
                     .assertSameAs(DbSchemaCatalog.read(own, nativeSchema.postgis, nativeSchema.schema));
@@ -5397,6 +5516,18 @@ final class DbInteropTest {
         var result = cli(db, operation, model, dataset, path, CancellationToken.none(), options);
         assertEquals(1, result.code(), result::diagnostics);
         assertTrue(result.diagnostics().contains(diagnostic), result::diagnostics);
+    }
+
+    static void assertSchemaWithIdentityColumns(TestDatabase db, String model, Path path) {
+        var result = schemaWithIdentityColumns(db, model, path, CancellationToken.none());
+        assertEquals(0, result.code(), result::diagnostics);
+    }
+
+    static CliResult schemaWithIdentityColumns(TestDatabase db, String model, Path path,
+                                               CancellationToken token, String... options) {
+        var flags = new ArrayList<>(List.of(options));
+        if (!flags.contains("--add-models")) flags.addAll(List.of("--create-basket-col", "--create-tid-col"));
+        return cli(db, "schemaimport", model, null, path, token, flags.toArray(String[]::new));
     }
 
     static CliResult cli(TestDatabase db, String operation, String model, String dataset, Path path,

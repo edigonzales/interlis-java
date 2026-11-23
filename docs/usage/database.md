@@ -1,8 +1,8 @@
 # Datenaustausch mit ili2db-Schemata
 
 Das JVM-Kommando `interlis-db` erstellt ili2db-kompatible Schemata in
-GeoPackage oder PostgreSQL/PostGIS. Es importiert XTF-FULL-Transfers in einen
-neuen benannten Datensatz, ersetzt Datensätze und exportiert sie. Das
+GeoPackage oder PostgreSQL/PostGIS. Es importiert und exportiert XTF-FULL-Transfers
+für ausgewählte Modelle oder benannte Datensätze. Das
 Referenzprofil für die Schemaerzeugung verwendet `ili2gpkg` und `ili2pg`
 **5.5.2**. Für den bisherigen Umfang mit Punkten unterstützt der Transfer
 auch bestehende 5.5.1-Schemata. Er kompiliert das gespeicherte Modell und
@@ -69,6 +69,26 @@ Vor dem ersten Schreibzugriff prüft es das Modell und bestimmt die
 Tabellen, Spalten und Metadaten gemäss der Standard-Namensvergabe von 5.5.2.
 PostgreSQL benötigt eine vorhandene PostGIS-Erweiterung und einen
 kleingeschriebenen Schemanamen, den ili2pg unquotiert verwenden kann.
+
+Ab `interlis-db 0.3.0-SNAPSHOT` entstehen neue Schemata standardmässig
+ohne `T_basket` und ohne Spalte für gewöhnliche Transferkennungen.
+`--create-basket-col` aktiviert die Zuordnung zu Baskets und Datensätzen.
+`--create-tid-col` speichert zusätzlich die ursprünglichen Transfer-TIDs.
+Die Optionen lassen sich unabhängig verwenden. Konkrete Objekt-OIDs
+erhalten automatisch eine typgerechte Spalte `T_Ili_Tid`. `T_Id` bleibt
+der interne SQL-Primärschlüssel. Ein abstraktes `ANYOID` legt die
+Speicherung erst über die konkreten Unterklassen fest.
+
+`TOPIC … EXTENDS …`, `BASKET OID AS` und aufgeschobene generische
+Domänen erfordern `--create-basket-col`. Die Optionen
+`--create-dataset-col` und `--create-unique` für `UNIQUE (BASKET)`
+benötigen ebenfalls die Basket-Spalte. `--add-models` übernimmt
+beide Einstellungen aus dem bestehenden Schema.
+
+Skripte, die ein Schema für den bisherigen datensatzbezogenen Transfer
+erstellen, ergänzen beim Schemaimport `--create-basket-col --create-tid-col`.
+Bestehende Schemata behalten ihr gespeichertes Layout.
+
 Das neue Schema entsteht in einer Transaktion. GeoPackage entsteht als temporäre Datei
 neben dem Ziel und wird nach erfolgreichem Abschluss per Hardlink
 veröffentlicht. Ein vorhandener Schemaname oder Zielpfad führt zu einem
@@ -217,6 +237,23 @@ widersprüchliche Schemaoption führt zum Abbruch.
 ## Aufruf
 
 ```sh
+interlis-db import --gpkg data.gpkg --model Example addition.xtf
+interlis-db export --gpkg data.gpkg --model Example result.xtf
+```
+
+Bei einem Schema ohne `T_basket` liest der Import die Kennungen für die
+Referenzauflösung aus dem XTF und fügt die Objekte zu den Fachtabellen
+hinzu. Der Export fasst die Zeilen der ausgewählten Modelle je konkretem
+Topic in einem erzeugten Basket zusammen. Direkt per SQL eingefügte
+Fachzeilen brauchen in diesem Schema keine Basket-ID. Fehlt einem Objekt
+ohne fachliche OID die gespeicherte TID, erzeugt der Export eine
+Transferkennung aus seinem SQL-Schlüssel und verwendet sie auch in
+Referenzen. Das gilt auch für Zeilen aus einem früheren Import ohne
+`--create-tid-col`.
+
+Schemata mit `T_basket` verwenden `--dataset` für den Transfer.
+
+```sh
 ./gradlew :interlis-db:installDist
 interlis-db/build/install/interlis-db/bin/interlis-db export \
   --gpkg data.gpkg --model Example --dataset original original.xtf
@@ -266,7 +303,8 @@ Lieferung verwenden die bestehende Suche im selben Schema.
 
 ## Baskets aktualisieren
 
-`update` verwendet dieselben Optionen wie `import`. Ein fehlender Datensatz
+`update` verwendet dieselben Optionen wie der datensatzbezogene Import
+und setzt ein Schema mit `--create-tid-col` voraus. Ein fehlender Datensatz
 wird angelegt. Jeder gelieferte Basket enthält seinen vollständigen neuen
 Bestand. Vorhandene Baskets und überlebende Objekte behalten ihre internen IDs.
 Ausgelassene Objekte im gelieferten Basket werden gelöscht. Ausgelassene
@@ -321,11 +359,13 @@ Bei PostGIS pflegt PostgreSQL die vorhandenen GiST-Indizes.
 
 ## Referenzprofil
 
+Für das Profil mit gespeicherten Basket- und Transferkennungen verwende
+bei `interlis-db` die Optionen `--create-basket-col --create-tid-col`.
 Für die Erzeugung mit dem Originalwerkzeug verwende
 `--noSmartMapping --createBasketCol --createTidCol --sqlEnableNull
 --defaultSrsAuth EPSG --defaultSrsCode 2056` an. Verwende beim Referenzimport
-`--importTid --importBid` und beim Referenzexport `--exportTid`. Das Kommando
-benötigt die gespeicherten BID/TID und bewahrt sie beim Werkzeugwechsel.
+`--importTid --importBid` und beim Referenzexport `--exportTid`. Dieses
+Profil bewahrt die gespeicherten BID und TID beim Werkzeugwechsel.
 Ein Datensatz enthält mindestens einen Basket. Baskets ohne Objekte sind
 zulässig.
 
@@ -924,6 +964,16 @@ Beide Backends speichern die OID als Text in `T_Ili_Tid`. Referenzen
 behalten ihre numerischen Fremdschlüssel. Transfer und Suche verwenden
 die OID in der gespeicherten Schreibweise.
 
+Modellierte `OID TEXT`-Domänen können Basket- und Objektkennungen
+festlegen. Das gilt auch für geerbte Klassen-OIDs und eigene Kennungen
+lokaler n:m-Assoziationen. Beide Backends speichern
+die Kennungen in `T_Ili_Tid` als Text und führen die deklarierte
+Objekt-OID-Domäne in den Spaltenmetadaten. Skalare Attribute vom Typ
+`OID TEXT` werden als Textspalten mit `typeKind=OID` abgebildet.
+Import, Export und Referenzauflösung erhalten die Gross- und
+Kleinschreibung. Klassen mit explizitem `NO OID` behalten ihre
+Transferkennung in `T_Ili_Tid`.
+
 Zum weiteren Ausbau gehören weitere Assoziationsformen mit Hierarchie-Enden
 sowie `EXTENDED`-Attribute. Weitere Grenzen sind andere OID-Regeln, eigene Linienformen,
 inkrementelle XTF-Transfers. Der gespeicherte Modelltext
@@ -935,6 +985,5 @@ XTF-Export auslassen. Beschädigte und nicht
 unterstützte Abbildungen werden diagnostiziert. Modellconstraints
 werden vom separaten Validator geprüft.
 
-Der CLI-Vertrag erhält den zusätzlichen Befehl `schemaimport`. Die
-[Interoperabilitätsprüfung](../development/testing.md#ili2db-interoperabilität)
+Die [Interoperabilitätsprüfung](../development/testing.md#ili2db-interoperabilität)
 verwendet die Originalwerkzeuge in beiden Richtungen.

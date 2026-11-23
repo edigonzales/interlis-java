@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static guru.interlis.db.DbInteropTest.assertSchemaWithIdentityColumns;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
@@ -695,7 +696,7 @@ final class DatasetWriteCases {
             reference.run(db, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
                     "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", ili.toString());
         } else {
-            assertCliSuccess(db, "schemaimport", model, null, ili);
+            assertSchemaWithIdentityColumns(db, model, ili);
         }
     }
 

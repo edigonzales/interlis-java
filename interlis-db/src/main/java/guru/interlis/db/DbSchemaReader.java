@@ -128,6 +128,7 @@ final class DbSchemaReader {
         }
         var roots = DbMapping.storageRoots(plan, crsPair);
         var selected = DbMapping.storageObjects(plan, roots, token);
+        DbMapping.checkBasketLayout(plan, selected, settings.schemaOptions());
         DbMapping.checkLayout(plan, selected);
         if (!settings.multiSrs() && plan.topics().stream()
                 .anyMatch(topic -> plan.rootModels().contains(topic.model()) && DbDomains.deferred(topic))) {
@@ -389,7 +390,7 @@ final class DbSchemaReader {
             db.checkGeometryTable(parent.name(), columns.stream().filter(column -> column.kind().geometry()).toList());
             for (var geometry : secondary) db.checkGeometryTable(geometry.table(), List.of(geometry.column()));
             tables.add(new Table(object, parent.name(), relation.base(), columns, relation.discriminator(),
-                    DbMapping.oidDomain(plan, object), secondary));
+                    relation.oidDomain(), settings.schemaOptions().contains(Ili2dbLayout.SchemaOption.TID_COLUMN), secondary));
         }
         for (var table : tables) {
             var physical = catalog.get(table.object().symbol());
@@ -448,13 +449,13 @@ final class DbSchemaReader {
             var object = relation.object();
             String name = relation.declaration().sqlName();
             var physical = physicalColumns(db, name);
-            requireColumns(db, name, physical, Map.of(T_ID, Kind.REFERENCE, T_BASKET, Kind.REFERENCE));
             requireIdPrimaryKey(db, name);
-            var used = new HashSet<>(Set.of(T_ID, T_BASKET));
+            var used = bindRowIdentity(db, name, physical, settings);
             bindAdditionalColumns(db, name, physical, used, settings);
             boolean subtype = relation.base().isPresent();
-            var domain = DbMapping.oidDomain(plan, object);
-            if (!subtype && (object.kind() != SymbolKind.ASSOCIATION || domain.isPresent())) {
+            var domain = relation.oidDomain();
+            if (!subtype && (domain.isPresent() || object.kind() != SymbolKind.ASSOCIATION
+                    && settings.schemaOptions().contains(Ili2dbLayout.SchemaOption.TID_COLUMN))) {
                 if (domain.isPresent()) {
                     requireIdentityColumn(db, name, physical, domain.orElseThrow());
                 } else {
@@ -487,6 +488,16 @@ final class DbSchemaReader {
             requireColumns(db, table, physical, columns);
             used.addAll(columns.keySet());
         }
+    }
+
+    private static Set<String> bindRowIdentity(Database db, String table, Map<String, String> physical, Settings settings) {
+        requireColumns(db, table, physical, Map.of(T_ID, Kind.REFERENCE));
+        var used = new HashSet<>(Set.of(T_ID));
+        if (settings.schemaOptions().contains(Ili2dbLayout.SchemaOption.BASKET_COLUMN)) {
+            requireColumns(db, table, physical, Map.of(T_BASKET, Kind.REFERENCE));
+            used.add(T_BASKET);
+        }
+        return used;
     }
 
     private static void requireIdentityColumn(Database db, String table, Map<String, String> physical, String domain)
@@ -530,8 +541,6 @@ final class DbSchemaReader {
         if (!SCHEMA_SENDER.equals(sender) && !isSender(sender, tool + "-5.5.1") && !isSender(sender, tool + "-5.5.2")) {
             throw unsupported("expected a supported schema created by interlis-db or " + tool + " 5.5.1 or 5.5.2");
         }
-        requireSetting(settings, "BasketHandling", "readWrite");
-        requireSetting(settings, "TidHandling", "property");
         boolean sqlEnableNull = optionalSetting(settings, PREFIX + "SqlNull", "enable");
         requireSetting(settings, "defaultSrsAuthority", "EPSG");
         String value = settings.get(PREFIX + "defaultSrsCode");
@@ -975,10 +984,10 @@ final class DbSchemaReader {
             throw new DbException("Invalid secondary geometry column for " + path);
         }
         var physical = physicalColumns(db, table);
-        requireColumns(db, table, physical, Map.of(T_ID, Kind.REFERENCE, T_BASKET, Kind.REFERENCE));
+        var used = bindRowIdentity(db, table, physical, settings);
         requireGeometryColumn(db, table, physical, column);
         requireIdPrimaryKey(db, table);
-        var used = new HashSet<>(Set.of(T_ID, T_BASKET, key(db, column.name())));
+        used.add(key(db, column.name()));
         bindAdditionalColumns(db, table, physical, used, settings);
         if (!physical.keySet().equals(used)) throw new DbException("Unexpected physical columns in " + table);
 
@@ -1238,7 +1247,7 @@ final class DbSchemaReader {
             String type = physical.get(key(db, name));
             if (type == null) throw new DbException("Missing physical column " + table + "." + name);
             boolean supported = switch (kind) {
-                case TEXT, FORMATTED, ENUMERATION -> type.equals("text") || type.equals("varchar");
+                case TEXT, OID_TEXT, FORMATTED, ENUMERATION -> type.equals("text") || type.equals("varchar");
                 case BOOLEAN -> type.equals("boolean") || type.equals("bool");
                 case INTEGER -> type.equals("integer") || type.equals("int4") || type.equals("int2")
                         || type.equals("smallint");

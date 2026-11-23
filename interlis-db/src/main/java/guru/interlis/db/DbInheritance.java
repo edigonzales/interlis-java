@@ -34,7 +34,7 @@ final class DbInheritance {
 
     record Declaration(ObjectDescriptor object, String sqlName, Strategy strategy) { }
     record Relation(Declaration declaration, Optional<SymbolRef> base, List<ObjectDescriptor> contributors,
-                    boolean discriminator) {
+                    boolean discriminator, Optional<String> oidDomain) {
         Relation {
             contributors = List.copyOf(contributors);
         }
@@ -107,7 +107,16 @@ final class DbInheritance {
             var physicalBase = bases.get(ref);
             boolean discriminator = physicalBase.isEmpty() && (alwaysDiscriminate || typesByRoot.get(ref).stream().anyMatch(type ->
                     !ref.equals(type.symbol()) && (profile == Profile.NEW_CLASS || !type.modifiers().contains(Modifier.ABSTRACT))));
-            relations.add(new Relation(declaration, physicalBase, contributors, discriminator));
+            Optional<String> oidDomain = Optional.empty();
+            if (physicalBase.isEmpty()) {
+                var identities = typesByRoot.get(ref).stream().filter(ObjectDescriptor::transferable)
+                        .map(type -> DbMapping.concreteOidDomain(plan, type)).distinct().toList();
+                if (identities.size() > 1) {
+                    throw DbMapping.unsupported("different OID rules in the table for " + object.name().declared());
+                }
+                oidDomain = identities.isEmpty() ? DbMapping.concreteOidDomain(plan, object) : identities.getFirst();
+            }
+            relations.add(new Relation(declaration, physicalBase, contributors, discriminator, oidDomain));
         }
         this.relations = List.copyOf(relations);
     }

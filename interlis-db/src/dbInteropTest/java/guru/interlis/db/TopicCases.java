@@ -331,7 +331,8 @@ final class TopicCases {
         var base = fixture(parent + ".ili");
         var derived = fixture(model + ".ili");
         referenceSchema(baseline, model);
-        run(own, "schemaimport", model, null, derived, "--model-file", base.toString());
+        run(own, "schemaimport", model, null, derived, "--create-basket-col", "--create-tid-col",
+                "--model-file", base.toString());
         try (var refSql = baseline.connect(); var nativeSql = own.connect()) {
             DbSchemaCatalog.read(refSql, baseline.postgis(), baseline.schema())
                     .assertSameAs(DbSchemaCatalog.read(nativeSql, own.postgis(), own.schema()));

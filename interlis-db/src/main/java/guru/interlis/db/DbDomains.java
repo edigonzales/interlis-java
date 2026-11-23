@@ -117,7 +117,7 @@ final class DbDomains {
         return value;
     }
 
-    private static String name(TransferPlan plan, SymbolRef ref) {
+    static String name(TransferPlan plan, SymbolRef ref) {
         return name(plan, plan.symbol(ref).known().orElseThrow());
     }
 

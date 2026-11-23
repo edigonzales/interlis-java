@@ -11,11 +11,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static guru.interlis.db.DbInteropTest.schemaWithIdentityColumns;
 import static guru.interlis.db.DbInteropTest.assertCliFailure;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
-import static guru.interlis.db.DbInteropTest.cli;
 import static guru.interlis.db.DbInteropTest.execute;
 import static guru.interlis.db.DbInteropTest.id;
 import static guru.interlis.db.DbInteropTest.readDataSection;
@@ -382,7 +382,7 @@ final class EnumerationCases {
                         ? "ADD CONSTRAINT blocked_enum CHECK (thisclass <> '" + broken + ".BrokenGrade')"
                         : "ADD COLUMN blocked_enum INTEGER CONSTRAINT blocked_enum CHECK (thisclass <> '" + broken + ".BrokenGrade')";
                 execute(sql, "ALTER TABLE " + grade + " " + column);
-                var result = cli(db, "schemaimport", broken, null, conflict, CancellationToken.none(),
+                var result = schemaWithIdentityColumns(db, broken, conflict, CancellationToken.none(),
                         "--add-models", "--model-file", base.toString());
                 assertEquals(1, result.code(), result::diagnostics);
                 assertTrue(result.diagnostics().contains("Cannot write enumeration lookup rows for grade"), result::diagnostics);
@@ -447,7 +447,7 @@ final class EnumerationCases {
                   Detail : Member;
                 END Asset;
                 """);
-        var rejected = cli(own.peer("enum_array_expand_guard"), "schemaimport", expanded, null, source,
+        var rejected = schemaWithIdentityColumns(own.peer("enum_array_expand_guard"), expanded, source,
                 CancellationToken.none(), "--expand-struct", "--create-enum-col-as-itf-code");
         assertEquals(1, rejected.code(), rejected::diagnostics);
         assertTrue(rejected.diagnostics().contains("enumeration column options for expanded field"), rejected::diagnostics);
@@ -557,7 +557,7 @@ final class EnumerationCases {
     }
 
     private static void create(TestDatabase db, String model, Path ili, String... options) {
-        var result = cli(db, "schemaimport", model, null, ili, CancellationToken.none(), options);
+        var result = schemaWithIdentityColumns(db, model, ili, CancellationToken.none(), options);
         assertEquals(0, result.code(), result::diagnostics);
     }
 

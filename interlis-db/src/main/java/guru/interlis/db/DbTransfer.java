@@ -82,15 +82,32 @@ final class DbTransfer {
     static void exportData(Database db, DbMapping mapping, String dataset, Optional<String> outputModel,
                            TransferWriter writer, CancellationToken token) throws SQLException {
         token.throwIfCancellationRequested();
+        var ids = ExportIds.prepare(db, mapping, token);
+        var plan = mapping.plan();
+        var output = outputModel.map(name -> plan.models().stream().filter(model -> model.name().declared().last().equals(name))
+                .findFirst().orElseThrow().symbol());
+        if (!mapping.hasBasketColumn()) {
+            checkStructureOwners(db, mapping, 0, token);
+            checkLinkOwners(db, mapping, 0, token);
+            var topics = plan.topics().stream().filter(topic -> mapping.models().contains(topic.model()))
+                    .filter(topic -> !topic.abstractTopic()).toList();
+            var exported = topics.stream().map(topic -> output.map(model -> mapping.translations().outputTopic(topic, model))
+                    .orElse(topic).model()).collect(Collectors.toSet());
+            startTransfer(mapping, output, exported, writer, token);
+            for (var stored : topics) {
+                var topic = output.map(model -> mapping.translations().outputTopic(stored, model)).orElse(stored);
+                var bid = new BasketId(ids.basket(stored), IdOrigin.SYNTHETIC);
+                writeBasket(db, mapping, ids, topic, 0, bid, DbDomains.read(plan, stored, null, bid.value()), writer, token);
+            }
+            writer.write(new TransferEvent.EndTransfer(), token);
+            return;
+        }
         long datasetId = DbDatasetWrite.findDataset(db, dataset)
                 .orElseThrow(() -> new DbException("Dataset does not exist: " + dataset));
         checkStructureOwners(db, mapping, datasetId, token);
         checkLinkOwners(db, mapping, datasetId, token);
         checkHierarchyTopics(db, mapping, datasetId, token);
         checkCrossDatasetReferences(db, mapping, datasetId, token);
-        var plan = mapping.plan();
-        var output = outputModel.map(name -> plan.models().stream().filter(model -> model.name().declared().last().equals(name))
-                .findFirst().orElseThrow().symbol());
         var topics = plan.topics().stream().filter(topic -> mapping.models().contains(topic.model()))
                 .collect(Collectors.toMap(topic -> topic.name().declared().toString(), Function.identity()));
         var exported = new HashSet<SymbolRef>();
@@ -106,14 +123,6 @@ final class DbTransfer {
             }
         }
         if (exported.isEmpty()) throw new DbException("Dataset has no baskets: " + dataset);
-        boolean ili23 = mapping.version() == LanguageVersion.ILI23;
-        var declarations = (output.isPresent() ? output.stream() : mapping.models().stream()).filter(exported::contains).map(ref -> {
-            var model = plan.model(ref).orElseThrow();
-            var symbol = (ModelSymbol) plan.symbol(ref).known().orElseThrow();
-            return new TransferEvent.ModelDeclaration(ref, mapping.version(),
-                    ili23 ? Optional.of(model.modelVersion()) : Optional.empty(),
-                    ili23 ? Optional.of(symbol.issuer()) : Optional.empty());
-        }).toList();
         String sql = "SELECT " + T_ID + ", topic, " + T_ILI_TID + ", domains FROM "
                 + db.technicalTable(BASKET) + " WHERE dataset = ? ORDER BY " + T_ID;
         try (var statement = db.connection().prepareStatement(sql)) {
@@ -123,8 +132,7 @@ final class DbTransfer {
                 if (!rows.next()) {
                     throw new DbException("Dataset has no baskets: " + dataset);
                 }
-                writer.write(new TransferEvent.StartTransfer(Optional.empty(), Optional.of("interlis-db"),
-                        Optional.empty(), declarations), token);
+                startTransfer(mapping, output, exported, writer, token);
                 do {
                     token.throwIfCancellationRequested();
                     var topicName = rows.getString(2);
@@ -133,11 +141,74 @@ final class DbTransfer {
                     String domains = rows.getString(4);
                     var bid = new BasketId(identifier(rows.getString(3), "BID", topicName), IdOrigin.SOURCE);
                     var bindings = DbDomains.read(plan, stored, domains, bid.value());
-                    writeBasket(db, mapping, topic, rows.getLong(1), bid, bindings, writer, token);
+                    writeBasket(db, mapping, ids, topic, rows.getLong(1), bid, bindings, writer, token);
                 } while (rows.next());
             }
         }
         writer.write(new TransferEvent.EndTransfer(), token);
+    }
+
+    private static void startTransfer(DbMapping mapping, Optional<SymbolRef> output, Set<SymbolRef> exported,
+                                      TransferWriter writer, CancellationToken token) {
+        var plan = mapping.plan();
+        boolean ili23 = mapping.version() == LanguageVersion.ILI23;
+        var declarations = (output.isPresent() ? output.stream() : mapping.models().stream()).filter(exported::contains).map(ref -> {
+            var model = plan.model(ref).orElseThrow();
+            var symbol = (ModelSymbol) plan.symbol(ref).known().orElseThrow();
+            return new TransferEvent.ModelDeclaration(ref, mapping.version(),
+                    ili23 ? Optional.of(model.modelVersion()) : Optional.empty(),
+                    ili23 ? Optional.of(symbol.issuer()) : Optional.empty());
+        }).toList();
+        writer.write(new TransferEvent.StartTransfer(Optional.empty(), Optional.of("interlis-db"), Optional.empty(), declarations), token);
+    }
+
+    private record ExportIds(String prefix) {
+        static ExportIds prepare(Database db, DbMapping mapping, CancellationToken token) throws SQLException {
+            var reserved = new HashSet<String>();
+            var tables = new ArrayList<String>();
+            if (mapping.hasBasketColumn()) tables.add(db.technicalTable(BASKET));
+            mapping.tables().stream().filter(table -> table.hasTidColumn() && table.carriesObjectId() && !table.uuidIdentity())
+                    .map(table -> db.table(table.name())).forEach(tables::add);
+            for (var table : tables) {
+                token.throwIfCancellationRequested();
+                try (var statement = db.connection().prepareStatement("SELECT " + T_ILI_TID + " FROM " + table
+                        + " WHERE " + T_ILI_TID + " LIKE 'dbid%'")) {
+                    fetchInPages(db, statement);
+                    try (var rows = statement.executeQuery()) {
+                        while (rows.next()) {
+                            token.throwIfCancellationRequested();
+                            var value = rows.getString(1);
+                            int dot = value.indexOf('.');
+                            if (dot > 0) reserved.add(value.substring(0, dot + 1));
+                        }
+                    }
+                }
+            }
+            int index = 0;
+            while (reserved.contains("dbid" + index + ".")) index++;
+            return new ExportIds("dbid" + index + ".");
+        }
+
+        String basket(TopicDescriptor topic) {
+            return prefix + "b." + topic.name().declared();
+        }
+
+        IdOrigin origin(String id) {
+            return id.startsWith(prefix) ? IdOrigin.SYNTHETIC : IdOrigin.SOURCE;
+        }
+
+        String tid(Table table, String alias) {
+            if (table.oidDomain().isPresent()) return tidExpression(table, alias);
+            String name = java.util.HexFormat.of().formatHex(table.name().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            String generated = "'" + prefix + "o." + name + ".' || CAST(" + alias + "." + T_ID + " AS text)";
+            return table.hasTidColumn() ? "COALESCE(NULLIF(" + tidExpression(table, alias) + ", ''), " + generated + ")"
+                    : generated;
+        }
+    }
+
+    private static String basketField(DbMapping mapping, String alias) {
+        // Keep the row cursor shape for schemas with no physical basket partition.
+        return mapping.hasBasketColumn() ? alias + "." + T_BASKET : "0";
     }
 
     private static TopicDescriptor selectedTopic(Map<String, TopicDescriptor> topics, String name) {
@@ -147,7 +218,7 @@ final class DbTransfer {
         return topic;
     }
 
-    private static void writeBasket(Database db, DbMapping mapping, TopicDescriptor topic, long basketId,
+    private static void writeBasket(Database db, DbMapping mapping, ExportIds ids, TopicDescriptor topic, long basketId,
                                     BasketId bid, List<TransferEvent.DomainBinding> bindings, TransferWriter writer,
                                     CancellationToken token) throws SQLException {
         var stableOid = basketOid(mapping, topic, bid);
@@ -157,15 +228,15 @@ final class DbTransfer {
                 mapping.crsPair().map(pair -> pair.epsgCodes(topic.symbol())).orElse(Map.of()));
         for (var table : mapping.tables()) {
             if (table.hasDiscriminator() && table.object().kind() == SymbolKind.STRUCTURE) {
-                checkStructureHierarchy(db, mapping, table, basketId, token);
+                checkStructureHierarchy(db, mapping, ids, table, basketId, token);
             }
             if (table.subtype() || table.object().topic().filter(declared -> mapping.includesTopic(topic.symbol(), declared)).isEmpty()) {
                 continue;
             }
             if (table.hasDiscriminator() && table.object().kind() != SymbolKind.STRUCTURE && !mapping.isEmbeddedLink(table)) {
-                writeHierarchyObjects(db, mapping, table, basketId, bid, topic.symbol(), selection, writer, token);
+                writeHierarchyObjects(db, mapping, ids, table, basketId, bid, topic.symbol(), selection, writer, token);
             } else if (table.object().transferable() && !mapping.isEmbeddedLink(table)) {
-                writeObjects(db, mapping, table, basketId, bid, topic.symbol(), selection, writer, token);
+                writeObjects(db, mapping, ids, table, basketId, bid, topic.symbol(), selection, writer, token);
             }
         }
         writer.write(new TransferEvent.EndBasket(bid), token);
@@ -178,22 +249,22 @@ final class DbTransfer {
         }
     }
 
-    private static void writeObjects(Database db, DbMapping mapping, Table table, long basketId, BasketId bid,
+    private static void writeObjects(Database db, DbMapping mapping, ExportIds ids, Table table, long basketId, BasketId bid,
                                      SymbolRef topic, GeometrySelection selection, TransferWriter writer,
                                      CancellationToken token) throws SQLException {
         var alternate = mapping.crsPair().flatMap(pair -> pair.alternateClass(topic, table.object().symbol()));
         var projections = new StringJoiner(", ").add("obj." + T_ID);
-        if (table.hasTidColumn()) {
-            projections.add("obj." + T_ILI_TID);
+        if (table.carriesObjectId()) {
+            projections.add(ids.tid(table, "obj"));
         }
         var from = new StringBuilder(db.table(table.name())).append(" obj");
-        String basketField = "obj." + T_BASKET;
-        appendColumns(db, mapping, table, "obj", projections, from);
+        String basketField = basketField(mapping, "obj");
+        appendColumns(db, mapping, ids, table, "obj", projections, from);
         var links = mapping.linkFields(table.object().symbol());
-        appendEmbeddedLinks(db, mapping, links, "obj", projections, from);
+        appendEmbeddedLinks(db, mapping, ids, links, "obj", projections, from);
         String sql = "SELECT " + projections + " FROM " + from
                 + " WHERE " + basketField + " = ? ORDER BY obj." + T_ID;
-        try (var structures = new StructureRows(db, mapping, basketId, token);
+        try (var structures = new StructureRows(db, mapping, ids, basketId, token);
              var statement = db.connection().prepareStatement(sql)) {
             for (var composition : mapping.compositionsForParent(table.object().symbol())) {
                 structures.open(composition);
@@ -203,12 +274,12 @@ final class DbTransfer {
             try (var rows = statement.executeQuery()) {
                 while (rows.next()) {
                     token.throwIfCancellationRequested();
-                    String ownerTid = table.hasTidColumn() ? identifier(rows.getString(2), "TID", table.name()) : null;
-                    int start = table.hasTidColumn() ? 3 : 2;
-                    var values = readFields(db, mapping, rows, start, table, ownerTid, selection);
-                    readEmbeddedLinks(db, mapping, rows, start + projectionSize(mapping, table), links, ownerTid, values);
+                    String ownerTid = table.carriesObjectId() ? identifier(rows.getString(2), "TID", table.name()) : null;
+                    int start = table.carriesObjectId() ? 3 : 2;
+                    var values = readFields(db, mapping, ids, rows, start, table, ownerTid, selection);
+                    readEmbeddedLinks(db, mapping, ids, rows, start + projectionSize(mapping, table), links, ownerTid, values);
                     structures.readFor(rows.getLong(1), ownerTid, values, table.object().symbol());
-                    var identity = objectIdentity(mapping, table, bid, ownerTid);
+                    var identity = objectIdentity(mapping, ids, table, bid, ownerTid);
                     var data = alternate.isPresent()
                             ? new Structured(alternate.orElseThrow().symbol(),
                                     mapping.crsPair().orElseThrow().alternateValues(table.object().symbol(), values))
@@ -222,7 +293,7 @@ final class DbTransfer {
         }
     }
 
-    private static void appendEmbeddedLinks(Database db, DbMapping mapping, List<EmbeddedAssociation> links,
+    private static void appendEmbeddedLinks(Database db, DbMapping mapping, ExportIds ids, List<EmbeddedAssociation> links,
                                             String owner, StringJoiner projections, StringBuilder from) {
         for (int index = 0; index < links.size(); index++) {
             var association = links.get(index);
@@ -231,20 +302,20 @@ final class DbTransfer {
             from.append(" LEFT JOIN ").append(db.table(link.name())).append(' ').append(alias)
                     .append(" ON ").append(alias).append('.').append(linkOwnerColumn(link, association))
                     .append(" = ").append(owner).append('.').append(T_ID)
-                    .append(" AND ").append(alias).append('.').append(T_BASKET)
-                    .append(" = ").append(owner).append('.').append(T_BASKET);
+                    .append(" AND ").append(basketField(mapping, alias))
+                    .append(" = ").append(basketField(mapping, owner));
             projections.add(alias + "." + T_ID);
-            appendColumns(db, mapping, link, alias, projections, from);
+            appendColumns(db, mapping, ids, link, alias, projections, from);
         }
     }
 
-    private static void readEmbeddedLinks(Database db, DbMapping mapping, ResultSet rows, int next,
+    private static void readEmbeddedLinks(Database db, DbMapping mapping, ExportIds ids, ResultSet rows, int next,
                                           List<EmbeddedAssociation> links, String ownerTid,
                                           Map<SymbolRef, TransferValue> values) throws SQLException {
         for (var association : links) {
             var link = mapping.table(association.object().symbol());
             if (rows.getObject(next) != null) {
-                var fields = readFields(db, mapping, rows, next + 1, link, ownerTid);
+                var fields = readFields(db, mapping, ids, rows, next + 1, link, ownerTid);
                 var owner = (Reference) fields.remove(association.ownerRole().slot().symbol());
                 var role = association.role().symbol();
                 if (owner.orderPosition().isPresent()) {
@@ -260,22 +331,22 @@ final class DbTransfer {
         return new Reference(reference.target(), reference.targetBasket(), reference.external(), position);
     }
 
-    private static void writeHierarchyObjects(Database db, DbMapping mapping, Table root, long basketId,
+    private static void writeHierarchyObjects(Database db, DbMapping mapping, ExportIds ids, Table root, long basketId,
                                                BasketId bid, SymbolRef topic, GeometrySelection selection,
                                                TransferWriter writer, CancellationToken token)
             throws SQLException {
-        boolean hasTid = root.hasTidColumn();
+        boolean hasTid = root.carriesObjectId();
         var fields = new StringJoiner(", ").add("obj." + T_ID);
-        if (hasTid) fields.add("obj." + T_ILI_TID);
+        if (hasTid) fields.add(ids.tid(root, "obj"));
         fields.add("obj." + T_TYPE);
         var from = new StringBuilder(db.table(root.name())).append(" obj");
-        appendColumns(db, mapping, root, "obj", fields, from);
+        appendColumns(db, mapping, ids, root, "obj", fields, from);
         var links = mapping.linkFields(root.object().symbol());
-        appendEmbeddedLinks(db, mapping, links, "obj", fields, from);
-        String sql = "SELECT " + fields + " FROM " + from + " WHERE obj." + T_BASKET
+        appendEmbeddedLinks(db, mapping, ids, links, "obj", fields, from);
+        String sql = "SELECT " + fields + " FROM " + from + " WHERE " + basketField(mapping, "obj")
                 + " = ? ORDER BY obj." + T_ID;
-        try (var fragments = new HierarchyRows(db, mapping, basketId, token);
-             var structures = new StructureRows(db, mapping, basketId, token);
+        try (var fragments = new HierarchyRows(db, mapping, ids, basketId, token);
+             var structures = new StructureRows(db, mapping, ids, basketId, token);
              var statement = db.connection().prepareStatement(sql)) {
             fragments.open(root, true);
             for (var part : mapping.hierarchy(root)) {
@@ -292,15 +363,15 @@ final class DbTransfer {
                     int field = 2;
                     String tid = hasTid ? identifier(rows.getString(field++), "TID", root.name()) : null;
                     var actual = mapping.concreteType(root, rows.getString(field++), id, topic);
-                    var values = readFields(db, mapping, rows, field, root, tid, selection, actual.object().symbol());
-                    readEmbeddedLinks(db, mapping, rows, field + projectionSize(mapping, root), links, tid, values);
+                    var values = readFields(db, mapping, ids, rows, field, root, tid, selection, actual.object().symbol());
+                    readEmbeddedLinks(db, mapping, ids, rows, field + projectionSize(mapping, root), links, tid, values);
                     fragments.readFor(actual, id, tid, values);
                     structures.readFor(id, tid, values, actual.object().symbol());
                     mapping.extendedFields(actual.object().symbol()).forEach((base, effective) -> {
                         var value = values.remove(base);
                         if (value != null) values.put(effective, value);
                     });
-                    var identity = objectIdentity(mapping, root, bid, tid);
+                    var identity = objectIdentity(mapping, ids, root, bid, tid);
                     var alternate = mapping.crsPair().flatMap(pair -> pair.alternateClass(topic, actual.object().symbol()));
                     var data = alternate.isPresent()
                             ? new Structured(alternate.orElseThrow().symbol(),
@@ -316,13 +387,13 @@ final class DbTransfer {
         }
     }
 
-    private static void checkStructureHierarchy(Database db, DbMapping mapping, Table root, long basketId,
+    private static void checkStructureHierarchy(Database db, DbMapping mapping, ExportIds ids, Table root, long basketId,
                                                 CancellationToken token) throws SQLException {
         // Composition cursors visit structures in owner and sequence order. Check the complete
         // hierarchy in ID order first, including subtype fragments without reachable owners.
-        String sql = "SELECT " + T_ID + ", " + T_TYPE + " FROM " + db.table(root.name())
-                + " WHERE " + T_BASKET + " = ? ORDER BY " + T_ID;
-        try (var fragments = new HierarchyRows(db, mapping, basketId, token);
+        String sql = "SELECT " + T_ID + ", " + T_TYPE + " FROM " + db.table(root.name()) + " obj"
+                + " WHERE " + basketField(mapping, "obj") + " = ? ORDER BY " + T_ID;
+        try (var fragments = new HierarchyRows(db, mapping, ids, basketId, token);
              var statement = db.connection().prepareStatement(sql)) {
             fragments.open(root, false);
             fetchInPages(db, statement);
@@ -342,14 +413,16 @@ final class DbTransfer {
     private static final class HierarchyRows implements AutoCloseable {
         private final Database db;
         private final DbMapping mapping;
+        private final ExportIds ids;
         private final long basketId;
         private final CancellationToken token;
         private final List<PreparedStatement> statements = new ArrayList<>();
         private final Map<Table, Fragment> fragments = new LinkedHashMap<>();
 
-        HierarchyRows(Database db, DbMapping mapping, long basketId, CancellationToken token) {
+        HierarchyRows(Database db, DbMapping mapping, ExportIds ids, long basketId, CancellationToken token) {
             this.db = db;
             this.mapping = mapping;
+            this.ids = ids;
             this.basketId = basketId;
             this.token = token;
         }
@@ -359,17 +432,17 @@ final class DbTransfer {
             for (var part : mapping.hierarchy(root)) {
                 if (!part.subtype()) continue;
                 token.throwIfCancellationRequested();
-                var fields = new StringJoiner(", ").add("part." + T_ID).add("part." + T_BASKET);
+                var fields = new StringJoiner(", ").add("part." + T_ID).add(basketField(mapping, "part"));
                 var from = new StringBuilder(db.table(part.name())).append(" part LEFT JOIN ")
                         .append(db.table(root.name())).append(" root ON root.").append(T_ID)
                         .append(" = part.").append(T_ID);
                 var links = includeFields ? mapping.linkFields(part.object().symbol()) : List.<EmbeddedAssociation>of();
                 if (includeFields) {
-                    appendColumns(db, mapping, part, "part", fields, from);
-                    appendEmbeddedLinks(db, mapping, links, "part", fields, from);
+                    appendColumns(db, mapping, ids, part, "part", fields, from);
+                    appendEmbeddedLinks(db, mapping, ids, links, "part", fields, from);
                 }
-                String sql = "SELECT " + fields + " FROM " + from + " WHERE part." + T_BASKET
-                        + " = ? OR root." + T_BASKET + " = ? ORDER BY part." + T_ID;
+                String sql = "SELECT " + fields + " FROM " + from + " WHERE " + basketField(mapping, "part")
+                        + " = ? OR " + basketField(mapping, "root") + " = ? ORDER BY part." + T_ID;
                 var statement = db.connection().prepareStatement(sql);
                 statements.add(statement);
                 fetchInPages(db, statement);
@@ -421,9 +494,9 @@ final class DbTransfer {
 
             void readFor(long rootId, String tid, Map<SymbolRef, TransferValue> values, SymbolRef actual) throws SQLException {
                 requireRow(rootId);
-                values.putAll(readFields(db, mapping, rows, 3, table, tid, ALL_GEOMETRIES, actual));
+                values.putAll(readFields(db, mapping, ids, rows, 3, table, tid, ALL_GEOMETRIES, actual));
                 if (!links.isEmpty()) {
-                    readEmbeddedLinks(db, mapping, rows, 3 + projectionSize(mapping, table), links, tid, values);
+                    readEmbeddedLinks(db, mapping, ids, rows, 3 + projectionSize(mapping, table), links, tid, values);
                 }
                 advance();
             }
@@ -471,7 +544,7 @@ final class DbTransfer {
         }
     }
 
-    private static void appendColumns(Database db, DbMapping mapping, Table table, String alias,
+    private static void appendColumns(Database db, DbMapping mapping, ExportIds ids, Table table, String alias,
                                       StringJoiner projections, StringBuilder from) {
         int refIndex = 0;
         for (var column : table.columns()) {
@@ -488,10 +561,10 @@ final class DbTransfer {
                     var root = mapping.referenceRoot(column);
                     from.append(" LEFT JOIN ").append(db.table(root.name())).append(' ').append(ref)
                             .append(" ON ").append(ref).append('.').append(T_ID).append(" = ").append(field);
-                    String targetBasket = ref + "." + T_BASKET;
-                    String sourceBasket = alias + "." + T_BASKET;
+                    String targetBasket = basketField(mapping, ref);
+                    String sourceBasket = basketField(mapping, alias);
                     String baskets = db.technicalTable(BASKET);
-                    if (column.external()) {
+                    if (column.external() && mapping.hasBasketColumn()) {
                         from.append(" AND EXISTS (SELECT 1 FROM ").append(baskets).append(" dst WHERE dst.")
                                 .append(T_ID).append(" = ").append(targetBasket);
                         from.append(" AND dst.topic IN ").append(topicNames(mapping, declared)).append(')');
@@ -504,15 +577,20 @@ final class DbTransfer {
                         from.append(" AND EXISTS (SELECT 1 FROM ").append(db.table(target.name())).append(' ').append(fragment)
                                 .append(" WHERE ").append(fragment).append('.').append(T_ID).append(" = ")
                                 .append(ref).append('.').append(T_ID)
-                                .append(" AND ").append(fragment).append('.').append(T_BASKET).append(" = ")
-                                .append(ref).append('.').append(T_BASKET).append(')');
+                                .append(" AND ").append(basketField(mapping, fragment)).append(" = ")
+                                .append(targetBasket).append(')');
                     }
-                    projections.add(field).add(ref + "." + T_ILI_TID);
+                    projections.add(field).add(ids.tid(root, ref));
                     if (root.hasDiscriminator()) projections.add(ref + "." + T_TYPE);
                     if (projectsTargetBid(mapping, column)) {
-                        projections.add("CASE WHEN " + targetBasket + " <> " + sourceBasket + " THEN (SELECT basket."
-                                + T_ILI_TID + " FROM " + baskets + " basket WHERE basket." + T_ID + " = "
-                                + targetBasket + ") END");
+                        if (mapping.hasBasketColumn()) {
+                            projections.add("CASE WHEN " + targetBasket + " <> " + sourceBasket + " THEN (SELECT basket."
+                                    + T_ILI_TID + " FROM " + baskets + " basket WHERE basket." + T_ID + " = "
+                                    + targetBasket + ") END");
+                        } else {
+                            var topic = root.object().topic().flatMap(mapping.plan()::topic).orElseThrow();
+                            projections.add("'" + ids.basket(topic) + "'");
+                        }
                     }
                     column.positionColumn().ifPresent(position -> projections.add(alias + "." + quote(position)));
                 }
@@ -522,7 +600,7 @@ final class DbTransfer {
                     } else {
                         column.physicalNames().forEach(name -> projections.add(alias + "." + quote(name)));
                     }
-                    if (column.array().flatMap(DbArray::target).isPresent()) projections.add(alias + "." + T_BASKET);
+                    if (column.array().flatMap(DbArray::target).isPresent()) projections.add(basketField(mapping, alias));
                 }
             }
         }
@@ -530,7 +608,7 @@ final class DbTransfer {
             String field = "fragment." + quote(geometry.column().name());
             String lookup = " FROM " + db.table(geometry.table()) + " fragment WHERE fragment." + T_ID
                     + " = " + alias + "." + T_ID;
-            projections.add("(SELECT fragment." + T_BASKET + " = " + alias + "." + T_BASKET + lookup + ")");
+            projections.add("(SELECT " + basketField(mapping, "fragment") + " = " + basketField(mapping, alias) + lookup + ")");
             projections.add("(SELECT " + db.geometryProjection(field, geometry.column()) + lookup + ")");
         }
     }
@@ -543,7 +621,8 @@ final class DbTransfer {
                 if (!column.external()) continue;
                 token.throwIfCancellationRequested();
                 var root = mapping.referenceRoot(column);
-                String sql = "SELECT DISTINCT ref." + T_ID + ", ref." + T_ILI_TID + ", dst." + T_ILI_TID
+                String targetTid = root.hasTidColumn() ? tidExpression(root, "ref") : "NULL";
+                String sql = "SELECT DISTINCT ref." + T_ID + ", " + targetTid + ", dst." + T_ILI_TID
                         + " FROM " + db.table(table.name()) + " obj JOIN " + baskets
                         + " src ON src." + T_ID + " = obj." + T_BASKET + " JOIN " + db.table(root.name())
                         + " ref ON ref." + T_ID + " = obj." + quote(column.name()) + " JOIN " + baskets
@@ -608,13 +687,18 @@ final class DbTransfer {
     private static StoredObject findReference(Database db, DbMapping mapping, SymbolRef declared, Table target,
                                               String tid, Optional<String> bid, String context) throws SQLException {
         var root = mapping.rootTable(target.object().symbol());
+        if (!root.hasTidColumn() || !mapping.hasBasketColumn() && bid.isPresent()) return null;
         String discriminator = root.hasDiscriminator() ? ", ref." + T_TYPE : "";
         String fragment = target.equals(root) ? "" : " AND EXISTS (SELECT 1 FROM " + db.table(target.name())
-                + " leaf WHERE leaf." + T_ID + " = ref." + T_ID + " AND leaf." + T_BASKET + " = ref." + T_BASKET + ")";
-        String sql = "SELECT ref." + T_ID + ", basket." + T_ILI_TID + discriminator
-                + " FROM " + db.table(root.name()) + " ref JOIN " + db.technicalTable(BASKET)
-                + " basket ON basket." + T_ID + " = ref." + T_BASKET + " WHERE basket.topic IN " + topicNames(mapping, declared)
-                + " AND " + tidExpression(root, "ref") + " = ?" + (bid.isPresent() ? " AND basket." + T_ILI_TID + " = ?" : "") + fragment;
+                + " leaf WHERE leaf." + T_ID + " = ref." + T_ID
+                + " AND " + basketField(mapping, "leaf") + " = " + basketField(mapping, "ref") + ")";
+        String baskets = mapping.hasBasketColumn() ? " JOIN " + db.technicalTable(BASKET)
+                + " basket ON basket." + T_ID + " = ref." + T_BASKET : "";
+        String topic = mapping.hasBasketColumn() ? "basket.topic IN " + topicNames(mapping, declared) + " AND " : "";
+        String sql = "SELECT ref." + T_ID + ", " + (mapping.hasBasketColumn() ? "basket." + T_ILI_TID : "NULL")
+                + discriminator + " FROM " + db.table(root.name()) + " ref" + baskets
+                + " WHERE " + topic + tidExpression(root, "ref") + " = ?"
+                + (bid.isPresent() ? " AND basket." + T_ILI_TID + " = ?" : "") + fragment;
         try (var statement = db.connection().prepareStatement(sql)) {
             statement.setString(1, tid);
             if (bid.isPresent()) statement.setString(2, bid.orElseThrow());
@@ -626,7 +710,10 @@ final class DbTransfer {
                             : root.object().symbol();
                     if (!mapping.isAssignableTo(type, declared)) continue;
                     if (result != null) throw ambiguousTarget(tid, context);
-                    var basket = new BasketId(identifier(rows.getString(2), "reference target BID", context), IdOrigin.SOURCE);
+                    var basket = mapping.hasBasketColumn()
+                            ? new BasketId(identifier(rows.getString(2), "reference target BID", context), IdOrigin.SOURCE)
+                            : new BasketId(root.object().topic().flatMap(mapping.plan()::topic).orElseThrow()
+                                    .name().declared().toString(), IdOrigin.SYNTHETIC);
                     result = new StoredObject(id, type, basket);
                 }
                 return result;
@@ -674,18 +761,18 @@ final class DbTransfer {
         return quote(table.column(association.ownerRole().slot().symbol()).name());
     }
 
-    private static Map<SymbolRef, TransferValue> readFields(Database db, DbMapping mapping, ResultSet rows,
+    private static Map<SymbolRef, TransferValue> readFields(Database db, DbMapping mapping, ExportIds ids, ResultSet rows,
                                                             int index, Table table, String ownerTid) throws SQLException {
-        return readFields(db, mapping, rows, index, table, ownerTid, ALL_GEOMETRIES);
+        return readFields(db, mapping, ids, rows, index, table, ownerTid, ALL_GEOMETRIES);
     }
 
-    private static Map<SymbolRef, TransferValue> readFields(Database db, DbMapping mapping, ResultSet rows,
+    private static Map<SymbolRef, TransferValue> readFields(Database db, DbMapping mapping, ExportIds ids, ResultSet rows,
                                                             int index, Table table, String ownerTid,
                                                             GeometrySelection selection) throws SQLException {
-        return readFields(db, mapping, rows, index, table, ownerTid, selection, table.object().symbol());
+        return readFields(db, mapping, ids, rows, index, table, ownerTid, selection, table.object().symbol());
     }
 
-    private static Map<SymbolRef, TransferValue> readFields(Database db, DbMapping mapping, ResultSet rows,
+    private static Map<SymbolRef, TransferValue> readFields(Database db, DbMapping mapping, ExportIds ids, ResultSet rows,
                                                             int index, Table table, String ownerTid,
                                                             GeometrySelection selection, SymbolRef actual) throws SQLException {
         var values = new LinkedHashMap<SymbolRef, TransferValue>();
@@ -701,7 +788,7 @@ final class DbTransfer {
                 continue;
             }
             var value = checkGeometrySelection(rows, index, column, ownerTid, selection)
-                    ? readValue(db, mapping, rows, index, column, ownerTid) : null;
+                    ? readValue(db, mapping, ids, rows, index, column, ownerTid) : null;
             if (value != null && values.putIfAbsent(column.slot().symbol(), value) != null) {
                 throw new DbException("Multiple stored values for " + column.slot().name().declared() + " of object " + ownerTid);
             }
@@ -758,17 +845,22 @@ final class DbTransfer {
             var parent = mapping.table(association.owner());
             String owner = "link." + linkOwnerColumn(link, association);
             String basket = db.technicalTable(BASKET);
+            String basketJoins = mapping.hasBasketColumn()
+                    ? " LEFT JOIN " + basket + " lb ON lb." + T_ID + " = link." + T_BASKET
+                            + " LEFT JOIN " + basket + " pb ON pb." + T_ID + " = parent." + T_BASKET
+                            + " WHERE lb.dataset = ? OR pb.dataset = ?" : "";
+            String wrongBasket = mapping.hasBasketColumn() ? " OR lb." + T_ID + " IS NULL OR parent." + T_BASKET + " <> link."
+                    + T_BASKET + " OR lb.topic NOT IN " + topicNames(mapping, parent) : "";
             String sql = "SELECT COUNT(*) FROM " + db.table(link.name()) + " link LEFT JOIN "
                     + db.table(parent.name()) + " parent ON parent." + T_ID + " = " + owner
-                    + " LEFT JOIN " + basket + " lb ON lb." + T_ID + " = link." + T_BASKET
-                    + " LEFT JOIN " + basket + " pb ON pb." + T_ID + " = parent." + T_BASKET
-                    + " WHERE lb.dataset = ? OR pb.dataset = ? GROUP BY " + owner
-                    + " HAVING COUNT(*) > 1 OR MAX(CASE WHEN parent." + T_ID + " IS NULL OR lb." + T_ID
-                    + " IS NULL OR parent." + T_BASKET + " <> link." + T_BASKET
-                    + " OR lb.topic NOT IN " + topicNames(mapping, parent) + " THEN 1 ELSE 0 END) > 0 LIMIT 1";
+                    + basketJoins + " GROUP BY " + owner
+                    + " HAVING COUNT(*) > 1 OR MAX(CASE WHEN parent." + T_ID + " IS NULL"
+                    + wrongBasket + " THEN 1 ELSE 0 END) > 0 LIMIT 1";
             try (var statement = db.connection().prepareStatement(sql)) {
-                statement.setLong(1, datasetId);
-                statement.setLong(2, datasetId);
+                if (mapping.hasBasketColumn()) {
+                    statement.setLong(1, datasetId);
+                    statement.setLong(2, datasetId);
+                }
                 try (var rows = statement.executeQuery()) {
                     if (rows.next()) {
                         String problem = rows.getLong(1) > 1 ? "Multiple link rows" : "Missing or inconsistent link owner";
@@ -788,12 +880,14 @@ final class DbTransfer {
             for (var composition : mapping.compositionsForChild(table.object().symbol())) {
                 ownerCount.add("CASE WHEN child." + quote(composition.ownerColumn()) + " IS NULL THEN 0 ELSE 1 END");
             }
-            String wrongTopic = table.object().topic().isPresent() ? " OR basket.topic NOT IN " + topicNames(mapping, table) : "";
-            String sql = "SELECT child." + T_ID + " FROM " + db.table(table.name()) + " child JOIN "
-                    + db.technicalTable(BASKET) + " basket ON basket." + T_ID + " = child." + T_BASKET
-                    + " WHERE basket.dataset = ? AND ((" + ownerCount + ") <> 1" + wrongTopic + ") LIMIT 1";
+            String wrongTopic = mapping.hasBasketColumn() && table.object().topic().isPresent()
+                    ? " OR basket.topic NOT IN " + topicNames(mapping, table) : "";
+            String basketScope = mapping.hasBasketColumn() ? " JOIN " + db.technicalTable(BASKET)
+                    + " basket ON basket." + T_ID + " = child." + T_BASKET + " WHERE basket.dataset = ? AND " : " WHERE ";
+            String sql = "SELECT child." + T_ID + " FROM " + db.table(table.name()) + " child" + basketScope
+                    + "((" + ownerCount + ") <> 1" + wrongTopic + ") LIMIT 1";
             try (var statement = db.connection().prepareStatement(sql)) {
-                statement.setLong(1, datasetId);
+                if (mapping.hasBasketColumn()) statement.setLong(1, datasetId);
                 try (var rows = statement.executeQuery()) {
                     if (rows.next()) {
                         throw new DbException("Expected exactly one structure owner in the correct topic for "
@@ -805,22 +899,27 @@ final class DbTransfer {
         // Nested lookups cannot reach orphans. Check the actual SQL owner, including inherited fields.
         for (var composition : mapping.compositions()) {
             var parent = mapping.table(composition.parent());
-            if (mapping.profile() == DbInheritance.Profile.NEW_CLASS && parent.object().kind() != SymbolKind.STRUCTURE
+            if (mapping.hasBasketColumn() && mapping.profile() == DbInheritance.Profile.NEW_CLASS && parent.object().kind() != SymbolKind.STRUCTURE
                     && !parent.hasDiscriminator() && !parent.subtype()) continue;
             token.throwIfCancellationRequested();
             var child = mapping.table(composition.childRoot());
             String owner = "child." + quote(composition.ownerColumn());
             String basket = db.technicalTable(BASKET);
+            boolean withBasket = mapping.hasBasketColumn();
+            String basketJoins = withBasket ? " LEFT JOIN " + basket + " cb ON cb." + T_ID + " = child." + T_BASKET
+                    + " LEFT JOIN " + basket + " pb ON pb." + T_ID + " = parent." + T_BASKET : "";
+            String basketScope = withBasket ? " AND (cb.dataset = ? OR pb.dataset = ?)" : "";
+            String wrongBasket = withBasket ? " OR pb." + T_ID + " IS NULL OR cb." + T_ID
+                    + " IS NULL OR parent." + T_BASKET + " <> child." + T_BASKET : "";
             String sql = "SELECT parent." + T_ID + " FROM " + db.table(child.name()) + " child LEFT JOIN "
                     + db.table(parent.name()) + " parent ON parent." + T_ID + " = " + owner
-                    + " LEFT JOIN " + basket + " cb ON cb." + T_ID + " = child." + T_BASKET
-                    + " LEFT JOIN " + basket + " pb ON pb." + T_ID + " = parent." + T_BASKET
-                    + " WHERE " + owner + " IS NOT NULL AND (cb.dataset = ? OR pb.dataset = ?)"
-                    + " AND (parent." + T_ID + " IS NULL OR pb." + T_ID + " IS NULL OR cb." + T_ID
-                    + " IS NULL OR parent." + T_BASKET + " <> child." + T_BASKET + ") LIMIT 1";
+                    + basketJoins + " WHERE " + owner + " IS NOT NULL" + basketScope
+                    + " AND (parent." + T_ID + " IS NULL" + wrongBasket + ") LIMIT 1";
             try (var statement = db.connection().prepareStatement(sql)) {
-                statement.setLong(1, datasetId);
-                statement.setLong(2, datasetId);
+                if (withBasket) {
+                    statement.setLong(1, datasetId);
+                    statement.setLong(2, datasetId);
+                }
                 try (var rows = statement.executeQuery()) {
                     if (rows.next()) {
                         String problem = rows.getObject(1) == null ? "Orphan structure row"
@@ -835,6 +934,7 @@ final class DbTransfer {
     private static final class StructureRows implements AutoCloseable {
         private final Database db;
         private final DbMapping mapping;
+        private final ExportIds ids;
         private final long basketId;
         private final CancellationToken token;
         private final List<PreparedStatement> statements = new ArrayList<>();
@@ -842,9 +942,10 @@ final class DbTransfer {
         private final Map<Composition, PreparedStatement> nestedStatements = new HashMap<>();
         private final Map<Table, PreparedStatement> subtypeStatements = new HashMap<>();
 
-        StructureRows(Database db, DbMapping mapping, long basketId, CancellationToken token) {
+        StructureRows(Database db, DbMapping mapping, ExportIds ids, long basketId, CancellationToken token) {
             this.db = db;
             this.mapping = mapping;
+            this.ids = ids;
             this.basketId = basketId;
             this.token = token;
         }
@@ -861,7 +962,7 @@ final class DbTransfer {
             var child = mapping.table(composition.childRoot());
             String owner = "child." + quote(composition.ownerColumn());
             String sequence = "child." + T_SEQ;
-            String basket = "child." + T_BASKET;
+            String basket = basketField(mapping, "child");
             String id = "child." + T_ID;
             var fields = new StringJoiner(", ").add(owner).add(sequence).add(basket).add(id);
             if (child.hasDiscriminator()) fields.add("child." + T_TYPE);
@@ -871,11 +972,11 @@ final class DbTransfer {
                 var parent = mapping.table(composition.parent());
                 from.append(" LEFT JOIN ").append(db.table(parent.name())).append(" parent ON parent.")
                         .append(T_ID).append(" = ").append(owner);
-                where = owner + " IS NOT NULL AND (" + basket + " = ? OR parent." + T_BASKET + " = ?)";
+                where = owner + " IS NOT NULL AND (" + basket + " = ? OR " + basketField(mapping, "parent") + " = ?)";
             } else {
                 where = owner + " = ? AND " + basket + " = ?";
             }
-            appendColumns(db, mapping, child, "child", fields, from);
+            appendColumns(db, mapping, ids, child, "child", fields, from);
             String sql = "SELECT " + fields + " FROM " + from + " WHERE " + where
                     + " ORDER BY " + owner + ", " + sequence + ", " + id;
             var statement = db.connection().prepareStatement(sql);
@@ -925,9 +1026,9 @@ final class DbTransfer {
             if (statement == null) {
                 var fields = new StringJoiner(", ").add("part." + T_ID);
                 var from = new StringBuilder(db.table(table.name())).append(" part");
-                appendColumns(db, mapping, table, "part", fields, from);
+                appendColumns(db, mapping, ids, table, "part", fields, from);
                 statement = db.connection().prepareStatement("SELECT " + fields + " FROM " + from
-                        + " WHERE part." + T_ID + " = ? AND part." + T_BASKET + " = ?");
+                        + " WHERE part." + T_ID + " = ? AND " + basketField(mapping, "part") + " = ?");
                 statements.add(statement);
                 subtypeStatements.put(table, statement);
             }
@@ -937,7 +1038,7 @@ final class DbTransfer {
                 if (!rows.next()) {
                     throw new DbException("Missing inheritance fragment in " + table.name() + " for T_Id " + id);
                 }
-                values.putAll(readFields(db, mapping, rows, 2, table, parentTid, ALL_GEOMETRIES, actual));
+                values.putAll(readFields(db, mapping, ids, rows, 2, table, parentTid, ALL_GEOMETRIES, actual));
             }
         }
 
@@ -1006,7 +1107,7 @@ final class DbTransfer {
                 if (!mapping.isAssignableTo(actual.object().symbol(), composition.child())) {
                     throw problem("Unexpected structure type " + actual.discriminator());
                 }
-                var values = readFields(db, mapping, rows, child.hasDiscriminator() ? 6 : 5, child, parentTid,
+                var values = readFields(db, mapping, ids, rows, child.hasDiscriminator() ? 6 : 5, child, parentTid,
                         ALL_GEOMETRIES, actual.object().symbol());
                 for (var part : actual.rows()) {
                     if (part.subtype()) readSubtype(part, id, parentTid, values, actual.object().symbol());
@@ -1042,7 +1143,7 @@ final class DbTransfer {
         }
     }
 
-    private static TransferValue readValue(Database db, DbMapping mapping, ResultSet rows, int index,
+    private static TransferValue readValue(Database db, DbMapping mapping, ExportIds ids, ResultSet rows, int index,
                                            Column column, String ownerTid) throws SQLException {
         if (column.expandedStructure().isPresent()) {
             return readExpanded(db, rows, index, column.expandedStructure().orElseThrow(), ownerTid);
@@ -1055,14 +1156,14 @@ final class DbTransfer {
             String context = column.slot().name().declared() + " of object " + ownerTid;
             var values = db.readArray(rows, index, array, context);
             if (array.target().isPresent()) {
-                values = readArrayReferences(db, mapping, mapping.table(array.target().orElseThrow()),
+                values = readArrayReferences(db, mapping, ids, mapping.table(array.target().orElseThrow()),
                         rows.getLong(index + 1), values, context);
             }
             return array.assemble(values, context);
         }
         return switch (column.kind()) {
             case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> readGeometry(db, rows, index, column);
-            case BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, UUID, BINARY, XML, ENUMERATION ->
+            case BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, UUID, OID_TEXT, BINARY, XML, ENUMERATION ->
                     readScalar(db, rows, index, column);
             case TEXT -> {
                 if (column.textExpansion().isPresent()) {
@@ -1093,10 +1194,11 @@ final class DbTransfer {
                     }
                 }
                 var bid = projectsTargetBid(mapping, column) ? Optional.ofNullable(rows.getString(next))
-                        .map(value -> new BasketId(identifier(value, "reference target BID", context), IdOrigin.SOURCE))
+                        .map(value -> new BasketId(identifier(value, "reference target BID", context), ids.origin(value)))
                         : Optional.<BasketId>empty();
                 String value = storedTid(root, tid);
-                TransferIdentity.ObjectKey key = hasWireOid(mapping, root) ? new ObjectOid(value) : new TransferId(value, IdOrigin.SOURCE);
+                TransferIdentity.ObjectKey key = hasWireOid(mapping, root)
+                        ? new ObjectOid(value) : new TransferId(value, ids.origin(value));
                 var reference = new Reference(key, bid, column.external(), position);
                 var catalogue = column.catalogueReference();
                 yield catalogue.<TransferValue>map(binding ->
@@ -1155,6 +1257,13 @@ final class DbTransfer {
             case UUID -> {
                 String value = rows.getString(index);
                 yield value == null ? null : new Oid(canonicalUuid(value, column.slot().name().declared().toString()));
+            }
+            case OID_TEXT -> {
+                String value = rows.getString(index);
+                if (value != null && value.isBlank()) {
+                    throw new DbException("Missing OID value at " + column.slot().name().declared());
+                }
+                yield value == null ? null : new Oid(value);
             }
             case TEXT, FORMATTED -> {
                 String value = rows.getString(index);
@@ -1264,7 +1373,8 @@ final class DbTransfer {
                            TransferReader reader, WriteMode mode, CancellationToken token) throws SQLException {
         token.throwIfCancellationRequested();
         if (mode != WriteMode.IMPORT) DbDatasetWrite.lock(db, mapping);
-        var existing = DbDatasetWrite.findDataset(db, dataset);
+        var existing = mapping.hasBasketColumn() ? DbDatasetWrite.findDataset(db, dataset)
+                : Optional.<Long>empty();
         if (mode == WriteMode.IMPORT && existing.isPresent()) {
             throw new DbException("Dataset already exists: " + dataset);
         }
@@ -1282,7 +1392,7 @@ final class DbTransfer {
                         if (existing.isPresent()) {
                             datasetId = existing.orElseThrow();
                             if (mode == WriteMode.REPLACE) DbDatasetWrite.clearDataset(db, mapping, datasetId, "replace", token);
-                        } else {
+                        } else if (mapping.hasBasketColumn()) {
                             datasetId = importer.insertDataset(dataset);
                         }
                     }
@@ -1297,35 +1407,35 @@ final class DbTransfer {
             }
             token.throwIfCancellationRequested();
             if (!sawBasket) {
-                throw new DbException("A dataset must contain at least one basket");
+                throw new DbException("A transfer must contain at least one basket");
             }
             importer.finishTransfer();
         }
     }
 
-    private static List<Reference> readArrayReferences(Database db, DbMapping mapping, Table target, long basket,
+    private static List<Reference> readArrayReferences(Database db, DbMapping mapping, ExportIds ids, Table target, long basket,
                                                        List<?> values, String context) throws SQLException {
         var distinct = new HashSet<Long>();
         for (var value : values) {
             if (!(value instanceof Long id)) throw new DbException("Missing or invalid array reference ID at " + context);
             distinct.add(id);
         }
-        var ids = new ArrayList<>(distinct);
+        var targetIds = new ArrayList<>(distinct);
         var references = new HashMap<Long, Reference>();
         final int batchSize = 256;
-        for (int offset = 0; offset < ids.size(); offset += batchSize) {
-            int size = Math.min(batchSize, ids.size() - offset);
-            String sql = "SELECT " + T_ID + ", " + T_ILI_TID + " FROM " + db.table(target.name())
-                    + " WHERE " + T_BASKET + " = ? AND " + T_ID + " IN ("
+        for (int offset = 0; offset < targetIds.size(); offset += batchSize) {
+            int size = Math.min(batchSize, targetIds.size() - offset);
+            String sql = "SELECT " + T_ID + ", " + ids.tid(target, "obj") + " FROM " + db.table(target.name()) + " obj"
+                    + " WHERE " + basketField(mapping, "obj") + " = ? AND " + T_ID + " IN ("
                     + String.join(", ", Collections.nCopies(size, "?")) + ")";
             try (var statement = db.connection().prepareStatement(sql)) {
                 statement.setLong(1, basket);
-                for (int i = 0; i < size; i++) statement.setLong(i + 2, ids.get(offset + i));
+                for (int i = 0; i < size; i++) statement.setLong(i + 2, targetIds.get(offset + i));
                 try (var rows = statement.executeQuery()) {
                     while (rows.next()) {
                         String tid = storedTid(target, identifier(rows.getString(2), "array reference target TID", context));
                         TransferIdentity.ObjectKey key = hasWireOid(mapping, target)
-                                ? new ObjectOid(tid) : new TransferId(tid, IdOrigin.SOURCE);
+                                ? new ObjectOid(tid) : new TransferId(tid, ids.origin(tid));
                         references.put(rows.getLong(1), new Reference(key, Optional.empty(), false, Optional.empty()));
                     }
                 }
@@ -1340,9 +1450,9 @@ final class DbTransfer {
         return result;
     }
 
-    private static TransferIdentity objectIdentity(DbMapping mapping, Table root, BasketId bid, String tid) {
+    private static TransferIdentity objectIdentity(DbMapping mapping, ExportIds ids, Table root, BasketId bid, String tid) {
         var value = Optional.ofNullable(tid).map(id -> storedTid(root, id));
-        return new TransferIdentity(bid, Optional.empty(), value.map(id -> new TransferId(id, IdOrigin.SOURCE)),
+        return new TransferIdentity(bid, Optional.empty(), value.map(id -> new TransferId(id, ids.origin(id))),
                 hasWireOid(mapping, root) ? value.map(ObjectOid::new) : Optional.empty(), Optional.empty());
     }
 
@@ -1351,8 +1461,11 @@ final class DbTransfer {
     }
 
     private static Optional<String> basketOid(DbMapping mapping, TopicDescriptor topic, BasketId bid) {
-        if (topic.oidRules().stream().noneMatch(rule -> rule.basket())) return Optional.empty();
-        canonicalUuid(bid.value(), topic.name().declared().toString());
+        var rule = topic.oidRules().stream().filter(ruleCandidate -> ruleCandidate.basket()).findFirst();
+        if (rule.isEmpty()) return Optional.empty();
+        if (Ili2dbLayout.UUID_OID.equals(DbMapping.oidDomain(mapping.plan(), rule.orElseThrow()))) {
+            canonicalUuid(bid.value(), topic.name().declared().toString());
+        }
         return mapping.version() == LanguageVersion.ILI24 ? Optional.of(bid.value()) : Optional.empty();
     }
 
@@ -1485,6 +1598,7 @@ final class DbTransfer {
             var domainsForBasket = DbDomains.resolve(mapping.plan(), topic, start.domainBindings(), start.id().value());
             basketGeometry = new GeometrySelection(domainsForBasket,
                     mapping.crsPair().map(pair -> pair.epsgCodes(topic.symbol())).orElse(Map.of()));
+            if (!mapping.hasBasketColumn()) return;
             String domains = DbDomains.format(mapping.plan(), start.domainBindings(), start.id().value());
             this.datasetId = datasetId;
             if (updating) {
@@ -1527,7 +1641,7 @@ final class DbTransfer {
             }
             var chain = storage.rows();
             var root = storage.root();
-            boolean hasTid = root.hasTidColumn();
+            boolean hasTid = root.carriesObjectId();
             var sourceTid = identity.tid().filter(value -> value.origin() == IdOrigin.SOURCE).map(TransferId::value);
             var expectedOid = hasWireOid(mapping, root)
                     ? sourceTid : Optional.<String>empty();
@@ -1595,8 +1709,7 @@ final class DbTransfer {
             var statement = update ? objectUpdateStatement(table) : insertStatement(table);
             int index = 1;
             if (!update) statement.setLong(index++, id);
-            statement.setLong(index++, basketId);
-            index = bindRowMetadata(statement, index, update);
+            index = bindBasketAndMetadata(statement, index, update);
             if (table.hasDiscriminator()) {
                 statement.setString(index++, concreteName);
             }
@@ -1660,15 +1773,16 @@ final class DbTransfer {
                                 + metadata.stream().map(name -> ", " + name + " = ?").collect(Collectors.joining())
                                 + " WHERE " + T_ID + " = ? AND " + T_BASKET + " = ?"
                         : "INSERT INTO " + table + " (" + field + ", "
-                                + String.join(", ", metadata) + (metadata.isEmpty() ? "" : ", ") + T_ID + ", " + T_BASKET
-                                + ") VALUES (" + parameter + ", ?".repeat(metadata.size()) + ", ?, ?)";
+                                + String.join(", ", metadata) + (metadata.isEmpty() ? "" : ", ") + T_ID
+                                + (mapping.hasBasketColumn() ? ", " + T_BASKET : "")
+                                + ") VALUES (" + parameter + ", ?".repeat(metadata.size() + (mapping.hasBasketColumn() ? 2 : 1)) + ")";
                 statement = db.connection().prepareStatement(sql);
                 statements.put(geometry.table(), statement);
             }
             int index = db.bindGeometry(statement, 1, geometry.table(), geometry.column(), value);
             index = bindRowMetadata(statement, index, update);
             statement.setLong(index++, id);
-            statement.setLong(index, basketId);
+            if (mapping.hasBasketColumn()) statement.setLong(index, basketId);
             if (statement.executeUpdate() != 1) {
                 throw new DbException("Missing or basket-mismatched secondary geometry row for "
                         + geometry.column().slot().name().declared() + " of object " + context);
@@ -1691,8 +1805,7 @@ final class DbTransfer {
             long id = db.nextId();
             var statement = insertStatement(table);
             statement.setLong(1, id);
-            statement.setLong(2, basketId);
-            int index = bindRowMetadata(statement, 3, false);
+            int index = bindBasketAndMetadata(statement, 2, false);
             if (table.hasDiscriminator()) statement.setString(index++, mapping.storage(table.object().symbol()).discriminator());
             var found = new HashSet<SymbolRef>();
             for (var column : table.columns()) {
@@ -1766,10 +1879,9 @@ final class DbTransfer {
             }
             long id = db.nextId();
             statement.setLong(1, id);
-            statement.setLong(2, basketId);
-            int index = bindRowMetadata(statement, 3, false);
+            int index = bindBasketAndMetadata(statement, 2, false);
             if (table.hasDiscriminator()) statement.setString(index++, actual.discriminator());
-            statement.setNull(index++, Types.VARCHAR);
+            if (table.hasTidColumn()) statement.setNull(index++, Types.VARCHAR);
             statement.setInt(index++, sequence);
             statement.setLong(index++, ownerId);
             int found = bindStructureFields(statement, index, table, structure, id, ownerTid, basket);
@@ -1779,8 +1891,8 @@ final class DbTransfer {
                 token.throwIfCancellationRequested();
                 var fragment = insertStatement(part);
                 fragment.setLong(1, id);
-                fragment.setLong(2, basketId);
-                found += bindStructureFields(fragment, bindRowMetadata(fragment, 3, false), part, structure, id, ownerTid, basket);
+                found += bindStructureFields(fragment, bindBasketAndMetadata(fragment, 2, false),
+                        part, structure, id, ownerTid, basket);
                 fragment.executeUpdate();
             }
             var compositions = mapping.compositionsForObject(structure.type());
@@ -1825,6 +1937,11 @@ final class DbTransfer {
             return statement;
         }
 
+        private int bindBasketAndMetadata(PreparedStatement statement, int index, boolean update) throws SQLException {
+            if (mapping.hasBasketColumn()) statement.setLong(index++, basketId);
+            return bindRowMetadata(statement, index, update);
+        }
+
         private int bindRowMetadata(PreparedStatement statement, int index, boolean update) throws SQLException {
             if (datasetColumn) statement.setString(index++, dataset);
             if (audit != null) {
@@ -1858,8 +1975,10 @@ final class DbTransfer {
                 names.add(T_ID);
                 values.add("?");
             }
-            names.add(T_BASKET);
-            values.add("?");
+            if (mapping.hasBasketColumn()) {
+                names.add(T_BASKET);
+                values.add("?");
+            }
             for (String metadata : writeMetadataColumns(update)) {
                 names.add(metadata);
                 values.add("?");
@@ -1917,6 +2036,7 @@ final class DbTransfer {
             }
             switch (column.kind()) {
                 case TEXT, FORMATTED -> statement.setString(index, ((Text) value).value());
+                case OID_TEXT -> statement.setString(index, ((Oid) value).lexeme());
                 case BINARY -> statement.setBytes(index, ((Binary) value).bytes());
                 case XML -> db.bindXml(statement, index, (XmlFragment) value);
                 case UUID -> db.bindUuid(statement, index,

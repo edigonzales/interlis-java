@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import static guru.interlis.db.DbInteropTest.schemaWithIdentityColumns;
 import static guru.interlis.db.DbInteropTest.assertCliSuccess;
 import static guru.interlis.db.DbInteropTest.child;
 import static guru.interlis.db.DbInteropTest.children;
@@ -44,7 +45,7 @@ final class XyzGeometryCases {
         reference.run(old, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
                 "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056",
                 "--createGeomIdx", ili.toString());
-        var create = cli(own, "schemaimport", model, null, ili, CancellationToken.none(), "--create-geom-index");
+        var create = schemaWithIdentityColumns(own, model, ili, CancellationToken.none(), "--create-geom-index");
         assertEquals(0, create.code(), create::diagnostics);
         try (var oldSql = old.connect(); var ownSql = own.connect()) {
             var expected = DbSchemaCatalog.read(oldSql, old.postgis(), old.schema());
