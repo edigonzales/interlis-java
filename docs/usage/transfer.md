@@ -310,8 +310,9 @@ Leertaste auf seiner Zeile zeigt Struktur- und Sammlungseinträge direkt
 darunter. LIST-Einträge sind nummeriert. BAG-Einträge behalten Duplikate
 und erscheinen ohne Nummer. Mit **⌘C** unter macOS bzw. **Strg+C** auf den
 anderen Plattformen kopierst du den angezeigten Wert der ausgewählten
-Zeile. Unterstrichene Referenz- und Rollenwerte öffnen ihr Ziel mit
-Doppelklick oder **Enter**. **Back** kehrt zum Ausgangsobjekt und zur
+Zeile. Ein Klick auf den Pfeil **→** neben dem Wert öffnet das aufgelöste
+Referenz- oder Rollenziel. Bei ausgewählter Zeile geht
+das auch mit **Enter**. **Back** kehrt zum Ausgangsobjekt und zur
 Referenzzeile zurück. Der Abschnitt **Beziehungen** zeigt aufklappbare
 Assoziationen mit Rollennamen, Zielen und eigenen Attributen. Beim
 Schliessen wird die temporäre DuckDB-Datenbank entfernt.

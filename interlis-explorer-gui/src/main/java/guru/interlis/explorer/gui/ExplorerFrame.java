@@ -28,6 +28,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTree;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.TransferHandler;
@@ -47,6 +48,8 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
@@ -56,7 +59,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.font.TextAttribute;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -64,12 +66,15 @@ import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
+import java.util.OptionalLong;
 import java.util.concurrent.ExecutionException;
 import java.util.prefs.Preferences;
 
 final class ExplorerFrame extends JFrame {
     private static final String LAST_TRANSFER_DIRECTORY = "lastTransferDirectory";
+    private static final int REFERENCE_ARROW_WIDTH = 28;
+    private static final int REFERENCE_ARROW_GAP = 6;
+    private static final Icon REFERENCE_ARROW = new GlyphIcon("→", REFERENCE_ARROW_WIDTH);
 
     private record Visit(long objectPosition, List<Integer> rowPath) {}
 
@@ -109,9 +114,9 @@ final class ExplorerFrame extends JFrame {
         tree.setRowHeight(26);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         tree.setCellRenderer(new DefaultTreeCellRenderer() {
-            private final Icon modelIcon = new LetterIcon("M");
-            private final Icon topicIcon = new LetterIcon("T");
-            private final Icon classIcon = new LetterIcon("C");
+            private final Icon modelIcon = new GlyphIcon("M");
+            private final Icon topicIcon = new GlyphIcon("T");
+            private final Icon classIcon = new GlyphIcon("C");
 
             @Override
             public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected,
@@ -194,22 +199,24 @@ final class ExplorerFrame extends JFrame {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getTableHeader().setReorderingAllowed(false);
         table.getColumnModel().getColumn(0).setPreferredWidth(175);
-        table.getColumnModel().getColumn(1).setPreferredWidth(420);
+        var valueColumn = table.getColumnModel().getColumn(1);
+        valueColumn.setPreferredWidth(420);
+        valueColumn.setMinWidth(REFERENCE_ARROW_WIDTH + REFERENCE_ARROW_GAP + 4);
         var valueRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean selected,
                                                             boolean focused, int row, int column) {
-                var label = (JLabel) super.getTableCellRendererComponent(table, value, selected, focused, row, column);
-                boolean linked = attributes.target(row).isPresent();
-                if (linked) {
-                    label.setFont(table.getFont().deriveFont(Map.of(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON)));
-                }
-                label.setToolTipText(linked ? "Double-click or press Enter to open" : null);
-                return label;
+                super.getTableCellRendererComponent(table, value, selected, focused, row, column);
+                boolean linked = navigationTarget(row).isPresent();
+                setIcon(linked ? REFERENCE_ARROW : null);
+                setToolTipText(linked ? "Click the arrow or press Enter to open" : null);
+                return this;
             }
         };
+        valueRenderer.setHorizontalTextPosition(SwingConstants.LEFT);
+        valueRenderer.setIconTextGap(REFERENCE_ARROW_GAP);
         valueRenderer.putClientProperty("html.disable", true);
-        table.getColumnModel().getColumn(1).setCellRenderer(valueRenderer);
+        valueColumn.setCellRenderer(valueRenderer);
         var attributeRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean selected,
@@ -229,21 +236,42 @@ final class ExplorerFrame extends JFrame {
         };
         attributeRenderer.putClientProperty("html.disable", true);
         table.getColumnModel().getColumn(0).setCellRenderer(attributeRenderer);
-        table.addMouseListener(new MouseAdapter() {
+        var mouse = new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent event) {
-                if (!SwingUtilities.isLeftMouseButton(event)) {
+                if (!SwingUtilities.isLeftMouseButton(event) || event.getClickCount() != 1) {
                     return;
                 }
-                int row = table.rowAtPoint(event.getPoint());
-                int column = table.columnAtPoint(event.getPoint());
-                if (column == 0 && event.getClickCount() == 1) {
+                var point = event.getPoint();
+                int row = table.rowAtPoint(point);
+                if (table.columnAtPoint(point) == 0) {
                     attributes.toggle(row);
-                } else if (column == 1 && event.getClickCount() == 2) {
+                } else if (isReferenceArrow(table, row, point)) {
                     followReference(row);
                 }
             }
-        });
+
+            @Override
+            public void mouseMoved(MouseEvent event) {
+                var point = event.getPoint();
+                boolean overArrow = ExplorerFrame.this.getCursor().getType() != Cursor.WAIT_CURSOR
+                        && isReferenceArrow(table, table.rowAtPoint(point), point);
+                table.setCursor(overArrow ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR) : null);
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent event) {
+                table.setCursor(null);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent event) {
+                table.setCursor(null);
+            }
+        };
+        table.addMouseListener(mouse);
+        table.addMouseMotionListener(mouse);
+        attributes.addTableModelListener(event -> table.setCursor(null));
         table.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "toggleAttribute");
         table.getActionMap().put("toggleAttribute", new AbstractAction() {
             @Override
@@ -279,15 +307,21 @@ final class ExplorerFrame extends JFrame {
         return table;
     }
 
-    private record LetterIcon(String letter) implements Icon {
+    private record GlyphIcon(String glyph, int width) implements Icon {
+        private static final int GLYPH_SIZE = 16;
+
+        GlyphIcon(String glyph) {
+            this(glyph, GLYPH_SIZE);
+        }
+
         @Override
         public int getIconWidth() {
-            return 16;
+            return width;
         }
 
         @Override
         public int getIconHeight() {
-            return 16;
+            return GLYPH_SIZE;
         }
 
         @Override
@@ -298,9 +332,9 @@ final class ExplorerFrame extends JFrame {
                 paint.setColor(new Color(foreground.getRed(), foreground.getGreen(), foreground.getBlue(), 204));
                 paint.setFont(component.getFont().deriveFont(Font.PLAIN, 11f));
                 var metrics = paint.getFontMetrics();
-                int left = x + (getIconWidth() - metrics.stringWidth(letter)) / 2;
+                int left = x + (GLYPH_SIZE - metrics.stringWidth(glyph)) / 2;
                 int baseline = y + (getIconHeight() - metrics.getHeight()) / 2 + metrics.getAscent();
-                paint.drawString(letter, left, baseline);
+                paint.drawString(glyph, left, baseline);
             } finally {
                 paint.dispose();
             }
@@ -493,13 +527,40 @@ final class ExplorerFrame extends JFrame {
                 : objects.size() + " shown (up to " + ExplorerDataset.OBJECT_LIMIT + ")");
     }
 
-    private void followReference(int row) {
+    private boolean isReferenceArrow(JTable table, int row, Point point) {
+        if (navigationTarget(row).isEmpty()) {
+            return false;
+        }
+        var cell = table.getCellRect(row, 1, false);
+        if (!cell.contains(point)) {
+            return false;
+        }
+        var label = (JLabel) table.prepareRenderer(table.getCellRenderer(row, 1), row, 1);
+        var insets = label.getInsets();
+        var content = new Rectangle(cell.x + insets.left, cell.y + insets.top,
+                cell.width - insets.left - insets.right, cell.height - insets.top - insets.bottom);
+        var arrow = new Rectangle();
+        SwingUtilities.layoutCompoundLabel(label, label.getFontMetrics(label.getFont()), label.getText(), label.getIcon(),
+                label.getVerticalAlignment(), label.getHorizontalAlignment(), label.getVerticalTextPosition(),
+                label.getHorizontalTextPosition(), content, arrow, new Rectangle(), label.getIconTextGap());
+        return point.x >= arrow.x && point.x < arrow.x + arrow.width;
+    }
+
+    private OptionalLong navigationTarget(int row) {
         var target = attributes.target(row);
         var source = objectList.getSelectedValue();
         if (source == null || target.isEmpty() || target.getAsLong() == source.position()) {
+            return OptionalLong.empty();
+        }
+        return target;
+    }
+
+    private void followReference(int row) {
+        var target = navigationTarget(row);
+        if (target.isEmpty()) {
             return;
         }
-        var visit = new Visit(source.position(), attributes.pathTo(row));
+        var visit = new Visit(objectList.getSelectedValue().position(), attributes.pathTo(row));
         if (openOccurrence(target.getAsLong())) {
             history.push(visit);
             back.setEnabled(true);
