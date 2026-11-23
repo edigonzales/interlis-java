@@ -20,10 +20,10 @@ final class PostgisTestServer implements AutoCloseable {
     Target target(Path file) {
         String schema = "db_test_" + UUID.randomUUID().toString().replace("-", "");
         // Drop schemas with the container so other tests can safely read the shared PostGIS catalog.
-        return new Target(file, start(), schema);
+        return new Target(file, container(), schema);
     }
 
-    private synchronized PostgreSQLContainer start() {
+    synchronized PostgreSQLContainer container() {
         if (postgres == null) {
             var container = postgisContainer();
             try {

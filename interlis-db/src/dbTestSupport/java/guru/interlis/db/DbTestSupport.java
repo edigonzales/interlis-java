@@ -246,4 +246,10 @@ final class DbTestSupport {
             assertFalse(Files.exists(db.file), db.file::toString);
         }
     }
+
+    static void assertExternalReference(Element reference, int version, String tid, String bid) {
+        assertNotNull(reference);
+        assertEquals(tid, id(reference, version, "ref"));
+        assertEquals(version == 23 ? bid : "", id(reference, version, "bid"));
+    }
 }

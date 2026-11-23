@@ -9,10 +9,16 @@ import static guru.interlis.db.DbTestSupport.postgisContainer;
 
 final class TestDatabase extends DbTestSupport.Target {
     private final Path work;
+    private final String scope;
 
     TestDatabase(Path work, PostgreSQLContainer postgres, String name) {
-        super(work.resolve(name + ".gpkg"), postgres, "db_interop_" + name);
+        this(work, postgres, name, "");
+    }
+
+    TestDatabase(Path work, PostgreSQLContainer postgres, String name, String scope) {
+        super(work.resolve(name + ".gpkg"), postgres, "db_interop_" + scope + name);
         this.work = work;
+        this.scope = scope;
     }
 
     List<String> referenceOptions() {
@@ -21,7 +27,7 @@ final class TestDatabase extends DbTestSupport.Target {
                 "--dbdatabase", postgres.getDatabaseName(), "--dbschema", schema, "--dbusr", user, "--dbpwd", password);
     }
 
-    TestDatabase peer(String name) { return new TestDatabase(work, postgres, name); }
+    TestDatabase peer(String name) { return new TestDatabase(work, postgres, name, scope); }
 
     @FunctionalInterface
     interface PostgisCase {

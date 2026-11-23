@@ -139,6 +139,11 @@ SQL-Gegenproben prüfen beschädigte Strukturzeilen, Sequenzen, Rollenziele,
 Vererbungsfragmente und Zuordnungen. Der GeoPackage-Fall für XTF 2.4 prüft
 die Projektion mit 32 polymorphen Referenzen.
 
+`ExternalReferenceStorageTest` prüft externe Ziele über Basket-, Topic-
+und Datensatzgrenzen. Es vergleicht TIDs und BID-Zuordnungen in SQL und XTF
+und prüft fehlende, mehrdeutige und typfremde Ziele. Abgewiesene Imports
+erhalten die gespeicherten Zeilen. Fehler beim Export erhalten die Datei.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -149,12 +154,18 @@ automatisch auf. Mit vorhandenen ZIPs und Gradle-Abhängigkeiten im lokalen
 Cache kann Gradle mit `--offline` laufen. Docker lädt fehlende Container-Images
 bei Bedarf separat.
 
-JUnit führt bis zu zwei Fälle gleichzeitig aus. Für jeden PostgreSQL-Test
-startet und entfernt die Suite mit Testcontainers einen PostgreSQL-16-Container
-mit PostGIS 3.4 (`sogis/postgis:16-3.4`). Dazu muss Docker laufen.
+JUnit führt bis zu zwei Fälle gleichzeitig aus. Die PostgreSQL-Tests starten
+ihre Container mit Testcontainers und verwenden PostgreSQL 16 mit PostGIS 3.4
+(`sogis/postgis:16-3.4`). Dazu muss Docker laufen.
 Jeder Fall entpackt sein Referenzwerkzeug in ein eigenes temporäres
 Arbeitsverzeichnis. JUnit löscht dieses Verzeichnis samt GeoPackage-Dateien,
 Prozesslogs und temporären Dateien des Referenzwerkzeugs auch bei Testfehlern.
+
+`CoreTransferInteropTest` verwendet einen PostGIS-Container für die Klasse
+und getrennte Schemata pro Fall. Die Option
+`--tests '*CoreTransferInteropTest.*External*'` prüft externe Referenzen in
+beiden Werkzeugrichtungen und Schematypen, auch bei getrennt gelieferten
+Topics. Ein Folgeimport mit ili2db prüft die ID-Vergabe im eigenen Schema.
 
 Die `*IdentityColumns*`-Fälle vergleichen alle Kombinationen von
 `--create-basket-col` und `--create-tid-col` mit den Referenzschemata.
