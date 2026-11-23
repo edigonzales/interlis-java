@@ -82,24 +82,13 @@ final class SchemaProfileInteropTest {
         new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version).standardColumns(expected, expected.peer("profile_audit_own"));
     }
 
-    @Test void geoPackageProfileUnique23() throws Exception { exchangeProfileUnique(23, null); }
-    @Test void geoPackageProfileUnique24() throws Exception { exchangeProfileUnique(24, null); }
-    @Test void postgisProfileUnique23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileUnique); }
-    @Test void postgisProfileUnique24() throws Exception { exchangeWithPostgis(24, this::exchangeProfileUnique); }
+    @Test void geoPackageProfileUniqueBasket24() throws Exception { exchangeProfileUniqueBasket(24, null); }
+    @Test void postgisProfileUniqueBasket24() throws Exception { exchangeWithPostgis(24, this::exchangeProfileUniqueBasket); }
 
-    private void exchangeProfileUnique(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(work, postgres, "profile_unique_ref");
-        new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version).uniqueConstraints(expected, expected.peer("profile_unique_own"));
-    }
-
-    @Test void geoPackageProfileNumericChecks23() throws Exception { exchangeProfileNumericChecks(23, null); }
-    @Test void geoPackageProfileNumericChecks24() throws Exception { exchangeProfileNumericChecks(24, null); }
-    @Test void postgisProfileNumericChecks23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileNumericChecks); }
-    @Test void postgisProfileNumericChecks24() throws Exception { exchangeWithPostgis(24, this::exchangeProfileNumericChecks); }
-
-    private void exchangeProfileNumericChecks(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(work, postgres, "profile_numeric_ref");
-        new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version).numericChecks(expected, expected.peer("profile_numeric_own"));
+    private void exchangeProfileUniqueBasket(int version, PostgreSQLContainer postgres) throws Exception {
+        var expected = new TestDatabase(work, postgres, "profile_unique_basket_ref");
+        new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version)
+                .basketUniqueConstraints(expected, expected.peer("profile_unique_basket_own"));
     }
 
     @Test void geoPackageProfileMetaInformation23() throws Exception { exchangeProfileMetaInformation(23, null); }

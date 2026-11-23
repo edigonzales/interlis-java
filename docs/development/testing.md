@@ -105,6 +105,11 @@ wenn ein späteres Element die 32-Bit-Kodierung übersteigt.
 Ein paralleler Import mit denselben IDs in einem zweiten PostgreSQL-Schema
 prüft, dass der Rollback die dort gespeicherten Zeilen intakt lässt.
 
+`SqlConstraintTest` prüft für beide XTF-Versionen globale und zusammengesetzte
+Schlüssel, SQL `NULL`, Ganzzahl- und Festkommabereiche sowie die gerundete
+Dezimalgrenze oberhalb von `2^53`. Die Fälle prüfen Rollback und die
+Constraint-Wirkung für neu hinzugefügte Modelle direkt in der Datenbank.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -161,16 +166,14 @@ Spalte mit der Datasetzuordnung über die Baskets.
 Die `*ProfileStandardColumns*`-Fälle prüfen Benutzer, Änderungs- und
 Erstellungszeitpunkt auf Fach-, Struktur- und Geometriehilfszeilen.
 Sie prüfen auch das erhaltene Erstellungsdatum nach einem Update.
-Die `*ProfileUnique*`-Fälle prüfen globale Ein- und Mehrspaltenschlüssel,
-SQL `NULL` und Rollback. In INTERLIS 2.4 reproduzieren sie den Fehler bei
-der ili2db-Schemaerzeugung für `UNIQUE (BASKET)` und tauschen Daten in einem
-mit `interlis-db` erzeugten Schema aus.
-Die `*ProfileNumericChecks*`-Fälle prüfen SQL-Bereichsprüfungen mit
-Ganzzahlen, Festkommawerten und `NULL`. Sie vergleichen auch eine gerundete
-Dezimalgrenze oberhalb von `2^53` und prüfen den Import-Rollback.
+Die `*ProfileUniqueBasket*`-Fälle reproduzieren den Fehler bei der
+ili2db-Schemaerzeugung für `UNIQUE (BASKET)` in INTERLIS 2.4 und tauschen
+Daten in einem mit `interlis-db` erzeugten Schema aus.
 Die `*ProfileMetaInformation*`-Fälle vergleichen `T_ILI2DB_META_ATTRS`
 einschliesslich einer inversen Rolle. Die Mischläufe kombinieren Smart2,
-Fremdschlüssel, Indizes, SQL-Checks und Aufzählungsmetadaten.
+Fremdschlüssel, Indizes, zusammengesetzte Schlüssel, SQL-Bereichsprüfungen
+und Aufzählungsmetadaten. Sie prüfen die gespeicherten Constraints und den
+Austausch ganzzahliger und dezimaler Grenzwerte in beiden Richtungen.
 
 Die `*ScalarWide*`-Fälle vergleichen die SQL-Kodierung und prüfen
 64-Bit-Ganzzahlen oberhalb von `2^53`, beide 64-Bit-Grenzwerte, SQL

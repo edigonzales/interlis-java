@@ -13,6 +13,8 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
 import static guru.interlis.db.DbTestSupport.assertCliFailure;
@@ -418,127 +420,40 @@ final class SchemaProfileCases {
                         + "</CheckPoint><Label>linked</Label>"));
     }
 
-    void uniqueConstraints(TestDatabase expected, TestDatabase own) throws Exception {
-        String model = "ProfileUnique" + version;
-        String definition = """
+    void basketUniqueConstraints(TestDatabase expected, TestDatabase own) throws Exception {
+        String basket = "ProfileUniqueBasket";
+        Path source = source(basket, """
                 CLASS Asset =
                   RegistryNo : TEXT*24;
                   LocalMark : TEXT*24;
                   VariantNo : 0..10;
                   UNIQUE RegistryNo;
-                  UNIQUE %sLocalMark, VariantNo;
+                  UNIQUE (BASKET) LocalMark, VariantNo;
                 END Asset;
-                """;
-        Path ili = source(model, definition.formatted(""));
-        referenceSchema(expected, ili, "--sqlEnableNull", "--createUnique");
-        schema(own, model, ili, "--create-unique");
-        sameCatalog(expected, own);
-        for (var db : List.of(expected, own)) {
-            Path output = work.resolve("unique-output.xtf");
-            referenceImport(db, "legacy", uniquenessData(model, "legacy", "legacy"));
-            assertCliSuccess(db, "export", model, "legacy", output);
-            assertEquals("legacy", child(rows(output, "legacy", 3).getFirst(), "RegistryNo").getTextContent());
-            assertCliSuccess(db, "import", model, "native", uniquenessData(model, "native", "native"));
-            referenceExport(db, "native", output);
-            var rows = rows(output, "native", 3);
-            assertEquals("native", child(rows.getFirst(), "RegistryNo").getTextContent());
-            assertNull(child(rows.getLast(), "RegistryNo"));
-            try (var sql = db.connect()) {
-                var keys = DbSchemaCatalog.read(sql, db.postgis(), db.schema()).relations().get("unique keys");
-                assertTrue(keys.contains(List.of("asset", "registryno")));
-                assertTrue(keys.contains(List.of("asset", "localmark", "variantno")));
-                String duplicate = "<LocalMark>duplicate</LocalMark><VariantNo>7</VariantNo>";
-                String valid = "<RegistryNo>tentative</RegistryNo>";
-                String error = db.postgis() ? "SQL code 23505" : "Database operation failed (SQL code ";
-                assertCliFailure(db, "import", model, "broken", assetData(model, "broken", List.of(valid, duplicate, duplicate)), error);
-                assertCliFailure(db, "import", model, "broken-global", assetData(model, "broken-global",
-                        List.of(valid, "<RegistryNo>legacy</RegistryNo>")), error);
-                assertEquals("6", scalar(sql, "SELECT count(*) FROM " + db.table("asset")));
-                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
-            }
-            String extra = "ProfileUniqueExtra" + version;
-            schema(db, extra, source(extra, "CLASS Extra = Badge : TEXT*24; UNIQUE Badge; END Extra;"), "--add-models");
-            try (var sql = db.connect()) {
-                assertTrue(DbSchemaCatalog.read(sql, db.postgis(), db.schema()).relations().get("unique keys")
-                        .contains(List.of("extra", "badge")));
-            }
-        }
-        if (version == 24) {
-            String basket = "ProfileUniqueBasket";
-            Path source = source(basket, definition.formatted("(BASKET) "));
-            var ref = expected.peer("profile_unique_basket_ref");
-            reference.expectFailure(ref, work.toString(), "no table attached", "--schemaimport", "--noSmartMapping",
-                    "--createBasketCol", "--createTidCol", "--sqlEnableNull", "--createUnique", source.toString());
-            var db = own.peer("profile_unique_basket_own");
-            schema(db, basket, source, "--create-unique");
-            Path output = work.resolve("basket-unique-output.xtf");
-            referenceImport(db, "legacy", uniquenessData(basket, "legacy", "shared"));
-            assertCliSuccess(db, "export", basket, "legacy", output);
-            assertEquals("shared", child(rows(output, "legacy", 3).getFirst(), "LocalMark").getTextContent());
-            assertCliSuccess(db, "import", basket, "native", uniquenessData(basket, "native", "shared"));
-            referenceExport(db, "native", output);
-            assertEquals("shared", child(rows(output, "native", 3).getFirst(), "LocalMark").getTextContent());
-            try (var sql = db.connect()) {
-                assertTrue(DbSchemaCatalog.read(sql, db.postgis(), db.schema()).relations().get("unique keys")
-                        .contains(List.of("asset", "localmark", "t_basket", "variantno")));
-                String duplicate = "<LocalMark>shared</LocalMark><VariantNo>5</VariantNo>";
-                assertCliFailure(db, "import", basket, "broken", assetData(basket, "broken", List.of(duplicate, duplicate)),
-                        db.postgis() ? "SQL code 23505" : "Database operation failed (SQL code ");
-                assertEquals("6", scalar(sql, "SELECT count(*) FROM " + db.table("asset")));
-            }
+                """);
+        reference.expectFailure(expected, work.toString(), "no table attached", "--schemaimport", "--noSmartMapping",
+                "--createBasketCol", "--createTidCol", "--sqlEnableNull", "--createUnique", source.toString());
+        schema(own, basket, source, "--create-unique");
+        Path output = work.resolve("basket-unique-output.xtf");
+        referenceImport(own, "legacy", uniquenessData(basket, "legacy", "shared"));
+        assertCliSuccess(own, "export", basket, "legacy", output);
+        assertEquals("shared", child(rows(output, "legacy", 3).getFirst(), "LocalMark").getTextContent());
+        assertCliSuccess(own, "import", basket, "native", uniquenessData(basket, "native", "shared"));
+        referenceExport(own, "native", output);
+        assertEquals("shared", child(rows(output, "native", 3).getFirst(), "LocalMark").getTextContent());
+        try (var sql = own.connect()) {
+            assertTrue(DbSchemaCatalog.read(sql, own.postgis(), own.schema()).relations().get("unique keys")
+                    .contains(List.of("asset", "localmark", "t_basket", "variantno")));
+            String duplicate = "<LocalMark>shared</LocalMark><VariantNo>5</VariantNo>";
+            assertCliFailure(own, "import", basket, "broken", assetData(basket, "broken", List.of(duplicate, duplicate)),
+                    own.postgis() ? "SQL code 23505" : "Database operation failed (SQL code ");
+            assertEquals("6", scalar(sql, "SELECT count(*) FROM " + own.table("asset")));
         }
     }
 
     private Path uniquenessData(String model, String prefix, String mark) throws Exception {
         return assetData(model, prefix, List.of("<RegistryNo>" + prefix + "</RegistryNo><LocalMark>" + mark
                 + "</LocalMark><VariantNo>5</VariantNo>", "", ""));
-    }
-
-    void numericChecks(TestDatabase expected, TestDatabase own) throws Exception {
-        String model = "ProfileNumeric" + version;
-        Path ili = source(model, """
-                DOMAIN SmallReading = -20..30;
-                CLASS Asset =
-                  Rating : SmallReading;
-                  WideNo : -9223372036854775808..9223372036854775807;
-                  Fraction : -2.500..3.125;
-                  Precise : -9007199254740993.125..9007199254740993.125;
-                END Asset;
-                """);
-        referenceSchema(expected, ili, "--sqlEnableNull", "--createNumChecks");
-        schema(own, model, ili, "--create-num-checks");
-        sameCatalog(expected, own);
-        var min = "<Rating>-20</Rating><WideNo>-9007199254740992</WideNo><Fraction>-2.500</Fraction>";
-        var max = "<Rating>30</Rating><WideNo>9007199254740992</WideNo><Fraction>3.125</Fraction>";
-        for (var db : List.of(expected, own)) {
-            mixed(db, model, List.of(min, max, ""), rows -> {
-                assertEquals("-20", child(rows.getFirst(), "Rating").getTextContent());
-                assertEquals("30", child(rows.get(1), "Rating").getTextContent());
-                assertDecimal("-2.500", child(rows.getFirst(), "Fraction").getTextContent());
-                assertDecimal("3.125", child(rows.get(1), "Fraction").getTextContent());
-                assertNull(child(rows.getLast(), "Rating"));
-            });
-            try (var sql = db.connect()) {
-                var table = db.table("asset");
-                String row = " WHERE t_ili_tid = 'native-0'";
-                execute(sql, "UPDATE " + table + " SET wideno = -9223372036854775808, precise = 9007199254740994.0" + row);
-                assertEquals("-9223372036854775808", scalar(sql, "SELECT wideno FROM " + table + row));
-                assertDecimal("9007199254740994", scalar(sql, "SELECT precise FROM " + table + row));
-                assertThrows(SQLException.class, () -> execute(sql, "UPDATE " + table + " SET precise = 9007199254740996.0" + row));
-                String error = db.postgis() ? "SQL code 23514" : "Database operation failed (SQL code ";
-                assertCliFailure(db, "import", model, "broken", assetData(model, "broken", List.of(min, "<Rating>31</Rating>")), error);
-                assertCliFailure(db, "import", model, "broken-fraction", assetData(model, "broken-fraction",
-                        List.of(min, "<Fraction>-2.501</Fraction>")), error);
-                assertEquals("6", scalar(sql, "SELECT count(*) FROM " + table));
-                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
-            }
-            String extra = "ProfileNumericExtra" + version;
-            schema(db, extra, source(extra, "CLASS Extra = Reading : 0..1; END Extra;"), "--add-models");
-            try (var sql = db.connect()) {
-                assertThrows(SQLException.class, () -> execute(sql, "INSERT INTO " + db.table("extra")
-                        + " (t_id,t_basket,reading) VALUES (999,999,2)"));
-            }
-        }
     }
 
     private static void assertDecimal(String expected, String actual) {
@@ -550,6 +465,7 @@ final class SchemaProfileCases {
         Path ili = source(model, """
                 DOMAIN Position = COORD 0.000 .. 100.000, 0.000 .. 100.000;
                 DOMAIN StatusValue = (in_progress, done);
+                DOMAIN SmallReading = -20..30;
                 STRUCTURE Note = Message : MANDATORY TEXT*24; END Note;
                 CLASS Root (ABSTRACT) = Memo : TEXT*24; END Root;
                 CLASS Target = Label : TEXT*24; END Target;
@@ -563,6 +479,14 @@ final class SchemaProfileCases {
                   Phase : StatusValue;
                   UNIQUE Label;
                 END Asset;
+                CLASS Measurement =
+                  LocalMark : TEXT*24;
+                  VariantNo : 0..10;
+                  Rating : SmallReading;
+                  WideNo : -9223372036854775808..9223372036854775807;
+                  Fraction : -2.500..3.125;
+                  UNIQUE LocalMark, VariantNo;
+                END Measurement;
                 ASSOCIATION Assignment =
                   RefAsset -- {0..1} Target;
                   !!@example.inverse = "no column"
@@ -584,7 +508,7 @@ final class SchemaProfileCases {
             var metadata = catalogKeys(left, fields + expected.table(relation));
             assertEquals(metadata, catalogKeys(right, fields + own.table(relation)));
             assertTrue(metadata.containsAll(Set.of(model + "|example.model|profile", model + "|ili2db.ili.lang|en",
-                    model + ".Data|ili2db.ili.topicClasses|asset target", model + ".Data.Asset|example.class|asset",
+                    model + ".Data|ili2db.ili.topicClasses|asset measurement target", model + ".Data.Asset|example.class|asset",
                     model + ".Data.Asset.Label|example.field|label", model + ".Data.Note.Message|ili2db.ili.attrCardinalityMin|1",
                     model + ".Data.Asset.Notes|ili2db.ili.attrCardinalityMax|*",
                     model + ".Data.Assignment.Sources|example.inverse|no column")));
@@ -596,10 +520,23 @@ final class SchemaProfileCases {
             Path output = work.resolve("meta-output.xtf");
             referenceImport(db, "legacy", metaData(model, "legacy"));
             assertCliSuccess(db, "export", model, "legacy", output);
-            assertMetaData(rows(output, "legacy", 2).getFirst(), "legacy");
+            assertMetaData(output, "legacy");
             assertCliSuccess(db, "import", model, "native", metaData(model, "native"));
             referenceExport(db, "native", output);
-            assertMetaData(rows(output, "native", 2).getFirst(), "native");
+            assertMetaData(output, "native");
+            try (var sql = db.connect()) {
+                String row = " WHERE t_ili_tid='native-reading-max'";
+                String table = db.table("measurement");
+                var duplicate = assertThrows(SQLException.class, () -> execute(sql, "UPDATE " + table + " SET variantno=1" + row));
+                var outOfRange = assertThrows(SQLException.class, () -> execute(sql, "UPDATE " + table + " SET rating=31" + row));
+                if (db.postgis()) {
+                    assertEquals("23505", duplicate.getSQLState());
+                    assertEquals("23514", outOfRange.getSQLState());
+                } else {
+                    assertTrue(duplicate.getMessage().contains("SQLITE_CONSTRAINT_UNIQUE"), duplicate::getMessage);
+                    assertTrue(outOfRange.getMessage().contains("SQLITE_CONSTRAINT_CHECK"), outOfRange::getMessage);
+                }
+            }
         }
         var extended = own.peer("profile_meta_extension");
         schema(extended, model, ili, "--create-meta-info");
@@ -619,17 +556,43 @@ final class SchemaProfileCases {
     }
 
     private Path metaData(String model, String prefix) throws Exception {
-        Path xtf = linkedData(model, prefix);
-        return Files.writeString(xtf, Files.readString(xtf).replace("<Label>linked</Label>", "<Label>" + prefix + "</Label>")
-                .replace("</Notes>", "</Notes><PositionValue>" + point("12.000", "13.000")
-                        + "</PositionValue><LevelNo>15</LevelNo><Phase>in_progress</Phase>"));
+        String note = version == 23 ? model + ".Data.Note" : "Note";
+        String asset = "<Label>" + prefix + "</Label><Notes><" + note + "><Message>present</Message></" + note
+                + "></Notes><PositionValue>" + point("12.000", "13.000")
+                + "</PositionValue><LevelNo>15</LevelNo><Phase>in_progress</Phase>"
+                + reference("RefAsset", prefix + "-target");
+        String mark = "<LocalMark>" + prefix + "-site</LocalMark>";
+        return data(model, prefix, object(model, "Asset", prefix + "-asset", asset)
+                + object(model, "Target", prefix + "-target", "<Label>target</Label>")
+                + object(model, "Measurement", prefix + "-reading-min", mark
+                        + "<VariantNo>1</VariantNo><Rating>-20</Rating><WideNo>-9007199254740992</WideNo><Fraction>-2.500</Fraction>")
+                + object(model, "Measurement", prefix + "-reading-max", mark
+                        + "<VariantNo>2</VariantNo><Rating>30</Rating><WideNo>9007199254740992</WideNo><Fraction>3.125</Fraction>")
+                + object(model, "Measurement", prefix + "-reading-missing", ""));
     }
 
-    private void assertMetaData(Element row, String prefix) {
+    private void assertMetaData(Path output, String prefix) throws Exception {
+        var objects = rows(output, prefix, 5).stream().collect(Collectors.toMap(
+                row -> id(row, version, "tid"), Function.identity()));
+        var row = objects.get(prefix + "-asset");
         assertLink(row, prefix);
         assertEquals(prefix, child(row, "Label").getTextContent());
         assertEquals("in_progress", child(row, "Phase").getTextContent());
         assertEquals("15", child(row, "LevelNo").getTextContent());
+        assertEquals("target", child(objects.get(prefix + "-target"), "Label").getTextContent());
+        var low = objects.get(prefix + "-reading-min");
+        var high = objects.get(prefix + "-reading-max");
+        assertEquals(prefix + "-site", child(low, "LocalMark").getTextContent());
+        assertEquals(prefix + "-site", child(high, "LocalMark").getTextContent());
+        assertEquals("1", child(low, "VariantNo").getTextContent());
+        assertEquals("2", child(high, "VariantNo").getTextContent());
+        assertEquals("-20", child(low, "Rating").getTextContent());
+        assertEquals("30", child(high, "Rating").getTextContent());
+        assertEquals("-9007199254740992", child(low, "WideNo").getTextContent());
+        assertEquals("9007199254740992", child(high, "WideNo").getTextContent());
+        assertDecimal("-2.500", child(low, "Fraction").getTextContent());
+        assertDecimal("3.125", child(high, "Fraction").getTextContent());
+        assertEquals(List.of(), children(objects.get(prefix + "-reading-missing")));
     }
 
     private Path linkedModel(String model) throws Exception {
