@@ -7,11 +7,9 @@ import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.w3c.dom.Element;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -33,8 +31,6 @@ import static guru.interlis.db.BaseDbFixture.assertTransferredAmounts;
 import static guru.interlis.db.BaseDbFixture.assertTransferredNestedTree;
 import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
-import static guru.interlis.db.DbTestSupport.assertExportRejected;
-import static guru.interlis.db.DbTestSupport.assertExternalReference;
 import static guru.interlis.db.DbTestSupport.assertLocalReference;
 import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
 import static guru.interlis.db.DbTestSupport.child;
@@ -42,13 +38,12 @@ import static guru.interlis.db.DbTestSupport.children;
 import static guru.interlis.db.DbTestSupport.cli;
 import static guru.interlis.db.DbTestSupport.execute;
 import static guru.interlis.db.DbTestSupport.id;
-import static guru.interlis.db.DbTestSupport.orderedOwners;
 import static guru.interlis.db.DbTestSupport.readDataSection;
-import static guru.interlis.db.DbTestSupport.referenceDatasetFixture;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
 import static guru.interlis.db.DbTestSupport.text;
 import static guru.interlis.db.DbTestSupport.transferredStructures;
+import static guru.interlis.db.ObjectIdFixtures.assertTextOidTransfer;
 import static guru.interlis.db.ReferenceTool.logText;
 import static guru.interlis.db.TestDatabase.exchangeWithPostgis;
 import static guru.interlis.db.TransferCatalogAssertions.assertAssociationCatalog;
@@ -826,29 +821,7 @@ final class DbInteropTest {
                 var output = work.resolve(db.schema() + ".xtf");
                 assertCliSuccess(db, "import", model, "text-oid", xtf);
                 assertCliSuccess(db, "export", model, "text-oid", output);
-                var data = readDataSection(output, version);
-                var basket = child(data, "Data");
-                assertEquals("Basket.Mixed-Case", id(basket, version, "bid"));
-                var entries = orderedOwners(basket, "Entry", version);
-                assertEquals(Set.of("Entry.Mixed-Case", "Entry.mixed-case"), entries.keySet());
-                var entry = entries.get("Entry.Mixed-Case");
-                assertEquals("Code.Mixed-Case", text(entry, "CodeValue"));
-                assertLocalReference(entry, "PreviousEntry", version, "Entry.mixed-case");
-                assertEquals("Plain-1", id(child(basket, "Plain"), version, "tid"));
-                var link = child(basket, "EntryPair");
-                assertEquals("Pair.Mixed-Case", id(link, version, "tid"));
-                assertLocalReference(link, "SourceEntry", version, "Entry.Mixed-Case");
-                assertLocalReference(link, "TargetEntry", version, "Entry.mixed-case");
-                var registry = child(data, "Registry");
-                assertEquals("Registry-Basket", id(registry, version, "bid"));
-                assertEquals("Register.Mixed-Case", id(child(registry, "Register"), version, "tid"));
-            }
-            if (newClass) {
-                try (var sql = ownDb.connect()) {
-                    execute(sql, "update " + ownDb.table("recordroot") + " set codevalue=' ' where t_ili_tid='Entry.Mixed-Case'");
-                }
-                var output = work.resolve(ownDb.schema() + ".xtf");
-                assertCliFailure(ownDb, "export", model, "text-oid", output, "Missing OID value at TextOid24.Data.RecordRoot.CodeValue");
+                assertTextOidTransfer(output, version);
             }
         }
     }
@@ -1422,235 +1395,6 @@ final class DbInteropTest {
                     corrupt::diagnostics);
             assertEquals(originalOutput, Files.readString(nativeOutput));
         }
-        exchangeOid(reference, postgres, version);
-    }
-
-    private void exchangeOid(ReferenceTool reference, PostgreSQLContainer postgres, int version) throws Exception {
-        String model = "DbOid" + version;
-        Path ili = work.resolve(model + ".ili");
-        try (var resource = DbInteropTest.class.getResourceAsStream("/" + ili.getFileName())) {
-            Files.copy(resource, ili);
-        }
-        var referenceDb = new TestDatabase(work, postgres, "oid_reference");
-        reference.run(referenceDb, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
-                "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", ili.toString());
-        var nativeDb = new TestDatabase(work, postgres, "oid_native");
-        assertSchemaWithIdentityColumns(nativeDb, model, ili);
-        try (var legacy = referenceDb.connect(); var own = nativeDb.connect()) {
-            DbSchemaCatalog.read(legacy, referenceDb.postgis, referenceDb.schema)
-                    .assertSameAs(DbSchemaCatalog.read(own, nativeDb.postgis, nativeDb.schema));
-        }
-        String referenceId = "C09B1740-5C5A-48EA-B095-938D1C946974";
-        String nativeId = "D09B1740-5C5A-48EA-B095-938D1C946974";
-        String tailId = "E09B1740-5C5A-48EA-B095-938D1C946974";
-        Path legacyInput = oidFixture(model, version, "oid-legacy", referenceId);
-        Path nativeInput = oidFixture(model, version, "oid-own", nativeId);
-        Path tailInput = oidFixture(model, version, "oid-tail", tailId);
-        for (var db : List.of(referenceDb, nativeDb)) {
-            try (var sql = db.connect()) {
-                reference.run(db, work.toString(), "--import", "--importTid", "--importBid", "--dataset", "oid-legacy",
-                        legacyInput.toString());
-                assertOidRows(db, sql, "oid-legacy", referenceId);
-                Path ownOutput = work.resolve("oid-own-output.xtf");
-                assertCliSuccess(db, "export", model, "oid-legacy", ownOutput);
-                assertOidXtf(ownOutput, model, version, "oid-legacy", referenceId);
-
-                assertCliSuccess(db, "import", model, "oid-own", nativeInput);
-                assertOidRows(db, sql, "oid-own", nativeId);
-                Path legacyOutput = work.resolve("oid-legacy-output.xtf");
-                reference.run(db, work.toString(), "--export", "--exportTid", "--dataset", "oid-own", legacyOutput.toString());
-                assertOidXtf(legacyOutput, model, version, "oid-own", nativeId);
-
-                reference.run(db, work.toString(), "--import", "--importTid", "--importBid", "--dataset", "oid-tail",
-                        tailInput.toString());
-                assertOidRows(db, sql, "oid-tail", tailId);
-                Path invalid = oidFixture(model, version, "oid-invalid", "malformed");
-                var rejected = cli(db, "import", model, "oid-invalid", invalid, CancellationToken.none());
-                assertNotEquals(0, rejected.code(), rejected::diagnostics);
-                assertTrue(rejected.diagnostics().contains("Invalid UUID"), rejected::diagnostics);
-                assertNull(scalar(sql, "select t_id from " + db.table("t_ili2db_dataset") + " where datasetname='oid-invalid'"));
-
-                exchangeOidReference(reference, db, sql, model, version, referenceId);
-                String metadata = db.table("t_ili2db_column_prop") + " where tablename='site' and tag='ch.ehi.ili2db.oidDomain'";
-                assertEquals("INTERLIS.UUIDOID", scalar(sql, "select setting from " + metadata));
-                execute(sql, "delete from " + metadata);
-                assertExportRejected(db, model, "oid-legacy", ownOutput, "oidDomain", "site.t_ili_tid");
-            }
-        }
-    }
-
-    private void exchangeOidReference(ReferenceTool reference, TestDatabase db, Connection sql, String model,
-                                      int version, String targetId) throws Exception {
-        String objects = version == 23 ? """
-                <%1$s.Data.Inspection TID="remote-inspection"><Links><%1$s.Data.InspectionRefs>
-                  <RemoteSite REF="%2$s" BID="%3$s"/>
-                </%1$s.Data.InspectionRefs></Links></%1$s.Data.Inspection>
-                """.formatted(model, targetId, oidBasket("oid-legacy")) : """
-                <Inspection i:tid="remote-inspection"><Links><InspectionRefs><RemoteSite i:ref="%s"/></InspectionRefs></Links></Inspection>
-                """.formatted(targetId);
-        Path legacy = Files.writeString(work.resolve("oid-reference-legacy.xtf"),
-                referenceDatasetFixture(model, version, oidBasket("oid-reference-legacy"), objects));
-        reference.run(db, work.toString(), "--import", "--importTid", "--importBid", "--dataset", "oid-reference-legacy", legacy.toString());
-        assertOidReferenceRow(db, sql, "remote-inspection", targetId, "oid-legacy", "remotesite");
-        Path output = work.resolve("oid-reference-output.xtf");
-        assertCliSuccess(db, "export", model, "oid-reference-legacy", output);
-        assertOidReferenceXtf(output, version, targetId, true);
-
-        Path own = Files.writeString(work.resolve("oid-reference-own.xtf"),
-                referenceDatasetFixture(model, version, oidBasket("oid-reference-own"), objects.replace("remote-inspection", "own-inspection")));
-        assertCliSuccess(db, "import", model, "oid-reference-own", own);
-        assertOidReferenceRow(db, sql, "own-inspection", targetId, "oid-legacy", "remotesite");
-        reference.run(db, work.toString(), "--export", "--exportTid", "--dataset", "oid-reference-own", output.toString());
-        assertOidReferenceXtf(output, version, targetId, false);
-
-        Path duplicate = oidFixture(model, version, "oid-duplicate", targetId);
-        assertCliSuccess(db, "import", model, "oid-duplicate", duplicate);
-        var ambiguous = Files.writeString(work.resolve("oid-reference-ambiguous.xtf"), Files.readString(output)
-                .replace("own-inspection", "ambiguous-inspection")
-                .replace(oidBasket("oid-reference-own"), oidBasket("oid-reference-ambiguous")));
-        var rejected = cli(db, "import", model, "oid-reference-ambiguous", ambiguous, CancellationToken.none());
-        assertNotEquals(0, rejected.code(), rejected::diagnostics);
-        assertTrue(rejected.diagnostics().contains("Ambiguous stored reference target"), rejected::diagnostics);
-        assertNull(scalar(sql, "select t_id from " + db.table("t_ili2db_dataset") + " where datasetname='oid-reference-ambiguous'"));
-    }
-
-    private static void assertOidReferenceRow(TestDatabase db, Connection sql, String owner, String target,
-                                              String targetBid, String column) throws SQLException {
-        String query = """
-                select s.t_ili_tid from %s s join %s r on r.%s=s.t_id
-                join %s i on r.inspection_links=i.t_id and r.t_basket=i.t_basket
-                join %s b on b.t_id=s.t_basket where i.t_ili_tid='%s' and b.t_ili_tid='%s' and s.t_type='marker'
-                """.formatted(db.table("site"), db.table("inspectionrefs"), column, db.table("inspection"),
-                db.table("t_ili2db_basket"), owner, oidBasket(targetBid));
-        assertEquals(target.toLowerCase(Locale.ROOT), scalar(sql, query));
-    }
-
-    private static void assertOidReferenceXtf(Path output, int version, String tid, boolean own) throws Exception {
-        var data = readDataSection(output, version);
-        assertEquals(1, children(data).size());
-        var basket = children(data).getFirst();
-        assertEquals(1, children(basket).size());
-        var inspection = children(basket).getFirst();
-        var refs = children(child(inspection, "Links")).getFirst();
-        assertExternalReference(child(refs, "RemoteSite"), version, tid.toLowerCase(Locale.ROOT),
-                own ? oidBasket("oid-legacy") : "");
-    }
-
-    private Path oidFixture(String model, int version, String bid, String tid) throws IOException {
-        String object = version == 23 ? """
-                <%1$s.Data.Marker TID="%2$s"><Label>marker</Label><Category>survey</Category></%1$s.Data.Marker>
-                """.formatted(model, tid) : """
-                <Marker i:tid="%s"><Label>marker</Label><Category>survey</Category></Marker>
-                """.formatted(tid);
-        String defaults = version == 23 ? """
-                <%1$s.Defaults BID="%2$s-defaults"><%1$s.Defaults.Address TID="%3$s"><Text>address</Text></%1$s.Defaults.Address></%1$s.Defaults>
-                """.formatted(model, bid, defaultOid(tid)) : """
-                <Defaults i:bid="%s-defaults"><Address i:tid="%s"><Text>address</Text></Address></Defaults>
-                """.formatted(bid, defaultOid(tid));
-        String inspection = version == 23 ? """
-                <%1$s.Data.Inspection TID="%2$s-inspection"><Links><%1$s.Data.InspectionRefs><LocalSite REF="%3$s"/><CatalogId REF="%4$s"/></%1$s.Data.InspectionRefs></Links></%1$s.Data.Inspection>
-                """.formatted(model, bid, tid, standardOid(tid)) : """
-                <Inspection i:tid="%s-inspection"><Links><InspectionRefs><LocalSite i:ref="%s"/><CatalogId i:ref="%s"/></InspectionRefs></Links></Inspection>
-                """.formatted(bid, tid, standardOid(tid));
-        String standard = version == 23 ? """
-                <%1$s.Data.StandardSite TID="%2$s"><Name>catalog</Name></%1$s.Data.StandardSite>
-                """.formatted(model, standardOid(tid)) : """
-                <StandardSite i:tid="%s"><Name>catalog</Name></StandardSite>
-                """.formatted(standardOid(tid));
-        String evidence = version == 23 ? """
-                <%1$s.Data.Evidence TID="%2$s"><EvidenceMarker REF="%3$s"/><EvidenceInspection REF="%4$s-inspection"/><Memo>evidence</Memo></%1$s.Data.Evidence>
-                """.formatted(model, evidenceOid(tid), tid, bid) : """
-                <Evidence i:tid="%s"><EvidenceMarker i:ref="%s"/><EvidenceInspection i:ref="%s-inspection"/><Memo>evidence</Memo></Evidence>
-                """.formatted(evidenceOid(tid), tid, bid);
-        String second = version == 23 ? """
-                <%1$s.Data BID="%2$s"><%1$s.Data.Site TID="%3$s"><Label>second</Label></%1$s.Data.Site></%1$s.Data>
-                """.formatted(model, oidBasket(bid + "-second"), secondOid(tid)) : """
-                <Data i:bid="%s"><Site i:tid="%s"><Label>second</Label></Site></Data>
-                """.formatted(oidBasket(bid + "-second"), secondOid(tid));
-        String fixture = referenceDatasetFixture(model, version, oidBasket(bid), inspection + object + evidence + standard)
-                .replace(version == 23 ? "</DATASECTION>" : "</i:datasection>",
-                        second + defaults + (version == 23 ? "</DATASECTION>" : "</i:datasection>"));
-        return Files.writeString(work.resolve(bid + ".xtf"), fixture);
-    }
-
-    private static String standardOid(String tid) {
-        return "ch203400000000%02d".formatted(Math.max(0, Character.digit(tid.charAt(0), 16)));
-    }
-
-    private static String evidenceOid(String tid) {
-        return tid.replace("-5C5A-", "-CCCC-");
-    }
-
-    private static String oidBasket(String name) {
-        return java.util.UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8)).toString();
-    }
-
-    private static String secondOid(String tid) {
-        return tid.replace("-5C5A-", "-BBBB-");
-    }
-
-    private static String defaultOid(String tid) {
-        return tid.replace("-5C5A-", "-ABCD-");
-    }
-
-    private static void assertOidRows(TestDatabase db, Connection sql, String bid, String tid) throws SQLException {
-        assertEquals(tid.toLowerCase(Locale.ROOT), scalar(sql, "select s.t_ili_tid from " + db.table("site")
-                + " s join " + db.table("marker") + " m on m.t_id=s.t_id and m.t_basket=s.t_basket"
-                + " join " + db.table("t_ili2db_basket") + " b on b.t_id=s.t_basket where b.t_ili_tid='" + oidBasket(bid)
-                + "' and s.label='marker' and s.t_type='marker' and m.category='survey'"));
-        assertEquals(secondOid(tid).toLowerCase(Locale.ROOT), scalar(sql, "select s.t_ili_tid from " + db.table("site")
-                + " s join " + db.table("t_ili2db_basket") + " b on b.t_id=s.t_basket where b.t_ili_tid='"
-                + oidBasket(bid + "-second") + "' and s.label='second'"));
-        assertOidReferenceRow(db, sql, bid + "-inspection", tid, bid, "localsite");
-        String catalog = """
-                select s.t_ili_tid from %s s join %s r on r.catalogid=s.t_id and r.t_basket=s.t_basket
-                join %s i on r.inspection_links=i.t_id and r.t_basket=i.t_basket
-                where i.t_ili_tid='%s-inspection' and s.aname='catalog'
-                """.formatted(db.table("standardsite"), db.table("inspectionrefs"), db.table("inspection"), bid);
-        assertEquals(standardOid(tid), scalar(sql, catalog));
-        String evidence = """
-                select e.t_ili_tid from %s e join %s b on b.t_id=e.t_basket
-                join %s s on s.t_id=e.evidencemarker and s.t_basket=e.t_basket
-                join %s i on i.t_id=e.evidenceinspection and i.t_basket=e.t_basket
-                where b.t_ili_tid='%s' and e.memo='evidence' and s.t_ili_tid='%s' and i.t_ili_tid='%s-inspection'
-                """.formatted(db.table("evidence"), db.table("t_ili2db_basket"), db.table("site"),
-                db.table("inspection"), oidBasket(bid), tid.toLowerCase(Locale.ROOT), bid);
-        assertEquals(evidenceOid(tid).toLowerCase(Locale.ROOT), scalar(sql, evidence));
-        assertEquals(defaultOid(tid).toLowerCase(Locale.ROOT), scalar(sql, "select a.t_ili_tid from " + db.table("address")
-                + " a join " + db.table("t_ili2db_basket") + " b on b.t_id=a.t_basket where b.t_ili_tid='"
-                + bid + "-defaults' and a.atext='address'"));
-    }
-
-    private static void assertOidXtf(Path output, String model, int version, String bid, String tid) throws Exception {
-        var data = readDataSection(output, version);
-        assertEquals(3, children(data).size());
-        var basket = children(data).stream().filter(value -> id(value, version, "bid").equals(oidBasket(bid)))
-                .findFirst().orElseThrow();
-        var second = children(data).stream().filter(value -> id(value, version, "bid").equals(oidBasket(bid + "-second")))
-                .findFirst().orElseThrow();
-        assertEquals(secondOid(tid).toLowerCase(Locale.ROOT), id(children(second).getFirst(), version, "tid"));
-        var object = child(basket, version == 23 ? model + ".Data.Marker" : "Marker");
-        assertNotNull(object);
-        assertEquals(tid.toLowerCase(Locale.ROOT), id(object, version, "tid"));
-        assertEquals("marker", child(object, "Label").getTextContent());
-        assertEquals("survey", child(object, "Category").getTextContent());
-        var inspection = child(basket, version == 23 ? model + ".Data.Inspection" : "Inspection");
-        var refs = children(child(inspection, "Links")).getFirst();
-        assertExternalReference(child(refs, "LocalSite"), version, tid.toLowerCase(Locale.ROOT), "");
-        assertExternalReference(child(refs, "CatalogId"), version, standardOid(tid), "");
-        var standard = child(basket, version == 23 ? model + ".Data.StandardSite" : "StandardSite");
-        assertEquals(standardOid(tid), id(standard, version, "tid"));
-        assertEquals("catalog", child(standard, "Name").getTextContent());
-        var evidence = child(basket, version == 23 ? model + ".Data.Evidence" : "Evidence");
-        assertNotNull(evidence);
-        assertEquals(evidenceOid(tid).toLowerCase(Locale.ROOT), id(evidence, version, "tid"));
-        assertEquals("evidence", child(evidence, "Memo").getTextContent());
-        assertExternalReference(child(evidence, "EvidenceMarker"), version, tid.toLowerCase(Locale.ROOT), "");
-        assertExternalReference(child(evidence, "EvidenceInspection"), version, bid + "-inspection", "");
-        var inherited = child(data, version == 23 ? model + ".Defaults" : "Defaults");
-        assertEquals(bid + "-defaults", id(inherited, version, "bid"));
-        assertEquals(defaultOid(tid).toLowerCase(Locale.ROOT),
-                id(child(inherited, version == 23 ? model + ".Defaults.Address" : "Address"), version, "tid"));
     }
 
     private static void assertStructureCatalog(TestDatabase db, Connection sql, String model, int version)

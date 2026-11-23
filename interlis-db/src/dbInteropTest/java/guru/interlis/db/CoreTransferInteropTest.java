@@ -38,4 +38,13 @@ final class CoreTransferInteropTest {
         var db = new TestDatabase(work, postgres, "ordered_reference", "order_" + version + "_");
         new CoreOrderedCases(work).exchangeOrdered(new ReferenceTool(work, db.postgis()), db, version);
     }
+    @Test void geoPackageOid23() throws Exception { oid(23, null); }
+    @Test void geoPackageOid24() throws Exception { oid(24, null); }
+    @Test void postgisOid23() throws Exception { oid(23, POSTGIS.container()); }
+    @Test void postgisOid24() throws Exception { oid(24, POSTGIS.container()); }
+
+    private void oid(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(work, postgres, "oid_reference", "oid_" + version + "_");
+        new CoreOidCases(work).exchangeOid(new ReferenceTool(work, db.postgis()), db, version);
+    }
 }

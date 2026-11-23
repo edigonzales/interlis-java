@@ -149,6 +149,11 @@ eingebetteter und attributierter Rollen direkt per JDBC. Es prüft den
 64-Bit-Grenzwert, fehlende Positionen, den Rollback bei Überlauf und den
 Erhalt der Ausgabedatei bei verwaisten oder ungültigen Positionswerten.
 
+`ObjectIdStorageTest` prüft UUID-Identitäten in XTF 2.3 und 2.4, den
+Rollback bei ungültigen UUIDs und mehrdeutigen Zielen sowie den Erhalt der
+Exportdatei bei fehlenden OID-Metadaten. Für XTF 2.4 prüft er zusätzlich
+die Gross- und Kleinschreibung von Text-OIDs und die Diagnose bei Leerwerten.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -174,6 +179,9 @@ Topics. Ein Folgeimport mit ili2db prüft die ID-Vergabe im eigenen Schema.
 Mit `--tests '*CoreTransferInteropTest.*Ordered*'` prüft dieselbe Klasse
 Katalog und Rollen in beiden Richtungen. Die Referenzfälle halten fest,
 welche Positionswerte ili2db 5.5.2 beim Import und Export auslässt.
+`--tests '*CoreTransferInteropTest.*Oid*'` prüft UUID-Identitäten und externe
+Ziele in beiden Richtungen und Schematypen. Ein Folgeimport mit ili2db prüft
+die ID-Vergabe im eigenen Schema.
 
 Die `*IdentityColumns*`-Fälle vergleichen alle Kombinationen von
 `--create-basket-col` und `--create-tid-col` mit den Referenzschemata.
