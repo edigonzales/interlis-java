@@ -226,9 +226,7 @@ final class SqlConstraintTest {
         if (backend == Backend.GEOPACKAGE) {
             test.run(new Target(file, null, "sql_constraints"));
         } else {
-            try (var db = POSTGIS.target(file)) {
-                test.run(db);
-            }
+            test.run(POSTGIS.target(file));
         }
     }
 }

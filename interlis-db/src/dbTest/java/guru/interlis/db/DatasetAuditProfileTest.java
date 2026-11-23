@@ -180,9 +180,7 @@ final class DatasetAuditProfileTest {
         if (backend == Backend.GEOPACKAGE) {
             test.run(new Target(file, null, "dataset_audit"));
         } else {
-            try (var db = POSTGIS.target(file)) {
-                test.run(db);
-            }
+            test.run(POSTGIS.target(file));
         }
     }
 

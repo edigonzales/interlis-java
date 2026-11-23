@@ -92,8 +92,9 @@ mit Docker aus. `dbTest` benötigt keine ili2db-Distributionen. Der reguläre
 `check` bleibt dienstfrei.
 
 Jede eigene DB-Testklasse startet PostgreSQL beim ersten PostGIS-Fall und
-entfernt den Container am Klassenende. Die Fälle verwenden getrennte
-PostgreSQL-Schemata oder temporäre GeoPackage-Dateien.
+entfernt den Container mit allen Testschemata am Klassenende. So können
+parallele Fälle den gemeinsamen PostGIS-Katalog während des gesamten Laufs
+lesen. GeoPackage-Fälle verwenden temporäre Dateien.
 
 `ArrayStorageTest` prüft XTF 2.3 und 2.4. Die Fälle vergleichen Text und
 Leertext, SQL `NULL`, leere Arrays, Boolean- und Integer-Werte direkt in der
@@ -119,6 +120,13 @@ Profil ohne Fremdschlüssel. Beide Fälle prüfen den Zuwachs bei `--add-models`
 nach Import, Update und Replace. Es kontrolliert die Objekt-IDs, die
 Zeitstempel und den Benutzer auf Fach-, Struktur- und Geometriehilfszeilen.
 Ein zweiter Datensatz prüft die Isolation der Änderungen.
+
+`HierarchyProfileTest` prüft Hierarchieschlüssel, Geometriehilfszeilen und
+Beziehungstabellen in `newClass` und Smart2. Ein eingehender Verweis aus einem
+zweiten Datensatz blockiert Replace und Delete. Nach dem Entfernen des
+Verweises prüft der Test den erfolgreichen Replace und Delete sowie den
+Erhalt des unabhängigen Datensatzes. Die `T_Type`-Fälle prüfen die Werte
+auf Fach-, Struktur- und Linkzeilen und die SQL-Checks nach `--add-models`.
 
 ## ili2db-Interoperabilität
 
@@ -164,11 +172,10 @@ Fremdschlüssel und referenzierende Indizes, auch nach `--add-models`.
 Der gemeinsame Austausch für beide Optionen läuft in
 `*ProfileMetaInformation*`.
 Die `*ProfileHierarchyKeys*`-Fälle vergleichen Fremdschlüssel in
-`newClass`- und Smart2-Schemata. Sie prüfen auch Geometriehilfszeilen,
-Beziehungstabellen und eingehende Verweise bei `update`, `replace` und `delete`.
+`newClass`- und Smart2-Schemata sowie den Austausch von Geometriehilfszeilen,
+Beziehungstabellen und polymorphen Verweisen.
 Die `*ProfileDiscriminator*`-Fälle prüfen `T_Type` in flachen Klassen,
-Hierarchien, Struktur- und Linktabellen sowie die Ablehnung ungültiger
-Werte durch den SQL-Check.
+Hierarchien, Struktur- und Linktabellen nach dem Austausch in beiden Richtungen.
 Die `*ProfileStandardColumns*`-Fälle vergleichen das Einzelprofil für
 `T_datasetname` samt Indexzuwachs bei `--add-models`. Der gemischte Austausch
 verwendet das kombinierte Profil mit Auditspalten. Die Fälle vergleichen die

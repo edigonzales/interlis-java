@@ -160,8 +160,9 @@ final class ArrayStorageTest {
     @Test
     void failedImportLeavesConcurrentPostgisSchemaIntact() throws Exception {
         var file = work.resolve("array.gpkg");
-        try (var good = POSTGIS.target(file); var bad = POSTGIS.target(file);
-             var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+        var good = POSTGIS.target(file);
+        var bad = POSTGIS.target(file);
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             createSchema(good, "2.4", "-20 .. 20", true);
             createSchema(bad, "2.4", "-20 .. 20", true);
             String first = asset("2.4", "first", List.of("3"));
@@ -286,9 +287,7 @@ final class ArrayStorageTest {
         if (backend == Backend.GEOPACKAGE) {
             test.run(new Target(file, null, "array_storage"));
         } else {
-            try (var db = POSTGIS.target(file)) {
-                test.run(db);
-            }
+            test.run(POSTGIS.target(file));
         }
     }
 }

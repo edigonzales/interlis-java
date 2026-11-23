@@ -120,9 +120,7 @@ final class ForeignKeyProfileTest {
         if (backend == Backend.GEOPACKAGE) {
             test.run(new Target(file, null, "foreign_keys"));
         } else {
-            try (var db = POSTGIS.target(file)) {
-                test.run(db);
-            }
+            test.run(POSTGIS.target(file));
         }
     }
 

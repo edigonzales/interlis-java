@@ -6,7 +6,6 @@ import org.w3c.dom.Element;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -26,6 +25,7 @@ import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.indexColumns;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
+import static guru.interlis.db.HierarchyProfileFixtures.assertStoredDiscriminators;
 import static guru.interlis.db.ProfileFixtures.AUDIT_TABLES;
 import static guru.interlis.db.ProfileFixtures.DATASET_INDEXES;
 import static guru.interlis.db.ProfileFixtures.LINKED_INDEXES;
@@ -33,7 +33,6 @@ import static guru.interlis.db.ProfileFixtures.LINKED_KEYS;
 import static guru.interlis.db.ProfileFixtures.assertDatasetColumns;
 import static guru.interlis.db.ProfileFixtures.assertInitialAuditColumns;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -116,32 +115,11 @@ final class SchemaProfileCases {
     }
 
     void hierarchyKeys(TestDatabase expected, TestDatabase own) throws Exception {
-        String model = "SmartPoly" + version;
-        Path ili = fixture(model + ".ili");
-        Files.writeString(ili, Files.readString(ili).replace("  END Data;", """
-                    DOMAIN Position = COORD 0.000 .. 100.000, 0.000 .. 100.000;
-                    CLASS Marker = MainPoint : Position; CheckPoint : Position; END Marker;
-                    ASSOCIATION Calibration =
-                      Applying -- {0..1} Terminal;
-                      Applied -- {0..*} Marker;
-                      Score : 0..9;
-                    END Calibration;
-                    STRUCTURE PointerValue = Destination : REFERENCE TO (EXTERNAL) Instrument; END PointerValue;
-                    CLASS Pointer = Link : PointerValue; END Pointer;
-                  END Data;"""));
-        Path input = fixture(model + ".xtf");
-        String endBasket = version == 23 ? "</" + model + ".Data>" : "</Data>";
-        String marker = fixtures.object(model, "Marker", "fixture-point", "<MainPoint>" + fixtures.point("12.000", "13.000")
-                + "</MainPoint><CheckPoint>" + fixtures.point("14.000", "15.000") + "</CheckPoint>"
-                + fixtures.reference("Applying", "fixture-t"));
-        Files.writeString(input, Files.readString(input).replace(endBasket, marker + endBasket));
-        Path nativeData = Files.writeString(work.resolve("hierarchy-native.xtf"), Files.readString(input).replace("fixture-", "native-"));
-        Path update = Files.writeString(work.resolve("hierarchy-update.xtf"), Files.readString(nativeData).replace(">smart<", ">changed<"));
-        String structure = version == 23 ? model + ".Data.PointerValue" : "PointerValue";
-        String destination = version == 23 ? "<Destination REF=\"native-s\" BID=\"native-b\"/>"
-                : "<Destination i:ref=\"native-s\"/>";
-        Path incoming = fixtures.data(model, "incoming", fixtures.object(model, "Pointer", "incoming-p",
-                "<Link><" + structure + ">" + destination + "</" + structure + "></Link>"));
+        var hierarchy = new HierarchyProfileFixtures(work, version);
+        String model = hierarchy.hierarchyModel();
+        Path ili = hierarchy.hierarchySource();
+        Path input = hierarchy.hierarchyData("fixture");
+        Path nativeData = hierarchy.hierarchyData("native");
         for (boolean smart : List.of(false, true)) {
             var baseline = smart ? expected.peer("profile_smart_keys_ref") : expected;
             var created = smart ? own.peer("profile_smart_keys_own") : own;
@@ -172,100 +150,34 @@ final class SchemaProfileCases {
                 Path output = work.resolve("hierarchy-output.xtf");
                 referenceImport(db, "legacy", input);
                 assertCliSuccess(db, "export", model, "legacy", output);
-                assertHierarchy(fixtures.basketRows(output, "fixture-b", 7), "fixture", "smart");
+                hierarchy.assertHierarchy(output, "fixture", "smart");
                 assertCliSuccess(db, "import", model, "native", nativeData);
                 referenceExport(db, "native", output);
-                assertHierarchy(fixtures.basketRows(output, "native-b", 7), "native", "smart");
-                try (var sql = db.connect()) {
-                    String row = " FROM " + db.table(smart ? "smartunit" : "instrument") + " WHERE t_ili_tid='native-s'";
-                    String original = scalar(sql, "SELECT t_id" + row);
-                    assertCliSuccess(db, "update", model, "native", update);
-                    assertEquals(original, scalar(sql, "SELECT t_id" + row));
-                    assertCliSuccess(db, "import", model, "incoming", incoming);
-                    assertCliFailure(db, "delete", model, "native", null, "referenced object");
-                    assertCliFailure(db, "replace", model, "native", nativeData, "referenced object");
-                    referenceExport(db, "native", output);
-                    assertHierarchy(fixtures.basketRows(output, "native-b", 7), "native", "changed");
-                    assertCliSuccess(db, "delete", model, "incoming", null);
-                    assertCliSuccess(db, "replace", model, "native", nativeData);
-                    assertNotEquals(original, scalar(sql, "SELECT t_id" + row));
-                    assertCliSuccess(db, "delete", model, "native", null);
-                    assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("marker_checkpoint")));
-                }
+                hierarchy.assertHierarchy(output, "native", "smart");
             }
         }
     }
 
-    private void assertHierarchy(List<Element> rows, String prefix, String memo) {
-        var smart = rows.stream().filter(row -> (prefix + "-s").equals(id(row, version, "tid"))).findFirst().orElseThrow();
-        assertEquals(memo, child(smart, "Memo").getTextContent());
-        var marker = rows.stream().filter(row -> (prefix + "-point").equals(id(row, version, "tid"))).findFirst().orElseThrow();
-        var coordinate = child(children(child(marker, "CheckPoint")).getFirst(), version == 23 ? "C1" : "c1");
-        assertEquals(0, new java.math.BigDecimal("14").compareTo(new java.math.BigDecimal(coordinate.getTextContent())));
-        assertEquals(prefix + "-t", id(child(marker, "Applying"), version, "ref"));
-        var links = rows.stream().filter(row -> row.getLocalName().endsWith("CrossCheck")).toList();
-        assertEquals(Set.of(prefix + "-s", prefix + "-t"), links.stream()
-                .map(row -> id(child(row, "CheckedInstrument"), version, "ref")).collect(java.util.stream.Collectors.toSet()));
-    }
-
-    private Path fixture(String name) throws Exception {
-        Path destination = work.resolve(name);
-        try (var input = SchemaProfileCases.class.getResourceAsStream("/smart/" + name)) {
-            Files.copy(java.util.Objects.requireNonNull(input, name), destination);
-        }
-        return destination;
-    }
-
     void discriminator(TestDatabase expected, TestDatabase own) throws Exception {
-        String model = "ProfileType" + version;
-        Path ili = fixtures.source(model, """
-                STRUCTURE Note = Message : TEXT*24; END Note;
-                CLASS Asset = Label : TEXT*24; Notes : LIST OF Note; END Asset;
-                CLASS Base (ABSTRACT) = Caption : TEXT*24; END Base;
-                CLASS Leaf EXTENDS Base = NumberValue : 0..12; END Leaf;
-                ASSOCIATION Survey =
-                  AssetTarget -- {0..1} Leaf;
-                  Surveyed -- {0..*} Asset;
-                  Detail : TEXT*20;
-                END Survey;
-                """);
+        var hierarchy = new HierarchyProfileFixtures(work, version);
+        String model = hierarchy.discriminatorModel();
+        Path ili = hierarchy.discriminatorSource();
         referenceSchema(expected, ili, "--sqlEnableNull", "--createTypeDiscriminator", "--createTypeConstraint");
         schema(own, model, ili, "--create-type-discriminator", "--create-type-constraint");
         sameCatalog(expected, own);
         for (var db : List.of(expected, own)) {
-            referenceImport(db, "legacy", typedData(model, "legacy"));
+            referenceImport(db, "legacy", hierarchy.discriminatorData("legacy"));
             Path output = work.resolve("type-output.xtf");
             assertCliSuccess(db, "export", model, "legacy", output);
-            assertTypedRows(fixtures.rows(output, "legacy", 2), "legacy");
-            assertCliSuccess(db, "import", model, "native", typedData(model, "native"));
+            hierarchy.assertTypedTransfer(output, "legacy");
+            assertCliSuccess(db, "import", model, "native", hierarchy.discriminatorData("native"));
             referenceExport(db, "native", output);
-            assertTypedRows(fixtures.rows(output, "native", 2), "native");
-            String extra = "ProfileTypeExtra" + version;
-            schema(db, extra, fixtures.source(extra, "CLASS Other = Label : TEXT*24; END Other;"), "--add-models");
+            hierarchy.assertTypedTransfer(output, "native");
             try (var sql = db.connect()) {
-                assertEquals("asset", scalar(sql, "SELECT t_type FROM " + db.table("asset") + " WHERE t_ili_tid='native-asset'"));
-                assertEquals("leaf", scalar(sql, "SELECT t_type FROM " + db.table("base") + " WHERE t_ili_tid='native-leaf'"));
-                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("survey") + " WHERE t_type='survey'"));
-                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("note") + " WHERE t_type='note'"));
-                assertThrows(SQLException.class, () -> execute(sql, "UPDATE " + db.table("asset") + " SET t_type='unknown'"));
-                assertThrows(SQLException.class, () -> execute(sql, "INSERT INTO " + db.table("other")
-                        + " (t_id,t_basket,t_type) VALUES (999,999,'unknown')"));
+                assertStoredDiscriminators(db, sql, "legacy");
+                assertStoredDiscriminators(db, sql, "native");
             }
         }
-    }
-
-    private Path typedData(String model, String prefix) throws Exception {
-        String note = version == 23 ? model + ".Data.Note" : "Note";
-        return fixtures.data(model, prefix, fixtures.object(model, "Asset", prefix + "-asset",
-                "<Label>typed</Label><Notes><" + note + "><Message>present</Message></" + note + "></Notes>"
-                        + fixtures.reference("AssetTarget", prefix + "-leaf"))
-                + fixtures.object(model, "Leaf", prefix + "-leaf", "<Caption>subtype</Caption><NumberValue>7</NumberValue>"));
-    }
-
-    private void assertTypedRows(List<Element> rows, String prefix) {
-        assertEquals("typed", child(rows.getFirst(), "Label").getTextContent());
-        assertEquals(prefix + "-leaf", id(child(rows.getFirst(), "AssetTarget"), version, "ref"));
-        assertEquals("7", child(rows.getLast(), "NumberValue").getTextContent());
     }
 
     private void datasetColumn(TestDatabase expected, TestDatabase own) throws Exception {

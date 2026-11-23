@@ -1,20 +1,20 @@
 package guru.interlis.db;
 
+import guru.interlis.db.DbTestSupport.Target;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.UUID;
 
-import static guru.interlis.db.DbTestSupport.execute;
 import static guru.interlis.db.DbTestSupport.postgisContainer;
 
 final class PostgisTestServer implements AutoCloseable {
     private PostgreSQLContainer postgres;
 
-    Schema target(Path file) {
+    Target target(Path file) {
         String schema = "db_test_" + UUID.randomUUID().toString().replace("-", "");
-        return new Schema(file, start(), schema);
+        // Drop schemas with the container so other tests can safely read the shared PostGIS catalog.
+        return new Target(file, start(), schema);
     }
 
     private synchronized PostgreSQLContainer start() {
@@ -40,16 +40,4 @@ final class PostgisTestServer implements AutoCloseable {
         if (postgres != null) postgres.close();
     }
 
-    static final class Schema extends DbTestSupport.Target implements AutoCloseable {
-        private Schema(Path file, PostgreSQLContainer postgres, String schema) {
-            super(file, postgres, schema);
-        }
-
-        @Override
-        public void close() throws SQLException {
-            try (var sql = connect()) {
-                execute(sql, "DROP SCHEMA IF EXISTS " + schema + " CASCADE");
-            }
-        }
-    }
 }

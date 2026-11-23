@@ -92,6 +92,7 @@ testing.suites {
     matching { it.name in ['dbTest', 'dbInteropTest'] }.configureEach {
         useJUnitJupiter(libs.versions.junit.get())
         sources.java.srcDir('src/dbTestSupport/java')
+        sources.resources.srcDir('src/dbTestSupport/resources')
         dependencies {
             implementation project()
             implementation 'org.testcontainers:testcontainers-postgresql:2.0.5'
