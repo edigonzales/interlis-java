@@ -1,19 +1,24 @@
 package guru.interlis.db;
 
+import guru.interlis.db.DbTestSupport.Target;
 import org.w3c.dom.Element;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
+import static guru.interlis.db.DbTestSupport.catalogKeys;
 import static guru.interlis.db.DbTestSupport.child;
 import static guru.interlis.db.DbTestSupport.children;
 import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.readDataSection;
 import static guru.interlis.db.DbTestSupport.referenceDatasetFixture;
+import static guru.interlis.db.DbTestSupport.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 final class ProfileFixtures {
@@ -22,6 +27,9 @@ final class ProfileFixtures {
             "t_ili2db_basket:dataset:t_ili2db_dataset");
     static final Set<String> LINKED_INDEXES = Set.of("asset:t_basket", "asset:refasset", "target:t_basket",
             "note:t_basket", "note:asset_notes", "t_ili2db_basket:dataset");
+    static final Set<String> DATASET_INDEXES = Set.of("asset:t_datasetname", "target:t_datasetname", "note:t_datasetname");
+    static final List<String> DATASET_TABLES = List.of("asset", "target", "note");
+    static final List<String> AUDIT_TABLES = List.of("asset", "asset_checkpoint", "note", "target");
 
     private final Path work;
     private final int version;
@@ -60,6 +68,41 @@ final class ProfileFixtures {
                 "<Label>linked</Label><Notes><" + note + "><Message>present</Message></" + note + "></Notes>"
                         + reference("RefAsset", prefix + "-target"))
                 + object(model, "Target", prefix + "-target", "<Label>target</Label>"));
+    }
+
+    Path auditModel(String model) throws IOException {
+        Path ili = linkedModel(model);
+        return Files.writeString(ili, Files.readString(ili).replace("CLASS Asset = Label", """
+                DOMAIN Position = COORD 0.000 .. 100.000, 0.000 .. 100.000;
+                CLASS Asset = MainPoint : Position; CheckPoint : Position; Label"""));
+    }
+
+    Path auditData(String model, String prefix) throws IOException {
+        String note = version == 23 ? model + ".Data.Note" : "Note";
+        String fields = "<MainPoint>" + point("12.000", "13.000") + "</MainPoint><CheckPoint>" + point("14.000", "15.000")
+                + "</CheckPoint><Label>linked</Label><Notes><" + note + "><Message>present</Message></" + note
+                + "></Notes>" + reference("RefAsset", prefix + "-target");
+        return data(model, prefix, object(model, "Asset", prefix + "-asset", fields)
+                + object(model, "Target", prefix + "-target", "<Label>target</Label>"));
+    }
+
+    static void assertDatasetColumns(Target db, Connection sql, List<String> tables) throws SQLException {
+        for (String table : tables) {
+            assertEquals(Set.of("legacy:legacy", "native:native"), catalogKeys(sql,
+                    "SELECT a.t_datasetname || ':' || d.datasetname FROM " + db.table(table) + " a JOIN "
+                            + db.table("t_ili2db_basket") + " b ON b.t_id = a.t_basket JOIN "
+                            + db.table("t_ili2db_dataset") + " d ON d.t_id = b.dataset"), table);
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table(table)), table);
+        }
+    }
+
+    static void assertInitialAuditColumns(Target db, Connection sql) throws SQLException {
+        String user = db.postgis() ? sql.getMetaData().getUserName() : System.getProperty("user.name");
+        for (String table : AUDIT_TABLES) {
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table(table)
+                    + " WHERE t_createdate = t_lastchange AND t_user = '" + user.replace("'", "''") + "'"
+                    + (db.postgis() ? "" : " AND typeof(t_createdate) = 'integer'")), table);
+        }
     }
 
     Path data(String model, String prefix, String objects) throws IOException {

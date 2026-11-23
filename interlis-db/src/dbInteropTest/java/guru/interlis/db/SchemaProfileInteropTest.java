@@ -52,16 +52,6 @@ final class SchemaProfileInteropTest {
         new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version).discriminator(expected, expected.peer("profile_type_own"));
     }
 
-    @Test void geoPackageProfileDatasetColumn23() throws Exception { exchangeProfileDatasetColumn(23, null); }
-    @Test void geoPackageProfileDatasetColumn24() throws Exception { exchangeProfileDatasetColumn(24, null); }
-    @Test void postgisProfileDatasetColumn23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileDatasetColumn); }
-    @Test void postgisProfileDatasetColumn24() throws Exception { exchangeWithPostgis(24, this::exchangeProfileDatasetColumn); }
-
-    private void exchangeProfileDatasetColumn(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(work, postgres, "profile_dataset_ref");
-        new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version).datasetColumn(expected, expected.peer("profile_dataset_own"));
-    }
-
     @Test void geoPackageProfileStandardColumns23() throws Exception { exchangeProfileStandardColumns(23, null); }
     @Test void geoPackageProfileStandardColumns24() throws Exception { exchangeProfileStandardColumns(24, null); }
     @Test void postgisProfileStandardColumns23() throws Exception { exchangeWithPostgis(23, this::exchangeProfileStandardColumns); }

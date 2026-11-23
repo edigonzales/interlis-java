@@ -115,6 +115,11 @@ Fremdschlüsselziele, Vorwärtsreferenzen, Strukturzeilen und den Rollback
 beim Import und beim Commit. Ein zweiter Fall vergleicht Indexspalten im
 Profil ohne Fremdschlüssel. Beide Fälle prüfen den Zuwachs bei `--add-models`.
 
+`DatasetAuditProfileTest` prüft die Datasetzuordnung und die Auditspalten
+nach Import, Update und Replace. Es kontrolliert die Objekt-IDs, die
+Zeitstempel und den Benutzer auf Fach-, Struktur- und Geometriehilfszeilen.
+Ein zweiter Datensatz prüft die Isolation der Änderungen.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -164,12 +169,11 @@ Beziehungstabellen und eingehende Verweise bei `update`, `replace` und `delete`.
 Die `*ProfileDiscriminator*`-Fälle prüfen `T_Type` in flachen Klassen,
 Hierarchien, Struktur- und Linktabellen sowie die Ablehnung ungültiger
 Werte durch den SQL-Check.
-Die `*ProfileDatasetColumn*`-Fälle prüfen `T_datasetname` und seine Indizes
-in zwei Datensätzen. Nach Import, `update` und `replace` vergleichen sie die
-Spalte mit der Datasetzuordnung über die Baskets.
-Die `*ProfileStandardColumns*`-Fälle prüfen Benutzer, Änderungs- und
-Erstellungszeitpunkt auf Fach-, Struktur- und Geometriehilfszeilen.
-Sie prüfen auch das erhaltene Erstellungsdatum nach einem Update.
+Die `*ProfileStandardColumns*`-Fälle vergleichen das Einzelprofil für
+`T_datasetname` samt Indexzuwachs bei `--add-models`. Der gemischte Austausch
+verwendet das kombinierte Profil mit Auditspalten. Die Fälle vergleichen die
+Datasetzuordnung, den Benutzer und die gespeicherten Zeitstempel nach beiden
+Imports.
 Die `*ProfileUniqueBasket*`-Fälle reproduzieren den Fehler bei der
 ili2db-Schemaerzeugung für `UNIQUE (BASKET)` in INTERLIS 2.4 und tauschen
 Daten in einem mit `interlis-db` erzeugten Schema aus.

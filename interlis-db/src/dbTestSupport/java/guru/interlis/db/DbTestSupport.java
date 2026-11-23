@@ -173,8 +173,8 @@ final class DbTestSupport {
         assertTrue(result.diagnostics().contains(diagnostic), result::diagnostics);
     }
 
-    static void assertSchemaWithIdentityColumns(Target db, String model, Path path) {
-        var result = schemaWithIdentityColumns(db, model, path, CancellationToken.none());
+    static void assertSchemaWithIdentityColumns(Target db, String model, Path path, String... options) {
+        var result = schemaWithIdentityColumns(db, model, path, CancellationToken.none(), options);
         assertEquals(0, result.code(), result::diagnostics);
     }
 

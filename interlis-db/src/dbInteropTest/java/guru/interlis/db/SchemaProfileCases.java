@@ -26,8 +26,12 @@ import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.indexColumns;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
+import static guru.interlis.db.ProfileFixtures.AUDIT_TABLES;
+import static guru.interlis.db.ProfileFixtures.DATASET_INDEXES;
 import static guru.interlis.db.ProfileFixtures.LINKED_INDEXES;
 import static guru.interlis.db.ProfileFixtures.LINKED_KEYS;
+import static guru.interlis.db.ProfileFixtures.assertDatasetColumns;
+import static guru.interlis.db.ProfileFixtures.assertInitialAuditColumns;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -264,60 +268,30 @@ final class SchemaProfileCases {
         assertEquals("7", child(rows.getLast(), "NumberValue").getTextContent());
     }
 
-    void datasetColumn(TestDatabase expected, TestDatabase own) throws Exception {
+    private void datasetColumn(TestDatabase expected, TestDatabase own) throws Exception {
         String model = "ProfileDataset" + version;
         Path ili = fixtures.linkedModel(model);
         referenceSchema(expected, ili, "--sqlEnableNull", "--createDatasetCol");
         schema(own, model, ili, "--create-dataset-col");
         sameCatalog(expected, own);
+        String add = "ProfileDatasetExtra" + version;
+        Path more = fixtures.source(add, "CLASS Extra = Label : TEXT*24; END Extra;");
+        var extended = new HashSet<>(DATASET_INDEXES);
+        extended.add("extra:t_datasetname");
         for (var db : List.of(expected, own)) {
-            Path output = work.resolve("dataset-output.xtf");
-            referenceImport(db, "legacy", fixtures.linkedData(model, "legacy"));
-            assertCliSuccess(db, "export", model, "legacy", output);
-            fixtures.assertLink(fixtures.rows(output, "legacy", 2).getFirst(), "legacy");
-            Path nativeData = fixtures.linkedData(model, "native");
-            assertCliSuccess(db, "import", model, "native", nativeData);
-            referenceExport(db, "native", output);
-            fixtures.assertLink(fixtures.rows(output, "native", 2).getFirst(), "native");
             try (var sql = db.connect()) {
-                assertEquals(Set.of("asset:t_datasetname", "target:t_datasetname", "note:t_datasetname"), indexColumns(db, sql));
-                assertDatasetColumns(db, sql);
-                Path changed = Files.writeString(work.resolve("changed.xtf"), Files.readString(nativeData).replace(">linked<", ">changed<"));
-                String row = " FROM " + db.table("asset") + " WHERE t_datasetname = 'native'";
-                String id = scalar(sql, "SELECT t_id" + row);
-                assertCliSuccess(db, "update", model, "native", changed);
-                assertEquals(id, scalar(sql, "SELECT t_id" + row));
-                assertEquals("changed", scalar(sql, "SELECT label" + row));
-                assertDatasetColumns(db, sql);
-                assertCliSuccess(db, "replace", model, "native", nativeData);
-                assertNotEquals(id, scalar(sql, "SELECT t_id" + row));
-                assertEquals("linked", scalar(sql, "SELECT label" + row));
-                assertDatasetColumns(db, sql);
-            }
-            String add = "ProfileDatasetExtra" + version;
-            schema(db, add, fixtures.source(add, "CLASS Extra = Label : TEXT*24; END Extra;"), "--add-models");
-            try (var sql = db.connect()) {
-                assertTrue(indexColumns(db, sql).contains("extra:t_datasetname"));
+                assertEquals(DATASET_INDEXES, indexColumns(db, sql));
+                schema(db, add, more, "--add-models");
+                assertEquals(extended, indexColumns(db, sql));
             }
         }
-    }
-
-    private static void assertDatasetColumns(TestDatabase db, Connection sql) throws Exception {
-        for (String table : List.of("asset", "target", "note")) {
-            assertEquals(Set.of("legacy:legacy", "native:native"), catalogKeys(sql,
-                    "SELECT a.t_datasetname || ':' || d.datasetname FROM " + db.table(table) + " a JOIN "
-                            + db.table("t_ili2db_basket") + " b ON b.t_id = a.t_basket JOIN "
-                            + db.table("t_ili2db_dataset") + " d ON d.t_id = b.dataset"));
-            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table(table)));
-        }
+        sameCatalog(expected, own);
     }
 
     void standardColumns(TestDatabase expected, TestDatabase own) throws Exception {
+        datasetColumn(expected.peer("profile_dataset_ref"), own.peer("profile_dataset_own"));
         String model = "ProfileAudit" + version;
-        Path ili = fixtures.linkedModel(model);
-        Files.writeString(ili, Files.readString(ili).replace("CLASS Asset = Label", """
-                DOMAIN Position = COORD 0.000 .. 100.000, 0.000 .. 100.000;
-                CLASS Asset = MainPoint : Position; CheckPoint : Position; Label"""));
+        Path ili = fixtures.auditModel(model);
         var legacyOptions = new ArrayList<>(List.of("--sqlEnableNull", "--createStdCols", "--createDatasetCol"));
         var nativeOptions = new ArrayList<>(List.of("--create-std-cols", "--create-dataset-col"));
         if (own.postgis()) {
@@ -329,47 +303,26 @@ final class SchemaProfileCases {
         sameCatalog(expected, own);
         for (var db : List.of(expected, own)) {
             Path output = work.resolve("audit-output.xtf");
-            referenceImport(db, "legacy", auditData(model, "legacy"));
+            referenceImport(db, "legacy", fixtures.auditData(model, "legacy"));
             assertCliSuccess(db, "export", model, "legacy", output);
             fixtures.assertLink(fixtures.rows(output, "legacy", 2).getFirst(), "legacy");
-            Path data = auditData(model, "native");
-            assertCliSuccess(db, "import", model, "native", data);
+            assertCliSuccess(db, "import", model, "native", fixtures.auditData(model, "native"));
             referenceExport(db, "native", output);
             fixtures.assertLink(fixtures.rows(output, "native", 2).getFirst(), "native");
             try (var sql = db.connect()) {
-                String user = db.postgis() ? sql.getMetaData().getUserName() : System.getProperty("user.name");
-                var tables = List.of("asset", "asset_checkpoint", "note", "target");
-                for (String table : tables) {
-                    assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table(table)
-                            + " WHERE t_createdate = t_lastchange AND t_user = '" + user.replace("'", "''") + "'"
-                            + (db.postgis() ? "" : " AND typeof(t_createdate) = 'integer'")));
-                }
-                String old = db.postgis() ? "TIMESTAMP '2000-02-03 00:00:00'" : "949536000000";
-                for (String table : List.of("asset", "asset_checkpoint")) {
-                    execute(sql, "UPDATE " + db.table(table) + " SET t_createdate=" + old + ", t_lastchange=" + old
-                            + ", t_user='previous' WHERE t_datasetname='native'");
-                }
-                assertCliSuccess(db, "update", model, "native", data);
-                for (String table : List.of("asset", "asset_checkpoint")) {
-                    assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table(table)
-                            + " WHERE t_datasetname='native' AND t_createdate=" + old + " AND t_lastchange>" + old
-                            + " AND t_user='" + user.replace("'", "''") + "'"));
-                }
-            }
-            String extra = "ProfileAuditExtra" + version;
-            schema(db, extra, fixtures.source(extra, "CLASS Extra = Label : TEXT*24; END Extra;"), "--add-models");
-            try (var sql = db.connect()) {
-                assertThrows(SQLException.class, () -> execute(sql, "INSERT INTO " + db.table("extra")
-                        + " (t_id,t_basket,t_datasetname) VALUES (999,999,'native')"));
+                assertDatasetColumns(db, sql, AUDIT_TABLES);
+                assertInitialAuditColumns(db, sql);
             }
         }
-    }
-
-    private Path auditData(String model, String prefix) throws Exception {
-        Path data = fixtures.linkedData(model, prefix);
-        return Files.writeString(data, Files.readString(data).replace("<Label>linked</Label>",
-                "<MainPoint>" + fixtures.point("12.000", "13.000") + "</MainPoint><CheckPoint>" + fixtures.point("14.000", "15.000")
-                        + "</CheckPoint><Label>linked</Label>"));
+        String extra = "ProfileAuditExtra" + version;
+        schema(expected, extra, fixtures.source(extra, "CLASS Extra = Label : TEXT*24; END Extra;"), "--add-models");
+        try (var sql = expected.connect()) {
+            var rejected = assertThrows(SQLException.class, () -> execute(sql, "INSERT INTO " + expected.table("extra")
+                    + " (t_id,t_basket,t_datasetname) VALUES (999,(SELECT min(t_id) FROM "
+                    + expected.table("t_ili2db_basket") + "),'native')"));
+            if (expected.postgis()) assertEquals("23502", rejected.getSQLState());
+            else assertTrue(rejected.getMessage().contains("SQLITE_CONSTRAINT_NOTNULL"), rejected::getMessage);
+        }
     }
 
     void basketUniqueConstraints(TestDatabase expected, TestDatabase own) throws Exception {
