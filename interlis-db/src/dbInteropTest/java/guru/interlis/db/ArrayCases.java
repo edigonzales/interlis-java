@@ -15,22 +15,27 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static guru.interlis.db.DbInteropTest.schemaWithIdentityColumns;
-import static guru.interlis.db.DbInteropTest.assertCliFailure;
-import static guru.interlis.db.DbInteropTest.assertCliSuccess;
-import static guru.interlis.db.DbInteropTest.child;
-import static guru.interlis.db.DbInteropTest.children;
-import static guru.interlis.db.DbInteropTest.execute;
-import static guru.interlis.db.DbInteropTest.id;
-import static guru.interlis.db.DbInteropTest.readDataSection;
-import static guru.interlis.db.DbInteropTest.referenceDatasetFixture;
-import static guru.interlis.db.DbInteropTest.scalar;
+import static guru.interlis.db.DbTestSupport.assertCliFailure;
+import static guru.interlis.db.DbTestSupport.assertCliSuccess;
+import static guru.interlis.db.DbTestSupport.child;
+import static guru.interlis.db.DbTestSupport.children;
+import static guru.interlis.db.DbTestSupport.execute;
+import static guru.interlis.db.DbTestSupport.id;
+import static guru.interlis.db.DbTestSupport.readDataSection;
+import static guru.interlis.db.DbTestSupport.referenceDatasetFixture;
+import static guru.interlis.db.DbTestSupport.scalar;
+import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 final class ArrayCases {
+    private static final List<String> LABELS = List.of("é, \"A\"", "a & b", "a & b", "last");
+    private static final List<String> FLAGS = List.of("true", "false", "true");
+    private static final List<String> NUMBERS = List.of("-5", "0", "12", "-5", "8");
+    private static final List<String> GRADES = List.of("Family.High", "Low");
+
     private final Path work;
     private final ReferenceTool reference;
     private final int version;
@@ -39,95 +44,6 @@ final class ArrayCases {
         this.work = work;
         this.reference = reference;
         this.version = version;
-    }
-
-    void text(TestDatabase db) throws Exception {
-        String model = "ArrayText" + version;
-        arraySource(model, "TEXT*40", "LIST");
-        schema(db, model);
-        var values = List.of("é, \"A\"", "duplicate", "duplicate");
-        var output = work.resolve("output.xtf");
-        referenceImport(db, "legacy", dataset(model, "legacy", values));
-        assertCliSuccess(db, "export", model, "legacy", output);
-        assertItems(output, "legacy", values);
-        try (var sql = db.connect()) {
-            execute(sql, "ALTER TABLE " + db.table("asset") + " RENAME COLUMN items TO stored_items");
-            execute(sql, "UPDATE " + db.table("t_ili2db_attrname") + " SET sqlname='stored_items' WHERE sqlname='items'");
-            execute(sql, "UPDATE " + db.table("t_ili2db_column_prop") + " SET columnname='stored_items' WHERE columnname='items'");
-        }
-        assertCliSuccess(db, "import", model, "native", dataset(model, "native", values));
-        referenceExport(db, "native", output);
-        assertItems(output, "native", values);
-
-        var withNull = Arrays.asList("before", null, "");
-        referenceImport(db, "legacy-null", dataset(model, "legacy-null", Arrays.asList("before", null, "after")));
-        reference.expectFailure(db, "%ILI_FROM_DB", "illegal value null for Entry", "--export", "--dataset", "legacy-null",
-                "--exportTid", work.resolve("reference-null.xtf").toString());
-        assertCliSuccess(db, "export", model, "legacy-null", output);
-        assertItems(output, "legacy-null", Arrays.asList("before", null, "after"));
-        assertCliSuccess(db, "import", model, "native-null", dataset(model, "native-null", withNull));
-        assertCliSuccess(db, "export", model, "native-null", output);
-        assertItems(output, "native-null", withNull);
-
-        try (var sql = db.connect()) {
-            assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("elem")));
-            var table = db.table("asset");
-            assertNull(scalar(sql, "SELECT stored_items FROM " + table + " WHERE t_ili_tid='native-missing'"));
-            execute(sql, "UPDATE " + table + " SET stored_items=" + (db.postgis() ? "'{}'" : "'[]'")
-                    + " WHERE t_ili_tid='native-missing'");
-            assertCliSuccess(db, "export", model, "native", output);
-            assertItems(output, "native", values);
-            execute(sql, "UPDATE " + table + " SET stored_items=" + (db.postgis() ? "'{{a},{b}}'" : "'[{}]'")
-                    + " WHERE t_ili_tid='native-value'");
-        }
-        var previous = Files.readString(output);
-        assertCliFailure(db, "export", model, "native", output, db.postgis()
-                ? "one-dimensional PostgreSQL array" : "Expected a text array element");
-        assertEquals(previous, Files.readString(output));
-    }
-
-    void bool(TestDatabase db) throws Exception {
-        String model = "ArrayBoolean" + version;
-        arraySource(model, "BOOLEAN", "LIST");
-        var values = List.of("true", "false", "true");
-        var output = mixedLists(db, model, values);
-        var table = db.table("asset");
-        String diagnostic;
-        try (var sql = db.connect()) {
-            if (db.postgis()) {
-                assertEquals("true", scalar(sql, "SELECT CAST(items[1] AS text) FROM " + table + " WHERE t_ili_tid='native-value'"));
-                execute(sql, "ALTER TABLE " + table + " ALTER COLUMN items TYPE integer[] USING NULL");
-                diagnostic = "Expected _bool for array column";
-            } else {
-                assertEquals("[true,false,true]", scalar(sql, "SELECT items FROM " + table + " WHERE t_ili_tid='native-value'"));
-                execute(sql, """
-                        UPDATE %s SET items='["true"]' WHERE t_ili_tid='native-value'
-                        """.formatted(table));
-                diagnostic = "Expected a boolean array element";
-            }
-            assertNull(scalar(sql, "SELECT items FROM " + table + " WHERE t_ili_tid='native-missing'"));
-        }
-        var previous = Files.readString(output);
-        assertCliFailure(db, "export", model, "native", output, diagnostic);
-        assertEquals(previous, Files.readString(output));
-    }
-
-    void integer(TestDatabase db) throws Exception {
-        String model = "ArrayInteger" + version;
-        arraySource(model, "-20 .. 20", "LIST");
-        mixedLists(db, model, List.of("-5", "0", "12", "-5"));
-
-        var first = object(model, "Asset", "rollback-first", element("Items", entry(model, "3")));
-        var last = object(model, "Asset", "rollback-last", element("Items", entry(model, "2147483648")));
-        assertCliFailure(db, "import", model, "rollback", transfer(model, "rollback", first + last), "32-bit integer encoding");
-        try (var sql = db.connect()) {
-            var asset = db.table("asset");
-            var firstElement = db.postgis() ? "items[1]" : "json_extract(items, '$[0]')";
-            assertEquals("-5", scalar(sql, "SELECT " + firstElement + " FROM " + asset + " WHERE t_ili_tid='native-value'"));
-            assertEquals("0", scalar(sql, "SELECT count(*) FROM " + asset + " WHERE t_ili_tid LIKE 'rollback-%'"));
-            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket")));
-            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
-        }
     }
 
     void enumeration(TestDatabase db) throws Exception {
@@ -201,15 +117,15 @@ final class ArrayCases {
         assertEquals(previous, Files.readString(output));
     }
 
-    void direct(TestDatabase db) throws Exception {
-        String model = "ArrayDirect" + version;
+    void scalars(TestDatabase db) throws Exception {
+        String model = "ArrayScalars" + version;
         source(model, """
                 DOMAIN Score = -20 .. 20;
                 DOMAIN Grade = (Low, Family (High, Higher));
-                """ + (version == 23 ? """
                 STRUCTURE LabelElem = Entry : TEXT*40; END LabelElem;
                 STRUCTURE FlagElem = Entry : BOOLEAN; END FlagElem;
                 STRUCTURE NumberElem = Entry : Score; END NumberElem;
+                """ + (version == 23 ? """
                 STRUCTURE GradeElem = Entry : Grade; END GradeElem;
                 """ : ""), """
                 CLASS Asset =
@@ -221,56 +137,85 @@ final class ArrayCases {
                   Numbers : LIST OF %s;
                   !!@ili2db.mapping=ARRAY
                   Grades : LIST OF %s;
+                  !!@ili2db.mapping=ARRAY
+                  FlagItems : LIST OF FlagElem;
+                """.formatted(version == 23 ? "LabelElem" : "TEXT*40", version == 23 ? "FlagElem" : "BOOLEAN",
+                        version == 23 ? "NumberElem" : "Score", version == 23 ? "GradeElem" : "Grade") + (version == 24 ? """
+                  !!@ili2db.mapping=ARRAY
+                  TextItems : LIST OF LabelElem;
+                  !!@ili2db.mapping=ARRAY
+                  NumberItems : LIST OF NumberElem;
+                """ : "") + """
                 END Asset;
-                """.formatted(version == 23 ? new Object[]{"LabelElem", "FlagElem", "NumberElem", "GradeElem"}
-                        : new Object[]{"TEXT*40", "BOOLEAN", "Score", "Grade"}));
+                """);
 
-        String values = directValues(model, "Labels", "LabelElem", "a & b", "a & b", "last")
-                + directValues(model, "Flags", "FlagElem", "true", "false", "true")
-                + directValues(model, "Numbers", "NumberElem", "-5", "0", "8")
-                + directValues(model, "Grades", "GradeElem", "Family.High", "Low");
+        String values = scalarValues(model, "Labels", "LabelElem", LABELS)
+                + scalarValues(model, "Flags", "FlagElem", FLAGS)
+                + scalarValues(model, "Numbers", "NumberElem", NUMBERS)
+                + scalarValues(model, "Grades", "GradeElem", GRADES)
+                + wrappedValues(model, "FlagItems", "FlagElem", FLAGS);
+        if (version == 24) {
+            values += wrappedValues(model, "TextItems", "LabelElem", LABELS)
+                    + wrappedValues(model, "NumberItems", "NumberElem", NUMBERS);
+        }
         schema(db, model);
         var output = work.resolve("output.xtf");
-        referenceImport(db, "legacy", directDataset(model, "legacy", values));
+        referenceImport(db, "legacy", scalarDataset(model, "legacy", values));
         assertCliSuccess(db, "export", model, "legacy", output);
-        assertDirect(output, "legacy");
-        assertCliSuccess(db, "import", model, "native", directDataset(model, "native", values));
-        referenceExport(db, "native", output);
-        assertDirect(output, "native");
-        if (version == 24) {
-            try (var sql = db.connect()) {
-                String invalid = db.postgis() ? "'{value,NULL}'" : """
-                        '["value",null]'
-                        """.strip();
-                execute(sql, "UPDATE " + db.table("asset") + " SET labels=" + invalid + " WHERE t_ili_tid='native-value'");
-            }
-            String previous = Files.readString(output);
-            assertCliFailure(db, "export", model, "native", output, "Null element in direct coalesced array");
-            assertEquals(previous, Files.readString(output));
+        assertScalars(output, "legacy");
+
+        String wrappedText = version == 23 ? "Labels" : "TextItems";
+        String sqlName = version == 23 ? "labels" : "textitems";
+        try (var sql = db.connect()) {
+            execute(sql, "ALTER TABLE " + db.table("asset") + " RENAME COLUMN " + sqlName + " TO stored_items");
+            execute(sql, "UPDATE " + db.table("t_ili2db_attrname") + " SET sqlname='stored_items' WHERE sqlname='" + sqlName + "'");
+            execute(sql, "UPDATE " + db.table("t_ili2db_column_prop") + " SET columnname='stored_items' WHERE columnname='" + sqlName + "'");
         }
+        assertCliSuccess(db, "import", model, "native", scalarDataset(model, "native", values));
+        referenceExport(db, "native", output);
+        assertScalars(output, "native");
+
+        var withNull = Arrays.asList("before", null, "after");
+        referenceImport(db, "legacy-null", scalarDataset(model, "legacy-null", wrappedValues(model, wrappedText, "LabelElem", withNull)));
+        reference.expectFailure(db, "%ILI_FROM_DB", "illegal value null for Entry", "--export", "--dataset", "legacy-null",
+                "--exportTid", work.resolve("reference-null.xtf").toString());
+        assertCliSuccess(db, "export", model, "legacy-null", output);
+        var rows = objects(output, "legacy-null");
+        assertNull(child(rows.get("legacy-null-missing"), wrappedText));
+        assertEquals(withNull, items(rows.get("legacy-null-value"), wrappedText));
     }
 
-    private String directValues(String model, String attribute, String wrapper, String... values) {
+    private String scalarValues(String model, String attribute, String wrapper, List<String> values) {
         if (version == 24) {
-            return Arrays.stream(values).map(value -> element(attribute, xmlText(value))).collect(Collectors.joining());
+            return values.stream().map(value -> element(attribute, xmlText(value))).collect(Collectors.joining());
         }
-        return element(attribute, Arrays.stream(values).map(value -> element(tag(model, wrapper), element("Entry", xmlText(value))))
+        return wrappedValues(model, attribute, wrapper, values);
+    }
+
+    private String wrappedValues(String model, String attribute, String wrapper, List<String> values) {
+        return element(attribute, values.stream().map(value -> element(tag(model, wrapper),
+                        value == null ? "" : element("Entry", xmlText(value))))
                 .collect(Collectors.joining()));
     }
 
-    private Path directDataset(String model, String prefix, String values) throws Exception {
+    private Path scalarDataset(String model, String prefix, String values) throws Exception {
         return transfer(model, prefix, object(model, "Asset", prefix + "-value", values)
                 + object(model, "Asset", prefix + "-missing", ""));
     }
 
-    private void assertDirect(Path output, String prefix) throws Exception {
+    private void assertScalars(Path output, String prefix) throws Exception {
         var found = objects(output, prefix);
         assertEquals(List.of(), children(found.get(prefix + "-missing")));
         var asset = found.get(prefix + "-value");
-        assertEquals(List.of("a & b", "a & b", "last"), scalarItems(asset, "Labels"));
+        assertEquals(LABELS, scalarItems(asset, "Labels"));
         assertEquals(List.of("false", "true", "true"), scalarItems(asset, "Flags").stream().sorted().toList());
-        assertEquals(List.of("-5", "0", "8"), scalarItems(asset, "Numbers"));
-        assertEquals(List.of("Family.High", "Low"), scalarItems(asset, "Grades"));
+        assertEquals(NUMBERS, scalarItems(asset, "Numbers"));
+        assertEquals(GRADES, scalarItems(asset, "Grades"));
+        assertEquals(FLAGS, items(asset, "FlagItems"));
+        if (version == 24) {
+            assertEquals(LABELS, items(asset, "TextItems"));
+            assertEquals(NUMBERS, items(asset, "NumberItems"));
+        }
     }
 
     private List<String> scalarItems(Element object, String name) {

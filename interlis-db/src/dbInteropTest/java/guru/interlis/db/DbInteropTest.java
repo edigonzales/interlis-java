@@ -1,18 +1,15 @@
 package guru.interlis.db;
 
+import guru.interlis.db.DbTestSupport.CliResult;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.CleanupMode;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.postgresql.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
 import org.w3c.dom.Element;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -20,7 +17,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -36,6 +32,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.zip.ZipInputStream;
 
+import static guru.interlis.db.DbTestSupport.assertCliFailure;
+import static guru.interlis.db.DbTestSupport.assertCliSuccess;
+import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
+import static guru.interlis.db.DbTestSupport.child;
+import static guru.interlis.db.DbTestSupport.children;
+import static guru.interlis.db.DbTestSupport.cli;
+import static guru.interlis.db.DbTestSupport.execute;
+import static guru.interlis.db.DbTestSupport.id;
+import static guru.interlis.db.DbTestSupport.postgisContainer;
+import static guru.interlis.db.DbTestSupport.readDataSection;
+import static guru.interlis.db.DbTestSupport.referenceDatasetFixture;
+import static guru.interlis.db.DbTestSupport.scalar;
+import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -45,7 +54,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class DbInteropTest {
-    private static final String XTF24_NS = "http://www.interlis.ch/xtf/2.4/INTERLIS";
     private static final String STORED_MODELS = "%ILI_FROM_DB";
     private static final int POINT = 1;
     private static final int LINESTRING = 2;
@@ -427,36 +435,6 @@ final class DbInteropTest {
         new EnumerationCases(work, new ReferenceTool(db.postgis()), version).numericArrays(expected, db);
     }
 
-    @Test void geoPackageArrayText23() throws Exception { exchangeArrayText(23, null); }
-    @Test void geoPackageArrayText24() throws Exception { exchangeArrayText(24, null); }
-    @Test void postgisArrayText23() throws Exception { exchangeWithPostgis(23, this::exchangeArrayText); }
-    @Test void postgisArrayText24() throws Exception { exchangeWithPostgis(24, this::exchangeArrayText); }
-
-    private void exchangeArrayText(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "array_text");
-        new ArrayCases(work, new ReferenceTool(db.postgis()), version).text(db);
-    }
-
-    @Test void geoPackageArrayBoolean23() throws Exception { exchangeArrayBoolean(23, null); }
-    @Test void geoPackageArrayBoolean24() throws Exception { exchangeArrayBoolean(24, null); }
-    @Test void postgisArrayBoolean23() throws Exception { exchangeWithPostgis(23, this::exchangeArrayBoolean); }
-    @Test void postgisArrayBoolean24() throws Exception { exchangeWithPostgis(24, this::exchangeArrayBoolean); }
-
-    private void exchangeArrayBoolean(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "array_boolean");
-        new ArrayCases(work, new ReferenceTool(db.postgis()), version).bool(db);
-    }
-
-    @Test void geoPackageArrayInteger23() throws Exception { exchangeArrayInteger(23, null); }
-    @Test void geoPackageArrayInteger24() throws Exception { exchangeArrayInteger(24, null); }
-    @Test void postgisArrayInteger23() throws Exception { exchangeWithPostgis(23, this::exchangeArrayInteger); }
-    @Test void postgisArrayInteger24() throws Exception { exchangeWithPostgis(24, this::exchangeArrayInteger); }
-
-    private void exchangeArrayInteger(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "array_integer");
-        new ArrayCases(work, new ReferenceTool(db.postgis()), version).integer(db);
-    }
-
     @Test void geoPackageArrayEnumeration23() throws Exception { exchangeArrayEnumeration(23, null); }
     @Test void geoPackageArrayEnumeration24() throws Exception { exchangeArrayEnumeration(24, null); }
     @Test void postgisArrayEnumeration23() throws Exception { exchangeWithPostgis(23, this::exchangeArrayEnumeration); }
@@ -487,14 +465,14 @@ final class DbInteropTest {
         new ArrayCases(work, new ReferenceTool(db.postgis()), version).single(db);
     }
 
-    @Test void geoPackageArrayDirect23() throws Exception { exchangeArrayDirect(23, null); }
-    @Test void geoPackageArrayDirect24() throws Exception { exchangeArrayDirect(24, null); }
-    @Test void postgisArrayDirect23() throws Exception { exchangeWithPostgis(23, this::exchangeArrayDirect); }
-    @Test void postgisArrayDirect24() throws Exception { exchangeWithPostgis(24, this::exchangeArrayDirect); }
+    @Test void geoPackageArrayScalars23() throws Exception { exchangeArrayScalars(23, null); }
+    @Test void geoPackageArrayScalars24() throws Exception { exchangeArrayScalars(24, null); }
+    @Test void postgisArrayScalars23() throws Exception { exchangeWithPostgis(23, this::exchangeArrayScalars); }
+    @Test void postgisArrayScalars24() throws Exception { exchangeWithPostgis(24, this::exchangeArrayScalars); }
 
-    private void exchangeArrayDirect(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(postgres, "array_direct");
-        new ArrayCases(work, new ReferenceTool(db.postgis()), version).direct(db);
+    private void exchangeArrayScalars(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(postgres, "array_scalars");
+        new ArrayCases(work, new ReferenceTool(db.postgis()), version).scalars(db);
     }
 
     @Test void geoPackageArraySchema23() throws Exception { exchangeArraySchema(23, null); }
@@ -1387,10 +1365,7 @@ final class DbInteropTest {
     }
 
     private void exchangeWithPostgis(int version, PostgisCase test) throws Exception {
-        var image = DockerImageName.parse("sogis/postgis:16-3.4").asCompatibleSubstituteFor("postgres");
-        try (var postgres = new PostgreSQLContainer(image)
-                .withTmpFs(Map.of("/var/lib/postgresql/data", "rw,size=256m"))
-                .withPassword("db_interop_password")) {
+        try (var postgres = postgisContainer()) {
             postgres.start();
             test.run(version, postgres);
         }
@@ -1974,22 +1949,6 @@ final class DbInteropTest {
                 referenceDatasetFixture(model, version, "tail-catalog-basket", leaf.replace("catalog-leaf", "tail-catalog-leaf")));
         reference.run(db, work.toString(), "--import", "--importTid", "--importBid", "--dataset", "catalog-tail", tail.toString());
         assertEquals("1", scalar(sql, "select count(*) from " + db.table("targetroot") + " where t_ili_tid='tail-catalog-leaf'"));
-    }
-
-    static String referenceDatasetFixture(String model, int version, String bid, String objects) {
-        if (version == 23) return """
-                <?xml version="1.0" encoding="UTF-8"?>
-                <TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
-                  <HEADERSECTION VERSION="2.3" SENDER="interop"><MODELS><MODEL NAME="%1$s" VERSION="1" URI="https://example.org/interlis/db"/></MODELS></HEADERSECTION>
-                  <DATASECTION><%1$s.Data BID="%2$s">%3$s</%1$s.Data></DATASECTION>
-                </TRANSFER>
-                """.formatted(model, bid, objects);
-        return """
-                <i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="http://www.interlis.ch/xtf/2.4/%1$s">
-                  <i:headersection><i:models><i:model>%1$s</i:model></i:models><i:sender>interop</i:sender></i:headersection>
-                  <i:datasection><Data i:bid="%2$s">%3$s</Data></i:datasection>
-                </i:transfer>
-                """.formatted(model, bid, objects);
     }
 
     private static void assertReferenceDatasetRows(TestDatabase db, Connection sql, int version, String tid) throws SQLException {
@@ -4602,15 +4561,6 @@ final class DbInteropTest {
         assertEquals(Integer.toString(count), scalar(sql, "select count(*) from " + db.table(table)), table);
     }
 
-    static Element readDataSection(Path output, int version) throws Exception {
-        var factory = DocumentBuilderFactory.newDefaultNSInstance();
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        var document = factory.newDocumentBuilder().parse(output.toFile());
-        var data = child(document.getDocumentElement(), version == 24 ? "datasection" : "DATASECTION");
-        assertNotNull(data);
-        return data;
-    }
-
     private static void assertTransfer(Path output, int version, String dataset, boolean hasEmptyText) throws Exception {
         var data = readDataSection(output, version);
         Map<String, Set<String>> baskets = new HashMap<>();
@@ -5475,76 +5425,6 @@ final class DbInteropTest {
     private record DetailValue(String label, Boolean enabled, Integer quantity, String decision) { }
     private record AnnotatedPair(String marker, String report, String memo, String grade, String decision) { }
 
-    static List<Element> children(Element parent) {
-        var elements = new ArrayList<Element>();
-        for (var node = parent.getFirstChild(); node != null; node = node.getNextSibling()) {
-            if (node instanceof Element child) elements.add(child);
-        }
-        return elements;
-    }
-
-    static Element child(Element parent, String name) {
-        return children(parent).stream().filter(element -> element.getLocalName().equals(name)).findFirst().orElse(null);
-    }
-
-    static String id(Element element, int version, String name) {
-        return version == 24 ? element.getAttributeNS(XTF24_NS, name) : element.getAttribute(name.toUpperCase(Locale.ROOT));
-    }
-
-    static String scalar(Connection sql, String query) throws SQLException {
-        try (var statement = sql.createStatement(); var result = statement.executeQuery(query)) {
-            if (!result.next()) return null;
-            String value = result.getString(1);
-            assertFalse(result.next(), query);
-            return value;
-        }
-    }
-
-    static void execute(Connection sql, String query) throws SQLException {
-        try (var statement = sql.createStatement()) {
-            statement.executeUpdate(query);
-        }
-    }
-
-    static void assertCliSuccess(TestDatabase db, String operation, String model, String dataset, Path path) {
-        var result = cli(db, operation, model, dataset, path, CancellationToken.none());
-        assertEquals(0, result.code(), result::diagnostics);
-    }
-
-    static void assertCliFailure(TestDatabase db, String operation, String model, String dataset, Path path,
-                                 String diagnostic, String... options) {
-        var result = cli(db, operation, model, dataset, path, CancellationToken.none(), options);
-        assertEquals(1, result.code(), result::diagnostics);
-        assertTrue(result.diagnostics().contains(diagnostic), result::diagnostics);
-    }
-
-    static void assertSchemaWithIdentityColumns(TestDatabase db, String model, Path path) {
-        var result = schemaWithIdentityColumns(db, model, path, CancellationToken.none());
-        assertEquals(0, result.code(), result::diagnostics);
-    }
-
-    static CliResult schemaWithIdentityColumns(TestDatabase db, String model, Path path,
-                                               CancellationToken token, String... options) {
-        var flags = new ArrayList<>(List.of(options));
-        if (!flags.contains("--add-models")) flags.addAll(List.of("--create-basket-col", "--create-tid-col"));
-        return cli(db, "schemaimport", model, null, path, token, flags.toArray(String[]::new));
-    }
-
-    static CliResult cli(TestDatabase db, String operation, String model, String dataset, Path path,
-                                 CancellationToken token, String... options) {
-        var diagnostics = new StringWriter();
-        var print = new PrintWriter(diagnostics);
-        var args = new ArrayList<>(List.of(operation, "--model", model));
-        if (dataset != null) args.addAll(List.of("--dataset", dataset));
-        args.addAll(db.nativeOptions());
-        args.addAll(List.of(options));
-        if (path != null) args.add(path.toString());
-        int code = Main.run(args.toArray(String[]::new), print, print, db.password, token);
-        return new CliResult(code, diagnostics.toString());
-    }
-
-    record CliResult(int code, String diagnostics) {}
-
     static void assertCliInZone(TestDatabase db, String operation, String model, String dataset, Path path, String zone)
             throws Exception {
         String modules = Main.class.getModule().getLayer().configuration().modules().stream()
@@ -5638,32 +5518,9 @@ final class DbInteropTest {
         }
     }
 
-    final class TestDatabase {
-        private final PostgreSQLContainer postgres;
-        private final boolean postgis;
-        private final Path file;
-        private final String url;
-        private final String user;
-        private final String password;
-        private final String schema;
-
+    final class TestDatabase extends DbTestSupport.Target {
         private TestDatabase(PostgreSQLContainer postgres, String name) {
-            this.postgres = postgres;
-            postgis = postgres != null;
-            file = work.resolve(name + ".gpkg");
-            url = postgis ? postgres.getJdbcUrl() : "jdbc:sqlite:" + file;
-            user = postgis ? postgres.getUsername() : "";
-            password = postgis ? postgres.getPassword() : "";
-            schema = "db_interop_" + name;
-        }
-
-        Connection connect() throws SQLException {
-            return DriverManager.getConnection(url, user, password);
-        }
-
-        private List<String> nativeOptions() {
-            return postgis ? List.of("--pg-url", url, "--schema", schema, "--user", user)
-                    : List.of("--gpkg", file.toString());
+            super(work.resolve(name + ".gpkg"), postgres, "db_interop_" + name);
         }
 
         private List<String> referenceOptions() {
@@ -5672,13 +5529,7 @@ final class DbInteropTest {
                     "--dbdatabase", postgres.getDatabaseName(), "--dbschema", schema, "--dbusr", user, "--dbpwd", password);
         }
 
-        boolean postgis() { return postgis; }
-
         TestDatabase peer(String name) { return new TestDatabase(postgres, name); }
-
-        String schema() { return schema; }
-
-        String table(String name) { return postgis ? schema + "." + name : name; }
     }
 
     private static String logText(Path log, String password) {

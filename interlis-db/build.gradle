@@ -76,8 +76,22 @@ def downloadIli2dbReferences = tasks.register('downloadIli2dbReferences') {
 }
 
 testing.suites {
+    dbTest(JvmTestSuite)
+
     dbInteropTest(JvmTestSuite) {
+        targets.configureEach {
+            testTask.configure {
+                inputs.files(downloadIli2dbReferences).withPathSensitivity(PathSensitivity.NONE)
+                inputs.file(rootProject.file('testdata/conformance/metamodel/IlisMeta16.ili')).withPathSensitivity(PathSensitivity.RELATIVE)
+                systemProperty 'ili2db.reference.version', ili2dbReferenceVersion
+                systemProperty 'ili2db.reference.dir', ili2dbReferenceDirectory.get().asFile.absolutePath
+            }
+        }
+    }
+
+    matching { it.name in ['dbTest', 'dbInteropTest'] }.configureEach {
         useJUnitJupiter(libs.versions.junit.get())
+        sources.java.srcDir('src/dbTestSupport/java')
         dependencies {
             implementation project()
             implementation 'org.testcontainers:testcontainers-postgresql:2.0.5'
@@ -85,10 +99,6 @@ testing.suites {
         targets.configureEach {
             testTask.configure {
                 javaLauncher = javaToolchains.launcherFor(java.toolchain)
-                inputs.files(downloadIli2dbReferences).withPathSensitivity(PathSensitivity.NONE)
-                inputs.file(rootProject.file('testdata/conformance/metamodel/IlisMeta16.ili')).withPathSensitivity(PathSensitivity.RELATIVE)
-                systemProperty 'ili2db.reference.version', ili2dbReferenceVersion
-                systemProperty 'ili2db.reference.dir', ili2dbReferenceDirectory.get().asFile.absolutePath
                 systemProperty 'junit.jupiter.execution.parallel.enabled', 'true'
                 systemProperty 'junit.jupiter.execution.parallel.mode.default', 'concurrent'
                 systemProperty 'junit.jupiter.execution.parallel.config.strategy', 'fixed'
@@ -100,11 +110,14 @@ testing.suites {
     }
 }
 
-javaModuleTesting.whitebox(testing.suites.dbInteropTest) {
-    requires.add('org.junit.jupiter.api')
-    requires.add('java.xml')
-}
+['dbTest', 'dbInteropTest'].each { suiteName ->
+    javaModuleTesting.whitebox(testing.suites.getByName(suiteName)) {
+        requires.add('org.junit.jupiter.api')
+        requires.add('java.xml')
+        if (suiteName == 'dbTest') requires.add('org.junit.jupiter.params')
+    }
 
-tasks.named('compileDbInteropTestJava') {
-    options.compilerArgs += ['--add-reads=guru.interlis.db=ALL-UNNAMED']
+    tasks.named(testing.suites.getByName(suiteName).sources.compileJavaTaskName) {
+        options.compilerArgs += ['--add-reads=guru.interlis.db=ALL-UNNAMED']
+    }
 }

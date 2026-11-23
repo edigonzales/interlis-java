@@ -82,6 +82,23 @@ JUnit-XML und Prozesslogs liegen in den Buildausgaben. Halte für eine Prüfung
 Toolchain, Plattform, relevante Eingaben, Commit, Befehle, Exits und Skips fest.
 Die [Freigabeprüfung](release.md) beschreibt die Auslieferungsprüfungen.
 
+## Eigene Datenbanktests
+
+`./gradlew :interlis-db:dbTest` prüft `interlis-db` über die eigene CLI und
+JDBC. Die Suite verwendet temporäre GeoPackage-Dateien sowie PostgreSQL 16
+mit PostGIS 3.4 über Testcontainers. Der
+[Linux-Push-Workflow](../../.github/workflows/database-tests.yml) führt sie
+mit Docker aus. `dbTest` benötigt keine ili2db-Distributionen. Der reguläre
+`check` bleibt dienstfrei.
+
+`ArrayStorageTest` prüft XTF 2.3 und 2.4. Die Fälle vergleichen Text und
+Leertext, SQL `NULL`, leere Arrays, Boolean- und Integer-Werte direkt in der
+Datenbank. Für Exportprüfungen setzen sie die Arraywerte per JDBC. Sie prüfen
+auch den Erhalt einer bestehenden XTF-Datei bei falschen SQL-Typen,
+beschädigten Elementen oder einem `NULL`-Element in einem direkten XTF-2.4-Array.
+Der Integerfall prüft den Rollback von Objektzeilen, Basket und Datensatz,
+wenn ein späteres Element die 32-Bit-Kodierung übersteigt.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -201,18 +218,20 @@ Die `*EnumNumericArrays*`-Fälle prüfen ITF-Codes und gespeicherte
 Lookup-IDs in Arrays. Sie vergleichen SQL-Typen, JSON-Zahlen, Reihenfolge,
 Duplikate, den Import-Rollback und den Erhalt einer Exportdatei.
 
-Die `*ArrayText*`-Fälle prüfen Reihenfolge, Duplikate, Sonderzeichen,
-gespeicherte SQL-Spaltennamen und den bekannten Referenzfehler bei
-`NULL`-Elementen. Die `*ArrayBoolean*`-Fälle prüfen die SQL- und
-JSON-Typen. Fehlerhafte Array-Werte lassen die XTF-Zieldatei intakt.
-Die `*ArrayInteger*`-Fälle prüfen typisierte Ganzzahlen und den Rollback,
-wenn ein Wert die 32-Bit-Kodierung übersteigt. Die `*ArrayEnumeration*`-Fälle
-prüfen benannte Aufzählungen und qualifizierte XTF-Codes. Die
+Die `*ArrayScalars*`-Fälle kombinieren Text, Boolean, Ganzzahlen und
+Aufzählungen in einem Referenzschema pro Backend und Sprachversion. Sie
+prüfen beide Werkzeugrichtungen, Strukturhüllen und direkte Werte in
+XTF 2.4, Listenreihenfolge, BAG-Duplikate, Sonderzeichen und fehlende Werte.
+Vor dem Rückweg wird eine umhüllte Textspalte samt gespeicherter Zuordnung
+umbenannt. Ein weiterer Datensatz prüft den bekannten Referenz-Exportfehler
+bei umhüllten `NULL`-Elementen und den erfolgreichen eigenen Export.
+Für diese vier Mischläufe verwende
+`./gradlew :interlis-db:dbInteropTest --tests '*DbInteropTest.*ArrayScalars*'`.
+
+Die `*ArrayEnumeration*`-Fälle prüfen benannte Aufzählungen und qualifizierte XTF-Codes. Die
 `*ArrayBag*`-Fälle prüfen Duplikate, fehlende Werte und die gruppierte
 XTF-2.4-Ausgabe von ili2db. Die `*ArraySingle*`-Fälle prüfen optionale
-Einzelwerte und diagnostizieren mehrere gespeicherte Elemente. Die
-`*ArrayDirect*`-Fälle prüfen in XTF 2.4 direkte skalare Array-Werte
-und in XTF 2.3 die entsprechende Einfeldstruktur.
+Einzelwerte und diagnostizieren mehrere gespeicherte Elemente.
 Die `*ArraySchema*`-Fälle vergleichen den SQL-Katalog und die Metadaten
 mit ili2db und prüfen den gemischten Datenaustausch, die gemeinsame
 ID-Vergabe und `--add-models` mit kombinierter EXPAND- und JSON-Abbildung.
