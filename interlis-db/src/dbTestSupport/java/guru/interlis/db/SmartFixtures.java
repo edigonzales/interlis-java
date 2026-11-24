@@ -187,4 +187,65 @@ final class SmartFixtures {
                     + " <> (checkedinstrument_terminal IS NULL))"));
         }
     }
+
+    void assertStructures(Path file, String model, String prefix) throws Exception {
+        var basket = children(readDataSection(file, version)).getFirst();
+        assertStructures(basket, model, prefix);
+    }
+
+    void assertStructures(Element basket, String model, String prefix) {
+        assertEquals(prefix + "-b", id(basket, version, "bid"));
+        var base = object(basket, model, "Survey", prefix + "-s");
+        var derived = object(basket, model, "DetailedSurvey", prefix + "-d");
+        assertEquals("solo", child(children(child(base, "Details")).getFirst(), "Memo").getTextContent());
+        assertNull(child(derived, "Details"));
+        assertEquals("derived", child(derived, "Label").getTextContent());
+        assertEquals(List.of("one", "two"), notes(base));
+        assertEquals(List.of("three", "four"), notes(derived));
+    }
+
+    private static List<String> notes(Element object) {
+        return children(object).stream().filter(e -> e.getLocalName().equals("Notes")).flatMap(e -> children(e).stream())
+                .map(note -> child(note, "Memo").getTextContent()).toList();
+    }
+
+    static void assertStructureStorage(Target db, Connection sql, String layout, int datasets) throws Exception {
+        boolean shared = layout.equals("smart1");
+        String note = db.table("note");
+        String owner = db.table(shared ? "survey" : "detailedsurvey");
+        String column = shared ? "survey_notes" : "detailedsurvey_notes";
+        String derived = "SELECT count(*) FROM " + note + " n JOIN " + owner
+                + " s ON n." + column + "=s.t_id AND n.t_basket=s.t_basket";
+        assertEquals(Integer.toString(2 * datasets), scalar(sql, derived
+                + " WHERE (n.t_seq=0 AND n.memo='three') OR (n.t_seq=1 AND n.memo='four')"));
+        String base = "SELECT count(*) FROM " + note + " n JOIN " + db.table("survey")
+                + " s ON n.survey_notes=s.t_id AND n.t_basket=s.t_basket";
+        assertEquals(Integer.toString(2 * datasets), scalar(sql, base
+                + " WHERE (n.t_seq=0 AND n.memo='one') OR (n.t_seq=1 AND n.memo='two')"));
+        assertEquals(Integer.toString(datasets), scalar(sql, "SELECT count(*) FROM " + note + " n JOIN "
+                + db.table("survey") + " s ON n.survey_details=s.t_id AND n.t_basket=s.t_basket WHERE n.memo='solo'"));
+        assertEquals(Integer.toString(5 * datasets), scalar(sql, "SELECT count(*) FROM " + note));
+        assertEquals(Integer.toString((shared ? 4 : 2) * datasets),
+                scalar(sql, "SELECT count(*) FROM " + note + " WHERE survey_notes IS NOT NULL"));
+    }
+
+    static void assertGeometryStorage(Target db, Connection sql, String layout, int datasets) throws Exception {
+        boolean shared = layout.equals("smart1");
+        String parent = db.table(shared ? "meter" : "smartunit");
+        if (db.postgis()) {
+            assertEquals(Integer.toString(datasets), scalar(sql, "SELECT count(*) FROM " + parent
+                    + " WHERE st_srid(location)=2056 AND st_srid(extralocation)=2056"));
+            assertEquals(Integer.toString(datasets), scalar(sql, "SELECT count(*) FROM " + parent
+                    + " WHERE t_ili_tid LIKE '%-n' AND st_srid(location)=2056 AND extralocation IS NULL"));
+        } else {
+            String helper = shared ? "meter_extralocation" : "smartunit_location";
+            String field = shared ? "extralocation" : "location";
+            assertEquals("2056", scalar(sql, "SELECT srs_id FROM gpkg_geometry_columns WHERE table_name='"
+                    + helper + "' AND column_name='" + field + "'"));
+            assertEquals(Integer.toString(2 * datasets), scalar(sql, "SELECT count(*) FROM " + db.table(helper) + " g JOIN "
+                    + parent + " p ON g.t_id=p.t_id AND g.t_basket=p.t_basket"
+                    + " WHERE p.t_ili_tid LIKE '%-s' OR p.t_ili_tid LIKE '%-n'"));
+            assertEquals(Integer.toString(2 * datasets), scalar(sql, "SELECT count(*) FROM " + db.table(helper)));
+        }
+    }
 }

@@ -208,6 +208,11 @@ Smart1-Diskriminator und eine umbenannte Smart2-Spalte. Die Referenzfälle
 prüfen den Rollback bei falschem Zieltyp und den Erhalt der Exportdatei
 bei mehreren belegten Zielspalten.
 
+`SmartPayloadStorageTest` prüft Eigentümer und Reihenfolge in
+Strukturtabellen sowie SRID und Zuordnung der Geometriehilfszeilen.
+Mehrfach belegte Eigentümer und fehlende GeoPackage-Hilfszeilen werden
+per JDBC hergestellt und müssen die bestehende Exportdatei erhalten.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -388,8 +393,11 @@ verwenden die Standardwahl von ili2db. Der Smart2-Folgeimport prüft die
 gemeinsame ID-Vergabe. Beim Smart2-Katalogvergleich wird die Reihenfolge
 innerhalb eines Satzes alternativer Fremdschlüsselspalten normalisiert.
 
-Die Fälle `*DbInteropTest.*SmartStructures*` und `*DbInteropTest.*SmartGeometries*`
-prüfen Struktureigentümer und Geometriezuordnungen in beiden Werkzeugrichtungen.
+`--tests '*SmartPayloadInteropTest'` verbindet Struktur- und Geometriemodell
+in einem Schema pro Smart-Profil und einer Lieferung mit zwei Baskets.
+Die Fälle vergleichen die Kataloge und prüfen Struktureigentümer und
+Geometriezuordnungen in beiden Werkzeugrichtungen. Die XTF-Prüfung ordnet
+die Baskets über Modell und BID zu.
 
 `--tests '*SmartMutationInteropTest'` prüft in beiden Layouts einen
 ili2db-Import, ein natives Update und den anschliessenden ili2db-Export. SQL
