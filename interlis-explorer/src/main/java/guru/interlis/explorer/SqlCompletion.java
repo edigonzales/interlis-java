@@ -7,6 +7,7 @@ import guru.interlis.explorer.ExplorerQueries.Suggestion;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -304,8 +305,12 @@ final class SqlCompletion {
             if (index < caretIndex && caretIndex <= close) {
                 break;
             }
-            var columns = explicit.isEmpty() ? projection(index + 1, close, ctes) : explicit;
-            ctes.put(normalize(name), new Source(List.of(name), columns));
+            var inferred = projection(index + 1, close, ctes);
+            var columns = new ArrayList<>(explicit);
+            if (inferred.size() > explicit.size()) {
+                columns.addAll(inferred.subList(explicit.size(), inferred.size()));
+            }
+            ctes.put(normalize(name), new Source(List.of(name), deduplicateColumns(columns)));
             index = close + 1;
             if (!at(index, Kind.COMMA)) {
                 return index;
@@ -313,6 +318,27 @@ final class SqlCompletion {
             index++;
         }
         return -1;
+    }
+
+    private static List<String> deduplicateColumns(List<String> columns) {
+        var used = new HashMap<String, Integer>();
+        var names = new ArrayList<String>();
+        for (var column : columns) {
+            var name = column;
+            if (!name.isEmpty()) {
+                var key = normalize(name);
+                int suffix = used.getOrDefault(key, 0);
+                if (suffix > 0) {
+                    do {
+                        name = column + "_" + suffix++;
+                    } while (used.containsKey(normalize(name)));
+                    used.put(key, suffix);
+                }
+                used.put(normalize(name), 1);
+            }
+            names.add(name);
+        }
+        return names;
     }
 
     private List<String> namesInParentheses(int open, int end) {
@@ -351,7 +377,9 @@ final class SqlCompletion {
                 return columns;
             }
             if (at(index, Kind.COMMA)) {
-                addProjection(columns, item, index, sources);
+                if (!addProjection(columns, item, index, sources)) {
+                    return columns;
+                }
                 item = index + 1;
             }
         }
@@ -359,23 +387,54 @@ final class SqlCompletion {
         return columns;
     }
 
-    private void addProjection(List<String> columns, int start, int end, List<Source> sources) {
+    private boolean addProjection(List<String> columns, int start, int end, List<Source> sources) {
         if (start >= end || columns.size() == MAX_INFERRED_COLUMNS) {
-            return;
+            return false;
         }
-        if (end == start + 1 && at(start, Kind.STAR)) {
-            sources.forEach(source -> addInferredColumns(columns, source));
-            return;
+        if (at(start, Kind.STAR)) {
+            if (end != start + 1 || sources.isEmpty()) {
+                return false;
+            }
+            for (var source : sources) {
+                if (source.columns().isEmpty()) {
+                    return false;
+                }
+                addInferredColumns(columns, source);
+            }
+            return true;
         }
         var path = path(start, end);
         if (path.end() == end && !path.names().isEmpty()) {
             columns.add(path.names().getLast());
-        } else if (path.end() == end - 2 && at(end - 2, Kind.DOT) && at(end - 1, Kind.STAR)) {
-            sources.stream().filter(source -> source.matches(path.names())).findFirst()
-                    .ifPresent(source -> addInferredColumns(columns, source));
+        } else if (at(path.end(), Kind.DOT) && at(path.end() + 1, Kind.STAR)) {
+            if (path.end() != end - 2) {
+                return false;
+            }
+            var source = sources.stream().filter(candidate -> candidate.matches(path.names())).findFirst();
+            if (source.isEmpty() || source.get().columns().isEmpty()) {
+                return false;
+            }
+            addInferredColumns(columns, source.get());
+        } else if (unknownProjectionWidth(start, end)) {
+            return false;
         } else if (aliasAt(end - 1) && (word(end - 2, "as") || implicitProjectionAlias(start, end - 1))) {
             columns.add(tokens.get(end - 1).value());
+        } else {
+            // Its generated name is unknown, but a regular expression occupies one position.
+            columns.add("");
         }
+        return true;
+    }
+
+    private boolean unknownProjectionWidth(int start, int end) {
+        for (int index = start; index < end; index++) {
+            if ((word(index, "columns") || word(index, "unnest")) && at(index + 1, Kind.OPEN)
+                    || at(index, Kind.OTHER) && (tokens.get(index).text().equals("[")
+                    || tokens.get(index).text().equals("{"))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void addInferredColumns(List<String> columns, Source source) {

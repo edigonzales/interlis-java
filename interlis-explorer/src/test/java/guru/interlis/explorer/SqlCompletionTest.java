@@ -62,6 +62,26 @@ class SqlCompletionTest {
     }
 
     @Test
+    void preservesCteProjectionPositionsAndDeduplicatesColumnsLikeDuckDb() {
+        assertEquals(List.of("first", "tid", "type_name"), suggestions("""
+                WITH q(first) AS (SELECT 1 + 4, tid, type_name FROM object)
+                SELECT q.| FROM q
+                """));
+        assertEquals(List.of("first", "type_name"),
+                suggestions("WITH q(first) AS (SELECT * FROM object) SELECT q.| FROM q"));
+        assertEquals(List.of("x", "X_1", "x_1_1", "x_2"), suggestions("""
+                WITH q AS (SELECT 1 AS x, 2 AS X, 3 AS x_1, 4 AS x)
+                SELECT q.| FROM q
+                """));
+        assertEquals(List.of("a", "a_1", "tail"),
+                suggestions("WITH q(a,a) AS (SELECT 1, 2, 3 AS tail) SELECT q.| FROM q"));
+        assertEquals(List.of("first"), suggestions("""
+                WITH q(first) AS (SELECT object.* EXCLUDE (tid), 1 AS tail FROM object)
+                SELECT q.| FROM q
+                """));
+    }
+
+    @Test
     void skipsCommentsAndLiteralsWithoutInventingBindings() {
         assertTrue(suggestions("SELECT tid -- artificial.|\nFROM object").isEmpty());
         assertTrue(suggestions("SELECT /* outer /* nested */ b.| */ tid FROM object").isEmpty());
