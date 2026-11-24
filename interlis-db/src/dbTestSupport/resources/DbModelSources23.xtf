@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="model sources fixture">
+    <MODELS>
+      <MODEL NAME="DbSharedSource23" VERSION="1" URI="https://example.org/interlis/db"/>
+      <MODEL NAME="DbStoredImports23" VERSION="1" URI="https://example.org/interlis/db"/>
+      <MODEL NAME="DbImportedStruct23" VERSION="1" URI="https://example.org/interlis/db"/>
+    </MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <DbSharedSource23.Data BID="fixture-shared-basket">
+      <DbSharedSource23.Data.Station TID="fixture-shared-station">
+        <Name>Imported domains</Name><State>active</State>
+        <Location><COORD><C1>2600123.125</C1><C2>1200456.375</C2></COORD></Location>
+      </DbSharedSource23.Data.Station>
+    </DbSharedSource23.Data>
+    <DbStoredImports23.Data BID="fixture-stored-basket">
+      <DbStoredImports23.Data.ImportedStation TID="fixture-stored-station">
+        <Name>Imported domains</Name><State>active</State>
+        <Location><COORD><C1>2600123.125</C1><C2>1200456.375</C2></COORD></Location>
+      </DbStoredImports23.Data.ImportedStation>
+    </DbStoredImports23.Data>
+    <DbImportedStruct23.Data BID="fixture-detail-basket">
+      <DbImportedStruct23.Data.Report TID="fixture-detail-report">
+        <Summary><DbSharedDetail23.Detail><Label>summary</Label></DbSharedDetail23.Detail></Summary>
+        <Entries><DbSharedDetail23.Detail><Label>second</Label></DbSharedDetail23.Detail><DbSharedDetail23.Detail><Label>first</Label></DbSharedDetail23.Detail></Entries>
+        <Observations><DbSharedDetail23.Detail><Label>same</Label></DbSharedDetail23.Detail><DbSharedDetail23.Detail><Label>same</Label></DbSharedDetail23.Detail></Observations>
+      </DbImportedStruct23.Data.Report>
+    </DbImportedStruct23.Data>
+  </DATASECTION>
+</TRANSFER>

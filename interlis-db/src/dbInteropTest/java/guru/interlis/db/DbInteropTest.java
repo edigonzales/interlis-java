@@ -407,22 +407,6 @@ final class DbInteropTest {
     @Test void postgisTopicMutations23() throws Exception { exchangeWithPostgis(23, this::exchangeTopicMutations); }
     @Test void postgisTopicMutations24() throws Exception { exchangeWithPostgis(24, this::exchangeTopicMutations); }
 
-    @Test void geoPackageSharedSource23() throws Exception { exchangeSharedSource(23, null); }
-    @Test void geoPackageSharedSource24() throws Exception { exchangeSharedSource(24, null); }
-    @Test void postgisSharedSource23() throws Exception { exchangeWithPostgis(23, this::exchangeSharedSource); }
-    @Test void postgisSharedSource24() throws Exception { exchangeWithPostgis(24, this::exchangeSharedSource); }
-    @Test void geoPackageStoredImports23() throws Exception { exchangeStoredImports(23, null); }
-    @Test void geoPackageStoredImports24() throws Exception { exchangeStoredImports(24, null); }
-    @Test void postgisStoredImports23() throws Exception { exchangeWithPostgis(23, this::exchangeStoredImports); }
-    @Test void postgisStoredImports24() throws Exception { exchangeWithPostgis(24, this::exchangeStoredImports); }
-    @Test void geoPackageLocalImports23() throws Exception { exchangeLocalImports(23, null); }
-    @Test void geoPackageLocalImports24() throws Exception { exchangeLocalImports(24, null); }
-    @Test void postgisLocalImports23() throws Exception { exchangeWithPostgis(23, this::exchangeLocalImports); }
-    @Test void postgisLocalImports24() throws Exception { exchangeWithPostgis(24, this::exchangeLocalImports); }
-    @Test void geoPackageImportedStruct23() throws Exception { exchangeImportedStruct(23, null); }
-    @Test void geoPackageImportedStruct24() throws Exception { exchangeImportedStruct(24, null); }
-    @Test void postgisImportedStruct23() throws Exception { exchangeWithPostgis(23, this::exchangeImportedStruct); }
-    @Test void postgisImportedStruct24() throws Exception { exchangeWithPostgis(24, this::exchangeImportedStruct); }
     @Test void geoPackageImportedTopic23() throws Exception { exchangeImportedTopic(23, null); }
     @Test void geoPackageImportedTopic24() throws Exception { exchangeImportedTopic(24, null); }
     @Test void postgisImportedTopic23() throws Exception { exchangeWithPostgis(23, this::exchangeImportedTopic); }
@@ -554,28 +538,6 @@ final class DbInteropTest {
         var reference = new ReferenceTool(work, inherited.postgis());
         new TranslationCases(work, reference, version).mutation(translated);
         new TopicCases(work, reference, version).mutation(inherited);
-    }
-
-    private void exchangeSharedSource(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "shared_source");
-        new ModelCases(work, new ReferenceTool(work, db.postgis()), version).sharedSource(db);
-    }
-
-    private void exchangeStoredImports(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "stored_imports");
-        new ModelCases(work, new ReferenceTool(work, db.postgis()), version).storedImports(db);
-    }
-
-    private void exchangeLocalImports(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(work, postgres, "reference_imports");
-        var nativeSchema = new TestDatabase(work, postgres, "native_imports");
-        new ModelCases(work, new ReferenceTool(work, reference.postgis()), version).localImports(reference, nativeSchema);
-    }
-
-    private void exchangeImportedStruct(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(work, postgres, "reference_detail");
-        var nativeSchema = new TestDatabase(work, postgres, "native_detail");
-        new ModelCases(work, new ReferenceTool(work, reference.postgis()), version).importedStructures(reference, nativeSchema);
     }
 
     private void exchangeImportedTopic(int version, PostgreSQLContainer postgres) throws Exception {

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
+    xmlns:g="http://www.interlis.ch/geometry/1.0" xmlns:d="http://www.interlis.ch/xtf/2.4/DbSharedDetail24">
+  <i:headersection>
+    <i:models>
+      <i:model>DbSharedSource24</i:model>
+      <i:model>DbStoredImports24</i:model>
+      <i:model>DbImportedStruct24</i:model>
+    </i:models>
+    <i:sender>model sources fixture</i:sender>
+  </i:headersection>
+  <i:datasection>
+    <Data xmlns="http://www.interlis.ch/xtf/2.4/DbSharedSource24" i:bid="fixture-shared-basket">
+      <Station i:tid="fixture-shared-station">
+        <Name>Imported domains</Name><State>active</State>
+        <Location><g:coord><g:c1>2600123.125</g:c1><g:c2>1200456.375</g:c2></g:coord></Location>
+      </Station>
+    </Data>
+    <Data xmlns="http://www.interlis.ch/xtf/2.4/DbStoredImports24" i:bid="fixture-stored-basket">
+      <ImportedStation i:tid="fixture-stored-station">
+        <Name>Imported domains</Name><State>active</State>
+        <Location><g:coord><g:c1>2600123.125</g:c1><g:c2>1200456.375</g:c2></g:coord></Location>
+      </ImportedStation>
+    </Data>
+    <Data xmlns="http://www.interlis.ch/xtf/2.4/DbImportedStruct24" i:bid="fixture-detail-basket">
+      <Report i:tid="fixture-detail-report">
+        <Summary><d:Detail><d:Label>summary</d:Label></d:Detail></Summary>
+        <Entries><d:Detail><d:Label>second</d:Label></d:Detail><d:Detail><d:Label>first</d:Label></d:Detail></Entries>
+        <Observations><d:Detail><d:Label>same</d:Label></d:Detail><d:Detail><d:Label>same</d:Label></d:Detail></Observations>
+      </Report>
+    </Data>
+  </i:datasection>
+</i:transfer>

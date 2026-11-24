@@ -3,10 +3,10 @@ INTERLIS 2.4;
 MODEL DbStoredImports24 (en) AT "https://example.org/interlis/db" VERSION "1" =
   IMPORTS DbStoredMiddle24, DbStoredTypes24;
   TOPIC Data =
-    CLASS Station =
+    CLASS ImportedStation =
       Name : DbStoredMiddle24.Label;
       State : DbStoredTypes24.Status;
       Location : DbStoredTypes24.Position;
-    END Station;
+    END ImportedStation;
   END Data;
 END DbStoredImports24.

@@ -226,6 +226,11 @@ Update und Delete.
 mit Rollback, widersprüchliche Fremdschlüsselmetadaten, doppelt belegte
 Smart2-Zielspalten sowie den Schutz referenzierter Katalogdatensätze.
 
+`ModelSourcesStorageTest` prüft fehlende lokale Modellimporte, fehlende und
+mehrdeutige gespeicherte Modellquellen sowie den Erhalt der Exportdatei.
+Eine manipulierte Topiczuordnung prüft, dass ein Datensatz mit einem
+Basket ausserhalb der Auswahl erhalten bleibt.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -397,19 +402,12 @@ die Baskets über Modell und BID zu.
 ili2db-Import, ein natives Update und den anschliessenden ili2db-Export. SQL
 und XTF belegen stabile IDs, den geerbten Wert und die Änderung.
 
-`*DbInteropTest.*SharedSource*` prüft importierte Typen aus derselben
-gespeicherten Modelldatei, die Fachwerte und CRS sowie beide
-Werkzeugrichtungen mit dem Referenzschema.
-`*DbInteropTest.*StoredImports*` prüft transitive und gemeinsam genutzte
-Quellen in mehreren gespeicherten Dateien. Fehlende und mehrdeutige
-Quellen müssen die vorherige Exportdatei erhalten.
-`*DbInteropTest.*LocalImports*` vergleicht die erzeugten Modellzeilen
-und das SQL-Schema mit ili2db. Danach laufen beide Werkzeugrichtungen
-mit den gespeicherten Quellen.
-`*DbInteropTest.*ImportedStruct*` prüft eine gemeinsam verwendete
-importierte Struktur als Einzelwert, Liste und Bag. Es vergleicht
-die Abbildung, die Eigentümer und Positionen sowie die Qualifikation
-der Werte im XTF.
+`--tests '*ModelSourcesInteropTest'` bündelt gemeinsam und transitiv
+gespeicherte Modellquellen sowie importierte Strukturen in einer Lieferung
+mit drei Baskets. Der Katalogvergleich prüft die Modellzeilen und die
+Abbildung. Nach dem Entfernen der lokalen Modelldateien laufen beide
+Werkzeugrichtungen in beiden Schematypen.
+
 `*DbInteropTest.*ImportedTopic*` prüft den Umfang der Abbildung bei
 `DEPENDS ON`, den Werkzeugwechsel mit einem separaten Zieldatensatz
 und den Rollback bei mehrdeutigen Ziel-TIDs.
