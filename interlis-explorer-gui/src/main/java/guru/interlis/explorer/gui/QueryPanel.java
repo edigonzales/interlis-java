@@ -5,10 +5,6 @@ import guru.interlis.explorer.ExplorerQueries.Mode;
 import guru.interlis.explorer.ExplorerQueries.SqlCatalog;
 import guru.interlis.explorer.ExplorerQueries.Suggestion;
 import guru.interlis.explorer.Iql;
-import org.fife.ui.autocomplete.AutoCompletion;
-import org.fife.ui.autocomplete.BasicCompletion;
-import org.fife.ui.autocomplete.Completion;
-import org.fife.ui.autocomplete.DefaultCompletionProvider;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
@@ -16,6 +12,7 @@ import org.fife.ui.rtextarea.RTextScrollPane;
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -24,14 +21,14 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingWorker;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.text.JTextComponent;
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -45,9 +42,9 @@ final class QueryPanel extends JPanel {
     private final JButton run = new JButton("Run");
     private final JButton cancel = new JButton("Cancel");
     private final JLabel status = new JLabel("Open a dataset to run a query.");
-    private final JTable results = new JTable();
+    private final ResultTable results = new ResultTable();
     private final EnumMap<Mode, String> drafts = new EnumMap<>(Mode.class);
-    private final AutoCompletion completion = new AutoCompletion(new QueryCompletions());
+    private final QueryAutoCompletion completion = new QueryAutoCompletion(this::suggestions);
 
     private Mode currentMode = Mode.IQL;
     private ExplorerQueries queries;
@@ -88,13 +85,6 @@ final class QueryPanel extends JPanel {
 
         status.setName("queryStatus");
         status.putClientProperty("html.disable", true);
-        results.setName("queryResults");
-        results.setFillsViewportHeight(true);
-        results.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        var renderer = new DefaultTableCellRenderer();
-        renderer.putClientProperty("html.disable", true);
-        results.setDefaultRenderer(Object.class, renderer);
-
         var actions = new JPanel(new FlowLayout(FlowLayout.LEADING, 6, 0));
         actions.add(mode);
         actions.add(run);
@@ -114,7 +104,7 @@ final class QueryPanel extends JPanel {
         active = null;
         queries = replacement;
         catalog = replacementCatalog == null ? EMPTY_CATALOG : replacementCatalog;
-        showResult(new ExplorerQueries.Result(List.of(), List.of(), false));
+        results.showResult(new ExplorerQueries.Result(List.of(), List.of(), false));
         status.setToolTipText(null);
         status.setText(queries == null ? "Open a dataset to run a query." : " ");
         setReady();
@@ -132,7 +122,7 @@ final class QueryPanel extends JPanel {
         currentMode = (Mode) mode.getSelectedItem();
         editor.setText(drafts.getOrDefault(currentMode, ""));
         editor.setCaretPosition(0);
-        showResult(new ExplorerQueries.Result(List.of(), List.of(), false));
+        results.showResult(new ExplorerQueries.Result(List.of(), List.of(), false));
         status.setToolTipText(null);
         status.setText(queries == null ? "Open a dataset to run a query." : " ");
     }
@@ -168,35 +158,11 @@ final class QueryPanel extends JPanel {
         }
     }
 
-    private List<Suggestion> suggestions(JTextComponent component) {
+    private List<Suggestion> suggestions(String text, int caret) {
         if (queries == null || active != null) {
             return List.of();
         }
-        int caret = component.getCaretPosition();
-        var text = component.getText();
         return currentMode == Mode.IQL ? queries.completeIql(text, caret) : catalog.complete(text, caret);
-    }
-
-    private final class QueryCompletions extends DefaultCompletionProvider {
-        private QueryCompletions() {
-            setAutoActivationRules(true, ".");
-        }
-
-        @Override
-        public String getAlreadyEnteredText(JTextComponent component) {
-            var items = suggestions(component);
-            return items.isEmpty() ? "" : component.getText()
-                    .substring(items.getFirst().start(), component.getCaretPosition());
-        }
-
-        @Override
-        protected List<Completion> getCompletionsImpl(JTextComponent component) {
-            var choices = new ArrayList<Completion>();
-            for (var item : suggestions(component)) {
-                choices.add(new BasicCompletion(this, item.text(), item.description()));
-            }
-            return choices;
-        }
     }
 
     private final class QueryWork extends SwingWorker<ExplorerQueries.Result, Void> {
@@ -237,7 +203,7 @@ final class QueryPanel extends JPanel {
                     status.setText("Query cancelled.");
                     return;
                 }
-                showResult(result);
+                results.showResult(result);
                 status.setText(result.rows().size() + (result.rows().size() == 1 ? " row" : " rows")
                         + (result.truncated() ? " shown. More rows are available." : "."));
             } catch (ExecutionException failure) {
@@ -260,8 +226,50 @@ final class QueryPanel extends JPanel {
         }
     }
 
-    private void showResult(ExplorerQueries.Result result) {
-        results.setModel(new AbstractTableModel() {
+    static final class ResultTable extends JTable {
+        ResultTable() {
+            setName("queryResults");
+            setFillsViewportHeight(true);
+            setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+            if (getTableHeader().getDefaultRenderer() instanceof JComponent headerRenderer) {
+                headerRenderer.putClientProperty("html.disable", true);
+            }
+            var renderer = new DefaultTableCellRenderer() {
+                @Override
+                public Component getTableCellRendererComponent(JTable table, Object value, boolean selected,
+                                                                boolean focus, int row, int column) {
+                    super.getTableCellRendererComponent(table, value, selected, focus, row, column);
+                    boolean isNull = table.getModel() instanceof ResultModel model
+                            && model.result.isNull(table.convertRowIndexToModel(row), table.convertColumnIndexToModel(column));
+                    if (isNull) {
+                        var font = getFont();
+                        setFont(font.deriveFont(font.getStyle() | Font.ITALIC));
+                    }
+                    String description = isNull ? "SQL NULL" : null;
+                    setToolTipText(description);
+                    getAccessibleContext().setAccessibleName(description);
+                    return this;
+                }
+            };
+            renderer.putClientProperty("html.disable", true);
+            setDefaultRenderer(Object.class, renderer);
+        }
+
+        void showResult(ExplorerQueries.Result result) {
+            setModel(new ResultModel(result));
+            for (int column = 0; column < result.columns().size(); column++) {
+                int width = Math.clamp(result.columns().get(column).length() * 8 + 32, 110, 400);
+                getColumnModel().getColumn(column).setPreferredWidth(width);
+            }
+        }
+
+        private static final class ResultModel extends AbstractTableModel {
+            private final ExplorerQueries.Result result;
+
+            private ResultModel(ExplorerQueries.Result result) {
+                this.result = result;
+            }
+
             @Override
             public int getRowCount() {
                 return result.rows().size();
@@ -281,10 +289,6 @@ final class QueryPanel extends JPanel {
             public Object getValueAt(int row, int column) {
                 return result.rows().get(row).get(column);
             }
-        });
-        for (int column = 0; column < result.columns().size(); column++) {
-            int width = Math.clamp(result.columns().get(column).length() * 8 + 32, 110, 400);
-            results.getColumnModel().getColumn(column).setPreferredWidth(width);
         }
     }
 }

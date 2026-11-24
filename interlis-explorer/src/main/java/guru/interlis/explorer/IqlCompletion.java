@@ -35,7 +35,7 @@ final class IqlCompletion {
         var scanned = IqlSyntax.scan(text, false);
         tokens = scanned.subList(0, scanned.size() - 1);
         int position = 0;
-        while (position < tokens.size() && tokens.get(position).end() < caret) position++;
+        while (position < tokens.size() && precedesCaret(tokens.get(position), caret)) position++;
         IqlSyntax.Token current = position < tokens.size() ? tokens.get(position) : null;
         inString = current != null && current.kind() == IqlSyntax.Kind.STRING
                 && current.start() < caret && caret <= current.end();
@@ -43,11 +43,16 @@ final class IqlCompletion {
             start = current.start();
             end = current.end();
         } else {
-            if (current != null && current.end() <= caret) position++;
             start = end = caret;
         }
         cursor = position;
         word = text.substring(start, caret);
+    }
+
+    private static boolean precedesCaret(IqlSyntax.Token token, int caret) {
+        // At a boundary, keep a completed word or advance past punctuation to the next word.
+        return token.end() < caret || token.end() == caret
+                && token.kind() != IqlSyntax.Kind.WORD && token.kind() != IqlSyntax.Kind.STRING;
     }
 
     List<Iql.Completion> suggestions() {

@@ -101,11 +101,15 @@ class IqlTest {
         var plan = plan("RelationsDemo");
         String source = "SELECT * FROM RelationsDemo.Data.I";
         assertTrue(Iql.complete(plan, source, source.length()).stream().anyMatch(match -> match.text().equals("Item")));
-        String nested = "SELECT i.details.ow FROM RelationsDemo.Data.Item AS i";
-        var matches = Iql.complete(plan, nested, nested.indexOf(" FROM"));
-        assertEquals(List.of("owner"), matches.stream().map(Iql.Completion::text).toList());
-        var match = matches.getFirst();
-        assertEquals("ow", nested.substring(match.start(), match.end()));
+        String nested = "SELECT i.details.owner FROM RelationsDemo.Data.Item AS i";
+        int tokenStart = nested.indexOf("owner");
+        for (int caret : List.of(tokenStart, tokenStart + 2, tokenStart + "owner".length())) {
+            var matches = Iql.complete(plan, nested, caret);
+            assertEquals(List.of("owner"), matches.stream().map(Iql.Completion::text).toList());
+            var match = matches.getFirst();
+            assertEquals(tokenStart, match.start());
+            assertEquals("owner", nested.substring(match.start(), match.end()));
+        }
         String inner = "SELECT p.title FROM RelationsDemo.Data.Parent p WHERE EXISTS(p.items AS i WHERE i.det";
         assertEquals(List.of("details"), Iql.complete(plan, inner, inner.length()).stream().map(Iql.Completion::text).toList());
     }

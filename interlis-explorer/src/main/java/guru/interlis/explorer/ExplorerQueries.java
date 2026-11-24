@@ -8,11 +8,13 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
@@ -26,10 +28,6 @@ public final class ExplorerQueries {
     private static final int CELL_LIMIT = 2_048;
     private static final int TIMEOUT_SECONDS = 60;
     private static final long CANCEL_RETRY_NANOS = TimeUnit.MILLISECONDS.toNanos(10);
-    private static final List<String> SQL_KEYWORDS = List.of(
-            "SELECT", "FROM", "WHERE", "AS", "JOIN", "ON", "AND", "OR", "NOT", "GROUP BY", "HAVING",
-            "ORDER BY", "LIMIT", "WITH", "DISTINCT", "UNION", "IS NULL", "ASC", "DESC");
-
     private final DuckDbStore store;
 
     public ExplorerQueries(DuckDbStore store) {
@@ -38,14 +36,33 @@ public final class ExplorerQueries {
 
     public enum Mode { IQL, SQL }
 
-    /** Offsets are UTF-16 indices into the source passed for completion. */
+    /** Replacement for the half-open UTF-16 range in the source passed for completion. */
     public record Suggestion(String text, String description, int start, int end) {}
 
-    /** Column labels and string previews in result order. All lists are immutable. */
-    public record Result(List<String> columns, List<List<String>> rows, boolean truncated) {
+    /**
+     * Column labels and string previews in result order. All lists and sets are immutable.
+     * A null result still has the string preview "NULL". Each row's set in
+     * {@code nullColumnsByRow} identifies which of its zero-based columns contain actual nulls.
+     */
+    public record Result(List<String> columns, List<List<String>> rows, boolean truncated,
+                         List<Set<Integer>> nullColumnsByRow) {
         public Result {
             columns = List.copyOf(columns);
             rows = rows.stream().map(List::copyOf).toList();
+            nullColumnsByRow = nullColumnsByRow.stream().map(Set::copyOf).toList();
+            if (nullColumnsByRow.size() != rows.size()) {
+                throw new IllegalArgumentException("Null column information must cover every result row");
+            }
+        }
+
+        /** Creates a result from string previews without any null-cell information. */
+        public Result(List<String> columns, List<List<String>> rows, boolean truncated) {
+            this(columns, rows, truncated, Collections.nCopies(rows.size(), Set.of()));
+        }
+
+        /** Reports whether the cell at the zero-based result indices contains a null. */
+        public boolean isNull(int row, int column) {
+            return nullColumnsByRow.get(row).contains(column);
         }
     }
 
@@ -205,26 +222,33 @@ public final class ExplorerQueries {
             try (var rows = query.executeQuery()) {
                 var metadata = rows.getMetaData();
                 var data = new ArrayList<List<String>>();
+                var nullColumnsByRow = new ArrayList<Set<Integer>>();
                 while (data.size() < ROW_LIMIT) {
                     cancellation.check();
                     if (!rows.next()) {
-                        return new Result(columns, data, false);
+                        return new Result(columns, data, false, nullColumnsByRow);
                     }
                     var line = new ArrayList<String>();
+                    var nullColumns = new HashSet<Integer>();
                     for (int index = 1; index <= columns.size(); index++) {
                         cancellation.check();
                         var type = metadata.getColumnTypeName(index);
+                        String value;
                         if ("GEOMETRY".equalsIgnoreCase(type) || metadata.getColumnType(index) == Types.BLOB) {
-                            line.add(rows.getObject(index) == null ? "NULL" : type);
+                            value = rows.getObject(index) == null ? null : type;
                         } else {
-                            var value = rows.getString(index);
-                            line.add(value == null ? "NULL" : abbreviated(value));
+                            value = rows.getString(index);
                         }
+                        if (value == null) {
+                            nullColumns.add(index - 1);
+                        }
+                        line.add(value == null ? "NULL" : abbreviated(value));
                     }
                     data.add(line);
+                    nullColumnsByRow.add(nullColumns);
                 }
                 cancellation.check();
-                return new Result(columns, data, rows.next());
+                return new Result(columns, data, rows.next(), nullColumnsByRow);
             }
         });
     }
@@ -244,78 +268,49 @@ public final class ExplorerQueries {
     }
 
     /** Immutable catalog snapshot built once off the Swing event thread. */
-    public record SqlCatalog(Map<String, List<String>> tables, List<String> functions) {
+    public record SqlCatalog(Map<String, List<String>> tables, List<String> functions, List<Table> sources) {
+        /** A relation with its declared spelling and columns in catalog order. */
+        public record Table(String catalog, String schema, String name, List<String> columns) {
+            public Table {
+                Objects.requireNonNull(catalog);
+                Objects.requireNonNull(schema);
+                Objects.requireNonNull(name);
+                columns = List.copyOf(columns);
+            }
+        }
+
+        public SqlCatalog(Map<String, List<String>> tables, List<String> functions) {
+            this(tables, functions, tables.entrySet().stream().sorted(Map.Entry.comparingByKey())
+                    .map(entry -> new Table("", "", entry.getKey(), entry.getValue())).toList());
+        }
+
         public SqlCatalog {
             var copy = new LinkedHashMap<String, List<String>>();
             tables.forEach((name, columns) -> copy.put(name, List.copyOf(columns)));
             tables = Map.copyOf(copy);
             functions = List.copyOf(functions);
+            sources = List.copyOf(sources);
         }
 
+        /** Suggests full token replacements, using half-open UTF-16 offsets into text. */
         public List<Suggestion> complete(String text, int caret) {
-            int start = identifierStart(text, caret);
-            var prefix = text.substring(start, caret).toLowerCase(Locale.ROOT);
-            var candidates = new LinkedHashMap<String, Suggestion>();
-            if (start > 0 && text.charAt(start - 1) == '.') {
-                int qualifierEnd = start - 1;
-                var qualifier = text.substring(identifierStart(text, qualifierEnd), qualifierEnd);
-                var tablesInScope = new ArrayList<String>();
-                tables.keySet().stream().filter(name -> name.equalsIgnoreCase(qualifier)).findFirst()
-                        .ifPresent(tablesInScope::add);
-                if (tablesInScope.isEmpty()) {
-                    var aliases = java.util.regex.Pattern.compile(
-                            "(?i)\\b(?:FROM|JOIN)\\s+([\\w]+)\\s+(?:AS\\s+)?([\\w]+)").matcher(text);
-                    while (aliases.find()) {
-                        if (aliases.group(2).equalsIgnoreCase(qualifier)) {
-                            var table = aliases.group(1);
-                            tables.keySet().stream().filter(name -> name.equalsIgnoreCase(table)).findFirst()
-                                    .ifPresent(tablesInScope::add);
-                        }
-                    }
-                }
-                tablesInScope.forEach(table -> tables.get(table).forEach(column ->
-                        add(candidates, column, table, prefix, start, caret)));
-            } else {
-                tables.keySet().stream().sorted().forEach(table ->
-                        add(candidates, table, "Table", prefix, start, caret));
-                tables.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(table ->
-                        table.getValue().forEach(column -> add(candidates, column, table.getKey(), prefix, start, caret)));
-                SQL_KEYWORDS.forEach(keyword -> add(candidates, keyword, "SQL", prefix, start, caret));
-                functions.forEach(name -> add(candidates, name, "Function", prefix, start, caret));
-            }
-            return candidates.values().stream().limit(100).toList();
-        }
-
-        private static int identifierStart(String text, int end) {
-            int start = end;
-            while (start > 0 && (Character.isLetterOrDigit(text.charAt(start - 1))
-                    || text.charAt(start - 1) == '_')) {
-                start--;
-            }
-            return start;
-        }
-
-        private static void add(Map<String, Suggestion> choices, String text, String description,
-                                String prefix, int start, int caret) {
-            var lower = text.toLowerCase(Locale.ROOT);
-            if (lower.startsWith(prefix)) {
-                choices.putIfAbsent(lower, new Suggestion(text, description, start, caret));
-            }
+            return SqlCompletion.complete(this, text, caret);
         }
     }
 
     public SqlCatalog sqlCatalog() throws SQLException {
-        var tables = new LinkedHashMap<String, List<String>>();
+        var columns = new LinkedHashMap<List<String>, List<String>>();
         var functions = new TreeSet<String>();
         try (var connection = store.duplicateForQuery();
              var statement = connection.createStatement()) {
             try (var rows = statement.executeQuery("""
-                    SELECT table_name, column_name FROM duckdb_columns()
-                    WHERE schema_name = 'main' AND NOT internal
-                    ORDER BY table_name, column_index
+                    SELECT database_name, schema_name, table_name, column_name FROM duckdb_columns()
+                    WHERE NOT internal
+                    ORDER BY database_name, schema_name, table_name, column_index
                     """)) {
                 while (rows.next()) {
-                    tables.computeIfAbsent(rows.getString(1), name -> new ArrayList<>()).add(rows.getString(2));
+                    var table = List.of(rows.getString(1), rows.getString(2), rows.getString(3));
+                    columns.computeIfAbsent(table, name -> new ArrayList<>()).add(rows.getString(4));
                 }
             }
             try (var rows = statement.executeQuery("SELECT DISTINCT function_name FROM duckdb_functions()")) {
@@ -324,6 +319,15 @@ public final class ExplorerQueries {
                 }
             }
         }
-        return new SqlCatalog(tables, List.copyOf(functions));
+        var tables = new LinkedHashMap<String, List<String>>();
+        var sources = new ArrayList<SqlCatalog.Table>();
+        columns.forEach((name, names) -> {
+            var table = new SqlCatalog.Table(name.get(0), name.get(1), name.get(2), names);
+            sources.add(table);
+            if (table.schema().equals("main")) {
+                tables.putIfAbsent(table.name(), table.columns());
+            }
+        });
+        return new SqlCatalog(tables, List.copyOf(functions), sources);
     }
 }

@@ -330,9 +330,12 @@ Schliessen wird die temporäre DuckDB-Datenbank entfernt.
 Im Tab **Query** wählst du **IQL** oder **SQL**. **Run** führt die Abfrage aus.
 Auf macOS geht das auch mit **⌘Enter**, auf den übrigen Plattformen mit
 **Strg+Enter**. Vorschläge erscheinen beim Tippen und auf **⌘⇧Leertaste**
-unter macOS bzw. **Strg+Leertaste**.
+unter macOS bzw. **Strg+Leertaste**. Ein gewählter Vorschlag ersetzt den
+ganzen Bezeichner an der Cursorposition.
 Mit **Cancel** kannst du eine laufende Abfrage abbrechen. Die Ergebnistabelle
 zeigt bis zu 1000 Zeilen und meldet, wenn weitere Treffer vorhanden sind.
+Echte `NULL`-Werte erscheinen kursiv und haben den Tooltip «SQL NULL».
+Spaltennamen werden als Klartext angezeigt.
 
 IQL verwendet die deklarierten Namen aus dem Modell. Mit `RelationsDemo.ili`
 und `relations-demo.xtf` liefert diese Abfrage den Namen des aufgelösten
@@ -370,9 +373,12 @@ und unbekannte oder unterschiedliche CRS. Die räumliche Abfrage benötigt
 DuckDB Spatial. Der Explorer lädt die signierte Extension aus dem lokalen
 Cache oder bezieht sie beim Öffnen aus dem offiziellen DuckDB-Repository.
 
-SQL arbeitet mit Tabellen und Spalten aus dem DuckDB-Katalog. Der Datensatz
-ist für diese Abfragen schreibgeschützt. Die folgende Abfrage zählt Objekte je
-konkreter Klasse.
+SQL arbeitet mit Tabellen und Spalten aus dem DuckDB-Katalog. Nach einem
+Tabellenalias und einem Punkt schlägt der Editor die Spalten der zugehörigen
+Quelle vor. Das gilt auch für qualifizierte oder in doppelte Anführungszeichen
+gesetzte Tabellennamen und für erkennbare Ausgabespalten von `WITH`-Abfragen.
+Der Datensatz ist für diese Abfragen schreibgeschützt. Die folgende Abfrage
+zählt Objekte je konkreter Klasse.
 
 ```sql
 SELECT type_name, count(*) AS objects
