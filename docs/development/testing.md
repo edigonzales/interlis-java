@@ -231,6 +231,10 @@ mehrdeutige gespeicherte Modellquellen sowie den Erhalt der Exportdatei.
 Eine manipulierte Topiczuordnung prüft, dass ein Datensatz mit einem
 Basket ausserhalb der Auswahl erhalten bleibt.
 
+`MultiModelStorageTest` prüft Modellauswahl, getrennte Sprachversionen im
+selben Schema, Rollback bei einem späteren fremden Basket oder einem
+mehrdeutigen Ziel sowie Datensatzänderungen mit eingehenden Referenzen.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -408,21 +412,12 @@ mit drei Baskets. Der Katalogvergleich prüft die Modellzeilen und die
 Abbildung. Nach dem Entfernen der lokalen Modelldateien laufen beide
 Werkzeugrichtungen in beiden Schematypen.
 
-`*DbInteropTest.*ImportedTopic*` prüft den Umfang der Abbildung bei
-`DEPENDS ON`, den Werkzeugwechsel mit einem separaten Zieldatensatz
-und den Rollback bei mehrdeutigen Ziel-TIDs.
-`*DbInteropTest.*JointSchema*` prüft zwei eigenständige Modelle mit
-gleichnamigen Topics und Klassen, ihre gespeicherten SQL-Zuordnungen,
-die gemeinsame ID-Vergabe und beide Werkzeugrichtungen.
-`*DbInteropTest.*MixedExport*` prüft Header und Baskets gemischter
-Datensätze, eine unvollständige Auswahl und getrennte Datensätze beider
-XTF-Versionen im selben Referenzschema.
-`*DbInteropTest.*MixedImport*` prüft gemischte Lieferungen in Referenz-
-und eigenen Schemata, die gemeinsame ID-Vergabe beim nächsten Referenzimport
-und den Rollback bei einem fremden späteren Basket.
-`*DbInteropTest.*MixedMutation*` prüft selektive Updates mit stabilen IDs,
-die vollständige Auswahl für Ersatz und Löschung sowie den Rollback bei
-eingehenden Referenzen aus einem weiteren Modell.
+`--tests '*MultiModelInteropTest.*Mixed*'` prüft gleichnamige Klassen,
+gemischte Datensätze und die SQL-Zuordnungen in beiden Schematypen. Der
+ili2db-Export folgt auf ein selektives natives Update. Ein Folgeimport
+überprüft die gemeinsame ID-Vergabe. Die Auswahl `*ImportedTopic*` prüft
+`DEPENDS ON` mit einem separaten Zieldatensatz und zwei Referenzformen.
+
 `*DbInteropTest.*AppendModels*` ergänzt ein befülltes Referenzschema
 mit einer Namenskollision und einer gemeinsam genutzten Struktur. Es
 vergleicht den Katalog nach einem Abbruch während der DDL und prüft danach

@@ -407,26 +407,6 @@ final class DbInteropTest {
     @Test void postgisTopicMutations23() throws Exception { exchangeWithPostgis(23, this::exchangeTopicMutations); }
     @Test void postgisTopicMutations24() throws Exception { exchangeWithPostgis(24, this::exchangeTopicMutations); }
 
-    @Test void geoPackageImportedTopic23() throws Exception { exchangeImportedTopic(23, null); }
-    @Test void geoPackageImportedTopic24() throws Exception { exchangeImportedTopic(24, null); }
-    @Test void postgisImportedTopic23() throws Exception { exchangeWithPostgis(23, this::exchangeImportedTopic); }
-    @Test void postgisImportedTopic24() throws Exception { exchangeWithPostgis(24, this::exchangeImportedTopic); }
-    @Test void geoPackageJointSchema23() throws Exception { exchangeJointSchema(23, null); }
-    @Test void geoPackageJointSchema24() throws Exception { exchangeJointSchema(24, null); }
-    @Test void postgisJointSchema23() throws Exception { exchangeWithPostgis(23, this::exchangeJointSchema); }
-    @Test void postgisJointSchema24() throws Exception { exchangeWithPostgis(24, this::exchangeJointSchema); }
-    @Test void geoPackageMixedExport23() throws Exception { exchangeMixedExport(23, null); }
-    @Test void geoPackageMixedExport24() throws Exception { exchangeMixedExport(24, null); }
-    @Test void postgisMixedExport23() throws Exception { exchangeWithPostgis(23, this::exchangeMixedExport); }
-    @Test void postgisMixedExport24() throws Exception { exchangeWithPostgis(24, this::exchangeMixedExport); }
-    @Test void geoPackageMixedImport23() throws Exception { exchangeMixedImport(23, null); }
-    @Test void geoPackageMixedImport24() throws Exception { exchangeMixedImport(24, null); }
-    @Test void postgisMixedImport23() throws Exception { exchangeWithPostgis(23, this::exchangeMixedImport); }
-    @Test void postgisMixedImport24() throws Exception { exchangeWithPostgis(24, this::exchangeMixedImport); }
-    @Test void geoPackageMixedMutation23() throws Exception { exchangeMixedMutation(23, null); }
-    @Test void geoPackageMixedMutation24() throws Exception { exchangeMixedMutation(24, null); }
-    @Test void postgisMixedMutation23() throws Exception { exchangeWithPostgis(23, this::exchangeMixedMutation); }
-    @Test void postgisMixedMutation24() throws Exception { exchangeWithPostgis(24, this::exchangeMixedMutation); }
     @Test void geoPackageAppendModels23() throws Exception { exchangeAppendModels(23, null); }
     @Test void geoPackageAppendModels24() throws Exception { exchangeAppendModels(24, null); }
     @Test void postgisAppendModels23() throws Exception { exchangeWithPostgis(23, this::exchangeAppendModels); }
@@ -538,34 +518,6 @@ final class DbInteropTest {
         var reference = new ReferenceTool(work, inherited.postgis());
         new TranslationCases(work, reference, version).mutation(translated);
         new TopicCases(work, reference, version).mutation(inherited);
-    }
-
-    private void exchangeImportedTopic(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(work, postgres, "reference_topic");
-        var nativeSchema = new TestDatabase(work, postgres, "native_topic");
-        new ModelCases(work, new ReferenceTool(work, reference.postgis()), version).importedTopics(reference, nativeSchema);
-    }
-
-    private void exchangeJointSchema(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(work, postgres, "reference_joint");
-        var nativeSchema = new TestDatabase(work, postgres, "native_joint");
-        new ModelCases(work, new ReferenceTool(work, reference.postgis()), version).jointSchema(reference, nativeSchema);
-    }
-
-    private void exchangeMixedExport(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "mixed_export");
-        new ModelCases(work, new ReferenceTool(work, db.postgis()), version).mixedExport(db);
-    }
-
-    private void exchangeMixedImport(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(work, postgres, "reference_mixed");
-        var nativeSchema = new TestDatabase(work, postgres, "native_mixed");
-        new ModelCases(work, new ReferenceTool(work, reference.postgis()), version).mixedImport(reference, nativeSchema);
-    }
-
-    private void exchangeMixedMutation(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "mixed_mutation");
-        new ModelCases(work, new ReferenceTool(work, db.postgis()), version).mixedMutation(db);
     }
 
     private void exchangeAppendModels(int version, PostgreSQLContainer postgres) throws Exception {
