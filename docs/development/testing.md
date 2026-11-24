@@ -175,6 +175,12 @@ Er prüft den Rollback bei fehlerhaften Spalten- und Arraywerten sowie bei
 einem SQL-Konflikt nach der Schemaerweiterung. Die Fälle prüfen den Erhalt
 der Exportdatei bei beschädigten Lookup-Zeilen und Arraywerten.
 
+`StructureMappingStorageTest` prüft gespeicherte Positionen, eine
+umbenannte EXPAND-Spalte, Rollback bei zu langen Listen und den Erhalt
+der Exportdatei bei beschädigten Typmarkierungen oder JSON-Werten.
+Weitere Fälle prüfen die JSON-Typen und leere gespeicherte Sammlungen,
+die stabilen IDs beim Update und das Freigeben belegter Spalten.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -290,28 +296,13 @@ fehlerhaften Referenzen prüfen sie Rollback und den Erhalt einer
 bestehenden XTF-Datei. Datensatzoperationen werden auch mit gespeicherten
 Verweisen aus einem Modell ausserhalb der CLI-Auswahl geprüft.
 
-Die `*ExpandSingle*`-Fälle prüfen den Austausch optionaler flacher
-Strukturen mit ili2db-`--expandStruct`, das Umbenennen einer SQL-Spalte
-und den Erhalt der XTF-Datei bei beschädigtem Strukturtyp. Die
-`*ExpandList*`-Fälle prüfen fünf Positionen, den Wechsel zur
-Strukturtabelle bei Obergrenze sechs und Rollback bei einer zu langen Liste.
-Die `*ExpandBag*`-Fälle prüfen doppelte und leere Einträge sowie die
-gruppierte XTF-2.4-Referenzausgabe. Die `*ExpandNested*`-Fälle prüfen
-beide Typmarkierungen und erkennen innere Werte ohne äusseren Strukturtyp.
-Die `*ExpandSchema*`-Fälle vergleichen den Katalog mit der Referenz. Sie
-prüfen kollidierende Spaltennamen, die gemeinsame ID-Vergabe und
-`--add-models` mit der gespeicherten Option. Die `*ExpandSmart2*`-Fälle
-prüfen zwei konkrete Eigentümertabellen, stabile IDs und freigewordene
-Spalten nach `update` sowie die Datensatzzeilen nach `replace` und `delete`.
-Die `*JsonStructure*`-Fälle prüfen `--coalesceJson` für Einzelstrukturen,
-typisierte Werte, SQL `NULL` und den Erhalt der XTF-Datei bei fehlerhaftem JSON.
-Die `*JsonCollections*`-Fälle prüfen flache Arrays in beiden
-Werkzeugrichtungen. Für innere JSON-Objekte vergleichen sie die
-gespeicherten Werte und prüfen den Export mit `interlis-db` sowie den
-bekannten Exportfehler von ili2db 5.5.2. Die `*JsonSchema*`-Fälle
-vergleichen den Katalog, kombinieren JSON und expandierte Spalten in
-derselben Tabelle und prüfen `update`, `--add-models` sowie die
-gemeinsame ID-Vergabe.
+`--tests '*StructureMappingInteropTest'` prüft EXPAND für Einzelwerte,
+LIST, BAG, Verschachtelung und die Rückkehr zur Strukturtabelle bei
+Obergrenze sechs in einem Modell. Der Smart2-Lauf prüft die beiden
+Eigentümertabellen und den gemischten Export nach Update. Das JSON-Schema
+kombiniert JSON und expandierte Spalten in derselben Tabelle und
+unterscheidet SQL `NULL` vom leeren Objekt. Die Schemafälle prüfen
+`--add-models` und einen weiteren ili2db-Import zur ID-Vergabe.
 
 <a id="ili2db-json-export-reproduzieren"></a>
 
@@ -323,7 +314,7 @@ und prüft den erfolgreichen Export aus derselben Datenbank mit
 `interlis-db`. [Fehlerbeschreibung und Beispielwert](../usage/database.md#ili2db-json-exportfehler)
 
 ```sh
-./gradlew :interlis-db:dbInteropTest --tests '*DbInteropTest.*JsonCollections*'
+./gradlew :interlis-db:dbInteropTest --tests '*StructureMappingInteropTest.*JsonCollections*'
 ```
 
 `*DbInteropTest.*CatalogueReference*` prüft beide Werkzeugrichtungen
