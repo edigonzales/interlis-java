@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipInputStream;
 
+import static guru.interlis.db.DbTestSupport.logText;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -79,15 +80,6 @@ final class ReferenceTool {
             }
         } finally {
             if (process.isAlive()) process.destroyForcibly().waitFor(5, TimeUnit.SECONDS);
-        }
-    }
-
-    static String logText(Path log, String password) {
-        try {
-            String text = Files.readString(log);
-            return password.isEmpty() ? text : text.replace(password, "[redacted]");
-        } catch (IOException failure) {
-            return log + ": " + failure.getMessage();
         }
     }
 }

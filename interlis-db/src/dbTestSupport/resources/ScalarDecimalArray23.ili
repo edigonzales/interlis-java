@@ -1,0 +1,11 @@
+INTERLIS 2.3;
+MODEL ScalarDecimalArray23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  TOPIC Data =
+    DOMAIN Price = -9999999999999999.999 .. 9999999999999999.999;
+    STRUCTURE Measure = Entry : Price; END Measure;
+    CLASS Asset =
+      !!@ili2db.mapping=ARRAY
+      Measurements : LIST OF Measure;
+    END Asset;
+  END Data;
+END ScalarDecimalArray23.

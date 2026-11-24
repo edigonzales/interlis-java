@@ -163,6 +163,12 @@ Schreibkonkurrenz und Rollback bei fehlerhaftem XTF oder blockierenden Referenze
 Punkt- und Sammlungsupdates, Replace, Delete und Rollback. Die Fälle prüfen
 die Hülle von Kreisbögen und die Diagnose eines fehlenden GeoPackage-Triggers.
 
+`ScalarStorageTest` prüft 64-Bit-Grenzen, Dezimalpräzision, Kalender- und
+Zeitwerte, FORMAT, UUID-Fachattribute sowie BLOB- und XML-Werte. Der
+Zeitzonentest startet getrennte JVM-Prozesse. SQL-Gegenproben prüfen
+den Rollback und den Erhalt der Exportdatei, insbesondere bei Überlauf,
+ungültigem Datum und übergrossen Binär- oder XML-Werten.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -237,31 +243,13 @@ Fremdschlüssel, Indizes, zusammengesetzte Schlüssel, SQL-Bereichsprüfungen
 und Aufzählungsmetadaten. Sie prüfen die gespeicherten Constraints und den
 Austausch ganzzahliger und dezimaler Grenzwerte in beiden Richtungen.
 
-Die `*ScalarWide*`-Fälle vergleichen die SQL-Kodierung und prüfen
-64-Bit-Ganzzahlen oberhalb von `2^53`, beide 64-Bit-Grenzwerte, SQL
-`NULL` und den Import-Rollback bei Überlauf.
-Die `*ScalarDecimal*`-Fälle prüfen Präzision, Skala, Einheiten und die
-beobachtete Rundung grosser Werte beim Referenzimport.
-Die `*ScalarDate*`-Fälle prüfen Kalenderdatum, Schaltjahr, Domänenalias,
-SQL `NULL` und den Erhalt der Exportdatei bei einem ungültigen Datum.
-Die `*ScalarTime*`-Fälle prüfen Uhrzeiten mit Millisekunden und führen
-native Transferaufrufe mit abweichenden JVM-Zeitzonen aus.
-Die `*ScalarTimestamp*`-Fälle vergleichen lokale Zeitstempel und ihre
-SQL-Schreibweise. Die JVM-Zeitzonentests enthalten einen Wert in der
-Sommerzeitlücke.
-Die `*ScalarFormatted*`-Fälle vergleichen Texttypen und Metadaten.
-Sie prüfen führende Nullen in `FORMAT`, Namen, URI-Kodierung und
-einen gespeicherten SQL-Spaltennamen nach einer Umbenennung.
-Die `*ScalarUuid*`-Fälle prüfen UUID-Fachattribute mit beiden
-Schreibweisen, SQL `NULL` und den Rollback bei einer ungültigen UUID.
-Die `*ScalarBinary*`-Fälle prüfen die gespeicherten Bytes, leere Werte,
-SQL `NULL` und den Erhalt der Exportdatei bei einem übergrossen BLOB.
-Die `*ScalarXml*`-Fälle prüfen XML-Inhalt, Namespaces, SQL `NULL` und
-Exportgrenzen. Sie prüfen auch den maskierten Text des XTF-2.4-Referenzexports
-und reproduzieren den Unicode-Exportfehler von ili2gpkg in XTF 2.3.
-Die `*ScalarDecimalArray*`-Fälle prüfen Dezimalarrays mit Strukturhülle
-in XTF 2.3 und als direkte Liste in XTF 2.4. Sie vergleichen den Katalog,
-Reihenfolge, Duplikate, SQL `NULL`, Präzision und den Import-Rollback.
+`--tests '*ScalarInteropTest'` bündelt die skalaren Werte in je einem
+Schema pro Backend und XTF-Version. Die Fälle vergleichen Katalog und
+Fachwerte in beiden Werkzeugrichtungen und Schematypen. Sie prüfen auch
+die Dezimalrundung beim ili2db-Import, den gespeicherten SQL-Namen einer
+umbenannten FORMAT-Spalte und den Unicode-Exportfehler von ili2gpkg
+in XTF 2.3. Die Dezimalarrays verwenden ein eigenes `--coalesceArray`-Profil
+und prüfen die Reihenfolge, Duplikate, SQL `NULL` und die numerische Kodierung.
 
 Die `*EnumItfCodes*`-Fälle prüfen den Austausch skalarer Aufzählungen
 mit ITF-Codes, einschliesslich Code `0`, SQL `NULL`, Rollback und

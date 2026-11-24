@@ -263,4 +263,13 @@ final class DbTestSupport {
         }
         return owners;
     }
+
+    static String logText(Path log, String password) {
+        try {
+            String text = Files.readString(log);
+            return password.isEmpty() ? text : text.replace(password, "[redacted]");
+        } catch (IOException failure) {
+            return log + ": " + failure.getMessage();
+        }
+    }
 }

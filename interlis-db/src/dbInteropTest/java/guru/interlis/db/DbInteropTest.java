@@ -22,9 +22,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static guru.interlis.db.BaseDbFixture.assertRows;
 import static guru.interlis.db.BaseDbFixture.assertTransferredAmounts;
@@ -44,7 +42,6 @@ import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
 import static guru.interlis.db.DbTestSupport.text;
 import static guru.interlis.db.DbTestSupport.transferredStructures;
 import static guru.interlis.db.ObjectIdFixtures.assertTextOidTransfer;
-import static guru.interlis.db.ReferenceTool.logText;
 import static guru.interlis.db.TestDatabase.exchangeWithPostgis;
 import static guru.interlis.db.TransferCatalogAssertions.assertAssociationCatalog;
 import static guru.interlis.db.TransferCatalogAssertions.assertReferenceMapping;
@@ -119,116 +116,6 @@ final class DbInteropTest {
             List.of("2602020.250", "1202000.250")))));
 
     @TempDir(cleanup = CleanupMode.ALWAYS) Path work;
-
-    @Test void geoPackageScalarWide23() throws Exception { exchangeScalarWide(23, null); }
-    @Test void geoPackageScalarWide24() throws Exception { exchangeScalarWide(24, null); }
-    @Test void postgisScalarWide23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarWide); }
-    @Test void postgisScalarWide24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarWide); }
-
-    private void exchangeScalarWide(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(work, postgres, "scalar_wide_ref");
-        var own = new TestDatabase(work, postgres, "scalar_wide_own");
-        new ScalarCases(work, new ReferenceTool(work, own.postgis()), version).wideIntegers(expected, own);
-    }
-
-    @Test void geoPackageScalarDecimal23() throws Exception { exchangeScalarDecimal(23, null); }
-    @Test void geoPackageScalarDecimal24() throws Exception { exchangeScalarDecimal(24, null); }
-    @Test void postgisScalarDecimal23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarDecimal); }
-    @Test void postgisScalarDecimal24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarDecimal); }
-
-    private void exchangeScalarDecimal(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(work, postgres, "scalar_decimal_ref");
-        var own = new TestDatabase(work, postgres, "scalar_decimal_own");
-        new ScalarCases(work, new ReferenceTool(work, own.postgis()), version).decimals(expected, own);
-    }
-
-    @Test void geoPackageScalarDate23() throws Exception { exchangeScalarDate(23, null); }
-    @Test void geoPackageScalarDate24() throws Exception { exchangeScalarDate(24, null); }
-    @Test void postgisScalarDate23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarDate); }
-    @Test void postgisScalarDate24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarDate); }
-
-    private void exchangeScalarDate(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(work, postgres, "scalar_date_ref");
-        var own = new TestDatabase(work, postgres, "scalar_date_own");
-        new ScalarCases(work, new ReferenceTool(work, own.postgis()), version).calendarDate(expected, own);
-    }
-
-    @Test void geoPackageScalarTime23() throws Exception { exchangeScalarTime(23, null); }
-    @Test void geoPackageScalarTime24() throws Exception { exchangeScalarTime(24, null); }
-    @Test void postgisScalarTime23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarTime); }
-    @Test void postgisScalarTime24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarTime); }
-
-    private void exchangeScalarTime(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(work, postgres, "scalar_time_ref");
-        var own = new TestDatabase(work, postgres, "scalar_time_own");
-        new ScalarCases(work, new ReferenceTool(work, own.postgis(), "UTC"), version).localTime(expected, own);
-    }
-
-    @Test void geoPackageScalarTimestamp23() throws Exception { exchangeScalarTimestamp(23, null); }
-    @Test void geoPackageScalarTimestamp24() throws Exception { exchangeScalarTimestamp(24, null); }
-    @Test void postgisScalarTimestamp23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarTimestamp); }
-    @Test void postgisScalarTimestamp24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarTimestamp); }
-
-    private void exchangeScalarTimestamp(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(work, postgres, "scalar_timestamp_ref");
-        var own = new TestDatabase(work, postgres, "scalar_timestamp_own");
-        new ScalarCases(work, new ReferenceTool(work, own.postgis(), "UTC"), version).localTimestamp(expected, own);
-    }
-
-    @Test void geoPackageScalarFormatted23() throws Exception { exchangeScalarFormatted(23, null); }
-    @Test void geoPackageScalarFormatted24() throws Exception { exchangeScalarFormatted(24, null); }
-    @Test void postgisScalarFormatted23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarFormatted); }
-    @Test void postgisScalarFormatted24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarFormatted); }
-
-    private void exchangeScalarFormatted(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(work, postgres, "scalar_formatted_ref");
-        var own = new TestDatabase(work, postgres, "scalar_formatted_own");
-        new ScalarCases(work, new ReferenceTool(work, own.postgis()), version).formatted(expected, own);
-    }
-
-    @Test void geoPackageScalarUuid23() throws Exception { exchangeScalarUuid(23, null); }
-    @Test void geoPackageScalarUuid24() throws Exception { exchangeScalarUuid(24, null); }
-    @Test void postgisScalarUuid23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarUuid); }
-    @Test void postgisScalarUuid24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarUuid); }
-
-    private void exchangeScalarUuid(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(work, postgres, "scalar_uuid_ref");
-        var own = new TestDatabase(work, postgres, "scalar_uuid_own");
-        new ScalarCases(work, new ReferenceTool(work, own.postgis()), version).uuidAttribute(expected, own);
-    }
-
-    @Test void geoPackageScalarBinary23() throws Exception { exchangeScalarBinary(23, null); }
-    @Test void geoPackageScalarBinary24() throws Exception { exchangeScalarBinary(24, null); }
-    @Test void postgisScalarBinary23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarBinary); }
-    @Test void postgisScalarBinary24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarBinary); }
-
-    private void exchangeScalarBinary(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(work, postgres, "scalar_binary_ref");
-        var own = new TestDatabase(work, postgres, "scalar_binary_own");
-        new ScalarCases(work, new ReferenceTool(work, own.postgis()), version).binary(expected, own);
-    }
-
-    @Test void geoPackageScalarXml23() throws Exception { exchangeScalarXml(23, null); }
-    @Test void geoPackageScalarXml24() throws Exception { exchangeScalarXml(24, null); }
-    @Test void postgisScalarXml23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarXml); }
-    @Test void postgisScalarXml24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarXml); }
-
-    private void exchangeScalarXml(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(work, postgres, "scalar_xml_ref");
-        var own = new TestDatabase(work, postgres, "scalar_xml_own");
-        new ScalarCases(work, new ReferenceTool(work, own.postgis()), version).xml(expected, own);
-    }
-
-    @Test void geoPackageScalarDecimalArray23() throws Exception { exchangeScalarDecimalArray(23, null); }
-    @Test void geoPackageScalarDecimalArray24() throws Exception { exchangeScalarDecimalArray(24, null); }
-    @Test void postgisScalarDecimalArray23() throws Exception { exchangeWithPostgis(23, this::exchangeScalarDecimalArray); }
-    @Test void postgisScalarDecimalArray24() throws Exception { exchangeWithPostgis(24, this::exchangeScalarDecimalArray); }
-
-    private void exchangeScalarDecimalArray(int version, PostgreSQLContainer postgres) throws Exception {
-        var expected = new TestDatabase(work, postgres, "scalar_decimal_array_ref");
-        var own = new TestDatabase(work, postgres, "scalar_decimal_array_own");
-        new ScalarCases(work, new ReferenceTool(work, own.postgis()), version).decimalArrays(expected, own);
-    }
 
     @Test void geoPackageEnumItfCodes23() throws Exception { exchangeEnumItfCodes(23, null); }
     @Test void geoPackageEnumItfCodes24() throws Exception { exchangeEnumItfCodes(24, null); }
@@ -3130,29 +3017,4 @@ final class DbInteropTest {
     private record CurveComponent(int type, List<List<String>> vertices) { }
     private record DetailValue(String label, Boolean enabled, Integer quantity, String decision) { }
     private record AnnotatedPair(String marker, String report, String memo, String grade, String decision) { }
-
-    static void assertCliInZone(TestDatabase db, String operation, String model, String dataset, Path path, String zone)
-            throws Exception {
-        String modules = Main.class.getModule().getLayer().configuration().modules().stream()
-                .flatMap(module -> module.reference().location().stream())
-                .filter(uri -> "file".equals(uri.getScheme())).map(uri -> Path.of(uri).toString()).sorted()
-                .collect(Collectors.joining(System.getProperty("path.separator")));
-        var java = Path.of(System.getProperty("java.home"), "bin", "java");
-        var command = new ArrayList<>(List.of(java.toString(), "-Duser.timezone=" + zone,
-                "--enable-native-access=org.xerial.sqlitejdbc", "--module-path", modules,
-                "--module", "guru.interlis.db/guru.interlis.db.Main",
-                operation, "--model", model, "--dataset", dataset));
-        command.addAll(db.nativeOptions());
-        command.add(path.toString());
-        Path log = Files.createTempFile(path.getParent(), "native-zone-", ".log");
-        var builder = new ProcessBuilder(command).redirectErrorStream(true).redirectOutput(log.toFile());
-        builder.environment().put("INTERLIS_DB_PASSWORD", db.password);
-        var process = builder.start();
-        try {
-            assertTrue(process.waitFor(60, TimeUnit.SECONDS), () -> "Native CLI timed out in " + zone);
-            assertEquals(0, process.exitValue(), () -> logText(log, db.password));
-        } finally {
-            if (process.isAlive()) process.destroyForcibly().waitFor(5, TimeUnit.SECONDS);
-        }
-    }
 }

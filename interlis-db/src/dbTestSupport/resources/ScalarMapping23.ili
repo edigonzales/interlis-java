@@ -1,0 +1,26 @@
+INTERLIS 2.3;
+MODEL ScalarMapping23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  TOPIC Data =
+    STRUCTURE Digits = Numeral : 0..9999; END Digits;
+    DOMAIN
+      Length = -100.000 .. 100.000 [INTERLIS.m];
+      Ticket = FORMAT BASED ON Digits (Numeral/4) "0000" .. "9999";
+      CalRange EXTENDS INTERLIS.XMLDate = "1900-01-01" .. "2100-12-31";
+    CLASS Asset =
+      WideNo : -9223372036854775808 .. 9223372036854775807;
+      SmallNo : -100 .. 100;
+      PriceValue : -9999999999999999.999 .. 9999999999999999.999;
+      Measure : Length;
+      CalendarDay : INTERLIS.XMLDate;
+      ReadingTime : INTERLIS.XMLTime;
+      ReadingStamp : INTERLIS.XMLDateTime;
+      TicketCode : Ticket;
+      RestrictedDay : CalRange;
+      NameCode : NAME;
+      UriCode : URI;
+      ExternalId : INTERLIS.UUIDOID;
+      BinaryValue : BLACKBOX BINARY;
+      XmlValue : BLACKBOX XML;
+    END Asset;
+  END Data;
+END ScalarMapping23.
