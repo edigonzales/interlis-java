@@ -160,7 +160,8 @@ class ExplorerTest {
                     .filter(type -> type.name().declared().equals(QualifiedName.of("Nested", "Data", "Item")))
                     .findFirst().orElseThrow();
             var inspector = new InspectorTableModel();
-            inspector.show(dataset.plan(), dataset.objects(item).getFirst().object().data(), InspectorRelationships.EMPTY);
+            var data = dataset.objects(item).getFirst().object().data();
+            inspector.show(dataset.plan(), data, InspectorRelationships.EMPTY);
             var collapsed = List.of(Map.entry("payload", "Nested.Child"), Map.entry("tail", "after"));
             assertEquals(collapsed, rows(inspector));
 
@@ -178,6 +179,12 @@ class ExplorerTest {
 
             inspector.toggle(0);
             assertEquals(collapsed, rows(inspector));
+            String alphaPath = "/Nested.Data.Item.payload/Nested.Child.alpha/";
+            assertEquals(-1, inspector.revealOccurrence(data, alphaPath + "2/Nested.Leaf.label"));
+            assertEquals(collapsed, rows(inspector));
+            int secondDuplicate = inspector.revealOccurrence(data, alphaPath + "1/Nested.Leaf.label");
+            assertEquals(List.of(0, 1, 1, 0), inspector.pathTo(secondDuplicate));
+            assertEquals(Map.entry("label", "duplicate"), rows(inspector).get(secondDuplicate));
         }
     }
 

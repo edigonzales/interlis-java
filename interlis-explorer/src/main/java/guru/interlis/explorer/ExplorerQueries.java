@@ -44,6 +44,13 @@ public final class ExplorerQueries {
     /** Replacement for the half-open UTF-16 range in the source passed for completion. */
     public record Suggestion(String text, String description, int start, int end) {}
 
+    /** An object in this dataset and its nonnull stored value path. An empty path identifies the object itself. */
+    public record Occurrence(long sourcePosition, String valuePath) {
+        public Occurrence {
+            Objects.requireNonNull(valuePath);
+        }
+    }
+
     /**
      * A geometry selected with IQL's explicit native geometry projection in this dataset.
      * The source position and path identify the exact stored occurrence. Unknown CRS and
@@ -70,9 +77,11 @@ public final class ExplorerQueries {
      * {@code nullColumnsByRow} identifies its missing cells. A present geometry whose
      * native projection failed has a preview and a diagnostic in {@code geometriesByRow}.
      * Its coordinate key is the zero-based visible column, as for null cells.
+     * An empty entry in {@code occurrencesByRow} indicates a row with no inspector destination.
      */
     public record Result(List<String> columns, List<List<String>> rows, boolean truncated,
-                         List<Set<Integer>> nullColumnsByRow, List<Map<Integer, GeometryCell>> geometriesByRow) {
+                         List<Set<Integer>> nullColumnsByRow, List<Map<Integer, GeometryCell>> geometriesByRow,
+                         List<Optional<Occurrence>> occurrencesByRow) {
         public Result {
             columns = List.copyOf(columns);
             rows = rows.stream().map(List::copyOf).toList();
@@ -84,6 +93,17 @@ public final class ExplorerQueries {
             if (geometriesByRow.size() != rows.size()) {
                 throw new IllegalArgumentException("Geometry information must cover every result row");
             }
+            occurrencesByRow = List.copyOf(occurrencesByRow);
+            if (occurrencesByRow.size() != rows.size()) {
+                throw new IllegalArgumentException("Occurrence information must cover every result row");
+            }
+        }
+
+        /** Creates a result with geometry metadata and no inspector destinations. */
+        public Result(List<String> columns, List<List<String>> rows, boolean truncated,
+                      List<Set<Integer>> nullColumnsByRow, List<Map<Integer, GeometryCell>> geometriesByRow) {
+            this(columns, rows, truncated, nullColumnsByRow, geometriesByRow,
+                    Collections.nCopies(rows.size(), Optional.empty()));
         }
 
         /** Creates a result from string previews and null cells without geometry metadata. */
@@ -104,6 +124,11 @@ public final class ExplorerQueries {
         /** Returns the geometry occurrence, if present, at the zero-based result indices. */
         public Optional<GeometryCell> geometry(int row, int column) {
             return Optional.ofNullable(geometriesByRow.get(row).get(column));
+        }
+
+        /** Returns the inspector destination, if any, for the zero-based result row. */
+        public Optional<Occurrence> occurrence(int row) {
+            return occurrencesByRow.get(row);
         }
     }
 
@@ -162,7 +187,7 @@ public final class ExplorerQueries {
                 cancellation.check();
                 var boundedSql = "SELECT * FROM (" + select + ") LIMIT " + (ROW_LIMIT + 1);
                 try (var query = connection.prepareStatement(boundedSql)) {
-                    return preview(query, cancellation, labels, List.of());
+                    return preview(query, cancellation, labels, List.of(), false);
                 }
             }
             var compiled = Iql.compile(store.queryPlan(), text, ROW_LIMIT);
@@ -190,8 +215,11 @@ public final class ExplorerQueries {
             try (var query = connection.prepareStatement(compiled.previewSql())) {
                 bind(query, compiled.parameters());
                 var metadata = query.getMetaData();
-                int visibleColumns = metadata.getColumnCount() - Iql.GEOMETRY_METADATA_COLUMNS * compiled.geometryColumns().size();
-                return preview(query, cancellation, columnLabels(metadata, visibleColumns), compiled.geometryColumns());
+                int visibleColumns = metadata.getColumnCount()
+                        - Iql.GEOMETRY_METADATA_COLUMNS * compiled.geometryColumns().size()
+                        - (compiled.occurrenceColumns() ? Iql.OCCURRENCE_METADATA_COLUMNS : 0);
+                return preview(query, cancellation, columnLabels(metadata, visibleColumns), compiled.geometryColumns(),
+                        compiled.occurrenceColumns());
             }
         }
     }
@@ -264,21 +292,23 @@ public final class ExplorerQueries {
     }
 
     private static Result preview(PreparedStatement query, Cancellation cancellation, List<String> columns,
-                                  List<Integer> geometryColumns) throws SQLException {
+                                  List<Integer> geometryColumns, boolean includeOccurrence) throws SQLException {
         var companionColumns = new int[columns.size()];
         for (int index = 0; index < geometryColumns.size(); index++) {
             companionColumns[geometryColumns.get(index)] = columns.size() + 1 + index * Iql.GEOMETRY_METADATA_COLUMNS;
         }
+        int occurrenceColumn = columns.size() + 1 + geometryColumns.size() * Iql.GEOMETRY_METADATA_COLUMNS;
         return runStatement(query, cancellation, () -> {
             try (var rows = query.executeQuery()) {
                 var metadata = rows.getMetaData();
                 var data = new ArrayList<List<String>>();
                 var nullColumnsByRow = new ArrayList<Set<Integer>>();
                 var geometriesByRow = new ArrayList<Map<Integer, GeometryCell>>();
+                var occurrencesByRow = new ArrayList<Optional<Occurrence>>();
                 while (data.size() < ROW_LIMIT) {
                     cancellation.check();
                     if (!rows.next()) {
-                        return new Result(columns, data, false, nullColumnsByRow, geometriesByRow);
+                        return new Result(columns, data, false, nullColumnsByRow, geometriesByRow, occurrencesByRow);
                     }
                     var line = new ArrayList<String>();
                     var nullColumns = new HashSet<Integer>();
@@ -306,11 +336,17 @@ public final class ExplorerQueries {
                     data.add(line);
                     nullColumnsByRow.add(nullColumns);
                     geometriesByRow.add(geometries);
+                    occurrencesByRow.add(includeOccurrence ? readOccurrence(rows, occurrenceColumn) : Optional.empty());
                 }
                 cancellation.check();
-                return new Result(columns, data, rows.next(), nullColumnsByRow, geometriesByRow);
+                return new Result(columns, data, rows.next(), nullColumnsByRow, geometriesByRow, occurrencesByRow);
             }
         });
+    }
+
+    private static Optional<Occurrence> readOccurrence(ResultSet rows, int column) throws SQLException {
+        long source = rows.getLong(column);
+        return rows.wasNull() ? Optional.empty() : Optional.of(new Occurrence(source, rows.getString(column + 1)));
     }
 
     private static GeometryCell readGeometry(ResultSet rows, int column, int companion) throws SQLException {

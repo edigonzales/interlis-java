@@ -61,6 +61,20 @@ class QueryResultPresentationTest {
                 assertNull(literal.getToolTipText());
                 assertEquals("NULL", literal.getAccessibleContext().getAccessibleName());
                 assertFalse(sql.isNull(0, 2));
+
+                table.setAutoCreateRowSorter(true);
+                table.showResult(iql);
+                assertTrue(table.selectedOccurrence().isEmpty());
+                table.getRowSorter().toggleSortOrder(0);
+                assertEquals(1, table.convertRowIndexToModel(0));
+                table.setRowSelectionInterval(0, 0);
+                assertTrue(table.selectedOccurrence().isPresent());
+                assertEquals(iql.occurrence(1), table.selectedOccurrence());
+                table.setRowSelectionInterval(0, 1);
+                assertTrue(table.selectedOccurrence().isEmpty());
+                table.showResult(sql);
+                table.setRowSelectionInterval(0, 0);
+                assertTrue(table.selectedOccurrence().isEmpty());
             });
         }
     }

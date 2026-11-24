@@ -2,6 +2,7 @@ package guru.interlis.explorer.gui;
 
 import guru.interlis.explorer.DuckDbStore.StoredObject;
 import guru.interlis.explorer.ExplorerQueries;
+import guru.interlis.explorer.ExplorerQueries.Occurrence;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.transfer.ModelDescriptor;
 import guru.interlis.transfer.ObjectDescriptor;
@@ -93,7 +94,8 @@ final class ExplorerFrame extends JFrame {
     private final JLabel objectTitle = new JLabel("Select an object");
     private final InspectorTableModel attributes = new InspectorTableModel();
     private final JTable inspector = inspectorTable();
-    private final QueryPanel queryPanel = new QueryPanel();
+    private final JTabbedPane tabs = new JTabbedPane();
+    private final QueryPanel queryPanel = new QueryPanel(this::openQueryOccurrence);
 
     private ExplorerDataset dataset;
     private boolean navigating;
@@ -189,7 +191,6 @@ final class ExplorerFrame extends JFrame {
         var panel = new JPanel(new BorderLayout(0, 14));
         panel.setBorder(BorderFactory.createEmptyBorder(16, 18, 14, 18));
         panel.add(toolbar, BorderLayout.NORTH);
-        var tabs = new JTabbedPane();
         tabs.addTab("Objects", content);
         tabs.addTab("Query", queryPanel);
         tabs.addChangeListener(event -> back.setVisible(tabs.getSelectedIndex() == 0));
@@ -604,7 +605,28 @@ final class ExplorerFrame extends JFrame {
         }
         history.pop();
         back.setEnabled(!history.isEmpty());
-        int row = attributes.reveal(visit.rowPath());
+        selectInspectorRow(attributes.reveal(visit.rowPath()));
+    }
+
+    private void openQueryOccurrence(Occurrence occurrence) {
+        if (!openOccurrence(occurrence.sourcePosition())) {
+            return;
+        }
+        tabs.setSelectedIndex(0);
+        if (occurrence.valuePath().isEmpty()) {
+            objectList.requestFocusInWindow();
+            return;
+        }
+        var selected = objectList.getSelectedValue();
+        int row = selected == null ? -1 : attributes.revealOccurrence(selected.object().data(), occurrence.valuePath());
+        if (row < 0) {
+            showError("Open in Inspector", "The result entry is unavailable.");
+        } else {
+            selectInspectorRow(row);
+        }
+    }
+
+    private void selectInspectorRow(int row) {
         if (row >= 0) {
             inspector.setRowSelectionInterval(row, row);
             inspector.scrollRectToVisible(inspector.getCellRect(row, 1, true));
@@ -619,7 +641,7 @@ final class ExplorerFrame extends JFrame {
         try {
             var target = dataset.store().objectAt(position).orElse(null);
             if (target == null) {
-                showError("Open reference", "The target object is unavailable.");
+                showError("Open object", "The target object is unavailable.");
                 return false;
             }
             var type = dataset.plan().object(target.object().type()).orElseThrow();
@@ -641,9 +663,9 @@ final class ExplorerFrame extends JFrame {
                     return true;
                 }
             }
-            showError("Open reference", "The target is outside the class browser.");
+            showError("Open object", "The target is outside the class browser.");
         } catch (SQLException | RuntimeException failure) {
-            showError("Open reference", failure.getMessage());
+            showError("Open object", failure.getMessage());
         }
         return false;
     }

@@ -18,7 +18,8 @@ final class IqlSyntax {
         }
     }
 
-    sealed interface Expression permits Path, Literal, Test, Not, Comparison, Junction, Exists, Intersects {}
+    sealed interface Expression permits Path, Function, Literal, Test, Not, Comparison, In, Between,
+            TextSearch, Junction, Exists, Intersects, WithinDistance {}
 
     enum LiteralKind { TEXT, NUMBER, BOOLEAN, ENUMERATION }
     enum State { MISSING, UNDEFINED, UNRESOLVED }
@@ -30,18 +31,25 @@ final class IqlSyntax {
         String name() { return String.join(".", segments.stream().map(Token::text).toList()); }
     }
 
+    record Function(Token name, Path path) implements Expression {}
     record Literal(Token token, LiteralKind kind, Object value) implements Expression {}
     record Test(Path path, State state, boolean negated) implements Expression {}
     record Not(Expression operand) implements Expression {}
     record Comparison(Expression left, Token operator, Expression right) implements Expression {}
+    record In(Expression value, List<Literal> options, boolean negated) implements Expression {}
+    record Between(Expression value, Literal lower, Literal upper, boolean negated) implements Expression {}
+    record TextSearch(Path path, Literal text, boolean prefix) implements Expression {}
     record Junction(Expression left, String operator, Expression right) implements Expression {}
     record Exists(Path path, Token alias, Expression condition) implements Expression {}
     record Intersects(Path path, List<Double> box) implements Expression {}
-    record Selection(Path path, Token alias, boolean count, boolean geometry) {}
+    record WithinDistance(Path path, Token anchor, double x, double y, double radius) implements Expression {}
+    record Selection(Expression expression, Token alias, boolean count, boolean geometry) {}
     record Expansion(Path path, Token alias, Token position) {}
-    record Order(Path path, boolean descending) {}
-    record Query(List<Selection> selections, Path source, Token alias, Expansion expansion, Expression filter,
-                 List<Order> order, int limit) {}
+    record Order(Expression expression, boolean descending) {}
+    record Query(List<Selection> selections, Path source, Token alias, List<Expansion> expansions, Expression filter,
+                 List<Expression> group, List<Order> order, int limit) {}
+
+    static final List<String> VALUE_FUNCTIONS = List.of("TID", "OID", "BID", "ELEMENT_COUNT");
 
     private static final Pattern NUMBER = Pattern.compile("[+-]?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+)?");
     private static final int MAX_TOKENS = 1024;
@@ -123,34 +131,41 @@ final class IqlSyntax {
     private Query query() {
         require("SELECT");
         var selections = new ArrayList<Selection>();
-        if (peek().is("COUNT") && tokens.get(index + 1).is("(")) {
-            index++;
-            require("(");
-            require("*");
-            require(")");
-            selections.add(new Selection(null, take("AS") ? word() : null, true, false));
-        } else if (!take("*")) {
+        boolean hasCount = false;
+        if (!take("*")) {
             do {
-                boolean geometry = peek().is("GEOMETRY") && tokens.get(index + 1).is("(");
-                if (geometry) index += 2;
-                Path path = path();
-                if (geometry) require(")");
-                selections.add(new Selection(path, take("AS") ? word() : null, false, geometry));
+                Token selection = peek();
+                boolean count = takeCall("COUNT");
+                boolean geometry = !count && takeCall("GEOMETRY");
+                if (count) {
+                    if (hasCount) throw selection.error("Only one COUNT(*) is allowed");
+                    hasCount = true;
+                    require("*");
+                }
+                Expression expression = count ? null : geometry ? path() : value();
+                if (count || geometry) require(")");
+                selections.add(new Selection(expression, take("AS") ? word() : null, count, geometry));
             } while (take(","));
         }
         require("FROM");
         Path source = path();
         Token alias = take("AS") || hasImplicitSourceAlias() ? word() : null;
-        Expansion expansion = take("EXPAND") ? expansion() : null;
+        var expansions = new ArrayList<Expansion>();
+        while (take("EXPAND")) expansions.add(expansion());
         Expression filter = take("WHERE") ? condition() : null;
+        var group = new ArrayList<Expression>();
+        if (take("GROUP")) {
+            require("BY");
+            do { group.add(value()); } while (take(","));
+        }
         var ordering = new ArrayList<Order>();
         if (take("ORDER")) {
             require("BY");
             do {
-                Path path = path();
+                Expression expression = value();
                 boolean descending = take("DESC");
                 if (!descending) take("ASC");
-                ordering.add(new Order(path, descending));
+                ordering.add(new Order(expression, descending));
             } while (take(","));
         }
         int limit = Integer.MAX_VALUE;
@@ -166,15 +181,15 @@ final class IqlSyntax {
         }
         take(";");
         if (peek().kind() != Kind.END) throw peek().error("Expected the end of the query");
-        return new Query(List.copyOf(selections), source, alias, expansion, filter, List.copyOf(ordering), limit);
+        return new Query(List.copyOf(selections), source, alias, List.copyOf(expansions), filter,
+                List.copyOf(group), List.copyOf(ordering), limit);
     }
 
     private boolean hasImplicitSourceAlias() {
         Token current = peek();
         if (current.kind() != Kind.WORD || clause(current)) return false;
         if (!current.is("EXPAND")) return true;
-        Token next = tokens.get(index + 1);
-        return next.kind() != Kind.WORD || clause(next);
+        return !startsExpansion(tokens, index);
     }
 
     private Expansion expansion() {
@@ -184,8 +199,15 @@ final class IqlSyntax {
         return new Expansion(path, alias, take("AT") ? word() : null);
     }
 
+    static boolean startsExpansion(List<Token> tokens, int index) {
+        if (index < 0 || index + 1 >= tokens.size() || !tokens.get(index).is("EXPAND")) return false;
+        Token path = tokens.get(index + 1);
+        return path.kind() == Kind.WORD && (!clause(path)
+                || index + 2 < tokens.size() && (tokens.get(index + 2).is(".") || tokens.get(index + 2).is("AS")));
+    }
+
     static boolean clause(Token token) {
-        return token.is("WHERE") || token.is("ORDER") || token.is("LIMIT");
+        return token.is("WHERE") || token.is("GROUP") || token.is("ORDER") || token.is("LIMIT");
     }
 
     private Expression condition() {
@@ -209,10 +231,21 @@ final class IqlSyntax {
                 require(")");
                 return result;
             }
-            if (take("EXISTS")) return exists();
-            if (take("INTERSECTS")) return intersects();
+            if (takeCall("EXISTS")) return exists();
+            if (takeCall("INTERSECTS")) return intersects();
+            if (takeCall("WITHIN_DISTANCE")) return withinDistance();
+            if (takeCall("CONTAINS")) return textSearch(false);
+            if (takeCall("STARTS_WITH")) return textSearch(true);
             Expression left = operand();
             if (take("IS")) return stateTest(left);
+            boolean negated = take("NOT");
+            if (take("IN")) return in(left, negated);
+            if (take("BETWEEN")) {
+                Literal lower = requireLiteral();
+                require("AND");
+                return new Between(left, lower, requireLiteral(), negated);
+            }
+            if (negated) throw peek().error("Expected IN or BETWEEN");
             Token operator = peek();
             if (operator.kind() == Kind.SYMBOL && List.of("=", "!=", "<>", "<", "<=", ">", ">=").contains(operator.text())) {
                 index++;
@@ -233,8 +266,25 @@ final class IqlSyntax {
         throw peek().error("Expected MISSING, UNDEFINED or UNRESOLVED");
     }
 
-    private Exists exists() {
+    private In in(Expression value, boolean negated) {
         require("(");
+        var options = new ArrayList<Literal>();
+        do { options.add(requireLiteral()); } while (take(","));
+        require(")");
+        return new In(value, List.copyOf(options), negated);
+    }
+
+    private TextSearch textSearch(boolean prefix) {
+        Path path = path();
+        require(",");
+        Token text = peek();
+        if (text.kind() != Kind.STRING) throw text.error("Expected a text literal");
+        index++;
+        require(")");
+        return new TextSearch(path, new Literal(text, LiteralKind.TEXT, text.text()), prefix);
+    }
+
+    private Exists exists() {
         Path path = path();
         require("AS");
         Token alias = word();
@@ -245,7 +295,6 @@ final class IqlSyntax {
     }
 
     private Intersects intersects() {
-        require("(");
         Path path = path();
         require(",");
         require("BOX");
@@ -254,11 +303,7 @@ final class IqlSyntax {
         Token start = peek();
         for (int i = 0; i < 4; i++) {
             if (i > 0) require(",");
-            Token token = peek();
-            double coordinate = number(token).doubleValue();
-            if (!Double.isFinite(coordinate)) throw token.error("BOX coordinates must be finite");
-            coordinates.add(coordinate);
-            index++;
+            coordinates.add(finiteNumber("BOX coordinates must be finite"));
         }
         if (coordinates.get(0) >= coordinates.get(2) || coordinates.get(1) >= coordinates.get(3)) {
             throw start.error("BOX minimums must be smaller than its maximums");
@@ -268,7 +313,44 @@ final class IqlSyntax {
         return new Intersects(path, List.copyOf(coordinates));
     }
 
+    private WithinDistance withinDistance() {
+        Path path = path();
+        require(",");
+        Token anchor = peek();
+        require("POINT");
+        require("(");
+        double x = finiteNumber("POINT coordinates must be finite");
+        require(",");
+        double y = finiteNumber("POINT coordinates must be finite");
+        require(")");
+        require(",");
+        Token radiusToken = peek();
+        double radius = finiteNumber("Radius must be finite");
+        if (number(radiusToken).signum() < 0) throw radiusToken.error("Radius must be non-negative");
+        require(")");
+        return new WithinDistance(path, anchor, x, y, radius);
+    }
+
+    private double finiteNumber(String message) {
+        Token token = peek();
+        double value = number(token).doubleValue();
+        if (!Double.isFinite(value)) throw token.error(message);
+        index++;
+        return value;
+    }
+
     private Expression operand() {
+        Literal literal = literal();
+        return literal != null ? literal : value();
+    }
+
+    private Literal requireLiteral() {
+        Literal literal = literal();
+        if (literal == null) throw peek().error("Expected a literal");
+        return literal;
+    }
+
+    private Literal literal() {
         Token token = peek();
         if (token.kind() == Kind.STRING) {
             index++;
@@ -278,9 +360,27 @@ final class IqlSyntax {
             index++;
             return new Literal(token, LiteralKind.NUMBER, number(token));
         }
-        if (take("TRUE")) return new Literal(token, LiteralKind.BOOLEAN, true);
-        if (take("FALSE")) return new Literal(token, LiteralKind.BOOLEAN, false);
-        if (take("#")) return new Literal(token, LiteralKind.ENUMERATION, path().name());
+        if ((token.is("TRUE") || token.is("FALSE")) && !tokens.get(index + 1).is(".")) {
+            index++;
+            return new Literal(token, LiteralKind.BOOLEAN, token.is("TRUE"));
+        }
+        if (take("#")) {
+            Path path = path();
+            return new Literal(new Token(token.kind(), token.text(), token.start(), path.last().end()),
+                    LiteralKind.ENUMERATION, path.name());
+        }
+        return null;
+    }
+
+    private Expression value() {
+        Token name = peek();
+        for (String function : VALUE_FUNCTIONS) {
+            if (takeCall(function)) {
+                Path path = path();
+                require(")");
+                return new Function(name, path);
+            }
+        }
         return path();
     }
 
@@ -313,6 +413,12 @@ final class IqlSyntax {
     private boolean take(String text) {
         if (!peek().is(text)) return false;
         index++;
+        return true;
+    }
+
+    private boolean takeCall(String name) {
+        if (!peek().is(name) || !tokens.get(index + 1).is("(")) return false;
+        index += 2;
         return true;
     }
 

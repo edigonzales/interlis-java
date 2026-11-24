@@ -3,7 +3,9 @@ package guru.interlis.explorer.gui;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.explorer.ExplorerQueries;
 import guru.interlis.explorer.ExplorerQueries.Mode;
+import guru.interlis.explorer.ExplorerQueries.Occurrence;
 import guru.interlis.explorer.Iql;
+import guru.interlis.model.QualifiedName;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
@@ -11,6 +13,7 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -35,6 +38,7 @@ class ExplorerQueryTest {
                     """, new ExplorerQueries.Cancellation());
             assertEquals(List.of("tid", "punctuation"), result.columns());
             assertEquals(List.of(List.of("i1", ";"), List.of("i2", ";")), result.rows());
+            assertEquals(List.of(Optional.empty(), Optional.empty()), result.occurrencesByRow());
             assertFalse(result.truncated());
             assertThrows(SQLException.class, () -> queries.execute(Mode.SQL, "SELECT 1; SELECT 2",
                     new ExplorerQueries.Cancellation()));
@@ -116,6 +120,18 @@ class ExplorerQueryTest {
                     WHERE i.title = 'Item with relationships'
                     """, new ExplorerQueries.Cancellation());
             assertEquals(List.of(List.of("Parent")), result.rows());
+            long itemPosition = dataset.store().objects(QualifiedName.of("RelationsDemo", "Data", "Item"), 1)
+                    .getFirst().position();
+            assertEquals(Optional.of(new Occurrence(itemPosition, "")), result.occurrence(0));
+
+            var aggregate = queries.execute(Mode.IQL, "SELECT COUNT(*) FROM RelationsDemo.Data.Item",
+                    new ExplorerQueries.Cancellation());
+            assertEquals(List.of(List.of("2")), aggregate.rows());
+            assertTrue(aggregate.occurrence(0).isEmpty());
+            var association = queries.execute(Mode.IQL, "SELECT remark FROM RelationsDemo.Data.Review",
+                    new ExplorerQueries.Cancellation());
+            assertEquals(List.of(List.of("reviewed")), association.rows());
+            assertTrue(association.occurrence(0).isEmpty());
 
             var text = "SELECT i.details. FROM RelationsDemo.Data.Item AS i";
             assertTrue(queries.completeIql(text, text.indexOf(" FROM")).stream()
