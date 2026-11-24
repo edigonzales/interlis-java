@@ -192,6 +192,12 @@ Update, Replace und Delete sowie den Rollback nach einem Fehler beim zweiten
 Objekt. Er prüft auch widersprüchliche Zuordnungen und die Auflösung einer
 umbenannten EPSG-Spalte.
 
+`BasketCrsStorageTest` prüft stabile IDs beim Update, Rollback, den
+Wechsel der CRS-Wahl beim Replace und Indexbereinigung beim Delete. Die
+Fälle prüfen auch inkompatible Alternativmodelle, fehlendes `--multi-srs`,
+mehrdeutige EPSG-Zuordnungen und den Erhalt der Exportdatei bei
+beschädigten Topics oder Domänenzuweisungen.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -447,10 +453,11 @@ mit Geometriespalten in der Fachtabelle und in Hilfstabellen. Die Fälle
 vergleichen die Kataloge und prüfen beide Werkzeugrichtungen in beiden
 Schematypen. Im eigenen Schema liest ili2db auch den Zustand nach einem Update.
 
-Die XTF-2.4-Fälle mit `Deferred` im Namen prüfen die Domänenwahl
-pro Basket, die XTF-2.3-Fälle mit `AlternateCrs` das alternative CRS-Modell.
-`*DbInteropTest.*BasketCrsMutation*` prüft in beiden Transferformaten
-unveränderte IDs beim Update, CRS-Wechsel beim Ersatz, Rollback und Raumindizes.
+`--tests '*BasketCrsInteropTest'` prüft alternative Topics in XTF 2.3 und
+aufgeschobene Domänen in XTF 2.4. Die Punktfälle vergleichen die Kataloge
+und prüfen beide Werkzeugrichtungen, den Wechsel nach Replace und in XTF 2.4
+einen leeren Basket und den Folgeimport. Die XTF-2.4-Fälle mit `DeferredMulti`
+und `DeferredCurves` prüfen 3D-Sammlungen beziehungsweise Kurven und Flächen.
 
 Die Tests zu aufgeschobenen `VERTEX`-Domänen prüfen den Werkzeugwechsel
 mit `--disableValidation` auf der ili2db-Seite. Der Validator von 5.5.2
