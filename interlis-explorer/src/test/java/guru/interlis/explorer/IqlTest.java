@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -84,6 +86,59 @@ class IqlTest {
     }
 
     @Test
+    void expandsListEntriesAndPreservesOriginalPositions() throws Exception {
+        var plan = plan("Reference24", Files.readString(fixture("Reference24.ili"))
+                .replace("LIST {0..2} OF Detail", "LIST {0..12} OF Detail"));
+        var positions = IntStream.rangeClosed(1, 12).boxed().toList();
+        var entries = positions.stream().map(position -> "<details><Detail><label>piece-" + position
+                + "</label></Detail></details>").collect(Collectors.joining("\n"));
+        var input = Files.readString(fixture("structures-and-link.xtf"))
+                .replace("<details><Detail><label>second</label></Detail></details>", entries)
+                .replace("<details><Detail><label>first</label></Detail></details>", "")
+                .replace("</Data>", "<Item i:tid=\"empty\"><required>yes</required></Item></Data>");
+        var database = loadText(plan, input);
+        assertEquals(positions.stream().map(Object::toString).toList(), values(database, plan, """
+                SELECT pos FROM Reference24.Data.Item EXPAND details AS d AT pos
+                """));
+        assertEquals(List.of("10", "2"), values(database, plan, """
+                SELECT pos FROM Reference24.Data.Item AS i EXPAND i.details AS d AT pos
+                WHERE required = 'yes' AND (d.label = 'piece-10' OR pos = 2)
+                ORDER BY pos DESC LIMIT 2
+                """));
+        assertEquals(List.of("piece-1"), values(database, plan, """
+                SELECT d.label FROM Reference24.Data.Item i EXPAND i.details AS d LIMIT 1
+                """));
+        assertEquals(List.of("12"), values(database, plan, """
+                SELECT COUNT(*) FROM Reference24.Data.Item AS i EXPAND i.details AS d WHERE i.required = 'yes'
+                """));
+        assertEquals(List.of("5"), values(database, plan, """
+                SELECT expand.count FROM Reference24.Data.Item expand WHERE expand.count = 5
+                """));
+    }
+
+    @Test
+    void expandsBagDuplicatesAndRejectsPositionsOnBags() throws Exception {
+        var plan = plan("Reference24", Files.readString(fixture("Reference24.ili"))
+                .replace("LIST {0..2} OF Detail", "BAG {0..2} OF Detail"));
+        var transfer = Files.readString(fixture("structures-and-link.xtf"))
+                .replace("<label>first</label>", "<label>second</label>");
+        var database = loadText(plan, transfer);
+        assertEquals(List.of("second", "second"), values(database, plan, """
+                SELECT d.label FROM Reference24.Data.Item i EXPAND i.details AS d
+                """));
+        var problem = assertThrows(Iql.QueryException.class, () -> Iql.compile(plan, """
+                SELECT pos FROM Reference24.Data.Item i EXPAND i.details AS d AT pos
+                """, 100));
+        assertTrue(problem.getMessage().contains("LIST"), problem::getMessage);
+        assertThrows(Iql.QueryException.class, () -> Iql.compile(plan, """
+                SELECT d FROM Reference24.Data.Item i EXPAND i.count AS d
+                """, 100));
+        assertThrows(Iql.QueryException.class, () -> Iql.compile(plan, """
+                SELECT i FROM Reference24.Data.Item i EXPAND i.details AS i
+                """, 100));
+    }
+
+    @Test
     void keepsValuesAsParametersAndPointsAtInvalidPaths() throws Exception {
         var plan = plan("RelationsDemo");
         var query = Iql.compile(plan, "SELECT title FROM RelationsDemo.Data.Item WHERE title = 'O''Neil'", 20);
@@ -112,6 +167,46 @@ class IqlTest {
         }
         String inner = "SELECT p.title FROM RelationsDemo.Data.Parent p WHERE EXISTS(p.items AS i WHERE i.det";
         assertEquals(List.of("details"), Iql.complete(plan, inner, inner.length()).stream().map(Iql.Completion::text).toList());
+    }
+
+    @Test
+    void completesExpansionPathsBindingsAndListPositions() throws Exception {
+        var model = Files.readString(fixture("Reference24.ili"))
+                .replace("label : TEXT*20;", "label : TEXT*20; marker : P;");
+        var list = plan("Reference24", model);
+        var bag = plan("Reference24", model.replace("LIST {0..2}", "BAG {0..2}"));
+        String source = " FROM Reference24.Data.Item AS i";
+        String expand = source + " EXPAND i.details AS d";
+        String withPosition = expand + " AT pos";
+
+        assertEquals(List.of("EXPAND"), completionTexts(list, "SELECT *" + source + " EXPA|"));
+        assertEquals(List.of("details"), completionTexts(list, "SELECT *" + source + " EXPAND i.de|tails AS d"));
+        assertEquals(List.of("details"), completionTexts(bag, "SELECT *" + source + " EXPAND i.det|"));
+        assertFalse(completionTexts(list, "SELECT *" + source + " EXPAND i.|").contains("count"));
+        assertEquals(List.of("AT"), completionTexts(list, "SELECT *" + expand + " A|"));
+        assertTrue(completionTexts(bag, "SELECT *" + expand + " A|").isEmpty());
+
+        String selection = "SELECT d.label" + withPosition;
+        int nameStart = selection.indexOf("label");
+        var label = Iql.complete(list, selection, nameStart + 2).getFirst();
+        assertEquals("label", label.text());
+        assertEquals(nameStart, label.start());
+        assertEquals("label", selection.substring(label.start(), label.end()));
+        assertEquals(List.of("GEOMETRY"), completionTexts(list, "SELECT GEOM|" + withPosition));
+        assertEquals(List.of("marker"), completionTexts(list, "SELECT GEOMETRY(d.|)" + withPosition));
+        assertTrue(completionTexts(list, "SELECT po|s" + withPosition).contains("pos"));
+        assertTrue(completionTexts(list, selection + " ORDER BY po|").contains("pos"));
+        assertTrue(completionTexts(list, selection + " WHERE po|s > 1").contains("pos"));
+        assertEquals(List.of("pos"), completionTexts(list,
+                selection + " WHERE EXISTS(i.details AS inner WHERE po|s > 1)"));
+        assertEquals(List.of("label"), completionTexts(list,
+                selection + " WHERE EXISTS(i.details AS pos WHERE pos.la|bel = 'x')"));
+        assertTrue(completionTexts(list, selection + " WHERE pos.|").isEmpty());
+    }
+
+    private static List<String> completionTexts(TransferPlan plan, String marked) {
+        int caret = marked.indexOf('|');
+        return Iql.complete(plan, marked.replace("|", ""), caret).stream().map(Iql.Completion::text).toList();
     }
 
     @Test
@@ -230,6 +325,15 @@ class IqlTest {
             assertNull(runCheck(connection, valid));
             assertNull(runCheck(connection, Iql.compile(plan, source.formatted(4, "second"), 100)));
             assertTrue(runCheck(connection, Iql.compile(plan, source.formatted(5, "second"), 100))
+                    .contains("no native projection"));
+
+            String expansion = """
+                    SELECT pos, GEOMETRY(d.marker) FROM Reference24.Data.Item i EXPAND i.details AS d AT pos
+                    WHERE i.count = 5 AND d.label = '%s' AND INTERSECTS(d.marker, BOX(0, 0, 1, 1))
+                    """;
+            var expanded = Iql.compile(plan, expansion.formatted("first"), 100);
+            assertNull(runCheck(connection, expanded));
+            assertTrue(runCheck(connection, Iql.compile(plan, expansion.formatted("second"), 100))
                     .contains("no native projection"));
         }
     }

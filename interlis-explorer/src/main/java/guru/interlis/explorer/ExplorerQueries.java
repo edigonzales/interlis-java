@@ -2,18 +2,23 @@ package guru.interlis.explorer;
 
 import com.google.gson.JsonParser;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CancellationException;
@@ -40,12 +45,34 @@ public final class ExplorerQueries {
     public record Suggestion(String text, String description, int start, int end) {}
 
     /**
-     * Column labels and string previews in result order. All lists and sets are immutable.
+     * A geometry selected with IQL's explicit native geometry projection in this dataset.
+     * The source position and path identify the exact stored occurrence. Unknown CRS and
+     * unavailable native types are empty, with the latter carrying a projection error.
+     */
+    public record GeometryCell(long sourcePosition, String valuePath, Optional<String> crs,
+                               Optional<String> geometryType, Optional<String> projectionError) {
+        public GeometryCell {
+            Objects.requireNonNull(valuePath);
+            Objects.requireNonNull(crs);
+            Objects.requireNonNull(geometryType);
+            Objects.requireNonNull(projectionError);
+        }
+
+        private String preview() {
+            return geometryType.map(type -> type + " · " + crs.orElse("CRS unknown"))
+                    .orElse("Geometry unavailable");
+        }
+    }
+
+    /**
+     * Column labels and string previews in result order. All collections are immutable.
      * A null result still has the string preview "NULL". Each row's set in
-     * {@code nullColumnsByRow} identifies which of its zero-based columns contain actual nulls.
+     * {@code nullColumnsByRow} identifies its missing cells. A present geometry whose
+     * native projection failed has a preview and a diagnostic in {@code geometriesByRow}.
+     * Its coordinate key is the zero-based visible column, as for null cells.
      */
     public record Result(List<String> columns, List<List<String>> rows, boolean truncated,
-                         List<Set<Integer>> nullColumnsByRow) {
+                         List<Set<Integer>> nullColumnsByRow, List<Map<Integer, GeometryCell>> geometriesByRow) {
         public Result {
             columns = List.copyOf(columns);
             rows = rows.stream().map(List::copyOf).toList();
@@ -53,6 +80,15 @@ public final class ExplorerQueries {
             if (nullColumnsByRow.size() != rows.size()) {
                 throw new IllegalArgumentException("Null column information must cover every result row");
             }
+            geometriesByRow = geometriesByRow.stream().map(Map::copyOf).toList();
+            if (geometriesByRow.size() != rows.size()) {
+                throw new IllegalArgumentException("Geometry information must cover every result row");
+            }
+        }
+
+        /** Creates a result from string previews and null cells without geometry metadata. */
+        public Result(List<String> columns, List<List<String>> rows, boolean truncated, List<Set<Integer>> nullColumnsByRow) {
+            this(columns, rows, truncated, nullColumnsByRow, Collections.nCopies(rows.size(), Map.of()));
         }
 
         /** Creates a result from string previews without any null-cell information. */
@@ -63,6 +99,11 @@ public final class ExplorerQueries {
         /** Reports whether the cell at the zero-based result indices contains a null. */
         public boolean isNull(int row, int column) {
             return nullColumnsByRow.get(row).contains(column);
+        }
+
+        /** Returns the geometry occurrence, if present, at the zero-based result indices. */
+        public Optional<GeometryCell> geometry(int row, int column) {
+            return Optional.ofNullable(geometriesByRow.get(row).get(column));
         }
     }
 
@@ -121,7 +162,7 @@ public final class ExplorerQueries {
                 cancellation.check();
                 var boundedSql = "SELECT * FROM (" + select + ") LIMIT " + (ROW_LIMIT + 1);
                 try (var query = connection.prepareStatement(boundedSql)) {
-                    return preview(query, cancellation, labels);
+                    return preview(query, cancellation, labels, List.of());
                 }
             }
             var compiled = Iql.compile(store.queryPlan(), text, ROW_LIMIT);
@@ -146,9 +187,11 @@ public final class ExplorerQueries {
                 }
             }
             cancellation.check();
-            try (var query = connection.prepareStatement(compiled.sql())) {
+            try (var query = connection.prepareStatement(compiled.previewSql())) {
                 bind(query, compiled.parameters());
-                return preview(query, cancellation, columnLabels(query.getMetaData()));
+                var metadata = query.getMetaData();
+                int visibleColumns = metadata.getColumnCount() - Iql.GEOMETRY_METADATA_COLUMNS * compiled.geometryColumns().size();
+                return preview(query, cancellation, columnLabels(metadata, visibleColumns), compiled.geometryColumns());
             }
         }
     }
@@ -187,8 +230,12 @@ public final class ExplorerQueries {
     }
 
     private static List<String> columnLabels(ResultSetMetaData metadata) throws SQLException {
+        return columnLabels(metadata, metadata.getColumnCount());
+    }
+
+    private static List<String> columnLabels(ResultSetMetaData metadata, int count) throws SQLException {
         var columns = new ArrayList<String>();
-        for (int index = 1; index <= metadata.getColumnCount(); index++) {
+        for (int index = 1; index <= count; index++) {
             columns.add(metadata.getColumnLabel(index));
         }
         return columns;
@@ -216,41 +263,91 @@ public final class ExplorerQueries {
         }
     }
 
-    private static Result preview(PreparedStatement query, Cancellation cancellation, List<String> columns)
-            throws SQLException {
+    private static Result preview(PreparedStatement query, Cancellation cancellation, List<String> columns,
+                                  List<Integer> geometryColumns) throws SQLException {
+        var companionColumns = new int[columns.size()];
+        for (int index = 0; index < geometryColumns.size(); index++) {
+            companionColumns[geometryColumns.get(index)] = columns.size() + 1 + index * Iql.GEOMETRY_METADATA_COLUMNS;
+        }
         return runStatement(query, cancellation, () -> {
             try (var rows = query.executeQuery()) {
                 var metadata = rows.getMetaData();
                 var data = new ArrayList<List<String>>();
                 var nullColumnsByRow = new ArrayList<Set<Integer>>();
+                var geometriesByRow = new ArrayList<Map<Integer, GeometryCell>>();
                 while (data.size() < ROW_LIMIT) {
                     cancellation.check();
                     if (!rows.next()) {
-                        return new Result(columns, data, false, nullColumnsByRow);
+                        return new Result(columns, data, false, nullColumnsByRow, geometriesByRow);
                     }
                     var line = new ArrayList<String>();
                     var nullColumns = new HashSet<Integer>();
+                    Map<Integer, GeometryCell> geometries = geometryColumns.isEmpty() ? Map.of() : new HashMap<>();
                     for (int index = 1; index <= columns.size(); index++) {
                         cancellation.check();
-                        var type = metadata.getColumnTypeName(index);
+                        int column = index - 1;
                         String value;
-                        if ("GEOMETRY".equalsIgnoreCase(type) || metadata.getColumnType(index) == Types.BLOB) {
-                            value = rows.getObject(index) == null ? null : type;
+                        if (companionColumns[column] != 0) {
+                            var geometry = readGeometry(rows, index, companionColumns[column]);
+                            if (geometry != null) {
+                                geometries.put(column, geometry);
+                            }
+                            value = geometry == null ? null : geometry.preview();
                         } else {
-                            value = rows.getString(index);
+                            var type = metadata.getColumnTypeName(index);
+                            value = "GEOMETRY".equalsIgnoreCase(type) || metadata.getColumnType(index) == Types.BLOB
+                                    ? (rows.getObject(index) == null ? null : type) : rows.getString(index);
                         }
                         if (value == null) {
-                            nullColumns.add(index - 1);
+                            nullColumns.add(column);
                         }
                         line.add(value == null ? "NULL" : abbreviated(value));
                     }
                     data.add(line);
                     nullColumnsByRow.add(nullColumns);
+                    geometriesByRow.add(geometries);
                 }
                 cancellation.check();
-                return new Result(columns, data, rows.next(), nullColumnsByRow);
+                return new Result(columns, data, rows.next(), nullColumnsByRow, geometriesByRow);
             }
         });
+    }
+
+    private static GeometryCell readGeometry(ResultSet rows, int column, int companion) throws SQLException {
+        long source = rows.getLong(companion);
+        if (rows.wasNull()) {
+            return null;
+        }
+        String path = rows.getString(companion + 1);
+        var crs = Optional.ofNullable(rows.getString(companion + 2));
+        var error = Optional.ofNullable(rows.getString(companion + 3));
+        var type = error.isPresent() ? Optional.<String>empty() : Optional.of(geometryType(rows, column));
+        return new GeometryCell(source, path, crs, type, error);
+    }
+
+    private static String geometryType(ResultSet rows, int column) throws SQLException {
+        // The pinned DuckDB JDBC driver exposes GEOMETRY as a WKB blob. A preview
+        // only needs its byte order and type, even without the Spatial extension.
+        var wkb = rows.getBlob(column);
+        if (wkb == null) {
+            return "GEOMETRY";
+        }
+        byte[] header = wkb.getBytes(1, 5);
+        if (header.length != 5 || (header[0] != 0 && header[0] != 1)) {
+            return "GEOMETRY";
+        }
+        int type = ByteBuffer.wrap(header, 1, 4)
+                .order(header[0] == 1 ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN).getInt();
+        return switch (type % 1000) {
+            case 1 -> "POINT";
+            case 2 -> "LINESTRING";
+            case 3 -> "POLYGON";
+            case 4 -> "MULTIPOINT";
+            case 5 -> "MULTILINESTRING";
+            case 6 -> "MULTIPOLYGON";
+            case 7 -> "GEOMETRYCOLLECTION";
+            default -> "GEOMETRY";
+        };
     }
 
     private static String abbreviated(String value) {

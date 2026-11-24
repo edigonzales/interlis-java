@@ -37,9 +37,10 @@ final class IqlSyntax {
     record Junction(Expression left, String operator, Expression right) implements Expression {}
     record Exists(Path path, Token alias, Expression condition) implements Expression {}
     record Intersects(Path path, List<Double> box) implements Expression {}
-    record Selection(Path path, Token alias, boolean count) {}
+    record Selection(Path path, Token alias, boolean count, boolean geometry) {}
+    record Expansion(Path path, Token alias, Token position) {}
     record Order(Path path, boolean descending) {}
-    record Query(List<Selection> selections, Path source, Token alias, Expression filter,
+    record Query(List<Selection> selections, Path source, Token alias, Expansion expansion, Expression filter,
                  List<Order> order, int limit) {}
 
     private static final Pattern NUMBER = Pattern.compile("[+-]?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+)?");
@@ -127,16 +128,20 @@ final class IqlSyntax {
             require("(");
             require("*");
             require(")");
-            selections.add(new Selection(null, take("AS") ? word() : null, true));
+            selections.add(new Selection(null, take("AS") ? word() : null, true, false));
         } else if (!take("*")) {
             do {
+                boolean geometry = peek().is("GEOMETRY") && tokens.get(index + 1).is("(");
+                if (geometry) index += 2;
                 Path path = path();
-                selections.add(new Selection(path, take("AS") ? word() : null, false));
+                if (geometry) require(")");
+                selections.add(new Selection(path, take("AS") ? word() : null, false, geometry));
             } while (take(","));
         }
         require("FROM");
         Path source = path();
-        Token alias = take("AS") ? word() : peek().kind() == Kind.WORD && !clause(peek()) ? word() : null;
+        Token alias = take("AS") || hasImplicitSourceAlias() ? word() : null;
+        Expansion expansion = take("EXPAND") ? expansion() : null;
         Expression filter = take("WHERE") ? condition() : null;
         var ordering = new ArrayList<Order>();
         if (take("ORDER")) {
@@ -161,7 +166,22 @@ final class IqlSyntax {
         }
         take(";");
         if (peek().kind() != Kind.END) throw peek().error("Expected the end of the query");
-        return new Query(List.copyOf(selections), source, alias, filter, List.copyOf(ordering), limit);
+        return new Query(List.copyOf(selections), source, alias, expansion, filter, List.copyOf(ordering), limit);
+    }
+
+    private boolean hasImplicitSourceAlias() {
+        Token current = peek();
+        if (current.kind() != Kind.WORD || clause(current)) return false;
+        if (!current.is("EXPAND")) return true;
+        Token next = tokens.get(index + 1);
+        return next.kind() != Kind.WORD || clause(next);
+    }
+
+    private Expansion expansion() {
+        Path path = path();
+        require("AS");
+        Token alias = word();
+        return new Expansion(path, alias, take("AT") ? word() : null);
     }
 
     static boolean clause(Token token) {

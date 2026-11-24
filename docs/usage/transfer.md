@@ -362,6 +362,31 @@ FROM Reference24.Data.Item AS i
 WHERE EXISTS(i.details AS detail WHERE detail.label = 'first')
 ```
 
+`EXPAND pfad AS eintrag` gibt eine Zeile pro Eintrag einer `LIST` oder
+eines `BAG` aus. Pro Abfrage ist eine Expansion möglich. Der Alias des
+Elternobjekts bleibt verfügbar. Leere, fehlende und undefinierte Sammlungen
+liefern null Zeilen. Ein `BAG` behält Duplikate. Für eine `LIST` bindet
+`AT pos` optional die ursprüngliche Position ab `1`. Diese Position kannst
+du in `SELECT`, `WHERE` und `ORDER BY` verwenden. Ohne eigene Sortierung
+folgen die Einträge einer `LIST` ihrer Reihenfolge im Transfer.
+
+Die folgende DMAV-Abfrage liefert die Strassenachsen der Lokalisation
+`1193` in einem kleinen LV95-Ausschnitt. `GEOMETRY(pfad)` gibt die native
+Geometrie des ausgewählten Eintrags aus. Die Ergebnistabelle zeigt den
+Geometrietyp und das CRS. Bei einem Projektionsfehler zeigt sie einen
+Hinweis in der betroffenen Zelle.
+
+```sql
+SELECT l.LokalisationNummer, pos AS Listenposition, s.IstAchse,
+       GEOMETRY(s.Geometrie) AS Linie
+FROM DMAV_Gebaeudeadressen_V1_1.Gebaeudeadressen.Lokalisation AS l
+EXPAND l.Strassenstueck AS s AT pos
+WHERE l.LokalisationNummer = '1193'
+  AND s.IstAchse
+  AND INTERSECTS(s.Geometrie, BOX(2586065, 1224223, 2586066, 1224225))
+ORDER BY pos
+```
+
 `IS MISSING` fragt nach einem im Transfer fehlenden Attribut.
 `IS UNDEFINED` prüft einen explizit undefinierten Wert. Mit
 `INTERSECTS(pfad, BOX(xmin, ymin, xmax, ymax))` suchst du Geometrien im

@@ -2,12 +2,14 @@ package guru.interlis.explorer;
 
 import guru.interlis.model.AlignmentType;
 import guru.interlis.model.BooleanType;
+import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.CoordinateType;
 import guru.interlis.model.DecimalLiteral;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.FormattedType;
 import guru.interlis.model.GeometryType;
+import guru.interlis.model.NumericDirection;
 import guru.interlis.model.NumericType;
 import guru.interlis.model.OidType;
 import guru.interlis.model.ReferenceType;
@@ -32,13 +34,17 @@ import java.util.stream.Collectors;
 import static guru.interlis.explorer.IqlModel.shortName;
 
 final class IqlBinder {
-    private sealed interface Binding permits Row, Value {}
+    private sealed interface Binding permits Row, Value, Position {}
 
     private record Row(ObjectDescriptor type, String fields, String typeName, String position,
                        String valuePath, String associationId, String identity) implements Binding {}
 
     private record Value(TypeDescriptor type, String raw, String position, String path, IqlSyntax.Token token,
                          IqlModel.Role role, Row owner) implements Binding {}
+
+    private record Position(String sql) implements Binding {}
+    private record CollectionRows(String from, Binding element, Position position) {}
+    private record ExpandedScope(Scope scope, Position position) {}
 
     private enum Kind { TEXT, NUMBER, BOOLEAN, ENUMERATION, DATE }
 
@@ -53,8 +59,7 @@ final class IqlBinder {
         private final String from;
         private final String restriction;
         private final Row implicit;
-        private final String alias;
-        private final Binding binding;
+        private final Map<String, Binding> bindings = new HashMap<>();
         private final List<String> joins = new ArrayList<>();
         private final List<String> pathJoins = new ArrayList<>();
         private final Map<Occurrence, String> projectedScalars = new HashMap<>();
@@ -65,13 +70,12 @@ final class IqlBinder {
             this.from = from;
             this.restriction = restriction;
             this.implicit = implicit;
-            this.alias = alias;
-            this.binding = binding;
+            bindings.put(alias, binding);
         }
 
         Binding alias(String name) {
-            if (alias.equals(name)) return binding;
-            return parent == null ? null : parent.alias(name);
+            var binding = bindings.get(name);
+            return binding != null || parent == null ? binding : parent.alias(name);
         }
 
         String sourceSql() { return from + String.join("", joins); }
@@ -101,12 +105,16 @@ final class IqlBinder {
         boolean association = source.kind() == SymbolKind.ASSOCIATION;
         String table = alias();
         var row = association ? associationRow(source, table) : objectRow(source, table);
-        var scope = new Scope(null, (association ? "association " : "object ") + table,
-                table + ".type_name IN " + typeNames(model.descendants(source)), row,
-                query.alias() == null ? query.source().last().text() : query.alias().text(), row);
+        var rootAlias = query.alias() == null ? query.source().last() : query.alias();
+        var root = new Scope(null, (association ? "association " : "object ") + table,
+                table + ".type_name IN " + typeNames(model.descendants(source)), row, rootAlias.text(), row);
+        var expansion = query.expansion() == null ? null : expand(root, query.expansion());
+        var scope = expansion == null ? root : expansion.scope();
 
-        var selections = query.selections().isEmpty() ? star(source, query.source().last()) : query.selections();
+        var selections = query.selections().isEmpty() ? star(source, query.source().last(), rootAlias) : query.selections();
         var columns = new ArrayList<String>();
+        var geometryColumns = new ArrayList<Integer>();
+        var geometryMetadata = new ArrayList<String>();
         for (var selection : selections) {
             if (selection.count()) {
                 columns.add("count(*) AS " + identifier(selection.alias() == null ? "count" : selection.alias().text()));
@@ -114,7 +122,14 @@ final class IqlBinder {
             }
             Binding binding = resolve(scope, selection.path());
             String label = selection.alias() == null ? selection.path().last().text() : selection.alias().text();
-            columns.add(project(scope, binding) + " AS " + identifier(label));
+            String projection;
+            if (selection.geometry()) {
+                geometryColumns.add(columns.size());
+                projection = geometryProjection(scope, binding, selection.path().last(), geometryMetadata);
+            } else {
+                projection = project(scope, binding);
+            }
+            columns.add(projection + " AS " + identifier(label));
         }
         String where = query.filter() == null ? "" : " AND (" + predicate(scope, query.filter()) + ")";
 
@@ -124,23 +139,32 @@ final class IqlBinder {
             throw query.order().getFirst().path().first().error("ORDER BY is unavailable with COUNT(*)");
         }
         for (var order : query.order()) {
-            var value = value(resolve(scope, order.path()), order.path().last());
-            var scalar = scalar(scope, value, scale(value.type()));
-            if (scalar.kind() == Kind.ENUMERATION) throw value.token().error("Enumeration ordering is not supported");
+            var binding = resolve(scope, order.path());
+            var scalar = scalar(scope, binding, scale(type(binding)), order.path().last());
+            if (scalar.kind() == Kind.ENUMERATION) throw order.path().last().error("Enumeration ordering is not supported");
             ordering.add(scalar.sql() + (order.descending() ? " DESC NULLS LAST" : " ASC NULLS LAST"));
         }
-        if (!aggregate) ordering.add(association ? row.associationId() : row.position());
-        String sql = "SELECT " + String.join(", ", columns) + " FROM " + scope.sourceSql()
-                + " WHERE " + scope.restriction + where + (ordering.isEmpty() ? "" : " ORDER BY " + String.join(", ", ordering))
+        if (!aggregate) {
+            ordering.add(association ? row.associationId() : row.position());
+            if (expansion != null) ordering.add(expansion.position().sql());
+        }
+        var lineage = scope.lineage();
+        String from = lineage.stream().map(Scope::sourceSql).collect(Collectors.joining(" CROSS JOIN "));
+        String restriction = lineage.stream().map(layer -> layer.restriction).collect(Collectors.joining(" AND "));
+        String select = "SELECT " + String.join(", ", columns);
+        String queryBody = " FROM " + from
+                + " WHERE " + restriction + where + (ordering.isEmpty() ? "" : " ORDER BY " + String.join(", ", ordering))
                 + " LIMIT " + Math.min(query.limit(), previewLimit + 1L);
-        return new Iql.Compiled(sql, parameters, checks.stream().map(this::spatialCheck).toList());
+        String metadata = geometryMetadata.isEmpty() ? "" : ", " + String.join(", ", geometryMetadata);
+        return new Iql.Compiled(select + queryBody, parameters, checks.stream().map(this::spatialCheck).toList(),
+                select + metadata + queryBody, geometryColumns);
     }
 
-    private List<IqlSyntax.Selection> star(ObjectDescriptor owner, IqlSyntax.Token anchor) {
+    private List<IqlSyntax.Selection> star(ObjectDescriptor owner, IqlSyntax.Token anchor, IqlSyntax.Token rootAlias) {
         var columns = owner.slots().stream().filter(slot -> !(slot instanceof AttributeSlot attr)
                 || !attr.attribute().transientAttribute()).map(slot -> {
                     var field = new IqlSyntax.Token(IqlSyntax.Kind.WORD, shortName(slot), anchor.start(), anchor.end());
-                    return new IqlSyntax.Selection(new IqlSyntax.Path(List.of(field)), null, false);
+                    return new IqlSyntax.Selection(new IqlSyntax.Path(List.of(rootAlias, field)), null, false, false);
                 }).toList();
         if (columns.isEmpty()) throw anchor.error("This source has no selectable fields");
         return columns;
@@ -152,7 +176,11 @@ final class IqlBinder {
         if (binding != null) names = names.subList(1, names.size());
         else binding = scope.implicit;
         for (var name : names) {
-            Row row = binding instanceof Row object ? object : traverse(scope, (Value) binding);
+            Row row = switch (binding) {
+                case Row object -> object;
+                case Value field -> traverse(scope, field);
+                case Position ignored -> throw name.error("A LIST position has no nested members");
+            };
             binding = member(row, name);
         }
         return binding;
@@ -194,7 +222,7 @@ final class IqlBinder {
             case StructureValueType structure -> new Row(requiredTarget(structure, value), extract(value.raw(), "'$[2]'"),
                     text(value.raw(), "$[1]"), value.position(), value.path(), null, "NULL");
             case ReferenceType reference -> referenceTarget(scope, value, reference);
-            case CollectionType ignored -> throw value.token().error("Use EXISTS to navigate a LIST or BAG");
+            case CollectionType ignored -> throw value.token().error("Use EXISTS or EXPAND to navigate a LIST or BAG");
             default -> throw value.token().error("This value has no nested members");
         };
     }
@@ -263,6 +291,7 @@ final class IqlBinder {
 
     private String project(Scope scope, Binding binding) {
         if (binding instanceof Row row) return row.identity();
+        if (binding instanceof Position position) return position.sql();
         var value = (Value) binding;
         if (value.role() != null) {
             if (value.role().multiple()) return "(SELECT count(*) FROM (" + roles(value) + ") " + alias() + ")";
@@ -282,6 +311,18 @@ final class IqlBinder {
     private String projection(Scope scope, Value value) {
         if (kind(value.type()) == null) return kindSummary(value.raw(), "Value");
         return scalar(scope, value, scale(value.type())).sql();
+    }
+
+    private String geometryProjection(Scope scope, Binding binding, IqlSyntax.Token token, List<String> metadata) {
+        Value field = value(binding, token);
+        if (!geometry(field)) throw token.error("GEOMETRY requires a geometry attribute");
+        String table = alias();
+        scope.joins.add(" LEFT JOIN geometry " + table + " ON " + geometryKey(table, field));
+        metadata.add(table + ".source_position");
+        metadata.add(table + ".value_path");
+        metadata.add(table + ".crs");
+        metadata.add(table + ".projection_error");
+        return table + ".geom";
     }
 
     private String predicate(Scope scope, IqlSyntax.Expression expression) {
@@ -356,26 +397,36 @@ final class IqlBinder {
     }
 
     private String compare(Scope scope, IqlSyntax.Comparison comparison) {
-        var left = comparison.left() instanceof IqlSyntax.Path path ? value(resolve(scope, path), path.last()) : null;
-        var right = comparison.right() instanceof IqlSyntax.Path path ? value(resolve(scope, path), path.last()) : null;
+        var left = comparison.left() instanceof IqlSyntax.Path path ? resolve(scope, path) : null;
+        var right = comparison.right() instanceof IqlSyntax.Path path ? resolve(scope, path) : null;
         int scale = Math.max(operandScale(comparison.left(), left), operandScale(comparison.right(), right));
         if (scale > 38) throw comparison.operator().error("Exact numeric comparison exceeds DuckDB decimal precision");
-        var leftKind = left == null ? kind((IqlSyntax.Literal) comparison.left(), right) : kind(left.type());
-        var rightKind = right == null ? kind((IqlSyntax.Literal) comparison.right(), left) : kind(right.type());
+        var leftKind = left == null ? kind((IqlSyntax.Literal) comparison.left(), type(right)) : kind(left);
+        var rightKind = right == null ? kind((IqlSyntax.Literal) comparison.right(), type(left)) : kind(right);
         if (leftKind == null || leftKind != rightKind) throw comparison.operator().error("Values have incompatible comparison types");
         String operator = comparison.operator().text();
         if ((leftKind == Kind.ENUMERATION || leftKind == Kind.BOOLEAN) && !List.of("=", "!=", "<>").contains(operator)) {
             throw comparison.operator().error("This value type supports equality comparisons only");
         }
-        if (left != null && right != null) validateComparison(left.type(), right.type(), comparison.operator());
-        String leftSql = left == null ? literal((IqlSyntax.Literal) comparison.left(), leftKind, scale, right)
-                : scalar(scope, left, scale).sql();
-        String rightSql = right == null ? literal((IqlSyntax.Literal) comparison.right(), rightKind, scale, left)
-                : scalar(scope, right, scale).sql();
+        if (left != null && right != null) validateComparison(left, right, comparison.operator());
+        String leftSql = left == null ? literal((IqlSyntax.Literal) comparison.left(), leftKind, scale, type(right))
+                : scalar(scope, left, scale, comparison.operator()).sql();
+        String rightSql = right == null ? literal((IqlSyntax.Literal) comparison.right(), rightKind, scale, type(left))
+                : scalar(scope, right, scale, comparison.operator()).sql();
         return "(" + leftSql + " " + operator + " " + rightSql + ")";
     }
 
-    private void validateComparison(TypeDescriptor left, TypeDescriptor right, IqlSyntax.Token operator) {
+    private void validateComparison(Binding leftBinding, Binding rightBinding, IqlSyntax.Token operator) {
+        TypeDescriptor left = type(leftBinding);
+        TypeDescriptor right = type(rightBinding);
+        if (leftBinding instanceof Position || rightBinding instanceof Position) {
+            TypeDescriptor other = leftBinding instanceof Position ? right : left;
+            if (other instanceof NumericType numeric && (numeric.range().unit().isPresent()
+                    || numeric.range().referenceSystem().isPresent() || numeric.range().direction() != NumericDirection.NONE
+                    || numeric.range().circular())) {
+                throw operator.error("A LIST position can only be compared with a unitless number");
+            }
+        }
         if (left instanceof NumericType a && right instanceof NumericType b) {
             var leftUnit = a.range().unit();
             var rightUnit = b.range().unit();
@@ -398,7 +449,7 @@ final class IqlBinder {
         }
     }
 
-    private String literal(IqlSyntax.Literal literal, Kind kind, int scale, Value other) {
+    private String literal(IqlSyntax.Literal literal, Kind kind, int scale, TypeDescriptor other) {
         return switch (kind) {
             case NUMBER -> {
                 var decimal = normalize(literal);
@@ -416,7 +467,7 @@ final class IqlBinder {
                 yield "CAST(" + parameter(literal.value()) + " AS DATE)";
             }
             case ENUMERATION -> {
-                if (other != null && other.type() instanceof EnumerationType type
+                if (other instanceof EnumerationType type
                         && (type.values().stream().noneMatch(option -> option.path().equals(literal.value()))
                         || !type.treeValues() && type.values().stream().anyMatch(option -> option.path().startsWith(literal.value() + ".")))) {
                     throw literal.token().error("Unknown enumeration value #" + literal.value());
@@ -427,8 +478,8 @@ final class IqlBinder {
         };
     }
 
-    private int operandScale(IqlSyntax.Expression expression, Value value) {
-        if (value != null) return scale(value.type());
+    private int operandScale(IqlSyntax.Expression expression, Binding binding) {
+        if (binding != null) return scale(type(binding));
         if (expression instanceof IqlSyntax.Literal literal && literal.kind() == IqlSyntax.LiteralKind.NUMBER) {
             return Math.max(0, normalize(literal).scale());
         }
@@ -451,13 +502,21 @@ final class IqlBinder {
         }
     }
 
-    private static Kind kind(IqlSyntax.Literal literal, Value other) {
+    private static Kind kind(IqlSyntax.Literal literal, TypeDescriptor other) {
         return switch (literal.kind()) {
-            case TEXT -> other != null && kind(other.type()) == Kind.DATE ? Kind.DATE : Kind.TEXT;
+            case TEXT -> kind(other) == Kind.DATE ? Kind.DATE : Kind.TEXT;
             case NUMBER -> Kind.NUMBER;
             case BOOLEAN -> Kind.BOOLEAN;
             case ENUMERATION -> Kind.ENUMERATION;
         };
+    }
+
+    private static Kind kind(Binding binding) {
+        return binding instanceof Position ? Kind.NUMBER : kind(type(binding));
+    }
+
+    private static TypeDescriptor type(Binding binding) {
+        return binding instanceof Value field ? field.type() : null;
     }
 
     private static Kind kind(TypeDescriptor type) {
@@ -471,6 +530,14 @@ final class IqlBinder {
             case NumericType ignored -> Kind.NUMBER;
             case null, default -> null;
         };
+    }
+
+    private Scalar scalar(Scope scope, Binding binding, int scale, IqlSyntax.Token token) {
+        if (binding instanceof Position position) {
+            return new Scalar(Kind.NUMBER, scale == 0 ? position.sql()
+                    : "CAST(" + position.sql() + " AS DECIMAL(38," + scale + "))");
+        }
+        return scalar(scope, value(binding, token), scale);
     }
 
     private Scalar scalar(Scope scope, Value value, int scale) {
@@ -542,18 +609,48 @@ final class IqlBinder {
         return "EXISTS (SELECT 1 FROM " + scope.sourceSql() + " WHERE " + scope.restriction + " AND (" + condition + "))";
     }
 
+    private ExpandedScope expand(Scope parent, IqlSyntax.Expansion expansion) {
+        Binding binding = resolve(parent, expansion.path());
+        if (!(binding instanceof Value field) || !(field.type() instanceof CollectionType type)) {
+            throw expansion.path().last().error("EXPAND requires a LIST or BAG");
+        }
+        var name = expansion.alias();
+        if (parent.alias(name.text()) != null) {
+            throw name.error("The EXPAND alias must differ from the source alias");
+        }
+        var positionName = expansion.position();
+        if (positionName != null) {
+            if (type.collectionKind() != CollectionKind.LIST) throw positionName.error("AT requires a LIST");
+            if (name.text().equals(positionName.text()) || parent.alias(positionName.text()) != null) {
+                throw positionName.error("The AT alias must differ from the source and EXPAND aliases");
+            }
+        }
+        var rows = collectionRows(field, type, name);
+        var scope = new Scope(parent, rows.from(), "TRUE", parent.implicit, name.text(), rows.element());
+        if (positionName != null) scope.bindings.put(positionName.text(), rows.position());
+        return new ExpandedScope(scope, rows.position());
+    }
+
     private Scope collectionScope(Scope parent, Value value, IqlSyntax.Token name) {
         if (!(value.type() instanceof CollectionType type)) throw value.token().error("EXISTS requires a LIST, BAG or multi-valued role");
+        var rows = collectionRows(value, type, name);
+        Row implicit = rows.element() instanceof Row row ? row : parent.implicit;
+        return new Scope(parent, rows.from(), "TRUE", implicit, name.text(), rows.element());
+    }
+
+    private CollectionRows collectionRows(Value value, CollectionType type, IqlSyntax.Token name) {
         String item = alias();
         var element = new Value(model.type(type.elementType()), item + ".value", value.position(),
                 value.path() + " || '/' || " + item + ".key", name, null, null);
         String from = "LATERAL json_each(" + value.raw() + ", '$[2]') " + item;
+        var position = new Position("(CAST(" + item + ".key AS BIGINT) + 1)");
         if (element.type() instanceof StructureValueType structure) {
+            String typeName = text(element.raw(), "$[1]");
             var row = new Row(requiredTarget(structure, element), extract(element.raw(), "'$[2]'"),
-                    text(element.raw(), "$[1]"), element.position(), element.path(), null, "NULL");
-            return new Scope(parent, from, "TRUE", row, name.text(), row);
+                    typeName, element.position(), element.path(), null, typeName);
+            return new CollectionRows(from, row, position);
         }
-        return new Scope(parent, from, "TRUE", parent.implicit, name.text(), element);
+        return new CollectionRows(from, element, position);
     }
 
     private Scope roleScope(Scope parent, Value value, IqlSyntax.Token name) {
@@ -570,7 +667,7 @@ final class IqlBinder {
 
     private String intersects(Scope scope, IqlSyntax.Intersects predicate, boolean distinguishUnknown) {
         var value = value(resolve(scope, predicate.path()), predicate.path().last());
-        if (!(value.type() instanceof GeometryType || value.type() instanceof CoordinateType)) {
+        if (!geometry(value)) {
             throw value.token().error("INTERSECTS requires a geometry attribute");
         }
         checks.add(new SpatialCheck(scope, value, predicate.path(), new ArrayList<>()));
@@ -633,6 +730,10 @@ final class IqlBinder {
     }
 
     private static String tag(String raw) { return text(raw, "$[0]"); }
+
+    private static boolean geometry(Value value) {
+        return value.type() instanceof GeometryType || value.type() instanceof CoordinateType;
+    }
 
     private static String geometryKey(String table, Value value) {
         return table + ".source_position = " + value.position() + " AND " + table + ".value_path = " + value.path();

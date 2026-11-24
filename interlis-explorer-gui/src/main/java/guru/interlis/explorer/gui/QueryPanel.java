@@ -239,13 +239,19 @@ final class QueryPanel extends JPanel {
                 public Component getTableCellRendererComponent(JTable table, Object value, boolean selected,
                                                                 boolean focus, int row, int column) {
                     super.getTableCellRendererComponent(table, value, selected, focus, row, column);
-                    boolean isNull = table.getModel() instanceof ResultModel model
-                            && model.result.isNull(table.convertRowIndexToModel(row), table.convertColumnIndexToModel(column));
-                    if (isNull) {
-                        var font = getFont();
-                        setFont(font.deriveFont(font.getStyle() | Font.ITALIC));
+                    String description = null;
+                    if (table.getModel() instanceof ResultModel model) {
+                        int modelRow = table.convertRowIndexToModel(row);
+                        int modelColumn = table.convertColumnIndexToModel(column);
+                        if (model.result.isNull(modelRow, modelColumn)) {
+                            var font = getFont();
+                            setFont(font.deriveFont(font.getStyle() | Font.ITALIC));
+                            description = "SQL NULL";
+                        } else {
+                            description = model.result.geometry(modelRow, modelColumn)
+                                    .flatMap(ExplorerQueries.GeometryCell::projectionError).orElse(null);
+                        }
                     }
-                    String description = isNull ? "SQL NULL" : null;
                     setToolTipText(description);
                     getAccessibleContext().setAccessibleName(description);
                     return this;
@@ -257,8 +263,17 @@ final class QueryPanel extends JPanel {
 
         void showResult(ExplorerQueries.Result result) {
             setModel(new ResultModel(result));
+            var metrics = getFontMetrics(getFont());
+            var geometryWidths = new int[result.columns().size()];
+            for (int row = 0; row < result.rows().size(); row++) {
+                for (int column : result.geometriesByRow().get(row).keySet()) {
+                    int width = metrics.stringWidth(result.rows().get(row).get(column)) + 32;
+                    geometryWidths[column] = Math.max(geometryWidths[column], width);
+                }
+            }
             for (int column = 0; column < result.columns().size(); column++) {
-                int width = Math.clamp(result.columns().get(column).length() * 8 + 32, 110, 400);
+                int heading = result.columns().get(column).length() * 8 + 32;
+                int width = Math.clamp(Math.max(heading, geometryWidths[column]), 110, 400);
                 getColumnModel().getColumn(column).setPreferredWidth(width);
             }
         }

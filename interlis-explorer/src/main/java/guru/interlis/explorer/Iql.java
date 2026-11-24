@@ -8,14 +8,27 @@ import java.util.Objects;
 /** Read-only, model-bound queries for one Native Store transfer plan. */
 public final class Iql {
     private static final int MAX_QUERY_LENGTH = 32_768;
+    static final int GEOMETRY_METADATA_COLUMNS = 4;
 
     private Iql() {}
 
-    /** DuckDB statement with its ordered, immutable JDBC parameters and preflight checks. */
-    public record Compiled(String sql, List<Object> parameters, List<Check> checks) {
+    /**
+     * DuckDB statement with its ordered, immutable JDBC parameters and preflight checks.
+     * The preview statement adds a source position, value path, CRS and possible projection
+     * diagnostic after the visible columns for each zero-based index in {@code geometryColumns}.
+     * The same JDBC parameters apply to both statements.
+     */
+    public record Compiled(String sql, List<Object> parameters, List<Check> checks,
+                           String previewSql, List<Integer> geometryColumns) {
         public Compiled {
             parameters = List.copyOf(parameters);
             checks = List.copyOf(checks);
+            geometryColumns = List.copyOf(geometryColumns);
+        }
+
+        /** Creates a statement without additional preview columns. */
+        public Compiled(String sql, List<Object> parameters, List<Check> checks) {
+            this(sql, parameters, checks, sql, List.of());
         }
     }
 

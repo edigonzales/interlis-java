@@ -1,6 +1,9 @@
 package guru.interlis.explorer;
 
+import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CollectionType;
+import guru.interlis.model.CoordinateType;
+import guru.interlis.model.GeometryType;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
 
@@ -15,7 +18,14 @@ import static guru.interlis.explorer.IqlModel.shortName;
 
 final class IqlCompletion {
     private record Prefix(List<String> qualifiers, int left) {}
-    private record Source(ObjectDescriptor type, String alias) {}
+    private record Source(ObjectDescriptor type, String alias, String description) {
+        Source(ObjectDescriptor type, String alias) {
+            this(type, alias, "Alias of " + type.name().declared());
+        }
+    }
+    private record Root(Source source, int from, int next) {}
+    private record Expansion(CollectionType type, Source element, Source position, int pathEnd, int aliasEnd) {}
+    private enum FieldKind { ANY, COLLECTION, GEOMETRY }
 
     private static final List<String> KEYWORDS = List.of("SELECT", "FROM", "AS", "WHERE", "AND", "OR", "NOT", "IS",
             "MISSING", "UNDEFINED", "UNRESOLVED", "TRUE", "FALSE", "EXISTS", "INTERSECTS", "BOX",
@@ -71,26 +81,75 @@ final class IqlCompletion {
             return List.copyOf(matches.values());
         }
 
-        Source root = source();
+        Root root = source();
         if (root != null) {
-            var visible = scopes(root);
-            var effective = visible.getLast().type();
-            if (prefix.qualifiers().isEmpty()) {
-                for (var scope : visible) suggest(scope.alias(), "Alias of " + scope.type().name().declared());
-            } else {
-                effective = follow(visible, prefix.qualifiers(), false);
+            var expansion = expansion(root);
+            if (expansion != null && prefix.left() == root.next() + 1) {
+                pathSuggestions(prefix, List.of(root.source()), FieldKind.COLLECTION);
+                return List.copyOf(matches.values());
             }
-            if (effective != null) {
-                for (var slot : effective.slots()) {
-                    if (slot instanceof AttributeSlot attr && !attr.attribute().transientAttribute()) {
-                        suggest(shortName(attr), model.type(attr).kind().toString());
-                    }
-                }
-                for (var role : model.roles(effective)) suggest(shortName(role.target()), role.multiple() ? "Role · multi-valued" : "Role");
+            if (expansion != null && completeExpansionDeclaration(root, expansion, prefix)) {
+                return List.copyOf(matches.values());
+            }
+            if (prefix.qualifiers().isEmpty() && cursor == root.next() && expansion == null) {
+                suggest("EXPAND", "IQL keyword");
+            }
+            var fieldKind = prefix.left() < root.from() && at(prefix.left() - 2, "GEOMETRY")
+                    && at(prefix.left() - 1, "(") ? FieldKind.GEOMETRY : FieldKind.ANY;
+            var visible = scopes(root.source(), expansion);
+            pathSuggestions(prefix, visible, fieldKind);
+            if (fieldKind == FieldKind.GEOMETRY) return List.copyOf(matches.values());
+        }
+        if (prefix.qualifiers().isEmpty()) {
+            if (root == null || cursor < root.from()) suggest("GEOMETRY", "IQL projection");
+            KEYWORDS.forEach(keyword -> suggest(keyword, "IQL keyword"));
+        }
+        return List.copyOf(matches.values());
+    }
+
+    private void pathSuggestions(Prefix prefix, List<Source> visible, FieldKind kind) {
+        ObjectDescriptor effective;
+        if (prefix.qualifiers().isEmpty()) {
+            for (var scope : visible.reversed()) suggest(scope.alias(), scope.description());
+            effective = visible.getLast().type();
+        } else {
+            effective = follow(visible, prefix.qualifiers(), false);
+        }
+        if (effective == null) return;
+        for (var slot : effective.slots()) {
+            if (!(slot instanceof AttributeSlot attr) || attr.attribute().transientAttribute()) continue;
+            var type = model.type(attr);
+            if (type instanceof CollectionType collection) {
+                if (kind != FieldKind.GEOMETRY) suggest(shortName(attr), collection.collectionKind().name());
+            } else if (kind == FieldKind.ANY || kind == FieldKind.GEOMETRY
+                    && (type instanceof GeometryType || type instanceof CoordinateType) || model.target(type).isPresent()) {
+                suggest(shortName(attr), type.kind().toString());
             }
         }
-        if (prefix.qualifiers().isEmpty()) KEYWORDS.forEach(keyword -> suggest(keyword, "IQL keyword"));
-        return List.copyOf(matches.values());
+        for (var role : model.roles(effective)) {
+            if (kind == FieldKind.ANY || !role.multiple()) {
+                suggest(shortName(role.target()), role.multiple() ? "Role · multi-valued" : "Role");
+            }
+        }
+    }
+
+    /** Recognizes the gaps for keywords and aliases in the leading EXPAND declaration. */
+    private boolean completeExpansionDeclaration(Root root, Expansion expansion, Prefix prefix) {
+        int last = expansion.aliasEnd();
+        boolean hasPosition = at(last, "AT");
+        if (hasPosition) last += 2;
+        if (prefix.left() <= root.next() || prefix.left() > last) return false;
+        if (cursor == expansion.pathEnd() && expansion.type() != null) suggest("AS", "IQL keyword");
+        if (cursor == expansion.aliasEnd() && expansion.element() != null
+                && expansion.type().collectionKind() == CollectionKind.LIST) {
+            suggest("AT", "IQL keyword");
+        }
+        if (cursor == last && expansion.element() != null && (!hasPosition || expansion.position() != null)) {
+            suggest("WHERE", "IQL keyword");
+            suggest("ORDER", "IQL keyword");
+            suggest("LIMIT", "IQL keyword");
+        }
+        return true;
     }
 
     private Prefix prefix() {
@@ -103,7 +162,7 @@ final class IqlCompletion {
         return new Prefix(List.copyOf(qualifiers), left);
     }
 
-    private Source source() {
+    private Root source() {
         int depth = 0;
         for (int i = 0; i < tokens.size(); i++) {
             var token = tokens.get(i);
@@ -116,12 +175,62 @@ final class IqlCompletion {
             var name = String.join(".", path);
             var type = model.sources().stream().filter(source -> source.name().declared().toString().equals(name)).findFirst();
             if (type.isEmpty()) return null;
-            if (stop < tokens.size() && tokens.get(stop).is("AS")) stop++;
-            String alias = stop < tokens.size() && tokens.get(stop).kind() == IqlSyntax.Kind.WORD
-                    && !IqlSyntax.clause(tokens.get(stop)) ? tokens.get(stop).text() : path.getLast();
-            return new Source(type.orElseThrow(), alias);
+            boolean explicit = at(stop, "AS");
+            if (explicit) stop++;
+            String alias = path.getLast();
+            if (wordAt(stop) && (explicit || !IqlSyntax.clause(tokens.get(stop)) && !isExpansionStart(stop))) {
+                alias = tokens.get(stop).text();
+                if (explicit || cursor != stop) stop++;
+            }
+            return new Root(new Source(type.orElseThrow(), alias), i, stop);
         }
         return null;
+    }
+
+    private boolean isExpansionStart(int index) {
+        return at(index, "EXPAND") && (cursor == index + 1 || wordAt(index + 1)
+                && !IqlSyntax.clause(tokens.get(index + 1)));
+    }
+
+    private Expansion expansion(Root root) {
+        if (!at(root.next(), "EXPAND")) return null;
+        int start = root.next() + 1;
+        var names = new ArrayList<String>();
+        int pathEnd = path(start, names);
+        var type = collection(root.source(), names);
+        if (type == null || !at(pathEnd, "AS") || !wordAt(pathEnd + 1)) {
+            return new Expansion(type, null, null, pathEnd, pathEnd + 1);
+        }
+        var alias = tokens.get(pathEnd + 1).text();
+        int aliasEnd = pathEnd + 2;
+        if (alias.equals(root.source().alias())) return new Expansion(type, null, null, pathEnd, aliasEnd);
+        var element = new Source(model.target(model.type(type.elementType())).orElse(null), alias,
+                type.collectionKind().name() + " element");
+        Source position = null;
+        if (type.collectionKind() == CollectionKind.LIST && at(aliasEnd, "AT") && wordAt(aliasEnd + 1)
+                && !IqlSyntax.clause(tokens.get(aliasEnd + 1))) {
+            var name = tokens.get(aliasEnd + 1).text();
+            if (!name.equals(alias) && !name.equals(root.source().alias())) position = new Source(null, name, "LIST position");
+        }
+        return new Expansion(type, element, position, pathEnd, aliasEnd);
+    }
+
+    private CollectionType collection(Source root, List<String> names) {
+        if (names.isEmpty() || names.size() == 1 && names.getFirst().equals(root.alias())) return null;
+        var owner = names.size() == 1 ? root.type() : follow(List.of(root), names.subList(0, names.size() - 1), false);
+        if (owner == null || model.roles(owner).stream().anyMatch(role -> shortName(role.target()).equals(names.getLast()))) {
+            return null;
+        }
+        var type = model.attribute(owner, names.getLast()).map(model::type).orElse(null);
+        return type instanceof CollectionType collection ? collection : null;
+    }
+
+    private boolean at(int index, String text) {
+        return index >= 0 && index < tokens.size() && tokens.get(index).is(text);
+    }
+
+    private boolean wordAt(int index) {
+        return index >= 0 && index < tokens.size() && tokens.get(index).kind() == IqlSyntax.Kind.WORD;
     }
 
     private int path(int start, List<String> path) {
@@ -134,9 +243,13 @@ final class IqlCompletion {
         return next;
     }
 
-    private List<Source> scopes(Source root) {
+    private List<Source> scopes(Source root, Expansion expansion) {
         var visible = new ArrayList<Source>();
         var stack = new ArrayDeque<Boolean>();
+        if (expansion != null) {
+            if (expansion.element() != null) visible.add(expansion.element());
+            if (expansion.position() != null) visible.add(expansion.position());
+        }
         visible.add(root);
         for (int i = 0; i < cursor; i++) {
             if (tokens.get(i).is("(")) {
