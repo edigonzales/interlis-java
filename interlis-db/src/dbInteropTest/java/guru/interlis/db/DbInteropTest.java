@@ -272,39 +272,6 @@ final class DbInteropTest {
         new StrokeCases(work, new ReferenceTool(work, own.postgis()), version).smart2(baseline, own);
     }
 
-    @Test void geoPackageCatalogueReference23() throws Exception { exchangeCatalogueReference(23, null); }
-    @Test void geoPackageCatalogueReference24() throws Exception { exchangeCatalogueReference(24, null); }
-    @Test void postgisCatalogueReference23() throws Exception { exchangeWithPostgis(23, this::exchangeCatalogueReference); }
-    @Test void postgisCatalogueReference24() throws Exception { exchangeWithPostgis(24, this::exchangeCatalogueReference); }
-    @Test void geoPackageCatalogueSmart223() throws Exception { exchangeCatalogueSmart2(23, null); }
-    @Test void geoPackageCatalogueSmart224() throws Exception { exchangeCatalogueSmart2(24, null); }
-    @Test void postgisCatalogueSmart223() throws Exception { exchangeWithPostgis(23, this::exchangeCatalogueSmart2); }
-    @Test void postgisCatalogueSmart224() throws Exception { exchangeWithPostgis(24, this::exchangeCatalogueSmart2); }
-    @Test void geoPackageCatalogueSchema23() throws Exception { exchangeCatalogueSchema(23, null); }
-    @Test void geoPackageCatalogueSchema24() throws Exception { exchangeCatalogueSchema(24, null); }
-    @Test void postgisCatalogueSchema23() throws Exception { exchangeWithPostgis(23, this::exchangeCatalogueSchema); }
-    @Test void postgisCatalogueSchema24() throws Exception { exchangeWithPostgis(24, this::exchangeCatalogueSchema); }
-
-    private void exchangeCatalogueReference(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "catalogue_reference");
-        var cases = new CatalogueCases(work, new ReferenceTool(work, db.postgis()), version);
-        cases.singleTarget(db);
-        if (version == 24) cases.directReference(new TestDatabase(work, postgres, "catalogue_direct"));
-    }
-
-    private void exchangeCatalogueSmart2(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "catalogue_smart2");
-        new CatalogueCases(work, new ReferenceTool(work, db.postgis()), version).smart2(db);
-    }
-
-    private void exchangeCatalogueSchema(int version, PostgreSQLContainer postgres) throws Exception {
-        var baseline = new TestDatabase(work, postgres, "catalogue_reference_newclass");
-        new CatalogueCases(work, new ReferenceTool(work, baseline.postgis()), version).schema(baseline,
-                new TestDatabase(work, postgres, "catalogue_native_newclass"), new TestDatabase(work, postgres, "catalogue_reference_smart2"),
-                new TestDatabase(work, postgres, "catalogue_native_smart2"));
-    }
-
-
     @Test void geoPackageIlisMeta16Schema() throws Exception { checkIlisMeta16Schema(24, null); }
     @Test void postgisIlisMeta16Schema() throws Exception { exchangeWithPostgis(24, this::checkIlisMeta16Schema); }
     @Test void geoPackageTextOid24() throws Exception { exchangeTextOid(24, null); }

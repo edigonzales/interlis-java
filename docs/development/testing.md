@@ -222,6 +222,10 @@ Geometrieteile und atomaren Export bei beschädigten Geometrien. Die
 Smart2-Fälle prüfen stabile IDs, Hilfszeilen und räumliche Treffer nach
 Update und Delete.
 
+`CatalogueReferenceStorageTest` prüft fehlende und mehrdeutige Katalogziele
+mit Rollback, widersprüchliche Fremdschlüsselmetadaten, doppelt belegte
+Smart2-Zielspalten sowie den Schutz referenzierter Katalogdatensätze.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -358,17 +362,12 @@ und prüft den erfolgreichen Export aus derselben Datenbank mit
 ./gradlew :interlis-db:dbInteropTest --tests '*StructureMappingInteropTest.*JsonCollections*'
 ```
 
-`*DbInteropTest.*CatalogueReference*` prüft beide Werkzeugrichtungen
-für Katalogreferenzen mit `--coalesceCatalogueRef` auf GeoPackage und
-PostGIS. Die Fixtures verwenden die CHBase-V1-Strukturform in beiden
-Sprachversionen. Die Fälle prüfen die Ziel-ID im separaten Katalogdatensatz,
-leere Strukturen, Rollback bei fehlendem Ziel und fehlerhafte Metadaten.
-`*DbInteropTest.*CatalogueSmart2*` prüft zusätzlich alternative Zielspalten,
-mehrdeutige Ziel-TIDs und den atomaren Export bei doppelt belegten Spalten.
-`*DbInteropTest.*CatalogueSchema*` vergleicht den SQL-Katalog der
-`newClass`- und Smart2-Schemata mit ili2db. Die Mischläufe prüfen
-anschliessend die gemeinsame ID-Vergabe und den Schutz referenzierter
-Katalogdatensätze beim Löschen.
+`--tests '*CatalogueReferenceInteropTest'` prüft die CHBase-V1-Katalog-
+referenzen mit `--coalesceCatalogueRef` und einem separaten Katalogdatensatz.
+Die Gruppen `*NewClass*` und `*Smart2*` vergleichen den Katalog, die
+SQL-Zielspalten und beide Werkzeugrichtungen in beiden Schematypen.
+Ein ili2db-Folgeimport prüft die gemeinsame ID-Vergabe. Die Gruppe
+`*Direct24*` prüft ein direktes `REFERENCE TO` im Referenzschema.
 
 `--tests '*ChbaseTextInteropTest'` prüft `--expandMultilingual` und
 `--expandLocalised` im selben Schema und in einer XTF-Lieferung mit zwei
