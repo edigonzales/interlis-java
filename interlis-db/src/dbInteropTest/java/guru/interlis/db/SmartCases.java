@@ -2,7 +2,6 @@ package guru.interlis.db;
 
 import org.w3c.dom.Element;
 
-import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -20,28 +19,29 @@ import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.readDataSection;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 final class SmartCases {
     private final Path work;
     private final ReferenceTool reference;
     private final int version;
+    private final SmartFixtures fixtures;
 
     SmartCases(Path work, ReferenceTool reference, int version) {
         this.work = work;
         this.reference = reference;
         this.version = version;
+        fixtures = new SmartFixtures(work, version);
     }
 
     void smart1Scalars(TestDatabase db, TestDatabase defaults) throws Exception {
         String model = "SmartMeter" + version;
-        var source = fixture(model + ".ili");
+        var source = fixtures.fixture(model + ".ili");
         referenceSchema(db, model, "smart1");
         referenceSchema(defaults, model, null);
         Files.delete(source);
-        var input = fixture(model + ".xtf");
-        var nativeInput = transferWithPrefix(input, "native");
+        var input = fixtures.fixture(model + ".xtf");
+        var nativeInput = fixtures.transferWithPrefix(input, "native");
         var output = work.resolve("output.xtf");
         referenceImport(defaults, "default", input);
         restoreEmptyMemo(defaults);
@@ -77,7 +77,7 @@ final class SmartCases {
 
     void smart2Scalars(TestDatabase db) throws Exception {
         String model = "SmartMeter" + version;
-        var source = fixture(model + ".ili");
+        var source = fixtures.fixture(model + ".ili");
         referenceSchema(db, model, "smart2");
         Files.delete(source);
         try (var sql = db.connect()) {
@@ -93,13 +93,13 @@ final class SmartCases {
                 org.junit.jupiter.api.Assertions.assertFalse(names.contains("t_type"));
             }
         }
-        var input = fixture(model + ".xtf");
+        var input = fixtures.fixture(model + ".xtf");
         var output = work.resolve("smart2-scalar-output.xtf");
         referenceImport(db, "legacy", input);
         restoreEmptyMemo(db);
         assertCliSuccess(db, "export", model, "legacy", output);
         assertScalarObjects(output, model, "fixture", true);
-        assertCliSuccess(db, "import", model, "native", transferWithPrefix(input, "native"));
+        assertCliSuccess(db, "import", model, "native", fixtures.transferWithPrefix(input, "native"));
         referenceExport(db, "native", output);
         assertScalarObjects(output, model, "native", false);
         try (var sql = db.connect()) {
@@ -114,15 +114,15 @@ final class SmartCases {
 
     void smart1References(TestDatabase db) throws Exception {
         String model = "SmartRefs" + version;
-        var source = fixture(model + ".ili");
+        var source = fixtures.fixture(model + ".ili");
         referenceSchema(db, model, "smart1");
         Files.delete(source);
-        var input = fixture(model + ".xtf");
+        var input = fixtures.fixture(model + ".xtf");
         var output = work.resolve("refs-output.xtf");
         referenceImport(db, "legacy", input);
         assertCliSuccess(db, "export", model, "legacy", output);
         assertReferences(output, model, "fixture");
-        var nativeInput = transferWithPrefix(input, "native");
+        var nativeInput = fixtures.transferWithPrefix(input, "native");
         assertCliSuccess(db, "import", model, "native", nativeInput);
         referenceExport(db, "native", output);
         assertReferences(output, model, "native");
@@ -145,26 +145,26 @@ final class SmartCases {
     private void assertReferences(Path file, String model, String prefix) throws Exception {
         var basket = children(readDataSection(file, version)).getFirst();
         assertEquals(prefix + "-b", id(basket, version, "bid"));
-        var owner = object(basket, model, "Survey", prefix + "-survey");
+        var owner = fixtures.object(basket, model, "Survey", prefix + "-survey");
         var note = children(child(owner, "Details")).getFirst();
         assertEquals(prefix + "-t", id(child(note, "AnyInstrument"), version, "ref"));
         assertEquals(prefix + "-s", id(child(note, "SmartTarget"), version, "ref"));
         assertEquals(prefix + "-m", id(child(owner, "Observed"), version, "ref"));
-        object(basket, model, "SmartUnit", prefix + "-s");
-        object(basket, model, "Terminal", prefix + "-t");
+        fixtures.object(basket, model, "SmartUnit", prefix + "-s");
+        fixtures.object(basket, model, "Terminal", prefix + "-t");
     }
 
     void smart2References(TestDatabase db) throws Exception {
         String model = "SmartPoly" + version;
-        var source = fixture(model + ".ili");
+        var source = fixtures.fixture(model + ".ili");
         referenceSchema(db, model, "smart2");
         Files.delete(source);
-        var input = fixture(model + ".xtf");
+        var input = fixtures.fixture(model + ".xtf");
         var output = work.resolve("smart2-refs-output.xtf");
         referenceImport(db, "legacy", input);
         assertCliSuccess(db, "export", model, "legacy", output);
         assertPolymorphicReferences(output, model, "fixture");
-        assertCliSuccess(db, "import", model, "native", transferWithPrefix(input, "native"));
+        assertCliSuccess(db, "import", model, "native", fixtures.transferWithPrefix(input, "native"));
         referenceExport(db, "native", output);
         assertPolymorphicReferences(output, model, "native");
         try (var sql = db.connect()) {
@@ -198,12 +198,12 @@ final class SmartCases {
 
     void structures(TestDatabase smart1, TestDatabase smart2) throws Exception {
         String model = "SmartStructures" + version;
-        var source = fixture(model + ".ili");
+        var source = fixtures.fixture(model + ".ili");
         referenceSchema(smart1, model, "smart1");
         referenceSchema(smart2, model, "smart2");
         Files.delete(source);
-        var input = fixture(model + ".xtf");
-        var nativeInput = transferWithPrefix(input, "native");
+        var input = fixtures.fixture(model + ".xtf");
+        var nativeInput = fixtures.transferWithPrefix(input, "native");
         var output = work.resolve("structures-output.xtf");
         for (var db : List.of(smart1, smart2)) {
             referenceImport(db, "legacy", input);
@@ -235,8 +235,8 @@ final class SmartCases {
     private void assertStructures(Path file, String model, String prefix) throws Exception {
         var basket = children(readDataSection(file, version)).getFirst();
         assertEquals(prefix + "-b", id(basket, version, "bid"));
-        var base = object(basket, model, "Survey", prefix + "-s");
-        var derived = object(basket, model, "DetailedSurvey", prefix + "-d");
+        var base = fixtures.object(basket, model, "Survey", prefix + "-s");
+        var derived = fixtures.object(basket, model, "DetailedSurvey", prefix + "-d");
         assertEquals("solo", child(children(child(base, "Details")).getFirst(), "Memo").getTextContent());
         assertNull(child(derived, "Details"));
         assertEquals("derived", child(derived, "Label").getTextContent());
@@ -251,20 +251,20 @@ final class SmartCases {
 
     void geometries(TestDatabase smart1, TestDatabase smart2) throws Exception {
         String model = "SmartGeometry" + version;
-        var source = fixture(model + ".ili");
+        var source = fixtures.fixture(model + ".ili");
         referenceSchema(smart1, model, "smart1");
         referenceSchema(smart2, model, "smart2");
         Files.delete(source);
-        var input = fixture(model + ".xtf");
-        var nativeInput = transferWithPrefix(input, "native");
+        var input = fixtures.fixture(model + ".xtf");
+        var nativeInput = fixtures.transferWithPrefix(input, "native");
         var output = work.resolve("geometry-output.xtf");
         for (var db : List.of(smart1, smart2)) {
             referenceImport(db, "legacy", input);
             assertCliSuccess(db, "export", model, "legacy", output);
-            assertGeometries(output, model, "fixture");
+            fixtures.assertGeometries(output, model, "fixture");
             assertCliSuccess(db, "import", model, "native", nativeInput);
             referenceExport(db, "native", output);
-            assertGeometries(output, model, "native");
+            fixtures.assertGeometries(output, model, "native");
             boolean shared = db == smart1;
             try (var sql = db.connect()) {
                 String parent = shared ? "meter" : "smartunit";
@@ -294,136 +294,27 @@ final class SmartCases {
         }
     }
 
-    private void assertGeometries(Path file, String model, String prefix) throws Exception {
-        var basket = children(readDataSection(file, version)).getFirst();
-        assertEquals(prefix + "-b", id(basket, version, "bid"));
-        var meter = object(basket, model, "Meter", prefix + "-m");
-        var smart = object(basket, model, "SmartUnit", prefix + "-s");
-        var absent = object(basket, model, "SmartUnit", prefix + "-n");
-        var terminal = object(basket, model, "Terminal", prefix + "-t");
-        assertPoint(child(meter, "Location"), "2600123.125", "1200456.375");
-        assertPoint(child(smart, "Location"), "2600124.125", "1200457.375");
-        assertPoint(child(smart, "ExtraLocation"), "2600125.125", "1200458.375");
-        assertPoint(child(absent, "Location"), "2600126.125", "1200459.375");
-        assertNull(child(meter, "ExtraLocation"));
-        assertNull(child(absent, "ExtraLocation"));
-        assertNull(child(terminal, "Location"));
-    }
-
-    private static void assertPoint(Element point, String x, String y) {
-        var coordinates = children(children(point).getFirst());
-        assertEquals(0, new BigDecimal(x).compareTo(new BigDecimal(coordinates.get(0).getTextContent())));
-        assertEquals(0, new BigDecimal(y).compareTo(new BigDecimal(coordinates.get(1).getTextContent())));
-    }
-
-    void mutations(TestDatabase smart1, TestDatabase smart2) throws Exception {
-        String parent = "TownParent" + version;
-        String model = "TownChild" + version;
-        String incoming = "TownIncoming" + version;
-        String geometry = "SmartGeometry" + version;
-        fixture("/topics/", parent + ".ili");
-        fixture("/topics/", model + ".ili");
-        fixture("/topics/", incoming + ".ili");
-        fixture(geometry + ".ili");
-        referenceSchema(smart1, model + ";" + incoming + ";" + geometry, "smart1");
-        referenceSchema(smart2, model + ";" + incoming + ";" + geometry, "smart2");
-        var input = fixture("/topics/", "region" + version + ".xtf");
-        var referenceInput = fixture("/topics/", "incoming" + version + ".xtf");
-        var geometryInput = fixture(geometry + ".xtf");
-        String original = Files.readString(input);
-        var changed = Files.writeString(work.resolve("region-changed.xtf"), original.replace(">child<", ">updated<")
-                .replace(">inherited<", ">marker updated<"));
-        var withoutTarget = Files.writeString(work.resolve("region-removed.xtf"),
-                original.lines().filter(line -> !line.contains("region-s")).collect(Collectors.joining("\n"))
-                        .replace(">inherited<", ">must roll back<"));
-        String changedType = version == 23
-                ? original.replace(model + ".Region.LocalStation", parent + ".Core.Station").replace("<LocalMemo>child</LocalMemo>", "")
-                : original.replace("a:LocalStation", "b:Station").replace("<a:LocalMemo>child</a:LocalMemo>", "");
-        var wrongType = Files.writeString(work.resolve("region-type-change.xtf"), changedType);
-        var geometryUpdate = Files.writeString(work.resolve("geometry-remove-optional.xtf"),
-                Files.readString(geometryInput).lines().filter(line -> !line.contains("fixture-n")).collect(Collectors.joining("\n")));
-        var output = work.resolve("mutated-output.xtf");
-        for (var db : List.of(smart1, smart2)) {
-            String station = db.table(db == smart1 ? "station" : "localstation");
-            referenceImport(db, "region", input);
-            referenceImport(db, "incoming", referenceInput);
-            String row = " FROM " + station + " WHERE t_ili_tid='region-s'";
-            String basket = "SELECT t_id FROM " + db.table("t_ili2db_basket") + " WHERE t_ili_tid='region-b'";
-            String dataset = "SELECT t_id FROM " + db.table("t_ili2db_dataset") + " WHERE datasetname='region'";
-            try (var sql = db.connect()) {
-                String previous = scalar(sql, "SELECT t_id" + row);
-                String previousBasket = scalar(sql, basket);
-                String previousDataset = scalar(sql, dataset);
-                assertEquals(previous, scalar(sql, "SELECT destination FROM " + db.table("incominglink")));
-                assertCliSuccess(db, "update", model, "region", changed);
-                assertEquals(previous, scalar(sql, "SELECT t_id" + row));
-                assertEquals(previousBasket, scalar(sql, basket));
-                assertEquals("updated", scalar(sql, "SELECT localmemo" + row));
-                assertCliFailure(db, "update", model, "region", wrongType, "Cannot change concrete class");
-                assertCliFailure(db, "update", model, "region", withoutTarget, "referenced object");
-                assertCliFailure(db, "replace", model, "region", input, "referenced object");
-                assertCliFailure(db, "delete", model, "region", null, "referenced object");
-                assertEquals(previous, scalar(sql, "SELECT t_id" + row));
-                assertEquals("marker updated", scalar(sql, "SELECT memo FROM " + db.table("marker") + " WHERE t_ili_tid='region-m'"));
-                referenceExport(db, "region", output);
-                assertRegion(output, "updated");
-                assertCliSuccess(db, "delete", incoming, "incoming", null);
-                assertCliSuccess(db, "replace", model, "region", input);
-                assertEquals(previousDataset, scalar(sql, dataset));
-                assertNotEquals(previous, scalar(sql, "SELECT t_id" + row));
-                referenceExport(db, "region", output);
-                assertRegion(output, "child");
-                assertCliSuccess(db, "delete", model, "region", null);
-                assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + station));
-                assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + db.table("marker")));
-                assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + db.table("t_ili2db_basket")));
-            }
-            referenceImport(db, "geometry", geometryInput);
-            assertCliSuccess(db, "update", geometry, "geometry", geometryUpdate);
-            assertCliSuccess(db, "replace", geometry, "geometry", geometryInput);
-            referenceExport(db, "geometry", output);
-            assertGeometries(output, geometry, "fixture");
-            assertCliSuccess(db, "delete", geometry, "geometry", null);
-            try (var sql = db.connect()) {
-                assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + db.table("t_ili2db_dataset")));
-                if (!db.postgis()) {
-                    String helper = db == smart1 ? "meter_extralocation" : "smartunit_location";
-                    assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + db.table(helper)));
-                }
-            }
-        }
-    }
-
-    private void assertRegion(Path path, String memo) throws Exception {
-        var basket = children(readDataSection(path, version)).getFirst();
-        assertEquals("region-b", id(basket, version, "bid"));
-        var station = children(basket).stream().filter(element -> "region-s".equals(id(element, version, "tid")))
-                .findFirst().orElseThrow();
-        assertEquals(memo, child(station, "LocalMemo").getTextContent());
-        assertEquals("base", child(station, "Memo").getTextContent());
-    }
-
     void smart1Schema(TestDatabase baseline, TestDatabase own) throws Exception {
         String model = "SmartRefs" + version;
         createAndCompare(baseline, own, model, "smart1");
-        var input = fixture(model + ".xtf");
+        var input = fixtures.fixture(model + ".xtf");
         var output = work.resolve("own-smart1.xtf");
         referenceImport(own, "legacy", input);
         assertCliSuccess(own, "export", model, "legacy", output);
         assertReferences(output, model, "fixture");
-        assertCliSuccess(own, "import", model, "native", transferWithPrefix(input, "native"));
+        assertCliSuccess(own, "import", model, "native", fixtures.transferWithPrefix(input, "native"));
         referenceExport(own, "native", output);
         assertReferences(output, model, "native");
     }
 
     void smart2Schema(TestDatabase baseline, TestDatabase own) throws Exception {
         String model = "SmartPoly" + version;
-        var source = fixture(model + ".ili");
+        var source = fixtures.fixture(model + ".ili");
         Files.writeString(source, Files.readString(source).replace("SmartTarget : REFERENCE TO SmartUnit",
                 "SmartTarget : REFERENCE TO Meter").replace("CLASS Survey = Details : Note; END Survey;",
                 "CLASS Survey = Details : Note; END Survey;\n    CLASS ExtraSurvey EXTENDS Survey = END ExtraSurvey;"));
         createAndCompare(baseline, own, model, "smart2", source);
-        var input = fixture(model + ".xtf");
+        var input = fixtures.fixture(model + ".xtf");
         String closingSurvey = version == 23 ? "</" + model + ".Data.Survey>" : "</Survey>";
         String extra = version == 23 ? "<" + model
                 + ".Data.ExtraSurvey TID=\"fixture-extra\"><Observed REF=\"fixture-m\"/></" + model + ".Data.ExtraSurvey>"
@@ -434,11 +325,11 @@ final class SmartCases {
         assertCliSuccess(own, "export", model, "legacy", output);
         assertPolymorphicReferences(output, model, "fixture");
         assertExtraSurvey(output, model, "fixture");
-        assertCliSuccess(own, "import", model, "native", transferWithPrefix(input, "native"));
+        assertCliSuccess(own, "import", model, "native", fixtures.transferWithPrefix(input, "native"));
         referenceExport(own, "native", output);
         assertPolymorphicReferences(output, model, "native");
         assertExtraSurvey(output, model, "native");
-        referenceImport(own, "tail", transferWithPrefix(input, "tail"));
+        referenceImport(own, "tail", fixtures.transferWithPrefix(input, "tail"));
         assertCliSuccess(own, "export", model, "tail", output);
         assertPolymorphicReferences(output, model, "tail");
         assertExtraSurvey(output, model, "tail");
@@ -455,12 +346,12 @@ final class SmartCases {
 
     private void assertExtraSurvey(Path path, String model, String prefix) throws Exception {
         var basket = children(readDataSection(path, version)).getFirst();
-        var survey = object(basket, model, "ExtraSurvey", prefix + "-extra");
+        var survey = fixtures.object(basket, model, "ExtraSurvey", prefix + "-extra");
         assertEquals(prefix + "-m", id(child(survey, "Observed"), version, "ref"));
     }
 
     private void createAndCompare(TestDatabase baseline, TestDatabase own, String model, String profile) throws Exception {
-        createAndCompare(baseline, own, model, profile, fixture(model + ".ili"));
+        createAndCompare(baseline, own, model, profile, fixtures.fixture(model + ".ili"));
     }
 
     private void createAndCompare(TestDatabase baseline, TestDatabase own, String model, String profile, Path source)
@@ -485,9 +376,9 @@ final class SmartCases {
         var basket = children(readDataSection(path, version)).getFirst();
         assertEquals(prefix + "-b", id(basket, version, "bid"));
         assertEquals(3, children(basket).size());
-        var meter = object(basket, model, "Meter", prefix + "-m");
-        var smart = object(basket, model, "SmartUnit", prefix + "-s");
-        var terminal = object(basket, model, "Terminal", prefix + "-t");
+        var meter = fixtures.object(basket, model, "Meter", prefix + "-m");
+        var smart = fixtures.object(basket, model, "SmartUnit", prefix + "-s");
+        var terminal = fixtures.object(basket, model, "Terminal", prefix + "-t");
         if (emptyMemo) {
             assertEquals("", child(meter, "Memo").getTextContent());
         } else {
@@ -504,41 +395,15 @@ final class SmartCases {
         assertEquals("p1", child(terminal, "Socket").getTextContent());
     }
 
-    private Element object(Element basket, String model, String name, String tid) {
-        var object = children(basket).stream().filter(element -> tid.equals(id(element, version, "tid")))
-                .findFirst().orElseThrow();
-        assertEquals(version == 23 ? model + ".Data." + name : name, object.getLocalName());
-        return object;
-    }
-
-    private Path transferWithPrefix(Path input, String prefix) throws Exception {
-        return Files.writeString(work.resolve(prefix + ".xtf"), Files.readString(input).replace("fixture-", prefix + "-"));
-    }
-
-    private Path fixture(String name) throws Exception {
-        return fixture("/smart/", name);
-    }
-
-    private Path fixture(String directory, String name) throws Exception {
-        var path = work.resolve(name);
-        try (var source = getClass().getResourceAsStream(directory + name)) {
-            Files.copy(source, path);
-        }
-        return path;
-    }
-
     private void referenceSchema(TestDatabase db, String model, String profile) throws Exception {
-        var options = new ArrayList<>(List.of("--schemaimport", "--createBasketCol", "--createTidCol", "--sqlEnableNull",
-                "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", "--models", model));
-        if (profile != null) options.addAll(List.of("--noSmartMapping", "--" + profile + "Inheritance"));
-        reference.run(db, work.toString(), options.toArray(String[]::new));
+        SmartInteropSupport.schema(reference, db, work, model, profile);
     }
 
     private void referenceImport(TestDatabase db, String dataset, Path input) throws Exception {
-        reference.run(db, "%ILI_FROM_DB", "--import", "--dataset", dataset, "--importBid", "--importTid", input.toString());
+        SmartInteropSupport.importDataset(reference, db, dataset, input);
     }
 
     private void referenceExport(TestDatabase db, String dataset, Path output) throws Exception {
-        reference.run(db, "%ILI_FROM_DB", "--export", "--dataset", dataset, "--exportTid", output.toString());
+        SmartInteropSupport.exportDataset(reference, db, dataset, output);
     }
 }

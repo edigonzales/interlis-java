@@ -405,10 +405,6 @@ final class DbInteropTest {
     @Test void geoPackageSmartGeometries24() throws Exception { exchangeSmartGeometries(24, null); }
     @Test void postgisSmartGeometries23() throws Exception { exchangeWithPostgis(23, this::exchangeSmartGeometries); }
     @Test void postgisSmartGeometries24() throws Exception { exchangeWithPostgis(24, this::exchangeSmartGeometries); }
-    @Test void geoPackageSmartMutations23() throws Exception { exchangeSmartMutations(23, null); }
-    @Test void geoPackageSmartMutations24() throws Exception { exchangeSmartMutations(24, null); }
-    @Test void postgisSmartMutations23() throws Exception { exchangeWithPostgis(23, this::exchangeSmartMutations); }
-    @Test void postgisSmartMutations24() throws Exception { exchangeWithPostgis(24, this::exchangeSmartMutations); }
     @Test void geoPackageSmart1Schema23() throws Exception { exchangeSmart1Schema(23, null); }
     @Test void geoPackageSmart1Schema24() throws Exception { exchangeSmart1Schema(24, null); }
     @Test void postgisSmart1Schema23() throws Exception { exchangeWithPostgis(23, this::exchangeSmart1Schema); }
@@ -543,12 +539,6 @@ final class DbInteropTest {
         var db = new TestDatabase(work, postgres, "smart1_geometries");
         new SmartCases(work, new ReferenceTool(work, db.postgis()), version)
                 .geometries(db, new TestDatabase(work, postgres, "smart2_geometries"));
-    }
-
-    private void exchangeSmartMutations(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "smart1_mutations");
-        new SmartCases(work, new ReferenceTool(work, db.postgis()), version)
-                .mutations(db, new TestDatabase(work, postgres, "smart2_mutations"));
     }
 
     private void exchangeSmart1Schema(int version, PostgreSQLContainer postgres) throws Exception {

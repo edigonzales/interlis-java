@@ -198,6 +198,11 @@ Fälle prüfen auch inkompatible Alternativmodelle, fehlendes `--multi-srs`,
 mehrdeutige EPSG-Zuordnungen und den Erhalt der Exportdatei bei
 beschädigten Topics oder Domänenzuweisungen.
 
+`SmartMutationStorageTest` prüft stabile Objekt- und Basket-IDs in Smart1
+und Smart2, den Rollback bei Klassenwechseln und eingehenden Referenzen sowie
+Replace und Delete nach Auflösung der Referenz. Er prüft auch das Entfernen
+optionaler Geometrien und die Bereinigung der GeoPackage-Hilfszeilen.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -374,11 +379,15 @@ weiteren Referenzimport.
 
 `*DbInteropTest.*Smart*` prüft Smart1 und Smart2 mit XTF 2.3 und 2.4.
 Die Fälle vergleichen beide Werkzeugrichtungen, physische Eigentümer
-und Zielspalten, Geometriezuordnungen und Datensatzmutationen. Die
+und Zielspalten sowie Geometriezuordnungen. Die
 Schemaerzeugung wird gegen den Katalog von ili2db geprüft. Beim
 Smart2-Vergleich wird die Reihenfolge innerhalb eines Satzes
 alternativer Fremdschlüsselspalten normalisiert, da ili2db sie aus
 einer Menge ermittelt.
+
+`--tests '*SmartMutationInteropTest'` prüft in beiden Layouts einen
+ili2db-Import, ein natives Update und den anschliessenden ili2db-Export. SQL
+und XTF belegen stabile IDs, den geerbten Wert und die Änderung.
 
 `*DbInteropTest.*SharedSource*` prüft importierte Typen aus derselben
 gespeicherten Modelldatei, die Fachwerte und CRS sowie beide
