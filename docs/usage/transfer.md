@@ -344,6 +344,11 @@ FROM RelationsDemo.Data.Item AS i
 WHERE i.title = 'Item with relationships'
 ```
 
+Beim Vergleich zweier numerischer Attribute verlangt IQL dieselbe Einheit
+und passende Referenzsysteme. Eine einfache Zahl wird in der Einheit des
+Attributs interpretiert. Bei Aufzählungen prüft IQL, ob die Modelltypen der
+beiden Attribute vergleichbar sind.
+
 Bei Sammlungen bindet `EXISTS` die Bedingungen an ein einzelnes Vorkommen.
 Mit `Reference24.ili` und `structures-and-link.xtf` findest du das Objekt, das
 einen Eintrag mit dem Namen `first` enthält.
@@ -357,7 +362,11 @@ WHERE EXISTS(i.details AS detail WHERE detail.label = 'first')
 `IS MISSING` fragt nach einem im Transfer fehlenden Attribut.
 `IS UNDEFINED` prüft einen explizit undefinierten Wert. Mit
 `INTERSECTS(pfad, BOX(xmin, ymin, xmax, ymax))` suchst du Geometrien im
-Koordinatenreferenzsystem des Attributs. Die räumliche Abfrage benötigt
+Koordinatenreferenzsystem des Attributs. Die Vorprüfung berücksichtigt
+nicht räumliche Filter, die festlegen, ob eine Geometrie das Ergebnis
+beeinflussen kann. Innerhalb von `EXISTS` gilt das für den jeweiligen
+Eintrag. Für die verbleibenden Geometrien meldet IQL fehlende Projektionen
+und unbekannte oder unterschiedliche CRS. Die räumliche Abfrage benötigt
 DuckDB Spatial. Der Explorer lädt die signierte Extension aus dem lokalen
 Cache oder bezieht sie beim Öffnen aus dem offiziellen DuckDB-Repository.
 

@@ -45,7 +45,8 @@ final class IqlBinder {
     private record Scalar(Kind kind, String sql) {}
     private record Occurrence(String position, String path) {}
     private record ScalarKey(Occurrence occurrence, Kind kind, int scale) {}
-    private record SpatialCheck(Scope scope, Value value, IqlSyntax.Path path) {}
+    private record Guard(Scope scope, String sql, List<Object> parameters) {}
+    private record SpatialCheck(Scope scope, Value value, IqlSyntax.Path path, List<Guard> guards) {}
 
     private static final class Scope {
         private final Scope parent;
@@ -74,7 +75,7 @@ final class IqlBinder {
         }
 
         String sourceSql() { return from + String.join("", joins); }
-        String preflightSourceSql() { return from + String.join("", pathJoins); }
+        String preflightSourceSql(boolean guarded) { return guarded ? sourceSql() : from + String.join("", pathJoins); }
 
         void pathJoin(String join) {
             joins.add(join);
@@ -289,8 +290,7 @@ final class IqlBinder {
 
     private String predicate(Scope scope, IqlSyntax.Expression expression, boolean distinguishUnknown) {
         return switch (expression) {
-            case IqlSyntax.Junction junction -> "(" + predicate(scope, junction.left(), distinguishUnknown)
-                    + " " + junction.operator() + " " + predicate(scope, junction.right(), distinguishUnknown) + ")";
+            case IqlSyntax.Junction junction -> junction(scope, junction, distinguishUnknown);
             case IqlSyntax.Not not -> "(NOT " + predicate(scope, not.operand(), true) + ")";
             case IqlSyntax.Test test -> test(scope, test);
             case IqlSyntax.Comparison comparison -> compare(scope, comparison);
@@ -306,6 +306,32 @@ final class IqlBinder {
                 yield parameter(literal.value());
             }
         };
+    }
+
+    private String junction(Scope scope, IqlSyntax.Junction junction, boolean distinguishUnknown) {
+        int firstParameter = parameters.size();
+        int firstCheck = checks.size();
+        String left = predicate(scope, junction.left(), distinguishUnknown);
+        int middleParameter = parameters.size();
+        int middleCheck = checks.size();
+        String right = predicate(scope, junction.right(), distinguishUnknown);
+        boolean leftSpatial = firstCheck != middleCheck;
+        boolean rightSpatial = middleCheck != checks.size();
+        if (leftSpatial != rightSpatial) {
+            // A spatial sibling is unknown until execution. A non-spatial sibling
+            // can prove the spatial branch cannot affect the filter.
+            String condition = junction.operator().equals("OR") ? " IS NOT TRUE"
+                    : distinguishUnknown ? " IS NOT FALSE" : " IS TRUE";
+            String sibling = leftSpatial ? right : left;
+            int siblingParameter = leftSpatial ? middleParameter : firstParameter;
+            int endParameter = leftSpatial ? parameters.size() : middleParameter;
+            var guard = new Guard(scope, "(" + sibling + ")" + condition,
+                    List.copyOf(parameters.subList(siblingParameter, endParameter)));
+            for (int check = firstCheck; check < checks.size(); check++) {
+                checks.get(check).guards().add(guard);
+            }
+        }
+        return "(" + left + " " + junction.operator() + " " + right + ")";
     }
 
     private String test(Scope scope, IqlSyntax.Test test) {
@@ -341,11 +367,35 @@ final class IqlBinder {
         if ((leftKind == Kind.ENUMERATION || leftKind == Kind.BOOLEAN) && !List.of("=", "!=", "<>").contains(operator)) {
             throw comparison.operator().error("This value type supports equality comparisons only");
         }
+        if (left != null && right != null) validateComparison(left.type(), right.type(), comparison.operator());
         String leftSql = left == null ? literal((IqlSyntax.Literal) comparison.left(), leftKind, scale, right)
                 : scalar(scope, left, scale).sql();
         String rightSql = right == null ? literal((IqlSyntax.Literal) comparison.right(), rightKind, scale, left)
                 : scalar(scope, right, scale).sql();
         return "(" + leftSql + " " + operator + " " + rightSql + ")";
+    }
+
+    private void validateComparison(TypeDescriptor left, TypeDescriptor right, IqlSyntax.Token operator) {
+        if (left instanceof NumericType a && right instanceof NumericType b) {
+            var leftUnit = a.range().unit();
+            var rightUnit = b.range().unit();
+            if (!leftUnit.equals(rightUnit)) {
+                if (leftUnit.isPresent() && rightUnit.isPresent()
+                        && model.hasDeclaredUnitConversion(leftUnit.orElseThrow(), rightUnit.orElseThrow())) {
+                    throw operator.error("Comparing these attributes requires unit conversion. IQL comparisons require the same unit");
+                }
+                throw operator.error("Comparing these attributes requires matching units");
+            }
+            if (!a.range().referenceSystem().equals(b.range().referenceSystem())) {
+                throw operator.error("Comparing these attributes requires matching reference systems and axes");
+            }
+            if (a.range().direction() != b.range().direction() || a.range().circular() != b.range().circular()) {
+                throw operator.error("Comparing these attributes requires matching numeric directions and circularity");
+            }
+        } else if (left instanceof EnumerationType a && right instanceof EnumerationType b
+                && !model.relatedEnumerations(a, b)) {
+            throw operator.error("Comparing these attributes requires related enumeration types");
+        }
     }
 
     private String literal(IqlSyntax.Literal literal, Kind kind, int scale, Value other) {
@@ -523,7 +573,7 @@ final class IqlBinder {
         if (!(value.type() instanceof GeometryType || value.type() instanceof CoordinateType)) {
             throw value.token().error("INTERSECTS requires a geometry attribute");
         }
-        checks.add(new SpatialCheck(scope, value, predicate.path()));
+        checks.add(new SpatialCheck(scope, value, predicate.path(), new ArrayList<>()));
         String match = alias();
         var box = predicate.box().stream().map(this::parameter).toList();
         // Keep the indexed column and the constant search envelope visible to DuckDB's optimizer.
@@ -538,14 +588,23 @@ final class IqlBinder {
 
     private Iql.Check spatialCheck(SpatialCheck check) {
         Value value = check.value();
-        String scope = check.scope().lineage().stream().map(Scope::preflightSourceSql).collect(Collectors.joining(" CROSS JOIN "));
-        String where = check.scope().lineage().stream().map(layer -> layer.restriction).collect(Collectors.joining(" AND "));
+        var lineage = check.scope().lineage();
+        var guardedScopes = check.guards().stream().map(Guard::scope).collect(Collectors.toSet());
+        String scope = lineage.stream().map(layer -> layer.preflightSourceSql(guardedScopes.contains(layer)))
+                .collect(Collectors.joining(" CROSS JOIN "));
+        String where = lineage.stream().map(layer -> layer.restriction).collect(Collectors.joining(" AND "));
+        var checkParameters = new ArrayList<Object>();
+        var guards = new StringBuilder();
+        for (var guard : check.guards()) {
+            guards.append(" AND (").append(guard.sql()).append(')');
+            checkParameters.addAll(guard.parameters());
+        }
         String sql = "SELECT CASE WHEN count(*) FILTER (WHERE g.projection_error IS NOT NULL) > 0"
                 + " THEN 'A geometry on this path has no native projection'"
                 + " WHEN count(*) FILTER (WHERE g.crs IS NULL) > 0 THEN 'The coordinate reference system is unknown on this path'"
                 + " WHEN count(DISTINCT g.crs) > 1 THEN 'This path has more than one coordinate reference system' END"
-                + " FROM " + scope + " JOIN geometry g ON " + geometryKey("g", value) + " WHERE " + where;
-        return new Iql.Check(sql, check.path().first().start(), check.path().last().end());
+                + " FROM " + scope + " JOIN geometry g ON " + geometryKey("g", value) + " WHERE " + where + guards;
+        return new Iql.Check(sql, checkParameters, check.path().first().start(), check.path().last().end());
     }
 
     private static Row objectRow(ObjectDescriptor type, String alias) {

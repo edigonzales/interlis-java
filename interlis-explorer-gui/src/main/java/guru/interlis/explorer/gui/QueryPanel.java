@@ -160,7 +160,7 @@ final class QueryPanel extends JPanel {
         active.execute();
     }
 
-    private void cancelQuery() {
+    void cancelQuery() {
         if (active != null) {
             cancel.setEnabled(false);
             status.setText("Cancelling query…");
@@ -213,7 +213,7 @@ final class QueryPanel extends JPanel {
         }
 
         private void requestCancellation() {
-            Thread.startVirtualThread(cancellation::cancel);
+            cancellation.cancel();
         }
 
         @Override

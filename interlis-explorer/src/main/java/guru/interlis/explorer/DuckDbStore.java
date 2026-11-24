@@ -135,8 +135,8 @@ public final class DuckDbStore implements AutoCloseable {
     }
 
     /**
-     * Opens a previously prepared local store for inspection and streaming
-     * queries. Close all writable connections to the file before calling this.
+     * Opens a previously prepared local store for inspection and bounded
+     * query previews. Close all writable connections to the file before calling this.
      * External access and extension installation are disabled for this session.
      */
     public static DuckDbStore openReadOnly(Path file, TransferPlan plan) throws SQLException {
@@ -144,7 +144,8 @@ public final class DuckDbStore implements AutoCloseable {
         String url = "jdbc:duckdb:" + file.toAbsolutePath();
         var properties = new Properties();
         properties.setProperty("access_mode", "READ_ONLY");
-        properties.setProperty("jdbc_stream_results", "true");
+        // The JDBC driver can cancel execution, but cannot interrupt a streaming result fetch.
+        properties.setProperty("jdbc_stream_results", "false");
         var connection = DriverManager.getConnection(url, properties);
         try (var statement = connection.createStatement()) {
             Spatial spatial = loadSpatial(connection, false);

@@ -8,11 +8,17 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -47,10 +53,57 @@ class ExplorerQueryTest {
                     new ExplorerQueries.Cancellation());
             assertEquals(1_000, capped.rows().size());
             assertTrue(capped.truncated());
+
+            var ordered = queries.execute(Mode.SQL, """
+                    SELECT i AS value, i + 1 AS value FROM range(20) r(i)
+                    ORDER BY i DESC LIMIT 2 OFFSET 1; -- trailing comment
+                    """, new ExplorerQueries.Cancellation());
+            assertEquals(List.of("value", "value"), ordered.columns());
+            assertEquals(List.of(List.of("18", "19"), List.of("17", "18")), ordered.rows());
+            assertFalse(ordered.truncated());
+
             var cancelled = new ExplorerQueries.Cancellation();
             cancelled.cancel();
             assertThrows(CancellationException.class, () -> queries.execute(Mode.SQL, "SELECT 1", cancelled));
         }
+    }
+
+    @Test
+    void cancelsAnExecutingSqlQueryAndLeavesItsDatasetUsable() throws Exception {
+        try (var dataset = relations()) {
+            var queries = new ExplorerQueries(dataset.store());
+            var cancellation = new ExplorerQueries.Cancellation();
+            var pending = new FutureTask<>(() -> queries.execute(Mode.SQL, """
+                    SELECT count(*) FROM range(200000000) r(i) WHERE md5(i::VARCHAR) = 'no match'
+                    """, cancellation));
+            var worker = Thread.ofPlatform().daemon().start(pending);
+            try {
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+                while (!pending.isDone() && !executingPreview(worker) && System.nanoTime() < deadline) {
+                    Thread.sleep(2);
+                }
+                assertTrue(executingPreview(worker), "The preview must be executing in DuckDB before cancellation");
+                cancellation.cancel();
+                var failure = assertThrows(ExecutionException.class, () -> pending.get(5, TimeUnit.SECONDS));
+                assertInstanceOf(CancellationException.class, failure.getCause());
+
+                var result = queries.execute(Mode.SQL,
+                        "SELECT count(*) FROM object WHERE type_name = 'RelationsDemo.Data.Item'",
+                        new ExplorerQueries.Cancellation());
+                assertEquals(List.of(List.of("2")), result.rows());
+            } finally {
+                cancellation.cancel();
+                worker.join(Duration.ofSeconds(5));
+            }
+        }
+    }
+
+    private static boolean executingPreview(Thread worker) {
+        var stack = Arrays.asList(worker.getStackTrace());
+        return stack.stream().anyMatch(frame -> frame.isNativeMethod()
+                    && frame.getClassName().equals("org.duckdb.DuckDBNative"))
+                && stack.stream().anyMatch(frame -> frame.getClassName().equals(ExplorerQueries.class.getName())
+                    && frame.getMethodName().equals("preview"));
     }
 
     @Test

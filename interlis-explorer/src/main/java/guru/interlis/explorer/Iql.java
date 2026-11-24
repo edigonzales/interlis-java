@@ -19,8 +19,16 @@ public final class Iql {
         }
     }
 
-    /** A scalar SQL check. Its single text result is null on success or contains a diagnostic. */
-    public record Check(String sql, int start, int end) {}
+    /** A scalar SQL check with immutable JDBC parameters. Its single text result is null on success. */
+    public record Check(String sql, List<Object> parameters, int start, int end) {
+        public Check {
+            parameters = List.copyOf(parameters);
+        }
+
+        public Check(String sql, int start, int end) {
+            this(sql, List.of(), start, end);
+        }
+    }
 
     /** Suggested text, description and replacement range in UTF-16 editor offsets. */
     public record Completion(String text, String description, int start, int end) {}

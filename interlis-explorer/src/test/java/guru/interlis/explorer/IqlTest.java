@@ -21,6 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +31,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -160,6 +162,92 @@ class IqlTest {
             assertTrue(result.next());
             assertTrue(result.getString(1).contains("coordinate reference system is unknown"));
         }
+    }
+
+    @Test
+    void spatialPreflightRespectsBooleanBranches() throws Exception {
+        var plan = plan("Reference24", Files.readString(fixture("Reference24.ili"))
+                .replace("    P = ", "    !!@CRS=EPSG:2056\n    P = "));
+        var input = Files.readString(fixture("geometry.xtf")).replace("    </Data>", """
+                    <Item i:tid="i2">
+                      <required>geo</required>
+                      <count>5</count>
+                      <trace><g:polyline>
+                        <g:coord><g:c1>0</g:c1><g:c2>0</g:c2></g:coord>
+                        <g:coord><g:c1>1</g:c1><g:c2>1</g:c2></g:coord>
+                      </g:polyline></trace>
+                    </Item>
+                  </Data>
+                """);
+        var database = loadText(plan, input);
+        String select = "SELECT COUNT(*) FROM Reference24.Data.Item i WHERE ";
+        String spatial = "INTERSECTS(i.trace, BOX(0, 0, 1, 1))";
+        try (var connection = DriverManager.getConnection("jdbc:duckdb:" + database)) {
+            var filtered = Iql.compile(plan, select + "i.count = 5 AND " + spatial, 100);
+            assertEquals(List.of("5", 0.0, 0.0, 1.0, 1.0), filtered.parameters());
+            assertEquals(List.of("5"), filtered.checks().getFirst().parameters());
+            assertNull(runCheck(connection, filtered));
+            assertNull(runCheck(connection, Iql.compile(plan, select + "FALSE AND " + spatial, 100)));
+            assertNull(runCheck(connection, Iql.compile(plan, select + spatial + " OR TRUE", 100)));
+            assertTrue(runCheck(connection, Iql.compile(plan, select + "FALSE OR " + spatial, 100))
+                    .contains("no native projection"));
+            assertTrue(runCheck(connection, Iql.compile(plan, select + "NOT (i.count = 5 AND " + spatial + ")", 100))
+                    .contains("no native projection"));
+        }
+    }
+
+    @Test
+    void spatialPreflightCombinesOuterAndSameOccurrenceFilters() throws Exception {
+        var plan = plan("Reference24", Files.readString(fixture("Reference24.ili"))
+                .replace("    P = ", "    !!@CRS=EPSG:2056\n    P = ")
+                .replace("label : TEXT*20;", "label : TEXT*20; marker : POLYLINE WITH (STRAIGHTS, ARCS) VERTEX P;"));
+        var input = Files.readString(fixture("structures-and-link.xtf")).replace("<label>second</label>", """
+                <label>second</label>
+                <marker xmlns:g="http://www.interlis.ch/geometry/1.0"><g:polyline>
+                  <g:coord><g:c1>0</g:c1><g:c2>0</g:c2></g:coord>
+                  <g:arc><g:c1>2</g:c1><g:c2>0</g:c2><g:a1>1</g:a1><g:a2>1</g:a2><g:r>1</g:r></g:arc>
+                </g:polyline></marker>
+                """).replace("<label>first</label>", """
+                <label>first</label>
+                <marker xmlns:g="http://www.interlis.ch/geometry/1.0"><g:polyline>
+                  <g:coord><g:c1>0</g:c1><g:c2>0</g:c2></g:coord>
+                  <g:coord><g:c1>1</g:c1><g:c2>1</g:c2></g:coord>
+                </g:polyline></marker>
+                """);
+        var database = loadText(plan, input);
+        String source = """
+                SELECT COUNT(*) FROM Reference24.Data.Item i WHERE i.count = %d
+                  AND EXISTS(i.details AS d WHERE INTERSECTS(d.marker, BOX(0, 0, 1, 1)) AND d.label = '%s')
+                """;
+        try (var connection = DriverManager.getConnection("jdbc:duckdb:" + database)) {
+            var valid = Iql.compile(plan, source.formatted(5, "first"), 100);
+            assertEquals(List.of("5", 0.0, 0.0, 1.0, 1.0, "first"), valid.parameters());
+            assertEquals(List.of("first", "5"), valid.checks().getFirst().parameters());
+            assertNull(runCheck(connection, valid));
+            assertNull(runCheck(connection, Iql.compile(plan, source.formatted(4, "second"), 100)));
+            assertTrue(runCheck(connection, Iql.compile(plan, source.formatted(5, "second"), 100))
+                    .contains("no native projection"));
+        }
+    }
+
+    private static String runCheck(Connection connection, Iql.Compiled compiled) throws Exception {
+        var check = compiled.checks().getFirst();
+        try (var statement = connection.prepareStatement(check.sql())) {
+            for (int i = 0; i < check.parameters().size(); i++) statement.setObject(i + 1, check.parameters().get(i));
+            try (var rows = statement.executeQuery()) {
+                assertTrue(rows.next());
+                return rows.getString(1);
+            }
+        }
+    }
+
+    private Path loadText(TransferPlan plan, String text) throws Exception {
+        var database = directory.resolve("spatial-scope.duckdb");
+        try (var store = DuckDbStore.open(database, plan);
+             var reader = new Xtf24Reader(plan, new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)))) {
+            store.importTransfer(reader, RUN);
+        }
+        return database;
     }
 
     private Path load(TransferPlan plan, String file) throws Exception {

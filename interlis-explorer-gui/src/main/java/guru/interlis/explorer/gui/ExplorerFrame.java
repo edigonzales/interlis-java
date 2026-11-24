@@ -105,11 +105,14 @@ final class ExplorerFrame extends JFrame {
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent event) {
+                if (closing) {
+                    return;
+                }
                 closing = true;
+                setVisible(false);
+                queryPanel.cancelQuery();
                 if (open.isEnabled()) {
                     closeWindow();
-                } else {
-                    status.setText("Closing dataset…");
                 }
             }
         });
@@ -507,6 +510,9 @@ final class ExplorerFrame extends JFrame {
     }
 
     private void selectClass() {
+        if (closing || dataset == null) {
+            return;
+        }
         objectList.setListData(new StoredObject[0]);
         inspectObject();
         classTitle.setText("Select a class");
@@ -525,6 +531,9 @@ final class ExplorerFrame extends JFrame {
     }
 
     private void inspectObject() {
+        if (closing || dataset == null) {
+            return;
+        }
         var selected = objectList.getSelectedValue();
         if (selected == null) {
             attributes.clear();
@@ -604,6 +613,9 @@ final class ExplorerFrame extends JFrame {
     }
 
     private boolean openOccurrence(long position) {
+        if (closing || dataset == null) {
+            return false;
+        }
         try {
             var target = dataset.store().objectAt(position).orElse(null);
             if (target == null) {

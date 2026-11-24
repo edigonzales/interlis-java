@@ -1,8 +1,11 @@
 package guru.interlis.explorer;
 
 import guru.interlis.model.CardinalityUpper;
+import guru.interlis.model.ComparisonOperator;
 import guru.interlis.model.DomainReferenceType;
+import guru.interlis.model.EnumerationType;
 import guru.interlis.model.ReferenceType;
+import guru.interlis.model.RelationDecision;
 import guru.interlis.model.StructureValueType;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
@@ -10,6 +13,7 @@ import guru.interlis.model.SymbolRef;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeId;
 import guru.interlis.model.TypeRef;
+import guru.interlis.model.query.TypeRelations;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.RoleSlot;
@@ -30,10 +34,12 @@ final class IqlModel {
     }
 
     private final TransferPlan plan;
+    private final TypeRelations types;
     private final List<ObjectDescriptor> associations;
 
     IqlModel(TransferPlan plan) {
         this.plan = plan;
+        types = new TypeRelations(plan.schema().semanticGraph());
         associations = plan.objects().stream().filter(type -> type.kind() == SymbolKind.ASSOCIATION).toList();
     }
 
@@ -117,6 +123,17 @@ final class IqlModel {
 
     TypeDescriptor type(AttributeSlot attribute) {
         return type(plan.type(attribute.effectiveType()).known().orElseThrow());
+    }
+
+    boolean relatedEnumerations(EnumerationType left, EnumerationType right) {
+        return types.areComparable(new TypeRef(plan.snapshotId(), left.id()),
+                        new TypeRef(plan.snapshotId(), right.id()), ComparisonOperator.EQUALITY)
+                .known().filter(relation -> relation.decision() == RelationDecision.ALLOWED).isPresent();
+    }
+
+    boolean hasDeclaredUnitConversion(SymbolId left, SymbolId right) {
+        return types.compareUnits(ref(left), ref(right)).known()
+                .filter(relation -> relation.decision() == RelationDecision.ALLOWED).isPresent();
     }
 
     private TypeDescriptor type(TypeDescriptor type) {
