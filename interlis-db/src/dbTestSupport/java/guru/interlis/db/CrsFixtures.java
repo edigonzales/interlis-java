@@ -9,6 +9,7 @@ import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
+import java.util.List;
 
 import static guru.interlis.db.DbTestSupport.child;
 import static guru.interlis.db.DbTestSupport.children;
@@ -18,6 +19,7 @@ import static guru.interlis.db.DbTestSupport.readDataSection;
 import static guru.interlis.db.DbTestSupport.referenceDatasetFixture;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class CrsFixtures {
@@ -234,5 +236,55 @@ final class CrsFixtures {
         var position = children(children(child(object, field)).getFirst());
         assertEquals(0, new BigDecimal(x).compareTo(new BigDecimal(position.get(0).getTextContent())));
         assertEquals(0, new BigDecimal(y).compareTo(new BigDecimal(position.get(1).getTextContent())));
+    }
+
+    static void assertHits(Target db, Connection sql, String table, String column, String x, String y,
+                                   int epsg, int count) throws Exception {
+        String actual = db.postgis() ? scalar(sql, "SELECT count(*) FROM " + db.table(table) + " WHERE " + column
+                + " && ST_MakeEnvelope(" + x + "," + y + "," + x + "," + y + "," + epsg + ")")
+                : geoPackageHits(sql, table, column, x, y);
+        assertEquals(Integer.toString(count), actual, table + "." + column);
+    }
+
+    private static String geoPackageHits(Connection sql, String table, String column, String x, String y)
+            throws Exception {
+        return scalar(sql, "SELECT count(*) FROM rtree_" + table + "_" + column + " WHERE minx <= " + x
+                + " AND maxx >= " + x + " AND miny <= " + y + " AND maxy >= " + y);
+    }
+
+    String mixedObject(String model, String tid, String centerX, boolean withOld) {
+        return object(model, "Asset", tid, field("Center", point(centerX, "1200002.125"))
+                + (withOld ? field("OldPosition", point("600100.125", "200200.375")) : "")
+                + field("GeoPosition", point("7.125", "46.375")));
+    }
+
+    static void assertMixed(Element object, String centerX, boolean withOld) {
+        assertPoint(object, "Center", centerX, "1200002.125");
+        if (withOld) assertPoint(object, "OldPosition", "600100.125", "200200.375");
+        else assertNull(child(object, "OldPosition"));
+        assertPoint(object, "GeoPosition", "7.125", "46.375");
+    }
+
+    static List<String> nativeLayout(Target db, boolean split) {
+        if (split && db.postgis()) return List.of("--one-geom-per-table");
+        if (!split && !db.postgis()) return List.of("--gpkg-multi-geom-per-table");
+        return List.of();
+    }
+
+    static void assertMixedSrs(Target db, Connection sql, String tid, boolean split, boolean suffix, boolean withOld)
+            throws Exception {
+        assertStoredEpsg(db, sql, "asset", suffix ? "center_2056" : "center", tid, 2056);
+        for (String field : List.of("oldposition", "geoposition")) {
+            boolean old = field.equals("oldposition");
+            int epsg = old ? 21781 : 4326;
+            String column = suffix ? field + "_" + epsg : field;
+            String table = split ? "asset_" + column : "asset";
+            String where = " WHERE t_id=(SELECT t_id FROM " + db.table("asset") + " WHERE t_ili_tid='" + tid + "')";
+            if (old && !withOld) {
+                assertNull(scalar(sql, "SELECT " + column + " FROM " + db.table(table) + where));
+            } else {
+                assertStoredSrid(db, sql, " FROM " + db.table(table) + where, column, epsg);
+            }
+        }
     }
 }

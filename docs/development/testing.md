@@ -187,6 +187,11 @@ Domain-Zuweisungen. Der GeoPackage-Fall prüft konkurrierende lokale SRS-IDs.
 Der Fall für Änderungen am PostGIS-Katalog `spatial_ref_sys` verwendet pro
 Sprachversion einen eigenen Container.
 
+`MultiSrsStorageTest` prüft räumliche Treffer und gespeicherte SRIDs nach
+Update, Replace und Delete sowie den Rollback nach einem Fehler beim zweiten
+Objekt. Er prüft auch widersprüchliche Zuordnungen und die Auflösung einer
+umbenannten EPSG-Spalte.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -437,12 +442,12 @@ bündelt Punkte und Geometrien mit `VERTEX`-Domänen. Eigene Fälle prüfen
 den statischen generischen Kontext in XTF 2.4 und die lokale GeoPackage-ID
 gegen den EPSG-Code im Geometrie-Header.
 
-`*DbInteropTest.*MixedSrid*` prüft mehrere EPSG-Codes
-pro Objekt, die Kataloge beider Schemaerzeuger und räumliche Treffer nach
-`update`, `replace` und `delete`. Es prüft auch fehlerhafte Spaltenmetadaten
-und den Rollback eines erst beim zweiten Objekt fehlgeschlagenen Ersatzes.
-`*DbInteropTest.*FixedMultiSrs*` prüft EPSG-suffigierte Spalten in beiden
-XTF-Versionen. Die XTF-2.4-Fälle mit `Deferred` im Namen prüfen die Domänenwahl
+`--tests '*MultiSrsInteropTest'` prüft gemischte SRIDs und feste EPSG-Suffixe
+mit Geometriespalten in der Fachtabelle und in Hilfstabellen. Die Fälle
+vergleichen die Kataloge und prüfen beide Werkzeugrichtungen in beiden
+Schematypen. Im eigenen Schema liest ili2db auch den Zustand nach einem Update.
+
+Die XTF-2.4-Fälle mit `Deferred` im Namen prüfen die Domänenwahl
 pro Basket, die XTF-2.3-Fälle mit `AlternateCrs` das alternative CRS-Modell.
 `*DbInteropTest.*BasketCrsMutation*` prüft in beiden Transferformaten
 unveränderte IDs beim Update, CRS-Wechsel beim Ersatz, Rollback und Raumindizes.

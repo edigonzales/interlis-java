@@ -74,7 +74,7 @@ final class AlternateCrsCases {
             assertCliSuccess(db, "update", "Current23", "main", updated);
             assertEquals(oldObject, scalar(sql, object));
             assertEquals(oldBasket, scalar(sql, basket));
-            CrsCases.assertHits(db, sql, oldTable, "location_21781", "610000.125", "200200.375", 21781, 1);
+            CrsFixtures.assertHits(db, sql, oldTable, "location_21781", "610000.125", "200200.375", 21781, 1);
             Path output = work.resolve("alternate-updated.xtf");
             reference.run(db, work.toString(), "--export", "--dataset", "main", "--exportTid", output.toString());
             assertEquals("Old23.Data", basket(output, "basket-old-main").getLocalName());
@@ -87,13 +87,13 @@ final class AlternateCrsCases {
             assertNotEquals(0, rollback.code(), rollback::diagnostics);
             assertEquals(oldObject, scalar(sql, object));
             assertEquals(oldBasket, scalar(sql, basket));
-            CrsCases.assertHits(db, sql, oldTable, "location_21781", "610000.125", "200200.375", 21781, 1);
-            CrsCases.assertHits(db, sql, "station", "location_2056", "2620000.125", "1220000.375", 2056, 0);
+            CrsFixtures.assertHits(db, sql, oldTable, "location_21781", "610000.125", "200200.375", 21781, 1);
+            CrsFixtures.assertHits(db, sql, "station", "location_2056", "2620000.125", "1220000.375", 2056, 0);
 
             assertCliSuccess(db, "replace", "Current23", "main", switched);
             assertNotEquals(oldObject, scalar(sql, object));
-            CrsCases.assertHits(db, sql, oldTable, "location_21781", "610000.125", "200200.375", 21781, 0);
-            CrsCases.assertHits(db, sql, "station", "location_2056", "2620000.125", "1220000.375", 2056, 1);
+            CrsFixtures.assertHits(db, sql, oldTable, "location_21781", "610000.125", "200200.375", 21781, 0);
+            CrsFixtures.assertHits(db, sql, "station", "location_2056", "2620000.125", "1220000.375", 2056, 1);
             output = work.resolve("alternate-replaced.xtf");
             reference.run(db, work.toString(), "--export", "--dataset", "main", "--exportTid", output.toString());
             assertEquals("Current23.Data", basket(output, "basket-old-main").getLocalName());
@@ -102,9 +102,9 @@ final class AlternateCrsCases {
             assertCliSuccess(db, "delete", "Current23", "main", null);
             assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
             assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket")));
-            CrsCases.assertHits(db, sql, "station", "location_2056", "2620000.125", "1220000.375", 2056, 0);
-            CrsCases.assertHits(db, sql, "station", "location_2056", "2600001.625", "1200002.125", 2056, 1);
-            CrsCases.assertHits(db, sql, oldTable, "location_21781", "600100.125", "200200.375", 21781, 1);
+            CrsFixtures.assertHits(db, sql, "station", "location_2056", "2620000.125", "1220000.375", 2056, 0);
+            CrsFixtures.assertHits(db, sql, "station", "location_2056", "2600001.625", "1200002.125", 2056, 1);
+            CrsFixtures.assertHits(db, sql, oldTable, "location_21781", "600100.125", "200200.375", 21781, 1);
         }
     }
 
