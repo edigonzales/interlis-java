@@ -203,6 +203,11 @@ und Smart2, den Rollback bei Klassenwechseln und eingehenden Referenzen sowie
 Replace und Delete nach Auflösung der Referenz. Er prüft auch das Entfernen
 optionaler Geometrien und die Bereinigung der GeoPackage-Hilfszeilen.
 
+`SmartClassStorageTest` prüft Leertext und SQL `NULL`, einen beschädigten
+Smart1-Diskriminator und eine umbenannte Smart2-Spalte. Die Referenzfälle
+prüfen den Rollback bei falschem Zieltyp und den Erhalt der Exportdatei
+bei mehreren belegten Zielspalten.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -377,13 +382,14 @@ Schemata für die drei Geometrieabbildungen mit ili2db. Die Mischläufe
 prüfen danach Geometriewerte, SRID, die gemeinsamen IDs und einen
 weiteren Referenzimport.
 
-`*DbInteropTest.*Smart*` prüft Smart1 und Smart2 mit XTF 2.3 und 2.4.
-Die Fälle vergleichen beide Werkzeugrichtungen, physische Eigentümer
-und Zielspalten sowie Geometriezuordnungen. Die
-Schemaerzeugung wird gegen den Katalog von ili2db geprüft. Beim
-Smart2-Vergleich wird die Reihenfolge innerhalb eines Satzes
-alternativer Fremdschlüsselspalten normalisiert, da ili2db sie aus
-einer Menge ermittelt.
+`--tests '*SmartClassInteropTest'` prüft skalare Werte, polymorphe
+Referenzen und den Katalog beider Schemaerzeuger. Die Smart1-Skalarfälle
+verwenden die Standardwahl von ili2db. Der Smart2-Folgeimport prüft die
+gemeinsame ID-Vergabe. Beim Smart2-Katalogvergleich wird die Reihenfolge
+innerhalb eines Satzes alternativer Fremdschlüsselspalten normalisiert.
+
+Die Fälle `*DbInteropTest.*SmartStructures*` und `*DbInteropTest.*SmartGeometries*`
+prüfen Struktureigentümer und Geometriezuordnungen in beiden Werkzeugrichtungen.
 
 `--tests '*SmartMutationInteropTest'` prüft in beiden Layouts einen
 ili2db-Import, ein natives Update und den anschliessenden ili2db-Export. SQL
