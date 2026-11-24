@@ -10,8 +10,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
-import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
+import static guru.interlis.db.ChbaseFixtures.basket;
+import static guru.interlis.db.ChbaseFixtures.fixture;
+import static guru.interlis.db.ChbaseFixtures.withPrefix;
 import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.child;
@@ -22,6 +27,7 @@ import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.readDataSection;
 import static guru.interlis.db.DbTestSupport.referenceDatasetFixture;
 import static guru.interlis.db.DbTestSupport.scalar;
+import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
 import static guru.interlis.db.SpatialIndexFixtures.assertIndex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -223,8 +229,8 @@ final class StrokeCases {
 
     void multiPolyline(TestDatabase db) throws Exception {
         var model = "ChbaseLines" + version;
-        fixture(model + ".ili");
-        var input = fixture(model + ".xtf");
+        fixture(work, model + ".ili");
+        var input = chbaseDelivery(model, "fixture-lines-b");
         String direct = "StrokeMultiLine" + version;
         var output = work.resolve("output.xtf");
         if (version == 24) source(direct, "MULTIPOLYLINE");
@@ -233,10 +239,10 @@ final class StrokeCases {
         assertGeometryColumn(db, "piperoute", "shape", "MULTILINESTRING", 2056);
         assertGeometryColumn(db, "flowroute", "shape", "MULTILINESTRING", 2056);
         assertCliSuccess(db, "export", model, "legacy", output);
-        assertWrappedLines(output, "fixture");
-        assertCliSuccess(db, "import", model, "native", withPrefix(input, "native"));
+        assertWrappedLines(output, "fixture-lines");
+        assertCliSuccess(db, "import", model, "native", withPrefix(work, input, "native"));
         referenceExport(db, "native", output);
-        assertWrappedLines(output, "native");
+        assertWrappedLines(output, "native-lines");
         if (version != 24) return;
 
         var multi = geometry("multipolyline", polyline(coord(600000, 200000) + arc(600005, 200005, 600010, 200000))
@@ -282,8 +288,8 @@ final class StrokeCases {
 
     void multiSurface(TestDatabase db) throws Exception {
         var model = "ChbaseSurfaces" + version;
-        fixture(model + ".ili");
-        var input = fixture(model + ".xtf");
+        fixture(work, model + ".ili");
+        var input = chbaseDelivery(model, "fixture-surfaces-b");
         var directModels = List.of("StrokeSurfaces", "StrokeAreas");
         if (version == 24) {
             source(directModels.getFirst(), "MULTISURFACE");
@@ -294,10 +300,10 @@ final class StrokeCases {
         referenceImport(db, "legacy", input);
         assertGeometryColumn(db, "landcover", "shape", "MULTIPOLYGON", 21781);
         assertCliSuccess(db, "export", model, "legacy", output);
-        assertWrappedSurfaces(output, "fixture");
-        assertCliSuccess(db, "import", model, "native", withPrefix(input, "native"));
+        assertWrappedSurfaces(output, "fixture-surfaces");
+        assertCliSuccess(db, "import", model, "native", withPrefix(work, input, "native"));
         referenceExport(db, "native", output);
-        assertWrappedSurfaces(output, "native");
+        assertWrappedSurfaces(output, "native-surfaces");
         if (version != 24) return;
 
         var first = surfaceValue(polyline(coord(600000, 200000) + arc(600005, 199995, 600010, 200000)
@@ -369,16 +375,27 @@ final class StrokeCases {
         }).map(member -> children(child(member, field)).getFirst()).toList();
     }
 
-    private Path fixture(String name) throws Exception {
-        var path = work.resolve(name);
-        try (var source = getClass().getResourceAsStream("/chbase/" + name)) {
-            Files.copy(source, path);
+    private Path chbaseDelivery(String model, String bid) throws Exception {
+        Path combined = fixture(work, "ChbaseGeometry" + version + ".xtf");
+        var data = readDataSection(combined, version);
+        var baskets = children(data);
+        var selected = basket(baskets, version, model, bid);
+        for (var other : baskets) {
+            if (other != selected) data.removeChild(other);
         }
-        return path;
-    }
 
-    private Path withPrefix(Path input, String prefix) throws Exception {
-        return Files.writeString(work.resolve(prefix + ".xtf"), Files.readString(input).replace("fixture-", prefix + "-"));
+        var transfer = data.getOwnerDocument().getDocumentElement();
+        var header = child(transfer, version == 23 ? "HEADERSECTION" : "headersection");
+        var models = child(header, version == 23 ? "MODELS" : "models");
+        for (var entry : children(models)) {
+            String name = version == 23 ? entry.getAttribute("NAME") : entry.getTextContent();
+            if (!model.equals(name)) models.removeChild(entry);
+        }
+
+        Path output = work.resolve(model + ".xtf");
+        TransformerFactory.newDefaultInstance().newTransformer()
+                .transform(new DOMSource(data.getOwnerDocument()), new StreamResult(output.toFile()));
+        return output;
     }
 
     void schema(TestDatabase baseline, TestDatabase own) throws Exception {

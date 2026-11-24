@@ -217,6 +217,11 @@ per JDBC hergestellt und müssen die bestehende Exportdatei erhalten.
 umbenannten Spaltenstamm, Leertext und SQL-`NULL` sowie Rollback bei
 Sprachfehlern und atomaren Export bei einer fehlenden Spalte.
 
+`ChbaseGeometryStorageTest` prüft SQL-`NULL`, leere Strukturtabellen,
+Geometrieteile und atomaren Export bei beschädigten Geometrien. Die
+Smart2-Fälle prüfen stabile IDs, Hilfszeilen und räumliche Treffer nach
+Update und Delete.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -369,22 +374,13 @@ Katalogdatensätze beim Löschen.
 `--expandLocalised` im selben Schema und in einer XTF-Lieferung mit zwei
 Baskets. Katalogvergleich, beide Werkzeugrichtungen in beiden Schematypen
 und ein ili2db-Folgeimport decken die SQL-Abbildung und die ID-Vergabe ab.
-`*DbInteropTest.*ChbaseSmart2*` prüft die geerbten Textspalten und die
-ausgelagerte Multipunkt-Geometrie gemeinsam. Die Fälle vergleichen die
-Schemata, prüfen beide Werkzeugrichtungen und kontrollieren beim
-Aktualisieren und Löschen IDs, Hilfszeilen und Raumindizes.
-`*DbInteropTest.*ChbasePoints*` prüft `--coalesceMultiPoint` in
-beiden Werkzeugrichtungen, einschliesslich doppelter Punkte, SRID,
-SQL-`NULL` und der leeren Strukturtabellen.
-`*DbInteropTest.*ChbaseLines*` prüft `--coalesceMultiLine` mit geraden
-und gebogenen Segmenten sowie gerichteten Linien.
-`*DbInteropTest.*ChbaseSurfaces*` prüft `--coalesceMultiSurface` mit
-mehreren Flächen, Innenring, Kreisbogen, abweichendem SRID und atomarem
-Export bei einer beschädigten Geometrieabbildung.
-`*DbInteropTest.*ChbaseGeometrySchema*` vergleicht die erzeugten
-Schemata für die drei Geometrieabbildungen mit ili2db. Die Mischläufe
-prüfen danach Geometriewerte, SRID, die gemeinsamen IDs und einen
-weiteren Referenzimport.
+`--tests '*ChbaseGeometryInteropTest'` bündelt Multipunkte, Multilinien und
+Multiflächen in einer Lieferung mit drei Baskets. Katalogvergleich und beide
+Werkzeugrichtungen in beiden Schematypen prüfen doppelte Punkte, gerichtete
+Linien, Kreisbögen, Innenringe und die SRIDs. Ein ili2db-Folgeimport prüft
+die gemeinsame ID-Vergabe. Die separat auswählbaren Smart2-Fälle verbinden
+geerbte Sprachwerte mit einer Multipunkt-Hilfstabelle und prüfen den
+ili2db-Export nach einem nativen Update.
 
 `--tests '*SmartClassInteropTest'` prüft skalare Werte, polymorphe
 Referenzen und den Katalog beider Schemaerzeuger. Die Smart1-Skalarfälle
@@ -525,7 +521,9 @@ Kanten und prüfen in XTF 2.3 einen mehrteiligen Rand. Die
 `MULTIPOLYLINE`, `MultiLine` und `MultiDirectedLine`. Die
 `*StrokeMultiSurface*`-Fälle prüfen `MULTIPOLYGON`, Teilflächen und
 Innenringe bei `MULTISURFACE`, `MULTIAREA` und CHBase-`MultiSurface`
-sowie leere SQL-Sammlungen. Die `*StrokeSchema*`-Fälle vergleichen
+sowie leere SQL-Sammlungen. Die beiden Gruppen verwenden die Linien- und
+Flächenbaskets der gemeinsamen CHBase-Fixture als Einzellieferungen.
+Die `*StrokeSchema*`-Fälle vergleichen
 den Katalog mit einem ili2db-Schema, prüfen die gemeinsame ID-Vergabe
 und ergänzen ein Modell mit der gespeicherten Option. Die
 `*StrokeSmart2*`-Fälle prüfen eine geerbte Geometrie in einer indizierten

@@ -190,8 +190,6 @@ final class DbInteropTest {
         new ArrayCases(work, new ReferenceTool(work, db.postgis()), version).references(baseline, db);
     }
 
-    @Test void geoPackageChbasePoints23() throws Exception { exchangeChbasePoints(23, null); }
-    @Test void geoPackageChbasePoints24() throws Exception { exchangeChbasePoints(24, null); }
     @Test void geoPackageStrokePolyline23() throws Exception { exchangeStrokePolyline(23, null); }
     @Test void geoPackageStrokePolyline24() throws Exception { exchangeStrokePolyline(24, null); }
     @Test void postgisStrokePolyline23() throws Exception { exchangeWithPostgis(23, this::exchangeStrokePolyline); }
@@ -272,52 +270,6 @@ final class DbInteropTest {
         var baseline = new TestDatabase(work, postgres, "stroke_smart_baseline");
         var own = new TestDatabase(work, postgres, "stroke_smart_own");
         new StrokeCases(work, new ReferenceTool(work, own.postgis()), version).smart2(baseline, own);
-    }
-
-    @Test void postgisChbasePoints23() throws Exception { exchangeWithPostgis(23, this::exchangeChbasePoints); }
-    @Test void postgisChbasePoints24() throws Exception { exchangeWithPostgis(24, this::exchangeChbasePoints); }
-    @Test void geoPackageChbaseLines23() throws Exception { exchangeChbaseLines(23, null); }
-    @Test void geoPackageChbaseLines24() throws Exception { exchangeChbaseLines(24, null); }
-    @Test void postgisChbaseLines23() throws Exception { exchangeWithPostgis(23, this::exchangeChbaseLines); }
-    @Test void postgisChbaseLines24() throws Exception { exchangeWithPostgis(24, this::exchangeChbaseLines); }
-    @Test void geoPackageChbaseSurfaces23() throws Exception { exchangeChbaseSurfaces(23, null); }
-    @Test void geoPackageChbaseSurfaces24() throws Exception { exchangeChbaseSurfaces(24, null); }
-    @Test void postgisChbaseSurfaces23() throws Exception { exchangeWithPostgis(23, this::exchangeChbaseSurfaces); }
-    @Test void postgisChbaseSurfaces24() throws Exception { exchangeWithPostgis(24, this::exchangeChbaseSurfaces); }
-    @Test void geoPackageChbaseGeometrySchema23() throws Exception { exchangeChbaseGeometrySchema(23, null); }
-    @Test void geoPackageChbaseGeometrySchema24() throws Exception { exchangeChbaseGeometrySchema(24, null); }
-    @Test void postgisChbaseGeometrySchema23() throws Exception { exchangeWithPostgis(23, this::exchangeChbaseGeometrySchema); }
-    @Test void postgisChbaseGeometrySchema24() throws Exception { exchangeWithPostgis(24, this::exchangeChbaseGeometrySchema); }
-    @Test void geoPackageChbaseSmart223() throws Exception { exchangeChbaseSmart2(23, null); }
-    @Test void geoPackageChbaseSmart224() throws Exception { exchangeChbaseSmart2(24, null); }
-    @Test void postgisChbaseSmart223() throws Exception { exchangeWithPostgis(23, this::exchangeChbaseSmart2); }
-    @Test void postgisChbaseSmart224() throws Exception { exchangeWithPostgis(24, this::exchangeChbaseSmart2); }
-
-    private void exchangeChbasePoints(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "chbase_points");
-        new ChbaseGeometryCases(work, new ReferenceTool(work, db.postgis()), version).points(db);
-    }
-
-    private void exchangeChbaseLines(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "chbase_lines");
-        new ChbaseGeometryCases(work, new ReferenceTool(work, db.postgis()), version).lines(db);
-    }
-
-    private void exchangeChbaseSurfaces(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "chbase_surfaces");
-        new ChbaseGeometryCases(work, new ReferenceTool(work, db.postgis()), version).surfaces(db);
-    }
-
-    private void exchangeChbaseGeometrySchema(int version, PostgreSQLContainer postgres) throws Exception {
-        var baseline = new TestDatabase(work, postgres, "chbase_geometry_ref");
-        new ChbaseGeometryCases(work, new ReferenceTool(work, baseline.postgis()), version)
-                .schema(baseline, new TestDatabase(work, postgres, "chbase_geometry_own"));
-    }
-
-    private void exchangeChbaseSmart2(int version, PostgreSQLContainer postgres) throws Exception {
-        var baseline = new TestDatabase(work, postgres, "chbase_smart2_ref");
-        new ChbaseGeometryCases(work, new ReferenceTool(work, baseline.postgis()), version)
-                .smart2(baseline, new TestDatabase(work, postgres, "chbase_smart2_own"));
     }
 
     @Test void geoPackageCatalogueReference23() throws Exception { exchangeCatalogueReference(23, null); }

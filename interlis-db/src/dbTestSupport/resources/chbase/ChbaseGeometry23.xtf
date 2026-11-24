@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="test"><MODELS>
+    <MODEL NAME="ChbasePoints23" VERSION="2026-01-01" URI="https://example.org"/>
+    <MODEL NAME="ChbaseLines23" VERSION="2026-01-01" URI="https://example.org"/>
+    <MODEL NAME="ChbaseSurfaces23" VERSION="2026-01-01" URI="https://example.org"/>
+  </MODELS></HEADERSECTION>
+  <DATASECTION>
+    <ChbasePoints23.Data BID="fixture-points-b">
+      <ChbasePoints23.Data.PinSet TID="fixture-points-empty"/>
+      <ChbasePoints23.Data.PinSet TID="fixture-points-value">
+        <Shape><ChbasePoints23.PinGroup><Members>
+          <ChbasePoints23.PinPart><Position><COORD><C1>2600000.125</C1><C2>1200000.250</C2></COORD></Position></ChbasePoints23.PinPart>
+          <ChbasePoints23.PinPart><Position><COORD><C1>2600000.125</C1><C2>1200000.250</C2></COORD></Position></ChbasePoints23.PinPart>
+          <ChbasePoints23.PinPart><Position><COORD><C1>2600400.500</C1><C2>1200200.750</C2></COORD></Position></ChbasePoints23.PinPart>
+        </Members></ChbasePoints23.PinGroup></Shape>
+      </ChbasePoints23.Data.PinSet>
+    </ChbasePoints23.Data>
+    <ChbaseLines23.Data BID="fixture-lines-b">
+      <ChbaseLines23.Data.PipeRoute TID="fixture-lines-empty"></ChbaseLines23.Data.PipeRoute>
+      <ChbaseLines23.Data.PipeRoute TID="fixture-lines-value"><Shape><GeometryCHLV95_V1.MultiLine><Lines><GeometryCHLV95_V1.LineStructure><Line><POLYLINE><COORD><C1>2600000</C1><C2>1200000</C2></COORD><ARC><C1>2600010</C1><C2>1200000</C2><A1>2600005</A1><A2>1200005</A2></ARC><COORD><C1>2600020</C1><C2>1200000</C2></COORD></POLYLINE></Line></GeometryCHLV95_V1.LineStructure><GeometryCHLV95_V1.LineStructure><Line><POLYLINE><COORD><C1>2600100</C1><C2>1200100</C2></COORD><COORD><C1>2600110</C1><C2>1200120</C2></COORD></POLYLINE></Line></GeometryCHLV95_V1.LineStructure></Lines></GeometryCHLV95_V1.MultiLine></Shape></ChbaseLines23.Data.PipeRoute>
+      <ChbaseLines23.Data.FlowRoute TID="fixture-lines-directed"><Shape><GeometryCHLV95_V1.MultiDirectedLine><Lines><GeometryCHLV95_V1.DirectedLineStructure><Line><POLYLINE><COORD><C1>2600210</C1><C2>1200200</C2></COORD><COORD><C1>2600200</C1><C2>1200200</C2></COORD></POLYLINE></Line></GeometryCHLV95_V1.DirectedLineStructure></Lines></GeometryCHLV95_V1.MultiDirectedLine></Shape></ChbaseLines23.Data.FlowRoute>
+    </ChbaseLines23.Data>
+    <ChbaseSurfaces23.Data BID="fixture-surfaces-b">
+      <ChbaseSurfaces23.Data.LandCover TID="fixture-surfaces-empty"/>
+      <ChbaseSurfaces23.Data.LandCover TID="fixture-surfaces-value">
+        <Shape><GeometryCHLV03_V1.MultiSurface><Surfaces>
+          <GeometryCHLV03_V1.SurfaceStructure><Surface><SURFACE><BOUNDARY><POLYLINE><COORD><C1>600000</C1><C2>200000</C2></COORD><ARC><C1>600020</C1><C2>200000</C2><A1>600010</A1><A2>199995</A2></ARC><COORD><C1>600020</C1><C2>200020</C2></COORD><COORD><C1>600000</C1><C2>200020</C2></COORD><COORD><C1>600000</C1><C2>200000</C2></COORD></POLYLINE></BOUNDARY><BOUNDARY><POLYLINE><COORD><C1>600005</C1><C2>200005</C2></COORD><COORD><C1>600005</C1><C2>200010</C2></COORD><COORD><C1>600010</C1><C2>200010</C2></COORD><COORD><C1>600010</C1><C2>200005</C2></COORD><COORD><C1>600005</C1><C2>200005</C2></COORD></POLYLINE></BOUNDARY></SURFACE></Surface></GeometryCHLV03_V1.SurfaceStructure>
+          <GeometryCHLV03_V1.SurfaceStructure><Surface><SURFACE><BOUNDARY><POLYLINE><COORD><C1>600100</C1><C2>200100</C2></COORD><COORD><C1>600110</C1><C2>200100</C2></COORD><COORD><C1>600110</C1><C2>200110</C2></COORD><COORD><C1>600100</C1><C2>200100</C2></COORD></POLYLINE></BOUNDARY></SURFACE></Surface></GeometryCHLV03_V1.SurfaceStructure>
+        </Surfaces></GeometryCHLV03_V1.MultiSurface></Shape>
+      </ChbaseSurfaces23.Data.LandCover>
+    </ChbaseSurfaces23.Data>
+  </DATASECTION>
+</TRANSFER>
