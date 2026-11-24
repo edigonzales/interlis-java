@@ -407,11 +407,6 @@ final class DbInteropTest {
     @Test void postgisTopicMutations23() throws Exception { exchangeWithPostgis(23, this::exchangeTopicMutations); }
     @Test void postgisTopicMutations24() throws Exception { exchangeWithPostgis(24, this::exchangeTopicMutations); }
 
-    @Test void geoPackageAppendModels23() throws Exception { exchangeAppendModels(23, null); }
-    @Test void geoPackageAppendModels24() throws Exception { exchangeAppendModels(24, null); }
-    @Test void postgisAppendModels23() throws Exception { exchangeWithPostgis(23, this::exchangeAppendModels); }
-    @Test void postgisAppendModels24() throws Exception { exchangeWithPostgis(24, this::exchangeAppendModels); }
-
     @Test void geoPackage23() throws Exception { exchange(23, null); }
     @Test void geoPackage24() throws Exception {
         exchange(24, null);
@@ -518,11 +513,6 @@ final class DbInteropTest {
         var reference = new ReferenceTool(work, inherited.postgis());
         new TranslationCases(work, reference, version).mutation(translated);
         new TopicCases(work, reference, version).mutation(inherited);
-    }
-
-    private void exchangeAppendModels(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "append_models");
-        new ModelCases(work, new ReferenceTool(work, db.postgis()), version).appendModels(db);
     }
 
     private void exchange(int version, PostgreSQLContainer postgres) throws Exception {

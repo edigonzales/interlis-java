@@ -235,6 +235,11 @@ Basket ausserhalb der Auswahl erhalten bleibt.
 selben Schema, Rollback bei einem späteren fremden Basket oder einem
 mehrdeutigen Ziel sowie Datensatzänderungen mit eingehenden Referenzen.
 
+`ModelExtensionStorageTest` prüft widersprüchliche Modellquellen und
+Settings sowie den Abbruch während der DDL. Katalog und bestehende IDs
+bleiben nach dem Rollback erhalten. Die Wiederholung ergänzt das Schema
+und prüft die gespeicherten Daten beider Modelle.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -418,10 +423,10 @@ ili2db-Export folgt auf ein selektives natives Update. Ein Folgeimport
 überprüft die gemeinsame ID-Vergabe. Die Auswahl `*ImportedTopic*` prüft
 `DEPENDS ON` mit einem separaten Zieldatensatz und zwei Referenzformen.
 
-`*DbInteropTest.*AppendModels*` ergänzt ein befülltes Referenzschema
-mit einer Namenskollision und einer gemeinsam genutzten Struktur. Es
-vergleicht den Katalog nach einem Abbruch während der DDL und prüft danach
-den Werkzeugwechsel mit den bestehenden und neuen SQL-Zuordnungen.
+`--tests '*ModelExtensionInteropTest'` ergänzt ein befülltes ili2db-Schema
+mit `--add-models`. Beide Werkzeuge exportieren den bestehenden Datensatz.
+Die Mischläufe prüfen den Austausch des neuen Datensatzes, die Rückverweise
+in der gemeinsamen Strukturtabelle und die fortgesetzte ID-Vergabe.
 
 `*DbInteropTest.*Translation*` prüft Quellenbindung, Originaltabellen,
 skalare und verschachtelte Werte, Schemaerstellung, Modellergänzung und
