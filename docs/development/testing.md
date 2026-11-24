@@ -159,6 +159,10 @@ und gespeicherten Identitäten. Die Fälle vergleichen Fach-, Struktur- und
 Linkzeilen, unabhängige Datensätze und referenzierte Ziele. Sie prüfen auch
 Schreibkonkurrenz und Rollback bei fehlerhaftem XTF oder blockierenden Referenzen.
 
+`SpatialIndexStorageTest` prüft die Treffer und den Indexinhalt nach
+Punkt- und Sammlungsupdates, Replace, Delete und Rollback. Die Fälle prüfen
+die Hülle von Kreisbögen und die Diagnose eines fehlenden GeoPackage-Triggers.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -445,9 +449,10 @@ Werkzeugwechsel über `update`, `replace` und `delete`. SQL und XTF belegen
 die stabilen IDs beim Update und den Ersatz der Daten beim Replace. Ein
 weiterer ili2db-Import prüft die gemeinsame ID-Vergabe. Eine Gegenprobe
 prüft die Behandlung der `ORDERED`-Position beim gemischten Update.
-`*DbInteropTest.*Spatial*` prüft die Raumindizes aus beiden Schemaerzeugern,
-den Werkzeugwechsel und die räumlichen Treffer nach Schreiboperationen.
-Die GeoPackage-Fälle prüfen zusätzlich die RTree-Trigger und den Indexinhalt.
+`--tests '*SpatialIndexInteropTest'` vergleicht die RTree- und GiST-Definitionen
+beider Schemaerzeuger. Die Fälle tauschen gerade und gebogene Geometrien
+gemeinsam aus und prüfen die räumlichen Treffer nach einem Update durch
+ili2db. Die XTF-2.4-Fälle prüfen zusätzlich die Reihenfolge der Geometrieteile.
 
 `*DbInteropTest.*Xyz*` prüft XYZ-Geometrien und die XY-Indexhüllen.
 `*DbInteropTest.*GeometryLayout*` prüft mehrere Spalten und Hilfstabellen,

@@ -21,7 +21,7 @@ import static guru.interlis.db.DbTestSupport.execute;
 import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.readDataSection;
 import static guru.interlis.db.DbTestSupport.scalar;
-import static guru.interlis.db.SpatialIndexCases.assertIndex;
+import static guru.interlis.db.SpatialIndexFixtures.assertIndex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 

@@ -966,10 +966,6 @@ final class DbInteropTest {
     @Test void postgis23() throws Exception { exchangeWithPostgis(23, this::exchange); }
     @Test void postgis24() throws Exception { exchangeWithPostgis(24, this::exchange); }
 
-    @Test void geoPackageSpatial23() throws Exception { exchangeSpatial(23, null); }
-    @Test void geoPackageSpatial24() throws Exception { exchangeSpatial(24, null); }
-    @Test void postgisSpatial23() throws Exception { exchangeWithPostgis(23, this::exchangeSpatial); }
-    @Test void postgisSpatial24() throws Exception { exchangeWithPostgis(24, this::exchangeSpatial); }
 
     @Test void geoPackageXyz23() throws Exception { exchangeXyz(23, null); }
     @Test void geoPackageXyz24() throws Exception { exchangeXyz(24, null); }
@@ -1146,16 +1142,6 @@ final class DbInteropTest {
     private void exchangeLocalSrid(int version, PostgreSQLContainer postgres) throws Exception {
         var cases = new CrsCases(work, version, new ReferenceTool(work, postgres != null));
         cases.localSrid(new TestDatabase(work, postgres, "local_srid"));
-    }
-
-    private void exchangeSpatial(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new SpatialIndexCases(work, version, new ReferenceTool(work, postgres != null));
-        cases.points(new TestDatabase(work, postgres, "spatial_points"));
-        cases.straightGeometries(new TestDatabase(work, postgres, "spatial_straight"));
-        cases.circularGeometries(new TestDatabase(work, postgres, "spatial_arcs"));
-        if (version == 24) cases.collections(new TestDatabase(work, postgres, "spatial_collections"));
-        cases.createdSchemas(new TestDatabase(work, postgres, "spatial_created_reference"),
-                new TestDatabase(work, postgres, "spatial_created_native"));
     }
 
     private void exchangeTranslationSources(int version, PostgreSQLContainer postgres) throws Exception {
