@@ -169,6 +169,12 @@ Zeitzonentest startet getrennte JVM-Prozesse. SQL-Gegenproben prüfen
 den Rollback und den Erhalt der Exportdatei, insbesondere bei Überlauf,
 ungültigem Datum und übergrossen Binär- oder XML-Werten.
 
+`EnumerationStorageTest` prüft Code 0, SQL `NULL`, geänderte Anzeigetexte,
+umbenannte Lookup-Tabellen und unbekannte oder mehrdeutige Lookup-IDs.
+Er prüft den Rollback bei fehlerhaften Spalten- und Arraywerten sowie bei
+einem SQL-Konflikt nach der Schemaerweiterung. Die Fälle prüfen den Erhalt
+der Exportdatei bei beschädigten Lookup-Zeilen und Arraywerten.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -251,34 +257,12 @@ umbenannten FORMAT-Spalte und den Unicode-Exportfehler von ili2gpkg
 in XTF 2.3. Die Dezimalarrays verwenden ein eigenes `--coalesceArray`-Profil
 und prüfen die Reihenfolge, Duplikate, SQL `NULL` und die numerische Kodierung.
 
-Die `*EnumItfCodes*`-Fälle prüfen den Austausch skalarer Aufzählungen
-mit ITF-Codes, einschliesslich Code `0`, SQL `NULL`, Rollback und
-dem Erhalt einer vorhandenen Exportdatei.
-Die `*EnumItfSchema*`-Fälle vergleichen den SQL-Katalog und prüfen den
-Werkzeugwechsel in Referenz- und eigenen Schemata.
-Die `*EnumText*`-Fälle prüfen SQL-Typen, Modelllabels, Boolean-Labels,
-manuell geänderte Anzeigetexte und das Leeren der Spalten per `update`.
-Die `*EnumSingleLookup*`-Fälle vergleichen Katalog, Reihenfolge, Texte
-und Vererbungsmetadaten der gemeinsamen Lookup-Tabelle. Gemischte
-Transfers erhalten manuell geänderte Lookup-Zeilen.
-Die `*EnumPerLookup*`-Fälle prüfen den Katalog für Lookup-Tabellen pro
-Definition, eine Namenskollision und einen gespeicherten SQL-Namen
-nach dem Umbenennen einer Lookup-Tabelle.
-Die `*EnumStoredIds*`-Fälle prüfen beliebige gespeicherte Lookup-IDs,
-`NULL`, unbekannte IDs und mehrdeutige Zuordnungen.
-Die `*EnumIdSchema*`-Fälle vergleichen den Katalog und die Lookup-Daten
-neuer Schemata und prüfen die gespeicherten IDs bis zum nächsten
-Referenzimport.
-Die `*EnumIdExtension*`-Fälle prüfen gemeinsame Lookup-Tabellen für
-Domänenerweiterungen, geerbte und neue Codes, explizite Reihenfolge
-sowie die Diagnose einer ID aus der falschen Definition.
-Die `*EnumAppend*`-Fälle prüfen ein unabhängiges Modell und die
-Erweiterung einer bestehenden Aufzählungsdomäne. Ein SQL-Konflikt beim
-Einfügen der Lookup-Zeilen muss auch Modellmetadaten und Fachtabellen
-zurückrollen.
-Die `*EnumNumericArrays*`-Fälle prüfen ITF-Codes und gespeicherte
-Lookup-IDs in Arrays. Sie vergleichen SQL-Typen, JSON-Zahlen, Reihenfolge,
-Duplikate, den Import-Rollback und den Erhalt einer Exportdatei.
+`--tests '*EnumerationInteropTest'` prüft den Katalog und beide
+Werkzeugrichtungen für SQL-ITF-Codes, Anzeigetexte, gemeinsame und
+getrennte Lookup-Tabellen sowie gespeicherte Lookup-IDs. Der ID-Fall
+kombiniert geerbte und erweiterte Definitionen, abweichende gespeicherte
+IDs und einen ili2db-Folgeimport. Weitere Fälle prüfen den Werkzeugwechsel
+nach `--add-models` sowie Arrays mit ITF-Codes oder Lookup-IDs.
 
 Die `*ArrayScalars*`-Fälle kombinieren Text, Boolean, Ganzzahlen und
 Aufzählungen in einem Referenzschema pro Backend und Sprachversion. Sie
