@@ -48,6 +48,18 @@ final class IqlModel {
                 && (type.kind() == SymbolKind.CLASS || type.kind() == SymbolKind.ASSOCIATION)).toList();
     }
 
+    List<ObjectDescriptor> matchingSources(String name) {
+        return sources().stream().filter(type -> name.indexOf('.') < 0
+                        ? type.name().declared().last().equals(name)
+                        : type.name().declared().toString().equals(name))
+                .toList();
+    }
+
+    static boolean validEnumerationValue(EnumerationType type, String name) {
+        return type.values().stream().anyMatch(option -> option.path().equals(name))
+                && (type.treeValues() || type.values().stream().noneMatch(option -> option.path().startsWith(name + ".")));
+    }
+
     List<ObjectDescriptor> descendants(ObjectDescriptor base) {
         return plan.objects().stream().filter(type -> derives(type, base.symbol())).toList();
     }

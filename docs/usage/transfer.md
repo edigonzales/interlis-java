@@ -337,9 +337,10 @@ zeigt bis zu 1000 Zeilen und meldet, wenn weitere Treffer vorhanden sind.
 Echte `NULL`-Werte erscheinen kursiv und haben den Tooltip «SQL NULL».
 Spaltennamen werden als Klartext angezeigt.
 
-IQL verwendet die deklarierten Namen aus dem Modell. Mit `RelationsDemo.ili`
-und `relations-demo.xtf` liefert diese Abfrage den Namen des aufgelösten
-Zielobjekts.
+IQL verwendet die deklarierten Namen aus dem Modell. Ein Klassen- oder
+Assoziationsname in `FROM` darf kurz sein, wenn er in den geladenen
+Modellen eindeutig ist. Mit `RelationsDemo.ili` und `relations-demo.xtf`
+liefert diese Abfrage den Namen des aufgelösten Zielobjekts.
 
 ```sql
 SELECT i.details.owner.title
@@ -352,6 +353,12 @@ und passende Referenzsysteme. Eine einfache Zahl wird in der Einheit des
 Attributs interpretiert. Bei Aufzählungen prüft IQL, ob die Modelltypen der
 beiden Attribute vergleichbar sind.
 
+`IN` und `NOT IN` vergleichen mit typgeprüften Literalen.
+`BETWEEN` und `NOT BETWEEN` verwenden inklusive Grenzen für Zahlen und
+ISO-Daten. `CONTAINS(pfad, 'text')` und `STARTS_WITH(pfad, 'text')` suchen
+wörtlich und unterscheiden Gross- und Kleinschreibung. Fehlende und
+undefinierte Werte ergeben bei diesen Filtern ein unbekanntes Ergebnis.
+
 Bei Sammlungen bindet `EXISTS` die Bedingungen an ein einzelnes Vorkommen.
 Mit `Reference24.ili` und `structures-and-link.xtf` findest du das Objekt, das
 einen Eintrag mit dem Namen `first` enthält.
@@ -363,28 +370,48 @@ WHERE EXISTS(i.details AS detail WHERE detail.label = 'first')
 ```
 
 `EXPAND pfad AS eintrag` gibt eine Zeile pro Eintrag einer `LIST` oder
-eines `BAG` aus. Pro Abfrage ist eine Expansion möglich. Der Alias des
-Elternobjekts bleibt verfügbar. Leere, fehlende und undefinierte Sammlungen
+eines `BAG` aus. Bei mehrwertigen Rollen liefert es die aufgelösten Ziele
+je Rollenvorkommen. Jede Folge-Expansion beginnt beim unmittelbar
+vorangehenden Eintragsalias. Leere, fehlende und undefinierte Sammlungen
 liefern null Zeilen. Ein `BAG` behält Duplikate. Für eine `LIST` bindet
 `AT pos` optional die ursprüngliche Position ab `1`. Diese Position kannst
 du in `SELECT`, `WHERE` und `ORDER BY` verwenden. Ohne eigene Sortierung
 folgen die Einträge einer `LIST` ihrer Reihenfolge im Transfer.
 
 Die folgende DMAV-Abfrage liefert die Strassenachsen der Lokalisation
-`1193` in einem kleinen LV95-Ausschnitt. `GEOMETRY(pfad)` gibt die native
-Geometrie des ausgewählten Eintrags aus. Die Ergebnistabelle zeigt den
-Geometrietyp und das CRS. Bei einem Projektionsfehler zeigt sie einen
-Hinweis in der betroffenen Zelle.
+`1193` in einem kleinen LV95-Ausschnitt. Ein ausdrücklich gewählter
+Geometriepfad und `GEOMETRY(pfad)` liefern beide die native Geometrie.
+Die Ergebnistabelle zeigt Geometrietyp und CRS oder einen Hinweis zum
+Projektionsfehler. `SELECT *` verwendet die kompakte Geometrieübersicht.
 
 ```sql
 SELECT l.LokalisationNummer, pos AS Listenposition, s.IstAchse,
-       GEOMETRY(s.Geometrie) AS Linie
+       s.Geometrie AS Linie
 FROM DMAV_Gebaeudeadressen_V1_1.Gebaeudeadressen.Lokalisation AS l
 EXPAND l.Strassenstueck AS s AT pos
 WHERE l.LokalisationNummer = '1193'
   AND s.IstAchse
   AND INTERSECTS(s.Geometrie, BOX(2586065, 1224223, 2586066, 1224225))
 ORDER BY pos
+```
+
+Markiere in der Ergebnistabelle eine navigierbare IQL-Zeile und öffne
+sie mit **Open in Inspector** oder **Enter**. Bei der DMAV-Abfrage
+öffnet der Explorer die Lokalisation am betreffenden Strassenstück.
+Bei der Expansion einer Rolle öffnet er das Zielobjekt. Mit `TID(alias)`,
+`OID(alias)` und `BID(alias)` kannst du die einzelnen Transferidentitäten
+eines Objekt- oder Assoziationsalias ausgeben und als Filter verwenden.
+
+`ELEMENT_COUNT(pfad)` zählt LIST- und BAG-Einträge einschliesslich
+Duplikaten. Im Transfer fehlende und leere Sammlungen zählen als `0`.
+Explizit undefinierte Sammlungen liefern `NULL`. Gruppen und einfache
+Häufigkeiten lassen sich zusammen abfragen.
+
+```sql
+SELECT l.Lokalisationsart, COUNT(*) AS Anzahl
+FROM Lokalisation AS l
+GROUP BY l.Lokalisationsart
+ORDER BY Anzahl DESC
 ```
 
 `IS MISSING` fragt nach einem im Transfer fehlenden Attribut.
@@ -395,8 +422,11 @@ nicht räumliche Filter, die festlegen, ob eine Geometrie das Ergebnis
 beeinflussen kann. Innerhalb von `EXISTS` gilt das für den jeweiligen
 Eintrag. Für die verbleibenden Geometrien meldet IQL fehlende Projektionen
 und unbekannte oder unterschiedliche CRS. Die räumliche Abfrage benötigt
-DuckDB Spatial. Der Explorer lädt die signierte Extension aus dem lokalen
-Cache oder bezieht sie beim Öffnen aus dem offiziellen DuckDB-Repository.
+DuckDB Spatial. `WITHIN_DISTANCE(pfad, POINT(x, y), 20)` findet Geometrien
+innerhalb von 20 Metern um den angegebenen LV95-Punkt. Die Distanzprüfung
+verlangt `EPSG:2056` für die relevanten Geometrien. Der Explorer lädt die
+signierte Extension aus dem lokalen Cache oder bezieht sie beim Öffnen aus
+dem offiziellen DuckDB-Repository.
 
 SQL arbeitet mit Tabellen und Spalten aus dem DuckDB-Katalog. Nach einem
 Tabellenalias und einem Punkt schlägt der Editor die Spalten der zugehörigen

@@ -139,6 +139,128 @@ class IqlTest {
     }
 
     @Test
+    void bindsTypedFiltersAndTreatsAbsentValuesAsUnknown() throws Exception {
+        var plan = plan("Reference24", Files.readString(fixture("Reference24.ili"))
+                .replace("count : 0..10;", """
+                        count : 0..10;
+                        note : TEXT*20;
+                        state : (open, closed);
+                        day : INTERLIS.XMLDate;
+                        """));
+        var data = Files.readString(fixture("structures-and-link.xtf"))
+                .replace("<count>5</count>", """
+                        <count>5</count><note>Ab%_cd</note><state>open</state><day>2026-01-02</day>
+                        """)
+                .replace("</Data>", """
+                        <Item i:tid="empty"><required>yes</required></Item>
+                        <Item i:tid="other"><required>yes</required><count>7</count><note>abXYcd</note>
+                          <state>closed</state><day>2026-01-05</day>
+                        </Item>
+                        </Data>
+                        """);
+        var database = loadText(plan, data);
+        assertEquals(List.of("i1"), values(database, plan, """
+                SELECT TID(i) FROM Item i
+                WHERE i.state IN (#open, #closed) AND i.count BETWEEN 4.99 AND 5.1
+                  AND i.day BETWEEN '2026-01-02' AND '2026-01-04'
+                  AND CONTAINS(i.note, '%_') AND STARTS_WITH(i.note, 'Ab')
+                """));
+        assertEquals(List.of("other"), values(database, plan, """
+                SELECT TID(i) FROM Item i
+                WHERE i.state NOT IN (#open) AND i.count NOT BETWEEN 4.99 AND 5.1
+                  AND NOT CONTAINS(i.note, '%_') AND NOT STARTS_WITH(i.note, 'Ab')
+                """));
+        assertEquals(List.of(), values(database, plan, """
+                SELECT TID(i) FROM Item i WHERE i.count IN (5.0000000000000000001)
+                """));
+        assertThrows(Iql.QueryException.class, () -> Iql.compile(plan, """
+                SELECT TID(i) FROM Item i WHERE i.state IN (#unknown)
+                """, 100));
+        assertThrows(Iql.QueryException.class, () -> Iql.compile(plan, """
+                SELECT TID(i) FROM Item i WHERE i.day BETWEEN 'tomorrow' AND '2026-01-05'
+                """, 100));
+        assertThrows(Iql.QueryException.class, () -> Iql.compile(plan, """
+                SELECT TID(i) FROM Item i WHERE CONTAINS(i.count, '5')
+                """, 100));
+    }
+
+    @Test
+    void returnsIndividualIdentitiesAndExpandsEachResolvedRoleOccurrence() throws Exception {
+        var plan = plan("RelationsDemo");
+        var data = Files.readString(fixture("relations-demo.xtf")).replace("</Data>", """
+                <Review i:tid="r2"><subject i:ref="i1"/><reviewer i:ref="p1"/></Review>
+                <Review i:tid="r3"><subject i:ref="missing"/><reviewer i:ref="p1"/></Review>
+                </Data>
+                """);
+        var database = loadText(plan, data);
+        try (var store = DuckDbStore.openReadOnly(database, plan)) {
+            var queries = new ExplorerQueries(store);
+            assertEquals(List.of(List.of("i1", "NULL", "b1")), execute(queries, """
+                    SELECT TID(i), OID(i), BID(i) FROM Item i WHERE TID(i) = 'i1' ORDER BY BID(i)
+                    """).rows());
+            assertEquals(List.of(List.of("NULL", "NULL", "b1")), execute(queries, """
+                    SELECT TID(a), OID(a), BID(a) FROM Link a
+                    """).rows());
+            assertEquals(List.of(List.of("r1")), execute(queries, """
+                    SELECT TID(r) FROM Review r WHERE r.remark = 'reviewed'
+                    """).rows());
+            var related = execute(queries, """
+                    SELECT TID(i) FROM Parent p EXPAND p.subject AS i WHERE TID(p) = 'p1'
+                    """);
+            assertEquals(List.of(List.of("i1"), List.of("i1")), related.rows());
+            assertEquals("i1", store.objectAt(related.occurrence(0).orElseThrow().sourcePosition())
+                    .orElseThrow().object().identity().tid().orElseThrow().value());
+        }
+        assertThrows(Iql.QueryException.class, () -> Iql.compile(plan, """
+                SELECT TID(i) FROM Parent p EXPAND p.subject AS i AT pos
+                """, 100));
+    }
+
+    @Test
+    void chainsCollectionsAndGroupsTheFilteredOccurrences() throws Exception {
+        var plan = plan("Reference24", Files.readString(fixture("Reference24.ili"))
+                .replace("  STRUCTURE Detail =", "  STRUCTURE Mark =\n    label: TEXT;\n  END Mark;\n  STRUCTURE Detail =")
+                .replace("label : TEXT*20;", "label : TEXT*20;\n    marks : LIST {0..*} OF Mark;"));
+        var data = Files.readString(fixture("structures-and-link.xtf"))
+                .replace("<label>second</label>", """
+                        <label>second</label><marks><Mark><label>a</label></Mark></marks>
+                        <marks><Mark><label>b</label></Mark></marks>
+                        """)
+                .replace("<label>first</label>", "<label>first</label><marks><Mark><label>b</label></Mark></marks>")
+                .replace("</Data>", "<Item i:tid=\"empty\"><required>yes</required></Item></Data>");
+        var database = loadText(plan, data);
+        String expansion = """
+                FROM Item i EXPAND i.details AS d AT pos EXPAND d.marks AS m AT mark
+                """;
+        try (var store = DuckDbStore.openReadOnly(database, plan)) {
+            var queries = new ExplorerQueries(store);
+            var details = execute(queries, "SELECT pos, mark, m.label " + expansion);
+            assertEquals(List.of(List.of("1", "1", "a"), List.of("1", "2", "b"), List.of("2", "1", "b")), details.rows());
+            assertTrue(details.occurrence(1).orElseThrow().valuePath().endsWith("/Reference24.Detail.marks/1"));
+            var groups = execute(queries, "SELECT m.label, COUNT(*) AS n " + expansion + """
+                    WHERE pos IN (1, 2) GROUP BY m.label ORDER BY n DESC
+                    """);
+            assertEquals(List.of(List.of("b", "2"), List.of("a", "1")), groups.rows());
+            assertTrue(groups.occurrence(0).isEmpty());
+            assertEquals(List.of(List.of("2"), List.of("1")), execute(queries, "SELECT COUNT(*) AS n " + expansion
+                    + "GROUP BY m.label ORDER BY n DESC").rows());
+            assertEquals(List.of(List.of("empty", "0"), List.of("i1", "2")), execute(queries, """
+                    SELECT TID(i), ELEMENT_COUNT(i.details) FROM Item i ORDER BY TID(i)
+                    """).rows());
+            assertEquals(List.of(List.of("5", "1"), List.of("NULL", "1")), execute(queries, """
+                    SELECT i.count, COUNT(*) AS n FROM Item i GROUP BY count ORDER BY i.count
+                    """).rows());
+        }
+        assertThrows(Iql.QueryException.class, () -> Iql.compile(plan, """
+                SELECT pos FROM Item i EXPAND i.details AS d AT pos EXPAND i.details AS another
+                """, 100));
+    }
+
+    private static ExplorerQueries.Result execute(ExplorerQueries queries, String text) throws Exception {
+        return queries.execute(ExplorerQueries.Mode.IQL, text, new ExplorerQueries.Cancellation());
+    }
+
+    @Test
     void keepsValuesAsParametersAndPointsAtInvalidPaths() throws Exception {
         var plan = plan("RelationsDemo");
         var query = Iql.compile(plan, "SELECT title FROM RelationsDemo.Data.Item WHERE title = 'O''Neil'", 20);

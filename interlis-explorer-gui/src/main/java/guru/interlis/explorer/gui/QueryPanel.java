@@ -2,6 +2,7 @@ package guru.interlis.explorer.gui;
 
 import guru.interlis.explorer.ExplorerQueries;
 import guru.interlis.explorer.ExplorerQueries.Mode;
+import guru.interlis.explorer.ExplorerQueries.Occurrence;
 import guru.interlis.explorer.ExplorerQueries.SqlCatalog;
 import guru.interlis.explorer.ExplorerQueries.Suggestion;
 import guru.interlis.explorer.Iql;
@@ -10,6 +11,7 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -32,7 +34,10 @@ import java.awt.event.KeyEvent;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 final class QueryPanel extends JPanel {
     private static final SqlCatalog EMPTY_CATALOG = new SqlCatalog(Map.of(), List.of());
@@ -41,6 +46,7 @@ final class QueryPanel extends JPanel {
     private final RSyntaxTextArea editor = new RSyntaxTextArea(8, 60);
     private final JButton run = new JButton("Run");
     private final JButton cancel = new JButton("Cancel");
+    private final Action openInInspector;
     private final JLabel status = new JLabel("Open a dataset to run a query.");
     private final ResultTable results = new ResultTable();
     private final EnumMap<Mode, String> drafts = new EnumMap<>(Mode.class);
@@ -48,11 +54,13 @@ final class QueryPanel extends JPanel {
 
     private Mode currentMode = Mode.IQL;
     private ExplorerQueries queries;
+    private ExplorerQueries resultSource;
     private SqlCatalog catalog = EMPTY_CATALOG;
     private QueryWork active;
 
-    QueryPanel() {
+    QueryPanel(Consumer<Occurrence> inspectorNavigation) {
         super(new BorderLayout(0, 8));
+        Objects.requireNonNull(inspectorNavigation);
         mode.setName("queryMode");
         editor.setName("queryEditor");
         editor.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_SQL);
@@ -82,6 +90,19 @@ final class QueryPanel extends JPanel {
                 runQuery();
             }
         });
+        openInInspector = new AbstractAction("Open in Inspector") {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                inspectorDestination().ifPresent(inspectorNavigation);
+            }
+        };
+        var inspect = new JButton(openInInspector);
+        inspect.setName("openQueryOccurrence");
+        results.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "openInInspector");
+        results.getActionMap().put("openInInspector", openInInspector);
+        results.getSelectionModel().addListSelectionListener(event -> {
+            if (!event.getValueIsAdjusting()) updateInspectorAction();
+        });
 
         status.setName("queryStatus");
         status.putClientProperty("html.disable", true);
@@ -89,6 +110,7 @@ final class QueryPanel extends JPanel {
         actions.add(mode);
         actions.add(run);
         actions.add(cancel);
+        actions.add(inspect);
         var body = ExplorerFrame.split(javax.swing.JSplitPane.VERTICAL_SPLIT, new RTextScrollPane(editor),
                 new JScrollPane(results), 200, 0.4);
         body.setContinuousLayout(true);
@@ -103,6 +125,7 @@ final class QueryPanel extends JPanel {
         var previous = active;
         active = null;
         queries = replacement;
+        resultSource = null;
         catalog = replacementCatalog == null ? EMPTY_CATALOG : replacementCatalog;
         results.showResult(new ExplorerQueries.Result(List.of(), List.of(), false));
         status.setToolTipText(null);
@@ -122,15 +145,29 @@ final class QueryPanel extends JPanel {
         currentMode = (Mode) mode.getSelectedItem();
         editor.setText(drafts.getOrDefault(currentMode, ""));
         editor.setCaretPosition(0);
+        resultSource = null;
         results.showResult(new ExplorerQueries.Result(List.of(), List.of(), false));
         status.setToolTipText(null);
         status.setText(queries == null ? "Open a dataset to run a query." : " ");
+        updateInspectorAction();
     }
 
     private void setReady() {
         run.setEnabled(queries != null && active == null);
         mode.setEnabled(active == null);
         cancel.setEnabled(active != null);
+        updateInspectorAction();
+    }
+
+    private void updateInspectorAction() {
+        openInInspector.setEnabled(inspectorDestination().isPresent());
+    }
+
+    private Optional<Occurrence> inspectorDestination() {
+        if (queries == null || resultSource != queries || active != null || currentMode != Mode.IQL) {
+            return Optional.empty();
+        }
+        return results.selectedOccurrence();
     }
 
     private void runQuery() {
@@ -203,7 +240,9 @@ final class QueryPanel extends JPanel {
                     status.setText("Query cancelled.");
                     return;
                 }
+                resultSource = source;
                 results.showResult(result);
+                updateInspectorAction();
                 status.setText(result.rows().size() + (result.rows().size() == 1 ? " row" : " rows")
                         + (result.truncated() ? " shown. More rows are available." : "."));
             } catch (ExecutionException failure) {
@@ -276,6 +315,13 @@ final class QueryPanel extends JPanel {
                 int width = Math.clamp(Math.max(heading, geometryWidths[column]), 110, 400);
                 getColumnModel().getColumn(column).setPreferredWidth(width);
             }
+        }
+
+        Optional<Occurrence> selectedOccurrence() {
+            if (getSelectedRowCount() != 1 || !(getModel() instanceof ResultModel model)) {
+                return Optional.empty();
+            }
+            return model.result.occurrence(convertRowIndexToModel(getSelectedRow()));
         }
 
         private static final class ResultModel extends AbstractTableModel {

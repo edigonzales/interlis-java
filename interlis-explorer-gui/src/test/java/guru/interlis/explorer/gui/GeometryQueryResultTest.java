@@ -73,6 +73,11 @@ class GeometryQueryResultTest {
             var root = result.geometry(0, 0).orElseThrow();
             var line = result.geometry(0, 2).orElseThrow();
             assertEquals(root.sourcePosition(), line.sourcePosition());
+            assertEquals(List.of("/Reference24.Data.Item.details/0", "/Reference24.Data.Item.details/1",
+                            "/Reference24.Data.Item.details/2"),
+                    result.occurrencesByRow().stream().map(entry -> entry.orElseThrow().valuePath()).toList());
+            assertTrue(result.occurrencesByRow().stream()
+                    .allMatch(entry -> entry.orElseThrow().sourcePosition() == line.sourcePosition()));
             assertEquals("/Reference24.Data.Item.trace", root.valuePath());
             assertEquals("/Reference24.Data.Item.details/0/Reference24.Detail.marker", line.valuePath());
             assertEquals(Optional.of("EPSG:2056"), line.crs());

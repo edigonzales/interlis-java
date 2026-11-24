@@ -9,6 +9,7 @@ import java.util.Objects;
 public final class Iql {
     private static final int MAX_QUERY_LENGTH = 32_768;
     static final int GEOMETRY_METADATA_COLUMNS = 4;
+    static final int OCCURRENCE_METADATA_COLUMNS = 2;
 
     private Iql() {}
 
@@ -16,14 +17,21 @@ public final class Iql {
      * DuckDB statement with its ordered, immutable JDBC parameters and preflight checks.
      * The preview statement adds a source position, value path, CRS and possible projection
      * diagnostic after the visible columns for each zero-based index in {@code geometryColumns}.
+     * With {@code occurrenceColumns}, a source position and value path follow those columns.
      * The same JDBC parameters apply to both statements.
      */
     public record Compiled(String sql, List<Object> parameters, List<Check> checks,
-                           String previewSql, List<Integer> geometryColumns) {
+                           String previewSql, List<Integer> geometryColumns, boolean occurrenceColumns) {
         public Compiled {
             parameters = List.copyOf(parameters);
             checks = List.copyOf(checks);
             geometryColumns = List.copyOf(geometryColumns);
+        }
+
+        /** Creates a preview statement with geometry metadata and no row occurrence. */
+        public Compiled(String sql, List<Object> parameters, List<Check> checks,
+                        String previewSql, List<Integer> geometryColumns) {
+            this(sql, parameters, checks, previewSql, geometryColumns, false);
         }
 
         /** Creates a statement without additional preview columns. */
