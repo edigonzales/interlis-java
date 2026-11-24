@@ -213,6 +213,10 @@ Strukturtabellen sowie SRID und Zuordnung der Geometriehilfszeilen.
 Mehrfach belegte Eigentümer und fehlende GeoPackage-Hilfszeilen werden
 per JDBC hergestellt und müssen die bestehende Exportdatei erhalten.
 
+`ChbaseTextStorageTest` prüft die gespeicherten Sprachspalten, einen
+umbenannten Spaltenstamm, Leertext und SQL-`NULL` sowie Rollback bei
+Sprachfehlern und atomaren Export bei einer fehlenden Spalte.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -361,15 +365,10 @@ mehrdeutige Ziel-TIDs und den atomaren Export bei doppelt belegten Spalten.
 anschliessend die gemeinsame ID-Vergabe und den Schutz referenzierter
 Katalogdatensätze beim Löschen.
 
-`*DbInteropTest.*ChbaseMultilingual*` prüft beide Werkzeugrichtungen für
-`--expandMultilingual`, den gespeicherten Spaltenstamm, die Sprachspalten,
-mehrzeilige Inhalte sowie Rollback bei nicht abbildbaren Sprachwerten.
-`*DbInteropTest.*ChbaseLocalised*` prüft `--expandLocalised`, Sprache,
-mehrzeilige Inhalte, Leertext, SQL-`NULL` und den atomaren Export bei
-fehlender Sprachspalte.
-`*DbInteropTest.*ChbaseTextSchema*` vergleicht beide Textabbildungen
-im gemeinsamen Schema mit ili2db und prüft die ID-Vergabe mit einem
-weiteren Referenzimport.
+`--tests '*ChbaseTextInteropTest'` prüft `--expandMultilingual` und
+`--expandLocalised` im selben Schema und in einer XTF-Lieferung mit zwei
+Baskets. Katalogvergleich, beide Werkzeugrichtungen in beiden Schematypen
+und ein ili2db-Folgeimport decken die SQL-Abbildung und die ID-Vergabe ab.
 `*DbInteropTest.*ChbaseSmart2*` prüft die geerbten Textspalten und die
 ausgelagerte Multipunkt-Geometrie gemeinsam. Die Fälle vergleichen die
 Schemata, prüfen beide Werkzeugrichtungen und kontrollieren beim

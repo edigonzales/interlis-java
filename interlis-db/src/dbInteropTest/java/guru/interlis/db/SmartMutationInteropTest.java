@@ -10,9 +10,9 @@ import java.util.List;
 
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.scalar;
-import static guru.interlis.db.SmartInteropSupport.exportDataset;
-import static guru.interlis.db.SmartInteropSupport.importDataset;
-import static guru.interlis.db.SmartInteropSupport.schema;
+import static guru.interlis.db.InteropCommands.exportDataset;
+import static guru.interlis.db.InteropCommands.importDataset;
+import static guru.interlis.db.InteropCommands.schema;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 

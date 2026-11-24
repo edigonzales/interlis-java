@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="http://www.interlis.ch/xtf/2.4/ChbaseMultilingual24"
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
   xmlns:l="http://www.interlis.ch/xtf/2.4/Localisation_V2" xmlns:s="http://www.interlis.ch/xtf/2.4/LocalisationCH_V2">
-  <i:headersection><i:models><i:model>ChbaseMultilingual24</i:model></i:models></i:headersection>
+  <i:headersection><i:models><i:model>ChbaseLocalised24</i:model><i:model>ChbaseMultilingual24</i:model></i:models></i:headersection>
   <i:datasection>
-    <Data i:bid="fixture-b">
-      <Plaque i:tid="fixture-empty"/>
-      <Plaque i:tid="fixture-value">
+    <Data xmlns="http://www.interlis.ch/xtf/2.4/ChbaseLocalised24" i:bid="fixture-loc-b">
+      <MemoCard i:tid="fixture-loc-empty"/>
+      <MemoCard i:tid="fixture-loc-value">
+        <Label><s:LocalisedText><l:Language>it</l:Language><l:Text>Ponte</l:Text></s:LocalisedText></Label>
+        <Description><s:LocalisedMText><l:Text>Première ligne&#10;Deuxième ligne</l:Text></s:LocalisedMText></Description>
+      </MemoCard>
+    </Data>
+    <Data xmlns="http://www.interlis.ch/xtf/2.4/ChbaseMultilingual24" i:bid="fixture-ml-b">
+      <Plaque i:tid="fixture-ml-empty"/>
+      <Plaque i:tid="fixture-ml-value">
         <Caption><s:MultilingualText><l:LocalisedText>
             <s:LocalisedText><l:Text>Default</l:Text></s:LocalisedText>
             <s:LocalisedText><l:Language>de</l:Language><l:Text>Brücke</l:Text></s:LocalisedText>
