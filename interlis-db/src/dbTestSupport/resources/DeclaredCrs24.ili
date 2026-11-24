@@ -1,0 +1,36 @@
+INTERLIS 2.4;
+!!@ CRS="EPSG:21781"
+MODEL DeclaredCrs24 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  DOMAIN
+    !!@ CRS="EPSG:21781"
+    OldXYZ = COORD 460000.000 .. 870000.000, 45000.000 .. 310000.000, -1000.000 .. 9000.000;
+    !!@ CRS="EPSG:4326"
+    VertexAngles = COORD -180.000 .. 180.000, -90.000 .. 90.000;
+    !!@ CRS="EPSG:21781"
+    Angles = COORD -180.000 .. 180.000, -90.000 .. 90.000 REFSYS "EPSG:4326";
+  TOPIC Data =
+    CLASS Globe =
+      Location : Angles;
+    END Globe;
+    CLASS Marker =
+      !!@ CRS="EPSG:2056"
+      Location : COORD 2460000.000 .. 2870000.000, 1045000.000 .. 1310000.000;
+    END Marker;
+    CLASS Station =
+      Location : COORD 460000.000 .. 870000.000, 45000.000 .. 310000.000;
+    END Station;
+    CLASS Route =
+      Trace : POLYLINE WITH (STRAIGHTS) VERTEX OldXYZ;
+    END Route;
+    CLASS Plot =
+      Outline : SURFACE WITH (STRAIGHTS) VERTEX VertexAngles WITHOUT OVERLAPS > 0.001;
+    END Plot;
+    CLASS Parcel =
+      Boundary : AREA WITH (STRAIGHTS) VERTEX OldXYZ WITHOUT OVERLAPS > 0.001;
+    END Parcel;
+    CLASS Network =
+      Routes : MULTIPOLYLINE WITH (STRAIGHTS) VERTEX OldXYZ;
+    END Network;
+
+  END Data;
+END DeclaredCrs24.

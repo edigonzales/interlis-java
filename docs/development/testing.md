@@ -181,6 +181,12 @@ der Exportdatei bei beschädigten Typmarkierungen oder JSON-Werten.
 Weitere Fälle prüfen die JSON-Typen und leere gespeicherte Sammlungen,
 die stabilen IDs beim Update und das Freigeben belegter Spalten.
 
+`CrsDefaultsStorageTest` prüft die Schema-Standards EPSG:21781 und 4326,
+fehlende oder widersprüchliche CRS-Metadaten und statische generische
+Domain-Zuweisungen. Der GeoPackage-Fall prüft konkurrierende lokale SRS-IDs.
+Der Fall für Änderungen am PostGIS-Katalog `spatial_ref_sys` verwendet pro
+Sprachversion einen eigenen Container.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -426,14 +432,15 @@ mit Geometrie-Hilfstabellen prüfen sie den Referenzimport und reproduzieren
 den [Fehler des Referenzexports](../usage/database.md#referenzprofil)
 für dieses Layout.
 
-`*DbInteropTest.*Crs*` prüft Schema- und Modellstandards, Koordinatendomänen
-und Stützpunktdomänen. `*DbInteropTest.*MixedSrid*` prüft mehrere EPSG-Codes
+`--tests '*CrsDefaultsInteropTest'` prüft Schema- und Modellstandards und
+bündelt Punkte und Geometrien mit `VERTEX`-Domänen. Eigene Fälle prüfen
+den statischen generischen Kontext in XTF 2.4 und die lokale GeoPackage-ID
+gegen den EPSG-Code im Geometrie-Header.
+
+`*DbInteropTest.*MixedSrid*` prüft mehrere EPSG-Codes
 pro Objekt, die Kataloge beider Schemaerzeuger und räumliche Treffer nach
 `update`, `replace` und `delete`. Es prüft auch fehlerhafte Spaltenmetadaten
 und den Rollback eines erst beim zweiten Objekt fehlgeschlagenen Ersatzes.
-`*DbInteropTest.*LocalSrid*` prüft abweichende lokale GeoPackage-SRS-IDs
-und die Ablehnung nicht eindeutiger Katalogzuordnungen.
-
 `*DbInteropTest.*FixedMultiSrs*` prüft EPSG-suffigierte Spalten in beiden
 XTF-Versionen. Die XTF-2.4-Fälle mit `Deferred` im Namen prüfen die Domänenwahl
 pro Basket, die XTF-2.3-Fälle mit `AlternateCrs` das alternative CRS-Modell.

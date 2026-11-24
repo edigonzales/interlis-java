@@ -4,8 +4,6 @@ import guru.interlis.execution.CancellationToken;
 import org.w3c.dom.Element;
 
 import java.math.BigDecimal;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -21,8 +19,10 @@ import static guru.interlis.db.DbTestSupport.cli;
 import static guru.interlis.db.DbTestSupport.execute;
 import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.readDataSection;
-import static guru.interlis.db.DbTestSupport.referenceDatasetFixture;
 import static guru.interlis.db.DbTestSupport.scalar;
+import static guru.interlis.db.CrsFixtures.assertStoredEpsg;
+import static guru.interlis.db.CrsFixtures.assertStoredSrid;
+import static guru.interlis.db.CrsFixtures.field;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -32,192 +32,13 @@ final class CrsCases {
     private final Path work;
     private final int version;
     private final ReferenceTool reference;
+    private final CrsFixtures fixtures;
 
     CrsCases(Path work, int version, ReferenceTool reference) {
         this.work = work;
         this.version = version;
         this.reference = reference;
-    }
-
-    void defaults(TestDatabase db, TestDatabase own, int epsg) throws Exception {
-        String model = "DefaultCrs" + version + "_" + epsg;
-        Path ili = defaultModel(model, epsg);
-        createReference(db, ili, epsg);
-        createOwn(own, model, ili, "--default-epsg", Integer.toString(epsg));
-        assertCatalogs(db, own);
-        defaultExchange(db, model, epsg);
-        defaultExchange(own, model, epsg);
-
-        try (var sql = db.connect()) {
-            execute(sql, "UPDATE " + db.table("t_ili2db_settings")
-                    + " SET setting = '2056' WHERE tag = 'ch.ehi.ili2db.defaultSrsCode'");
-        }
-        Path output = Files.writeString(work.resolve(model + "-bad-catalog.xtf"), "previous output");
-        var failed = cli(db, "export", model, "legacy", output, CancellationToken.none());
-        assertNotEquals(0, failed.code(), failed::diagnostics);
-        assertTrue(failed.diagnostics().contains("Expected an EPSG:2056"), failed::diagnostics);
-        assertTrue(failed.diagnostics().contains("station.location"), failed::diagnostics);
-        assertEquals("previous output", Files.readString(output));
-    }
-
-    void declaredPointCrs(TestDatabase old, TestDatabase own) throws Exception {
-        String model = "DeclaredCrs" + version;
-        String declaration = version == 24 ? "21781" : "4326";
-        String refsys = version == 24 ? " REFSYS \"EPSG:4326\"" : "";
-        Path ili = Files.writeString(work.resolve(model + ".ili"), """
-                INTERLIS 2.%s;
-                !!@ CRS="EPSG:21781"
-                MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
-                  DOMAIN
-                    !!@ CRS="EPSG:%s"
-                    Angles = COORD -180.000 .. 180.000, -90.000 .. 90.000%s;
-                  TOPIC Data =
-                    CLASS Globe =
-                      Location : Angles;
-                    END Globe;
-                    CLASS Marker =
-                      !!@ CRS="EPSG:2056"
-                      Location : COORD 2460000.000 .. 2870000.000, 1045000.000 .. 1310000.000;
-                    END Marker;
-                    CLASS Station =
-                      Location : COORD 460000.000 .. 870000.000, 45000.000 .. 310000.000;
-                    END Station;
-                  END Data;
-                END %s.
-                """.formatted(version % 10, model, declaration, refsys, model));
-        createReference(old, ili, 2056);
-        createOwn(own, model, ili);
-        assertCatalogs(old, own);
-        declaredExchange(old, model);
-        declaredExchange(own, model);
-        try (var sql = old.connect()) {
-            execute(sql, "DELETE FROM " + old.table("t_ili2db_settings")
-                    + " WHERE tag = 'ch.ehi.ili2db.defaultSrsCode'");
-        }
-        Path output = work.resolve(model + "-no-default.xtf");
-        assertCliSuccess(old, "export", model, "legacy", output);
-        assertDeclared(output, "legacy-declared");
-    }
-
-    private void declaredExchange(TestDatabase db, String model) throws Exception {
-        mixedExchange(db, model, "declared", tid ->
-                object(model, "Globe", tid + "-globe", field("Location", point("7.125", "46.375")))
-                + object(model, "Marker", tid + "-marker", field("Location", point("2600001.625", "1200002.125")))
-                + object(model, "Station", tid + "-station", field("Location", point("600100.125", "200200.375"))),
-                this::assertDeclared);
-        try (var sql = db.connect()) {
-            for (String tid : List.of("legacy-declared", "own-declared")) {
-                assertStoredEpsg(db, sql, "globe", "location", tid + "-globe", 4326);
-                assertStoredEpsg(db, sql, "marker", "location", tid + "-marker", 2056);
-                assertStoredEpsg(db, sql, "station", "location", tid + "-station", 21781);
-            }
-        }
-    }
-
-    private void assertDeclared(Path file, String tid) throws Exception {
-        var basket = basket(file, tid);
-        assertEquals(3, children(basket).size());
-        assertPoint(object(basket, tid + "-globe"), "Location", "7.125", "46.375");
-        assertPoint(object(basket, tid + "-marker"), "Location", "2600001.625", "1200002.125");
-        assertPoint(object(basket, tid + "-station"), "Location", "600100.125", "200200.375");
-    }
-
-    void vertexCrs(TestDatabase old, TestDatabase own) throws Exception {
-        String model = "VertexCrs" + version;
-        Path ili = fixture(model);
-        createReference(old, ili, 2056);
-        createOwn(own, model, ili);
-        try (var ref = old.connect(); var sql = own.connect()) {
-            var catalog = DbSchemaCatalog.read(ref, old.postgis(), old.schema());
-            if (!old.postgis()) {
-                catalog = catalog.expectGeoPackageGeometryExtension("route", "trace", "COMPOUNDCURVE")
-                        .expectGeoPackageGeometryExtension("plot", "outline", "CURVEPOLYGON")
-                        .expectGeoPackageGeometryExtension("parcel", "boundary", "CURVEPOLYGON");
-                if (version == 24) catalog = catalog.expectGeoPackageGeometryExtension("network", "routes", "MULTICURVE");
-            }
-            catalog.assertSameAs(DbSchemaCatalog.read(sql, own.postgis(), own.schema()));
-        }
-        vertexExchange(old, model);
-        vertexExchange(own, model);
-    }
-
-    private void vertexExchange(TestDatabase db, String model) throws Exception {
-        String trace = line(point("600100.125", "200100.375", "4.125") + point("600120.250", "200130.625", "-9.375"));
-        String shell = line(point("7", "46") + point("8", "46") + point("8", "47") + point("7", "47") + point("7", "46"));
-        String hole = line(point("7.125", "46.125") + point("7.125", "46.375") + point("7.375", "46.375")
-                + point("7.375", "46.125") + point("7.125", "46.125"));
-        String area = line(point("600300", "200300", "1") + point("600340", "200300", "2")
-                + point("600340", "200340", "3") + point("600300", "200340", "4") + point("600300", "200300", "1"));
-        String second = line(point("600150", "200150", "11") + point("600160", "200180", "12"));
-        mixedExchange(db, model, "vertex", tid -> object(model, "Route", tid + "-route", field("Trace", trace))
-                + object(model, "Plot", tid + "-plot", field("Outline", surface(shell, hole)))
-                + object(model, "Parcel", tid + "-parcel", field("Boundary", surface(area, "")))
-                + (version == 24 ? object(model, "Network", tid + "-network",
-                        field("Routes", "<g:multipolyline>" + trace + second + "</g:multipolyline>")) : ""), this::assertVertex);
-        try (var sql = db.connect()) {
-            for (String tid : List.of("legacy-vertex", "own-vertex")) {
-                assertStoredEpsg(db, sql, "route", "trace", tid + "-route", 21781);
-                assertStoredEpsg(db, sql, "plot", "outline", tid + "-plot", 4326);
-                assertStoredEpsg(db, sql, "parcel", "boundary", tid + "-parcel", 21781);
-                if (version == 24) assertStoredEpsg(db, sql, "network", "routes", tid + "-network", 21781);
-            }
-        }
-    }
-
-    private void assertVertex(Path file, String tid) throws Exception {
-        var basket = basket(file, tid);
-        assertEquals(version == 24 ? 4 : 3, children(basket).size());
-        assertOrdinates(child(object(basket, tid + "-route"), "Trace"), 3, "4.125", "-9.375");
-        assertOrdinates(child(object(basket, tid + "-plot"), "Outline"), 1,
-                "7", "8", "8", "7", "7", "7.125", "7.125", "7.375", "7.375", "7.125");
-        assertOrdinates(child(object(basket, tid + "-parcel"), "Boundary"), 3, "1", "2", "3", "4", "1");
-        if (version == 24) {
-            var routes = child(object(basket, tid + "-network"), "Routes");
-            assertOrdinates(routes, 3, "4.125", "-9.375", "11", "12");
-            assertEquals(2, children(children(routes).getFirst()).size());
-        }
-    }
-
-    private void assertOrdinates(Element field, int axis, String... values) {
-        var found = field.getElementsByTagNameNS("*", (version == 23 ? "C" : "c") + axis);
-        assertEquals(values.length, found.getLength(), field.getTagName());
-        for (int i = 0; i < values.length; i++) {
-            assertEquals(0, new BigDecimal(values[i]).compareTo(new BigDecimal(found.item(i).getTextContent())));
-        }
-    }
-
-    void modelOverride(TestDatabase db) throws Exception {
-        String model = "OverrideCrs" + version;
-        Path ili = Files.writeString(work.resolve(model + ".ili"), """
-                INTERLIS 2.%s;
-                !!@ CRS="EPSG:2056"
-                MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
-                  TOPIC Data =
-                    CLASS Station =
-                      Location : COORD 460000.000 .. 870000.000, 45000.000 .. 310000.000;
-                    END Station;
-                    CLASS Globe =
-                      !!@ CRS="EPSG:4326"
-                      Location : COORD -180.000 .. 180.000, -90.000 .. 90.000;
-                    END Globe;
-                  END Data;
-                END %s.
-                """.formatted(version % 10, model, model));
-        createReference(db, ili, 2056, "--modelSrsCode", model + "=21781");
-        mixedExchange(db, model, "override", tid ->
-                object(model, "Station", tid + "-station", field("Location", point("600100.125", "200200.375")))
-                + object(model, "Globe", tid + "-globe", field("Location", point("7.125", "46.375"))),
-                (output, tid) -> {
-                    var basket = basket(output, tid);
-                    assertPoint(object(basket, tid + "-station"), "Location", "600100.125", "200200.375");
-                    assertPoint(object(basket, tid + "-globe"), "Location", "7.125", "46.375");
-                });
-        try (var sql = db.connect()) {
-            for (String tid : List.of("legacy-override", "own-override")) {
-                assertStoredEpsg(db, sql, "station", "location", tid + "-station", 21781);
-                assertStoredEpsg(db, sql, "globe", "location", tid + "-globe", 4326);
-            }
-        }
+        fixtures = new CrsFixtures(work, version);
     }
 
     void mutateDeferred(TestDatabase db) throws Exception {
@@ -248,7 +69,7 @@ final class CrsCases {
             assertHits(db, sql, "station", "location_2056", "2600100.625", "1200002.125", 2056, 1);
             Path output = work.resolve("domains-updated.xtf");
             reference.run(db, work.toString(), "--export", "--dataset", "main", "--exportTid", output.toString());
-            assertPoint(object(basket(output, "current-main"), "current-main"), "Location", "2600100.625", "1200002.125");
+            CrsFixtures.assertPoint(fixtures.object(fixtures.basket(output, "current-main"), "current-main"), "Location", "2600100.625", "1200002.125");
 
             var rejected = cli(db, "update", model, "main", switched, CancellationToken.none());
             assertNotEquals(0, rejected.code(), rejected::diagnostics);
@@ -267,9 +88,9 @@ final class CrsCases {
             assertHits(db, sql, oldTable, "location_21781", "620000.125", "220000.375", 21781, 1);
             output = work.resolve("domains-replaced.xtf");
             reference.run(db, work.toString(), "--export", "--dataset", "main", "--exportTid", output.toString());
-            var switchedBasket = basket(output, "current-main");
+            var switchedBasket = fixtures.basket(output, "current-main");
             assertEquals(model + ".Grid=" + model + ".OldGrid", id(switchedBasket, version, "domains"));
-            assertPoint(object(switchedBasket, "current-main"), "Location", "620000.125", "220000.375");
+            CrsFixtures.assertPoint(fixtures.object(switchedBasket, "current-main"), "Location", "620000.125", "220000.375");
 
             assertCliSuccess(db, "delete", model, "main", null);
             assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
@@ -282,7 +103,7 @@ final class CrsCases {
 
     void deferredMulti(TestDatabase legacy, TestDatabase nativeDb) throws Exception {
         String model = "DeferredMulti24";
-        Path ili = fixture(model);
+        Path ili = fixtures.fixture(model);
         createReference(legacy, ili, 2056, "--multiSrs");
         createOwn(nativeDb, model, ili, "--multi-srs");
         for (var db : List.of(legacy, nativeDb)) {
@@ -329,24 +150,24 @@ final class CrsCases {
     }
 
     private String multiObjects(String model, String tid, int x, int y, int pointX, int pointY) {
-        String lines = line(xyz(x, y, 1) + xyz(x + 20, y + 10, 2))
-                + line(xyz(x + 50, y + 50, 3) + xyz(x + 70, y + 80, 4));
+        String lines = fixtures.line(xyz(x, y, 1) + xyz(x + 20, y + 10, 2))
+                + fixtures.line(xyz(x + 50, y + 50, 3) + xyz(x + 70, y + 80, 4));
         String surfaces = face3d(x + 100, y + 100) + face3d(x + 150, y + 150);
         String areas = face3d(x + 200, y + 200) + face3d(x + 250, y + 250);
         String points = xyz(pointX + 10, pointY + 10, 5) + xyz(pointX + 20, pointY + 20, 6);
-        return object(model, "Network", "network-" + tid, field("Routes", field("g:multipolyline", lines)))
-                + object(model, "Park", "park-" + tid, field("Coverage", field("g:multisurface", surfaces)))
-                + object(model, "District", "district-" + tid, field("Boundary", field("g:multisurface", areas)))
-                + object(model, "Survey", "survey-" + tid, field("Sites", field("g:multicoord", points)));
+        return fixtures.object(model, "Network", "network-" + tid, field("Routes", field("g:multipolyline", lines)))
+                + fixtures.object(model, "Park", "park-" + tid, field("Coverage", field("g:multisurface", surfaces)))
+                + fixtures.object(model, "District", "district-" + tid, field("Boundary", field("g:multisurface", areas)))
+                + fixtures.object(model, "Survey", "survey-" + tid, field("Sites", field("g:multicoord", points)));
     }
 
     private String face3d(int x, int y) {
-        return surface(line(xyz(x, y, 1) + xyz(x + 20, y, 2) + xyz(x + 20, y + 20, 3)
+        return fixtures.surface(fixtures.line(xyz(x, y, 1) + xyz(x + 20, y, 2) + xyz(x + 20, y + 20, 3)
                 + xyz(x, y + 20, 4) + xyz(x, y, 1)), "");
     }
 
     private String xyz(int x, int y, int z) {
-        return point(Integer.toString(x), Integer.toString(y), Integer.toString(z));
+        return fixtures.point(Integer.toString(x), Integer.toString(y), Integer.toString(z));
     }
 
     private void assertMulti(Path output, String suffix) throws Exception {
@@ -355,22 +176,22 @@ final class CrsCases {
             String tid = type + "-" + suffix;
             var basket = baskets.stream().filter(b -> ("basket-" + tid).equals(id(b, version, "bid"))).findFirst().orElseThrow();
             assertTrue(id(basket, version, "domains").contains(type.equals("current") ? ".OldPoints" : ".CurrentPoints"));
-            assertOrdinates(child(object(basket, "network-" + tid), "Routes"), 3, "1", "2", "3", "4");
+            fixtures.assertOrdinates(child(fixtures.object(basket, "network-" + tid), "Routes"), 3, "1", "2", "3", "4");
             for (String key : List.of("park-" + tid, "district-" + tid)) {
-                var value = children(object(basket, key)).getFirst();
+                var value = children(fixtures.object(basket, key)).getFirst();
                 assertEquals(2, value.getElementsByTagNameNS("*", "surface").getLength());
-                assertOrdinates(value, 3, "1", "2", "3", "4", "1", "1", "2", "3", "4", "1");
+                fixtures.assertOrdinates(value, 3, "1", "2", "3", "4", "1", "1", "2", "3", "4", "1");
             }
-            var sites = child(object(basket, "survey-" + tid), "Sites");
-            assertOrdinates(sites, 3, "5", "6");
-            assertOrdinates(sites, 1, type.equals("current") ? "600010" : "2600010",
+            var sites = child(fixtures.object(basket, "survey-" + tid), "Sites");
+            fixtures.assertOrdinates(sites, 3, "5", "6");
+            fixtures.assertOrdinates(sites, 1, type.equals("current") ? "600010" : "2600010",
                     type.equals("current") ? "600020" : "2600020");
         }
     }
 
     void deferredCurves(TestDatabase legacy, TestDatabase nativeDb) throws Exception {
         String model = "DeferredCurves24";
-        Path ili = fixture(model);
+        Path ili = fixtures.fixture(model);
         createReference(legacy, ili, 2056, "--multiSrs");
         createOwn(nativeDb, model, ili, "--multi-srs");
         try (var ref = legacy.connect(); var own = nativeDb.connect()) {
@@ -411,12 +232,12 @@ final class CrsCases {
     private String curveObjects(String model, String tid, int x, int y) {
         String arc = "<g:arc>" + field("g:c1", Integer.toString(x + 20)) + field("g:c2", Integer.toString(y))
                 + field("g:a1", Integer.toString(x + 10)) + field("g:a2", Integer.toString(y + 10)) + "</g:arc>";
-        String trace = line(xy(x, y) + arc + xy(x + 30, y));
+        String trace = fixtures.line(xy(x, y) + arc + xy(x + 30, y));
         String shell = ring(x + 100, y + 100, 30, false);
         String hole = ring(x + 110, y + 110, 10, true);
-        return object(model, "Route", "route-" + tid, field("Trace", trace))
-                + object(model, "Plot", "plot-" + tid, field("Outline", surface(shell, hole)))
-                + object(model, "Parcel", "parcel-" + tid, field("Boundary", surface(ring(x + 200, y + 200, 20, false), "")));
+        return fixtures.object(model, "Route", "route-" + tid, field("Trace", trace))
+                + fixtures.object(model, "Plot", "plot-" + tid, field("Outline", fixtures.surface(shell, hole)))
+                + fixtures.object(model, "Parcel", "parcel-" + tid, field("Boundary", fixtures.surface(ring(x + 200, y + 200, 20, false), "")));
     }
 
     private String ring(int x, int y, int span, boolean interior) {
@@ -424,11 +245,11 @@ final class CrsCases {
         String b = xy(x + span, y);
         String c = xy(x + span, y + span);
         String d = xy(x, y + span);
-        return line(a + (interior ? d + c + b : b + c + d) + a);
+        return fixtures.line(a + (interior ? d + c + b : b + c + d) + a);
     }
 
     private String xy(int x, int y) {
-        return point(Integer.toString(x), Integer.toString(y));
+        return fixtures.point(Integer.toString(x), Integer.toString(y));
     }
 
     private void assertCurves(Path output, String current, String old) throws Exception {
@@ -437,15 +258,15 @@ final class CrsCases {
             var basket = baskets.stream().filter(b -> children(b).stream()
                     .anyMatch(o -> ("route-" + tid).equals(id(o, version, "tid")))).findFirst().orElseThrow();
             int offset = tid.equals(current) ? 2600000 : 600000;
-            var trace = child(object(basket, "route-" + tid), "Trace");
-            assertOrdinates(trace, 1, Integer.toString(offset), Integer.toString(offset + 20), Integer.toString(offset + 30));
+            var trace = child(fixtures.object(basket, "route-" + tid), "Trace");
+            fixtures.assertOrdinates(trace, 1, Integer.toString(offset), Integer.toString(offset + 20), Integer.toString(offset + 30));
             var controls = trace.getElementsByTagNameNS("*", "a1");
             assertEquals(1, controls.getLength());
             assertEquals(0, BigDecimal.valueOf(offset + 10).compareTo(new BigDecimal(controls.item(0).getTextContent())));
-            var outline = child(object(basket, "plot-" + tid), "Outline");
+            var outline = child(fixtures.object(basket, "plot-" + tid), "Outline");
             assertEquals(1, outline.getElementsByTagNameNS("*", "interior").getLength());
             assertEquals(10, outline.getElementsByTagNameNS("*", "c1").getLength());
-            assertEquals(5, child(object(basket, "parcel-" + tid), "Boundary").getElementsByTagNameNS("*", "c1").getLength());
+            assertEquals(5, child(fixtures.object(basket, "parcel-" + tid), "Boundary").getElementsByTagNameNS("*", "c1").getLength());
         }
     }
 
@@ -572,8 +393,8 @@ final class CrsCases {
 
     private Path deferredDelivery(String model, String suffix) throws Exception {
         return deferredDelivery(model, suffix,
-                object(model, "Station", "current-" + suffix, field("Location", point("2600001.625", "1200002.125"))),
-                object(model, "Station", "old-" + suffix, field("Location", point("600100.125", "200200.375"))));
+                fixtures.object(model, "Station", "current-" + suffix, field("Location", fixtures.point("2600001.625", "1200002.125"))),
+                fixtures.object(model, "Station", "old-" + suffix, field("Location", fixtures.point("600100.125", "200200.375"))));
     }
 
     private Path deferredDelivery(String model, String suffix, String current, String old) throws Exception {
@@ -599,57 +420,16 @@ final class CrsCases {
             assertEquals(model + ".Grid=" + model + (type.equals("current") ? ".CurrentGrid" : ".OldGrid"),
                     id(basket, version, "domains"));
             switch (type) {
-                case "current" -> assertPoint(object(basket, bid), "Location", "2600001.625", "1200002.125");
-                case "old" -> assertPoint(object(basket, bid), "Location", "600100.125", "200200.375");
+                case "current" -> CrsFixtures.assertPoint(fixtures.object(basket, bid), "Location", "2600001.625", "1200002.125");
+                case "old" -> CrsFixtures.assertPoint(fixtures.object(basket, bid), "Location", "600100.125", "200200.375");
                 case "empty" -> assertTrue(children(basket).isEmpty());
             }
         }
     }
 
-    void staticGeneric(TestDatabase old, TestDatabase own) throws Exception {
-        String model = "StaticCrs24";
-        String x = "600100.125";
-        String y = "200200.375";
-        String selection = model + ".Grid=" + model + ".LocalGrid";
-        Path ili = Files.writeString(work.resolve(model + ".ili"), """
-                INTERLIS 2.4;
-                MODEL StaticCrs24 (en) AT "https://example.org/interlis/db" VERSION "1" =
-                  DOMAIN
-                    Grid (GENERIC) = COORD NUMERIC, NUMERIC;
-                    LocalGrid EXTENDS Grid = COORD 460000.000 .. 870000.000, 45000.000 .. 310000.000 REFSYS "EPSG:21781";
-                  CONTEXT fixed = Grid = LocalGrid;
-                  TOPIC Data =
-                    CLASS Station =
-                      Location : Grid;
-                    END Station;
-                  END Data;
-                END StaticCrs24.
-                """);
-        createReference(old, ili, 2056);
-        createOwn(own, model, ili);
-        assertCatalogs(old, own);
-        for (var db : List.of(old, own)) {
-            mixedExchange(db, model, "static", tid -> object(model, "Station", tid, field("Location", point(x, y))),
-                    (output, tid) -> assertPoint(output, tid, "Location", x, y));
-            Path output = work.resolve(db.schema() + "-explicit.xtf");
-            assertCliSuccess(db, "export", model, "own", output);
-            assertEquals(selection, id(basket(output, "own-static"), version, "domains"));
-            try (var sql = db.connect()) {
-                assertStoredEpsg(db, sql, "station", "location", "own-static", 21781);
-            }
-            assertCliSuccess(db, "import", model, "explicit", output);
-
-            String content = Files.readString(output);
-            Files.writeString(output, content.replace(selection, model + ".Grid=" + model + ".Grid"));
-            var invalid = cli(db, "import", model, "invalid", output, CancellationToken.none());
-            assertNotEquals(0, invalid.code(), invalid::diagnostics);
-            assertTrue(invalid.diagnostics().contains("permitted assignments"), invalid::diagnostics);
-        }
-    }
-
     void fixedMultiSrs(TestDatabase old, TestDatabase own, boolean split) throws Exception {
         String model = "MixedSrid" + version;
-        Path ili = fixture(model);
+        Path ili = fixtures.fixture(model);
         var referenceFlags = new ArrayList<>(List.of("--multiSrs"));
         var nativeFlags = new ArrayList<>(List.of("--multi-srs"));
         if (split && old.postgis()) {
@@ -678,12 +458,12 @@ final class CrsCases {
         }
         Path renamed = work.resolve(old.schema() + "-renamed.xtf");
         assertCliSuccess(old, "export", model, "legacy", renamed);
-        assertMixed(object(basket(renamed, "legacy-mixed"), "legacy-mixed"), "2600001.625", true);
+        assertMixed(fixtures.object(fixtures.basket(renamed, "legacy-mixed"), "legacy-mixed"), "2600001.625", true);
     }
 
     void mixedSrid(TestDatabase old, TestDatabase own, boolean split) throws Exception {
         String model = "MixedSrid" + version;
-        Path ili = fixture(model);
+        Path ili = fixtures.fixture(model);
         if (split && old.postgis()) {
             createReference(old, ili, 2056, "--oneGeomPerTable", "--createGeomIdx");
             createOwn(own, model, ili, "--one-geom-per-table", "--create-geom-index");
@@ -729,9 +509,9 @@ final class CrsCases {
         String centerX = "2600001.625";
         String updatedX = "2600800.125";
         String replacementX = "2600900.125";
-        Path updated = delivery(model, "basket-own-mixed", mixedObject(model, "own-mixed", updatedX, false));
-        Path replacement = delivery(model, "replacement-srid", mixedObject(model, "replaced", replacementX, true));
-        Path invalid = delivery(model, "rollback-srid", mixedObject(model, "rolled-back", replacementX, true)
+        Path updated = fixtures.delivery(model, "basket-own-mixed", mixedObject(model, "own-mixed", updatedX, false));
+        Path replacement = fixtures.delivery(model, "replacement-srid", mixedObject(model, "replaced", replacementX, true));
+        Path invalid = fixtures.delivery(model, "rollback-srid", mixedObject(model, "rolled-back", replacementX, true)
                 + mixedObject(model, "wrong-srid", updatedX, true));
         Path output = work.resolve(db.schema() + "-updated-srid.xtf");
         try (var sql = db.connect()) {
@@ -753,7 +533,7 @@ final class CrsCases {
             assertHits(db, sql, geoTable, "geoposition", "7.125", "46.375", 4326, 2);
             Files.delete(output);
             reference.run(db, work.toString(), "--export", "--dataset", "own", "--exportTid", output.toString());
-            assertMixed(object(basket(output, "own-mixed"), "own-mixed"), updatedX, false);
+            assertMixed(fixtures.object(fixtures.basket(output, "own-mixed"), "own-mixed"), updatedX, false);
 
             // Only the second new object fails the database check, after the first was written.
             if (db.postgis()) {
@@ -847,7 +627,7 @@ final class CrsCases {
 
     private void mixedObjectExchange(TestDatabase db, String model, boolean split, boolean multiSrs) throws Exception {
         mixedExchange(db, model, "mixed", tid -> mixedObject(model, tid, "2600001.625", true),
-                (output, tid) -> assertMixed(object(basket(output, tid), tid), "2600001.625", true));
+                (output, tid) -> assertMixed(fixtures.object(fixtures.basket(output, tid), tid), "2600001.625", true));
         try (var sql = db.connect()) {
             for (String tid : List.of("legacy-mixed", "own-mixed")) {
                 assertStoredEpsg(db, sql, "asset", multiSrs ? "center_2056" : "center", tid, 2056);
@@ -864,99 +644,20 @@ final class CrsCases {
     }
 
     private String mixedObject(String model, String tid, String centerX, boolean withOld) {
-        return object(model, "Asset", tid, field("Center", point(centerX, "1200002.125"))
-                + (withOld ? field("OldPosition", point("600100.125", "200200.375")) : "")
-                + field("GeoPosition", point("7.125", "46.375")));
+        return fixtures.object(model, "Asset", tid, field("Center", fixtures.point(centerX, "1200002.125"))
+                + (withOld ? field("OldPosition", fixtures.point("600100.125", "200200.375")) : "")
+                + field("GeoPosition", fixtures.point("7.125", "46.375")));
     }
 
     private static void assertMixed(Element object, String centerX, boolean withOld) {
-        assertPoint(object, "Center", centerX, "1200002.125");
-        if (withOld) assertPoint(object, "OldPosition", "600100.125", "200200.375");
+        CrsFixtures.assertPoint(object, "Center", centerX, "1200002.125");
+        if (withOld) CrsFixtures.assertPoint(object, "OldPosition", "600100.125", "200200.375");
         else assertNull(child(object, "OldPosition"));
-        assertPoint(object, "GeoPosition", "7.125", "46.375");
+        CrsFixtures.assertPoint(object, "GeoPosition", "7.125", "46.375");
     }
 
-    void rejectMissingDefault(TestDatabase db) throws Exception {
-        String model = "MissingCrs" + version;
-        Path ili = defaultModel(model, 4326);
-        var result = schemaWithIdentityColumns(db, model, ili, CancellationToken.none(), "--default-epsg", "999999");
-        assertNotEquals(0, result.code(), result::diagnostics);
-        assertTrue(result.diagnostics().contains("missing the EPSG:999999 SRS"), result::diagnostics);
-        assertMissingTarget(db);
-    }
-
-    void localSrid(TestDatabase db) throws Exception {
-        String model = "LocalSrid" + version;
-        String x = "600100.125";
-        String y = "200200.375";
-        createReference(db, defaultModel(model, 21781), 21781);
-        if (!db.postgis()) {
-            try (var sql = db.connect()) {
-                execute(sql, "UPDATE gpkg_spatial_ref_sys SET srs_id=921781 WHERE srs_id=21781");
-                execute(sql, "UPDATE gpkg_geometry_columns SET srs_id=921781 WHERE srs_id=21781");
-                execute(sql, "UPDATE gpkg_contents SET srs_id=921781 WHERE srs_id=21781");
-            }
-        }
-        mixedExchange(db, model, "local", tid -> object(model, "Station", tid, field("Location", point(x, y))),
-                (output, tid) -> assertPoint(output, tid, "Location", x, y));
-
-        try (var sql = db.connect()) {
-            assertStoredEpsg(db, sql, "station", "location", "legacy-local", 21781);
-            assertStoredEpsg(db, sql, "station", "location", "own-local", db.postgis() ? 21781 : 921781);
-            if (db.postgis()) {
-                execute(sql, "UPDATE spatial_ref_sys SET srid=921781 WHERE srid=21781");
-            } else {
-                execute(sql, """
-                        INSERT INTO gpkg_spatial_ref_sys (srs_name, srs_id, organization, organization_coordsys_id, definition)
-                        SELECT srs_name, 21781, organization, organization_coordsys_id, definition
-                        FROM gpkg_spatial_ref_sys WHERE srs_id=4326
-                        """);
-            }
-        }
-        Path output = Files.writeString(work.resolve("ambiguous-local-srid.xtf"), "previous output");
-        var failure = cli(db, "export", model, "legacy", output, CancellationToken.none());
-        assertNotEquals(0, failure.code(), failure::diagnostics);
-        String message = db.postgis() ? "Expected an EPSG:21781" : "SRS differs from its geometry column";
-        assertTrue(failure.diagnostics().contains(message), failure::diagnostics);
-        assertEquals("previous output", Files.readString(output));
-        if (!db.postgis()) {
-            assertCliSuccess(db, "export", model, "own", output);
-            assertPoint(output, "own-local", "Location", x, y);
-        }
-    }
-
-    private Path fixture(String model) throws Exception {
-        Path ili = work.resolve(model + ".ili");
-        if (Files.notExists(ili)) {
-            try (var resource = getClass().getResourceAsStream("/" + ili.getFileName())) {
-                Files.copy(resource, ili);
-            }
-        }
-        return ili;
-    }
-
-    private Path defaultModel(String model, int epsg) throws Exception {
-        String ranges = epsg == 21781 ? "460000.000 .. 870000.000, 45000.000 .. 310000.000"
-                : "-180.000 .. 180.000, -90.000 .. 90.000";
-        return Files.writeString(work.resolve(model + ".ili"), """
-                INTERLIS 2.%s;
-                MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
-                  TOPIC Data =
-                    CLASS Station =
-                      Location : COORD %s;
-                    END Station;
-                  END Data;
-                END %s.
-                """.formatted(version % 10, model, ranges, model));
-    }
-
-    private void createReference(TestDatabase db, Path ili, Integer epsg, String... extra) throws Exception {
-        var args = new ArrayList<>(List.of("--schemaimport", "--noSmartMapping", "--createBasketCol", "--createTidCol",
-                "--sqlEnableNull", "--defaultSrsAuth", "EPSG"));
-        if (epsg != null) args.addAll(List.of("--defaultSrsCode", epsg.toString()));
-        args.addAll(List.of(extra));
-        args.add(ili.toString());
-        reference.run(db, work.toString(), args.toArray(String[]::new));
+    private void createReference(TestDatabase db, Path ili, int epsg, String... extra) throws Exception {
+        CrsInteropSupport.createReference(reference, db, work, ili, epsg, extra);
     }
 
     private void createOwn(TestDatabase db, String model, Path ili, String... options) {
@@ -965,22 +666,7 @@ final class CrsCases {
     }
 
     private static void assertCatalogs(TestDatabase old, TestDatabase own) throws Exception {
-        try (var ref = old.connect(); var sql = own.connect()) {
-            DbSchemaCatalog.read(ref, old.postgis(), old.schema())
-                    .assertSameAs(DbSchemaCatalog.read(sql, own.postgis(), own.schema()));
-        }
-    }
-
-    private void defaultExchange(TestDatabase db, String model, int epsg) throws Exception {
-        String x = epsg == 21781 ? "600100.125" : "7.125";
-        String y = epsg == 21781 ? "200200.375" : "46.375";
-        mixedExchange(db, model, "default", (tid) ->
-                object(model, "Station", tid, field("Location", point(x, y))), (output, tid) ->
-                assertPoint(output, tid, "Location", x, y));
-        try (var sql = db.connect()) {
-            assertStoredEpsg(db, sql, "station", "location", "legacy-default", epsg);
-            assertStoredEpsg(db, sql, "station", "location", "own-default", epsg);
-        }
+        CrsInteropSupport.assertCatalogs(old, own);
     }
 
     @FunctionalInterface
@@ -997,91 +683,17 @@ final class CrsCases {
                                ExportAssertion assertion) throws Exception {
         String legacy = "legacy-" + part;
         String own = "own-" + part;
-        Path input = delivery(model, "basket-" + legacy, object.xml(legacy));
+        Path input = fixtures.delivery(model, "basket-" + legacy, object.xml(legacy));
         reference.run(db, work.toString(), "--import", "--dataset", "legacy", "--importTid", "--importBid", input.toString());
         Path output = work.resolve(db.schema() + "-native.xtf");
         assertCliSuccess(db, "export", model, "legacy", output);
         assertion.verify(output, legacy);
 
-        input = delivery(model, "basket-" + own, object.xml(own));
+        input = fixtures.delivery(model, "basket-" + own, object.xml(own));
         assertCliSuccess(db, "import", model, "own", input);
         output = work.resolve(db.schema() + "-reference.xtf");
         reference.run(db, work.toString(), "--export", "--dataset", "own", "--exportTid", output.toString());
         assertion.verify(output, own);
     }
 
-    private void assertStoredEpsg(TestDatabase db, Connection sql, String table, String field, String tid, int epsg)
-            throws Exception {
-        String query = " FROM " + db.table(table) + " WHERE t_ili_tid = '" + tid + "'";
-        assertStoredSrid(db, sql, query, field, epsg);
-    }
-
-    private static void assertStoredSrid(TestDatabase db, Connection sql, String query, String field, int srid)
-            throws Exception {
-        if (db.postgis()) {
-            assertEquals(Integer.toString(srid), scalar(sql, "SELECT ST_SRID(" + field + ")" + query));
-        } else {
-            try (var stmt = sql.createStatement(); var rows = stmt.executeQuery("SELECT " + field + query)) {
-                assertTrue(rows.next());
-                byte[] blob = rows.getBytes(1);
-                var order = (blob[3] & 1) == 0 ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
-                assertEquals(srid, ByteBuffer.wrap(blob).order(order).getInt(4));
-            }
-        }
-    }
-
-    private Path delivery(String model, String bid, String objects) throws Exception {
-        String text = referenceDatasetFixture(model, version, bid, objects);
-        if (version == 24) text = text.replace("<i:transfer ", "<i:transfer xmlns:g=\"http://www.interlis.ch/geometry/1.0\" ");
-        return Files.writeString(work.resolve(model + "-" + bid + ".xtf"), text);
-    }
-
-    private String object(String model, String type, String tid, String values) {
-        return version == 23 ? "<%1$s.Data.%2$s TID=\"%3$s\">%4$s</%1$s.Data.%2$s>".formatted(model, type, tid, values)
-                : "<%1$s i:tid=\"%2$s\">%3$s</%1$s>".formatted(type, tid, values);
-    }
-
-    private String point(String... coordinates) {
-        var body = new StringBuilder();
-        for (int axis = 0; axis < coordinates.length; axis++) {
-            body.append(field((version == 23 ? "C" : "g:c") + (axis + 1), coordinates[axis]));
-        }
-        return field(version == 23 ? "COORD" : "g:coord", body.toString());
-    }
-
-    private String line(String positions) {
-        return field(version == 23 ? "POLYLINE" : "g:polyline", positions);
-    }
-
-    private String surface(String shell, String hole) {
-        if (version == 23) {
-            return field("SURFACE", field("BOUNDARY", shell) + (hole.isEmpty() ? "" : field("BOUNDARY", hole)));
-        }
-        return field("g:surface", field("g:exterior", shell) + (hole.isEmpty() ? "" : field("g:interior", hole)));
-    }
-
-    private static String field(String name, String value) {
-        return "<" + name + ">" + value + "</" + name + ">";
-    }
-
-    private Element basket(Path output, String tid) throws Exception {
-        var basket = children(readDataSection(output, version)).getFirst();
-        assertEquals("basket-" + tid, id(basket, version, "bid"));
-        return basket;
-    }
-
-    private Element object(Element basket, String tid) {
-        return children(basket).stream().filter(object -> id(object, version, "tid").equals(tid))
-                .findFirst().orElseThrow();
-    }
-
-    private void assertPoint(Path output, String tid, String field, String x, String y) throws Exception {
-        assertPoint(object(basket(output, tid), tid), field, x, y);
-    }
-
-    private static void assertPoint(Element object, String field, String x, String y) {
-        var position = children(children(child(object, field)).getFirst());
-        assertEquals(0, new BigDecimal(x).compareTo(new BigDecimal(position.get(0).getTextContent())));
-        assertEquals(0, new BigDecimal(y).compareTo(new BigDecimal(position.get(1).getTextContent())));
-    }
 }

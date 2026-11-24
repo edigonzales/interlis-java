@@ -694,25 +694,6 @@ final class DbInteropTest {
                 new TestDatabase(work, postgres, "alternate_hierarchy_own"), postgres != null);
     }
 
-    @Test void geoPackageCrs23() throws Exception { exchangeCrs(23, null); }
-    @Test void geoPackageCrs24() throws Exception { exchangeCrs(24, null); }
-    @Test void postgisCrs23() throws Exception { exchangeWithPostgis(23, this::exchangeCrs); }
-    @Test void postgisCrs24() throws Exception { exchangeWithPostgis(24, this::exchangeCrs); }
-
-    private void exchangeCrs(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new CrsCases(work, version, new ReferenceTool(work, postgres != null));
-        for (int epsg : List.of(21781, 4326)) {
-            cases.defaults(new TestDatabase(work, postgres, "crs_reference_" + epsg),
-                    new TestDatabase(work, postgres, "crs_own_" + epsg), epsg);
-        }
-        cases.rejectMissingDefault(new TestDatabase(work, postgres, "crs_missing"));
-        cases.declaredPointCrs(new TestDatabase(work, postgres, "declared_crs_reference"),
-                new TestDatabase(work, postgres, "declared_crs_own"));
-        cases.vertexCrs(new TestDatabase(work, postgres, "vertex_crs_reference"),
-                new TestDatabase(work, postgres, "vertex_crs_own"));
-        cases.modelOverride(new TestDatabase(work, postgres, "model_crs_reference"));
-    }
-
     @Test void geoPackageMixedSrid23() throws Exception { exchangeMixedSrid(23, null); }
     @Test void geoPackageMixedSrid24() throws Exception { exchangeMixedSrid(24, null); }
     @Test void postgisMixedSrid23() throws Exception { exchangeWithPostgis(23, this::exchangeMixedSrid); }
@@ -798,15 +779,6 @@ final class DbInteropTest {
         cases.exportDeferred(new TestDatabase(work, postgres, "deferred_reference"));
     }
 
-    @Test void geoPackageStaticGeneric24() throws Exception { exchangeStaticGeneric(24, null); }
-    @Test void postgisStaticGeneric24() throws Exception { exchangeWithPostgis(24, this::exchangeStaticGeneric); }
-
-    private void exchangeStaticGeneric(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new CrsCases(work, version, new ReferenceTool(work, postgres != null));
-        cases.staticGeneric(new TestDatabase(work, postgres, "static_crs_reference"),
-                new TestDatabase(work, postgres, "static_crs_own"));
-    }
-
     @Test void geoPackageFixedMultiSrs23() throws Exception { exchangeFixedMultiSrs(23, null); }
     @Test void geoPackageFixedMultiSrs24() throws Exception { exchangeFixedMultiSrs(24, null); }
     @Test void postgisFixedMultiSrs23() throws Exception { exchangeWithPostgis(23, this::exchangeFixedMultiSrs); }
@@ -818,16 +790,6 @@ final class DbInteropTest {
                 new TestDatabase(work, postgres, "suffix_split_own"), true);
         cases.fixedMultiSrs(new TestDatabase(work, postgres, "suffix_wide_reference"),
                 new TestDatabase(work, postgres, "suffix_wide_own"), false);
-    }
-
-    @Test void geoPackageLocalSrid23() throws Exception { exchangeLocalSrid(23, null); }
-    @Test void geoPackageLocalSrid24() throws Exception { exchangeLocalSrid(24, null); }
-    @Test void postgisLocalSrid23() throws Exception { exchangeWithPostgis(23, this::exchangeLocalSrid); }
-    @Test void postgisLocalSrid24() throws Exception { exchangeWithPostgis(24, this::exchangeLocalSrid); }
-
-    private void exchangeLocalSrid(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new CrsCases(work, version, new ReferenceTool(work, postgres != null));
-        cases.localSrid(new TestDatabase(work, postgres, "local_srid"));
     }
 
     private void exchangeTranslationSources(int version, PostgreSQLContainer postgres) throws Exception {
