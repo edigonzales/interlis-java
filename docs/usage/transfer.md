@@ -266,6 +266,8 @@ unterstützt gebundene Referenz- und Assoziationspfade, abgeleitete Werte,
 nichtgeometrische Standardfunktionen und explizite Hostbindungen.
 `SET` kann kontextgebundenes und explizites `ALL` zählen.
 Prozentbedingungen verwenden einen exakten Vergleich.
+Bei `EXISTENCE`-Pfaden durch Struktursammlungen bleibt die Prüfung
+vorhandener Sammlungseinträge als ungeklärt ausgewiesen.
 
 Bei vollständigen Transfers muss ein obligatorisches, nichttransientes
 Attribut auch dann geliefert werden, wenn es berechenbar ist. Der Validator

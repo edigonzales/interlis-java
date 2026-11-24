@@ -838,6 +838,13 @@ ConstraintSymbol bewahrt den tatsächlichen Namen und seinen Quellbereich,
 auch für CONSTRAINTS OF. Struktur-, Assoziations- und Viewkörper verwenden
 dieselbe direkte Namensprüfung wie Klassen.
 
+Bei `EXISTENCE` in INTERLIS 2.4 können Quell- und Zielpfad durch eine
+Struktursammlung wie `Entries->Code` führen. Der Compiler bindet die
+effektiven Attribute bis zum Endwert und prüft dessen Typkompatibilität.
+Bei gewöhnlichen Wertpfaden und `UNIQUE` gelten die bisherigen
+Kardinalitätsregeln. Grundlage ist die Bestandskompatibilität mit der
+[CHBase-Existenzbedingung](norm-decisions.md#decision-39).
+
 <a id="numerische-unterteilungen-und-exakte-faktorbedingungen"></a>
 ## numerische Unterteilungen und exakte Faktorbedingungen
 

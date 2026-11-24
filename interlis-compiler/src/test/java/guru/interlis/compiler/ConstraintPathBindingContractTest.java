@@ -142,6 +142,36 @@ class ConstraintPathBindingContractTest {
         }
     }
 
+    @Test void existenceBindsTheNarrowedElementOfAnInheritedStructureList() {
+        var body = """
+                TOPIC Catalogue =
+                  CLASS Country = Code: MANDATORY TEXT*2; END Country;
+                END Catalogue;
+                TOPIC Names =
+                  DEPENDS ON Catalogue;
+                  STRUCTURE Entry = END Entry;
+                  STRUCTURE CountryName EXTENDS Entry = Code: MANDATORY TEXT*2; END CountryName;
+                  CLASS Dictionary = Entries: LIST OF Entry; END Dictionary;
+                  CLASS CountryNamesTranslation EXTENDS Dictionary =
+                    Entries (EXTENDED): LIST OF CountryName;
+                    EXISTENCE CONSTRAINT Entries->Code REQUIRED IN M.Catalogue.Country: Code;
+                  END CountryNamesTranslation;
+                END Names;
+                """;
+        var graph = ok("2.4", body).schema().semanticGraph();
+        var existence = assertInstanceOf(ExistenceConstraint.class, constraints(graph).getFirst());
+        var source = path(graph, existence.source());
+        var steps = source.path().steps().stream().map(step -> assertInstanceOf(PathStep.AttributeStep.class, step))
+                .map(step -> graph.symbol(step.target()).orElseThrow()).toList();
+        assertEquals(List.of("Entries", "Code"), steps.stream().map(member -> member.name().value()).toList());
+        assertEquals("CountryNamesTranslation", graph.symbol(steps.getFirst().owner().orElseThrow()).orElseThrow().name().value());
+        assertEquals("CountryName", graph.symbol(steps.getLast().owner().orElseThrow()).orElseThrow().name().value());
+        assertInstanceOf(TextType.class, graph.type(source.typeId()).orElseThrow());
+        bad("2.4", body.replace("Entries->Code", "Entries->Unknown"));
+        bad("2.4", body.replace("EXISTENCE CONSTRAINT Entries->Code REQUIRED IN M.Catalogue.Country: Code;",
+                "MANDATORY CONSTRAINT Entries->Code == \"CH\";"));
+    }
+
     @Test void existenceChecksStructureIdentityAndGeometryCoordinateDirection() {
         for (String version : List.of("2.3", "2.4")) {
             String structures = "TOPIC T = STRUCTURE S = code: TEXT; END S; STRUCTURE R EXTENDS S = END R; "

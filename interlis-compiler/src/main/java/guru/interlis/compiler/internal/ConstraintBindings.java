@@ -150,7 +150,7 @@ final class ConstraintBindings {
         SymbolId context = paths.get().contextualObject(expressions.get().expressionContext(decl.id()), paths.get().scopeRoot(decl.id()));
         if (syntax.existence().isPresent()) {
             var existence = syntax.existence().orElseThrow();
-            ExpressionResult source = constraintPath(existence.source(), decl, context, false);
+            ExpressionResult source = existencePath(existence.source(), decl, context);
             requireConstraintValue(decl, source, false);
             List<guru.interlis.model.ExistenceConstraint.ExistenceTarget> targets = new ArrayList<>();
             for (var target : existence.targets()) {
@@ -180,7 +180,7 @@ final class ConstraintBindings {
                                 .anyMatch(n -> resolver.resolve(d.id(), n, Set.of(SymbolKind.TOPIC)).target()
                                         .filter(targetTopic::equals).isPresent()));
                 if (!depends) diagnostics.emitRule(decl, "EXISTENCE target topic requires DEPENDS ON", "EXISTENCE_DEPENDS");
-                ExpressionResult path = constraintPath(target.path(), decl, targetScope, false);
+                ExpressionResult path = existencePath(target.path(), decl, targetScope);
                 requireConstraintValue(decl, path, false);
                 if (!source.error() && !path.error() && !existenceCompatible(source.typeId(), path.typeId())) {
                     TypeDescriptor from = typeBindings.get().effectiveDescriptor(source.typeId()), to = typeBindings.get().effectiveDescriptor(path.typeId());
@@ -292,6 +292,12 @@ final class ConstraintBindings {
         if (syntax instanceof PathExpressionSyntax path)
             return paths.get().pathExpression(expressions.get().nextExpressionId(), path, owner.id(), start, localPrefix);
         return expressions.get().buildExpression(syntax, owner.id()); // Unsupported operators keep their explicit diagnostic.
+    }
+
+    private ExpressionResult existencePath(ExpressionSyntax syntax, DeclInfo owner, SymbolId start) {
+        if (syntax instanceof PathExpressionSyntax path)
+            return paths.get().existencePath(path, owner, start);
+        return expressions.get().buildExpression(syntax, owner.id());
     }
 
     private void requireConstraintValue(DeclInfo owner, ExpressionResult result, boolean unique) {
