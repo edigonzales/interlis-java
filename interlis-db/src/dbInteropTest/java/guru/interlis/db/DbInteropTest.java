@@ -966,16 +966,6 @@ final class DbInteropTest {
     @Test void postgis23() throws Exception { exchangeWithPostgis(23, this::exchange); }
     @Test void postgis24() throws Exception { exchangeWithPostgis(24, this::exchange); }
 
-    @Test void geoPackageMutation23() throws Exception { exchangeMutation(23, null); }
-    @Test void geoPackageMutation24() throws Exception { exchangeMutation(24, null); }
-    @Test void postgisMutation23() throws Exception { exchangeWithPostgis(23, this::exchangeMutation); }
-    @Test void postgisMutation24() throws Exception { exchangeWithPostgis(24, this::exchangeMutation); }
-
-    @Test void geoPackageDelete23() throws Exception { exchangeDelete(23, null); }
-    @Test void geoPackageDelete24() throws Exception { exchangeDelete(24, null); }
-    @Test void postgisDelete23() throws Exception { exchangeWithPostgis(23, this::exchangeDelete); }
-    @Test void postgisDelete24() throws Exception { exchangeWithPostgis(24, this::exchangeDelete); }
-
     @Test void geoPackageSpatial23() throws Exception { exchangeSpatial(23, null); }
     @Test void geoPackageSpatial24() throws Exception { exchangeSpatial(24, null); }
     @Test void postgisSpatial23() throws Exception { exchangeWithPostgis(23, this::exchangeSpatial); }
@@ -1166,38 +1156,6 @@ final class DbInteropTest {
         if (version == 24) cases.collections(new TestDatabase(work, postgres, "spatial_collections"));
         cases.createdSchemas(new TestDatabase(work, postgres, "spatial_created_reference"),
                 new TestDatabase(work, postgres, "spatial_created_native"));
-    }
-
-    private void exchangeDelete(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new DatasetWriteCases(work, version, new ReferenceTool(work, postgres != null));
-        cases.deleteRelations(new TestDatabase(work, postgres, "delete_reference"), true);
-        cases.deleteRelations(new TestDatabase(work, postgres, "delete_native"), false);
-        cases.deleteReferenced(new TestDatabase(work, postgres, "delete_references"));
-    }
-
-    private void exchangeMutation(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new ReferenceTool(work, postgres != null);
-        var cases = new DatasetWriteCases(work, version, reference);
-        cases.replace(new TestDatabase(work, postgres, "mutation_reference"), true);
-        cases.replace(new TestDatabase(work, postgres, "mutation_native"), false);
-        cases.replaceRelations(new TestDatabase(work, postgres, "replace_rel_reference"), true);
-        cases.replaceRelations(new TestDatabase(work, postgres, "replace_rel_native"), false);
-        cases.replaceExternal(new TestDatabase(work, postgres, "replace_ext_reference"), true);
-        cases.replaceExternal(new TestDatabase(work, postgres, "replace_ext_native"), false);
-        cases.updateFlat(new TestDatabase(work, postgres, "update_stable_reference"), true, true);
-        cases.updateFlat(new TestDatabase(work, postgres, "update_stable_native"), false, true);
-        cases.updateFlat(new TestDatabase(work, postgres, "update_stored_reference"), true, false);
-        cases.updateFlat(new TestDatabase(work, postgres, "update_stored_native"), false, false);
-        cases.updateGeometry(new TestDatabase(work, postgres, "update_geom_reference"), true);
-        cases.updateGeometry(new TestDatabase(work, postgres, "update_geom_native"), false);
-        cases.updateStructures(new TestDatabase(work, postgres, "update_struct_reference"), true);
-        cases.updateStructures(new TestDatabase(work, postgres, "update_struct_native"), false);
-        cases.updateLocalReferences(new TestDatabase(work, postgres, "update_local_reference"), true);
-        cases.updateLocalReferences(new TestDatabase(work, postgres, "update_local_native"), false);
-        cases.updateAssociations(new TestDatabase(work, postgres, "update_link_reference"), true);
-        cases.updateAssociations(new TestDatabase(work, postgres, "update_link_native"), false);
-        cases.updateExternalReferences(new TestDatabase(work, postgres, "update_ext_reference"), true);
-        cases.updateExternalReferences(new TestDatabase(work, postgres, "update_ext_native"), false);
     }
 
     private void exchangeTranslationSources(int version, PostgreSQLContainer postgres) throws Exception {

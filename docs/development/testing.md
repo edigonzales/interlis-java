@@ -154,6 +154,11 @@ Rollback bei ungültigen UUIDs und mehrdeutigen Zielen sowie den Erhalt der
 Exportdatei bei fehlenden OID-Metadaten. Für XTF 2.4 prüft er zusätzlich
 die Gross- und Kleinschreibung von Text-OIDs und die Diagnose bei Leerwerten.
 
+`DatasetMutationTest` prüft `update`, `replace` und `delete` mit stabilen
+und gespeicherten Identitäten. Die Fälle vergleichen Fach-, Struktur- und
+Linkzeilen, unabhängige Datensätze und referenzierte Ziele. Sie prüfen auch
+Schreibkonkurrenz und Rollback bei fehlerhaftem XTF oder blockierenden Referenzen.
+
 ## ili2db-Interoperabilität
 
 Die separate Gradle-Suite verwendet die offiziellen Distributionen von ili2gpkg
@@ -435,13 +440,11 @@ Referenzen in abgeleiteten Baskets. `*DbInteropTest.*TopicMutations*`
 prüft bei übersetzten und abgeleiteten Baskets die stabilen IDs beim
 Update, Ersatz und Löschung sowie Rollback bei eingehenden Referenzen.
 
-Die Fälle `*DbInteropTest.*Mutation*` prüfen `replace` und `update`
-in beiden Werkzeugrichtungen. Sie prüfen die internen IDs und den Bestand
-in SQL, exportiertes XTF, besitzende Datensätze, Referenzen und Rollback.
-Die Auswahl umfasst beide XTF-Versionen und beide Backends.
-
-Die Fälle `*DbInteropTest.*Delete*` prüfen das Löschen benannter
-Datensätze und die Wiederherstellung aller Zeilen beim Rollback.
+`--tests '*DatasetMutationInteropTest'` prüft in beiden Schematypen den
+Werkzeugwechsel über `update`, `replace` und `delete`. SQL und XTF belegen
+die stabilen IDs beim Update und den Ersatz der Daten beim Replace. Ein
+weiterer ili2db-Import prüft die gemeinsame ID-Vergabe. Eine Gegenprobe
+prüft die Behandlung der `ORDERED`-Position beim gemischten Update.
 `*DbInteropTest.*Spatial*` prüft die Raumindizes aus beiden Schemaerzeugern,
 den Werkzeugwechsel und die räumlichen Treffer nach Schreiboperationen.
 Die GeoPackage-Fälle prüfen zusätzlich die RTree-Trigger und den Indexinhalt.

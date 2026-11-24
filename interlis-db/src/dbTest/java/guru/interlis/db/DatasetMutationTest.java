@@ -1,6 +1,12 @@
 package guru.interlis.db;
 
+import guru.interlis.db.DbTestSupport.Target;
+import guru.interlis.db.PostgisTestServer.Backend;
 import guru.interlis.execution.CancellationToken;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -31,28 +37,62 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-final class DatasetWriteCases {
-    private final Path work;
-    private final int version;
-    private final ReferenceTool reference;
+final class DatasetMutationTest {
+    private static final PostgisTestServer POSTGIS = new PostgisTestServer();
 
-    DatasetWriteCases(Path work, int version, ReferenceTool reference) {
-        this.work = work;
-        this.version = version;
-        this.reference = reference;
+    @TempDir Path work;
+    private int version;
+
+    @AfterAll
+    static void stopPostgis() {
+        POSTGIS.close();
     }
 
-    void deleteRelations(TestDatabase db, boolean referenceSchema) throws Exception {
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void datasetLifecycle(Backend backend, int version) throws Exception {
+        this.version = version;
+        replace(database(backend, "replace"));
+        updateFlat(database(backend, "update"), false);
+        updateFlat(database(backend, "stable"), true);
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void geometryStructuresAndLinks(Backend backend, int version) throws Exception {
+        this.version = version;
+        deleteRelations(database(backend, "delete-relations"));
+        replaceRelations(database(backend, "replace-relations"));
+        updateGeometry(database(backend, "update-geometry"));
+        updateStructures(database(backend, "update-structures"));
+        updateAssociations(database(backend, "update-associations"));
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void mutationOfReferencedObjects(Backend backend, int version) throws Exception {
+        this.version = version;
+        deleteReferenced(database(backend, "delete-reference"));
+        replaceExternal(database(backend, "replace-reference"));
+        updateLocalReferences(database(backend, "update-local"));
+        updateExternalReferences(database(backend, "update-external"));
+    }
+
+    private Target database(Backend backend, String name) {
+        return POSTGIS.target(work.resolve(name + ".gpkg"), backend);
+    }
+
+    private void deleteRelations(Target db) throws Exception {
         String model = "DbInterop" + version;
-        schema(db, referenceSchema, model);
+        schema(db, model);
         Path input = work.resolve("delete-source.xtf");
         if (Files.notExists(input)) {
-            try (var resource = DatasetWriteCases.class.getResourceAsStream("/" + model + ".xtf")) {
+            try (var resource = DatasetMutationTest.class.getResourceAsStream("/" + model + ".xtf")) {
                 Files.copy(resource, input);
             }
         }
-        seed(db, referenceSchema, model, "remove", input);
-        seed(db, referenceSchema, model, "retain", input);
+        assertCliSuccess(db, "import", model, "remove", input);
+        assertCliSuccess(db, "import", model, "retain", input);
         try (var sql = db.connect()) {
             String datasets = db.table("t_ili2db_dataset");
             String baskets = db.table("t_ili2db_basket");
@@ -74,8 +114,7 @@ final class DatasetWriteCases {
             assertEquals(removedRows, basketObjectIds(db, sql, tables, removedBaskets));
             execute(sql, "DROP TABLE " + pin);
 
-            if (referenceSchema) assertCliSuccess(db, "delete", model, "remove", null);
-            else reference.run(db, work.toString(), "--delete", "--dataset", "remove");
+            assertCliSuccess(db, "delete", model, "remove", null);
 
             assertNull(scalar(sql, "SELECT t_id FROM " + datasets + " WHERE datasetname='remove'"));
             assertEquals("0", scalar(sql, "SELECT count(*) FROM " + baskets + " WHERE dataset=" + removed));
@@ -85,13 +124,10 @@ final class DatasetWriteCases {
             assertNotEquals(0, failed.code(), failed::diagnostics);
             assertTrue(failed.diagnostics().contains("Dataset does not exist"), failed::diagnostics);
 
-            long largest = Long.parseLong(scalar(sql, "SELECT max(t_id) FROM " + baskets));
-            runReference(db, "import", "tail", input);
-            assertTrue(Long.parseLong(scalar(sql, "SELECT t_id FROM " + datasets + " WHERE datasetname='tail'")) > largest);
         }
     }
 
-    private static Map<String, List<String>> basketObjectIds(TestDatabase db, Connection sql, List<String> tables,
+    private static Map<String, List<String>> basketObjectIds(Target db, Connection sql, List<String> tables,
                                                               List<String> baskets) throws SQLException {
         var result = new HashMap<String, List<String>>();
         for (String table : tables) {
@@ -101,13 +137,13 @@ final class DatasetWriteCases {
         return result;
     }
 
-    void deleteReferenced(TestDatabase db) throws Exception {
+    private void deleteReferenced(Target db) throws Exception {
         String model = "DbMutRef" + version;
-        schema(db, true, model);
+        schema(db, model);
         Path catalog = delivery("delete-catalog", model, new Basket("catalog", target(model, "site", "listed")));
         Path source = delivery("delete-dependent", model,
                 new Basket("source", recordWithReference(model, "record", "observed", "site", "catalog")));
-        runReference(db, "import", "catalog", catalog);
+        assertCliSuccess(db, "import", model, "catalog", catalog);
         assertCliSuccess(db, "import", model, "source", source);
         try (var sql = db.connect()) {
             var targets = rows(db, sql, "mutationtarget");
@@ -123,15 +159,15 @@ final class DatasetWriteCases {
         }
     }
 
-    void replace(TestDatabase db, boolean referenceSchema) throws Exception {
+    private void replace(Target db) throws Exception {
         String model = "DbMutation" + version;
-        schema(db, referenceSchema, model);
+        schema(db, model);
         Path first = delivery("original", model, new Basket("main", item(model, "kept", "old")),
                 new Basket("obsolete", item(model, "removed", "gone")));
         Path other = delivery("isolated", model, new Basket("other", item(model, "kept", "other dataset")));
         Path replacement = delivery("replacement", model, new Basket("main", item(model, "kept", "changed")));
-        seed(db, referenceSchema, model, "main", first);
-        seed(db, referenceSchema, model, "other", other);
+        assertCliSuccess(db, "import", model, "main", first);
+        assertCliSuccess(db, "import", model, "other", other);
 
         try (var sql = db.connect()) {
             var old = rows(db, sql, "mutationitem");
@@ -144,7 +180,7 @@ final class DatasetWriteCases {
             assertNotEquals(0, failure.code(), failure::diagnostics);
             assertEquals(old, rows(db, sql, "mutationitem"));
 
-            Path exported = mutate(db, referenceSchema, "replace", model, "main", replacement);
+            Path exported = mutate(db, "replace", model, "main", replacement);
             var actual = rows(db, sql, "mutationitem");
             assertEquals(2, actual.size());
             var previous = old.get(key("main", "main", "kept"));
@@ -161,22 +197,19 @@ final class DatasetWriteCases {
             Path created = delivery("created", model, new Basket("created", item(model, "new", "new dataset")));
             assertCliSuccess(db, "replace", model, "created", created);
             assertEquals("new dataset", rows(db, sql, "mutationitem").get(key("created", "created", "new")).label());
-            runReference(db, "import", "tail", created);
-            var tail = rows(db, sql, "mutationitem").get(key("tail", "created", "new"));
-            assertTrue(tail.object() > current.object());
         }
     }
 
-    void replaceRelations(TestDatabase db, boolean referenceSchema) throws Exception {
+    private void replaceRelations(Target db) throws Exception {
         String model = "DbInterop" + version;
-        schema(db, referenceSchema, model);
+        schema(db, model);
         Path original = work.resolve("replace-original.xtf");
         if (Files.notExists(original)) {
-            try (var resource = DatasetWriteCases.class.getResourceAsStream("/" + model + ".xtf")) {
+            try (var resource = DatasetMutationTest.class.getResourceAsStream("/" + model + ".xtf")) {
                 Files.copy(resource, original);
             }
         }
-        seed(db, referenceSchema, model, "rel", original);
+        assertCliSuccess(db, "import", model, "rel", original);
         String fields = "<Links>" + structure(model, "LinkDetail",
                 "<Label>in new basket</Label>" + reference("Destination", "site", "")) + "</Links>";
         String geometry = version == 23 ? "<COORD><C1>2600600.500</C1><C2>1200600.250</C2></COORD>"
@@ -192,7 +225,7 @@ final class DatasetWriteCases {
                 while (rows.next()) originalBaskets.add(rows.getLong(1));
             }
             assertFalse(originalBaskets.isEmpty());
-            Path exported = mutate(db, referenceSchema, "replace", model, "rel", replacement);
+            Path exported = mutate(db, "replace", model, "rel", replacement);
             for (String table : List.of("mast", "tower", "nestedleaf", "nestedinner", "markerlink", "place", "linkdetail")) {
                 for (long basket : originalBaskets) {
                     assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table(table) + " WHERE t_basket = " + basket), table);
@@ -213,17 +246,17 @@ final class DatasetWriteCases {
         }
     }
 
-    void replaceExternal(TestDatabase db, boolean referenceSchema) throws Exception {
+    private void replaceExternal(Target db) throws Exception {
         String model = "DbMutRef" + version;
-        schema(db, referenceSchema, model);
+        schema(db, model);
         Path catalog = delivery("replace-catalog", model,
                 new Basket("catalog", object(model, "MutationTarget", "destination", "<Label>listed</Label>")));
         Path source = delivery("replace-ext-source", model,
                 new Basket("source", recordWithReference(model, "record", "original", "destination", "catalog")));
         Path replacement = delivery("replace-ext-new", model,
                 new Basket("source", recordWithReference(model, "record", "replacement", "destination", "catalog")));
-        seed(db, referenceSchema, model, "catalog", catalog);
-        seed(db, referenceSchema, model, "source", source);
+        assertCliSuccess(db, "import", model, "catalog", catalog);
+        assertCliSuccess(db, "import", model, "source", source);
 
         try (var sql = db.connect()) {
             var target = rows(db, sql, "mutationtarget").get(key("catalog", "catalog", "destination"));
@@ -234,7 +267,7 @@ final class DatasetWriteCases {
             String readLink = "SELECT destination FROM " + db.table("mutationlink");
             assertEquals(Long.toString(target.object()), scalar(sql, readLink));
 
-            Path output = mutate(db, referenceSchema, "replace", model, "source", replacement);
+            Path output = mutate(db, "replace", model, "source", replacement);
             assertSingleExport(output, "source", "record", "replacement");
             assertEquals(Long.toString(target.object()), scalar(sql, readLink));
             assertEquals(target, rows(db, sql, "mutationtarget").get(key("catalog", "catalog", "destination")));
@@ -246,9 +279,9 @@ final class DatasetWriteCases {
                 + structure(model, "MutationLink", reference("Destination", target, bid)) + "</Detail>");
     }
 
-    void updateFlat(TestDatabase db, boolean referenceSchema, boolean stable) throws Exception {
+    private void updateFlat(Target db, boolean stable) throws Exception {
         String model = (stable ? "DbMutStable" : "DbMutation") + version;
-        schema(db, referenceSchema, model);
+        schema(db, model);
         String main = identity("main", stable);
         String later = identity("later", stable);
         String clear = identity("clear", stable);
@@ -267,8 +300,8 @@ final class DatasetWriteCases {
         Path changed = delivery("updated", model, new Basket(main,
                         item(model, kept, "after") + item(model, added, "added") + newStandard),
                 new Basket(clear, ""), new Basket(later, item(model, identity("another", stable), "new basket")));
-        seed(db, referenceSchema, model, "main", original);
-        seed(db, referenceSchema, model, "other", other);
+        assertCliSuccess(db, "import", model, "main", original);
+        assertCliSuccess(db, "import", model, "other", other);
 
         try (var sql = db.connect()) {
             var before = rows(db, sql, "mutationitem");
@@ -284,7 +317,7 @@ final class DatasetWriteCases {
             assertNotEquals(0, rejected.code(), rejected::diagnostics);
             assertEquals(before, rows(db, sql, "mutationitem"));
 
-            Path output = mutate(db, referenceSchema, "update", model, "main", changed);
+            Path output = mutate(db, "update", model, "main", changed);
             var after = rows(db, sql, "mutationitem");
             assertEquals(5, after.size(), after.toString());
             assertEquals(before.get(keeper).withLabel("after"), after.get(keeper));
@@ -312,9 +345,9 @@ final class DatasetWriteCases {
         }
     }
 
-    void updateGeometry(TestDatabase db, boolean referenceSchema) throws Exception {
+    private void updateGeometry(Target db) throws Exception {
         String model = "DbMutGeom" + version;
-        schema(db, referenceSchema, model);
+        schema(db, model);
         Path original = delivery("geom-before", model, new Basket("geometries",
                 object(model, "GeoLeaf", "kept", "<Label>old</Label>" + point("2600000.125") + "<DetailCode>old</DetailCode>")
                 + object(model, "GeoLeaf", "clear", "<Label>clear</Label>" + point("2600050.500"))
@@ -322,7 +355,7 @@ final class DatasetWriteCases {
         Path changed = delivery("geom-after", model, new Basket("geometries",
                 object(model, "GeoLeaf", "kept", "<Label>now</Label>" + point("2600600.500") + "<DetailCode>new</DetailCode>")
                 + object(model, "GeoLeaf", "clear", "<Label>empty</Label>")));
-        seed(db, referenceSchema, model, "geom", original);
+        assertCliSuccess(db, "import", model, "geom", original);
         try (var sql = db.connect()) {
             var before = rows(db, sql, "georoot");
             Path switched = delivery("geom-wrong-type", model, new Basket("geometries",
@@ -332,7 +365,7 @@ final class DatasetWriteCases {
             assertTrue(failure.diagnostics().contains("Cannot change concrete class"), failure::diagnostics);
             assertEquals(before, rows(db, sql, "georoot"));
 
-            Path output = mutate(db, referenceSchema, "update", model, "geom", changed);
+            Path output = mutate(db, "update", model, "geom", changed);
             var current = rows(db, sql, "georoot");
             var kept = key("geom", "geometries", "kept");
             assertEquals(before.get(kept).withLabel("now"), current.get(kept));
@@ -356,9 +389,9 @@ final class DatasetWriteCases {
                 : "<Center><g:coord><g:c1>%s</g:c1><g:c2>1200000.375</g:c2></g:coord></Center>".formatted(x);
     }
 
-    void updateStructures(TestDatabase db, boolean referenceSchema) throws Exception {
+    private void updateStructures(Target db) throws Exception {
         String model = "DbMutStruct" + version;
-        schema(db, referenceSchema, model);
+        schema(db, model);
         String oldTree = tree(model, "old one", List.of("old entry", "discard"), List.of("old flag", "other"));
         Path initial = delivery("tree-before", model, new Basket("trees",
                 object(model, "TreeRecord", "keeper", "<Label>before</Label>" + oldTree)
@@ -367,12 +400,12 @@ final class DatasetWriteCases {
                 object(model, "TreeRecord", "keeper", "<Label>after</Label>"
                         + tree(model, "new one", List.of("first", "second", "first"), List.of("repeat", "repeat")))
                 + object(model, "TreeRecord", "clear", "<Label>empty</Label>")));
-        seed(db, referenceSchema, model, "structures", initial);
+        assertCliSuccess(db, "import", model, "structures", initial);
         try (var sql = db.connect()) {
             var before = rows(db, sql, "treerecord");
             var oldLeafIds = strings(sql, "SELECT t_id FROM " + db.table("leafvalue"));
             assertEquals(6, oldLeafIds.size());
-            Path output = mutate(db, referenceSchema, "update", model, "structures", changed);
+            Path output = mutate(db, "update", model, "structures", changed);
             var after = rows(db, sql, "treerecord");
             long owner = after.get(key("structures", "trees", "keeper")).object();
             assertEquals(before.get(key("structures", "trees", "keeper")).withLabel("after"),
@@ -398,9 +431,9 @@ final class DatasetWriteCases {
         }
     }
 
-    void updateLocalReferences(TestDatabase db, boolean referenceSchema) throws Exception {
+    private void updateLocalReferences(Target db) throws Exception {
         String model = "DbMutLocal" + version;
-        schema(db, referenceSchema, model);
+        schema(db, model);
         String originalTarget = object(model, "MutationTarget", "former", "<Label>former</Label>");
         Path original = delivery("local-before", model, new Basket("local",
                 originalTarget + recordWithReference(model, "record", "before", "former", "")
@@ -410,11 +443,11 @@ final class DatasetWriteCases {
                 + structure(model, "MutationLink", "") + "</Detail>");
         Path changed = delivery("local-after", model, new Basket("local", owner + cleared
                 + object(model, "MutationTarget", "fresh", "<Label>fresh</Label>")));
-        seed(db, referenceSchema, model, "local", original);
+        assertCliSuccess(db, "import", model, "local", original);
 
         try (var sql = db.connect()) {
             var before = rows(db, sql, "mutationrecord");
-            Path output = mutate(db, referenceSchema, "update", model, "local", changed);
+            Path output = mutate(db, "update", model, "local", changed);
             var after = rows(db, sql, "mutationrecord");
             assertEquals(before.get(key("local", "local", "record")).withLabel("now"),
                     after.get(key("local", "local", "record")));
@@ -443,9 +476,9 @@ final class DatasetWriteCases {
         }
     }
 
-    void updateAssociations(TestDatabase db, boolean referenceSchema) throws Exception {
+    private void updateAssociations(Target db) throws Exception {
         String model = "DbMutRoles" + version;
-        schema(db, referenceSchema, model);
+        schema(db, model);
         String proofId = identity("proof", true);
         String lost = identity("proof-removed", true);
         Path initial = delivery("roles-before", model, new Basket("roles",
@@ -459,7 +492,7 @@ final class DatasetWriteCases {
                 + object(model, "RoleMarker", "first", "<Label>first</Label>" + review(model, "hub-b", "checked"))
                 + object(model, "RoleMarker", "second", "<Label>second</Label>")
                 + object(model, "RoleHub", "hub-a", "<Label>a</Label>") + object(model, "RoleHub", "hub-b", "<Label>b</Label>")));
-        seed(db, referenceSchema, model, "roles", initial);
+        assertCliSuccess(db, "import", model, "roles", initial);
 
         try (var sql = db.connect()) {
             var markerRows = rows(db, sql, "rolemarker");
@@ -467,7 +500,7 @@ final class DatasetWriteCases {
             var before = rows(db, sql, "roleproof");
             var previousVisits = strings(sql, "SELECT t_id FROM " + db.table("rolevisit"));
             assertEquals(2, previousVisits.size());
-            Path output = mutate(db, referenceSchema, "update", model, "roles", changed);
+            Path output = mutate(db, "update", model, "roles", changed);
             assertEquals(markerRows, rows(db, sql, "rolemarker"));
             assertEquals(hubRows, rows(db, sql, "rolehub"));
             var proofs = rows(db, sql, "roleproof");
@@ -482,9 +515,8 @@ final class DatasetWriteCases {
             assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("rolereview")));
             assertEquals("checked", scalar(sql, "SELECT memo FROM " + db.table("rolereview")
                     + " WHERE reviewowner=" + first + " AND reviewedat=" + hub));
-            String positions = referenceSchema ? " = 17" : " IS NULL";
             String visitId = scalar(sql, "SELECT t_id FROM " + db.table("rolevisit")
-                    + " WHERE markervisit=" + second + " AND hubvisit=" + hub + " AND markervisit_t_seq" + positions);
+                    + " WHERE markervisit=" + second + " AND hubvisit=" + hub + " AND markervisit_t_seq=17");
             assertNotNull(visitId);
             assertFalse(previousVisits.contains(visitId));
             assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("rolevisit")));
@@ -493,13 +525,7 @@ final class DatasetWriteCases {
             var kept = objects.stream().filter(o -> proofId.equals(id(o, version, "tid"))).findFirst().orElseThrow();
             assertEquals("second", id(child(kept, "ProofMarker"), version, "ref"));
             assertEquals("hub-b", id(child(kept, "ProofHub"), version, "ref"));
-            assertVisitPosition(output, "");
-            if (referenceSchema) {
-                // The standalone ORDERED positions are omitted by the 5.5.2 reference exporter.
-                Path nativeOutput = work.resolve("ordered-update-native.xtf");
-                assertCliSuccess(db, "export", model, "roles", nativeOutput);
-                assertVisitPosition(nativeOutput, "17");
-            }
+            assertVisitPosition(output, "17");
         }
     }
 
@@ -526,9 +552,9 @@ final class DatasetWriteCases {
                 + "<Label>" + label + "</Label>");
     }
 
-    void updateExternalReferences(TestDatabase db, boolean referenceSchema) throws Exception {
+    private void updateExternalReferences(Target db) throws Exception {
         String model = "DbMutRef" + version;
-        schema(db, referenceSchema, model);
+        schema(db, model);
         Path catalog = delivery("update-catalog", model, new Basket("catalog", target(model, "destination", "listed")));
         Path initial = delivery("external-before", model, new Basket("source",
                         recordWithReference(model, "external", "old", "destination", "catalog")),
@@ -541,14 +567,14 @@ final class DatasetWriteCases {
                 + recordWithReference(model, "spare-ref", "from omitted basket", "untouched", "spare");
         Path changed = delivery("external-after", model, new Basket("source", source),
                 new Basket("sinks", target(model, "retain", "updated target") + target(model, "fresh", "new")));
-        seed(db, referenceSchema, model, "catalog", catalog);
-        seed(db, referenceSchema, model, "main", initial);
-        seed(db, referenceSchema, model, "consumer", consumer);
+        assertCliSuccess(db, "import", model, "catalog", catalog);
+        assertCliSuccess(db, "import", model, "main", initial);
+        assertCliSuccess(db, "import", model, "consumer", consumer);
 
         try (var sql = db.connect()) {
             var before = rows(db, sql, "mutationtarget");
             var externalBefore = rows(db, sql, "mutationrecord").get(key("main", "source", "external"));
-            Path output = mutate(db, referenceSchema, "update", model, "main", changed);
+            Path output = mutate(db, "update", model, "main", changed);
             var after = rows(db, sql, "mutationtarget");
             var records = rows(db, sql, "mutationrecord");
             var retain = key("main", "sinks", "retain");
@@ -600,7 +626,7 @@ final class DatasetWriteCases {
         return object(model, "MutationTarget", tid, "<Label>" + label + "</Label>");
     }
 
-    private static void assertDestination(TestDatabase db, Connection sql, Row owner, Row target) throws SQLException {
+    private static void assertDestination(Target db, Connection sql, Row owner, Row target) throws SQLException {
         assertEquals(Long.toString(target.object()), scalar(sql, "SELECT destination FROM " + db.table("mutationlink")
                 + " WHERE mutationrecord_detail = " + owner.object()));
     }
@@ -625,7 +651,7 @@ final class DatasetWriteCases {
         return values;
     }
 
-    private void checkStoredIdentities(TestDatabase db, Connection sql, String model, Path input,
+    private void checkStoredIdentities(Target db, Connection sql, String model, Path input,
                                        Map<List<String>, Row> after) throws Exception {
         assertCliSuccess(db, "update", model, "main", input);
         var replayed = rows(db, sql, "mutationitem");
@@ -664,7 +690,7 @@ final class DatasetWriteCases {
         return stable ? UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8)).toString() : name;
     }
 
-    private void checkConcurrentWriter(TestDatabase db, String model, Path input) throws Exception {
+    private void checkConcurrentWriter(Target db, String model, Path input) throws Exception {
         try (var lock = db.connect(); var statement = lock.createStatement()) {
             if (db.postgis()) {
                 lock.setAutoCommit(false);
@@ -683,43 +709,21 @@ final class DatasetWriteCases {
         }
     }
 
-    private void schema(TestDatabase db, boolean referenceSchema, String model) throws Exception {
+    private void schema(Target db, String model) throws Exception {
         Path ili = work.resolve(model + ".ili");
         if (Files.notExists(ili)) {
-            try (var resource = DatasetWriteCases.class.getResourceAsStream("/" + ili.getFileName())) {
+            try (var resource = DatasetMutationTest.class.getResourceAsStream("/" + ili.getFileName())) {
                 Files.copy(resource, ili);
             }
         }
-        if (referenceSchema) {
-            reference.run(db, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
-                    "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", ili.toString());
-        } else {
-            assertSchemaWithIdentityColumns(db, model, ili);
-        }
+        assertSchemaWithIdentityColumns(db, model, ili);
     }
 
-    private void runReference(TestDatabase db, String operation, String dataset, Path transfer) throws Exception {
-        reference.run(db, work.toString(), "--" + operation, "--importTid", "--importBid", "--dataset", dataset,
-                transfer.toString());
-    }
-
-    private void seed(TestDatabase db, boolean referenceSchema, String model, String dataset, Path transfer) throws Exception {
-        if (referenceSchema) runReference(db, "import", dataset, transfer);
-        else assertCliSuccess(db, "import", model, dataset, transfer);
-    }
-
-    private Path mutate(TestDatabase db, boolean nativeMutation, String operation, String model, String dataset,
-                        Path transfer) throws Exception {
-        Path out = work.resolve(operation + "-mixed.xtf");
-        Files.deleteIfExists(out);
-        if (nativeMutation) {
-            assertCliSuccess(db, operation, model, dataset, transfer);
-            reference.run(db, work.toString(), "--export", "--exportTid", "--dataset", dataset, out.toString());
-        } else {
-            runReference(db, operation, dataset, transfer);
-            assertCliSuccess(db, "export", model, dataset, out);
-        }
-        return out;
+    private Path mutate(Target db, String operation, String model, String dataset, Path transfer) throws Exception {
+        Path output = work.resolve(operation + ".xtf");
+        assertCliSuccess(db, operation, model, dataset, transfer);
+        assertCliSuccess(db, "export", model, dataset, output);
+        return output;
     }
 
     private Path delivery(String file, String model, Basket... baskets) throws Exception {
@@ -769,7 +773,7 @@ final class DatasetWriteCases {
         assertEquals(label, child(objects.getFirst(), "Label").getTextContent());
     }
 
-    private static Map<List<String>, Row> rows(TestDatabase db, Connection sql, String table) throws SQLException {
+    private static Map<List<String>, Row> rows(Target db, Connection sql, String table) throws SQLException {
         var result = new HashMap<List<String>, Row>();
         String query = """
                 SELECT d.datasetname, b.t_ili_tid, i.t_ili_tid, d.t_id, b.t_id, i.t_id, i.label
