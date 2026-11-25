@@ -114,6 +114,10 @@ referenzierter Objekte bei Update, Replace und Delete. Die Gegenprobe
 umfasst auch gespeicherte Referenzen aus einem Modell ausserhalb der
 CLI-Auswahl.
 
+`ArraySmart2StorageTest` prüft stabile Objekt-, Basket- und Datensatz-IDs
+beim Kürzen und Leeren von Listen, die ID-Vergabe bei Replace und den
+Erhalt des unabhängigen Datensatzes bei Delete.
+
 `SqlConstraintTest` prüft für beide XTF-Versionen globale und zusammengesetzte
 Schlüssel, SQL `NULL`, Ganzzahl- und Festkommabereiche sowie die gerundete
 Dezimalgrenze oberhalb von `2^53`. Die Fälle prüfen Rollback und die
@@ -345,9 +349,11 @@ und die gemeinsame ID-Vergabe. Eine Gegenprobe erhält den bekannten
 ili2db-Exportfehler bei umhüllten `NULL`-Elementen und prüft den erfolgreichen
 Export mit `interlis-db`.
 
-Die `*ArraySmart2*`-Fälle prüfen geerbte Spalten, das Kürzen und Entfernen
-von Listen per `update`, stabile IDs sowie `replace` und `delete` neben
-einem zweiten Datensatz.
+`--tests '*ArraySmart2InteropTest'` vergleicht die geerbten Array-Spalten
+in den konkreten Tabellen und prüft beide Werkzeugrichtungen in beiden
+Schematypen. Der ili2db-Export nach einem nativen Update prüft eine gekürzte
+und eine geleerte Liste.
+
 `--tests '*ArrayReferenceInteropTest'` vergleicht die Kataloge und prüft
 Vorwärtsreferenzen sowie Reihenfolge und doppelte Ziele im XTF und in den
 SQL-Arrays beider Schematypen. Ein ili2db-Folgeimport prüft die gemeinsame

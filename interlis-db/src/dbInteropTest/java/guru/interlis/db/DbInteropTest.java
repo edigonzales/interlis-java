@@ -117,17 +117,6 @@ final class DbInteropTest {
 
     @TempDir(cleanup = CleanupMode.ALWAYS) Path work;
 
-    @Test void geoPackageArraySmart223() throws Exception { exchangeArraySmart2(23, null); }
-    @Test void geoPackageArraySmart224() throws Exception { exchangeArraySmart2(24, null); }
-    @Test void postgisArraySmart223() throws Exception { exchangeWithPostgis(23, this::exchangeArraySmart2); }
-    @Test void postgisArraySmart224() throws Exception { exchangeWithPostgis(24, this::exchangeArraySmart2); }
-
-    private void exchangeArraySmart2(int version, PostgreSQLContainer postgres) throws Exception {
-        var baseline = new TestDatabase(work, postgres, "array_smart_reference");
-        var db = new TestDatabase(work, postgres, "array_smart_native");
-        new ArrayCases(work, new ReferenceTool(work, db.postgis()), version).smart2(baseline, db);
-    }
-
     @Test void geoPackageStrokePolyline23() throws Exception { exchangeStrokePolyline(23, null); }
     @Test void geoPackageStrokePolyline24() throws Exception { exchangeStrokePolyline(24, null); }
     @Test void postgisStrokePolyline23() throws Exception { exchangeWithPostgis(23, this::exchangeStrokePolyline); }

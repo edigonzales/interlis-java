@@ -1,0 +1,20 @@
+INTERLIS 2.3;
+
+MODEL ArraySmart23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  TOPIC Data =
+    STRUCTURE Elem = Entry : TEXT*40; END Elem;
+
+    CLASS AssetBase (ABSTRACT) =
+      !!@ili2db.mapping=ARRAY
+      Items : LIST OF Elem;
+    END AssetBase;
+
+    CLASS FirstAsset EXTENDS AssetBase =
+      Marker : TEXT*20;
+    END FirstAsset;
+
+    CLASS OtherAsset EXTENDS AssetBase =
+      Caption : TEXT*20;
+    END OtherAsset;
+  END Data;
+END ArraySmart23.
