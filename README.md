@@ -21,8 +21,19 @@ interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler chec
 ```
 
 Unter Windows verwende `gradlew.bat` und `interlis-compiler.bat`.
-`./gradlew check` baut und prüft die JVM-Module. Die portablen
-Backend-Prüfungen verwenden zusätzlich Node.js 24.22.0.
+
+## Tests
+
+| Aufruf | Prüft | Wann |
+| --- | --- | --- |
+| `./gradlew check` | Reguläre JVM-Tests ohne externe Dienste | Bei Änderungen an JVM-Modulen |
+| `./gradlew :interlis-db:dbTest` | Die eigene CLI und JDBC auf GeoPackage und PostGIS | Bei jedem Push im DB-Workflow |
+| `./gradlew :interlis-db:dbInteropTest` | Schema und Datenaustausch mit ili2gpkg und ili2pg | Gezielt bei Mapping-Änderungen, vollständig für DB-Freigaben und bei einer neuen ili2db-Referenzversion |
+
+Die PostgreSQL-Fälle brauchen Docker. Die
+[Testanleitung](docs/development/testing.md#aufbau-der-datenbanktests)
+erklärt Fixtures, Testauswahl und Berichte. Die portablen Backend-Prüfungen
+verwenden zusätzlich Node.js 24.22.0.
 
 - [Compiler-Anleitung](docs/usage/compiler.md), [CLI-Referenz](docs/usage/cli.md),
   [Java SDK](docs/usage/sdk.md), [Transfer](docs/usage/transfer.md), [LSP](docs/usage/lsp.md), [Desktop](docs/usage/desktop.md) und [Browser](docs/usage/browser.md)

@@ -82,19 +82,44 @@ JUnit-XML und Prozesslogs liegen in den Buildausgaben. Halte für eine Prüfung
 Toolchain, Plattform, relevante Eingaben, Commit, Befehle, Exits und Skips fest.
 Die [Freigabeprüfung](release.md) beschreibt die Auslieferungsprüfungen.
 
+## Aufbau der Datenbanktests
+
+Die Testquellen liegen unter `interlis-db/src/`.
+
+| Testquellen | Gradle-Aufgabe | Inhalt |
+| --- | --- | --- |
+| `test` | `:interlis-db:check` | Modultests für CLI-Optionen, SQL-Abbildung und interne Verträge ohne Datenbankserver |
+| `dbTest` | `:interlis-db:dbTest` | Eigene CLI und JDBC gegen echte Datenbanken, mit gezielten SQL-Prüfungen, Fehlerfällen und Rollback |
+| `dbInteropTest` | `:interlis-db:dbInteropTest` | Katalogvergleich und Austausch mit ili2gpkg und ili2pg als separaten Java-Prozessen |
+| `dbTestSupport` | Gemeinsame Testquellen | JDBC-, CLI- und XTF-Helfer sowie gemeinsam verwendete `.ili`- und `.xtf`-Fixtures |
+
+Beide DB-Suiten rufen die eigene CLI über `Main.run` im JUnit-Prozess auf.
+Die Mischläufe prüfen beispielsweise den Import mit ili2db und den Export
+mit `interlis-db` in derselben Datenbank. DB-Tests legen GeoPackage-Dateien in
+`@TempDir` an. Für PostgreSQL 16 mit PostGIS 3.4 startet Testcontainers
+gewöhnlich einen Container pro Klasse. Die Fälle erhalten getrennte Schemata.
+Tests, die den datenbankweiten Katalog verändern, verwenden einen separaten
+Container. JUnit führt je Suite bis zu zwei Fälle parallel aus.
+
+Der [Linux-Push-Workflow](../../.github/workflows/database-tests.yml) führt
+`dbTest` bei jedem Push aus. Bei Mapping-Änderungen laufen die betroffenen
+Mischläufe gezielt. Die vollständige Referenzsuite ist für DB-Freigaben
+und für einen Wechsel der ili2db-Referenzversion vorgesehen.
+
+```sh
+./gradlew :interlis-db:check
+./gradlew :interlis-db:dbTest --tests '*BaseMappingStorageTest.storesBaseMappingsAndRejectsDamagedAttribute'
+./gradlew :interlis-db:dbInteropTest --tests '*BaseMappingInteropTest.geoPackage*'
+```
+
+Der GeoPackage-Selektor läuft ohne Docker. JUnit-XML liegt pro Aufgabe unter
+`interlis-db/build/test-results/` und der HTML-Bericht unter
+`interlis-db/build/reports/tests/`.
+
 ## Eigene Datenbanktests
 
-`./gradlew :interlis-db:dbTest` prüft `interlis-db` über die eigene CLI und
-JDBC. Die Suite verwendet temporäre GeoPackage-Dateien sowie PostgreSQL 16
-mit PostGIS 3.4 über Testcontainers. Der
-[Linux-Push-Workflow](../../.github/workflows/database-tests.yml) führt sie
-mit Docker aus. `dbTest` benötigt keine ili2db-Distributionen. Der reguläre
-`check` bleibt dienstfrei.
-
-Jede eigene DB-Testklasse startet PostgreSQL beim ersten PostGIS-Fall und
-entfernt den Container mit allen Testschemata am Klassenende. So können
-parallele Fälle den gemeinsamen PostGIS-Katalog während des gesamten Laufs
-lesen. GeoPackage-Fälle verwenden temporäre Dateien.
+`./gradlew :interlis-db:dbTest` führt alle eigenen DB-Tests aus. Die
+Suite benötigt keine ili2db-Distributionen.
 
 `ArrayStorageTest` prüft XTF 2.3 und 2.4. Die Fälle vergleichen Text und
 Leertext, SQL `NULL`, leere Arrays, Boolean- und Integer-Werte direkt in der
@@ -262,9 +287,8 @@ automatisch auf. Mit vorhandenen ZIPs und Gradle-Abhängigkeiten im lokalen
 Cache kann Gradle mit `--offline` laufen. Docker lädt fehlende Container-Images
 bei Bedarf separat.
 
-JUnit führt bis zu zwei Fälle gleichzeitig aus. Die PostgreSQL-Tests starten
-ihre Container mit Testcontainers und verwenden PostgreSQL 16 mit PostGIS 3.4
-(`sogis/postgis:16-3.4`). Dazu muss Docker laufen.
+Die PostgreSQL-Tests benötigen Docker und verwenden das Image
+`sogis/postgis:16-3.4`.
 Jeder Fall entpackt sein Referenzwerkzeug in ein eigenes temporäres
 Arbeitsverzeichnis. JUnit löscht dieses Verzeichnis samt GeoPackage-Dateien,
 Prozesslogs und temporären Dateien des Referenzwerkzeugs auch bei Testfehlern.
