@@ -117,17 +117,6 @@ final class DbInteropTest {
 
     @TempDir(cleanup = CleanupMode.ALWAYS) Path work;
 
-    @Test void geoPackageStrokeSmart223() throws Exception { exchangeStrokeSmart2(23, null); }
-    @Test void geoPackageStrokeSmart224() throws Exception { exchangeStrokeSmart2(24, null); }
-    @Test void postgisStrokeSmart223() throws Exception { exchangeWithPostgis(23, this::exchangeStrokeSmart2); }
-    @Test void postgisStrokeSmart224() throws Exception { exchangeWithPostgis(24, this::exchangeStrokeSmart2); }
-
-    private void exchangeStrokeSmart2(int version, PostgreSQLContainer postgres) throws Exception {
-        var baseline = new TestDatabase(work, postgres, "stroke_smart_baseline");
-        var own = new TestDatabase(work, postgres, "stroke_smart_own");
-        new StrokeCases(work, new ReferenceTool(work, own.postgis()), version).smart2(baseline, own);
-    }
-
     @Test void geoPackageIlisMeta16Schema() throws Exception { checkIlisMeta16Schema(24, null); }
     @Test void postgisIlisMeta16Schema() throws Exception { exchangeWithPostgis(24, this::checkIlisMeta16Schema); }
     @Test void geoPackageTextOid24() throws Exception { exchangeTextOid(24, null); }

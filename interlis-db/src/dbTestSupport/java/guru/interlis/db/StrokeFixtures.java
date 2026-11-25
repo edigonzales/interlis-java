@@ -18,7 +18,7 @@ import static guru.interlis.db.DbTestSupport.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 final class StrokeFixtures {
-    final Path work;
+    private final Path work;
     final int version;
 
     StrokeFixtures(Path work, int version) {
@@ -74,9 +74,13 @@ final class StrokeFixtures {
     }
 
     Path transfer(String model, String prefix, String objects) throws Exception {
-        var xml = referenceDatasetFixture(model, version, prefix + "-b", objects);
+        return transfer(model, prefix, prefix + "-b", objects);
+    }
+
+    Path transfer(String model, String filename, String bid, String objects) throws Exception {
+        var xml = referenceDatasetFixture(model, version, bid, objects);
         if (version == 24) xml = xml.replace("<i:transfer ", "<i:transfer xmlns:g=\"http://www.interlis.ch/geometry/1.0\" ");
-        return Files.writeString(work.resolve(prefix + ".xtf"), xml);
+        return Files.writeString(work.resolve(filename + ".xtf"), xml);
     }
 
     String object(String model, String name, String tid, String fields) {
@@ -133,5 +137,4 @@ final class StrokeFixtures {
             assertEquals(type + ":" + epsg, scalar(sql, query));
         }
     }
-
 }

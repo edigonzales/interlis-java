@@ -530,9 +530,12 @@ Innenringe sowie EPSG:2056 und EPSG:21781.
 `StrokeMultiGeometryStorageTest` prüft den Export leerer
 `MULTIPOLYGON`-Werte neben befüllten Sammlungen.
 
-Die `*StrokeSmart2*`-Fälle prüfen eine geerbte Geometrie in einer indizierten
-Hilfstabelle. Sie vergleichen SQL-IDs und räumliche Abfragen vor und
-nach `update` und `delete`.
+`--tests '*StrokeSmart2InteropTest'` prüft geerbte, segmentierte
+Geometrien in einer indizierten Hilfstabelle. Der ili2db-Export nach
+einem nativen `update` prüft Punkt, Linie und Text.
+`StrokeSmart2StorageTest` prüft stabile Objekt- und Basket-IDs,
+räumliche Treffer und die Bereinigung beim Löschen. PostgreSQL
+weist den GiST-Zugriff mit `EXPLAIN` nach, GeoPackage prüft den RTree.
 
 Die Auswahl `--tests '*DbInteropTest.geoPackage*'` läuft ohne Docker.
 Der Basislauf vergleicht vor dem ersten Datenimport den SQL-Katalog und die
