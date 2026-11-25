@@ -102,3 +102,19 @@ liegen bei der Extension.
 Die [Testanleitung](docs/development/testing.md) und die
 [Freigabeprüfung](docs/development/release.md) beschreiben die direkten Aufrufe
 und die Prüfungen für die Auslieferung.
+
+### Datenbanktests in `interlis-db`
+
+- Prüfe SQL-Details, Fehlerfälle und Rollback in `dbTest` gegen echte
+  Datenbanken. Der Push-Workflow führt die Suite auf GeoPackage und PostGIS aus.
+- Prüfe den Katalog und den tatsächlichen Werkzeugwechsel mit der gepinnten
+  ili2db-Referenz in `dbInteropTest`. Führe bei Mapping-Änderungen die
+  betroffenen Mischfälle aus und erweitere die Fixture eines vorhandenen
+  Mischlaufs, wenn er dasselbe Profil abdeckt. Führe die ganze Suite für
+  DB-Freigaben und beim Wechsel der Referenzversion aus.
+- Benenne Tests und Fixtures nach dem fachlichen Verhalten. Prüfe konkrete
+  SQL- und XTF-Werte und formuliere Abweichungen so, dass der betroffene Fall
+  im JUnit-Bericht erkennbar ist.
+
+Befehle, Testselektion und Container-Isolation stehen in der
+[Testanleitung für Datenbanktests](docs/development/testing.md#aufbau-der-datenbanktests).
