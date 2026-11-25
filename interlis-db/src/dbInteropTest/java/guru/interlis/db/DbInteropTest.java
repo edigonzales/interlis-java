@@ -41,7 +41,6 @@ import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
 import static guru.interlis.db.DbTestSupport.text;
 import static guru.interlis.db.DbTestSupport.transferredStructures;
-import static guru.interlis.db.ObjectIdFixtures.assertTextOidTransfer;
 import static guru.interlis.db.TestDatabase.exchangeWithPostgis;
 import static guru.interlis.db.TransferCatalogAssertions.assertAssociationCatalog;
 import static guru.interlis.db.TransferCatalogAssertions.assertReferenceMapping;
@@ -119,18 +118,6 @@ final class DbInteropTest {
 
     @Test void geoPackageIlisMeta16Schema() throws Exception { checkIlisMeta16Schema(24, null); }
     @Test void postgisIlisMeta16Schema() throws Exception { exchangeWithPostgis(24, this::checkIlisMeta16Schema); }
-    @Test void geoPackageTextOid24() throws Exception { exchangeTextOid(24, null); }
-    @Test void postgisTextOid24() throws Exception { exchangeWithPostgis(24, this::exchangeTextOid); }
-    @Test void geoPackageIdentityColumns24() throws Exception { exchangeIdentityColumns(24, null); }
-    @Test void postgisIdentityColumns24() throws Exception { exchangeWithPostgis(24, this::exchangeIdentityColumns); }
-    @Test void geoPackageIdentityColumns23() throws Exception { exchangeIdentityColumns(23, null); }
-    @Test void postgisIdentityColumns23() throws Exception { exchangeWithPostgis(23, this::exchangeIdentityColumns); }
-
-    private void exchangeIdentityColumns(int version, PostgreSQLContainer postgres) throws Exception {
-        new IdentityColumnCases(work, new ReferenceTool(work, postgres != null), version)
-                .exercise(new TestDatabase(work, postgres, "identity"));
-    }
-
     private void checkIlisMeta16Schema(int version, PostgreSQLContainer postgres) throws Exception {
         var source = Path.of("../testdata/conformance/metamodel/IlisMeta16.ili");
         var ili = Files.copy(source, work.resolve(source.getFileName()));
@@ -171,42 +158,6 @@ final class DbInteropTest {
                 }
             } else {
                 assertFalse(Files.exists(nativeDb.file), profile);
-            }
-        }
-    }
-
-    private void exchangeTextOid(int version, PostgreSQLContainer postgres) throws Exception {
-        String model = "TextOid24";
-        var ili = work.resolve(model + ".ili");
-        var xtf = work.resolve(model + ".xtf");
-        for (var path : List.of(ili, xtf)) {
-            try (var resource = DbInteropTest.class.getResourceAsStream("/" + path.getFileName())) {
-                Files.copy(resource, path);
-            }
-        }
-        var reference = new ReferenceTool(work, postgres != null);
-        for (String profile : List.of("newclass", "smart1", "smart2")) {
-            boolean newClass = profile.equals("newclass");
-            var legacyDb = new TestDatabase(work, postgres, "textoid_ref_" + profile);
-            var args = new ArrayList<>(List.of("--schemaimport", "--createBasketCol", "--createTidCol", "--sqlEnableNull",
-                    "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", "--noSmartMapping"));
-            if (!newClass) args.add("--" + profile + "Inheritance");
-            args.add(ili.toString());
-            reference.run(legacyDb, work.toString(), args.toArray(String[]::new));
-
-            var ownDb = new TestDatabase(work, postgres, "textoid_own_" + profile);
-            var nativeArgs = newClass ? new String[0] : new String[]{"--inheritance", profile};
-            var result = schemaWithIdentityColumns(ownDb, model, ili, CancellationToken.none(), nativeArgs);
-            assertEquals(0, result.code(), result::diagnostics);
-            try (var legacy = legacyDb.connect(); var own = ownDb.connect()) {
-                DbSchemaCatalog.read(legacy, legacyDb.postgis(), legacyDb.schema())
-                        .assertSameAs(DbSchemaCatalog.read(own, ownDb.postgis(), ownDb.schema()));
-            }
-            for (var db : List.of(legacyDb, ownDb)) {
-                var output = work.resolve(db.schema() + ".xtf");
-                assertCliSuccess(db, "import", model, "text-oid", xtf);
-                assertCliSuccess(db, "export", model, "text-oid", output);
-                assertTextOidTransfer(output, version);
             }
         }
     }

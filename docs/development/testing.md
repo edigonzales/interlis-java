@@ -281,10 +281,11 @@ welche Positionswerte ili2db 5.5.2 beim Import und Export auslässt.
 Ziele in beiden Richtungen und Schematypen. Ein Folgeimport mit ili2db prüft
 die ID-Vergabe im eigenen Schema.
 
-Die `*IdentityColumns*`-Fälle vergleichen alle Kombinationen von
-`--create-basket-col` und `--create-tid-col` mit den Referenzschemata.
-Sie prüfen Modell- und Datensatztransfers, direkt eingefügte SQL-Zeilen,
-Referenzen auf gespeicherte und erzeugte TIDs und konkrete OIDs.
+`--tests '*IdentityColumnInteropTest'` vergleicht in NewClass die Profile
+mit beiden und ohne beide Identitätsspalten. XTF 2.4 ergänzt Smart1 und Smart2
+mit beiden Spalten. `IdentityColumnStorageTest` prüft die vollständige
+Schaltermatrix, direkte SQL-Inserts, gespeicherte und erzeugte TIDs, Referenzen,
+konkrete OIDs und den Rollback nach einer Schemaerweiterung.
 
 Die `*IlisMeta16Schema`-Fälle prüfen mit `--createBasketCol` die drei
 Vererbungsprofile der Referenzwerkzeuge anhand der gespeicherten
@@ -292,10 +293,11 @@ Strategien und der Spalten für die Assoziation. `interlis-db` verlangt
 wegen `BASKET OID AS` den Schalter `--create-basket-col`. Mit dem Schalter
 stoppt die Schemaplanung in allen drei Profilen bei der Strukturkomposition
 `UnaryExpr.SubExpression` innerhalb einer Vererbungshierarchie.
-Die `*TextOid24`-Fälle prüfen Modell- und Topicdomänen,
+`--tests '*TextOidInteropTest'` prüft Modell- und Topicdomänen,
 geerbte Objekt-OIDs, Assoziations-OIDs und ein skalares `OID TEXT`-Attribut.
-Sie vergleichen die SQL-Kataloge und prüfen den XTF-Roundtrip in
-Referenzschemata und eigenen Schemata auf beiden Backends.
+Der Katalogvergleich und der native XTF-Transfer über Referenzschemata
+decken alle drei Vererbungsprofile ab. `ObjectIdStorageTest` prüft diese
+Profile in eigenen Schemata.
 
 Die SQL-Profilfälle liegen in `SchemaProfileInteropTest`. Für diese Auswahl
 verwende `./gradlew :interlis-db:dbInteropTest --tests '*SchemaProfileInteropTest'`.

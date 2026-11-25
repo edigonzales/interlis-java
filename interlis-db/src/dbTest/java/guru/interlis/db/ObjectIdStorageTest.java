@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 
 import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
@@ -86,17 +87,24 @@ final class ObjectIdStorageTest {
     @ParameterizedTest(name = "{0}, XTF 24")
     @EnumSource(Backend.class)
     void textOidCaseAndBlankValue(Backend backend) throws Exception {
-        var db = POSTGIS.target(work.resolve("text-oid.gpkg"), backend);
         String model = "TextOid24";
-        assertSchemaWithIdentityColumns(db, model, copy(model + ".ili"));
-        assertCliSuccess(db, "import", model, "text-oid", copy(model + ".xtf"));
-        Path output = work.resolve("text-oid-out.xtf");
-        assertCliSuccess(db, "export", model, "text-oid", output);
-        assertTextOidTransfer(output, 24);
-        try (var sql = db.connect()) {
-            execute(sql, "update " + db.table("recordroot") + " set codevalue=' ' where t_ili_tid='Entry.Mixed-Case'");
+        var source = copy(model + ".ili");
+        var input = copy(model + ".xtf");
+        for (var profile : List.of("newclass", "smart1", "smart2")) {
+            var db = POSTGIS.target(work.resolve(profile + "-text-oid.gpkg"), backend);
+            var options = profile.equals("newclass") ? new String[0] : new String[]{"--inheritance", profile};
+            assertSchemaWithIdentityColumns(db, model, source, options);
+            assertCliSuccess(db, "import", model, "text-oid", input);
+            Path output = work.resolve(profile + "-text-oid-out.xtf");
+            assertCliSuccess(db, "export", model, "text-oid", output);
+            assertTextOidTransfer(output, 24);
+            if (profile.equals("newclass")) {
+                try (var sql = db.connect()) {
+                    execute(sql, "update " + db.table("recordroot") + " set codevalue=' ' where t_ili_tid='Entry.Mixed-Case'");
+                }
+                assertExportRejected(db, model, "text-oid", output, "Missing OID value at TextOid24.Data.RecordRoot.CodeValue");
+            }
         }
-        assertExportRejected(db, model, "text-oid", output, "Missing OID value at TextOid24.Data.RecordRoot.CodeValue");
     }
 
     private static void assertMissingDataset(Target db, Connection sql, String dataset) throws SQLException {

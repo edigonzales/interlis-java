@@ -1,6 +1,6 @@
 package guru.interlis.db;
 
-import guru.interlis.execution.CancellationToken;
+import guru.interlis.db.DbTestSupport.Target;
 import org.w3c.dom.Element;
 
 import java.nio.charset.StandardCharsets;
@@ -9,11 +9,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.child;
 import static guru.interlis.db.DbTestSupport.children;
-import static guru.interlis.db.DbTestSupport.cli;
 import static guru.interlis.db.DbTestSupport.execute;
 import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.readDataSection;
@@ -21,91 +19,41 @@ import static guru.interlis.db.DbTestSupport.referenceDatasetFixture;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-final class IdentityColumnCases {
+final class IdentityColumnFixtures {
     private static final String SOURCE_TID = "dbid0.o.6d61726b6572.1";
     private static final String UUID_OID = "c09b1740-5c5a-48ea-b095-938d1c946974";
     private final Path work;
-    private final ReferenceTool reference;
     private final int version;
-    private final String model;
+    final String model;
+    final Path source;
+    final Path input;
 
-    IdentityColumnCases(Path work, ReferenceTool reference, int version) {
+    IdentityColumnFixtures(Path work, int version) throws Exception {
         this.work = work;
-        this.reference = reference;
         this.version = version;
         model = "IdentityColumns" + version;
-    }
-
-    void exercise(TestDatabase server) throws Exception {
-        if (server.postgis()) {
-            try (var sql = server.connect()) {
-                execute(sql, "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"");
-            }
-        }
-        String source;
+        String content;
         try (var resource = getClass().getResourceAsStream("/IdentityColumns24.ili")) {
-            source = new String(resource.readAllBytes(), StandardCharsets.UTF_8);
+            content = new String(resource.readAllBytes(), StandardCharsets.UTF_8);
         }
         if (version == 23) {
-            source = source.replace("INTERLIS 2.4;", "INTERLIS 2.3;")
+            content = content.replace("INTERLIS 2.4;", "INTERLIS 2.3;")
                     .replace("IdentityColumns24", model).replace("MODEL ", "CONTRACTED MODEL ");
         }
-        var ili = Files.writeString(work.resolve(model + ".ili"), source);
-        var input = Files.writeString(work.resolve("objects.xtf"), fixture());
-        var profiles = version == 24 ? List.of("newclass", "smart1", "smart2") : List.of("newclass");
-        for (String profile : profiles) {
-            for (boolean baskets : List.of(false, true)) {
-                for (boolean tids : List.of(false, true)) {
-                    String name = profile + (baskets ? "_b" : "") + (tids ? "_t" : "");
-                    var legacy = server.peer("ref_" + name);
-                    var own = server.peer("own_" + name);
-                    createSchemas(legacy, own, ili, profile, baskets, tids);
-                    var fixture = profile.equals("newclass") ? legacy : own;
-                    var output = exchange(fixture, input, name, baskets, tids);
-                    if (!baskets && !tids && profile.equals("newclass")) {
-                        appendModel(own);
-                        verifyRollback(own);
-                        assertCliSuccess(own, "import", model, null, output);
-                        try (var sql = own.connect()) {
-                            assertEquals("2", scalar(sql, "select count(*) from " + own.table("marker")));
-                        }
-                    }
-                }
-            }
-        }
-        if (version == 24) checkAbstractOid(server);
+        source = Files.writeString(work.resolve(model + ".ili"), content);
+        input = Files.writeString(work.resolve("objects.xtf"), fixture());
     }
 
-    private void createSchemas(TestDatabase legacy, TestDatabase own,
-                               Path ili, String profile, boolean baskets, boolean tids) throws Exception {
-        var refOptions = new ArrayList<>(List.of("--schemaimport", "--noSmartMapping", "--sqlEnableNull",
-                "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056"));
+    void schema(Target db, String profile, boolean baskets, boolean tids) {
         var options = new ArrayList<String>();
-        if (!profile.equals("newclass")) {
-            refOptions.add("--" + profile + "Inheritance");
-            options.addAll(List.of("--inheritance", profile));
-        }
-        if (baskets) {
-            refOptions.add("--createBasketCol");
-            options.add("--create-basket-col");
-        }
-        if (tids) {
-            refOptions.add("--createTidCol");
-            options.add("--create-tid-col");
-        }
-        refOptions.add(ili.toString());
-        reference.run(legacy, work.toString(), refOptions.toArray(String[]::new));
-        var result = cli(own, "schemaimport", model, null, ili, CancellationToken.none(), options.toArray(String[]::new));
-        assertEquals(0, result.code(), result::diagnostics);
-        try (var expected = legacy.connect(); var actual = own.connect()) {
-            DbSchemaCatalog.read(expected, legacy.postgis(), legacy.schema())
-                    .assertSameAs(DbSchemaCatalog.read(actual, own.postgis(), own.schema()));
-        }
+        if (!profile.equals("newclass")) options.addAll(List.of("--inheritance", profile));
+        if (baskets) options.add("--create-basket-col");
+        if (tids) options.add("--create-tid-col");
+        assertCliSuccess(db, "schemaimport", model, null, source, options.toArray(String[]::new));
     }
 
-    private Path exchange(TestDatabase db, Path input, String label, boolean baskets, boolean tids)
+    Path roundTrip(Target db, String label, String profile, boolean baskets, boolean tids)
             throws Exception {
         String dataset = baskets ? "objects" : null;
         if (!baskets) insertDirectly(db);
@@ -135,14 +83,14 @@ final class IdentityColumnCases {
                 .findFirst().orElseThrow(), version, "tid"));
         try (var sql = db.connect()) {
             assertEquals(baskets ? "2" : "0", scalar(sql, "select count(*) from " + db.table("t_ili2db_basket")));
-            if (!baskets && !tids && label.equals("newclass")) {
+            if (!baskets && !tids && profile.equals("newclass")) {
                 String targetColumn = scalar(sql, "select sqlname from " + db.table("t_ili2db_attrname")
                         + " where iliname='" + model + ".Data.Detail.Target'");
                 execute(sql, "update " + db.table("detail") + " set " + Database.quote(targetColumn)
                         + " = (select t_id from " + db.table("marker") + " where label='Direct SQL')");
             }
         }
-        if (!baskets && !tids && label.equals("newclass")) {
+        if (!baskets && !tids && profile.equals("newclass")) {
             assertCliSuccess(db, "export", model, null, output);
             var reexported = children(children(readDataSection(output, version)).getFirst());
             var updated = reexported.stream().filter(object -> typeName(object).equals("Holder")).findFirst().orElseThrow();
@@ -152,7 +100,7 @@ final class IdentityColumnCases {
         return output;
     }
 
-    private void insertDirectly(TestDatabase db) throws Exception {
+    private void insertDirectly(Target db) throws Exception {
         try (var sql = db.connect()) {
             String basket = scalar(sql, "select t_id from " + db.table("t_ili2db_basket") + " where t_ili_tid='source-basket'");
             // Query returns null when the schema does not track baskets.
@@ -187,49 +135,6 @@ final class IdentityColumnCases {
                   <%1$s.Data.StableText TID="Text-Identity"/>
                   <%1$s.Data.StableUuid TID="%2$s"/>
                 </%1$s.Data></DATASECTION>""".formatted(model, UUID_OID));
-    }
-
-    private void appendModel(TestDatabase db) throws Exception {
-        String name = "Extra" + version;
-        var ili = Files.writeString(work.resolve(name + ".ili"), """
-                INTERLIS 2.%s;
-                MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
-                  TOPIC Data = CLASS Addition = END Addition; END Data;
-                END %s.
-                """.formatted(version - 20, name, name));
-        var result = cli(db, "schemaimport", name, null, ili, CancellationToken.none(), "--add-models");
-        assertEquals(0, result.code(), result::diagnostics);
-        try (var sql = db.connect()) {
-            execute(sql, "insert into " + db.table("addition") + " (t_id) values (100)");
-        }
-    }
-
-    private void verifyRollback(TestDatabase db) throws Exception {
-        var bad = Files.writeString(work.resolve("broken.xtf"), fixture().replace("next-basket", "source-basket"));
-        var result = cli(db, "import", model, null, bad, CancellationToken.none());
-        assertNotEquals(0, result.code(), result::diagnostics);
-        try (var sql = db.connect()) {
-            assertEquals("0", scalar(sql, "select count(*) from " + db.table("marker")));
-        }
-        assertCliFailure(db, "import", model, "named", bad, "require a schema created with --create-basket-col");
-    }
-
-    private void checkAbstractOid(TestDatabase server) throws Exception {
-        var ili = Files.writeString(work.resolve("AbstractOid.ili"), """
-                INTERLIS 2.4;
-                MODEL AbstractOid (en) AT "https://example.org/interlis/db" VERSION "1" =
-                  TOPIC Data =
-                    CLASS Root (ABSTRACT) = OID AS INTERLIS.ANYOID; END Root;
-                    CLASS Leaf EXTENDS Root = OID AS INTERLIS.UUIDOID; END Leaf;
-                  END Data;
-                END AbstractOid.
-                """);
-        var db = server.peer("abstract_oid");
-        assertCliSuccess(db, "schemaimport", "AbstractOid", null, ili);
-        try (var sql = db.connect()) {
-            assertEquals("INTERLIS.UUIDOID", scalar(sql, "select setting from " + db.table("t_ili2db_column_prop")
-                    + " where tablename='root' and tag='ch.ehi.ili2db.oidDomain'"));
-        }
     }
 
     private static String text(Element object, String field) {
