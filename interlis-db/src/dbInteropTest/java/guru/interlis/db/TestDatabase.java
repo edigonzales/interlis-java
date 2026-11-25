@@ -5,8 +5,6 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import java.nio.file.Path;
 import java.util.List;
 
-import static guru.interlis.db.DbTestSupport.postgisContainer;
-
 final class TestDatabase extends DbTestSupport.Target {
     private final Path work;
     private final String scope;
@@ -28,16 +26,4 @@ final class TestDatabase extends DbTestSupport.Target {
     }
 
     TestDatabase peer(String name) { return new TestDatabase(work, postgres, name, scope); }
-
-    @FunctionalInterface
-    interface PostgisCase {
-        void run(int version, PostgreSQLContainer postgres) throws Exception;
-    }
-
-    static void exchangeWithPostgis(int version, PostgisCase test) throws Exception {
-        try (var postgres = postgisContainer()) {
-            postgres.start();
-            test.run(version, postgres);
-        }
-    }
 }

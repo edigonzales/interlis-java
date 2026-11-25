@@ -97,7 +97,7 @@ Beide DB-Suiten rufen die eigene CLI über `Main.run` im JUnit-Prozess auf.
 Die Mischläufe prüfen beispielsweise den Import mit ili2db und den Export
 mit `interlis-db` in derselben Datenbank. DB-Tests legen GeoPackage-Dateien in
 `@TempDir` an. Für PostgreSQL 16 mit PostGIS 3.4 startet Testcontainers
-gewöhnlich einen Container pro Klasse. Die Fälle erhalten getrennte Schemata.
+einen Container pro Klasse. Die Fälle erhalten getrennte Schemata.
 Tests, die den datenbankweiten Katalog verändern, verwenden einen separaten
 Container. JUnit führt je Suite bis zu zwei Fälle parallel aus.
 
