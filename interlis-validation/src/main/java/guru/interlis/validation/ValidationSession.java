@@ -121,9 +121,7 @@ public final class ValidationSession implements AutoCloseable {
                 }
                 case TransferEvent.ObjectEvent object -> {
                     require(State.IN_BASKET);
-                    inspect(prepared ? object : NumericRounding.prepare(object, plan, basket, options, cancellation),
-                            cancellation);
-                    objects = Math.incrementExact(objects);
+                    inspectObject(object, cancellation, prepared);
                 }
                 case TransferEvent.EndBasket end -> {
                     require(State.IN_BASKET);
@@ -145,6 +143,17 @@ public final class ValidationSession implements AutoCloseable {
             state = State.FAILED;
             throw failure;
         }
+    }
+
+    /** Uses a fresh session to inspect the object without running basket rules. */
+    ValidationReport validateObject(TransferEvent.StartBasket start, TransferEvent.ObjectEvent object,
+                                    CancellationToken cancellation) {
+        require(State.BEFORE_TRANSFER);
+        cancellation.throwIfCancellationRequested();
+        basket = BasketContext.of(start, plan);
+        inspectObject(object, cancellation, false);
+        cancellation.throwIfCancellationRequested();
+        return completedReport(List.of(), Optional.empty());
     }
 
     /** Returns the completed report once, after EndTransfer. Early finish makes the session terminal. */
@@ -295,6 +304,11 @@ public final class ValidationSession implements AutoCloseable {
     public void close() {
         clear();
         state = State.CLOSED;
+    }
+
+    private void inspectObject(TransferEvent.ObjectEvent event, CancellationToken cancellation, boolean prepared) {
+        inspect(prepared ? event : NumericRounding.prepare(event, plan, basket, options, cancellation), cancellation);
+        objects = Math.incrementExact(objects);
     }
 
     private void inspect(TransferEvent.ObjectEvent event, CancellationToken cancellation) {

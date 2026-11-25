@@ -58,6 +58,35 @@ class StructureValueContractTest {
             assertEquals(Set.of(RejectionReason.SOURCE_ERRORS),result.rejection().reasons());
         }
     }
+
+    @Test void declaredObjectSetFunctionAcceptsOnlyTheCurrentStructureAsASingleton() {
+        var declaration = "FUNCTION check(objects:OBJECTS OF ANYCLASS; attribute:ATTRIBUTE; structure:ANYSTRUCTURE):BOOLEAN; ";
+        var body = declaration + """
+                TOPIC Data =
+                  STRUCTURE Detail =
+                    name: TEXT;
+                    MANDATORY CONSTRAINT check(THIS, >>name, THIS);
+                  END Detail;
+                END Data;
+                """;
+        var graph = ok("2.4", body).schema().semanticGraph();
+        var call = graph.expressions().stream().filter(FunctionCallExpression.class::isInstance)
+                .map(FunctionCallExpression.class::cast).findFirst().orElseThrow();
+        assertEquals(ExpressionTypeState.RESOLVED, call.typeState());
+        var structure = graph.expression(call.children().getFirst()).orElseThrow();
+        assertInstanceOf(StructureValueType.class, graph.type(structure.typeId()).orElseThrow());
+        var path = assertInstanceOf(PathExpression.class, structure);
+        assertInstanceOf(PathStep.ThisStep.class, path.path().steps().getFirst());
+
+        var embedded = STRUCTURES + declaration
+                + "TOPIC Data=CLASS Item=detail:S; MANDATORY CONSTRAINT check(detail, >>detail, detail); "
+                + "END Item; END Data;";
+        for (var rejectedBody : List.of(body.replace("OBJECTS OF ANYCLASS", "OBJECT OF ANYCLASS"), embedded)) {
+            var rejected = assertInstanceOf(CompilationOutcome.Rejected.class,
+                    CompilerEngines.create().compile(input("2.4", rejectedBody), TOKEN));
+            assertTrue(rejected.analysis().diagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-SEM-0005")));
+        }
+    }
     @Test void requiredWildcardsAndUnavailableConcreteStructuresNeedExplicitAbstractAttributes() {
         for(var version:List.of("2.3","2.4")) {
             for(var type:List.of("MANDATORY ANYSTRUCTURE","LIST{1..2} OF ANYSTRUCTURE","MANDATORY S")) {

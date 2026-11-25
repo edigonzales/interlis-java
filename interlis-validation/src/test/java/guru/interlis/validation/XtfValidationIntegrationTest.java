@@ -295,6 +295,32 @@ class XtfValidationIntegrationTest {
 
     @ParameterizedTest
     @EnumSource(Version.class)
+    void checksOnlyTheSelectedDecodedOccurrence(Version version) throws IOException {
+        var fixture = new Fixture(version);
+        try (var reader = version.reader(fixture.transfer, new ByteArrayInputStream(version.fixture("invalid.xtf")))) {
+            assertInstanceOf(TransferEvent.StartTransfer.class, reader.readNext(RUN).orElseThrow());
+            var basket = assertInstanceOf(TransferEvent.StartBasket.class, reader.readNext(RUN).orElseThrow());
+            var neighbor = assertInstanceOf(TransferEvent.ObjectEvent.class, reader.readNext(RUN).orElseThrow());
+            assertEquals("i1", neighbor.object().identity().tid().orElseThrow().value());
+            var selected = assertInstanceOf(TransferEvent.ObjectEvent.class, reader.readNext(RUN).orElseThrow());
+
+            var report = LocalValidator.validateObject(fixture.plan, basket, selected, OPTIONS, RUN);
+            assertEquals(1, report.inspectedObjects());
+            assertEquals(0, report.inspectedBaskets());
+            assertEquals(1, report.detectedViolations());
+            assertEquals(ValidationReport.Result.FAILED_CHECKED_SCOPE, report.result());
+            var diagnostic = report.examples().getFirst();
+            assertEquals(REQUIRED_VALUE_MISSING, diagnostic.code());
+            assertEquals(List.of(fixture.slot("code")), diagnostic.data().path());
+            assertEquals("i2", diagnostic.data().tid().orElseThrow().value());
+            assertTrue(report.datasetScope().isEmpty());
+            assertThrows(OperationCancelledException.class,
+                    () -> LocalValidator.validateObject(fixture.plan, basket, selected, OPTIONS, () -> true));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(Version.class)
     void globalOnlyViolationRemainsOutsideCheckedScope(Version version) throws IOException {
         var f = new Fixture(version);
         var report = f.read(version.fixture("global-only.xtf"));

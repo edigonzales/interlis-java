@@ -1,11 +1,8 @@
 package guru.interlis.explorer.gui;
 
 import guru.interlis.compiler.CompilationOutcome;
-import guru.interlis.compiler.CompilationRequest;
 import guru.interlis.compiler.CompilerEngines;
-import guru.interlis.compiler.CompilerOptions;
 import guru.interlis.compiler.ModelSelector;
-import guru.interlis.compiler.SourceSet;
 import guru.interlis.diagnostics.DiagnosticLanguage;
 import guru.interlis.diagnostics.DiagnosticMessageFormatter;
 import guru.interlis.diagnostics.Severity;
@@ -13,59 +10,123 @@ import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
 import guru.interlis.explorer.DuckDbStore;
 import guru.interlis.explorer.DuckDbStore.StoredObject;
-import guru.interlis.model.CollectionType;
-import guru.interlis.model.CoordinateType;
-import guru.interlis.model.GeometryType;
-import guru.interlis.model.StructureValueType;
-import guru.interlis.model.SymbolRef;
-import guru.interlis.model.TypeDescriptor;
-import guru.interlis.model.TypeRef;
-import guru.interlis.model.query.TypeRelations;
+import guru.interlis.model.QualifiedName;
+import guru.interlis.model.SymbolKind;
+import guru.interlis.repository.FetchPolicy;
+import guru.interlis.repository.HostRepositories;
+import guru.interlis.repository.RepositoryBase;
+import guru.interlis.repository.RepositoryCacheConfiguration;
+import guru.interlis.repository.RepositoryConfig;
+import guru.interlis.repository.RepositoryResolutionOutcome;
+import guru.interlis.repository.RepositoryResolveOptions;
+import guru.interlis.repository.RepositorySource;
+import guru.interlis.repository.SourceLoadException;
+import guru.interlis.repository.SourceLocator;
 import guru.interlis.source.SourceId;
-import guru.interlis.source.SourceRevision;
-import guru.interlis.source.SourceText;
-import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
-import guru.interlis.transfer.TransferGeometry;
-import guru.interlis.transfer.TransferIdentity;
-import guru.interlis.transfer.TransferObject;
+import guru.interlis.transfer.RoleSlot;
+import guru.interlis.transfer.TransferEvent;
+import guru.interlis.transfer.TransferIdentity.TransferId;
 import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferPlanner;
 import guru.interlis.transfer.TransferPlanningResult;
-import guru.interlis.transfer.TransferValue;
+import guru.interlis.transfer.TransferValue.Reference;
+import guru.interlis.validation.LocalValidator;
+import guru.interlis.validation.PlanningProblem;
+import guru.interlis.validation.RuntimeBindings;
+import guru.interlis.validation.ValidationOptions;
+import guru.interlis.validation.ValidationPlan;
+import guru.interlis.validation.ValidationPlanner;
+import guru.interlis.validation.ValidationPlanningResult;
+import guru.interlis.validation.ValidationProfile;
+import guru.interlis.validation.ValidationReport;
+import guru.interlis.validation.jts.JtsGeometryEngine;
+import guru.interlis.workspace.AnalysisRequest;
+import guru.interlis.workspace.SourceChange;
+import guru.interlis.workspace.SourceExpectation;
+import guru.interlis.workspace.SourceUpdate;
+import guru.interlis.workspace.Workspace;
+import guru.interlis.workspace.WorkspaceCompileRequest;
+import guru.interlis.workspace.WorkspaceConfiguration;
+import guru.interlis.workspace.Workspaces;
+import guru.interlis.xtf24.Xtf24Limits;
+import guru.interlis.xtf24.Xtf24ReadProfile;
 import guru.interlis.xtf24.Xtf24Reader;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-/** Owns the transfer plan and temporary store for one opened dataset. */
-record ExplorerDataset(TransferPlan plan, DuckDbStore store, Path directory) implements AutoCloseable {
+/** Owns the plans and temporary store for one opened dataset. */
+record ExplorerDataset(TransferPlan plan, DuckDbStore store, Path directory,
+                       ValidationPlanningResult validationPlanning, Set<QualifiedName> storedObjectTypes)
+        implements AutoCloseable {
     static final int OBJECT_LIMIT = 100;
+
+    record Link(int start, int end, String menuLabel, long targetPosition) { }
+
+    record LinkedText(String text, List<Link> links) {
+        LinkedText {
+            links = List.copyOf(links);
+        }
+    }
+
+    private record ReferenceKey(long position, QualifiedName slot, Reference reference) { }
+
+    /** Captured on the store's owning thread and safe to validate after the store closes. */
+    record ObjectValidation(ValidationPlan plan, TransferEvent.StartBasket basket, TransferEvent.ObjectEvent object) {
+        ValidationReport validate(CancellationToken cancellation) {
+            return LocalValidator.validateObject(plan, basket, object, ValidationOptions.defaults(), cancellation);
+        }
+    }
 
     static ExplorerDataset open(List<Path> models, Path xtf, CancellationToken cancellation)
             throws IOException, SQLException {
-        var plan = compile(models, cancellation);
+        return open(models, xtf, cancellation, false);
+    }
+
+    static ExplorerDataset openWithSpatial(List<Path> models, Path xtf, CancellationToken cancellation)
+            throws IOException, SQLException {
+        return open(models, xtf, cancellation, true);
+    }
+
+    private static ExplorerDataset open(List<Path> models, Path xtf, CancellationToken cancellation, boolean spatial)
+            throws IOException, SQLException {
+        var plan = compile(models, xtf, cancellation);
+        cancellation.throwIfCancellationRequested();
+        var bindings = RuntimeBindings.empty().withGeometry(JtsGeometryEngine.standard());
+        var validation = ValidationPlanner.plan(plan, ValidationProfile.LOCAL_ONLY, bindings);
         cancellation.throwIfCancellationRequested();
         var directory = Files.createTempDirectory("interlis-explorer-");
-        DuckDbStore store = null;
+        var database = directory.resolve("transfer.duckdb");
+        DuckDbStore opened = null;
         try {
-            store = DuckDbStore.open(directory.resolve("transfer.duckdb"), plan);
-            try (var input = Files.newInputStream(xtf);
-                 var reader = new Xtf24Reader(plan, input, Optional.of(sourceId(xtf)))) {
+            try (var store = spatial ? DuckDbStore.openWithSpatial(database, plan) : DuckDbStore.open(database, plan);
+                 var input = Files.newInputStream(xtf);
+                 var reader = new Xtf24Reader(plan, input, Optional.of(sourceId(xtf)), Xtf24Limits.defaults(),
+                         Xtf24ReadProfile.DMAV_1_1)) {
                 store.importTransfer(reader, cancellation);
             }
-            return new ExplorerDataset(plan, store, directory);
+            cancellation.throwIfCancellationRequested();
+            opened = DuckDbStore.openReadOnly(database, plan);
+            var objectTypes = opened.storedObjectTypes();
+            cancellation.throwIfCancellationRequested();
+            return new ExplorerDataset(plan, opened, directory, validation, objectTypes);
         } catch (IOException | SQLException | RuntimeException | Error failure) {
             try {
-                release(store, directory);
+                release(opened, directory);
             } catch (IOException | SQLException cleanup) {
                 failure.addSuppressed(cleanup);
             }
@@ -73,24 +134,125 @@ record ExplorerDataset(TransferPlan plan, DuckDbStore store, Path directory) imp
         }
     }
 
-    private static TransferPlan compile(List<Path> models, CancellationToken cancellation) throws IOException {
-        var sources = new LinkedHashMap<SourceId, SourceText>();
-        for (var file : models) {
-            cancellation.throwIfCancellationRequested();
-            var path = file.toRealPath();
-            var id = sourceId(path);
-            sources.put(id, new SourceText(id, new SourceRevision(1), Files.readString(path)));
+    private static TransferPlan compile(List<Path> models, Path xtf, CancellationToken cancellation) throws IOException {
+        List<String> headerModels;
+        try (var input = Files.newInputStream(xtf)) {
+            headerModels = Xtf24Reader.readModelNames(input, cancellation);
         }
-        var roots = sources.keySet().stream()
-                .<ModelSelector>map(ModelSelector.BySource::new).toList();
-        var request = new CompilationRequest(roots, SourceSet.of(sources), CompilerOptions.defaults());
-        var schema = switch (CompilerEngines.create().compile(request, cancellation)) {
+        var location = Path.of("").toAbsolutePath();
+        var repositories = HostRepositories.createObserved(location,
+                RepositoryCacheConfiguration.defaults(Path.of(System.getProperty("user.home"))), ignored -> {});
+        try (var workspace = Workspaces.create(CompilerEngines.create(), WorkspaceConfiguration.defaults())) {
+            var roots = new ArrayList<ModelSelector>();
+            var directories = new LinkedHashSet<Path>();
+            for (var model : models) {
+                cancellation.throwIfCancellationRequested();
+                var path = model.toRealPath();
+                var source = addModelSource(path, workspace, repositories, cancellation);
+                var selector = new ModelSelector.BySource(source);
+                if (!roots.contains(selector)) {
+                    roots.add(selector);
+                }
+                directories.add(path.getParent());
+            }
+            boolean discoveredNeighbours = missingImports(workspace, roots, cancellation);
+            if (discoveredNeighbours) {
+                addNeighbouringSources(directories, workspace, repositories, cancellation);
+            }
+            resolveModelImports(workspace, roots, repositories, cancellation);
+            var plan = compile(workspace, roots, cancellation);
+            var namedModels = new LinkedHashSet<String>();
+            for (var model : plan.models()) {
+                namedModels.add(model.name().declared().last());
+                var canonical = plan.schema().semanticGraph().symbol(model.name().canonical().symbol()).orElseThrow();
+                namedModels.add(canonical.name().value());
+            }
+            var additionalRoots = headerModels.stream().filter(name -> !namedModels.contains(name))
+                    .map(name -> new ModelSelector.ByName(name, Optional.empty(), Optional.empty())).toList();
+            if (additionalRoots.isEmpty()) {
+                return plan;
+            }
+            if (!discoveredNeighbours) {
+                addNeighbouringSources(directories, workspace, repositories, cancellation);
+            }
+            roots.addAll(additionalRoots);
+            resolveModelImports(workspace, roots, repositories, cancellation);
+            return compile(workspace, roots, cancellation);
+        } catch (SourceLoadException failure) {
+            throw new IOException("Cannot read a model source: " + failure.getMessage(), failure);
+        }
+    }
+
+    private static TransferPlan compile(Workspace workspace, List<ModelSelector> roots, CancellationToken cancellation)
+            throws IOException {
+        return plan(workspace.compile(new WorkspaceCompileRequest(workspace.currentRevision(), roots), cancellation));
+    }
+
+    private static void addNeighbouringSources(Iterable<Path> directories, Workspace workspace,
+            HostRepositories.Access repositories, CancellationToken cancellation) throws IOException {
+        for (var directory : directories) {
+            cancellation.throwIfCancellationRequested();
+            try (var entries = Files.list(directory)) {
+                var neighbours = entries.filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT)
+                        .endsWith(".ili") && Files.isRegularFile(path)).sorted().iterator();
+                while (neighbours.hasNext()) {
+                    cancellation.throwIfCancellationRequested();
+                    addModelSource(neighbours.next().toRealPath(), workspace, repositories, cancellation);
+                }
+            }
+        }
+    }
+
+    private static SourceId addModelSource(Path path, Workspace workspace, HostRepositories.Access repositories,
+            CancellationToken cancellation) {
+        var id = sourceId(path);
+        if (workspace.source(id).isEmpty()) {
+            var source = repositories.loader().load(new SourceLocator(id.value()), FetchPolicy.defaults(), cancellation);
+            workspace.update(new SourceUpdate(id, new SourceExpectation.Absent(), new SourceChange.Replace(source.text())));
+        }
+        return id;
+    }
+
+    private static boolean missingImports(Workspace workspace, List<ModelSelector> roots, CancellationToken cancellation) {
+        var request = new AnalysisRequest(workspace.currentRevision(), roots);
+        return workspace.capture(request, cancellation).resolution().pendingFetches().stream()
+                .anyMatch(fetch -> !fetch.modelName().isEmpty());
+    }
+
+    private static void resolveModelImports(Workspace workspace, List<ModelSelector> roots,
+            HostRepositories.Access repositories, CancellationToken cancellation) throws IOException {
+        if (!missingImports(workspace, roots, cancellation)) {
+            return;
+        }
+        var configured = new RepositoryConfig(List.of(modelRepository("https://models.geo.admin.ch/"),
+                modelRepository("https://models.interlis.ch/")), FetchPolicy.defaults());
+        var request = new AnalysisRequest(workspace.currentRevision(), roots);
+        switch (repositories.closureService().resolve(workspace, request, RepositoryResolveOptions.defaults(configured),
+                cancellation)) {
+            case RepositoryResolutionOutcome.Prepared prepared -> prepared.update().apply(workspace);
+            case RepositoryResolutionOutcome.Cancelled cancelled -> throw new OperationCancelledException(cancelled.reason());
+            case RepositoryResolutionOutcome.Rejected rejected -> throw new IOException(rejected.problems().stream()
+                    .limit(10)
+                    .map(problem -> problem.reason() + " " + problem.modelName())
+                    .collect(Collectors.joining("\n", "Model resolution rejected.\n", "")));
+            case RepositoryResolutionOutcome.Stale ignored -> throw new IOException("Model sources changed during resolution.");
+        }
+    }
+
+    private static RepositorySource modelRepository(String url) {
+        var base = URI.create(url);
+        return new RepositorySource(new RepositoryBase(base), new SourceLocator(base.resolve("ilimodels.xml").toString()));
+    }
+
+    private static TransferPlan plan(CompilationOutcome outcome) throws IOException {
+        var schema = switch (outcome) {
             case CompilationOutcome.Succeeded success -> success.schema();
             case CompilationOutcome.Rejected rejected -> {
                 var formatter = new DiagnosticMessageFormatter();
                 var diagnostics = rejected.analysis().diagnostics().stream()
                         .filter(diagnostic -> diagnostic.severity() == Severity.ERROR)
-                        .map(diagnostic -> formatter.format(diagnostic, DiagnosticLanguage.EN).text())
+                        .map(diagnostic -> diagnostic.primaryRange().map(range -> range.source().value() + "\n").orElse("")
+                                + formatter.format(diagnostic, DiagnosticLanguage.EN).text())
                         .limit(10).collect(Collectors.joining("\n"));
                 throw new IOException("Model compilation rejected. " + rejected.rejection().reasons()
                         + "\n" + diagnostics);
@@ -117,56 +279,73 @@ record ExplorerDataset(TransferPlan plan, DuckDbStore store, Path directory) imp
         return store.objects(type.name().declared(), OBJECT_LIMIT);
     }
 
-    List<Map.Entry<String, String>> attributes(TransferObject object) {
-        return plan.object(object.type()).orElseThrow().slots().stream()
-                .filter(AttributeSlot.class::isInstance)
-                .map(AttributeSlot.class::cast)
-                .map(slot -> Map.entry(slot.name().declared().last(),
-                        object.value(slot.symbol()).map(value -> displayValue(slot, value)).orElse("Absent")))
-                .toList();
+    List<StoredObject> objectsIncluding(ObjectDescriptor type, StoredObject selected) throws SQLException {
+        var objects = objects(type);
+        if (objects.stream().anyMatch(object -> object.position() == selected.position())) {
+            return objects;
+        }
+        var visible = new ArrayList<>(objects);
+        visible.add(selected);
+        return List.copyOf(visible);
     }
 
-    private String displayValue(AttributeSlot slot, TransferValue value) {
-        return switch (value) {
-            case TransferValue.Undefined ignored -> "Undefined";
-            case TransferValue.Text text -> text.value();
-            case TransferValue.BooleanValue flag -> flag.value() ? "TRUE" : "FALSE";
-            case TransferValue.Enumeration enumeration -> String.join(".", enumeration.path());
-            case TransferValue.NumberValue number -> number.lexeme();
-            case TransferValue.Oid oid -> oid.lexeme();
-            case TransferValue.ClassName name -> name.name().toString();
-            case TransferValue.AttributePath path -> path.name().toString();
-            case TransferValue.Binary binary -> "BINARY (" + binary.size() + " bytes)";
-            case TransferValue.XmlFragment ignored -> "XML";
-            case TransferValue.Structured structure -> plan.object(structure.type()).orElseThrow().name().declared().toString();
-            case TransferValue.Repeated repeated -> {
-                var collection = (CollectionType) plan.type(slot.effectiveType()).known().orElseThrow();
-                var ref = new TypeRef(plan.snapshotId(), collection.elementType());
-                var element = new TypeRelations(plan.schema().semanticGraph()).resolveAliases(ref).known()
-                        .map(type -> new TypeRef(plan.snapshotId(), type.effectiveType())).orElse(ref);
-                yield repeated.kind() + " OF " + typeName(plan.type(element).known().orElseThrow())
-                        + " (" + repeated.values().size() + ")";
+    Map<Long, LinkedText> associationLabels(ObjectDescriptor type, List<StoredObject> objects) throws SQLException {
+        if (type.kind() != SymbolKind.ASSOCIATION) {
+            return Map.of();
+        }
+        var roles = type.slots().stream().filter(RoleSlot.class::isInstance).map(RoleSlot.class::cast).toList();
+        var anonymous = objects.stream().filter(object ->
+                object.object().identity().tid().isEmpty() && object.object().identity().oid().isEmpty()).toList();
+        var positions = anonymous.stream().map(StoredObject::position).collect(Collectors.toSet());
+        var slots = roles.stream().map(role -> role.name().declared()).collect(Collectors.toSet());
+        var targets = new HashMap<ReferenceKey, Long>();
+        for (var entry : store.resolvedReferences(positions, slots)) {
+            targets.put(new ReferenceKey(entry.sourcePosition(), entry.slot(), entry.reference()), entry.targetPosition());
+        }
+        var labels = new HashMap<Long, LinkedText>();
+        for (var object : anonymous) {
+            var label = new StringBuilder(objectLabel(object));
+            var links = new ArrayList<Link>();
+            String separator = "  ";
+            for (var role : roles) {
+                var name = role.name().declared();
+                var reference = object.object().value(role.symbol()).map(Reference.class::cast);
+                var target = "→ " + reference.map(ExplorerDataset::displayReference).orElse("Absent");
+                label.append(separator).append(name.last()).append(' ');
+                int start = label.length();
+                label.append(target);
+                var position = reference.map(value -> targets.get(new ReferenceKey(object.position(), name, value)));
+                position.ifPresent(resolved -> links.add(new Link(start, label.length(), name.last() + " " + target, resolved)));
+                separator = ", ";
             }
-            case TransferValue.Reference reference -> {
-                var target = reference.target();
-                String label = (target instanceof TransferIdentity.TransferId ? "TID " : "OID ") + target.value();
-                yield reference.targetBasket().map(basket -> label + " (BID " + basket.value() + ")").orElse(label);
-            }
-            case TransferGeometry.Coordinate ignored -> "COORD";
-            case TransferGeometry.MultiCoordinate ignored -> "MULTICOORD";
-            case TransferGeometry ignored -> typeName(plan.type(slot.effectiveType()).known().orElseThrow());
-        };
+            labels.put(object.position(), new LinkedText(label.toString(), links));
+        }
+        return Map.copyOf(labels);
     }
 
-    private String typeName(TypeDescriptor type) {
-        return switch (type) {
-            case CoordinateType coordinate -> coordinate.multiCoordinate() ? "MULTICOORD" : "COORD";
-            case GeometryType geometry -> geometry.geometryKind().name();
-            case StructureValueType structure -> structure.target()
-                    .map(id -> plan.object(new SymbolRef(plan.snapshotId(), id)).orElseThrow())
-                    .map(descriptor -> descriptor.name().declared().toString()).orElse("ANYSTRUCTURE");
-            default -> type.kind().name();
+    static String objectLabel(StoredObject object) {
+        var identity = object.object().identity();
+        return identity.tid().map(tid -> "TID " + tid.value())
+                .or(() -> identity.oid().map(oid -> "OID " + oid.value()))
+                .orElseGet(() -> "Object " + object.position());
+    }
+
+    static String displayReference(Reference reference) {
+        var target = reference.target();
+        String label = (target instanceof TransferId ? "TID " : "OID ") + target.value();
+        return reference.targetBasket().map(basket -> label + " (BID " + basket.value() + ")").orElse(label);
+    }
+
+    ObjectValidation objectValidation(StoredObject selected) throws SQLException {
+        var validationPlan = switch (validationPlanning) {
+            case ValidationPlanningResult.Ready ready -> ready.plan();
+            case ValidationPlanningResult.Rejected rejected -> throw new IllegalStateException(rejected.problems().stream()
+                    .map(PlanningProblem::message).collect(Collectors.joining("\n", "Validation plan unavailable.\n", "")));
         };
+        var context = store.objectContext(selected.position())
+                .orElseThrow(() -> new IllegalStateException("The selected object could not be found."));
+        return new ObjectValidation(validationPlan, context.basket(),
+                new TransferEvent.ObjectEvent(selected.object(), Optional.empty(), context.consistency()));
     }
 
     @Override

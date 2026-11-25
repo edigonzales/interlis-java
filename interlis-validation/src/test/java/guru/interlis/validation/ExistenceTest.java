@@ -115,6 +115,41 @@ class ExistenceTest {
     }
 
     @Test
+    void reportsUnsupportedValueSemanticsForExistencePathsThroughRepeatedStructures() {
+        var model = """
+                STRUCTURE Entry = value: TEXT*2; END Entry;
+                CLASS Target =
+                  code: TEXT*2;
+                  entries: LIST OF Entry;
+                END Target;
+                CLASS Subject =
+                  code: TEXT*2;
+                  entries: LIST OF Entry;
+                  EXISTENCE CONSTRAINT %s;
+                END Subject;
+                """;
+        var members = "<entries><Entry><value>CH</value></Entry></entries>"
+                + "<entries><Entry><value>FR</value></Entry></entries>";
+        var data = """
+                <Target i:tid='target'><code>CH</code>%s</Target>
+                <Subject i:tid='subject'><code>FR</code>%s</Subject>
+                """.formatted(members, members);
+        for (var paths : List.of("entries->value REQUIRED IN Target:code", "code REQUIRED IN Target:entries->value")) {
+            var report = validate(plan(model.formatted(paths)), DatasetScope.SUPPLIED_DATASET,
+                    primary("p", basket("data", data)));
+            assertEquals(0, report.detectedViolations());
+            var coverage = report.coverage().datasetRules().getFirst();
+            assertEquals(DatasetRuleCoverage.Outcome.UNSUPPORTED_VALUE_SEMANTICS, coverage.outcome());
+            assertEquals(0, coverage.evaluations());
+            assertEquals(1, coverage.undecidedCandidates());
+        }
+        var absent = validate(plan(model.formatted("entries->value REQUIRED IN Target:code")), DatasetScope.SUPPLIED_DATASET,
+                primary("p", basket("data", "<Subject i:tid='empty'/>")));
+        assertEquals(0, absent.detectedViolations());
+        assertEquals(0, absent.coverage().datasetRules().getFirst().undecidedCandidates());
+    }
+
+    @Test
     void requiresEveryStandardVertexButIgnoresTheArcIntermediatePoint() {
         var plan = plan("""
                 DOMAIN Position = COORD 0.00..100.00, 0.00..100.00;

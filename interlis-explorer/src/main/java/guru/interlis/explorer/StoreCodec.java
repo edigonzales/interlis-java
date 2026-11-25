@@ -30,7 +30,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -114,6 +113,14 @@ final class StoreCodec {
                 .name().declared().toString();
     }
 
+    String slotName(SymbolRef declaration) {
+        String name = slotNames.get(declaration);
+        if (name == null || !slot(name).equals(declaration)) {
+            throw new IllegalArgumentException("Cannot bind transfer slot " + declaration);
+        }
+        return name;
+    }
+
     JsonArray identity(TransferIdentity id) {
         return array(basketId(id.currentBasket()), id.originalBasket().map(StoreCodec::basketId).orElse(null),
                 id.tid().map(tid -> array(tid.value(), tid.origin().name())).orElse(null),
@@ -129,14 +136,10 @@ final class StoreCodec {
                 optional(data, 3).map(ObjectOid::new), optional(data, 4).map(SourceId::new));
     }
 
-    JsonObject fields(Structured object, BiConsumer<String, Reference> references) {
+    JsonObject fields(Structured object) {
         var fields = new JsonObject();
         for (var entry : object.values().entrySet()) {
-            String slot = slotNames.get(entry.getKey());
-            if (slot == null || !slot(slot).equals(entry.getKey())) {
-                throw new IllegalArgumentException("Cannot bind transfer slot " + entry.getKey());
-            }
-            fields.add(slot, value(entry.getValue(), slot, references));
+            fields.add(slotName(entry.getKey()), value(entry.getValue()));
         }
         return fields;
     }
@@ -172,19 +175,16 @@ final class StoreCodec {
         return candidates.getFirst();
     }
 
-    private JsonArray value(TransferValue value, String slot, BiConsumer<String, Reference> references) {
+    private JsonArray value(TransferValue value) {
         return switch (value) {
             case Text text -> array("text", text.value());
             case BooleanValue bool -> array("boolean", bool.value());
             case Enumeration enumeration -> array("enumeration", array(enumeration.path(), JsonPrimitive::new));
             case NumberValue number -> array("number", number.lexeme(), number.exactValue().toString());
-            case Structured structure -> array("structure", objectName(structure.type()), fields(structure, references));
+            case Structured structure -> array("structure", objectName(structure.type()), fields(structure));
             case Repeated repeated -> array("repeated", repeated.kind().name(),
-                    array(repeated.values(), item -> value(item, slot, references)));
-            case Reference reference -> {
-                references.accept(slot, reference);
-                yield reference(reference);
-            }
+                    array(repeated.values(), this::value));
+            case Reference reference -> reference(reference);
             case Binary binary -> array("binary", Base64.getEncoder().encodeToString(binary.bytes()));
             case XmlFragment fragment -> {
                 var namespaces = new JsonObject();

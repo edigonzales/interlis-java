@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-/** Immutable report for a completed transfer. Counts include omitted diagnostic examples. */
+/** Immutable report for a completed validation run. Counts include omitted diagnostic examples. */
 public record ValidationReport(Result result, long inspectedBaskets, long inspectedObjects, long detectedViolations,
                                List<ValidationDiagnostic> examples, ValidationCoverage coverage,
                                Optional<DatasetScope> datasetScope) {

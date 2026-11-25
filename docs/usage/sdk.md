@@ -61,6 +61,12 @@ API 0.11 verwendet für `ResolutionLock` den Konstruktor mit Modellpins,
 Indexdigests, Suchschritten und nicht verfügbaren Quellen. Der Codec liest
 und schreibt XML-Version 2.
 
+`LocalValidator.validateObject` und `DuckDbStore.objectContext` sind additive
+Erweiterungen der Java-API 0.11 für die lokale Prüfung eines dekodierten Objekts
+mit seinem originalen Basketkontext. `DuckDbStore.storedObjectTypes` und
+`DuckDbStore.resolvedReferences` liefern Typnamen eigenständiger gespeicherter
+Objekte und gebündelte Referenzziele. Bestehende Aufrufer bleiben kompatibel.
+
 Die Workspace-API übergibt `SourceInventory` direkt an den Resolver und
 `CacheLimits` begrenzt die behaltenen Syntaxsnapshots und deren Textlänge.
 `WorkspaceCapture` bindet die Übernahme an Herkunft, Workspace-Revision

@@ -284,6 +284,12 @@ class GeometryAndIdentityTest {
         var link = fixture.ref("Checks", "T", "Link");
         var a = fixture.basket("a", List.of(), Optional.of("too-long"), TransferEvent.Consistency.COMPLETE);
         var b = fixture.basket("b", List.of(), Optional.of("B02"), TransferEvent.Consistency.COMPLETE);
+        var validObject = object(a, item, Map.of(), Optional.of("t1"), Optional.of("20"));
+        var objectReport = LocalValidator.validateObject(fixture.plan, a, validObject, ValidationOptions.defaults(), RUN);
+        assertEquals(ValidationReport.Result.PASSED_CHECKED_SCOPE, objectReport.result());
+        assertEquals(0, objectReport.inspectedBaskets());
+        assertThrows(ValidationStreamException.class,
+                () -> LocalValidator.validateObject(fixture.plan, b, validObject, ValidationOptions.defaults(), RUN));
         var values = Map.<SymbolRef, TransferValue>of(fixture.field("explicitId"), new TransferValue.Oid("abcd"),
                 fixture.field("uuid"), new TransferValue.Oid("not-a-uuid"));
         try (var session = fixture.session()) {

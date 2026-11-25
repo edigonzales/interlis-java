@@ -145,6 +145,14 @@ synchron mit `accept` prüfen und nach `EndTransfer` einmal `finish` aufrufen.
 In diesem Fall bestätigt der Host selbst das Quellenende und liefert zum
 Plan passende, strukturell dekodierte Events.
 
+Für ein bereits dekodiertes Einzelobjekt erhält
+`LocalValidator.validateObject(plan, basket, objectEvent, options, cancellation)`
+den originalen `StartBasket` und das `ObjectEvent` derselben Schemarevision.
+Die Prüfung verwendet die lokalen Regeln und Budgets für das Objekt sowie
+die Domänenbindungen und den Konsistenzzustand des Baskets. Der Bericht zählt
+ein geprüftes Objekt und null geprüfte Baskets. Der Datenort übernimmt die
+Transferquelle aus der Objektidentität, falls vorhanden.
+
 Das Profil prüft Pflichtwerte, Kardinalitäten, Strukturzuweisung, unterstützte
 Skalare und Modellwerte sowie lokale Geometriewerte wie Achsendimensionen,
 Achsenbereiche und Standardsegmentformen. Generische Basketbindungen wählen
@@ -266,6 +274,8 @@ unterstützt gebundene Referenz- und Assoziationspfade, abgeleitete Werte,
 nichtgeometrische Standardfunktionen und explizite Hostbindungen.
 `SET` kann kontextgebundenes und explizites `ALL` zählen.
 Prozentbedingungen verwenden einen exakten Vergleich.
+Bei `EXISTENCE`-Pfaden durch Struktursammlungen bleibt die Prüfung
+vorhandener Sammlungseinträge als ungeklärt ausgewiesen.
 
 Bei vollständigen Transfers muss ein obligatorisches, nichttransientes
 Attribut auch dann geliefert werden, wenn es berechenbar ist. Der Validator
@@ -298,14 +308,162 @@ derselben unveränderlichen Schemainstanz geplant sein.
 ## INTERLIS Object Explorer
 
 Starte den lokalen Explorer mit `./gradlew :interlis-explorer-gui:run`.
-Wähle unter **Open dataset…** die lokalen ILI-Dateien einschliesslich
-ihrer Modellimporte und anschliessend eine XTF-2.4-FULL-Datei. Der Explorer
+Wähle unter **Open dataset…** die zum Transfer gehörenden lokalen ILI-Dateien
+und anschliessend eine XTF-2.4-FULL-Datei. Der Explorer sucht fehlende
+Modellimporte in benachbarten ILI-Dateien und danach in den öffentlichen
+Modellrepos `models.geo.admin.ch` und `models.interlis.ch`. Er löst auch
+weitere Modellnamen aus dem XTF-Kopf auf. Für die Codierung im amtlichen
+DMAV-1.1-Testtransfer akzeptiert der Import einen Bogen-Zwischenpunkt vor dem
+Endpunkt, mehrere Struktureinträge pro Attributelement einer Sammlung und
+ausgeschriebene Topic-Namen vor Objekttypen. Der Explorer
 merkt sich den Ordner des letzten erfolgreichen Imports auch über einen
-Neustart hinweg. Wähle im Modellbaum eine Klasse und danach ein Objekt.
-Die Liste zeigt bis zu 100 Instanzen der gewählten Klasse in
-Transferreihenfolge. Der Inspektor zeigt die Attribute in effektiver
-Modellreihenfolge. Beim Schliessen wird die temporäre DuckDB-Datenbank
-entfernt.
+Neustart hinweg. Im Modellbaum kennzeichnen **M**, **T**, **C** und **A**
+Modelle, Topics, Klassen und Assoziationen. Beim Öffnen zeigt der Baum die Topics der
+importierten Baskets und ihre Modelle. Auch ein leerer Basket macht sein
+Topic sichtbar. Mit **Show all models** blendest du den vollständigen
+Modellbaum ein. Wähle eine Klasse oder eine Assoziation mit eigenständigen
+Vorkommen und danach ein Objekt. Die Liste zeigt bis zu 100 Instanzen des
+gewählten Typs in Transferreihenfolge. Bei Assoziationen ohne TID oder OID
+zeigt die Zeile die Transferposition, Rollennamen und Zielkennungen.
+Der Inspektor zeigt die Attribute in effektiver
+Modellreihenfolge. Ein Klick auf ein aufklappbares Attribut oder die
+Leertaste auf seiner Zeile zeigt Struktur- und Sammlungseinträge direkt
+darunter. LIST-Einträge sind nummeriert. BAG-Einträge behalten Duplikate
+und erscheinen ohne Nummer. Mit **⌘C** unter macOS bzw. **Strg+C** auf den
+anderen Plattformen kopierst du den angezeigten Wert der ausgewählten
+Zeile. In der Objektliste und im Inspektor öffnen der unterstrichene Pfeil und
+die Zielkennung das aufgelöste Referenz- oder Rollenziel. **Go to target**
+ist im Kontextmenü auch mit **Umschalt+F10** erreichbar. Im Inspektor führt
+ebenfalls **Enter** zum Ziel. Ein Ziel ausserhalb der ersten 100 Instanzen wird
+zusätzlich in die Liste aufgenommen. **Back** oder **Alt+←** kehrt zum
+Ausgangsobjekt und gegebenenfalls zur Referenzzeile zurück.
+Der Abschnitt **Beziehungen** zeigt aufklappbare
+Assoziationen mit Rollennamen, Zielen und eigenen Attributen. Beim
+Schliessen wird die temporäre DuckDB-Datenbank entfernt.
+
+**Validate object** am Objekttitel oder im Kontextmenü prüft genau die
+ausgewählte Instanz mit dem originalen Basketkontext. Der Dialog zeigt lokale
+Befunde mit Datenpfad und prüft Geometrien mit JTS. Basketregeln,
+Referenzzielprüfung und weitere Datensatzregeln liegen ausserhalb des lokalen
+Prüfumfangs. Ein Wechsel der Auswahl oder des Datensatzes verwirft die laufende
+Prüfung.
+
+### Daten abfragen
+
+Im Tab **Query** wählst du **IQL** oder **SQL**. **Run** führt die Abfrage aus.
+Auf macOS geht das auch mit **⌘Enter**, auf den übrigen Plattformen mit
+**Strg+Enter**. Vorschläge erscheinen beim Tippen und auf **⌘⇧Leertaste**
+unter macOS bzw. **Strg+Leertaste**. Ein gewählter Vorschlag ersetzt den
+ganzen Bezeichner an der Cursorposition.
+Mit **Cancel** kannst du eine laufende Abfrage abbrechen. Die Ergebnistabelle
+zeigt bis zu 1000 Zeilen und meldet, wenn weitere Treffer vorhanden sind.
+Echte `NULL`-Werte erscheinen kursiv und haben den Tooltip «SQL NULL».
+Spaltennamen werden als Klartext angezeigt.
+
+IQL verwendet die deklarierten Namen aus dem Modell. Ein Klassen- oder
+Assoziationsname in `FROM` darf kurz sein, wenn er in den geladenen
+Modellen eindeutig ist. Mit `RelationsDemo.ili` und `relations-demo.xtf`
+liefert diese Abfrage den Namen des aufgelösten Zielobjekts.
+
+```sql
+SELECT i.details.owner.title
+FROM RelationsDemo.Data.Item AS i
+WHERE i.title = 'Item with relationships'
+```
+
+Beim Vergleich zweier numerischer Attribute verlangt IQL dieselbe Einheit
+und passende Referenzsysteme. Eine einfache Zahl wird in der Einheit des
+Attributs interpretiert. Bei Aufzählungen prüft IQL, ob die Modelltypen der
+beiden Attribute vergleichbar sind.
+
+`IN` und `NOT IN` vergleichen mit typgeprüften Literalen.
+`BETWEEN` und `NOT BETWEEN` verwenden inklusive Grenzen für Zahlen und
+ISO-Daten. `CONTAINS(pfad, 'text')` und `STARTS_WITH(pfad, 'text')` suchen
+wörtlich und unterscheiden Gross- und Kleinschreibung. Fehlende und
+undefinierte Werte ergeben bei diesen Filtern ein unbekanntes Ergebnis.
+
+Bei Sammlungen bindet `EXISTS` die Bedingungen an ein einzelnes Vorkommen.
+Mit `Reference24.ili` und `structures-and-link.xtf` findest du das Objekt, das
+einen Eintrag mit dem Namen `first` enthält.
+
+```sql
+SELECT i.count
+FROM Reference24.Data.Item AS i
+WHERE EXISTS(i.details AS detail WHERE detail.label = 'first')
+```
+
+`EXPAND pfad AS eintrag` gibt eine Zeile pro Eintrag einer `LIST` oder
+eines `BAG` aus. Bei mehrwertigen Rollen liefert es die aufgelösten Ziele
+je Rollenvorkommen. Jede Folge-Expansion beginnt beim unmittelbar
+vorangehenden Eintragsalias. Leere, fehlende und undefinierte Sammlungen
+liefern null Zeilen. Ein `BAG` behält Duplikate. Für eine `LIST` bindet
+`AT pos` optional die ursprüngliche Position ab `1`. Diese Position kannst
+du in `SELECT`, `WHERE` und `ORDER BY` verwenden. Ohne eigene Sortierung
+folgen die Einträge einer `LIST` ihrer Reihenfolge im Transfer.
+
+Die folgende DMAV-Abfrage liefert die Strassenachsen der Lokalisation
+`1193` in einem kleinen LV95-Ausschnitt. Ein ausdrücklich gewählter
+Geometriepfad und `GEOMETRY(pfad)` liefern beide die native Geometrie.
+Die Ergebnistabelle zeigt Geometrietyp und CRS oder einen Hinweis zum
+Projektionsfehler. `SELECT *` verwendet die kompakte Geometrieübersicht.
+
+```sql
+SELECT l.LokalisationNummer, pos AS Listenposition, s.IstAchse,
+       s.Geometrie AS Linie
+FROM DMAV_Gebaeudeadressen_V1_1.Gebaeudeadressen.Lokalisation AS l
+EXPAND l.Strassenstueck AS s AT pos
+WHERE l.LokalisationNummer = '1193'
+  AND s.IstAchse
+  AND INTERSECTS(s.Geometrie, BOX(2586065, 1224223, 2586066, 1224225))
+ORDER BY pos
+```
+
+Markiere in der Ergebnistabelle eine navigierbare IQL-Zeile und öffne
+sie mit **Open in Inspector** oder **Enter**. Bei der DMAV-Abfrage
+öffnet der Explorer die Lokalisation am betreffenden Strassenstück.
+Bei der Expansion einer Rolle öffnet er das Zielobjekt. Mit `TID(alias)`,
+`OID(alias)` und `BID(alias)` kannst du die einzelnen Transferidentitäten
+eines Objekt- oder Assoziationsalias ausgeben und als Filter verwenden.
+
+`ELEMENT_COUNT(pfad)` zählt LIST- und BAG-Einträge einschliesslich
+Duplikaten. Im Transfer fehlende und leere Sammlungen zählen als `0`.
+Explizit undefinierte Sammlungen liefern `NULL`. Gruppen und einfache
+Häufigkeiten lassen sich zusammen abfragen.
+
+```sql
+SELECT l.Lokalisationsart, COUNT(*) AS Anzahl
+FROM Lokalisation AS l
+GROUP BY l.Lokalisationsart
+ORDER BY Anzahl DESC
+```
+
+`IS MISSING` fragt nach einem im Transfer fehlenden Attribut.
+`IS UNDEFINED` prüft einen explizit undefinierten Wert. Mit
+`INTERSECTS(pfad, BOX(xmin, ymin, xmax, ymax))` suchst du Geometrien im
+Koordinatenreferenzsystem des Attributs. Die Vorprüfung berücksichtigt
+nicht räumliche Filter, die festlegen, ob eine Geometrie das Ergebnis
+beeinflussen kann. Innerhalb von `EXISTS` gilt das für den jeweiligen
+Eintrag. Für die verbleibenden Geometrien meldet IQL fehlende Projektionen
+und unbekannte oder unterschiedliche CRS. Die räumliche Abfrage benötigt
+DuckDB Spatial. `WITHIN_DISTANCE(pfad, POINT(x, y), 20)` findet Geometrien
+innerhalb von 20 Metern um den angegebenen LV95-Punkt. Die Distanzprüfung
+verlangt `EPSG:2056` für die relevanten Geometrien. Der Explorer lädt die
+signierte Extension aus dem lokalen Cache oder bezieht sie beim Öffnen aus
+dem offiziellen DuckDB-Repository.
+
+SQL arbeitet mit Tabellen und Spalten aus dem DuckDB-Katalog. Nach einem
+Tabellenalias und einem Punkt schlägt der Editor die Spalten der zugehörigen
+Quelle vor. Das gilt auch für qualifizierte oder in doppelte Anführungszeichen
+gesetzte Tabellennamen und für erkennbare Ausgabespalten von `WITH`-Abfragen.
+Der Datensatz ist für diese Abfragen schreibgeschützt. Die folgende Abfrage
+zählt Objekte je konkreter Klasse.
+
+```sql
+SELECT type_name, count(*) AS objects
+FROM object
+GROUP BY type_name
+ORDER BY type_name
+```
 
 ## Objektspeicher in DuckDB
 
@@ -345,10 +503,17 @@ zum Plan passenden Reader mit XTF-2.4-FULL-Ereignissen. Beim erneuten Öffnen
 liefert der Aufrufer den passenden Plan aus dem Compiler. Der Store bindet
 Typen und Slots anhand ihrer deklarierten qualifizierten Namen neu und meldet
 fehlende oder mehrdeutige Deklarationen beim Lesen der betroffenen Werte.
+`basketTopics()` liefert die eindeutigen Topic-Referenzen der gespeicherten
+Baskets im aktuell gebundenen Plan, einschliesslich leerer Baskets.
 `find(basketId, objectKey)` sucht nach TID oder OID im angegebenen Basket.
 Vorkommen ohne TID oder OID bleiben über `objects(type)` zugänglich.
 `objects(type, limit)` liest höchstens die angegebene Anzahl Vorkommen des
-exakten Typs in Transferreihenfolge. Die Positionsnummern gelten innerhalb der Datei.
+exakten Typs in Transferreihenfolge. `objectAt(position)` öffnet ein
+Vorkommen direkt. `referencePositions(sourcePosition)` liefert die
+indizierten Referenzen mit ihren aufgelösten Positionen.
+`incomingRoleSources(targetPosition, limit)` liefert bis zum angegebenen
+Limit die Quellvorkommen eingehender Assoziationsrollen in
+Transferreihenfolge. Die Positionsnummern gelten innerhalb der Datei.
 
 | Tabelle | Inhalt |
 |---|---|
