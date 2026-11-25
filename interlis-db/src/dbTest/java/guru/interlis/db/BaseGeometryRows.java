@@ -28,6 +28,7 @@ import static guru.interlis.db.BaseDbFixture.SURFACE_WITH_HOLE;
 import static guru.interlis.db.BaseDbFixture.SURVEY_POINTS;
 import static guru.interlis.db.BaseDbFixture.WEST_AREA;
 import static guru.interlis.db.DbTestSupport.scalar;
+import static guru.interlis.db.ScalarFixtures.assertNumber;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -105,7 +106,7 @@ final class BaseGeometryRows {
         String basket = db.table("t_ili2db_basket");
         String sites = version == 24 ? ", " + geometryField(db, "r.sites") : "";
         String objects = """
-                select b.t_ili_tid, m.t_ili_tid, m.t_type, m.caption, t.height, r.aonline, f.asignal, t.serialnumber,
+                select b.t_ili_tid, m.t_ili_tid, m.t_type, m.caption, t.height, r.aonline, f.asignal, t.serialnumber, t.tilt,
                        %s, %s%s
                 from %s m join %s b on b.t_id=m.t_basket
                 left join %s t on t.t_id=m.t_id and t.t_basket=m.t_basket
@@ -127,6 +128,12 @@ final class BaseGeometryRows {
                         rows.getString(5));
                 assertEquals(switch (type) { case "relay" -> "35000000000"; case "tower" -> "45000000000"; default -> null; },
                         rows.getString("serialnumber"));
+                String tilt = rows.getString("tilt");
+                switch (type) {
+                    case "relay" -> assertNumber("-1.25", tilt);
+                    case "tower" -> assertNumber("12.50", tilt);
+                    default -> assertNull(tilt);
+                }
                 if (type.equals("relay")) {
                     assertFalse(rows.getBoolean(6));
                     assertFalse(rows.wasNull());

@@ -41,6 +41,7 @@ import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.readDataSection;
 import static guru.interlis.db.DbTestSupport.text;
 import static guru.interlis.db.DbTestSupport.transferredStructures;
+import static guru.interlis.db.ScalarFixtures.assertNumber;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -359,13 +360,16 @@ final class BaseTransferAssertions {
     private static void assertTransferredClassHierarchy(Map<String, Element> objects, int version, String dataset) {
         String prefix = version == 23 ? "BaseMapping23.Data." : "";
         var mast = objects.get(dataset + "-mast");
+        var tower = objects.get(dataset + "-tower");
         var relay = objects.get(dataset + "-relay");
         assertClassFields(mast, prefix + "Mast", Map.of("Caption", "base"), "Notes");
-        assertClassFields(objects.get(dataset + "-tower"), prefix + "Tower",
-                Map.of("Caption", "middle", "Height", "75", "SerialNumber", "45000000000"));
+        assertClassFields(tower, prefix + "Tower",
+                Map.of("Caption", "middle", "Height", "75", "SerialNumber", "45000000000"), "Tilt");
         assertClassFields(relay, prefix + "Relay",
                 Map.of("Caption", "leaf", "Height", "24", "SerialNumber", "35000000000", "Online", "false"),
-                "Notes", "Supplement", "Center", "Alignment", "Sites", "Mentor", "PairedService", "Recommended");
+                "Notes", "Supplement", "Center", "Alignment", "Sites", "Mentor", "PairedService", "Recommended", "Tilt");
+        assertTilt(tower, "12.50");
+        assertTilt(relay, "-1.25");
         assertLocalReference(relay, "Mentor", version, dataset + "-relay");
         assertTransferClassPoint(relay, "Center", version, MAST_CENTER);
         assertTransferRoute(child(relay, "Alignment"), version, STRAIGHT_ROUTE);
@@ -649,6 +653,12 @@ final class BaseTransferAssertions {
             assertEquals(name, payload.getFirst().getLocalName());
             assertEquals(memo, text(payload.getFirst(), "Memo"));
         }
+    }
+
+    private static void assertTilt(Element object, String expected) {
+        var values = children(object).stream().filter(field -> field.getLocalName().equals("Tilt")).toList();
+        assertEquals(1, values.size(), "Tilt in " + object.getTagName());
+        assertNumber(expected, values.getFirst().getTextContent());
     }
 
     private static void assertClassFields(Element object, String name, Map<String, String> fields, String... nestedFields) {

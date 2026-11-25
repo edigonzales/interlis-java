@@ -986,15 +986,19 @@ final class DbMapping {
         if (object.kind() != SymbolKind.CLASS || attribute.attribute().transientAttribute()) return false;
         var type = plan.type(attribute.effectiveType()).known().orElseThrow();
         if (type instanceof TextType text) return text.textKind() == TextKind.TEXT;
-        if (profile != DbInheritance.Profile.NEW_CLASS || !(type instanceof NumericType)) return false;
-        Kind kind = scalarKind(type);
-        if (kind != Kind.INTEGER && kind != Kind.BIGINT) return false;
+        if (profile != DbInheritance.Profile.NEW_CLASS || !(type instanceof NumericType number)) return false;
+        Kind kind = scalarKind(number);
+        if (kind != Kind.INTEGER && kind != Kind.BIGINT && kind != Kind.DECIMAL) return false;
 
         var base = baseAttribute(plan, attribute.attribute());
         var owner = plan.object(new SymbolRef(plan.snapshotId(), base.header().owner().orElseThrow())).orElseThrow();
         return !base.transientAttribute() && owner.topic().equals(object.topic()) && owner.slots().stream()
-                .anyMatch(slot -> slot instanceof AttributeSlot original && original.attribute().id().equals(base.id())
-                        && scalarKind(plan.type(original.effectiveType()).known().orElseThrow()) == kind);
+                .anyMatch(slot -> {
+                    if (!(slot instanceof AttributeSlot original) || !original.attribute().id().equals(base.id())) return false;
+                    var originalType = plan.type(original.effectiveType()).known().orElseThrow();
+                    return scalarKind(originalType) == kind && (kind != Kind.DECIMAL
+                            || DbDecimal.describe((NumericType) originalType).scale() == DbDecimal.describe(number).scale());
+                });
     }
 
     private static AttributeSymbol baseAttribute(TransferPlan plan, AttributeSymbol attribute) {

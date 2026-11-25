@@ -37,6 +37,27 @@ final class DbMappingTest {
     }
 
     @Test
+    void rejectsDecimalOverrideWithDifferentScale() {
+        var source = new SourceText(new SourceId("test:/Readings.ili"), new SourceRevision(1), """
+                INTERLIS 2.3;
+                MODEL Readings (en) AT "https://example.org" VERSION "2026-11-25" =
+                  TOPIC Data =
+                    CLASS Reading =
+                      Value : -90.00 .. 90.00;
+                    END Reading;
+                    CLASS LocalReading EXTENDS Reading =
+                      Value (EXTENDED) : -9.999 .. 9.999;
+                    END LocalReading;
+                  END Data;
+                END Readings.
+                """);
+        var rejected = assertThrows(DbException.class,
+                () -> DbMapping.planNew("Readings", source, false, false, 2056, CancellationToken.none()));
+        assertTrue(rejected.getMessage().contains("extended attribute in inheritance at Readings.Data.LocalReading.Value"),
+                rejected::getMessage);
+    }
+
+    @Test
     void rejectsOneToOneAssociationsBetweenTopics() {
         for (String version : List.of("2.3", "2.4")) {
             var source = new SourceText(new SourceId("test:/Location.ili"), new SourceRevision(1), """

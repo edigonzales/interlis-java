@@ -7,6 +7,8 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
 
@@ -89,7 +91,10 @@ final class BaseMappingInteropTest {
     private static void compareCatalogs(TestDatabase baseline, TestDatabase own, int version) throws Exception {
         try (var expected = baseline.connect(); var actual = own.connect()) {
             var catalog = DbSchemaCatalog.read(expected, baseline.postgis(), baseline.schema());
-            if (!baseline.postgis()) {
+            if (baseline.postgis()) {
+                assertTiltPrecision(expected, baseline.schema());
+                assertTiltPrecision(actual, own.schema());
+            } else {
                 catalog = catalog.expectGeoPackageGeometryExtension("route", "trace", "COMPOUNDCURVE")
                         .expectGeoPackageGeometryExtension("tower", "alignment", "COMPOUNDCURVE")
                         .expectGeoPackageGeometryExtension("plot", "footprint", "CURVEPOLYGON")
@@ -102,6 +107,13 @@ final class BaseMappingInteropTest {
             }
             catalog.assertSameAs(DbSchemaCatalog.read(actual, own.postgis(), own.schema()));
         }
+    }
+
+    private static void assertTiltPrecision(Connection sql, String schema) throws SQLException {
+        assertEquals("4:2", scalar(sql, """
+                select numeric_precision || ':' || numeric_scale from information_schema.columns
+                where table_schema = '%s' and table_name = 'tower' and column_name = 'tilt'
+                """.formatted(schema)), schema + ".tower.tilt precision and scale");
     }
 
     private static void assertReferenceEmptyTextAndRestoreSqlEmptyStrings(TestDatabase db) throws Exception {

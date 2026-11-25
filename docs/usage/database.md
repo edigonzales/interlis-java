@@ -42,8 +42,10 @@ SQL-Spalte der Basisdeklaration. Der Export verwendet im XTF 2.4 ihren
 Namensraum.
 In `newClass`-Klassenhierarchien innerhalb desselben Topics verwenden
 verengte Ganzzahlbereiche mit gleichem Speichertyp (`INTEGER` oder `BIGINT`)
-ebenfalls die Spalte und den `ATTRNAME`-Eintrag der Basisdeklaration.
-`--create-num-checks` verwendet für diese Spalte den Basisbereich.
+und verengte Festkommaattribute mit gleicher Skala ebenfalls die Spalte
+und den `ATTRNAME`-Eintrag der Basisdeklaration. Auf PostGIS bestimmt die
+Basisdeklaration auch die SQL-Präzision der Festkommaspalte.
+`--create-num-checks` verwendet für diese Spalten den Basisbereich.
 Ohne `--createNumChecks` kann ili2pg 5.5.2 für zehnstellige Ganzzahlgrenzen
 eine `integer`-Spalte anlegen, auch wenn der Modellbereich darüber hinausgeht.
 Der Austausch für solche Bereiche setzt auf PostGIS eine `bigint`-Spalte

@@ -210,7 +210,7 @@
         </Notes>
       </BaseMapping23.Data.Mast>
       <BaseMapping23.Data.Tower TID="legacy-tower">
-        <Caption>middle</Caption><Height>75</Height><SerialNumber>45000000000</SerialNumber>
+        <Caption>middle</Caption><Height>75</Height><SerialNumber>45000000000</SerialNumber><Tilt>12.50</Tilt>
       </BaseMapping23.Data.Tower>
       <BaseMapping23.Data.Beacon TID="legacy-beacon"><Caption>sibling</Caption><Signal>green</Signal></BaseMapping23.Data.Beacon>
       <BaseMapping23.Data.Relay TID="legacy-relay">
@@ -219,6 +219,7 @@
         <Center><COORD><C1>2600000.125</C1><C2>1200000.375</C2></COORD></Center>
         <Height>24</Height>
         <SerialNumber>35000000000</SerialNumber>
+        <Tilt>-1.25</Tilt>
         <Supplement><BaseMapping23.Data.NestedOuter>
           <Items><BaseMapping23.Data.NestedInner>
             <Headline>inherited</Headline>

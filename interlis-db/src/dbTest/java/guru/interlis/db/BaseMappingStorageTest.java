@@ -37,6 +37,7 @@ import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.readDataSection;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
+import static guru.interlis.db.ScalarFixtures.assertNumber;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -69,8 +70,9 @@ final class BaseMappingStorageTest {
             BaseStructureRows.assertStored(db, sql, version, "legacy");
             BaseAssociationRows.assertStored(db, sql, version, "legacy");
             assertRows(db, sql, version, 1);
-            assertTowerRange(db, sql, "height", 99);
-            assertTowerRange(db, sql, "serialnumber", 50_000_000_000L);
+            assertTowerRange(db, sql, "height", "99", "100");
+            assertTowerRange(db, sql, "serialnumber", "50000000000", "50000000001");
+            assertTowerRange(db, sql, "tilt", "90.00", "90.01");
         }
         if (db.postgis()) assertPostgresIdDefault(db);
 
@@ -83,15 +85,16 @@ final class BaseMappingStorageTest {
         assertExportRejected(db, model, "legacy", output, "Select", "missing_select");
     }
 
-    private static void assertTowerRange(Target db, Connection sql, String column, long maximum) throws SQLException {
+    private static void assertTowerRange(Target db, Connection sql, String column, String maximum, String outside)
+            throws SQLException {
         String table = db.table("tower");
         String relay = " where t_id=(select t_id from " + db.table("mast") + " where t_ili_tid='legacy-relay')";
         String update = "update " + table + " set " + column + "=";
         sql.setAutoCommit(false);
         try {
             execute(sql, update + maximum + relay);
-            assertEquals(Long.toString(maximum), scalar(sql, "select " + column + " from " + table + relay));
-            var rejected = assertThrows(SQLException.class, () -> execute(sql, update + (maximum + 1) + relay));
+            assertNumber(maximum, scalar(sql, "select " + column + " from " + table + relay));
+            var rejected = assertThrows(SQLException.class, () -> execute(sql, update + outside + relay));
             if (db.postgis) {
                 assertEquals("23514", rejected.getSQLState(), rejected::getMessage);
             } else {
