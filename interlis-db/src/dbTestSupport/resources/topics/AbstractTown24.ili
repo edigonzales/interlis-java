@@ -2,6 +2,6 @@ INTERLIS 2.4;
 MODEL AbstractTown24 AT "https://example.org/town" VERSION "1" =
   TOPIC Core (ABSTRACT) =
     CLASS Item = Label : TEXT*30; Size : 0..100; END Item;
-    CLASS Marker = END Marker;
+    CLASS SurveyMark = END SurveyMark;
   END Core;
 END AbstractTown24.

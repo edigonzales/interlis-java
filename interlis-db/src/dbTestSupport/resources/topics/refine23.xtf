@@ -6,7 +6,7 @@
   <DATASECTION>
     <RefinedTown23.Region BID="refine-b">
       <RefinedTown23.Region.Item TID="refine-i"><Label>text</Label><Size>4</Size><Extra>added</Extra></RefinedTown23.Region.Item>
-      <AbstractTown23.Core.Marker TID="refine-m"/>
+      <AbstractTown23.Core.SurveyMark TID="refine-m"/>
     </RefinedTown23.Region>
   </DATASECTION>
 </TRANSFER>

@@ -6,7 +6,7 @@
   <i:datasection>
     <d:Region i:bid="refine-b">
       <d:Item i:tid="refine-i"><p:Label>text</p:Label><p:Size>4</p:Size><d:Extra>added</d:Extra></d:Item>
-      <p:Marker i:tid="refine-m"/>
+      <p:SurveyMark i:tid="refine-m"/>
     </d:Region>
   </i:datasection>
 </i:transfer>

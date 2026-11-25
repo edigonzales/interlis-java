@@ -211,22 +211,6 @@ final class DbInteropTest {
         }
     }
 
-    @Test void geoPackageTopicInherited23() throws Exception { exchangeTopicInherited(23, null); }
-    @Test void geoPackageTopicInherited24() throws Exception { exchangeTopicInherited(24, null); }
-    @Test void postgisTopicInherited23() throws Exception { exchangeWithPostgis(23, this::exchangeTopicInherited); }
-    @Test void postgisTopicInherited24() throws Exception { exchangeWithPostgis(24, this::exchangeTopicInherited); }
-    @Test void geoPackageTopicFragments23() throws Exception { exchangeTopicFragments(23, null); }
-    @Test void geoPackageTopicFragments24() throws Exception { exchangeTopicFragments(24, null); }
-    @Test void postgisTopicFragments23() throws Exception { exchangeWithPostgis(23, this::exchangeTopicFragments); }
-    @Test void postgisTopicFragments24() throws Exception { exchangeWithPostgis(24, this::exchangeTopicFragments); }
-    @Test void geoPackageTopicRefinement23() throws Exception { exchangeTopicRefinement(23, null); }
-    @Test void geoPackageTopicRefinement24() throws Exception { exchangeTopicRefinement(24, null); }
-    @Test void postgisTopicRefinement23() throws Exception { exchangeWithPostgis(23, this::exchangeTopicRefinement); }
-    @Test void postgisTopicRefinement24() throws Exception { exchangeWithPostgis(24, this::exchangeTopicRefinement); }
-    @Test void geoPackageTopicReferences23() throws Exception { exchangeTopicReferences(23, null); }
-    @Test void geoPackageTopicReferences24() throws Exception { exchangeTopicReferences(24, null); }
-    @Test void postgisTopicReferences23() throws Exception { exchangeWithPostgis(23, this::exchangeTopicReferences); }
-    @Test void postgisTopicReferences24() throws Exception { exchangeWithPostgis(24, this::exchangeTopicReferences); }
     @Test void geoPackageTopicMutations23() throws Exception { exchangeTopicMutations(23, null); }
     @Test void geoPackageTopicMutations24() throws Exception { exchangeTopicMutations(24, null); }
     @Test void postgisTopicMutations23() throws Exception { exchangeWithPostgis(23, this::exchangeTopicMutations); }
@@ -279,30 +263,6 @@ final class DbInteropTest {
                 new TestDatabase(work, postgres, "hierarchy_geometry_own"), postgres == null);
         cases.hierarchy(new TestDatabase(work, postgres, "alternate_hierarchy_reference"),
                 new TestDatabase(work, postgres, "alternate_hierarchy_own"), postgres != null);
-    }
-
-    private void exchangeTopicInherited(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(work, postgres, "reference_topic_inherited");
-        var own = new TestDatabase(work, postgres, "own_topic_inherited");
-        new TopicCases(work, new ReferenceTool(work, reference.postgis()), version).inherited(reference, own);
-    }
-
-    private void exchangeTopicFragments(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(work, postgres, "reference_topic_fragments");
-        var own = new TestDatabase(work, postgres, "own_topic_fragments");
-        new TopicCases(work, new ReferenceTool(work, reference.postgis()), version).fragments(reference, own);
-    }
-
-    private void exchangeTopicRefinement(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(work, postgres, "reference_topic_refinement");
-        var own = new TestDatabase(work, postgres, "own_topic_refinement");
-        new TopicCases(work, new ReferenceTool(work, reference.postgis()), version).refinement(reference, own);
-    }
-
-    private void exchangeTopicReferences(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(work, postgres, "reference_topic_references");
-        var own = new TestDatabase(work, postgres, "own_topic_references");
-        new TopicCases(work, new ReferenceTool(work, reference.postgis()), version).references(reference, own);
     }
 
     private void exchangeTopicMutations(int version, PostgreSQLContainer postgres) throws Exception {

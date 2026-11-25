@@ -441,10 +441,14 @@ Namen des Originals. `TranslationStorageTest` prüft beschädigte oder
 fehlende Quellen und die abgewiesene Ausgabesprache mit bytegenau
 erhaltener Zieldatei.
 
-`*DbInteropTest.*Topic*` umfasst zusätzlich geerbte Klassen,
-basketübergreifende Abhängigkeiten und Klassenfragmente, abstrakte
-Basistopics mit verengten Textattributen sowie lokale Rollen und
-Referenzen in abgeleiteten Baskets. `*DbInteropTest.*TopicMutations*`
+`--tests '*TopicInheritanceInteropTest'` bündelt geerbte Klassen,
+Klassenfragmente, Attributverfeinerung und Referenzen in fünf Baskets.
+Der Mischlauf vergleicht den Katalog und prüft den Werkzeugwechsel in
+beiden Schematypen. `TopicInheritanceStorageTest` prüft unzulässige
+Geschwistertypen, gespeicherte abstrakte Baskets und den Rollback bei
+einer Referenz in den falschen Basket.
+
+`*DbInteropTest.*TopicMutations*`
 prüft bei übersetzten und abgeleiteten Baskets die stabilen IDs beim
 Update, Ersatz und Löschung sowie Rollback bei eingehenden Referenzen.
 
