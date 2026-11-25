@@ -41,27 +41,23 @@ final class XyzGeometryStorageTest {
         var output = work.resolve("xyz-storage-export.xtf");
 
         try (var sql = db.connect()) {
-            assertStorage(db, sql);
+            assertStorage(db, sql, version);
+            assertSpatialHits(db, sql);
             var before = storedValues(db, sql, version);
-            assertCliSuccess(db, "export", fixture.model, "xyz", output);
-            fixture.assertTransfer(output);
 
             assertCliFailure(db, "replace", fixture.model, "xyz", fixture.lineWithMissingHeight(),
                     version == 23 ? "Expected C3" : "Expected a 3D coordinate");
             assertEquals(before, storedValues(db, sql, version));
-            assertStorage(db, sql);
-            assertCliSuccess(db, "export", fixture.model, "xyz", output);
-            fixture.assertTransfer(output);
+            assertSpatialHits(db, sql);
 
             if (version == 24) {
                 assertCliFailure(db, "replace", fixture.model, "xyz", fixture.mixedCollection(), "Expected a 3D coordinate");
                 assertEquals(before, storedValues(db, sql, version));
-                assertStorage(db, sql);
-                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("survey")));
-                assertCliSuccess(db, "export", fixture.model, "xyz", output);
-                fixture.assertTransfer(output);
+                assertSpatialHits(db, sql);
             }
         }
+        assertCliSuccess(db, "export", fixture.model, "xyz", output);
+        fixture.assertTransfer(output);
     }
 
     private static Map<String, Set<String>> storedValues(Target db, Connection sql, int version) throws SQLException {
@@ -81,13 +77,24 @@ final class XyzGeometryStorageTest {
         return values;
     }
 
-    private static void assertStorage(Target db, Connection sql) throws SQLException {
+    private static void assertStorage(Target db, Connection sql, int version) throws SQLException {
         String table = db.table("marker");
         assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("plot") + " WHERE outline IS NOT NULL"));
         assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("parcel") + " WHERE perimeter IS NOT NULL"));
         assertEquals("3", scalar(sql, "SELECT count(*) FROM " + table));
         assertEquals("1", scalar(sql, "SELECT count(*) FROM " + table + " WHERE aposition IS NULL"));
         assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("track") + " WHERE t_ili_tid='track-1'"));
+        if (version == 24) {
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("survey")));
+        }
+        if (db.postgis()) {
+            assertTrue(scalar(sql, "SELECT ST_AsEWKT(trace) FROM " + db.table("track") + " WHERE t_ili_tid='arc-track'")
+                    .contains("2602380 1202360 NaN"));
+            assertEquals("42.875", scalar(sql, "SELECT ST_Z(aposition) FROM " + table + " WHERE t_ili_tid='above'"));
+        }
+    }
+
+    private static void assertSpatialHits(Target db, Connection sql) throws SQLException {
         String arcHit = db.postgis()
                 ? "SELECT count(*) FROM " + db.table("track")
                         + " WHERE trace && ST_MakeEnvelope(2602399,1202300,2602399,1202300,2056)"
@@ -95,10 +102,7 @@ final class XyzGeometryStorageTest {
                         + " AND miny<=1202300 AND maxy>=1202300";
         assertEquals("1", scalar(sql, arcHit));
         if (db.postgis()) {
-            assertTrue(scalar(sql, "SELECT ST_AsEWKT(trace) FROM " + db.table("track") + " WHERE t_ili_tid='arc-track'")
-                    .contains("2602380 1202360 NaN"));
-            assertEquals("42.875", scalar(sql, "SELECT ST_Z(aposition) FROM " + table + " WHERE t_ili_tid='above'"));
-            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + table
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("marker")
                     + " WHERE aposition && ST_MakeEnvelope(2600000,1200000,2600001,1200001,2056)"));
         } else {
             assertEquals("1", scalar(sql, "SELECT count(*) FROM rtree_marker_aposition"
