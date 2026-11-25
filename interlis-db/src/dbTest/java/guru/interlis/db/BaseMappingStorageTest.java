@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,6 +28,7 @@ import static guru.interlis.db.DbTestSupport.assertExportRejected;
 import static guru.interlis.db.DbTestSupport.assertLocalReference;
 import static guru.interlis.db.DbTestSupport.assertMissingTarget;
 import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
+import static guru.interlis.db.DbTestSupport.catalogKeys;
 import static guru.interlis.db.DbTestSupport.child;
 import static guru.interlis.db.DbTestSupport.children;
 import static guru.interlis.db.DbTestSupport.cli;
@@ -158,24 +160,27 @@ final class BaseMappingStorageTest {
         base.importDataset(db, "legacy");
         base.importDataset(db, "native");
         try (var sql = db.connect()) {
-            assertMissingReferenceRollback(db, sql, model, version, fixture, "LinkedHub", "MarkerLink", "missing-link", 2);
-            assertMissingReferenceRollback(db, sql, model, version, fixture, "Witness", "Review", "missing-review", 2);
             assertMissingReferenceRollback(db, sql, model, version, fixture,
-                    "ConsultedMarker", "AnnotatedLink", "missing-annotated-link", 2);
+                    "LinkedHub", "MarkerLink", "missing-link", "marker", "hub", "markerlink");
+            assertMissingReferenceRollback(db, sql, model, version, fixture,
+                    "Witness", "Review", "missing-review", "marker", "hub", "review");
+            assertMissingReferenceRollback(db, sql, model, version, fixture,
+                    "ConsultedMarker", "AnnotatedLink", "missing-annotated-link", "marker", "report", "annotatedlink");
             assertWrongTargetBranchRollback(db, sql, model, version, fixture);
             assertWrongHierarchyRoleRollback(db, sql, model, version, fixture);
             assertWrongStandaloneBranchRollback(db, sql, model, version, fixture,
-                    "HierarchyLink", "WorkBranch", "wrong-hierarchy-link");
+                    "HierarchyLink", "WorkBranch", "wrong-hierarchy-link", "hierarchylink");
             assertWrongStandaloneBranchRollback(db, sql, model, version, fixture,
-                    "DispatchRecord", "DispatchMast", "wrong-ternary-link");
+                    "DispatchRecord", "DispatchMast", "wrong-ternary-link", "dispatchrecord");
             base.importDataset(db, "tail");
-            assertRollback(db, sql, model, version, fixture);
-            assertStructureRollback(db, sql, model, version, fixture);
+            assertRollback(db, sql, model, fixture);
+            assertStructureRollback(db, sql, model, fixture);
             assertMissingStructureTargetRollback(db, sql, model, version, fixture);
             assertMissingReferenceRollback(db, sql, model, version, fixture,
-                    "Select", "missing-role-marker-1", "missing-role", 3);
-            assertClassHierarchyRollback(db, sql, model, version, fixture);
+                    "Select", "missing-role-marker-1", "missing-role", "marker", "hub");
+            assertClassHierarchyRollback(db, sql, model, fixture);
             assertUnresolvedHierarchyReferenceRollback(db, sql, model, version, fixture);
+            assertRows(db, sql, version, 3);
         }
     }
 
@@ -284,9 +289,10 @@ final class BaseMappingStorageTest {
         }
     }
 
-    private void assertRollback(Target db, Connection sql, String model, int version, String fixture)
+    private void assertRollback(Target db, Connection sql, String model, String fixture)
             throws Exception {
         Path broken = Files.writeString(work.resolve("rollback.xtf"), fixture.replace("legacy-", "fail-"));
+        var rows = storedIds(db, sql, "route", "place");
         if (db.postgis) {
             String sequenceValue = "select last_value from " + db.table("t_ili2db_seq");
             long before = Long.parseLong(scalar(sql, sequenceValue));
@@ -314,11 +320,10 @@ final class BaseMappingStorageTest {
             assertNotEquals(0, rejected.code(), rejected::diagnostics);
             assertTrue(rejected.diagnostics().contains("SQL code"), rejected::diagnostics);
         }
-        assertNull(scalar(sql, "select datasetname from " + db.table("t_ili2db_dataset") + " where datasetname='fail'"));
-        assertRows(db, sql, version, 3);
+        assertRolledBack(db, sql, "fail", rows);
     }
 
-    private void assertStructureRollback(Target db, Connection sql, String model, int version, String fixture)
+    private void assertStructureRollback(Target db, Connection sql, String model, String fixture)
             throws Exception {
         // Reject the second basket's child after the flat collections and nested leaves reached the database.
         String condition = """
@@ -356,12 +361,11 @@ final class BaseMappingStorageTest {
                     """.formatted(condition));
         }
         Path input = Files.writeString(work.resolve("structure-rollback.xtf"), fixture.replace("legacy-", "structure-fail-"));
+        var rows = storedIds(db, sql, "report", "detail", "nestedrecord", "nestedouter", "nestedinner", "nestedleaf");
         var rejected = cli(db, "import", model, "structure-fail", input, CancellationToken.none());
         assertEquals(1, rejected.code(), rejected::diagnostics);
         assertTrue(rejected.diagnostics().contains(db.postgis ? "SQL code P0052" : "SQL code"), rejected::diagnostics);
-        assertNull(scalar(sql, "select datasetname from " + db.table("t_ili2db_dataset")
-                + " where datasetname='structure-fail'"));
-        assertRows(db, sql, version, 3);
+        assertRolledBack(db, sql, "structure-fail", rows);
     }
 
     private void assertMissingStructureTargetRollback(Target db, Connection sql, String model, int version,
@@ -371,22 +375,22 @@ final class BaseMappingStorageTest {
                 "<Destination " + ref + "=\"missing-destination\"");
         Path input = Files.writeString(work.resolve("missing-structure-target.xtf"),
                 broken.replace("legacy-", "missing-structure-target-"));
+        var rows = storedIds(db, sql, "report", "linkdetail");
         var rejected = cli(db, "import", model, "missing-structure-target", input, CancellationToken.none());
         assertEquals(1, rejected.code(), rejected::diagnostics);
         assertTrue(rejected.diagnostics().contains("missing-structure-target-report-2 at " + model + ".Data.LinkDetail.Destination")
                 && rejected.diagnostics().contains("missing-destination"), rejected::diagnostics);
-        assertNull(scalar(sql, "select datasetname from " + db.table("t_ili2db_dataset")
-                + " where datasetname='missing-structure-target'"));
-        assertRows(db, sql, version, 3);
+        assertRolledBack(db, sql, "missing-structure-target", rows);
     }
 
     private void assertMissingReferenceRollback(Target db, Connection sql, String model, int version,
                                                 String fixture, String role, String affectedObject, String dataset,
-                                                int existingDatasets) throws Exception {
+                                                String... affectedTables) throws Exception {
         String ref = version == 24 ? "i:ref" : "REF";
         String roleStart = "<" + role + " " + ref + "=\"";
         String broken = fixture.replaceFirst(roleStart + "legacy-[^\"]+", roleStart + "unresolved-target");
         Path input = Files.writeString(work.resolve(dataset + "-target.xtf"), broken.replace("legacy-", dataset + "-"));
+        var rows = storedIds(db, sql, affectedTables);
         String counter = db.postgis ? "select last_value from " + db.table("t_ili2db_seq")
                 : "select T_LastUniqueId from T_KEY_OBJECT where T_Key='T_Id'";
         long before = Long.parseLong(scalar(sql, counter));
@@ -397,9 +401,7 @@ final class BaseMappingStorageTest {
         // PostgreSQL has allocated IDs for the dataset, first basket and all its rows, including both late Hubs.
         long allocated = version == 24 ? 35 : 30;
         assertEquals(Long.toString(db.postgis ? before + allocated : before), scalar(sql, counter));
-        assertNull(scalar(sql, "select datasetname from " + db.table("t_ili2db_dataset")
-                + " where datasetname='" + dataset + "'"));
-        assertRows(db, sql, version, existingDatasets);
+        assertRolledBack(db, sql, dataset, rows);
     }
 
     private void assertWrongTargetBranchRollback(Target db, Connection sql, String model, int version,
@@ -409,11 +411,12 @@ final class BaseMappingStorageTest {
         String broken = fixture.replace(field + "\"legacy-relay\"", field + "\"legacy-beacon\"");
         assertNotEquals(fixture, broken);
         Path input = Files.writeString(work.resolve("wrong-branch.xtf"), broken.replace("legacy-", "wrong-branch-"));
+        var rows = storedIds(db, sql, "refcarrier", "targetpair");
         var rejected = cli(db, "import", model, "wrong-branch", input, CancellationToken.none());
         assertEquals(1, rejected.code(), rejected::diagnostics);
         assertTrue(rejected.diagnostics().contains("TargetPair.BranchTarget")
                 && rejected.diagnostics().contains("wrong-branch-beacon"), rejected::diagnostics);
-        assertRows(db, sql, version, 2);
+        assertRolledBack(db, sql, "wrong-branch", rows);
     }
 
     private void assertWrongHierarchyRoleRollback(Target db, Connection sql, String model, int version,
@@ -422,26 +425,46 @@ final class BaseMappingStorageTest {
         String broken = fixture.replace(role + "\"legacy-relay\"", role + "\"legacy-beacon\"");
         assertNotEquals(fixture, broken);
         Path input = Files.writeString(work.resolve("wrong-role-branch.xtf"), broken.replace("legacy-", "wrong-role-branch-"));
+        var rows = storedIds(db, sql, "servicebase", "serviceunit", "mast");
         var rejected = cli(db, "import", model, "wrong-role-branch", input, CancellationToken.none());
         assertEquals(1, rejected.code(), rejected::diagnostics);
         assertTrue(rejected.diagnostics().contains("HierarchyCrew.Supervisor")
                 && rejected.diagnostics().contains("wrong-role-branch-beacon"), rejected::diagnostics);
-        assertRows(db, sql, version, 2);
+        assertRolledBack(db, sql, "wrong-role-branch", rows);
     }
 
     private void assertWrongStandaloneBranchRollback(Target db, Connection sql, String model, int version,
-                                                     String fixture, String association, String role, String dataset)
+                                                     String fixture, String association, String role, String dataset,
+                                                     String linkTable)
             throws Exception {
         String ref = version == 24 ? "i:ref" : "REF";
         String field = "<" + role + " " + ref + "=";
         String broken = fixture.replace(field + "\"legacy-relay\"", field + "\"legacy-beacon\"");
         assertNotEquals(fixture, broken);
         Path input = Files.writeString(work.resolve(dataset + ".xtf"), broken.replace("legacy-", dataset + "-"));
+        var rows = storedIds(db, sql, "mast", linkTable);
         var rejected = cli(db, "import", model, dataset, input, CancellationToken.none());
         assertEquals(1, rejected.code(), rejected::diagnostics);
         assertTrue(rejected.diagnostics().contains(association + "." + role)
                 && rejected.diagnostics().contains(dataset + "-beacon"), rejected::diagnostics);
-        assertRows(db, sql, version, 2);
+        assertRolledBack(db, sql, dataset, rows);
+    }
+
+    private static Map<String, Set<String>> storedIds(Target db, Connection sql, String... tables) throws SQLException {
+        var rows = new LinkedHashMap<String, Set<String>>();
+        for (String table : tables) {
+            rows.put(table, catalogKeys(sql, "select t_id from " + db.table(table)));
+        }
+        return rows;
+    }
+
+    private static void assertRolledBack(Target db, Connection sql, String dataset, Map<String, Set<String>> rows)
+            throws SQLException {
+        assertNull(scalar(sql, "select t_id from " + db.table("t_ili2db_dataset") + " where datasetname='" + dataset + "'"),
+                dataset);
+        assertNull(scalar(sql, "select t_id from " + db.table("t_ili2db_basket")
+                + " where t_ili_tid in ('" + dataset + "-basket-1', '" + dataset + "-basket-2')"), dataset);
+        assertEquals(rows, storedIds(db, sql, rows.keySet().toArray(String[]::new)), dataset);
     }
 
     private static void assertCorruptStructureRejected(Target db, Connection sql, String model, Path output)
@@ -679,7 +702,7 @@ final class BaseMappingStorageTest {
         }
     }
 
-    private void assertClassHierarchyRollback(Target db, Connection sql, String model, int version, String fixture)
+    private void assertClassHierarchyRollback(Target db, Connection sql, String model, String fixture)
             throws Exception {
         String condition = "exists (select 1 from " + db.table("mast") + " m join " + db.table("tower")
                 + " t on t.t_id=m.t_id and t.t_basket=m.t_basket"
@@ -703,11 +726,11 @@ final class BaseMappingStorageTest {
                     """.formatted(condition));
         }
         Path input = Files.writeString(work.resolve("class-rollback.xtf"), fixture.replace("legacy-", "class-fail-"));
+        var rows = storedIds(db, sql, "mast", "tower", "arelay");
         var rejected = cli(db, "import", model, "class-fail", input, CancellationToken.none());
         assertEquals(1, rejected.code(), rejected::diagnostics);
         assertTrue(rejected.diagnostics().contains(db.postgis ? "SQL code P0054" : "SQL code"), rejected::diagnostics);
-        assertNull(scalar(sql, "select t_id from " + db.table("mast") + " where t_ili_tid='class-fail-relay'"));
-        assertRows(db, sql, version, 3);
+        assertRolledBack(db, sql, "class-fail", rows);
     }
 
     private void assertUnresolvedHierarchyReferenceRollback(Target db, Connection sql, String model,
@@ -718,13 +741,12 @@ final class BaseMappingStorageTest {
         String broken = fixture.replace(noteReference + "\"legacy-relay\"", noteReference + "\"missing-branch-target\"");
         assertNotEquals(fixture, broken);
         Path input = Files.writeString(work.resolve(dataset + ".xtf"), broken.replace("legacy-", dataset + "-"));
+        var rows = storedIds(db, sql, "refnotebook", "refnotebase", "refnotebranch", "refnoteleaf");
         var rejected = cli(db, "import", model, dataset, input, CancellationToken.none());
         assertEquals(1, rejected.code(), rejected::diagnostics);
         assertTrue(rejected.diagnostics().contains(model + ".Data.RefNoteBranch.BranchTarget")
                 && rejected.diagnostics().contains("missing-branch-target"), rejected::diagnostics);
-        assertNull(scalar(sql, "select t_id from " + db.table("refnotebook")
-                + " where t_ili_tid='" + dataset + "-ref-notebook'"));
-        assertRows(db, sql, version, 3);
+        assertRolledBack(db, sql, dataset, rows);
     }
 
     private static void assertWrongRelayReviewOwnerRejected(Target db, Connection sql, String model, Path output)

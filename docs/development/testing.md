@@ -590,9 +590,11 @@ gerade und gebogene Segmente, Aussen- und Innenringe, die gemeinsame Kante
 benachbarter `AREA`-Objekte, SRS und `NULL` für XTF 2.3 und 2.4 in beiden
 Werkzeugrichtungen. In 2.3 prüfen sie auch die Zusammenführung eines
 geteilten Randes. In 2.4 prüfen sie die geordneten Teile von
-`MULTICOORD`, `MULTIPOLYLINE`, `MULTISURFACE` und `MULTIAREA`. Ein weiterer
-Referenzimport im eigenen Schema prüft die gemeinsame ID-Vergabe. `GeometryStorageTest` übernimmt
-Rollback und Exportfehler für Geometrien sowie den Export leerer SQL-Sammlungen.
+`MULTICOORD`, `MULTIPOLYLINE`, `MULTISURFACE` und `MULTIAREA`. Nach einem
+weiteren Referenzimport im eigenen Schema prüft JDBC die gemeinsame ID-Vergabe,
+die Basket-Zuordnung und einen Marker mit seiner Verknüpfung. `GeometryStorageTest`
+prüft Rollback und Exportfehler für Geometrien sowie den Export leerer
+SQL-Sammlungen.
 
 Der Basislauf prüft die XTF-Ergebnisse. `BaseMappingStorageTest` prüft
 die physischen Zeilen, ihre Binärkodierung und Zuordnungen per JDBC.

@@ -8,11 +8,13 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 
 import static guru.interlis.db.BaseDbFixture.assertRows;
 import static guru.interlis.db.BaseTransferAssertions.assertTransfer;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
+import static guru.interlis.db.DbTestSupport.catalogKeys;
 import static guru.interlis.db.DbTestSupport.execute;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.InteropCommands.exportDataset;
@@ -68,14 +70,19 @@ final class BaseMappingInteropTest {
 
         var tail = Files.writeString(work.resolve("tail.xtf"), transfer.replace("legacy-", "tail-"));
         importDataset(reference, own, "tail", tail);
-        var output = work.resolve("tail-export.xtf");
-        assertCliSuccess(own, "export", model, "tail", output);
-        assertTransfer(output, version, "tail", false);
         try (var sql = own.connect()) {
             assertRows(own, sql, version, 3);
-            assertEquals("2", scalar(sql, "select count(*) from " + own.table("t_ili2db_basket") + " b join "
-                    + own.table("t_ili2db_dataset") + " d on b.dataset=d.t_id"
-                    + " where d.datasetname='tail' and b.t_ili_tid in ('tail-basket-1', 'tail-basket-2')"));
+            assertEquals(Set.of("tail-basket-1", "tail-basket-2"), catalogKeys(sql,
+                    "select b.t_ili_tid from " + own.table("t_ili2db_basket") + " b join "
+                            + own.table("t_ili2db_dataset") + " d on b.dataset=d.t_id where d.datasetname='tail'"));
+            assertEquals("first", scalar(sql, """
+                    select m.aselect from %s l
+                    join %s m on m.t_id=l.linkedmarker and m.t_basket=l.t_basket
+                    join %s h on h.t_id=l.linkedhub and h.t_basket=l.t_basket
+                    join %s b on b.t_id=l.t_basket
+                    where b.t_ili_tid='tail-basket-1' and m.t_ili_tid='tail-marker-1' and h.t_ili_tid='tail-hub-1'
+                    """.formatted(own.table("markerlink"), own.table("marker"), own.table("hub"),
+                    own.table("t_ili2db_basket"))));
         }
     }
 
