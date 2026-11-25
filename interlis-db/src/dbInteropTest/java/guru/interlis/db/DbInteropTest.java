@@ -211,11 +211,6 @@ final class DbInteropTest {
         }
     }
 
-    @Test void geoPackageTopicMutations23() throws Exception { exchangeTopicMutations(23, null); }
-    @Test void geoPackageTopicMutations24() throws Exception { exchangeTopicMutations(24, null); }
-    @Test void postgisTopicMutations23() throws Exception { exchangeWithPostgis(23, this::exchangeTopicMutations); }
-    @Test void postgisTopicMutations24() throws Exception { exchangeWithPostgis(24, this::exchangeTopicMutations); }
-
     @Test void geoPackage23() throws Exception { exchange(23, null); }
     @Test void geoPackage24() throws Exception {
         exchange(24, null);
@@ -263,14 +258,6 @@ final class DbInteropTest {
                 new TestDatabase(work, postgres, "hierarchy_geometry_own"), postgres == null);
         cases.hierarchy(new TestDatabase(work, postgres, "alternate_hierarchy_reference"),
                 new TestDatabase(work, postgres, "alternate_hierarchy_own"), postgres != null);
-    }
-
-    private void exchangeTopicMutations(int version, PostgreSQLContainer postgres) throws Exception {
-        var translated = new TestDatabase(work, postgres, "translation_mutation");
-        var inherited = new TestDatabase(work, postgres, "topic_mutation");
-        var reference = new ReferenceTool(work, inherited.postgis());
-        new TranslationCases(work, reference, version).mutation(translated);
-        new TopicCases(work, reference, version).mutation(inherited);
     }
 
     private void exchange(int version, PostgreSQLContainer postgres) throws Exception {

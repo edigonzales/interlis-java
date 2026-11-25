@@ -439,18 +439,19 @@ Austausch neuer Lieferungen und die explizite Ausgabesprache. XTF 2.3
 prüft den Sprachwechsel in beide Richtungen. XTF 2.4 exportiert mit den
 Namen des Originals. `TranslationStorageTest` prüft beschädigte oder
 fehlende Quellen und die abgewiesene Ausgabesprache mit bytegenau
-erhaltener Zieldatei.
+erhaltener Zieldatei. Nach einem nativen Update liest ili2db die
+geänderte Übersetzung. Stabile IDs, falsche Modellauswahl, Replace und
+Delete prüft `TranslationStorageTest` direkt.
 
 `--tests '*TopicInheritanceInteropTest'` bündelt geerbte Klassen,
 Klassenfragmente, Attributverfeinerung und Referenzen in fünf Baskets.
 Der Mischlauf vergleicht den Katalog und prüft den Werkzeugwechsel in
 beiden Schematypen. `TopicInheritanceStorageTest` prüft unzulässige
 Geschwistertypen, gespeicherte abstrakte Baskets und den Rollback bei
-einer Referenz in den falschen Basket.
-
-`*DbInteropTest.*TopicMutations*`
-prüft bei übersetzten und abgeleiteten Baskets die stabilen IDs beim
-Update, Ersatz und Löschung sowie Rollback bei eingehenden Referenzen.
+einer Referenz in den falschen Basket. Ein ili2db-Export nach nativem
+Update prüft die aktualisierten Werte der Fragmente. Der eigene DB-Test
+prüft stabile IDs, eingehende Referenzen und den Erhalt unabhängiger
+Datensätze bei Mutationen im NewClass-Layout.
 
 `--tests '*DatasetMutationInteropTest'` prüft in beiden Schematypen den
 Werkzeugwechsel über `update`, `replace` und `delete`. SQL und XTF belegen

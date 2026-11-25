@@ -53,14 +53,20 @@ final class TopicInheritanceInteropTest {
             importDataset(reference, db, "legacy", legacy);
             var output = work.resolve(db.schema() + "-legacy.xtf");
             assertCliSuccess(db, "export", fixture.child, "legacy", output, fixture.modelsAfterChild());
-            fixture.assertMixedDelivery(output, "", "text");
+            fixture.assertMixedDelivery(output, "", "text", false);
 
             assertCliSuccess(db, "import", fixture.child, "native", nativeInput, fixture.modelsAfterChild());
             output = work.resolve(db.schema() + "-native.xtf");
             exportDataset(reference, db, "native", output);
-            fixture.assertMixedDelivery(output, "native-", "updated");
+            fixture.assertMixedDelivery(output, "native-", "updated", false);
             assertStoredValues(db, fixture);
         }
+
+        var updated = fixture.updateRegion(work.resolve("region" + version + ".xtf"));
+        assertCliSuccess(own, "update", fixture.child, "legacy", updated);
+        var output = work.resolve("topic-updated-reference.xtf");
+        exportDataset(reference, own, "legacy", output);
+        fixture.assertMixedDelivery(output, "", "text", true);
     }
 
     private static void assertStoredValues(TestDatabase db, TopicInheritanceFixtures fixture) throws Exception {

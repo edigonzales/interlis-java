@@ -54,7 +54,8 @@ final class TranslationInteropTest {
         assertSameCatalog(baseline, own);
         for (var source : List.of(original, translated, nestedOriginal, nestedTranslated)) Files.delete(source);
 
-        var legacy = mergeDeliveries(work.resolve("mixed-legacy.xtf"), version, fixture.scalarInput(), fixture.copy("nested" + version + ".xtf"));
+        var scalarInput = fixture.scalarInput();
+        var legacy = mergeDeliveries(work.resolve("mixed-legacy.xtf"), version, scalarInput, fixture.copy("nested" + version + ".xtf"));
         var nativeInput = Files.writeString(work.resolve("mixed-native.xtf"), Files.readString(legacy)
                 .replace(fixture.scalarLabel + "-", "native-scalar-").replace("nested-", "native-nested-"));
         for (var db : List.of(baseline, own)) {
@@ -69,6 +70,11 @@ final class TranslationInteropTest {
             fixture.assertMixedDelivery(output, "native-scalar", "native-nested", "text");
             assertStoredValues(db, fixture);
         }
+
+        assertCliSuccess(own, "update", fixture.translated, "legacy", fixture.updateScalar(scalarInput));
+        var updated = work.resolve("mixed-updated-reference.xtf");
+        exportDataset(reference, own, "legacy", updated);
+        fixture.assertMixedDelivery(updated, fixture.scalarLabel, "nested", "updated");
     }
 
     private void extendAndExport(int version, PostgreSQLContainer postgres) throws Exception {

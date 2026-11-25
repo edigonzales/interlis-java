@@ -49,6 +49,10 @@ final class TranslationFixtures {
         return copy(scalarLabel + version + ".xtf");
     }
 
+    Path updateScalar(Path input) throws Exception {
+        return Files.writeString(work.resolve("translation-update.xtf"), Files.readString(input).replace(">text<", ">updated<"));
+    }
+
     void scalarSchema(Target db, Path originalSource, Path translatedSource, String... options) {
         var args = new ArrayList<>(List.of("--model-file", originalSource.toString()));
         args.addAll(List.of(options));

@@ -9,9 +9,11 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
@@ -22,6 +24,8 @@ import static guru.interlis.db.ModelFixtures.mergeDeliveries;
 import static guru.interlis.db.ModelFixtures.tableFor;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 final class TopicInheritanceStorageTest {
     private static final PostgisTestServer POSTGIS = new PostgisTestServer();
@@ -95,7 +99,92 @@ final class TopicInheritanceStorageTest {
 
         var output = work.resolve("kept-export.xtf");
         assertCliSuccess(db, "export", fixture.child, "kept", output, fixture.modelsAfterChild());
-        fixture.assertMixedDelivery(output, "", "text");
+        fixture.assertMixedDelivery(output, "", "text", false);
+    }
+
+    @ParameterizedTest(name = "XTF {0}, {1}")
+    @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
+    void mutatesNewClassFragmentsWithIncomingReferences(int version, Backend backend) throws Exception {
+        var fixture = new TopicInheritanceFixtures(work, version);
+        var db = POSTGIS.target(work.resolve("topic-mutation.gpkg"), backend);
+        String incoming = "TownIncoming" + version;
+        var parentSource = fixture.source(fixture.town);
+        var childSource = fixture.source(fixture.child);
+        var incomingSource = fixture.source(incoming);
+        assertSchemaWithIdentityColumns(db, fixture.child, childSource, "--model", incoming,
+                "--model-file", parentSource.toString(), "--model-file", incomingSource.toString());
+        for (var path : List.of(parentSource, childSource, incomingSource)) Files.delete(path);
+
+        var input = fixture.input("region");
+        var source = Files.readString(input);
+        var independent = Files.writeString(work.resolve("independent.xtf"), source.replace("region-", "independent-"));
+        var updated = fixture.updateRegion(input);
+        var removed = Files.writeString(work.resolve("removed-target.xtf"),
+                source.lines().filter(line -> !line.contains("region-s")).collect(Collectors.joining("\n"))
+                        .replace(">inherited<", ">must roll back<"));
+        assertCliSuccess(db, "import", fixture.child, "inherited", input);
+        assertCliSuccess(db, "import", incoming, "incoming", fixture.input("incoming"));
+        assertCliSuccess(db, "import", fixture.child, "independent", independent);
+
+        String station = db.table("station");
+        String destination = "SELECT destination FROM " + db.table("incominglink");
+        var output = work.resolve("mutated-region.xtf");
+        try (var sql = db.connect()) {
+            var before = regionIds(db, sql, "inherited", "region");
+            var kept = regionIds(db, sql, "independent", "independent");
+            assertEquals(before.station(), scalar(sql, destination));
+            assertCliSuccess(db, "update", fixture.child, "inherited", updated);
+            assertEquals(before, regionIds(db, sql, "inherited", "region"));
+
+            execute(sql, "UPDATE " + station + " SET t_type='siblingstation' WHERE t_ili_tid='region-s'");
+            assertCliFailure(db, "update", fixture.child, "inherited", updated,
+                    "does not belong to basket topic " + fixture.child + ".Region");
+            execute(sql, "UPDATE " + station + " SET t_type='localstation' WHERE t_ili_tid='region-s'");
+            assertCliFailure(db, "update", fixture.child, "inherited", removed, "referenced object");
+            assertCliFailure(db, "replace", fixture.child, "inherited", input, "referenced object");
+            assertCliFailure(db, "delete", fixture.child, "inherited", null, "referenced object");
+            assertCliFailure(db, "delete", incoming, "inherited", null, "outside the selected model");
+            assertEquals(before, regionIds(db, sql, "inherited", "region"));
+            assertEquals(before.station(), scalar(sql, destination));
+            assertCliSuccess(db, "export", fixture.child, "inherited", output);
+            fixture.assertFragmentDelivery(output, "region", "new marker", "new base", "new child");
+
+            assertCliSuccess(db, "delete", incoming, "incoming", null);
+            assertCliSuccess(db, "replace", fixture.child, "inherited", input);
+            var replaced = regionIds(db, sql, "inherited", "region");
+            assertEquals(before.dataset(), replaced.dataset());
+            assertNotEquals(before.station(), replaced.station());
+            assertNotEquals(before.marker(), replaced.marker());
+            assertNotEquals(before.basket(), replaced.basket());
+            assertCliSuccess(db, "export", fixture.child, "inherited", output);
+            fixture.assertFragmentDelivery(output, "region", "inherited", "base", "child");
+
+            assertCliSuccess(db, "delete", fixture.child, "inherited", null);
+            assertEquals(kept, regionIds(db, sql, "independent", "independent"));
+            assertEquals("independent", scalar(sql, "SELECT datasetname FROM " + db.table("t_ili2db_dataset")));
+            for (var table : List.of("station", "localstation", "marker", "t_ili2db_basket")) {
+                assertEquals("1", scalar(sql, "SELECT COUNT(*) FROM " + db.table(table)), table);
+            }
+            assertCliSuccess(db, "export", fixture.child, "independent", output);
+            fixture.assertFragmentDelivery(output, "independent", "inherited", "base", "child");
+        }
+    }
+
+    private record RegionIds(String station, String marker, String basket, String dataset) { }
+
+    private static RegionIds regionIds(Target db, Connection sql, String dataset, String prefix) throws Exception {
+        String baskets = db.table("t_ili2db_basket");
+        String datasetId = scalar(sql, "SELECT t_id FROM " + db.table("t_ili2db_dataset") + " WHERE datasetname='" + dataset + "'");
+        String basket = scalar(sql, "SELECT t_id FROM " + baskets + " WHERE t_ili_tid='" + prefix + "-b' AND dataset=" + datasetId);
+        String station = scalar(sql, "SELECT t_id FROM " + db.table("station")
+                + " WHERE t_ili_tid='" + prefix + "-s' AND t_type='localstation' AND t_basket=" + basket);
+        String marker = scalar(sql, "SELECT t_id FROM " + db.table("marker") + " WHERE t_ili_tid='" + prefix + "-m' AND t_basket=" + basket);
+        assertNotNull(datasetId);
+        assertNotNull(basket);
+        assertNotNull(station);
+        assertNotNull(marker);
+        assertEquals(station, scalar(sql, "SELECT t_id FROM " + db.table("localstation") + " WHERE t_id=" + station + " AND t_basket=" + basket));
+        return new RegionIds(station, marker, basket, datasetId);
     }
 
     private Path wrongBasketDelivery(int version) throws Exception {

@@ -79,7 +79,12 @@ final class TopicInheritanceFixtures {
                 .replace("refine-", "native-refine-").replace("links-", "native-links-").replace(">text<", ">updated<"));
     }
 
-    void assertMixedDelivery(Path file, String prefix, String refinedText) throws Exception {
+    Path updateRegion(Path input) throws Exception {
+        return Files.writeString(work.resolve("region-updated.xtf"), Files.readString(input)
+                .replace(">inherited<", ">new marker<").replace(">base<", ">new base<").replace(">child<", ">new child<"));
+    }
+
+    void assertMixedDelivery(Path file, String prefix, String refinedText, boolean regionUpdated) throws Exception {
         var data = readDataSection(file, version);
         var header = headerModels(data, version);
         assertEquals(models.size(), header.size());
@@ -87,7 +92,9 @@ final class TopicInheritanceFixtures {
         assertEquals(5, children(data).size());
         assertFlat(basket(data, version, flat + ".Region", prefix + "flat-b"), prefix + "flat");
         assertFragments(basket(data, version, child + ".Region", prefix + "region-b"), prefix + "region",
-                "inherited", "base", "child");
+                regionUpdated ? "new marker" : "inherited",
+                regionUpdated ? "new base" : "base",
+                regionUpdated ? "new child" : "child");
         assertRefinement(basket(data, version, refined + ".Region", prefix + "refine-b"), prefix + "refine", refinedText);
         assertReferences(data, prefix + "links");
     }
