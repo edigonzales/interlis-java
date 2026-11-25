@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Objects;
 
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
@@ -26,6 +27,66 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class BaseDbFixture {
+    static final int POINT = 1;
+    static final int LINESTRING = 2;
+    static final int MULTIPOINT = 4;
+    static final int CIRCULARSTRING = 8;
+    static final int COMPOUNDCURVE = 9;
+    static final int CURVEPOLYGON = 10;
+    static final int MULTICURVE = 11;
+    static final int MULTISURFACE = 12;
+    static final List<String> MAST_CENTER = List.of("2600000.125", "1200000.375");
+    static final List<String> SERVICE_POINT = List.of("2600100.250", "1200100.625");
+    static final List<List<String>> SURVEY_POINTS = List.of(
+            List.of("2601500.625", "1201500.500"), List.of("2601100.125", "1201100.750"));
+    static final DetailValue SUMMARY = new DetailValue("review", true, -3, "approved");
+    private static final DetailValue DRAFT_ENTRY = new DetailValue("b", false, 2, "draft");
+    static final List<DetailValue> ENTRIES = List.of(
+            DRAFT_ENTRY, new DetailValue("a", null, -1, "approved"), DRAFT_ENTRY);
+    private static final DetailValue FIRST_OBSERVATION = new DetailValue("x", true, null, null);
+    static final List<DetailValue> OBSERVATIONS = List.of(
+            FIRST_OBSERVATION, new DetailValue("r", null, 7, "approved"), FIRST_OBSERVATION);
+    static final DetailValue LATER_ENTRY = new DetailValue("later", null, null, null);
+    static final List<String> MARKER_LABELS = List.of("first", "second", "unlinked");
+    static final List<CurveComponent> STRAIGHT_ROUTE = List.of(new CurveComponent(LINESTRING, List.of(
+            List.of("2600123.125", "1200456.375"), List.of("2600345.250", "1200678.500"),
+            List.of("2600567.625", "1200456.750"))));
+    static final List<CurveComponent> ARC_ROUTE = List.of(new CurveComponent(CIRCULARSTRING, List.of(
+            List.of("2600500.125", "1200500.250"), List.of("2600505.125", "1200505.250"),
+            List.of("2600510.125", "1200500.250"), List.of("2600515.125", "1200495.250"),
+            List.of("2600520.125", "1200500.250"))));
+    static final List<CurveComponent> MIXED_ROUTE = List.of(
+            new CurveComponent(LINESTRING, List.of(
+                    List.of("2600600.500", "1200600.250"), List.of("2600610.500", "1200600.250"))),
+            new CurveComponent(CIRCULARSTRING, List.of(
+                    List.of("2600610.500", "1200600.250"), List.of("2600615.500", "1200605.250"),
+                    List.of("2600620.500", "1200600.250"))),
+            new CurveComponent(LINESTRING, List.of(
+                    List.of("2600620.500", "1200600.250"), List.of("2600630.500", "1200600.250"))));
+    static final List<List<CurveComponent>> SURFACE_WITH_HOLE = List.of(
+            List.of(new CurveComponent(LINESTRING, List.of(
+                    List.of("2601000.125", "1201000.375"), List.of("2601040.250", "1201000.375"),
+                    List.of("2601040.250", "1201040.500"), List.of("2601000.125", "1201040.500"),
+                    List.of("2601000.125", "1201000.375")))),
+            List.of(new CurveComponent(LINESTRING, List.of(
+                    List.of("2601008.125", "1201010.375"), List.of("2601008.125", "1201028.625"),
+                    List.of("2601020.250", "1201020.500"), List.of("2601008.125", "1201010.375")))));
+    static final List<List<CurveComponent>> CURVED_SURFACE = List.of(List.of(
+            new CurveComponent(CIRCULARSTRING, List.of(
+                    List.of("2601200.250", "1201200.625"), List.of("2601210.250", "1201190.625"),
+                    List.of("2601220.250", "1201200.625"))),
+            new CurveComponent(LINESTRING, List.of(
+                    List.of("2601220.250", "1201200.625"), List.of("2601200.250", "1201200.625")))));
+    // The two parcel rings traverse their common edge in opposite directions.
+    static final List<List<CurveComponent>> WEST_AREA = List.of(List.of(new CurveComponent(LINESTRING, List.of(
+            List.of("2602000.125", "1202000.250"), List.of("2602020.250", "1202000.250"),
+            List.of("2602020.250", "1202020.750"), List.of("2602000.125", "1202020.750"),
+            List.of("2602000.125", "1202000.250")))));
+    static final List<List<CurveComponent>> EAST_AREA = List.of(List.of(new CurveComponent(LINESTRING, List.of(
+            List.of("2602020.250", "1202000.250"), List.of("2602040.500", "1202000.250"),
+            List.of("2602040.500", "1202020.750"), List.of("2602020.250", "1202020.750"),
+            List.of("2602020.250", "1202000.250")))));
+
     private final Path work;
     private final int version;
     private final String model;
@@ -172,4 +233,12 @@ final class BaseDbFixture {
         assertTrue(leaves.stream().allMatch(leaf -> leaf.getLocalName().equals(prefix + "NestedLeaf")
                 && id(leaf, version, "tid").isEmpty()));
     }
+
+    static Set<List<String>> expectedMarkerLinks(String dataset) {
+        return Set.of(List.of(dataset + "-marker-1", dataset + "-hub-1"),
+                List.of(dataset + "-marker-1", dataset + "-hub-2"), List.of(dataset + "-marker-2", dataset + "-hub-1"));
+    }
+
+    record CurveComponent(int type, List<List<String>> vertices) { }
+    record DetailValue(String label, Boolean enabled, Integer quantity, String decision) { }
 }

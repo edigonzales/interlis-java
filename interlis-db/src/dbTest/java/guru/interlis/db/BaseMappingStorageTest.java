@@ -54,6 +54,44 @@ final class BaseMappingStorageTest {
 
     @ParameterizedTest(name = "{0}, XTF {1}")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void storesBaseMappingsAndRejectsDamagedAttribute(Backend backend, int version) throws Exception {
+        var fixture = new BaseDbFixture(work, version);
+        var db = POSTGIS.target(work.resolve("base-mapping.gpkg"), backend);
+        String model = fixture.model();
+        assertSchemaWithIdentityColumns(db, model, fixture.source());
+        var input = Files.writeString(work.resolve("base-input.xtf"), fixture.transfer());
+        assertCliSuccess(db, "import", model, "legacy", input);
+
+        try (var sql = db.connect()) {
+            BaseGeometryRows.assertStored(db, sql, version, "legacy");
+            BaseStructureRows.assertStored(db, sql, version, "legacy");
+            BaseAssociationRows.assertStored(db, sql, version, "legacy");
+            assertRows(db, sql, version, 1);
+        }
+        if (db.postgis()) assertPostgresIdDefault(db);
+
+        var output = work.resolve("base-export.xtf");
+        assertCliSuccess(db, "export", model, "legacy", output);
+        try (var sql = db.connect()) {
+            execute(sql, "update " + db.table("t_ili2db_attrname") + " set sqlname='missing_select'"
+                    + " where iliname='" + model + ".Data.Place.Select'");
+        }
+        assertExportRejected(db, model, "legacy", output, "Select", "missing_select");
+    }
+
+    private static void assertPostgresIdDefault(Target db) throws SQLException {
+        try (var sql = db.connect()) {
+            sql.setAutoCommit(false);
+            long lastId = Long.parseLong(scalar(sql, "select last_value from " + db.table("t_ili2db_seq")));
+            String newId = scalar(sql, "insert into " + db.table("place") + " (t_basket) values ((select min(t_id) from "
+                    + db.table("t_ili2db_basket") + ")) returning t_id");
+            assertEquals(Long.toString(lastId + 1), newId);
+            sql.rollback();
+        }
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void failedSchemaCreationPreservesTarget(Backend backend, int version) throws Exception {
         var fixture = new BaseDbFixture(work, version);
         var db = POSTGIS.target(work.resolve("native.gpkg"), backend);

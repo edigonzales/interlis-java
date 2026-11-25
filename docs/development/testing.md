@@ -558,7 +558,7 @@ einem nativen `update` prüft Punkt, Linie und Text.
 räumliche Treffer und die Bereinigung beim Löschen. PostgreSQL
 weist den GiST-Zugriff mit `EXPLAIN` nach, GeoPackage prüft den RTree.
 
-Die Auswahl `--tests '*DbInteropTest.geoPackage*'` läuft ohne Docker.
+Die Auswahl `--tests '*BaseMappingInteropTest.geoPackage*'` läuft ohne Docker.
 Der Basislauf vergleicht vor dem ersten Datenimport den SQL-Katalog und die
 Metadaten der erzeugten Schemata. Die GeoPackage-Erweiterungseinträge für
 Polylinien und Flächen werden separat geprüft. Die Tests vergleichen Punkte,
@@ -567,10 +567,14 @@ benachbarter `AREA`-Objekte, SRS und `NULL` für XTF 2.3 und 2.4 in beiden
 Werkzeugrichtungen. In 2.3 prüfen sie auch die Zusammenführung eines
 geteilten Randes. In 2.4 prüfen sie die geordneten Teile von
 `MULTICOORD`, `MULTIPOLYLINE`, `MULTISURFACE` und `MULTIAREA`. Ein weiterer
-Referenzimport prüft die gemeinsame ID-Vergabe. `GeometryStorageTest` übernimmt
+Referenzimport im eigenen Schema prüft die gemeinsame ID-Vergabe. `GeometryStorageTest` übernimmt
 Rollback und Exportfehler für Geometrien sowie den Export leerer SQL-Sammlungen.
 
-Der Basislauf und `BaseMappingStorageTest` prüfen gemeinsam optionale
+Der Basislauf prüft die XTF-Ergebnisse. `BaseMappingStorageTest` prüft
+die physischen Zeilen, ihre Binärkodierung und Zuordnungen per JDBC.
+Eine beschädigte Zuordnung für `Place.Select` erhält die Exportdatei.
+Ein direkter PostgreSQL-Insert prüft den Default der gemeinsamen Sequenz.
+Beide Tests prüfen optionale
 Einzelstrukturen, `LIST OF` und `BAG OF` mit demselben
 Strukturtyp, Rückverweisspalten, `T_Seq`, Reihenfolge und Duplikate.
 Bei verschachtelten Strukturen prüft sie Rückverweise auf den direkten
