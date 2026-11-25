@@ -310,7 +310,10 @@ Endpunkt, mehrere Struktureinträge pro Attributelement einer Sammlung und
 ausgeschriebene Topic-Namen vor Objekttypen. Der Explorer
 merkt sich den Ordner des letzten erfolgreichen Imports auch über einen
 Neustart hinweg. Im Modellbaum kennzeichnen **M**, **T** und **C**
-Modelle, Topics und Klassen. Wähle eine Klasse und danach ein Objekt.
+Modelle, Topics und Klassen. Beim Öffnen zeigt der Baum die Topics der
+importierten Baskets und ihre Modelle. Auch ein leerer Basket macht sein
+Topic sichtbar. Mit **Show all models** blendest du den vollständigen
+Modellbaum ein. Wähle eine Klasse und danach ein Objekt.
 Die Liste zeigt bis zu 100 Instanzen der gewählten Klasse in
 Transferreihenfolge. Der Inspektor zeigt die Attribute in effektiver
 Modellreihenfolge. Ein Klick auf ein aufklappbares Attribut oder die
@@ -480,6 +483,8 @@ zum Plan passenden Reader mit XTF-2.4-FULL-Ereignissen. Beim erneuten Öffnen
 liefert der Aufrufer den passenden Plan aus dem Compiler. Der Store bindet
 Typen und Slots anhand ihrer deklarierten qualifizierten Namen neu und meldet
 fehlende oder mehrdeutige Deklarationen beim Lesen der betroffenen Werte.
+`basketTopics()` liefert die eindeutigen Topic-Referenzen der gespeicherten
+Baskets im aktuell gebundenen Plan, einschliesslich leerer Baskets.
 `find(basketId, objectKey)` sucht nach TID oder OID im angegebenen Basket.
 Vorkommen ohne TID oder OID bleiben über `objects(type)` zugänglich.
 `objects(type, limit)` liest höchstens die angegebene Anzahl Vorkommen des

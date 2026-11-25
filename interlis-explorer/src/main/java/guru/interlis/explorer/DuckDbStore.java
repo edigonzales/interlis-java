@@ -2,6 +2,7 @@ package guru.interlis.explorer;
 
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.QualifiedName;
+import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.TransferEvent.*;
 import guru.interlis.transfer.TransferIdentity.BasketId;
@@ -24,11 +25,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * A single XTF 2.4 FULL transfer in a local DuckDB file. Use one caller at a time.
@@ -401,6 +404,26 @@ public final class DuckDbStore implements AutoCloseable {
     /** Returns whether the file contains a committed transfer, including one with no baskets. */
     public boolean hasTransfer() throws SQLException {
         return header(connection).isPresent();
+    }
+
+    /**
+     * Returns the nonnull, immutable set of primary and additional topics from
+     * stored baskets, including empty baskets. References belong to this store's
+     * transfer plan snapshot. Iteration order is unspecified.
+     * @throws IllegalArgumentException if a basket declaration cannot be bound to the plan
+     * @throws SQLException if the query fails
+     */
+    public Set<SymbolRef> basketTopics() throws SQLException {
+        var topics = new HashSet<SymbolRef>();
+        try (var statement = connection.createStatement();
+             var rows = statement.executeQuery("SELECT metadata FROM basket")) {
+            while (rows.next()) {
+                var basket = codec.basket(rows.getString("metadata"));
+                topics.add(basket.topic());
+                topics.addAll(basket.additionalTopics());
+            }
+        }
+        return Set.copyOf(topics);
     }
 
     /** Returns all occurrences of the exact declared type in transfer order. */

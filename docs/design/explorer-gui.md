@@ -10,6 +10,11 @@ zugänglich. Die Regeln gelten für die künftige Oberfläche.
 Die Hauptansicht verbindet die Modellnavigation mit dem Objektinspektor.
 Der Einstieg folgt der Hierarchie Modell → Topic → Klasse → Objekt.
 Physische Datenbanktabellen und Spalten bestimmen diese Navigation nicht.
+Beim Öffnen eines Transfers zeigt der Modellbaum die Topics der importierten
+Baskets und ihre Modelle. Leere Baskets zählen mit. Die Klassen eines
+sichtbaren Topics folgen der Modellreihenfolge. **Show all models** neben
+**Model** zeigt zusätzlich die übrigen Modelle und Topics. Beim Umschalten
+bleiben sichtbare aufgeklappte Knoten und die sichtbare Auswahl erhalten.
 
 ## 3 Zusätzliche Ansichten
 

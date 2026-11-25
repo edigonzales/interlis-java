@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -72,6 +73,9 @@ class DuckDbStoreTest {
         var plan = compile("!! New source revision with the same declarations.\n" + model());
         assertNotEquals(inputPlan.snapshotId(), plan.snapshotId());
         try (var store = DuckDbStore.open(file, plan)) {
+            var basketTopics = store.basketTopics();
+            assertEquals(Set.of(symbol(plan, QualifiedName.of("Reference24", "Data"))), basketTopics);
+            assertThrows(UnsupportedOperationException.class, basketTopics::clear);
             var items = store.objects(ITEM);
             assertEquals(1, items.size());
             var item = store.find(BASKET, new TransferId("i1", IdOrigin.SOURCE)).orElseThrow();
@@ -122,6 +126,26 @@ class DuckDbStoreTest {
         try (var store = DuckDbStore.open(file, incompatible)) {
             var failure = assertThrows(IllegalArgumentException.class, () -> store.objects(ITEM));
             assertTrue(failure.getMessage().contains("Reference24.Data.Item.count"));
+        }
+    }
+
+    @Test
+    void committedTransferWithoutBasketsHasNoBasketTopics() throws Exception {
+        var plan = compile();
+        var transfer = """
+                <i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS">
+                  <i:headersection>
+                    <i:models><i:model>Reference24</i:model></i:models>
+                    <i:sender>test</i:sender>
+                  </i:headersection>
+                  <i:datasection/>
+                </i:transfer>
+                """;
+        try (var store = DuckDbStore.open(temp.resolve("no-baskets.duckdb"), plan);
+             var reader = new Xtf24Reader(plan, new ByteArrayInputStream(transfer.getBytes(StandardCharsets.UTF_8)))) {
+            store.importTransfer(reader, RUN);
+            assertTrue(store.hasTransfer());
+            assertEquals(Set.of(), store.basketTopics());
         }
     }
 
