@@ -42,7 +42,7 @@ class ArithmeticExpressionTypeContractTest {
     }
 
     @Test
-    void exactSmallIntervalsAndLiteralTreesPublishOnlyProvenBounds() {
+    void decimalArithmeticPublishesProvenBounds() {
         String body = VIEW_BASE
                 + "a := c->n + c->n; b := 3-5; product := c->n * -2; reversed := -2 * c->n; "
                 + "half := 1/2; smallTree := (1.0 + 0.25) * 2; uncertain := 0.1+0.2; "
@@ -56,16 +56,24 @@ class ArithmeticExpressionTypeContractTest {
         assertEquals(type(graph, "product").range(), type(graph, "reversed").range());
         assertBounds(type(graph, "half"), "0.5", "0.5");
         assertBounds(type(graph, "smallTree"), "2.5", "2.5");
-        for (String name : List.of("uncertain", "third", "zeroDivisor", "variableDivisor", "halfRange")) {
+        assertBounds(type(graph, "uncertain"), "0.3", "0.3");
+        assertBounds(type(graph, "third"), "0." + "3".repeat(50), "0." + "3".repeat(50));
+        assertBounds(type(graph, "halfRange"), "0", "5");
+        for (String name : List.of("zeroDivisor", "variableDivisor")) {
             assertEquals(NumericRange.unbounded(), type(graph, name).range(), name);
         }
         assertFalse(attribute(graph, "n").mandatory());
         assertFalse(attribute(graph, "a").mandatory());
         assertNotEquals(attribute(graph, "n").declaredType(), attribute(graph, "a").declaredType());
-        assertEquals(RelationDecision.DISALLOWED, relation(graph, type(graph, "halfRange"), type(graph, "n"), true));
+        assertEquals(RelationDecision.ALLOWED, relation(graph, type(graph, "halfRange"), type(graph, "n"), false));
         assertEquals(RelationDecision.DISALLOWED, relation(graph, type(graph, "a"), type(graph, "declared"), true));
-        rejected("2.4", attribute("1..1", "(10000000000000000+1)-10000000000000000"), "ILI-SEM-0005");
-        rejected("2.4", attribute("0.3..0.3", "0.1+0.2"), "ILI-SEM-0005");
+        ok("2.4", attribute("1..1", "(10000000000000000+1)-10000000000000000"));
+        ok("2.4", attribute("0.3..0.3", "0.1+0.2"));
+        ok("2.4", "FUNCTION check(v:0.00..1.00):BOOLEAN; CLASS C = MANDATORY CONSTRAINT check(1/3); END C;");
+        var blocked = assertInstanceOf(CompilationOutcome.Rejected.class,
+                CompilerEngines.create().compile(request(source("2.4",
+                        "CLASS C = n:-1..1; value:0..10 := 1/n; END C;"), CompilerOptions.defaults()), TOKEN));
+        assertEquals(java.util.Set.of(RejectionReason.INCOMPLETE_SUPPORT), blocked.rejection().reasons());
         ok("2.4", "CLASS C = n : 0..10; MANDATORY CONSTRAINT (n / 0) >= 1; END C;");
     }
 

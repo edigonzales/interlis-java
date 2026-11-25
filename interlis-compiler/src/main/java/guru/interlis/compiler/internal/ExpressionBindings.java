@@ -5,6 +5,7 @@ import guru.interlis.diagnostics.DiagnosticId;
 import guru.interlis.diagnostics.Severity;
 import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.Cardinality;
+import guru.interlis.model.BinaryExpression;
 import guru.interlis.model.BinaryOperator;
 import guru.interlis.model.ClassValueType;
 import guru.interlis.model.CollectionType;
@@ -70,6 +71,7 @@ import java.util.function.Supplier;
 
 /** Binds and types source expressions in their owning scope. */
 final class ExpressionBindings {
+    private final Set<TypeId> roundedNumericRanges = new HashSet<>();
     private final SemanticGraphRead.Expressions state;
     private final SemanticWork work;
     private final IndexedDeclarations index;
@@ -516,7 +518,7 @@ final class ExpressionBindings {
                 work.checkpoint();
                 var actual = arguments.get(i);
                 TypeId expected = function.parameters().get(i).typeId();
-                actual=contextualValue(actual,expected,owner);arguments.set(i,actual);
+                actual=assignmentValue(actual,expected,owner);arguments.set(i,actual);
                 if (!actual.error() && !(typeBindings.effectiveDescriptor(expected) instanceof guru.interlis.model.AttributePathType) && typeBindings.assignment(
                         typeBindings.effectiveDescriptor(actual.typeId()), typeBindings.effectiveDescriptor(expected),
                         guru.interlis.model.AssignmentContext.FUNCTION_ARGUMENT).decision()
@@ -638,8 +640,18 @@ final class ExpressionBindings {
                     TypeDescriptor b = typeBindings.effectiveDescriptor(right.typeId());
                     if (a instanceof NumericType x && b instanceof NumericType y) {
                         result = typeBindings.nextTypeId();
-                        typeBindings.defineType(new NumericType(result, new Origin.DeclaredOrigin(syntax.range()),
-                                NumericExpressionRanges.infer(syntax.operator(), x.range(), y.range(), work)));
+                        var origin = new Origin.DeclaredOrigin(syntax.range());
+                        if (!NumericExpressionRanges.compatibleAdditiveUnits(syntax.operator(), x.range(), y.range())) {
+                            var diagnostic = diagnostics.emitTypeMismatch(ownerSource(owner), syntax.range(),
+                                    "different units", "equal units for addition or subtraction");
+                            typeBindings.defineType(new ErrorType(result, origin, List.of(diagnostic)));
+                            error = true;
+                        } else {
+                            var estimate = NumericExpressionRanges.infer(syntax.operator(), x.range(), y.range(), work);
+                            if (estimate.rounded() || roundedNumericRanges.contains(left.typeId())
+                                    || roundedNumericRanges.contains(right.typeId())) roundedNumericRanges.add(result);
+                            typeBindings.defineType(new NumericType(result, origin, estimate.range()));
+                        }
                     } else {
                         // Numeric-family validation above leaves only UNDEFINED here.
                         result = a instanceof NumericType ? right.typeId() : left.typeId();
@@ -771,6 +783,32 @@ final class ExpressionBindings {
 
     private TypeId booleanType(SymbolId owner) {
         return typeBindings.builtinBoolean(index.byId(owner).orElseThrow().language());
+    }
+
+    ExpressionResult assignmentValue(ExpressionResult value, TypeId expected, SymbolId owner) {
+        value = contextualValue(value, expected, owner);
+        if (value.error()
+                || !(state.expression(value.id()) instanceof BinaryExpression expression)
+                || !(typeBindings.effectiveDescriptor(value.typeId()) instanceof NumericType source)
+                || !(typeBindings.effectiveDescriptor(expected) instanceof NumericType target)
+                || !source.range().unit().equals(target.range().unit())
+                || target.range().minimum().isEmpty()) return value;
+        if (source.range().minimum().isPresent()) {
+            if (!roundedNumericRanges.contains(value.typeId())) return value;
+            var lower = source.range().minimum().orElseThrow().exactValue();
+            var upper = source.range().maximum().orElseThrow().exactValue();
+            var targetLower = target.range().minimum().orElseThrow().exactValue();
+            var targetUpper = target.range().maximum().orElseThrow().exactValue();
+            if (upper.compareTo(targetLower) < 0 || lower.compareTo(targetUpper) > 0
+                    || lower.compareTo(targetLower) >= 0 && upper.compareTo(targetUpper) <= 0) return value;
+        }
+
+        var diagnostic = diagnostics.emitUnsupported(ownerSource(owner), expression.range(),
+                "NUMERIC_RESULT_RANGE", "the arithmetic result range cannot be established");
+        var errorType = typeBindings.nextTypeId();
+        typeBindings.defineType(new ErrorType(errorType, new Origin.DeclaredOrigin(expression.range()),
+                List.of(diagnostic)));
+        return new ExpressionResult(value.id(), errorType, true);
     }
 
     /** Bind constants to their expected value type; shared inherited expressions are only checked by valueAssignable. */
