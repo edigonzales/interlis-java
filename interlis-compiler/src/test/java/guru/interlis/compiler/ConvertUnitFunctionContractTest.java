@@ -63,14 +63,18 @@ class ConvertUnitFunctionContractTest {
                       angle(TRANSIENT):0..10 [INTERLIS.rad] := INTERLIS.convertUnit(1 [Turn]);
                       heat(TRANSIENT):0..1000 [INTERLIS.K] := INTERLIS.convertUnit(32 [Fahrenheit]);
                       x:0..2 [Twice]; meters(TRANSIENT):-8..0 [m] := INTERLIS.convertUnit(x);
+                      nested(TRANSIENT):100..100 [Centimeter] := INTERLIS.convertUnit(INTERLIS.convertUnit(1 [m]));
                       limit:0..1 [m];
                       MANDATORY CONSTRAINT INTERLIS.convertUnit(2 [Twice]) < limit;
+                      MANDATORY CONSTRAINT INTERLIS.convertUnit(1 [m]) > 0;
                     END C; END T;
                     """);
             var heat = graph.symbols().stream().filter(AttributeSymbol.class::isInstance)
                     .map(AttributeSymbol.class::cast).filter(a -> a.name().value().equals("heat"))
                     .findFirst().orElseThrow();
             assertEquals(heat.declaredType(), graph.expression(heat.derivations().getFirst()).orElseThrow().typeId());
+            bad(version, definitions + "TOPIC T=CLASS C=unitless:0..1; MANDATORY CONSTRAINT "
+                    + "INTERLIS.convertUnit(1 [m]) > unitless; END C; END T;");
             bad(version, definitions + "TOPIC T=CLASS C=value(TRANSIENT):0..10 [Centimeter] := "
                     + "INTERLIS.convertUnit(2 [m]); END C; END T;");
             bad(version, definitions + "FUNCTION fits(value:0..10 [Centimeter]):BOOLEAN;"

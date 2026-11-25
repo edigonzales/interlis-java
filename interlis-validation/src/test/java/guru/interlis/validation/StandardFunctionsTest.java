@@ -62,4 +62,21 @@ class StandardFunctionsTest {
                 "<Item i:tid='item'><distance>2</distance><metres>3999</metres></Item>")));
         assertEquals(2, bad.detectedViolations());
     }
+
+    @Test
+    void functionConversionReportsMissingRuntimeContext() {
+        var plan = plan("""
+                UNIT Fahrenheit = FUNCTION // (Fahrenheit + 459.67) / 1.8 // [INTERLIS.K];
+                CLASS Item =
+                  fahrenheit: 0..100 [Fahrenheit];
+                  kelvin: 0..1000 [INTERLIS.K];
+                  MANDATORY CONSTRAINT INTERLIS.convertUnit(fahrenheit) == kelvin;
+                END Item;
+                """);
+        var report = validate(plan, DatasetScope.SUPPLIED_DATASET, primary("p", basket("basket",
+                "<Item i:tid='item'><fahrenheit>32</fahrenheit><kelvin>273.15</kelvin></Item>")));
+        assertEquals(0, report.detectedViolations());
+        assertEquals(List.of(ValidationCoverage.ConstraintStatus.MISSING_RUNTIME_CONTEXT),
+                report.coverage().constraints().stream().map(ValidationCoverage.ConstraintCount::status).toList());
+    }
 }

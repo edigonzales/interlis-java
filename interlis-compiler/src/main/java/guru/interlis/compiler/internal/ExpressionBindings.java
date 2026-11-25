@@ -364,8 +364,8 @@ final class ExpressionBindings {
         if (!error && signature.rule()==BuiltinFunctions.Rule.CONVERT_UNIT) {
             var from=typeBindings.effectiveDescriptor(arguments.getFirst().typeId());
             type=typeBindings.nextTypeId();
-            typeBindings.defineType(new NumericType(type,new Origin.DeclaredOrigin(syntax.range()),new NumericRange(Optional.empty(),Optional.empty(),false,
-                    guru.interlis.model.NumericDirection.NONE,from instanceof NumericType n?n.range().unit():Optional.empty(),Optional.empty())));
+            typeBindings.defineType(new NumericType(type, new Origin.DeclaredOrigin(syntax.range()),
+                    from instanceof NumericType numeric ? numeric.range() : NumericRange.unbounded()));
         }
         FunctionBindings.Result bound = FunctionBindings.Result.empty();
         if (!error) {
