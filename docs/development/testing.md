@@ -432,10 +432,15 @@ mit `--add-models`. Beide Werkzeuge exportieren den bestehenden Datensatz.
 Die Mischläufe prüfen den Austausch des neuen Datensatzes, die Rückverweise
 in der gemeinsamen Strukturtabelle und die fortgesetzte ID-Vergabe.
 
-`*DbInteropTest.*Translation*` prüft Quellenbindung, Originaltabellen,
-skalare und verschachtelte Werte, Schemaerstellung, Modellergänzung und
-die explizite Ausgabesprache. Die Fälle vergleichen XTF 2.3 mit übersetzten
-Baskets und XTF 2.4 mit den Namen des Originals.
+`--tests '*TranslationInteropTest'` bündelt skalare und verschachtelte
+Baskets im Katalogvergleich und Werkzeugwechsel. Ein weiterer Fall
+ergänzt ein befülltes ili2db-Schema und prüft die erhaltenen IDs, den
+Austausch neuer Lieferungen und die explizite Ausgabesprache. XTF 2.3
+prüft den Sprachwechsel in beide Richtungen. XTF 2.4 exportiert mit den
+Namen des Originals. `TranslationStorageTest` prüft beschädigte oder
+fehlende Quellen und die abgewiesene Ausgabesprache mit bytegenau
+erhaltener Zieldatei.
+
 `*DbInteropTest.*Topic*` umfasst zusätzlich geerbte Klassen,
 basketübergreifende Abhängigkeiten und Klassenfragmente, abstrakte
 Basistopics mit verengten Textattributen sowie lokale Rollen und

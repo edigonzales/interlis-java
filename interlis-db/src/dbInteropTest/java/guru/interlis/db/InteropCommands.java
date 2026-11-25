@@ -27,8 +27,12 @@ final class InteropCommands {
         reference.run(db, "%ILI_FROM_DB", "--import", "--dataset", dataset, "--importBid", "--importTid", input.toString());
     }
 
-    static void exportDataset(ReferenceTool reference, TestDatabase db, String dataset, Path output) throws Exception {
-        reference.run(db, "%ILI_FROM_DB", "--export", "--dataset", dataset, "--exportTid", output.toString());
+    static void exportDataset(ReferenceTool reference, TestDatabase db, String dataset, Path output, String... options)
+            throws Exception {
+        var args = new ArrayList<>(List.of("--export", "--dataset", dataset, "--exportTid"));
+        args.addAll(List.of(options));
+        args.add(output.toString());
+        reference.run(db, "%ILI_FROM_DB", args.toArray(String[]::new));
     }
 
     static void assertSharedIds(TestDatabase db, int expected, String... tables) throws Exception {

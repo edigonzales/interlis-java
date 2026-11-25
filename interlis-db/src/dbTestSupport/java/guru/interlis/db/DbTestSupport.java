@@ -167,8 +167,8 @@ final class DbTestSupport {
         }
     }
 
-    static void assertCliSuccess(Target db, String operation, String model, String dataset, Path path) {
-        var result = cli(db, operation, model, dataset, path, CancellationToken.none());
+    static void assertCliSuccess(Target db, String operation, String model, String dataset, Path path, String... options) {
+        var result = cli(db, operation, model, dataset, path, CancellationToken.none(), options);
         assertEquals(0, result.code(), result::diagnostics);
     }
 

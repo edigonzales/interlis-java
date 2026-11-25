@@ -211,26 +211,6 @@ final class DbInteropTest {
         }
     }
 
-    @Test void geoPackageTranslationSources23() throws Exception { exchangeTranslationSources(23, null); }
-    @Test void geoPackageTranslationSources24() throws Exception { exchangeTranslationSources(24, null); }
-    @Test void postgisTranslationSources23() throws Exception { exchangeWithPostgis(23, this::exchangeTranslationSources); }
-    @Test void postgisTranslationSources24() throws Exception { exchangeWithPostgis(24, this::exchangeTranslationSources); }
-    @Test void geoPackageTranslationScalars23() throws Exception { exchangeTranslationScalars(23, null); }
-    @Test void geoPackageTranslationScalars24() throws Exception { exchangeTranslationScalars(24, null); }
-    @Test void postgisTranslationScalars23() throws Exception { exchangeWithPostgis(23, this::exchangeTranslationScalars); }
-    @Test void postgisTranslationScalars24() throws Exception { exchangeWithPostgis(24, this::exchangeTranslationScalars); }
-    @Test void geoPackageTranslationNested23() throws Exception { exchangeTranslationNested(23, null); }
-    @Test void geoPackageTranslationNested24() throws Exception { exchangeTranslationNested(24, null); }
-    @Test void postgisTranslationNested23() throws Exception { exchangeWithPostgis(23, this::exchangeTranslationNested); }
-    @Test void postgisTranslationNested24() throws Exception { exchangeWithPostgis(24, this::exchangeTranslationNested); }
-    @Test void geoPackageTranslationSchema23() throws Exception { exchangeTranslationSchema(23, null); }
-    @Test void geoPackageTranslationSchema24() throws Exception { exchangeTranslationSchema(24, null); }
-    @Test void postgisTranslationSchema23() throws Exception { exchangeWithPostgis(23, this::exchangeTranslationSchema); }
-    @Test void postgisTranslationSchema24() throws Exception { exchangeWithPostgis(24, this::exchangeTranslationSchema); }
-    @Test void geoPackageTranslationExport23() throws Exception { exchangeTranslationExport(23, null); }
-    @Test void geoPackageTranslationExport24() throws Exception { exchangeTranslationExport(24, null); }
-    @Test void postgisTranslationExport23() throws Exception { exchangeWithPostgis(23, this::exchangeTranslationExport); }
-    @Test void postgisTranslationExport24() throws Exception { exchangeWithPostgis(24, this::exchangeTranslationExport); }
     @Test void geoPackageTopicInherited23() throws Exception { exchangeTopicInherited(23, null); }
     @Test void geoPackageTopicInherited24() throws Exception { exchangeTopicInherited(24, null); }
     @Test void postgisTopicInherited23() throws Exception { exchangeWithPostgis(23, this::exchangeTopicInherited); }
@@ -299,33 +279,6 @@ final class DbInteropTest {
                 new TestDatabase(work, postgres, "hierarchy_geometry_own"), postgres == null);
         cases.hierarchy(new TestDatabase(work, postgres, "alternate_hierarchy_reference"),
                 new TestDatabase(work, postgres, "alternate_hierarchy_own"), postgres != null);
-    }
-
-    private void exchangeTranslationSources(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "translation_sources");
-        new TranslationCases(work, new ReferenceTool(work, db.postgis()), version).sources(db);
-    }
-
-    private void exchangeTranslationScalars(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "translation_scalars");
-        new TranslationCases(work, new ReferenceTool(work, db.postgis()), version).scalars(db);
-    }
-
-    private void exchangeTranslationNested(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "translation_nested");
-        new TranslationCases(work, new ReferenceTool(work, db.postgis()), version).nested(db);
-    }
-
-    private void exchangeTranslationSchema(int version, PostgreSQLContainer postgres) throws Exception {
-        var reference = new TestDatabase(work, postgres, "reference_translation");
-        var own = new TestDatabase(work, postgres, "own_translation");
-        var extended = new TestDatabase(work, postgres, "extended_translation");
-        new TranslationCases(work, new ReferenceTool(work, reference.postgis()), version).schema(reference, own, extended);
-    }
-
-    private void exchangeTranslationExport(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "translation_export");
-        new TranslationCases(work, new ReferenceTool(work, db.postgis()), version).exportLanguage(db);
     }
 
     private void exchangeTopicInherited(int version, PostgreSQLContainer postgres) throws Exception {

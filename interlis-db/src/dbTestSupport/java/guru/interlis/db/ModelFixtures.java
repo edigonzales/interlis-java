@@ -3,6 +3,10 @@ package guru.interlis.db;
 import guru.interlis.db.DbTestSupport.Target;
 import org.w3c.dom.Element;
 
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -19,17 +23,39 @@ final class ModelFixtures {
     private ModelFixtures() { }
 
     static Path fixture(Path work, String name) throws Exception {
-        Path target = work.resolve(name);
+        Path target = work.resolve(Path.of(name).getFileName());
         try (var resource = ModelFixtures.class.getResourceAsStream("/" + name)) {
             Files.copy(Objects.requireNonNull(resource, name), target);
         }
         return target;
     }
 
+    static Path mergeDeliveries(Path output, int version, Path first, Path... others) throws Exception {
+        var data = readDataSection(first, version);
+        var document = data.getOwnerDocument();
+        var models = modelEntries(data, version);
+        for (var input : others) {
+            var additional = readDataSection(input, version);
+            for (var model : children(modelEntries(additional, version))) {
+                models.appendChild(document.importNode(model, true));
+            }
+            for (var basket : children(additional)) {
+                data.appendChild(document.importNode(basket, true));
+            }
+        }
+        TransformerFactory.newDefaultInstance().newTransformer()
+                .transform(new DOMSource(document), new StreamResult(output.toFile()));
+        return output;
+    }
+
     static List<String> headerModels(Element data, int version) {
-        var header = child((Element) data.getParentNode(), version == 23 ? "HEADERSECTION" : "headersection");
-        return children(child(header, version == 23 ? "MODELS" : "models")).stream()
+        return children(modelEntries(data, version)).stream()
                 .map(model -> version == 23 ? model.getAttribute("NAME") : model.getTextContent().strip()).toList();
+    }
+
+    private static Element modelEntries(Element data, int version) {
+        var header = child((Element) data.getParentNode(), version == 23 ? "HEADERSECTION" : "headersection");
+        return child(header, version == 23 ? "MODELS" : "models");
     }
 
     static Element basket(Element data, int version, String topic, String bid) {
