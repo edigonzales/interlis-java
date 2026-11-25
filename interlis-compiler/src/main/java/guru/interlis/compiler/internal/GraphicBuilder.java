@@ -325,7 +325,7 @@ final class GraphicBuilder {
         }
         if(syntax instanceof GraphicDeclarationSyntax.ExpressionValue e) {
             var expression=expressions.get().buildExpression(e.expression(),decl.id());
-            if(expected!=null)expression=expressions.get().contextualValue(expression,expected.id(),decl.id());
+            if(expected!=null)expression=expressions.get().assignmentValue(expression,expected.id(),decl.id());
             if(!expression.error() && parameter.isPresent())checkMandatoryValue(decl,(ParameterSymbol)state.symbol(parameter.orElseThrow()),state.expression(expression.id()));
             if(expected!=null && !expression.error() && !typeBindings.assignable(expression.typeId(),expected.id()))
                 diagnostics.emitRule(decl,"incompatible signature parameter assignment","GRAPHIC_PARAMETER_TYPE");

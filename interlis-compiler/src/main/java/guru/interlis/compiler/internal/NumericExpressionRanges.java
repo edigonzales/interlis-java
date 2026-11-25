@@ -24,6 +24,11 @@ final class NumericExpressionRanges {
     record Estimate(NumericRange range, boolean rounded) { }
 
     static Estimate infer(BinaryOperator operator, NumericRange left, NumericRange right, SemanticWork work) {
+        return infer(operator, left, right, false, work);
+    }
+
+    static Estimate infer(BinaryOperator operator, NumericRange left, NumericRange right,
+                          boolean sameOperand, SemanticWork work) {
         work.checkpoint();
         Optional<SymbolId> unit = left.unit();
         if (operator == BinaryOperator.MUL) {
@@ -51,8 +56,11 @@ final class NumericExpressionRanges {
         boolean rounded = false;
         BigDecimal minimum = null;
         BigDecimal maximum = null;
-        for (var l : a) {
-            for (var r : b) {
+        for (int i = 0; i < a.length; i++) {
+            for (int j = 0; j < b.length; j++) {
+                if (sameOperand && i != j) continue;
+                var l = a[i];
+                var r = b[j];
                 work.checkpoint();
                 var lower = checked(exact ? operate(operator, l, r)
                         : DecimalMath.divideOutwards(l, r, true));
@@ -61,6 +69,9 @@ final class NumericExpressionRanges {
                 minimum = minimum == null ? lower : minimum.min(lower);
                 maximum = maximum == null ? upper : maximum.max(upper);
             }
+        }
+        if (sameOperand && operator == BinaryOperator.MUL && a[0].signum() <= 0 && a[1].signum() >= 0) {
+            minimum = BigDecimal.ZERO;
         }
         return new Estimate(range(minimum, maximum, unit), rounded);
     }
@@ -95,6 +106,10 @@ final class NumericExpressionRanges {
         return new NumericRange(Optional.ofNullable(lower).map(NumericExpressionRanges::boundary),
                 Optional.ofNullable(upper).map(NumericExpressionRanges::boundary),
                 false, NumericDirection.NONE, unit, Optional.empty());
+    }
+
+    static NumericRange singleton(BigDecimal value) {
+        return range(value, value, Optional.empty());
     }
 
     static DecimalLiteral boundary(BigDecimal value) {

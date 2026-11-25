@@ -75,6 +75,7 @@ class ArithmeticExpressionTypeContractTest {
                         "CLASS C = n:-1..1; value:0..10 := 1/n; END C;"), CompilerOptions.defaults()), TOKEN));
         assertEquals(java.util.Set.of(RejectionReason.INCOMPLETE_SUPPORT), blocked.rejection().reasons());
         ok("2.4", "CLASS C = n : 0..10; MANDATORY CONSTRAINT (n / 0) >= 1; END C;");
+        ok("2.4", "CLASS C = a:-10000..10000; zero:0..0 := a-a; squared:0..100000000 := a*a; END C;");
     }
 
     @Test

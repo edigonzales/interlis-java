@@ -21,7 +21,7 @@ class ConvertUnitFunctionContractTest {
         var r=assertInstanceOf(CompilationOutcome.Rejected.class,CompilerEngines.create().compile(input(v,body),CancellationToken.none()));
         assertEquals(Set.of(RejectionReason.SOURCE_ERRORS),r.rejection().reasons());assertTrue(r.analysis().diagnostics().toString().contains("CONVERT_UNIT"),r.analysis().diagnostics().toString());
     }
-    @Test void conversionsUseTheAttributeDestinationWithoutComputingOrRoundingAValue() {
+    @Test void conversionsUseTheDeclaredDestinationAndRetainTheSourceUnit() {
         for(String v:List.of("2.3","2.4"))for(String from:List.of("value","1[m]","PI[m]")) {
             var g=ok(v,"TOPIC T=CLASS C=value:0..10000[m];result(TRANSIENT):0..10[km]:=INTERLIS.convertUnit("+from+");END C;END T;");
             var attribute=g.symbols().stream().filter(AttributeSymbol.class::isInstance).map(AttributeSymbol.class::cast).filter(a->a.name().value().equals("result")).findFirst().orElseThrow();
@@ -54,6 +54,30 @@ class ConvertUnitFunctionContractTest {
             assertEquals("m",g.symbol(((NumericType)g.type(call.typeId()).orElseThrow()).range().unit().orElseThrow()).orElseThrow().name().value());
         }
     }
+    @Test void convertedBoundsApplyToAssignmentsAndArgumentsButNotComparisons() {
+        var definitions = "UNIT Centimeter=0.01[m]; Negative=-2[m]; Twice=2[Negative]; Turn=PI[INTERLIS.rad]; "
+                + "Fahrenheit=FUNCTION // (Fahrenheit + 459.67) / 1.8 // [INTERLIS.K]; ";
+        for (String version : List.of("2.3", "2.4")) {
+            var graph = ok(version, definitions + """
+                    TOPIC T=CLASS C=
+                      angle(TRANSIENT):0..10 [INTERLIS.rad] := INTERLIS.convertUnit(1 [Turn]);
+                      heat(TRANSIENT):0..1000 [INTERLIS.K] := INTERLIS.convertUnit(32 [Fahrenheit]);
+                      x:0..2 [Twice]; meters(TRANSIENT):-8..0 [m] := INTERLIS.convertUnit(x);
+                      limit:0..1 [m];
+                      MANDATORY CONSTRAINT INTERLIS.convertUnit(2 [Twice]) < limit;
+                    END C; END T;
+                    """);
+            var heat = graph.symbols().stream().filter(AttributeSymbol.class::isInstance)
+                    .map(AttributeSymbol.class::cast).filter(a -> a.name().value().equals("heat"))
+                    .findFirst().orElseThrow();
+            assertEquals(heat.declaredType(), graph.expression(heat.derivations().getFirst()).orElseThrow().typeId());
+            bad(version, definitions + "TOPIC T=CLASS C=value(TRANSIENT):0..10 [Centimeter] := "
+                    + "INTERLIS.convertUnit(2 [m]); END C; END T;");
+            bad(version, definitions + "FUNCTION fits(value:0..10 [Centimeter]):BOOLEAN;"
+                    + " TOPIC T=CLASS C=MANDATORY CONSTRAINT F.fits(INTERLIS.convertUnit(2 [m])); END C; END T;");
+        }
+    }
+
     @Test void changedDestinationsProduceTheSameDiagnosticsWithFreshAndReusedAnalysis() {
         for(String v:List.of("2.3","2.4")) {
             var engine=CompilerEngines.create();AnalysisSnapshot previous=null;

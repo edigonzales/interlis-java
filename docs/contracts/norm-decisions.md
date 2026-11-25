@@ -62,6 +62,14 @@ Typ wird der fehlende Nachweis als unvollständige Unterstützung ausgewiesen.
 Die Attributrundung folgt weiterhin dem deklarierten Raster nach §2.8.
 [INTERLIS-Referenzhandbuch][norm24]
 
+Für `INTERLIS.convertUnit` prüft der Compiler die gemeinsame Umrechnungsbasis.
+Bei berechenbaren Skalierungen prüft er in Zuweisungen und Funktionsargumenten
+auch den umgerechneten Wertebereich. Ein Vergleich bindet die Zieleinheit.
+Bei typkompatiblen `FUNCTION`-Umrechnungen enthält das Schema den Aufruf und den
+deklarierten Zieltyp. Für die Berechnung ist eine ausführbare Umrechnung nötig.
+Der Validator meldet fehlenden Auswertungskontext, wenn diese nicht vorliegt.
+[INTERLIS-Referenzhandbuch §3.14][ref-norm24-p87]
+
 ## Gemeinsame Segmentendpunkte bei Linienzügen
 
 Das Referenzhandbuch definiert einfache Linienzüge über die Injektivität

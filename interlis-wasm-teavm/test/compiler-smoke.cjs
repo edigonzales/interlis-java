@@ -169,6 +169,27 @@ function registerCompilerTests(load) {
     });
   });
 
+  test('checks decimal arithmetic and converted ranges in the generated runtime', () => {
+    const sourceId = 'memory:/numeric.ili';
+    const text = `INTERLIS 2.4;
+      MODEL Numbers AT "https://example.org/" VERSION "1" =
+      UNIT Centimeter = 0.01 [INTERLIS.m];
+      TOPIC Data = CLASS C =
+        n:0..10; half:0..5 := n / 2; third:0.00..1.00 := 1 / 3;
+        sum:0.3..0.3 := 0.1 + 0.2;
+        cm:0..10 [Centimeter] := INTERLIS.convertUnit(0.02 [INTERLIS.m]);
+      END C; END Data; END Numbers.`;
+    withSession(call, [{sourceId, text}], (request, revision) => {
+      assert.equal(compile(request, revision, 'Numbers').outcome, 'succeeded');
+    });
+    withSession(call, [{sourceId, text: text.replace('0.02 [INTERLIS.m]', '2 [INTERLIS.m]')}],
+      (request, revision) => {
+        const rejected = compile(request, revision, 'Numbers');
+        assert.equal(rejected.outcome, 'rejected');
+        assert.ok(rejected.diagnostics.some(d => JSON.stringify(d).includes('CONVERT_UNIT_RANGE')));
+      });
+  });
+
   test('applies temporal bounds in the generated runtime', () => {
     const sourceId = 'memory:/clock.ili';
     const text = 'INTERLIS 2.4; MODEL Clock AT "x" VERSION "1" = DOMAIN Time = FORMAT INTERLIS.XMLTime "00:00:00.000" .. "23:59:59.999"; END Clock.';
