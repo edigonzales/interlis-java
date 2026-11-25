@@ -209,13 +209,16 @@
           <BaseMapping23.Data.NestedLeaf><Amount>6</Amount></BaseMapping23.Data.NestedLeaf>
         </Notes>
       </BaseMapping23.Data.Mast>
-      <BaseMapping23.Data.Tower TID="legacy-tower"><Caption>middle</Caption><Height>12</Height></BaseMapping23.Data.Tower>
+      <BaseMapping23.Data.Tower TID="legacy-tower">
+        <Caption>middle</Caption><Height>75</Height><SerialNumber>45000000000</SerialNumber>
+      </BaseMapping23.Data.Tower>
       <BaseMapping23.Data.Beacon TID="legacy-beacon"><Caption>sibling</Caption><Signal>green</Signal></BaseMapping23.Data.Beacon>
       <BaseMapping23.Data.Relay TID="legacy-relay">
         <Caption>leaf</Caption>
         <Notes><BaseMapping23.Data.NestedLeaf><Amount>7</Amount></BaseMapping23.Data.NestedLeaf></Notes>
         <Center><COORD><C1>2600000.125</C1><C2>1200000.375</C2></COORD></Center>
         <Height>24</Height>
+        <SerialNumber>35000000000</SerialNumber>
         <Supplement><BaseMapping23.Data.NestedOuter>
           <Items><BaseMapping23.Data.NestedInner>
             <Headline>inherited</Headline>

@@ -14,6 +14,29 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class DbMappingTest {
     @Test
+    void rejectsIntegerOverrideWithDifferentStorageKind() {
+        for (String version : List.of("2.3", "2.4")) {
+            var source = new SourceText(new SourceId("test:/Readings.ili"), new SourceRevision(1), """
+                    INTERLIS %s;
+                    MODEL Readings (en) AT "https://example.org" VERSION "2026-11-25" =
+                      TOPIC Data =
+                        CLASS Reading =
+                          Value : 0 .. 5000000000;
+                        END Reading;
+                        CLASS LocalReading EXTENDS Reading =
+                          Value (EXTENDED) : 0 .. 49;
+                        END LocalReading;
+                      END Data;
+                    END Readings.
+                    """.formatted(version));
+            var rejected = assertThrows(DbException.class,
+                    () -> DbMapping.planNew("Readings", source, false, false, 2056, CancellationToken.none()));
+            assertTrue(rejected.getMessage().contains("extended attribute in inheritance at Readings.Data.LocalReading.Value"),
+                    rejected::getMessage);
+        }
+    }
+
+    @Test
     void rejectsOneToOneAssociationsBetweenTopics() {
         for (String version : List.of("2.3", "2.4")) {
             var source = new SourceText(new SourceId("test:/Location.ili"), new SourceRevision(1), """

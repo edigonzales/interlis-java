@@ -378,11 +378,7 @@ final class DbMapping {
             for (var slot : binding.object().slots()) {
                 if (slot instanceof AttributeSlot attribute && attribute.attribute().overrides().isPresent()
                         && !attribute.attribute().transientAttribute()) {
-                    var base = attribute.attribute();
-                    while (base.overrides().isPresent()) {
-                        var ref = new SymbolRef(plan.snapshotId(), base.overrides().orElseThrow());
-                        base = (AttributeSymbol) plan.symbol(ref).known().orElseThrow();
-                    }
+                    var base = baseAttribute(plan, attribute.attribute());
                     fields.put(new SymbolRef(plan.snapshotId(), base.id()), slot.symbol());
                 }
             }
@@ -649,7 +645,7 @@ final class DbMapping {
         var roots = storageRoots(plan, crsPair);
         var objects = storageObjects(plan, roots, token);
         checkBasketLayout(plan, objects, schemaOptions);
-        checkLayout(plan, objects);
+        checkLayout(plan, objects, profile);
         var wrappedGeometries = DbWrappedGeometry.plan(plan, objects, transformations);
         var geometryComponents = wrappedGeometries.values().stream().map(binding -> binding.component().symbol())
                 .collect(Collectors.toSet());
@@ -840,7 +836,7 @@ final class DbMapping {
         }
     }
 
-    static void checkLayout(TransferPlan plan, List<ObjectDescriptor> objects) {
+    static void checkLayout(TransferPlan plan, List<ObjectDescriptor> objects, DbInheritance.Profile profile) {
         if (objects.stream().noneMatch(object -> object.kind() == SymbolKind.CLASS && object.topic().isPresent())) {
             throw unsupported("expected a selected model containing classes in topics");
         }
@@ -882,7 +878,7 @@ final class DbMapping {
                 throw unsupported("class layout or identity rules for " + object.name().declared());
             }
         }
-        if (!hierarchy.isEmpty()) checkInheritance(plan, objects, hierarchy);
+        if (!hierarchy.isEmpty()) checkInheritance(plan, objects, hierarchy, profile);
     }
 
     static void checkBasketLayout(TransferPlan plan, List<ObjectDescriptor> objects,
@@ -957,7 +953,8 @@ final class DbMapping {
         return association.slots().stream().filter(RoleSlot.class::isInstance).map(RoleSlot.class::cast).toList();
     }
 
-    private static void checkInheritance(TransferPlan plan, List<ObjectDescriptor> objects, Set<SymbolRef> hierarchy) {
+    private static void checkInheritance(TransferPlan plan, List<ObjectDescriptor> objects, Set<SymbolRef> hierarchy,
+                                         DbInheritance.Profile profile) {
         for (var object : objects) {
             if (!hierarchy.contains(object.symbol())) continue;
             boolean catalogueWrapper = object.kind() == SymbolKind.STRUCTURE && DbCatalogueReference.isWrapper(plan, object);
@@ -972,10 +969,7 @@ final class DbMapping {
                 boolean multilingual = DbTextExpansion.isInheritedCollection(plan, object, attribute);
                 if (attribute.member().overridden() && !multilingual
                         && !(catalogueWrapper && DbCatalogueReference.isReferenceField(attribute))
-                        && !(object.kind() == SymbolKind.CLASS
-                        && !attribute.attribute().transientAttribute()
-                        && plan.type(attribute.effectiveType()).known().orElseThrow() instanceof TextType text
-                        && text.textKind() == TextKind.TEXT)) {
+                        && !supportsExtendedClassAttribute(plan, object, attribute, profile)) {
                     throw unsupported("extended attribute in inheritance at " + attribute.name().declared());
                 }
                 if (object.kind() != SymbolKind.STRUCTURE || attribute.attribute().transientAttribute()) continue;
@@ -985,6 +979,30 @@ final class DbMapping {
                 }
             }
         }
+    }
+
+    private static boolean supportsExtendedClassAttribute(TransferPlan plan, ObjectDescriptor object,
+                                                          AttributeSlot attribute, DbInheritance.Profile profile) {
+        if (object.kind() != SymbolKind.CLASS || attribute.attribute().transientAttribute()) return false;
+        var type = plan.type(attribute.effectiveType()).known().orElseThrow();
+        if (type instanceof TextType text) return text.textKind() == TextKind.TEXT;
+        if (profile != DbInheritance.Profile.NEW_CLASS || !(type instanceof NumericType)) return false;
+        Kind kind = scalarKind(type);
+        if (kind != Kind.INTEGER && kind != Kind.BIGINT) return false;
+
+        var base = baseAttribute(plan, attribute.attribute());
+        var owner = plan.object(new SymbolRef(plan.snapshotId(), base.header().owner().orElseThrow())).orElseThrow();
+        return !base.transientAttribute() && owner.topic().equals(object.topic()) && owner.slots().stream()
+                .anyMatch(slot -> slot instanceof AttributeSlot original && original.attribute().id().equals(base.id())
+                        && scalarKind(plan.type(original.effectiveType()).known().orElseThrow()) == kind);
+    }
+
+    private static AttributeSymbol baseAttribute(TransferPlan plan, AttributeSymbol attribute) {
+        while (attribute.overrides().isPresent()) {
+            var ref = new SymbolRef(plan.snapshotId(), attribute.overrides().orElseThrow());
+            attribute = (AttributeSymbol) plan.symbol(ref).known().orElseThrow();
+        }
+        return attribute;
     }
 
     static List<AttributeSlot> attributes(ObjectDescriptor object) {

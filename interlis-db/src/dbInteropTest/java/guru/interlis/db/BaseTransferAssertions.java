@@ -361,8 +361,10 @@ final class BaseTransferAssertions {
         var mast = objects.get(dataset + "-mast");
         var relay = objects.get(dataset + "-relay");
         assertClassFields(mast, prefix + "Mast", Map.of("Caption", "base"), "Notes");
-        assertClassFields(objects.get(dataset + "-tower"), prefix + "Tower", Map.of("Caption", "middle", "Height", "12"));
-        assertClassFields(relay, prefix + "Relay", Map.of("Caption", "leaf", "Height", "24", "Online", "false"),
+        assertClassFields(objects.get(dataset + "-tower"), prefix + "Tower",
+                Map.of("Caption", "middle", "Height", "75", "SerialNumber", "45000000000"));
+        assertClassFields(relay, prefix + "Relay",
+                Map.of("Caption", "leaf", "Height", "24", "SerialNumber", "35000000000", "Online", "false"),
                 "Notes", "Supplement", "Center", "Alignment", "Sites", "Mentor", "PairedService", "Recommended");
         assertLocalReference(relay, "Mentor", version, dataset + "-relay");
         assertTransferClassPoint(relay, "Center", version, MAST_CENTER);

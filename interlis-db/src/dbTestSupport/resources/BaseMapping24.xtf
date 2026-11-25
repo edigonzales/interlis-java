@@ -285,13 +285,16 @@
           <NestedLeaf><Amount>6</Amount></NestedLeaf>
         </Notes>
       </Mast>
-      <Tower i:tid="legacy-tower"><Caption>middle</Caption><Height>12</Height></Tower>
+      <Tower i:tid="legacy-tower">
+        <Caption>middle</Caption><Height>75</Height><SerialNumber>45000000000</SerialNumber>
+      </Tower>
       <Beacon i:tid="legacy-beacon"><Caption>sibling</Caption><Signal>green</Signal></Beacon>
       <Relay i:tid="legacy-relay">
         <Caption>leaf</Caption>
         <Notes><NestedLeaf><Amount>7</Amount></NestedLeaf></Notes>
         <Center><g:coord><g:c1>2600000.125</g:c1><g:c2>1200000.375</g:c2></g:coord></Center>
         <Height>24</Height>
+        <SerialNumber>35000000000</SerialNumber>
         <Supplement><NestedOuter>
           <Items><NestedInner>
             <Headline>inherited</Headline>

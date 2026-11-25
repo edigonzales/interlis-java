@@ -105,7 +105,7 @@ final class BaseGeometryRows {
         String basket = db.table("t_ili2db_basket");
         String sites = version == 24 ? ", " + geometryField(db, "r.sites") : "";
         String objects = """
-                select b.t_ili_tid, m.t_ili_tid, m.t_type, m.caption, t.height, r.aonline, f.asignal,
+                select b.t_ili_tid, m.t_ili_tid, m.t_type, m.caption, t.height, r.aonline, f.asignal, t.serialnumber,
                        %s, %s%s
                 from %s m join %s b on b.t_id=m.t_basket
                 left join %s t on t.t_id=m.t_id and t.t_basket=m.t_basket
@@ -123,8 +123,10 @@ final class BaseGeometryRows {
                 assertEquals(dataset + "-" + type, rows.getString(2));
                 assertEquals(type.equals("relay") ? "arelay" : type, rows.getString(3));
                 assertEquals(item.getLast(), rows.getString(4));
-                assertEquals(switch (type) { case "relay" -> "24"; case "tower" -> "12"; default -> null; },
+                assertEquals(switch (type) { case "relay" -> "24"; case "tower" -> "75"; default -> null; },
                         rows.getString(5));
+                assertEquals(switch (type) { case "relay" -> "35000000000"; case "tower" -> "45000000000"; default -> null; },
+                        rows.getString("serialnumber"));
                 if (type.equals("relay")) {
                     assertFalse(rows.getBoolean(6));
                     assertFalse(rows.wasNull());

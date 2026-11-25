@@ -40,6 +40,14 @@ Ein abstraktes Basistopic liefert Tabellen für konkrete abgeleitete Baskets.
 Bei `CLASS (EXTENDED)` verwendet ein verengtes `TEXT`-Attribut die
 SQL-Spalte der Basisdeklaration. Der Export verwendet im XTF 2.4 ihren
 Namensraum.
+In `newClass`-Klassenhierarchien innerhalb desselben Topics verwenden
+verengte Ganzzahlbereiche mit gleichem Speichertyp (`INTEGER` oder `BIGINT`)
+ebenfalls die Spalte und den `ATTRNAME`-Eintrag der Basisdeklaration.
+`--create-num-checks` verwendet für diese Spalte den Basisbereich.
+Ohne `--createNumChecks` kann ili2pg 5.5.2 für zehnstellige Ganzzahlgrenzen
+eine `integer`-Spalte anlegen, auch wenn der Modellbereich darüber hinausgeht.
+Der Austausch für solche Bereiche setzt auf PostGIS eine `bigint`-Spalte
+voraus.
 Lokale Referenzen dürfen auf Objekte geerbter Klassen im selben Basket
 zeigen. Der Basket kann eingebettete Rollen des Basistopics übernehmen.
 Eine in einem abgeleiteten Topic deklarierte eingebettete 1:n-Rolle mit
@@ -975,7 +983,7 @@ Kleinschreibung. Klassen mit explizitem `NO OID` behalten ihre
 Transferkennung in `T_Ili_Tid`.
 
 Zum weiteren Ausbau gehören weitere Assoziationsformen mit Hierarchie-Enden
-sowie `EXTENDED`-Attribute. Weitere Grenzen sind andere OID-Regeln, eigene Linienformen,
+sowie weitere `EXTENDED`-Abbildungen. Weitere Grenzen sind andere OID-Regeln, eigene Linienformen,
 inkrementelle XTF-Transfers. Der gespeicherte Modelltext
 ist auf eine Million Zeichen begrenzt.
 

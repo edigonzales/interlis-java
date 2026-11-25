@@ -60,7 +60,7 @@ final class BaseMappingStorageTest {
         var fixture = new BaseDbFixture(work, version);
         var db = POSTGIS.target(work.resolve("base-mapping.gpkg"), backend);
         String model = fixture.model();
-        assertSchemaWithIdentityColumns(db, model, fixture.source());
+        assertSchemaWithIdentityColumns(db, model, fixture.source(), "--create-num-checks");
         var input = Files.writeString(work.resolve("base-input.xtf"), fixture.transfer());
         assertCliSuccess(db, "import", model, "legacy", input);
 
@@ -69,6 +69,8 @@ final class BaseMappingStorageTest {
             BaseStructureRows.assertStored(db, sql, version, "legacy");
             BaseAssociationRows.assertStored(db, sql, version, "legacy");
             assertRows(db, sql, version, 1);
+            assertTowerRange(db, sql, "height", 99);
+            assertTowerRange(db, sql, "serialnumber", 50_000_000_000L);
         }
         if (db.postgis()) assertPostgresIdDefault(db);
 
@@ -79,6 +81,27 @@ final class BaseMappingStorageTest {
                     + " where iliname='" + model + ".Data.Place.Select'");
         }
         assertExportRejected(db, model, "legacy", output, "Select", "missing_select");
+    }
+
+    private static void assertTowerRange(Target db, Connection sql, String column, long maximum) throws SQLException {
+        String table = db.table("tower");
+        String relay = " where t_id=(select t_id from " + db.table("mast") + " where t_ili_tid='legacy-relay')";
+        String update = "update " + table + " set " + column + "=";
+        sql.setAutoCommit(false);
+        try {
+            execute(sql, update + maximum + relay);
+            assertEquals(Long.toString(maximum), scalar(sql, "select " + column + " from " + table + relay));
+            var rejected = assertThrows(SQLException.class, () -> execute(sql, update + (maximum + 1) + relay));
+            if (db.postgis) {
+                assertEquals("23514", rejected.getSQLState(), rejected::getMessage);
+            } else {
+                assertTrue(rejected.getMessage().contains("SQLITE_CONSTRAINT_CHECK"), rejected::getMessage);
+            }
+            assertTrue(rejected.getMessage().contains(column), rejected::getMessage);
+        } finally {
+            sql.rollback();
+            sql.setAutoCommit(true);
+        }
     }
 
     private static void assertPostgresIdDefault(Target db) throws SQLException {
