@@ -3,12 +3,19 @@ package guru.interlis.explorer.gui;
 import guru.interlis.explorer.DuckDbStore.StoredObject;
 import guru.interlis.explorer.ExplorerQueries;
 import guru.interlis.explorer.ExplorerQueries.Occurrence;
+import guru.interlis.explorer.gui.ExplorerDataset.Link;
+import guru.interlis.explorer.gui.ExplorerDataset.LinkedText;
+import guru.interlis.model.QualifiedName;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.ModelDescriptor;
 import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.TopicDescriptor;
 import guru.interlis.transfer.TransferPlan;
+import guru.interlis.validation.DataLocation;
+import guru.interlis.validation.UncheckedRuleInfo;
+import guru.interlis.validation.ValidationCoverage;
+import guru.interlis.validation.ValidationReport;
 import guru.interlis.xtf24.Xtf24Exception;
 
 import javax.swing.AbstractAction;
@@ -23,8 +30,11 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
@@ -33,9 +43,9 @@ import javax.swing.JTextArea;
 import javax.swing.JTree;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
-import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
+import javax.swing.ToolTipManager;
 import javax.swing.TransferHandler;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -54,11 +64,11 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -71,20 +81,23 @@ import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.prefs.Preferences;
 
 final class ExplorerFrame extends JFrame {
     private static final String LAST_TRANSFER_DIRECTORY = "lastTransferDirectory";
-    private static final int REFERENCE_ARROW_WIDTH = 28;
-    private static final int REFERENCE_ARROW_GAP = 6;
-    private static final Icon REFERENCE_ARROW = new GlyphIcon("→", REFERENCE_ARROW_WIDTH);
+    private static final String SELECT_OBJECT_TYPE = "Select a class or association";
 
-    private record Visit(long objectPosition, List<Integer> rowPath) {}
+    private record Visit(long objectPosition, TreePath typePath, List<Integer> rowPath) {}
 
     private record OpenedDataset(ExplorerDataset dataset, ExplorerQueries queries, ExplorerQueries.SqlCatalog catalog,
                                  Set<SymbolRef> basketTopics) {}
@@ -95,10 +108,22 @@ final class ExplorerFrame extends JFrame {
     private final JLabel status = new JLabel("Choose the local model files and an XTF 2.4 FULL transfer.");
     private final JTree tree = new JTree(new DefaultMutableTreeNode());
     private final JCheckBox showAllModels = new JCheckBox("Show all models");
-    private final JLabel classTitle = new JLabel("Select a class");
+    private final JLabel classTitle = new JLabel(SELECT_OBJECT_TYPE);
     private final JLabel count = new JLabel(" ");
     private final JList<StoredObject> objectList = new JList<>();
+    private final DefaultListCellRenderer objectRenderer = new DefaultListCellRenderer();
+    private final ReferenceCell objectLinks = new ReferenceCell();
+    private final ReferenceCell inspectorLinks = new ReferenceCell();
+    private final JPopupMenu objectMenu = new JPopupMenu();
+    private final JPopupMenu inspectorMenu = new JPopupMenu();
     private final JLabel objectTitle = new JLabel("Select an object");
+    private final AbstractAction validateObject = new AbstractAction("Validate object") {
+        @Override
+        public void actionPerformed(ActionEvent event) {
+            validateSelectedObject();
+        }
+    };
+    private final JButton validateButton = new JButton(validateObject);
     private final InspectorTableModel attributes = new InspectorTableModel();
     private final JTable inspector = inspectorTable();
     private final JTabbedPane tabs = new JTabbedPane();
@@ -106,6 +131,8 @@ final class ExplorerFrame extends JFrame {
 
     private ExplorerDataset dataset;
     private Set<SymbolRef> basketTopics = Set.of();
+    private Map<Long, LinkedText> associationLabels = Map.of();
+    private AtomicBoolean validationCancelled;
     private boolean navigating;
     private volatile boolean closing;
 
@@ -119,6 +146,7 @@ final class ExplorerFrame extends JFrame {
                     return;
                 }
                 closing = true;
+                cancelValidation();
                 setVisible(false);
                 queryPanel.cancelQuery();
                 if (open.isEnabled()) {
@@ -135,6 +163,7 @@ final class ExplorerFrame extends JFrame {
             private final Icon modelIcon = new GlyphIcon("M");
             private final Icon topicIcon = new GlyphIcon("T");
             private final Icon classIcon = new GlyphIcon("C");
+            private final Icon associationIcon = new GlyphIcon("A");
 
             @Override
             public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected,
@@ -152,7 +181,7 @@ final class ExplorerFrame extends JFrame {
                     }
                     case ObjectDescriptor type -> {
                         setText(type.name().declared().last());
-                        yield classIcon;
+                        yield type.kind() == SymbolKind.ASSOCIATION ? associationIcon : classIcon;
                     }
                     case null, default -> {
                         setText("");
@@ -170,9 +199,9 @@ final class ExplorerFrame extends JFrame {
 
         objectList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         objectList.setFixedCellHeight(26);
-        var objectRenderer = new DefaultListCellRenderer();
-        objectList.setCellRenderer((list, object, index, selected, focused) ->
-                objectRenderer.getListCellRendererComponent(list, objectLabel(object), index, selected, focused));
+        objectList.setCellRenderer((list, object, index, selected, focused) -> renderObject(object, index, selected, focused));
+        ToolTipManager.sharedInstance().registerComponent(objectList);
+        configureObjectLinks();
         objectList.addListSelectionListener(event -> {
             if (!event.getValueIsAdjusting()) {
                 inspectObject();
@@ -184,7 +213,8 @@ final class ExplorerFrame extends JFrame {
         showAllModels.addActionListener(event -> refreshModelTree());
         var instances = section(classTitle, objectList);
         instances.add(count, BorderLayout.SOUTH);
-        var inspection = section(objectTitle, inspector);
+        var inspection = section(objectTitle, inspector, validateButton);
+        updateValidationAction();
         var content = split(JSplitPane.HORIZONTAL_SPLIT, navigation,
                 split(JSplitPane.VERTICAL_SPLIT, instances, inspection, 230, 0.35), 250, 0.25);
 
@@ -197,6 +227,14 @@ final class ExplorerFrame extends JFrame {
         open.addActionListener(event -> chooseDataset());
         back.setEnabled(false);
         back.addActionListener(event -> goBack());
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, InputEvent.ALT_DOWN_MASK), "back");
+        getRootPane().getActionMap().put("back", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                goBack();
+            }
+        });
         status.putClientProperty("html.disable", true);
         var panel = new JPanel(new BorderLayout(0, 14));
         panel.setBorder(BorderFactory.createEmptyBorder(16, 18, 14, 18));
@@ -224,20 +262,19 @@ final class ExplorerFrame extends JFrame {
         table.getColumnModel().getColumn(0).setPreferredWidth(175);
         var valueColumn = table.getColumnModel().getColumn(1);
         valueColumn.setPreferredWidth(420);
-        valueColumn.setMinWidth(REFERENCE_ARROW_WIDTH + REFERENCE_ARROW_GAP + 4);
         var valueRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean selected,
                                                             boolean focused, int row, int column) {
-                super.getTableCellRendererComponent(table, value, selected, focused, row, column);
-                boolean linked = navigationTarget(row).isPresent();
-                setIcon(linked ? REFERENCE_ARROW : null);
-                setToolTipText(linked ? "Click the arrow or press Enter to open" : null);
-                return this;
+                var target = navigationTarget(row);
+                String text = target.isPresent() ? "→ " + value : value.toString();
+                super.getTableCellRendererComponent(table, text, selected, focused, row, column);
+                setToolTipText(target.isPresent() ? "Open the target or press Enter" : null);
+                var links = target.isPresent() ? List.of(new Link(0, text.length(), text, target.getAsLong()))
+                        : List.<Link>of();
+                return inspectorLinks.render(this, new LinkedText(text, links));
             }
         };
-        valueRenderer.setHorizontalTextPosition(SwingConstants.LEFT);
-        valueRenderer.setIconTextGap(REFERENCE_ARROW_GAP);
         valueRenderer.putClientProperty("html.disable", true);
         valueColumn.setCellRenderer(valueRenderer);
         var attributeRenderer = new DefaultTableCellRenderer() {
@@ -262,14 +299,14 @@ final class ExplorerFrame extends JFrame {
         var mouse = new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent event) {
-                if (!SwingUtilities.isLeftMouseButton(event) || event.getClickCount() != 1) {
+                if (!plainClick(event)) {
                     return;
                 }
                 var point = event.getPoint();
                 int row = table.rowAtPoint(point);
                 if (table.columnAtPoint(point) == 0) {
                     attributes.toggle(row);
-                } else if (isReferenceArrow(table, row, point)) {
+                } else if (inspectorLinkAt(table, row, point)) {
                     followReference(row);
                 }
             }
@@ -277,9 +314,8 @@ final class ExplorerFrame extends JFrame {
             @Override
             public void mouseMoved(MouseEvent event) {
                 var point = event.getPoint();
-                boolean overArrow = ExplorerFrame.this.getCursor().getType() != Cursor.WAIT_CURSOR
-                        && isReferenceArrow(table, table.rowAtPoint(point), point);
-                table.setCursor(overArrow ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR) : null);
+                boolean overLink = inspectorLinkAt(table, table.rowAtPoint(point), point);
+                table.setCursor(overLink ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR) : null);
             }
 
             @Override
@@ -294,6 +330,7 @@ final class ExplorerFrame extends JFrame {
         };
         table.addMouseListener(mouse);
         table.addMouseMotionListener(mouse);
+        configurePopup(table, this::showInspectorMenu);
         attributes.addTableModelListener(event -> table.setCursor(null));
         table.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "toggleAttribute");
         table.getActionMap().put("toggleAttribute", new AbstractAction() {
@@ -328,6 +365,144 @@ final class ExplorerFrame extends JFrame {
         table.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_C, shortcut), "copy");
         table.getActionMap().put("copy", TransferHandler.getCopyAction());
         return table;
+    }
+
+    private JLabel renderObject(StoredObject object, int index, boolean selected, boolean focused) {
+        var label = associationLabels.get(object.position());
+        var text = label == null ? ExplorerDataset.objectLabel(object) : label.text();
+        objectRenderer.getListCellRendererComponent(objectList, text, index, selected, focused);
+        objectRenderer.setToolTipText(label == null ? null : text);
+        return label == null ? objectRenderer : objectLinks.render(objectRenderer, label);
+    }
+
+    private void configureObjectLinks() {
+        var mouse = new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent event) {
+                if (plainClick(event) && canNavigate()) {
+                    var point = event.getPoint();
+                    objectLinkAt(point).ifPresent(link -> {
+                        var source = objectList.getModel().getElementAt(objectList.locationToIndex(point));
+                        follow(source, link.targetPosition(), List.of());
+                    });
+                }
+            }
+
+            @Override
+            public void mouseMoved(MouseEvent event) {
+                var linked = canNavigate() && objectLinkAt(event.getPoint()).isPresent();
+                objectList.setCursor(linked ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR) : null);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent event) {
+                objectList.setCursor(null);
+            }
+        };
+        objectList.addMouseListener(mouse);
+        objectList.addMouseMotionListener(mouse);
+        configurePopup(objectList, this::showObjectMenu);
+    }
+
+    private static boolean plainClick(MouseEvent event) {
+        return SwingUtilities.isLeftMouseButton(event) && event.getClickCount() == 1
+                && !event.isPopupTrigger() && !event.isControlDown() && !event.isMetaDown()
+                && !event.isAltDown() && !event.isShiftDown();
+    }
+
+    private Optional<Link> objectLinkAt(Point point) {
+        int index = objectList.locationToIndex(point);
+        if (index < 0) {
+            return Optional.empty();
+        }
+        var bounds = objectList.getCellBounds(index, index);
+        if (!bounds.contains(point)) {
+            return Optional.empty();
+        }
+        var label = renderObject(objectList.getModel().getElementAt(index), index, objectList.isSelectedIndex(index),
+                objectList.hasFocus() && objectList.getLeadSelectionIndex() == index);
+        return label == objectLinks
+                ? objectLinks.linkAt(new Point(point.x - bounds.x, point.y - bounds.y), bounds.height)
+                : Optional.empty();
+    }
+
+    private static void configurePopup(JComponent view, Consumer<Point> showMenu) {
+        view.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent event) {
+                popup(event);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent event) {
+                popup(event);
+            }
+
+            private void popup(MouseEvent event) {
+                if (event.isPopupTrigger()) {
+                    showMenu.accept(event.getPoint());
+                    event.consume();
+                }
+            }
+        });
+        var keys = view.getInputMap(JComponent.WHEN_FOCUSED);
+        keys.put(KeyStroke.getKeyStroke(KeyEvent.VK_CONTEXT_MENU, 0), "showTargetMenu");
+        keys.put(KeyStroke.getKeyStroke(KeyEvent.VK_F10, InputEvent.SHIFT_DOWN_MASK), "showTargetMenu");
+        view.getActionMap().put("showTargetMenu", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                showMenu.accept(null);
+            }
+        });
+    }
+
+    private void showObjectMenu(Point point) {
+        if (!canNavigate()) {
+            return;
+        }
+        int index = point == null ? objectList.getSelectedIndex() : objectList.locationToIndex(point);
+        if (index < 0) {
+            return;
+        }
+        var bounds = objectList.getCellBounds(index, index);
+        if (point != null && !bounds.contains(point)) {
+            return;
+        }
+        objectList.requestFocusInWindow();
+        objectList.setSelectedIndex(index);
+        var object = objectList.getModel().getElementAt(index);
+        objectMenu.removeAll();
+        objectMenu.add(new JMenuItem(validateObject));
+        var label = associationLabels.get(object.position());
+        if (label != null && !label.links().isEmpty()) {
+            var targets = new JMenu("Go to target");
+            for (var link : label.links()) {
+                var item = new JMenuItem(link.menuLabel());
+                item.addActionListener(event -> follow(object, link.targetPosition(), List.of()));
+                targets.add(item);
+            }
+            objectMenu.add(targets);
+        }
+        if (point == null) {
+            objectList.ensureIndexIsVisible(index);
+        }
+        objectMenu.show(objectList, point == null ? bounds.x : point.x,
+                point == null ? bounds.y + bounds.height : point.y);
+    }
+
+    private void showInspectorMenu(Point point) {
+        int row = point == null ? inspector.getSelectedRow() : inspector.rowAtPoint(point);
+        if (navigationTarget(row).isEmpty()) {
+            return;
+        }
+        selectInspectorRow(row);
+        inspectorMenu.removeAll();
+        var item = new JMenuItem("Go to target");
+        item.addActionListener(event -> followReference(row));
+        inspectorMenu.add(item);
+        var bounds = inspector.getCellRect(row, 1, true);
+        inspectorMenu.show(inspector, point == null ? bounds.x : point.x,
+                point == null ? bounds.y + bounds.height : point.y);
     }
 
     private record GlyphIcon(String glyph, int width) implements Icon {
@@ -427,6 +602,7 @@ final class ExplorerFrame extends JFrame {
     }
 
     private void chooseDataset() {
+        cancelValidation();
         var modelChooser = new JFileChooser(lastTransferDirectory());
         modelChooser.setDialogTitle("Select INTERLIS model files and their imports");
         modelChooser.setMultiSelectionEnabled(true);
@@ -447,7 +623,14 @@ final class ExplorerFrame extends JFrame {
     }
 
     private void openDataset(List<Path> files, Path xtf) {
+        cancelValidation();
         open.setEnabled(false);
+        updateValidationAction();
+        back.setEnabled(false);
+        objectMenu.setVisible(false);
+        objectMenu.removeAll();
+        inspectorMenu.setVisible(false);
+        inspectorMenu.removeAll();
         var previousCursor = getCursor();
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         status.setText("Compiling models and importing " + xtf.getFileName() + "…");
@@ -479,13 +662,15 @@ final class ExplorerFrame extends JFrame {
                     } else {
                         var previous = dataset;
                         dataset = opened;
+                        associationLabels = Map.of();
                         queryPanel.setDataset(result.queries(), result.catalog(), () -> release(previous));
                         history.clear();
                         back.setEnabled(false);
                         basketTopics = result.basketTopics();
                         showAllModels.setSelected(false);
                         showAllModels.setEnabled(true);
-                        tree.setModel(new DefaultTreeModel(modelTree(opened.plan(), Optional.of(basketTopics))));
+                        tree.setModel(new DefaultTreeModel(modelTree(opened.plan(), Optional.of(basketTopics),
+                                opened.storedObjectTypes())));
                         selectClass();
                         status.setText("Opened " + xtf.getFileName()
                                 + (basketTopics.isEmpty() ? " · No baskets in this transfer." : ""));
@@ -509,13 +694,16 @@ final class ExplorerFrame extends JFrame {
                         closeWindow();
                     } else {
                         open.setEnabled(true);
+                        updateValidationAction();
+                        back.setEnabled(!history.isEmpty());
                     }
                 }
             }
         }.execute();
     }
 
-    static DefaultMutableTreeNode modelTree(TransferPlan plan, Optional<Set<SymbolRef>> visibleTopics) {
+    static DefaultMutableTreeNode modelTree(TransferPlan plan, Optional<Set<SymbolRef>> visibleTopics,
+                                           Set<QualifiedName> storedObjectTypes) {
         var root = new DefaultMutableTreeNode();
         for (var model : plan.models()) {
             var modelNode = new DefaultMutableTreeNode(model);
@@ -526,9 +714,10 @@ final class ExplorerFrame extends JFrame {
                 var topic = plan.topic(topicRef).orElseThrow();
                 var topicNode = new DefaultMutableTreeNode(topic);
                 modelNode.add(topicNode);
-                for (var classRef : topic.objectTypes()) {
-                    var type = plan.object(classRef).orElseThrow();
-                    if (type.kind() == SymbolKind.CLASS) {
+                for (var typeRef : topic.objectTypes()) {
+                    var type = plan.object(typeRef).orElseThrow();
+                    if (type.kind() == SymbolKind.CLASS || type.kind() == SymbolKind.ASSOCIATION
+                            && storedObjectTypes.contains(type.name().declared())) {
                         topicNode.add(new DefaultMutableTreeNode(type, false));
                     }
                 }
@@ -545,7 +734,7 @@ final class ExplorerFrame extends JFrame {
             return;
         }
         var topics = showAllModels.isSelected() ? Optional.<Set<SymbolRef>>empty() : Optional.of(basketTopics);
-        var root = modelTree(dataset.plan(), topics);
+        var root = modelTree(dataset.plan(), topics, dataset.storedObjectTypes());
         boolean selectionKept;
         navigating = true;
         try {
@@ -603,9 +792,10 @@ final class ExplorerFrame extends JFrame {
         if (closing || dataset == null) {
             return;
         }
+        associationLabels = Map.of();
         objectList.setListData(new StoredObject[0]);
         inspectObject();
-        classTitle.setText("Select a class");
+        classTitle.setText(SELECT_OBJECT_TYPE);
         count.setText(" ");
         if (tree.getLastSelectedPathComponent() instanceof DefaultMutableTreeNode node
                 && node.getUserObject() instanceof ObjectDescriptor type) {
@@ -621,6 +811,8 @@ final class ExplorerFrame extends JFrame {
     }
 
     private void inspectObject() {
+        cancelValidation();
+        updateValidationAction();
         if (closing || dataset == null) {
             return;
         }
@@ -630,7 +822,7 @@ final class ExplorerFrame extends JFrame {
             objectTitle.setText("Select an object");
             return;
         }
-        objectTitle.setText(objectLabel(selected));
+        objectTitle.setText(ExplorerDataset.objectLabel(selected));
         try {
             var relationships = InspectorRelationships.read(dataset.plan(), dataset.store(), selected);
             attributes.show(dataset.plan(), selected.object().data(), relationships);
@@ -640,61 +832,71 @@ final class ExplorerFrame extends JFrame {
         }
     }
 
-    private void showObjects(ObjectDescriptor type, List<StoredObject> objects) {
+    private void showObjects(ObjectDescriptor type, List<StoredObject> objects) throws SQLException {
+        associationLabels = dataset.associationLabels(type, objects);
         classTitle.setText(type.name().declared().toString());
+        objectList.setCursor(null);
         objectList.setListData(objects.toArray(StoredObject[]::new));
-        count.setText(objects.isEmpty() ? "No objects of this class."
-                : objects.size() + " shown (up to " + ExplorerDataset.OBJECT_LIMIT + ")");
+        String scope = objects.size() > ExplorerDataset.OBJECT_LIMIT ? "includes selected object"
+                : "up to " + ExplorerDataset.OBJECT_LIMIT;
+        count.setText(objects.isEmpty() ? "No objects of this type." : objects.size() + " shown (" + scope + ")");
     }
 
-    private boolean isReferenceArrow(JTable table, int row, Point point) {
-        if (navigationTarget(row).isEmpty()) {
+    private boolean inspectorLinkAt(JTable table, int row, Point point) {
+        if (navigationTarget(row).isEmpty() || table.columnAtPoint(point) != 1) {
             return false;
         }
         var cell = table.getCellRect(row, 1, false);
         if (!cell.contains(point)) {
             return false;
         }
-        var label = (JLabel) table.prepareRenderer(table.getCellRenderer(row, 1), row, 1);
-        var insets = label.getInsets();
-        var content = new Rectangle(cell.x + insets.left, cell.y + insets.top,
-                cell.width - insets.left - insets.right, cell.height - insets.top - insets.bottom);
-        var arrow = new Rectangle();
-        SwingUtilities.layoutCompoundLabel(label, label.getFontMetrics(label.getFont()), label.getText(), label.getIcon(),
-                label.getVerticalAlignment(), label.getHorizontalAlignment(), label.getVerticalTextPosition(),
-                label.getHorizontalTextPosition(), content, arrow, new Rectangle(), label.getIconTextGap());
-        return point.x >= arrow.x && point.x < arrow.x + arrow.width;
+        var label = table.prepareRenderer(table.getCellRenderer(row, 1), row, 1);
+        return label == inspectorLinks
+                && inspectorLinks.linkAt(new Point(point.x - cell.x, point.y - cell.y), cell.height).isPresent();
+    }
+
+    private boolean canNavigate() {
+        return dataset != null && open.isEnabled() && !closing;
     }
 
     private OptionalLong navigationTarget(int row) {
         var target = attributes.target(row);
         var source = objectList.getSelectedValue();
-        if (source == null || target.isEmpty() || target.getAsLong() == source.position()) {
+        if (!canNavigate() || source == null || target.isEmpty() || target.getAsLong() == source.position()) {
             return OptionalLong.empty();
         }
         return target;
     }
 
     private void followReference(int row) {
-        var target = navigationTarget(row);
-        if (target.isEmpty()) {
+        navigationTarget(row).ifPresent(target -> follow(objectList.getSelectedValue(), target, attributes.pathTo(row)));
+    }
+
+    private void follow(StoredObject source, long target, List<Integer> rowPath) {
+        if (!canNavigate() || source == null || source.position() == target) {
             return;
         }
-        var visit = new Visit(objectList.getSelectedValue().position(), attributes.pathTo(row));
-        if (openOccurrence(target.getAsLong())) {
+        var visit = new Visit(source.position(), tree.getSelectionPath(), rowPath);
+        if (openOccurrence(target)) {
             history.push(visit);
             back.setEnabled(true);
+            objectList.requestFocusInWindow();
         }
     }
 
     private void goBack() {
         var visit = history.peek();
-        if (visit == null || !openOccurrence(visit.objectPosition())) {
+        if (!canNavigate() || tabs.getSelectedIndex() != 0 || visit == null
+                || !openOccurrence(visit.objectPosition(), visit.typePath())) {
             return;
         }
         history.pop();
         back.setEnabled(!history.isEmpty());
-        selectInspectorRow(attributes.reveal(visit.rowPath()));
+        if (visit.rowPath().isEmpty()) {
+            objectList.requestFocusInWindow();
+        } else {
+            selectInspectorRow(attributes.reveal(visit.rowPath()));
+        }
     }
 
     private void openQueryOccurrence(Occurrence occurrence) {
@@ -724,6 +926,10 @@ final class ExplorerFrame extends JFrame {
     }
 
     private boolean openOccurrence(long position) {
+        return openOccurrence(position, null);
+    }
+
+    private boolean openOccurrence(long position, TreePath previousPath) {
         if (closing || dataset == null) {
             return false;
         }
@@ -734,37 +940,176 @@ final class ExplorerFrame extends JFrame {
                 return false;
             }
             var type = dataset.plan().object(target.object().type()).orElseThrow();
-            var root = (DefaultMutableTreeNode) tree.getModel().getRoot();
-            for (var nodes = root.depthFirstEnumeration(); nodes.hasMoreElements();) {
-                var node = (DefaultMutableTreeNode) nodes.nextElement();
-                if (type.equals(node.getUserObject())) {
-                    var objects = dataset.objectsIncluding(type, target);
-                    var path = new TreePath(node.getPath());
-                    navigating = true;
-                    try {
-                        tree.setSelectionPath(path);
-                        tree.scrollPathToVisible(path);
-                    } finally {
-                        navigating = false;
-                    }
-                    showObjects(type, objects);
-                    objectList.setSelectedValue(target, true);
-                    return true;
-                }
+            var path = occurrencePath(type, previousPath);
+            if (path == null && !showAllModels.isSelected()) {
+                showAllModels.setSelected(true);
+                refreshModelTree();
+                path = occurrencePath(type, previousPath);
             }
-            showError("Open object", "The target is outside the class browser.");
+            if (path == null) {
+                showError("Open object", "The target type is unavailable in the model tree.");
+                return false;
+            }
+            var objects = dataset.objectsIncluding(type, target);
+            showObjects(type, objects);
+            navigating = true;
+            try {
+                tree.setSelectionPath(path);
+                tree.scrollPathToVisible(path);
+            } finally {
+                navigating = false;
+            }
+            objectList.setSelectedValue(target, true);
+            return true;
         } catch (SQLException | RuntimeException failure) {
             showError("Open object", failure.getMessage());
         }
         return false;
     }
 
-    static String objectLabel(StoredObject entry) {
-        var identity = entry.object().identity();
-        if (identity.tid().isPresent()) {
-            return "TID " + identity.tid().orElseThrow().value();
+    private TreePath occurrencePath(ObjectDescriptor type, TreePath previousPath) {
+        var root = (DefaultMutableTreeNode) tree.getModel().getRoot();
+        if (previousPath != null) {
+            var restored = findPath(root, previousPath);
+            if (restored != null) {
+                return restored;
+            }
         }
-        return identity.oid().map(oid -> "OID " + oid.value()).orElse("Store position " + entry.position());
+        for (var nodes = root.depthFirstEnumeration(); nodes.hasMoreElements();) {
+            var node = (DefaultMutableTreeNode) nodes.nextElement();
+            if (type.equals(node.getUserObject())) {
+                return new TreePath(node.getPath());
+            }
+        }
+        return null;
+    }
+
+    private void cancelValidation() {
+        if (validationCancelled != null) {
+            validationCancelled.set(true);
+        }
+    }
+
+    private void updateValidationAction() {
+        boolean selected = objectList.getSelectedValue() != null;
+        validateButton.setVisible(selected);
+        validateObject.setEnabled(selected && canNavigate() && validationCancelled == null);
+        validateButton.setText(validationCancelled != null && !validationCancelled.get()
+                ? "Validating…" : "Validate object");
+    }
+
+    private void validateSelectedObject() {
+        if (!validateObject.isEnabled()) {
+            return;
+        }
+        var activeDataset = dataset;
+        var selected = objectList.getSelectedValue();
+        ExplorerDataset.ObjectValidation request;
+        try {
+            request = activeDataset.objectValidation(selected);
+        } catch (SQLException | RuntimeException failure) {
+            showError("Object validation failed", failure.getMessage());
+            return;
+        }
+        var cancelled = new AtomicBoolean();
+        validationCancelled = cancelled;
+        updateValidationAction();
+        new SwingWorker<ValidationReport, Void>() {
+            @Override
+            protected ValidationReport doInBackground() {
+                return request.validate(cancelled::get);
+            }
+
+            @Override
+            protected void done() {
+                validationCancelled = null;
+                updateValidationAction();
+                if (cancelled.get() || closing || dataset != activeDataset || objectList.getSelectedValue() != selected) {
+                    return;
+                }
+                try {
+                    var plan = activeDataset.plan();
+                    var type = plan.object(selected.object().type()).orElseThrow().name().declared();
+                    var association = associationLabels.get(selected.position());
+                    var title = association == null ? ExplorerDataset.objectLabel(selected) : association.text();
+                    var label = title + " (" + type + ", basket " + request.basket().id().value() + ")";
+                    showDetails("Object validation", validationText(plan, label, get()), 16,
+                            JOptionPane.INFORMATION_MESSAGE);
+                } catch (ExecutionException failure) {
+                    showError("Object validation failed", failure.getCause().getMessage());
+                } catch (InterruptedException failure) {
+                    Thread.currentThread().interrupt();
+                    showError("Object validation failed", "Validation was interrupted.");
+                }
+            }
+        }.execute();
+    }
+
+    private static String validationText(TransferPlan plan, String label, ValidationReport report) {
+        var text = new StringBuilder(label).append("\n\n");
+        long violations = report.detectedViolations();
+        if (violations == 0) {
+            text.append("No violations found in local checks\n");
+        } else {
+            text.append(violations).append(violations == 1 ? " violation\n" : " violations\n");
+            for (var finding : report.examples()) {
+                text.append('\n').append(dataPath(plan, finding.data())).append("  ").append(finding.message());
+                if (finding.data().path().isEmpty()) {
+                    text.append(" (").append(symbolName(plan, finding.rule().declaration())).append(')');
+                }
+            }
+            long omitted = violations - report.examples().size();
+            if (omitted > 0) {
+                text.append("\n").append(omitted).append(" more violations omitted from the examples.");
+            }
+            text.append('\n');
+        }
+        text.append("\nLocal checks use the basket as context. Basket rules, reference targets, uniqueness across "
+                + "objects and other dataset rules were not checked.\n");
+
+        var coverage = report.coverage();
+        var constraintGaps = new EnumMap<ValidationCoverage.ConstraintStatus, Long>(ValidationCoverage.ConstraintStatus.class);
+        for (var rule : coverage.constraints()) {
+            constraintGaps.merge(rule.status(), rule.occurrences(), Long::sum);
+        }
+        appendGap(text, "Incomplete context", coverage.incompleteContext(),
+                constraintGaps.getOrDefault(ValidationCoverage.ConstraintStatus.INCOMPLETE_CONTEXT, 0L));
+        appendGap(text, "Missing runtime context", coverage.missingRuntimeContext(),
+                constraintGaps.getOrDefault(ValidationCoverage.ConstraintStatus.MISSING_RUNTIME_CONTEXT, 0L));
+        appendGap(text, "Unsupported values", coverage.unsupportedValues(),
+                constraintGaps.getOrDefault(ValidationCoverage.ConstraintStatus.UNSUPPORTED_VALUE, 0L));
+        appendGap(text, "Unsupported expressions", List.of(),
+                constraintGaps.getOrDefault(ValidationCoverage.ConstraintStatus.UNSUPPORTED_EXPRESSION, 0L));
+        if (coverage.notChecked().stream().anyMatch(rule -> rule.reason() == UncheckedRuleInfo.Reason.UNSUPPORTED_EXPRESSION)) {
+            text.append("\nThe model plan also contains expressions outside the local validator's capabilities.\n");
+        }
+        return text.toString();
+    }
+
+    private static void appendGap(StringBuilder text, String reason, List<ValidationCoverage.RuleCount> rules, long constraints) {
+        long skipped = rules.stream().mapToLong(ValidationCoverage.RuleCount::occurrences).sum() + constraints;
+        if (skipped > 0) {
+            text.append('\n').append(reason).append(" prevented ").append(skipped)
+                    .append(skipped == 1 ? " check.\n" : " checks.\n");
+        }
+    }
+
+    private static String dataPath(TransferPlan plan, DataLocation location) {
+        var path = new StringBuilder();
+        for (var step : location.path()) {
+            switch (step) {
+                case DataLocation.Slot slot -> path.append('/').append(symbolName(plan, slot.symbol()));
+                case DataLocation.Index index -> path.append('[').append(index.position()).append(']');
+                case DataLocation.GeometryComponent component -> path.append('/')
+                        .append(component.kind().name().toLowerCase(Locale.ROOT))
+                        .append('[').append(component.position()).append(']');
+            }
+        }
+        return path.isEmpty() ? "Object" : path.substring(1);
+    }
+
+    private static String symbolName(TransferPlan plan, SymbolRef ref) {
+        return plan.symbol(ref).known().map(symbol -> symbol.name().value()).orElseGet(() -> ref.symbol().value());
     }
 
     private void closeWindow() {
@@ -788,11 +1133,15 @@ final class ExplorerFrame extends JFrame {
     }
 
     private void showError(String title, String message) {
-        var details = new JTextArea(message, 5, 52);
+        showDetails(title, message, 5, JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void showDetails(String title, String message, int rows, int messageType) {
+        var details = new JTextArea(message, rows, 52);
         details.setEditable(false);
         details.setLineWrap(true);
         details.setWrapStyleWord(true);
         details.setCaretPosition(0);
-        JOptionPane.showMessageDialog(this, new JScrollPane(details), title, JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(this, new JScrollPane(details), title, messageType);
     }
 }

@@ -10,6 +10,8 @@ import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
 import guru.interlis.explorer.DuckDbStore;
 import guru.interlis.explorer.DuckDbStore.StoredObject;
+import guru.interlis.model.QualifiedName;
+import guru.interlis.model.SymbolKind;
 import guru.interlis.repository.FetchPolicy;
 import guru.interlis.repository.HostRepositories;
 import guru.interlis.repository.RepositoryBase;
@@ -22,9 +24,23 @@ import guru.interlis.repository.SourceLoadException;
 import guru.interlis.repository.SourceLocator;
 import guru.interlis.source.SourceId;
 import guru.interlis.transfer.ObjectDescriptor;
+import guru.interlis.transfer.RoleSlot;
+import guru.interlis.transfer.TransferEvent;
+import guru.interlis.transfer.TransferIdentity.TransferId;
 import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferPlanner;
 import guru.interlis.transfer.TransferPlanningResult;
+import guru.interlis.transfer.TransferValue.Reference;
+import guru.interlis.validation.LocalValidator;
+import guru.interlis.validation.PlanningProblem;
+import guru.interlis.validation.RuntimeBindings;
+import guru.interlis.validation.ValidationOptions;
+import guru.interlis.validation.ValidationPlan;
+import guru.interlis.validation.ValidationPlanner;
+import guru.interlis.validation.ValidationPlanningResult;
+import guru.interlis.validation.ValidationProfile;
+import guru.interlis.validation.ValidationReport;
+import guru.interlis.validation.jts.JtsGeometryEngine;
 import guru.interlis.workspace.AnalysisRequest;
 import guru.interlis.workspace.SourceChange;
 import guru.interlis.workspace.SourceExpectation;
@@ -44,15 +60,37 @@ import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-/** Owns the transfer plan and temporary store for one opened dataset. */
-record ExplorerDataset(TransferPlan plan, DuckDbStore store, Path directory) implements AutoCloseable {
+/** Owns the plans and temporary store for one opened dataset. */
+record ExplorerDataset(TransferPlan plan, DuckDbStore store, Path directory,
+                       ValidationPlanningResult validationPlanning, Set<QualifiedName> storedObjectTypes)
+        implements AutoCloseable {
     static final int OBJECT_LIMIT = 100;
+
+    record Link(int start, int end, String menuLabel, long targetPosition) { }
+
+    record LinkedText(String text, List<Link> links) {
+        LinkedText {
+            links = List.copyOf(links);
+        }
+    }
+
+    private record ReferenceKey(long position, QualifiedName slot, Reference reference) { }
+
+    /** Captured on the store's owning thread and safe to validate after the store closes. */
+    record ObjectValidation(ValidationPlan plan, TransferEvent.StartBasket basket, TransferEvent.ObjectEvent object) {
+        ValidationReport validate(CancellationToken cancellation) {
+            return LocalValidator.validateObject(plan, basket, object, ValidationOptions.defaults(), cancellation);
+        }
+    }
 
     static ExplorerDataset open(List<Path> models, Path xtf, CancellationToken cancellation)
             throws IOException, SQLException {
@@ -68,8 +106,12 @@ record ExplorerDataset(TransferPlan plan, DuckDbStore store, Path directory) imp
             throws IOException, SQLException {
         var plan = compile(models, xtf, cancellation);
         cancellation.throwIfCancellationRequested();
+        var bindings = RuntimeBindings.empty().withGeometry(JtsGeometryEngine.standard());
+        var validation = ValidationPlanner.plan(plan, ValidationProfile.LOCAL_ONLY, bindings);
+        cancellation.throwIfCancellationRequested();
         var directory = Files.createTempDirectory("interlis-explorer-");
         var database = directory.resolve("transfer.duckdb");
+        DuckDbStore opened = null;
         try {
             try (var store = spatial ? DuckDbStore.openWithSpatial(database, plan) : DuckDbStore.open(database, plan);
                  var input = Files.newInputStream(xtf);
@@ -78,10 +120,13 @@ record ExplorerDataset(TransferPlan plan, DuckDbStore store, Path directory) imp
                 store.importTransfer(reader, cancellation);
             }
             cancellation.throwIfCancellationRequested();
-            return new ExplorerDataset(plan, DuckDbStore.openReadOnly(database, plan), directory);
+            opened = DuckDbStore.openReadOnly(database, plan);
+            var objectTypes = opened.storedObjectTypes();
+            cancellation.throwIfCancellationRequested();
+            return new ExplorerDataset(plan, opened, directory, validation, objectTypes);
         } catch (IOException | SQLException | RuntimeException | Error failure) {
             try {
-                release(null, directory);
+                release(opened, directory);
             } catch (IOException | SQLException cleanup) {
                 failure.addSuppressed(cleanup);
             }
@@ -239,10 +284,68 @@ record ExplorerDataset(TransferPlan plan, DuckDbStore store, Path directory) imp
         if (objects.stream().anyMatch(object -> object.position() == selected.position())) {
             return objects;
         }
-        var visible = new ArrayList<StoredObject>();
+        var visible = new ArrayList<>(objects);
         visible.add(selected);
-        visible.addAll(objects.subList(0, Math.min(objects.size(), OBJECT_LIMIT - 1)));
         return List.copyOf(visible);
+    }
+
+    Map<Long, LinkedText> associationLabels(ObjectDescriptor type, List<StoredObject> objects) throws SQLException {
+        if (type.kind() != SymbolKind.ASSOCIATION) {
+            return Map.of();
+        }
+        var roles = type.slots().stream().filter(RoleSlot.class::isInstance).map(RoleSlot.class::cast).toList();
+        var anonymous = objects.stream().filter(object ->
+                object.object().identity().tid().isEmpty() && object.object().identity().oid().isEmpty()).toList();
+        var positions = anonymous.stream().map(StoredObject::position).collect(Collectors.toSet());
+        var slots = roles.stream().map(role -> role.name().declared()).collect(Collectors.toSet());
+        var targets = new HashMap<ReferenceKey, Long>();
+        for (var entry : store.resolvedReferences(positions, slots)) {
+            targets.put(new ReferenceKey(entry.sourcePosition(), entry.slot(), entry.reference()), entry.targetPosition());
+        }
+        var labels = new HashMap<Long, LinkedText>();
+        for (var object : anonymous) {
+            var label = new StringBuilder(objectLabel(object));
+            var links = new ArrayList<Link>();
+            String separator = "  ";
+            for (var role : roles) {
+                var name = role.name().declared();
+                var reference = object.object().value(role.symbol()).map(Reference.class::cast);
+                var target = "→ " + reference.map(ExplorerDataset::displayReference).orElse("Absent");
+                label.append(separator).append(name.last()).append(' ');
+                int start = label.length();
+                label.append(target);
+                var position = reference.map(value -> targets.get(new ReferenceKey(object.position(), name, value)));
+                position.ifPresent(resolved -> links.add(new Link(start, label.length(), name.last() + " " + target, resolved)));
+                separator = ", ";
+            }
+            labels.put(object.position(), new LinkedText(label.toString(), links));
+        }
+        return Map.copyOf(labels);
+    }
+
+    static String objectLabel(StoredObject object) {
+        var identity = object.object().identity();
+        return identity.tid().map(tid -> "TID " + tid.value())
+                .or(() -> identity.oid().map(oid -> "OID " + oid.value()))
+                .orElseGet(() -> "Object " + object.position());
+    }
+
+    static String displayReference(Reference reference) {
+        var target = reference.target();
+        String label = (target instanceof TransferId ? "TID " : "OID ") + target.value();
+        return reference.targetBasket().map(basket -> label + " (BID " + basket.value() + ")").orElse(label);
+    }
+
+    ObjectValidation objectValidation(StoredObject selected) throws SQLException {
+        var validationPlan = switch (validationPlanning) {
+            case ValidationPlanningResult.Ready ready -> ready.plan();
+            case ValidationPlanningResult.Rejected rejected -> throw new IllegalStateException(rejected.problems().stream()
+                    .map(PlanningProblem::message).collect(Collectors.joining("\n", "Validation plan unavailable.\n", "")));
+        };
+        var context = store.objectContext(selected.position())
+                .orElseThrow(() -> new IllegalStateException("The selected object could not be found."));
+        return new ObjectValidation(validationPlan, context.basket(),
+                new TransferEvent.ObjectEvent(selected.object(), Optional.empty(), context.consistency()));
     }
 
     @Override

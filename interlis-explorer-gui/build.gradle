@@ -16,6 +16,8 @@ dependencies {
     implementation project(':interlis-transfer')
     implementation project(':interlis-xtf')
     implementation project(':interlis-explorer')
+    implementation project(':interlis-validation')
+    implementation project(':interlis-validation-jts')
     implementation 'com.formdev:flatlaf:3.7'
     implementation 'com.fifesoft:rsyntaxtextarea:4.0.1'
     implementation 'com.fifesoft:autocomplete:4.0.0'

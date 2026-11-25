@@ -8,6 +8,9 @@ import guru.interlis.transfer.ModelDescriptor;
 import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.TopicDescriptor;
 import guru.interlis.transfer.TransferPlan;
+import guru.interlis.validation.DataLocation;
+import guru.interlis.validation.ValidationCode;
+import guru.interlis.validation.ValidationReport;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -30,6 +33,9 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ExplorerTest {
+    private static final CancellationToken RUN = CancellationToken.none();
+    private static final Path FIXTURES = Path.of(System.getProperty("testdata.dir"), "reference", "iox", "ili24");
+
     @TempDir Path temp;
 
     @Test
@@ -91,7 +97,7 @@ class ExplorerTest {
     }
 
     private static void checkModelTree(TransferPlan plan, Set<SymbolRef> topics) {
-        var filtered = ExplorerFrame.modelTree(plan, Optional.of(topics));
+        var filtered = ExplorerFrame.modelTree(plan, Optional.of(topics), Set.of());
         assertEquals(1, filtered.getChildCount());
         var model = (DefaultMutableTreeNode) filtered.getFirstChild();
         assertEquals(QualifiedName.of("Root"), ((ModelDescriptor) model.getUserObject()).name().declared());
@@ -113,7 +119,7 @@ class ExplorerTest {
         tree.setRootVisible(false);
         tree.expandPath(new TreePath(empty.getPath()));
         tree.setSelectionPath(new TreePath(inherited.getPath()));
-        var full = ExplorerFrame.modelTree(plan, Optional.empty());
+        var full = ExplorerFrame.modelTree(plan, Optional.empty(), Set.of());
         assertEquals(plan.models().size(), full.getChildCount());
         assertTrue(ExplorerFrame.replaceModelTree(tree, full));
         var selected = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
@@ -126,9 +132,9 @@ class ExplorerTest {
 
         var hiddenBase = (DefaultMutableTreeNode) fullModel.getFirstChild();
         tree.setSelectionPath(new TreePath(hiddenBase.getPath()));
-        assertFalse(ExplorerFrame.replaceModelTree(tree, ExplorerFrame.modelTree(plan, Optional.of(topics))));
+        assertFalse(ExplorerFrame.replaceModelTree(tree, ExplorerFrame.modelTree(plan, Optional.of(topics), Set.of())));
         assertTrue(tree.isSelectionEmpty());
-        assertEquals(0, ExplorerFrame.modelTree(plan, Optional.of(Set.of())).getChildCount());
+        assertEquals(0, ExplorerFrame.modelTree(plan, Optional.of(Set.of()), Set.of()).getChildCount());
     }
 
     @Test
@@ -138,7 +144,7 @@ class ExplorerTest {
                 fixtures.resolve("structures-and-link.xtf"), CancellationToken.none());
         try (dataset) {
             var modelNode = (DefaultMutableTreeNode) ExplorerFrame
-                    .modelTree(dataset.plan(), Optional.of(dataset.store().basketTopics())).getFirstChild();
+                    .modelTree(dataset.plan(), Optional.of(dataset.store().basketTopics()), dataset.storedObjectTypes()).getFirstChild();
             var model = assertInstanceOf(ModelDescriptor.class, modelNode.getUserObject());
             assertEquals(QualifiedName.of("Reference24"), model.name().declared());
             var topicNode = (DefaultMutableTreeNode) modelNode.getFirstChild();
@@ -313,10 +319,135 @@ class ExplorerTest {
             var parentType = dataset.plan().object(target.object().type()).orElseThrow();
             assertFalse(dataset.objects(parentType).contains(target));
             var visible = dataset.objectsIncluding(parentType, target);
-            assertEquals(100, visible.size());
-            assertEquals(target, visible.getFirst());
-            assertEquals(dataset.objects(parentType).subList(0, 99), visible.subList(1, 100));
+            assertEquals(101, visible.size());
+            assertEquals(target, visible.getLast());
+            assertEquals(dataset.objects(parentType), visible.subList(0, 100));
+            assertEquals(100, dataset.objectsIncluding(parentType, visible.getFirst()).size());
         }
+    }
+
+    @Test
+    void capturesTheOriginalGenericDomainForEachObject() throws Exception {
+        ExplorerDataset.ObjectValidation first;
+        ExplorerDataset.ObjectValidation second;
+        try (var dataset = ExplorerDataset.open(List.of(FIXTURES.resolve("Generic24.ili")),
+                FIXTURES.resolve("generic-domains.xtf"), RUN)) {
+            var objects = dataset.objects(type(dataset, "Generic24", "Item"));
+            first = dataset.objectValidation(objects.getFirst());
+            second = dataset.objectValidation(objects.getLast());
+            assertEquals("b1", first.basket().id().value());
+            assertEquals("b2", second.basket().id().value());
+            assertFalse(first.basket().domainBindings().equals(second.basket().domainBindings()));
+            assertTrue(dataset.store().objectContext(Long.MAX_VALUE).isEmpty());
+        }
+        for (var captured : List.of(first, second)) {
+            var report = captured.validate(RUN);
+            assertEquals(1, report.inspectedObjects());
+            assertEquals(ValidationReport.Result.PASSED_CHECKED_SCOPE, report.result());
+            assertTrue(report.coverage().missingRuntimeContext().isEmpty());
+        }
+    }
+
+    @Test
+    void browsesAndValidatesStandaloneAssociationsWithoutIdentifiers() throws Exception {
+        var model = Files.writeString(temp.resolve("Relations.ili"), """
+                INTERLIS 2.4;
+                MODEL Relations AT "https://example.org" VERSION "1" =
+                  DOMAIN Point = COORD 0.00..100.00, 0.00..100.00;
+                  TOPIC Data =
+                    CLASS Item = viaPoint : REFERENCE TO Waypoint; END Item;
+                    CLASS Waypoint = OID AS INTERLIS.UUIDOID; END Waypoint;
+                    ASSOCIATION Peer =
+                      source -- {0..*} Item;
+                      destination -- {0..*} Item;
+                      via -- {0..1} Waypoint;
+                      shape : SURFACE WITH (STRAIGHTS) VERTEX Point WITHOUT OVERLAPS > 0.01;
+                    END Peer;
+                    ASSOCIATION Unused =
+                      firstItem -- {0..*} Item;
+                      secondItem -- {0..*} Item;
+                    END Unused;
+                  END Data;
+                END Relations.
+                """);
+        var transfer = Files.writeString(temp.resolve("peers.xtf"), """
+                <i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
+                    xmlns="http://www.interlis.ch/xtf/2.4/Relations" xmlns:g="http://www.interlis.ch/geometry/1.0">
+                  <i:headersection><i:models><i:model>Relations</i:model></i:models>
+                    <i:sender>validation fixture</i:sender></i:headersection>
+                  <i:datasection><Data i:bid="b1">
+                    <Item i:tid="first"><viaPoint i:ref="be15e471-c885-46c3-88a5-ec07b309311b"/></Item><Item i:tid="second"/>
+                    <Peer><source i:ref="first"/><destination i:ref="second"/>
+                      <via i:ref="be15e471-c885-46c3-88a5-ec07b309311b"/></Peer>
+                    <Peer><source i:ref="second"/><destination i:ref="missing"/>
+                      <shape><g:surface><g:exterior><g:polyline>
+                        <g:coord><g:c1>0</g:c1><g:c2>0</g:c2></g:coord>
+                        <g:coord><g:c1>2</g:c1><g:c2>2</g:c2></g:coord>
+                        <g:coord><g:c1>2</g:c1><g:c2>0</g:c2></g:coord>
+                        <g:coord><g:c1>0</g:c1><g:c2>2</g:c2></g:coord>
+                        <g:coord><g:c1>0</g:c1><g:c2>0</g:c2></g:coord>
+                      </g:polyline></g:exterior></g:surface></shape>
+                    </Peer>
+                    <Waypoint i:tid="be15e471-c885-46c3-88a5-ec07b309311b"/>
+                  </Data></i:datasection>
+                </i:transfer>
+                """);
+        try (var dataset = ExplorerDataset.open(List.of(model), transfer, RUN)) {
+            var root = ExplorerFrame.modelTree(dataset.plan(), Optional.of(dataset.store().basketTopics()), dataset.storedObjectTypes());
+            var modelNode = (DefaultMutableTreeNode) root.getFirstChild();
+            var topicNode = (DefaultMutableTreeNode) modelNode.getFirstChild();
+            assertEquals(3, topicNode.getChildCount());
+            var itemNode = (DefaultMutableTreeNode) topicNode.getFirstChild();
+            assertEquals(type(dataset, "Relations", "Item"), itemNode.getUserObject());
+            var peerNode = (DefaultMutableTreeNode) topicNode.getLastChild();
+            var peer = assertInstanceOf(ObjectDescriptor.class, peerNode.getUserObject());
+            assertEquals(QualifiedName.of("Relations", "Data", "Peer"), peer.name().declared());
+            var objects = dataset.objects(peer);
+            assertEquals(List.of(3L, 4L), objects.stream().map(StoredObject::position).toList());
+            var labels = dataset.associationLabels(peer, objects);
+            assertEquals(List.of(
+                    "Object 3  source → TID first, destination → TID second, via → OID be15e471-c885-46c3-88a5-ec07b309311b",
+                    "Object 4  source → TID second, destination → TID missing, via → Absent"),
+                    objects.stream().map(row -> labels.get(row.position()).text()).toList());
+            var firstLinks = labels.get(3L).links();
+            assertEquals(List.of(1L, 2L, 5L), firstLinks.stream().map(ExplorerDataset.Link::targetPosition).toList());
+            assertEquals(List.of("source → TID first", "destination → TID second",
+                            "via → OID be15e471-c885-46c3-88a5-ec07b309311b"),
+                    firstLinks.stream().map(ExplorerDataset.Link::menuLabel).toList());
+            var first = labels.get(3L).text();
+            assertEquals(List.of("→ TID first", "→ TID second", "→ OID be15e471-c885-46c3-88a5-ec07b309311b"),
+                    firstLinks.stream().map(link -> first.substring(link.start(), link.end())).toList());
+            assertEquals(List.of(2L), labels.get(4L).links().stream().map(ExplorerDataset.Link::targetPosition).toList());
+            var inspector = new InspectorTableModel();
+            show(dataset, inspector, dataset.store().objectAt(1).orElseThrow());
+            assertEquals(Map.entry("viaPoint", "OID be15e471-c885-46c3-88a5-ec07b309311b"), rows(inspector).getFirst());
+            assertEquals(OptionalLong.of(5), inspector.target(0));
+            show(dataset, inspector, objects.getFirst());
+            assertEquals(Map.entry("shape", "Absent"), rows(inspector).getFirst());
+            inspector.toggle(2);
+            assertEquals(List.of("shape", "Beziehungen", "Peer", "source", "destination", "via"),
+                    rows(inspector).stream().map(Map.Entry::getKey).toList());
+            for (var row : objects) {
+                assertTrue(row.object().identity().tid().isEmpty());
+                assertTrue(row.object().identity().oid().isEmpty());
+            }
+            assertEquals(ValidationReport.Result.PASSED_CHECKED_SCOPE,
+                    dataset.objectValidation(objects.getFirst()).validate(RUN).result());
+            var report = dataset.objectValidation(objects.getLast()).validate(RUN);
+            assertEquals(1, report.inspectedObjects());
+            assertEquals(List.of(ValidationCode.GEOMETRY_SELF_INTERSECTION),
+                    report.examples().stream().map(finding -> finding.code()).toList());
+            var finding = report.examples().getFirst();
+            assertEquals(new DataLocation.Slot(peer.slots().stream().filter(slot -> slot.name().declared().last().equals("shape"))
+                    .findFirst().orElseThrow().symbol()), finding.data().path().getFirst());
+            assertEquals(transfer.toUri().toString(), finding.data().source().orElseThrow().value());
+        }
+    }
+
+    private static ObjectDescriptor type(ExplorerDataset dataset, String model, String type) {
+        var name = QualifiedName.of(model, "Data", type);
+        return dataset.plan().objects().stream().filter(object -> object.name().declared().equals(name))
+                .findFirst().orElseThrow();
     }
 
     private static void show(ExplorerDataset dataset, InspectorTableModel inspector,

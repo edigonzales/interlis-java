@@ -145,6 +145,14 @@ synchron mit `accept` prüfen und nach `EndTransfer` einmal `finish` aufrufen.
 In diesem Fall bestätigt der Host selbst das Quellenende und liefert zum
 Plan passende, strukturell dekodierte Events.
 
+Für ein bereits dekodiertes Einzelobjekt erhält
+`LocalValidator.validateObject(plan, basket, objectEvent, options, cancellation)`
+den originalen `StartBasket` und das `ObjectEvent` derselben Schemarevision.
+Die Prüfung verwendet die lokalen Regeln und Budgets für das Objekt sowie
+die Domänenbindungen und den Konsistenzzustand des Baskets. Der Bericht zählt
+ein geprüftes Objekt und null geprüfte Baskets. Der Datenort übernimmt die
+Transferquelle aus der Objektidentität, falls vorhanden.
+
 Das Profil prüft Pflichtwerte, Kardinalitäten, Strukturzuweisung, unterstützte
 Skalare und Modellwerte sowie lokale Geometriewerte wie Achsendimensionen,
 Achsenbereiche und Standardsegmentformen. Generische Basketbindungen wählen
@@ -309,24 +317,36 @@ DMAV-1.1-Testtransfer akzeptiert der Import einen Bogen-Zwischenpunkt vor dem
 Endpunkt, mehrere Struktureinträge pro Attributelement einer Sammlung und
 ausgeschriebene Topic-Namen vor Objekttypen. Der Explorer
 merkt sich den Ordner des letzten erfolgreichen Imports auch über einen
-Neustart hinweg. Im Modellbaum kennzeichnen **M**, **T** und **C**
-Modelle, Topics und Klassen. Beim Öffnen zeigt der Baum die Topics der
+Neustart hinweg. Im Modellbaum kennzeichnen **M**, **T**, **C** und **A**
+Modelle, Topics, Klassen und Assoziationen. Beim Öffnen zeigt der Baum die Topics der
 importierten Baskets und ihre Modelle. Auch ein leerer Basket macht sein
 Topic sichtbar. Mit **Show all models** blendest du den vollständigen
-Modellbaum ein. Wähle eine Klasse und danach ein Objekt.
-Die Liste zeigt bis zu 100 Instanzen der gewählten Klasse in
-Transferreihenfolge. Der Inspektor zeigt die Attribute in effektiver
+Modellbaum ein. Wähle eine Klasse oder eine Assoziation mit eigenständigen
+Vorkommen und danach ein Objekt. Die Liste zeigt bis zu 100 Instanzen des
+gewählten Typs in Transferreihenfolge. Bei Assoziationen ohne TID oder OID
+zeigt die Zeile die Transferposition, Rollennamen und Zielkennungen.
+Der Inspektor zeigt die Attribute in effektiver
 Modellreihenfolge. Ein Klick auf ein aufklappbares Attribut oder die
 Leertaste auf seiner Zeile zeigt Struktur- und Sammlungseinträge direkt
 darunter. LIST-Einträge sind nummeriert. BAG-Einträge behalten Duplikate
 und erscheinen ohne Nummer. Mit **⌘C** unter macOS bzw. **Strg+C** auf den
 anderen Plattformen kopierst du den angezeigten Wert der ausgewählten
-Zeile. Ein Klick auf den Pfeil **→** neben dem Wert öffnet das aufgelöste
-Referenz- oder Rollenziel. Bei ausgewählter Zeile geht
-das auch mit **Enter**. **Back** kehrt zum Ausgangsobjekt und zur
-Referenzzeile zurück. Der Abschnitt **Beziehungen** zeigt aufklappbare
+Zeile. In der Objektliste und im Inspektor öffnen der unterstrichene Pfeil und
+die Zielkennung das aufgelöste Referenz- oder Rollenziel. **Go to target**
+ist im Kontextmenü auch mit **Umschalt+F10** erreichbar. Im Inspektor führt
+ebenfalls **Enter** zum Ziel. Ein Ziel ausserhalb der ersten 100 Instanzen wird
+zusätzlich in die Liste aufgenommen. **Back** oder **Alt+←** kehrt zum
+Ausgangsobjekt und gegebenenfalls zur Referenzzeile zurück.
+Der Abschnitt **Beziehungen** zeigt aufklappbare
 Assoziationen mit Rollennamen, Zielen und eigenen Attributen. Beim
 Schliessen wird die temporäre DuckDB-Datenbank entfernt.
+
+**Validate object** am Objekttitel oder im Kontextmenü prüft genau die
+ausgewählte Instanz mit dem originalen Basketkontext. Der Dialog zeigt lokale
+Befunde mit Datenpfad und prüft Geometrien mit JTS. Basketregeln,
+Referenzzielprüfung und weitere Datensatzregeln liegen ausserhalb des lokalen
+Prüfumfangs. Ein Wechsel der Auswahl oder des Datensatzes verwirft die laufende
+Prüfung.
 
 ### Daten abfragen
 

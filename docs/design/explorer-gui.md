@@ -8,11 +8,14 @@ zugänglich. Die Regeln gelten für die künftige Oberfläche.
 ## 2 Navigation
 
 Die Hauptansicht verbindet die Modellnavigation mit dem Objektinspektor.
-Der Einstieg folgt der Hierarchie Modell → Topic → Klasse → Objekt.
+Unter einem Topic stehen die Klassen und die Assoziationstypen mit
+eigenständigen Vorkommen im geöffneten Transfer. Beide führen zur Objektliste.
+Bei Assoziationen ohne TID oder OID zeigt die Zeile die Transferposition sowie
+Rollennamen und Zielkennungen in effektiver Modellreihenfolge.
 Physische Datenbanktabellen und Spalten bestimmen diese Navigation nicht.
 Beim Öffnen eines Transfers zeigt der Modellbaum die Topics der importierten
-Baskets und ihre Modelle. Leere Baskets zählen mit. Die Klassen eines
-sichtbaren Topics folgen der Modellreihenfolge. **Show all models** neben
+Baskets und ihre Modelle. Leere Baskets zählen mit. Die Klassen und
+Assoziationen eines sichtbaren Topics folgen der Modellreihenfolge. **Show all models** neben
 **Model** zeigt zusätzlich die übrigen Modelle und Topics. Beim Umschalten
 bleiben sichtbare aufgeklappte Knoten und die sichtbare Auswahl erhalten.
 
@@ -47,6 +50,13 @@ Typ haben darauf keinen Einfluss.
 Geerbte Attribute erscheinen an ihrer effektiven Position in der konkreten
 Klasse. Ein mit `EXTENDED` eingeschränktes Attribut erscheint einmal mit seinem
 effektiv geltenden Typ. Seine Herkunft kann bei Bedarf eingesehen werden.
+
+### 5.3 Einzelobjektprüfung
+
+**Validate object** steht am Titel des ausgewählten Objekts und im
+Kontextmenü seiner Zeile. Ein Ergebnisdialog zeigt die lokalen Befunde und
+nennt den geprüften Umfang. Die Objektbezeichnung übernimmt die Rollen und
+Zielkennungen aus der Liste.
 
 ## 6 Komplexe Werte und Strukturen
 
@@ -124,6 +134,11 @@ Ausgangsobjekt. Eigene Attribute einer Assoziation sind im Kontext der
 Beziehung zugänglich. Komplexe oder mehrstellige Assoziationsinstanzen
 können selbst navigierbar sein. Fachlich definierte Rollenreihenfolgen bleiben
 erhalten.
+
+Pfeil und Zielkennung auflösbarer Referenzen bilden gemeinsam einen
+unterstrichenen Link. Das gilt für die Objektliste und den Inspektor. Der
+verbleibende Teil einer Objektzeile dient der Auswahl der Ausgangsinstanz.
+**Go to target** im Kontextmenü bietet denselben Sprung per Tastatur.
 
 ## 8 Offene Gestaltungsfragen
 

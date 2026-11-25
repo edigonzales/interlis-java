@@ -69,8 +69,24 @@ public final class DuckDbStore implements AutoCloseable {
     /** A reference at its declaring slot. The target is empty when there is no unique local match. */
     public record ReferenceLink(QualifiedName slot, Reference reference, Optional<StoredObject> target) {}
 
+    /** Immutable basket and object metadata for a stored occurrence. Both components are non-null. */
+    public record ObjectContext(StartBasket basket, Consistency consistency) {
+        public ObjectContext {
+            Objects.requireNonNull(basket, "basket");
+            Objects.requireNonNull(consistency, "consistency");
+        }
+    }
+
     /** An indexed reference and its database-local target position, if uniquely resolved. */
     public record ReferencePosition(Reference reference, OptionalLong targetPosition) {}
+
+    /** An indexed reference with a unique target. Positions are local to this file and values are non-null. */
+    public record ResolvedReference(long sourcePosition, QualifiedName slot, Reference reference, long targetPosition) {
+        public ResolvedReference {
+            Objects.requireNonNull(slot, "slot");
+            Objects.requireNonNull(reference, "reference");
+        }
+    }
 
     private DuckDbStore(String url, Connection connection, TransferPlan plan, Spatial spatial) {
         this.url = url;
@@ -426,6 +442,21 @@ public final class DuckDbStore implements AutoCloseable {
         return Set.copyOf(topics);
     }
 
+    /**
+     * Returns the declared qualified names of types with stored top-level occurrences.
+     * The result is immutable and unordered. An empty store returns an empty set.
+     */
+    public Set<QualifiedName> storedObjectTypes() throws SQLException {
+        try (var query = connection.createStatement();
+             var rows = query.executeQuery("SELECT DISTINCT type_name FROM object")) {
+            var names = new HashSet<QualifiedName>();
+            while (rows.next()) {
+                names.add(StoreCodec.qualifiedName(rows.getString(1)));
+            }
+            return Set.copyOf(names);
+        }
+    }
+
     /** Returns all occurrences of the exact declared type in transfer order. */
     public List<StoredObject> objects(QualifiedName type) throws SQLException {
         try (var query = connection.prepareStatement("SELECT * FROM object WHERE type_name = ? ORDER BY position")) {
@@ -461,6 +492,45 @@ public final class DuckDbStore implements AutoCloseable {
             query.setLong(1, position);
             try (var rows = query.executeQuery()) {
                 return rows.next() ? Optional.of(storedObject(rows)) : Optional.empty();
+            }
+        }
+    }
+
+    /**
+     * Returns immutable reference metadata for the supplied non-null sets of file-local source positions
+     * and declared slot names. Results contain unique target matches in source and stored reference order.
+     * An empty filter returns an empty list. Target object values are not read.
+     * @throws SQLException if the query fails
+     */
+    public List<ResolvedReference> resolvedReferences(Set<Long> sourcePositions, Set<QualifiedName> slots)
+            throws SQLException {
+        var positions = Set.copyOf(sourcePositions);
+        var names = Set.copyOf(slots);
+        if (positions.isEmpty() || names.isEmpty()) {
+            return List.of();
+        }
+        var positionParameters = String.join(", ", Collections.nCopies(positions.size(), "?"));
+        var slotParameters = String.join(", ", Collections.nCopies(names.size(), "?"));
+        try (var query = connection.prepareStatement("""
+                SELECT source_position, slot, value, target_position FROM reference
+                WHERE source_position IN (%s) AND slot IN (%s) AND target_position IS NOT NULL
+                ORDER BY source_position, position
+                """.formatted(positionParameters, slotParameters))) {
+            int parameter = 1;
+            for (long position : positions) {
+                query.setLong(parameter++, position);
+            }
+            for (var name : names) {
+                query.setString(parameter++, name.toString());
+            }
+            try (var rows = query.executeQuery()) {
+                var result = new ArrayList<ResolvedReference>();
+                while (rows.next()) {
+                    result.add(new ResolvedReference(rows.getLong("source_position"),
+                            codec.referenceSlot(rows.getString("slot")), StoreCodec.reference(rows.getString("value")),
+                            rows.getLong("target_position")));
+                }
+                return List.copyOf(result);
             }
         }
     }
@@ -534,6 +604,27 @@ public final class DuckDbStore implements AutoCloseable {
                 throw new IllegalStateException("Ambiguous object identity " + key.value() + " in basket " + basket.value());
             }
             return found.stream().findFirst();
+        }
+    }
+
+    /**
+     * Returns the original basket header and object consistency without reading object values.
+     * The position is local to this file. An unknown position returns an empty result.
+     * References in the header belong to the transfer plan used to open the store.
+     */
+    public Optional<ObjectContext> objectContext(long position) throws SQLException {
+        try (var query = connection.prepareStatement("""
+                SELECT b.metadata, o.consistency FROM object o JOIN basket b ON b.position = o.basket_position
+                WHERE o.position = ?
+                """)) {
+            query.setLong(1, position);
+            try (var rows = query.executeQuery()) {
+                if (!rows.next()) {
+                    return Optional.empty();
+                }
+                return Optional.of(new ObjectContext(codec.basket(rows.getString("metadata")),
+                        Consistency.valueOf(rows.getString("consistency"))));
+            }
         }
     }
 

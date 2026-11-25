@@ -13,7 +13,6 @@ import guru.interlis.explorer.gui.InspectorRelationships.Association;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.TransferGeometry;
-import guru.interlis.transfer.TransferIdentity;
 import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferValue;
 import guru.interlis.transfer.TransferValue.Reference;
@@ -43,7 +42,7 @@ final class InspectorTableModel extends AbstractTableModel {
                     0, null, null));
             for (var association : associations) {
                 rows.add(new Row(association.type().name().declared().last(), "", 0, null,
-                        () -> associationMembers(association)));
+                        () -> associationMembers(association, association.data() != object)));
             }
         }
         fireTableDataChanged();
@@ -212,17 +211,20 @@ final class InspectorTableModel extends AbstractTableModel {
                 .filter(AttributeSlot.class::isInstance).map(AttributeSlot.class::cast).toList();
     }
 
-    private List<Row> associationMembers(Association association) {
+    private List<Row> associationMembers(Association association, boolean showAttributes) {
         var result = new ArrayList<Row>();
         for (var slot : association.type().slots()) {
             var name = slot.name().declared().last();
             var value = association.data().value(slot.symbol()).orElse(null);
             switch (slot) {
-                case AttributeSlot attribute -> result.add(row(name, attribute.effectiveType(),
-                        value, 1, association.targets()));
+                case AttributeSlot attribute -> {
+                    if (showAttributes) {
+                        result.add(row(name, attribute.effectiveType(), value, 1, association.targets()));
+                    }
+                }
                 case RoleSlot role -> {
                     if (role.equals(association.embeddedOwner())) {
-                        result.add(new Row(name, ExplorerFrame.objectLabel(association.source()), 1,
+                        result.add(new Row(name, ExplorerDataset.objectLabel(association.source()), 1,
                                 association.source().position(), null));
                     } else {
                         result.add(row(name, null, value, 1, association.targets()));
@@ -280,11 +282,7 @@ final class InspectorTableModel extends AbstractTableModel {
             case TransferValue.Repeated repeated -> repeated.kind() + " OF "
                     + typeName(plan.type(collectionElement(type)).known().orElseThrow())
                     + " (" + repeated.values().size() + ")";
-            case TransferValue.Reference reference -> {
-                var target = reference.target();
-                String label = (target instanceof TransferIdentity.TransferId ? "TID " : "OID ") + target.value();
-                yield reference.targetBasket().map(basket -> label + " (BID " + basket.value() + ")").orElse(label);
-            }
+            case TransferValue.Reference reference -> ExplorerDataset.displayReference(reference);
             case TransferGeometry.Coordinate ignored -> "COORD";
             case TransferGeometry.MultiCoordinate ignored -> "MULTICOORD";
             case TransferGeometry ignored -> typeName(plan.type(type).known().orElseThrow());

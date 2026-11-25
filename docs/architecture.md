@@ -25,7 +25,7 @@ Die Gradle-Teilprojekte deklarieren die konkreten Abhängigkeiten und Scopes.
 | `interlis-validation-mvstore` | validation, H2 MVStore | Optionaler JVM-Speicher für einen Datensatzlauf |
 | `interlis-xtf` | transfer, model | XML-Adapter für XTF 2.3 und 2.4 |
 | `interlis-explorer` | model, transfer, xtf | Lokaler DuckDB-Host für einen XTF-2.4-FULL-Transfer, IQL und schreibgeschützte SQL-Abfragen |
-| `interlis-explorer-gui` | model, compiler, workspace, repository, transfer, xtf, explorer | Lokaler Swing-Host für Modellauflösung, Import, Objektinspektion und Abfragen |
+| `interlis-explorer-gui` | model, compiler, workspace, repository, transfer, xtf, explorer, validation, validation-jts | Lokaler Swing-Host für Modellauflösung, Import, Objektinspektion, Abfragen und Einzelobjektprüfung |
 | `interlis-compiler-cli` | compiler, model, repository, workspace, projection | CLI, Prozessgrenzen, Präsentation und Ausgabe |
 | `interlis-validator-cli` | compiler, workspace, repository, transfer, xtf, validation, validation-jts, validation-mvstore, Gson | JVM-Host für Modellbeschaffung, XTF-Dateien und Validatorausgabe |
 | `interlis-compiler-gui` | model, compiler, workspace, repository | Desktop-Modellprüfung, Diagnosen, Abhängigkeiten und Repositoryexplorer |
@@ -50,6 +50,9 @@ neutrale Transferereignisse. Der Plan ist unveränderlich. Die lokale Sitzung
 hält Basketkontext, Zähler und begrenzte Diagnosebeispiele. Die
 Datensatzsitzung verwendet einen vom Host bereitgestellten Byte-Speicher.
 Der Regelplan verweist auf die Revision des gebundenen Schemas.
+Bei einer Einzelobjektprüfung liefert der Host das Objekt mit dem originalen
+Basketkontext. Der Explorer führt die lokale Prüfung mit der JTS-Engine
+ausserhalb der Swing-Ereignisverarbeitung aus.
 Die Laufzeitabhängigkeiten des Validators bleiben Modell und Transferkern.
 Der Host kann `interlis-validation-mvstore` für dateigestützte Prüfungen
 wählen. Dieses Modul besitzt die temporären Dateien und bindet H2 MVStore.

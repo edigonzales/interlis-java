@@ -13,4 +13,6 @@ module guru.interlis.explorer.gui {
     requires guru.interlis.transfer;
     requires guru.interlis.xtf;
     requires guru.interlis.explorer;
+    requires guru.interlis.validation;
+    requires guru.interlis.validation.jts;
 }
