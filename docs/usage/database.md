@@ -50,6 +50,10 @@ Ohne `--createNumChecks` kann ili2pg 5.5.2 für zehnstellige Ganzzahlgrenzen
 eine `integer`-Spalte anlegen, auch wenn der Modellbereich darüber hinausgeht.
 Der Austausch für solche Bereiche setzt auf PostGIS eine `bigint`-Spalte
 voraus.
+Inline-Aufzählungen mit `EXTENDED` verwenden im `newClass`-Standardprofil
+ebenfalls die Spalte und den `ATTRNAME`-Eintrag der Basisdeklaration.
+Der konkrete Typ liefert den als Text gespeicherten XTF-Code, auch für neu
+hinzugekommene Werte wie `active.ready`.
 Lokale Referenzen dürfen auf Objekte geerbter Klassen im selben Basket
 zeigen. Der Basket kann eingebettete Rollen des Basistopics übernehmen.
 Eine in einem abgeleiteten Topic deklarierte eingebettete 1:n-Rolle mit

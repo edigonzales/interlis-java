@@ -17,6 +17,31 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class DbMappingTest {
     @Test
+    void rejectsEnumerationOverridesWithItfCodes() {
+        for (String version : List.of("2.3", "2.4")) {
+            var source = new SourceText(new SourceId("test:/Readings.ili"), new SourceRevision(1), """
+                    INTERLIS %s;
+                    MODEL Readings (en) AT "https://example.org" VERSION "2026-11-25" =
+                      TOPIC Data =
+                        CLASS Meter = State : (idle, active); END Meter;
+                        CLASS SmartUnit EXTENDS Meter =
+                          State (EXTENDED) : (active(ready), paused);
+                        END SmartUnit;
+                      END Data;
+                    END Readings.
+                    """.formatted(version));
+            var token = CancellationToken.none();
+            var plan = DbModelSources.compile(List.of("Readings"), List.of(source), "test model", token).plan();
+            var options = new DbEnumOptions(true, false, false, DbEnumOptions.Lookup.NONE);
+            var rejected = assertThrows(DbException.class, () -> DbMapping.planNew(plan, false, false, 2056, false,
+                    Optional.empty(), new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), false, options,
+                    Set.of(), token));
+            assertTrue(rejected.getMessage().contains("extended attribute in inheritance at Readings.Data.SmartUnit.State"),
+                    rejected::getMessage);
+        }
+    }
+
+    @Test
     void copiesInheritedNumericOverrideInDeclaringClassOrderInSmart2() {
         for (String version : List.of("2.3", "2.4")) {
             var source = new SourceText(new SourceId("test:/Readings.ili"), new SourceRevision(1), """

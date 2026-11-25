@@ -649,7 +649,7 @@ final class DbMapping {
         var roots = storageRoots(plan, crsPair);
         var objects = storageObjects(plan, roots, token);
         checkBasketLayout(plan, objects, schemaOptions);
-        checkLayout(plan, objects);
+        checkLayout(plan, objects, profile, enumOptions);
         var wrappedGeometries = DbWrappedGeometry.plan(plan, objects, transformations);
         var geometryComponents = wrappedGeometries.values().stream().map(binding -> binding.component().symbol())
                 .collect(Collectors.toSet());
@@ -840,7 +840,8 @@ final class DbMapping {
         }
     }
 
-    static void checkLayout(TransferPlan plan, List<ObjectDescriptor> objects) {
+    static void checkLayout(TransferPlan plan, List<ObjectDescriptor> objects, DbInheritance.Profile profile,
+                            DbEnumOptions enumOptions) {
         if (objects.stream().noneMatch(object -> object.kind() == SymbolKind.CLASS && object.topic().isPresent())) {
             throw unsupported("expected a selected model containing classes in topics");
         }
@@ -882,7 +883,7 @@ final class DbMapping {
                 throw unsupported("class layout or identity rules for " + object.name().declared());
             }
         }
-        if (!hierarchy.isEmpty()) checkInheritance(plan, objects, hierarchy);
+        if (!hierarchy.isEmpty()) checkInheritance(plan, objects, hierarchy, profile, enumOptions);
     }
 
     static void checkBasketLayout(TransferPlan plan, List<ObjectDescriptor> objects,
@@ -957,7 +958,8 @@ final class DbMapping {
         return association.slots().stream().filter(RoleSlot.class::isInstance).map(RoleSlot.class::cast).toList();
     }
 
-    private static void checkInheritance(TransferPlan plan, List<ObjectDescriptor> objects, Set<SymbolRef> hierarchy) {
+    private static void checkInheritance(TransferPlan plan, List<ObjectDescriptor> objects, Set<SymbolRef> hierarchy,
+                                         DbInheritance.Profile profile, DbEnumOptions enumOptions) {
         for (var object : objects) {
             if (!hierarchy.contains(object.symbol())) continue;
             boolean catalogueWrapper = object.kind() == SymbolKind.STRUCTURE && DbCatalogueReference.isWrapper(plan, object);
@@ -972,7 +974,7 @@ final class DbMapping {
                 boolean multilingual = DbTextExpansion.isInheritedCollection(plan, object, attribute);
                 if (attribute.member().overridden() && !multilingual
                         && !(catalogueWrapper && DbCatalogueReference.isReferenceField(attribute))
-                        && !supportsExtendedClassAttribute(plan, object, attribute)) {
+                        && !supportsExtendedClassAttribute(plan, object, attribute, profile, enumOptions)) {
                     throw unsupported("extended attribute in inheritance at " + attribute.name().declared());
                 }
                 if (object.kind() != SymbolKind.STRUCTURE || attribute.attribute().transientAttribute()) continue;
@@ -985,23 +987,34 @@ final class DbMapping {
     }
 
     private static boolean supportsExtendedClassAttribute(TransferPlan plan, ObjectDescriptor object,
-                                                          AttributeSlot attribute) {
+                                                          AttributeSlot attribute, DbInheritance.Profile profile,
+                                                          DbEnumOptions enumOptions) {
         if (object.kind() != SymbolKind.CLASS || attribute.attribute().transientAttribute()) return false;
         var type = plan.type(attribute.effectiveType()).known().orElseThrow();
         if (type instanceof TextType text) return text.textKind() == TextKind.TEXT;
-        if (!(type instanceof NumericType number)) return false;
-        Kind kind = scalarKind(number);
-        if (kind != Kind.INTEGER && kind != Kind.BIGINT && kind != Kind.DECIMAL) return false;
+        Kind kind = scalarKind(type);
+        if (kind == Kind.ENUMERATION) {
+            if (profile != DbInheritance.Profile.NEW_CLASS || !DbEnumOptions.DEFAULT.equals(enumOptions)
+                    || !inlineEnumeration(plan, attribute)) return false;
+        } else if (kind != Kind.INTEGER && kind != Kind.BIGINT && kind != Kind.DECIMAL) {
+            return false;
+        }
 
         var base = baseAttribute(plan, attribute.attribute());
         var owner = plan.object(new SymbolRef(plan.snapshotId(), base.header().owner().orElseThrow())).orElseThrow();
         return !base.transientAttribute() && owner.topic().equals(object.topic()) && owner.slots().stream()
                 .anyMatch(slot -> {
                     if (!(slot instanceof AttributeSlot original) || !original.attribute().id().equals(base.id())) return false;
+                    if (kind == Kind.ENUMERATION) return inlineEnumeration(plan, original);
                     var originalType = plan.type(original.effectiveType()).known().orElseThrow();
                     return scalarKind(originalType) == kind && (kind != Kind.DECIMAL
-                            || DbDecimal.describe((NumericType) originalType).scale() == DbDecimal.describe(number).scale());
+                            || DbDecimal.describe((NumericType) originalType).scale() == DbDecimal.describe((NumericType) type).scale());
                 });
+    }
+
+    private static boolean inlineEnumeration(TransferPlan plan, AttributeSlot slot) {
+        return plan.type(slot.declaredType()).known().orElseThrow() instanceof EnumerationType enumeration
+                && !enumeration.treeValues();
     }
 
     private static AttributeSymbol baseAttribute(TransferPlan plan, AttributeSymbol attribute) {

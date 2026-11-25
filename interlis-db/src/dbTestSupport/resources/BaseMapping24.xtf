@@ -286,7 +286,7 @@
         </Notes>
       </Mast>
       <Tower i:tid="legacy-tower">
-        <Caption>middle</Caption><Height>75</Height><SerialNumber>45000000000</SerialNumber><Tilt>12.50</Tilt>
+        <Caption>middle</Caption><Height>75</Height><SerialNumber>45000000000</SerialNumber><Tilt>12.50</Tilt><State>active</State>
       </Tower>
       <Beacon i:tid="legacy-beacon"><Caption>sibling</Caption><Signal>green</Signal></Beacon>
       <Relay i:tid="legacy-relay">
@@ -296,6 +296,7 @@
         <Height>24</Height>
         <SerialNumber>35000000000</SerialNumber>
         <Tilt>-1.25</Tilt>
+        <State>active.ready</State>
         <Supplement><NestedOuter>
           <Items><NestedInner>
             <Headline>inherited</Headline>

@@ -142,6 +142,7 @@ MODEL BaseMapping24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-2
       Height : 0 .. 99;
       SerialNumber : 0 .. 50000000000;
       Tilt : -90.00 .. 90.00;
+      State : (idle, active);
       Supplement : NestedOuter;
       Alignment : POLYLINE WITH (STRAIGHTS, ARCS) VERTEX RoutePosition;
     END Tower;
@@ -149,6 +150,7 @@ MODEL BaseMapping24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-2
       Height (EXTENDED) : 0 .. 49;
       SerialNumber (EXTENDED) : 0 .. 40000000000;
       Tilt (EXTENDED) : -9.99 .. 9.99;
+      State (EXTENDED) : (active(ready), paused);
       Online : BOOLEAN;
       Sites : SurveyPositions;
     END Relay;

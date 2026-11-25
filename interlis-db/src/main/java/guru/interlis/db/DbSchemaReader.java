@@ -129,7 +129,7 @@ final class DbSchemaReader {
         var roots = DbMapping.storageRoots(plan, crsPair);
         var selected = DbMapping.storageObjects(plan, roots, token);
         DbMapping.checkBasketLayout(plan, selected, settings.schemaOptions());
-        DbMapping.checkLayout(plan, selected);
+        DbMapping.checkLayout(plan, selected, settings.inheritance(), settings.enumOptions());
         if (!settings.multiSrs() && plan.topics().stream()
                 .anyMatch(topic -> plan.rootModels().contains(topic.model()) && DbDomains.deferred(topic))) {
             throw unsupported("deferred generic domains require SETTINGS.useEpsgInNames");

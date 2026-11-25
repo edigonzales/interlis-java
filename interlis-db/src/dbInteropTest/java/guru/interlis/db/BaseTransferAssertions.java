@@ -364,9 +364,10 @@ final class BaseTransferAssertions {
         var relay = objects.get(dataset + "-relay");
         assertClassFields(mast, prefix + "Mast", Map.of("Caption", "base"), "Notes");
         assertClassFields(tower, prefix + "Tower",
-                Map.of("Caption", "middle", "Height", "75", "SerialNumber", "45000000000"), "Tilt");
+                Map.of("Caption", "middle", "Height", "75", "SerialNumber", "45000000000", "State", "active"), "Tilt");
         assertClassFields(relay, prefix + "Relay",
-                Map.of("Caption", "leaf", "Height", "24", "SerialNumber", "35000000000", "Online", "false"),
+                Map.of("Caption", "leaf", "Height", "24", "SerialNumber", "35000000000", "Online", "false",
+                        "State", "active.ready"),
                 "Notes", "Supplement", "Center", "Alignment", "Sites", "Mentor", "PairedService", "Recommended", "Tilt");
         assertTilt(tower, "12.50");
         assertTilt(relay, "-1.25");
