@@ -10,18 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
-import static guru.interlis.db.ChbaseFixtures.basket;
-import static guru.interlis.db.ChbaseFixtures.fixture;
-import static guru.interlis.db.ChbaseFixtures.withPrefix;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.child;
 import static guru.interlis.db.DbTestSupport.children;
-import static guru.interlis.db.DbTestSupport.emptyCollection;
-import static guru.interlis.db.DbTestSupport.execute;
 import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.readDataSection;
 import static guru.interlis.db.DbTestSupport.referenceDatasetFixture;
@@ -30,7 +22,6 @@ import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
 import static guru.interlis.db.SpatialIndexFixtures.assertIndex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class StrokeCases {
@@ -42,177 +33,6 @@ final class StrokeCases {
         this.work = work;
         this.reference = reference;
         this.version = version;
-    }
-
-    void multiPolyline(TestDatabase db) throws Exception {
-        var model = "ChbaseLines" + version;
-        fixture(work, model + ".ili");
-        var input = chbaseDelivery(model, "fixture-lines-b");
-        String direct = "StrokeMultiLine" + version;
-        var output = work.resolve("output.xtf");
-        if (version == 24) source(direct, "MULTIPOLYLINE");
-        referenceSchema(db, version == 24 ? model + ";" + direct : model, "--coalesceMultiLine");
-        referenceImport(db, "legacy", input);
-        assertGeometryColumn(db, "piperoute", "shape", "MULTILINESTRING", 2056);
-        assertGeometryColumn(db, "flowroute", "shape", "MULTILINESTRING", 2056);
-        assertCliSuccess(db, "export", model, "legacy", output);
-        assertWrappedLines(output, "fixture-lines");
-        assertCliSuccess(db, "import", model, "native", withPrefix(work, input, "native"));
-        referenceExport(db, "native", output);
-        assertWrappedLines(output, "native-lines");
-        if (version != 24) return;
-
-        var multi = geometry("multipolyline", polyline(coord(600000, 200000) + arc(600005, 200005, 600010, 200000))
-                + polyline(coord(600020, 200020) + coord(600030, 200010)));
-        referenceImport(db, "legacy-direct", dataset(direct, "legacy-direct", multi));
-        assertGeometryColumn(db, "route", "shape", "MULTILINESTRING", 2056);
-        assertCliSuccess(db, "export", direct, "legacy-direct", output);
-        assertMultiLine(output, "legacy-direct");
-        assertCliSuccess(db, "import", direct, "native-direct", dataset(direct, "native-direct", multi));
-        referenceExport(db, "native-direct", output);
-        assertMultiLine(output, "native-direct");
-    }
-
-    private void assertMultiLine(Path output, String prefix) throws Exception {
-        var objects = objects(output, prefix);
-        assertNull(child(objects.get(prefix + "-null"), "Shape"));
-        var geometry = children(child(objects.get(prefix + "-value"), "Shape")).getFirst();
-        assertEquals("multipolyline", geometry.getLocalName());
-        var lines = children(geometry).stream().map(this::positions).toList();
-        assertEquals(2, lines.size());
-        assertEquals(81, lines.getFirst().size());
-        assertEquals(List.of(600000.0, 200000.0), lines.getFirst().getFirst());
-        assertEquals(List.of(600005.0, 200005.0), lines.getFirst().get(40));
-        assertEquals(List.of(600010.0, 200000.0), lines.getFirst().getLast());
-        assertEquals(List.of(List.of(600020.0, 200020.0), List.of(600030.0, 200010.0)), lines.getLast());
-    }
-
-    private void assertWrappedLines(Path output, String prefix) throws Exception {
-        var objects = objects(output, prefix);
-        assertNull(child(objects.get(prefix + "-empty"), "Shape"));
-        var lines = wrapperMembers(objects.get(prefix + "-value"), "MultiLine", "Lines", "Line").stream()
-                .map(this::positions).toList();
-        assertEquals(2, lines.size());
-        assertEquals(82, lines.getFirst().size());
-        assertEquals(List.of(2600000.0, 1200000.0), lines.getFirst().getFirst());
-        assertEquals(List.of(2600005.0, 1200005.0), lines.getFirst().get(40));
-        assertEquals(List.of(2600020.0, 1200000.0), lines.getFirst().getLast());
-        assertEquals(List.of(List.of(2600100.0, 1200100.0), List.of(2600110.0, 1200120.0)), lines.getLast());
-        var directed = wrapperMembers(objects.get(prefix + "-directed"), "MultiDirectedLine", "Lines", "Line");
-        assertEquals(1, directed.size());
-        assertEquals(List.of(List.of(2600210.0, 1200200.0), List.of(2600200.0, 1200200.0)), positions(directed.getFirst()));
-    }
-
-    void multiSurface(TestDatabase db) throws Exception {
-        var model = "ChbaseSurfaces" + version;
-        fixture(work, model + ".ili");
-        var input = chbaseDelivery(model, "fixture-surfaces-b");
-        var directModels = List.of("StrokeSurfaces", "StrokeAreas");
-        if (version == 24) {
-            source(directModels.getFirst(), "MULTISURFACE");
-            source(directModels.getLast(), "MULTIAREA");
-        }
-        var output = work.resolve("output.xtf");
-        referenceSchema(db, version == 24 ? model + ";" + String.join(";", directModels) : model, "--coalesceMultiSurface");
-        referenceImport(db, "legacy", input);
-        assertGeometryColumn(db, "landcover", "shape", "MULTIPOLYGON", 21781);
-        assertCliSuccess(db, "export", model, "legacy", output);
-        assertWrappedSurfaces(output, "fixture-surfaces");
-        assertCliSuccess(db, "import", model, "native", withPrefix(work, input, "native"));
-        referenceExport(db, "native", output);
-        assertWrappedSurfaces(output, "native-surfaces");
-        if (version != 24) return;
-
-        var first = surfaceValue(polyline(coord(600000, 200000) + arc(600005, 199995, 600010, 200000)
-                + coord(600010, 200010) + coord(600000, 200000)),
-                polyline(coord(600006, 200001) + coord(600008, 200003) + coord(600008, 200001) + coord(600006, 200001)));
-        var second = surfaceValue(polyline(coord(600020, 200020) + coord(600030, 200020)
-                + coord(600030, 200030) + coord(600020, 200020)));
-        var shape = geometry("multisurface", first + second);
-        for (var direct : directModels) {
-            String legacy = direct + "-legacy";
-            String nativeDataset = direct + "-native";
-            referenceImport(db, legacy, dataset(direct, legacy, shape));
-            assertCliSuccess(db, "export", direct, legacy, output);
-            assertMultiSurface(output, legacy);
-            assertCliSuccess(db, "import", direct, nativeDataset, dataset(direct, nativeDataset, shape));
-            referenceExport(db, nativeDataset, output);
-            assertMultiSurface(output, nativeDataset);
-            try (var sql = db.connect()) {
-                var table = scalar(sql, "SELECT sqlname FROM " + db.table("t_ili2db_classname")
-                        + " WHERE iliname='" + direct + ".Data.Route'");
-                assertGeometryColumn(db, table, "shape", "MULTIPOLYGON", 2056);
-                execute(sql, "UPDATE " + db.table(table) + " SET shape=" + emptyCollection(db, "MULTIPOLYGON", 6)
-                        + " WHERE t_ili_tid='" + nativeDataset + "-null'");
-                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table(table)
-                        + " WHERE t_ili_tid='" + nativeDataset + "-null' AND shape IS NOT NULL"));
-            }
-            assertCliSuccess(db, "export", direct, nativeDataset, output);
-            assertMultiSurface(output, nativeDataset);
-        }
-    }
-
-    private void assertWrappedSurfaces(Path output, String prefix) throws Exception {
-        var objects = objects(output, prefix);
-        assertNull(child(objects.get(prefix + "-empty"), "Shape"));
-        var members = wrapperMembers(objects.get(prefix + "-value"), "MultiSurface", "Surfaces", "Surface");
-        assertEquals(2, members.size());
-        var first = surfaceRings(members.getFirst());
-        assertEquals(2, first.size());
-        assertTrue(first.getFirst().contains(List.of(600010.0, 199995.0)));
-        assertEquals(List.of(600000.0, 200000.0), first.getFirst().getFirst());
-        assertEquals(first.getFirst().getFirst(), first.getFirst().getLast());
-        assertEquals(List.of(List.of(600005.0, 200005.0), List.of(600005.0, 200010.0),
-                List.of(600010.0, 200010.0), List.of(600010.0, 200005.0), List.of(600005.0, 200005.0)), first.getLast());
-        assertEquals(List.of(List.of(List.of(600100.0, 200100.0), List.of(600110.0, 200100.0),
-                List.of(600110.0, 200110.0), List.of(600100.0, 200100.0))), surfaceRings(members.getLast()));
-    }
-
-    private void assertMultiSurface(Path output, String prefix) throws Exception {
-        var objects = objects(output, prefix);
-        assertNull(child(objects.get(prefix + "-null"), "Shape"));
-        var parts = children(children(child(objects.get(prefix + "-value"), "Shape")).getFirst());
-        assertEquals(2, parts.size());
-        var first = surfaceRings(parts.getFirst());
-        assertEquals(2, first.size());
-        assertEquals(83, first.getFirst().size());
-        assertEquals(List.of(600005.0, 199995.0), first.getFirst().get(40));
-        assertEquals(List.of(List.of(600006.0, 200001.0), List.of(600008.0, 200003.0),
-                List.of(600008.0, 200001.0), List.of(600006.0, 200001.0)), first.getLast());
-        assertEquals(List.of(List.of(List.of(600020.0, 200020.0), List.of(600030.0, 200020.0),
-                List.of(600030.0, 200030.0), List.of(600020.0, 200020.0))), surfaceRings(parts.getLast()));
-    }
-
-    private List<Element> wrapperMembers(Element object, String wrapperName, String bag, String field) {
-        var wrapper = children(child(object, "Shape")).getFirst();
-        assertTrue(wrapper.getLocalName().equals(wrapperName) || wrapper.getLocalName().endsWith("." + wrapperName));
-        return children(wrapper).stream().flatMap(element -> {
-            assertEquals(bag, element.getLocalName());
-            return children(element).stream();
-        }).map(member -> children(child(member, field)).getFirst()).toList();
-    }
-
-    private Path chbaseDelivery(String model, String bid) throws Exception {
-        Path combined = fixture(work, "ChbaseGeometry" + version + ".xtf");
-        var data = readDataSection(combined, version);
-        var baskets = children(data);
-        var selected = basket(baskets, version, model, bid);
-        for (var other : baskets) {
-            if (other != selected) data.removeChild(other);
-        }
-
-        var transfer = data.getOwnerDocument().getDocumentElement();
-        var header = child(transfer, version == 23 ? "HEADERSECTION" : "headersection");
-        var models = child(header, version == 23 ? "MODELS" : "models");
-        for (var entry : children(models)) {
-            String name = version == 23 ? entry.getAttribute("NAME") : entry.getTextContent();
-            if (!model.equals(name)) models.removeChild(entry);
-        }
-
-        Path output = work.resolve(model + ".xtf");
-        TransformerFactory.newDefaultInstance().newTransformer()
-                .transform(new DOMSource(data.getOwnerDocument()), new StreamResult(output.toFile()));
-        return output;
     }
 
     private static void assertSameCatalog(TestDatabase baseline, TestDatabase own) throws Exception {
@@ -331,46 +151,8 @@ final class StrokeCases {
         }
     }
 
-    private List<List<List<Double>>> surfaceRings(Element surface) {
-        return children(surface).stream().map(ring -> positions(children(ring).getFirst())).toList();
-    }
-
-    private String surfaceValue(String exterior, String... interiors) {
-        String contents = geometry(version == 23 ? "boundary" : "exterior", exterior);
-        for (String interior : interiors) contents += geometry(version == 23 ? "boundary" : "interior", interior);
-        return geometry("surface", contents);
-    }
-
     private List<List<Double>> linePositions(Element object) {
         return positions(children(child(object, "Shape")).getFirst());
-    }
-
-    private String route(String model, String tid, String shape) {
-        return object(model, "Route", tid, "<Shape>" + shape + "</Shape>");
-    }
-
-    private Path source(String model, String kind) throws Exception {
-        return source(model, kind, "000");
-    }
-
-    private Path source(String model, String kind, String precision) throws Exception {
-        return Files.writeString(work.resolve(model + ".ili"), """
-                INTERLIS 2.%1$d;
-                MODEL %2$s (en) AT "https://example.org/interlis/db" VERSION "1" =
-                  DOMAIN Vertex = COORD 400000.%3$s .. 900000.%3$s, 0.%3$s .. 400000.%3$s;
-                  TOPIC Data =
-                    CLASS Route =
-                      Shape : %4$s WITH (STRAIGHTS, ARCS) VERTEX Vertex%5$s;
-                    END Route;
-                  END Data;
-                END %2$s.
-                """.formatted(version - 20, model, precision, kind,
-                        kind.endsWith("LINE") ? "" : " WITHOUT OVERLAPS > 0.001"));
-    }
-
-    private Path dataset(String model, String prefix, String shape) throws Exception {
-        return transfer(model, prefix, route(model, prefix + "-value", shape)
-                + object(model, "Route", prefix + "-null", ""));
     }
 
     private Path transfer(String model, String prefix, String objects) throws Exception {

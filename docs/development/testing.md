@@ -521,12 +521,15 @@ Sehnentoleranz und Rollback am Koordinatenlimit. Dazu kommen die
 Ablehnung von XYZ und der Erhalt der XTF-Datei bei fehlerhaften
 Spaltenmetadaten, Katalogtypen oder WKB-Werten.
 
-Die `*StrokeMultiPolyline*`-Fälle prüfen Reihenfolge und Richtung von
-`MULTIPOLYLINE`, `MultiLine` und `MultiDirectedLine`. Die
-`*StrokeMultiSurface*`-Fälle prüfen `MULTIPOLYGON`, Teilflächen und
-Innenringe bei `MULTISURFACE`, `MULTIAREA` und CHBase-`MultiSurface`
-sowie leere SQL-Sammlungen. Die beiden Gruppen verwenden die Linien- und
-Flächenbaskets der gemeinsamen CHBase-Fixture als Einzellieferungen.
+`--tests '*StrokeMultiGeometryInteropTest'` prüft den Katalog und den
+Werkzeugwechsel für CHBase-`MultiLine`, `MultiDirectedLine` und
+`MultiSurface` mit zwei Baskets derselben Lieferung. XTF 2.4 ergänzt
+einen Basket mit `MULTIPOLYLINE`, `MULTISURFACE` und `MULTIAREA`.
+Die Prüfungen umfassen Reihenfolge, Richtung, Bogenstützpunkte,
+Innenringe sowie EPSG:2056 und EPSG:21781.
+`StrokeMultiGeometryStorageTest` prüft den Export leerer
+`MULTIPOLYGON`-Werte neben befüllten Sammlungen.
+
 Die `*StrokeSmart2*`-Fälle prüfen eine geerbte Geometrie in einer indizierten
 Hilfstabelle. Sie vergleichen SQL-IDs und räumliche Abfragen vor und
 nach `update` und `delete`.

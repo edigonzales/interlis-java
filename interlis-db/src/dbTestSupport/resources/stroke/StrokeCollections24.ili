@@ -1,0 +1,19 @@
+INTERLIS 2.4;
+
+MODEL StrokeCollections24 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  DOMAIN Vertex = COORD 400000.000 .. 900000.000, 0.000 .. 400000.000;
+
+  TOPIC Data =
+    CLASS RouteGroup =
+      Shape : MULTIPOLYLINE WITH (STRAIGHTS, ARCS) VERTEX Vertex;
+    END RouteGroup;
+
+    CLASS ParcelGroup =
+      Shape : MULTISURFACE WITH (STRAIGHTS, ARCS) VERTEX Vertex WITHOUT OVERLAPS > 0.001;
+    END ParcelGroup;
+
+    CLASS DistrictGroup =
+      Shape : MULTIAREA WITH (STRAIGHTS, ARCS) VERTEX Vertex WITHOUT OVERLAPS > 0.001;
+    END DistrictGroup;
+  END Data;
+END StrokeCollections24.

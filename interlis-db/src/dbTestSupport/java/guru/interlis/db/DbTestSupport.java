@@ -216,8 +216,12 @@ final class DbTestSupport {
     }
 
     static String emptyCollection(Target db, String geometryType, int wkbType) {
-        return db.postgis ? "st_geomfromtext('" + geometryType + " EMPTY', 2056)"
-                : "X'475000100000080800%08X00000000'".formatted(wkbType);
+        return emptyCollection(db, geometryType, wkbType, 2056);
+    }
+
+    static String emptyCollection(Target db, String geometryType, int wkbType, int srid) {
+        return db.postgis ? "st_geomfromtext('" + geometryType + " EMPTY', " + srid + ")"
+                : "X'47500010%08X00%08X00000000'".formatted(srid, wkbType);
     }
 
     static void assertLocalReference(Element owner, String field, int version, String tid) {

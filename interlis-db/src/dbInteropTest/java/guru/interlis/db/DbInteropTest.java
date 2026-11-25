@@ -117,26 +117,6 @@ final class DbInteropTest {
 
     @TempDir(cleanup = CleanupMode.ALWAYS) Path work;
 
-    @Test void geoPackageStrokeMultiPolyline23() throws Exception { exchangeStrokeMultiPolyline(23, null); }
-    @Test void geoPackageStrokeMultiPolyline24() throws Exception { exchangeStrokeMultiPolyline(24, null); }
-    @Test void postgisStrokeMultiPolyline23() throws Exception { exchangeWithPostgis(23, this::exchangeStrokeMultiPolyline); }
-    @Test void postgisStrokeMultiPolyline24() throws Exception { exchangeWithPostgis(24, this::exchangeStrokeMultiPolyline); }
-
-    private void exchangeStrokeMultiPolyline(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "stroke_multi_line");
-        new StrokeCases(work, new ReferenceTool(work, db.postgis()), version).multiPolyline(db);
-    }
-
-    @Test void geoPackageStrokeMultiSurface23() throws Exception { exchangeStrokeMultiSurface(23, null); }
-    @Test void geoPackageStrokeMultiSurface24() throws Exception { exchangeStrokeMultiSurface(24, null); }
-    @Test void postgisStrokeMultiSurface23() throws Exception { exchangeWithPostgis(23, this::exchangeStrokeMultiSurface); }
-    @Test void postgisStrokeMultiSurface24() throws Exception { exchangeWithPostgis(24, this::exchangeStrokeMultiSurface); }
-
-    private void exchangeStrokeMultiSurface(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "stroke_multi_surface");
-        new StrokeCases(work, new ReferenceTool(work, db.postgis()), version).multiSurface(db);
-    }
-
     @Test void geoPackageStrokeSmart223() throws Exception { exchangeStrokeSmart2(23, null); }
     @Test void geoPackageStrokeSmart224() throws Exception { exchangeStrokeSmart2(24, null); }
     @Test void postgisStrokeSmart223() throws Exception { exchangeWithPostgis(23, this::exchangeStrokeSmart2); }
