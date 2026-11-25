@@ -108,6 +108,12 @@ prüft, dass der Rollback die dort gespeicherten Zeilen intakt lässt. Die Fäll
 Array-Spalten samt gespeicherten Zuordnungen und den Erhalt der XTF-Datei
 bei mehreren Elementen für eine optionale Einzelstruktur.
 
+`ArrayReferenceStorageTest` prüft Rollback bei fehlenden Array-Zielen,
+den Erhalt der Exportdatei bei basketfremden Referenzen und den Schutz
+referenzierter Objekte bei Update, Replace und Delete. Die Gegenprobe
+umfasst auch gespeicherte Referenzen aus einem Modell ausserhalb der
+CLI-Auswahl.
+
 `SqlConstraintTest` prüft für beide XTF-Versionen globale und zusammengesetzte
 Schlüssel, SQL `NULL`, Ganzzahl- und Festkommabereiche sowie die gerundete
 Dezimalgrenze oberhalb von `2^53`. Die Fälle prüfen Rollback und die
@@ -342,11 +348,10 @@ Export mit `interlis-db`.
 Die `*ArraySmart2*`-Fälle prüfen geerbte Spalten, das Kürzen und Entfernen
 von Listen per `update`, stabile IDs sowie `replace` und `delete` neben
 einem zweiten Datensatz.
-Die `*ArrayReferences*`-Fälle vergleichen den Referenzkatalog, prüfen
-Vorwärtsreferenzen, doppelte Ziele und die gespeicherten ID-Arrays. Bei
-fehlerhaften Referenzen prüfen sie Rollback und den Erhalt einer
-bestehenden XTF-Datei. Datensatzoperationen werden auch mit gespeicherten
-Verweisen aus einem Modell ausserhalb der CLI-Auswahl geprüft.
+`--tests '*ArrayReferenceInteropTest'` vergleicht die Kataloge und prüft
+Vorwärtsreferenzen sowie Reihenfolge und doppelte Ziele im XTF und in den
+SQL-Arrays beider Schematypen. Ein ili2db-Folgeimport prüft die gemeinsame
+ID-Vergabe.
 
 `--tests '*StructureMappingInteropTest'` prüft EXPAND für Einzelwerte,
 LIST, BAG, Verschachtelung und die Rückkehr zur Strukturtabelle bei

@@ -5,24 +5,19 @@ import org.w3c.dom.Element;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.child;
 import static guru.interlis.db.DbTestSupport.children;
-import static guru.interlis.db.DbTestSupport.execute;
 import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.readDataSection;
 import static guru.interlis.db.DbTestSupport.referenceDatasetFixture;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -123,139 +118,6 @@ final class ArrayCases {
         assertEquals("secondary", child(otherRow, "Caption").getTextContent());
     }
 
-    void references(TestDatabase baseline, TestDatabase own) throws Exception {
-        String model = "ArrayRefs" + version;
-        String target = "CLASS Target = Label : TEXT*40; END Target;";
-        var ili = source(model, target + (version == 23
-                ? " STRUCTURE Link = Entry : REFERENCE TO Target; END Link;" : ""), """
-                CLASS Asset =
-                  !!@ili2db.mapping=ARRAY
-                  Links : LIST OF %s;
-                END Asset;
-                """.formatted(version == 23 ? "Link" : "REFERENCE TO Target"));
-        schema(baseline, model);
-        create(own, model, ili, "--coalesce-array");
-        assertSameCatalog(baseline, own);
-        var output = work.resolve("output.xtf");
-        var order = List.of("b", "a", "b");
-        for (var db : List.of(baseline, own)) {
-            referenceImport(db, "legacy", referenceDataset(model, "legacy", order, true));
-            assertCliSuccess(db, "export", model, "legacy", output);
-            assertReferences(output, "legacy", order);
-            assertCliSuccess(db, "import", model, "native", referenceDataset(model, "native", order, true));
-            referenceExport(db, "native", output);
-            assertReferences(output, "native", order);
-            referenceImport(db, "tail", referenceDataset(model, "tail", List.of("a"), true));
-            assertCliSuccess(db, "export", model, "tail", output);
-            assertReferences(output, "tail", List.of("a"));
-
-            try (var sql = db.connect()) {
-                String assets = db.table("asset");
-                String targets = db.table("target");
-                String nativeA = scalar(sql, "SELECT t_id FROM " + targets + " WHERE t_ili_tid = 'native-target-a'");
-                String nativeB = scalar(sql, "SELECT t_id FROM " + targets + " WHERE t_ili_tid = 'native-target-b'");
-                assertEquals(List.of(nativeB, nativeA, nativeB), storedReferences(db, sql, "native-value", 3));
-                assertNull(scalar(sql, "SELECT links FROM " + assets + " WHERE t_ili_tid = 'native-missing'"));
-                assertSharedIds(db, sql, 18, "asset", "target");
-
-                assertCliFailure(db, "import", model, "broken", referenceDataset(model, "broken", List.of("absent"), true),
-                        "Cannot encode array reference to broken-target-absent");
-                assertSharedIds(db, sql, 18, "asset", "target");
-
-                storeReference(db, sql, "legacy-missing", nativeA);
-                byte[] previous = Files.readAllBytes(output);
-                assertCliFailure(db, "export", model, "legacy", output, "Missing same-basket array target T_Id " + nativeA);
-                assertArrayEquals(previous, Files.readAllBytes(output));
-                assertCliFailure(db, "update", model, "native", referenceDataset(model, "native", List.of("b"), false),
-                        "Cannot delete referenced object T_Id " + nativeA);
-                assertCliFailure(db, "replace", model, "native", referenceDataset(model, "native", List.of("b"), false),
-                        "Cannot replace referenced object T_Id " + nativeA);
-                assertCliFailure(db, "delete", model, "native", null, "Cannot delete referenced object T_Id " + nativeA);
-                assertEquals(List.of(nativeB, nativeA, nativeB), storedReferences(db, sql, "native-value", 3));
-                assertSharedIds(db, sql, 18, "asset", "target");
-
-                execute(sql, "UPDATE " + assets + " SET links = NULL WHERE t_ili_tid = 'legacy-missing'");
-                assertCliSuccess(db, "update", model, "native", referenceDataset(model, "native", List.of("b"), false));
-                assertEquals(List.of(nativeB), storedReferences(db, sql, "native-value", 1));
-                assertEquals("0", scalar(sql, "SELECT count(*) FROM " + targets + " WHERE t_ili_tid = 'native-target-a'"));
-                referenceExport(db, "native", output);
-                assertReferences(output, "native", List.of("b"));
-                assertCliSuccess(db, "delete", model, "native", null);
-                assertSharedIds(db, sql, 12, "asset", "target");
-            }
-        }
-        protectUnselectedArray(own);
-    }
-
-    private void protectUnselectedArray(TestDatabase db) throws Exception {
-        String model = "ArrayTarget" + version;
-        var ili = source(model, "", "CLASS OtherTarget = Label : TEXT*40; END OtherTarget;");
-        create(db, model, ili, "--add-models");
-        var keep = object(model, "OtherTarget", "kept", element("Label", "Keep"));
-        var drop = object(model, "OtherTarget", "referenced", element("Label", "Drop"));
-        assertCliSuccess(db, "import", model, "target", transfer(model, "target", keep + drop));
-        var smaller = transfer(model, "target", keep);
-        try (var sql = db.connect()) {
-            String targets = db.table("othertarget");
-            String id = scalar(sql, "SELECT t_id FROM " + targets + " WHERE t_ili_tid = 'referenced'");
-            // The source model is outside the CLI selection. Simulate a stored reference to the selected target.
-            execute(sql, "UPDATE " + db.table("t_ili2db_column_prop")
-                    + " SET setting = 'othertarget' WHERE tablename = 'asset' AND columnname = 'links'"
-                    + " AND tag = 'ch.ehi.ili2db.foreignKey'");
-            execute(sql, "UPDATE " + db.table("t_ili2db_attrname")
-                    + " SET target = 'othertarget' WHERE colowner = 'asset' AND sqlname = 'links'");
-            storeReference(db, sql, "legacy-missing", id);
-            assertCliFailure(db, "update", model, "target", smaller, "Cannot delete referenced object T_Id " + id);
-            assertCliFailure(db, "replace", model, "target", smaller, "Cannot replace referenced object T_Id " + id);
-            assertCliFailure(db, "delete", model, "target", null, "Cannot delete referenced object T_Id " + id);
-            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + targets));
-            assertEquals(id, scalar(sql, "SELECT t_id FROM " + targets + " WHERE t_ili_tid = 'referenced'"));
-        }
-    }
-
-    private static void storeReference(TestDatabase db, Connection sql, String owner, String target) throws Exception {
-        String encoded = db.postgis() ? "ARRAY[" + target + "]::bigint[]" : "'[\"" + target + "\"]'";
-        execute(sql, "UPDATE " + db.table("asset") + " SET links = " + encoded + " WHERE t_ili_tid = '" + owner + "'");
-    }
-
-    private Path referenceDataset(String model, String prefix, List<String> order, boolean includeA) throws Exception {
-        String entries = order.stream().map(value -> {
-            String tid = prefix + "-target-" + value;
-            return version == 23 ? element(tag(model, "Link"), "<Entry REF=\"" + tid + "\"/>")
-                    : "<Links i:ref=\"" + tid + "\"/>";
-        }).collect(Collectors.joining());
-        String contents = version == 23 ? element("Links", entries) : entries;
-        return transfer(model, prefix, object(model, "Asset", prefix + "-value", contents)
-                + object(model, "Asset", prefix + "-missing", "")
-                + (includeA ? object(model, "Target", prefix + "-target-a", element("Label", "A")) : "")
-                + object(model, "Target", prefix + "-target-b", element("Label", "B")));
-    }
-
-    private void assertReferences(Path output, String prefix, List<String> order) throws Exception {
-        var rows = objects(output, prefix);
-        assertNull(child(rows.get(prefix + "-missing"), "Links"));
-        var value = rows.get(prefix + "-value");
-        var refs = version == 23 ? children(child(value, "Links")).stream().map(entry -> child(entry, "Entry"))
-                : children(value).stream().filter(field -> field.getLocalName().equals("Links"))
-                        .flatMap(field -> id(field, version, "ref").isEmpty() ? children(field).stream() : Stream.of(field));
-        assertEquals(order.stream().map(target -> prefix + "-target-" + target).toList(),
-                refs.map(field -> id(field, version, "ref")).toList());
-        assertEquals("B", child(rows.get(prefix + "-target-b"), "Label").getTextContent());
-    }
-
-    private static List<String> storedReferences(TestDatabase db, Connection sql, String tid, int size) throws Exception {
-        String from = " FROM " + db.table("asset") + " WHERE t_ili_tid = '" + tid + "'";
-        assertEquals(Integer.toString(size), scalar(sql, "SELECT "
-                + (db.postgis() ? "cardinality(links)" : "json_array_length(links)") + from));
-        var refs = new ArrayList<String>();
-        for (int i = 0; i < size; i++) {
-            String path = "'$[" + i + "]'";
-            if (!db.postgis()) assertEquals("text", scalar(sql, "SELECT json_type(links, " + path + ")" + from));
-            refs.add(scalar(sql, "SELECT " + (db.postgis() ? "links[" + (i + 1) + "]" : "json_extract(links, " + path + ")") + from));
-        }
-        return refs;
-    }
-
     private static void create(TestDatabase db, String model, Path ili, String... options) {
         var result = schemaWithIdentityColumns(db, model, ili, CancellationToken.none(), options);
         assertEquals(0, result.code(), result::diagnostics);
@@ -266,14 +128,6 @@ final class ArrayCases {
             DbSchemaCatalog.read(expected, baseline.postgis(), baseline.schema())
                     .assertSameAs(DbSchemaCatalog.read(actual, db.postgis(), db.schema()));
         }
-    }
-
-    private static void assertSharedIds(TestDatabase db, Connection sql, int count, String... tables) throws Exception {
-        var all = new ArrayList<>(List.of(tables));
-        all.addAll(List.of("t_ili2db_dataset", "t_ili2db_basket"));
-        var rows = all.stream().map(table -> "SELECT t_id FROM " + db.table(table)).collect(Collectors.joining(" UNION ALL "));
-        assertEquals(Integer.toString(count), scalar(sql, "SELECT count(*) FROM (" + rows + ") ids"));
-        assertEquals(Integer.toString(count), scalar(sql, "SELECT count(DISTINCT t_id) FROM (" + rows + ") ids"));
     }
 
     private Path source(String model, String structures, String objects) throws Exception {

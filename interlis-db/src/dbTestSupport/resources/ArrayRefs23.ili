@@ -1,0 +1,13 @@
+INTERLIS 2.3;
+
+MODEL ArrayRefs23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  TOPIC Data =
+    CLASS Target = Label : TEXT*40; END Target;
+    STRUCTURE Link = Entry : REFERENCE TO Target; END Link;
+
+    CLASS Asset =
+      !!@ili2db.mapping=ARRAY
+      Links : LIST OF Link;
+    END Asset;
+  END Data;
+END ArrayRefs23.
