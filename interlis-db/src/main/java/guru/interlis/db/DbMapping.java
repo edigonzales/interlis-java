@@ -5,6 +5,7 @@ import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.BlackboxKind;
 import guru.interlis.model.BlackboxType;
 import guru.interlis.model.CardinalityUpper;
+import guru.interlis.model.ClassSymbol;
 import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.CoordinateType;
@@ -24,6 +25,7 @@ import guru.interlis.model.ReferenceType;
 import guru.interlis.model.RoleAggregation;
 import guru.interlis.model.StructureValueType;
 import guru.interlis.model.Symbol;
+import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.model.TextKind;
@@ -376,10 +378,12 @@ final class DbMapping {
         for (var binding : storage.values()) {
             var fields = new HashMap<SymbolRef, SymbolRef>();
             for (var slot : binding.object().slots()) {
-                if (slot instanceof AttributeSlot attribute && attribute.attribute().overrides().isPresent()
-                        && !attribute.attribute().transientAttribute()) {
-                    var base = baseAttribute(plan, attribute.attribute());
-                    fields.put(new SymbolRef(plan.snapshotId(), base.id()), slot.symbol());
+                if (slot instanceof AttributeSlot attribute && !attribute.attribute().transientAttribute()) {
+                    for (var base = attribute.attribute(); base.overrides().isPresent();) {
+                        var ref = new SymbolRef(plan.snapshotId(), base.overrides().orElseThrow());
+                        fields.put(ref, slot.symbol());
+                        base = (AttributeSymbol) plan.symbol(ref).known().orElseThrow();
+                    }
                 }
             }
             if (!fields.isEmpty()) extensions.put(binding.object().symbol(), Map.copyOf(fields));
@@ -699,7 +703,7 @@ final class DbMapping {
                         roleColumn(role.slot(), role.target(), role.slot().name().declared().last()), role.slot().role().ordered()));
             }
             for (var contributor : relation.contributors()) {
-                for (var attribute : storageAttributes(object, contributor)) {
+                for (var attribute : storageAttributes(plan, profile, relation, contributor)) {
                     String attributeName = attribute.name().declared().last();
                     var catalogue = transformations.contains(AttributeTransformation.CATALOGUE_REFERENCE)
                             ? DbCatalogueReference.describe(plan, attribute)
@@ -986,7 +990,7 @@ final class DbMapping {
         if (object.kind() != SymbolKind.CLASS || attribute.attribute().transientAttribute()) return false;
         var type = plan.type(attribute.effectiveType()).known().orElseThrow();
         if (type instanceof TextType text) return text.textKind() == TextKind.TEXT;
-        if (profile != DbInheritance.Profile.NEW_CLASS || !(type instanceof NumericType number)) return false;
+        if (profile == DbInheritance.Profile.SMART2 || !(type instanceof NumericType number)) return false;
         Kind kind = scalarKind(number);
         if (kind != Kind.INTEGER && kind != Kind.BIGINT && kind != Kind.DECIMAL) return false;
 
@@ -1022,8 +1026,13 @@ final class DbMapping {
         return attributes;
     }
 
-    static List<AttributeSlot> storageAttributes(ObjectDescriptor table, ObjectDescriptor contributor) {
+    static List<AttributeSlot> storageAttributes(TransferPlan plan, DbInheritance.Profile profile,
+                                                DbInheritance.Relation relation, ObjectDescriptor contributor) {
+        var table = relation.object();
         var attributes = attributes(contributor);
+        if (profile == DbInheritance.Profile.SMART1 && table.kind() == SymbolKind.CLASS) {
+            return copiedClassAttributes(plan, relation, contributor, attributes);
+        }
         if (table.equals(contributor) || !DbCatalogueReference.isBase(contributor)) return attributes;
         // When a Smart layout copies a wrapper's base field into the concrete table,
         // ili2db stores the concrete declaration and its narrower target.
@@ -1031,6 +1040,30 @@ final class DbMapping {
                 .map(AttributeSlot.class::cast).filter(DbCatalogueReference::isReferenceField).findFirst();
         return attributes.stream().map(attribute -> DbCatalogueReference.isReferenceField(attribute)
                 ? effective.orElse(attribute) : attribute).toList();
+    }
+
+    private static List<AttributeSlot> copiedClassAttributes(TransferPlan plan, DbInheritance.Relation relation,
+                                                           ObjectDescriptor contributor, List<AttributeSlot> attributes) {
+        var fields = new HashMap<SymbolId, AttributeSlot>();
+        for (var attribute : attributes) fields.put(attribute.attribute().id(), attribute);
+        boolean changed = false;
+        for (var slot : relation.object().slots()) {
+            if (!(slot instanceof AttributeSlot override) || !override.member().overridden()
+                    || override.attribute().transientAttribute()
+                    || !(plan.type(override.effectiveType()).known().orElseThrow() instanceof NumericType)) continue;
+            var base = baseAttribute(plan, override.attribute());
+            if (relation.contributors().stream().noneMatch(owner ->
+                    base.header().owner().filter(owner.symbol().symbol()::equals).isPresent())) continue;
+            if (fields.remove(base.id()) != null) changed = true;
+            if (override.member().inheritancePath().getFirst().equals(contributor.symbol().symbol())) {
+                fields.put(override.attribute().id(), override);
+                changed = true;
+            }
+        }
+        if (!changed) return attributes;
+        // A copied override keeps its position in the class that declares it.
+        var declaration = (ClassSymbol) plan.symbol(contributor.symbol()).known().orElseThrow();
+        return declaration.members().stream().map(fields::get).filter(attribute -> attribute != null).toList();
     }
 
     static List<AssociationRole> describeRoles(TransferPlan plan, ObjectDescriptor association) {

@@ -433,6 +433,12 @@ Referenzschema lässt sich mit `--noSmartMapping --smart1Inheritance`
 und den übrigen Optionen des Referenzprofils erzeugen. Tabellen und
 konkrete Typen werden über die gespeicherten Zuordnungen und `T_Type`
 aufgelöst.
+Bei numerischen `EXTENDED`-Attributen mit gleichem Speichertyp und gleicher
+Festkommaskala bestimmt die Basisdeklaration Spalte, `ATTRNAME`, Präzision
+und optionale SQL-Bereichschecks in der gemeinsamen Tabelle.
+Übernimmt eine konkrete Tabelle das Attribut einer abstrakten Klasse ohne
+eigene Tabelle, verwendet sie die für ihren Typ wirksame Deklaration.
+Weitere Untertypen teilen diese Spalte.
 Referenzattribute und eingebettete 1:n-Rollen verwenden die gespeicherte
 physische Zieltabelle. Bei einem enger deklarierten Ziel wird auch der
 konkrete Typ der Zielzeile geprüft.

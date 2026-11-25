@@ -16,6 +16,7 @@ import static guru.interlis.db.DbTestSupport.children;
 import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.readDataSection;
 import static guru.interlis.db.DbTestSupport.scalar;
+import static guru.interlis.db.ScalarFixtures.assertNumber;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -111,6 +112,24 @@ final class SmartFixtures {
         assertEquals(Set.of(prefix + "-t", prefix + "-s"), links.stream()
                 .map(link -> id(child(link, "CheckedInstrument"), version, "ref")).collect(Collectors.toSet()));
         for (var link : links) assertEquals(prefix + "-survey", id(child(link, "CheckedSurvey"), version, "ref"));
+    }
+
+    void assertNumericOverrides(Path file, String model, String prefix) throws Exception {
+        var basket = children(readDataSection(file, version)).getFirst();
+        var meter = object(basket, model, "Meter", prefix + "-m");
+        var smart = object(basket, model, "SmartUnit", prefix + "-s");
+        assertEquals("75", child(meter, "Counter").getTextContent());
+        assertEquals("45000000000", child(meter, "WideValue").getTextContent());
+        assertNumber("12.50", child(meter, "Tilt").getTextContent());
+        assertEquals("7", child(smart, "Counter").getTextContent());
+        assertEquals("35000000000", child(smart, "WideValue").getTextContent());
+        assertNumber("-1.25", child(smart, "Tilt").getTextContent());
+        if (model.equals("SmartRefs" + version)) {
+            var local = object(basket, model, "LocalReading", prefix + "-local-reading");
+            var spare = object(basket, model, "SpareReading", prefix + "-spare-reading");
+            assertEquals("42", child(local, "NumericValue").getTextContent());
+            assertEquals("93", child(spare, "NumericValue").getTextContent());
+        }
     }
 
     void assertExtraSurvey(Path path, String model, String prefix) throws Exception {

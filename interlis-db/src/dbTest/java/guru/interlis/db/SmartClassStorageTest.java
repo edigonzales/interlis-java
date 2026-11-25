@@ -10,6 +10,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -20,8 +21,10 @@ import static guru.interlis.db.DbTestSupport.assertExportRejected;
 import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
 import static guru.interlis.db.DbTestSupport.execute;
 import static guru.interlis.db.DbTestSupport.scalar;
+import static guru.interlis.db.ScalarFixtures.assertNumber;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class SmartClassStorageTest {
@@ -80,10 +83,12 @@ final class SmartClassStorageTest {
         var fixtures = new SmartFixtures(work, version);
         String smart1 = "SmartRefs" + version;
         var shared = POSTGIS.target(work.resolve("smart1.gpkg"), backend);
-        assertSchemaWithIdentityColumns(shared, smart1, fixtures.fixture(smart1 + ".ili"), "--inheritance", "smart1");
+        assertSchemaWithIdentityColumns(shared, smart1, fixtures.fixture(smart1 + ".ili"),
+                "--inheritance", "smart1", "--create-num-checks");
         Path input = fixtures.fixture(smart1 + ".xtf");
         Path output = roundTrip(shared, smart1, input, "smart1");
         fixtures.assertReferences(output, smart1, "fixture");
+        fixtures.assertNumericOverrides(output, smart1, "fixture");
 
         Path bad = Files.writeString(work.resolve("wrong-target.xtf"), Files.readString(input)
                 .replace("fixture-", "bad-").replace("ref=\"bad-s\"", "ref=\"bad-t\"").replace("REF=\"bad-s\"", "REF=\"bad-t\""));
@@ -94,6 +99,20 @@ final class SmartClassStorageTest {
                 assertCount(shared, sql, table, "1");
             }
             assertCount(shared, sql, "instrument", "3");
+            String instrument = shared.table("instrument");
+            assertEquals("meter", scalar(sql, "select t_type from " + instrument + " where t_ili_tid='fixture-m'"));
+            assertEquals("smartunit", scalar(sql, "select t_type from " + instrument + " where t_ili_tid='fixture-s'"));
+            assertStoredNumbers(sql, instrument, "fixture-m", "75", "45000000000", "12.50");
+            assertStoredNumbers(sql, instrument, "fixture-s", "7", "35000000000", "-1.25");
+            assertNumericCheck(shared, sql, instrument, "fixture-s", "counter", "100", "101");
+            assertNumericCheck(shared, sql, instrument, "fixture-s", "widevalue", "50000000000", "50000000001");
+            assertNumericCheck(shared, sql, instrument, "fixture-s", "tilt", "90.00", "90.01");
+            String regional = shared.table("regionalreading");
+            assertEquals("localreading", scalar(sql, "select t_type from " + regional
+                    + " where t_ili_tid='fixture-local-reading'"));
+            assertNumericCheck(shared, sql, regional, "fixture-local-reading", "numericvalue", "79", "80");
+            assertEquals("93", scalar(sql, "select numericvalue from " + shared.table("sparereading")
+                    + " where t_ili_tid='fixture-spare-reading'"));
         }
 
         String smart2 = "SmartPoly" + version;
@@ -107,6 +126,35 @@ final class SmartClassStorageTest {
                     + concrete.table("terminal") + " WHERE t_ili_tid='fixture-t') WHERE t_ili_tid='fixture-survey'");
         }
         assertExportRejected(concrete, smart2, "fixture", output, "Multiple stored values for " + smart2 + ".Data.Observation.Observed");
+    }
+
+    private static void assertStoredNumbers(Connection sql, String table, String tid, String counter, String wideValue,
+                                            String tilt) throws SQLException {
+        String row = " from " + table + " where t_ili_tid='" + tid + "'";
+        assertEquals(counter, scalar(sql, "select counter" + row), tid);
+        assertEquals(wideValue, scalar(sql, "select widevalue" + row), tid);
+        assertNumber(tilt, scalar(sql, "select tilt" + row));
+    }
+
+    private static void assertNumericCheck(Target db, Connection sql, String table, String tid, String column,
+                                           String maximum, String outside) throws SQLException {
+        String row = " where t_ili_tid='" + tid + "'";
+        String update = "update " + table + " set " + column + "=";
+        sql.setAutoCommit(false);
+        try {
+            execute(sql, update + maximum + row);
+            assertNumber(maximum, scalar(sql, "select " + column + " from " + table + row));
+            var rejected = assertThrows(SQLException.class, () -> execute(sql, update + outside + row));
+            if (db.postgis) {
+                assertEquals("23514", rejected.getSQLState(), rejected::getMessage);
+            } else {
+                assertTrue(rejected.getMessage().contains("SQLITE_CONSTRAINT_CHECK"), rejected::getMessage);
+            }
+            assertTrue(rejected.getMessage().contains(column), rejected::getMessage);
+        } finally {
+            sql.rollback();
+            sql.setAutoCommit(true);
+        }
     }
 
     private static void assertCount(Target db, Connection sql, String table, String count) throws Exception {

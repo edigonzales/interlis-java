@@ -7,6 +7,8 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -84,8 +86,13 @@ final class SmartClassInteropTest {
         Path ili = fixtures.fixture(model + ".ili");
         Path input = fixtures.fixture(model + ".xtf");
         if (smart2) extendSmartPoly(ili, input, model, version);
-        schema(reference, old, work, model, layout);
-        assertSchemaWithIdentityColumns(own, model, ili, "--inheritance", layout);
+        if (smart2) {
+            schema(reference, old, work, model, layout);
+            assertSchemaWithIdentityColumns(own, model, ili, "--inheritance", layout);
+        } else {
+            schema(reference, old, work, model, layout, "--createNumChecks");
+            assertSchemaWithIdentityColumns(own, model, ili, "--inheritance", layout, "--create-num-checks");
+        }
         compareCatalog(old, own, smart2);
         Files.delete(ili);
 
@@ -109,6 +116,7 @@ final class SmartClassInteropTest {
             try (var sql = db.connect()) {
                 int datasets = smart2 && db == own ? 3 : 2;
                 SmartFixtures.assertReferenceStorage(db, sql, layout, datasets);
+                if (db.postgis() && !smart2) assertTiltPrecision(sql, db.schema(), "instrument", "4:2");
                 if (smart2) {
                     assertEquals(Integer.toString(datasets), scalar(sql, "SELECT count(*) FROM " + db.table("note") + " n JOIN "
                             + db.table("smartunit") + " s ON n.metertarget_smartunit=s.t_id AND n.t_basket=s.t_basket"
@@ -127,6 +135,14 @@ final class SmartClassInteropTest {
                 assertEquals("30", scalar(sql, "SELECT count(DISTINCT t_id) FROM (" + ids + ") ids"));
             }
         }
+    }
+
+    private static void assertTiltPrecision(Connection sql, String schema, String table, String precisionAndScale)
+            throws SQLException {
+        assertEquals(precisionAndScale, scalar(sql, """
+                select numeric_precision || ':' || numeric_scale from information_schema.columns
+                where table_schema='%s' and table_name='%s' and column_name='tilt'
+                """.formatted(schema, table)), table + ".tilt precision and scale");
     }
 
     private static void compareCatalog(TestDatabase old, TestDatabase own, boolean smart2) throws Exception {
@@ -159,6 +175,7 @@ final class SmartClassInteropTest {
                                                 int version, boolean smart2) throws Exception {
         if (!smart2) {
             fixtures.assertReferences(output, model, prefix);
+            fixtures.assertNumericOverrides(output, model, prefix);
             return;
         }
         fixtures.assertPolymorphicReferences(output, model, prefix);

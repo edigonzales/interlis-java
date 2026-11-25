@@ -246,7 +246,7 @@ final class DbSchemaReader {
             }
             for (var contributor : relation.contributors()) {
                 var defaults = settings.crs(plan.model(contributor.model()).orElseThrow().name().declared().last());
-                for (var attr : DbMapping.storageAttributes(object, contributor)) {
+                for (var attr : DbMapping.storageAttributes(plan, settings.inheritance(), relation, contributor)) {
                     String path = attr.name().declared().toString();
                     var transformation = transformations.attributes().get(path);
                     if (transformation == Ili2dbLayout.AttributeTransformation.CATALOGUE_REFERENCE) {
