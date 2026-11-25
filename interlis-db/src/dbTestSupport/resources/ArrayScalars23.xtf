@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="array fixture">
+    <MODELS><MODEL NAME="ArrayScalars23" VERSION="1" URI="https://example.org/interlis/db"/></MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <ArrayScalars23.Data BID="fixture-b">
+      <ArrayScalars23.Data.Asset TID="fixture-missing"/>
+      <ArrayScalars23.Data.Asset TID="fixture-value">
+        <Labels><ArrayScalars23.Data.LabelElem><Entry>é, "A"</Entry></ArrayScalars23.Data.LabelElem><ArrayScalars23.Data.LabelElem><Entry>a &amp; b</Entry></ArrayScalars23.Data.LabelElem><ArrayScalars23.Data.LabelElem><Entry>a &amp; b</Entry></ArrayScalars23.Data.LabelElem><ArrayScalars23.Data.LabelElem><Entry>last</Entry></ArrayScalars23.Data.LabelElem></Labels>
+        <Flags><ArrayScalars23.Data.FlagElem><Entry>true</Entry></ArrayScalars23.Data.FlagElem><ArrayScalars23.Data.FlagElem><Entry>false</Entry></ArrayScalars23.Data.FlagElem><ArrayScalars23.Data.FlagElem><Entry>true</Entry></ArrayScalars23.Data.FlagElem></Flags>
+        <Numbers><ArrayScalars23.Data.NumberElem><Entry>-5</Entry></ArrayScalars23.Data.NumberElem><ArrayScalars23.Data.NumberElem><Entry>0</Entry></ArrayScalars23.Data.NumberElem><ArrayScalars23.Data.NumberElem><Entry>12</Entry></ArrayScalars23.Data.NumberElem><ArrayScalars23.Data.NumberElem><Entry>-5</Entry></ArrayScalars23.Data.NumberElem><ArrayScalars23.Data.NumberElem><Entry>8</Entry></ArrayScalars23.Data.NumberElem></Numbers>
+        <Grades><ArrayScalars23.Data.GradeElem><Entry>Family.High</Entry></ArrayScalars23.Data.GradeElem><ArrayScalars23.Data.GradeElem><Entry>Low</Entry></ArrayScalars23.Data.GradeElem><ArrayScalars23.Data.GradeElem><Entry>Family.High</Entry></ArrayScalars23.Data.GradeElem><ArrayScalars23.Data.GradeElem><Entry>Family.Higher</Entry></ArrayScalars23.Data.GradeElem></Grades>
+        <FlagItems><ArrayScalars23.Data.FlagElem><Entry>true</Entry></ArrayScalars23.Data.FlagElem><ArrayScalars23.Data.FlagElem><Entry>false</Entry></ArrayScalars23.Data.FlagElem><ArrayScalars23.Data.FlagElem><Entry>true</Entry></ArrayScalars23.Data.FlagElem></FlagItems>
+        <Notes><ArrayScalars23.Data.NoteElem><Entry>first line&#10;second line</Entry></ArrayScalars23.Data.NoteElem></Notes>
+        <WrappedBag><ArrayScalars23.Data.LabelElem><Entry>repeat</Entry></ArrayScalars23.Data.LabelElem><ArrayScalars23.Data.LabelElem><Entry>other</Entry></ArrayScalars23.Data.LabelElem><ArrayScalars23.Data.LabelElem><Entry>repeat</Entry></ArrayScalars23.Data.LabelElem></WrappedBag>
+        <Single><ArrayScalars23.Data.LabelElem><Entry>one</Entry></ArrayScalars23.Data.LabelElem></Single>
+        <Detail><ArrayScalars23.Data.LabelElem><Entry>expanded</Entry></ArrayScalars23.Data.LabelElem></Detail>
+        <Doc><ArrayScalars23.Data.LabelElem><Entry>json</Entry></ArrayScalars23.Data.LabelElem></Doc>
+      </ArrayScalars23.Data.Asset>
+    </ArrayScalars23.Data>
+  </DATASECTION>
+</TRANSFER>

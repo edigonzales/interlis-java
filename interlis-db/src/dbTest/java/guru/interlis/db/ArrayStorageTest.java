@@ -16,12 +16,15 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static guru.interlis.db.ArrayFixtures.storedItems;
+import static guru.interlis.db.ArrayScalarFixtures.LABELS;
 import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.child;
@@ -154,6 +157,38 @@ final class ArrayStorageTest {
                 setItems(db, sql, "native-value", db.postgis() ? "'{value,NULL}'" : "'[\"value\",null]'");
             }
             assertFailedExportKeepsFile(db, output, "Null element in direct coalesced array");
+        });
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @MethodSource("fullTransfers")
+    void renamedArrayColumnAndSingleValueCardinality(Backend backend, String version) throws Exception {
+        withDatabase(backend, db -> {
+            var fixture = new ArrayScalarFixtures(work, xtfVersion(version));
+            fixture.schema(db);
+            String column = fixture.wrappedText.toLowerCase(Locale.ROOT);
+            try (var sql = db.connect()) {
+                execute(sql, "ALTER TABLE " + db.table("asset") + " RENAME COLUMN " + column + " TO stored_items");
+                execute(sql, "UPDATE " + db.table("t_ili2db_attrname")
+                        + " SET sqlname='stored_items' WHERE colowner='asset' AND sqlname='" + column + "'");
+                execute(sql, "UPDATE " + db.table("t_ili2db_column_prop")
+                        + " SET columnname='stored_items' WHERE tablename='asset' AND columnname='" + column + "'");
+            }
+
+            assertCliSuccess(db, "import", fixture.model, "native", fixture.input);
+            Path output = work.resolve("published.xtf");
+            assertCliSuccess(db, "export", fixture.model, "native", output);
+            fixture.assertDelivery(output, "fixture", false);
+            byte[] previous = Files.readAllBytes(output);
+            try (var sql = db.connect()) {
+                assertEquals(LABELS, storedItems(db, sql, "asset", "stored_items", "fixture-value", LABELS.size()));
+                assertEquals(List.of("one"), storedItems(db, sql, "asset", "single", "fixture-value", 1));
+                assertNull(scalar(sql, "SELECT single FROM " + db.table("asset") + " WHERE t_ili_tid='fixture-missing'"));
+                String multiple = db.postgis() ? "'{first,second}'" : "'[\"first\",\"second\"]'";
+                execute(sql, "UPDATE " + db.table("asset") + " SET single=" + multiple + " WHERE t_ili_tid='fixture-value'");
+            }
+            assertCliFailure(db, "export", fixture.model, "native", output, "Single coalesced structure has multiple array elements");
+            assertArrayEquals(previous, Files.readAllBytes(output));
         });
     }
 

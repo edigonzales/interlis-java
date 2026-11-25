@@ -1,0 +1,44 @@
+INTERLIS 2.4;
+
+MODEL ArrayScalars24 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  TOPIC Data =
+    DOMAIN
+      Score = -20 .. 20;
+      Grade = (Low, Family (High, Higher));
+
+    STRUCTURE LabelElem = Entry : TEXT*40; END LabelElem;
+    STRUCTURE FlagElem = Entry : BOOLEAN; END FlagElem;
+    STRUCTURE NumberElem = Entry : Score; END NumberElem;
+    STRUCTURE GradeElem = Entry : Grade; END GradeElem;
+    STRUCTURE NoteElem = Entry : MTEXT; END NoteElem;
+
+    CLASS Asset =
+      !!@ili2db.mapping=ARRAY
+      Labels : LIST OF TEXT*40;
+      !!@ili2db.mapping=ARRAY
+      Flags : BAG OF BOOLEAN;
+      !!@ili2db.mapping=ARRAY
+      Numbers : LIST OF Score;
+      !!@ili2db.mapping=ARRAY
+      Grades : LIST OF Grade;
+      !!@ili2db.mapping=ARRAY
+      FlagItems : LIST OF FlagElem;
+      !!@ili2db.mapping=ARRAY
+      TextItems : LIST OF LabelElem;
+      !!@ili2db.mapping=ARRAY
+      NumberItems : LIST OF NumberElem;
+      !!@ili2db.mapping=ARRAY
+      WrappedGrades : LIST OF GradeElem;
+      !!@ili2db.mapping=ARRAY
+      Notes : LIST OF NoteElem;
+      !!@ili2db.mapping=ARRAY
+      WrappedBag : BAG OF LabelElem;
+      !!@ili2db.mapping=ARRAY
+      Single : LabelElem;
+      !!@ili2db.mapping=EXPAND
+      Detail : LabelElem;
+      !!@ili2db.mapping=JSON
+      Doc : LabelElem;
+    END Asset;
+  END Data;
+END ArrayScalars24.

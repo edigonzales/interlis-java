@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="http://www.interlis.ch/xtf/2.4/ArrayScalars24">
+  <i:headersection><i:models><i:model>ArrayScalars24</i:model></i:models><i:sender>array fixture</i:sender></i:headersection>
+  <i:datasection>
+    <Data i:bid="fixture-b">
+      <Asset i:tid="fixture-missing"/>
+      <Asset i:tid="fixture-value">
+        <Labels>é, "A"</Labels>
+        <Labels>a &amp; b</Labels>
+        <Labels>a &amp; b</Labels>
+        <Labels>last</Labels>
+        <Flags>true</Flags>
+        <Flags>false</Flags>
+        <Flags>true</Flags>
+        <Numbers>-5</Numbers>
+        <Numbers>0</Numbers>
+        <Numbers>12</Numbers>
+        <Numbers>-5</Numbers>
+        <Numbers>8</Numbers>
+        <Grades>Family.High</Grades>
+        <Grades>Low</Grades>
+        <Grades>Family.High</Grades>
+        <Grades>Family.Higher</Grades>
+        <FlagItems><FlagElem><Entry>true</Entry></FlagElem><FlagElem><Entry>false</Entry></FlagElem><FlagElem><Entry>true</Entry></FlagElem></FlagItems>
+        <TextItems><LabelElem><Entry>é, "A"</Entry></LabelElem><LabelElem><Entry>a &amp; b</Entry></LabelElem><LabelElem><Entry>a &amp; b</Entry></LabelElem><LabelElem><Entry>last</Entry></LabelElem></TextItems>
+        <NumberItems><NumberElem><Entry>-5</Entry></NumberElem><NumberElem><Entry>0</Entry></NumberElem><NumberElem><Entry>12</Entry></NumberElem><NumberElem><Entry>-5</Entry></NumberElem><NumberElem><Entry>8</Entry></NumberElem></NumberItems>
+        <WrappedGrades><GradeElem><Entry>Family.High</Entry></GradeElem><GradeElem><Entry>Low</Entry></GradeElem><GradeElem><Entry>Family.High</Entry></GradeElem><GradeElem><Entry>Family.Higher</Entry></GradeElem></WrappedGrades>
+        <Notes><NoteElem><Entry>first line&#10;second line</Entry></NoteElem></Notes>
+        <WrappedBag><LabelElem><Entry>repeat</Entry></LabelElem><LabelElem><Entry>other</Entry></LabelElem><LabelElem><Entry>repeat</Entry></LabelElem></WrappedBag>
+        <Single><LabelElem><Entry>one</Entry></LabelElem></Single>
+        <Detail><LabelElem><Entry>expanded</Entry></LabelElem></Detail>
+        <Doc><LabelElem><Entry>json</Entry></LabelElem></Doc>
+      </Asset>
+    </Data>
+  </i:datasection>
+</i:transfer>

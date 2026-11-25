@@ -104,7 +104,9 @@ beschädigten Elementen oder einem `NULL`-Element in einem direkten XTF-2.4-Arra
 Der Integerfall prüft den Rollback von Objektzeilen, Basket und Datensatz,
 wenn ein späteres Element die 32-Bit-Kodierung übersteigt.
 Ein paralleler Import mit denselben IDs in einem zweiten PostgreSQL-Schema
-prüft, dass der Rollback die dort gespeicherten Zeilen intakt lässt.
+prüft, dass der Rollback die dort gespeicherten Zeilen intakt lässt. Die Fälle prüfen auch umbenannte
+Array-Spalten samt gespeicherten Zuordnungen und den Erhalt der XTF-Datei
+bei mehreren Elementen für eine optionale Einzelstruktur.
 
 `SqlConstraintTest` prüft für beide XTF-Versionen globale und zusammengesetzte
 Schlüssel, SQL `NULL`, Ganzzahl- und Festkommabereiche sowie die gerundete
@@ -329,23 +331,14 @@ kombiniert geerbte und erweiterte Definitionen, abweichende gespeicherte
 IDs und einen ili2db-Folgeimport. Weitere Fälle prüfen den Werkzeugwechsel
 nach `--add-models` sowie Arrays mit ITF-Codes oder Lookup-IDs.
 
-Die `*ArrayScalars*`-Fälle kombinieren Text, Boolean, Ganzzahlen und
-Aufzählungen in einem Referenzschema pro Backend und Sprachversion. Sie
-prüfen beide Werkzeugrichtungen, Strukturhüllen und direkte Werte in
-XTF 2.4, Listenreihenfolge, BAG-Duplikate, Sonderzeichen und fehlende Werte.
-Vor dem Rückweg wird eine umhüllte Textspalte samt gespeicherter Zuordnung
-umbenannt. Ein weiterer Datensatz prüft den bekannten Referenz-Exportfehler
-bei umhüllten `NULL`-Elementen und den erfolgreichen eigenen Export.
-Für diese vier Mischläufe verwende
-`./gradlew :interlis-db:dbInteropTest --tests '*DbInteropTest.*ArrayScalars*'`.
+`--tests '*ArrayScalarInteropTest'` bündelt skalare LIST- und BAG-Arrays,
+optionale Einzelstrukturen sowie EXPAND und JSON in einem Modell pro
+Sprachversion. Katalog und Datenaustausch werden in beiden Schematypen
+geprüft. Ein ili2db-Import nach `--add-models` prüft die Array-Einstellung
+und die gemeinsame ID-Vergabe. Eine Gegenprobe erhält den bekannten
+ili2db-Exportfehler bei umhüllten `NULL`-Elementen und prüft den erfolgreichen
+Export mit `interlis-db`.
 
-Die `*ArrayEnumeration*`-Fälle prüfen benannte Aufzählungen und qualifizierte XTF-Codes. Die
-`*ArrayBag*`-Fälle prüfen Duplikate, fehlende Werte und die gruppierte
-XTF-2.4-Ausgabe von ili2db. Die `*ArraySingle*`-Fälle prüfen optionale
-Einzelwerte und diagnostizieren mehrere gespeicherte Elemente.
-Die `*ArraySchema*`-Fälle vergleichen den SQL-Katalog und die Metadaten
-mit ili2db und prüfen den gemischten Datenaustausch, die gemeinsame
-ID-Vergabe und `--add-models` mit kombinierter EXPAND- und JSON-Abbildung.
 Die `*ArraySmart2*`-Fälle prüfen geerbte Spalten, das Kürzen und Entfernen
 von Listen per `update`, stabile IDs sowie `replace` und `delete` neben
 einem zweiten Datensatz.

@@ -117,57 +117,6 @@ final class DbInteropTest {
 
     @TempDir(cleanup = CleanupMode.ALWAYS) Path work;
 
-    @Test void geoPackageArrayEnumeration23() throws Exception { exchangeArrayEnumeration(23, null); }
-    @Test void geoPackageArrayEnumeration24() throws Exception { exchangeArrayEnumeration(24, null); }
-    @Test void postgisArrayEnumeration23() throws Exception { exchangeWithPostgis(23, this::exchangeArrayEnumeration); }
-    @Test void postgisArrayEnumeration24() throws Exception { exchangeWithPostgis(24, this::exchangeArrayEnumeration); }
-
-    private void exchangeArrayEnumeration(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "array_enumeration");
-        new ArrayCases(work, new ReferenceTool(work, db.postgis()), version).enumeration(db);
-    }
-
-    @Test void geoPackageArrayBag23() throws Exception { exchangeArrayBag(23, null); }
-    @Test void geoPackageArrayBag24() throws Exception { exchangeArrayBag(24, null); }
-    @Test void postgisArrayBag23() throws Exception { exchangeWithPostgis(23, this::exchangeArrayBag); }
-    @Test void postgisArrayBag24() throws Exception { exchangeWithPostgis(24, this::exchangeArrayBag); }
-
-    private void exchangeArrayBag(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "array_bag");
-        new ArrayCases(work, new ReferenceTool(work, db.postgis()), version).bag(db);
-    }
-
-    @Test void geoPackageArraySingle23() throws Exception { exchangeArraySingle(23, null); }
-    @Test void geoPackageArraySingle24() throws Exception { exchangeArraySingle(24, null); }
-    @Test void postgisArraySingle23() throws Exception { exchangeWithPostgis(23, this::exchangeArraySingle); }
-    @Test void postgisArraySingle24() throws Exception { exchangeWithPostgis(24, this::exchangeArraySingle); }
-
-    private void exchangeArraySingle(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "array_single");
-        new ArrayCases(work, new ReferenceTool(work, db.postgis()), version).single(db);
-    }
-
-    @Test void geoPackageArrayScalars23() throws Exception { exchangeArrayScalars(23, null); }
-    @Test void geoPackageArrayScalars24() throws Exception { exchangeArrayScalars(24, null); }
-    @Test void postgisArrayScalars23() throws Exception { exchangeWithPostgis(23, this::exchangeArrayScalars); }
-    @Test void postgisArrayScalars24() throws Exception { exchangeWithPostgis(24, this::exchangeArrayScalars); }
-
-    private void exchangeArrayScalars(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "array_scalars");
-        new ArrayCases(work, new ReferenceTool(work, db.postgis()), version).scalars(db);
-    }
-
-    @Test void geoPackageArraySchema23() throws Exception { exchangeArraySchema(23, null); }
-    @Test void geoPackageArraySchema24() throws Exception { exchangeArraySchema(24, null); }
-    @Test void postgisArraySchema23() throws Exception { exchangeWithPostgis(23, this::exchangeArraySchema); }
-    @Test void postgisArraySchema24() throws Exception { exchangeWithPostgis(24, this::exchangeArraySchema); }
-
-    private void exchangeArraySchema(int version, PostgreSQLContainer postgres) throws Exception {
-        var baseline = new TestDatabase(work, postgres, "array_schema_reference");
-        var db = new TestDatabase(work, postgres, "array_schema_native");
-        new ArrayCases(work, new ReferenceTool(work, db.postgis()), version).createSchema(baseline, db);
-    }
-
     @Test void geoPackageArraySmart223() throws Exception { exchangeArraySmart2(23, null); }
     @Test void geoPackageArraySmart224() throws Exception { exchangeArraySmart2(24, null); }
     @Test void postgisArraySmart223() throws Exception { exchangeWithPostgis(23, this::exchangeArraySmart2); }
