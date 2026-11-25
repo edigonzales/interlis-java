@@ -1,72 +1,44 @@
 package guru.interlis.db;
 
-import guru.interlis.execution.CancellationToken;
+import guru.interlis.db.DbTestSupport.Target;
+import org.w3c.dom.Element;
 
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
-import static guru.interlis.db.DbTestSupport.assertCliSuccess;
+import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
 import static guru.interlis.db.DbTestSupport.child;
 import static guru.interlis.db.DbTestSupport.children;
-import static guru.interlis.db.DbTestSupport.cli;
 import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.readDataSection;
 import static guru.interlis.db.DbTestSupport.referenceDatasetFixture;
-import static guru.interlis.db.DbTestSupport.scalar;
+import static guru.interlis.db.ModelFixtures.basket;
+import static guru.interlis.db.ModelFixtures.headerModels;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-final class XyzGeometryCases {
+final class XyzGeometryFixtures {
     private final Path work;
     private final int version;
-    private final String model;
-    private final ReferenceTool reference;
+    final String model;
+    private final Path source;
 
-    XyzGeometryCases(Path work, int version, ReferenceTool reference) {
+    XyzGeometryFixtures(Path work, int version) throws Exception {
         this.work = work;
         this.version = version;
         model = "DbXyz" + version;
-        this.reference = reference;
+        source = ModelFixtures.fixture(work, model + ".ili");
     }
 
-    void exchange(TestDatabase old, TestDatabase own) throws Exception {
-        var ili = work.resolve(model + ".ili");
-        try (var fixture = getClass().getResourceAsStream("/" + ili.getFileName())) {
-            Files.copy(fixture, ili);
-        }
-        reference.run(old, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
-                "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056",
-                "--createGeomIdx", ili.toString());
-        var create = schemaWithIdentityColumns(own, model, ili, CancellationToken.none(), "--create-geom-index");
-        assertEquals(0, create.code(), create::diagnostics);
-        try (var oldSql = old.connect(); var ownSql = own.connect()) {
-            var expected = DbSchemaCatalog.read(oldSql, old.postgis(), old.schema());
-            if (!old.postgis()) {
-                expected = expected.expectGeoPackageGeometryExtension("track", "trace", "COMPOUNDCURVE")
-                        .expectGeoPackageGeometryExtension("plot", "outline", "CURVEPOLYGON")
-                        .expectGeoPackageGeometryExtension("parcel", "perimeter", "CURVEPOLYGON");
-                if (version == 24) {
-                    expected = expected.expectGeoPackageGeometryExtension("network", "routes", "MULTICURVE")
-                            .expectGeoPackageGeometryExtension("park", "grounds", "MULTISURFACE")
-                            .expectGeoPackageGeometryExtension("district", "territory", "MULTISURFACE");
-                }
-            }
-            expected.assertSameAs(DbSchemaCatalog.read(ownSql, own.postgis(), own.schema()));
-        }
+    void schema(Target db) {
+        assertSchemaWithIdentityColumns(db, model, source, "--create-geom-index");
+    }
 
-        String markers = object("Marker", "above", "<Position>" + position("2600000.125", "1200000.375", "42.875") + "</Position>")
-                + object("Marker", "below", "<Position>" + position("2600010.250", "1200020.500", "-31.125") + "</Position>")
-                + object("Marker", "absent", "");
-        String track = object("Track", "track-1", "<Trace>" + line(
-                position("2600300.125", "1200300.375", "7.500")
-                + position("2600310.250", "1200320.500", "-11.250")
-                + position("2600320.375", "1200340.750", "12.875")) + "</Trace>");
+    Path input() throws Exception {
         String shell = box(2600400, 1200400, 40, "1", "2", "3", "4");
         String hole = box(2600410, 1200410, 10, "11", "12", "13", "14");
         String areas = object("Plot", "plot-1", "<Outline>" + surface(shell, hole) + "</Outline>")
@@ -79,69 +51,44 @@ final class XyzGeometryCases {
         String curved = object("Track", "arc-track", "<Trace>" + line(start + arc) + "</Trace>")
                 + object("Plot", "arc-plot", "<Outline>" + surface(line(start + arc + start), "") + "</Outline>");
         String multi = version == 24 ? collections(start, arc, shell, hole) : "";
-        Path input = delivery("xyz", markers + track + areas + curved + multi);
-        reference.run(old, work.toString(), "--import", "--dataset", "xyz", "--importTid", "--importBid", input.toString());
-        Path ownExport = work.resolve("xyz-native.xtf");
-        assertCliSuccess(old, "export", model, "xyz", ownExport);
-        assertTransfer(ownExport);
-
-        assertCliSuccess(own, "import", model, "xyz", input);
-        Path referenceExport = work.resolve("xyz-reference.xtf");
-        reference.run(own, work.toString(), "--export", "--dataset", "xyz", "--exportTid", referenceExport.toString());
-        assertTransfer(referenceExport);
-
-        try (var sql = own.connect()) {
-            assertStorage(own, sql);
-            var broken = delivery("xyz-broken", markers + track + object("Track", "broken", "<Trace>" + line(
-                    position("2600300.125", "1200300.375", "7.500") + position("2600320.375", "1200340.750"))
-                    + "</Trace>"));
-            var failure = cli(own, "replace", model, "xyz", broken, CancellationToken.none());
-            assertNotEquals(0, failure.code(), failure::diagnostics);
-            assertStorage(own, sql);
-            if (version == 24) {
-                String malformed = object("Survey", "wrong-dimension", "<Locations><g:multicoord>"
-                        + position("2600600", "1200600", "13") + position("2600620", "1200620")
-                        + "</g:multicoord></Locations>");
-                var mixed = cli(own, "replace", model, "xyz", delivery("xyz-mixed", markers + malformed),
-                        CancellationToken.none());
-                assertNotEquals(0, mixed.code(), mixed::diagnostics);
-                assertStorage(own, sql);
-                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + own.table("survey")));
-            }
-        }
+        return delivery("xyz", markers("42.875") + track() + areas + curved + multi);
     }
 
-    private void assertStorage(TestDatabase db, Connection sql) throws SQLException {
-        String table = db.table("marker");
-        assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("plot") + " WHERE outline IS NOT NULL"));
-        assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("parcel") + " WHERE perimeter IS NOT NULL"));
-        assertEquals("3", scalar(sql, "SELECT count(*) FROM " + table));
-        assertEquals("1", scalar(sql, "SELECT count(*) FROM " + table + " WHERE aposition IS NULL"));
-        assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("track") + " WHERE t_ili_tid='track-1'"));
-        String arcHit = db.postgis()
-                ? "SELECT count(*) FROM " + db.table("track")
-                        + " WHERE trace && ST_MakeEnvelope(2602399,1202300,2602399,1202300,2056)"
-                : "SELECT count(*) FROM rtree_track_trace WHERE minx<=2602399 AND maxx>=2602399"
-                        + " AND miny<=1202300 AND maxy>=1202300";
-        assertEquals("1", scalar(sql, arcHit));
-        if (db.postgis()) {
-            assertTrue(scalar(sql, "SELECT ST_AsEWKT(trace) FROM " + db.table("track") + " WHERE t_ili_tid='arc-track'")
-                    .contains("2602380 1202360 NaN"));
-            assertEquals("42.875", scalar(sql, "SELECT ST_Z(aposition) FROM " + table + " WHERE t_ili_tid='above'"));
-            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + table
-                    + " WHERE aposition && ST_MakeEnvelope(2600000,1200000,2600001,1200001,2056)"));
-        } else {
-            assertEquals("1", scalar(sql, "SELECT count(*) FROM rtree_marker_aposition"
-                    + " WHERE minx<=2600000.125 AND maxx>=2600000.125 AND miny<=1200000.375 AND maxy>=1200000.375"));
-            assertEquals("2", scalar(sql, "SELECT count(*) FROM rtree_marker_aposition"));
-        }
+    Path lineWithMissingHeight() throws Exception {
+        var broken = object("Track", "broken", "<Trace>" + line(
+                position("2600300.125", "1200300.375", "7.500") + position("2600320.375", "1200340.750")) + "</Trace>");
+        return delivery("xyz-broken", markers("43.875") + track() + broken);
     }
 
-    private void assertTransfer(Path file) throws Exception {
-        var basket = children(readDataSection(file, version)).getFirst();
-        assertEquals("xyz-basket", id(basket, version, "bid"));
+    Path mixedCollection() throws Exception {
+        var broken = object("Survey", "wrong-dimension", "<Locations><g:multicoord>"
+                + position("2600600", "1200600", "13") + position("2600620", "1200620") + "</g:multicoord></Locations>");
+        return delivery("xyz-mixed", markers("43.875") + broken);
+    }
+
+    private String markers(String height) {
+        return object("Marker", "above", "<Position>" + position("2600000.125", "1200000.375", height) + "</Position>")
+                + object("Marker", "below", "<Position>" + position("2600010.250", "1200020.500", "-31.125") + "</Position>")
+                + object("Marker", "absent", "");
+    }
+
+    private String track() {
+        return object("Track", "track-1", "<Trace>" + line(
+                position("2600300.125", "1200300.375", "7.500")
+                + position("2600310.250", "1200320.500", "-11.250")
+                + position("2600320.375", "1200340.750", "12.875")) + "</Trace>");
+    }
+
+    void assertTransfer(Path file) throws Exception {
+        var data = readDataSection(file, version);
+        assertEquals(List.of(model), headerModels(data, version));
+        assertEquals(1, children(data).size());
+        var basket = basket(data, version, model + ".Data", "xyz-basket");
         var objects = children(basket);
-        assertEquals(version == 24 ? 14 : 9, objects.size());
+        var expectedIds = new HashSet<>(List.of("above", "below", "absent", "track-1", "plot-1", "west", "east", "arc-track", "arc-plot"));
+        if (version == 24) expectedIds.addAll(List.of("survey", "survey-empty", "network", "park", "district"));
+        assertEquals(expectedIds.size(), objects.size());
+        assertEquals(expectedIds, objects.stream().map(object -> id(object, version, "tid")).collect(Collectors.toSet()));
         for (var object : objects) {
             switch (id(object, version, "tid")) {
                 case "above" -> assertHeights(object, "Position", "42.875");
@@ -164,7 +111,7 @@ final class XyzGeometryCases {
         }
     }
 
-    private void assertHeights(org.w3c.dom.Element object, String field, String... expected) {
+    private void assertHeights(Element object, String field, String... expected) {
         var elements = child(object, field).getElementsByTagNameNS("*", version == 23 ? "C3" : "c3");
         assertEquals(expected.length, elements.getLength(), field);
         for (int i = 0; i < expected.length; i++) {

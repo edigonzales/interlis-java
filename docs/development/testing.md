@@ -463,7 +463,13 @@ beider Schemaerzeuger. Die Fälle tauschen gerade und gebogene Geometrien
 gemeinsam aus und prüfen die räumlichen Treffer nach einem Update durch
 ili2db. Die XTF-2.4-Fälle prüfen zusätzlich die Reihenfolge der Geometrieteile.
 
-`*DbInteropTest.*Xyz*` prüft XYZ-Geometrien und die XY-Indexhüllen.
+`--tests '*XyzGeometryInteropTest'` vergleicht die Kataloge und die
+Z-Werte von Punkten, Bögen, Linien und Flächen in beiden Werkzeugrichtungen.
+Die XTF-2.4-Fälle prüfen auch die Reihenfolge der XYZ-Sammlungen.
+`XyzGeometryStorageTest` prüft XY-Indexhüllen, den Z-Platzhalter für
+Bogenstützpunkte in PostGIS und den Rollback bei fehlenden Höhen oder
+gemischten Dimensionen.
+
 `--tests '*GeometryLayoutInteropTest'` vergleicht die Kataloge für gemeinsame
 Geometriespalten und für Hilfstabellen. Klassen mit mehreren Geometrien
 und die Klassenhierarchie teilen sich je Layout dasselbe Schemapaar.

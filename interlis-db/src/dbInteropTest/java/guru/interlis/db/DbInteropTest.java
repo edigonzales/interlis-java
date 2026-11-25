@@ -218,17 +218,6 @@ final class DbInteropTest {
     @Test void postgis23() throws Exception { exchangeWithPostgis(23, this::exchange); }
     @Test void postgis24() throws Exception { exchangeWithPostgis(24, this::exchange); }
 
-
-    @Test void geoPackageXyz23() throws Exception { exchangeXyz(23, null); }
-    @Test void geoPackageXyz24() throws Exception { exchangeXyz(24, null); }
-    @Test void postgisXyz23() throws Exception { exchangeWithPostgis(23, this::exchangeXyz); }
-    @Test void postgisXyz24() throws Exception { exchangeWithPostgis(24, this::exchangeXyz); }
-
-    private void exchangeXyz(int version, PostgreSQLContainer postgres) throws Exception {
-        new XyzGeometryCases(work, version, new ReferenceTool(work, postgres != null))
-                .exchange(new TestDatabase(work, postgres, "xyz_reference"), new TestDatabase(work, postgres, "xyz_own"));
-    }
-
     private void exchange(int version, PostgreSQLContainer postgres) throws Exception {
         var base = new BaseDbFixture(work, version);
         String model = base.model();
