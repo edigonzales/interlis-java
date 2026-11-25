@@ -509,25 +509,25 @@ den Basket des Links, beide Ziel-TIDs und die eigenständigen XTF-Objekte.
 ./gradlew :interlis-db:dbInteropTest
 ```
 
-Die `*StrokePolyline*`-Fälle prüfen den Austausch gerader XY-Polylinien
-mit ili2db-`--strokeArcs`, gespeicherte SQL-Namen und das Verhalten bei
-widersprüchlichen Spaltenmetadaten. Die `*StrokeArcs*`-Fälle vergleichen
-die Stützpunktfolge eines gewöhnlichen Kreisbogens mit der Referenz und
-prüfen grosse Bögen, Vollkreise und den Rollback am Koordinatenlimit. Die
-`*StrokeSurface*`-Fälle prüfen `POLYGON`, Innenringe und den Erhalt der
-XTF-Datei bei beschädigtem WKB oder falschem Katalogtyp. Die
-`*StrokeArea*`-Fälle vergleichen die Koordinaten gemeinsamer gebogener
-Kanten und prüfen in XTF 2.3 einen mehrteiligen Rand. Die
-`*StrokeMultiPolyline*`-Fälle prüfen Reihenfolge und Richtung von
+`--tests '*StrokeGeometryInteropTest'` bündelt gerade und segmentierte
+XY-Polylinien, Punkte, `SURFACE` mit Innenring und benachbarte `AREA`-Objekte
+in einer Lieferung pro Sprachversion. Der Mischlauf prüft den Katalog,
+die Bogenstützpunkte und Koordinatentoleranzen, den gemeinsamen gebogenen
+Rand sowie einen mehrteiligen Rand in XTF 2.3. Ein ili2db-Folgeimport prüft
+die gemeinsame ID-Vergabe. Die Schemaerweiterung übernimmt `--strokeArcs`
+für eine weitere Flächenspalte. `StrokeGeometryStorageTest` prüft
+umbenannte Spalten, grosse Bögen, Vollkreise, kollineare Stützpunkte,
+Sehnentoleranz und Rollback am Koordinatenlimit. Dazu kommen die
+Ablehnung von XYZ und der Erhalt der XTF-Datei bei fehlerhaften
+Spaltenmetadaten, Katalogtypen oder WKB-Werten.
+
+Die `*StrokeMultiPolyline*`-Fälle prüfen Reihenfolge und Richtung von
 `MULTIPOLYLINE`, `MultiLine` und `MultiDirectedLine`. Die
 `*StrokeMultiSurface*`-Fälle prüfen `MULTIPOLYGON`, Teilflächen und
 Innenringe bei `MULTISURFACE`, `MULTIAREA` und CHBase-`MultiSurface`
 sowie leere SQL-Sammlungen. Die beiden Gruppen verwenden die Linien- und
 Flächenbaskets der gemeinsamen CHBase-Fixture als Einzellieferungen.
-Die `*StrokeSchema*`-Fälle vergleichen
-den Katalog mit einem ili2db-Schema, prüfen die gemeinsame ID-Vergabe
-und ergänzen ein Modell mit der gespeicherten Option. Die
-`*StrokeSmart2*`-Fälle prüfen eine geerbte Geometrie in einer indizierten
+Die `*StrokeSmart2*`-Fälle prüfen eine geerbte Geometrie in einer indizierten
 Hilfstabelle. Sie vergleichen SQL-IDs und räumliche Abfragen vor und
 nach `update` und `delete`.
 

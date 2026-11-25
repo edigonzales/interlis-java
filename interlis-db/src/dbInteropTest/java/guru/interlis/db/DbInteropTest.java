@@ -117,46 +117,6 @@ final class DbInteropTest {
 
     @TempDir(cleanup = CleanupMode.ALWAYS) Path work;
 
-    @Test void geoPackageStrokePolyline23() throws Exception { exchangeStrokePolyline(23, null); }
-    @Test void geoPackageStrokePolyline24() throws Exception { exchangeStrokePolyline(24, null); }
-    @Test void postgisStrokePolyline23() throws Exception { exchangeWithPostgis(23, this::exchangeStrokePolyline); }
-    @Test void postgisStrokePolyline24() throws Exception { exchangeWithPostgis(24, this::exchangeStrokePolyline); }
-
-    private void exchangeStrokePolyline(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "stroke_polyline");
-        new StrokeCases(work, new ReferenceTool(work, db.postgis()), version).polyline(db);
-    }
-
-    @Test void geoPackageStrokeArcs23() throws Exception { exchangeStrokeArcs(23, null); }
-    @Test void geoPackageStrokeArcs24() throws Exception { exchangeStrokeArcs(24, null); }
-    @Test void postgisStrokeArcs23() throws Exception { exchangeWithPostgis(23, this::exchangeStrokeArcs); }
-    @Test void postgisStrokeArcs24() throws Exception { exchangeWithPostgis(24, this::exchangeStrokeArcs); }
-
-    private void exchangeStrokeArcs(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "stroke_arcs");
-        new StrokeCases(work, new ReferenceTool(work, db.postgis()), version).arcs(db);
-    }
-
-    @Test void geoPackageStrokeSurface23() throws Exception { exchangeStrokeSurface(23, null); }
-    @Test void geoPackageStrokeSurface24() throws Exception { exchangeStrokeSurface(24, null); }
-    @Test void postgisStrokeSurface23() throws Exception { exchangeWithPostgis(23, this::exchangeStrokeSurface); }
-    @Test void postgisStrokeSurface24() throws Exception { exchangeWithPostgis(24, this::exchangeStrokeSurface); }
-
-    private void exchangeStrokeSurface(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "stroke_surface");
-        new StrokeCases(work, new ReferenceTool(work, db.postgis()), version).surface(db);
-    }
-
-    @Test void geoPackageStrokeArea23() throws Exception { exchangeStrokeArea(23, null); }
-    @Test void geoPackageStrokeArea24() throws Exception { exchangeStrokeArea(24, null); }
-    @Test void postgisStrokeArea23() throws Exception { exchangeWithPostgis(23, this::exchangeStrokeArea); }
-    @Test void postgisStrokeArea24() throws Exception { exchangeWithPostgis(24, this::exchangeStrokeArea); }
-
-    private void exchangeStrokeArea(int version, PostgreSQLContainer postgres) throws Exception {
-        var db = new TestDatabase(work, postgres, "stroke_area");
-        new StrokeCases(work, new ReferenceTool(work, db.postgis()), version).area(db);
-    }
-
     @Test void geoPackageStrokeMultiPolyline23() throws Exception { exchangeStrokeMultiPolyline(23, null); }
     @Test void geoPackageStrokeMultiPolyline24() throws Exception { exchangeStrokeMultiPolyline(24, null); }
     @Test void postgisStrokeMultiPolyline23() throws Exception { exchangeWithPostgis(23, this::exchangeStrokeMultiPolyline); }
@@ -175,17 +135,6 @@ final class DbInteropTest {
     private void exchangeStrokeMultiSurface(int version, PostgreSQLContainer postgres) throws Exception {
         var db = new TestDatabase(work, postgres, "stroke_multi_surface");
         new StrokeCases(work, new ReferenceTool(work, db.postgis()), version).multiSurface(db);
-    }
-
-    @Test void geoPackageStrokeSchema23() throws Exception { exchangeStrokeSchema(23, null); }
-    @Test void geoPackageStrokeSchema24() throws Exception { exchangeStrokeSchema(24, null); }
-    @Test void postgisStrokeSchema23() throws Exception { exchangeWithPostgis(23, this::exchangeStrokeSchema); }
-    @Test void postgisStrokeSchema24() throws Exception { exchangeWithPostgis(24, this::exchangeStrokeSchema); }
-
-    private void exchangeStrokeSchema(int version, PostgreSQLContainer postgres) throws Exception {
-        var baseline = new TestDatabase(work, postgres, "stroke_baseline");
-        var own = new TestDatabase(work, postgres, "stroke_own");
-        new StrokeCases(work, new ReferenceTool(work, own.postgis()), version).schema(baseline, own);
     }
 
     @Test void geoPackageStrokeSmart223() throws Exception { exchangeStrokeSmart2(23, null); }
