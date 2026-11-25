@@ -122,11 +122,6 @@ final class OidBindings {
                 diagnostics.emitRule(decl, "OID rule cannot change its inherited domain", "OID_OVERRIDE");
             rules.removeIf(r -> r.basket() == own.basket()); rules.add(own);
         }
-        // Only 2.4 defines an omitted class rule as inherited NO OID.
-        if (decl.language() == guru.interlis.model.LanguageVersion.ILI24
-                && state.symbol(state.baseOf(id)) instanceof ClassSymbol && inherited.isEmpty()
-                && rules.stream().anyMatch(r -> !r.basket() && oidState(r) == 2))
-            diagnostics.emitRule(decl, "inherited NO OID must first be concretized as ANYOID", "OID_OVERRIDE");
         rules.sort(Comparator.comparing(r -> !r.basket()));
         for (var rule : rules) {
             if (oidState(rule) == 1 && !decl.modifiers().contains(guru.interlis.model.Modifier.ABSTRACT))

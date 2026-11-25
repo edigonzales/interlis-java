@@ -110,6 +110,28 @@ class Xtf24GeometryTest {
     }
 
     @Test
+    void acceptsTheCompleteSupportPositionBeforeTheEndPositionInDmavArcs() throws Exception {
+        var start = point("2570000.000", "1200000.000");
+        var support = "<g:a1>2570010.110</g:a1><g:a2>1200010.220</g:a2>";
+        var end = "<g:c1>2570020.330</g:c1><g:c2>1200000.440</g:c2>";
+        var standard = "<g:arc>" + end + support + "</g:arc>";
+        var dmav = "<g:arc>" + support + end + "</g:arc>";
+        var invalid = "<g:arc><g:a1>2570010.110</g:a1>" + end + "<g:a2>1200010.220</g:a2></g:arc>";
+        var standardXml = transfer("<line>" + line(start, standard) + "</line>", false);
+        var dmavXml = transfer("<line>" + line(start, dmav) + "</line>", false);
+        var expected = read(plan, standardXml);
+        var decoded = read(plan, dmavXml, Xtf24ReadProfile.DMAV_1_1);
+        assertEquals(expected, decoded);
+        assertEquals(expected, read(plan, write(plan, decoded)));
+        assertEquals(Xtf24Exception.Reason.INVALID_WIRE,
+                assertThrows(Xtf24Exception.class, () -> read(plan, dmavXml)).reason());
+        assertEquals(Xtf24Exception.Reason.INVALID_WIRE,
+                assertThrows(Xtf24Exception.class,
+                        () -> read(plan, transfer("<line>" + line(start, invalid) + "</line>", false),
+                                Xtf24ReadProfile.DMAV_1_1)).reason());
+    }
+
+    @Test
     void retainsExteriorAndInteriorRolesWithoutTopologyChecks() throws Exception {
         var exterior = line(point("0", "0"), point("4", "4"), point("0", "4"), point("4", "0"));
         var hole1 = line(point("1", "1"), point("2", "1"));

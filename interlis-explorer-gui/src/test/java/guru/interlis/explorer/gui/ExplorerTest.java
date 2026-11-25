@@ -3,18 +3,25 @@ package guru.interlis.explorer.gui;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.explorer.DuckDbStore.StoredObject;
 import guru.interlis.model.QualifiedName;
+import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.ModelDescriptor;
 import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.TopicDescriptor;
+import guru.interlis.transfer.TransferPlan;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import javax.swing.JTree;
+import javax.swing.SwingUtilities;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreePath;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -26,12 +33,112 @@ class ExplorerTest {
     @TempDir Path temp;
 
     @Test
+    void resolvesLocalModelImportsFromNeighbouringSources() throws Exception {
+        Files.writeString(temp.resolve("Dependency.ili"), """
+                INTERLIS 2.4;
+                TYPE MODEL Dependency AT "https://example.org" VERSION "1" =
+                  DOMAIN Counter = 0 .. 10;
+                END Dependency.
+                TYPE MODEL OtherHeaderModel AT "https://example.org" VERSION "1" =
+                END OtherHeaderModel.
+                """);
+        var model = Files.writeString(temp.resolve("Root.ili"), """
+                INTERLIS 2.4;
+                MODEL Root AT "https://example.org" VERSION "1" =
+                  XMLNS "urn:explorer-import";
+                  IMPORTS Dependency;
+                  TOPIC Base =
+                    CLASS Inherited = END Inherited;
+                  END Base;
+                  TOPIC Data EXTENDS Base =
+                    CLASS Item =
+                      count: MANDATORY Dependency.Counter;
+                    END Item;
+                  END Data;
+                  TOPIC Empty =
+                    CLASS Spare = END Spare;
+                  END Empty;
+                END Root.
+                """);
+        var transfer = Files.writeString(temp.resolve("import.xtf"), """
+                <i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns="urn:explorer-import">
+                  <i:headersection><i:models><i:model>Dependency</i:model><i:model>Root</i:model>
+                    <i:model>OtherHeaderModel</i:model></i:models>
+                    <i:sender>test</i:sender></i:headersection>
+                  <i:datasection>
+                    <Empty i:bid="empty"/>
+                    <Data i:bid="basket"><Item i:tid="example"><count>5</count></Item></Data>
+                    <Data i:bid="duplicateTopic"/>
+                  </i:datasection>
+                </i:transfer>
+                """);
+        try (var dataset = ExplorerDataset.open(List.of(model), transfer, CancellationToken.none())) {
+            assertTrue(dataset.plan().models().stream()
+                    .anyMatch(descriptor -> descriptor.name().declared().equals(QualifiedName.of("OtherHeaderModel"))));
+            var type = dataset.plan().objects().stream()
+                    .filter(descriptor -> descriptor.name().declared().equals(QualifiedName.of("Root", "Data", "Item")))
+                    .findFirst().orElseThrow();
+            assertEquals("example", dataset.objects(type).getFirst().object().identity().tid().orElseThrow().value());
+
+            var plan = dataset.plan();
+            var data = plan.topic(type.topic().orElseThrow()).orElseThrow();
+            var empty = plan.topics().stream().filter(topic -> topic.name().declared().last().equals("Empty"))
+                    .findFirst().orElseThrow();
+            var topics = dataset.store().basketTopics();
+            assertEquals(Set.of(data.symbol(), empty.symbol()), topics);
+            SwingUtilities.invokeAndWait(() -> checkModelTree(plan, topics));
+        }
+    }
+
+    private static void checkModelTree(TransferPlan plan, Set<SymbolRef> topics) {
+        var filtered = ExplorerFrame.modelTree(plan, Optional.of(topics));
+        assertEquals(1, filtered.getChildCount());
+        var model = (DefaultMutableTreeNode) filtered.getFirstChild();
+        assertEquals(QualifiedName.of("Root"), ((ModelDescriptor) model.getUserObject()).name().declared());
+        assertEquals(2, model.getChildCount());
+        var data = (DefaultMutableTreeNode) model.getChildAt(0);
+        assertEquals(QualifiedName.of("Root", "Data"), ((TopicDescriptor) data.getUserObject()).name().declared());
+        var empty = (DefaultMutableTreeNode) model.getChildAt(1);
+        assertEquals(QualifiedName.of("Root", "Empty"), ((TopicDescriptor) empty.getUserObject()).name().declared());
+        assertEquals(1, empty.getChildCount());
+        assertEquals(2, data.getChildCount());
+        var item = (DefaultMutableTreeNode) data.getFirstChild();
+        assertEquals(QualifiedName.of("Root", "Data", "Item"),
+                ((ObjectDescriptor) item.getUserObject()).name().declared());
+        var inherited = (DefaultMutableTreeNode) data.getLastChild();
+        assertEquals(QualifiedName.of("Root", "Base", "Inherited"),
+                ((ObjectDescriptor) inherited.getUserObject()).name().declared());
+
+        var tree = new JTree(filtered);
+        tree.setRootVisible(false);
+        tree.expandPath(new TreePath(empty.getPath()));
+        tree.setSelectionPath(new TreePath(inherited.getPath()));
+        var full = ExplorerFrame.modelTree(plan, Optional.empty());
+        assertEquals(plan.models().size(), full.getChildCount());
+        assertTrue(ExplorerFrame.replaceModelTree(tree, full));
+        var selected = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
+        assertEquals(inherited.getUserObject(), selected.getUserObject());
+        assertEquals(data.getUserObject(), ((DefaultMutableTreeNode) selected.getParent()).getUserObject());
+        var fullModel = (DefaultMutableTreeNode) selected.getParent().getParent();
+        assertEquals(3, fullModel.getChildCount());
+        var fullEmpty = (DefaultMutableTreeNode) fullModel.getChildAt(2);
+        assertTrue(tree.isExpanded(new TreePath(fullEmpty.getPath())));
+
+        var hiddenBase = (DefaultMutableTreeNode) fullModel.getFirstChild();
+        tree.setSelectionPath(new TreePath(hiddenBase.getPath()));
+        assertFalse(ExplorerFrame.replaceModelTree(tree, ExplorerFrame.modelTree(plan, Optional.of(topics))));
+        assertTrue(tree.isSelectionEmpty());
+        assertEquals(0, ExplorerFrame.modelTree(plan, Optional.of(Set.of())).getChildCount());
+    }
+
+    @Test
     void browsesImportedObjectsInModelOrder() throws Exception {
         var fixtures = Path.of(System.getProperty("testdata.dir"), "reference", "iox", "ili24");
         var dataset = ExplorerDataset.open(List.of(fixtures.resolve("Reference24.ili")),
                 fixtures.resolve("structures-and-link.xtf"), CancellationToken.none());
         try (dataset) {
-            var modelNode = (DefaultMutableTreeNode) ExplorerFrame.modelTree(dataset.plan()).getFirstChild();
+            var modelNode = (DefaultMutableTreeNode) ExplorerFrame
+                    .modelTree(dataset.plan(), Optional.of(dataset.store().basketTopics())).getFirstChild();
             var model = assertInstanceOf(ModelDescriptor.class, modelNode.getUserObject());
             assertEquals(QualifiedName.of("Reference24"), model.name().declared());
             var topicNode = (DefaultMutableTreeNode) modelNode.getFirstChild();
@@ -120,7 +227,8 @@ class ExplorerTest {
                     .filter(type -> type.name().declared().equals(QualifiedName.of("Nested", "Data", "Item")))
                     .findFirst().orElseThrow();
             var inspector = new InspectorTableModel();
-            inspector.show(dataset.plan(), dataset.objects(item).getFirst().object().data(), InspectorRelationships.EMPTY);
+            var data = dataset.objects(item).getFirst().object().data();
+            inspector.show(dataset.plan(), data, InspectorRelationships.EMPTY);
             var collapsed = List.of(Map.entry("payload", "Nested.Child"), Map.entry("tail", "after"));
             assertEquals(collapsed, rows(inspector));
 
@@ -138,6 +246,12 @@ class ExplorerTest {
 
             inspector.toggle(0);
             assertEquals(collapsed, rows(inspector));
+            String alphaPath = "/Nested.Data.Item.payload/Nested.Child.alpha/";
+            assertEquals(-1, inspector.revealOccurrence(data, alphaPath + "2/Nested.Leaf.label"));
+            assertEquals(collapsed, rows(inspector));
+            int secondDuplicate = inspector.revealOccurrence(data, alphaPath + "1/Nested.Leaf.label");
+            assertEquals(List.of(0, 1, 1, 0), inspector.pathTo(secondDuplicate));
+            assertEquals(Map.entry("label", "duplicate"), rows(inspector).get(secondDuplicate));
         }
     }
 

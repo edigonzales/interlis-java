@@ -10,11 +10,19 @@ zugänglich. Die Regeln gelten für die künftige Oberfläche.
 Die Hauptansicht verbindet die Modellnavigation mit dem Objektinspektor.
 Der Einstieg folgt der Hierarchie Modell → Topic → Klasse → Objekt.
 Physische Datenbanktabellen und Spalten bestimmen diese Navigation nicht.
+Beim Öffnen eines Transfers zeigt der Modellbaum die Topics der importierten
+Baskets und ihre Modelle. Leere Baskets zählen mit. Die Klassen eines
+sichtbaren Topics folgen der Modellreihenfolge. **Show all models** neben
+**Model** zeigt zusätzlich die übrigen Modelle und Topics. Beim Umschalten
+bleiben sichtbare aufgeklappte Knoten und die sichtbare Auswahl erhalten.
 
 ## 3 Zusätzliche Ansichten
 
-Karte, Tabelle und SQL sind bei Bedarf zugängliche Ansichten. Für das
-Hauptfenster genügt ein einfacher Aufbau ohne Docking-Framework.
+Karte, Tabelle und Abfragen sind bei Bedarf zugängliche Ansichten. Der
+Abfrage-Tab bietet IQL für modellbasierte Abfragen und DuckDB-SQL für
+direkte SQL-Abfragen. Editor, Moduswahl, Ausführen, Abbrechen und
+Ergebnistabelle genügen. Für IQL kommen Vorschläge aus dem geprüften
+Modell, für SQL aus dem Katalog des geöffneten Datensatzes.
 
 ## 4 Visuelle Gestaltung
 
@@ -88,9 +96,10 @@ konkreten Eintrag und dessen Attribut zugeordnet. Das gilt auch für
 Ein gemeinsamer, zurückhaltender Zugang zur Kartenansicht genügt. Eingebettete
 Karten und automatische Miniaturkarten entfallen. Die Karte zeigt eine
 zusätzliche Sicht auf den Geometriewert, der Teil seines fachlichen
-Strukturwerts oder Objekts bleibt. Eine allfällige Linearisierung von
-Kreisbögen betrifft ausschliesslich die Darstellung. Die gespeicherten
-INTERLIS-Werte behalten ihre vollständige Geometriesemantik.
+Strukturwerts oder Objekts bleibt. Darstellung und räumliche Abfragen
+können dieselbe native DuckDB-Geometrie verwenden. Kreisbögen werden dort
+mit einer modellabhängigen Toleranz segmentiert. Die gespeicherten
+INTERLIS-Werte und der XTF-Export behalten ihre vollständige Geometriesemantik.
 
 ### 6.6 Einheitliches Darstellungsprinzip
 

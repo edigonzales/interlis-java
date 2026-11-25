@@ -1,7 +1,10 @@
 package guru.interlis.explorer.gui;
 
 import guru.interlis.explorer.DuckDbStore.StoredObject;
+import guru.interlis.explorer.ExplorerQueries;
+import guru.interlis.explorer.ExplorerQueries.Occurrence;
 import guru.interlis.model.SymbolKind;
+import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.ModelDescriptor;
 import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.TopicDescriptor;
@@ -14,6 +17,7 @@ import javax.swing.Box;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.Icon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -24,6 +28,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
 import javax.swing.KeyStroke;
@@ -65,8 +70,11 @@ import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.prefs.Preferences;
 
@@ -78,19 +86,26 @@ final class ExplorerFrame extends JFrame {
 
     private record Visit(long objectPosition, List<Integer> rowPath) {}
 
+    private record OpenedDataset(ExplorerDataset dataset, ExplorerQueries queries, ExplorerQueries.SqlCatalog catalog,
+                                 Set<SymbolRef> basketTopics) {}
+
     private final JButton back = new JButton("Back");
     private final ArrayDeque<Visit> history = new ArrayDeque<>();
     private final JButton open = new JButton("Open dataset…");
     private final JLabel status = new JLabel("Choose the local model files and an XTF 2.4 FULL transfer.");
     private final JTree tree = new JTree(new DefaultMutableTreeNode());
+    private final JCheckBox showAllModels = new JCheckBox("Show all models");
     private final JLabel classTitle = new JLabel("Select a class");
     private final JLabel count = new JLabel(" ");
     private final JList<StoredObject> objectList = new JList<>();
     private final JLabel objectTitle = new JLabel("Select an object");
     private final InspectorTableModel attributes = new InspectorTableModel();
     private final JTable inspector = inspectorTable();
+    private final JTabbedPane tabs = new JTabbedPane();
+    private final QueryPanel queryPanel = new QueryPanel(this::openQueryOccurrence);
 
     private ExplorerDataset dataset;
+    private Set<SymbolRef> basketTopics = Set.of();
     private boolean navigating;
     private volatile boolean closing;
 
@@ -100,11 +115,14 @@ final class ExplorerFrame extends JFrame {
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent event) {
+                if (closing) {
+                    return;
+                }
                 closing = true;
+                setVisible(false);
+                queryPanel.cancelQuery();
                 if (open.isEnabled()) {
                     closeWindow();
-                } else {
-                    status.setText("Closing dataset…");
                 }
             }
         });
@@ -161,7 +179,9 @@ final class ExplorerFrame extends JFrame {
             }
         });
 
-        var navigation = section(new JLabel("Model"), tree);
+        var navigation = section(new JLabel("Model"), tree, showAllModels);
+        showAllModels.setEnabled(false);
+        showAllModels.addActionListener(event -> refreshModelTree());
         var instances = section(classTitle, objectList);
         instances.add(count, BorderLayout.SOUTH);
         var inspection = section(objectTitle, inspector);
@@ -181,7 +201,10 @@ final class ExplorerFrame extends JFrame {
         var panel = new JPanel(new BorderLayout(0, 14));
         panel.setBorder(BorderFactory.createEmptyBorder(16, 18, 14, 18));
         panel.add(toolbar, BorderLayout.NORTH);
-        panel.add(content, BorderLayout.CENTER);
+        tabs.addTab("Objects", content);
+        tabs.addTab("Query", queryPanel);
+        tabs.addChangeListener(event -> back.setVisible(tabs.getSelectedIndex() == 0));
+        panel.add(tabs, BorderLayout.CENTER);
         panel.add(status, BorderLayout.SOUTH);
         setContentPane(panel);
         setMinimumSize(new Dimension(640, 470));
@@ -342,18 +365,29 @@ final class ExplorerFrame extends JFrame {
     }
 
     private static JPanel section(JLabel title, JComponent view) {
+        return section(title, view, null);
+    }
+
+    private static JPanel section(JLabel title, JComponent view, JComponent action) {
         title.setFont(title.getFont().deriveFont(Font.BOLD));
         title.putClientProperty("html.disable", true);
         var scroll = new JScrollPane(view);
         scroll.setBorder(BorderFactory.createEmptyBorder());
         var panel = new JPanel(new BorderLayout(0, 8));
         panel.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
-        panel.add(title, BorderLayout.NORTH);
+        if (action == null) {
+            panel.add(title, BorderLayout.NORTH);
+        } else {
+            var header = new JPanel(new BorderLayout(8, 0));
+            header.add(title, BorderLayout.WEST);
+            header.add(action, BorderLayout.EAST);
+            panel.add(header, BorderLayout.NORTH);
+        }
         panel.add(scroll, BorderLayout.CENTER);
         return panel;
     }
 
-    private static JSplitPane split(int direction, JComponent first, JComponent second, int divider, double weight) {
+    static JSplitPane split(int direction, JComponent first, JComponent second, int divider, double weight) {
         var pane = new JSplitPane(direction, first, second);
         pane.setBorder(BorderFactory.createEmptyBorder());
         pane.setDividerLocation(divider);
@@ -417,29 +451,45 @@ final class ExplorerFrame extends JFrame {
         var previousCursor = getCursor();
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         status.setText("Compiling models and importing " + xtf.getFileName() + "…");
-        new SwingWorker<ExplorerDataset, Void>() {
+        new SwingWorker<OpenedDataset, Void>() {
             @Override
-            protected ExplorerDataset doInBackground() throws Exception {
-                return ExplorerDataset.open(files, xtf, () -> closing);
+            protected OpenedDataset doInBackground() throws Exception {
+                var opened = ExplorerDataset.openWithSpatial(files, xtf, () -> closing);
+                try {
+                    var queries = new ExplorerQueries(opened.store());
+                    return new OpenedDataset(opened, queries, queries.sqlCatalog(), opened.store().basketTopics());
+                } catch (SQLException | RuntimeException | Error failure) {
+                    try {
+                        opened.close();
+                    } catch (IOException | SQLException cleanup) {
+                        failure.addSuppressed(cleanup);
+                    }
+                    throw failure;
+                }
             }
 
             @Override
             protected void done() {
                 setCursor(previousCursor);
                 try {
-                    var opened = get();
+                    var result = get();
+                    var opened = result.dataset();
                     if (closing) {
                         release(opened);
                     } else {
                         var previous = dataset;
                         dataset = opened;
+                        queryPanel.setDataset(result.queries(), result.catalog(), () -> release(previous));
                         history.clear();
                         back.setEnabled(false);
-                        tree.setModel(new DefaultTreeModel(modelTree(opened.plan())));
+                        basketTopics = result.basketTopics();
+                        showAllModels.setSelected(false);
+                        showAllModels.setEnabled(true);
+                        tree.setModel(new DefaultTreeModel(modelTree(opened.plan(), Optional.of(basketTopics))));
                         selectClass();
-                        status.setText("Opened " + xtf.getFileName());
+                        status.setText("Opened " + xtf.getFileName()
+                                + (basketTopics.isEmpty() ? " · No baskets in this transfer." : ""));
                         rememberTransferDirectory(xtf);
-                        release(previous);
                     }
                 } catch (ExecutionException failure) {
                     if (!closing) {
@@ -465,12 +515,14 @@ final class ExplorerFrame extends JFrame {
         }.execute();
     }
 
-    static DefaultMutableTreeNode modelTree(TransferPlan plan) {
+    static DefaultMutableTreeNode modelTree(TransferPlan plan, Optional<Set<SymbolRef>> visibleTopics) {
         var root = new DefaultMutableTreeNode();
         for (var model : plan.models()) {
             var modelNode = new DefaultMutableTreeNode(model);
-            root.add(modelNode);
             for (var topicRef : model.topics()) {
+                if (visibleTopics.isPresent() && !visibleTopics.orElseThrow().contains(topicRef)) {
+                    continue;
+                }
                 var topic = plan.topic(topicRef).orElseThrow();
                 var topicNode = new DefaultMutableTreeNode(topic);
                 modelNode.add(topicNode);
@@ -481,11 +533,76 @@ final class ExplorerFrame extends JFrame {
                     }
                 }
             }
+            if (visibleTopics.isEmpty() || modelNode.getChildCount() > 0) {
+                root.add(modelNode);
+            }
         }
         return root;
     }
 
+    private void refreshModelTree() {
+        if (closing || dataset == null) {
+            return;
+        }
+        var topics = showAllModels.isSelected() ? Optional.<Set<SymbolRef>>empty() : Optional.of(basketTopics);
+        var root = modelTree(dataset.plan(), topics);
+        boolean selectionKept;
+        navigating = true;
+        try {
+            selectionKept = replaceModelTree(tree, root);
+        } finally {
+            navigating = false;
+        }
+        if (!selectionKept) {
+            selectClass();
+        }
+    }
+
+    static boolean replaceModelTree(JTree tree, DefaultMutableTreeNode root) {
+        var oldRoot = new TreePath(tree.getModel().getRoot());
+        var descendants = tree.getExpandedDescendants(oldRoot);
+        var expanded = descendants == null ? List.<TreePath>of() : Collections.list(descendants);
+        var selected = tree.getSelectionPath();
+        tree.setModel(new DefaultTreeModel(root));
+        for (var path : expanded) {
+            var replacement = findPath(root, path);
+            if (replacement != null) {
+                tree.expandPath(replacement);
+            }
+        }
+        var replacement = selected == null ? null : findPath(root, selected);
+        if (replacement == null) {
+            return false;
+        }
+        tree.setSelectionPath(replacement);
+        tree.scrollPathToVisible(replacement);
+        return true;
+    }
+
+    private static TreePath findPath(DefaultMutableTreeNode root, TreePath path) {
+        var node = root;
+        for (int i = 1; i < path.getPathCount(); i++) {
+            var descriptor = ((DefaultMutableTreeNode) path.getPathComponent(i)).getUserObject();
+            var children = node.children();
+            node = null;
+            while (children.hasMoreElements()) {
+                var child = (DefaultMutableTreeNode) children.nextElement();
+                if (descriptor.equals(child.getUserObject())) {
+                    node = child;
+                    break;
+                }
+            }
+            if (node == null) {
+                return null;
+            }
+        }
+        return new TreePath(node.getPath());
+    }
+
     private void selectClass() {
+        if (closing || dataset == null) {
+            return;
+        }
         objectList.setListData(new StoredObject[0]);
         inspectObject();
         classTitle.setText("Select a class");
@@ -504,6 +621,9 @@ final class ExplorerFrame extends JFrame {
     }
 
     private void inspectObject() {
+        if (closing || dataset == null) {
+            return;
+        }
         var selected = objectList.getSelectedValue();
         if (selected == null) {
             attributes.clear();
@@ -574,7 +694,28 @@ final class ExplorerFrame extends JFrame {
         }
         history.pop();
         back.setEnabled(!history.isEmpty());
-        int row = attributes.reveal(visit.rowPath());
+        selectInspectorRow(attributes.reveal(visit.rowPath()));
+    }
+
+    private void openQueryOccurrence(Occurrence occurrence) {
+        if (!openOccurrence(occurrence.sourcePosition())) {
+            return;
+        }
+        tabs.setSelectedIndex(0);
+        if (occurrence.valuePath().isEmpty()) {
+            objectList.requestFocusInWindow();
+            return;
+        }
+        var selected = objectList.getSelectedValue();
+        int row = selected == null ? -1 : attributes.revealOccurrence(selected.object().data(), occurrence.valuePath());
+        if (row < 0) {
+            showError("Open in Inspector", "The result entry is unavailable.");
+        } else {
+            selectInspectorRow(row);
+        }
+    }
+
+    private void selectInspectorRow(int row) {
         if (row >= 0) {
             inspector.setRowSelectionInterval(row, row);
             inspector.scrollRectToVisible(inspector.getCellRect(row, 1, true));
@@ -583,10 +724,13 @@ final class ExplorerFrame extends JFrame {
     }
 
     private boolean openOccurrence(long position) {
+        if (closing || dataset == null) {
+            return false;
+        }
         try {
             var target = dataset.store().objectAt(position).orElse(null);
             if (target == null) {
-                showError("Open reference", "The target object is unavailable.");
+                showError("Open object", "The target object is unavailable.");
                 return false;
             }
             var type = dataset.plan().object(target.object().type()).orElseThrow();
@@ -608,9 +752,9 @@ final class ExplorerFrame extends JFrame {
                     return true;
                 }
             }
-            showError("Open reference", "The target is outside the class browser.");
+            showError("Open object", "The target is outside the class browser.");
         } catch (SQLException | RuntimeException failure) {
-            showError("Open reference", failure.getMessage());
+            showError("Open object", failure.getMessage());
         }
         return false;
     }
@@ -624,9 +768,13 @@ final class ExplorerFrame extends JFrame {
     }
 
     private void closeWindow() {
-        release(dataset);
+        var previous = dataset;
         dataset = null;
-        dispose();
+        open.setEnabled(false);
+        queryPanel.setDataset(null, null, () -> {
+            release(previous);
+            dispose();
+        });
     }
 
     private void release(ExplorerDataset toClose) {

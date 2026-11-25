@@ -132,6 +132,46 @@ final class InspectorTableModel extends AbstractTableModel {
         return -1;
     }
 
+    /** Resolves a stored value path before expanding any inspector rows. */
+    int revealOccurrence(TransferValue.Structured object, String valuePath) {
+        if (plan == null || !valuePath.startsWith("/")) {
+            return -1;
+        }
+        TransferValue value = object;
+        var path = new ArrayList<Integer>();
+        for (String segment : valuePath.substring(1).split("/", -1)) {
+            int index;
+            if (value instanceof TransferValue.Structured structure) {
+                var slots = attributeSlots(structure);
+                index = 0;
+                while (index < slots.size() && !slots.get(index).name().declared().toString().equals(segment)) {
+                    index++;
+                }
+                if (index == slots.size()) {
+                    return -1;
+                }
+                value = structure.value(slots.get(index).symbol()).orElse(null);
+            } else if (value instanceof TransferValue.Repeated repeated) {
+                try {
+                    index = Integer.parseInt(segment);
+                } catch (NumberFormatException invalid) {
+                    return -1;
+                }
+                if (index < 0 || index >= repeated.values().size() || !segment.equals(Integer.toString(index))) {
+                    return -1;
+                }
+                value = repeated.values().get(index);
+            } else {
+                return -1;
+            }
+            if (value == null) {
+                return -1;
+            }
+            path.add(index);
+        }
+        return reveal(path);
+    }
+
     boolean expanded(int row) {
         return row + 1 < rows.size() && depth(row + 1) > depth(row);
     }
@@ -160,13 +200,16 @@ final class InspectorTableModel extends AbstractTableModel {
 
     private List<Row> attributes(TransferValue.Structured structure, int depth, Map<Reference, Long> targets) {
         var result = new ArrayList<Row>();
-        for (var slot : plan.object(structure.type()).orElseThrow().slots()) {
-            if (slot instanceof AttributeSlot attribute) {
-                result.add(row(attribute.name().declared().last(), attribute.effectiveType(),
-                        structure.value(attribute.symbol()).orElse(null), depth, targets));
-            }
+        for (var attribute : attributeSlots(structure)) {
+            result.add(row(attribute.name().declared().last(), attribute.effectiveType(),
+                    structure.value(attribute.symbol()).orElse(null), depth, targets));
         }
         return result;
+    }
+
+    private List<AttributeSlot> attributeSlots(TransferValue.Structured structure) {
+        return plan.object(structure.type()).orElseThrow().slots().stream()
+                .filter(AttributeSlot.class::isInstance).map(AttributeSlot.class::cast).toList();
     }
 
     private List<Row> associationMembers(Association association) {

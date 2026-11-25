@@ -41,6 +41,26 @@ class Xtf24NamesTest {
     }
 
     @Test
+    void dmavProfileAcceptsRedundantTopicQualificationOnlyForTheDeclaringTopic() {
+        var plan = plan("""
+                INTERLIS 2.4;
+                MODEL Main AT "https://example.org" VERSION "1" =
+                  XMLNS "urn:main";
+                  TOPIC Data = CLASS Data = END Data; END Data;
+                END Main.
+                """, "Main");
+        var names = new Xtf24Names(plan);
+        var descriptor = object(plan, "Main", "Data", "Data");
+        var types = Set.of(descriptor.symbol());
+        var qualified = new QName("urn:main", "Data.Data");
+        assertEquals(new QName("urn:main", "Data"), names.objectName(descriptor));
+        assertSame(descriptor, names.objectOccurrence(qualified, types, Xtf24ReadProfile.DMAV_1_1));
+        assertThrows(Xtf24Exception.class, () -> names.objectOccurrence(qualified, types, Xtf24ReadProfile.STANDARD));
+        assertThrows(Xtf24Exception.class, () -> names.objectOccurrence(
+                new QName("urn:main", "Other.Data"), types, Xtf24ReadProfile.DMAV_1_1));
+    }
+
+    @Test
     void usesCanonicalNamesWithDeclaredPlanAndKeepsTranslationContext() {
         var plan = plan("""
                 INTERLIS 2.4;

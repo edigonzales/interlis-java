@@ -20,10 +20,14 @@ import guru.interlis.model.FormattedType;
 import guru.interlis.model.FunctionSymbol;
 import guru.interlis.model.GenericType;
 import guru.interlis.model.GeometryType;
+import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.MetaAttributeSet;
 import guru.interlis.model.NumericRange;
 import guru.interlis.model.NumericType;
+import guru.interlis.model.ObjectArgumentType;
 import guru.interlis.model.Origin;
+import guru.interlis.model.PathExpression;
+import guru.interlis.model.PathStep;
 import guru.interlis.model.ReferenceSegment;
 import guru.interlis.model.ReferenceType;
 import guru.interlis.model.ReferenceUsage;
@@ -487,15 +491,16 @@ final class ExpressionBindings {
     private ExpressionResult functionCallExpression(ExpressionId id,
                                                     FunctionCallExpressionSyntax syntax,
                                                     SymbolId owner) {
-        var selected=names.resolveName(index.byId(owner).orElseThrow(),syntax.functionName(),Set.of(SymbolKind.FUNCTION),true);
+        var declaration = index.byId(owner).orElseThrow();
+        var selected=names.resolveName(declaration,syntax.functionName(),Set.of(SymbolKind.FUNCTION),true);
         if(selected.target().map(state::symbol).filter(f->f instanceof FunctionSymbol && f.origin() instanceof Origin.PredefinedOrigin).isPresent())
             return builtinFunctionExpression(id,new BuiltinFunctionExpressionSyntax(syntax.id(),syntax.range(),syntax.functionName(),syntax.arguments()),owner);
         List<DiagnosticId> bindingErrors = new ArrayList<>();
-        Optional<SymbolId> target = names.bindTarget(index.byId(owner).orElseThrow(), syntax.functionName(),
+        Optional<SymbolId> target = names.bindTarget(declaration, syntax.functionName(),
                 Set.of(SymbolKind.FUNCTION), ReferenceUsage.EXPRESSION, bindingErrors);
         FunctionSymbol function = target.flatMap(index::byId).map(ensureSymbol::apply)
                 .filter(FunctionSymbol.class::isInstance).map(FunctionSymbol.class::cast).orElse(null);
-        List<ExpressionResult> arguments=new ArrayList<>(functions.arguments(function,syntax.arguments(),index.byId(owner).orElseThrow(),BuiltinFunctions.Rule.SIMPLE));
+        List<ExpressionResult> arguments=new ArrayList<>(functions.arguments(function,syntax.arguments(),declaration,BuiltinFunctions.Rule.SIMPLE));
         List<ExpressionId> children = arguments.stream().map(ExpressionResult::id).toList();
         boolean error = arguments.stream().anyMatch(ExpressionResult::error);
         TypeId type;
@@ -517,10 +522,7 @@ final class ExpressionBindings {
                 var actual = arguments.get(i);
                 TypeId expected = function.parameters().get(i).typeId();
                 actual=contextualValue(actual,expected,owner);arguments.set(i,actual);
-                if (!actual.error() && !(typeBindings.effectiveDescriptor(expected) instanceof guru.interlis.model.AttributePathType) && typeBindings.assignment(
-                        typeBindings.effectiveDescriptor(actual.typeId()), typeBindings.effectiveDescriptor(expected),
-                        guru.interlis.model.AssignmentContext.FUNCTION_ARGUMENT).decision()
-                        != guru.interlis.model.RelationDecision.ALLOWED) {
+                if (!actual.error() && !declaredArgumentMatches(actual, expected, declaration.language())) {
                     diagnostics.emitTypeMismatch(ownerSource(owner), syntax.arguments().get(i).range(),
                             typeBindings.typeName(actual.typeId()), typeBindings.typeName(expected));
                     error = true;
@@ -531,7 +533,7 @@ final class ExpressionBindings {
         if (!error) {
             var rule = functions.legacyAreaPaths(function, arguments) ? BuiltinFunctions.Rule.LEGACY_AREAS_TEXT
                     : BuiltinFunctions.Rule.SIMPLE;
-            bound = functions.bind(function,arguments,index.byId(owner).orElseThrow(),syntax.range(),rule);
+            bound = functions.bind(function,arguments,declaration,syntax.range(),rule);
             error = bound.error();
         }
         if (!error) type=functions.returnType(function,arguments,syntax.range());
@@ -540,6 +542,23 @@ final class ExpressionBindings {
                         : guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range(), children, syntax.functionName().text(), target,bound.paths()));
         return new ExpressionResult(id, type, error);
+    }
+
+    private boolean declaredArgumentMatches(ExpressionResult argument, TypeId expected, LanguageVersion language) {
+        var formal = typeBindings.effectiveDescriptor(expected);
+        var actual = typeBindings.effectiveDescriptor(argument.typeId());
+        if (formal instanceof guru.interlis.model.AttributePathType
+                || typeBindings.assignment(actual, formal, guru.interlis.model.AssignmentContext.FUNCTION_ARGUMENT)
+                        .decision() == guru.interlis.model.RelationDecision.ALLOWED) {
+            return true;
+        }
+        // ili2c accepts the current structure as a singleton for the unrestricted
+        // object-set parameter in DMAV's declared covers function.
+        return language == LanguageVersion.ILI24 && actual instanceof StructureValueType
+                && formal instanceof ObjectArgumentType objects && objects.objects()
+                && objects.base().isEmpty() && objects.restrictions().isEmpty()
+                && state.expression(argument.id()) instanceof PathExpression path
+                && path.path().steps().size() == 1 && path.path().steps().getFirst() instanceof PathStep.ThisStep;
     }
 
     private ExpressionResult literalExpression(ExpressionId id, LiteralExpressionSyntax syntax, SymbolId owner) {

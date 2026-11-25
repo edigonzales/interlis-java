@@ -36,13 +36,13 @@ final class Xtf24GeometryCodec {
     }
 
     TransferGeometry read(Xtf24Input input, TypeDescriptor type, Map<SymbolRef, TypeRef> concreteTypes,
-                          Consistency consistency) throws XMLStreamException {
+                          Consistency consistency, Xtf24ReadProfile profile) throws XMLStreamException {
         Set<String> allowed = allowed(type, concreteTypes, consistency);
         if (input.nextTag() != START_ELEMENT || !allowed.contains(input.cursor().getLocalName())
                 || !NAMESPACE.equals(input.cursor().getNamespaceURI())) {
             throw input.error(INVALID_WIRE, "Geometry element does not match the XTF field encoding");
         }
-        var value = new Reader(input).geometry();
+        var value = new Reader(input, profile).geometry();
         if (input.nextTag() != END_ELEMENT) {
             throw input.error(INVALID_WIRE, "Expected one geometry value in the XTF attribute");
         }
@@ -103,9 +103,11 @@ final class Xtf24GeometryCodec {
 
     private static final class Reader {
         private final Xtf24Input input;
+        private final Xtf24ReadProfile profile;
 
-        Reader(Xtf24Input input) {
+        Reader(Xtf24Input input, Xtf24ReadProfile profile) {
             this.input = input;
+            this.profile = profile;
         }
 
         TransferGeometry geometry() throws XMLStreamException {
@@ -194,18 +196,30 @@ final class Xtf24GeometryCodec {
         private Arc arc() throws XMLStreamException {
             attributes();
             startContents();
-            var end = position();
-            var a1 = number("a1");
-            input.nextTag();
-            var a2 = number("a2");
-            input.nextTag();
+            Coordinate end;
+            Coordinate support;
+            if (profile == Xtf24ReadProfile.DMAV_1_1 && at(START_ELEMENT, "a1")) {
+                support = support();
+                end = position();
+            } else {
+                end = position();
+                support = support();
+            }
             Optional<ArcRadius> radius = Optional.empty();
             if (at(START_ELEMENT, "r")) {
                 radius = Optional.of(new ArcRadius(number("r"), RadiusConvention.POSITIVE_SELECTED_BY_SUPPORT));
                 input.nextTag();
             }
             require(END_ELEMENT, "arc");
-            return new Arc(new Coordinate(List.of(a1, a2)), end, radius);
+            return new Arc(support, end, radius);
+        }
+
+        private Coordinate support() throws XMLStreamException {
+            var a1 = number("a1");
+            input.nextTag();
+            var a2 = number("a2");
+            input.nextTag();
+            return new Coordinate(List.of(a1, a2));
         }
 
         private Surface surface() throws XMLStreamException {

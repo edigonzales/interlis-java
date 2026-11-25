@@ -2,6 +2,7 @@ package guru.interlis.explorer;
 
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.QualifiedName;
+import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.TransferEvent.*;
 import guru.interlis.transfer.TransferIdentity.BasketId;
@@ -24,11 +25,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.Properties;
+import java.util.Set;
 
 /**
  * A single XTF 2.4 FULL transfer in a local DuckDB file. Use one caller at a time.
@@ -58,6 +61,7 @@ public final class DuckDbStore implements AutoCloseable {
     private final TransferPlan plan;
     private final StoreCodec codec;
     private final List<String> roleNames;
+    private final Spatial spatial;
 
     /** A stored occurrence and its database-local position, including occurrences without a TID or OID. */
     public record StoredObject(long position, TransferObject object) {}
@@ -68,10 +72,11 @@ public final class DuckDbStore implements AutoCloseable {
     /** An indexed reference and its database-local target position, if uniquely resolved. */
     public record ReferencePosition(Reference reference, OptionalLong targetPosition) {}
 
-    private DuckDbStore(String url, Connection connection, TransferPlan plan) {
+    private DuckDbStore(String url, Connection connection, TransferPlan plan, Spatial spatial) {
         this.url = url;
         this.connection = connection;
         this.plan = plan;
+        this.spatial = spatial;
         codec = new StoreCodec(plan);
         roleNames = plan.objects().stream().flatMap(type -> type.slots().stream())
                 .filter(RoleSlot.class::isInstance).map(slot -> slot.name().declared().toString())
@@ -80,10 +85,24 @@ public final class DuckDbStore implements AutoCloseable {
 
     /** Opens or creates a local DuckDB file. Both arguments are nonnull. */
     public static DuckDbStore open(Path file, TransferPlan plan) throws SQLException {
+        return open(file, plan, false);
+    }
+
+    /**
+     * Opens or creates a local DuckDB file, attempting to provision the signed
+     * Spatial extension if needed. A file with no persisted spatial index can
+     * still be used when the extension is unavailable.
+     */
+    public static DuckDbStore openWithSpatial(Path file, TransferPlan plan) throws SQLException {
+        return open(file, plan, true);
+    }
+
+    private static DuckDbStore open(Path file, TransferPlan plan, boolean provisionSpatial) throws SQLException {
         Objects.requireNonNull(plan, "plan");
         String url = "jdbc:duckdb:" + file.toAbsolutePath();
         var connection = DriverManager.getConnection(url);
         try (var statement = connection.createStatement()) {
+            Spatial spatial = loadSpatial(connection, provisionSpatial);
             statement.execute("""
                     CREATE TABLE IF NOT EXISTS transfer (
                         singleton BOOLEAN PRIMARY KEY CHECK (singleton), metadata JSON NOT NULL
@@ -109,15 +128,154 @@ public final class DuckDbStore implements AutoCloseable {
                         target_position BIGINT, PRIMARY KEY (source_position, position)
                     )
                     """);
+            var store = new DuckDbStore(url, connection, plan, spatial);
+            store.prepareProjections();
+            return store;
         } catch (SQLException | RuntimeException | Error failure) {
-            try {
-                connection.close();
-            } catch (SQLException cleanup) {
-                failure.addSuppressed(cleanup);
-            }
+            closeFailedOpen(connection, failure);
             throw failure;
         }
-        return new DuckDbStore(url, connection, plan);
+    }
+
+    /**
+     * Opens a previously prepared local store for inspection and bounded
+     * query previews. Close all writable connections to the file before calling this.
+     * External access and extension installation are disabled for this session.
+     */
+    public static DuckDbStore openReadOnly(Path file, TransferPlan plan) throws SQLException {
+        Objects.requireNonNull(plan, "plan");
+        String url = "jdbc:duckdb:" + file.toAbsolutePath();
+        var properties = new Properties();
+        properties.setProperty("access_mode", "READ_ONLY");
+        // The JDBC driver can cancel execution, but cannot interrupt a streaming result fetch.
+        properties.setProperty("jdbc_stream_results", "false");
+        var connection = DriverManager.getConnection(url, properties);
+        try (var statement = connection.createStatement()) {
+            Spatial spatial = loadSpatial(connection, false);
+            if (!StoreProjection.prepared(connection)) {
+                throw new SQLException("The explorer store has no committed query projections");
+            }
+            statement.execute("SET autoinstall_known_extensions = false");
+            statement.execute("SET autoload_known_extensions = false");
+            statement.execute("SET enable_external_access = false");
+            statement.execute("SET lock_configuration = true");
+            return new DuckDbStore(url, connection, plan, spatial);
+        } catch (SQLException | RuntimeException | Error failure) {
+            closeFailedOpen(connection, failure);
+            throw failure;
+        }
+    }
+
+    private record Spatial(boolean available, String diagnostic) {}
+
+    private static Spatial loadSpatial(Connection connection, boolean provision) {
+        try {
+            execute(connection, "LOAD spatial");
+            return new Spatial(true, null);
+        } catch (SQLException unavailable) {
+            if (!provision) {
+                return new Spatial(false, unavailable.getMessage());
+            }
+            try {
+                // A failed execution closes its DuckDB JDBC statement.
+                execute(connection, "INSTALL spatial FROM 'https://extensions.duckdb.org'");
+                execute(connection, "LOAD spatial");
+                return new Spatial(true, null);
+            } catch (SQLException installFailure) {
+                return new Spatial(false, installFailure.getMessage());
+            }
+        }
+    }
+
+    private static void execute(Connection connection, String sql) throws SQLException {
+        try (var statement = connection.createStatement()) {
+            statement.execute(sql);
+        }
+    }
+
+    private static void closeFailedOpen(Connection connection, Throwable failure) {
+        try {
+            connection.close();
+        } catch (SQLException cleanup) {
+            failure.addSuppressed(cleanup);
+        }
+    }
+
+    /** Returns whether this store can use DuckDB Spatial functions. */
+    public boolean spatialAvailable() {
+        return spatial.available();
+    }
+
+    /** Returns the engine diagnostic when DuckDB Spatial is unavailable. */
+    public Optional<String> spatialDiagnostic() {
+        return Optional.ofNullable(spatial.diagnostic());
+    }
+
+    Connection duplicateForQuery() throws SQLException {
+        requireOpen();
+        if (!connection.isReadOnly()) {
+            throw new SQLException("A query requires a read-only explorer store");
+        }
+        return connection.unwrap(DuckDBConnection.class).duplicate();
+    }
+
+    TransferPlan queryPlan() {
+        return plan;
+    }
+
+    private void prepareProjections() throws SQLException {
+        connection.setAutoCommit(false);
+        try {
+            StoreProjection.createSchema(connection);
+            if (header(connection).isPresent()) {
+                if (!StoreProjection.prepared(connection)) {
+                    backfillProjections();
+                } else if (spatial.available()) {
+                    execute(connection, "CREATE INDEX IF NOT EXISTS geometry_rtree ON geometry USING RTREE (geom)");
+                }
+            }
+            connection.commit();
+        } catch (SQLException | RuntimeException | Error failure) {
+            rollback(connection, failure);
+            throw failure;
+        } finally {
+            connection.setAutoCommit(true);
+        }
+    }
+
+    private void backfillProjections() throws SQLException {
+        var cancellation = CancellationToken.none();
+        try (var statement = connection.createStatement()) {
+            statement.execute("DELETE FROM reference");
+        }
+        try (var projection = new StoreProjection(connection, plan, codec, cancellation);
+             var query = connection.prepareStatement("""
+                     SELECT o.position, o.basket_position, o.type_name, o.fields, b.metadata
+                     FROM object o JOIN basket b ON b.position = o.basket_position
+                     WHERE o.position > ? ORDER BY o.position LIMIT 64
+                     """)) {
+            long position = 0;
+            long basket = 0;
+            boolean finished = false;
+            while (!finished) {
+                query.setLong(1, position);
+                long pageStart = position;
+                try (var rows = query.executeQuery()) {
+                    while (rows.next()) {
+                        long basketPosition = rows.getLong("basket_position");
+                        if (basket != basketPosition) {
+                            projection.startBasket(codec.basket(rows.getString("metadata")));
+                            basket = basketPosition;
+                        }
+                        position = rows.getLong("position");
+                        projection.project(position, codec.structure(rows.getString("type_name"), rows.getString("fields")));
+                    }
+                }
+                projection.flush();
+                finished = position == pageStart;
+            }
+        }
+        resolveProjections(connection, cancellation);
     }
 
     /**
@@ -131,6 +289,9 @@ public final class DuckDbStore implements AutoCloseable {
         }
         cancellation.throwIfCancellationRequested();
         requireOpen();
+        if (connection.isReadOnly()) {
+            throw new SQLException("Cannot import into a read-only explorer store");
+        }
         // Own this transaction separately so a failed import never affects later reads.
         try (var transaction = DriverManager.getConnection(url)) {
             transaction.setAutoCommit(false);
@@ -139,20 +300,29 @@ public final class DuckDbStore implements AutoCloseable {
                     throw new IllegalStateException("The store already contains a transfer");
                 }
                 ingest(transaction, reader, cancellation);
-                try (var statement = transaction.createStatement()) {
-                    statement.executeUpdate(RESOLVE_REFERENCES);
-                }
+                resolveProjections(transaction, cancellation);
                 cancellation.throwIfCancellationRequested();
                 transaction.commit();
             } catch (SQLException | RuntimeException | Error failure) {
-                try {
-                    transaction.rollback();
-                } catch (SQLException cleanup) {
-                    failure.addSuppressed(cleanup);
-                }
+                rollback(transaction, failure);
                 throw failure;
             }
         }
+    }
+
+    private static void rollback(Connection connection, Throwable failure) {
+        try {
+            connection.rollback();
+        } catch (SQLException cleanup) {
+            failure.addSuppressed(cleanup);
+        }
+    }
+
+    private void resolveProjections(Connection transaction, CancellationToken cancellation) throws SQLException {
+        try (var statement = transaction.createStatement()) {
+            statement.executeUpdate(RESOLVE_REFERENCES);
+        }
+        StoreProjection.finish(transaction, spatial.available(), cancellation);
     }
 
     private void ingest(Connection transaction, TransferReader reader, CancellationToken cancellation) throws SQLException {
@@ -160,7 +330,7 @@ public final class DuckDbStore implements AutoCloseable {
         try (var transfer = transaction.prepareStatement("INSERT INTO transfer VALUES (true, ?)");
              var basket = transaction.prepareStatement("INSERT INTO basket VALUES (?, ?, ?)");
              var object = duckdb.createAppender("object");
-             var reference = duckdb.createAppender("reference")) {
+             var projection = new StoreProjection(transaction, plan, codec, cancellation)) {
             long basketPosition = 0;
             long objectPosition = 0;
             boolean started = false;
@@ -187,9 +357,16 @@ public final class DuckDbStore implements AutoCloseable {
                         basket.setString(2, start.id().value());
                         basket.setString(3, codec.basket(start).toString());
                         basket.executeUpdate();
+                        projection.startBasket(start);
                     }
-                    case ObjectEvent occurrence -> insertObject(object, reference, ++objectPosition, basketPosition,
-                            occurrence, cancellation);
+                    case ObjectEvent occurrence -> {
+                        insertObject(object, ++objectPosition, basketPosition, occurrence);
+                        projection.project(objectPosition, occurrence.object().data());
+                        if (objectPosition % 256 == 0) {
+                            object.flush();
+                            projection.flush();
+                        }
+                    }
                     case EndBasket ignored -> {}
                     case EndTransfer ignored -> {}
                 }
@@ -199,19 +376,18 @@ public final class DuckDbStore implements AutoCloseable {
             }
             // DuckDB JDBC 2.0.1.0 suppresses flush failures in Appender.close().
             object.flush();
-            reference.flush();
+            projection.flush();
         }
     }
 
-    private void insertObject(DuckDBAppender object, DuckDBAppender reference, long position, long basketPosition,
-                              ObjectEvent occurrence, CancellationToken cancellation) throws SQLException {
+    private void insertObject(DuckDBAppender object, long position, long basketPosition, ObjectEvent occurrence)
+            throws SQLException {
         if (occurrence.operation().isPresent()) {
             throw new IllegalArgumentException("The store does not support incremental object operations");
         }
         var value = occurrence.object();
         var identity = value.identity();
-        var links = new ArrayList<Map.Entry<String, Reference>>();
-        var fields = codec.fields(value.data(), (slot, target) -> links.add(Map.entry(slot, target)));
+        var fields = codec.fields(value.data());
         object.beginRow()
                 .append(position)
                 .append(basketPosition)
@@ -223,27 +399,31 @@ public final class DuckDbStore implements AutoCloseable {
                 .append(fields.toString())
                 .endRow();
 
-        int index = 0;
-        for (var link : links) {
-            cancellation.throwIfCancellationRequested();
-            var target = link.getValue();
-            reference.beginRow()
-                    .append(position)
-                    .append(++index)
-                    .append(link.getKey())
-                    .append(StoreCodec.reference(target).toString())
-                    .append(target.target().value())
-                    .append(!(target.target() instanceof TransferId))
-                    .append(target.targetBasket().map(BasketId::value).orElse(null))
-                    .append(target.external())
-                    .appendNull() // target_position is set by reference resolution.
-                    .endRow();
-        }
     }
 
     /** Returns whether the file contains a committed transfer, including one with no baskets. */
     public boolean hasTransfer() throws SQLException {
         return header(connection).isPresent();
+    }
+
+    /**
+     * Returns the nonnull, immutable set of primary and additional topics from
+     * stored baskets, including empty baskets. References belong to this store's
+     * transfer plan snapshot. Iteration order is unspecified.
+     * @throws IllegalArgumentException if a basket declaration cannot be bound to the plan
+     * @throws SQLException if the query fails
+     */
+    public Set<SymbolRef> basketTopics() throws SQLException {
+        var topics = new HashSet<SymbolRef>();
+        try (var statement = connection.createStatement();
+             var rows = statement.executeQuery("SELECT metadata FROM basket")) {
+            while (rows.next()) {
+                var basket = codec.basket(rows.getString("metadata"));
+                topics.add(basket.topic());
+                topics.addAll(basket.additionalTopics());
+            }
+        }
+        return Set.copyOf(topics);
     }
 
     /** Returns all occurrences of the exact declared type in transfer order. */

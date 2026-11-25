@@ -20,6 +20,7 @@ import javax.xml.stream.XMLStreamException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -34,14 +35,17 @@ final class Xtf24ValueReader {
     private final Xtf24Limits limits;
     private final Xtf24References references;
     private final Xtf24GeometryCodec geometry;
+    private final Xtf24ReadProfile profile;
     private Consistency consistency = Consistency.COMPLETE;
 
-    Xtf24ValueReader(guru.interlis.transfer.TransferPlan plan, Xtf24Input input, Xtf24Layout layout, Xtf24Limits limits) {
+    Xtf24ValueReader(guru.interlis.transfer.TransferPlan plan, Xtf24Input input, Xtf24Layout layout,
+                     Xtf24Limits limits, Xtf24ReadProfile profile) {
         this.input = input;
         this.layout = layout;
         this.limits = limits;
         references = new Xtf24References(limits);
         geometry = new Xtf24GeometryCodec(plan, layout);
+        this.profile = profile;
     }
 
     void basketConsistency(Consistency consistency) {
@@ -99,7 +103,11 @@ final class Xtf24ValueReader {
                 var element = layout.type(new TypeRef(attribute.symbol().snapshot(), collection.elementType()), concreteTypes);
                 var items = new ArrayList<TransferValue>();
                 do {
-                    items.add(readValue(element, object.model(), concreteTypes, structureTypes, activeTypes));
+                    if (profile == Xtf24ReadProfile.DMAV_1_1 && element instanceof StructureValueType structureType) {
+                        readStructureItems(items, structureType, object.model(), concreteTypes, structureTypes, activeTypes);
+                    } else {
+                        items.add(readValue(element, object.model(), concreteTypes, structureTypes, activeTypes));
+                    }
                     event = input.nextTag();
                 } while (event == START_ELEMENT && input.cursor().getName().equals(name));
                 values.put(attribute.symbol(), new Repeated(collection.collectionKind(), items));
@@ -176,17 +184,10 @@ final class Xtf24ValueReader {
         }
         return switch (type.kind()) {
             case BLACKBOX -> Xtf24Blackbox.read(input, (BlackboxType) type);
-            case COORDINATE, GEOMETRY -> geometry.read(input, type, concreteTypes, consistency);
+            case COORDINATE, GEOMETRY -> geometry.read(input, type, concreteTypes, consistency, profile);
             case STRUCTURE_VALUE -> {
-                if (input.nextTag() != START_ELEMENT) {
-                    throw input.error(INVALID_WIRE, "Expected one structure element");
-                }
-                var structure = layout.structure(input.cursor().getName(), structureTypes,
-                        (StructureValueType) type, containingModel);
-                if (input.cursor().getAttributeCount() != 0) {
-                    throw input.error(UNSUPPORTED, "Unexpected attribute on XTF structure");
-                }
-                var value = read(structure, concreteTypes, structureTypes, activeTypes);
+                input.nextTag();
+                var value = readStructure((StructureValueType) type, containingModel, concreteTypes, structureTypes, activeTypes);
                 if (input.nextTag() != END_ELEMENT) {
                     throw input.error(INVALID_WIRE, "Expected exactly one structure element");
                 }
@@ -196,5 +197,33 @@ final class Xtf24ValueReader {
                     Xtf24Scalars.read(type, input.text(), limits);
             default -> throw input.error(UNSUPPORTED, "XTF 2.4 value type " + type.kind());
         };
+    }
+
+    private void readStructureItems(List<TransferValue> items, StructureValueType type, SymbolRef containingModel,
+            Map<SymbolRef, TypeRef> concreteTypes, Set<SymbolRef> structureTypes, Set<SymbolRef> activeTypes)
+            throws XMLStreamException {
+        if (input.cursor().getAttributeCount() != 0) {
+            throw input.error(UNSUPPORTED, "Unexpected attribute on XTF value element");
+        }
+        input.nextTag();
+        do {
+            items.add(readStructure(type, containingModel, concreteTypes, structureTypes, activeTypes));
+        } while (input.nextTag() == START_ELEMENT);
+        if (input.cursor().getEventType() != END_ELEMENT) {
+            throw input.error(INVALID_WIRE, "Expected the end of a structure collection attribute");
+        }
+    }
+
+    private Structured readStructure(StructureValueType type, SymbolRef containingModel,
+            Map<SymbolRef, TypeRef> concreteTypes, Set<SymbolRef> structureTypes, Set<SymbolRef> activeTypes)
+            throws XMLStreamException {
+        if (input.cursor().getEventType() != START_ELEMENT) {
+            throw input.error(INVALID_WIRE, "Expected one structure element");
+        }
+        var structure = layout.structure(input.cursor().getName(), structureTypes, type, containingModel);
+        if (input.cursor().getAttributeCount() != 0) {
+            throw input.error(UNSUPPORTED, "Unexpected attribute on XTF structure");
+        }
+        return read(structure, concreteTypes, structureTypes, activeTypes);
     }
 }

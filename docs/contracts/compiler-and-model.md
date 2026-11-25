@@ -859,13 +859,16 @@ leerem `domain` bezeichnet explizites NO OID. Fehlgeschlagene Bindung darf
 nicht als NO OID erscheinen. Vererbte Regeln und Topic-Defaults behalten ihre
 ursprüngliche Herkunft; Klassen übernehmen ausschliesslich Objektregeln.
 Strukturen erhalten keine OID-Regeln. Nur in 2.4 bedeutet eine fehlende
-Klassen-/Topic-Festlegung implizites NO OID; dessen Vererbung folgt dann
-denselben Konkretisierungsregeln wie explizites NO OID. INTERLIS.NOOID steht
-nur in 2.4 zur Verfügung. In 2.3 darf eine noch fehlende Festlegung ergänzt,
-ein ausdrücklich geerbtes NO OID jedoch nicht in ANYOID geändert werden.
-In 2.4 ist die Klassen-Konkretisierung NO OID → ANYOID → konkrete OID möglich;
-ein direkter Sprung von NO OID zur konkreten OID ist unzulässig. Eine einmal
-zugewiesene Topic-OID bleibt in beiden Versionen unverändert. Die eingebaute
+Klassen-/Topic-Festlegung implizites NO OID für die Objektidentifikation.
+Eine abgeleitete Klasse darf in beiden Sprachfassungen erstmals eine
+konkrete OID festlegen, wenn sie keine vorhandene Objektregel von der
+Basisklasse übernimmt. Das gilt auch für `EXTENDED` in einem erweiterten
+Topic ([CHBase-Kompatibilität](norm-decisions.md#decision-38)).
+INTERLIS.NOOID steht nur in 2.4 zur Verfügung. Für eine ausdrücklich
+geerbte NO-OID-Regel ist in 2.4 die Konkretisierung über ANYOID möglich.
+Sie ist Voraussetzung für den Übergang zur konkreten OID. In 2.3 bleibt die
+ausdrücklich geerbte NO-OID-Regel bestehen. Eine einmal zugewiesene
+Topic-OID bleibt in beiden Versionen unverändert. Die eingebaute
 NOOID-Domäne kann nicht durch beliebige eigene OID-Domänen erweitert werden.
 Domänenziele müssen OID-Typen sein. In 2.3 verlangen explizite OID-AS-Angaben
 CONTRACTED; 2.4 hat diese Pflicht aufgehoben. Die Regeln für unveränderliche

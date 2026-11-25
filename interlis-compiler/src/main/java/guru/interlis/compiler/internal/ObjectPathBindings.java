@@ -16,6 +16,7 @@ import guru.interlis.model.CoordinateType;
 import guru.interlis.model.ErrorType;
 import guru.interlis.model.ExpressionId;
 import guru.interlis.model.GeometryType;
+import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.NumericType;
 import guru.interlis.model.Origin;
 import guru.interlis.model.ReferenceType;
@@ -139,6 +140,13 @@ final class ObjectPathBindings {
 
     ExpressionResult valuePath(PathExpressionSyntax syntax, SymbolId owner, SymbolId start) {
         return pathExpression(expressions.get().nextExpressionId(), syntax, owner, start, false, PathContext.FUNCTION_PATH);
+    }
+
+    ExpressionResult existencePath(PathExpressionSyntax syntax, DeclInfo owner, SymbolId start) {
+        // INTERLIS 2.4 existence constraints compare the terminal attributes of
+        // repeated structures, as used by CHBase's CountryNamesTranslation.
+        var context = owner.language() == LanguageVersion.ILI24 ? PathContext.EXISTENCE : PathContext.VALUE;
+        return pathExpression(expressions.get().nextExpressionId(), syntax, owner.id(), start, false, context);
     }
 
     ExpressionResult inspectionPath(PathExpressionSyntax syntax, SymbolId owner, SymbolId start) {
@@ -620,5 +628,5 @@ final class ObjectPathBindings {
 
     private record RoleAccess(SymbolId association, RoleSymbol source, Optional<RoleSymbol> target) { }
 
-    private enum PathContext { VALUE, INSPECTION, FUNCTION_PATH }
+    private enum PathContext { VALUE, INSPECTION, FUNCTION_PATH, EXISTENCE }
 }

@@ -4,6 +4,7 @@ import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
 
 import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -14,13 +15,14 @@ import java.io.InputStream;
 import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 
 import static guru.interlis.xtf24.Xtf24Exception.Reason.*;
 import static javax.xml.stream.XMLStreamConstants.*;
 
 /** Secure cursor over the XTF XML stream. */
-final class Xtf24Input {
+final class Xtf24Input implements AutoCloseable {
     private static final int MAX_ATTRIBUTES = 64;
 
     private final BorrowedInput input;
@@ -92,6 +94,29 @@ final class Xtf24Input {
 
     XMLStreamReader cursor() {
         return xml;
+    }
+
+    boolean at(int token, QName name) {
+        return xml.getEventType() == token && xml.getName().equals(name);
+    }
+
+    void require(int token, QName name) {
+        if (!at(token, name)) {
+            throw error(INVALID_WIRE, "Expected " + name);
+        }
+    }
+
+    void nextStart(QName name) throws XMLStreamException {
+        nextTag();
+        require(START_ELEMENT, name);
+    }
+
+    void requireAttributes(Set<QName> supported) {
+        for (int i = 0; i < xml.getAttributeCount(); i++) {
+            if (!supported.contains(xml.getAttributeName(i))) {
+                throw error(UNSUPPORTED, "Attribute is outside the XTF 2.4 wire profile");
+            }
+        }
     }
 
     void beginObject() {
@@ -258,7 +283,8 @@ final class Xtf24Input {
         }
     }
 
-    void close() {
+    @Override
+    public void close() {
         if (xml != null) {
             try {
                 xml.close();

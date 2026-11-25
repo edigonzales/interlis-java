@@ -147,11 +147,46 @@ class FormatPrecisionOidBindingContractTest {
             bad(version,"TOPIC T = NO OID; END T;");
             ok(version,"TOPIC T = OID AS INTERLIS.UUIDOID; STRUCTURE S = END S; CLASS A EXTENDS S = NO OID; END A; END T;");
             String implicit = "TOPIC T = CLASS A = END A; CLASS B EXTENDS A = OID AS INTERLIS.UUIDOID; END B; END T;";
-            if (version.equals("2.3")) ok(version,implicit); else bad(version,implicit);
+            var withFirstAssignment = ok(version, implicit).schema().semanticGraph();
+            assertTrue(symbol(withFirstAssignment, "A").header().oidRules().isEmpty());
+            var firstDomain = symbol(withFirstAssignment, "B").header().oidRules().getFirst().domain().orElseThrow();
+            assertEquals("INTERLIS.UUIDOID", withFirstAssignment.symbol(firstDomain).orElseThrow().name().value());
             String abstractChild = "TOPIC T = CLASS A = END A; CLASS B (ABSTRACT) EXTENDS A = OID AS INTERLIS.ANYOID; END B; END T;";
             bad(version,abstractChild);
             ok(version,abstractChild.replace("TOPIC T =", "TOPIC T (ABSTRACT) ="));
         }
+    }
+
+    @Test void extendedTopicCanIntroduceTheFirstClassOidAsInChBase() {
+        String modelBody = """
+                TOPIC AdministrativeUnits (ABSTRACT) =
+                  CLASS AdministrativeUnion =
+                  END AdministrativeUnion;
+                END AdministrativeUnits;
+                TOPIC CHAdministrativeUnions EXTENDS AdministrativeUnits =
+                  CLASS AdministrativeUnion (EXTENDED) =
+                    OID AS INTERLIS.UUIDOID;
+                  END AdministrativeUnion;
+                END CHAdministrativeUnions;
+                """;
+        var schema = ok("2.4", modelBody).schema();
+        var graph = schema.semanticGraph();
+        var baseRef = schema.queries().findQualifiedName(
+                QualifiedName.of("F", "AdministrativeUnits", "AdministrativeUnion")).getFirst();
+        var extensionRef = schema.queries().findQualifiedName(
+                QualifiedName.of("F", "CHAdministrativeUnions", "AdministrativeUnion")).getFirst();
+        var base = assertInstanceOf(ClassSymbol.class, graph.symbol(baseRef.symbol()).orElseThrow());
+        var extension = assertInstanceOf(ClassSymbol.class, graph.symbol(extensionRef.symbol()).orElseThrow());
+        assertEquals(Optional.of(base.id()), extension.baseType());
+        assertTrue(base.header().oidRules().isEmpty());
+        assertTrue(symbol(graph, "AdministrativeUnits").header().oidRules().isEmpty());
+        assertTrue(symbol(graph, "CHAdministrativeUnions").header().oidRules().isEmpty());
+        var rules = extension.header().oidRules();
+        assertEquals(1, rules.size());
+        var rule = rules.getFirst();
+        assertFalse(rule.basket());
+        assertInstanceOf(Origin.DeclaredOrigin.class, rule.origin());
+        assertEquals("INTERLIS.UUIDOID", graph.symbol(rule.domain().orElseThrow()).orElseThrow().name().value());
     }
 
     @Test void translatedOidRulesCompareMappedIdentitiesInsteadOfEqualCarrierTypes() {

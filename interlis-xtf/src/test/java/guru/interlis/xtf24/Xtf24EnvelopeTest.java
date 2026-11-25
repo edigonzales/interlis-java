@@ -50,6 +50,18 @@ class Xtf24EnvelopeTest {
     }
 
     @Test
+    void readsOrderedModelNamesWithoutAPlanAndRejectsBlankAndDuplicateNames() {
+        var xml = document("", "").replace("<i:model>Main</i:model>",
+                "<i:model> Main </i:model><i:model>Other</i:model>");
+        assertEquals(List.of("Main", "Other"), Xtf24Reader.readModelNames(
+                new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)), TOKEN));
+        for (var malformed : List.of(xml.replace("Other", "Main"), xml.replace(">Other</i:model>", "></i:model>"))) {
+            assertEquals(Xtf24Exception.Reason.INVALID_WIRE, assertThrows(Xtf24Exception.class,
+                    () -> Xtf24Reader.readModelNames(new ByteArrayInputStream(malformed.getBytes(StandardCharsets.UTF_8)), TOKEN)).reason());
+        }
+    }
+
+    @Test
     void rejectsDuplicateUnknownAndWrongVersionHeaders() {
         var plan = plan(SOURCE, "Main");
         var valid = document("", "");
@@ -207,8 +219,13 @@ class Xtf24EnvelopeTest {
     }
 
     static List<TransferEvent> read(TransferPlan plan, String xml) {
+        return read(plan, xml, Xtf24ReadProfile.STANDARD);
+    }
+
+    static List<TransferEvent> read(TransferPlan plan, String xml, Xtf24ReadProfile profile) {
         var events = new ArrayList<TransferEvent>();
-        try (var reader = new Xtf24Reader(plan, new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)))) {
+        try (var reader = new Xtf24Reader(plan, new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)),
+                Optional.empty(), Xtf24Limits.defaults(), profile)) {
             for (var event = reader.readNext(TOKEN); event.isPresent(); event = reader.readNext(TOKEN)) {
                 events.add(event.orElseThrow());
             }
