@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -157,6 +158,7 @@ class ExplorerTest {
             assertEquals(QualifiedName.of("Reference24", "Data", "Item"), item.name().declared());
             var objects = dataset.objects(item);
             assertEquals(1, objects.size());
+            assertEquals("TID i1", ExplorerDataset.objectLabel(objects.getFirst()));
             var object = objects.getFirst().object();
             assertEquals("i1", object.identity().tid().orElseThrow().value());
             var inspector = new InspectorTableModel();
@@ -441,6 +443,50 @@ class ExplorerTest {
             assertEquals(new DataLocation.Slot(peer.slots().stream().filter(slot -> slot.name().declared().last().equals("shape"))
                     .findFirst().orElseThrow().symbol()), finding.data().path().getFirst());
             assertEquals(transfer.toUri().toString(), finding.data().source().orElseThrow().value());
+        }
+    }
+
+    @Test
+    void opensExternalReferenceBeyondTheRegularObjectList() throws Exception {
+        var model = Files.writeString(temp.resolve("Navigation.ili"), """
+                INTERLIS 2.4;
+                MODEL Navigation AT "https://example.org" VERSION "1" =
+                  TOPIC Data =
+                    CLASS Target = OID AS INTERLIS.UUIDOID; END Target;
+                    CLASS Source =
+                      local : REFERENCE TO Target;
+                      remote : REFERENCE TO (EXTERNAL) Target;
+                    END Source;
+                  END Data;
+                END Navigation.
+                """);
+        String oid = "00000000-0000-4000-8000-%012d";
+        String targets = IntStream.rangeClosed(1, 101)
+                .mapToObj(index -> "<Target i:tid=\"" + oid.formatted(index) + "\"/>").collect(Collectors.joining());
+        var transfer = Files.writeString(temp.resolve("navigation.xtf"), """
+                <i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
+                    xmlns="http://www.interlis.ch/xtf/2.4/Navigation">
+                  <i:headersection><i:models><i:model>Navigation</i:model></i:models><i:sender>fixture</i:sender></i:headersection>
+                  <i:datasection><Data i:bid="source">
+                    <Source i:tid="s1"><local i:ref="%s"/><remote i:ref="%s"/></Source>
+                  </Data><Data i:bid="targets">%s</Data></i:datasection>
+                </i:transfer>
+                """.formatted(oid.formatted(101), oid.formatted(101), targets));
+        try (var dataset = ExplorerDataset.open(List.of(model), transfer, RUN)) {
+            var source = dataset.objects(type(dataset, "Navigation", "Source")).getFirst();
+            var inspector = new InspectorTableModel();
+            show(dataset, inspector, source);
+            assertEquals(List.of(Map.entry("local", "OID " + oid.formatted(101)),
+                    Map.entry("remote", "OID " + oid.formatted(101))), rows(inspector));
+            assertEquals(OptionalLong.empty(), inspector.target(0));
+            var target = dataset.store().objectAt(inspector.target(1).orElseThrow()).orElseThrow();
+            assertEquals(oid.formatted(101), target.object().identity().oid().orElseThrow().value());
+            var targetType = type(dataset, "Navigation", "Target");
+            assertEquals(100, dataset.objects(targetType).size());
+            var listed = dataset.objectsIncluding(targetType, target);
+            assertEquals(101, listed.size());
+            assertEquals(target, listed.getLast());
+            assertEquals(100, dataset.objectsIncluding(targetType, listed.getFirst()).size());
         }
     }
 

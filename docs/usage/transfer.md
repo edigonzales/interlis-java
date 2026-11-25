@@ -324,9 +324,10 @@ Topic sichtbar. Mit **Show all models** blendest du den vollständigen
 Modellbaum ein. Wähle eine Klasse oder eine Assoziation mit eigenständigen
 Vorkommen und danach ein Objekt. Die Liste zeigt bis zu 100 Instanzen des
 gewählten Typs in Transferreihenfolge. Bei Assoziationen ohne TID oder OID
-zeigt die Zeile die Transferposition, Rollennamen und Zielkennungen.
-Der Inspektor zeigt die Attribute in effektiver
-Modellreihenfolge. Ein Klick auf ein aufklappbares Attribut oder die
+zeigt die Zeile die Transferposition, Rollennamen und Zielkennungen,
+etwa **Object 4  source → TID first, destination → OID …**. Der Tooltip
+zeigt die vollständige Zeile. Der Inspektor zeigt die Attribute in
+effektiver Modellreihenfolge. Ein Klick auf ein aufklappbares Attribut oder die
 Leertaste auf seiner Zeile zeigt Struktur- und Sammlungseinträge direkt
 darunter. LIST-Einträge sind nummeriert. BAG-Einträge behalten Duplikate
 und erscheinen ohne Nummer. Mit **⌘C** unter macOS bzw. **Strg+C** auf den
@@ -511,6 +512,12 @@ Vorkommen ohne TID oder OID bleiben über `objects(type)` zugänglich.
 exakten Typs in Transferreihenfolge. `objectAt(position)` öffnet ein
 Vorkommen direkt. `referencePositions(sourcePosition)` liefert die
 indizierten Referenzen mit ihren aufgelösten Positionen.
+`storedObjectTypes()` liefert die deklarierten Namen der als eigenständige
+Objekte gespeicherten Typen. `resolvedReferences(positions, slots)` liest
+aufgelöste Zielpositionen gebündelt für Quellpositionen und Slots.
+`objectContext(position)` liefert den originalen Basketheader und die
+Konsistenz des Objekt-Ereignisses. Die Symbolreferenzen gehören zum
+Transferplan des geöffneten Speichers.
 `incomingRoleSources(targetPosition, limit)` liefert bis zum angegebenen
 Limit die Quellvorkommen eingehender Assoziationsrollen in
 Transferreihenfolge. Die Positionsnummern gelten innerhalb der Datei.

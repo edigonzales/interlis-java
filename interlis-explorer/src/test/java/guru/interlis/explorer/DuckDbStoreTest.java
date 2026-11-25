@@ -102,6 +102,10 @@ class DuckDbStoreTest {
             assertEquals(PARENT_ROLE, link.slot());
             assertEquals(relation.value(symbol(plan, PARENT_ROLE)).orElseThrow(), link.reference());
             assertEquals(Optional.of(parent), link.target());
+            assertEquals(List.of(new DuckDbStore.ResolvedReference(item.position(), PARENT_ROLE, link.reference(),
+                            parent.position())),
+                    store.resolvedReferences(Set.of(item.position(), parent.position()), Set.of(PARENT_ROLE)));
+            assertTrue(store.resolvedReferences(Set.of(item.position()), Set.of(ITEM.child("required"))).isEmpty());
             assertEquals(List.of(item), store.incoming(parent.position()));
 
             var output = new ByteArrayOutputStream();
@@ -406,6 +410,7 @@ class DuckDbStoreTest {
             assertEquals(1, unresolved.size());
             assertEquals(new TransferId("missing", IdOrigin.SOURCE), unresolved.getFirst().reference().target());
             assertTrue(unresolved.getFirst().target().isEmpty());
+            assertTrue(store.resolvedReferences(Set.of(item.position()), Set.of(PARENT_ROLE)).isEmpty());
 
             try (var input = Files.newInputStream(fixture("geometry.xtf"));
                  var reader = new Xtf24Reader(plan, input)) {
