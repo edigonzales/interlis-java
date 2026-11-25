@@ -649,7 +649,7 @@ final class DbMapping {
         var roots = storageRoots(plan, crsPair);
         var objects = storageObjects(plan, roots, token);
         checkBasketLayout(plan, objects, schemaOptions);
-        checkLayout(plan, objects, profile);
+        checkLayout(plan, objects);
         var wrappedGeometries = DbWrappedGeometry.plan(plan, objects, transformations);
         var geometryComponents = wrappedGeometries.values().stream().map(binding -> binding.component().symbol())
                 .collect(Collectors.toSet());
@@ -840,7 +840,7 @@ final class DbMapping {
         }
     }
 
-    static void checkLayout(TransferPlan plan, List<ObjectDescriptor> objects, DbInheritance.Profile profile) {
+    static void checkLayout(TransferPlan plan, List<ObjectDescriptor> objects) {
         if (objects.stream().noneMatch(object -> object.kind() == SymbolKind.CLASS && object.topic().isPresent())) {
             throw unsupported("expected a selected model containing classes in topics");
         }
@@ -882,7 +882,7 @@ final class DbMapping {
                 throw unsupported("class layout or identity rules for " + object.name().declared());
             }
         }
-        if (!hierarchy.isEmpty()) checkInheritance(plan, objects, hierarchy, profile);
+        if (!hierarchy.isEmpty()) checkInheritance(plan, objects, hierarchy);
     }
 
     static void checkBasketLayout(TransferPlan plan, List<ObjectDescriptor> objects,
@@ -957,8 +957,7 @@ final class DbMapping {
         return association.slots().stream().filter(RoleSlot.class::isInstance).map(RoleSlot.class::cast).toList();
     }
 
-    private static void checkInheritance(TransferPlan plan, List<ObjectDescriptor> objects, Set<SymbolRef> hierarchy,
-                                         DbInheritance.Profile profile) {
+    private static void checkInheritance(TransferPlan plan, List<ObjectDescriptor> objects, Set<SymbolRef> hierarchy) {
         for (var object : objects) {
             if (!hierarchy.contains(object.symbol())) continue;
             boolean catalogueWrapper = object.kind() == SymbolKind.STRUCTURE && DbCatalogueReference.isWrapper(plan, object);
@@ -973,7 +972,7 @@ final class DbMapping {
                 boolean multilingual = DbTextExpansion.isInheritedCollection(plan, object, attribute);
                 if (attribute.member().overridden() && !multilingual
                         && !(catalogueWrapper && DbCatalogueReference.isReferenceField(attribute))
-                        && !supportsExtendedClassAttribute(plan, object, attribute, profile)) {
+                        && !supportsExtendedClassAttribute(plan, object, attribute)) {
                     throw unsupported("extended attribute in inheritance at " + attribute.name().declared());
                 }
                 if (object.kind() != SymbolKind.STRUCTURE || attribute.attribute().transientAttribute()) continue;
@@ -986,11 +985,11 @@ final class DbMapping {
     }
 
     private static boolean supportsExtendedClassAttribute(TransferPlan plan, ObjectDescriptor object,
-                                                          AttributeSlot attribute, DbInheritance.Profile profile) {
+                                                          AttributeSlot attribute) {
         if (object.kind() != SymbolKind.CLASS || attribute.attribute().transientAttribute()) return false;
         var type = plan.type(attribute.effectiveType()).known().orElseThrow();
         if (type instanceof TextType text) return text.textKind() == TextKind.TEXT;
-        if (profile == DbInheritance.Profile.SMART2 || !(type instanceof NumericType number)) return false;
+        if (!(type instanceof NumericType number)) return false;
         Kind kind = scalarKind(number);
         if (kind != Kind.INTEGER && kind != Kind.BIGINT && kind != Kind.DECIMAL) return false;
 
@@ -1030,7 +1029,7 @@ final class DbMapping {
                                                 DbInheritance.Relation relation, ObjectDescriptor contributor) {
         var table = relation.object();
         var attributes = attributes(contributor);
-        if (profile == DbInheritance.Profile.SMART1 && table.kind() == SymbolKind.CLASS) {
+        if (profile != DbInheritance.Profile.NEW_CLASS && table.kind() == SymbolKind.CLASS) {
             return copiedClassAttributes(plan, relation, contributor, attributes);
         }
         if (table.equals(contributor) || !DbCatalogueReference.isBase(contributor)) return attributes;

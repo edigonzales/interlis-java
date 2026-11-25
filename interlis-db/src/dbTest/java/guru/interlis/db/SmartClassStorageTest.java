@@ -117,11 +117,21 @@ final class SmartClassStorageTest {
 
         String smart2 = "SmartPoly" + version;
         var concrete = POSTGIS.target(work.resolve("smart2.gpkg"), backend);
-        assertSchemaWithIdentityColumns(concrete, smart2, fixtures.fixture(smart2 + ".ili"), "--inheritance", "smart2");
+        assertSchemaWithIdentityColumns(concrete, smart2, fixtures.fixture(smart2 + ".ili"),
+                "--inheritance", "smart2", "--create-num-checks");
         output = roundTrip(concrete, smart2, fixtures.fixture(smart2 + ".xtf"), "smart2");
         fixtures.assertPolymorphicReferences(output, smart2, "fixture");
+        fixtures.assertNumericOverrides(output, smart2, "fixture");
         try (var sql = concrete.connect()) {
             SmartFixtures.assertReferenceStorage(concrete, sql, "smart2", 1);
+            String meter = concrete.table("meter");
+            String smartUnit = concrete.table("smartunit");
+            assertStoredNumbers(sql, meter, "fixture-m", "75", "45000000000", "12.50");
+            assertStoredNumbers(sql, smartUnit, "fixture-s", "7", "35000000000", "-1.25");
+            assertNumericCheck(concrete, sql, meter, "fixture-m", "counter", "100", "101");
+            assertNumericCheck(concrete, sql, smartUnit, "fixture-s", "counter", "49", "50");
+            assertNumericCheck(concrete, sql, smartUnit, "fixture-s", "widevalue", "40000000000", "40000000001");
+            assertNumericCheck(concrete, sql, smartUnit, "fixture-s", "tilt", "9.50", "9.51");
             execute(sql, "UPDATE " + concrete.table("survey") + " SET observed_terminal=(SELECT t_id FROM "
                     + concrete.table("terminal") + " WHERE t_ili_tid='fixture-t') WHERE t_ili_tid='fixture-survey'");
         }

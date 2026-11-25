@@ -3,8 +3,17 @@ INTERLIS 2.3;
 MODEL SmartPoly23 AT "https://example.org/smart" VERSION "1" =
   TOPIC Data =
     CLASS Instrument (ABSTRACT) = Memo : TEXT*30; END Instrument;
-    CLASS Meter EXTENDS Instrument = Counter : 0..100; END Meter;
-    CLASS SmartUnit EXTENDS Meter = Badge : TEXT*12; END SmartUnit;
+    CLASS Meter EXTENDS Instrument =
+      Counter : 0..100;
+      WideValue : 0..50000000000;
+      Tilt : -90.00..90.00;
+    END Meter;
+    CLASS SmartUnit EXTENDS Meter =
+      Badge : TEXT*12;
+      Counter (EXTENDED) : 0..49;
+      WideValue (EXTENDED) : 0..40000000000;
+      Tilt (EXTENDED) : -9.50..9.50;
+    END SmartUnit;
     CLASS Terminal EXTENDS Instrument = Socket : TEXT*12; END Terminal;
     STRUCTURE Note =
       AnyInstrument : REFERENCE TO Instrument;

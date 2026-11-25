@@ -1,18 +1,58 @@
 package guru.interlis.db;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.NumericType;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class DbMappingTest {
+    @Test
+    void copiesInheritedNumericOverrideInDeclaringClassOrderInSmart2() {
+        for (String version : List.of("2.3", "2.4")) {
+            var source = new SourceText(new SourceId("test:/Readings.ili"), new SourceRevision(1), """
+                    INTERLIS %s;
+                    MODEL Readings (en) AT "https://example.org" VERSION "2026-11-25" =
+                      TOPIC Data =
+                        CLASS Meter =
+                          Counter : 0..100;
+                          Label : TEXT*16;
+                          Tilt : -90.00..90.00;
+                        END Meter;
+                        CLASS SmartUnit EXTENDS Meter =
+                          Badge : TEXT*12;
+                          Counter (EXTENDED) : 0..49;
+                          Tilt (EXTENDED) : -9.99..9.99;
+                        END SmartUnit;
+                        CLASS SpecializedUnit EXTENDS SmartUnit =
+                          Plug : TEXT*12;
+                        END SpecializedUnit;
+                      END Data;
+                    END Readings.
+                    """.formatted(version));
+            var token = CancellationToken.none();
+            var plan = DbModelSources.compile(List.of("Readings"), List.of(source), "test model", token).plan();
+            var mapping = DbMapping.planNew(plan, false, false, 2056, false, Optional.empty(), new SqlNames(),
+                    DbInheritance.Profile.SMART2, Set.of(), false, DbEnumOptions.DEFAULT, Set.of(), token);
+            var concrete = mapping.tables().stream().filter(table -> table.name().equals("specializedunit"))
+                    .findFirst().orElseThrow();
+            assertEquals(List.of("plug", "badge", "counter", "tilt", "label"),
+                    concrete.columns().stream().map(DbMapping.Column::name).toList());
+            assertEquals("Readings.Data.SmartUnit.Counter", concrete.columns().get(2).slot().name().declared().toString());
+            var tilt = (NumericType) concrete.columns().get(3).effectiveType().orElseThrow();
+            assertEquals(new DbDecimal(3, 2), DbDecimal.describe(tilt));
+        }
+    }
+
     @Test
     void rejectsIntegerOverrideWithDifferentStorageKind() {
         for (String version : List.of("2.3", "2.4")) {

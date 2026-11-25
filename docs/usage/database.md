@@ -445,6 +445,10 @@ konkrete Typ der Zielzeile geprüft.
 Für Smart2-Schemata unterstützt der Transfer skalare Klassenattribute
 in den vollständigen Tabellen der konkreten Klassen. Das Referenzschema
 verwendet dazu `--noSmartMapping --smart2Inheritance`.
+Bei numerischen `EXTENDED`-Attributen mit gleichem Speichertyp und gleicher
+Festkommaskala erhält die konkrete Tabelle die Spalte und den `ATTRNAME` der
+wirksamen Deklaration. Präzision und optionale SQL-Bereichschecks verwenden
+deren verengten Bereich.
 Bei polymorphen Referenzattributen und ungeordneten Rollen verwendet
 Smart2 alternative Fremdschlüsselspalten. Der Import befüllt die
 passende Zielspalte. Mehrere gleichzeitig belegte Zielspalten für

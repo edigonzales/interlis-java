@@ -86,13 +86,8 @@ final class SmartClassInteropTest {
         Path ili = fixtures.fixture(model + ".ili");
         Path input = fixtures.fixture(model + ".xtf");
         if (smart2) extendSmartPoly(ili, input, model, version);
-        if (smart2) {
-            schema(reference, old, work, model, layout);
-            assertSchemaWithIdentityColumns(own, model, ili, "--inheritance", layout);
-        } else {
-            schema(reference, old, work, model, layout, "--createNumChecks");
-            assertSchemaWithIdentityColumns(own, model, ili, "--inheritance", layout, "--create-num-checks");
-        }
+        schema(reference, old, work, model, layout, "--createNumChecks");
+        assertSchemaWithIdentityColumns(own, model, ili, "--inheritance", layout, "--create-num-checks");
         compareCatalog(old, own, smart2);
         Files.delete(ili);
 
@@ -116,7 +111,14 @@ final class SmartClassInteropTest {
             try (var sql = db.connect()) {
                 int datasets = smart2 && db == own ? 3 : 2;
                 SmartFixtures.assertReferenceStorage(db, sql, layout, datasets);
-                if (db.postgis() && !smart2) assertTiltPrecision(sql, db.schema(), "instrument", "4:2");
+                if (db.postgis()) {
+                    if (smart2) {
+                        assertTiltPrecision(sql, db.schema(), "meter", "4:2");
+                        assertTiltPrecision(sql, db.schema(), "smartunit", "3:2");
+                    } else {
+                        assertTiltPrecision(sql, db.schema(), "instrument", "4:2");
+                    }
+                }
                 if (smart2) {
                     assertEquals(Integer.toString(datasets), scalar(sql, "SELECT count(*) FROM " + db.table("note") + " n JOIN "
                             + db.table("smartunit") + " s ON n.metertarget_smartunit=s.t_id AND n.t_basket=s.t_basket"
@@ -173,9 +175,9 @@ final class SmartClassInteropTest {
 
     private static void assertReferenceTransfer(SmartFixtures fixtures, Path output, String model, String prefix,
                                                 int version, boolean smart2) throws Exception {
+        fixtures.assertNumericOverrides(output, model, prefix);
         if (!smart2) {
             fixtures.assertReferences(output, model, prefix);
-            fixtures.assertNumericOverrides(output, model, prefix);
             return;
         }
         fixtures.assertPolymorphicReferences(output, model, prefix);
