@@ -30,7 +30,7 @@ final class StrokeGeometryStorageTest {
         POSTGIS.close();
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "{displayName} [{index}] {arguments}")
     @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
     void renamedLineColumnAndWrongGeometryMetadata(int version, Backend backend) throws Exception {
         var fixture = new StrokeGeometryFixtures(work, version);
@@ -58,7 +58,7 @@ final class StrokeGeometryStorageTest {
         assertExportRejected(db, fixture.model, "native", output, "COLUMN_PROP.geomType for straight.stored_shape");
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "{displayName} [{index}] {arguments}")
     @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
     void chordToleranceAndCoordinateLimitRollback(int version, Backend backend) throws Exception {
         var xml = new StrokeFixtures(work, version);
@@ -101,7 +101,7 @@ final class StrokeGeometryStorageTest {
         }
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "{displayName} [{index}] {arguments}")
     @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
     void rejectsXyzSchema(int version, Backend backend) throws Exception {
         var xml = new StrokeFixtures(work, version);
@@ -114,7 +114,7 @@ final class StrokeGeometryStorageTest {
                 "strokeArcs requires XY at " + model + ".Data.Route.Shape", "--stroke-arcs");
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "{displayName} [{index}] {arguments}")
     @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
     void rejectsWrongPolygonStorageWithoutReplacingExport(int version, Backend backend) throws Exception {
         var fixture = new StrokeGeometryFixtures(work, version);

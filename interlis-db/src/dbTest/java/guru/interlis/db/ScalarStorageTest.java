@@ -50,7 +50,7 @@ final class ScalarStorageTest {
         POSTGIS.close();
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void numericPrecisionAndLateOverflow(Backend backend, int version) throws Exception {
         var db = target(backend);
@@ -76,7 +76,7 @@ final class ScalarStorageTest {
         }
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void localTemporalValuesAcrossJvmTimeZones(Backend backend, int version) throws Exception {
         var db = target(backend);
@@ -113,7 +113,7 @@ final class ScalarStorageTest {
         assertExportRejected(db, model, "zoned", output, "Invalid SQL date");
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void storedNameAndUuidAttributes(Backend backend, int version) throws Exception {
         var db = target(backend);
@@ -146,7 +146,7 @@ final class ScalarStorageTest {
         }
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void blackboxValuesAndAtomicExport(Backend backend, int version) throws Exception {
         var db = target(backend);
@@ -181,7 +181,7 @@ final class ScalarStorageTest {
         }
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void decimalArrayPrecisionAndRollback(Backend backend, int version) throws Exception {
         var db = target(backend);

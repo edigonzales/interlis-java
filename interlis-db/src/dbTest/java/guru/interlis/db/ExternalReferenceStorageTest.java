@@ -48,7 +48,7 @@ final class ExternalReferenceStorageTest {
         POSTGIS.close();
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void basketAndDatasetReferences(Backend backend, int version) throws Exception {
         var db = POSTGIS.target(work.resolve("external.gpkg"), backend);
@@ -68,7 +68,7 @@ final class ExternalReferenceStorageTest {
         }
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void topicAndSplitDatasetReferences(Backend backend, int version) throws Exception {
         var db = POSTGIS.target(work.resolve("topics.gpkg"), backend);

@@ -32,7 +32,7 @@ final class GeometryLayoutStorageTest {
         POSTGIS.close();
     }
 
-    @ParameterizedTest(name = "XTF {0}, {1}")
+    @ParameterizedTest(name = "{displayName} [XTF {0}, {1}]")
     @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
     void updatesGeometryColumnsAndTheirIndexes(int version, Backend backend) throws Exception {
         var fixture = new GeometryLayoutFixtures(work, version);
@@ -83,7 +83,7 @@ final class GeometryLayoutStorageTest {
         }
     }
 
-    @ParameterizedTest(name = "XTF {0}, {1}")
+    @ParameterizedTest(name = "{displayName} [XTF {0}, {1}]")
     @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
     void replacesAndDeletesOptionalGeometryFragments(int version, Backend backend) throws Exception {
         var fixture = new GeometryLayoutFixtures(work, version);
@@ -132,7 +132,7 @@ final class GeometryLayoutStorageTest {
         }
     }
 
-    @ParameterizedTest(name = "XTF {0}, {1}")
+    @ParameterizedTest(name = "{displayName} [XTF {0}, {1}]")
     @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
     void keepsHierarchyAndHelperRowsConsistentAcrossMutations(int version, Backend backend) throws Exception {
         var fixture = new GeometryLayoutFixtures(work, version);

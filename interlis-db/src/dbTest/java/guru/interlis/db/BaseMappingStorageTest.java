@@ -54,7 +54,7 @@ final class BaseMappingStorageTest {
         POSTGIS.close();
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void storesBaseMappingsAndRejectsDamagedAttribute(Backend backend, int version) throws Exception {
         var fixture = new BaseDbFixture(work, version);
@@ -92,7 +92,7 @@ final class BaseMappingStorageTest {
         }
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void failedSchemaCreationPreservesTarget(Backend backend, int version) throws Exception {
         var fixture = new BaseDbFixture(work, version);
@@ -149,7 +149,7 @@ final class BaseMappingStorageTest {
         assertMissingTarget(cancelledDb);
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void lateImportFailuresRollBack(Backend backend, int version) throws Exception {
         var db = POSTGIS.target(work.resolve("rollback.gpkg"), backend);
@@ -184,7 +184,7 @@ final class BaseMappingStorageTest {
         }
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void damagedStructuresAndRolesKeepPreviousExport(Backend backend, int version) throws Exception {
         var db = POSTGIS.target(work.resolve("stored.gpkg"), backend);

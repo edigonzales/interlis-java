@@ -26,7 +26,7 @@ final class SmartPayloadStorageTest {
         POSTGIS.close();
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void structureOwnersAndSequences(Backend backend, int version) throws Exception {
         var fixture = new SmartFixtures(work, version);
@@ -53,7 +53,7 @@ final class SmartPayloadStorageTest {
         }
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void geometryOwnersAndMissingSecondaryRows(Backend backend, int version) throws Exception {
         var fixture = new SmartFixtures(work, version);

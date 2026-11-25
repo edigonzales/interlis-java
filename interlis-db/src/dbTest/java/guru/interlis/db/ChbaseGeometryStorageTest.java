@@ -33,7 +33,7 @@ final class ChbaseGeometryStorageTest {
         POSTGIS.close();
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void collectionStorageAndAtomicExport(Backend backend, int version) throws Exception {
         var fixture = new ChbaseGeometryFixtures(work, version);
@@ -74,7 +74,7 @@ final class ChbaseGeometryStorageTest {
         assertArrayEquals(previous, Files.readAllBytes(output));
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void smart2MutationKeepsOwnersAndIndexesInSync(Backend backend, int version) throws Exception {
         var fixture = new ChbaseSmartFixtures(work, version);

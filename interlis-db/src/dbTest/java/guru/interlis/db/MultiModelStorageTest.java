@@ -34,7 +34,7 @@ final class MultiModelStorageTest {
         POSTGIS.close();
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void selectionLanguageVersionsAndLateImportFailure(Backend backend, int version) throws Exception {
         var models = new MultiModelFixtures(work, version);
@@ -73,7 +73,7 @@ final class MultiModelStorageTest {
         assertSingleDelivery(output, otherVersion, other);
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void datasetChangesRespectIncomingReferences(Backend backend, int version) throws Exception {
         var models = new MultiModelFixtures(work, version);
@@ -133,7 +133,7 @@ final class MultiModelStorageTest {
         }
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void ambiguousTargetRollsBackSurvey(Backend backend, int version) throws Exception {
         var fixture = new ImportedTopicFixtures(work, version);

@@ -43,13 +43,13 @@ final class SpatialIndexStorageTest {
         POSTGIS.close();
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void pointUpdatesAndRollback(Backend backend, int version) throws Exception {
         points(POSTGIS.target(work.resolve("points.gpkg"), backend), new SpatialIndexFixtures(work, version), version);
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void straightAndCurvedEnvelopes(Backend backend, int version) throws Exception {
         var db = POSTGIS.target(work.resolve("geometries.gpkg"), backend);
@@ -83,7 +83,7 @@ final class SpatialIndexStorageTest {
         }
     }
 
-    @ParameterizedTest(name = "{0}, XTF 24")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF 24]")
     @EnumSource(Backend.class)
     void collectionIndexesAndNulls(Backend backend) throws Exception {
         collections(POSTGIS.target(work.resolve("collections.gpkg"), backend), new SpatialIndexFixtures(work, 24));

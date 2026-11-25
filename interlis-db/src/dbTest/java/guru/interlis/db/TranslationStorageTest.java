@@ -31,7 +31,7 @@ final class TranslationStorageTest {
         POSTGIS.close();
     }
 
-    @ParameterizedTest(name = "XTF {0}, {1}")
+    @ParameterizedTest(name = "{displayName} [XTF {0}, {1}]")
     @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
     void rejectsBrokenOriginalSources(int version, Backend backend) throws Exception {
         var fixture = new TranslationFixtures(work, version);
@@ -63,7 +63,7 @@ final class TranslationStorageTest {
         }
     }
 
-    @ParameterizedTest(name = "XTF {0}, {1}")
+    @ParameterizedTest(name = "{displayName} [XTF {0}, {1}]")
     @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
     void rejectsUnavailableOutputLanguage(int version, Backend backend) throws Exception {
         var fixture = new TranslationFixtures(work, version);
@@ -77,7 +77,7 @@ final class TranslationStorageTest {
                 fixture.french ? "outside the selected model" : "require the original model", "--export-model", fixture.translated);
     }
 
-    @ParameterizedTest(name = "XTF {0}, {1}")
+    @ParameterizedTest(name = "{displayName} [XTF {0}, {1}]")
     @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
     void mutatesTranslatedBasketWithStableIds(int version, Backend backend) throws Exception {
         var fixture = new TranslationFixtures(work, version);

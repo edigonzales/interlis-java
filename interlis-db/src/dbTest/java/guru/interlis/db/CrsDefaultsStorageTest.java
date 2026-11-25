@@ -39,7 +39,7 @@ final class CrsDefaultsStorageTest {
         POSTGIS.close();
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void defaultSettingsAndMissingCrs(Backend backend, int version) throws Exception {
         var fixture = new CrsFixtures(work, version);
@@ -71,7 +71,7 @@ final class CrsDefaultsStorageTest {
         assertMissingTarget(absent);
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void declaredCrsSurvivesRemovalOfSchemaDefault(Backend backend, int version) throws Exception {
         var fixture = new CrsFixtures(work, version);
@@ -89,7 +89,7 @@ final class CrsDefaultsStorageTest {
         fixture.assertDeclared(output, "declared");
     }
 
-    @ParameterizedTest(name = "{0}, XTF 24")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF 24]")
     @EnumSource(Backend.class)
     void staticGenericAssignment(Backend backend) throws Exception {
         var fixture = new CrsFixtures(work, 24);
@@ -114,7 +114,7 @@ final class CrsDefaultsStorageTest {
         }
     }
 
-    @ParameterizedTest(name = "GEOPACKAGE, XTF {0}")
+    @ParameterizedTest(name = "{displayName} [GEOPACKAGE, XTF {0}]")
     @ValueSource(ints = {23, 24})
     void competingGeoPackageIdRejectsLegacyHeader(int version) throws Exception {
         var fixture = new CrsFixtures(work, version);
@@ -145,7 +145,7 @@ final class CrsDefaultsStorageTest {
         fixture.assertStation(own, "own", 21781);
     }
 
-    @ParameterizedTest(name = "POSTGIS, XTF {0}")
+    @ParameterizedTest(name = "{displayName} [POSTGIS, XTF {0}]")
     @ValueSource(ints = {23, 24})
     void changedPostgisCatalogRejectsExport(int version) throws Exception {
         // spatial_ref_sys is shared by all schemas in a database.

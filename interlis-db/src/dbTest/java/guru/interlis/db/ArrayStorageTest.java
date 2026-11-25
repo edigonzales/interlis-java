@@ -57,7 +57,7 @@ final class ArrayStorageTest {
                 Stream.of("2.3", "2.4").map(version -> Arguments.of(backend, version)));
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @MethodSource("fullTransfers")
     void textValuesAndInvalidElements(Backend backend, String version) throws Exception {
         withDatabase(backend, db -> {
@@ -81,7 +81,7 @@ final class ArrayStorageTest {
         });
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @MethodSource("fullTransfers")
     void booleanStorageAndWrongType(Backend backend, String version) throws Exception {
         withDatabase(backend, db -> {
@@ -112,7 +112,7 @@ final class ArrayStorageTest {
         });
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @MethodSource("fullTransfers")
     void integerStorageAndLateOverflowRollback(Backend backend, String version) throws Exception {
         withDatabase(backend, db -> {
@@ -144,7 +144,7 @@ final class ArrayStorageTest {
         });
     }
 
-    @ParameterizedTest(name = "{0}, XTF 2.4")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF 2.4]")
     @EnumSource(Backend.class)
     void directNullElementKeepsExport(Backend backend) throws Exception {
         withDatabase(backend, db -> {
@@ -160,7 +160,7 @@ final class ArrayStorageTest {
         });
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @MethodSource("fullTransfers")
     void renamedArrayColumnAndSingleValueCardinality(Backend backend, String version) throws Exception {
         withDatabase(backend, db -> {

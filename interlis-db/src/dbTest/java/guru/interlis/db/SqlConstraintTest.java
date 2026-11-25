@@ -43,7 +43,7 @@ final class SqlConstraintTest {
         POSTGIS.close();
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void uniqueKeysAndRollback(Backend backend, int version) throws Exception {
         withDatabase(backend, db -> {
@@ -99,7 +99,7 @@ final class SqlConstraintTest {
         });
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void numericChecksAndRollback(Backend backend, int version) throws Exception {
         withDatabase(backend, db -> {

@@ -37,19 +37,19 @@ final class BasketCrsStorageTest {
         POSTGIS.close();
     }
 
-    @ParameterizedTest(name = "{0}, XTF 23")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF 23]")
     @EnumSource(Backend.class)
     void alternateTopicsDuringMutations(Backend backend) throws Exception {
         mutateAlternate(target(backend, "alternate-mutation"), new AlternateCrsFixtures(work));
     }
 
-    @ParameterizedTest(name = "{0}, XTF 24")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF 24]")
     @EnumSource(Backend.class)
     void deferredDomainsDuringMutations(Backend backend) throws Exception {
         mutateDeferred(target(backend, "deferred-mutation"), new CrsFixtures(work, 24));
     }
 
-    @ParameterizedTest(name = "{0}, XTF 23")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF 23]")
     @EnumSource(Backend.class)
     void alternateSchemaAndUnknownTopic(Backend backend) throws Exception {
         var fixtures = new AlternateCrsFixtures(work);
@@ -79,7 +79,7 @@ final class BasketCrsStorageTest {
         assertExportRejected(db, "Current23", "native", output, "outside the selected model");
     }
 
-    @ParameterizedTest(name = "{0}, XTF 24")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF 24]")
     @EnumSource(Backend.class)
     void rejectsMissingMultiSrsAndAmbiguousDomains(Backend backend) throws Exception {
         var fixtures = new CrsFixtures(work, 24);
@@ -100,7 +100,7 @@ final class BasketCrsStorageTest {
         assertMissingTarget(ambiguousTarget);
     }
 
-    @ParameterizedTest(name = "{0}, XTF 24")
+    @ParameterizedTest(name = "{displayName} [{0}, XTF 24]")
     @EnumSource(Backend.class)
     void deferredImportRollbackAndCorruptStoredDomains(Backend backend) throws Exception {
         var fixtures = new CrsFixtures(work, 24);

@@ -37,7 +37,7 @@ final class TopicInheritanceStorageTest {
         POSTGIS.close();
     }
 
-    @ParameterizedTest(name = "XTF {0}, {1}")
+    @ParameterizedTest(name = "{displayName} [XTF {0}, {1}]")
     @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
     void rejectsSiblingClassWithoutReplacingExport(int version, Backend backend) throws Exception {
         var fixture = new TopicInheritanceFixtures(work, version);
@@ -56,7 +56,7 @@ final class TopicInheritanceStorageTest {
         assertArrayEquals(published, Files.readAllBytes(output));
     }
 
-    @ParameterizedTest(name = "XTF {0}, {1}")
+    @ParameterizedTest(name = "{displayName} [XTF {0}, {1}]")
     @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
     void rejectsAbstractBasketWithoutReplacingExport(int version, Backend backend) throws Exception {
         var fixture = new TopicInheritanceFixtures(work, version);
@@ -79,7 +79,7 @@ final class TopicInheritanceStorageTest {
         assertArrayEquals(published, Files.readAllBytes(output));
     }
 
-    @ParameterizedTest(name = "XTF {0}, {1}")
+    @ParameterizedTest(name = "{displayName} [XTF {0}, {1}]")
     @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
     void rollsBackWhenInheritedReferenceTargetsWrongBasket(int version, Backend backend) throws Exception {
         var fixture = new TopicInheritanceFixtures(work, version);
@@ -102,7 +102,7 @@ final class TopicInheritanceStorageTest {
         fixture.assertMixedDelivery(output, "", "text", false);
     }
 
-    @ParameterizedTest(name = "XTF {0}, {1}")
+    @ParameterizedTest(name = "{displayName} [XTF {0}, {1}]")
     @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
     void mutatesNewClassFragmentsWithIncomingReferences(int version, Backend backend) throws Exception {
         var fixture = new TopicInheritanceFixtures(work, version);
