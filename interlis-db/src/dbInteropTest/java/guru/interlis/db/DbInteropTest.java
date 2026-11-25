@@ -116,52 +116,6 @@ final class DbInteropTest {
 
     @TempDir(cleanup = CleanupMode.ALWAYS) Path work;
 
-    @Test void geoPackageIlisMeta16Schema() throws Exception { checkIlisMeta16Schema(24, null); }
-    @Test void postgisIlisMeta16Schema() throws Exception { exchangeWithPostgis(24, this::checkIlisMeta16Schema); }
-    private void checkIlisMeta16Schema(int version, PostgreSQLContainer postgres) throws Exception {
-        var source = Path.of("../testdata/conformance/metamodel/IlisMeta16.ili");
-        var ili = Files.copy(source, work.resolve(source.getFileName()));
-        var reference = new ReferenceTool(work, postgres != null);
-        for (String profile : List.of("newclass", "smart1", "smart2")) {
-            boolean newClass = profile.equals("newclass");
-            var referenceDb = new TestDatabase(work, postgres, "meta_ref_" + profile);
-            var args = new ArrayList<>(List.of("--schemaimport", "--createBasketCol", "--noSmartMapping"));
-            if (!newClass) args.add("--" + profile + "Inheritance");
-            args.add(ili.toString());
-            reference.run(referenceDb, work.toString(), args.toArray(String[]::new));
-            try (var sql = referenceDb.connect()) {
-                var inheritance = "select setting from " + referenceDb.table("t_ili2db_trafo")
-                        + " where tag = 'ch.ehi.ili2db.inheritance' and iliname = 'IlisMeta16.ModelData.";
-                assertEquals("embedded", scalar(sql, inheritance + "BasketOID'"), profile);
-                assertEquals(newClass ? "newClass" : "subClass", scalar(sql, inheritance + "Factor'"), profile);
-                assertEquals(profile.equals("smart2") ? "newAndSubClass" : "newClass",
-                        scalar(sql, inheritance + "Model'"), profile);
-
-                String oidColumn = newClass ? "oid" : "oid_texttype";
-                assertNull(scalar(sql, "select t_basket, " + oidColumn
-                        + " from " + referenceDb.table("dataunit") + " where 1 = 0"), profile);
-            }
-
-            var nativeDb = new TestDatabase(work, postgres, "meta_native_" + profile);
-            var nativeArgs = newClass ? new String[0] : new String[]{"--inheritance", profile};
-            assertCliFailure(nativeDb, "schemaimport", "IlisMeta16", null, ili,
-                    "IlisMeta16.ModelData requires --create-basket-col", nativeArgs);
-            var result = schemaWithIdentityColumns(nativeDb, "IlisMeta16", ili, CancellationToken.none(), nativeArgs);
-            assertEquals(1, result.code(), result::diagnostics);
-            assertTrue(result.diagnostics().contains(
-                    "Unsupported ili2db mapping (composition in structure inheritance at "
-                            + "IlisMeta16.ModelData.UnaryExpr.SubExpression)"), result::diagnostics);
-            if (nativeDb.postgis()) {
-                try (var sql = nativeDb.connect()) {
-                    assertEquals("0", scalar(sql, "select count(*) from information_schema.schemata where schema_name = '"
-                            + nativeDb.schema() + "'"), profile);
-                }
-            } else {
-                assertFalse(Files.exists(nativeDb.file), profile);
-            }
-        }
-    }
-
     @Test void geoPackage23() throws Exception { exchange(23, null); }
     @Test void geoPackage24() throws Exception {
         exchange(24, null);

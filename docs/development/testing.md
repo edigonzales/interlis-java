@@ -287,12 +287,14 @@ mit beiden Spalten. `IdentityColumnStorageTest` prüft die vollständige
 Schaltermatrix, direkte SQL-Inserts, gespeicherte und erzeugte TIDs, Referenzen,
 konkrete OIDs und den Rollback nach einer Schemaerweiterung.
 
-Die `*IlisMeta16Schema`-Fälle prüfen mit `--createBasketCol` die drei
-Vererbungsprofile der Referenzwerkzeuge anhand der gespeicherten
-Strategien und der Spalten für die Assoziation. `interlis-db` verlangt
-wegen `BASKET OID AS` den Schalter `--create-basket-col`. Mit dem Schalter
-stoppt die Schemaplanung in allen drei Profilen bei der Strukturkomposition
-`UnaryExpr.SubExpression` innerhalb einer Vererbungshierarchie.
+`--tests '*IlisMeta16SchemaInteropTest'` prüft die drei Vererbungsprofile
+der Referenzwerkzeuge mit `--createBasketCol`, die gespeicherten Strategien
+und die Basket- und OID-Spalten der Assoziation.
+`IlisMeta16SchemaStorageTest` prüft die erforderliche Option
+`--create-basket-col` für `BASKET OID AS` und die Diagnose für die
+Strukturkomposition `UnaryExpr.SubExpression`. Beide Fehler lassen das
+Datenbankziel unverändert.
+
 `--tests '*TextOidInteropTest'` prüft Modell- und Topicdomänen,
 geerbte Objekt-OIDs, Assoziations-OIDs und ein skalares `OID TEXT`-Attribut.
 Der Katalogvergleich und der native XTF-Transfer über Referenzschemata

@@ -82,7 +82,6 @@ testing.suites {
         targets.configureEach {
             testTask.configure {
                 inputs.files(downloadIli2dbReferences).withPathSensitivity(PathSensitivity.NONE)
-                inputs.file(rootProject.file('testdata/conformance/metamodel/IlisMeta16.ili')).withPathSensitivity(PathSensitivity.RELATIVE)
                 systemProperty 'ili2db.reference.version', ili2dbReferenceVersion
                 systemProperty 'ili2db.reference.dir', ili2dbReferenceDirectory.get().asFile.absolutePath
             }
@@ -100,6 +99,7 @@ testing.suites {
         targets.configureEach {
             testTask.configure {
                 javaLauncher = javaToolchains.launcherFor(java.toolchain)
+                inputs.file(rootProject.file('testdata/conformance/metamodel/IlisMeta16.ili')).withPathSensitivity(PathSensitivity.RELATIVE)
                 systemProperty 'junit.jupiter.execution.parallel.enabled', 'true'
                 systemProperty 'junit.jupiter.execution.parallel.mode.default', 'concurrent'
                 systemProperty 'junit.jupiter.execution.parallel.config.strategy', 'fixed'
