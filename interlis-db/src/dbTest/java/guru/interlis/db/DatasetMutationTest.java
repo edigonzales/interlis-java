@@ -83,7 +83,7 @@ final class DatasetMutationTest {
     }
 
     private void deleteRelations(Target db) throws Exception {
-        String model = "DbInterop" + version;
+        String model = "BaseMapping" + version;
         schema(db, model);
         Path input = work.resolve("delete-source.xtf");
         if (Files.notExists(input)) {
@@ -201,7 +201,7 @@ final class DatasetMutationTest {
     }
 
     private void replaceRelations(Target db) throws Exception {
-        String model = "DbInterop" + version;
+        String model = "BaseMapping" + version;
         schema(db, model);
         Path original = work.resolve("replace-original.xtf");
         if (Files.notExists(original)) {
@@ -729,7 +729,7 @@ final class DatasetMutationTest {
     private Path delivery(String file, String model, Basket... baskets) throws Exception {
         var first = baskets[0];
         String xml = referenceDatasetFixture(model, version, first.bid(), first.objects());
-        if (model.equals("DbInterop23")) xml = xml.replace("VERSION=\"1\"", "VERSION=\"2026-11-20\"");
+        if (model.equals("BaseMapping23")) xml = xml.replace("VERSION=\"1\"", "VERSION=\"2026-11-20\"");
         String end = version == 23 ? "</DATASECTION>" : "</i:datasection>";
         var extra = new StringBuilder();
         for (int i = 1; i < baskets.length; i++) {

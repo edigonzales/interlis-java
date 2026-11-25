@@ -6,9 +6,9 @@ import java.util.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-class OidFollowupAbstractFormatContractTest {
+class OidAndAbstractFormatContractTest {
     private static CompilationOutcome compile(String version, String body) {
-        var source = CompilerTestSupport.source("memory:/oid-followups.ili", "INTERLIS " + version
+        var source = CompilerTestSupport.source("memory:/oid-and-abstract-format.ili", "INTERLIS " + version
                 + "; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = " + body + " END F.");
         return CompilerEngines.create().compile(CompilerTestSupport.request(List.of("F"), Map.of(source.id(),source),
                 List.of(), CompilerOptions.defaults()), CancellationToken.none());

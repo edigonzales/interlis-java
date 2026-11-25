@@ -1,34 +1,59 @@
-INTERLIS 2.3;
+INTERLIS 2.4;
 
-MODEL DbInterop23 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20" =
+!!@ CRS=EPSG:21781
+MODEL BaseMapping24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20" =
   DOMAIN
+    !!@ CRS=EPSG:02056
     Position = COORD 2460000.000 .. 2870000.000, 1045000.000 .. 1310000.000;
+    !!@ CRS=EPSG:02056
     RoutePosition = COORD 2450000.500 .. 2880000.250, 1040000.125 .. 1320000.750;
+    !!@ CRS=EPSG:02056
     PlotPosition = COORD 2440000.125 .. 2885000.750, 1035000.500 .. 1325000.250;
+    !!@ CRS=EPSG:02056
+    SurveyPositions = MULTICOORD 2460000.125 .. 2870000.750, 1045000.500 .. 1310000.250;
+    Approval = (draft, approved);
+
+  STRUCTURE Detail =
+    Label : TEXT*16;
+    Enabled : BOOLEAN;
+    Quantity : -20 .. 20;
+    Decision : (draft, approved);
+  END Detail;
 
   TOPIC Data =
+    !!@ ili2db.dispName="Places"
     CLASS Place =
+      !!@ ili2db.dispName="Label"
       Select : TEXT*40;
       Active : BOOLEAN;
       Count : -100 .. 100;
-      Status : (draft, approved);
+      Status : Approval;
       Geometry : Position;
     END Place;
     CLASS Route =
       Trace : POLYLINE WITH (STRAIGHTS, ARCS) VERTEX RoutePosition;
     END Route;
+    CLASS Link =
+      Target : REFERENCE TO Place;
+    END Link;
     CLASS Plot =
       Footprint : SURFACE WITH (STRAIGHTS, ARCS) VERTEX PlotPosition WITHOUT OVERLAPS > 0.001;
     END Plot;
     CLASS Parcel =
       Boundary : AREA WITH (STRAIGHTS) VERTEX PlotPosition WITHOUT OVERLAPS > 0.001;
     END Parcel;
-    STRUCTURE Detail =
-      Label : TEXT*16;
-      Enabled : BOOLEAN;
-      Quantity : -20 .. 20;
-      Decision : (draft, approved);
-    END Detail;
+    CLASS Park =
+      Coverage : MULTISURFACE WITH (STRAIGHTS, ARCS) VERTEX PlotPosition WITHOUT OVERLAPS > 0.001;
+    END Park;
+    CLASS District =
+      Coverage : MULTIAREA WITH (STRAIGHTS, ARCS) VERTEX PlotPosition WITHOUT OVERLAPS > 0.001;
+    END District;
+    CLASS RouteGroup =
+      Traces : MULTIPOLYLINE WITH (STRAIGHTS, ARCS) VERTEX RoutePosition;
+    END RouteGroup;
+    CLASS Survey =
+      Locations : SurveyPositions;
+    END Survey;
     STRUCTURE LinkDetail =
       Label : TEXT*16;
       Destination : REFERENCE TO Place;
@@ -80,12 +105,12 @@ MODEL DbInterop23 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
     CLASS Hub =
     END Hub;
     ASSOCIATION MarkerHub =
-      Select -- {0..1} Hub;
       Markers -- {0..*} Marker;
+      Select -- {0..1} Hub;
     END MarkerHub;
     ASSOCIATION MarkerLink =
-      LinkedMarker -- {0..*} Marker;
       LinkedHub -- {0..*} Hub;
+      LinkedMarker -- {0..*} Marker;
     END MarkerLink;
     ASSOCIATION Review =
       Witness -- {0..1} Hub;
@@ -105,8 +130,8 @@ MODEL DbInterop23 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
     CLASS PairRight =
     END PairRight;
     ASSOCIATION Pairing =
-      LeftLink -- {1} PairLeft;
       RightLink -- {0..1} PairRight;
+      LeftLink -- {1} PairLeft;
     END Pairing;
     CLASS Mast =
       Caption : TEXT*32;
@@ -120,6 +145,7 @@ MODEL DbInterop23 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
     END Tower;
     CLASS Relay EXTENDS Tower =
       Online : BOOLEAN;
+      Sites : SurveyPositions;
     END Relay;
     CLASS Beacon EXTENDS Mast =
       Signal : (red, green);
@@ -136,8 +162,8 @@ MODEL DbInterop23 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
       Crewmember -- {0..*} ServiceBase;
     END HierarchyCrew;
     ASSOCIATION HierarchyPair =
-      PairedService -- {0..1} ServiceBase;
       PairedTower -- {0..1} Tower;
+      PairedService -- {0..1} ServiceBase;
     END HierarchyPair;
     ASSOCIATION MastMentoring =
       Mentor -- {0..1} Mast;
@@ -166,6 +192,8 @@ MODEL DbInterop23 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
       BranchTarget : REFERENCE TO Tower;
     END TargetPair;
     CLASS RefCarrier =
+      DirectRoot : REFERENCE TO ServiceBase;
+      DirectBranch : REFERENCE TO Tower;
       Pairs : LIST {0..*} OF TargetPair;
     END RefCarrier;
     ASSOCIATION ServiceAggregation =
@@ -189,6 +217,16 @@ MODEL DbInterop23 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
     CLASS RefNoteBook =
       Entries : LIST {0..*} OF RefNoteBase;
     END RefNoteBook;
+    CLASS RefAssetBase =
+      Label : TEXT*12;
+      RootTarget : REFERENCE TO Mast;
+    END RefAssetBase;
+    CLASS RefAssetBranch EXTENDS RefAssetBase =
+      BranchTarget : REFERENCE TO Tower;
+    END RefAssetBranch;
+    CLASS RefAssetLeaf EXTENDS RefAssetBranch =
+      OwnTarget : REFERENCE TO Mast;
+    END RefAssetLeaf;
     CLASS RatingForm =
     END RatingForm;
     ASSOCIATION Rating =
@@ -202,8 +240,8 @@ MODEL DbInterop23 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
       Memo : TEXT*16;
     END RelayReview;
     ASSOCIATION RatingTag =
-      TaggedUnit -- {0..1} ServiceUnit;
       TaggedForm -- {0..1} RatingForm;
+      TaggedUnit -- {0..1} ServiceUnit;
       Memo : TEXT*16;
     END RatingTag;
     CLASS ContractSite =
@@ -219,4 +257,15 @@ MODEL DbInterop23 (en) AT "https://example.org/interlis/db" VERSION "2026-11-20"
       DetailRank : 0 .. 20;
     END TaggedAllocation;
   END Data;
-END DbInterop23.
+
+  TOPIC Naming =
+    CLASS place =
+      Select : TEXT*40;
+      ASelect : TEXT*40;
+      LongAttributeNameWithAnUnusuallyLongMiddleSectionForTestingShorteningAboveTheLimit : TEXT;
+    END place;
+    CLASS LongClassNameWithAnUnusuallyLongMiddleSectionForTestingShorteningAboveTheLimit =
+      Number : 0 .. 5;
+    END LongClassNameWithAnUnusuallyLongMiddleSectionForTestingShorteningAboveTheLimit;
+  END Naming;
+END BaseMapping24.

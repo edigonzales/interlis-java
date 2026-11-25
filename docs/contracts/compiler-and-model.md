@@ -858,7 +858,7 @@ Syntax, Diagnose, Navigation/Rename und Schema-Closure benutzen dieselben
 gebundenen Ziele. Fehler sperren das Schema, der Teilgraph bleibt inspizierbar.
 `FormatPrecisionOidBindingContractTest` prüft positive/negative Regeln,
 Getrenntheit von Basket/Objekt, Herkunft, Scope, Typen und öffentliche Abfragen.
-`OidFollowupAbstractFormatContractTest` ergänzt Versionsunterschiede,
+`OidAndAbstractFormatContractTest` ergänzt Versionsunterschiede,
 Topic-Zuordnungen, abstrakte Komponenten und effektive FORMAT-Attributziele.
 `NoOidReferenceContractTest` prüft zusätzlich die NO-OID-Regel für
 Referenzattribute und Rollenzielmengen. Die vollständige Semantikabnahme und alle

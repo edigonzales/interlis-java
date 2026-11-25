@@ -151,9 +151,9 @@ final class SpatialIndexStorageTest {
     }
 
     private void collections(Target db, SpatialIndexFixtures fixtures) throws Exception {
-        String model = "DbInterop24";
+        String model = "BaseMapping24";
         createSchema(db, fixtures, model);
-        Path input = fixtures.copy("DbInterop24.xtf");
+        Path input = fixtures.copy("BaseMapping24.xtf");
         assertCliSuccess(db, "import", model, "collections", input);
         try (var sql = db.connect()) {
             assertIndex(db, sql, "survey", "locations");

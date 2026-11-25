@@ -95,7 +95,7 @@ final class BaseDbFixture {
     BaseDbFixture(Path work, int version) throws IOException {
         this.work = work;
         this.version = version;
-        model = "DbInterop" + version;
+        model = "BaseMapping" + version;
         transfer = new String(resource(model + ".xtf"), StandardCharsets.UTF_8);
     }
 
@@ -210,7 +210,7 @@ final class BaseDbFixture {
     }
 
     static void assertTransferredNestedTree(Element record, int version, List<String> values) {
-        String prefix = version == 23 ? "DbInterop23.Data." : "";
+        String prefix = version == 23 ? "BaseMapping23.Data." : "";
         assertEquals(prefix + "NestedRecord", record.getLocalName());
         var tree = transferredStructures(record, "Tree");
         assertEquals(List.of(prefix + "NestedOuter"), tree.stream().map(Element::getLocalName).toList());

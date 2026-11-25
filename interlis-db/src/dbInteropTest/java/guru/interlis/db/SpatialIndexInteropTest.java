@@ -93,7 +93,7 @@ final class SpatialIndexInteropTest {
     }
 
     private void collections(ReferenceTool reference, TestDatabase db, SpatialIndexFixtures fixtures) throws Exception {
-        String model = "DbInterop24";
+        String model = "BaseMapping24";
         referenceSchema(reference, db, fixtures.copy(model + ".ili"));
         Path input = fixtures.copy(model + ".xtf");
         assertCliSuccess(db, "import", model, "native", input);

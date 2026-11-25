@@ -50,7 +50,7 @@ final class BaseTransferAssertions {
     private BaseTransferAssertions() { }
 
     private static void assertTransferredPolymorphicTargets(Element carrier, int version, String dataset) {
-        String prefix = version == 23 ? "DbInterop23.Data." : "";
+        String prefix = version == 23 ? "BaseMapping23.Data." : "";
         assertNotNull(carrier);
         assertEquals(prefix + "RefCarrier", carrier.getLocalName());
         var pairs = children(carrier).stream().filter(value -> value.getLocalName().equals("Pairs"))
@@ -70,7 +70,7 @@ final class BaseTransferAssertions {
     private static void assertTransferredStructureReferences(Element report, int version, String dataset) {
         var links = children(report).stream().filter(element -> element.getLocalName().equals("Links"))
                 .flatMap(element -> children(element).stream()).toList();
-        String name = version == 23 ? "DbInterop23.Data.LinkDetail" : "LinkDetail";
+        String name = version == 23 ? "BaseMapping23.Data.LinkDetail" : "LinkDetail";
         assertEquals(List.of(name, name), links.stream().map(Element::getLocalName).toList());
         assertEquals("first", text(links.getFirst(), "Label"));
         var destination = child(links.getFirst(), "Destination");
@@ -87,16 +87,16 @@ final class BaseTransferAssertions {
         Map<String, Element> objects = new HashMap<>();
         var markerLinks = new HashSet<List<String>>();
         var annotatedLinks = new HashSet<AnnotatedPair>();
-        String markerLinkName = version == 24 ? "MarkerLink" : "DbInterop23.Data.MarkerLink";
-        String hierarchyPrefix = version == 24 ? "" : "DbInterop23.Data.";
+        String markerLinkName = version == 24 ? "MarkerLink" : "BaseMapping23.Data.MarkerLink";
+        String hierarchyPrefix = version == 24 ? "" : "BaseMapping23.Data.";
         var hierarchyLinks = new HashSet<String>();
-        String annotatedLinkName = version == 24 ? "AnnotatedLink" : "DbInterop23.Data.AnnotatedLink";
-        String aggregationName = version == 24 ? "ServiceAggregation" : "DbInterop23.Data.ServiceAggregation";
+        String annotatedLinkName = version == 24 ? "AnnotatedLink" : "BaseMapping23.Data.AnnotatedLink";
+        String aggregationName = version == 24 ? "ServiceAggregation" : "BaseMapping23.Data.ServiceAggregation";
         int aggregations = 0;
-        String allocationName = version == 24 ? "TaggedAllocation" : "DbInterop23.Data.TaggedAllocation";
+        String allocationName = version == 24 ? "TaggedAllocation" : "BaseMapping23.Data.TaggedAllocation";
         int allocations = 0;
         for (Element basket : children(data)) {
-            assertEquals(version == 24 ? "Data" : "DbInterop23.Data", basket.getLocalName());
+            assertEquals(version == 24 ? "Data" : "BaseMapping23.Data", basket.getLocalName());
             String bid = id(basket, version, "bid");
             var tids = new java.util.HashSet<String>();
             for (Element object : children(basket)) {
@@ -240,7 +240,7 @@ final class BaseTransferAssertions {
         assertTransferredReviews(objects, version, dataset);
         assertTransferredPairing(objects, version, dataset);
 
-        String placeName = version == 24 ? "Place" : "DbInterop23.Data.Place";
+        String placeName = version == 24 ? "Place" : "BaseMapping23.Data.Place";
         for (String tid : List.of(first, second, third)) {
             assertEquals(placeName, objects.get(tid).getLocalName());
         }
@@ -265,7 +265,7 @@ final class BaseTransferAssertions {
             assertEquals("Link", objects.get(link).getLocalName());
             assertEquals(first, id(child(objects.get(link), "Target"), version, "ref"));
         }
-        String routeName = version == 24 ? "Route" : "DbInterop23.Data.Route";
+        String routeName = version == 24 ? "Route" : "BaseMapping23.Data.Route";
         for (String tid : List.of(line, noLine, arcs, mixed)) {
             assertEquals(routeName, objects.get(tid).getLocalName());
         }
@@ -273,14 +273,14 @@ final class BaseTransferAssertions {
         assertTransferRoute(child(objects.get(line), "Trace"), version, STRAIGHT_ROUTE);
         assertTransferRoute(child(objects.get(arcs), "Trace"), version, ARC_ROUTE);
         assertTransferRoute(child(objects.get(mixed), "Trace"), version, MIXED_ROUTE);
-        String plotName = version == 24 ? "Plot" : "DbInterop23.Data.Plot";
+        String plotName = version == 24 ? "Plot" : "BaseMapping23.Data.Plot";
         for (String tid : List.of(plotWithHole, curvedPlot, noSurface)) {
             assertEquals(plotName, objects.get(tid).getLocalName());
         }
         assertNull(child(objects.get(noSurface), "Footprint"));
         assertTransferSurface(child(objects.get(plotWithHole), "Footprint"), version, SURFACE_WITH_HOLE);
         assertTransferSurface(child(objects.get(curvedPlot), "Footprint"), version, CURVED_SURFACE);
-        String parcelName = version == 24 ? "Parcel" : "DbInterop23.Data.Parcel";
+        String parcelName = version == 24 ? "Parcel" : "BaseMapping23.Data.Parcel";
         for (String tid : List.of(westArea, eastArea, noArea)) {
             assertEquals(parcelName, objects.get(tid).getLocalName());
         }
@@ -306,7 +306,7 @@ final class BaseTransferAssertions {
     }
 
     private static void assertTransferredRoles(Map<String, Element> objects, int version, String dataset) {
-        String prefix = version == 23 ? "DbInterop23.Data." : "";
+        String prefix = version == 23 ? "BaseMapping23.Data." : "";
         String hub = dataset + "-hub-1";
         assertEquals(prefix + "Hub", objects.get(hub).getLocalName());
         assertEquals(prefix + "Hub", objects.get(dataset + "-hub-2").getLocalName());
@@ -345,7 +345,7 @@ final class BaseTransferAssertions {
         assertEquals(hub, id(first, version, "ref"));
         assertEquals(1, children(first).size());
         var payload = children(first).getFirst();
-        assertEquals(version == 24 ? "Review" : "DbInterop23.Data.Review", payload.getLocalName());
+        assertEquals(version == 24 ? "Review" : "BaseMapping23.Data.Review", payload.getLocalName());
         assertEquals("reviewed", text(payload, "Memo"));
         assertEquals("-3", text(payload, "Grade"));
 
@@ -357,7 +357,7 @@ final class BaseTransferAssertions {
     }
 
     private static void assertTransferredClassHierarchy(Map<String, Element> objects, int version, String dataset) {
-        String prefix = version == 23 ? "DbInterop23.Data." : "";
+        String prefix = version == 23 ? "BaseMapping23.Data." : "";
         var mast = objects.get(dataset + "-mast");
         var relay = objects.get(dataset + "-relay");
         assertClassFields(mast, prefix + "Mast", Map.of("Caption", "base"), "Notes");
@@ -411,7 +411,7 @@ final class BaseTransferAssertions {
         var book = objects.get(dataset + "-ref-notebook");
         assertNotNull(book);
         var entries = transferredStructures(book, "Entries");
-        String note = version == 23 ? "DbInterop23.Data.RefNoteLeaf" : "RefNoteLeaf";
+        String note = version == 23 ? "BaseMapping23.Data.RefNoteLeaf" : "RefNoteLeaf";
         assertEquals(List.of(note, note), entries.stream().map(Element::getLocalName).toList());
         assertTrue(entries.stream().allMatch(entry -> id(entry, version, "tid").isEmpty()));
         assertTransferredReferenceFields(entries.getFirst(), entries.getLast(), version, dataset);
@@ -444,7 +444,7 @@ final class BaseTransferAssertions {
     }
 
     private static void assertTransferredPairing(Map<String, Element> objects, int version, String dataset) {
-        String prefix = version == 23 ? "DbInterop23.Data." : "";
+        String prefix = version == 23 ? "BaseMapping23.Data." : "";
         String leftTid = dataset + "-pairleft-1";
         String rightTid = dataset + "-pairright-1";
         var left = objects.get(leftTid);
@@ -465,7 +465,7 @@ final class BaseTransferAssertions {
     }
 
     private static void assertTransferredStructureHierarchy(Element record, int version) {
-        String prefix = version == 23 ? "DbInterop23.Data." : "";
+        String prefix = version == 23 ? "BaseMapping23.Data." : "";
         assertEquals(prefix + "TypedRecord", record.getLocalName());
         var main = transferredStructures(record, "Main");
         assertEquals(1, main.size());
@@ -488,7 +488,7 @@ final class BaseTransferAssertions {
     }
 
     private static void assertTransferredReports(Element first, Element second, int version) {
-        String prefix = version == 23 ? "DbInterop23.Data." : "";
+        String prefix = version == 23 ? "BaseMapping23.Data." : "";
         assertEquals(prefix + "Report", first.getLocalName());
         assertEquals(prefix + "Report", second.getLocalName());
         var summary = child(first, "Summary");
@@ -643,7 +643,7 @@ final class BaseTransferAssertions {
         } else {
             var payload = children(element);
             assertEquals(1, payload.size());
-            String name = version == 23 ? "DbInterop23.Data." + association : association;
+            String name = version == 23 ? "BaseMapping23.Data." + association : association;
             assertEquals(name, payload.getFirst().getLocalName());
             assertEquals(memo, text(payload.getFirst(), "Memo"));
         }
