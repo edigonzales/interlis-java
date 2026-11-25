@@ -16,7 +16,6 @@ import guru.interlis.model.ConstraintSymbol;
 import guru.interlis.model.FunctionCallExpression;
 import guru.interlis.model.FunctionSymbol;
 import guru.interlis.model.LiteralExpression;
-import guru.interlis.model.NumericRange;
 import guru.interlis.model.NumericType;
 import guru.interlis.model.ObjectArgumentType;
 import guru.interlis.model.ObjectSetExpression;
@@ -126,7 +125,7 @@ class RuntimeModelBaselineTest {
     }
 
     @Test
-    void preservesExactOperandsWithoutTurningStaticUnboundednessIntoUndefined() {
+    void preservesExactOperandsOfStaticallyBoundDivision() {
         var schema = compile("""
                 INTERLIS 2.4;
                 CONTRACTED MODEL Checks (en) AT "https://example.org/checks" VERSION "1" =
@@ -144,8 +143,9 @@ class RuntimeModelBaselineTest {
         var division = graph.expressions().stream().filter(BinaryExpression.class::isInstance)
                 .map(BinaryExpression.class::cast).filter(node -> node.operator() == BinaryOperator.DIV)
                 .findFirst().orElseThrow();
-        assertEquals(NumericRange.unbounded(),
-                assertInstanceOf(NumericType.class, graph.type(division.typeId()).orElseThrow()).range());
+        var range = assertInstanceOf(NumericType.class, graph.type(division.typeId()).orElseThrow()).range();
+        assertEquals("0." + "3".repeat(50), range.minimum().orElseThrow().exactValue().toPlainString());
+        assertEquals(range.minimum(), range.maximum());
         assertEquals(List.of("1", "3"), division.children().stream().map(graph::expression)
                 .map(Optional::orElseThrow).map(node -> assertInstanceOf(LiteralExpression.class, node).lexeme()).toList());
         assertTrue(graph.expressions().stream().filter(ConstantExpression.class::isInstance)

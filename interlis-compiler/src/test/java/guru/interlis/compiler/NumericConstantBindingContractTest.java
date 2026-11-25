@@ -42,13 +42,18 @@ class NumericConstantBindingContractTest {
             assertTrue(rejected.rejection().reasons().contains(RejectionReason.SOURCE_ERRORS));
         }
     }
-    @Test void transcendentalConstantsKeepSymbolicValuesAndUnitsWithoutFakeExactDecimals() {
+    @Test void transcendentalConstantsKeepSymbolicValuesAndUseProfileBounds() {
         for(String version:List.of("2.3","2.4"))for(String name:List.of("PI","LNBASE")) {
             var result=compile(version,"UNIT m; TOPIC T=CLASS C=n:-100000.00000..100000.00000[m]; MANDATORY CONSTRAINT n>"+name+"[m]; END C; END T;");
             var graph=assertInstanceOf(CompilationOutcome.Succeeded.class,result,()->result.toString()).schema().semanticGraph();
             var value=graph.expressions().stream().filter(ConstantExpression.class::isInstance).map(ConstantExpression.class::cast).filter(e->e.constantName().equals(name)).findFirst().orElseThrow();
             var type=assertInstanceOf(NumericType.class,graph.type(value.typeId()).orElseThrow());
-            assertTrue(type.range().minimum().isEmpty());assertTrue(type.range().maximum().isEmpty());
+            var minimum = type.range().minimum().orElseThrow();
+            assertEquals(type.range().maximum().orElseThrow(), minimum);
+            assertEquals(PrecisionOrigin.COMPUTED, minimum.precision().origin());
+            assertEquals(name.equals("PI") ? "3.1415926535897932384626433832795028841971693993751"
+                            : "2.7182818284590452353602874713526624977572470937",
+                    minimum.exactValue().toPlainString());
             assertEquals("m",graph.symbol(type.range().unit().orElseThrow()).orElseThrow().name().value());
             assertInstanceOf(Origin.DeclaredOrigin.class,type.origin());
         }

@@ -5,6 +5,7 @@ import guru.interlis.diagnostics.DiagnosticId;
 import guru.interlis.diagnostics.Severity;
 import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.Cardinality;
+import guru.interlis.model.BinaryExpression;
 import guru.interlis.model.BinaryOperator;
 import guru.interlis.model.ClassValueType;
 import guru.interlis.model.CollectionType;
@@ -43,6 +44,8 @@ import guru.interlis.model.TextType;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeId;
 import guru.interlis.model.TypedExpression;
+import guru.interlis.model.internal.DecimalMath;
+import guru.interlis.model.internal.UnitScales;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRange;
 import guru.interlis.syntax.BinaryExpressionSyntax;
@@ -61,6 +64,7 @@ import guru.interlis.syntax.UnaryExpressionSyntax;
 import guru.interlis.syntax.UndefinedExpressionSyntax;
 import guru.interlis.syntax.UnsupportedExpressionSyntax;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -74,6 +78,7 @@ import java.util.function.Supplier;
 
 /** Binds and types source expressions in their owning scope. */
 final class ExpressionBindings {
+    private final Set<TypeId> roundedNumericRanges = new HashSet<>();
     private final SemanticGraphRead.Expressions state;
     private final SemanticWork work;
     private final IndexedDeclarations index;
@@ -362,8 +367,8 @@ final class ExpressionBindings {
         if (!error && signature.rule()==BuiltinFunctions.Rule.CONVERT_UNIT) {
             var from=typeBindings.effectiveDescriptor(arguments.getFirst().typeId());
             type=typeBindings.nextTypeId();
-            typeBindings.defineType(new NumericType(type,new Origin.DeclaredOrigin(syntax.range()),new NumericRange(Optional.empty(),Optional.empty(),false,
-                    guru.interlis.model.NumericDirection.NONE,from instanceof NumericType n?n.range().unit():Optional.empty(),Optional.empty())));
+            typeBindings.defineType(new NumericType(type, new Origin.DeclaredOrigin(syntax.range()),
+                    from instanceof NumericType numeric ? numeric.range() : NumericRange.unbounded()));
         }
         FunctionBindings.Result bound = FunctionBindings.Result.empty();
         if (!error) {
@@ -521,7 +526,8 @@ final class ExpressionBindings {
                 work.checkpoint();
                 var actual = arguments.get(i);
                 TypeId expected = function.parameters().get(i).typeId();
-                actual=contextualValue(actual,expected,owner);arguments.set(i,actual);
+                actual = assignmentValue(actual, expected, owner);
+                arguments.set(i, actual);
                 if (!actual.error() && !declaredArgumentMatches(actual, expected, declaration.language())) {
                     diagnostics.emitTypeMismatch(ownerSource(owner), syntax.arguments().get(i).range(),
                             typeBindings.typeName(actual.typeId()), typeBindings.typeName(expected));
@@ -630,8 +636,8 @@ final class ExpressionBindings {
                 }
                 left = contextualNumericConstant(left, right.typeId());
                 right = contextualNumericConstant(right, left.typeId());
-                left = contextualValue(left, right.typeId(), owner);
-                right = contextualValue(right, left.typeId(), owner);
+                left = contextualValue(left, right.typeId(), owner, true);
+                right = contextualValue(right, left.typeId(), owner, true);
                 error |= left.error() || right.error();
                 if(!error && !comparisonAllowed(left,right,comparison)) {
                     diagnostics.emitTypeMismatch(ownerSource(owner),syntax.range(),typeBindings.typeName(left.typeId())+","+typeBindings.typeName(right.typeId()),"COMPARABLE "+comparison);
@@ -657,8 +663,21 @@ final class ExpressionBindings {
                     TypeDescriptor b = typeBindings.effectiveDescriptor(right.typeId());
                     if (a instanceof NumericType x && b instanceof NumericType y) {
                         result = typeBindings.nextTypeId();
-                        typeBindings.defineType(new NumericType(result, new Origin.DeclaredOrigin(syntax.range()),
-                                NumericExpressionRanges.infer(syntax.operator(), x.range(), y.range(), work)));
+                        var origin = new Origin.DeclaredOrigin(syntax.range());
+                        if (!NumericExpressionRanges.compatibleAdditiveUnits(syntax.operator(), x.range(), y.range())) {
+                            var diagnostic = diagnostics.emitTypeMismatch(ownerSource(owner), syntax.range(),
+                                    "different units", "equal units for addition or subtraction");
+                            typeBindings.defineType(new ErrorType(result, origin, List.of(diagnostic)));
+                            error = true;
+                        } else {
+                            var leftAttribute = simpleAttribute(left.id());
+                            var rightAttribute = simpleAttribute(right.id());
+                            var estimate = NumericExpressionRanges.infer(syntax.operator(), x.range(), y.range(),
+                                    leftAttribute.isPresent() && leftAttribute.equals(rightAttribute), work);
+                            if (estimate.rounded() || roundedNumericRanges.contains(left.typeId())
+                                    || roundedNumericRanges.contains(right.typeId())) roundedNumericRanges.add(result);
+                            typeBindings.defineType(new NumericType(result, origin, estimate.range()));
+                        }
                     } else {
                         // Numeric-family validation above leaves only UNDEFINED here.
                         result = a instanceof NumericType ? right.typeId() : left.typeId();
@@ -673,6 +692,14 @@ final class ExpressionBindings {
                 left.id(), right.id());
         state.defineExpression(expression);
         return new ExpressionResult(id, result, error);
+    }
+
+    private Optional<SymbolId> simpleAttribute(ExpressionId expression) {
+        if (state.expression(expression) instanceof PathExpression path && path.path().steps().size() == 1
+                && path.path().steps().getFirst() instanceof guru.interlis.model.PathStep.AttributeStep step) {
+            return Optional.of(step.target());
+        }
+        return Optional.empty();
     }
 
     private ExpressionResult unaryExpression(ExpressionId id, UnaryExpressionSyntax syntax,
@@ -709,7 +736,8 @@ final class ExpressionBindings {
     }
 
     private ExpressionResult constantExpression(ExpressionId id, ConstantExpressionSyntax syntax, SymbolId owner) {
-        TypeId type = numericLiteralType(Optional.empty(), syntax.unit(), syntax.range(), owner);
+        var decimal = NumericExpressionRanges.boundary(DecimalMath.constant(syntax.constantName()));
+        TypeId type = numericLiteralType(Optional.of(decimal), syntax.unit(), syntax.range(), owner);
         TypedExpression expression = new guru.interlis.model.ConstantExpression(id, type,
                 typeBindings.effectiveDescriptor(type) instanceof ErrorType ? guru.interlis.model.ExpressionTypeState.ERROR : guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of(),
                 syntax.constantName());
@@ -792,22 +820,71 @@ final class ExpressionBindings {
         return typeBindings.builtinBoolean(index.byId(owner).orElseThrow().language());
     }
 
+    ExpressionResult assignmentValue(ExpressionResult value, TypeId expected, SymbolId owner) {
+        value = contextualValue(value, expected, owner, false);
+        if (!value.error() && state.expression(value.id()) instanceof guru.interlis.model.FunctionCallExpression call
+                && isUnitConversion(call) && typeBindings.effectiveDescriptor(expected) instanceof NumericType target) {
+            var outcome = conversionRange(call, target);
+            if (outcome != ConversionRange.ACCEPTED) {
+                var diagnostic = outcome == ConversionRange.UNCERTAIN
+                        ? diagnostics.emitUnsupported(ownerSource(owner), call.range(), "CONVERT_UNIT_RANGE",
+                                "the converted range cannot be established")
+                        : diagnostics.emitRule(index.byId(owner).orElseThrow(),
+                                "The converted value can fall outside its destination range", "CONVERT_UNIT_RANGE", call.range());
+                return conversionError(call, diagnostic);
+            }
+        }
+        if (value.error()
+                || !(state.expression(value.id()) instanceof BinaryExpression expression)
+                || !(typeBindings.effectiveDescriptor(value.typeId()) instanceof NumericType source)
+                || !(typeBindings.effectiveDescriptor(expected) instanceof NumericType target)
+                || !source.range().unit().equals(target.range().unit())
+                || target.range().minimum().isEmpty()) return value;
+        if (source.range().minimum().isPresent()) {
+            if (!roundedNumericRanges.contains(value.typeId())) return value;
+            var lower = source.range().minimum().orElseThrow().exactValue();
+            var upper = source.range().maximum().orElseThrow().exactValue();
+            var targetLower = target.range().minimum().orElseThrow().exactValue();
+            var targetUpper = target.range().maximum().orElseThrow().exactValue();
+            if (upper.compareTo(targetLower) < 0 || lower.compareTo(targetUpper) > 0
+                    || lower.compareTo(targetLower) >= 0 && upper.compareTo(targetUpper) <= 0) return value;
+        }
+
+        var diagnostic = diagnostics.emitUnsupported(ownerSource(owner), expression.range(),
+                "NUMERIC_RESULT_RANGE", "the arithmetic result range cannot be established");
+        var errorType = typeBindings.nextTypeId();
+        typeBindings.defineType(new ErrorType(errorType, new Origin.DeclaredOrigin(expression.range()),
+                List.of(diagnostic)));
+        return new ExpressionResult(value.id(), errorType, true);
+    }
+
     /** Bind constants to their expected value type; shared inherited expressions are only checked by valueAssignable. */
-    ExpressionResult contextualValue(ExpressionResult value, TypeId expected, SymbolId owner) {
+    private ExpressionResult contextualValue(ExpressionResult value, TypeId expected, SymbolId owner,
+                                             boolean comparison) {
         if(value.error())return value;
         value=contextualNumericConstant(value,expected);
         if (state.expression(value.id()) instanceof guru.interlis.model.FunctionCallExpression call && isUnitConversion(call)
                 && typeBindings.effectiveDescriptor(expected) instanceof NumericType numeric) {
             // Unrestricted NUMERIC is a wildcard formal, not a new unitless destination.
             if(numeric.range().unit().isEmpty() && numeric.range().minimum().isEmpty() && numeric.range().maximum().isEmpty())return value;
-            TypeId type=expected;boolean error=!conversionCompatible(call,numeric);
-            if(error) {
-                var diagnostic=diagnostics.emitRule(index.byId(owner).orElseThrow(),"convertUnit source and destination need a common conversion unit","CONVERT_UNIT",call.range());
-                type=typeBindings.nextTypeId();typeBindings.defineType(new ErrorType(type,new Origin.DeclaredOrigin(call.range()),List.of(diagnostic)));
+            if (!conversionCompatible(call, numeric)) {
+                var diagnostic = diagnostics.emitRule(index.byId(owner).orElseThrow(),
+                        "convertUnit source and destination need a common conversion unit", "CONVERT_UNIT", call.range());
+                return conversionError(call, diagnostic);
             }
-            state.replaceExpression(new guru.interlis.model.FunctionCallExpression(call.id(),type,
-                    error?guru.interlis.model.ExpressionTypeState.ERROR:call.typeState(),call.range(),call.children(),call.functionName(),call.targetFunction(),call.argumentPaths()));
-            return new ExpressionResult(call.id(),type,error);
+            var source = state.expression(call.children().getFirst());
+            TypeId type = expected;
+            if (guru.interlis.model.internal.TypeCompatibility.isUndefined(typeBindings.effectiveDescriptor(source.typeId()))) {
+                type = source.typeId();
+            } else if (comparison) {
+                type = typeBindings.nextTypeId();
+                var range = new NumericRange(Optional.empty(), Optional.empty(), false,
+                        guru.interlis.model.NumericDirection.NONE, numeric.range().unit(), Optional.empty());
+                typeBindings.defineType(new NumericType(type, new Origin.DeclaredOrigin(call.range()), range));
+            }
+            state.replaceExpression(new guru.interlis.model.FunctionCallExpression(call.id(), type,
+                    call.typeState(), call.range(), call.children(), call.functionName(), call.targetFunction(), call.argumentPaths()));
+            return new ExpressionResult(call.id(), type, false);
         }
         var result=contextualEnumConstant(value,expected,owner,"ENUM_CONSTANT");
         if(state.expression(result.id()) instanceof guru.interlis.model.LiteralExpression literal && literal.textValue().isPresent()
@@ -817,6 +894,57 @@ final class ExpressionBindings {
             return new ExpressionResult(result.id(),expected,false);
         }
         return result;
+    }
+
+    private ExpressionResult conversionError(guru.interlis.model.FunctionCallExpression call, DiagnosticId diagnostic) {
+        var type = typeBindings.nextTypeId();
+        typeBindings.defineType(new ErrorType(type, new Origin.DeclaredOrigin(call.range()), List.of(diagnostic)));
+        state.replaceExpression(new guru.interlis.model.FunctionCallExpression(call.id(), type,
+                guru.interlis.model.ExpressionTypeState.ERROR, call.range(), call.children(),
+                call.functionName(), call.targetFunction(), call.argumentPaths()));
+        return new ExpressionResult(call.id(), type, true);
+    }
+
+    private enum ConversionRange { ACCEPTED, OUTSIDE, UNCERTAIN }
+
+    private ConversionRange conversionRange(guru.interlis.model.FunctionCallExpression call, NumericType target) {
+        if (target.range().minimum().isEmpty() || target.range().maximum().isEmpty()) return ConversionRange.ACCEPTED;
+        var source = typeBindings.effectiveDescriptor(state.expression(call.children().getFirst()).typeId());
+        if (!(source instanceof NumericType numeric)) return ConversionRange.ACCEPTED;
+        var from = numeric.range();
+        var to = target.range();
+        var fromScale = Optional.of(BigDecimal.ONE);
+        var toScale = Optional.of(BigDecimal.ONE);
+        if (!from.unit().equals(to.unit()) && from.unit().isPresent() && to.unit().isPresent()) {
+            fromScale = unitScale(from.unit().orElseThrow());
+            toScale = unitScale(to.unit().orElseThrow());
+        }
+        // A declared conversion function can only be evaluated with an implementation.
+        if (fromScale.isEmpty() || toScale.isEmpty()) return ConversionRange.ACCEPTED;
+
+        var scaled = NumericExpressionRanges.infer(BinaryOperator.MUL, from,
+                NumericExpressionRanges.singleton(fromScale.orElseThrow()), work);
+        var estimate = NumericExpressionRanges.infer(BinaryOperator.DIV, scaled.range(),
+                NumericExpressionRanges.singleton(toScale.orElseThrow()), work);
+        var converted = estimate.range();
+        if (converted.minimum().isEmpty() || converted.maximum().isEmpty()) return ConversionRange.UNCERTAIN;
+        var lower = converted.minimum().orElseThrow().exactValue();
+        var upper = converted.maximum().orElseThrow().exactValue();
+        var targetLower = to.minimum().orElseThrow().exactValue();
+        var targetUpper = to.maximum().orElseThrow().exactValue();
+        if (lower.compareTo(targetLower) >= 0 && upper.compareTo(targetUpper) <= 0) return ConversionRange.ACCEPTED;
+        if ((estimate.rounded() || roundedNumericRanges.contains(numeric.id()))
+                && upper.compareTo(targetLower) >= 0 && lower.compareTo(targetUpper) <= 0) {
+            return ConversionRange.UNCERTAIN;
+        }
+        return ConversionRange.OUTSIDE;
+    }
+
+    private Optional<BigDecimal> unitScale(SymbolId unit) {
+        return UnitScales.resolve(unit, units::extensionUnit, id -> id, depth -> {
+            work.checkpoint();
+            if (depth > 128) throw new AnalysisBudgetExceededException("unitConversionDepth", 128);
+        }, NumericExpressionRanges::checked).map(UnitScales.Scale::factor);
     }
 
     private ExpressionResult contextualNumericConstant(ExpressionResult value, TypeId expected) {
@@ -853,7 +981,7 @@ final class ExpressionBindings {
     boolean valueAssignable(TypedExpression value, TypeId expected) {
         var descriptor=typeBindings.effectiveDescriptor(expected);
         if(value instanceof guru.interlis.model.FunctionCallExpression call && isUnitConversion(call) && descriptor instanceof NumericType numeric)
-            return conversionCompatible(call,numeric);
+            return conversionCompatible(call,numeric) && conversionRange(call,numeric) == ConversionRange.ACCEPTED;
         if(value instanceof guru.interlis.model.ConstantExpression constant && constant.constantName().startsWith("#")) {
             var actual = typeBindings.effectiveDescriptor(value.typeId());
             if (hasEnumValues(descriptor)) {

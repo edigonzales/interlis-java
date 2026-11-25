@@ -51,9 +51,25 @@ führen zu einem technischen Fehler. Es gibt keinen Unterlauf auf null.
 
 Damit ist `0.1 + 0.2 == 0.3` wahr, während `(1/3)*3 == 1` und
 `PI == 3.141592653589793` falsch sind. Binary64, wie es iox-ili verwendet,
-liefert für diese drei Einzelrechnungen falsch, wahr und wahr. Die
-Attributrundung folgt weiterhin dem deklarierten Raster nach §2.8.
+liefert für diese drei Einzelrechnungen falsch, wahr und wahr.
+
+Der Compiler verwendet dieselbe Dezimalrechnung für aus dem Modell herleitbare
+Ergebnisgrenzen. Nichtterminierende Einzelquotienten folgen der Rundung des
+Validators. Bereichsdivision schliesst alle Ergebnisse mit nach aussen
+gerundeten Grenzen ein. Für einen numerischen Vergleich genügt der numerische
+Typ der Operanden. Bei einer Zuweisung an einen begrenzten
+Typ wird der fehlende Nachweis als unvollständige Unterstützung ausgewiesen.
+
+Die Attributrundung folgt weiterhin dem deklarierten Raster nach §2.8.
 [INTERLIS-Referenzhandbuch][norm24]
+
+Für `INTERLIS.convertUnit` prüft der Compiler die gemeinsame Umrechnungsbasis.
+Bei berechenbaren Skalierungen prüft er in Zuweisungen und Funktionsargumenten
+auch den umgerechneten Wertebereich. Ein Vergleich bindet die Zieleinheit.
+Bei typkompatiblen `FUNCTION`-Umrechnungen enthält das Schema den Aufruf und den
+deklarierten Zieltyp. Für die Berechnung ist eine ausführbare Umrechnung nötig.
+Der Validator meldet fehlenden Auswertungskontext, wenn diese nicht vorliegt.
+[INTERLIS-Referenzhandbuch §3.14][ref-norm24-p87]
 
 ## Gemeinsame Segmentendpunkte bei Linienzügen
 

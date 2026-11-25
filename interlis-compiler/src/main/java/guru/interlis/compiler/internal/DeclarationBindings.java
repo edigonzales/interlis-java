@@ -696,7 +696,7 @@ final class DeclarationBindings {
         if (inferred != null) return inferred;
         List<ExpressionId> result = new ArrayList<>();
         for (var expression : syntax.derivations()) {
-            var bound = expressions.contextualValue(expressions.buildExpression(expression, decl.owner().orElseThrow()),type,decl.id());
+            var bound = expressions.assignmentValue(expressions.buildExpression(expression, decl.owner().orElseThrow()),type,decl.id());
             result.add(bound.id());
             if(!bound.error() && (syntax.mandatory() || typeBindings.mandatoryType(type))
                     && guru.interlis.model.internal.TypeCompatibility.isUndefined(typeBindings.effectiveDescriptor(bound.typeId())))
