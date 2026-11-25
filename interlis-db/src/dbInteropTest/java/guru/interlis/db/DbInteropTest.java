@@ -229,37 +229,6 @@ final class DbInteropTest {
                 .exchange(new TestDatabase(work, postgres, "xyz_reference"), new TestDatabase(work, postgres, "xyz_own"));
     }
 
-    @Test void geoPackageGeometryLayout23() throws Exception { exchangeGeometryLayout(23, null); }
-    @Test void geoPackageGeometryLayout24() throws Exception { exchangeGeometryLayout(24, null); }
-    @Test void postgisGeometryLayout23() throws Exception { exchangeWithPostgis(23, this::exchangeGeometryLayout); }
-    @Test void postgisGeometryLayout24() throws Exception { exchangeWithPostgis(24, this::exchangeGeometryLayout); }
-
-    private void exchangeGeometryLayout(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new GeometryLayoutCases(work, version, new ReferenceTool(work, postgres != null));
-        if (postgres != null) {
-            cases.sameTable(new TestDatabase(work, postgres, "geometry_layout_reference"),
-                    new TestDatabase(work, postgres, "geometry_layout_own"));
-        } else {
-            cases.wideGeoPackage(new TestDatabase(work, null, "wide_geometry_reference"),
-                    new TestDatabase(work, null, "wide_geometry_own"));
-        }
-        cases.split(new TestDatabase(work, postgres, "split_geometry_reference"),
-                new TestDatabase(work, postgres, "split_geometry_own"));
-    }
-
-    @Test void geoPackageGeometryHierarchy23() throws Exception { exchangeGeometryHierarchy(23, null); }
-    @Test void geoPackageGeometryHierarchy24() throws Exception { exchangeGeometryHierarchy(24, null); }
-    @Test void postgisGeometryHierarchy23() throws Exception { exchangeWithPostgis(23, this::exchangeGeometryHierarchy); }
-    @Test void postgisGeometryHierarchy24() throws Exception { exchangeWithPostgis(24, this::exchangeGeometryHierarchy); }
-
-    private void exchangeGeometryHierarchy(int version, PostgreSQLContainer postgres) throws Exception {
-        var cases = new GeometryLayoutCases(work, version, new ReferenceTool(work, postgres != null));
-        cases.hierarchy(new TestDatabase(work, postgres, "hierarchy_geometry_reference"),
-                new TestDatabase(work, postgres, "hierarchy_geometry_own"), postgres == null);
-        cases.hierarchy(new TestDatabase(work, postgres, "alternate_hierarchy_reference"),
-                new TestDatabase(work, postgres, "alternate_hierarchy_own"), postgres != null);
-    }
-
     private void exchange(int version, PostgreSQLContainer postgres) throws Exception {
         var base = new BaseDbFixture(work, version);
         String model = base.model();

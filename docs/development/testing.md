@@ -464,13 +464,14 @@ gemeinsam aus und prüfen die räumlichen Treffer nach einem Update durch
 ili2db. Die XTF-2.4-Fälle prüfen zusätzlich die Reihenfolge der Geometrieteile.
 
 `*DbInteropTest.*Xyz*` prüft XYZ-Geometrien und die XY-Indexhüllen.
-`*DbInteropTest.*GeometryLayout*` prüft mehrere Spalten und Hilfstabellen,
-`*DbInteropTest.*GeometryHierarchy*` deren Verwendung in Klassenhierarchien.
-Die Tests vergleichen Kataloge beider Schemaerzeuger und wechseln für Import,
-Export und Mutationen zwischen den Werkzeugen. Bei Klassenhierarchien
-mit Geometrie-Hilfstabellen prüfen sie den Referenzimport und reproduzieren
-den [Fehler des Referenzexports](../usage/database.md#referenzprofil)
-für dieses Layout.
+`--tests '*GeometryLayoutInteropTest'` vergleicht die Kataloge für gemeinsame
+Geometriespalten und für Hilfstabellen. Klassen mit mehreren Geometrien
+und die Klassenhierarchie teilen sich je Layout dasselbe Schemapaar.
+Der Mischlauf prüft auch Updates. Bei Hilfstabellen bleiben der
+Referenzimport mit nativem Export und der dokumentierte
+[Fehler des Referenzexports](../usage/database.md#referenzprofil) abgedeckt.
+`GeometryLayoutStorageTest` prüft räumliche Indizes, stabile IDs,
+SQL-`NULL`, beschädigte Basketzuordnungen und Rollback per JDBC.
 
 `--tests '*CrsDefaultsInteropTest'` prüft Schema- und Modellstandards und
 bündelt Punkte und Geometrien mit `VERTEX`-Domänen. Eigene Fälle prüfen
