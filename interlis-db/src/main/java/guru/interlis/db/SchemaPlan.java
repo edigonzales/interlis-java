@@ -20,6 +20,7 @@ import guru.interlis.model.NumericType;
 import guru.interlis.model.Origin;
 import guru.interlis.model.PathExpression;
 import guru.interlis.model.PathStep;
+import guru.interlis.model.ReferenceType;
 import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
@@ -202,15 +203,27 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     }
 
     private static Map<String, Set<String>> requiredColumns(DbMapping mapping) {
+        for (var composition : mapping.compositions()) {
+            if (mapping.table(composition.parent()).object().kind() == SymbolKind.STRUCTURE) {
+                throw DbMapping.unsupported("--sql-not-null at " + composition.slot().name().declared());
+            }
+        }
         var required = new HashMap<String, Set<String>>();
         for (var table : mapping.tables()) {
-            if (table.object().kind() != SymbolKind.CLASS || table.subtype() || !table.secondaryGeometries().isEmpty()) {
+            var kind = table.object().kind();
+            if ((kind != SymbolKind.CLASS && kind != SymbolKind.STRUCTURE) || table.subtype()
+                    || !table.secondaryGeometries().isEmpty()) {
                 throw DbMapping.unsupported("--sql-not-null at " + table.object().name().declared());
             }
             var columns = new HashSet<String>();
             for (var column : table.columns()) {
                 if (column.slot() instanceof RoleSlot role && mapping.simpleEmbeddedRole(table, column)) {
                     if (role.role().cardinality().lower().signum() > 0) columns.add(column.name());
+                    continue;
+                }
+                if (column.kind() == DbMapping.Kind.REFERENCE && column.catalogueReference().isEmpty()
+                        && column.effectiveType().orElse(null) instanceof ReferenceType reference
+                        && DbMapping.simpleLocalReference(mapping.plan(), reference)) {
                     continue;
                 }
                 if (!column.simpleScalar()) {

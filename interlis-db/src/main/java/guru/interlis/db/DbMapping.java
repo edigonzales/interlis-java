@@ -511,14 +511,20 @@ final class DbMapping {
             return false;
         }
         var target = table(column.targetRelation());
-        return flatClass(table) && flatClass(target)
+        return flatClass(plan, table.object()) && flatClass(plan, target.object())
                 && associationsForOwner(associations, table.object().symbol()).stream()
                 .anyMatch(association -> association.role().symbol().equals(column.slot().symbol()) && !association.ownerRole().single());
     }
 
-    private boolean flatClass(Table table) {
-        return table.object().kind() == SymbolKind.CLASS && !table.subtype()
-                && !table.object().modifiers().contains(Modifier.ABSTRACT) && !hasSubtypes(plan, table.object().symbol());
+    private static boolean flatClass(TransferPlan plan, ObjectDescriptor object) {
+        return object.kind() == SymbolKind.CLASS && object.baseType().isEmpty()
+                && !object.modifiers().contains(Modifier.ABSTRACT) && !hasSubtypes(plan, object.symbol());
+    }
+
+    static boolean simpleLocalReference(TransferPlan plan, ReferenceType reference) {
+        return !reference.external() && reference.restrictions().isEmpty()
+                && reference.target().flatMap(target -> plan.object(new SymbolRef(plan.snapshotId(), target)))
+                .filter(object -> flatClass(plan, object)).isPresent();
     }
     boolean hasBasketColumn() { return schemaOptions.contains(Ili2dbLayout.SchemaOption.BASKET_COLUMN); }
     boolean storesTransferTids() { return schemaOptions.contains(Ili2dbLayout.SchemaOption.TID_COLUMN); }
@@ -1504,6 +1510,7 @@ final class DbMapping {
             case GeometryType ignored when curve != null -> curve.kind();
             case ReferenceType reference when reference.target().isPresent()
                     && (optional(attr)
+                    || simpleLocalReference(plan, reference)
                     || (DbCatalogueReference.isReferenceField(attr) && DbCatalogueReference.isWrapper(plan, object))) ->
                     Kind.REFERENCE;
             default -> throw unsupported("attribute " + path + " (" + type.kind() + ")");

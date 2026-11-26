@@ -95,6 +95,22 @@ final class ProfileFixtures {
         return object(model, "Site", prefix + "-site", "<Label>site</Label>");
     }
 
+    Path requiredReferenceModel(String model) throws IOException {
+        String direct = version == 24 ? "DirectSite : MANDATORY REFERENCE TO Site;" : "";
+        return source(model, """
+                CLASS Site = Label : MANDATORY TEXT*30; END Site;
+                STRUCTURE SiteDetail = AssignedSite : MANDATORY REFERENCE TO Site; END SiteDetail;
+                CLASS Asset = Detail : SiteDetail; %s END Asset;
+                """.formatted(direct));
+    }
+
+    String referringAsset(String model, String tid, String targetTid) {
+        String structure = version == 23 ? model + ".Data.SiteDetail" : "SiteDetail";
+        String fields = targetTid == null ? "" : reference("AssignedSite", targetTid);
+        String direct = version == 24 && targetTid != null ? reference("DirectSite", targetTid) : "";
+        return object(model, "Asset", tid, "<Detail><" + structure + ">" + fields + "</" + structure + "></Detail>" + direct);
+    }
+
     Path auditModel(String model) throws IOException {
         Path ili = linkedModel(model);
         return Files.writeString(ili, Files.readString(ili).replace("CLASS Asset = Label", """

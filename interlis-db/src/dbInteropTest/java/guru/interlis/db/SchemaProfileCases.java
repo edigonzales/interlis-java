@@ -111,12 +111,51 @@ final class SchemaProfileCases {
     private void assertRequiredRole(Path output, String prefix) throws Exception {
         var asset = fixtures.rows(output, prefix, 2).stream()
                 .filter(row -> (prefix + "-asset").equals(id(row, version, "tid"))).findFirst().orElseThrow();
-        var role = child(asset, "AssignedSite");
-        String ref = version == 23 ? role.getAttribute("REF")
-                : role.getAttributeNS("http://www.interlis.ch/xtf/2.4/INTERLIS", "ref");
-        assertEquals(prefix + "-site", ref);
+        assertEquals(prefix + "-site", targetTid(child(asset, "AssignedSite")));
         assertEquals("42", child(asset, "SerialNo").getTextContent());
         assertNull(child(asset, "ReviewSite"));
+    }
+
+    private String targetTid(Element reference) {
+        return version == 23 ? reference.getAttribute("REF")
+                : reference.getAttributeNS("http://www.interlis.ch/xtf/2.4/INTERLIS", "ref");
+    }
+
+    void requiredReferences(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ProfileRequiredReference" + version;
+        Path ili = fixtures.requiredReferenceModel(model);
+        referenceSchema(expected, ili, "--createFk");
+        schema(own, model, ili, "--sql-not-null", "--create-fk");
+        sameCatalog(expected, own);
+        for (var db : List.of(expected, own)) {
+            var output = work.resolve("required-reference-output.xtf");
+            var legacy = fixtures.data(model, "legacy",
+                    fixtures.referringAsset(model, "legacy-asset", "legacy-site") + fixtures.assignedSite(model, "legacy"));
+            referenceImport(db, "legacy", legacy);
+            assertCliSuccess(db, "export", model, "legacy", output);
+            assertRequiredReferences(output, "legacy");
+
+            var nativeInput = fixtures.data(model, "native",
+                    fixtures.referringAsset(model, "native-asset", "native-site") + fixtures.assignedSite(model, "native"));
+            assertCliSuccess(db, "import", model, "native", nativeInput);
+            referenceExport(db, "native", output);
+            assertRequiredReferences(output, "native");
+            try (var sql = db.connect()) {
+                assertEquals(Set.of("legacy-asset:legacy-site", "native-asset:native-site"),
+                        catalogKeys(sql, "SELECT a.t_ili_tid || ':' || s.t_ili_tid FROM " + db.table("asset") + " a JOIN "
+                                + db.table("sitedetail") + " d ON d.asset_detail=a.t_id JOIN "
+                                + db.table("site") + " s ON s.t_id=d.assignedsite"
+                                + (version == 24 ? " WHERE a.directsite=s.t_id" : "")));
+            }
+        }
+    }
+
+    private void assertRequiredReferences(Path output, String prefix) throws Exception {
+        var asset = fixtures.rows(output, prefix, 2).stream()
+                .filter(row -> (prefix + "-asset").equals(id(row, version, "tid"))).findFirst().orElseThrow();
+        var detail = children(child(asset, "Detail")).getFirst();
+        assertEquals(prefix + "-site", targetTid(child(detail, "AssignedSite")));
+        if (version == 24) assertEquals(prefix + "-site", targetTid(child(asset, "DirectSite")));
     }
 
     void foreignKeyProfiles(TestDatabase expected, TestDatabase own) throws Exception {

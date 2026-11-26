@@ -40,6 +40,17 @@ final class SchemaProfileInteropTest {
                 .requiredRoles(expected, expected.peer("profile_required_role_own"));
     }
 
+    @Test void geoPackageProfileRequiredReferences23() throws Exception { exchangeProfileRequiredReferences(23, null); }
+    @Test void geoPackageProfileRequiredReferences24() throws Exception { exchangeProfileRequiredReferences(24, null); }
+    @Test void postgisProfileRequiredReferences23() throws Exception { exchangeProfileRequiredReferences(23, POSTGIS.container()); }
+    @Test void postgisProfileRequiredReferences24() throws Exception { exchangeProfileRequiredReferences(24, POSTGIS.container()); }
+
+    private void exchangeProfileRequiredReferences(int version, PostgreSQLContainer postgres) throws Exception {
+        var expected = new TestDatabase(work, postgres, "profile_required_ref", "v" + version + "_");
+        new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version)
+                .requiredReferences(expected, expected.peer("profile_required_ref_own"));
+    }
+
     @Test void geoPackageProfileForeignKeys23() throws Exception { exchangeProfileForeignKeys(23, null); }
     @Test void geoPackageProfileForeignKeys24() throws Exception { exchangeProfileForeignKeys(24, null); }
     @Test void postgisProfileForeignKeys23() throws Exception { exchangeProfileForeignKeys(23, POSTGIS.container()); }

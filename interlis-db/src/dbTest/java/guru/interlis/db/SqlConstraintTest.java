@@ -367,6 +367,35 @@ final class SqlConstraintTest {
         });
     }
 
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void requiredReferenceAttributesRemainNullableAndRollBackUnresolvedTargets(Backend backend, int version) throws Exception {
+        withDatabase(backend, db -> {
+            String model = "SqlRequiredReference";
+            var fixture = new ProfileFixtures(work, version);
+            var ili = fixture.requiredReferenceModel(model);
+            var strictChecks = schemaWithIdentityColumns(db, model, ili, CancellationToken.none(),
+                    "--sql-not-null", "--create-mandatory-checks");
+            assertEquals(2, strictChecks.code(), strictChecks::diagnostics);
+            assertTrue(strictChecks.diagnostics().contains("cannot be combined"), strictChecks::diagnostics);
+            DbTestSupport.assertSchemaWithIdentityColumns(db, model, ili, "--sql-not-null", "--create-fk");
+            assertCliSuccess(db, "import", model, "nullable", fixture.data(model, "nullable",
+                    fixture.referringAsset(model, "nullable-asset", null)));
+            assertCliFailure(db, "import", model, "broken", fixture.data(model, "broken",
+                    fixture.assignedSite(model, "broken") + fixture.referringAsset(model, "broken-asset", "broken-site")
+                            + fixture.referringAsset(model, "broken-unknown", "absent")), "to absent");
+            try (var sql = db.connect()) {
+                assertRolledBack(db, sql, 1, 1);
+                assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("site")));
+                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("sitedetail") + " WHERE assignedsite IS NULL"));
+                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("sitedetail")));
+                if (version == 24) {
+                    assertNull(scalar(sql, "SELECT directsite FROM " + db.table("asset") + " WHERE t_ili_tid='nullable-asset'"));
+                }
+            }
+        });
+    }
+
     private static void assertRolledBack(Target db, Connection sql, int objects, int datasets) throws SQLException {
         assertEquals(Integer.toString(objects), scalar(sql, "SELECT count(*) FROM " + db.table("asset")));
         assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("asset") + " WHERE t_ili_tid LIKE 'broken-%'"));
