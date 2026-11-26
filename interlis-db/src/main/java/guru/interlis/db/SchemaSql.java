@@ -183,7 +183,11 @@ final class SchemaSql {
                 columns.add(SEQ_COLUMN + " " + dialect.idType());
             }
             for (var column : table.columns()) {
-                addColumnDefinitions(columns, column, dialect);
+                if (column.scalarText(plan.schemaOptions())) {
+                    columns.add(quote(column.name()) + " TEXT");
+                } else {
+                    addColumnDefinitions(columns, column, dialect);
+                }
                 column.positionColumn().ifPresent(position -> columns.add(quote(position) + " " + dialect.idType()));
             }
             columns.addAll(auditColumns);

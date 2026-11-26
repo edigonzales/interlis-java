@@ -52,6 +52,32 @@ final class ScalarStorageTest {
 
     @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void modelExtensionCannotChangeScalarStorage(Backend backend, int version) throws Exception {
+        var db = target(backend);
+        var fixture = new ScalarFixtures(work, version);
+        String model = "ScalarMapping" + version;
+        assertSchemaWithIdentityColumns(db, model, fixture.copyModel(model));
+        var input = fixture.data(model, "typed", List.of(field("SmallNo", "13")));
+        assertCliSuccess(db, "import", model, "typed", input);
+        Path addition = Files.writeString(work.resolve("ExtraModel.ili"), """
+                INTERLIS 2.%d;
+                MODEL ExtraModel (en) AT "https://example.org/interlis/db" VERSION "1" =
+                  TOPIC Data = CLASS Extra = Label : TEXT; END Extra; END Data;
+                END ExtraModel.
+                """.formatted(version - 20));
+        assertCliFailure(db, "schemaimport", "ExtraModel", null, addition,
+                "conflict with the existing ili2db SETTINGS", "--add-models", "--sql-cols-as-text");
+        try (var sql = db.connect()) {
+            assertNull(scalar(sql, "SELECT max(sqlname) FROM " + db.table("t_ili2db_classname")
+                    + " WHERE iliname='ExtraModel.Data.Extra'"));
+            assertNull(scalar(sql, "SELECT max(setting) FROM " + db.table("t_ili2db_settings")
+                    + " WHERE tag='ch.ehi.ili2db.SqlColsAsText'"));
+            assertEquals("13", stored(db, sql, "smallno", "typed", 0));
+        }
+    }
+
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void numericPrecisionAndLateOverflow(Backend backend, int version) throws Exception {
         var db = target(backend);
         var fixture = new ScalarFixtures(work, version);

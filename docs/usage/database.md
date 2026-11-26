@@ -435,6 +435,8 @@ BLACKBOX verwendet Base64 beziehungsweise XML-Text. Bei reinem
 BLACKBOX-XML-Text speichert die Referenz-Textspalte keine Namespace-Bindungen
 des umgebenden XTF-Elements. Das Profil unterstützt Enum-Codes ohne
 zusätzliche Enum-Schemaoptionen und ohne `--expandStruct`.
+`schemaimport --sql-cols-as-text` erzeugt dieses Profil. `--add-models`
+übernimmt die Textabbildung aus dem bestehenden Schema.
 
 In bestehenden `newClass`-Schemata aus ili2db 5.5.2 mit
 `--coalesceCatalogueRef` verwendet der FULL-Transfer die Fremdschlüsselspalte

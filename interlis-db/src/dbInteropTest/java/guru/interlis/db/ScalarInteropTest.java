@@ -136,11 +136,14 @@ final class ScalarInteropTest {
 
     private void exchangeScalarText(int version, PostgreSQLContainer postgres) throws Exception {
         var db = new TestDatabase(work, postgres, "scalar_text_reference", "v" + version + "_");
+        var own = db.peer("scalar_text_own");
         var reference = new ReferenceTool(work, db.postgis(), "UTC");
         var fixture = new ScalarFixtures(work, version);
         String model = "ScalarMapping" + version;
         Path ili = fixture.copyModel(model);
         referenceSchema(reference, db, ili, "--sqlColsAsText");
+        assertSchemaWithIdentityColumns(own, model, ili, "--sql-cols-as-text");
+        compareCatalog(db, own);
 
         var scalars = new LinkedHashMap<String, String>();
         scalars.put("Caption", "Caption");
@@ -161,6 +164,32 @@ final class ScalarInteropTest {
         var values = List.of(fields, "");
         Path legacy = fixture.data(model, "legacy", values);
         Path nativeInput = fixture.data(model, "native", values);
+        exchangeScalarText(db, reference, fixture, model, legacy, nativeInput, scalars, uuid);
+        exchangeScalarText(own, reference, fixture, model, legacy, nativeInput, scalars, uuid);
+
+        String extension = "ScalarTextExtension" + version;
+        Path extensionIli = Files.writeString(work.resolve(extension + ".ili"), """
+                INTERLIS 2.%d;
+                MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
+                  TOPIC Data = CLASS Extra = ValueNo : 0.000 .. 9999999999999999.999; END Extra; END Data;
+                END %s.
+                """.formatted(version - 20, extension, extension));
+        assertSchemaWithIdentityColumns(own, extension, extensionIli, "--add-models");
+        String object = version == 23 ? "<" + extension + ".Data.Extra TID=\"new-1\"><ValueNo>" + HIGH_DECIMAL
+                + "</ValueNo></" + extension + ".Data.Extra>" : "<Extra i:tid=\"new-1\"><ValueNo>" + HIGH_DECIMAL
+                + "</ValueNo></Extra>";
+        Path extra = Files.writeString(work.resolve("extension.xtf"),
+                DbTestSupport.referenceDatasetFixture(extension, version, "extension-basket", object));
+        referenceImport(reference, own, "extension", extra);
+        try (var sql = own.connect()) {
+            assertEquals(HIGH_DECIMAL, scalar(sql, "SELECT valueno FROM " + own.table("extra")));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + own.table("extra")
+                    + " WHERE t_id > (SELECT max(t_id) FROM " + own.table("asset") + ")"));
+        }
+    }
+
+    private void exchangeScalarText(TestDatabase db, ReferenceTool reference, ScalarFixtures fixture, String model,
+                                    Path legacy, Path nativeInput, Map<String, String> scalars, String uuid) throws Exception {
         referenceImport(reference, db, "legacy", legacy);
         Path exported = work.resolve("scalar-text-native.xtf");
         assertCliSuccess(db, "export", model, "legacy", exported);

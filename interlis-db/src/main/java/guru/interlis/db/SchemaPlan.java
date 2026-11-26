@@ -91,6 +91,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                            DbInheritance.Profile inheritance, Set<AttributeTransformation> transformations, boolean strokeArcs,
                            DbEnumOptions enumOptions, Set<SchemaOption> schemaOptions, CancellationToken token)
             throws IOException {
+        DbScalarText.checkProfile(schemaOptions, enumOptions, transformations);
         var files = new ArrayList<Path>();
         files.add(file);
         files.addAll(imports);
@@ -164,7 +165,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             }
             var rules = constraints.get(table.object().symbol().symbol());
             if (rules != null) uniqueKeys.put(table.name(), uniqueKeys(mapping, table, rules));
-            if (schemaOptions.contains(SchemaOption.NUMERIC_CHECKS)) {
+            if (schemaOptions.contains(SchemaOption.NUMERIC_CHECKS) && !schemaOptions.contains(SchemaOption.SCALAR_TEXT)) {
                 numericChecks.put(table.name(), table.columns().stream().flatMap(SchemaPlan::numericChecks).toList());
             }
         }
@@ -439,7 +440,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             case MULTISURFACE -> column.wrappedGeometry().isPresent() ? "MULTISURFACE" : ((GeometryType) effective).geometryKind().name();
             case REFERENCE, REFERENCE_TEXT -> null;
         };
-        if (typeKind != null) property(properties, table, subtype, column, "typeKind", typeKind);
+        boolean scalarText = column.scalarText(mapping.schemaOptions());
+        if (!scalarText && typeKind != null) property(properties, table, subtype, column, "typeKind", typeKind);
         if (!expandedField && (column.kind() == DbMapping.Kind.BOOLEAN || column.kind() == DbMapping.Kind.ENUMERATION)) {
             String domain = null;
             if (declaredType(mapping, column) instanceof DomainReferenceType alias) {
@@ -460,10 +462,10 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 }
             }
         }
-        if (effective instanceof TextType text && text.textKind() == TextKind.MTEXT) {
+        if (!scalarText && effective instanceof TextType text && text.textKind() == TextKind.MTEXT) {
             property(properties, table, subtype, column, "textKind", "MTEXT");
         }
-        if (effective instanceof NumericType number) {
+        if (!scalarText && effective instanceof NumericType number) {
             number.range().unit().ifPresent(id -> {
                 var unit = symbol(mapping, new SymbolRef(mapping.plan().snapshotId(), id));
                 String name = unit.name().value();
