@@ -27,6 +27,16 @@ final class EnumerationFixtures {
               Active : BOOLEAN;
             END Asset;
             """;
+    static final String INLINE_OVERRIDES = """
+            CLASS Meter = State : (idle, active, standby) ORDERED; END Meter;
+            CLASS SmartUnit EXTENDS Meter =
+              Label : TEXT*30;
+              State (EXTENDED) : (active (
+                !!@ili2db.dispName="Ready label"
+                ready, busy), out_of_service);
+            END SmartUnit;
+            CLASS Leaf EXTENDS SmartUnit = Details : TEXT*30; END Leaf;
+            """;
 
     private final Path work;
     private final int version;
@@ -125,6 +135,25 @@ final class EnumerationFixtures {
         return dataset(model, prefix, object(model, "Asset", prefix + "-value", """
                 <GradeValue>Family.Alpha</GradeValue><DirectValue>No_Sign</DirectValue><Active>true</Active>
                 """) + object(model, "Asset", prefix + "-missing", ""));
+    }
+
+    Path inlineDataset(String model, String prefix) throws Exception {
+        return dataset(model, prefix, object(model, "Meter", prefix + "-base", "<State>standby</State>")
+                + object(model, "SmartUnit", prefix + "-ready", "<State>active.ready</State><Label>smart</Label>")
+                + object(model, "Leaf", prefix + "-inherited", "<State>standby</State>")
+                + object(model, "Leaf", prefix + "-fallback", "<State>out_of_service</State>")
+                + object(model, "Leaf", prefix + "-missing", ""));
+    }
+
+    void assertInlineOverrides(Path output, String prefix) throws Exception {
+        var basket = children(readDataSection(output, version)).getFirst();
+        assertEquals(prefix + "-basket", id(basket, version, "bid"));
+        var objects = children(basket).stream().collect(Collectors.toMap(row -> id(row, version, "tid"), row -> row));
+        assertEquals("standby", child(objects.get(prefix + "-base"), "State").getTextContent());
+        assertEquals("active.ready", child(objects.get(prefix + "-ready"), "State").getTextContent());
+        assertEquals("standby", child(objects.get(prefix + "-inherited"), "State").getTextContent());
+        assertEquals("out_of_service", child(objects.get(prefix + "-fallback"), "State").getTextContent());
+        assertNull(child(objects.get(prefix + "-missing"), "State"));
     }
 
     void assertScalars(Path output, String prefix) throws Exception {

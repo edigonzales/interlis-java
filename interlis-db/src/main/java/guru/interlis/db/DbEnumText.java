@@ -19,19 +19,24 @@ record DbEnumText(String column, Map<String, String> labels, boolean beautify) {
     }
 
     static DbEnumText describe(TransferPlan plan, DbMapping.Column column, boolean beautify) {
-        var labels = new HashMap<String, String>();
         if (column.kind() == DbMapping.Kind.ENUMERATION) {
             if (column.enumeration().filter(value -> !value.labels().isEmpty()).isPresent()) {
                 return new DbEnumText(column.name() + "_txt", column.enumeration().orElseThrow().labels(), beautify);
             }
-            var definition = DbEnumeration.definition(plan, (AttributeSlot) column.slot());
-            String language = language(plan, definition);
-            DbEnumeration.elements(plan, definition).forEach((path, element) -> {
-                String label = displayName(element, language);
-                if (label != null && !label.isEmpty()) labels.put(path, label);
-            });
+            return new DbEnumText(column.name() + "_txt", modelLabels(plan, (AttributeSlot) column.slot()), beautify);
         }
-        return new DbEnumText(column.name() + "_txt", labels, beautify);
+        return new DbEnumText(column.name() + "_txt", Map.of(), beautify);
+    }
+
+    static Map<String, String> modelLabels(TransferPlan plan, AttributeSlot slot) {
+        var labels = new HashMap<String, String>();
+        var definition = DbEnumeration.definition(plan, slot);
+        String language = language(plan, definition);
+        DbEnumeration.elements(plan, definition).forEach((path, element) -> {
+            String label = displayName(element, language);
+            if (label != null && !label.isEmpty()) labels.put(path, label);
+        });
+        return Map.copyOf(labels);
     }
 
     static String language(TransferPlan plan, Symbol symbol) {
@@ -47,11 +52,15 @@ record DbEnumText(String column, Map<String, String> labels, boolean beautify) {
     }
 
     String label(TransferValue value) {
+        return label(value, labels);
+    }
+
+    String label(TransferValue value, Map<String, String> effectiveLabels) {
         return switch (value) {
             case BooleanValue flag -> Boolean.toString(flag.value());
             case Enumeration enumeration -> {
                 String path = String.join(".", enumeration.path());
-                yield labels.getOrDefault(path, fallback(path, beautify));
+                yield effectiveLabels.getOrDefault(path, fallback(path, beautify));
             }
             case null, default -> null;
         };

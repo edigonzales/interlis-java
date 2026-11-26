@@ -1724,8 +1724,9 @@ final class DbTransfer {
             var extendedFields = mapping.extendedFields(object.type());
             for (var column : table.columns()) {
                 var slot = column.slot().symbol();
+                var effective = extendedFields.getOrDefault(slot, slot);
                 var value = basketGeometry.active(column) && mapping.applies(column, object.type())
-                        ? object.value(extendedFields.getOrDefault(slot, slot))
+                        ? object.value(effective)
                         : Optional.<TransferValue>empty();
                 if (value.isPresent()) found.add(slot);
                 var payload = value.filter(val -> val != Undefined.INSTANCE).orElse(null);
@@ -1740,7 +1741,12 @@ final class DbTransfer {
                     }
                     payload = reference;
                 }
-                index = bindColumn(statement, index, table, column, id, context, object.identity().currentBasket(), payload);
+                if (!effective.equals(slot) && column.enumText().isPresent()) {
+                    String label = column.enumText().orElseThrow().label(payload, mapping.extendedEnumLabels(effective));
+                    index = bindScalar(statement, index, column, payload, label);
+                } else {
+                    index = bindColumn(statement, index, table, column, id, context, object.identity().currentBasket(), payload);
+                }
             }
             if (update) {
                 statement.setLong(index++, id);
@@ -2028,8 +2034,13 @@ final class DbTransfer {
 
         private int bindScalar(PreparedStatement statement, int index, Column column, TransferValue value)
                 throws SQLException {
+            return bindScalar(statement, index, column, value, column.enumText().map(text -> text.label(value)).orElse(null));
+        }
+
+        private int bindScalar(PreparedStatement statement, int index, Column column, TransferValue value, String label)
+                throws SQLException {
             int next = index + 1;
-            if (column.enumText().isPresent()) statement.setString(next++, column.enumText().orElseThrow().label(value));
+            if (column.enumText().isPresent()) statement.setString(next++, label);
             if (value == null || value == Undefined.INSTANCE) {
                 statement.setNull(index, Types.NULL);
                 return next;

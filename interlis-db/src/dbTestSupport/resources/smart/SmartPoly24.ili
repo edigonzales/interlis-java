@@ -17,7 +17,9 @@ MODEL SmartPoly24 AT "https://example.org/smart" VERSION "1" =
     CLASS Sensor = State : (idle, active, standby) ORDERED; END Sensor;
     CLASS SmartSensor EXTENDS Sensor =
       Label : TEXT*12;
-      State (EXTENDED) : (active (ready, busy), out_of_service);
+      State (EXTENDED) : (active (
+        !!@ili2db.dispName="Ready label"
+        ready, busy), out_of_service);
     END SmartSensor;
     CLASS SensorLeaf EXTENDS SmartSensor = Detail : TEXT*12; END SensorLeaf;
     CLASS Terminal EXTENDS Instrument = Socket : TEXT*12; END Terminal;

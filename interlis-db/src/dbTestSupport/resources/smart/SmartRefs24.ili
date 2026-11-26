@@ -14,7 +14,9 @@ MODEL SmartRefs24 AT "https://example.org/smart" VERSION "1" =
       Counter (EXTENDED) : 0..49;
       WideValue (EXTENDED) : 0..40000000000;
       Tilt (EXTENDED) : -9.99..9.99;
-      State (EXTENDED) : (active (ready, busy), out_of_service);
+      State (EXTENDED) : (active (
+        !!@ili2db.dispName="Ready label"
+        ready, busy), out_of_service);
     END SmartUnit;
     CLASS Terminal EXTENDS Instrument = Socket : TEXT*12; END Terminal;
     STRUCTURE Note =

@@ -86,8 +86,8 @@ final class SmartClassInteropTest {
         Path ili = fixtures.fixture(model + ".ili");
         Path input = fixtures.fixture(model + ".xtf");
         if (smart2) extendSmartPoly(ili, input, model, version);
-        schema(reference, old, work, model, layout, "--createNumChecks");
-        assertSchemaWithIdentityColumns(own, model, ili, "--inheritance", layout, "--create-num-checks");
+        schema(reference, old, work, model, layout, "--createNumChecks", "--createEnumTxtCol");
+        assertSchemaWithIdentityColumns(own, model, ili, "--inheritance", layout, "--create-num-checks", "--create-enum-txt-col");
         compareCatalog(old, own, smart2);
         Files.delete(ili);
 
@@ -111,6 +111,10 @@ final class SmartClassInteropTest {
             try (var sql = db.connect()) {
                 int datasets = smart2 && db == own ? 3 : 2;
                 SmartFixtures.assertReferenceStorage(db, sql, layout, datasets);
+                String enumTable = db.table(smart2 ? "smartsensor" : "instrument");
+                String enumTid = smart2 ? "smart-sensor" : "s";
+                assertEquals("Ready label", scalar(sql, "SELECT astate_txt FROM " + enumTable
+                        + " WHERE t_ili_tid='native-" + enumTid + "'"));
                 if (db.postgis()) {
                     if (smart2) {
                         assertTiltPrecision(sql, db.schema(), "meter", "4:2");

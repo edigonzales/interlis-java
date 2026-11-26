@@ -13,6 +13,7 @@ import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.execute;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.EnumerationFixtures.BASE;
+import static guru.interlis.db.EnumerationFixtures.INLINE_OVERRIDES;
 import static guru.interlis.db.EnumerationFixtures.assertItfRows;
 import static guru.interlis.db.EnumerationFixtures.mappedTable;
 import static guru.interlis.db.EnumerationFixtures.rows;
@@ -73,6 +74,25 @@ final class EnumerationCases {
         assertSameCatalog(integerReference, integerOwn);
         textRoundtrip(integerReference, model, "2");
         textRoundtrip(integerOwn, model, "2");
+
+        String extended = "EnumInlineLabels" + version;
+        var extendedReference = own.peer("inline_txt_ref");
+        var extendedOwn = own.peer("inline_txt_own");
+        var source = fixtures.source(extended, INLINE_OVERRIDES);
+        schema(extendedReference, extended, "--createEnumTxtCol", "--beautifyEnumDispName");
+        create(extendedOwn, extended, source, "--create-enum-txt-col", "--beautify-enum-disp-name");
+        assertSameCatalog(extendedReference, extendedOwn);
+        for (var db : List.of(extendedReference, extendedOwn)) {
+            mixInline(db, extended);
+            try (var sql = db.connect()) {
+                for (var prefix : List.of("legacy", "native")) {
+                    String row = " FROM " + db.table("meter") + " WHERE t_ili_tid='" + prefix;
+                    assertEquals("Ready label", scalar(sql, "SELECT astate_txt" + row + "-ready'"));
+                    assertEquals("out of service", scalar(sql, "SELECT astate_txt" + row + "-fallback'"));
+                    assertNull(scalar(sql, "SELECT astate_txt" + row + "-missing'"));
+                }
+            }
+        }
     }
 
     void singleLookup(TestDatabase expected, TestDatabase own) throws Exception {
@@ -329,6 +349,16 @@ final class EnumerationCases {
         assertCliSuccess(db, "import", model, "native", fixtures.scalars(model, "native"));
         referenceExport(db, "native", output);
         fixtures.assertScalars(output, "native");
+    }
+
+    private void mixInline(TestDatabase db, String model) throws Exception {
+        Path output = work.resolve("inline-overrides.xtf");
+        referenceImport(db, "legacy", fixtures.inlineDataset(model, "legacy"));
+        assertCliSuccess(db, "export", model, "legacy", output);
+        fixtures.assertInlineOverrides(output, "legacy");
+        assertCliSuccess(db, "import", model, "native", fixtures.inlineDataset(model, "native"));
+        referenceExport(db, "native", output);
+        fixtures.assertInlineOverrides(output, "native");
     }
 
     private void schema(TestDatabase db, String model, String... flags) throws Exception {

@@ -113,6 +113,27 @@ final class EnumerationStorageTest {
 
     @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void extendedInlineLabelsFollowTheConcreteType(Backend backend, int version) throws Exception {
+        var db = target(backend, "inline-overrides");
+        var fixtures = new EnumerationFixtures(work, version);
+        String model = "EnumInlineLabels" + version;
+        assertSchemaWithIdentityColumns(db, model, fixtures.source(model, EnumerationFixtures.INLINE_OVERRIDES),
+                "--create-enum-txt-col", "--beautify-enum-disp-name");
+        Path output = roundTrip(db, model, "native", fixtures.inlineDataset(model, "native"));
+        try (var sql = db.connect()) {
+            String row = " FROM " + db.table("meter") + " WHERE t_ili_tid='native-";
+            assertEquals("standby", scalar(sql, "SELECT astate_txt" + row + "base'"));
+            assertEquals("Ready label", scalar(sql, "SELECT astate_txt" + row + "ready'"));
+            assertEquals("out of service", scalar(sql, "SELECT astate_txt" + row + "fallback'"));
+            assertNull(scalar(sql, "SELECT astate_txt" + row + "missing'"));
+            execute(sql, "UPDATE " + db.table("meter") + " SET astate_txt='edited' WHERE t_ili_tid='native-ready'");
+        }
+        assertCliSuccess(db, "export", model, "native", output);
+        fixtures.assertInlineOverrides(output, "native");
+    }
+
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void storedIdsAndInvalidLookupRows(Backend backend, int version) throws Exception {
         var db = target(backend, "stored-ids");
         var fixtures = new EnumerationFixtures(work, version);

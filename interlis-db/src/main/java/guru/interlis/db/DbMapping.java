@@ -326,6 +326,7 @@ final class DbMapping {
     private final Map<SymbolRef, List<Table>> referenceTables;
     private final Map<Table, List<Table>> hierarchies;
     private final Map<SymbolRef, Map<SymbolRef, SymbolRef>> extendedFields;
+    private final Map<SymbolRef, Map<String, String>> extendedEnumLabels;
     private final List<Composition> compositions;
     private final Map<SymbolRef, List<Composition>> byParent;
     private final Map<SymbolRef, List<Composition>> byChild;
@@ -375,10 +376,16 @@ final class DbMapping {
         hierarchies = families.entrySet().stream().collect(Collectors.toUnmodifiableMap(
                 Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
         var extensions = new HashMap<SymbolRef, Map<SymbolRef, SymbolRef>>();
+        var labels = new HashMap<SymbolRef, Map<String, String>>();
+        boolean hasEnumText = tables.stream().flatMap(table -> table.columns().stream())
+                .anyMatch(column -> column.kind() == Kind.ENUMERATION && column.enumText().isPresent());
         for (var binding : storage.values()) {
             var fields = new HashMap<SymbolRef, SymbolRef>();
             for (var slot : binding.object().slots()) {
                 if (slot instanceof AttributeSlot attribute && !attribute.attribute().transientAttribute()) {
+                    if (hasEnumText && attribute.attribute().overrides().isPresent() && inlineEnumeration(plan, attribute)) {
+                        labels.computeIfAbsent(slot.symbol(), unused -> DbEnumText.modelLabels(plan, attribute));
+                    }
                     for (var base = attribute.attribute(); base.overrides().isPresent();) {
                         var ref = new SymbolRef(plan.snapshotId(), base.overrides().orElseThrow());
                         fields.put(ref, slot.symbol());
@@ -389,6 +396,7 @@ final class DbMapping {
             if (!fields.isEmpty()) extensions.put(binding.object().symbol(), Map.copyOf(fields));
         }
         extendedFields = Map.copyOf(extensions);
+        extendedEnumLabels = Map.copyOf(labels);
         this.compositions = List.copyOf(compositions);
         byParent = indexCompositions(this.compositions, Composition::parent);
         byChild = indexCompositions(this.compositions, Composition::childRoot);
@@ -532,6 +540,10 @@ final class DbMapping {
 
     Map<SymbolRef, SymbolRef> extendedFields(SymbolRef type) {
         return extendedFields.getOrDefault(type, Map.of());
+    }
+
+    Map<String, String> extendedEnumLabels(SymbolRef slot) {
+        return extendedEnumLabels.getOrDefault(slot, Map.of());
     }
 
     ObjectStorage concreteType(Table root, String discriminator, long id) {
@@ -992,7 +1004,8 @@ final class DbMapping {
         if (type instanceof TextType text) return text.textKind() == TextKind.TEXT;
         Kind kind = scalarKind(type);
         if (kind == Kind.ENUMERATION) {
-            if (!DbEnumOptions.DEFAULT.equals(enumOptions) || !inlineEnumeration(plan, attribute)) return false;
+            if (enumOptions.numeric() || enumOptions.lookup() != DbEnumOptions.Lookup.NONE
+                    || !inlineEnumeration(plan, attribute)) return false;
         } else if (kind != Kind.INTEGER && kind != Kind.BIGINT && kind != Kind.DECIMAL) {
             return false;
         }
