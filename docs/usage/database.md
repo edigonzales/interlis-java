@@ -447,9 +447,11 @@ gespeicherten Pflichtwerten setzt die Datenbank die vorhandenen `NOT NULL`-
 Bedingungen durch. `schemaimport --add-models` setzt `SqlNull=enable` voraus.
 
 `schemaimport --sql-not-null` erzeugt ein striktes `newClass`-Schema für
-flache Klassen mit direkt gespeicherten skalaren Attributen. Pflichtattribute
-erhalten `NOT NULL`. Ohne die Option gilt `SqlNull=enable`. Die Kombination
-mit `--create-mandatory-checks` ist auf das nullable Profil beschränkt.
+flache Klassen mit direkt gespeicherten skalaren Attributen und lokalen,
+ungeordneten 1:n-Rollen mit einer konkreten Zieltabelle. Skalare Pflichtattribute
+und eingebettete Rollen mit Kardinalität `{1}` erhalten `NOT NULL`. Ohne
+die Option gilt `SqlNull=enable`. Die Kombination mit
+`--create-mandatory-checks` ist auf das nullable Profil beschränkt.
 
 Der FULL-Transfer mit GeoPackage und PostGIS unterstützt bestehende
 ili2db-Schemata mit `--sqlColsAsText`. Einfache Attribute werden als SQL-Text

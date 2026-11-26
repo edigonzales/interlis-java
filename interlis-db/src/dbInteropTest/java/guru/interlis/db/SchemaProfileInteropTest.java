@@ -36,7 +36,8 @@ final class SchemaProfileInteropTest {
 
     private void exchangeProfileRequiredRoles(int version, PostgreSQLContainer postgres) throws Exception {
         var expected = new TestDatabase(work, postgres, "profile_required_role_ref", "v" + version + "_");
-        new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version).requiredRoles(expected);
+        new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version)
+                .requiredRoles(expected, expected.peer("profile_required_role_own"));
     }
 
     @Test void geoPackageProfileForeignKeys23() throws Exception { exchangeProfileForeignKeys(23, null); }

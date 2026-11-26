@@ -334,20 +334,7 @@ final class SqlConstraintTest {
             String model = "SqlRequiredRole";
             var fixture = new ProfileFixtures(work, version);
             var modelFile = fixture.requiredRoleModel(model);
-            DbTestSupport.assertSchemaWithIdentityColumns(db, model, modelFile, "--create-fk");
-            try (var sql = db.connect()) {
-                if (db.postgis()) {
-                    execute(sql, "ALTER TABLE " + db.table("asset") + " ALTER COLUMN assignedsite SET NOT NULL");
-                } else {
-                    execute(sql, "DROP TABLE asset");
-                    execute(sql, """
-                            CREATE TABLE asset (t_id INTEGER PRIMARY KEY, t_basket INTEGER NOT NULL,
-                                t_ili_tid TEXT(255), serialno INTEGER, assignedsite INTEGER NOT NULL
-                                REFERENCES site(t_id) DEFERRABLE INITIALLY DEFERRED, reviewsite INTEGER)
-                            """);
-                }
-                execute(sql, "DELETE FROM " + db.table("t_ili2db_settings") + " WHERE tag='ch.ehi.ili2db.SqlNull'");
-            }
+            DbTestSupport.assertSchemaWithIdentityColumns(db, model, modelFile, "--sql-not-null", "--create-fk");
             String forward = "forward";
             String backward = "backward";
             assertCliSuccess(db, "import", model, forward, fixture.data(model, forward,
@@ -367,6 +354,10 @@ final class SqlConstraintTest {
                 assertCliFailure(db, "import", model, "broken", fixture.data(model, "broken",
                         fixture.assignedAsset(model, "broken", 5)
                                 + fixture.object(model, "Other", "broken-site", "")), "Cannot encode reference from broken-asset");
+                assertCliFailure(db, "import", model, "broken-role", fixture.data(model, "broken-role",
+                        fixture.assignedSite(model, "broken-role")
+                                + fixture.object(model, "Asset", "broken-role-asset", "<SerialNo>6</SerialNo>")),
+                        importSqlDiagnostic(db, "23502"));
                 assertEquals(identity, scalar(sql, query));
                 assertEquals("3", scalar(sql, "SELECT serialno FROM " + db.table("asset") + " WHERE t_ili_tid='forward-asset'"));
                 assertRolledBack(db, sql, 2, 2);

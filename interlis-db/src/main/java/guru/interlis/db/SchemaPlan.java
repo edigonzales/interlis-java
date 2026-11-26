@@ -33,6 +33,7 @@ import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
 import guru.interlis.transfer.AttributeSlot;
+import guru.interlis.transfer.RoleSlot;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -208,6 +209,10 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             }
             var columns = new HashSet<String>();
             for (var column : table.columns()) {
+                if (column.slot() instanceof RoleSlot role && mapping.simpleEmbeddedRole(table, column)) {
+                    if (role.role().cardinality().lower().signum() > 0) columns.add(column.name());
+                    continue;
+                }
                 if (!column.simpleScalar()) {
                     throw DbMapping.unsupported("--sql-not-null at " + column.slot().name().declared());
                 }

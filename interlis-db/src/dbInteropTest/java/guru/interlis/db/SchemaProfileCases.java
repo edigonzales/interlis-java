@@ -78,10 +78,18 @@ final class SchemaProfileCases {
         }
     }
 
-    void requiredRoles(TestDatabase db) throws Exception {
+    void requiredRoles(TestDatabase db, TestDatabase own) throws Exception {
         String model = "ProfileRequiredRole" + version;
         Path ili = fixtures.requiredRoleModel(model);
         referenceSchema(db, ili, "--createFk");
+        schema(own, model, ili, "--sql-not-null", "--create-fk");
+        sameCatalog(db, own);
+        for (var target : List.of(db, own)) {
+            exchangeRequiredRoles(target, model);
+        }
+    }
+
+    private void exchangeRequiredRoles(TestDatabase db, String model) throws Exception {
         Path output = work.resolve("required-role-output.xtf");
         Path legacy = fixtures.data(model, "legacy",
                 fixtures.assignedAsset(model, "legacy", 42) + fixtures.assignedSite(model, "legacy"));
