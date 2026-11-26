@@ -51,6 +51,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -1535,6 +1536,7 @@ final class DbTransfer {
         private final Optional<Set<String>> storedTids;
         private final Map<String, StoredObject> externalObjects = new HashMap<>();
         private final List<Pending> pending = new ArrayList<>();
+        private final List<PendingRole> pendingRoles = new ArrayList<>();
         private final List<PendingArray> pendingArrays = new ArrayList<>();
         private final List<Pending> externalPending = new ArrayList<>();
         private final List<DbDatasetWrite.ExistingObject> removedObjects = new ArrayList<>();
@@ -2179,6 +2181,16 @@ final class DbTransfer {
 
         private StoredObject bindReference(Table table, Column column, long id, String tid, BasketId basket,
                                            Reference reference) {
+            if (column.slot() instanceof RoleSlot role && role.role().targets().size() > 1) {
+                if (reference.external() || reference.orderPosition().isPresent()
+                        || reference.targetBasket().filter(target -> !target.value().equals(basket.value())).isPresent()) {
+                    throw new DbException("Unsupported reference in " + tid + " at " + role.name().declared());
+                }
+                if (table.column(role.symbol()).equals(column)) {
+                    pendingRoles.add(new PendingRole(table, role, id, tid, reference));
+                }
+                return null;
+            }
             boolean external = column.external();
             var root = mapping.referenceRoot(column);
             if (reference.external() != external
@@ -2204,6 +2216,8 @@ final class DbTransfer {
         void finishBasket() throws SQLException {
             patchReferences(pending, objects);
             pending.clear();
+            patchAlternativeRoles();
+            pendingRoles.clear();
             patchArrayReferences();
             pendingArrays.clear();
             objects.clear();
@@ -2226,14 +2240,44 @@ final class DbTransfer {
                 }
                 checkReference(patch, target);
                 if (!mappedInColumn(patch.column(), target)) continue;
-                var key = new ReferenceColumn(patch.table(), patch.column());
-                var statement = referenceUpdate(key);
-                statement.setLong(1, target.id());
-                statement.setLong(2, patch.objectId());
-                if (statement.executeUpdate() != 1) {
-                    throw new DbException("Could not patch reference on object " + patch.objectTid());
-                }
+                patchReference(patch.table(), patch.column(), target, patch.objectId(), patch.objectTid());
             }
+        }
+
+        private void patchAlternativeRoles() throws SQLException {
+            for (var patch : pendingRoles) {
+                token.throwIfCancellationRequested();
+                var ref = patch.reference();
+                String tid = ref.target().value();
+                var exact = objects.get(tid);
+                var canonical = objects.get(tid.toLowerCase(Locale.ROOT));
+                Column selected = null;
+                StoredObject target = null;
+                for (var column : patch.table().columns()) {
+                    if (!column.slot().symbol().equals(patch.role().symbol())) continue;
+                    var root = mapping.referenceRoot(column);
+                    var candidate = root.uuidIdentity() ? canonical : exact;
+                    if (candidate == null || (ref.target() instanceof ObjectOid) != hasWireOid(mapping, root)
+                            || !mapping.isAssignableTo(candidate.type(), column.target().orElseThrow())
+                            || !mappedInColumn(column, candidate)) continue;
+                    if (selected != null) throw ambiguousTarget(tid, patch.role().name().declared().toString());
+                    selected = column;
+                    target = candidate;
+                }
+                if (selected == null) {
+                    throw new DbException("Cannot encode reference from " + patch.objectTid() + " at "
+                            + patch.role().name().declared() + " to " + tid + " as an ID in an alternative target table in this basket");
+                }
+                patchReference(patch.table(), selected, target, patch.objectId(), patch.objectTid());
+            }
+        }
+
+        private void patchReference(Table table, Column column, StoredObject target, long objectId, String objectTid)
+                throws SQLException {
+            var statement = referenceUpdate(new ReferenceColumn(table, column));
+            statement.setLong(1, target.id());
+            statement.setLong(2, objectId);
+            if (statement.executeUpdate() != 1) throw new DbException("Could not patch reference on object " + objectTid);
         }
 
         private void patchArrayReferences() throws SQLException {
@@ -2292,6 +2336,8 @@ final class DbTransfer {
     private record StoredObject(long id, SymbolRef type, BasketId basket) { }
 
     private record ReferenceColumn(Table table, Column column) { }
+
+    private record PendingRole(Table table, RoleSlot role, long objectId, String objectTid, Reference reference) { }
 
     private record PendingArray(ReferenceColumn column, long objectId, String path, List<String> targetTids) { }
 

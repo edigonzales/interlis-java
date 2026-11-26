@@ -252,7 +252,18 @@ final class DbMapping {
         boolean ordered() { return ownerRole.slot().role().ordered(); }
     }
 
-    record AssociationRole(RoleSlot slot, SymbolRef target) {
+    record AssociationRole(RoleSlot slot, List<SymbolRef> targets) {
+        AssociationRole {
+            targets = List.copyOf(targets);
+        }
+
+        // Embedded associations have one declared target per role.
+        SymbolRef target() { return targets.getFirst(); }
+
+        List<Column> columns() {
+            return targets.stream().map(target -> roleColumn(slot, target, slot.name().declared().last())).toList();
+        }
+
         boolean single() {
             return CardinalityUpper.finite(1).equals(slot.role().cardinality().upper());
         }
@@ -515,6 +526,10 @@ final class DbMapping {
     }
 
     boolean isAssignableTo(SymbolRef actual, SymbolRef declared) {
+        return isAssignableTo(plan, actual, declared);
+    }
+
+    private static boolean isAssignableTo(TransferPlan plan, SymbolRef actual, SymbolRef declared) {
         for (var type = actual; type != null; type = plan.object(type).orElseThrow().baseType().orElse(null)) {
             if (type.equals(declared)) return true;
         }
@@ -711,7 +726,7 @@ final class DbMapping {
             names.put(object.symbol(), name);
         }
         var referenced = new HashSet<SymbolRef>();
-        linkRoles.values().forEach(roles -> roles.forEach(role -> referenced.add(role.target())));
+        linkRoles.values().forEach(roles -> roles.forEach(role -> referenced.addAll(role.targets())));
         associations.forEach(association -> referenced.add(association.target()));
         var inheritance = DbInheritance.plan(plan, objects, names, profile, referenced,
                 schemaOptions.contains(Ili2dbLayout.SchemaOption.TYPE_DISCRIMINATOR));
@@ -730,7 +745,7 @@ final class DbMapping {
             var roles = linkRoles.getOrDefault(object.symbol(), List.of());
             for (var role : roles) {
                 columns.addAll(planReferences(allocator, names, inheritance, name, discriminator, gpkg,
-                        roleColumn(role.slot(), role.target(), role.slot().name().declared().last()), role.slot().role().ordered()));
+                        role.columns(), role.slot().role().ordered()));
             }
             for (var contributor : relation.contributors()) {
                 for (var attribute : storageAttributes(plan, profile, relation, contributor)) {
@@ -842,22 +857,43 @@ final class DbMapping {
     private static List<Column> planReferences(SqlNames allocator, Map<SymbolRef, String> names, DbInheritance inheritance,
                                                 String owner, boolean discriminator, boolean gpkg, Column reference,
                                                 boolean ordered) {
-        var declared = reference.target().orElseThrow();
-        var targets = inheritance.referenceTables(declared);
-        if (targets.isEmpty() || (ordered && targets.size() > 1)) {
-            throw unsupported("reference storage at " + reference.slot().name().declared());
-        }
+        return planReferences(allocator, names, inheritance, owner, discriminator, gpkg, List.of(reference), ordered);
+    }
+
+    private static List<Column> planReferences(SqlNames allocator, Map<SymbolRef, String> names, DbInheritance inheritance,
+                                               String owner, boolean discriminator, boolean gpkg, List<Column> references,
+                                               boolean ordered) {
+        var alternatives = referenceAlternatives(inheritance, references, ordered);
         var result = new ArrayList<Column>();
-        String field = reference.slot().name().declared().last();
-        for (var target : targets) {
-            String name = targets.size() > 1 ? allocator.polymorphicColumn(owner, field, names.get(target))
+        for (var reference : alternatives) {
+            String field = reference.slot().name().declared().last();
+            String name = alternatives.size() > 1 ? allocator.polymorphicColumn(owner, field, names.get(reference.targetRelation()))
                     : reference.slot() instanceof RoleSlot ? allocator.roleColumn(owner, field) : allocator.column(owner, field);
             checkColumnName(reference.slot(), name, false, discriminator, gpkg);
             var column = reference.withName(name);
-            if (!target.equals(declared) || targets.size() > 1) column = column.withReferenceTable(target);
             result.add(ordered ? column.withPositionColumn(gpkg) : column);
         }
         return result;
+    }
+
+    static List<Column> referenceAlternatives(DbInheritance inheritance, List<Column> references, boolean ordered) {
+        var alternatives = new ArrayList<Column>();
+        var relations = new HashSet<SymbolRef>();
+        for (var reference : references) {
+            var declared = reference.target().orElseThrow();
+            var tables = inheritance.referenceTables(declared);
+            if (tables.isEmpty() || (ordered && tables.size() > 1)) {
+                throw unsupported("reference storage at " + reference.slot().name().declared());
+            }
+            for (var table : tables) {
+                if (!relations.add(table)) {
+                    throw unsupported("overlapping reference storage at " + reference.slot().name().declared());
+                }
+                alternatives.add(!table.equals(declared) || tables.size() > 1 || references.size() > 1
+                        ? reference.withReferenceTable(table) : reference);
+            }
+        }
+        return alternatives;
     }
 
     private static void checkColumnName(TransferSlot slot, String column, boolean structure, boolean discriminator,
@@ -1152,7 +1188,15 @@ final class DbMapping {
                         || role.role().aggregation() != RoleAggregation.NONE))) {
             throw unsupported("ORDERED roles in " + feature);
         }
-        return roles.stream().map(role -> new AssociationRole(role, roleTarget(plan, association, role))).toList();
+        long alternatives = roles.stream().filter(role -> role.role().targets().size() > 1).count();
+        if (alternatives > 0 && (alternatives != 1 || roles.size() != 2 || identified || external > 0
+                || association.baseType().isPresent() || hasSubtypes(plan, association.symbol())
+                || roles.stream().anyMatch(role -> role.role().targets().size() > 2 || role.role().ordered()
+                || role.role().aggregation() != RoleAggregation.NONE
+                || CardinalityUpper.finite(1).equals(role.role().cardinality().upper())))) {
+            throw unsupported("OR role at " + association.name().declared());
+        }
+        return roles.stream().map(role -> new AssociationRole(role, roleTargets(plan, association, role))).toList();
     }
 
     private static boolean hasSubtypes(TransferPlan plan, SymbolRef type) {
@@ -1212,19 +1256,26 @@ final class DbMapping {
         return Optional.of(new EmbeddedAssociation(association, name, owner, target, linkTable));
     }
 
-    private static SymbolRef roleTarget(TransferPlan plan, ObjectDescriptor association, RoleSlot slot) {
+    private static List<SymbolRef> roleTargets(TransferPlan plan, ObjectDescriptor association, RoleSlot slot) {
         var role = slot.role();
         String feature = "role " + slot.name().declared();
-        if (role.targets().size() != 1 || role.hiding() || role.derivation().isPresent()) {
+        if (role.targets().isEmpty() || role.hiding() || role.derivation().isPresent()) {
             throw unsupported(feature);
         }
-        var target = new SymbolRef(plan.snapshotId(), role.targets().getFirst().base());
-        if (plan.object(target).filter(object -> object.kind() == SymbolKind.CLASS
-                && (localTopic(plan, association, object) || (role.external() && inDependentTopic(plan, association, object))))
-                .isEmpty()) {
-            throw unsupported(feature + " requires a class in an allowed topic");
+        var targets = new ArrayList<SymbolRef>();
+        for (var alternative : role.targets()) {
+            var target = new SymbolRef(plan.snapshotId(), alternative.base());
+            if (plan.object(target).filter(object -> object.kind() == SymbolKind.CLASS
+                    && (localTopic(plan, association, object) || (role.external() && inDependentTopic(plan, association, object))))
+                    .isEmpty()) {
+                throw unsupported(feature + " requires a class in an allowed topic");
+            }
+            if (targets.stream().anyMatch(other -> isAssignableTo(plan, target, other) || isAssignableTo(plan, other, target))) {
+                throw unsupported("overlapping targets of " + feature);
+            }
+            targets.add(target);
         }
-        return target;
+        return targets;
     }
 
     static List<EmbeddedAssociation> associationsForOwner(List<EmbeddedAssociation> associations, SymbolRef owner) {

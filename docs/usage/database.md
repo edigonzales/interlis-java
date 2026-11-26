@@ -828,6 +828,10 @@ verwendet die TID aus der Wurzeltabelle des Ziels. Eine `RESTRICTION`
 am Rollenziel ändert weder den Fremdschlüssel einer eingebetteten Rolle
 noch den einer eigenständigen Linktabelle.
 Auch Selbstbezüge innerhalb derselben Hierarchie sind möglich.
+Bei binären lokalen n:m-Assoziationen mit ungeordneten Rollen kann ein Ende
+zwei getrennte Zielzweige mit `OR` deklarieren. Die Linktabelle erhält
+die alternativen Fremdschlüsselspalten der physischen Zieltabellen.
+Pro Linkzeile wird genau eine Spalte dieser Rolle verwendet.
 
 `CLASSNAME` und `INHERITANCE` führen die Assoziation, `TRAFO` kennzeichnet
 sie als `embedded` und `ATTRNAME` benennt Spalte und Ziel. Referenzen auf

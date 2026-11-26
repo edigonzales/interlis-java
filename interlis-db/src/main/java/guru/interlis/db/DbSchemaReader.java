@@ -247,8 +247,7 @@ final class DbSchemaReader {
             if (roles != null) {
                 for (var role : roles) {
                     columns.addAll(bindReferences(db, parent, attrNames, layout, names,
-                            DbMapping.roleColumn(role.slot(), role.target(), role.slot().name().declared().last()),
-                            role.slot().role().ordered(), settings));
+                            role.columns(), role.slot().role().ordered(), settings));
                 }
             }
             for (var contributor : relation.contributors()) {
@@ -1063,18 +1062,20 @@ final class DbSchemaReader {
     private static List<Column> bindReferences(Database db, CatalogTable table, AttributeNames names,
                                                 DbInheritance layout, Map<SymbolRef, String> tableNames,
                                                 Column reference, boolean ordered, Settings settings) throws SQLException {
-        String path = reference.slot().name().declared().toString();
-        var declared = reference.target().orElseThrow();
-        var targets = layout.referenceTables(declared);
-        if (targets.isEmpty() || (ordered && targets.size() > 1)) throw unsupported("reference storage at " + path);
+        return bindReferences(db, table, names, layout, tableNames, List.of(reference), ordered, settings);
+    }
+
+    private static List<Column> bindReferences(Database db, CatalogTable table, AttributeNames names,
+                                                DbInheritance layout, Map<SymbolRef, String> tableNames,
+                                                List<Column> references, boolean ordered, Settings settings) throws SQLException {
         var columns = new ArrayList<Column>();
-        for (var target : targets) {
-            String targetName = tableNames.get(target);
+        for (var reference : DbMapping.referenceAlternatives(layout, references, ordered)) {
+            String path = reference.slot().name().declared().toString();
+            String targetName = tableNames.get(reference.targetRelation());
             var binding = names.take(path, table.name(), targetName);
-            var described = reference.withName(binding.name());
-            if (!target.equals(declared) || targets.size() > 1) described = described.withReferenceTable(target);
-            var column = bindColumn(db, table, tableNames, described, binding, path, settings);
-            if (settings.inheritance() == DbInheritance.Profile.SMART2 || reference.catalogueReference().isPresent()) {
+            var column = bindColumn(db, table, tableNames, reference.withName(binding.name()), binding, path, settings);
+            if (settings.inheritance() == DbInheritance.Profile.SMART2 || reference.catalogueReference().isPresent()
+                    || references.size() > 1) {
                 requireForeignKey(db, table.name(), binding.name(), targetName, path);
             }
             columns.add(ordered ? bindPosition(db, table, column) : column);
