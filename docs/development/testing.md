@@ -489,6 +489,15 @@ für obligatorische Einzelwerte in der gemeinsamen Strukturtabelle und die
 fortgesetzte ID-Vergabe.
 Die `smart2*`-Fälle vergleichen das Ergänzen eines unabhängigen Modells
 mit ili2db und prüfen die geerbten Spalten in den neuen konkreten Tabellen.
+Die `smart1*Subtype*`-Fälle vergleichen gemeinsame Tabellen, das Ergänzen
+von `T_Type` und die erweiterten Typchecks. `ModelExtensionStorageTest`
+prüft zusätzlich die alten Zeilen, die SQL-Checks und den Rollback der DDL.
+
+`--tests '*SmartReferenceExtensionInteropTest'` prüft Smart2-Zielspalten
+für bestehende Rollen und Referenzattribute. Die Fälle vergleichen
+Metadaten und Fremdschlüssel und tauschen Daten in beiden Werkzeugrichtungen
+aus. `ModelExtensionStorageTest` prüft dazu Rollback, Zielwechsel beim
+Update und einen Export mit konkurrierenden Zielspalten.
 
 `--tests '*ExportSelectionInteropTest.*Baskets*'` vergleicht die
 Basket-Auswahl mit ili2db `--baskets` und importiert die XTF-Dateien mit

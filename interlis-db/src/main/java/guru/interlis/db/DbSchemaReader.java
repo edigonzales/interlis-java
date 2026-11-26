@@ -455,20 +455,25 @@ final class DbSchemaReader {
 
     private static Set<String> storedReferenceSubtypes(Database db, TransferPlan plan, CancellationToken token) throws SQLException {
         var selected = DbMapping.storageObjects(plan, DbMapping.storageRoots(plan, Optional.empty()), token);
-        var roles = new LinkedHashMap<String, Set<String>>();
+        var references = new LinkedHashMap<String, Set<String>>();
         for (var object : selected) {
             for (var slot : object.slots()) {
-                if (slot instanceof RoleSlot) roles.put(slot.name().declared().toString(), qualifiedReferenceRoots(plan, slot));
+                if (slot instanceof RoleSlot || slot instanceof AttributeSlot attribute
+                        && DbStructureShape.type(plan, attribute) instanceof ReferenceType) {
+                    references.put(slot.name().declared().toString(), qualifiedReferenceRoots(plan, slot));
+                }
             }
         }
-        if (roles.isEmpty()) return Set.of();
+        if (references.isEmpty()) return Set.of();
         var known = selected.stream().map(object -> object.name().declared().toString()).collect(Collectors.toSet());
         var stored = DbStoredClasses.read(db, token);
         var additional = new HashSet<String>();
         for (var entry : readReferenceNames(db, token).entrySet()) {
-            var roots = roles.get(entry.getKey());
+            var roots = references.get(entry.getKey());
             if (roots == null) continue;
             for (var binding : entry.getValue()) {
+                var owner = stored.physicalType(binding.owner(), db.gpkg());
+                if (owner == null || !known.contains(owner.path())) continue;
                 var target = stored.physicalType(binding.target(), db.gpkg());
                 if (target == null || known.contains(target.path())) continue;
                 var ancestry = stored.ancestry(target);
@@ -946,10 +951,7 @@ final class DbSchemaReader {
                     var targets = roots.stream().filter(affectedTargets::containsKey).flatMap(root -> affectedTargets.get(root).stream())
                             .collect(Collectors.toCollection(java.util.TreeSet::new));
                     if (targets.isEmpty()) continue;
-                    if (mapping.profile() != DbInheritance.Profile.SMART2 || !(slot instanceof RoleSlot)
-                            || object.kind() != SymbolKind.ASSOCIATION || !DbMapping.embeddedAssociation(source, object, "",
-                                    DbMapping.describeRoles(source, object)).filter(association ->
-                                    association.role().symbol().equals(slot.symbol()) && !association.linkTable() && !association.ordered()).isPresent()) {
+                    if (mapping.profile() != DbInheritance.Profile.SMART2 || !expandableReference(source, object, slot)) {
                         throw new DbException("--add-models would change stored reference " + path);
                     }
                     processed.add(path);
@@ -976,6 +978,17 @@ final class DbSchemaReader {
             }
         }
         return additions;
+    }
+
+    private static boolean expandableReference(TransferPlan plan, ObjectDescriptor object, TransferSlot slot) {
+        return switch (slot) {
+            case RoleSlot role -> object.kind() == SymbolKind.ASSOCIATION
+                    && DbMapping.embeddedAssociation(plan, object, "", DbMapping.describeRoles(plan, object)).stream()
+                    .anyMatch(association -> association.role().symbol().equals(role.symbol())
+                            && !association.linkTable() && !association.ordered());
+            case AttributeSlot attribute -> (object.kind() == SymbolKind.CLASS || object.kind() == SymbolKind.STRUCTURE)
+                    && DbStructureShape.type(plan, attribute) instanceof ReferenceType reference && reference.restrictions().isEmpty();
+        };
     }
 
     private static Map<String, List<AttributeName>> readReferenceNames(Database db, CancellationToken token) throws SQLException {

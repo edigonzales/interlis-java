@@ -328,8 +328,10 @@ Metadaten in der bisherigen Eigentümertabelle. Fremdschlüssel und Indizes
 folgen den gespeicherten Optionen. Die bisherigen Zielspalten bleiben
 nutzbar. Das gilt auch, wenn die Rolle bisher genau eine unsuffigierte
 Zielspalte hatte. Ihr Name bleibt erhalten, die neue Spalte erhält den
-Suffix der neuen Zieltabelle. Für weitere Referenzabbildungen nennt ein
-Abbruch die betroffene Rolle oder das Attribut.
+Suffix der neuen Zieltabelle. Dieselbe Erweiterung gilt für einfache
+`REFERENCE TO`-Attribute in flachen Strukturen und für direkte
+Referenzattribute in Klassen mit XTF 2.4. Für weitere Referenzabbildungen
+nennt ein Abbruch die betroffene Rolle oder das Attribut.
 
 Im nullable Smart1-Profil ergänzt `--add-models` unabhängige Modelle und
 skalare Untertypen in einer bestehenden Tabelle mit `T_Type`.

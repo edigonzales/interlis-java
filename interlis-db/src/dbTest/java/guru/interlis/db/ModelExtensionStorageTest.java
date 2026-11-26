@@ -173,6 +173,30 @@ final class ModelExtensionStorageTest {
 
     @ParameterizedTest(name = "{0}, XTF {1}")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void smart2RejectsTwoPopulatedAlternativesOfExpandedReferenceAttribute(Backend backend, int version) throws Exception {
+        var fixture = new SmartReferenceExtensionFixtures(work, version, true);
+        var catalog = fixture.catalog;
+        var db = POSTGIS.target(work.resolve("widen-attribute.gpkg"), backend);
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.survey, fixture.surveySource, "--inheritance", "smart2",
+                "--model-file", catalog.originalSource.toString(), "--create-fk");
+        assertCliSuccess(db, "import", catalog.original, "original", catalog.input(catalog.original, "original"));
+        assertCliSuccess(db, "schemaimport", catalog.specialized, null, catalog.specializedSource(),
+                "--add-models", "--model-file", catalog.originalSource.toString());
+        assertCliSuccess(db, "import", fixture.survey, "native", fixture.combined("native"), "--model", catalog.specialized);
+        var output = work.resolve("attribute.xtf");
+        assertCliSuccess(db, "export", fixture.survey, "native", output, "--model", catalog.specialized);
+        var before = Files.readString(output);
+        try (var sql = db.connect(); var edit = sql.createStatement()) {
+            edit.executeUpdate("UPDATE " + db.table(fixture.ownerTable()) + " SET site_entry=(SELECT t_id FROM "
+                    + db.table("entry") + " WHERE t_ili_tid='original-entry') WHERE site_specializedentry IS NOT NULL");
+            assertCliFailure(db, "export", fixture.survey, "native", output,
+                    "Multiple stored values for " + fixture.referencePath(), "--model", catalog.specialized);
+        }
+        assertEquals(before, Files.readString(output));
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void smart2AddsPolymorphicTargetToStoredRoleAtomically(Backend backend, int version) throws Exception {
         var fixture = new SmartReferenceExtensionFixtures(work, version);
         var catalog = fixture.catalog;
