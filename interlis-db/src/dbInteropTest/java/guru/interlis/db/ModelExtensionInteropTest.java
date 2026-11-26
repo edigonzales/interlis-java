@@ -11,6 +11,7 @@ import java.util.Set;
 
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.catalogKeys;
+import static guru.interlis.db.DbTestSupport.foreignKeyColumns;
 import static guru.interlis.db.InteropCommands.assertSharedIds;
 import static guru.interlis.db.InteropCommands.exportDataset;
 import static guru.interlis.db.InteropCommands.importDataset;
@@ -52,6 +53,43 @@ final class ModelExtensionInteropTest {
     @Test void smart2SubtypeGeoPackage24() throws Exception { exchangeSmart2Subtype(24, null); }
     @Test void smart2SubtypePostgis23() throws Exception { exchangeSmart2Subtype(23, POSTGIS.container()); }
     @Test void smart2SubtypePostgis24() throws Exception { exchangeSmart2Subtype(24, POSTGIS.container()); }
+    @Test void smart1RolesGeoPackage23() throws Exception { exchangeExternalRoles(23, null, "smart1"); }
+    @Test void smart1RolesGeoPackage24() throws Exception { exchangeExternalRoles(24, null, "smart1"); }
+    @Test void smart1RolesPostgis23() throws Exception { exchangeExternalRoles(23, POSTGIS.container(), "smart1"); }
+    @Test void smart1RolesPostgis24() throws Exception { exchangeExternalRoles(24, POSTGIS.container(), "smart1"); }
+    @Test void smart2RolesGeoPackage23() throws Exception { exchangeExternalRoles(23, null, "smart2"); }
+    @Test void smart2RolesGeoPackage24() throws Exception { exchangeExternalRoles(24, null, "smart2"); }
+    @Test void smart2RolesPostgis23() throws Exception { exchangeExternalRoles(23, POSTGIS.container(), "smart2"); }
+    @Test void smart2RolesPostgis24() throws Exception { exchangeExternalRoles(24, POSTGIS.container(), "smart2"); }
+
+    private void exchangeExternalRoles(int version, PostgreSQLContainer postgres, String profile) throws Exception {
+        var fixture = new SmartModelExtensionFixtures(work, version, false, false);
+        String survey = "AddedSurvey" + version;
+        var source = fixture.externalRoleSource(survey, "BaseAsset");
+        var db = new TestDatabase(work, postgres, "append_" + profile + "_roles", "v" + version + "_");
+        var expected = db.peer("append_" + profile + "_roles_reference");
+        var reference = new ReferenceTool(work, db.postgis());
+        schema(reference, db, work, fixture.original, profile, "--createFk");
+        schema(reference, expected, work, fixture.original, profile, "--createFk");
+        importDataset(reference, db, "original", fixture.input(fixture.original, "original"));
+        var original = fixture.originalRows(db);
+        schema(reference, expected, work, survey, profile, "--createFk");
+
+        assertCliSuccess(db, "schemaimport", survey, null, source, "--add-models", "--model-file", fixture.originalSource.toString());
+        try (var sql = db.connect(); var expectedSql = expected.connect()) {
+            DbSchemaCatalog.read(expectedSql, db.postgis(), expected.schema()).canonicalReferenceAlternatives()
+                    .assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()).canonicalReferenceAlternatives());
+            assertEquals(foreignKeyColumns(expected, expectedSql), foreignKeyColumns(db, sql));
+        }
+        var output = work.resolve("survey.xtf");
+        importDataset(reference, db, "legacy", fixture.externalRoleInput(survey, "legacy"));
+        assertCliSuccess(db, "export", survey, "legacy", output);
+        fixture.assertExternalRoleDelivery(output, survey, "legacy");
+        assertCliSuccess(db, "import", survey, "native", fixture.externalRoleInput(survey, "native"));
+        exportDataset(reference, db, "native", output);
+        fixture.assertExternalRoleDelivery(output, survey, "native");
+        assertEquals(original, fixture.originalRows(db));
+    }
 
     private void exchangeSmart2Subtype(int version, PostgreSQLContainer postgres) throws Exception {
         var fixture = new SmartModelExtensionFixtures(work, version, false, false);

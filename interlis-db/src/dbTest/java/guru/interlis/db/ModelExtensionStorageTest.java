@@ -14,6 +14,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
+import static guru.interlis.db.DbTestSupport.scalar;
+import static guru.interlis.db.ModelFixtures.tableFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 final class ModelExtensionStorageTest {
@@ -161,6 +163,75 @@ final class ModelExtensionStorageTest {
             fixture.assertDelivery(output, fixture.added, "added");
             assertEquals(rows, fixture.originalRows(db));
         }
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}, {2}")
+    @CsvSource({"GEOPACKAGE,23,smart1", "GEOPACKAGE,24,smart1", "POSTGIS,23,smart1", "POSTGIS,24,smart1",
+            "GEOPACKAGE,23,smart2", "GEOPACKAGE,24,smart2", "POSTGIS,23,smart2", "POSTGIS,24,smart2"})
+    void smartExtensionsRequireStoredRoleTargetMappings(Backend backend, int version, String profile) throws Exception {
+        var fixture = new SmartModelExtensionFixtures(work, version, false, false);
+        var db = POSTGIS.target(work.resolve("external-role-targets.gpkg"), backend);
+        String survey = "NewSurvey" + version;
+        var newSource = fixture.externalRoleSource(survey, "BaseAsset");
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource, "--inheritance", profile);
+        assertCliSuccess(db, "import", fixture.original, "original", fixture.input(fixture.original, "original"));
+        String type = fixture.original + ".Data.Alternate";
+        String target = tableFor(db, type);
+        String classNames = db.table("t_ili2db_classname");
+        try (var sql = db.connect(); var edit = sql.createStatement()) {
+            var rows = fixture.originalRows(db);
+            edit.executeUpdate("DELETE FROM " + classNames + " WHERE iliname='" + type + "'");
+            var missing = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+            assertCliFailure(db, "schemaimport", survey, null, newSource, "Missing stored CLASSNAME mapping for " + type,
+                    "--add-models", "--model-file", fixture.originalSource.toString());
+            missing.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+
+            edit.executeUpdate("INSERT INTO " + classNames + " (iliname, sqlname) VALUES ('" + type + "', 'absent_target')");
+            var invalid = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+            assertCliFailure(db, "schemaimport", survey, null, newSource, "Missing or ambiguous physical table absent_target",
+                    "--add-models", "--model-file", fixture.originalSource.toString());
+            invalid.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+
+            String otherTarget = tableFor(db, fixture.original + ".Data.Entry");
+            edit.executeUpdate("UPDATE " + classNames + " SET sqlname='" + otherTarget + "' WHERE iliname='" + type + "'");
+            var conflicting = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+            assertCliFailure(db, "schemaimport", survey, null, newSource, "Conflicting stored CLASSNAME SQL name " + otherTarget,
+                    "--add-models", "--model-file", fixture.originalSource.toString());
+            conflicting.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+
+            edit.executeUpdate("UPDATE " + classNames + " SET sqlname='" + target + "' WHERE iliname='" + type + "'");
+            assertEquals(rows, fixture.originalRows(db));
+            assertCliSuccess(db, "schemaimport", survey, null, newSource, "--add-models", "--model-file", fixture.originalSource.toString());
+        }
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}, {2}")
+    @CsvSource({"GEOPACKAGE,23,smart1", "GEOPACKAGE,24,smart1", "POSTGIS,23,smart1", "POSTGIS,24,smart1",
+            "GEOPACKAGE,23,smart2", "GEOPACKAGE,24,smart2", "POSTGIS,23,smart2", "POSTGIS,24,smart2"})
+    void smartParentExportIgnoresCopiesOfInheritedFieldsInAnotherModel(Backend backend, int version, String profile)
+            throws Exception {
+        var fixture = new SmartModelExtensionFixtures(work, version, false, false);
+        Files.writeString(fixture.originalSource, Files.readString(fixture.originalSource).replace("  END Data;", """
+                    CLASS Service = END Service;
+                    ASSOCIATION Servicing =
+                      Assets -- {0..*} BaseAsset;
+                      UsedService -- {0..1} Service;
+                    END Servicing;
+                  END Data;"""));
+        var db = POSTGIS.target(work.resolve("inherited-fields.gpkg"), backend);
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource, "--inheritance", profile);
+        assertCliSuccess(db, "import", fixture.original, "original", fixture.input(fixture.original, "original"));
+        var original = fixture.originalRows(db);
+        assertCliSuccess(db, "schemaimport", fixture.specialized, null, fixture.specializedSource("BaseAsset"),
+                "--add-models", "--model-file", fixture.originalSource.toString());
+        try (var sql = db.connect()) {
+            assertEquals("service", scalar(sql, "SELECT target FROM " + db.table("t_ili2db_attrname") + " WHERE iliname='"
+                    + fixture.original + ".Data.Servicing.UsedService' AND colowner='specializedentry'"));
+        }
+        var output = work.resolve("parent.xtf");
+        assertCliSuccess(db, "export", fixture.original, "original", output);
+        fixture.assertDelivery(output, fixture.original, "original");
+        assertEquals(original, fixture.originalRows(db));
     }
 
     private static CancellationToken cancelDuringDdl(AtomicInteger checkpoints, int checkpoint) {

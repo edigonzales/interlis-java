@@ -7,6 +7,7 @@ import guru.interlis.transfer.TransferPlan;
 
 import java.util.ArrayList;
 import java.util.ArrayDeque;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -124,10 +125,16 @@ final class DbInheritance {
     static DbInheritance plan(TransferPlan plan, List<ObjectDescriptor> objects, Map<SymbolRef, String> names,
                               Profile profile, SqlNames allocator, Set<SymbolRef> referenced, boolean alwaysDiscriminate) {
         var strategies = new LinkedHashMap<SymbolRef, Strategy>();
+        var usedStoredNames = new HashSet<String>();
         for (var object : objects) {
             if (profile == Profile.NEW_CLASS || !names.containsKey(object.symbol())) continue;
             String path = object.name().declared().toString();
-            if (allocator.hasClass(path)) strategies.put(object.symbol(), storedStrategy(object, allocator.storedStrategy(path)));
+            if (!allocator.hasClass(path)) continue;
+            String name = names.get(object.symbol());
+            if (!usedStoredNames.add(Ili2dbLayout.foldedName(name))) {
+                throw new DbException("Conflicting stored CLASSNAME SQL name " + name + " for " + path);
+            }
+            strategies.put(object.symbol(), storedStrategy(object, allocator.storedStrategy(path)));
         }
         var declarations = new ArrayList<Declaration>();
         for (var object : objects) {

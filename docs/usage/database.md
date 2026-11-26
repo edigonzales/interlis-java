@@ -331,6 +331,12 @@ Typen die entsprechenden `T_Type`-Werte. Ein zusätzlicher Untertyp, der in
 einer bestehenden Tabelle gespeichert werden müsste, führt vor der DDL zum
 Abbruch mit Angabe von Typ und Tabelle.
 
+In Smart1 und Smart2 kann ein neues Modell externe eingebettete Rollen auf
+Klassen in bereits abgebildeten Topics ergänzen. Die Rollenspalten stehen
+in der neuen Eigentümertabelle. Bei einem abstrakten Ziel bestimmt die
+gespeicherte Vererbungsabbildung die konkreten Zieltabellen. Fehlende
+Klassenzuordnungen und inkonsistente Zieltabellen führen zum Abbruch.
+
 ## Aufruf
 
 ```sh

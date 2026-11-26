@@ -11,6 +11,7 @@ import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.ModelFixtures.tableFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 final class SmartModelExtensionFixtures {
     final String original;
@@ -36,15 +37,19 @@ final class SmartModelExtensionFixtures {
     }
 
     Path specializedSource() throws Exception {
+        return specializedSource("Entry");
+    }
+
+    Path specializedSource(String base) throws Exception {
         return Files.writeString(work.resolve(specialized + ".ili"), """
                 INTERLIS 2.%d;
                 MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
                   IMPORTS %s;
                   TOPIC Data EXTENDS %s.Data =
-                    CLASS SpecializedEntry EXTENDS %s.Data.Entry = Extra : TEXT*20; END SpecializedEntry;
+                    CLASS SpecializedEntry EXTENDS %s.Data.%s = Extra : TEXT*20; END SpecializedEntry;
                   END Data;
                 END %s.
-                """.formatted(version - 20, specialized, original, original, original, specialized));
+                """.formatted(version - 20, specialized, original, original, original, base, specialized));
     }
 
     Path specializedInput(String prefix) throws Exception {
@@ -76,9 +81,40 @@ final class SmartModelExtensionFixtures {
                       Reports -- {0..*} SurveyRecord;
                       Site (EXTERNAL) -- {0..1} %s.Data.%s;
                     END AssetLink;
+                    ASSOCIATION ExactAssetLink =
+                      ExactReports -- {0..*} SurveyRecord;
+                      ConcreteSite (EXTERNAL) -- {0..1} %s.Data.Entry;
+                    END ExactAssetLink;
                   END Data;
                 END %s.
-                """.formatted(version - 20, model, original, original, original, target, model));
+                """.formatted(version - 20, model, original, original, original, target, original, model));
+    }
+
+    Path externalRoleInput(String model, String prefix) throws Exception {
+        return transfers.data(model, prefix, transfers.object(model, "SurveyRecord", prefix + "-entry",
+                externalReference("Site", "original-entry"))
+                + transfers.object(model, "SurveyRecord", prefix + "-alternate",
+                externalReference("ConcreteSite", "original-entry") + externalReference("Site", "original-alternate")));
+    }
+
+    private String externalReference(String role, String target) {
+        String reference = transfers.reference(role, target);
+        return version == 23 ? reference.replace("/>", " BID=\"original-basket\"/>") : reference;
+    }
+
+    void assertExternalRoleDelivery(Path output, String model, String prefix) throws Exception {
+        var rows = transfers.rows(output, prefix, 2);
+        for (var row : rows) {
+            ModelFixtures.assertName(row, version, model + ".Data.SurveyRecord");
+        }
+        var alternate = rows.getFirst();
+        var entry = rows.getLast();
+        assertEquals(prefix + "-alternate", id(alternate, version, "tid"));
+        assertEquals(prefix + "-entry", id(entry, version, "tid"));
+        assertEquals("original-alternate", id(child(alternate, "Site"), version, "ref"));
+        assertEquals("original-entry", id(child(alternate, "ConcreteSite"), version, "ref"));
+        assertEquals("original-entry", id(child(entry, "Site"), version, "ref"));
+        assertNull(child(entry, "ConcreteSite"));
     }
 
     private Path source(String name, boolean sharedDomains) throws Exception {

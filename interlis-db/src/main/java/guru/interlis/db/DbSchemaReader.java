@@ -416,9 +416,12 @@ final class DbSchemaReader {
         if (settings.inheritance() != DbInheritance.Profile.NEW_CLASS) {
             unselectedOwners.removeAll(usedNames);
             attrNames.ignoreOwners(unselectedOwners);
-        }
-        if (settings.inheritance() == DbInheritance.Profile.SMART2 && !attrNames.isEmpty()) {
-            ignoreOtherModelCopies(db, scope, usedNames, attrNames);
+            if (!attrNames.isEmpty()) {
+                var roleOwners = associations.stream().filter(association -> !association.linkTable())
+                        .collect(Collectors.toMap(association -> association.role().name().declared().toString(),
+                                association -> plan.object(association.owner()).orElseThrow().name().declared().toString()));
+                ignoreOtherModelCopies(db, scope, usedNames, attrNames, roleOwners);
+            }
         }
         if (!attrNames.isEmpty()) throw new DbException("Extra ATTRNAME mappings for " + modelName);
         var notNullRoles = tables.stream().flatMap(table -> {
@@ -433,21 +436,31 @@ final class DbSchemaReader {
     }
 
     private static void ignoreOtherModelCopies(Database db, MetadataScope scope, Set<String> selectedOwners,
-                                               AttributeNames attributes) throws SQLException {
+                                               AttributeNames attributes, Map<String, String> roleOwners) throws SQLException {
         var bases = new HashMap<String, String>();
         var owners = new HashMap<String, String>();
-        String sql = "SELECT i.thisclass, i.baseclass, c.sqlname FROM " + db.technicalTable(INHERITANCE)
-                + " i JOIN " + db.technicalTable(CLASSNAME) + " c ON c.iliname = i.thisclass WHERE i.baseclass IS NOT NULL";
-        try (var stmt = db.connection().createStatement(); var rows = stmt.executeQuery(sql)) {
-            while (rows.next()) {
-                String type = required(rows, 1, "INHERITANCE.thisClass");
-                String base = required(rows, 2, "INHERITANCE.baseClass");
-                bases.put(type, base);
-                String owner = key(db, required(rows, 3, "CLASSNAME.sqlname"));
-                if (!scope.includes(type) && !selectedOwners.contains(owner)) owners.put(owner, type);
+        String sql = """
+                SELECT i.thisclass, i.baseclass, c.sqlname, t.setting
+                FROM %s i JOIN %s c ON c.iliname = i.thisclass
+                JOIN %s t ON t.iliname = i.thisclass AND t.tag = ?
+                WHERE i.baseclass IS NOT NULL
+                """.formatted(db.technicalTable(INHERITANCE), db.technicalTable(CLASSNAME), db.technicalTable(TRAFO));
+        try (var stmt = db.connection().prepareStatement(sql)) {
+            stmt.setString(1, INHERITANCE_TAG);
+            try (var rows = stmt.executeQuery()) {
+                while (rows.next()) {
+                    String type = required(rows, 1, "INHERITANCE.thisClass");
+                    bases.put(type, required(rows, 2, "INHERITANCE.baseClass"));
+                    String owner = key(db, required(rows, 3, "CLASSNAME.sqlname"));
+                    String strategy = required(rows, 4, "TRAFO.setting");
+                    if ((NEW_CLASS.equals(strategy) || "newAndSubClass".equals(strategy))
+                            && !scope.includes(type) && !selectedOwners.contains(owner)) {
+                        owners.put(owner, type);
+                    }
+                }
             }
         }
-        attributes.ignoreInheritedCopies(owners, bases);
+        attributes.ignoreInheritedCopies(owners, bases, roleOwners);
     }
 
     private static void bindOtherStructureOwners(Database db, MetadataScope scope, CatalogTable table) throws SQLException {
@@ -710,7 +723,43 @@ final class DbSchemaReader {
         return new SqlNames(classes, relations, columns, attributes, strategies);
     }
 
-    static void checkSmart2SubtypeExtension(Database db, SchemaPlan extension, SqlNames names, CancellationToken token)
+    static void checkSmartExtension(Database db, SchemaPlan extension, List<SchemaPlan.ModelFile> newFiles,
+                                    SqlNames names, CancellationToken token) throws SQLException {
+        var mapping = extension.mapping();
+        for (var alias : mapping.inheritance().aliases()) {
+            var owner = mapping.table(alias.owner());
+            if (!names.hasClass(alias.object().name().declared().toString())
+                    && names.hasClass(owner.object().name().declared().toString())) {
+                throw new DbException("Smart1 --add-models would change stored table " + owner.name()
+                        + " for subtype " + alias.object().name().declared());
+            }
+        }
+        var newModels = newFiles.stream().flatMap(file -> storedDeclarations(file.modelNames()).keySet().stream())
+                .collect(Collectors.toSet());
+        for (var declaration : mapping.inheritance().declarations()) {
+            token.throwIfCancellationRequested();
+            var object = declaration.object();
+            String path = object.name().declared().toString();
+            if (object.kind() == SymbolKind.CLASS && !newModels.contains(MetadataScope.modelName(path)) && !names.hasClass(path)) {
+                throw new DbException("Missing stored CLASSNAME mapping for " + path);
+            }
+        }
+        var checkedTables = new HashSet<String>();
+        for (var table : extension.addedTables()) {
+            for (var column : table.columns()) {
+                token.throwIfCancellationRequested();
+                if (column.kind() != Kind.REFERENCE || !(column.slot() instanceof RoleSlot role) || !role.role().external()) continue;
+                var target = mapping.table(column.targetRelation());
+                if (names.hasClass(target.object().name().declared().toString()) && checkedTables.add(target.name())) {
+                    requirePhysicalTable(db, target.name());
+                    requireIdPrimaryKey(db, target.name());
+                }
+            }
+        }
+        checkStoredReferenceExpansion(db, extension, names, token);
+    }
+
+    private static void checkStoredReferenceExpansion(Database db, SchemaPlan extension, SqlNames names, CancellationToken token)
             throws SQLException {
         var mapping = extension.mapping();
         var plan = mapping.plan();
@@ -749,7 +798,7 @@ final class DbSchemaReader {
                     if (referenceRoots(source, slot).stream().map(id -> new SymbolRef(source.snapshotId(), id))
                             .flatMap(ref -> source.object(ref).stream()).map(target -> target.name().declared().toString())
                             .anyMatch(affectedTargets::contains)) {
-                        throw new DbException("Smart2 --add-models would change stored reference " + path);
+                        throw new DbException("--add-models would change stored reference " + path);
                     }
                 }
             }
@@ -951,11 +1000,11 @@ final class DbSchemaReader {
             mappings.values().removeIf(List::isEmpty);
         }
 
-        void ignoreInheritedCopies(Map<String, String> owners, Map<String, String> bases) {
+        void ignoreInheritedCopies(Map<String, String> owners, Map<String, String> bases, Map<String, String> roleOwners) {
             for (var entry : mappings.entrySet()) {
                 int member = entry.getKey().lastIndexOf('.');
                 if (member < 0) continue;
-                String declaration = entry.getKey().substring(0, member);
+                String declaration = roleOwners.getOrDefault(entry.getKey(), entry.getKey().substring(0, member));
                 entry.getValue().removeIf(name -> inheritsFrom(owners.get(key(db, name.owner())), declaration, bases));
             }
             mappings.values().removeIf(List::isEmpty);
@@ -1322,16 +1371,12 @@ final class DbSchemaReader {
     }
 
     private static PhysicalColumns readPhysicalColumns(Database db, String name) throws SQLException {
+        requirePhysicalTable(db, name);
         var metadata = db.connection().getMetaData();
         String catalog = db.connection().getCatalog();
         String escape = metadata.getSearchStringEscape();
         String pattern = searchPattern(name, escape);
         String schemaPattern = searchPattern(db.schema(), escape);
-        try (var tables = metadata.getTables(catalog, schemaPattern, pattern, new String[]{"TABLE"})) {
-            if (!tables.next() || !key(db, name).equals(key(db, tables.getString("TABLE_NAME"))) || tables.next()) {
-                throw new DbException("Missing or ambiguous physical table " + name);
-            }
-        }
         var columns = new HashMap<String, String>();
         var notNull = new HashSet<String>();
         try (var rows = metadata.getColumns(catalog, schemaPattern, pattern, null)) {
@@ -1342,6 +1387,17 @@ final class DbSchemaReader {
             }
         }
         return new PhysicalColumns(columns, notNull);
+    }
+
+    private static void requirePhysicalTable(Database db, String name) throws SQLException {
+        var metadata = db.connection().getMetaData();
+        String escape = metadata.getSearchStringEscape();
+        try (var tables = metadata.getTables(db.connection().getCatalog(), searchPattern(db.schema(), escape),
+                searchPattern(name, escape), new String[]{"TABLE"})) {
+            if (!tables.next() || !key(db, name).equals(key(db, tables.getString("TABLE_NAME"))) || tables.next()) {
+                throw new DbException("Missing or ambiguous physical table " + name);
+            }
+        }
     }
 
     private static String searchPattern(String name, String escape) {
