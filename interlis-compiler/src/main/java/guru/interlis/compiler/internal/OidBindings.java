@@ -6,9 +6,12 @@ import guru.interlis.model.ClassSymbol;
 import guru.interlis.model.DeclaredName;
 import guru.interlis.model.Documentation;
 import guru.interlis.model.DomainSymbol;
+import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.MetaAttributeSet;
+import guru.interlis.model.Modifier;
 import guru.interlis.model.NumericRange;
 import guru.interlis.model.NumericType;
+import guru.interlis.model.OidRule;
 import guru.interlis.model.Origin;
 import guru.interlis.model.ReferenceUsage;
 import guru.interlis.model.Symbol;
@@ -71,15 +74,16 @@ final class OidBindings {
     }
 
     void bindOidRules() {
-        Map<SymbolId, List<guru.interlis.model.OidRule>> bound = new LinkedHashMap<>();
+        Map<SymbolId, List<OidRule>> bound = new LinkedHashMap<>();
+        Set<OidRule> compatibleTopicDefaults = new HashSet<>();
         for (Symbol symbol : List.copyOf(state.symbolsInBuildOrder())) {
             if (symbol instanceof ClassSymbol || symbol instanceof TopicSymbol || symbol instanceof AssociationSymbol)
-                bindOidRules(symbol.id(), bound, new HashSet<>());
+                bindOidRules(symbol.id(), bound, new HashSet<>(), compatibleTopicDefaults);
         }
     }
 
-    List<guru.interlis.model.OidRule> bindOidRules(SymbolId id,
-            Map<SymbolId, List<guru.interlis.model.OidRule>> bound, Set<SymbolId> active) {
+    private List<OidRule> bindOidRules(SymbolId id, Map<SymbolId, List<OidRule>> bound,
+                                     Set<SymbolId> active, Set<OidRule> compatibleTopicDefaults) {
         work.checkpoint();
         if (bound.containsKey(id)) return bound.get(id);
         if (!active.add(id)) return List.of(); // Existing inheritance checks diagnose the cycle.
@@ -93,13 +97,13 @@ final class OidBindings {
             case AssociationDeclarationSyntax a -> a.oidRules();
             default -> List.of();
         };
-        List<guru.interlis.model.OidRule> inherited = state.hasBase(id)
-                ? bindOidRules(state.baseOf(id), bound, active) : List.of();
-        List<guru.interlis.model.OidRule> rules = new ArrayList<>(inherited);
+        List<OidRule> inherited = state.hasBase(id)
+                ? bindOidRules(state.baseOf(id), bound, active, compatibleTopicDefaults) : List.of();
+        List<OidRule> rules = new ArrayList<>(inherited);
         if (!(symbol instanceof TopicSymbol) && rules.isEmpty()) {
             SymbolId topic = scopeRoot.apply(id);
             if (topic != null && !topic.equals(id) && state.symbol(topic) instanceof TopicSymbol)
-                bindOidRules(topic, bound, active).stream().filter(r -> !r.basket()).forEach(rules::add);
+                bindOidRules(topic, bound, active, compatibleTopicDefaults).stream().filter(r -> !r.basket()).forEach(rules::add);
         }
         for (var rule : declared) {
             work.checkpoint();
@@ -116,15 +120,21 @@ final class OidBindings {
                     diagnostics.emitRule(decl, "OID AS must bind an OID domain", "OID_DOMAIN"); continue;
                 }
             }
-            var own = new guru.interlis.model.OidRule(rule.basket(), domain, new Origin.DeclaredOrigin(rule.range()));
+            var own = new OidRule(rule.basket(), domain, new Origin.DeclaredOrigin(rule.range()));
             var previous = inherited.stream().filter(r -> r.basket() == own.basket()).findFirst();
             if (previous.isPresent() && !oidOverrideAllowed(previous.orElseThrow(), own, decl.language(), symbol instanceof TopicSymbol))
                 diagnostics.emitRule(decl, "OID rule cannot change its inherited domain", "OID_OVERRIDE");
+            // The INTERLIS 2.3 exception follows the declared rule when inherited.
+            if (decl.language() == LanguageVersion.ILI23 && symbol instanceof TopicSymbol
+                    && !decl.modifiers().contains(Modifier.ABSTRACT) && !own.basket() && isBuiltinAnyOid(own)) {
+                compatibleTopicDefaults.add(own);
+            }
             rules.removeIf(r -> r.basket() == own.basket()); rules.add(own);
         }
         rules.sort(Comparator.comparing(r -> !r.basket()));
         for (var rule : rules) {
-            if (oidState(rule) == 1 && !decl.modifiers().contains(guru.interlis.model.Modifier.ABSTRACT))
+            if (oidState(rule) == 1 && !decl.modifiers().contains(Modifier.ABSTRACT)
+                    && !(decl.language() == LanguageVersion.ILI23 && compatibleTopicDefaults.contains(rule)))
                 diagnostics.emitRule(decl, "ANYOID requires an abstract topic, class or association", "OID_ABSTRACT");
         }
         if (symbol instanceof AssociationSymbol association) {
@@ -149,6 +159,11 @@ final class OidBindings {
         };
         replaceOidOwner.accept(replacement); active.remove(id);
         var result = List.copyOf(rules); bound.put(id, result); return result;
+    }
+
+    private boolean isBuiltinAnyOid(OidRule rule) {
+        return rule.domain().map(state::symbol).map(Symbol::origin).orElse(null) instanceof Origin.PredefinedOrigin origin
+                && origin.key().equals("INTERLIS.ANYOID");
     }
 
     int oidState(guru.interlis.model.OidRule rule) {

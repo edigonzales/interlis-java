@@ -1291,6 +1291,14 @@ Die sechs betroffenen Originalfälle werden reguläre PASS-Fälle und behalten
 zusätzliche gepinnte Positiv-/Negativkontrollen; die übrigen zwölf
 Referenzausnahmen und offenen Normentscheidungen sind davon nicht freigegeben.
 
+Die Kompatibilitätsregel für das
+[amtliche Strassenmodell](norm-decisions.md#decision-40) erlaubt in 2.3 die
+eingebaute Domäne `INTERLIS.ANYOID` als Objekt-OID eines konkreten Topics.
+Bei einer Übernahme innerhalb von 2.3 bleiben Domäne und deklarierte Herkunft
+der Regel erhalten. Für eigene OID-ANY-Domänen, Basket-OIDs und explizite
+OID-Festlegungen konkreter Klassen oder Assoziationen gilt weiterhin die
+bisherige Abstraktionsregel. In 2.4 gilt die Einschränkung gemäss der Norm.
+
 <a id="freigegebenes-type-model-kompatibilitätsprofil"></a>
 ## freigegebenes TYPE-MODEL-Kompatibilitätsprofil
 

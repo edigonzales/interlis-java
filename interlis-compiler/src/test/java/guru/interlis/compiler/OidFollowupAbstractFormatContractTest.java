@@ -50,6 +50,36 @@ class OidFollowupAbstractFormatContractTest {
 
     }
 
+    @Test void concreteLegacyTopicCanSupplyAnyOidAsItsObjectDefault() {
+        String topics = """
+                TOPIC Streets =
+                  OID AS INTERLIS.ANYOID;
+                  CLASS Street = END Street;
+                  CLASS LocalStreet EXTENDS Street = END LocalStreet;
+                END Streets;
+                TOPIC ExtendedStreets EXTENDS Streets =
+                  CLASS Crossing = END Crossing;
+                END ExtendedStreets;
+                """;
+        var graph = ok("2.3", topics);
+        var rules = symbol(graph, "Streets").header().oidRules();
+        assertEquals(1, rules.size());
+        var rule = rules.getFirst();
+        assertFalse(rule.basket());
+        assertInstanceOf(Origin.DeclaredOrigin.class, rule.origin());
+        assertEquals("INTERLIS.ANYOID", graph.symbol(rule.domain().orElseThrow()).orElseThrow().name().value());
+        for (var name : List.of("Street", "LocalStreet", "ExtendedStreets", "Crossing")) {
+            assertEquals(rules, symbol(graph, name).header().oidRules(), name);
+        }
+
+        bad("2.4", topics, "OID_ABSTRACT");
+        bad("2.3", topics.replace("OID AS INTERLIS.ANYOID;", "BASKET OID AS INTERLIS.ANYOID;"), "OID_ABSTRACT");
+        bad("2.3", topics.replace("CLASS Street = END Street;",
+                "CLASS Street = OID AS INTERLIS.ANYOID; END Street;"), "OID_ABSTRACT");
+        bad("2.3", topics.replace("TOPIC ExtendedStreets EXTENDS Streets =",
+                "TOPIC ExtendedStreets EXTENDS Streets = OID AS INTERLIS.UUIDOID;"), "OID_OVERRIDE");
+    }
+
     private static final String ABSTRACT = "STRUCTURE S (ABSTRACT) = n (ABSTRACT): NUMERIC; END S; "
             + "DOMAIN Code (ABSTRACT) = FORMAT BASED ON S (n/2); ";
     private static final String CONCRETE = ABSTRACT

@@ -35,6 +35,36 @@ class ValidatorCommandTest {
     }
 
     @Test
+    void validatesXtf23FullWithAnyOidOnAConcreteTopic() throws Exception {
+        write("Checks.ili", """
+                INTERLIS 2.3;
+                CONTRACTED MODEL Checks AT "https://example.org/checks" VERSION "1" =
+                  TOPIC Data =
+                    OID AS INTERLIS.ANYOID;
+                    CLASS Item = name : MANDATORY TEXT*8; END Item;
+                  END Data;
+                END Checks.
+                """);
+        var input = legacy("<name>valid</name>").replace("TID=\"one\"", "TID=\"123\"");
+        write("input.xtf", input);
+        var result = run("--json", "--offline", "input.xtf");
+        assertEquals(0, result.exit(), result.output());
+        var report = result.json();
+        assertTrue(report.get("completed").getAsBoolean());
+        assertEquals(1, report.get("objects").getAsInt());
+        assertEquals(0, report.get("violations").getAsInt());
+        assertTrue(report.getAsJsonArray("unchecked").isEmpty());
+
+        write("duplicate.xtf", input.replace("</Checks.Data>", """
+                <Checks.Data.Item TID="123"><name>valid</name></Checks.Data.Item>
+                </Checks.Data>
+                """));
+        var duplicate = run("--json", "--offline", "duplicate.xtf");
+        assertFailed(duplicate, 1, "transfer");
+        assertTrue(duplicate.output().contains("DUPLICATE_ID"), duplicate.output());
+    }
+
+    @Test
     void checksSurfaceAndAreaLineAttributes() throws Exception {
         lineAttributeModel("MANDATORY CONSTRAINT label != \"reserved\";");
         write("valid.xtf", legacy(attributedBoundary("shape", "<label>valid</label>")
