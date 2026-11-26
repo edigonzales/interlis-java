@@ -191,6 +191,12 @@ Zeichenprüfungen der Referenz. GeoPackage speichert die Einstellung.
 `--sql-cols-as-text`-Spalten für einfache Attribute erhalten diese
 Prüfungen nicht.
 
+`schemaimport --create-date-time-checks` entspricht ili2db
+`--createDateTimeChecks`. PostGIS prüft die inklusiven Grenzen der als
+`DATE`, `TIME` oder `TIMESTAMP` gespeicherten Domänen. GeoPackage speichert
+die Einstellung. Temporale Formate in SQL-Textspalten bleiben frei von
+diesen SQL-Prüfungen.
+
 `schemaimport --create-meta-info` schreibt die Modellmetadaten in
 `T_ILI2DB_META_ATTRS`. Dazu gehören deklarierte Meta-Attribute,
 Kardinalitäten, Rollenarten und die SQL-Namen der Klassen eines Topics.

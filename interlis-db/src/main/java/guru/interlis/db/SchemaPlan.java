@@ -9,6 +9,7 @@ import guru.interlis.model.DecimalLiteral;
 import guru.interlis.model.DomainReferenceType;
 import guru.interlis.model.ExpressionId;
 import guru.interlis.model.ExpressionRef;
+import guru.interlis.model.FormattedType;
 import guru.interlis.model.GeometryType;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.Modifier;
@@ -60,7 +61,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                   boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean strokeArcs, DbEnumOptions enumOptions,
                   Set<AttributeTransformation> transformations, List<DbEnumLookup> enumLookups,
                   Map<String, List<List<String>>> uniqueKeys, Map<String, List<NumericCheck>> numericChecks,
-                  Map<String, List<TextCheck>> textChecks, List<DbMetaInfo.Row> metaInformation) {
+                  Map<String, List<TextCheck>> textChecks, Map<String, List<TemporalCheck>> temporalChecks,
+                  List<DbMetaInfo.Row> metaInformation) {
     record ModelFile(String filename, LanguageVersion version, String modelNames, String content) { }
 
     record ColumnProperty(String table, String subtype, String column, String key, String value) { }
@@ -68,6 +70,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     record NumericCheck(String column, String minimum, String maximum) { }
 
     record TextCheck(String column, boolean normalized) { }
+
+    record TemporalCheck(String column, String sqlType, String minimum, String maximum) { }
 
     record ForeignKey(String table, String column, String target, boolean index) {
         ForeignKey(String table, String column, String target) { this(table, column, target, true); }
@@ -142,6 +146,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         var uniqueKeys = new HashMap<String, List<List<String>>>();
         var numericChecks = new HashMap<String, List<NumericCheck>>();
         var textChecks = new HashMap<String, List<TextCheck>>();
+        var temporalChecks = new HashMap<String, List<TemporalCheck>>();
         Map<SymbolId, List<ConstraintSymbol>> constraints = schemaOptions.contains(SchemaOption.UNIQUE)
                 ? uniqueConstraints(mapping) : Map.of();
         for (var table : addedTables) {
@@ -174,6 +179,10 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             if (!gpkg && schemaOptions.contains(SchemaOption.TEXT_CHECKS)) {
                 textChecks.put(table.name(), table.columns().stream().flatMap(column -> textChecks(column, schemaOptions)).toList());
             }
+            if (!gpkg && schemaOptions.contains(SchemaOption.DATE_TIME_CHECKS)) {
+                temporalChecks.put(table.name(), table.columns().stream()
+                        .flatMap(column -> temporalChecks(column, schemaOptions)).toList());
+            }
         }
         for (var composition : addedCompositions) {
             token.throwIfCancellationRequested();
@@ -185,7 +194,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         return new SchemaPlan(mapping, modelFiles, addedTables, addedAssociations, addedCompositions, properties, geometries,
                 splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations,
                 enumLookups, Map.copyOf(uniqueKeys),
-                Map.copyOf(numericChecks), Map.copyOf(textChecks),
+                Map.copyOf(numericChecks), Map.copyOf(textChecks), Map.copyOf(temporalChecks),
                 schemaOptions.contains(SchemaOption.META_INFO) ? DbMetaInfo.plan(mapping, token) : List.of());
     }
 
@@ -205,6 +214,29 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         if (column.array().isPresent() || column.scalarText(options)
                 || !(column.effectiveType().orElse(null) instanceof TextType text)) return Stream.empty();
         return Stream.of(new TextCheck(column.name(), text.textKind() != TextKind.MTEXT));
+    }
+
+    private static Stream<TemporalCheck> temporalChecks(DbMapping.Column column, Set<SchemaOption> options) {
+        if (column.expandedStructure().isPresent()) {
+            return column.expandedStructure().orElseThrow().groups().stream().flatMap(group -> group.fields().stream())
+                    .flatMap(field -> temporalChecks(field, options));
+        }
+        if (column.scalarText(options) || !(column.effectiveType().orElse(null) instanceof FormattedType type)) {
+            return Stream.empty();
+        }
+        // The compiler represents predefined temporal domains without explicit lexical bounds.
+        return switch (column.kind()) {
+            case DATE -> Stream.of(temporalCheck(column, type, "DATE", "1582-01-01", "2999-12-31"));
+            case TIME -> Stream.of(temporalCheck(column, type, "TIME", "00:00:00.000", "23:59:59.999"));
+            case DATETIME -> Stream.of(temporalCheck(column, type, "TIMESTAMP", "1582-01-01T00:00:00.000",
+                    "2999-12-31T23:59:59.999"));
+            default -> Stream.empty();
+        };
+    }
+
+    private static TemporalCheck temporalCheck(DbMapping.Column column, FormattedType type, String sqlType,
+                                               String minimum, String maximum) {
+        return new TemporalCheck(column.name(), sqlType, type.minimum().orElse(minimum), type.maximum().orElse(maximum));
     }
 
     private static Stream<NumericCheck> numericChecks(DbMapping.Column column) {
@@ -332,7 +364,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     SchemaPlan withModelFiles(List<ModelFile> files) {
         return new SchemaPlan(mapping, files, addedTables, addedAssociations, addedCompositions, columnProperties,
                 geometryColumns, splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations, enumLookups,
-                uniqueKeys, numericChecks, textChecks, metaInformation);
+                uniqueKeys, numericChecks, textChecks, temporalChecks, metaInformation);
     }
 
     private static Origin.DeclaredOrigin origin(ModelSymbol model) {

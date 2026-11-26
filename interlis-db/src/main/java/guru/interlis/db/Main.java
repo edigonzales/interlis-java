@@ -52,7 +52,7 @@ public final class Main {
                     [--create-single-enum-tab | --create-enum-tabs | --create-enum-tabs-with-id]
                     [--create-fk] [--create-fk-idx] [--sql-ext-ref-cols] [--sql-cols-as-text]
                     [--create-type-discriminator] [--create-type-constraint] [--create-dataset-col] [--create-std-cols]
-                    [--create-unique] [--create-num-checks] [--create-text-checks] [--create-meta-info]
+                    [--create-unique] [--create-num-checks] [--create-text-checks] [--create-date-time-checks] [--create-meta-info]
                     [--stroke-arcs] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Use --dataset for transfers against schemas with T_basket.

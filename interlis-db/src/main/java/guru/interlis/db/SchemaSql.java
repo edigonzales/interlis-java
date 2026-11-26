@@ -212,6 +212,11 @@ final class SchemaSql {
                         + field + ") = 0 AND position('\\t' IN " + field + ") = 0 AND " : "";
                 columns.add("CHECK (" + normalized + "length(trim(" + field + ")) >= 1)");
             }
+            for (var check : plan.temporalChecks().getOrDefault(table.name(), List.of())) {
+                columns.add("CHECK (" + quote(check.column()) + " BETWEEN "
+                        + check.sqlType() + " " + literal(check.minimum()) + " AND "
+                        + check.sqlType() + " " + literal(check.maximum()) + ")");
+            }
             commands.add(dialect.create(table.name(), String.join(", ", columns), inlineKeys.getOrDefault(table.name(), List.of())));
             for (var geometry : table.secondaryGeometries()) {
                 commands.add(dialect.create(geometry.table(), dialect.primaryId()

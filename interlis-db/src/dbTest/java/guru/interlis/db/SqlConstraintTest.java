@@ -45,6 +45,67 @@ final class SqlConstraintTest {
 
     @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void temporalChecksFollowBackendAndPhysicalStorage(Backend backend, int version) throws Exception {
+        withDatabase(backend, db -> {
+            String model = "SqlTemporal";
+            String declarations = """
+                    DOMAIN DateWindow EXTENDS INTERLIS.XMLDate = "1900-01-01" .. "2100-12-31";
+                    CLASS Asset =
+                      CalendarDay : INTERLIS.XMLDate;
+                      ReadingTime : INTERLIS.XMLTime;
+                      ReadingStamp : INTERLIS.XMLDateTime;
+                      RestrictedDay : DateWindow;
+                    END Asset;
+                    """;
+            schema(db, model, version, declarations, "--create-date-time-checks");
+            String low = "<CalendarDay>1582-01-01</CalendarDay><ReadingTime>00:00:00.000</ReadingTime>"
+                    + "<ReadingStamp>1582-01-01T00:00:00.000</ReadingStamp>";
+            String high = "<CalendarDay>2999-12-31</CalendarDay><ReadingTime>23:59:59.999</ReadingTime>"
+                    + "<ReadingStamp>2999-12-31T23:59:59.999</ReadingStamp><RestrictedDay>1500-01-01</RestrictedDay>";
+            assertCliSuccess(db, "import", model, "temporals", data(model, version, "temporals", low, high, ""));
+            var output = work.resolve("temporals-export.xtf");
+            assertCliSuccess(db, "export", model, "temporals", output);
+            var rows = exportedRows(output, version, "temporals", 3);
+            assertEquals("1582-01-01", child(rows.getFirst(), "CalendarDay").getTextContent());
+            assertEquals("23:59:59.999", child(rows.get(1), "ReadingTime").getTextContent());
+            assertEquals("2999-12-31T23:59:59.999", child(rows.get(1), "ReadingStamp").getTextContent());
+            assertEquals("1500-01-01", child(rows.get(1), "RestrictedDay").getTextContent());
+            assertNull(child(rows.getLast(), "CalendarDay"));
+            try (var sql = db.connect()) {
+                String table = db.table("asset");
+                String row = " WHERE t_ili_tid='temporals-0'";
+                if (db.postgis()) {
+                    for (String invalid : List.of("calendarday='1581-12-31'", "calendarday='3000-01-01'",
+                            "readingtime='23:59:59.999001'", "readingstamp='3000-01-01 00:00:00'")) {
+                        var failure = assertThrows(SQLException.class, () -> execute(sql, "UPDATE " + table + " SET " + invalid + row));
+                        assertEquals("23514", failure.getSQLState(), invalid);
+                    }
+                    assertCliFailure(db, "import", model, "broken-temporal",
+                            data(model, version, "broken-temporal", low, "<CalendarDay>3000-01-01</CalendarDay>"), "23514");
+                } else {
+                    execute(sql, "UPDATE " + table + " SET calendarday='1581-12-31'" + row);
+                    assertEquals("1581-12-31", scalar(sql, "SELECT calendarday FROM " + table + row));
+                    assertCliFailure(db, "import", model, "broken-temporal",
+                            data(model, version, "broken-temporal", low, "<CalendarDay>2024-02-30</CalendarDay>"), "Invalid SQL date");
+                }
+                assertRolledBack(db, sql, 3, 1);
+                assertNull(scalar(sql, "SELECT readingstamp FROM " + table + " WHERE t_ili_tid='temporals-2'"));
+                assertEquals("create", scalar(sql, "SELECT setting FROM " + db.table("t_ili2db_settings")
+                        + " WHERE tag='ch.ehi.ili2db.datetimeCheckConstraints'"));
+            }
+            Path file = work.resolve("temporal-text.gpkg");
+            var text = db.postgis() ? POSTGIS.target(file) : new Target(file, null, "temporal_text");
+            schema(text, model, version, declarations, "--create-date-time-checks", "--sql-cols-as-text");
+            assertCliSuccess(text, "import", model, "text-temporal",
+                    data(model, version, "text-temporal", "<CalendarDay>1500-01-01</CalendarDay>"));
+            try (var sql = text.connect()) {
+                assertEquals("1500-01-01", scalar(sql, "SELECT calendarday FROM " + text.table("asset")));
+            }
+        });
+    }
+
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void textChecksFollowBackendAndPhysicalStorage(Backend backend, int version) throws Exception {
         withDatabase(backend, db -> {
             String model = "SqlText";

@@ -84,6 +84,7 @@ final class SchemaProfileInteropTest {
 
     private void exchangeProfileMetaInformation(int version, PostgreSQLContainer postgres) throws Exception {
         var expected = new TestDatabase(work, postgres, "profile_meta_ref", "v" + version + "_");
-        new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version).metaInformation(expected, expected.peer("profile_meta_own"));
+        new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis(), "UTC"), version)
+                .metaInformation(expected, expected.peer("profile_meta_own"));
     }
 }

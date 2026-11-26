@@ -302,6 +302,9 @@ final class SchemaProfileCases {
                   Rating : SmallReading;
                   WideNo : -9223372036854775808..9223372036854775807;
                   Fraction : -2.500..3.125;
+                  CalendarDay : INTERLIS.XMLDate;
+                  ReadingTime : INTERLIS.XMLTime;
+                  ReadingStamp : INTERLIS.XMLDateTime;
                   UNIQUE LocalMark, VariantNo;
                 END Measurement;
                 ASSOCIATION Assignment =
@@ -314,18 +317,20 @@ final class SchemaProfileCases {
                 "!!@example.model = \"profile\"\nMODEL " + model));
         referenceSchema(expected, ili, "--sqlEnableNull", "--smart2Inheritance", "--createMetaInfo", "--createFk",
                 "--createFkIdx", "--createUnique", "--createNumChecks", "--createGeomIdx", "--strokeArcs", "--createEnumTabs",
-                "--beautifyEnumDispName", "--createTextChecks");
+                "--beautifyEnumDispName", "--createTextChecks", "--createDateTimeChecks");
         schema(own, model, ili, "--inheritance", "smart2", "--create-meta-info", "--create-fk", "--create-fk-idx",
                 "--create-unique", "--create-num-checks", "--create-geom-index", "--stroke-arcs", "--create-enum-tabs",
-                "--beautify-enum-disp-name", "--create-text-checks");
+                "--beautify-enum-disp-name", "--create-text-checks", "--create-date-time-checks");
         sameCatalog(expected, own);
         String relation = "t_ili2db_meta_attrs";
         try (var left = expected.connect(); var right = own.connect()) {
             if (expected.postgis()) {
-                var checks = textChecks(expected, left);
+                var checks = textAndTemporalChecks(expected, left);
                 assertTrue(checks.stream().anyMatch(check -> check.startsWith("asset:") && check.contains("POSITION")),
                         checks::toString);
-                assertEquals(checks, textChecks(own, right), "SQL text checks");
+                assertTrue(checks.stream().anyMatch(check -> check.startsWith("measurement:") && check.contains("readingstamp")),
+                        checks::toString);
+                assertEquals(checks, textAndTemporalChecks(own, right), "SQL text and temporal checks");
             }
             String fields = "SELECT ilielement || '|' || attr_name || '|' || attr_value FROM ";
             var metadata = catalogKeys(left, fields + expected.table(relation));
@@ -388,12 +393,13 @@ final class SchemaProfileCases {
         }
     }
 
-    private static Set<String> textChecks(TestDatabase db, java.sql.Connection sql) throws SQLException {
+    private static Set<String> textAndTemporalChecks(TestDatabase db, java.sql.Connection sql) throws SQLException {
         return catalogKeys(sql, """
                 SELECT t.relname || ':' || pg_get_constraintdef(c.oid)
                 FROM pg_constraint c JOIN pg_class t ON t.oid=c.conrelid
                 JOIN pg_namespace n ON n.oid=t.relnamespace
-                WHERE n.nspname='%s' AND c.contype='c' AND pg_get_constraintdef(c.oid) LIKE '%%length(%%'
+                WHERE n.nspname='%s' AND c.contype='c'
+                  AND pg_get_constraintdef(c.oid) ~ 'length[(]|::(date|time|timestamp)'
                 """.formatted(db.schema()));
     }
 
@@ -409,7 +415,9 @@ final class SchemaProfileCases {
                 + fixtures.object(model, "Measurement", prefix + "-reading-min", mark
                         + "<VariantNo>1</VariantNo><Rating>-20</Rating><WideNo>-9007199254740992</WideNo><Fraction>-2.500</Fraction>")
                 + fixtures.object(model, "Measurement", prefix + "-reading-max", mark
-                        + "<VariantNo>2</VariantNo><Rating>30</Rating><WideNo>9007199254740992</WideNo><Fraction>3.125</Fraction>")
+                        + "<VariantNo>2</VariantNo><Rating>30</Rating><WideNo>9007199254740992</WideNo><Fraction>3.125</Fraction>"
+                        + "<CalendarDay>2024-02-29</CalendarDay><ReadingTime>12:30:15.125</ReadingTime>"
+                        + "<ReadingStamp>2024-02-29T12:30:15.125</ReadingStamp>")
                 + fixtures.object(model, "Measurement", prefix + "-reading-missing", ""));
     }
 
@@ -434,6 +442,9 @@ final class SchemaProfileCases {
         assertEquals("9007199254740992", child(high, "WideNo").getTextContent());
         assertDecimal("-2.500", child(low, "Fraction").getTextContent());
         assertDecimal("3.125", child(high, "Fraction").getTextContent());
+        assertEquals("2024-02-29", child(high, "CalendarDay").getTextContent());
+        assertEquals("12:30:15.125", child(high, "ReadingTime").getTextContent());
+        assertEquals("2024-02-29T12:30:15.125", child(high, "ReadingStamp").getTextContent());
         assertEquals(List.of(), children(objects.get(prefix + "-reading-missing")));
     }
 
