@@ -173,6 +173,49 @@ final class SchemaProfileCases {
         if (version == 24) assertEquals(prefix + "-site", targetTid(child(asset, "DirectSite")));
     }
 
+    void requiredGeometries(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ProfileRequiredGeometry" + version;
+        Path ili = fixtures.requiredGeometryModel(model);
+        referenceSchema(expected, ili, "--strokeArcs", "--createGeomIdx");
+        schema(own, model, ili, "--sql-not-null", "--stroke-arcs", "--create-geom-index");
+        sameCatalog(expected, own);
+        for (var db : List.of(expected, own)) {
+            var output = work.resolve("required-geometry-output.xtf");
+            var legacy = fixtures.data(model, "legacy", fixtures.requiredGeometryObjects(model, "legacy"));
+            referenceImport(db, "legacy", legacy);
+            assertCliSuccess(db, "export", model, "legacy", output);
+            assertRequiredGeometries(output, "legacy");
+
+            var nativeInput = fixtures.data(model, "native", fixtures.requiredGeometryObjects(model, "native"));
+            assertCliSuccess(db, "import", model, "native", nativeInput);
+            referenceExport(db, "native", output);
+            assertRequiredGeometries(output, "native");
+        }
+    }
+
+    private void assertRequiredGeometries(Path output, String prefix) throws Exception {
+        var rows = fixtures.rows(output, prefix, version == 24 ? 5 : 4).stream()
+                .collect(Collectors.toMap(row -> id(row, version, "tid"), Function.identity()));
+        assertPositions(child(rows.get(prefix + "-marker"), "Center"), "12.125,13.375,-4.875");
+        assertPositions(child(rows.get(prefix + "-trail"), "Trace"), "10,10", "20,30");
+        assertPositions(child(rows.get(prefix + "-plot"), "Outline"), "10,10", "20,10", "20,20", "10,20", "10,10");
+        assertNull(child(rows.get(prefix + "-survey"), "OptionalPoint"));
+        if (version == 24) {
+            assertPositions(child(rows.get(prefix + "-stops"), "Locations"), "30,40", "50,60");
+        }
+    }
+
+    private void assertPositions(Element geometry, String... expected) {
+        var positions = geometry.getElementsByTagNameNS("*", version == 23 ? "COORD" : "coord");
+        var actual = new ArrayList<String>();
+        for (int i = 0; i < positions.getLength(); i++) {
+            actual.add(children((Element) positions.item(i)).stream()
+                    .map(axis -> new BigDecimal(axis.getTextContent()).stripTrailingZeros().toPlainString())
+                    .collect(Collectors.joining(",")));
+        }
+        assertEquals(List.of(expected), actual, geometry.getLocalName());
+    }
+
     void foreignKeyProfiles(TestDatabase expected, TestDatabase own) throws Exception {
         String model = "ProfileFk" + version;
         Path ili = fixtures.linkedModel(model);

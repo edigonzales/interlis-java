@@ -450,18 +450,18 @@ gelten dieselben Pflichtspaltenregeln wie bei der Neuanlage. Neue
 Besitzerspalten in gemeinsam verwendeten Strukturtabellen bleiben nullable.
 
 `schemaimport --sql-not-null` erzeugt ein striktes `newClass`-Schema für
-flache Klassen mit direkt gespeicherten skalaren Attributen und lokalen,
-ungeordneten 1:1- und 1:n-Rollen mit einer konkreten Zieltabelle sowie flache Strukturen.
-Skalare Pflichtattribute und eingebettete Rollen mit Kardinalität `{1}`
-erhalten `NOT NULL`. Lokale Referenzattribute mit einer konkreten,
+flache Klassen und flache Strukturen. Direkt gespeicherte skalare
+Pflichtattribute, Pflichtgeometrien in flachen Klassen und lokale,
+ungeordnete 1:1- und 1:n-Rollen mit Kardinalität `{1}` und einer konkreten
+Zieltabelle erhalten `NOT NULL`. Geometrien verwenden ein festes CRS und
+liegen in der jeweiligen Klassentabelle. Lokale Referenzattribute mit einer konkreten,
 vererbungsfreien Zielklasse bleiben auch bei `MANDATORY REFERENCE TO`
 nullable. XTF 2.3 überträgt diese Referenzattribute innerhalb einer Struktur.
 XTF 2.4 unterstützt zusätzlich direkte Klassenattribute. Ohne die Option
 gilt `SqlNull=enable`. Die Kombination mit `--create-mandatory-checks` ist
 auf das nullable Profil beschränkt.
-Für Geometrien und Rollen mit Zielen in
-Vererbungshierarchien steht die Schemaerzeugung mit `SqlNull=enable`
-zur Verfügung.
+Für Geometriehilfstabellen, `--multi-srs` und Rollen mit Zielen in
+Vererbungshierarchien steht die Schemaerzeugung mit `SqlNull=enable` zur Verfügung.
 
 Der FULL-Transfer mit GeoPackage und PostGIS unterstützt bestehende
 ili2db-Schemata mit `--sqlColsAsText`. Einfache Attribute werden als SQL-Text

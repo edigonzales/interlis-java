@@ -202,11 +202,11 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 enumLookups, Map.copyOf(uniqueKeys),
                 Map.copyOf(numericChecks), Map.copyOf(textChecks), Map.copyOf(temporalChecks),
                 schemaOptions.contains(SchemaOption.META_INFO) ? DbMetaInfo.plan(mapping, token) : List.of(),
-                sqlNotNull, sqlNotNull ? requiredColumns(mapping, addedTables, addedCompositions) : Map.of());
+                sqlNotNull, sqlNotNull ? requiredColumns(mapping, addedTables, addedCompositions, multiSrs) : Map.of());
     }
 
     private static Map<String, Set<String>> requiredColumns(DbMapping mapping, List<DbMapping.Table> addedTables,
-                                                             List<DbMapping.Composition> addedCompositions) {
+                                                             List<DbMapping.Composition> addedCompositions, boolean multiSrs) {
         for (var composition : addedCompositions) {
             if (mapping.table(composition.parent()).object().kind() == SymbolKind.STRUCTURE) {
                 throw DbMapping.unsupported("--sql-not-null at " + composition.slot().name().declared());
@@ -230,7 +230,9 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                         && DbMapping.simpleLocalReference(mapping.plan(), reference)) {
                     continue;
                 }
-                if (!column.simpleScalar()) {
+                boolean directGeometry = kind == SymbolKind.CLASS && column.kind().geometry() && !multiSrs
+                        && column.domainBinding().isEmpty() && column.wrappedGeometry().isEmpty();
+                if (!column.simpleScalar() && !directGeometry) {
                     throw DbMapping.unsupported("--sql-not-null at " + column.slot().name().declared());
                 }
                 if (column.slot() instanceof AttributeSlot attribute && attribute.cardinality().lower().signum() > 0) {

@@ -437,6 +437,40 @@ final class SqlConstraintTest {
         assertEquals(Integer.toString(datasets), scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
     }
 
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void requiredGeometryRollsBackLateMissingValue(Backend backend, int version) throws Exception {
+        withDatabase(backend, db -> {
+            String model = "SqlRequiredGeometry";
+            var fixture = new ProfileFixtures(work, version);
+            DbTestSupport.assertSchemaWithIdentityColumns(db, model, fixture.requiredGeometryModel(model),
+                    "--sql-not-null", "--create-geom-index");
+            assertCliSuccess(db, "import", model, "valid",
+                    fixture.data(model, "valid", fixture.requiredGeometryObjects(model, "valid")));
+            assertCliFailure(db, "import", model, "broken", fixture.data(model, "broken",
+                    fixture.requiredGeometryObjects(model, "broken") + fixture.object(model, "Marker", "absent", "")),
+                    importSqlDiagnostic(db, "23502"));
+            try (var sql = db.connect()) {
+                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket")));
+                assertEquals("valid", scalar(sql, "SELECT datasetname FROM " + db.table("t_ili2db_dataset")));
+                assertIndexedGeometry(db, sql, "marker", "center");
+                assertIndexedGeometry(db, sql, "trail", "trace");
+                assertIndexedGeometry(db, sql, "plot", "outline");
+                if (version == 24) assertIndexedGeometry(db, sql, "stops", "locations");
+                assertEquals("valid-survey", scalar(sql, "SELECT t_ili_tid FROM " + db.table("survey")
+                        + " WHERE optionalpoint IS NULL"));
+                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("survey")));
+            }
+        });
+    }
+
+    private static void assertIndexedGeometry(Target db, Connection sql, String table, String field) throws SQLException {
+        SpatialIndexFixtures.assertIndex(db, sql, table, field);
+        assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table(table)), table);
+        assertEquals("1", scalar(sql, "SELECT count(*) FROM " + (db.postgis() ? db.table(table)
+                + " WHERE ST_SRID(" + field + ")=2056" : "rtree_" + table + "_" + field)), table);
+    }
+
     private static String importSqlDiagnostic(Target db, String state) {
         return db.postgis() ? "SQL code " + state : "Database operation failed (SQL code ";
     }

@@ -147,6 +147,9 @@ Erhalt des unabhängigen Datensatzes bei Delete.
 Schlüssel, SQL `NULL`, Ganzzahl- und Festkommabereiche sowie die gerundete
 Dezimalgrenze oberhalb von `2^53`. Die Fälle prüfen Rollback und die
 Constraint-Wirkung für neu hinzugefügte Modelle direkt in der Datenbank.
+Die strikten Fälle prüfen Vorwärtsreferenzen und stabile IDs bei 1:1-Rollen,
+den Rollback bei fehlenden Pflichtwerten und die räumlichen Indizes
+direkt gespeicherter Geometrien.
 
 `ForeignKeyProfileTest` prüft für beide XTF-Versionen die genauen
 Fremdschlüsselziele, Vorwärtsreferenzen, Strukturzeilen und den Rollback
@@ -343,6 +346,9 @@ verwende `./gradlew :interlis-db:dbInteropTest --tests '*SchemaProfileInteropTes
 Die `*ProfileNullability*`-Fälle tauschen Pflichtskalare und optionale
 Werte in Referenzschemata ohne `--sqlEnableNull` aus. Sie prüfen den
 Rollback bei einer verletzten SQL-Pflichtspalte.
+Die `*ProfileRequiredRoles*`- und `*ProfileRequiredGeometries*`-Fälle
+vergleichen strikte Referenz- und eigene Schemata und prüfen den
+Werkzeugwechsel in beiden Richtungen.
 Die `*ProfileForeignKeys*`-Fälle vergleichen die beiden Einzelprofile für
 Fremdschlüssel und referenzierende Indizes, auch nach `--add-models`.
 Der gemeinsame Austausch für beide Optionen läuft in
@@ -470,7 +476,8 @@ ili2db-Export folgt auf ein selektives natives Update. Ein Folgeimport
 `DEPENDS ON` mit einem separaten Zieldatensatz und zwei Referenzformen.
 
 `--tests '*ModelExtensionInteropTest'` ergänzt ein befülltes ili2db-Schema
-mit `--add-models`. Beide Werkzeuge exportieren den bestehenden Datensatz.
+mit `--add-models`, je mit und ohne `--sqlEnableNull`. Beide Werkzeuge
+exportieren den bestehenden Datensatz.
 Die Mischläufe prüfen den Austausch des neuen Datensatzes, die Rückverweise
 in der gemeinsamen Strukturtabelle und die fortgesetzte ID-Vergabe.
 

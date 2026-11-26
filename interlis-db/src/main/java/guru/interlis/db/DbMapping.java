@@ -1498,7 +1498,9 @@ final class DbMapping {
         if (!(type instanceof GeometryType) && concrete.isPresent()) {
             type = plan.type(new TypeRef(plan.snapshotId(), concrete.orElseThrow().typeId())).known().orElseThrow();
         }
-        boolean geometrySupported = optional(attr) || geometryComponent;
+        boolean geometrySupported = optional(attr) || geometryComponent
+                || ((type instanceof CoordinateType || type instanceof GeometryType)
+                && selection.isEmpty() && flatClass(plan, object));
         var curve = type instanceof GeometryType geometry && geometrySupported
                 ? describeCurve(plan, geometry, path, defaults, concrete) : null;
         Kind scalar = scalarKind(type);

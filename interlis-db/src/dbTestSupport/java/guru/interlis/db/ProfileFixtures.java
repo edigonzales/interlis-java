@@ -134,6 +134,35 @@ final class ProfileFixtures {
         return object(model, "Asset", tid, "<Detail><" + structure + ">" + fields + "</" + structure + "></Detail>" + direct);
     }
 
+    Path requiredGeometryModel(String model) throws IOException {
+        String multi = version == 24
+                ? "CLASS Stops = Locations : MANDATORY MULTICOORD 0.000..100.000, 0.000..100.000; END Stops;"
+                : "";
+        return source(model, """
+                DOMAIN
+                  XY = COORD 0.000..100.000, 0.000..100.000;
+                  XYZ = COORD 0.000..100.000, 0.000..100.000, -100.000..100.000;
+                CLASS Marker = Center : MANDATORY XYZ; END Marker;
+                CLASS Trail = Trace : MANDATORY POLYLINE WITH (STRAIGHTS) VERTEX XY; END Trail;
+                CLASS Plot = Outline : MANDATORY SURFACE WITH (STRAIGHTS) VERTEX XY WITHOUT OVERLAPS > 0.001; END Plot;
+                CLASS Survey = OptionalPoint : XY; END Survey;
+                %s
+                """.formatted(multi));
+    }
+
+    String requiredGeometryObjects(String model, String prefix) {
+        String line = geometry("POLYLINE", "polyline", point("10", "10") + point("20", "30"));
+        String ring = geometry("POLYLINE", "polyline",
+                point("10", "10") + point("20", "10") + point("20", "20") + point("10", "20") + point("10", "10"));
+        String surface = geometry("SURFACE", "surface", geometry("BOUNDARY", "exterior", ring));
+        String multi = version == 24 ? object(model, "Stops", prefix + "-stops", "<Locations>"
+                + geometry("MULTICOORD", "multicoord", point("30", "40") + point("50", "60")) + "</Locations>") : "";
+        return object(model, "Marker", prefix + "-marker", "<Center>" + point("12.125", "13.375", "-4.875") + "</Center>")
+                + object(model, "Trail", prefix + "-trail", "<Trace>" + line + "</Trace>")
+                + object(model, "Plot", prefix + "-plot", "<Outline>" + surface + "</Outline>")
+                + object(model, "Survey", prefix + "-survey", "") + multi;
+    }
+
     Path auditModel(String model) throws IOException {
         Path ili = linkedModel(model);
         return Files.writeString(ili, Files.readString(ili).replace("CLASS Asset = Label", """
@@ -184,8 +213,19 @@ final class ProfileFixtures {
     }
 
     String point(String x, String y) {
-        return version == 23 ? "<COORD><C1>" + x + "</C1><C2>" + y + "</C2></COORD>"
-                : "<g:coord xmlns:g=\"http://www.interlis.ch/geometry/1.0\"><g:c1>" + x + "</g:c1><g:c2>" + y + "</g:c2></g:coord>";
+        return point(x, y, null);
+    }
+
+    private String point(String x, String y, String z) {
+        String prefix = version == 23 ? "C" : "g:c";
+        String axes = "<" + prefix + "1>" + x + "</" + prefix + "1><" + prefix + "2>" + y + "</" + prefix + "2>";
+        if (z != null) axes += "<" + prefix + "3>" + z + "</" + prefix + "3>";
+        return geometry("COORD", "coord", axes);
+    }
+
+    private String geometry(String xtf23, String xtf24, String contents) {
+        return version == 23 ? "<" + xtf23 + ">" + contents + "</" + xtf23 + ">"
+                : "<g:" + xtf24 + " xmlns:g=\"http://www.interlis.ch/geometry/1.0\">" + contents + "</g:" + xtf24 + ">";
     }
 
     List<Element> rows(Path path, String prefix, int count) throws Exception {
