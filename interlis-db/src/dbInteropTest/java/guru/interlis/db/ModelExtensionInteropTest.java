@@ -24,16 +24,25 @@ final class ModelExtensionInteropTest {
         POSTGIS.close();
     }
 
-    @Test void geoPackage23() throws Exception { exchange(23, null); }
-    @Test void geoPackage24() throws Exception { exchange(24, null); }
-    @Test void postgis23() throws Exception { exchange(23, POSTGIS.container()); }
-    @Test void postgis24() throws Exception { exchange(24, POSTGIS.container()); }
+    @Test void geoPackage23() throws Exception { exchange(23, null, false); }
+    @Test void geoPackage24() throws Exception { exchange(24, null, false); }
+    @Test void postgis23() throws Exception { exchange(23, POSTGIS.container(), false); }
+    @Test void postgis24() throws Exception { exchange(24, POSTGIS.container(), false); }
+    @Test void strictGeoPackage23() throws Exception { exchange(23, null, true); }
+    @Test void strictGeoPackage24() throws Exception { exchange(24, null, true); }
+    @Test void strictPostgis23() throws Exception { exchange(23, POSTGIS.container(), true); }
+    @Test void strictPostgis24() throws Exception { exchange(24, POSTGIS.container(), true); }
 
-    private void exchange(int version, PostgreSQLContainer postgres) throws Exception {
-        var fixture = new ModelExtensionFixtures(work, version);
-        var db = new TestDatabase(work, postgres, "append_models", "v" + version + "_");
+    private void exchange(int version, PostgreSQLContainer postgres, boolean strict) throws Exception {
+        var fixture = new ModelExtensionFixtures(work, version, strict);
+        var db = new TestDatabase(work, postgres, strict ? "append_strict_models" : "append_models", "v" + version + "_");
         var reference = new ReferenceTool(work, db.postgis());
-        schema(reference, db, work, fixture.original, "newClass");
+        if (strict) {
+            reference.run(db, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol", "--createTidCol",
+                    "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", "--models", fixture.original);
+        } else {
+            schema(reference, db, work, fixture.original, "newClass");
+        }
         importDataset(reference, db, "original", fixture.originalInput);
 
         try (var sql = db.connect()) {

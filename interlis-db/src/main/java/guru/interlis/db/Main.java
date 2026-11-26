@@ -146,7 +146,6 @@ public final class Main {
             }
         }
         var settings = DbSchemaReader.readSettings(db, options.models());
-        if (!settings.sqlEnableNull()) throw new DbException("--add-models requires a schema with SqlNull=enable");
         if (settings.inheritance() != DbInheritance.Profile.NEW_CLASS || settings.defaultEpsg() == 0
                 || (options.explicitEpsg() && options.defaultEpsg() != settings.defaultEpsg())
                 || (options.explicitLayout() && options.splitGeometries() != settings.splitGeometries())
@@ -159,7 +158,7 @@ public final class Main {
         var plan = SchemaPlan.read(options.models(), options.file(), options.modelFiles(), db.gpkg(),
                 settings.splitGeometries(), settings.defaultEpsg(), settings.multiSrs(), Optional.empty(), names,
                 settings.inheritance(), settings.structureTransformations(), settings.strokeArcs(), settings.enumOptions(),
-                settings.schemaOptions(), false, cancellation);
+                settings.schemaOptions(), !settings.sqlEnableNull(), cancellation);
         plan = plan.withModelFiles(DbSchemaReader.newModelFiles(db, plan.modelFiles(), cancellation));
         if (plan.addedTables().isEmpty() && plan.modelFiles().isEmpty()) {
             throw new DbException("No new model tables or sources to add");

@@ -101,6 +101,9 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                            DbEnumOptions enumOptions, Set<SchemaOption> schemaOptions, boolean sqlNotNull, CancellationToken token)
             throws IOException {
         DbScalarText.checkProfile(schemaOptions, enumOptions, transformations);
+        if (sqlNotNull && schemaOptions.contains(SchemaOption.MANDATORY_CHECKS)) {
+            throw DbMapping.unsupported("strict schemas with active mandatory checks");
+        }
         var files = new ArrayList<Path>();
         files.add(file);
         files.addAll(imports);
@@ -199,17 +202,18 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 enumLookups, Map.copyOf(uniqueKeys),
                 Map.copyOf(numericChecks), Map.copyOf(textChecks), Map.copyOf(temporalChecks),
                 schemaOptions.contains(SchemaOption.META_INFO) ? DbMetaInfo.plan(mapping, token) : List.of(),
-                sqlNotNull, sqlNotNull ? requiredColumns(mapping) : Map.of());
+                sqlNotNull, sqlNotNull ? requiredColumns(mapping, addedTables, addedCompositions) : Map.of());
     }
 
-    private static Map<String, Set<String>> requiredColumns(DbMapping mapping) {
-        for (var composition : mapping.compositions()) {
+    private static Map<String, Set<String>> requiredColumns(DbMapping mapping, List<DbMapping.Table> addedTables,
+                                                             List<DbMapping.Composition> addedCompositions) {
+        for (var composition : addedCompositions) {
             if (mapping.table(composition.parent()).object().kind() == SymbolKind.STRUCTURE) {
                 throw DbMapping.unsupported("--sql-not-null at " + composition.slot().name().declared());
             }
         }
         var required = new HashMap<String, Set<String>>();
-        for (var table : mapping.tables()) {
+        for (var table : addedTables) {
             var kind = table.object().kind();
             if ((kind != SymbolKind.CLASS && kind != SymbolKind.STRUCTURE) || table.subtype()
                     || !table.secondaryGeometries().isEmpty()) {

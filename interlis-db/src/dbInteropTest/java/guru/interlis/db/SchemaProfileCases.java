@@ -64,8 +64,6 @@ final class SchemaProfileCases {
                 assertEquals("present", child(rows.getLast(), "Remark").getTextContent());
             });
         }
-        assertCliFailure(db, "schemaimport", model, null, ili, "--add-models requires a schema with SqlNull=enable",
-                "--add-models");
         try (var sql = db.connect()) {
             assertNull(scalar(sql, "SELECT setting FROM " + db.table("t_ili2db_settings")
                     + " WHERE tag = 'ch.ehi.ili2db.SqlNull'"));

@@ -26,10 +26,11 @@ final class ModelExtensionStorageTest {
         POSTGIS.close();
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}")
-    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
-    void addModelsIsTransactionalAndCanBeRetried(Backend backend, int version) throws Exception {
-        var fixture = new ModelExtensionFixtures(work, version);
+    @ParameterizedTest(name = "{0}, XTF {1}, strict={2}")
+    @CsvSource({"GEOPACKAGE,23,false", "GEOPACKAGE,24,false", "POSTGIS,23,false", "POSTGIS,24,false",
+            "GEOPACKAGE,23,true", "GEOPACKAGE,24,true", "POSTGIS,23,true", "POSTGIS,24,true"})
+    void addModelsIsTransactionalAndCanBeRetried(Backend backend, int version, boolean strict) throws Exception {
+        var fixture = new ModelExtensionFixtures(work, version, strict);
         var db = POSTGIS.target(work.resolve("extension.gpkg"), backend);
         fixture.initialSchema(db);
         assertCliSuccess(db, "import", fixture.original, "original", fixture.originalInput);

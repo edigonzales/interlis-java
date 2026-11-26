@@ -444,7 +444,10 @@ zulässig.
 
 Der Transfer liest auch Referenzschemata ohne `--sqlEnableNull`. Bei direkt
 gespeicherten Pflichtwerten setzt die Datenbank die vorhandenen `NOT NULL`-
-Bedingungen durch. `schemaimport --add-models` setzt `SqlNull=enable` voraus.
+Bedingungen durch. `schemaimport --add-models` übernimmt das
+Nullbarkeitsprofil des bestehenden `newClass`-Schemas. Für neue Tabellen
+gelten dieselben Pflichtspaltenregeln wie bei der Neuanlage. Neue
+Besitzerspalten in gemeinsam verwendeten Strukturtabellen bleiben nullable.
 
 `schemaimport --sql-not-null` erzeugt ein striktes `newClass`-Schema für
 flache Klassen mit direkt gespeicherten skalaren Attributen und lokalen,
