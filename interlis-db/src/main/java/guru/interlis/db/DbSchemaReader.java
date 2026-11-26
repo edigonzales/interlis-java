@@ -112,8 +112,11 @@ final class DbSchemaReader {
         var models = new LinkedHashSet<>(settings.srsModels().map(DbCrsPair.Models::names).orElse(selectedModels));
         outputModel.ifPresent(models::add);
         var initialPlan = readModelPlan(db, List.copyOf(models), token);
-        var additionalTypes = settings.inheritance() == DbInheritance.Profile.SMART1
-                ? sharedSubtypes(db, initialPlan, token) : Set.<String>of();
+        var additionalTypes = switch (settings.inheritance()) {
+            case SMART1 -> sharedSubtypes(db, initialPlan, token);
+            case SMART2 -> storedReferenceSubtypes(db, initialPlan, token);
+            case NEW_CLASS -> Set.<String>of();
+        };
         var storageModels = new LinkedHashSet<>(models);
         additionalTypes.stream().sorted().map(MetadataScope::modelName).forEach(storageModels::add);
         TransferPlan plan = storageModels.equals(models) ? initialPlan : readModelPlan(db, List.copyOf(storageModels), token);
@@ -450,6 +453,32 @@ final class DbSchemaReader {
         return DbStoredClasses.read(db, token).sharedSubtypes(selected);
     }
 
+    private static Set<String> storedReferenceSubtypes(Database db, TransferPlan plan, CancellationToken token) throws SQLException {
+        var selected = DbMapping.storageObjects(plan, DbMapping.storageRoots(plan, Optional.empty()), token);
+        var roles = new LinkedHashMap<String, Set<String>>();
+        for (var object : selected) {
+            for (var slot : object.slots()) {
+                if (slot instanceof RoleSlot) roles.put(slot.name().declared().toString(), qualifiedReferenceRoots(plan, slot));
+            }
+        }
+        if (roles.isEmpty()) return Set.of();
+        var known = selected.stream().map(object -> object.name().declared().toString()).collect(Collectors.toSet());
+        var stored = DbStoredClasses.read(db, token);
+        var additional = new HashSet<String>();
+        for (var entry : readReferenceNames(db, token).entrySet()) {
+            var roots = roles.get(entry.getKey());
+            if (roots == null) continue;
+            for (var binding : entry.getValue()) {
+                var target = stored.physicalType(binding.target(), db.gpkg());
+                if (target == null || known.contains(target.path())) continue;
+                var ancestry = stored.ancestry(target);
+                if (!Collections.disjoint(ancestry, roots)) additional.addAll(ancestry);
+            }
+        }
+        additional.removeAll(known);
+        return additional;
+    }
+
     private static void ignoreOtherModelCopies(Database db, MetadataScope scope, Set<String> selectedOwners,
                                                AttributeNames attributes, Map<String, String> roleOwners) throws SQLException {
         var bases = new HashMap<String, String>();
@@ -763,7 +792,7 @@ final class DbSchemaReader {
                 }
             }
         }
-        checkStoredReferenceExpansion(db, extension, names, token);
+        var references = planStoredReferenceExpansion(db, extension, names, token);
         var columns = new ArrayList<SchemaPlan.AddedColumn>();
         var discriminators = new ArrayList<SchemaPlan.DiscriminatorChange>();
         var aliases = mapping.inheritance().aliases().stream()
@@ -819,7 +848,7 @@ final class DbSchemaReader {
             }
             discriminators.add(new SchemaPlan.DiscriminatorChange(owner.name(), List.copyOf(types), initialType, existingCheck));
         }
-        return extension.withExtension(newFiles, columns, discriminators);
+        return extension.withExtension(newFiles, columns, discriminators, references);
     }
 
     private static String storedDiscriminatorCheck(Database db, String table, List<String> types) throws SQLException {
@@ -879,11 +908,12 @@ final class DbSchemaReader {
         }
     }
 
-    private static void checkStoredReferenceExpansion(Database db, SchemaPlan extension, SqlNames names, CancellationToken token)
+    private static List<SchemaPlan.AddedReference> planStoredReferenceExpansion(Database db, SchemaPlan extension,
+                                                                                SqlNames names, CancellationToken token)
             throws SQLException {
         var mapping = extension.mapping();
         var plan = mapping.plan();
-        var affectedTargets = new HashSet<String>();
+        var affectedTargets = new LinkedHashMap<String, Set<String>>();
         for (var table : extension.addedTables()) {
             if (table.object().kind() != SymbolKind.CLASS) continue;
             for (var base = table.object().baseType().flatMap(plan::object); base.isPresent();
@@ -891,22 +921,19 @@ final class DbSchemaReader {
                 var ancestor = base.orElseThrow();
                 String path = ancestor.name().declared().toString();
                 if (names.hasClass(path) && mapping.inheritance().referenceTables(ancestor.symbol()).contains(table.object().symbol())) {
-                    affectedTargets.add(path);
+                    affectedTargets.computeIfAbsent(path, unused -> new LinkedHashSet<>()).add(table.name());
                 }
             }
         }
-        if (affectedTargets.isEmpty()) return;
+        if (affectedTargets.isEmpty()) return List.of();
 
         // A previously mapped reference can be declared in a model outside the new source closure.
-        var slotsByModel = new LinkedHashMap<String, Set<String>>();
-        try (var stmt = db.connection().createStatement();
-             var rows = stmt.executeQuery("SELECT DISTINCT iliname FROM " + db.technicalTable(ATTRNAME) + " WHERE target IS NOT NULL")) {
-            while (rows.next()) {
-                token.throwIfCancellationRequested();
-                String path = required(rows, 1, "ATTRNAME.iliname");
-                slotsByModel.computeIfAbsent(MetadataScope.modelName(path), unused -> new HashSet<>()).add(path);
-            }
-        }
+        var storedNames = readReferenceNames(db, token);
+        var slotsByModel = storedNames.keySet().stream().collect(Collectors.groupingBy(MetadataScope::modelName,
+                LinkedHashMap::new, Collectors.toSet()));
+        var storedClasses = DbStoredClasses.read(db, token);
+        var additions = new ArrayList<SchemaPlan.AddedReference>();
+        var processed = new HashSet<String>();
         var compiledModels = plan.models().stream().map(model -> model.name().declared().last()).collect(Collectors.toSet());
         for (var entry : slotsByModel.entrySet()) {
             token.throwIfCancellationRequested();
@@ -914,15 +941,61 @@ final class DbSchemaReader {
             for (var object : source.objects()) {
                 for (var slot : object.slots()) {
                     String path = slot.name().declared().toString();
-                    if (!entry.getValue().contains(path)) continue;
-                    if (referenceRoots(source, slot).stream().map(id -> new SymbolRef(source.snapshotId(), id))
-                            .flatMap(ref -> source.object(ref).stream()).map(target -> target.name().declared().toString())
-                            .anyMatch(affectedTargets::contains)) {
+                    if (!entry.getValue().contains(path) || processed.contains(path)) continue;
+                    var roots = qualifiedReferenceRoots(source, slot);
+                    var targets = roots.stream().filter(affectedTargets::containsKey).flatMap(root -> affectedTargets.get(root).stream())
+                            .collect(Collectors.toCollection(java.util.TreeSet::new));
+                    if (targets.isEmpty()) continue;
+                    if (mapping.profile() != DbInheritance.Profile.SMART2 || !(slot instanceof RoleSlot)
+                            || object.kind() != SymbolKind.ASSOCIATION || !DbMapping.embeddedAssociation(source, object, "",
+                                    DbMapping.describeRoles(source, object)).filter(association ->
+                                    association.role().symbol().equals(slot.symbol()) && !association.linkTable() && !association.ordered()).isPresent()) {
                         throw new DbException("--add-models would change stored reference " + path);
+                    }
+                    processed.add(path);
+                    var byOwner = storedNames.get(path).stream().collect(Collectors.groupingBy(AttributeName::owner,
+                            LinkedHashMap::new, Collectors.toList()));
+                    for (var owner : byOwner.entrySet()) {
+                        if (owner.getValue().size() < 2) throw new DbException("--add-models would change stored reference " + path);
+                        String table = owner.getKey();
+                        var ownerType = storedClasses.physicalType(table, db.gpkg());
+                        if (ownerType == null) throw new DbException("Missing stored reference owner for " + path + " in " + table);
+                        var columns = readPhysicalColumns(db, table).types();
+                        for (var binding : owner.getValue()) {
+                            requireColumns(db, table, columns, Map.of(binding.name(), Kind.REFERENCE));
+                            requireForeignKey(db, table, binding.name(), binding.target(), path);
+                        }
+                        for (String target : targets) {
+                            String column = names.polymorphicColumn(table, slot.name().declared().last(), target);
+                            if (columns.containsKey(key(db, column))) {
+                                throw new DbException("Existing column conflicts with " + table + "." + column);
+                            }
+                            additions.add(new SchemaPlan.AddedReference(MetadataScope.modelName(ownerType.path()), path, table, column, target));
+                        }
                     }
                 }
             }
         }
+        return additions;
+    }
+
+    private static Map<String, List<AttributeName>> readReferenceNames(Database db, CancellationToken token) throws SQLException {
+        var bindings = new LinkedHashMap<String, List<AttributeName>>();
+        String sql = "SELECT iliname, sqlname, colowner, target FROM " + db.technicalTable(ATTRNAME) + " WHERE target IS NOT NULL";
+        try (var stmt = db.connection().createStatement(); var rows = stmt.executeQuery(sql)) {
+            while (rows.next()) {
+                token.throwIfCancellationRequested();
+                String path = required(rows, 1, "ATTRNAME.iliname");
+                bindings.computeIfAbsent(path, unused -> new ArrayList<>()).add(new AttributeName(
+                        required(rows, 2, "ATTRNAME.sqlname"), required(rows, 3, "ATTRNAME.colowner"), required(rows, 4, "ATTRNAME.target")));
+            }
+        }
+        return bindings;
+    }
+
+    private static Set<String> qualifiedReferenceRoots(TransferPlan plan, TransferSlot slot) {
+        return referenceRoots(plan, slot).stream().map(id -> new SymbolRef(plan.snapshotId(), id))
+                .flatMap(ref -> plan.object(ref).stream()).map(target -> target.name().declared().toString()).collect(Collectors.toSet());
     }
 
     private static List<SymbolId> referenceRoots(TransferPlan plan, TransferSlot slot) {

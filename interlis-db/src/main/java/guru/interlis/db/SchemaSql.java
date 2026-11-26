@@ -246,6 +246,11 @@ final class SchemaSql {
             addColumnChecks(definition, addition.checks());
             commands.add("ALTER TABLE " + dialect.table(addition.table()) + " ADD COLUMN " + String.join(" ", definition));
         }
+        for (var reference : plan.addedReferences()) {
+            String foreignKey = createForeignKeys && dialect.gpkg() ? " " + dialect.references(reference.target()) : "";
+            commands.add("ALTER TABLE " + dialect.table(reference.table()) + " ADD COLUMN " + quote(reference.column())
+                    + " " + dialect.idType() + foreignKey);
+        }
         if (createGeometryIndexes) {
             for (String table : plan.addedStorageTables()) {
                 for (var geometry : plan.geometryColumns().getOrDefault(table, List.of())) {
@@ -433,6 +438,11 @@ final class SchemaSql {
                 token.throwIfCancellationRequested();
                 var field = addition.field();
                 row(attributes, field.slot().name().declared().toString(), field.name(), addition.table(), null);
+            }
+            for (var reference : plan.addedReferences()) {
+                token.throwIfCancellationRequested();
+                row(attributes, reference.path(), reference.column(), reference.table(), reference.target());
+                row(colProps, reference.table(), null, reference.column(), PREFIX + "foreignKey", reference.target());
             }
             if (!plan.discriminatorChanges().isEmpty()) {
                 String sql = "UPDATE " + d.table(COLUMN_PROP)

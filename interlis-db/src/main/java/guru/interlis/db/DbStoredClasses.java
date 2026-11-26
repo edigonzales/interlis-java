@@ -5,6 +5,7 @@ import guru.interlis.execution.CancellationToken;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -54,5 +55,24 @@ final class DbStoredClasses {
             }
         }
         return subtypes;
+    }
+
+    Entry physicalType(String table, boolean gpkg) {
+        Entry result = null;
+        for (var entry : byPath.values()) {
+            if (!Ili2dbLayout.NEW_CLASS.equals(entry.strategy()) && !"newAndSubClass".equals(entry.strategy())) continue;
+            if (!(gpkg ? table.equalsIgnoreCase(entry.name()) : table.equals(entry.name()))) continue;
+            if (result != null) throw new DbException("Ambiguous stored class table " + table);
+            result = entry;
+        }
+        return result;
+    }
+
+    Set<String> ancestry(Entry entry) {
+        var ancestors = new LinkedHashSet<String>();
+        for (var current = entry; current != null; current = byPath.get(current.base())) {
+            if (!ancestors.add(current.path())) throw new DbException("Circular stored inheritance for " + entry.path());
+        }
+        return ancestors;
     }
 }

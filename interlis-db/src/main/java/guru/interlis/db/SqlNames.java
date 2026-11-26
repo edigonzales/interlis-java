@@ -50,6 +50,8 @@ final class SqlNames {
 
     boolean hasAttribute(String name) { return storedAttributes.contains(name); }
 
+    SqlNames copy() { return new SqlNames(storedClasses, tables, columns, storedAttributes, storedStrategies); }
+
     String mappedTable(String declared, String model, String topic, String className) {
         String prior = storedClasses.get(declared);
         return prior != null ? prior : table(model, topic, className);

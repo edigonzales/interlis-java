@@ -322,8 +322,12 @@ verwendet die Spaltenabbildung eines gemeinsamen Schemaimports beider Modelle.
 Ein neues Modell kann in Smart2 ein bestehendes Topic erweitern und einen
 konkreten Untertyp mit vollständiger eigener Tabelle ergänzen. Die gespeicherten
 SQL-Namen und Vererbungsstrategien der Basistypen gelten weiterhin. Benötigt
-eine bereits abgebildete Referenz für den neuen Typ weitere Zielspalten,
-bricht `--add-models` mit dem Namen der betroffenen Referenz ab.
+eine bestehende ungeordnete eingebettete Rolle mit mehreren Zieltabellen
+eine weitere Zielspalte, ergänzt `--add-models` diese samt Fremdschlüssel-
+Metadaten in der bisherigen Eigentümertabelle. Fremdschlüssel und Indizes
+folgen den gespeicherten Optionen. Die bisherigen Zielspalten bleiben
+nutzbar. Für weitere Referenzabbildungen nennt ein Abbruch die betroffene
+Rolle oder das Attribut.
 
 Im nullable Smart1-Profil ergänzt `--add-models` unabhängige Modelle und
 skalare Untertypen in einer bestehenden Tabelle mit `T_Type`.

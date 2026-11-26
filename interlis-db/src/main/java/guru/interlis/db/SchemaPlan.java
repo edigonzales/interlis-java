@@ -66,7 +66,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                   Set<AttributeTransformation> transformations, List<DbEnumLookup> enumLookups,
                   Map<String, List<List<String>>> uniqueKeys, Map<String, ColumnChecks> columnChecks,
                   List<DbMetaInfo.Row> metaInformation, boolean sqlNotNull, Map<String, Set<String>> requiredColumns,
-                  List<AddedColumn> addedColumns, List<DiscriminatorChange> discriminatorChanges) {
+                  List<AddedColumn> addedColumns, List<DiscriminatorChange> discriminatorChanges,
+                  List<AddedReference> addedReferences) {
     record ModelFile(String filename, LanguageVersion version, String modelNames, String content) { }
 
     record ColumnProperty(String table, String subtype, String column, String key, String value) { }
@@ -80,6 +81,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     record ColumnChecks(List<NumericCheck> numbers, List<TextCheck> texts, List<TemporalCheck> times) { }
 
     record AddedColumn(String table, DbMapping.Column field, ColumnChecks checks) { }
+
+    record AddedReference(String ownerModel, String path, String table, String column, String target) { }
 
     record DiscriminatorChange(String table, List<String> types, Optional<String> initialType,
                                Optional<String> existingCheck) {
@@ -101,6 +104,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         addedCompositions = List.copyOf(addedCompositions);
         addedColumns = List.copyOf(addedColumns);
         discriminatorChanges = List.copyOf(discriminatorChanges);
+        addedReferences = List.copyOf(addedReferences);
         columnProperties = List.copyOf(columnProperties);
         transformations = Set.copyOf(transformations);
         enumLookups = List.copyOf(enumLookups);
@@ -206,7 +210,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations,
                 enumLookups, Map.copyOf(uniqueKeys), Map.copyOf(columnChecks),
                 schemaOptions.contains(SchemaOption.META_INFO) ? DbMetaInfo.plan(mapping, token) : List.of(),
-                sqlNotNull, sqlNotNull ? requiredColumns(mapping, addedTables, multiSrs) : Map.of(), List.of(), List.of());
+                sqlNotNull, sqlNotNull ? requiredColumns(mapping, addedTables, multiSrs) : Map.of(), List.of(), List.of(), List.of());
     }
 
     private static Map<String, Set<String>> requiredColumns(DbMapping mapping, List<DbMapping.Table> addedTables,
@@ -409,6 +413,9 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             keys.add(new ForeignKey(mapping.table(composition.childRoot()).name(), composition.ownerColumn(),
                     mapping.table(composition.parent()).name()));
         }
+        for (var reference : addedReferences) {
+            keys.add(new ForeignKey(reference.table(), reference.column(), reference.target()));
+        }
         if (enumOptions.lookup() == DbEnumOptions.Lookup.WITH_ID) {
             var enumTables = enumLookups.stream().map(DbEnumLookup::table).collect(Collectors.toSet());
             for (var property : columnProperties) {
@@ -430,7 +437,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 ? "CATALOGUE" : table.object().kind().name();
     }
 
-    SchemaPlan withExtension(List<ModelFile> files, List<AddedColumn> columns, List<DiscriminatorChange> discriminators) {
+    SchemaPlan withExtension(List<ModelFile> files, List<AddedColumn> columns, List<DiscriminatorChange> discriminators,
+                             List<AddedReference> references) {
         var properties = new ArrayList<>(columnProperties);
         for (var column : columns) {
             var owner = mapping.tables().stream().filter(table -> table.name().equals(column.table())).findFirst().orElseThrow();
@@ -439,7 +447,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         return new SchemaPlan(mapping, files, addedTables, addedVirtualClasses, addedAssociations, addedCompositions, properties,
                 geometryColumns, splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations, enumLookups,
                 uniqueKeys, columnChecks, metaInformation, sqlNotNull, requiredColumns,
-                columns, discriminators);
+                columns, discriminators, references);
     }
 
     private static Origin.DeclaredOrigin origin(ModelSymbol model) {

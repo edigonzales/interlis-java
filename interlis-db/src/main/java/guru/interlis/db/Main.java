@@ -158,13 +158,13 @@ public final class Main {
         }
         var names = DbSchemaReader.namesForExtension(db, options.models(), settings.inheritance());
         var plan = SchemaPlan.read(options.models(), options.file(), options.modelFiles(), db.gpkg(),
-                settings.splitGeometries(), settings.defaultEpsg(), settings.multiSrs(), Optional.empty(), names,
+                settings.splitGeometries(), settings.defaultEpsg(), settings.multiSrs(), Optional.empty(), names.copy(),
                 settings.inheritance(), settings.structureTransformations(), settings.strokeArcs(), settings.enumOptions(),
                 settings.schemaOptions(), !settings.sqlEnableNull(), cancellation);
         var newFiles = DbSchemaReader.newModelFiles(db, plan.modelFiles(), cancellation);
         plan = smart && newFiles.size() != plan.modelFiles().size()
                 ? DbSchemaReader.planSmartExtension(db, plan, newFiles, names, cancellation)
-                : plan.withExtension(newFiles, List.of(), List.of());
+                : plan.withExtension(newFiles, List.of(), List.of(), List.of());
         if (plan.addedTables().isEmpty() && plan.modelFiles().isEmpty()) {
             throw new DbException("No new model tables or sources to add");
         }
@@ -176,6 +176,9 @@ public final class Main {
                 .collect(Collectors.groupingBy(model -> model.languageVersion(),
                         Collectors.mapping(model -> model.name().declared().last(), Collectors.toList())));
         for (var models : byVersion.values()) DbSchemaReader.read(db, models, cancellation);
+        for (String model : plan.addedReferences().stream().map(SchemaPlan.AddedReference::ownerModel).distinct().toList()) {
+            if (!options.models().contains(model)) DbSchemaReader.read(db, List.of(model), cancellation);
+        }
     }
 
     private static void importData(Options options, String password, CancellationToken cancellation)

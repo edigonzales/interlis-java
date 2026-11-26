@@ -128,10 +128,49 @@ final class ModelExtensionStorageTest {
             var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
             var rows = fixture.originalRows(db);
             assertCliFailure(db, "schemaimport", fixture.specialized, null, fixture.specializedSource(),
-                    "would change stored reference " + survey + ".Data.AssetLink.Site",
+                    "would change stored reference " + survey + ".Data.ExactAssetLink.ConcreteSite",
                     "--add-models", "--model-file", fixture.originalSource.toString());
             before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
             assertEquals(rows, fixture.originalRows(db));
+        }
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void smart2AddsPolymorphicTargetToStoredRoleAtomically(Backend backend, int version) throws Exception {
+        var fixture = new SmartReferenceExtensionFixtures(work, version);
+        var catalog = fixture.catalog;
+        var db = POSTGIS.target(work.resolve("widen-role.gpkg"), backend);
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.survey, fixture.surveySource, "--inheritance", "smart2",
+                "--model-file", catalog.originalSource.toString(), "--create-fk", "--create-fk-idx");
+        assertCliSuccess(db, "import", catalog.original, "original", catalog.input(catalog.original, "original"));
+        assertCliSuccess(db, "import", fixture.survey, "survey", fixture.existingSurvey("survey", "original-entry", "original-basket"));
+        var source = catalog.specializedSource();
+        try (var sql = db.connect(); var edit = sql.createStatement()) {
+            var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+            String properties = db.table("t_ili2db_column_prop");
+            String siteEntry = " WHERE tablename='surveyrecord' AND columnname='site_entry'";
+            edit.executeUpdate("UPDATE " + properties + " SET setting='wrong'" + siteEntry);
+            var invalid = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+            assertCliFailure(db, "schemaimport", catalog.specialized, null, source,
+                    "Inconsistent COLUMN_PROP.foreignKey for " + fixture.referencePath(),
+                    "--add-models", "--model-file", catalog.originalSource.toString());
+            invalid.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+            edit.executeUpdate("UPDATE " + properties + " SET setting='entry'" + siteEntry);
+
+            var checkpoints = new AtomicInteger();
+            var aborted = schemaWithIdentityColumns(db, catalog.specialized, source,
+                    cancelDuringDdl(checkpoints, 3), "--add-models", "--model-file", catalog.originalSource.toString());
+            assertEquals(130, aborted.code(), aborted::diagnostics);
+            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+
+            assertCliSuccess(db, "schemaimport", catalog.specialized, null, source,
+                    "--add-models", "--model-file", catalog.originalSource.toString());
+            var output = work.resolve("old-survey.xtf");
+            assertCliSuccess(db, "export", fixture.survey, "survey", output);
+            fixture.assertSurvey(output, "survey", "original-entry");
+            assertEquals("1", scalar(sql, "SELECT COUNT(*) FROM " + db.table("surveyrecord")
+                    + " WHERE site_entry IS NOT NULL AND site_specializedentry IS NULL"));
         }
     }
 
