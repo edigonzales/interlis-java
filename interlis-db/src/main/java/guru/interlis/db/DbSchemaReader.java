@@ -138,8 +138,10 @@ final class DbSchemaReader {
         roots.stream().map(ref -> plan.model(ref).orElseThrow().name().declared().last()).forEach(mappedModels::add);
         var enumDefinitions = new LinkedHashMap<String, String>();
         var enumLookup = settings.enumOptions().lookup();
+        List<DbEnumLookup.Definition> definitions = List.of();
         if (enumLookup == DbEnumOptions.Lookup.PER_DEFINITION || enumLookup == DbEnumOptions.Lookup.WITH_ID) {
-            for (var definition : DbEnumLookup.definitions(plan, roots, selected, enumLookup, token)) {
+            definitions = DbEnumLookup.definitions(plan, roots, selected, token);
+            for (var definition : definitions) {
                 var declaration = definition.declaration();
                 var storedDefinition = enumLookup == DbEnumOptions.Lookup.WITH_ID
                         ? DbEnumLookup.root(plan, declaration) : declaration;
@@ -169,7 +171,6 @@ final class DbSchemaReader {
         var inheritance = readInheritance(db, scope);
         var names = new HashMap<SymbolRef, String>();
         var usedNames = new HashSet<String>();
-        var enumerations = readEnumTables(db, classNames, usedNames, enumDefinitions, enumLookup, token);
         var declarations = new ArrayList<DbInheritance.Declaration>();
         var associations = new ArrayList<EmbeddedAssociation>();
         var linkRoles = new HashMap<SymbolRef, List<AssociationRole>>();
@@ -219,6 +220,12 @@ final class DbSchemaReader {
         checkSystemTables(db);
         var layout = new DbInheritance(plan, declarations, settings.inheritance(),
                 settings.schemaOptions().contains(Ili2dbLayout.SchemaOption.TYPE_DISCRIMINATOR));
+        if (enumLookup == DbEnumOptions.Lookup.WITH_ID) {
+            var stored = DbEnumLookup.storedDefinitions(plan, definitions, layout).stream()
+                    .map(definition -> DbEnumLookup.name(plan, definition.declaration())).collect(Collectors.toSet());
+            enumDefinitions.keySet().retainAll(stored);
+        }
+        var enumerations = readEnumTables(db, classNames, usedNames, enumDefinitions, enumLookup, token);
         for (var alias : layout.aliases()) {
             names.put(alias.object().symbol(), names.get(alias.owner()));
         }
@@ -413,8 +420,10 @@ final class DbSchemaReader {
             attrNames.ignoreOwners(unselectedOwners);
         }
         if (!attrNames.isEmpty()) throw new DbException("Extra ATTRNAME mappings for " + modelName);
-        return new DbMapping(plan, version, tables, compositions, associations, crsPair, requestedRoots,
+        var mapping = new DbMapping(plan, version, tables, compositions, associations, crsPair, requestedRoots,
                 layout, settings.schemaOptions());
+        mapping.checkEnumLookupIds(settings.enumOptions());
+        return mapping;
     }
 
     private static void bindOtherStructureOwners(Database db, MetadataScope scope, CatalogTable table) throws SQLException {

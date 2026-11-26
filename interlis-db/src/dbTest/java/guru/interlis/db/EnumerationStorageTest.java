@@ -61,6 +61,25 @@ final class EnumerationStorageTest {
 
     @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void itfCodesStayOrdinalWithLookupTablesAndForeignKeys(Backend backend, int version) throws Exception {
+        var db = target(backend, "itf-and-lookup");
+        var fixtures = new EnumerationFixtures(work, version);
+        String model = "EnumItfLookup" + version;
+        assertSchemaWithIdentityColumns(db, model, fixtures.source(model, BASE), "--create-enum-col-as-itf-code",
+                "--create-enum-tabs-with-id", "--create-fk");
+        Path output = roundTrip(db, model, "native", fixtures.scalars(model, "native"));
+        fixtures.assertScalars(output, "native");
+        try (var sql = db.connect()) {
+            assertItfRows(db, sql, "native");
+            var keys = DbTestSupport.foreignKeyColumns(db, sql);
+            assertTrue(keys.contains("asset:t_basket:t_ili2db_basket"), keys::toString);
+            assertTrue(keys.stream().noneMatch(key -> key.startsWith("asset:gradevalue:") || key.startsWith("asset:directvalue:")),
+                    keys::toString);
+        }
+    }
+
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void editedTextAndStoredLookupName(Backend backend, int version) throws Exception {
         var fixtures = new EnumerationFixtures(work, version);
         String model = "EnumLabels" + version;
@@ -211,6 +230,57 @@ final class EnumerationStorageTest {
                     + " FROM " + grade + " WHERE t_id=7001");
             assertExportRejected(db, model, "native", output, "Ambiguous enumeration lookup");
         }
+    }
+
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void extendedInlineIdsUseTheStoredConcreteDefinition(Backend backend, int version) throws Exception {
+        var db = target(backend, "inline-ids");
+        var fixtures = new EnumerationFixtures(work, version);
+        String model = "EnumInlineIds" + version;
+        Path source = fixtures.source(model, EnumerationFixtures.INLINE_OVERRIDES);
+        assertSchemaWithIdentityColumns(db, model, source, "--inheritance", "smart2", "--create-enum-tabs-with-id",
+                "--create-fk", "--create-enum-txt-col");
+        try (var sql = db.connect()) {
+            String lookup = db.table("meter_state");
+            String root = " FROM " + lookup + " WHERE thisclass='" + model + ".Data.Meter.State' AND ilicode='standby'";
+            execute(sql, "UPDATE " + lookup + " SET t_id=7001 WHERE t_id=(SELECT t_id" + root + ")");
+            Path output = roundTrip(db, model, "native", fixtures.inlineDataset(model, "native"));
+            fixtures.assertInlineOverrides(output, "native");
+            String base = " WHERE t_ili_tid='native-base'";
+            String leaf = " WHERE t_ili_tid='native-inherited'";
+            assertEquals("7001", scalar(sql, "SELECT astate FROM " + db.table("meter") + base));
+            String derived = scalar(sql, "SELECT astate FROM " + db.table("leaf") + leaf);
+            assertNotEquals("7001", derived);
+            execute(sql, "UPDATE " + db.table("leaf") + " SET astate=7001" + leaf);
+            assertExportRejected(db, model, "native", output, "Unknown numeric enumeration value 7001");
+            execute(sql, "UPDATE " + db.table("leaf") + " SET astate=" + derived + leaf);
+
+            Path invalid = fixtures.dataset(model, "broken",
+                    fixtures.object(model, "Meter", "broken-first", "<State>standby</State>")
+                            + fixtures.object(model, "SmartUnit", "broken-last", "<State>active.unknown</State>"));
+            assertCliFailure(db, "import", model, "broken", invalid,
+                    "Cannot encode enumeration value active.unknown at " + model + ".Data.SmartUnit.State");
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("meter")));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("smartunit")));
+            assertEquals("3", scalar(sql, "SELECT count(*) FROM " + db.table("leaf")));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket")));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
+        }
+
+        for (String layout : List.of("newClass", "smart1")) {
+            String[] options = layout.equals("smart1")
+                    ? new String[]{"--inheritance", "smart1", "--create-enum-tabs-with-id"}
+                    : new String[]{"--create-enum-tabs-with-id"};
+            var rejected = schemaWithIdentityColumns(target(backend, "inline-shared-" + layout), model, source,
+                    CancellationToken.none(), options);
+            assertEquals(1, rejected.code(), rejected::diagnostics);
+            assertTrue(rejected.diagnostics().contains("enumeration lookup IDs for a shared column"), rejected::diagnostics);
+        }
+        var rejected = schemaWithIdentityColumns(target(backend, "inline-itf"), model, source, CancellationToken.none(),
+                "--inheritance", "smart2", "--create-enum-col-as-itf-code");
+        assertEquals(1, rejected.code(), rejected::diagnostics);
+        assertTrue(rejected.diagnostics().contains("extended attribute in inheritance"), rejected::diagnostics);
     }
 
     @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")

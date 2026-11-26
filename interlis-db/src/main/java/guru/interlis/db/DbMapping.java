@@ -546,6 +546,24 @@ final class DbMapping {
         return extendedEnumLabels.getOrDefault(slot, Map.of());
     }
 
+    void checkEnumLookupIds(DbEnumOptions options) {
+        if (options.lookup() != DbEnumOptions.Lookup.WITH_ID) return;
+        for (var binding : storage.values()) {
+            var object = binding.object();
+            if (!object.transferable()) continue;
+            var fields = extendedFields(object.symbol());
+            if (fields.isEmpty()) continue;
+            for (var table : binding.rows()) {
+                for (var column : table.columns()) {
+                    if (column.kind() == Kind.ENUMERATION && fields.containsKey(column.slot().symbol())) {
+                        throw unsupported("enumeration lookup IDs for a shared column " + table.name() + "." + column.name()
+                                + " at " + object.name().declared());
+                    }
+                }
+            }
+        }
+    }
+
     ObjectStorage concreteType(Table root, String discriminator, long id) {
         var actual = discriminator == null ? null : byDiscriminator.get(discriminator);
         if (actual == null || actual.object().modifiers().contains(Modifier.ABSTRACT)
@@ -816,7 +834,9 @@ final class DbMapping {
                     schemaOptions.contains(Ili2dbLayout.SchemaOption.TID_COLUMN), secondary));
         }
         var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
-        return new DbMapping(plan, version, tables, compositions, associations, crsPair, plan.rootModels(), inheritance, schemaOptions);
+        var mapping = new DbMapping(plan, version, tables, compositions, associations, crsPair, plan.rootModels(), inheritance, schemaOptions);
+        mapping.checkEnumLookupIds(enumOptions);
+        return mapping;
     }
 
     private static List<Column> planReferences(SqlNames allocator, Map<SymbolRef, String> names, DbInheritance inheritance,
@@ -1004,7 +1024,7 @@ final class DbMapping {
         if (type instanceof TextType text) return text.textKind() == TextKind.TEXT;
         Kind kind = scalarKind(type);
         if (kind == Kind.ENUMERATION) {
-            if (enumOptions.numeric() || !inlineEnumeration(plan, attribute)) return false;
+            if (enumOptions.itfCodes() || !inlineEnumeration(plan, attribute)) return false;
         } else if (kind != Kind.INTEGER && kind != Kind.BIGINT && kind != Kind.DECIMAL) {
             return false;
         }

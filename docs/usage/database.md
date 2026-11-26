@@ -237,6 +237,14 @@ Erweiterte Aufzählungsdomänen teilen die Tabelle ihrer Basisdefinition.
 `thisClass` unterscheidet die Zeilen für den jeweiligen Typ, auch
 wenn beide denselben XTF-Code enthalten. `seq` folgt der expliziten
 Ordnungsdeklaration des Typs.
+Inline-Aufzählungen mit `EXTENDED` verwenden dieselbe Lookup-Regel,
+wenn Smart2 oder Smart1 eine Fachspalte für die erweiterte Deklaration
+anlegt. Mit `--create-fk` verweist die Fachspalte auf die Lookup-Tabelle.
+Eine gemeinsam genutzte Basisspalte in `newClass` oder Smart1 wird für
+Lookup-IDs abgewiesen. In diesem Layout speichert ili2db 5.5.2 nur
+Lookup-Zeilen der Basis und scheitert beim Import neuer Codes der
+Erweiterung. Die ITF-Kodierung ist für diese Inline-Erweiterungen
+ebenfalls ausgeschlossen.
 `--add-models` übernimmt die gespeicherten Aufzählungsoptionen.
 Lookup-Zeilen für neue Definitionen werden in derselben Transaktion
 ergänzt. Vorhandene IDs, Anzeigenamen und Inaktiv-Markierungen bleiben

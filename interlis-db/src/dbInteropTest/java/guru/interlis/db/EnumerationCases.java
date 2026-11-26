@@ -10,8 +10,10 @@ import java.util.List;
 import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.execute;
+import static guru.interlis.db.DbTestSupport.foreignKeyColumns;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.EnumerationFixtures.BASE;
+import static guru.interlis.db.EnumerationFixtures.ABSTRACT_INLINE_OVERRIDES;
 import static guru.interlis.db.EnumerationFixtures.INLINE_OVERRIDES;
 import static guru.interlis.db.EnumerationFixtures.assertItfRows;
 import static guru.interlis.db.EnumerationFixtures.mappedTable;
@@ -19,6 +21,7 @@ import static guru.interlis.db.EnumerationFixtures.rows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class EnumerationCases {
     private final Path work;
@@ -38,6 +41,16 @@ final class EnumerationCases {
         var ili = fixtures.source(model, BASE);
         schema(expected, model, "--createEnumColAsItfCode");
         create(own, model, ili, "--create-enum-col-as-itf-code");
+        assertItfExchange(expected, own, model);
+
+        var lookupReference = expected.peer("itf_and_lookup_reference");
+        var lookupOwn = own.peer("itf_and_lookup_own");
+        schema(lookupReference, model, "--createEnumColAsItfCode", "--createEnumTabsWithId", "--createFk");
+        create(lookupOwn, model, ili, "--create-enum-col-as-itf-code", "--create-enum-tabs-with-id", "--create-fk");
+        assertItfExchange(lookupReference, lookupOwn, model);
+    }
+
+    private void assertItfExchange(TestDatabase expected, TestDatabase own, String model) throws Exception {
         assertSameCatalog(expected, own);
         for (var db : List.of(expected, own)) {
             mixScalars(db, model);
@@ -267,6 +280,58 @@ final class EnumerationCases {
                 }
             }
         }
+        inlineIds(expected.peer("inline_ids_concrete_reference"), own.peer("inline_ids_concrete_own"), true);
+        inlineIds(expected.peer("inline_ids_copied_reference"), own.peer("inline_ids_copied_own"), false);
+
+        String shared = "EnumInlineSharedIds" + version;
+        fixtures.source(shared, INLINE_OVERRIDES);
+        var sharedDb = expected.peer("inline_ids_shared");
+        schema(sharedDb, shared, "--createEnumTabsWithId");
+        reference.expectFailure(sharedDb, "%ILI_FROM_DB", "longValue()", "--import", "--dataset", "inline-shared",
+                "--importTid", "--importBid", fixtures.inlineDataset(shared, "inline-shared").toString());
+    }
+
+    private void inlineIds(TestDatabase expected, TestDatabase own, boolean concreteBase) throws Exception {
+        String layout = concreteBase ? "smart2" : "smart1";
+        String model = (concreteBase ? "EnumInlineConcreteIds" : "EnumInlineCopiedIds") + version;
+        var source = fixtures.source(model, concreteBase ? INLINE_OVERRIDES : ABSTRACT_INLINE_OVERRIDES);
+        InteropCommands.schema(reference, expected, work, model, layout, "--createEnumTabsWithId", "--createFk",
+                "--createEnumTxtCol", "--beautifyEnumDispName");
+        create(own, model, source, "--inheritance", layout, "--create-enum-tabs-with-id", "--create-fk",
+                "--create-enum-txt-col", "--beautify-enum-disp-name");
+        assertSameCatalog(expected, own);
+        assertLookupContents(expected, own, "meter_state");
+        for (var db : List.of(expected, own)) {
+            mixInline(db, model, concreteBase);
+            try (var sql = db.connect()) {
+                var foreignKeys = foreignKeyColumns(db, sql);
+                assertTrue(foreignKeys.contains("smartunit:astate:meter_state"), foreignKeys::toString);
+                if (concreteBase) {
+                    assertTrue(foreignKeys.contains("meter:astate:meter_state"), foreignKeys::toString);
+                    assertTrue(foreignKeys.contains("leaf:astate:meter_state"), foreignKeys::toString);
+                }
+                String root = model + ".Data.Meter.State";
+                String derived = model + ".Data.SmartUnit.State";
+                for (var prefix : List.of("legacy-inline", "native-inline")) {
+                    if (concreteBase) {
+                        assertInlineId(db, sql, "meter", prefix + "-base", root, "standby", "standby");
+                    }
+                    String leafTable = concreteBase ? "leaf" : "smartunit";
+                    assertInlineId(db, sql, "smartunit", prefix + "-ready", derived, "active.ready", "Ready label");
+                    assertInlineId(db, sql, leafTable, prefix + "-inherited", derived, "standby", "standby");
+                    assertInlineId(db, sql, leafTable, prefix + "-fallback", derived, "out_of_service", "out of service");
+                    assertNull(scalar(sql, "SELECT astate FROM " + db.table(leafTable)
+                            + " WHERE t_ili_tid='" + prefix + "-missing'"));
+                }
+            }
+        }
+    }
+
+    private static void assertInlineId(TestDatabase db, Connection sql, String table, String tid,
+                                       String definition, String code, String label) throws Exception {
+        assertEquals(List.of(List.of(definition, code, label)), rows(sql,
+                "SELECT e.thisclass,e.ilicode,t.astate_txt FROM " + db.table(table) + " t JOIN "
+                        + db.table("meter_state") + " e ON e.t_id=t.astate WHERE t.t_ili_tid='" + tid + "'"), tid);
     }
 
     void appendEnums(TestDatabase expected, TestDatabase own) throws Exception {
@@ -390,13 +455,17 @@ final class EnumerationCases {
     }
 
     private void mixInline(TestDatabase db, String model) throws Exception {
+        mixInline(db, model, true);
+    }
+
+    private void mixInline(TestDatabase db, String model, boolean concreteBase) throws Exception {
         Path output = work.resolve("inline-overrides.xtf");
-        referenceImport(db, "legacy-inline", fixtures.inlineDataset(model, "legacy-inline"));
+        referenceImport(db, "legacy-inline", fixtures.inlineDataset(model, "legacy-inline", concreteBase));
         assertCliSuccess(db, "export", model, "legacy-inline", output);
-        fixtures.assertInlineOverrides(output, "legacy-inline");
-        assertCliSuccess(db, "import", model, "native-inline", fixtures.inlineDataset(model, "native-inline"));
+        fixtures.assertInlineOverrides(output, "legacy-inline", concreteBase);
+        assertCliSuccess(db, "import", model, "native-inline", fixtures.inlineDataset(model, "native-inline", concreteBase));
         referenceExport(db, "native-inline", output);
-        fixtures.assertInlineOverrides(output, "native-inline");
+        fixtures.assertInlineOverrides(output, "native-inline", concreteBase);
     }
 
     private void schema(TestDatabase db, String model, String... flags) throws Exception {

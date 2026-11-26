@@ -48,9 +48,13 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
         var objects = mapping.inheritance().declarations().stream().map(DbInheritance.Declaration::object).toList();
         var roots = DbMapping.storageRoots(plan, mapping.crsPair());
         var orderedDeclarations = orderedDeclarations(syntax, token);
+        var definitions = definitions(plan, roots, objects, token);
+        if (options.lookup() != DbEnumOptions.Lookup.PER_DEFINITION) {
+            definitions = storedDefinitions(plan, definitions, mapping.inheritance());
+        }
         if (options.lookup() == DbEnumOptions.Lookup.SINGLE) {
             var rows = new ArrayList<Row>();
-            for (var definition : storedDefinitions(plan, roots, objects, mapping.inheritance(), token)) {
+            for (var definition : definitions) {
                 rows.addAll(rows(plan, definition, orderedDeclarations, options.beautify(), token));
             }
             return List.of(new DbEnumLookup(Ili2dbLayout.ENUM, Optional.empty(), !names.hasTable(Ili2dbLayout.ENUM), rows));
@@ -63,7 +67,7 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
                             new Row(BOOLEAN_DEFINITION, null, "true", 1, null, "true", null))));
         }
         var byTable = new LinkedHashMap<Symbol, List<Row>>();
-        for (var definition : definitions(plan, roots, objects, options.lookup(), token)) {
+        for (var definition : definitions) {
             var declaration = options.lookup() == DbEnumOptions.Lookup.WITH_ID
                     ? root(plan, definition.declaration()) : definition.declaration();
             byTable.computeIfAbsent(declaration, ignored -> new ArrayList<>())
@@ -131,9 +135,8 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
     }
 
     static List<Definition> definitions(TransferPlan plan, List<SymbolRef> models, List<ObjectDescriptor> objects,
-                                        DbEnumOptions.Lookup mode, CancellationToken token) {
+                                        CancellationToken token) {
         var definitions = declaredDefinitions(plan, models, objects, token);
-        if (mode == DbEnumOptions.Lookup.WITH_ID) return definitions;
         var result = new ArrayList<>(definitions);
         result.addAll(inlineExtensions(plan, objects, token));
         return List.copyOf(result);
@@ -173,10 +176,7 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
         return List.copyOf(definitions.values());
     }
 
-    private static List<Definition> storedDefinitions(TransferPlan plan, List<SymbolRef> models,
-                                                       List<ObjectDescriptor> objects, DbInheritance layout,
-                                                       CancellationToken token) {
-        var definitions = definitions(plan, models, objects, DbEnumOptions.Lookup.SINGLE, token);
+    static List<Definition> storedDefinitions(TransferPlan plan, List<Definition> definitions, DbInheritance layout) {
         var extensions = definitions.stream().filter(DbEnumLookup::inlineExtension).toList();
         if (extensions.isEmpty()) return definitions;
         var bases = extensions.stream().map(definition -> root(plan, definition.declaration()).id())

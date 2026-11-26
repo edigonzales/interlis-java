@@ -129,6 +129,11 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 && !names.hasClass(association.object().name().declared().toString())).toList();
         var addedCompositions = mapping.compositions().stream()
                 .filter(composition -> !names.hasAttribute(composition.slot().name().declared().toString())).toList();
+        var enumLookups = DbEnumLookup.plan(mapping, names, enumOptions, compiled.syntax(), token);
+        var enumTables = enumOptions.lookup() == DbEnumOptions.Lookup.WITH_ID && !enumOptions.itfCodes()
+                && schemaOptions.contains(SchemaOption.FOREIGN_KEY)
+                ? enumLookups.stream().collect(Collectors.toMap(lookup -> lookup.mappedName().orElseThrow(), DbEnumLookup::table))
+                : Map.<String, String>of();
         var properties = new ArrayList<ColumnProperty>();
         var geometries = new HashMap<String, List<GeometryColumn>>();
         var uniqueKeys = new HashMap<String, List<List<String>>>();
@@ -143,6 +148,14 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             }
             for (var column : table.columns()) {
                 addProperties(properties, geometries, mapping, table, table.name(), column);
+                if (!enumTables.isEmpty() && column.kind() == DbMapping.Kind.ENUMERATION && column.array().isEmpty()) {
+                    var definition = DbEnumeration.definition(mapping.plan(), (AttributeSlot) column.slot());
+                    String target = enumTables.get(DbEnumLookup.name(mapping.plan(), DbEnumLookup.root(mapping.plan(), definition)));
+                    if (target == null) {
+                        throw new DbException("Missing planned enumeration lookup for " + column.slot().name().declared());
+                    }
+                    property(properties, table.name(), null, column, "foreignKey", target);
+                }
             }
             for (var secondary : table.secondaryGeometries()) {
                 addProperties(properties, geometries, mapping, table, secondary.table(), secondary.column());
@@ -164,7 +177,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         }
         return new SchemaPlan(mapping, modelFiles, addedTables, addedAssociations, addedCompositions, properties, geometries,
                 splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations,
-                DbEnumLookup.plan(mapping, names, enumOptions, compiled.syntax(), token), Map.copyOf(uniqueKeys),
+                enumLookups, Map.copyOf(uniqueKeys),
                 Map.copyOf(numericChecks), schemaOptions.contains(SchemaOption.META_INFO) ? DbMetaInfo.plan(mapping, token) : List.of());
     }
 
@@ -272,6 +285,14 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         for (var composition : addedCompositions) {
             keys.add(new ForeignKey(mapping.table(composition.childRoot()).name(), composition.ownerColumn(),
                     mapping.table(composition.parent()).name()));
+        }
+        if (enumOptions.lookup() == DbEnumOptions.Lookup.WITH_ID) {
+            var enumTables = enumLookups.stream().map(DbEnumLookup::table).collect(Collectors.toSet());
+            for (var property : columnProperties) {
+                if (property.key().equals(Ili2dbLayout.PREFIX + "foreignKey") && enumTables.contains(property.value())) {
+                    keys.add(new ForeignKey(property.table(), property.column(), property.value()));
+                }
+            }
         }
         return List.copyOf(keys);
     }
