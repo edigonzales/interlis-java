@@ -824,8 +824,10 @@ einschliesslich abstrakter Basisklassen. Die Rollenspalte liegt in der
 Tabelle der deklarierten Eigentümerklasse. Sie speichert die gemeinsame
 `T_Id` der Zielzeilen. Die Zielmetadaten benennen die Tabelle des deklarierten
 Zieltyps. Im XTF erscheint die Rolle am konkreten Eigentümerobjekt und
-verwendet die TID aus der Wurzeltabelle des Ziels. Auch Selbstbezüge innerhalb
-derselben Hierarchie sind möglich.
+verwendet die TID aus der Wurzeltabelle des Ziels. Eine `RESTRICTION`
+am Rollenziel ändert weder den Fremdschlüssel einer eingebetteten Rolle
+noch den einer eigenständigen Linktabelle.
+Auch Selbstbezüge innerhalb derselben Hierarchie sind möglich.
 
 `CLASSNAME` und `INHERITANCE` führen die Assoziation, `TRAFO` kennzeichnet
 sie als `embedded` und `ATTRNAME` benennt Spalte und Ziel. Referenzen auf

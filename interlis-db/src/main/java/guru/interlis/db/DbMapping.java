@@ -1187,6 +1187,9 @@ final class DbMapping {
         // For 1:1, the second declared role's class owns the column for the first role.
         var target = first.single() ? first : second;
         var owner = first.single() ? second : first;
+        if (!owner.slot().role().targets().getFirst().restrictions().isEmpty()) {
+            throw unsupported("restriction on the owner of an embedded association at " + association.name().declared());
+        }
         boolean crossesTopic = roles.stream().anyMatch(role ->
                 !plan.object(role.target()).orElseThrow().topic().equals(association.topic()));
         if (crossesTopic && owner.single()) {
@@ -1212,8 +1215,7 @@ final class DbMapping {
     private static SymbolRef roleTarget(TransferPlan plan, ObjectDescriptor association, RoleSlot slot) {
         var role = slot.role();
         String feature = "role " + slot.name().declared();
-        if (role.targets().size() != 1 || !role.targets().getFirst().restrictions().isEmpty()
-                || role.hiding() || role.derivation().isPresent()) {
+        if (role.targets().size() != 1 || role.hiding() || role.derivation().isPresent()) {
             throw unsupported(feature);
         }
         var target = new SymbolRef(plan.snapshotId(), role.targets().getFirst().base());

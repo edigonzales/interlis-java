@@ -141,7 +141,7 @@ MODEL BaseMapping23 (en) AT "https://example.org/interlis/db" VERSION "2026-11-2
       Label : TEXT*18;
     END ServiceUnit;
     ASSOCIATION HierarchyCrew =
-      Supervisor -- {0..1} Tower;
+      Supervisor -- {0..1} Tower RESTRICTION (Relay);
       Crewmember -- {0..*} ServiceBase;
     END HierarchyCrew;
     ASSOCIATION HierarchyPair =
@@ -153,7 +153,7 @@ MODEL BaseMapping23 (en) AT "https://example.org/interlis/db" VERSION "2026-11-2
       Mentee -- {0..*} Tower;
     END MastMentoring;
     ASSOCIATION HierarchyLink =
-      WorkBranch -- {0..*} Tower;
+      WorkBranch -- {0..*} Tower RESTRICTION (Relay);
       StaffRoot -- {0..*} ServiceBase;
     END HierarchyLink;
     ASSOCIATION HierarchyNote =

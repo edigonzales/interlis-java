@@ -194,6 +194,7 @@ final class BaseMappingStorageTest {
                     "ConsultedMarker", "AnnotatedLink", "missing-annotated-link", "marker", "report", "annotatedlink");
             assertWrongTargetBranchRollback(db, sql, model, version, fixture);
             assertWrongHierarchyRoleRollback(db, sql, model, version, fixture);
+            assertMissingRestrictedRoleRollback(db, sql, model, version, fixture);
             assertWrongStandaloneBranchRollback(db, sql, model, version, fixture,
                     "HierarchyLink", "WorkBranch", "wrong-hierarchy-link", "hierarchylink");
             assertWrongStandaloneBranchRollback(db, sql, model, version, fixture,
@@ -457,6 +458,21 @@ final class BaseMappingStorageTest {
         assertTrue(rejected.diagnostics().contains("HierarchyCrew.Supervisor")
                 && rejected.diagnostics().contains("wrong-role-branch-beacon"), rejected::diagnostics);
         assertRolledBack(db, sql, "wrong-role-branch", rows);
+    }
+
+    private void assertMissingRestrictedRoleRollback(Target db, Connection sql, String model, int version, String fixture)
+            throws Exception {
+        String ref = version == 24 ? "i:ref" : "REF";
+        String broken = fixture.replace("<WorkBranch " + ref + "=\"legacy-relay\"", "<WorkBranch " + ref + "=\"unresolved\"");
+        assertNotEquals(fixture, broken);
+        String dataset = "missing-restricted-role";
+        Path input = Files.writeString(work.resolve(dataset + ".xtf"), broken.replace("legacy-", dataset + "-"));
+        var rows = storedIds(db, sql, "mast", "servicebase", "hierarchylink");
+        var rejected = cli(db, "import", model, dataset, input, CancellationToken.none());
+        assertEquals(1, rejected.code(), rejected::diagnostics);
+        assertTrue(rejected.diagnostics().contains("HierarchyLink.WorkBranch")
+                && rejected.diagnostics().contains("unresolved"), rejected::diagnostics);
+        assertRolledBack(db, sql, dataset, rows);
     }
 
     private void assertWrongStandaloneBranchRollback(Target db, Connection sql, String model, int version,
