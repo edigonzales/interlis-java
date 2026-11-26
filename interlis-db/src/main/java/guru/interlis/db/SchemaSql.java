@@ -220,10 +220,13 @@ final class SchemaSql {
             }
             commands.add(dialect.create(table.name(), String.join(", ", columns), inlineKeys.getOrDefault(table.name(), List.of())));
             for (var geometry : table.secondaryGeometries()) {
+                var column = geometry.column();
+                var requiredGeometry = plan.requiredColumns().getOrDefault(geometry.table(), Set.of());
                 commands.add(dialect.create(geometry.table(), dialect.primaryId()
                         + (createBasketColumn ? ", " + basketColumn : "") + ", "
                         + (createDatasetColumn ? datasetColumn + ", " : "")
-                        + quote(geometry.column().name()) + " " + dialect.columnType(geometry.column(), 0)
+                        + quote(column.name()) + " " + dialect.columnType(column, 0)
+                        + (requiredGeometry.contains(column.name()) ? " NOT NULL" : "")
                         + (auditColumns.isEmpty() ? "" : ", " + String.join(", ", auditColumns)),
                         inlineKeys.getOrDefault(geometry.table(), List.of())));
             }

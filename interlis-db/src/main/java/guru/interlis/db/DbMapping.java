@@ -514,7 +514,7 @@ final class DbMapping {
         return table.object().kind() == SymbolKind.CLASS && target.object().kind() == SymbolKind.CLASS;
     }
 
-    private static boolean flatClass(TransferPlan plan, ObjectDescriptor object) {
+    static boolean flatClass(TransferPlan plan, ObjectDescriptor object) {
         return object.kind() == SymbolKind.CLASS && object.baseType().isEmpty()
                 && !object.modifiers().contains(Modifier.ABSTRACT) && !hasSubtypes(plan, object.symbol());
     }

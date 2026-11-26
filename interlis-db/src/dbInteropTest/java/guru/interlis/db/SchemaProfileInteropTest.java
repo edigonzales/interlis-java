@@ -84,6 +84,17 @@ final class SchemaProfileInteropTest {
                 .requiredGeometries(expected, expected.peer("profile_required_geom_own"));
     }
 
+    @Test void geoPackageProfileRequiredGeometryFragments23() throws Exception { exchangeProfileRequiredGeometryFragments(23, null); }
+    @Test void geoPackageProfileRequiredGeometryFragments24() throws Exception { exchangeProfileRequiredGeometryFragments(24, null); }
+    @Test void postgisProfileRequiredGeometryFragments23() throws Exception { exchangeProfileRequiredGeometryFragments(23, POSTGIS.container()); }
+    @Test void postgisProfileRequiredGeometryFragments24() throws Exception { exchangeProfileRequiredGeometryFragments(24, POSTGIS.container()); }
+
+    private void exchangeProfileRequiredGeometryFragments(int version, PostgreSQLContainer postgres) throws Exception {
+        var expected = new TestDatabase(work, postgres, "profile_required_geom_fragments_ref", "v" + version + "_");
+        new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version)
+                .requiredGeometryFragments(expected, expected.peer("profile_required_geom_fragments_own"));
+    }
+
     @Test void geoPackageProfileForeignKeys23() throws Exception { exchangeProfileForeignKeys(23, null); }
     @Test void geoPackageProfileForeignKeys24() throws Exception { exchangeProfileForeignKeys(24, null); }
     @Test void postgisProfileForeignKeys23() throws Exception { exchangeProfileForeignKeys(23, POSTGIS.container()); }

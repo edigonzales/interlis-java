@@ -210,8 +210,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         var required = new HashMap<String, Set<String>>();
         for (var table : addedTables) {
             var kind = table.object().kind();
-            if ((kind != SymbolKind.CLASS && (kind != SymbolKind.STRUCTURE || table.subtype()))
-                    || !table.secondaryGeometries().isEmpty()) {
+            if (kind != SymbolKind.CLASS && (kind != SymbolKind.STRUCTURE || table.subtype())) {
                 throw DbMapping.unsupported("--sql-not-null at " + table.object().name().declared());
             }
             var columns = new HashSet<String>();
@@ -225,8 +224,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                         && DbMapping.simpleLocalReference(mapping.plan(), reference)) {
                     continue;
                 }
-                boolean directGeometry = kind == SymbolKind.CLASS && column.kind().geometry() && !multiSrs
-                        && column.domainBinding().isEmpty() && column.wrappedGeometry().isEmpty();
+                boolean directGeometry = kind == SymbolKind.CLASS && fixedGeometry(column, multiSrs);
                 if (!column.simpleScalar() && !directGeometry) {
                     throw DbMapping.unsupported("--sql-not-null at " + column.slot().name().declared());
                 }
@@ -235,8 +233,24 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 }
             }
             if (!columns.isEmpty()) required.put(table.name(), Set.copyOf(columns));
+            if (!table.secondaryGeometries().isEmpty() && !DbMapping.flatClass(mapping.plan(), table.object())) {
+                throw DbMapping.unsupported("--sql-not-null at " + table.object().name().declared());
+            }
+            for (var secondary : table.secondaryGeometries()) {
+                var column = secondary.column();
+                if (!fixedGeometry(column, multiSrs)) {
+                    throw DbMapping.unsupported("--sql-not-null at " + column.slot().name().declared());
+                }
+                if (column.slot() instanceof AttributeSlot attribute && attribute.cardinality().lower().signum() > 0) {
+                    required.put(secondary.table(), Set.of(column.name()));
+                }
+            }
         }
         return Map.copyOf(required);
+    }
+
+    private static boolean fixedGeometry(DbMapping.Column column, boolean multiSrs) {
+        return column.kind().geometry() && !multiSrs && column.domainBinding().isEmpty() && column.wrappedGeometry().isEmpty();
     }
 
     List<String> addedStorageTables() { return DbMapping.storageTables(addedTables); }

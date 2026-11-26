@@ -275,6 +275,43 @@ final class SchemaProfileCases {
         }
     }
 
+    void requiredGeometryFragments(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ProfileRequiredGeometryFragments" + version;
+        var ili = fixtures.requiredGeometryFragmentsModel(model);
+        var referenceOptions = new ArrayList<>(List.of("--createGeomIdx", "--createFk"));
+        var nativeOptions = new ArrayList<>(List.of("--sql-not-null", "--create-geom-index", "--create-fk"));
+        if (expected.postgis()) {
+            referenceOptions.add("--oneGeomPerTable");
+            nativeOptions.add("--one-geom-per-table");
+        }
+        referenceSchema(expected, ili, referenceOptions.toArray(String[]::new));
+        schema(own, model, ili, nativeOptions.toArray(String[]::new));
+        mixedObjects(expected, own, model, 2, prefix ->
+                        fixtures.markerWithGeometryFragments(model, prefix + "-full", "12.125", true)
+                                + fixtures.markerWithGeometryFragments(model, prefix + "-partial", "22.125", false),
+                (prefix, rows) -> {
+                    var objects = rows.stream().collect(Collectors.toMap(row -> id(row, version, "tid"), Function.identity()));
+                    var full = objects.get(prefix + "-full");
+                    var partial = objects.get(prefix + "-partial");
+                    assertPositions(child(full, "Center"), "10,11");
+                    assertPositions(child(full, "Anchor"), "12.125,13.375,-4.875");
+                    assertPositions(child(full, "Peg"), "16,17");
+                    assertPositions(child(partial, "Center"), "10,11");
+                    assertPositions(child(partial, "Anchor"), "22.125,13.375,-4.875");
+                    assertNull(child(partial, "Peg"));
+                });
+        try (var sql = expected.connect()) {
+            String fragment = " FROM " + expected.table("marker_peg") + " p JOIN " + expected.table("marker")
+                    + " m ON p.t_id=m.t_id AND p.t_basket=m.t_basket WHERE m.t_ili_tid='legacy-partial'";
+            String id = scalar(sql, "SELECT p.t_id" + fragment + " AND p.peg IS NULL");
+            assertTrue(id != null, "ili2db import retains the optional geometry row with SQL NULL");
+            assertCliSuccess(expected, "update", model, "legacy", fixtures.data(model, "legacy",
+                    fixtures.markerWithGeometryFragments(model, "legacy-full", "12.125", true)
+                            + fixtures.markerWithGeometryFragments(model, "legacy-partial", "22.125", true)));
+            assertEquals(id, scalar(sql, "SELECT p.t_id" + fragment + " AND p.peg IS NOT NULL"));
+        }
+    }
+
     private void assertPositions(Element geometry, String... expected) {
         var positions = geometry.getElementsByTagNameNS("*", version == 23 ? "COORD" : "coord");
         var actual = new ArrayList<String>();

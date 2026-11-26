@@ -602,6 +602,49 @@ final class SqlConstraintTest {
         });
     }
 
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void requiredGeometryFragmentsKeepIdsAndIndexesOnUpdateAndRollback(Backend backend, int version) throws Exception {
+        withDatabase(backend, db -> {
+            String model = "SqlRequiredGeometryFragments";
+            var fixture = new ProfileFixtures(work, version);
+            var ili = fixture.requiredGeometryFragmentsModel(model);
+            String[] options = db.postgis()
+                    ? new String[]{"--sql-not-null", "--create-geom-index", "--create-fk", "--one-geom-per-table"}
+                    : new String[]{"--sql-not-null", "--create-geom-index", "--create-fk"};
+            DbTestSupport.assertSchemaWithIdentityColumns(db, model, ili, options);
+            assertCliSuccess(db, "import", model, "markers", fixture.data(model, "markers",
+                    fixture.markerWithGeometryFragments(model, "keep", "12.125", true)));
+            try (var sql = db.connect()) {
+                String fragments = " FROM " + db.table("marker") + " m JOIN " + db.table("marker_anchor")
+                        + " a ON a.t_id=m.t_id AND a.t_basket=m.t_basket JOIN " + db.table("marker_peg")
+                        + " p ON p.t_id=m.t_id AND p.t_basket=m.t_basket WHERE m.t_ili_tid='keep'";
+                String ids = scalar(sql, "SELECT m.t_id || ':' || m.t_basket" + fragments);
+                assertNotNull(ids);
+                SpatialIndexFixtures.assertSearch(db, sql, "marker_anchor", "anchor", "12.125", "13.375", true);
+                SpatialIndexFixtures.assertSearch(db, sql, "marker_peg", "peg", "16", "17", true);
+                assertCliSuccess(db, "update", model, "markers", fixture.data(model, "markers",
+                        fixture.markerWithGeometryFragments(model, "keep", "22.125", false)));
+                assertCliFailure(db, "import", model, "broken", fixture.data(model, "broken",
+                        fixture.markerWithGeometryFragments(model, "broken-first", "42.125", true)
+                                + fixture.markerWithGeometryFragments(model, "broken-last", null, true)),
+                        db.postgis() ? "SQL code 23502)" : "SQL code 19)");
+                assertEquals(ids, scalar(sql, "SELECT m.t_id || ':' || m.t_basket" + fragments));
+                assertEquals("1", scalar(sql, "SELECT count(*)" + fragments + " AND p.peg IS NULL"));
+                assertIndexedGeometry(db, sql, "marker_anchor", "anchor");
+                SpatialIndexFixtures.assertIndex(db, sql, "marker_peg", "peg");
+                SpatialIndexFixtures.assertSearch(db, sql, "marker_anchor", "anchor", "12.125", "13.375", false);
+                SpatialIndexFixtures.assertSearch(db, sql, "marker_anchor", "anchor", "22.125", "13.375", true);
+                SpatialIndexFixtures.assertSearch(db, sql, "marker_anchor", "anchor", "42.125", "13.375", false);
+                SpatialIndexFixtures.assertSearch(db, sql, "marker_peg", "peg", "16", "17", false);
+                for (String table : List.of("marker", "marker_peg", "t_ili2db_basket")) {
+                    assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table(table)), table);
+                }
+                assertEquals("markers", scalar(sql, "SELECT datasetname FROM " + db.table("t_ili2db_dataset")));
+            }
+        });
+    }
+
     private static void assertIndexedGeometry(Target db, Connection sql, String table, String field) throws SQLException {
         SpatialIndexFixtures.assertIndex(db, sql, table, field);
         assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table(table)), table);

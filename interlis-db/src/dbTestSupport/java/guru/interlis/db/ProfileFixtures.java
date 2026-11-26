@@ -239,6 +239,26 @@ final class ProfileFixtures {
                 CLASS Asset = MainPoint : Position; CheckPoint : Position; Label"""));
     }
 
+    Path requiredGeometryFragmentsModel(String model) throws IOException {
+        return source(model, """
+                DOMAIN
+                  XY = COORD 0.000..100.000, 0.000..100.000;
+                  XYZ = COORD 0.000..100.000, 0.000..100.000, -100.000..100.000;
+                CLASS Marker =
+                  Center : XY;
+                  Anchor : MANDATORY XYZ;
+                  Peg : XY;
+                END Marker;
+                """);
+    }
+
+    String markerWithGeometryFragments(String model, String tid, String anchorX, boolean peg) {
+        String fields = "<Center>" + point("10", "11") + "</Center>";
+        if (anchorX != null) fields += "<Anchor>" + point(anchorX, "13.375", "-4.875") + "</Anchor>";
+        if (peg) fields += "<Peg>" + point("16", "17") + "</Peg>";
+        return object(model, "Marker", tid, fields);
+    }
+
     Path auditData(String model, String prefix) throws IOException {
         String note = version == 23 ? model + ".Data.Note" : "Note";
         String fields = "<MainPoint>" + point("12.000", "13.000") + "</MainPoint><CheckPoint>" + point("14.000", "15.000")

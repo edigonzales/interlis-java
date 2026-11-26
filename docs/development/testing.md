@@ -147,9 +147,10 @@ Erhalt des unabhängigen Datensatzes bei Delete.
 Schlüssel, SQL `NULL`, Ganzzahl- und Festkommabereiche sowie die gerundete
 Dezimalgrenze oberhalb von `2^53`. Die Fälle prüfen Rollback und die
 Constraint-Wirkung für neu hinzugefügte Modelle direkt in der Datenbank.
-Die strikten Fälle prüfen Vorwärtsreferenzen und stabile IDs bei 1:1-Rollen,
-den Rollback bei fehlenden Pflichtwerten und die räumlichen Indizes
-direkt gespeicherter Geometrien.
+Die strikten Fälle prüfen Vorwärtsreferenzen und stabile IDs bei flachen
+Rollen und Rollen in Klassenhierarchien. Fehlende Pflichtfelder prüfen den
+Rollback über verschachtelte Strukturzeilen, Klassenfragmente und
+Geometriehilfstabellen. Räumliche Treffer belegen die Aktualisierung der Indizes.
 
 `ForeignKeyProfileTest` prüft für beide XTF-Versionen die genauen
 Fremdschlüsselziele, Vorwärtsreferenzen, Strukturzeilen und den Rollback
@@ -349,6 +350,11 @@ Rollback bei einer verletzten SQL-Pflichtspalte.
 Die `*ProfileRequiredRoles*`- und `*ProfileRequiredGeometries*`-Fälle
 vergleichen strikte Referenz- und eigene Schemata und prüfen den
 Werkzeugwechsel in beiden Richtungen.
+`*ProfileNestedStructures*` prüft Einzelwerte, Listen und Bags in
+Strukturen. `*ProfileRequiredHierarchy*` prüft Pflichtfelder und zwei
+Rollen auf dasselbe Ziel in einer `newClass`-Hierarchie.
+`*ProfileRequiredGeometryFragments*` prüft Pflichtgeometrien und
+optionale Werte in aufgeteilten Geometrietabellen.
 Die `*ProfileForeignKeys*`-Fälle vergleichen die beiden Einzelprofile für
 Fremdschlüssel und referenzierende Indizes, auch nach `--add-models`.
 Der gemeinsame Austausch für beide Optionen läuft in
@@ -479,7 +485,8 @@ ili2db-Export folgt auf ein selektives natives Update. Ein Folgeimport
 mit `--add-models`, je mit und ohne `--sqlEnableNull`. Beide Werkzeuge
 exportieren den bestehenden Datensatz.
 Die Mischläufe prüfen den Austausch des neuen Datensatzes, die Rückverweise
-in der gemeinsamen Strukturtabelle und die fortgesetzte ID-Vergabe.
+für obligatorische Einzelwerte in der gemeinsamen Strukturtabelle und die
+fortgesetzte ID-Vergabe.
 
 `--tests '*TranslationInteropTest'` bündelt skalare und verschachtelte
 Baskets im Katalogvergleich und Werkzeugwechsel. Ein weiterer Fall

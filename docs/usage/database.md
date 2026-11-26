@@ -449,23 +449,24 @@ Nullbarkeitsprofil des bestehenden `newClass`-Schemas. Für neue Tabellen
 gelten dieselben Pflichtspaltenregeln wie bei der Neuanlage. Neue
 Besitzerspalten in gemeinsam verwendeten Strukturtabellen bleiben nullable.
 Das gilt auch für einen als `MANDATORY` deklarierten Einzelwert. Der
-Validator prüft, ob ein solcher Strukturwert beim Elternobjekt vorhanden ist.
+DB-Transfer kann eine Elternzeile ohne Strukturwert importieren und exportieren.
+Die Vollständigkeit prüft der separat aufgerufene [Validator](validator.md).
 
 `schemaimport --sql-not-null` erzeugt ein striktes `newClass`-Schema für
 Klassen und ihre Strukturen. Direkt gespeicherte skalare Pflichtattribute
 erhalten in einer Klassenhierarchie `NOT NULL` auf der Tabelle ihrer
 Deklaration. Die Fragmente eines Objekts verwenden dieselbe `T_Id`.
-Pflichtgeometrien in flachen Klassen und lokale,
-ungeordnete 1:1- und 1:n-Rollen mit Kardinalität `{1}` und einer konkreten
-Zieltabelle erhalten `NOT NULL`. Geometrien verwenden ein festes CRS und
-liegen in der jeweiligen Klassentabelle. Lokale Referenzattribute mit einer konkreten,
-vererbungsfreien Zielklasse bleiben auch bei `MANDATORY REFERENCE TO`
+Pflichtgeometrien in flachen Klassen und lokale, ungeordnete 1:1- und
+1:n-Rollen mit Kardinalität `{1}` und einer konkreten
+Zieltabelle erhalten `NOT NULL`. Geometrien verwenden ein festes CRS.
+Bei der Aufteilung der Geometriespalten einer flachen Klasse gilt die
+Nullbarkeit auch auf der jeweiligen Hilfstabelle. Lokale Referenzattribute
+mit einer konkreten, vererbungsfreien Zielklasse bleiben auch bei `MANDATORY REFERENCE TO`
 nullable. XTF 2.3 überträgt diese Referenzattribute innerhalb einer Struktur.
 XTF 2.4 unterstützt zusätzlich direkte Klassenattribute. Ohne die Option
 gilt `SqlNull=enable`. Die Kombination mit `--create-mandatory-checks` ist
 auf das nullable Profil beschränkt.
-Für Geometriehilfstabellen und `--multi-srs` steht die Schemaerzeugung
-mit `SqlNull=enable` zur Verfügung.
+Geometrieabbildungen mit `--multi-srs` verwenden das Profil mit `SqlNull=enable`.
 
 Der FULL-Transfer mit GeoPackage und PostGIS unterstützt bestehende
 ili2db-Schemata mit `--sqlColsAsText`. Einfache Attribute werden als SQL-Text
@@ -849,8 +850,8 @@ Richtungen geprüft.
 [ili2db-Quellcode](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/src/ch/ehi/ili2db/json/Iox2jsonUtility.java#L309-L339) ·
 [Reproduktion](../development/testing.md#ili2db-json-export-reproduzieren)
 
-In XTF 2.3 und 2.4 FULL können Klassen und Strukturen optionale und obligatorische Strukturwerte
-sowie `LIST OF`- und `BAG OF`-Attribute mit einem Strukturtyp aus dem
+In XTF 2.3 und 2.4 FULL können Klassen und Strukturen optionale und
+obligatorische Strukturwerte sowie `LIST OF`- und `BAG OF`-Attribute mit einem Strukturtyp aus dem
 Modell oder dem eigenen Topic enthalten. Verschachtelungen sind azyklisch.
 Strukturelemente verwenden die unterstützten skalaren Attributtypen.
 Im strikten `newClass`-Schema gilt `NOT NULL` für direkt gespeicherte
