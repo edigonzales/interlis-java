@@ -1,0 +1,7 @@
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
+  xmlns:m="http://www.interlis.ch/xtf/2.4/Review" xmlns:g="http://www.interlis.ch/geometry/1.0">
+<i:headersection><i:models><i:model>Review</i:model></i:models><i:sender>test</i:sender></i:headersection>
+<i:datasection><m:Data i:bid="b"><m:Object i:tid="o"><m:line><g:polyline>
+<g:coord><g:c1>0</g:c1><g:c2>0</g:c2></g:coord>
+ <g:arc><g:c1>10</g:c1><g:c2>0</g:c2><g:a1>5</g:a1><g:a2>0</g:a2><g:r>1</g:r></g:arc>
+ </g:polyline></m:line></m:Object></m:Data></i:datasection></i:transfer>

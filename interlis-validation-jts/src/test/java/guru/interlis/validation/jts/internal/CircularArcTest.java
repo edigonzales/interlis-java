@@ -58,6 +58,37 @@ class CircularArcTest {
                 radius("0.99", RadiusConvention.POSITIVE_SELECTED_BY_SUPPORT), 0));
     }
 
+    @Test
+    void rejectsRadiusBelowExactHalfChordEvenWhenBinary64RoundsItToEquality() {
+        var start = new Point(-1, 0);
+        var end = new Point(1, 0);
+        var support = new Point(0, 1);
+        assertInstanceOf(CircularArc.Construction.Invalid.class, CircularArc.build(start, support, end,
+                radius("0.99999999999999999999999999999999", RadiusConvention.POSITIVE_SELECTED_BY_SUPPORT), 0.001));
+    }
+
+    @Test
+    void rejectsImpossibleDiameterWithCollinearIntermediatePositionInBothFormats() {
+        for (var convention : RadiusConvention.values()) {
+            var invalid = assertInstanceOf(CircularArc.Construction.Invalid.class, CircularArc.build(
+                    new Point(0, 0), new Point(5, 0), new Point(10, 0), radius("1", convention),
+                    BigDecimal.ONE, true, () -> {}));
+            assertTrue(invalid.chordTooLong());
+            assertEquals("Radius is smaller than half the chord (squared chord 100, squared diameter 4)",
+                    invalid.detail());
+        }
+    }
+
+    @Test
+    void signedRadiusSelectsMinorClockwiseArcAcrossTheChordFromDisplacedIntermediatePosition() {
+        // ILI 2.3 §2.8.12.2 and §3.3.11.12. Distance to the short clockwise branch is
+        // 11 - sqrt(96), while the nearest points on the long branch are sqrt(5) away.
+        var arc = built(CircularArc.build(new Point(0, 0), new Point(2, -1), new Point(4, 0),
+                radius("10", RadiusConvention.SIGNED_CLOCKWISE), BigDecimal.ONE, true, () -> {}));
+        assertEquals(-Math.sqrt(96), arc.center().y(), 1e-12);
+        assertEquals(-2 * Math.asin(0.2), arc.sweep(), 1e-12);
+    }
+
     private static CircularArc built(CircularArc.Construction result) {
         return assertInstanceOf(CircularArc.Construction.Built.class, result).arc();
     }

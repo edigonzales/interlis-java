@@ -1,0 +1,9 @@
+INTERLIS 2.4;
+MODEL Shares AT "https://example.org/area" VERSION "1" =
+  TOPIC Data =
+    DOMAIN Point = COORD 0.000 .. 100.000, 0.000 .. 100.000, 0.000 .. 100.000, ROTATION 2 -> 1;
+    CLASS Piece =
+      shape : AREA WITH (STRAIGHTS) VERTEX Point WITHOUT OVERLAPS > 0.050;
+    END Piece;
+  END Data;
+END Shares.

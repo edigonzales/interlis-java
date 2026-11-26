@@ -1,0 +1,9 @@
+INTERLIS 2.3;
+MODEL NearArcOverlap AT "https://example.org/near-arc-overlap" VERSION "1" =
+  TOPIC Data =
+    DOMAIN Point = COORD 2460000.000 .. 2870000.000, 1045000.000 .. 1310000.000, ROTATION 2 -> 1;
+    CLASS Boundary =
+      line : POLYLINE WITH (STRAIGHTS, ARCS) VERTEX Point WITHOUT OVERLAPS > 0.050;
+    END Boundary;
+  END Data;
+END NearArcOverlap.

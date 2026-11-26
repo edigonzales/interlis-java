@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+ <HEADERSECTION VERSION="2.3" SENDER="test"><MODELS><MODEL NAME="Review" VERSION="1" URI="https://example.org/review"/></MODELS></HEADERSECTION>
+ <DATASECTION><Review.Data BID="b"><Review.Data.Object TID="o"><line><POLYLINE>
+ <COORD><C1>0</C1><C2>0</C2></COORD>
+ <ARC><C1>10</C1><C2>0</C2><A1>5</A1><A2>0</A2><R>1</R></ARC>
+ </POLYLINE></line></Review.Data.Object></Review.Data></DATASECTION></TRANSFER>

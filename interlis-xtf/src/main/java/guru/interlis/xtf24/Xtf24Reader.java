@@ -90,6 +90,11 @@ public final class Xtf24Reader extends TransferReader {
     }
 
     @Override
+    public Optional<XtfEncoding> xtfEncoding() {
+        return Optional.of(XtfEncoding.XTF24);
+    }
+
+    @Override
     protected Optional<TransferEvent> readEvent(CancellationToken cancellation) {
         input.begin(cancellation);
         try {

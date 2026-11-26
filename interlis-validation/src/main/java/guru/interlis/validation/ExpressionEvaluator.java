@@ -122,24 +122,28 @@ final class ExpressionEvaluator {
             }
             var selection = paths.orElseThrow();
             var geometry = engine.orElseThrow();
-            var control = new GeometryEngine.Control(frame.visit(), ignored -> {});
+            var evidence = new ArrayList<GeometryEvidence>(1);
+            var control = new GeometryEngine.Control(frame.visit(), finding -> {
+                if (evidence.isEmpty()) {
+                    finding.geometryEvidence().ifPresent(evidence::add);
+                }
+            });
+            var purpose = standard == StandardFunctions.AREAS_WITHOUT_GAPS
+                    ? GeometryEngine.CoveragePurpose.AREA_WITHOUT_GAPS : GeometryEngine.CoveragePurpose.AREA;
             var first = call.children().getFirst();
             if (program.nodes().get(first) instanceof ObjectSetExpression set
                     && plan.effectiveType(set.typeId()).orElse(null) instanceof ObjectArgumentType type) {
                 var population = frame.populations().apply(type, set.explicitSelection());
                 if (legacyArea && !selection.holders().isEmpty()) {
-                    return areaResult(population.checkAreaGroups(selection, geometry, control), MissingContext.POPULATION);
+                    return areaResult(population.checkAreaGroups(selection, geometry, control),
+                            MissingContext.POPULATION, evidence);
                 }
                 var source = population.geometries(selection);
                 if (source.isEmpty()) {
                     return MissingContext.POPULATION;
                 }
-                var purpose = standard == StandardFunctions.AREAS_WITHOUT_GAPS
-                        ? GeometryEngine.CoveragePurpose.AREA_WITHOUT_GAPS : GeometryEngine.CoveragePurpose.AREA;
-                return areaResult(geometry.checkCoverage(source.orElseThrow(), purpose, control), MissingContext.POPULATION);
-            }
-            if (!legacyArea) {
-                return MissingContext.POPULATION;
+                return areaResult(geometry.checkCoverage(source.orElseThrow(), purpose, control),
+                        MissingContext.POPULATION, evidence);
             }
             var root = evaluate(first, frame);
             if (!(root instanceof Known known)) {
@@ -152,7 +156,8 @@ final class ExpressionEvaluator {
             if (known.referenceOrigin().isPresent()) {
                 start = start.withDataset(known.referenceOrigin().orElseThrow());
             }
-            return areaResult(selection.check(start, geometry, control), MissingContext.ATTRIBUTE_VALUE);
+            return areaResult(selection.check(start, geometry, control, purpose, legacyArea),
+                    MissingContext.ATTRIBUTE_VALUE, evidence);
         }
         if (standard == StandardFunctions.ELEMENT_COUNT && frame.row().isPresent()
                 && frame.row().orElseThrow().groupSize().isPresent()
@@ -209,10 +214,11 @@ final class ExpressionEvaluator {
         return standard.evaluate(args, frame, firstType instanceof EnumerationType enumeration ? enumeration : null);
     }
 
-    private static EvaluationResult areaResult(GeometryEngine.Check check, MissingContext missing) {
+    private static EvaluationResult areaResult(GeometryEngine.Check check, MissingContext missing,
+                                               List<GeometryEvidence> evidence) {
         return switch (check) {
             case VALID -> bool(true);
-            case INVALID -> bool(false);
+            case INVALID -> bool(false, evidence.stream().findFirst());
             case MISSING_PARAMETERS -> missing;
             case UNSUPPORTED, NUMERICALLY_UNDETERMINED -> Unsupported.INSTANCE;
         };
@@ -247,14 +253,11 @@ final class ExpressionEvaluator {
             return effective.filter(guru.interlis.model.CoordinateType.class::isInstance)
                     .map(guru.interlis.model.CoordinateType.class::cast).orElse(null);
         };
-        var axes = type.vertexDomain().map(coordinate);
-        if (axes.isEmpty()) {
+        var input = GeometryParameters.input(value, type, location, function.languageVersion(), coordinate,
+                frame.partial() || origin.map(context -> context.occurrence().partial()).orElse(false));
+        if (input.coordinateDomain().isEmpty()) {
             return MissingContext.ATTRIBUTE_VALUE;
         }
-        var input = new GeometryEngine.Input(value, type, location, function.languageVersion(),
-                GeometryParameters.quantum(axes.orElseThrow()), GeometryParameters.overlap(type, coordinate),
-                frame.partial() || origin.map(context -> context.occurrence().partial()).orElse(false),
-                axes.map(guru.interlis.model.CoordinateType::id));
         var operation = standard == StandardFunctions.GEOMETRY_LENGTH ? GeometryEngine.Measure.LENGTH : GeometryEngine.Measure.AREA;
         return switch (engine.orElseThrow().measure(operation, input, new GeometryEngine.Control(frame.visit(), ignored -> {}))) {
             case GeometryEngine.Measurement.Value measured -> {
@@ -283,8 +286,8 @@ final class ExpressionEvaluator {
             var right = logicalOperand(evaluate(binary.right(), context));
             if (right instanceof Known known && known.value() instanceof TransferValue.BooleanValue value) {
                 return switch (binary.operator()) {
-                    case AND -> value.value() ? left : bool(false);
-                    case OR, IMPLIES -> value.value() ? bool(true) : left;
+                    case AND -> value.value() ? left : right;
+                    case OR, IMPLIES -> value.value() ? right : left;
                     default -> throw new IllegalStateException("Unexpected logical operator");
                 };
             }
@@ -296,12 +299,24 @@ final class ExpressionEvaluator {
         if (!(known.value() instanceof TransferValue.BooleanValue value)) {
             return Unsupported.INSTANCE;
         }
-        return switch (binary.operator()) {
-            case AND -> value.value() ? logicalOperand(evaluate(binary.right(), context)) : bool(false);
-            case OR -> value.value() ? bool(true) : logicalOperand(evaluate(binary.right(), context));
-            case IMPLIES -> value.value() ? logicalOperand(evaluate(binary.right(), context)) : bool(true);
+        if (binary.operator() == BinaryOperator.AND && !value.value()
+                || binary.operator() == BinaryOperator.OR && value.value()) {
+            return known;
+        }
+        if (binary.operator() == BinaryOperator.IMPLIES && !value.value()) {
+            return bool(true, known.geometryEvidence());
+        }
+        var right = logicalOperand(evaluate(binary.right(), context));
+        if (!(right instanceof Known other && other.value() instanceof TransferValue.BooleanValue rhs)) {
+            return right;
+        }
+        boolean leftAlsoDeterminesResult = switch (binary.operator()) {
+            case AND -> rhs.value();
+            case OR, IMPLIES -> !rhs.value();
             default -> throw new IllegalStateException("Unexpected logical operator");
         };
+        return leftAlsoDeterminesResult && other.geometryEvidence().isEmpty()
+                ? bool(rhs.value(), known.geometryEvidence()) : right;
     }
 
     private EvaluationResult comparison(BinaryExpression binary, EvaluationResult left, EvaluationResult right,
@@ -340,7 +355,7 @@ final class ExpressionEvaluator {
             return Unsupported.INSTANCE;
         }
         int order = ordering.getAsInt();
-        return bool(switch (binary.operator()) {
+        boolean result = switch (binary.operator()) {
             case EQ -> order == 0;
             case NEQ -> order != 0;
             case LT -> order < 0;
@@ -348,7 +363,9 @@ final class ExpressionEvaluator {
             case GT -> order > 0;
             case GTE -> order >= 0;
             default -> throw new IllegalStateException("Unexpected comparison operator");
-        });
+        };
+        return comparison.family() == Family.BOOLEAN
+                ? bool(result, lhs.geometryEvidence().or(rhs::geometryEvidence)) : bool(result);
     }
 
     private OptionalInt formatOrder(BinaryExpression binary, EvaluationFrame context,
@@ -417,7 +434,7 @@ final class ExpressionEvaluator {
         }
         return known.value() instanceof TransferValue.BooleanValue value
                 && expression.operator() == UnaryOperator.NOT
-                ? bool(!value.value()) : Unsupported.INSTANCE;
+                ? bool(!value.value(), known.geometryEvidence()) : Unsupported.INSTANCE;
     }
 
     private static EvaluationResult logicalOperand(EvaluationResult result) {
@@ -631,6 +648,10 @@ final class ExpressionEvaluator {
 
     static Known bool(boolean value) {
         return new Known(new TransferValue.BooleanValue(value));
+    }
+
+    private static Known bool(boolean value, Optional<GeometryEvidence> evidence) {
+        return new Known(new TransferValue.BooleanValue(value), Optional.empty(), evidence);
     }
 
     private static boolean matches(Family family, TransferValue value) {

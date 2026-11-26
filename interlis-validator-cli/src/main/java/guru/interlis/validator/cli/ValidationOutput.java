@@ -7,6 +7,8 @@ import guru.interlis.model.SymbolRef;
 import guru.interlis.validation.DataLocation;
 import guru.interlis.validation.DatasetScope;
 import guru.interlis.validation.DatasetValidationSession;
+import guru.interlis.validation.GeometryEvidence;
+import guru.interlis.validation.GeometryWitness;
 import guru.interlis.validation.ValidationDiagnostic;
 import guru.interlis.validation.ValidationOptions;
 import guru.interlis.validation.ValidationReport;
@@ -173,10 +175,29 @@ final class ValidationOutput {
             rule.addProperty("endOffset", range.endOffset());
         });
         result.add("ruleLocation", rule);
-        var related = new JsonArray();
-        diagnostic.relatedData().ifPresent(location -> related.add(jsonLocation(location, graph)));
-        result.add("relatedLocations", related);
+        result.add("relatedLocations", jsonRelatedLocations(diagnostic.relatedData().stream().toList(), graph));
+        diagnostic.geometryEvidence().ifPresent(evidence -> result.add("geometryEvidence", jsonGeometry(evidence, graph)));
         return result;
+    }
+
+    private static JsonObject jsonGeometry(GeometryEvidence evidence, SemanticGraph graph) {
+        var result = new JsonObject();
+        result.addProperty("code", evidence.code().name());
+        result.addProperty("detail", evidence.detail());
+        result.add("location", jsonLocation(evidence.location(), graph));
+        result.add("relatedLocations", jsonRelatedLocations(evidence.relatedLocations(), graph));
+        var witness = new JsonObject();
+        witness.addProperty("kind", witnessKind(evidence.witness()));
+        witness.addProperty("x", evidence.witness().x().toPlainString());
+        witness.addProperty("y", evidence.witness().y().toPlainString());
+        result.add("witness", witness);
+        return result;
+    }
+
+    private static JsonArray jsonRelatedLocations(List<DataLocation> locations, SemanticGraph graph) {
+        var related = new JsonArray();
+        locations.forEach(value -> related.add(jsonLocation(value, graph)));
+        return related;
     }
 
     private static JsonObject jsonLocation(DataLocation location, SemanticGraph graph) {
@@ -195,7 +216,31 @@ final class ValidationOutput {
         err.println(diagnostic.code() + " " + diagnostic.message() + location(diagnostic.data(), graph)
                 + " | model rule " + name(rule.declaration(), graph)
                 + rule.range().map(range -> " at " + range.source().value() + ":" + range.startOffset()).orElse("")
-                + diagnostic.relatedData().map(other -> " | related:" + location(other, graph)).orElse(""));
+                + diagnostic.relatedData().map(other -> " | related:" + location(other, graph)).orElse("")
+                + diagnostic.geometryEvidence().map(evidence -> geometryText(diagnostic, evidence, graph)).orElse(""));
+    }
+
+    private static String geometryText(ValidationDiagnostic diagnostic, GeometryEvidence evidence, SemanticGraph graph) {
+        var point = evidence.witness();
+        var display = new StringBuilder(" | ");
+        if (evidence.code() != diagnostic.code()) {
+            display.append(evidence.code()).append(' ');
+        }
+        display.append(witnessKind(point)).append(" XY=(").append(point.x().toPlainString()).append(", ")
+                .append(point.y().toPlainString()).append(") ").append(evidence.detail());
+        if (!evidence.location().equals(diagnostic.data())) {
+            display.append(location(evidence.location(), graph));
+        }
+        for (var other : evidence.relatedLocations()) {
+            if (diagnostic.relatedData().filter(other::equals).isEmpty()) {
+                display.append(" | related:").append(location(other, graph));
+            }
+        }
+        return display.toString();
+    }
+
+    private static String witnessKind(GeometryWitness witness) {
+        return witness.kind().name().toLowerCase(Locale.ROOT).replace('_', '-');
     }
 
     private static String location(DataLocation location, SemanticGraph graph) {

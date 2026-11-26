@@ -8,11 +8,13 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Writer;
 import java.io.StringWriter;
+import java.io.Writer;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -394,22 +396,151 @@ class ValidatorCommandTest {
 
     @Test
     void usesJtsForTopology() throws Exception {
-        model(directory, "2.3", """
+        projectedModel("2.3", """
                 shape : SURFACE WITH (STRAIGHTS) VERTEX Point WITHOUT OVERLAPS > 0.001;
                 """);
-        var ring = """
-                <shape><SURFACE><BOUNDARY><POLYLINE>
-                <COORD><C1>0</C1><C2>0</C2></COORD>
-                <COORD><C1>2</C1><C2>2</C2></COORD>
-                <COORD><C1>2</C1><C2>0</C2></COORD>
-                <COORD><C1>0</C1><C2>2</C2></COORD>
-                <COORD><C1>0</C1><C2>0</C2></COORD>
-                </POLYLINE></BOUNDARY></SURFACE></shape>
-                """;
+        var ring = polygon23(0, 0, 2, 2, 2, 0, 0, 2, 0, 0);
         write("crossed.xtf", legacy("<name>valid</name>" + ring));
         var result = run("--offline", "crossed.xtf");
         assertEquals(1, result.exit(), result.error());
-        assertTrue(result.error().contains("GEOMETRY_SELF_INTERSECTION"), result.error());
+        String path = "/shape/RING[1]/LINE[1]/PART[1]/SEGMENT[";
+        assertTrue(result.error().lines().anyMatch(line -> line.contains("GEOMETRY_SELF_INTERSECTION")
+                && line.contains("TID=one") && line.contains(path + "1]") && line.contains(path + "3]")
+                && line.contains("intersection XY=(2600001") && line.contains("1200001")), result.error());
+
+        var json = run("--offline", "--json", "crossed.xtf");
+        assertEquals(1, json.exit(), json.output());
+        assertTrue(json.json().get("completed").getAsBoolean());
+        var finding = json.json().getAsJsonArray("diagnostics").get(0).getAsJsonObject();
+        var evidence = assertGeometryEvidence(finding, "GEOMETRY_SELF_INTERSECTION", "intersection");
+        assertWitness(evidence, "2600001", "1200001");
+        var primary = evidence.getAsJsonObject("location");
+        var related = evidence.getAsJsonArray("relatedLocations").get(0).getAsJsonObject();
+        assertEquals("one", primary.get("tid").getAsString());
+        assertEquals("one", related.get("tid").getAsString());
+        assertEquals(Set.of(path + "1]", path + "3]"),
+                Set.of(primary.get("path").getAsString(), related.get("path").getAsString()));
+
+        write("late-error.xtf", legacy("<name>ok</name>").replace("BID=\"basket\"", "BID=\"late\"") + "<trailing/>");
+        var interrupted = run("--offline", "--json", "--max-diagnostics", "2", "crossed.xtf", "late-error.xtf");
+        assertFailed(interrupted, 1, "transfer");
+        assertEquals(1, interrupted.json().get("violations").getAsLong());
+        assertEquals(finding, interrupted.json().getAsJsonArray("diagnostics").get(1).getAsJsonObject());
+        var capped = run("--offline", "--json", "--max-diagnostics", "1", "crossed.xtf", "late-error.xtf");
+        assertFailed(capped, 1, "transfer");
+        assertEquals(1, capped.json().get("violations").getAsLong());
+        assertTrue(capped.json().get("diagnosticsTruncated").getAsBoolean());
+        assertEquals(1, capped.json().getAsJsonArray("diagnostics").size());
+    }
+
+    @Test
+    void locatesAreaConflictsAcrossFilesEvenWithTheSameTransferId() throws Exception {
+        projectedModel("2.3", "shape : AREA WITH (STRAIGHTS) VERTEX Point WITHOUT OVERLAPS > 0.001;");
+        write("west.xtf", legacy("<name>western</name>" + polygon23(0, 0, 10, 0, 10, 10, 0, 10, 0, 0))
+                .replace("BID=\"basket\"", "BID=\"west\""));
+        write("east.xtf", legacy("<name>eastern</name>" + polygon23(8, 4, 12, 4, 12, 8, 8, 8, 8, 4))
+                .replace("BID=\"basket\"", "BID=\"east\""));
+        write("inside.xtf", legacy("<name>inside</name>" + polygon23(2, 2, 4, 2, 4, 4, 2, 4, 2, 2))
+                .replace("BID=\"basket\"", "BID=\"inside\""));
+        var crossing = run("--offline", "--json", "west.xtf", "east.xtf");
+        assertEquals(1, crossing.exit(), crossing.output());
+        assertTrue(crossing.json().get("completed").getAsBoolean());
+        assertEquals(2, crossing.json().get("objects").getAsInt());
+        var witnesses = new HashSet<BigDecimal>();
+        for (var finding : crossing.json().getAsJsonArray("diagnostics")) {
+            var evidence = assertGeometryEvidence(finding.getAsJsonObject(), "GEOMETRY_AREA_OVERLAP", "intersection");
+            assertPair(evidence, "west", "east");
+            assertEquals(0, ordinate(evidence, "x").compareTo(new BigDecimal("2600010")));
+            var y = ordinate(evidence, "y").stripTrailingZeros();
+            witnesses.add(y);
+            String path = "/shape/RING[1]/LINE[1]/PART[1]/SEGMENT[";
+            var first = evidence.getAsJsonObject("location");
+            var second = evidence.getAsJsonArray("relatedLocations").get(0).getAsJsonObject();
+            String eastSegment = y.equals(new BigDecimal("1200004")) ? "1]" : "3]";
+            assertEquals(Set.of(path + "2]", path + eastSegment),
+                    Set.of(first.get("path").getAsString(), second.get("path").getAsString()));
+        }
+        assertEquals(Set.of(new BigDecimal("1200004"), new BigDecimal("1200008")), witnesses);
+        var crossingText = run("--offline", "west.xtf", "east.xtf");
+        assertEquals(1, crossingText.exit(), crossingText.error());
+        assertTrue(crossingText.error().lines().anyMatch(line -> line.contains("GEOMETRY_AREA_OVERLAP")
+                && line.contains("west.xtf BID=west TID=one") && line.contains("east.xtf BID=east TID=one")
+                && line.contains("intersection XY=(2600010") && line.contains("/shape/RING[1]")), crossingText.error());
+
+        var contained = run("--offline", "--json", "west.xtf", "inside.xtf");
+        assertEquals(1, contained.exit(), contained.output());
+        assertTrue(contained.json().get("completed").getAsBoolean());
+        var evidence = assertGeometryEvidence(contained.json().getAsJsonArray("diagnostics").get(0).getAsJsonObject(),
+                "GEOMETRY_AREA_OVERLAP", "contained-boundary");
+        assertPair(evidence, "west", "inside");
+        var x = ordinate(evidence, "x");
+        var y = ordinate(evidence, "y");
+        assertTrue(onInterval(x, "2600002", "2600004") && onInterval(y, "1200002", "1200004"));
+        assertTrue(onExtreme(x, "2600002", "2600004") || onExtreme(y, "1200002", "1200004"));
+
+        var text = run("--offline", "west.xtf", "inside.xtf");
+        assertEquals(1, text.exit(), text.error());
+        assertTrue(text.error().contains("contained-boundary XY=(") && text.error().contains("west.xtf")
+                && text.error().contains("inside.xtf"), text.error());
+    }
+
+    @Test
+    void locatesGapEvidenceWithinItsFailedAreaConstraint() throws Exception {
+        projectedModel("2.4", """
+                shape : SURFACE WITH (STRAIGHTS) VERTEX Point;
+                SET CONSTRAINT INTERLIS.areAreasWithoutGaps(ALL, UNDEFINED, >>shape);
+                """);
+        write("gap.xtf", surface24(ring24("exterior", 0, 0, 8, 0, 8, 8, 0, 8, 0, 0)
+                + ring24("interior", 2, 2, 4, 2, 4, 4, 2, 4, 2, 2)));
+        var result = run("--offline", "--json", "gap.xtf");
+        assertEquals(1, result.exit(), result.output());
+        assertTrue(result.json().get("completed").getAsBoolean());
+        assertEquals(1, result.json().get("violations").getAsInt());
+        var finding = result.json().getAsJsonArray("diagnostics").get(0).getAsJsonObject();
+        assertEquals("SET_CONSTRAINT_FALSE", finding.get("code").getAsString());
+        var evidence = assertGeometryEvidence(finding, "GEOMETRY_GAP", "gap-boundary");
+        var location = evidence.getAsJsonObject("location");
+        assertEquals("ring", location.get("tid").getAsString());
+        assertTrue(location.get("path").getAsString().startsWith("/shape/RING[2]/"), evidence.toString());
+        var x = ordinate(evidence, "x");
+        var y = ordinate(evidence, "y");
+        assertTrue(onInterval(x, "2600002", "2600004") && onInterval(y, "1200002", "1200004"));
+        assertTrue(onExtreme(x, "2600002", "2600004") || onExtreme(y, "1200002", "1200004"));
+
+        var text = run("--offline", "gap.xtf");
+        assertEquals(1, text.exit(), text.error());
+        assertTrue(text.error().lines().anyMatch(line -> line.contains("SET_CONSTRAINT_FALSE")
+                && line.contains("GEOMETRY_GAP gap-boundary XY=(") && line.contains("gap.xtf BID=parcel TID=ring")
+                && line.contains("/shape/RING[2]/")), text.error());
+    }
+
+    @Test
+    void includesALocallyInvalidSurfaceInItsFailedAreaConstraint() throws Exception {
+        projectedModel("2.4", """
+                shape : SURFACE WITH (STRAIGHTS) VERTEX Point;
+                SET CONSTRAINT INTERLIS.areAreas(ALL, UNDEFINED, >>shape);
+                """);
+        write("crossed.xtf", surface24(ring24("exterior", 0, 0, 2, 2, 2, 0, 0, 2, 0, 0)));
+        var result = run("--offline", "--json", "crossed.xtf");
+        assertEquals(1, result.exit(), result.output());
+        assertTrue(result.json().get("completed").getAsBoolean());
+        assertEquals(2, result.json().get("violations").getAsInt());
+        var diagnostics = result.json().getAsJsonArray("diagnostics").asList().stream()
+                .map(item -> item.getAsJsonObject()).toList();
+        var direct = diagnostics.stream().filter(finding -> finding.get("code").getAsString()
+                .equals("GEOMETRY_SELF_INTERSECTION")).findFirst().orElseThrow();
+        var constraint = diagnostics.stream().filter(finding -> finding.get("code").getAsString()
+                .equals("SET_CONSTRAINT_FALSE")).findFirst().orElseThrow();
+        var evidence = assertGeometryEvidence(constraint, "GEOMETRY_SELF_INTERSECTION", "intersection");
+        assertEquals(direct.getAsJsonObject("geometryEvidence"), evidence);
+        assertWitness(evidence, "2600001", "1200001");
+        var primary = evidence.getAsJsonObject("location");
+        var related = evidence.getAsJsonArray("relatedLocations").get(0).getAsJsonObject();
+        assertEquals("ring", primary.get("tid").getAsString());
+        assertEquals("ring", related.get("tid").getAsString());
+        String path = "/shape/RING[1]/LINE[1]/PART[1]/SEGMENT[";
+        assertEquals(Set.of(path + "1]", path + "3]"),
+                Set.of(primary.get("path").getAsString(), related.get("path").getAsString()));
     }
 
     @Test
@@ -484,6 +615,7 @@ class ValidatorCommandTest {
         assertEquals(1, diagnostics.size());
         var diagnostic = diagnostics.get(0).getAsJsonObject();
         assertEquals("DATASET_UNIQUE_DUPLICATE", diagnostic.get("code").getAsString());
+        assertFalse(diagnostic.has("geometryEvidence"));
         assertTrue(diagnostic.getAsJsonObject("location").get("source").getAsString().endsWith(".xtf"));
         assertTrue(diagnostic.getAsJsonObject("ruleLocation").get("source").getAsString().endsWith(".ili"));
         assertEquals(1, diagnostic.getAsJsonArray("relatedLocations").size());
@@ -721,6 +853,93 @@ class ValidatorCommandTest {
 
     private void write(String name, String content) throws Exception {
         Files.writeString(directory.resolve(name), content);
+    }
+
+    private void projectedModel(String version, String attributes) throws Exception {
+        write("Checks.ili", """
+                INTERLIS %s;
+                MODEL Checks AT "https://example.org/checks" VERSION "1" =
+                  DOMAIN Point = COORD 2600000.000 .. 2600015.000, 1200000.000 .. 1200015.000;
+                  TOPIC Data =
+                    CLASS Item =
+                      name : MANDATORY TEXT*8;
+                      %s
+                    END Item;
+                  END Data;
+                END Checks.
+                """.formatted(version, attributes));
+    }
+
+    private static String polygon23(int... offsets) {
+        return "<shape><SURFACE><BOUNDARY><POLYLINE>" + positions("COORD", "C1", "C2", offsets)
+                + "</POLYLINE></BOUNDARY></SURFACE></shape>";
+    }
+
+    private static String surface24(String rings) {
+        return """
+                <i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
+                    xmlns:m="http://www.interlis.ch/xtf/2.4/Checks" xmlns:g="http://www.interlis.ch/geometry/1.0">
+                  <i:headersection><i:models><i:model>Checks</i:model></i:models><i:sender>test</i:sender></i:headersection>
+                  <i:datasection><m:Data i:bid="parcel"><m:Item i:tid="ring">
+                    <m:name>ring</m:name><m:shape><g:surface>%s</g:surface></m:shape>
+                  </m:Item></m:Data></i:datasection>
+                </i:transfer>
+                """.formatted(rings);
+    }
+
+    private static String ring24(String boundary, int... offsets) {
+        return "<g:%s><g:polyline>%s</g:polyline></g:%s>"
+                .formatted(boundary, positions("g:coord", "g:c1", "g:c2", offsets), boundary);
+    }
+
+    private static String positions(String coord, String x, String y, int... offsets) {
+        var coordinates = new StringBuilder();
+        for (int index = 0; index < offsets.length; index += 2) {
+            coordinates.append("<%s><%s>%d</%s><%s>%d</%s></%s>".formatted(coord, x, 2_600_000 + offsets[index], x,
+                    y, 1_200_000 + offsets[index + 1], y, coord));
+        }
+        return coordinates.toString();
+    }
+
+    private static JsonObject assertGeometryEvidence(JsonObject diagnostic, String code, String kind) {
+        var evidence = diagnostic.getAsJsonObject("geometryEvidence");
+        assertNotNull(evidence, diagnostic.toString());
+        assertEquals(code, evidence.get("code").getAsString(), evidence.toString());
+        assertFalse(evidence.get("detail").getAsString().isBlank());
+        assertEquals(kind, evidence.getAsJsonObject("witness").get("kind").getAsString(), evidence.toString());
+        return evidence;
+    }
+
+    private static void assertWitness(JsonObject evidence, String x, String y) {
+        assertEquals(0, ordinate(evidence, "x").compareTo(new BigDecimal(x)), evidence.toString());
+        assertEquals(0, ordinate(evidence, "y").compareTo(new BigDecimal(y)), evidence.toString());
+    }
+
+    private static BigDecimal ordinate(JsonObject evidence, String axis) {
+        var value = evidence.getAsJsonObject("witness").getAsJsonPrimitive(axis);
+        assertTrue(value.isString(), evidence.toString());
+        return new BigDecimal(value.getAsString());
+    }
+
+    private static boolean onInterval(BigDecimal value, String lower, String upper) {
+        return value.compareTo(new BigDecimal(lower)) >= 0 && value.compareTo(new BigDecimal(upper)) <= 0;
+    }
+
+    private static boolean onExtreme(BigDecimal value, String lower, String upper) {
+        return value.compareTo(new BigDecimal(lower)) == 0 || value.compareTo(new BigDecimal(upper)) == 0;
+    }
+
+    private static void assertPair(JsonObject evidence, String firstBasket, String secondBasket) {
+        var primary = evidence.getAsJsonObject("location");
+        assertEquals(1, evidence.getAsJsonArray("relatedLocations").size(), evidence.toString());
+        var related = evidence.getAsJsonArray("relatedLocations").get(0).getAsJsonObject();
+        assertEquals(Set.of(firstBasket, secondBasket), Set.of(primary.get("bid").getAsString(), related.get("bid").getAsString()));
+        for (var location : List.of(primary, related)) {
+            assertEquals("one", location.get("tid").getAsString());
+            assertTrue(location.get("source").getAsString().endsWith("/" + location.get("bid").getAsString() + ".xtf"),
+                    location.toString());
+            assertTrue(location.get("path").getAsString().startsWith("/shape/RING[1]"), location.toString());
+        }
     }
 
     private static void model(Path path, String version, String attributes) throws Exception {

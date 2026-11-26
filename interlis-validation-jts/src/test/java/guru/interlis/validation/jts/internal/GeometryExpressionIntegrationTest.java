@@ -15,12 +15,17 @@ import guru.interlis.validation.jts.JtsGeometryEngine;
 import guru.interlis.xtf23.Xtf23Reader;
 import guru.interlis.xtf24.Xtf24Reader;
 import org.junit.jupiter.api.Test;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.operation.polygonize.Polygonizer;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -242,8 +247,86 @@ class GeometryExpressionIntegrationTest {
                 """;
         var a = object23("one", 0, 2);
         assertEquals(0, validate23(declarations, a + object23("two", 3, 5)).detectedViolations());
-        assertEquals(List.of(ValidationCode.SET_CONSTRAINT_FALSE), validate23(declarations, a + object23("two", 1, 3))
-                .examples().stream().map(ValidationDiagnostic::code).toList());
+        var report = validate23(declarations, a + object23("two", 1, 3));
+        assertEquals(List.of(ValidationCode.SET_CONSTRAINT_FALSE), codes(report));
+        var evidence = report.examples().getFirst().geometryEvidence().orElseThrow();
+        assertEquals(ValidationCode.GEOMETRY_BOUNDARY_MISMATCH, evidence.code());
+        assertEquals(Set.of("one", "two"), Set.of(evidence.location().tid().orElseThrow().value(),
+                evidence.relatedData().orElseThrow().tid().orElseThrow().value()));
+    }
+
+    @Test
+    void checksGapFreeSingletonAndReportsTheBoundaryOnTheFailedConstraint() {
+        var model = """
+                CLASS Item =
+                  shape : SURFACE WITH (STRAIGHTS) VERTEX Point;
+                  active : BOOLEAN;
+                  MANDATORY CONSTRAINT INTERLIS.areAreasWithoutGaps(THIS, UNDEFINED, >>shape);
+                END Item;
+                """;
+        var valid = validate24(model, item(SQUARE, true), true);
+        assertEquals(0, valid.detectedViolations(), valid.examples().toString());
+        assertEquals(ValidationCoverage.ConstraintStatus.CHECKED, valid.coverage().constraints().getFirst().status());
+
+        var invalid = validate24(model, item(DONUT, true), true);
+        assertEquals(List.of(ValidationCode.MANDATORY_CONSTRAINT_FALSE), codes(invalid));
+        var evidence = invalid.examples().getFirst().geometryEvidence().orElseThrow();
+        assertEquals(ValidationCode.GEOMETRY_GAP, evidence.code());
+        assertEquals(GeometryWitness.Kind.GAP_BOUNDARY, evidence.witness().kind());
+        assertEquals("parcel", evidence.location().tid().orElseThrow().value());
+        assertTrue(evidence.location().path().contains(new DataLocation.GeometryComponent(
+                DataLocation.GeometryComponent.Kind.RING, 2)));
+    }
+
+    @Test
+    void attachesGeometryEvidenceOnlyWhenItExplainsTheFailedBooleanRule() {
+        var model = """
+                CLASS Item =
+                  shape : SURFACE WITH (STRAIGHTS) VERTEX Point;
+                  active : BOOLEAN;
+                  %s
+                END Item;
+                """;
+        var check = "INTERLIS.areAreasWithoutGaps(THIS, UNDEFINED, >>shape)";
+        var donut = item(DONUT, true);
+        for (var condition : List.of(check + " OR #true", "NOT (" + check + ")")) {
+            var report = validate24(model.formatted("MANDATORY CONSTRAINT " + condition + ";"), donut, true);
+            assertEquals(0, report.detectedViolations(), report.examples().toString());
+            assertEquals(ValidationCoverage.ConstraintStatus.CHECKED, report.coverage().constraints().getFirst().status());
+        }
+        var unrelated = validate24(model.formatted("MANDATORY CONSTRAINT NOT (" + check + " OR #true);"), donut, true);
+        assertEquals(List.of(ValidationCode.MANDATORY_CONSTRAINT_FALSE), codes(unrelated));
+        assertTrue(unrelated.examples().getFirst().geometryEvidence().isEmpty());
+
+        var caused = validate24(model.formatted("MANDATORY CONSTRAINT NOT (NOT (" + check + "));"), donut, true);
+        assertEquals(List.of(ValidationCode.MANDATORY_CONSTRAINT_FALSE), codes(caused));
+        assertEquals(ValidationCode.GEOMETRY_GAP,
+                caused.examples().getFirst().geometryEvidence().orElseThrow().code());
+
+        var set = "SET CONSTRAINT WHERE " + check + ": INTERLIS.objectCount(ALL) ";
+        var filtered = validate24(model.formatted(set + "== 0;"), donut, true);
+        assertEquals(0, filtered.detectedViolations(), filtered.examples().toString());
+        var emptySelection = validate24(model.formatted(set + "> 0;"), donut, true);
+        assertEquals(List.of(ValidationCode.SET_CONSTRAINT_FALSE), codes(emptySelection));
+        assertTrue(emptySelection.examples().getFirst().geometryEvidence().isEmpty());
+    }
+
+    @Test
+    void carriesTheGapThroughAFailedPlausibilityThreshold() {
+        var model = """
+                CLASS Item =
+                  shape : SURFACE WITH (STRAIGHTS) VERTEX Point;
+                  active : BOOLEAN;
+                  CONSTRAINT >= 100% INTERLIS.areAreasWithoutGaps(THIS, UNDEFINED, >>shape);
+                  CONSTRAINT <= 0% NOT (INTERLIS.areAreasWithoutGaps(THIS, UNDEFINED, >>shape));
+                END Item;
+                """;
+        var report = validate24(model, item(DONUT, true), true);
+        assertEquals(List.of(ValidationCode.PLAUSIBILITY_CONSTRAINT_FALSE, ValidationCode.PLAUSIBILITY_CONSTRAINT_FALSE),
+                codes(report));
+        for (var finding : report.examples()) {
+            assertEquals(ValidationCode.GEOMETRY_GAP, finding.geometryEvidence().orElseThrow().code());
+        }
     }
 
     @Test
@@ -379,6 +462,159 @@ class GeometryExpressionIntegrationTest {
         assertTrue(report.examples().stream().noneMatch(finding -> finding.code() == ValidationCode.SET_CONSTRAINT_FALSE));
     }
 
+    @Test
+    void acceptsTheOriginalPermissibleAreaOverlaps() throws IOException {
+        var model = fixture("iox-overlap/Overlap23.ili");
+        for (var name : List.of("Area_1Boundary_NoOverlap", "Area_1Boundary_PermissibleOverlap",
+                "Area_3Boundaries_PermissibleArcOverlaps", "Area_3Boundaries_PermissibleOverlap_GH366")) {
+            var report = validateFixture("2.3", "Overlap23", model, fixture("iox-overlap/" + name + ".xtf"));
+            assertEquals(0, report.detectedViolations(), () -> name + ": " + report.examples());
+            assertEquals(DatasetRuleCoverage.Outcome.SATISFIED,
+                    report.coverage().datasetRules().getFirst().outcome(), name);
+        }
+    }
+
+    @Test
+    void requiresBothRingsToHaveASupportPointAtTheirContact() throws IOException {
+        var report = validateFixture("2.3", "Overlap23", fixture("iox-overlap/Overlap23.ili"),
+                fixture("iox-overlap/Area_2Boundaries_NoOverlap.xtf"));
+        var evidence = report.examples().stream()
+                .filter(finding -> finding.code() == ValidationCode.GEOMETRY_SELF_INTERSECTION)
+                .map(finding -> finding.geometryEvidence().orElseThrow()).findFirst().orElseThrow();
+        assertEquals(GeometryWitness.Kind.INTERSECTION, evidence.witness().kind());
+        assertEquals(2600000.100, evidence.witness().x().doubleValue(), 1e-8);
+        assertEquals(1050011.411, evidence.witness().y().doubleValue(), 0.001);
+    }
+
+    @Test
+    void acceptsTheNoiseZonesWithEitherAreaRule() throws IOException {
+        var model = fixture("NoiseZones.ili");
+        var byConstraint = model.replace("shape : AREA", "shape : SURFACE").replace("END Zone;", """
+                SET CONSTRAINT INTERLIS.areAreas(ALL, UNDEFINED, >>shape);
+                END Zone;""");
+        var data = fixture("NoiseZones.xtf");
+        for (var variant : List.of(model, byConstraint)) {
+            var report = validateFixture("2.3", "NoiseZones", variant, data);
+            assertEquals(2, report.inspectedObjects());
+            assertEquals(0, report.detectedViolations(), report.examples().toString());
+            assertEquals(DatasetRuleCoverage.Outcome.SATISFIED, report.coverage().datasetRules().getFirst().outcome());
+        }
+    }
+
+    @Test
+    void distinguishesBoundedGapsFromTheOutsideAfterToleratedOverlaps() throws IOException {
+        var model = fixture("CoverageGaps.ili");
+        var ordinaryArea = model.replace("areAreasWithoutGaps", "areAreas");
+        for (var name : List.of("ThinStraightGap", "GapBetweenArcAndStraight", "GapAfterToleratedOverlap",
+                "EnclaveWithToleratedOverlap", "OverlapOpenToOutside")) {
+            var data = fixture(name + ".xtf");
+            var area = validateFixture("2.4", "CoverageGaps", ordinaryArea, data);
+            assertEquals(0, area.detectedViolations(), () -> name + ": " + area.examples());
+            assertEquals(DatasetRuleCoverage.Outcome.SATISFIED, area.coverage().datasetRules().getFirst().outcome(), name);
+
+            var gaps = validateFixture("2.4", "CoverageGaps", model, data);
+            if (name.equals("OverlapOpenToOutside")) {
+                assertEquals(0, gaps.detectedViolations(), gaps.examples().toString());
+                assertEquals(DatasetRuleCoverage.Outcome.SATISFIED, gaps.coverage().datasetRules().getFirst().outcome());
+            } else {
+                assertEquals(List.of(ValidationCode.SET_CONSTRAINT_FALSE), codes(gaps), name);
+                var evidence = gaps.examples().getFirst().geometryEvidence().orElseThrow();
+                assertEquals(ValidationCode.GEOMETRY_GAP, evidence.code(), name);
+                assertEquals(GeometryWitness.Kind.GAP_BOUNDARY, evidence.witness().kind(), name);
+                assertTrue(evidence.location().tid().isPresent(), name);
+                if (name.equals("GapAfterToleratedOverlap")) {
+                    var participants = new java.util.HashSet<String>();
+                    participants.add(evidence.location().tid().orElseThrow().value());
+                    evidence.relatedLocations().forEach(location -> participants.add(location.tid().orElseThrow().value()));
+                    assertEquals(Set.of("a", "b", "c"), participants);
+                }
+            }
+        }
+    }
+
+    @Test
+    void appliesTheOverlapToleranceToTheActualNearCrossingFromIssue476() throws IOException {
+        // INTERLIS 2.3 §2.8.12. The common vertex and the independently calculated second
+        // root (0.433 mm away) bound a lens that is permitted at .050. Use finer model
+        // precision for the rejection case so the tolerance can be positive and below the sagitta.
+        var model = fixture("NearArcOverlap.ili");
+        var transfer = fixture("NearArcOverlap.xtf");
+        var tolerated = validateFixture("2.3", "NearArcOverlap", model, transfer);
+        assertEquals(0, tolerated.detectedViolations(), tolerated.examples().toString());
+        var finerModel = model.replace(".000", ".000000000").replace("0.050", "0.000000001");
+        var rejected = validateFixture("2.3", "NearArcOverlap", finerModel, transfer);
+        assertEquals(List.of(ValidationCode.GEOMETRY_SELF_INTERSECTION), codes(rejected));
+        var witness = rejected.examples().getFirst().geometryEvidence().orElseThrow().witness();
+        assertEquals(GeometryWitness.Kind.INTERSECTION, witness.kind());
+        assertEquals(0.000433336, Math.hypot(witness.x().doubleValue() - 2754777.422,
+                witness.y().doubleValue() - 1260634.983), 1e-9);
+    }
+
+    @Test
+    void polygonizesTheThreeStraightEdgesOfTheThinGap() {
+        var start = new Coordinate(2716165.803, 1280939.889);
+        var offset = new Coordinate(2716166.623, 1280939.467);
+        var end = new Coordinate(2716177.128, 1280934.062);
+        var factory = new GeometryFactory();
+        var polygonizer = new Polygonizer();
+        polygonizer.add(List.of(factory.createLineString(new Coordinate[]{start, offset}),
+                factory.createLineString(new Coordinate[]{offset, end}),
+                factory.createLineString(new Coordinate[]{end, start})));
+        assertEquals(1, polygonizer.getPolygons().size());
+        assertEquals(0.000505, polygonizer.getGeometry().getArea(), 1e-8);
+    }
+
+    @Test
+    void identifiesTheSameCurvedGapAfterRingRotationReversalAndTranslation() throws IOException {
+        // INTERLIS 2.4 §3.8.13.3 and §3.14. The arc and vertical chord enclose the same lens in every ordering.
+        var model = fixture("CoverageGaps.ili");
+        var transfer = fixture("GapBetweenArcAndStraight.xtf");
+        int firstItem = transfer.indexOf("<Item");
+        int afterLastItem = transfer.lastIndexOf("</Item>") + "</Item>".length();
+        for (int offset : List.of(0, 1_000_000)) {
+            var a = point(offset, offset);
+            var b = point(offset + 10, offset);
+            var c = point(offset + 10, offset + 10);
+            var d = point(offset, offset + 10);
+            var toB = arcPoint(offset + 10, offset, offset + 8, offset + 5);
+            var toC = arcPoint(offset + 10, offset + 10, offset + 8, offset + 5);
+            var right = point(offset + 20, offset) + point(offset + 20, offset + 10);
+            for (var ring : List.of(a + b + toC + d + a, b + toC + d + a + b, d + c + toB + a + d)) {
+                var contents = coverageItem("curved", ring) + coverageItem("straight", c + b + right + c);
+                var data = transfer.substring(0, firstItem) + contents + transfer.substring(afterLastItem);
+                var report = validateFixture("2.4", "CoverageGaps", model, data);
+                assertEquals(List.of(ValidationCode.SET_CONSTRAINT_FALSE), codes(report));
+                var evidence = report.examples().getFirst().geometryEvidence().orElseThrow();
+                assertEquals(GeometryWitness.Kind.GAP_BOUNDARY, evidence.witness().kind());
+                assertEquals(offset + 10, evidence.witness().x().intValueExact());
+                assertTrue(Set.of(offset, offset + 10).contains(evidence.witness().y().intValueExact()));
+            }
+        }
+    }
+
+    private static String coverageItem(String id, String ring) {
+        return "<Item i:tid='" + id + "'><shape><g:surface><g:exterior><g:polyline>" + ring
+                + "</g:polyline></g:exterior></g:surface></shape></Item>";
+    }
+
+    private static String arcPoint(int x, int y, int ax, int ay) {
+        return "<g:arc><g:c1>" + x + "</g:c1><g:c2>" + y + "</g:c2><g:a1>" + ax
+                + "</g:a1><g:a2>" + ay + "</g:a2></g:arc>";
+    }
+
+    private static String fixture(String name) throws IOException {
+        try (var stream = GeometryExpressionIntegrationTest.class.getResourceAsStream("/geometry/" + name)) {
+            assertNotNull(stream, name);
+            return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    private static ValidationReport validateFixture(String version, String name, String model, String xtf) {
+        var source = new SourceText(new SourceId("memory:/" + name + ".ili"), new SourceRevision(1), model);
+        return validateModel(version, name, source, xtf, true, ValidationOptions.defaults(),
+                ValidationProfile.DATASET, false, false);
+    }
+
     private static ValidationReport validate24(String declarations, String contents, boolean engine) {
         return validate24(declarations, contents, engine, ValidationOptions.defaults());
     }
@@ -435,8 +671,14 @@ class GeometryExpressionIntegrationTest {
                 END Checks.
                 """.formatted(legacyAreas ? LEGACY_AREA_MODEL : "INTERLIS " + version + ";",
                 legacyAreas ? "IMPORTS INTERLIS_ext;" : "", DOMAIN, declarations));
-        var request = new CompilationRequest(List.of(new ModelSelector.ByName("Checks", Optional.empty(), Optional.empty())),
-                legacyAreas ? withLegacyImport(source) : SourceSet.of(Map.of(id, source)), CompilerOptions.defaults());
+        return validateModel(version, "Checks", source, xtf, engine, options, profile, legacyAreas, hostAreaSet);
+    }
+
+    private static ValidationReport validateModel(String version, String model, SourceText source, String xtf,
+                                                   boolean engine, ValidationOptions options,
+                                                   ValidationProfile profile, boolean legacyAreas, boolean hostAreaSet) {
+        var request = new CompilationRequest(List.of(new ModelSelector.ByName(model, Optional.empty(), Optional.empty())),
+                legacyAreas ? withLegacyImport(source) : SourceSet.of(Map.of(source.id(), source)), CompilerOptions.defaults());
         var compiled = CompilerEngines.create().compile(request, TOKEN);
         var schema = assertInstanceOf(CompilationOutcome.Succeeded.class, compiled,
                 () -> compiled instanceof CompilationOutcome.Rejected rejected

@@ -10,6 +10,7 @@ import guru.interlis.transfer.TransferValue.NumberValue;
 import guru.interlis.validation.DataLocation;
 import guru.interlis.validation.GeometryEngine;
 import guru.interlis.validation.ValidationCode;
+import guru.interlis.validation.ValidationLimitException;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -43,6 +44,17 @@ class TransferGeometryAdapterTest {
                 findings.getFirst().path().getLast());
     }
 
+    @Test
+    void appliesTheNumericBudgetBeforeExactGeometryArithmetic() {
+        var oversized = new NumberValue("1e-1000000000", new BigDecimal("1e-1000000000"));
+        var radius = new ArcRadius(oversized, RadiusConvention.POSITIVE_SELECTED_BY_SUPPORT);
+        var arc = new Arc(point("1", "1"), point("2", "0"), Optional.of(radius));
+        assertThrows(ValidationLimitException.class,
+                () -> read(point("0", "0"), List.of(arc), new ArrayList<>()));
+        assertThrows(ValidationLimitException.class,
+                () -> read(point("0", "0"), List.of(new Straight(point("1e-1000000000", "0"))), new ArrayList<>()));
+    }
+
     private static TransferGeometryAdapter.Result read(Coordinate start, List<Segment> segments,
                                                         List<GeometryEngine.Finding> findings) {
         var type = new GeometryType(new TypeId("line"), new Origin.PredefinedOrigin(LanguageVersion.ILI24, "line"),
@@ -50,7 +62,7 @@ class TransferGeometryAdapterTest {
         var data = new DataLocation(Optional.empty(), Optional.<guru.interlis.transfer.TransferIdentity.BasketId>empty(),
                 Optional.empty(), Optional.empty(), Optional.empty(), List.of());
         var input = new GeometryEngine.Input(new Polyline(List.of(new CurvePart(start, segments))),
-                type, data, LanguageVersion.ILI24, Optional.empty(), Optional.empty(), false);
+                type, data, LanguageVersion.ILI24, Optional.of(new BigDecimal("0.001")), Optional.empty(), false);
         return new TransferGeometryAdapter(input, new GeometryEngine.Control(() -> {}, findings::add)).read();
     }
 

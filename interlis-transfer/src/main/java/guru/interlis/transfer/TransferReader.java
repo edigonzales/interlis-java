@@ -14,6 +14,9 @@ import java.util.Optional;
  * failure or close. Memory for this check grows with the number of distinct IDs. These two
  * identity scopes are separate. */
 public abstract class TransferReader implements AutoCloseable {
+    /** Encoding of the supplied XTF stream, independent of the model language. */
+    public enum XtfEncoding { XTF23, XTF24 }
+
     private final TransferSequence sequence;
     private boolean exhausted;
 
@@ -30,6 +33,11 @@ public abstract class TransferReader implements AutoCloseable {
     /** Returns the immutable plan used to decode this reader's events. */
     public final TransferPlan transferPlan() {
         return sequence.plan();
+    }
+
+    /** Returns the source XTF encoding, if known, without reading the stream. */
+    public Optional<XtfEncoding> xtfEncoding() {
+        return Optional.empty();
     }
 
     /**

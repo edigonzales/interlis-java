@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="review">
+    <MODELS>
+      <MODEL NAME="Shares" VERSION="1" URI="https://example.org/area" />
+    </MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <Shares.Data BID="review">
+      <Shares.Data.Piece TID="left">
+        <shape>
+          <SURFACE>
+            <BOUNDARY>
+              <POLYLINE>
+                <COORD>
+                  <C1>1</C1>
+                  <C2>1</C2>
+                  <C3>2</C3>
+                </COORD>
+                <COORD>
+                  <C1>5</C1>
+                  <C2>1</C2>
+                  <C3>2</C3>
+                </COORD>
+                <COORD>
+                  <C1>5</C1>
+                  <C2>5</C2>
+                  <C3>2</C3>
+                </COORD>
+                <COORD>
+                  <C1>1</C1>
+                  <C2>5</C2>
+                  <C3>2</C3>
+                </COORD>
+                <COORD>
+                  <C1>1</C1>
+                  <C2>1</C2>
+                  <C3>2</C3>
+                </COORD>
+              </POLYLINE>
+            </BOUNDARY>
+          </SURFACE>
+        </shape>
+      </Shares.Data.Piece>
+      <Shares.Data.Piece TID="right">
+        <shape>
+          <SURFACE>
+            <BOUNDARY>
+              <POLYLINE>
+                <COORD>
+                  <C1>5</C1>
+                  <C2>1</C2>
+                  <C3>2</C3>
+                </COORD>
+                <COORD>
+                  <C1>9</C1>
+                  <C2>1</C2>
+                  <C3>2</C3>
+                </COORD>
+                <COORD>
+                  <C1>9</C1>
+                  <C2>5</C2>
+                  <C3>2</C3>
+                </COORD>
+                <COORD>
+                  <C1>5</C1>
+                  <C2>5</C2>
+                  <C3>2</C3>
+                </COORD>
+                <COORD>
+                  <C1>5</C1>
+                  <C2>1</C2>
+                  <C3>2</C3>
+                </COORD>
+              </POLYLINE>
+            </BOUNDARY>
+          </SURFACE>
+        </shape>
+      </Shares.Data.Piece>
+    </Shares.Data>
+  </DATASECTION>
+</TRANSFER>

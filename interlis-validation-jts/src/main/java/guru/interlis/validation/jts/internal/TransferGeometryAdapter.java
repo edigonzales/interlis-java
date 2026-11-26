@@ -1,16 +1,22 @@
 package guru.interlis.validation.jts.internal;
 
 import guru.interlis.transfer.TransferGeometry;
+import guru.interlis.transfer.TransferReader.XtfEncoding;
 import guru.interlis.validation.DataLocation.GeometryComponent;
 import guru.interlis.validation.GeometryEngine;
+import guru.interlis.validation.GeometryWitness;
 import guru.interlis.validation.ValidationCode;
+import guru.interlis.validation.ValidationLimitException;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import static guru.interlis.validation.DataLocation.GeometryComponent.Kind.*;
 import static guru.interlis.validation.GeometryEngine.Check.*;
+import static java.util.stream.Collectors.joining;
 
 final class TransferGeometryAdapter {
     record Position(BigDecimal x, BigDecimal y) {
@@ -20,7 +26,8 @@ final class TransferGeometryAdapter {
         }
 
         Position(TransferGeometry.Coordinate coordinate) {
-            this(coordinate.ordinates().get(0).exactValue(), coordinate.ordinates().get(1).exactValue());
+            this(requireNumericBudget(coordinate.ordinates().get(0).exactValue()),
+                    requireNumericBudget(coordinate.ordinates().get(1).exactValue()));
         }
 
         Position minimum(Position other) {
@@ -28,15 +35,89 @@ final class TransferGeometryAdapter {
         }
     }
 
-    record Edge(Position start, Position end, Position support, BigDecimal radius) {
+    record Edge(Position start, Position end, ExactCircle circle, int direction) {
         Edge reversed() {
-            return new Edge(end, start, support, radius);
+            return new Edge(end, start, circle, -direction);
+        }
+
+        @Override public boolean equals(Object object) {
+            return object instanceof Edge other && start.equals(other.start) && end.equals(other.end)
+                    && direction == other.direction
+                    && (circle == null ? other.circle == null : other.circle != null && circle.sameCircle(other.circle));
+        }
+
+        @Override public int hashCode() {
+            return Objects.hash(start, end, direction);
         }
     }
 
-    record Segment(CurveSegment curve, List<GeometryComponent> path, Edge edge) {
+    record TransferMismatch(String detail, CurveSegment.Point witness) {}
+
+    private record XtfBoundary(XtfEncoding encoding, List<BigDecimal> start, List<BigDecimal> end,
+                               List<BigDecimal> intermediate, Optional<BigDecimal> radius) {
+        XtfBoundary(XtfEncoding encoding, TransferGeometry.Coordinate start, TransferGeometry.Segment segment) {
+            this(encoding, ordinates(start), ordinates(segment.end()),
+                    segment instanceof TransferGeometry.Arc arc ? ordinates(arc.support()) : List.of(),
+                    segment instanceof TransferGeometry.Arc arc ? arc.radius().map(r ->
+                            requireNumericBudget(r.sourceValue().exactValue()).stripTrailingZeros()) : Optional.empty());
+        }
+
+        private static List<BigDecimal> ordinates(TransferGeometry.Coordinate coordinate) {
+            return coordinate.ordinates().stream()
+                    .map(value -> requireNumericBudget(value.exactValue()).stripTrailingZeros()).toList();
+        }
+
+        XtfBoundary reversed() {
+            return new XtfBoundary(encoding, end, start, intermediate,
+                    encoding == XtfEncoding.XTF23 ? radius.map(BigDecimal::negate) : radius);
+        }
+    }
+
+    record Segment(CurveSegment curve, List<GeometryComponent> path, Edge edge, Optional<XtfBoundary> xtfBoundary) {
+        Segment(CurveSegment curve, List<GeometryComponent> path, Edge edge) {
+            this(curve, path, edge, Optional.empty());
+        }
+
         Segment reversed() {
-            return new Segment(curve.reversed(), path, edge.reversed());
+            return new Segment(curve.reversed(), path, edge.reversed(), xtfBoundary.map(XtfBoundary::reversed));
+        }
+
+        /** Compares the transferred values of an already matched geometric edge. */
+        Optional<TransferMismatch> transferIdentityMismatch(Segment other, boolean sameDirection) {
+            if (xtfBoundary.isEmpty() || other.xtfBoundary().isEmpty()) {
+                return Optional.empty();
+            }
+            var boundary = xtfBoundary.orElseThrow();
+            var adjacent = other.xtfBoundary().orElseThrow();
+            var aligned = sameDirection ? adjacent : adjacent.reversed();
+            if (!boundary.start().equals(aligned.start())) {
+                return Optional.of(new TransferMismatch("Shared XTF AREA edge has different support point ordinates "
+                        + display(boundary.start()) + " and " + display(aligned.start()), curve.start()));
+            }
+            if (!boundary.end().equals(aligned.end())) {
+                return Optional.of(new TransferMismatch("Shared XTF AREA edge has different support point ordinates "
+                        + display(boundary.end()) + " and " + display(aligned.end()), curve.end()));
+            }
+            if (!boundary.intermediate().equals(aligned.intermediate())) {
+                return Optional.of(new TransferMismatch("Shared XTF AREA arc has different intermediate ordinates "
+                        + display(boundary.intermediate()) + " and " + display(aligned.intermediate()), curve.start()));
+            }
+            boolean mixedEncodings = boundary.encoding() != adjacent.encoding();
+            var radius = mixedEncodings ? boundary.radius().map(BigDecimal::abs) : boundary.radius();
+            var adjacentRadius = mixedEncodings ? aligned.radius().map(BigDecimal::abs) : aligned.radius();
+            if (!radius.equals(adjacentRadius)) {
+                return Optional.of(new TransferMismatch("Shared XTF AREA arc has different transferred radii "
+                        + boundary.radius().map(BigDecimal::toPlainString).orElse("(absent)") + " and "
+                        + adjacent.radius().map(BigDecimal::toPlainString).orElse("(absent)"), curve.start()));
+            }
+            if (sameDirection && boundary.encoding() == XtfEncoding.XTF24 && !mixedEncodings) {
+                return Optional.of(new TransferMismatch("Shared XTF 2.4 AREA edges run in the same direction", curve.start()));
+            }
+            return Optional.empty();
+        }
+
+        private static String display(List<BigDecimal> ordinates) {
+            return ordinates.stream().map(BigDecimal::toPlainString).collect(joining(", ", "[", "]"));
         }
     }
 
@@ -44,11 +125,11 @@ final class TransferGeometryAdapter {
                 List<Segment> segments, List<GeometryComponent> path) {}
     record Ring(List<Part> parts, List<GeometryComponent> path, List<Segment> segments) {}
     record Surface(Ring shell, List<Ring> holes) {}
-    record Result(GeometryEngine.Check check, List<Part> lines, List<Surface> surfaces, boolean threeDimensional) {}
+    record Result(GeometryEngine.Check check, List<Part> lines, List<Surface> surfaces, boolean threeDimensional,
+                  Position origin) {}
 
     private final GeometryEngine.Input input;
     private final GeometryEngine.Control control;
-    private final boolean coverage;
     private Position origin;
     private boolean threeDimensional;
     private GeometryEngine.Check check = VALID;
@@ -61,7 +142,6 @@ final class TransferGeometryAdapter {
         this.input = input;
         this.control = control;
         this.origin = coverageOrigin;
-        this.coverage = coverageOrigin != null;
     }
 
     static Position coverageOrigin(TransferGeometry geometry, Position minimum, Runnable visit) {
@@ -118,7 +198,8 @@ final class TransferGeometryAdapter {
             }
             default -> check = UNSUPPORTED;
         }
-        return new Result(check, List.copyOf(lines), List.copyOf(surfaces), threeDimensional);
+        return new Result(check, List.copyOf(lines), List.copyOf(surfaces), threeDimensional,
+                origin == null ? new Position(BigDecimal.ZERO, BigDecimal.ZERO) : origin);
     }
 
     private Surface surface(TransferGeometry.Surface value, List<GeometryComponent> path) {
@@ -149,6 +230,7 @@ final class TransferGeometryAdapter {
             var start = new Position(part.start());
             var previous = project(start, part.start());
             var previousExact = start;
+            var previousCoordinate = part.start();
             var segments = new ArrayList<Segment>();
             for (int j = 0; j < part.segments().size(); j++) {
                 control.visit().run();
@@ -158,20 +240,21 @@ final class TransferGeometryAdapter {
                 var segmentPath = at(partPath, SEGMENT, j);
                 if (previousExact.equals(endExact)) {
                     invalid(segmentPath, ValidationCode.GEOMETRY_DEGENERATE_SEGMENT,
-                            "Coincident projected endpoints");
-                } else if (previous != null && end != null && previous.equals(end)) {
-                    unavailable(NUMERICALLY_UNDETERMINED);
+                            "Coincident projected endpoints", endExact);
                 } else if (previous != null && end != null) {
+                    var startCoordinate = previousCoordinate;
+                    var xtfBoundary = input.xtfAreaEncoding().map(encoding -> new XtfBoundary(encoding, startCoordinate, segment));
                     switch (segment) {
                         case TransferGeometry.Straight ignored ->
                             segments.add(new Segment(new CurveSegment.Straight(previous, end), segmentPath,
-                                    new Edge(previousExact, endExact, null, null)));
+                                    new Edge(previousExact, endExact, null, 0), xtfBoundary));
                         case TransferGeometry.Arc arc ->
-                            arc(previousExact, endExact, previous, end, arc, segmentPath, segments);
+                            arc(previousExact, endExact, previous, end, arc, segmentPath, xtfBoundary, segments);
                     }
                 }
                 previous = end;
                 previousExact = endExact;
+                previousCoordinate = segment.end();
             }
             var end = part.segments().isEmpty() ? part.start() : part.segments().getLast().end();
             parts.add(new Part(start, part.start(), end, List.copyOf(segments), partPath));
@@ -179,59 +262,41 @@ final class TransferGeometryAdapter {
     }
 
     private void arc(Position startExact, Position endExact, CurveSegment.Point start, CurveSegment.Point end,
-                     TransferGeometry.Arc value, List<GeometryComponent> path, List<Segment> segments) {
+                     TransferGeometry.Arc value, List<GeometryComponent> path, Optional<XtfBoundary> xtfBoundary,
+                     List<Segment> segments) {
         var supportExact = new Position(value.support());
         var support = project(supportExact, value.support());
         if (support == null) {
             return;
         }
-        if (support.equals(start) && !supportExact.equals(startExact)
-                || support.equals(end) && !supportExact.equals(endExact)) {
-            unavailable(NUMERICALLY_UNDETERMINED);
-            return;
-        }
-        double tolerance = 0;
+        var quantum = BigDecimal.ZERO;
         if (value.radius().isPresent()) {
+            requireNumericBudget(value.radius().orElseThrow().sourceValue().exactValue());
             if (input.quantum().isEmpty()) {
                 unavailable(MISSING_PARAMETERS);
                 return;
             }
-            tolerance = input.quantum().orElseThrow().doubleValue()
-                    * (value.radius().orElseThrow().convention() == TransferGeometry.RadiusConvention.SIGNED_CLOCKWISE ? 2 : 1 / Math.sqrt(2));
-            if (!Double.isFinite(tolerance) || tolerance <= 0) {
+            quantum = requireNumericBudget(input.quantum().orElseThrow());
+            if (quantum.signum() <= 0) {
                 unavailable(NUMERICALLY_UNDETERMINED);
                 return;
             }
         }
-        switch (CircularArc.build(start, support, end, value.radius(), tolerance)) {
+        switch (CircularArc.build(start, support, end, value.radius(), quantum, true, control.visit())) {
             case CircularArc.Construction.Built built -> {
-                var radius = value.radius().map(supplied -> supplied.sourceValue().exactValue().abs()).orElse(null);
-                if (radius != null && inferredRadiusEquals(startExact, supportExact, endExact, radius)) {
-                    radius = null;
-                }
-                segments.add(new Segment(built.arc(), path, new Edge(startExact, endExact, supportExact,
-                        radius == null ? null : radius.stripTrailingZeros())));
+                var arc = built.arc();
+                segments.add(new Segment(arc, path, new Edge(startExact, endExact, arc.definition(), -arc.arcSide()),
+                        xtfBoundary));
             }
-            case CircularArc.Construction.Invalid error -> invalid(path, ValidationCode.GEOMETRY_INVALID_ARC, error.detail());
+            case CircularArc.Construction.Invalid error ->
+                invalid(path, ValidationCode.GEOMETRY_INVALID_ARC, error.detail(),
+                        error.chordTooLong() ? endExact : supportExact);
             case CircularArc.Construction.Undetermined ignored -> unavailable(NUMERICALLY_UNDETERMINED);
         }
     }
 
-    private static boolean inferredRadiusEquals(Position start, Position support, Position end, BigDecimal radius) {
-        var sx = support.x().subtract(start.x());
-        var sy = support.y().subtract(start.y());
-        var ex = end.x().subtract(start.x());
-        var ey = end.y().subtract(start.y());
-        var twiceArea = sx.multiply(ey).subtract(sy.multiply(ex));
-        // The square of abc = 4A times the circumradius avoids a square root or a division.
-        return twiceArea.signum() != 0
-                && squaredLength(sx, sy).multiply(squaredLength(ex, ey))
-                .multiply(squaredLength(ex.subtract(sx), ey.subtract(sy)))
-                .compareTo(radius.pow(2).multiply(twiceArea.pow(2)).multiply(BigDecimal.valueOf(4))) == 0;
-    }
-
-    private static BigDecimal squaredLength(BigDecimal x, BigDecimal y) {
-        return x.pow(2).add(y.pow(2));
+    static Position absolute(CurveSegment.Point point, Position origin) {
+        return new Position(origin.x().add(point.exactX()), origin.y().add(point.exactY()));
     }
 
     private CurveSegment.Point project(Position position, TransferGeometry.Coordinate coordinate) {
@@ -242,9 +307,8 @@ final class TransferGeometryAdapter {
         }
         var dx = position.x().subtract(origin.x());
         var dy = position.y().subtract(origin.y());
-        var point = new CurveSegment.Point(dx.doubleValue(), dy.doubleValue());
-        if (!finite(point) || coverage && (BigDecimal.valueOf(point.x()).compareTo(dx) != 0
-                || BigDecimal.valueOf(point.y()).compareTo(dy) != 0)) {
+        var point = new CurveSegment.Point(dx, dy);
+        if (!finite(point)) {
             unavailable(NUMERICALLY_UNDETERMINED);
             return null;
         }
@@ -253,6 +317,14 @@ final class TransferGeometryAdapter {
 
     private static boolean finite(CurveSegment.Point point) {
         return Double.isFinite(point.x()) && Double.isFinite(point.y());
+    }
+
+    private static BigDecimal requireNumericBudget(BigDecimal value) {
+        // Match the scalar validator's input budget before converting source decimals to rational numbers.
+        if (value.unscaledValue().bitLength() > 16_384 || Math.abs((long) value.scale()) > 10_000) {
+            throw new ValidationLimitException("Numeric magnitude or scale exceeds the local comparison budget");
+        }
+        return value;
     }
 
     private void unavailable(GeometryEngine.Check reason) {
@@ -264,6 +336,13 @@ final class TransferGeometryAdapter {
     private void invalid(List<GeometryComponent> path, ValidationCode code, String detail) {
         check = INVALID;
         control.findings().accept(new GeometryEngine.Finding(input.location(), path, code, detail));
+    }
+
+    private void invalid(List<GeometryComponent> path, ValidationCode code, String detail, Position witness) {
+        check = INVALID;
+        var coordinate = new GeometryWitness(GeometryWitness.Kind.VERTEX, witness.x(), witness.y());
+        control.findings().accept(new GeometryEngine.Finding(input.location(), path, code, detail,
+                Optional.empty(), Optional.of(coordinate)));
     }
 
     private static List<GeometryComponent> at(List<GeometryComponent> path, GeometryComponent.Kind kind, int offset) {

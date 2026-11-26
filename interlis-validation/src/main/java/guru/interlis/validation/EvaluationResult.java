@@ -2,10 +2,17 @@ package guru.interlis.validation;
 
 import guru.interlis.transfer.TransferValue;
 
+import java.util.Optional;
+
 sealed interface EvaluationResult {
-    record Known(TransferValue value, java.util.Optional<DatasetPathContext> referenceOrigin) implements EvaluationResult {
+    record Known(TransferValue value, Optional<DatasetPathContext> referenceOrigin,
+                 Optional<GeometryEvidence> geometryEvidence) implements EvaluationResult {
         Known(TransferValue value) {
-            this(value, java.util.Optional.empty());
+            this(value, Optional.empty());
+        }
+
+        Known(TransferValue value, Optional<DatasetPathContext> referenceOrigin) {
+            this(value, referenceOrigin, Optional.empty());
         }
     }
     record KnownObjects(java.util.function.Supplier<java.util.List<ObjectHandle>> firstTwo,

@@ -4,10 +4,12 @@ import guru.interlis.diagnostics.Severity;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
-/** A local violation, with separate data and model provenance. */
+/** A violation with separate data and model provenance and an optional spatial witness. */
 public record ValidationDiagnostic(ValidationCode code, Severity severity, DataLocation data,
-                                   RuleLocation rule, List<String> arguments, java.util.Optional<DataLocation> relatedData) {
+                                   RuleLocation rule, List<String> arguments, Optional<DataLocation> relatedData,
+                                   Optional<GeometryEvidence> geometryEvidence) {
     public ValidationDiagnostic {
         Objects.requireNonNull(code, "code");
         Objects.requireNonNull(severity, "severity");
@@ -15,11 +17,17 @@ public record ValidationDiagnostic(ValidationCode code, Severity severity, DataL
         Objects.requireNonNull(rule, "rule");
         arguments = List.copyOf(arguments);
         Objects.requireNonNull(relatedData, "relatedData");
+        Objects.requireNonNull(geometryEvidence, "geometryEvidence");
+    }
+
+    public ValidationDiagnostic(ValidationCode code, Severity severity, DataLocation data,
+                                RuleLocation rule, List<String> arguments, Optional<DataLocation> relatedData) {
+        this(code, severity, data, rule, arguments, relatedData, Optional.empty());
     }
 
     public ValidationDiagnostic(ValidationCode code, Severity severity, DataLocation data,
                                 RuleLocation rule, List<String> arguments) {
-        this(code, severity, data, rule, arguments, java.util.Optional.empty());
+        this(code, severity, data, rule, arguments, Optional.empty());
     }
 
     /** English fallback message for presentation. */
