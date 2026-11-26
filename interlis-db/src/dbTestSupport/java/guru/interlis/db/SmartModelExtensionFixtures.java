@@ -41,15 +41,19 @@ final class SmartModelExtensionFixtures {
     }
 
     Path specializedSource(String base) throws Exception {
-        return Files.writeString(work.resolve(specialized + ".ili"), """
+        return subtypeSource(specialized, "SpecializedEntry", base, "Extra");
+    }
+
+    Path subtypeSource(String model, String type, String base, String field) throws Exception {
+        return Files.writeString(work.resolve(model + ".ili"), """
                 INTERLIS 2.%d;
                 MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
                   IMPORTS %s;
                   TOPIC Data EXTENDS %s.Data =
-                    CLASS SpecializedEntry EXTENDS %s.Data.%s = Extra : TEXT*20; END SpecializedEntry;
+                    CLASS %s EXTENDS %s.Data.%s = %s : TEXT*20; END %s;
                   END Data;
                 END %s.
-                """.formatted(version - 20, specialized, original, original, original, base, specialized));
+                """.formatted(version - 20, model, original, original, type, original, base, field, type, model));
     }
 
     Path specializedInput(String prefix) throws Exception {

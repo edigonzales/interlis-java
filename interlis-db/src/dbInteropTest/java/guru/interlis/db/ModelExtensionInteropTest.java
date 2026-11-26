@@ -12,6 +12,7 @@ import java.util.Set;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.catalogKeys;
 import static guru.interlis.db.DbTestSupport.foreignKeyColumns;
+import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.InteropCommands.assertSharedIds;
 import static guru.interlis.db.InteropCommands.exportDataset;
 import static guru.interlis.db.InteropCommands.importDataset;
@@ -61,6 +62,47 @@ final class ModelExtensionInteropTest {
     @Test void smart2RolesGeoPackage24() throws Exception { exchangeExternalRoles(24, null, "smart2"); }
     @Test void smart2RolesPostgis23() throws Exception { exchangeExternalRoles(23, POSTGIS.container(), "smart2"); }
     @Test void smart2RolesPostgis24() throws Exception { exchangeExternalRoles(24, POSTGIS.container(), "smart2"); }
+    @Test void smart1SharedSubtypeGeoPackage23() throws Exception { exchangeSmart1SharedSubtype(23, null); }
+    @Test void smart1SharedSubtypeGeoPackage24() throws Exception { exchangeSmart1SharedSubtype(24, null); }
+    @Test void smart1SharedSubtypePostgis23() throws Exception { exchangeSmart1SharedSubtype(23, POSTGIS.container()); }
+    @Test void smart1SharedSubtypePostgis24() throws Exception { exchangeSmart1SharedSubtype(24, POSTGIS.container()); }
+
+    private void exchangeSmart1SharedSubtype(int version, PostgreSQLContainer postgres) throws Exception {
+        var fixture = new SmartModelExtensionFixtures(work, version, false, true);
+        var source = fixture.specializedSource();
+        String further = "FurtherSmart" + version;
+        var furtherSource = fixture.subtypeSource(further, "FurtherEntry", "Entry", "OtherExtra");
+        var db = new TestDatabase(work, postgres, "append_smart1_subtype", "v" + version + "_");
+        var expected = db.peer("append_smart1_subtype_reference");
+        var reference = new ReferenceTool(work, db.postgis());
+        schema(reference, db, work, fixture.original, "smart1");
+        importDataset(reference, db, "original", fixture.input(fixture.original, "original"));
+        var original = fixture.originalRows(db);
+        assertCliSuccess(db, "schemaimport", fixture.specialized, null, source,
+                "--add-models", "--model-file", fixture.originalSource.toString());
+        importDataset(reference, db, "legacy", fixture.specializedInput("legacy"));
+        assertCliSuccess(db, "schemaimport", further, null, furtherSource,
+                "--add-models", "--model-file", fixture.originalSource.toString());
+        schema(reference, expected, work, fixture.original + ";" + fixture.specialized + ";" + further, "smart1");
+        try (var sql = db.connect(); var expectedSql = expected.connect()) {
+            var actualCatalog = DbSchemaCatalog.read(sql, db.postgis(), db.schema()).relations();
+            var referenceCatalog = DbSchemaCatalog.read(expectedSql, db.postgis(), expected.schema()).relations();
+            for (String relation : java.util.List.of("classname", "attrname", "column_prop", "trafo", "inheritance")) {
+                assertEquals(referenceCatalog.get(relation), actualCatalog.get(relation), relation);
+            }
+            assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("entry")
+                    + " WHERE t_type IN ('entry','alternate') AND extra IS NULL AND otherextra IS NULL"));
+        }
+        var output = work.resolve("shared-subtype.xtf");
+        assertCliSuccess(db, "export", fixture.specialized, "legacy", output);
+        fixture.assertSpecializedDelivery(output, "legacy");
+        assertCliSuccess(db, "import", fixture.specialized, "native", fixture.specializedInput("native"));
+        exportDataset(reference, db, "native", output);
+        fixture.assertSpecializedDelivery(output, "native");
+        assertCliSuccess(db, "export", fixture.original, "original", output);
+        fixture.assertDelivery(output, fixture.original, "original");
+        assertEquals(original, fixture.originalRows(db));
+    }
 
     private void exchangeExternalRoles(int version, PostgreSQLContainer postgres, String profile) throws Exception {
         var fixture = new SmartModelExtensionFixtures(work, version, false, false);

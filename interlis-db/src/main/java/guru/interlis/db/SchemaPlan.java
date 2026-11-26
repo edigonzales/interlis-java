@@ -64,9 +64,9 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                   List<ColumnProperty> columnProperties, Map<String, List<GeometryColumn>> geometryColumns,
                   boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean strokeArcs, DbEnumOptions enumOptions,
                   Set<AttributeTransformation> transformations, List<DbEnumLookup> enumLookups,
-                  Map<String, List<List<String>>> uniqueKeys, Map<String, List<NumericCheck>> numericChecks,
-                  Map<String, List<TextCheck>> textChecks, Map<String, List<TemporalCheck>> temporalChecks,
-                  List<DbMetaInfo.Row> metaInformation, boolean sqlNotNull, Map<String, Set<String>> requiredColumns) {
+                  Map<String, List<List<String>>> uniqueKeys, Map<String, ColumnChecks> columnChecks,
+                  List<DbMetaInfo.Row> metaInformation, boolean sqlNotNull, Map<String, Set<String>> requiredColumns,
+                  List<AddedColumn> addedColumns, List<DiscriminatorChange> discriminatorChanges) {
     record ModelFile(String filename, LanguageVersion version, String modelNames, String content) { }
 
     record ColumnProperty(String table, String subtype, String column, String key, String value) { }
@@ -76,6 +76,14 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     record TextCheck(String column, boolean normalized) { }
 
     record TemporalCheck(String column, String sqlType, String minimum, String maximum) { }
+
+    record ColumnChecks(List<NumericCheck> numbers, List<TextCheck> texts, List<TemporalCheck> times) { }
+
+    record AddedColumn(String table, DbMapping.Column field, ColumnChecks checks) { }
+
+    record DiscriminatorChange(String table, List<String> types) {
+        DiscriminatorChange { types = List.copyOf(types); }
+    }
 
     record ForeignKey(String table, String column, String target, boolean index) {
         ForeignKey(String table, String column, String target) { this(table, column, target, true); }
@@ -90,6 +98,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         addedVirtualClasses = List.copyOf(addedVirtualClasses);
         addedAssociations = List.copyOf(addedAssociations);
         addedCompositions = List.copyOf(addedCompositions);
+        addedColumns = List.copyOf(addedColumns);
+        discriminatorChanges = List.copyOf(discriminatorChanges);
         columnProperties = List.copyOf(columnProperties);
         transformations = Set.copyOf(transformations);
         enumLookups = List.copyOf(enumLookups);
@@ -155,9 +165,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         var properties = new ArrayList<ColumnProperty>();
         var geometries = new HashMap<String, List<GeometryColumn>>();
         var uniqueKeys = new HashMap<String, List<List<String>>>();
-        var numericChecks = new HashMap<String, List<NumericCheck>>();
-        var textChecks = new HashMap<String, List<TextCheck>>();
-        var temporalChecks = new HashMap<String, List<TemporalCheck>>();
+        var columnChecks = new HashMap<String, ColumnChecks>();
         Map<SymbolId, List<ConstraintSymbol>> constraints = schemaOptions.contains(SchemaOption.UNIQUE)
                 ? uniqueConstraints(mapping) : Map.of();
         for (var table : addedTables) {
@@ -184,16 +192,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             }
             var rules = constraints.get(table.object().symbol().symbol());
             if (rules != null) uniqueKeys.put(table.name(), uniqueKeys(mapping, table, rules));
-            if (schemaOptions.contains(SchemaOption.NUMERIC_CHECKS) && !schemaOptions.contains(SchemaOption.SCALAR_TEXT)) {
-                numericChecks.put(table.name(), table.columns().stream().flatMap(SchemaPlan::numericChecks).toList());
-            }
-            if (!gpkg && schemaOptions.contains(SchemaOption.TEXT_CHECKS)) {
-                textChecks.put(table.name(), table.columns().stream().flatMap(column -> textChecks(column, schemaOptions)).toList());
-            }
-            if (!gpkg && schemaOptions.contains(SchemaOption.DATE_TIME_CHECKS)) {
-                temporalChecks.put(table.name(), table.columns().stream()
-                        .flatMap(column -> temporalChecks(column, schemaOptions)).toList());
-            }
+            columnChecks.put(table.name(), columnChecks(table.columns(), gpkg, schemaOptions));
         }
         for (var composition : addedCompositions) {
             token.throwIfCancellationRequested();
@@ -204,10 +203,9 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         }
         return new SchemaPlan(mapping, modelFiles, addedTables, addedVirtualClasses, addedAssociations, addedCompositions, properties, geometries,
                 splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations,
-                enumLookups, Map.copyOf(uniqueKeys),
-                Map.copyOf(numericChecks), Map.copyOf(textChecks), Map.copyOf(temporalChecks),
+                enumLookups, Map.copyOf(uniqueKeys), Map.copyOf(columnChecks),
                 schemaOptions.contains(SchemaOption.META_INFO) ? DbMetaInfo.plan(mapping, token) : List.of(),
-                sqlNotNull, sqlNotNull ? requiredColumns(mapping, addedTables, multiSrs) : Map.of());
+                sqlNotNull, sqlNotNull ? requiredColumns(mapping, addedTables, multiSrs) : Map.of(), List.of(), List.of());
     }
 
     private static Map<String, Set<String>> requiredColumns(DbMapping mapping, List<DbMapping.Table> addedTables,
@@ -261,6 +259,16 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     List<String> addedStorageTables() { return DbMapping.storageTables(addedTables); }
 
     Set<SchemaOption> schemaOptions() { return mapping.schemaOptions(); }
+
+    static ColumnChecks columnChecks(List<DbMapping.Column> columns, boolean gpkg, Set<SchemaOption> options) {
+        return new ColumnChecks(
+                options.contains(SchemaOption.NUMERIC_CHECKS) && !options.contains(SchemaOption.SCALAR_TEXT)
+                        ? columns.stream().flatMap(SchemaPlan::numericChecks).toList() : List.of(),
+                !gpkg && options.contains(SchemaOption.TEXT_CHECKS)
+                        ? columns.stream().flatMap(column -> textChecks(column, options)).toList() : List.of(),
+                !gpkg && options.contains(SchemaOption.DATE_TIME_CHECKS)
+                        ? columns.stream().flatMap(column -> temporalChecks(column, options)).toList() : List.of());
+    }
 
     private static Stream<TextCheck> textChecks(DbMapping.Column column, Set<SchemaOption> options) {
         if (column.expandedStructure().isPresent()) {
@@ -421,10 +429,16 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 ? "CATALOGUE" : table.object().kind().name();
     }
 
-    SchemaPlan withModelFiles(List<ModelFile> files) {
-        return new SchemaPlan(mapping, files, addedTables, addedVirtualClasses, addedAssociations, addedCompositions, columnProperties,
+    SchemaPlan withExtension(List<ModelFile> files, List<AddedColumn> columns, List<DiscriminatorChange> discriminators) {
+        var properties = new ArrayList<>(columnProperties);
+        for (var column : columns) {
+            var owner = mapping.tables().stream().filter(table -> table.name().equals(column.table())).findFirst().orElseThrow();
+            addProperties(properties, new HashMap<>(), mapping, owner, column.table(), column.field());
+        }
+        return new SchemaPlan(mapping, files, addedTables, addedVirtualClasses, addedAssociations, addedCompositions, properties,
                 geometryColumns, splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations, enumLookups,
-                uniqueKeys, numericChecks, textChecks, temporalChecks, metaInformation, sqlNotNull, requiredColumns);
+                uniqueKeys, columnChecks, metaInformation, sqlNotNull, requiredColumns,
+                columns, discriminators);
     }
 
     private static Origin.DeclaredOrigin origin(ModelSymbol model) {

@@ -665,6 +665,11 @@ final class DbMapping {
     }
 
     static List<ObjectDescriptor> storageObjects(TransferPlan plan, List<SymbolRef> roots, CancellationToken token) {
+        return storageObjects(plan, roots, Set.of(), token);
+    }
+
+    static List<ObjectDescriptor> storageObjects(TransferPlan plan, List<SymbolRef> roots, Set<String> additionalTypes,
+                                                 CancellationToken token) {
         var topics = new HashSet<SymbolRef>();
         var dependencies = new ArrayDeque<SymbolRef>();
         for (var topic : plan.topics()) {
@@ -682,7 +687,8 @@ final class DbMapping {
         var selected = new HashSet<SymbolRef>();
         var pending = new ArrayDeque<ObjectDescriptor>();
         for (var object : plan.objects()) {
-            if (roots.contains(object.model()) || object.topic().filter(topics::contains).isPresent()) {
+            if (roots.contains(object.model()) || object.topic().filter(topics::contains).isPresent()
+                    || additionalTypes.contains(object.name().declared().toString())) {
                 include(object, selected, pending);
             }
         }

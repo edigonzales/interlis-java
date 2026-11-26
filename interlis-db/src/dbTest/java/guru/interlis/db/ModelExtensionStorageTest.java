@@ -9,6 +9,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static guru.interlis.db.DbTestSupport.assertCliFailure;
@@ -17,6 +18,7 @@ import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.ModelFixtures.tableFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 final class ModelExtensionStorageTest {
     private static final PostgisTestServer POSTGIS = new PostgisTestServer();
@@ -144,11 +146,6 @@ final class ModelExtensionStorageTest {
         try (var sql = db.connect()) {
             var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
             var rows = fixture.originalRows(db);
-            assertCliFailure(db, "schemaimport", fixture.specialized, null, fixture.specializedSource(),
-                    "would change stored table entry for subtype " + fixture.specialized + ".Data.SpecializedEntry",
-                    "--add-models", "--model-file", fixture.originalSource.toString());
-            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
-
             var checkpoints = new AtomicInteger();
             var cancelled = schemaWithIdentityColumns(db, fixture.added, fixture.addedSource,
                     cancelDuringDdl(checkpoints, 2), "--add-models");
@@ -162,6 +159,61 @@ final class ModelExtensionStorageTest {
             assertCliSuccess(db, "export", fixture.added, "added", output);
             fixture.assertDelivery(output, fixture.added, "added");
             assertEquals(rows, fixture.originalRows(db));
+        }
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void smart1SharedSubtypeKeepsOriginalRowsAndRollsBackAddedColumn(Backend backend, int version) throws Exception {
+        var fixture = new SmartModelExtensionFixtures(work, version, false, true);
+        var db = POSTGIS.target(work.resolve("shared-subtype.gpkg"), backend);
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource, "--inheritance", "smart1");
+        assertCliSuccess(db, "import", fixture.original, "original", fixture.input(fixture.original, "original"));
+        var source = fixture.specializedSource();
+        var rows = fixture.originalRows(db);
+        try (var sql = db.connect()) {
+            var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+            var checkpoints = new AtomicInteger();
+            var cancelled = schemaWithIdentityColumns(db, fixture.specialized, source,
+                    cancelDuringDdl(checkpoints, 2), "--add-models", "--model-file", fixture.originalSource.toString());
+            assertEquals(130, cancelled.code(), cancelled::diagnostics);
+            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+
+            assertCliSuccess(db, "schemaimport", fixture.specialized, null, source,
+                    "--add-models", "--model-file", fixture.originalSource.toString());
+            assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("entry") + " WHERE extra IS NULL"));
+            assertCliSuccess(db, "import", fixture.specialized, "added", fixture.specializedInput("added"));
+            var output = work.resolve("shared-subtype.xtf");
+            assertCliSuccess(db, "export", fixture.specialized, "added", output);
+            fixture.assertSpecializedDelivery(output, "added");
+            assertCliSuccess(db, "export", fixture.original, "original", output);
+            fixture.assertDelivery(output, fixture.original, "original");
+            assertEquals(rows, fixture.originalRows(db));
+        }
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void smart1AddsScalarChecksToNewColumnsInTheSharedTable(Backend backend, int version) throws Exception {
+        var fixture = new SmartModelExtensionFixtures(work, version, false, true);
+        var db = POSTGIS.target(work.resolve("shared-scalar-checks.gpkg"), backend);
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource,
+                "--inheritance", "smart1", "--create-num-checks", "--create-text-checks");
+        assertCliSuccess(db, "import", fixture.original, "original", fixture.input(fixture.original, "original"));
+        var source = fixture.specializedSource();
+        Files.writeString(source, Files.readString(source).replace("Extra : TEXT*20;", "Extra : TEXT*20; Score : 0..9;"));
+        assertCliSuccess(db, "schemaimport", fixture.specialized, null, source,
+                "--add-models", "--model-file", fixture.originalSource.toString());
+        assertCliSuccess(db, "import", fixture.specialized, "added", fixture.specializedInput("added"));
+        try (var sql = db.connect(); var statement = sql.createStatement()) {
+            String table = db.table("entry");
+            String added = " WHERE t_ili_tid='added-specialized'";
+            assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + table + " WHERE extra IS NULL AND score IS NULL"));
+            statement.executeUpdate("UPDATE " + table + " SET score = 9" + added);
+            assertThrows(SQLException.class, () -> statement.executeUpdate("UPDATE " + table + " SET score = 10" + added));
+            if (db.postgis()) {
+                assertThrows(SQLException.class, () -> statement.executeUpdate("UPDATE " + table + " SET extra = '  '" + added));
+            }
         }
     }
 

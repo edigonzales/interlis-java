@@ -325,11 +325,13 @@ SQL-Namen und Vererbungsstrategien der Basistypen gelten weiterhin. Benötigt
 eine bereits abgebildete Referenz für den neuen Typ weitere Zielspalten,
 bricht `--add-models` mit dem Namen der betroffenen Referenz ab.
 
-Im nullable Smart1-Profil ergänzt `--add-models` unabhängige Modelle.
-Neue Hierarchien verwenden die Smart1-Tabelle und bei gemeinsam gespeicherten
-Typen die entsprechenden `T_Type`-Werte. Ein zusätzlicher Untertyp, der in
-einer bestehenden Tabelle gespeichert werden müsste, führt vor der DDL zum
-Abbruch mit Angabe von Typ und Tabelle.
+Im nullable Smart1-Profil ergänzt `--add-models` unabhängige Modelle und
+skalare Untertypen in einer bestehenden Tabelle mit `T_Type` ohne Typcheck.
+Die neuen Fachspalten sind nullable und übernehmen die aktiven SQL-Checks
+für Zahlen, Texte und Zeitwerte des Schemas. Die Liste der Typwerte umfasst auch
+Untertypen aus früheren Erweiterungen. Beim erneuten `--schemaimport` mit
+ili2gpkg 5.5.2 fehlten in der Probe die physischen Spalten des Untertyps.
+Die Katalogreferenz ist hier der gemeinsame Schemaimport beider Modelle.
 
 In Smart1 und Smart2 kann ein neues Modell externe eingebettete Rollen auf
 Klassen in bereits abgebildeten Topics ergänzen. Die Rollenspalten stehen

@@ -203,21 +203,7 @@ final class SchemaSql {
             for (var key : plan.uniqueKeys().getOrDefault(table.name(), List.of())) {
                 columns.add("UNIQUE (" + key.stream().map(Database::quote).collect(Collectors.joining(", ")) + ")");
             }
-            for (var check : plan.numericChecks().getOrDefault(table.name(), List.of())) {
-                columns.add("CHECK (" + quote(check.column()) + " BETWEEN " + check.minimum() + " AND " + check.maximum() + ")");
-            }
-            for (var check : plan.textChecks().getOrDefault(table.name(), List.of())) {
-                String field = quote(check.column());
-                // Match ili2pg's literals under PostgreSQL's standard_conforming_strings default.
-                String normalized = check.normalized() ? "position('\\n' IN " + field + ") = 0 AND position('\\r' IN "
-                        + field + ") = 0 AND position('\\t' IN " + field + ") = 0 AND " : "";
-                columns.add("CHECK (" + normalized + "length(trim(" + field + ")) >= 1)");
-            }
-            for (var check : plan.temporalChecks().getOrDefault(table.name(), List.of())) {
-                columns.add("CHECK (" + quote(check.column()) + " BETWEEN "
-                        + check.sqlType() + " " + literal(check.minimum()) + " AND "
-                        + check.sqlType() + " " + literal(check.maximum()) + ")");
-            }
+            addColumnChecks(columns, plan.columnChecks().get(table.name()));
             commands.add(dialect.create(table.name(), String.join(", ", columns), inlineKeys.getOrDefault(table.name(), List.of())));
             for (var geometry : table.secondaryGeometries()) {
                 var column = geometry.column();
@@ -239,6 +225,14 @@ final class SchemaSql {
                 commands.add("ALTER TABLE " + dialect.table(child) + " ADD COLUMN "
                         + quote(composition.ownerColumn()) + " " + dialect.idType() + reference);
             }
+        }
+        for (var addition : plan.addedColumns()) {
+            var field = addition.field();
+            String type = field.scalarText(plan.schemaOptions()) ? "TEXT" : dialect.columnType(field, 0);
+            var definition = new ArrayList<String>();
+            definition.add(quote(field.name()) + " " + type);
+            addColumnChecks(definition, addition.checks());
+            commands.add("ALTER TABLE " + dialect.table(addition.table()) + " ADD COLUMN " + String.join(" ", definition));
         }
         if (createGeometryIndexes) {
             for (String table : plan.addedStorageTables()) {
@@ -423,6 +417,21 @@ final class SchemaSql {
                 row(inheritance, name, null);
                 row(transformations, name, INHERITANCE_TAG, EMBEDDED);
             }
+            for (var addition : plan.addedColumns()) {
+                token.throwIfCancellationRequested();
+                var field = addition.field();
+                row(attributes, field.slot().name().declared().toString(), field.name(), addition.table(), null);
+            }
+            if (!plan.discriminatorChanges().isEmpty()) {
+                String sql = "UPDATE " + d.table(COLUMN_PROP)
+                        + " SET setting = ? WHERE tablename = ? AND lower(columnname) = ? AND tag = ? AND subtype IS NULL";
+                try (var update = connection.prepareStatement(sql)) {
+                    for (var change : plan.discriminatorChanges()) {
+                        token.throwIfCancellationRequested();
+                        row(update, new com.google.gson.Gson().toJson(change.types()), change.table(), Ili2dbLayout.T_TYPE, PREFIX + "types");
+                    }
+                }
+            }
             for (var property : plan.columnProperties()) {
                 token.throwIfCancellationRequested();
                 row(colProps, property.table(), property.subtype(), property.column(), property.key(), property.value());
@@ -522,6 +531,24 @@ final class SchemaSql {
     private static String baseClass(SchemaPlan plan, guru.interlis.transfer.ObjectDescriptor type) {
         return type.baseType().flatMap(plan.mapping().plan()::object)
                 .map(value -> value.name().declared().toString()).orElse(null);
+    }
+
+    private static void addColumnChecks(List<String> definitions, SchemaPlan.ColumnChecks checks) {
+        for (var check : checks.numbers()) {
+            definitions.add("CHECK (" + quote(check.column()) + " BETWEEN " + check.minimum() + " AND " + check.maximum() + ")");
+        }
+        for (var check : checks.texts()) {
+            String field = quote(check.column());
+            // Match ili2pg's literals under PostgreSQL's standard_conforming_strings default.
+            String normalized = check.normalized() ? "position('\\n' IN " + field + ") = 0 AND position('\\r' IN "
+                    + field + ") = 0 AND position('\\t' IN " + field + ") = 0 AND " : "";
+            definitions.add("CHECK (" + normalized + "length(trim(" + field + ")) >= 1)");
+        }
+        for (var check : checks.times()) {
+            definitions.add("CHECK (" + quote(check.column()) + " BETWEEN "
+                    + check.sqlType() + " " + literal(check.minimum()) + " AND "
+                    + check.sqlType() + " " + literal(check.maximum()) + ")");
+        }
     }
 
     private static String literal(String value) {

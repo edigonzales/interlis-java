@@ -1,5 +1,7 @@
 package guru.interlis.db;
 
+import com.google.gson.Gson;
+
 import guru.interlis.compiler.AnalysisBudget;
 import guru.interlis.db.DbMapping.AssociationRole;
 import guru.interlis.db.DbMapping.Column;
@@ -12,6 +14,7 @@ import guru.interlis.db.DbMapping.Table;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.LanguageVersion;
+import guru.interlis.model.Modifier;
 import guru.interlis.model.Origin;
 import guru.interlis.model.ReferenceType;
 import guru.interlis.model.SymbolId;
@@ -108,7 +111,12 @@ final class DbSchemaReader {
         var settings = readSettings(db, selectedModels);
         var models = new LinkedHashSet<>(settings.srsModels().map(DbCrsPair.Models::names).orElse(selectedModels));
         outputModel.ifPresent(models::add);
-        TransferPlan plan = readModelPlan(db, List.copyOf(models), token);
+        var initialPlan = readModelPlan(db, List.copyOf(models), token);
+        var additionalTypes = settings.inheritance() == DbInheritance.Profile.SMART1
+                ? sharedSubtypes(db, initialPlan, token) : Set.<String>of();
+        var storageModels = new LinkedHashSet<>(models);
+        additionalTypes.stream().sorted().map(MetadataScope::modelName).forEach(storageModels::add);
+        TransferPlan plan = storageModels.equals(models) ? initialPlan : readModelPlan(db, List.copyOf(storageModels), token);
         var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
         if (plan.rootModels().stream().map(ref -> plan.model(ref).orElseThrow().languageVersion())
                 .anyMatch(language -> language != version)) {
@@ -131,8 +139,9 @@ final class DbSchemaReader {
                 throw unsupported("export model " + output + " is outside the selected translation families");
             }
         }
-        var roots = DbMapping.storageRoots(plan, crsPair);
-        var selected = DbMapping.storageObjects(plan, roots, token);
+        var roots = DbMapping.storageRoots(plan, crsPair).stream().filter(ref -> plan.models().stream().anyMatch(model ->
+                model.name().canonical().equals(ref) && models.contains(model.name().declared().last()))).toList();
+        var selected = DbMapping.storageObjects(plan, roots, additionalTypes, token);
         DbMapping.checkBasketLayout(plan, selected, settings.schemaOptions());
         DbMapping.checkLayout(plan, selected, settings.enumOptions());
         if (!settings.multiSrs() && plan.topics().stream()
@@ -435,6 +444,12 @@ final class DbSchemaReader {
         return mapping;
     }
 
+    private static Set<String> sharedSubtypes(Database db, TransferPlan plan, CancellationToken token) throws SQLException {
+        var selected = DbMapping.storageObjects(plan, DbMapping.storageRoots(plan, Optional.empty()), token).stream()
+                .map(object -> object.name().declared().toString()).collect(Collectors.toSet());
+        return DbStoredClasses.read(db, token).sharedSubtypes(selected);
+    }
+
     private static void ignoreOtherModelCopies(Database db, MetadataScope scope, Set<String> selectedOwners,
                                                AttributeNames attributes, Map<String, String> roleOwners) throws SQLException {
         var bases = new HashMap<String, String>();
@@ -723,17 +738,9 @@ final class DbSchemaReader {
         return new SqlNames(classes, relations, columns, attributes, strategies);
     }
 
-    static void checkSmartExtension(Database db, SchemaPlan extension, List<SchemaPlan.ModelFile> newFiles,
-                                    SqlNames names, CancellationToken token) throws SQLException {
+    static SchemaPlan planSmartExtension(Database db, SchemaPlan extension, List<SchemaPlan.ModelFile> newFiles,
+                                          SqlNames names, CancellationToken token) throws SQLException {
         var mapping = extension.mapping();
-        for (var alias : mapping.inheritance().aliases()) {
-            var owner = mapping.table(alias.owner());
-            if (!names.hasClass(alias.object().name().declared().toString())
-                    && names.hasClass(owner.object().name().declared().toString())) {
-                throw new DbException("Smart1 --add-models would change stored table " + owner.name()
-                        + " for subtype " + alias.object().name().declared());
-            }
-        }
         var newModels = newFiles.stream().flatMap(file -> storedDeclarations(file.modelNames()).keySet().stream())
                 .collect(Collectors.toSet());
         for (var declaration : mapping.inheritance().declarations()) {
@@ -757,6 +764,67 @@ final class DbSchemaReader {
             }
         }
         checkStoredReferenceExpansion(db, extension, names, token);
+        var columns = new ArrayList<SchemaPlan.AddedColumn>();
+        var discriminators = new ArrayList<SchemaPlan.DiscriminatorChange>();
+        var aliases = mapping.inheritance().aliases().stream()
+                .filter(alias -> !names.hasClass(alias.object().name().declared().toString())
+                        && names.hasClass(mapping.table(alias.owner()).object().name().declared().toString()))
+                .collect(Collectors.groupingBy(DbMapping.StorageAlias::owner, LinkedHashMap::new, Collectors.toList()));
+        for (var entry : aliases.entrySet()) {
+            token.throwIfCancellationRequested();
+            var owner = mapping.table(entry.getKey());
+            String ownerPath = owner.object().name().declared().toString();
+            var stored = read(db, List.of(MetadataScope.modelName(ownerPath)), token);
+            var oldTable = stored.tables().stream().filter(table -> table.object().name().declared().toString().equals(ownerPath))
+                    .findFirst().orElseThrow(() -> new DbException("Missing stored Smart1 table for " + ownerPath));
+            if (!oldTable.hasDiscriminator() || oldTable.subtype() || !owner.hasDiscriminator()
+                    || extension.schemaOptions().contains(Ili2dbLayout.SchemaOption.TYPE_CONSTRAINT)) {
+                throw unsupported("Smart1 --add-models requires an existing T_Type without a type check in " + owner.name());
+            }
+            var oldTypes = stored.objectStorage().stream().filter(type -> type.root().equals(oldTable)
+                    && !type.object().modifiers().contains(Modifier.ABSTRACT)).map(DbMapping.ObjectStorage::discriminator).sorted().toList();
+            requireStoredDiscriminatorTypes(db, owner.name(), oldTypes);
+            var types = new java.util.TreeSet<>(oldTypes);
+            var physical = readPhysicalColumns(db, owner.name()).types();
+            for (var alias : entry.getValue()) {
+                var object = alias.object();
+                if (!object.modifiers().contains(Modifier.ABSTRACT)) types.add(alias.discriminator());
+                if (mapping.associations().stream().anyMatch(association -> association.owner().equals(object.symbol()))) {
+                    throw unsupported("new Smart1 roles in shared table " + owner.name());
+                }
+                for (var attribute : DbMapping.attributes(object)) {
+                    var fields = owner.columns().stream().filter(column -> column.slot().symbol().equals(attribute.symbol())).toList();
+                    if (fields.size() != 1 || fields.getFirst().kind().geometry() || fields.getFirst().target().isPresent()
+                            || fields.getFirst().transformation() != null || fields.getFirst().enumText().isPresent()
+                            || fields.getFirst().kind() == Kind.ENUMERATION && extension.enumOptions().lookup() == DbEnumOptions.Lookup.WITH_ID) {
+                        throw unsupported("Smart1 attribute in shared table at " + attribute.name().declared());
+                    }
+                    var field = fields.getFirst();
+                    if (physical.containsKey(key(db, field.name()))) {
+                        throw new DbException("Existing column conflicts with " + owner.name() + "." + field.name());
+                    }
+                    columns.add(new SchemaPlan.AddedColumn(owner.name(), field,
+                            SchemaPlan.columnChecks(List.of(field), db.gpkg(), extension.schemaOptions())));
+                }
+            }
+            discriminators.add(new SchemaPlan.DiscriminatorChange(owner.name(), List.copyOf(types)));
+        }
+        return extension.withExtension(newFiles, columns, discriminators);
+    }
+
+    private static void requireStoredDiscriminatorTypes(Database db, String table, List<String> types) throws SQLException {
+        String sql = "SELECT setting FROM " + db.technicalTable(Ili2dbLayout.COLUMN_PROP)
+                + " WHERE tablename = ? AND lower(columnname) = ? AND tag = ? AND subtype IS NULL";
+        try (var statement = db.connection().prepareStatement(sql)) {
+            statement.setString(1, table);
+            statement.setString(2, T_TYPE);
+            statement.setString(3, PREFIX + "types");
+            try (var rows = statement.executeQuery()) {
+                if (!rows.next() || !new Gson().toJson(types).equals(rows.getString(1)) || rows.next()) {
+                    throw new DbException("Inconsistent COLUMN_PROP.types for " + table + "." + T_TYPE);
+                }
+            }
+        }
     }
 
     private static void checkStoredReferenceExpansion(Database db, SchemaPlan extension, SqlNames names, CancellationToken token)

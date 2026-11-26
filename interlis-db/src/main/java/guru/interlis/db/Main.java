@@ -162,10 +162,9 @@ public final class Main {
                 settings.inheritance(), settings.structureTransformations(), settings.strokeArcs(), settings.enumOptions(),
                 settings.schemaOptions(), !settings.sqlEnableNull(), cancellation);
         var newFiles = DbSchemaReader.newModelFiles(db, plan.modelFiles(), cancellation);
-        if (smart && newFiles.size() != plan.modelFiles().size()) {
-            DbSchemaReader.checkSmartExtension(db, plan, newFiles, names, cancellation);
-        }
-        plan = plan.withModelFiles(newFiles);
+        plan = smart && newFiles.size() != plan.modelFiles().size()
+                ? DbSchemaReader.planSmartExtension(db, plan, newFiles, names, cancellation)
+                : plan.withExtension(newFiles, List.of(), List.of());
         if (plan.addedTables().isEmpty() && plan.modelFiles().isEmpty()) {
             throw new DbException("No new model tables or sources to add");
         }
