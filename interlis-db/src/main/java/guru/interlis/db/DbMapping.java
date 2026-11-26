@@ -1004,7 +1004,7 @@ final class DbMapping {
         if (type instanceof TextType text) return text.textKind() == TextKind.TEXT;
         Kind kind = scalarKind(type);
         if (kind == Kind.ENUMERATION) {
-            if (enumOptions.numeric() || enumOptions.lookup() != DbEnumOptions.Lookup.NONE
+            if (enumOptions.numeric() || enumOptions.lookup() == DbEnumOptions.Lookup.PER_DEFINITION
                     || !inlineEnumeration(plan, attribute)) return false;
         } else if (kind != Kind.INTEGER && kind != Kind.BIGINT && kind != Kind.DECIMAL) {
             return false;
@@ -1022,7 +1022,7 @@ final class DbMapping {
                 });
     }
 
-    private static boolean inlineEnumeration(TransferPlan plan, AttributeSlot slot) {
+    static boolean inlineEnumeration(TransferPlan plan, AttributeSlot slot) {
         return plan.type(slot.declaredType()).known().orElseThrow() instanceof EnumerationType enumeration
                 && !enumeration.treeValues();
     }

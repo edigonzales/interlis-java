@@ -16,6 +16,7 @@ import guru.interlis.source.SourceRange;
 import guru.interlis.syntax.EnumerationTypeSyntax;
 import guru.interlis.syntax.SyntaxNode;
 import guru.interlis.syntax.SyntaxSnapshot;
+import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.TransferPlan;
 
@@ -44,11 +45,13 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
         if (options.lookup() == DbEnumOptions.Lookup.NONE) return List.of();
         var plan = mapping.plan();
         var objects = mapping.inheritance().declarations().stream().map(DbInheritance.Declaration::object).toList();
-        var definitions = definitions(plan, DbMapping.storageRoots(plan, mapping.crsPair()), objects, token);
+        var roots = DbMapping.storageRoots(plan, mapping.crsPair());
         var orderedDeclarations = orderedDeclarations(syntax, token);
         if (options.lookup() == DbEnumOptions.Lookup.SINGLE) {
             var rows = new ArrayList<Row>();
-            for (var definition : definitions) rows.addAll(rows(plan, definition, orderedDeclarations, options.beautify(), token));
+            for (var definition : storedDefinitions(plan, roots, objects, mapping.inheritance(), token)) {
+                rows.addAll(rows(plan, definition, orderedDeclarations, options.beautify(), token));
+            }
             return List.of(new DbEnumLookup(Ili2dbLayout.ENUM, Optional.empty(), !names.hasTable(Ili2dbLayout.ENUM), rows));
         }
         var lookups = new ArrayList<DbEnumLookup>();
@@ -59,7 +62,7 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
                             new Row(BOOLEAN_DEFINITION, null, "true", 1, null, "true", null))));
         }
         var byTable = new LinkedHashMap<Symbol, List<Row>>();
-        for (var definition : definitions) {
+        for (var definition : definitions(plan, roots, objects, token)) {
             var declaration = options.lookup() == DbEnumOptions.Lookup.WITH_ID
                     ? root(plan, definition.declaration()) : definition.declaration();
             byTable.computeIfAbsent(declaration, ignored -> new ArrayList<>())
@@ -158,6 +161,45 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
             }
         }
         return List.copyOf(definitions.values());
+    }
+
+    private static List<Definition> storedDefinitions(TransferPlan plan, List<SymbolRef> models,
+                                                       List<ObjectDescriptor> objects, DbInheritance layout,
+                                                       CancellationToken token) {
+        var definitions = definitions(plan, models, objects, token);
+        var extensions = inlineExtensions(plan, objects, token);
+        if (extensions.isEmpty()) return definitions;
+        var bases = extensions.stream().map(definition -> root(plan, definition.declaration()).id())
+                .collect(Collectors.toSet());
+        var stored = layout.relations().stream()
+                .flatMap(relation -> relation.contributors().stream()
+                        .flatMap(contributor -> DbMapping.storageAttributes(plan, layout.profile(), relation, contributor).stream()))
+                .map(slot -> slot.attribute().id()).collect(Collectors.toSet());
+        var result = new ArrayList<Definition>();
+        for (var definition : definitions) {
+            var id = definition.declaration().id();
+            if (!bases.contains(id) || stored.contains(id)) result.add(definition);
+        }
+        for (var definition : extensions) {
+            if (stored.contains(definition.declaration().id())) result.add(definition);
+        }
+        return List.copyOf(result);
+    }
+
+    private static List<Definition> inlineExtensions(TransferPlan plan, List<ObjectDescriptor> objects,
+                                                     CancellationToken token) {
+        var extensions = new LinkedHashMap<SymbolId, Definition>();
+        for (var object : objects) {
+            token.throwIfCancellationRequested();
+            for (var slot : object.slots()) {
+                if (slot instanceof AttributeSlot attr && attr.attribute().overrides().isPresent()
+                        && !attr.attribute().transientAttribute() && DbMapping.inlineEnumeration(plan, attr)) {
+                    extensions.computeIfAbsent(attr.attribute().id(), unused -> new Definition(attr.attribute(),
+                            (EnumerationType) plan.type(attr.effectiveType()).known().orElseThrow()));
+                }
+            }
+        }
+        return List.copyOf(extensions.values());
     }
 
     private static String table(TransferPlan plan, SqlNames names, Symbol declaration, String path) {

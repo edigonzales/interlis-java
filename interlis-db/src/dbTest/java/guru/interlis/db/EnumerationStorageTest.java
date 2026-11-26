@@ -134,6 +134,30 @@ final class EnumerationStorageTest {
 
     @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void singleLookupUsesTheCopiedInlineDefinition(Backend backend, int version) throws Exception {
+        var db = target(backend, "inline-single");
+        var fixtures = new EnumerationFixtures(work, version);
+        String model = "EnumInlineCopied" + version;
+        assertSchemaWithIdentityColumns(db, model, fixtures.source(model, EnumerationFixtures.ABSTRACT_INLINE_OVERRIDES),
+                "--inheritance", "smart1", "--create-single-enum-tab");
+        Path output = roundTrip(db, model, "native", fixtures.inlineDataset(model, "native", false));
+        fixtures.assertInlineOverrides(output, "native", false);
+        try (var sql = db.connect()) {
+            String lookup = db.table("t_ili2db_enum");
+            String base = model + ".Data.Meter.State";
+            String derived = model + ".Data.SmartUnit.State";
+            assertEquals(List.of(List.of(derived, base, "idle", "0"),
+                            List.of(derived, base, "active.ready", "1"),
+                            List.of(derived, base, "active.busy", "2"),
+                            List.of(derived, base, "standby", "3"),
+                            List.of(derived, base, "out_of_service", "4")),
+                    rows(sql, "SELECT thisclass,baseclass,ilicode,itfcode FROM " + lookup + " ORDER BY itfcode"));
+            assertEquals("0", scalar(sql, "SELECT COUNT(seq) FROM " + lookup));
+        }
+    }
+
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void storedIdsAndInvalidLookupRows(Backend backend, int version) throws Exception {
         var db = target(backend, "stored-ids");
         var fixtures = new EnumerationFixtures(work, version);

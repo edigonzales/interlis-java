@@ -37,6 +37,7 @@ final class EnumerationFixtures {
             END SmartUnit;
             CLASS Leaf EXTENDS SmartUnit = Details : TEXT*30; END Leaf;
             """;
+    static final String ABSTRACT_INLINE_OVERRIDES = INLINE_OVERRIDES.replace("CLASS Meter =", "CLASS Meter (ABSTRACT) =");
 
     private final Path work;
     private final int version;
@@ -138,7 +139,12 @@ final class EnumerationFixtures {
     }
 
     Path inlineDataset(String model, String prefix) throws Exception {
-        return dataset(model, prefix, object(model, "Meter", prefix + "-base", "<State>standby</State>")
+        return inlineDataset(model, prefix, true);
+    }
+
+    Path inlineDataset(String model, String prefix, boolean concreteBase) throws Exception {
+        String base = concreteBase ? object(model, "Meter", prefix + "-base", "<State>standby</State>") : "";
+        return dataset(model, prefix, base
                 + object(model, "SmartUnit", prefix + "-ready", "<State>active.ready</State><Label>smart</Label>")
                 + object(model, "Leaf", prefix + "-inherited", "<State>standby</State>")
                 + object(model, "Leaf", prefix + "-fallback", "<State>out_of_service</State>")
@@ -146,10 +152,16 @@ final class EnumerationFixtures {
     }
 
     void assertInlineOverrides(Path output, String prefix) throws Exception {
+        assertInlineOverrides(output, prefix, true);
+    }
+
+    void assertInlineOverrides(Path output, String prefix, boolean concreteBase) throws Exception {
         var basket = children(readDataSection(output, version)).getFirst();
         assertEquals(prefix + "-basket", id(basket, version, "bid"));
         var objects = children(basket).stream().collect(Collectors.toMap(row -> id(row, version, "tid"), row -> row));
-        assertEquals("standby", child(objects.get(prefix + "-base"), "State").getTextContent());
+        if (concreteBase) {
+            assertEquals("standby", child(objects.get(prefix + "-base"), "State").getTextContent());
+        }
         assertEquals("active.ready", child(objects.get(prefix + "-ready"), "State").getTextContent());
         assertEquals("standby", child(objects.get(prefix + "-inherited"), "State").getTextContent());
         assertEquals("out_of_service", child(objects.get(prefix + "-fallback"), "State").getTextContent());

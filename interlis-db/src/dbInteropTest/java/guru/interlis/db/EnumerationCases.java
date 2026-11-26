@@ -5,7 +5,6 @@ import guru.interlis.execution.CancellationToken;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.List;
 
 import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
@@ -131,6 +130,36 @@ final class EnumerationCases {
                 var before = rows(sql, query);
                 mixScalars(db, model);
                 assertEquals(before, rows(sql, query));
+            }
+        }
+        inlineSingleLookup(expected.peer("inline_single_reference"), own.peer("inline_single_own"), false);
+        inlineSingleLookup(expected.peer("inline_single_smart_reference"), own.peer("inline_single_smart_own"), true);
+    }
+
+    private void inlineSingleLookup(TestDatabase expected, TestDatabase own, boolean smart) throws Exception {
+        String model = (smart ? "EnumInlineSmart" : "EnumInlineShared") + version;
+        var source = fixtures.source(model, INLINE_OVERRIDES);
+        InteropCommands.schema(reference, expected, work, model, smart ? "smart2" : "newClass",
+                "--createSingleEnumTab", "--beautifyEnumDispName");
+        if (smart) {
+            create(own, model, source, "--inheritance", "smart2", "--create-single-enum-tab", "--beautify-enum-disp-name");
+        } else {
+            create(own, model, source, "--create-single-enum-tab", "--beautify-enum-disp-name");
+        }
+        assertSameCatalog(expected, own);
+        assertLookupContents(expected, own, "t_ili2db_enum");
+        for (var db : List.of(expected, own)) {
+            mixInline(db, model);
+            try (var sql = db.connect()) {
+                String lookup = db.table("t_ili2db_enum");
+                String base = model + ".Data.Meter.State";
+                String derived = model + ".Data.SmartUnit.State";
+                assertEquals("2", scalar(sql, "SELECT seq FROM " + lookup
+                        + " WHERE thisclass='" + base + "' AND ilicode='standby'"));
+                assertEquals(smart ? base : null, scalar(sql, "SELECT baseclass FROM " + lookup
+                        + " WHERE thisclass='" + derived + "' AND ilicode='active.ready'"));
+                assertEquals(smart ? "3" : null, scalar(sql, "SELECT itfcode FROM " + lookup
+                        + " WHERE thisclass='" + derived + "' AND ilicode='standby'"));
             }
         }
     }
@@ -362,10 +391,7 @@ final class EnumerationCases {
     }
 
     private void schema(TestDatabase db, String model, String... flags) throws Exception {
-        var options = new ArrayList<>(List.of("--schemaimport", "--noSmartMapping", "--createBasketCol",
-                "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", "--models", model));
-        options.addAll(List.of(flags));
-        reference.run(db, work.toString(), options.toArray(String[]::new));
+        InteropCommands.schema(reference, db, work, model, "newClass", flags);
     }
 
     private void referenceImport(TestDatabase db, String dataset, Path input) throws Exception {

@@ -219,7 +219,10 @@ Label, auch wenn die Klassen eine gemeinsame `_txt`-Spalte verwenden.
 Mit `--create-single-enum-tab` werden die Aufzählungswerte und
 ihre Metadaten in `T_ILI2DB_ENUM` abgelegt, entsprechend ili2db
 `--createSingleEnumTab`. Die Tabelle führt jede Definition mit ihrer
-eigenen Zuordnung von XTF- und ITF-Codes.
+eigenen Zuordnung von XTF- und ITF-Codes. Bei Inline-Aufzählungen mit
+`EXTENDED` erscheinen die Definitionen, für die das Schema eine
+Fachspalte anlegt. Eine gemeinsam genutzte Basisspalte kann daher XTF-Codes
+enthalten, die in `T_ILI2DB_ENUM` fehlen.
 Mit `--create-enum-tabs` erhält jede Definition eine eigene
 Lookup-Tabelle, entsprechend ili2db `--createEnumTabs`. `CLASSNAME`
 enthält ihren SQL-Namen. Fachspalten verwenden weiterhin die separat
