@@ -265,6 +265,23 @@ final class BaseStructureRows {
             assertFalse(result.next());
         }
 
+        String restrictedRows = """
+                select n.t_type,n.t_seq,n.label
+                from %s n join %s r on n.typedrecord_selected=r.t_id and n.t_basket=r.t_basket
+                where r.t_ili_tid='%s-typed-1' order by n.t_seq
+                """.formatted(db.table("notebase"), db.table("typedrecord"), dataset);
+        try (var statement = sql.createStatement(); var result = statement.executeQuery(restrictedRows)) {
+            assertTrue(result.next());
+            assertEquals("flagnote", result.getString(1));
+            assertEquals(0, result.getInt(2));
+            assertEquals("first", result.getString(3));
+            assertTrue(result.next());
+            assertEquals("countnote", result.getString(1));
+            assertEquals(1, result.getInt(2));
+            assertEquals("second", result.getString(3));
+            assertFalse(result.next());
+        }
+
         String abstractRows = """
                 select k.t_type, k.t_seq, k.label, k.t_ili_tid, n.acode
                 from %s k join %s n on n.t_id=k.t_id and n.t_basket=k.t_basket

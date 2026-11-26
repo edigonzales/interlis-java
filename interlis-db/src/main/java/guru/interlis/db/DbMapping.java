@@ -1342,7 +1342,7 @@ final class DbMapping {
             if (!optional(slot)) throw unsupported(feature);
             structure = (StructureValueType) type;
         }
-        if (structure.target().isEmpty() || !structure.restrictions().isEmpty()) throw unsupported(feature);
+        if (structure.target().isEmpty()) throw unsupported(feature);
         var child = new SymbolRef(plan.snapshotId(), structure.target().orElseThrow());
         if (plan.object(child).filter(object -> object.kind() == SymbolKind.STRUCTURE
                 && (object.topic().isEmpty() || object.topic().equals(parent.topic()))).isEmpty()) {

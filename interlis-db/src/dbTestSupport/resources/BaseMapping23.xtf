@@ -151,6 +151,10 @@
           <BaseMapping23.Data.CountNote><Label>count</Label><Amount>7</Amount></BaseMapping23.Data.CountNote>
           <BaseMapping23.Data.FlagNote><Label>flag</Label><Enabled>true</Enabled></BaseMapping23.Data.FlagNote>
         </Values>
+        <Selected>
+          <BaseMapping23.Data.FlagNote><Label>first</Label><Enabled>true</Enabled></BaseMapping23.Data.FlagNote>
+          <BaseMapping23.Data.CountNote><Label>second</Label><Amount>4</Amount></BaseMapping23.Data.CountNote>
+        </Selected>
         <Extras>
           <BaseMapping23.Data.NamedNote><Label>duplicate</Label><Code>ABC</Code></BaseMapping23.Data.NamedNote>
           <BaseMapping23.Data.NamedNote><Label>duplicate</Label><Code>ABC</Code></BaseMapping23.Data.NamedNote>

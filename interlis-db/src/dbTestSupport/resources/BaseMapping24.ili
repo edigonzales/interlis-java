@@ -82,6 +82,7 @@ MODEL BaseMapping24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-2
     STRUCTURE FlagNote EXTENDS NoteBase =
       Enabled : BOOLEAN;
     END FlagNote;
+    STRUCTURE ArchivedNote EXTENDS NoteBase = END ArchivedNote;
     STRUCTURE NoteKind (ABSTRACT) =
       Label : TEXT*16;
     END NoteKind;
@@ -91,7 +92,8 @@ MODEL BaseMapping24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-2
     CLASS TypedRecord =
       Main : CountNote;
       Values : LIST {0..*} OF NoteBase;
-      Extras : BAG {0..*} OF NoteKind;
+      Selected : LIST {0..*} OF NoteBase RESTRICTION (CountNote; FlagNote);
+      Extras : BAG {0..*} OF NoteKind RESTRICTION (NamedNote);
     END TypedRecord;
     CLASS Report =
       Summary : Detail;

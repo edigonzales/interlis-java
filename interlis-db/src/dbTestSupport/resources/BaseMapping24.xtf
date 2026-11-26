@@ -217,6 +217,10 @@
           <CountNote><Label>count</Label><Amount>7</Amount></CountNote>
           <FlagNote><Label>flag</Label><Enabled>true</Enabled></FlagNote>
         </Values>
+        <Selected>
+          <FlagNote><Label>first</Label><Enabled>true</Enabled></FlagNote>
+          <CountNote><Label>second</Label><Amount>4</Amount></CountNote>
+        </Selected>
         <Extras>
           <NamedNote><Label>duplicate</Label><Code>ABC</Code></NamedNote>
           <NamedNote><Label>duplicate</Label><Code>ABC</Code></NamedNote>

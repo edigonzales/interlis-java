@@ -780,6 +780,9 @@ In XTF 2.3 und 2.4 FULL können Klassen und Strukturen optionale Strukturwerte
 sowie `LIST OF`- und `BAG OF`-Attribute mit einem Strukturtyp aus dem
 Modell oder dem eigenen Topic enthalten. Verschachtelungen sind azyklisch.
 Strukturelemente verwenden die unterstützten skalaren Attributtypen.
+Bei `LIST OF` und `BAG OF` mit `RESTRICTION` verwendet das
+`newClass`-Profil den Rückverweis der deklarierten Strukturhierarchie.
+`T_Type` bezeichnet den konkreten Strukturtyp der gespeicherten Zeile.
 Topic-lokale Strukturen können optionale `REFERENCE TO`-Attribute auf eine
 Klasse desselben Topics und Baskets enthalten. Vorwärtsreferenzen werden
 am Basketende aufgelöst.

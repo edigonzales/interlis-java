@@ -155,8 +155,8 @@ final class BaseDbFixture {
                     scalar(sql, "select count(*) from " + db.table(entry.getKey())), entry.getKey());
         }
         tables.addAll(hierarchyCounts.keySet());
-        var structureCounts = Map.of("typedrecord", 2, "notebase", 4, "countnote", 2,
-                "flagnote", 1, "notekind", 2, "namednote", 2);
+        var structureCounts = Map.of("typedrecord", 2, "notebase", 6, "countnote", 3,
+                "flagnote", 2, "notekind", 2, "namednote", 2);
         for (var entry : structureCounts.entrySet()) {
             assertEquals(Integer.toString(datasets * entry.getValue()),
                     scalar(sql, "select count(*) from " + db.table(entry.getKey())), entry.getKey());
@@ -201,7 +201,7 @@ final class BaseDbFixture {
             tables.add(table);
         }
         var ids = tables.stream().map(table -> "select t_id from " + db.table(table)).toList();
-        assertEquals(Integer.toString(datasets * (version == 24 ? 107 : 96)),
+        assertEquals(Integer.toString(datasets * (version == 24 ? 109 : 98)),
                 scalar(sql, "select count(distinct t_id) from (" + String.join(" union all ", ids) + ") ids"));
     }
 

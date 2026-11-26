@@ -484,12 +484,17 @@ final class BaseTransferAssertions {
         assertClassFields(values.get(1), prefix + "CountNote", Map.of("Label", "count", "Amount", "7"));
         assertClassFields(values.get(2), prefix + "FlagNote", Map.of("Label", "flag", "Enabled", "true"));
 
+        var selected = transferredStructures(record, "Selected");
+        assertEquals(2, selected.size());
+        assertClassFields(selected.get(0), prefix + "FlagNote", Map.of("Label", "first", "Enabled", "true"));
+        assertClassFields(selected.get(1), prefix + "CountNote", Map.of("Label", "second", "Amount", "4"));
+
         var extras = transferredStructures(record, "Extras");
         assertEquals(2, extras.size());
         for (var duplicate : extras) {
             assertClassFields(duplicate, prefix + "NamedNote", Map.of("Label", "duplicate", "Code", "ABC"));
         }
-        for (var field : List.of(main, values, extras)) {
+        for (var field : List.of(main, values, selected, extras)) {
             assertTrue(field.stream().allMatch(structure -> id(structure, version, "tid").isEmpty()));
         }
     }
