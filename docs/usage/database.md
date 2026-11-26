@@ -326,8 +326,10 @@ eine bestehende ungeordnete eingebettete Rolle mit mehreren Zieltabellen
 eine weitere Zielspalte, ergänzt `--add-models` diese samt Fremdschlüssel-
 Metadaten in der bisherigen Eigentümertabelle. Fremdschlüssel und Indizes
 folgen den gespeicherten Optionen. Die bisherigen Zielspalten bleiben
-nutzbar. Für weitere Referenzabbildungen nennt ein Abbruch die betroffene
-Rolle oder das Attribut.
+nutzbar. Das gilt auch, wenn die Rolle bisher genau eine unsuffigierte
+Zielspalte hatte. Ihr Name bleibt erhalten, die neue Spalte erhält den
+Suffix der neuen Zieltabelle. Für weitere Referenzabbildungen nennt ein
+Abbruch die betroffene Rolle oder das Attribut.
 
 Im nullable Smart1-Profil ergänzt `--add-models` unabhängige Modelle und
 skalare Untertypen in einer bestehenden Tabelle mit `T_Type`.

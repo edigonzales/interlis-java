@@ -10,7 +10,9 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
@@ -116,11 +118,13 @@ final class ModelExtensionStorageTest {
 
     @ParameterizedTest(name = "{0}, XTF {1}")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
-    void smart2RejectsSubtypeThatWouldChangeStoredReference(Backend backend, int version) throws Exception {
+    void smart2RejectsExpansionOfStoredLinkTable(Backend backend, int version) throws Exception {
         var fixture = new SmartModelExtensionFixtures(work, version, false, false);
         var db = POSTGIS.target(work.resolve("referenced-hierarchy.gpkg"), backend);
         String survey = "ExistingSurvey" + version;
-        DbTestSupport.assertSchemaWithIdentityColumns(db, survey, fixture.externalRoleSource(survey, "BaseAsset"),
+        var linkSource = fixture.externalRoleSource(survey, "BaseAsset");
+        Files.writeString(linkSource, Files.readString(linkSource).replace("END ExactAssetLink;", "CommentText : TEXT*20; END ExactAssetLink;"));
+        DbTestSupport.assertSchemaWithIdentityColumns(db, survey, linkSource,
                 "--inheritance", "smart2", "--model-file", fixture.originalSource.toString());
         assertCliSuccess(db, "import", fixture.original, "original", fixture.input(fixture.original, "original"));
 
@@ -132,6 +136,38 @@ final class ModelExtensionStorageTest {
                     "--add-models", "--model-file", fixture.originalSource.toString());
             before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
             assertEquals(rows, fixture.originalRows(db));
+        }
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void smart2RetargetsPreviouslySingleRoleWithoutRenamingItsColumn(Backend backend, int version) throws Exception {
+        var fixture = new SmartReferenceExtensionFixtures(work, version);
+        var catalog = fixture.catalog;
+        catalog.leaveOnlyOriginalEntry();
+        var db = POSTGIS.target(work.resolve("single-role.gpkg"), backend);
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.survey, fixture.surveySource, "--inheritance", "smart2",
+                "--model-file", catalog.originalSource.toString(), "--create-fk", "--create-fk-idx");
+        assertCliSuccess(db, "import", catalog.original, "original", catalog.entryInput("original"));
+        assertCliSuccess(db, "import", fixture.survey, "survey", fixture.existingSurvey("survey", "original-entry", "original-basket"));
+        try (var sql = db.connect()) {
+            String row = " FROM " + db.table("surveyrecord") + " WHERE t_ili_tid='survey-record'";
+            String before = scalar(sql, "SELECT t_id || ':' || site" + row);
+            assertCliSuccess(db, "schemaimport", catalog.specialized, null, catalog.specializedSource(),
+                    "--add-models", "--model-file", catalog.originalSource.toString());
+            assertEquals(before, scalar(sql, "SELECT t_id || ':' || site" + row));
+            assertEquals(Set.of("surveyrecord:site", "surveyrecord:site_specializedentry"),
+                    DbTestSupport.indexColumns(db, sql).stream().filter(index -> index.startsWith("surveyrecord:site"))
+                            .collect(Collectors.toSet()));
+
+            assertCliSuccess(db, "import", catalog.specialized, "new-target", catalog.specializedInput("new-target"));
+            assertCliSuccess(db, "update", fixture.survey, "survey",
+                    fixture.existingSurvey("survey", "new-target-specialized", "new-target-basket"));
+            assertEquals(before.substring(0, before.indexOf(':')), scalar(sql, "SELECT t_id" + row));
+            assertEquals("1", scalar(sql, "SELECT COUNT(*)" + row + " AND site IS NULL"));
+            var output = work.resolve("retargeted.xtf");
+            assertCliSuccess(db, "export", fixture.survey, "survey", output);
+            fixture.assertSurvey(output, "survey", "new-target-specialized");
         }
     }
 

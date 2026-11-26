@@ -956,7 +956,6 @@ final class DbSchemaReader {
                     var byOwner = storedNames.get(path).stream().collect(Collectors.groupingBy(AttributeName::owner,
                             LinkedHashMap::new, Collectors.toList()));
                     for (var owner : byOwner.entrySet()) {
-                        if (owner.getValue().size() < 2) throw new DbException("--add-models would change stored reference " + path);
                         String table = owner.getKey();
                         var ownerType = storedClasses.physicalType(table, db.gpkg());
                         if (ownerType == null) throw new DbException("Missing stored reference owner for " + path + " in " + table);
