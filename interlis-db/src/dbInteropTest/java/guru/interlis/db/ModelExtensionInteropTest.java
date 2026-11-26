@@ -66,6 +66,35 @@ final class ModelExtensionInteropTest {
     @Test void smart1SharedSubtypeGeoPackage24() throws Exception { exchangeSmart1SharedSubtype(24, null); }
     @Test void smart1SharedSubtypePostgis23() throws Exception { exchangeSmart1SharedSubtype(23, POSTGIS.container()); }
     @Test void smart1SharedSubtypePostgis24() throws Exception { exchangeSmart1SharedSubtype(24, POSTGIS.container()); }
+    @Test void smart1FirstSubtypeGeoPackage23() throws Exception { exchangeSmart1FirstSubtype(23, null); }
+    @Test void smart1FirstSubtypeGeoPackage24() throws Exception { exchangeSmart1FirstSubtype(24, null); }
+    @Test void smart1FirstSubtypePostgis23() throws Exception { exchangeSmart1FirstSubtype(23, POSTGIS.container()); }
+    @Test void smart1FirstSubtypePostgis24() throws Exception { exchangeSmart1FirstSubtype(24, POSTGIS.container()); }
+
+    private void exchangeSmart1FirstSubtype(int version, PostgreSQLContainer postgres) throws Exception {
+        var fixture = new SmartModelExtensionFixtures(work, version, false, false);
+        fixture.leaveOnlyOriginalEntry();
+        var source = fixture.specializedSource();
+        var db = new TestDatabase(work, postgres, "append_smart1_first_subtype", "v" + version + "_");
+        var expected = db.peer("append_first_subtype_reference");
+        var reference = new ReferenceTool(work, db.postgis());
+        schema(reference, db, work, fixture.original, "smart1");
+        importDataset(reference, db, "original", fixture.entryInput("original"));
+        assertCliSuccess(db, "schemaimport", fixture.specialized, null, source,
+                "--add-models", "--model-file", fixture.originalSource.toString());
+        schema(reference, expected, work, fixture.original + ";" + fixture.specialized, "smart1");
+        assertSubtypeCatalog(db, expected);
+
+        var output = work.resolve("first-subtype.xtf");
+        assertCliSuccess(db, "export", fixture.original, "original", output);
+        fixture.assertEntryDelivery(output, "original");
+        importDataset(reference, db, "legacy", fixture.specializedInput("legacy"));
+        assertCliSuccess(db, "export", fixture.specialized, "legacy", output);
+        fixture.assertSpecializedDelivery(output, "legacy");
+        assertCliSuccess(db, "import", fixture.specialized, "native", fixture.specializedInput("native"));
+        exportDataset(reference, db, "native", output);
+        fixture.assertSpecializedDelivery(output, "native");
+    }
 
     private void exchangeSmart1SharedSubtype(int version, PostgreSQLContainer postgres) throws Exception {
         var fixture = new SmartModelExtensionFixtures(work, version, false, true);
@@ -84,12 +113,8 @@ final class ModelExtensionInteropTest {
         assertCliSuccess(db, "schemaimport", further, null, furtherSource,
                 "--add-models", "--model-file", fixture.originalSource.toString());
         schema(reference, expected, work, fixture.original + ";" + fixture.specialized + ";" + further, "smart1");
-        try (var sql = db.connect(); var expectedSql = expected.connect()) {
-            var actualCatalog = DbSchemaCatalog.read(sql, db.postgis(), db.schema()).relations();
-            var referenceCatalog = DbSchemaCatalog.read(expectedSql, db.postgis(), expected.schema()).relations();
-            for (String relation : java.util.List.of("classname", "attrname", "column_prop", "trafo", "inheritance")) {
-                assertEquals(referenceCatalog.get(relation), actualCatalog.get(relation), relation);
-            }
+        assertSubtypeCatalog(db, expected);
+        try (var sql = db.connect()) {
             assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("entry")
                     + " WHERE t_type IN ('entry','alternate') AND extra IS NULL AND otherextra IS NULL"));
         }
@@ -102,6 +127,21 @@ final class ModelExtensionInteropTest {
         assertCliSuccess(db, "export", fixture.original, "original", output);
         fixture.assertDelivery(output, fixture.original, "original");
         assertEquals(original, fixture.originalRows(db));
+    }
+
+    private static void assertSubtypeCatalog(TestDatabase db, TestDatabase expected) throws Exception {
+        try (var sql = db.connect(); var expectedSql = expected.connect()) {
+            var actualCatalog = DbSchemaCatalog.read(sql, db.postgis(), db.schema()).relations();
+            var referenceCatalog = DbSchemaCatalog.read(expectedSql, db.postgis(), expected.schema()).relations();
+            for (String relation : java.util.List.of("classname", "attrname", "column_prop", "trafo", "inheritance")) {
+                assertEquals(referenceCatalog.get(relation), actualCatalog.get(relation), relation);
+            }
+            var actual = actualCatalog.get("columns").stream().filter(row -> row.getFirst().equals("entry"))
+                    .map(row -> row.subList(2, row.size())).collect(java.util.stream.Collectors.toSet());
+            var canonical = referenceCatalog.get("columns").stream().filter(row -> row.getFirst().equals("entry"))
+                    .map(row -> row.subList(2, row.size())).collect(java.util.stream.Collectors.toSet());
+            assertEquals(canonical, actual);
+        }
     }
 
     private void exchangeExternalRoles(int version, PostgreSQLContainer postgres, String profile) throws Exception {

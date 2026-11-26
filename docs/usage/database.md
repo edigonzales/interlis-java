@@ -332,6 +332,9 @@ für Zahlen, Texte und Zeitwerte des Schemas. Die Liste der Typwerte umfasst auc
 Untertypen aus früheren Erweiterungen. Beim erneuten `--schemaimport` mit
 ili2gpkg 5.5.2 fehlten in der Probe die physischen Spalten des Untertyps.
 Die Katalogreferenz ist hier der gemeinsame Schemaimport beider Modelle.
+Speicherte die Tabelle vorher genau einen konkreten Typ, ergänzt
+`--add-models` die Spalte `T_Type`, übernimmt den vorhandenen Typ in alle
+bisherigen Zeilen und setzt `NOT NULL`. Die Spalte erhält keinen Default.
 
 In Smart1 und Smart2 kann ein neues Modell externe eingebettete Rollen auf
 Klassen in bereits abgebildeten Topics ergänzen. Die Rollenspalten stehen

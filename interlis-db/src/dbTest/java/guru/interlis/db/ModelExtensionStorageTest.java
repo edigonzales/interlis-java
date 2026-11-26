@@ -217,6 +217,38 @@ final class ModelExtensionStorageTest {
         }
     }
 
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void smart1BackfillsFirstDiscriminatorAtomically(Backend backend, int version) throws Exception {
+        var fixture = new SmartModelExtensionFixtures(work, version, false, false);
+        fixture.leaveOnlyOriginalEntry();
+        var db = POSTGIS.target(work.resolve("first-discriminator.gpkg"), backend);
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource, "--inheritance", "smart1");
+        assertCliSuccess(db, "import", fixture.original, "original", fixture.entryInput("original"));
+        var source = fixture.specializedSource();
+        String originalRow = " FROM " + db.table("entry") + " WHERE t_ili_tid = 'original-entry'";
+        try (var sql = db.connect(); var statement = sql.createStatement()) {
+            var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+            String id = scalar(sql, "SELECT t_id || ':' || t_basket" + originalRow);
+            var checkpoints = new AtomicInteger();
+            var cancelled = schemaWithIdentityColumns(db, fixture.specialized, source,
+                    cancelDuringDdl(checkpoints, 3), "--add-models", "--model-file", fixture.originalSource.toString());
+            assertEquals(130, cancelled.code(), cancelled::diagnostics);
+            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+
+            assertCliSuccess(db, "schemaimport", fixture.specialized, null, source,
+                    "--add-models", "--model-file", fixture.originalSource.toString());
+            assertEquals(id, scalar(sql, "SELECT t_id || ':' || t_basket" + originalRow));
+            assertEquals("entry", scalar(sql, "SELECT t_type" + originalRow));
+            String table = db.table("entry");
+            assertThrows(SQLException.class, () -> statement.executeUpdate("INSERT INTO " + table
+                    + " (t_id, t_basket) SELECT t_id + 100, t_basket" + originalRow));
+            var output = work.resolve("first-discriminator.xtf");
+            assertCliSuccess(db, "export", fixture.original, "original", output);
+            fixture.assertEntryDelivery(output, "original");
+        }
+    }
+
     @ParameterizedTest(name = "{0}, XTF {1}, {2}")
     @CsvSource({"GEOPACKAGE,23,smart1", "GEOPACKAGE,24,smart1", "POSTGIS,23,smart1", "POSTGIS,24,smart1",
             "GEOPACKAGE,23,smart2", "GEOPACKAGE,24,smart2", "POSTGIS,23,smart2", "POSTGIS,24,smart2"})

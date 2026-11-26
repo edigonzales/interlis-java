@@ -777,13 +777,20 @@ final class DbSchemaReader {
             var stored = read(db, List.of(MetadataScope.modelName(ownerPath)), token);
             var oldTable = stored.tables().stream().filter(table -> table.object().name().declared().toString().equals(ownerPath))
                     .findFirst().orElseThrow(() -> new DbException("Missing stored Smart1 table for " + ownerPath));
-            if (!oldTable.hasDiscriminator() || oldTable.subtype() || !owner.hasDiscriminator()
+            if (oldTable.subtype() || !owner.hasDiscriminator()
                     || extension.schemaOptions().contains(Ili2dbLayout.SchemaOption.TYPE_CONSTRAINT)) {
-                throw unsupported("Smart1 --add-models requires an existing T_Type without a type check in " + owner.name());
+                throw unsupported("Smart1 --add-models requires a shared root table without a type check in " + owner.name());
             }
             var oldTypes = stored.objectStorage().stream().filter(type -> type.root().equals(oldTable)
                     && !type.object().modifiers().contains(Modifier.ABSTRACT)).map(DbMapping.ObjectStorage::discriminator).sorted().toList();
-            requireStoredDiscriminatorTypes(db, owner.name(), oldTypes);
+            Optional<String> initialType = Optional.empty();
+            if (oldTable.hasDiscriminator()) {
+                requireStoredDiscriminatorTypes(db, owner.name(), oldTypes);
+            } else {
+                if (oldTypes.size() != 1) throw new DbException("Cannot determine initial T_Type for " + owner.name());
+                requireStoredDiscriminatorTypes(db, owner.name(), List.of());
+                initialType = Optional.of(oldTypes.getFirst());
+            }
             var types = new java.util.TreeSet<>(oldTypes);
             var physical = readPhysicalColumns(db, owner.name()).types();
             for (var alias : entry.getValue()) {
@@ -807,7 +814,7 @@ final class DbSchemaReader {
                             SchemaPlan.columnChecks(List.of(field), db.gpkg(), extension.schemaOptions())));
                 }
             }
-            discriminators.add(new SchemaPlan.DiscriminatorChange(owner.name(), List.copyOf(types)));
+            discriminators.add(new SchemaPlan.DiscriminatorChange(owner.name(), List.copyOf(types), initialType));
         }
         return extension.withExtension(newFiles, columns, discriminators);
     }
@@ -820,7 +827,8 @@ final class DbSchemaReader {
             statement.setString(2, T_TYPE);
             statement.setString(3, PREFIX + "types");
             try (var rows = statement.executeQuery()) {
-                if (!rows.next() || !new Gson().toJson(types).equals(rows.getString(1)) || rows.next()) {
+                boolean found = rows.next();
+                if (types.isEmpty() ? found : !found || !new Gson().toJson(types).equals(rows.getString(1)) || rows.next()) {
                     throw new DbException("Inconsistent COLUMN_PROP.types for " + table + "." + T_TYPE);
                 }
             }

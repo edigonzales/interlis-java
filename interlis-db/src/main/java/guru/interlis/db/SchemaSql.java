@@ -226,6 +226,14 @@ final class SchemaSql {
                         + quote(composition.ownerColumn()) + " " + dialect.idType() + reference);
             }
         }
+        for (var change : plan.discriminatorChanges()) {
+            change.initialType().ifPresent(type -> {
+                String table = dialect.table(change.table());
+                commands.add("ALTER TABLE " + table + " ADD COLUMN " + TYPE_COLUMN + " " + dialect.text(60));
+                commands.add("UPDATE " + table + " SET " + TYPE_COLUMN + " = " + literal(type));
+                commands.add("ALTER TABLE " + table + " ALTER COLUMN " + TYPE_COLUMN + " SET NOT NULL");
+            });
+        }
         for (var addition : plan.addedColumns()) {
             var field = addition.field();
             String type = field.scalarText(plan.schemaOptions()) ? "TEXT" : dialect.columnType(field, 0);
@@ -428,7 +436,12 @@ final class SchemaSql {
                 try (var update = connection.prepareStatement(sql)) {
                     for (var change : plan.discriminatorChanges()) {
                         token.throwIfCancellationRequested();
-                        row(update, new com.google.gson.Gson().toJson(change.types()), change.table(), Ili2dbLayout.T_TYPE, PREFIX + "types");
+                        String types = new com.google.gson.Gson().toJson(change.types());
+                        if (change.initialType().isPresent()) {
+                            row(colProps, change.table(), null, TYPE_COLUMN, PREFIX + "types", types);
+                        } else {
+                            row(update, types, change.table(), Ili2dbLayout.T_TYPE, PREFIX + "types");
+                        }
                     }
                 }
             }

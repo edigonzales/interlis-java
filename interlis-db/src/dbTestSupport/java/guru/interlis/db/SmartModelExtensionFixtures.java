@@ -145,6 +145,23 @@ final class SmartModelExtensionFixtures {
                         + (sharedTable ? "<BranchNote>branch</BranchNote>" : "")));
     }
 
+    void leaveOnlyOriginalEntry() throws Exception {
+        Files.writeString(originalSource, Files.readString(originalSource).replaceFirst("(?m)^.*CLASS Alternate.*\\R", ""));
+    }
+
+    Path entryInput(String prefix) throws Exception {
+        return transfers.data(original, prefix,
+                transfers.object(original, "Entry", prefix + "-entry", "<Label>entry</Label><Quantity>7</Quantity>"));
+    }
+
+    void assertEntryDelivery(Path output, String prefix) throws Exception {
+        var row = transfers.rows(output, prefix, 1).getFirst();
+        ModelFixtures.assertName(row, version, original + ".Data.Entry");
+        assertEquals(prefix + "-entry", id(row, version, "tid"));
+        assertEquals("entry", child(row, "Label").getTextContent());
+        assertEquals("7", child(row, "Quantity").getTextContent());
+    }
+
     void assertDelivery(Path output, String model, String prefix) throws Exception {
         var rows = transfers.rows(output, prefix, 2);
         String expectedPrefix = version == 23 ? model + ".Data." : "";
