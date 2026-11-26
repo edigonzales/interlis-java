@@ -2,7 +2,6 @@ package guru.interlis.db;
 
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
-import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.TransferProtocolException;
 import guru.interlis.transfer.TransferReader;
@@ -157,17 +156,21 @@ public final class Main {
                 || !settings.schemaOptions().containsAll(options.schemaOptions())) {
             throw new DbException("Schema options conflict with the existing ili2db SETTINGS");
         }
-        var names = DbSchemaReader.namesForExtension(db, options.models());
+        var names = DbSchemaReader.namesForExtension(db, options.models(), settings.inheritance());
         var plan = SchemaPlan.read(options.models(), options.file(), options.modelFiles(), db.gpkg(),
                 settings.splitGeometries(), settings.defaultEpsg(), settings.multiSrs(), Optional.empty(), names,
                 settings.inheritance(), settings.structureTransformations(), settings.strokeArcs(), settings.enumOptions(),
                 settings.schemaOptions(), !settings.sqlEnableNull(), cancellation);
         var newFiles = DbSchemaReader.newModelFiles(db, plan.modelFiles(), cancellation);
         if (smart2) {
-            for (var declaration : plan.mapping().inheritance().declarations()) {
-                String path = declaration.object().name().declared().toString();
-                if (names.hasClass(path) && declaration.object().kind() != SymbolKind.STRUCTURE) {
-                    throw new DbException("Smart2 --add-models cannot yet reuse the stored mapping for " + path);
+            DbSchemaReader.checkSmart2SubtypeExtension(db, plan, names, cancellation);
+            for (var table : plan.addedTables()) {
+                for (var column : table.columns()) {
+                    if (column.kind() != DbMapping.Kind.REFERENCE) continue;
+                    var target = plan.mapping().table(column.targetRelation()).object();
+                    if (names.hasClass(target.name().declared().toString())) {
+                        throw new DbException("Smart2 --add-models cannot yet reference the stored mapping for " + target.name().declared());
+                    }
                 }
             }
         }

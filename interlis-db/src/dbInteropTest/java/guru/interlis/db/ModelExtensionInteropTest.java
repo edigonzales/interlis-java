@@ -42,6 +42,39 @@ final class ModelExtensionInteropTest {
     @Test void smart2GeoPackage24() throws Exception { exchangeSmart2(24, null); }
     @Test void smart2Postgis23() throws Exception { exchangeSmart2(23, POSTGIS.container()); }
     @Test void smart2Postgis24() throws Exception { exchangeSmart2(24, POSTGIS.container()); }
+    @Test void smart2SubtypeGeoPackage23() throws Exception { exchangeSmart2Subtype(23, null); }
+    @Test void smart2SubtypeGeoPackage24() throws Exception { exchangeSmart2Subtype(24, null); }
+    @Test void smart2SubtypePostgis23() throws Exception { exchangeSmart2Subtype(23, POSTGIS.container()); }
+    @Test void smart2SubtypePostgis24() throws Exception { exchangeSmart2Subtype(24, POSTGIS.container()); }
+
+    private void exchangeSmart2Subtype(int version, PostgreSQLContainer postgres) throws Exception {
+        var fixture = new Smart2ExtensionFixtures(work, version, false);
+        var newSource = fixture.specializedSource();
+        var db = new TestDatabase(work, postgres, "append_subtype", "v" + version + "_");
+        var expected = db.peer("append_subtype_reference");
+        var reference = new ReferenceTool(work, db.postgis());
+        schema(reference, db, work, fixture.original, "smart2");
+        schema(reference, expected, work, fixture.original, "smart2");
+        importDataset(reference, db, "original", fixture.input(fixture.original, "original"));
+        var original = fixture.originalRows(db);
+        schema(reference, expected, work, fixture.specialized, "smart2");
+        assertCliSuccess(db, "schemaimport", fixture.specialized, null, newSource,
+                "--add-models", "--model-file", fixture.originalSource.toString());
+        try (var sql = db.connect(); var expectedSql = expected.connect()) {
+            DbSchemaCatalog.read(expectedSql, db.postgis(), expected.schema())
+                    .assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+        }
+        var output = work.resolve("subtype.xtf");
+        importDataset(reference, db, "legacy", fixture.specializedInput("legacy"));
+        assertCliSuccess(db, "export", fixture.specialized, "legacy", output);
+        fixture.assertSpecializedDelivery(output, "legacy");
+        assertCliSuccess(db, "import", fixture.specialized, "native", fixture.specializedInput("native"));
+        exportDataset(reference, db, "native", output);
+        fixture.assertSpecializedDelivery(output, "native");
+        assertCliSuccess(db, "export", fixture.original, "original", output);
+        fixture.assertDelivery(output, fixture.original, "original");
+        assertEquals(original, fixture.originalRows(db));
+    }
 
     private void exchangeSmart2(int version, PostgreSQLContainer postgres) throws Exception {
         var fixture = new Smart2ExtensionFixtures(work, version, true);

@@ -771,7 +771,7 @@ final class DbMapping {
         var referenced = new HashSet<SymbolRef>();
         linkRoles.values().forEach(roles -> roles.forEach(role -> referenced.addAll(role.targets())));
         associations.forEach(association -> referenced.add(association.target()));
-        var inheritance = DbInheritance.plan(plan, objects, names, profile, referenced,
+        var inheritance = DbInheritance.plan(plan, objects, names, profile, allocator, referenced,
                 schemaOptions.contains(Ili2dbLayout.SchemaOption.TYPE_DISCRIMINATOR));
         var discriminated = inheritance.relations().stream().filter(DbInheritance.Relation::discriminator)
                 .map(relation -> relation.object().symbol()).collect(Collectors.toSet());

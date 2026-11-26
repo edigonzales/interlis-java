@@ -319,6 +319,12 @@ Smart2-Erweiterung konnte ili2gpkg 5.5.2 in XTF 2.3 und 2.4 die Einträge in
 scheiterte an den fehlenden Spalten. Das von `interlis-db` ergänzte Schema
 verwendet die Spaltenabbildung eines gemeinsamen Schemaimports beider Modelle.
 
+Ein neues Modell kann in Smart2 ein bestehendes Topic erweitern und einen
+konkreten Untertyp mit vollständiger eigener Tabelle ergänzen. Die gespeicherten
+SQL-Namen und Vererbungsstrategien der Basistypen gelten weiterhin. Benötigt
+eine bereits abgebildete Referenz für den neuen Typ weitere Zielspalten,
+bricht `--add-models` mit dem Namen der betroffenen Referenz ab.
+
 ## Aufruf
 
 ```sh

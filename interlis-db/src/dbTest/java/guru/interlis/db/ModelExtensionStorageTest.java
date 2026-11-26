@@ -110,6 +110,27 @@ final class ModelExtensionStorageTest {
         }
     }
 
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void smart2RejectsSubtypeThatWouldChangeStoredReference(Backend backend, int version) throws Exception {
+        var fixture = new Smart2ExtensionFixtures(work, version, false);
+        var db = POSTGIS.target(work.resolve("referenced-hierarchy.gpkg"), backend);
+        String survey = "ExistingSurvey" + version;
+        DbTestSupport.assertSchemaWithIdentityColumns(db, survey, fixture.externalRoleSource(survey, "BaseAsset"),
+                "--inheritance", "smart2", "--model-file", fixture.originalSource.toString());
+        assertCliSuccess(db, "import", fixture.original, "original", fixture.input(fixture.original, "original"));
+
+        try (var sql = db.connect()) {
+            var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+            var rows = fixture.originalRows(db);
+            assertCliFailure(db, "schemaimport", fixture.specialized, null, fixture.specializedSource(),
+                    "would change stored reference " + survey + ".Data.AssetLink.Site",
+                    "--add-models", "--model-file", fixture.originalSource.toString());
+            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+            assertEquals(rows, fixture.originalRows(db));
+        }
+    }
+
     private static CancellationToken cancelDuringDdl(AtomicInteger checkpoints, int checkpoint) {
         var stack = StackWalker.getInstance();
         return () -> stack.walk(frames -> frames.anyMatch(frame ->

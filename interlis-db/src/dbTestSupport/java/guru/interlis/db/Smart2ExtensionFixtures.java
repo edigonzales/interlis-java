@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 final class Smart2ExtensionFixtures {
     final String original;
     final String added;
+    final String specialized;
     final Path originalSource;
     final Path addedSource;
     private final ProfileFixtures transfers;
@@ -27,8 +28,55 @@ final class Smart2ExtensionFixtures {
         transfers = new ProfileFixtures(work, version);
         original = "OriginalSmart" + version;
         added = "AddedSmart" + version;
+        specialized = "SpecializedSmart" + version;
         originalSource = source(original, false);
         addedSource = source(added, sharedDomains);
+    }
+
+    Path specializedSource() throws Exception {
+        return Files.writeString(work.resolve(specialized + ".ili"), """
+                INTERLIS 2.%d;
+                MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
+                  IMPORTS %s;
+                  TOPIC Data EXTENDS %s.Data =
+                    CLASS SpecializedEntry EXTENDS %s.Data.Entry = Extra : TEXT*20; END SpecializedEntry;
+                  END Data;
+                END %s.
+                """.formatted(version - 20, specialized, original, original, original, specialized));
+    }
+
+    Path specializedInput(String prefix) throws Exception {
+        String inherited = version == 23 ? "<Label>inherited</Label><Quantity>17</Quantity>"
+                : "<o:Label xmlns:o=\"http://www.interlis.ch/xtf/2.4/" + original + "\">inherited</o:Label>"
+                    + "<o:Quantity xmlns:o=\"http://www.interlis.ch/xtf/2.4/" + original + "\">17</o:Quantity>";
+        return transfers.data(specialized, prefix, transfers.object(specialized, "SpecializedEntry", prefix + "-specialized",
+                inherited + "<Extra>local</Extra>"));
+    }
+
+    void assertSpecializedDelivery(Path output, String prefix) throws Exception {
+        var object = transfers.rows(output, prefix, 1).getFirst();
+        assertEquals(version == 23 ? specialized + ".Data.SpecializedEntry" : "SpecializedEntry", object.getLocalName());
+        assertEquals(prefix + "-specialized", id(object, version, "tid"));
+        assertEquals("inherited", child(object, "Label").getTextContent());
+        assertEquals("17", child(object, "Quantity").getTextContent());
+        assertEquals("local", child(object, "Extra").getTextContent());
+    }
+
+    Path externalRoleSource(String model, String target) throws Exception {
+        return Files.writeString(work.resolve(model + ".ili"), """
+                INTERLIS 2.%d;
+                MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
+                  IMPORTS %s;
+                  TOPIC Data =
+                    DEPENDS ON %s.Data;
+                    CLASS SurveyRecord = END SurveyRecord;
+                    ASSOCIATION AssetLink =
+                      Reports -- {0..*} SurveyRecord;
+                      Site (EXTERNAL) -- {0..1} %s.Data.%s;
+                    END AssetLink;
+                  END Data;
+                END %s.
+                """.formatted(version - 20, model, original, original, original, target, model));
     }
 
     private Path source(String name, boolean sharedDomains) throws Exception {

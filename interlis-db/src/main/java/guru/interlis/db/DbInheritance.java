@@ -122,12 +122,18 @@ final class DbInheritance {
     }
 
     static DbInheritance plan(TransferPlan plan, List<ObjectDescriptor> objects, Map<SymbolRef, String> names,
-                              Profile profile, Set<SymbolRef> referenced, boolean alwaysDiscriminate) {
+                              Profile profile, SqlNames allocator, Set<SymbolRef> referenced, boolean alwaysDiscriminate) {
         var strategies = new LinkedHashMap<SymbolRef, Strategy>();
+        for (var object : objects) {
+            if (profile == Profile.NEW_CLASS || !names.containsKey(object.symbol())) continue;
+            String path = object.name().declared().toString();
+            if (allocator.hasClass(path)) strategies.put(object.symbol(), storedStrategy(object, allocator.storedStrategy(path)));
+        }
         var declarations = new ArrayList<Declaration>();
         for (var object : objects) {
             if (!names.containsKey(object.symbol())) continue;
-            var strategy = switch (profile) {
+            var strategy = strategies.get(object.symbol());
+            if (strategy == null) strategy = switch (profile) {
                 case NEW_CLASS -> Strategy.NEW_CLASS;
                 case SMART1 -> smart1(plan, object, strategies, referenced);
                 case SMART2 -> object.modifiers().contains(Modifier.ABSTRACT) ? Strategy.SUB_CLASS : Strategy.NEW_AND_SUB_CLASS;
@@ -135,6 +141,16 @@ final class DbInheritance {
             declarations.add(new Declaration(object, names.get(object.symbol()), strategy));
         }
         return new DbInheritance(plan, declarations, profile, alwaysDiscriminate);
+    }
+
+    static Strategy storedStrategy(ObjectDescriptor object, String value) {
+        return switch (value) {
+            case Ili2dbLayout.NEW_CLASS -> Strategy.NEW_CLASS;
+            case "superClass" -> Strategy.SUPER_CLASS;
+            case "subClass" -> Strategy.SUB_CLASS;
+            case "newAndSubClass" -> Strategy.NEW_AND_SUB_CLASS;
+            case null, default -> throw invalid(object);
+        };
     }
 
     private static Strategy smart1(TransferPlan plan, ObjectDescriptor object, Map<SymbolRef, Strategy> strategies,

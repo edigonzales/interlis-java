@@ -13,6 +13,8 @@ import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.Origin;
+import guru.interlis.model.ReferenceType;
+import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.source.SourceId;
@@ -22,6 +24,7 @@ import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.TransferPlan;
+import guru.interlis.transfer.TransferSlot;
 
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -206,13 +209,7 @@ final class DbSchemaReader {
             if (settings.inheritance() == DbInheritance.Profile.NEW_CLASS && !NEW_CLASS.equals(transformation)) {
                 throw new DbException("Missing or inconsistent CLASSNAME/TRAFO mapping for " + path);
             }
-            var strategy = switch (transformation) {
-                case NEW_CLASS -> DbInheritance.Strategy.NEW_CLASS;
-                case "superClass" -> DbInheritance.Strategy.SUPER_CLASS;
-                case "subClass" -> DbInheritance.Strategy.SUB_CLASS;
-                case "newAndSubClass" -> DbInheritance.Strategy.NEW_AND_SUB_CLASS;
-                case null, default -> throw DbInheritance.invalid(object);
-            };
+            var strategy = DbInheritance.storedStrategy(object, transformation);
             declarations.add(new DbInheritance.Declaration(object, name, strategy));
             names.put(object.symbol(), name);
         }
@@ -420,6 +417,9 @@ final class DbSchemaReader {
             unselectedOwners.removeAll(usedNames);
             attrNames.ignoreOwners(unselectedOwners);
         }
+        if (settings.inheritance() == DbInheritance.Profile.SMART2 && !attrNames.isEmpty()) {
+            ignoreOtherModelCopies(db, scope, usedNames, attrNames);
+        }
         if (!attrNames.isEmpty()) throw new DbException("Extra ATTRNAME mappings for " + modelName);
         var notNullRoles = tables.stream().flatMap(table -> {
             var notNull = catalog.get(table.object().symbol()).notNull();
@@ -430,6 +430,24 @@ final class DbSchemaReader {
                 layout, settings.schemaOptions(), notNullRoles);
         mapping.checkEnumLookupIds(settings.enumOptions());
         return mapping;
+    }
+
+    private static void ignoreOtherModelCopies(Database db, MetadataScope scope, Set<String> selectedOwners,
+                                               AttributeNames attributes) throws SQLException {
+        var bases = new HashMap<String, String>();
+        var owners = new HashMap<String, String>();
+        String sql = "SELECT i.thisclass, i.baseclass, c.sqlname FROM " + db.technicalTable(INHERITANCE)
+                + " i JOIN " + db.technicalTable(CLASSNAME) + " c ON c.iliname = i.thisclass WHERE i.baseclass IS NOT NULL";
+        try (var stmt = db.connection().createStatement(); var rows = stmt.executeQuery(sql)) {
+            while (rows.next()) {
+                String type = required(rows, 1, "INHERITANCE.thisClass");
+                String base = required(rows, 2, "INHERITANCE.baseClass");
+                bases.put(type, base);
+                String owner = key(db, required(rows, 3, "CLASSNAME.sqlname"));
+                if (!scope.includes(type) && !selectedOwners.contains(owner)) owners.put(owner, type);
+            }
+        }
+        attributes.ignoreInheritedCopies(owners, bases);
     }
 
     private static void bindOtherStructureOwners(Database db, MetadataScope scope, CatalogTable table) throws SQLException {
@@ -635,7 +653,7 @@ final class DbSchemaReader {
         return true;
     }
 
-    static SqlNames namesForExtension(Database db, List<String> models) throws SQLException {
+    static SqlNames namesForExtension(Database db, List<String> models, DbInheritance.Profile profile) throws SQLException {
         checkSystemTables(db);
         var relations = new HashSet<String>();
         var metadata = db.connection().getMetaData();
@@ -673,7 +691,78 @@ final class DbSchemaReader {
                 columns.computeIfAbsent(owner, unused -> new HashSet<>()).add(foldedName(required(rows, 3, "ATTRNAME.sqlname")));
             }
         }
-        return new SqlNames(classes, relations, columns, attributes);
+        var strategies = new HashMap<String, String>();
+        if (profile != DbInheritance.Profile.NEW_CLASS) {
+            String table = foldedName(TRAFO);
+            requireMetadataColumns(db, table, "iliname", "tag", "setting");
+            try (var stmt = db.connection().prepareStatement("SELECT iliname, setting FROM " + db.table(table) + " WHERE tag = ?")) {
+                stmt.setString(1, INHERITANCE_TAG);
+                try (var rows = stmt.executeQuery()) {
+                    while (rows.next()) {
+                        String path = required(rows, 1, "TRAFO.iliname");
+                        if (strategies.putIfAbsent(path, required(rows, 2, "TRAFO.setting")) != null) {
+                            throw new DbException("Duplicate TRAFO inheritance mapping for " + path);
+                        }
+                    }
+                }
+            }
+        }
+        return new SqlNames(classes, relations, columns, attributes, strategies);
+    }
+
+    static void checkSmart2SubtypeExtension(Database db, SchemaPlan extension, SqlNames names, CancellationToken token)
+            throws SQLException {
+        var mapping = extension.mapping();
+        var plan = mapping.plan();
+        var affectedTargets = new HashSet<String>();
+        for (var table : extension.addedTables()) {
+            if (table.object().kind() != SymbolKind.CLASS) continue;
+            for (var base = table.object().baseType().flatMap(plan::object); base.isPresent();
+                 base = base.orElseThrow().baseType().flatMap(plan::object)) {
+                var ancestor = base.orElseThrow();
+                String path = ancestor.name().declared().toString();
+                if (names.hasClass(path) && mapping.inheritance().referenceTables(ancestor.symbol()).contains(table.object().symbol())) {
+                    affectedTargets.add(path);
+                }
+            }
+        }
+        if (affectedTargets.isEmpty()) return;
+
+        // A previously mapped reference can be declared in a model outside the new source closure.
+        var slotsByModel = new LinkedHashMap<String, Set<String>>();
+        try (var stmt = db.connection().createStatement();
+             var rows = stmt.executeQuery("SELECT DISTINCT iliname FROM " + db.technicalTable(ATTRNAME) + " WHERE target IS NOT NULL")) {
+            while (rows.next()) {
+                token.throwIfCancellationRequested();
+                String path = required(rows, 1, "ATTRNAME.iliname");
+                slotsByModel.computeIfAbsent(MetadataScope.modelName(path), unused -> new HashSet<>()).add(path);
+            }
+        }
+        var compiledModels = plan.models().stream().map(model -> model.name().declared().last()).collect(Collectors.toSet());
+        for (var entry : slotsByModel.entrySet()) {
+            token.throwIfCancellationRequested();
+            var source = compiledModels.contains(entry.getKey()) ? plan : readModelPlan(db, List.of(entry.getKey()), token);
+            for (var object : source.objects()) {
+                for (var slot : object.slots()) {
+                    String path = slot.name().declared().toString();
+                    if (!entry.getValue().contains(path)) continue;
+                    if (referenceRoots(source, slot).stream().map(id -> new SymbolRef(source.snapshotId(), id))
+                            .flatMap(ref -> source.object(ref).stream()).map(target -> target.name().declared().toString())
+                            .anyMatch(affectedTargets::contains)) {
+                        throw new DbException("Smart2 --add-models would change stored reference " + path);
+                    }
+                }
+            }
+        }
+    }
+
+    private static List<SymbolId> referenceRoots(TransferPlan plan, TransferSlot slot) {
+        return switch (slot) {
+            case RoleSlot role -> role.role().targets().stream().flatMap(target -> target.allowedRoots().stream()).toList();
+            case AttributeSlot attribute -> DbStructureShape.type(plan, attribute) instanceof ReferenceType reference
+                    ? reference.targetRoots() : DbCatalogueReference.describe(plan, attribute)
+                    .map(binding -> binding.reference().targetRoots()).orElseGet(List::of);
+        };
     }
 
     static List<SchemaPlan.ModelFile> newModelFiles(Database db, List<SchemaPlan.ModelFile> files, CancellationToken token)
@@ -860,6 +949,24 @@ final class DbSchemaReader {
         void ignoreOwners(Set<String> owners) {
             mappings.values().forEach(names -> names.removeIf(name -> owners.contains(key(db, name.owner()))));
             mappings.values().removeIf(List::isEmpty);
+        }
+
+        void ignoreInheritedCopies(Map<String, String> owners, Map<String, String> bases) {
+            for (var entry : mappings.entrySet()) {
+                int member = entry.getKey().lastIndexOf('.');
+                if (member < 0) continue;
+                String declaration = entry.getKey().substring(0, member);
+                entry.getValue().removeIf(name -> inheritsFrom(owners.get(key(db, name.owner())), declaration, bases));
+            }
+            mappings.values().removeIf(List::isEmpty);
+        }
+
+        private static boolean inheritsFrom(String type, String declaration, Map<String, String> bases) {
+            var seen = new HashSet<String>();
+            while ((type = bases.get(type)) != null && seen.add(type)) {
+                if (type.equals(declaration)) return true;
+            }
+            return false;
         }
 
         boolean isEmpty() { return mappings.isEmpty(); }

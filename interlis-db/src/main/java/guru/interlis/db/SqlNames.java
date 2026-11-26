@@ -24,15 +24,17 @@ final class SqlNames {
     private final Map<String, Set<String>> columns = new HashMap<>();
     private final Map<String, String> storedClasses;
     private final Set<String> storedAttributes;
+    private final Map<String, String> storedStrategies;
 
     SqlNames() {
-        this(Map.of(), Set.of(), Map.of(), Set.of());
+        this(Map.of(), Set.of(), Map.of(), Set.of(), Map.of());
     }
 
     SqlNames(Map<String, String> storedClasses, Set<String> relations, Map<String, Set<String>> storedColumns,
-             Set<String> storedAttributes) {
+             Set<String> storedAttributes, Map<String, String> storedStrategies) {
         this.storedClasses = Map.copyOf(storedClasses);
         this.storedAttributes = Set.copyOf(storedAttributes);
+        this.storedStrategies = Map.copyOf(storedStrategies);
         relations.forEach(name -> tables.add(Ili2dbLayout.foldedName(name)));
         storedClasses.values().forEach(name -> tables.add(Ili2dbLayout.foldedName(name)));
         storedColumns.forEach((table, names) -> columns.put(table, new HashSet<>(names)));
@@ -41,6 +43,8 @@ final class SqlNames {
     boolean hasClass(String name) { return storedClasses.containsKey(name); }
 
     String storedClass(String name) { return storedClasses.get(name); }
+
+    String storedStrategy(String name) { return storedStrategies.get(name); }
 
     boolean hasTable(String name) { return tables.contains(Ili2dbLayout.foldedName(name)); }
 
