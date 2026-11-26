@@ -133,6 +133,9 @@ Im `newClass`-Profil speichert ein externes Referenzattribut den XTF-`REF`
 in einer Textspalte mit deklarierter Länge 255. Das funktioniert ohne
 geladenen Zielbestand. `ATTRNAME.target` bezeichnet das Modellziel,
 und lokale Referenzen behalten ihre numerische Abbildung.
+Eine eingebettete externe 1:n-Rolle ohne eigene Attribute verwendet
+dieselbe Textkodierung in der Eigentümertabelle. `update` kann die Rolle
+ändern oder leeren und behält die Objekt-ID.
 Ein mitgeliefertes Ziel-`BID` aus XTF 2.3 wird gemäss Referenzprofil
 beim Export weggelassen. `--add-models` übernimmt die Einstellung.
 

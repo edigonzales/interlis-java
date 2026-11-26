@@ -6,10 +6,14 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
+import static guru.interlis.db.DbTestSupport.scalar;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 final class ExternalTextReferenceStorageTest {
     private static final PostgisTestServer POSTGIS = new PostgisTestServer();
@@ -37,5 +41,32 @@ final class ExternalTextReferenceStorageTest {
         Path output = work.resolve("added-out.xtf");
         assertCliSuccess(db, "export", added, "added", output);
         fixture.assertTransfer(output, "added");
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void changesAndClearsEmbeddedTextWithoutReplacingTheObject(Backend backend, int version) throws Exception {
+        var fixture = new ExternalTextReferenceFixture(work, version);
+        var db = POSTGIS.target(work.resolve("embedded-text.gpkg"), backend);
+        String model = fixture.model();
+        assertSchemaWithIdentityColumns(db, model, fixture.source(model), "--sql-ext-ref-cols");
+        var input = fixture.transfer(model, "mutable");
+        assertCliSuccess(db, "import", model, "mutable", input);
+        String original = Files.readString(input);
+        String role = version == 23 ? "SiteMark REF" : "SiteMark i:ref";
+        var changed = Files.writeString(work.resolve("changed.xtf"),
+                original.replace(role + "=\"" + ExternalTextReferenceFixture.REMOTE + "\"", role + "=\"another-site\""));
+        var cleared = Files.writeString(work.resolve("cleared.xtf"), original.replaceFirst("<SiteMark [^>]*/>", ""));
+        String row = " FROM " + db.table("report") + " WHERE t_ili_tid='mutable-report'";
+        try (var sql = db.connect()) {
+            String id = scalar(sql, "SELECT t_id" + row);
+            assertEquals(ExternalTextReferenceFixture.REMOTE, scalar(sql, "SELECT sitemark" + row));
+            assertCliSuccess(db, "update", model, "mutable", changed);
+            assertEquals("another-site", scalar(sql, "SELECT sitemark" + row));
+            assertEquals(id, scalar(sql, "SELECT t_id" + row));
+            assertCliSuccess(db, "update", model, "mutable", cleared);
+            assertNull(scalar(sql, "SELECT sitemark" + row));
+            assertEquals(id, scalar(sql, "SELECT t_id" + row));
+        }
     }
 }
