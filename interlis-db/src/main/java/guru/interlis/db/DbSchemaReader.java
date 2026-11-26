@@ -139,7 +139,7 @@ final class DbSchemaReader {
         var enumDefinitions = new LinkedHashMap<String, String>();
         var enumLookup = settings.enumOptions().lookup();
         if (enumLookup == DbEnumOptions.Lookup.PER_DEFINITION || enumLookup == DbEnumOptions.Lookup.WITH_ID) {
-            for (var definition : DbEnumLookup.definitions(plan, roots, selected, token)) {
+            for (var definition : DbEnumLookup.definitions(plan, roots, selected, enumLookup, token)) {
                 var declaration = definition.declaration();
                 var storedDefinition = enumLookup == DbEnumOptions.Lookup.WITH_ID
                         ? DbEnumLookup.root(plan, declaration) : declaration;

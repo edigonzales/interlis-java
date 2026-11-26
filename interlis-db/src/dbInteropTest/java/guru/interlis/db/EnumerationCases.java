@@ -84,7 +84,7 @@ final class EnumerationCases {
         for (var db : List.of(extendedReference, extendedOwn)) {
             mixInline(db, extended);
             try (var sql = db.connect()) {
-                for (var prefix : List.of("legacy", "native")) {
+                for (var prefix : List.of("legacy-inline", "native-inline")) {
                     String row = " FROM " + db.table("meter") + " WHERE t_ili_tid='" + prefix;
                     assertEquals("Ready label", scalar(sql, "SELECT astate_txt" + row + "-ready'"));
                     assertEquals("out of service", scalar(sql, "SELECT astate_txt" + row + "-fallback'"));
@@ -166,10 +166,18 @@ final class EnumerationCases {
 
     void perLookup(TestDatabase expected, TestDatabase own) throws Exception {
         String model = "EnumTables" + version;
-        var ili = fixtures.source(model, BASE + "CLASS Asset_DirectValue = Memo : TEXT*40; END Asset_DirectValue;");
+        var ili = fixtures.source(model, BASE + "CLASS Asset_DirectValue = Memo : TEXT*40; END Asset_DirectValue;"
+                + INLINE_OVERRIDES);
         schema(expected, model, "--createEnumTabs");
         create(own, model, ili, "--create-enum-tabs");
         assertSameCatalog(expected, own);
+        try (var left = expected.connect(); var right = own.connect()) {
+            for (String table : List.of("meter_state", "smartunit_state")) {
+                String query = "SELECT ilicode,itfcode,seq,dispname,description,inactive FROM ";
+                assertEquals(rows(left, query + expected.table(table) + " ORDER BY itfcode"),
+                        rows(right, query + own.table(table) + " ORDER BY itfcode"), table);
+            }
+        }
         for (var db : List.of(expected, own)) {
             try (var sql = db.connect()) {
                 String direct = mappedTable(db, sql, model + ".Data.Asset.DirectValue");
@@ -190,6 +198,7 @@ final class EnumerationCases {
                 }
             }
             mixScalars(db, model);
+            mixInline(db, model);
             try (var sql = db.connect()) {
                 assertEquals("Family.Alpha", scalar(sql, "SELECT gradevalue FROM " + db.table("asset")
                         + " WHERE t_ili_tid = 'native-value'"));
@@ -382,12 +391,12 @@ final class EnumerationCases {
 
     private void mixInline(TestDatabase db, String model) throws Exception {
         Path output = work.resolve("inline-overrides.xtf");
-        referenceImport(db, "legacy", fixtures.inlineDataset(model, "legacy"));
-        assertCliSuccess(db, "export", model, "legacy", output);
-        fixtures.assertInlineOverrides(output, "legacy");
-        assertCliSuccess(db, "import", model, "native", fixtures.inlineDataset(model, "native"));
-        referenceExport(db, "native", output);
-        fixtures.assertInlineOverrides(output, "native");
+        referenceImport(db, "legacy-inline", fixtures.inlineDataset(model, "legacy-inline"));
+        assertCliSuccess(db, "export", model, "legacy-inline", output);
+        fixtures.assertInlineOverrides(output, "legacy-inline");
+        assertCliSuccess(db, "import", model, "native-inline", fixtures.inlineDataset(model, "native-inline"));
+        referenceExport(db, "native-inline", output);
+        fixtures.assertInlineOverrides(output, "native-inline");
     }
 
     private void schema(TestDatabase db, String model, String... flags) throws Exception {

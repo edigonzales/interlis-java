@@ -158,6 +158,28 @@ final class EnumerationStorageTest {
 
     @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void perLookupStoresBothInlineDefinitions(Backend backend, int version) throws Exception {
+        var db = target(backend, "inline-per-definition");
+        var fixtures = new EnumerationFixtures(work, version);
+        String model = "EnumInlineTables" + version;
+        assertSchemaWithIdentityColumns(db, model, fixtures.source(model, EnumerationFixtures.INLINE_OVERRIDES),
+                "--create-enum-tabs");
+        Path output = roundTrip(db, model, "native", fixtures.inlineDataset(model, "native"));
+        fixtures.assertInlineOverrides(output, "native");
+        try (var sql = db.connect()) {
+            String base = mappedTable(db, sql, model + ".Data.Meter.State");
+            String derived = mappedTable(db, sql, model + ".Data.SmartUnit.State");
+            assertNotEquals(base, derived);
+            assertEquals(List.of(List.of("idle", "0"), List.of("active", "1"), List.of("standby", "2")),
+                    rows(sql, "SELECT ilicode,itfcode FROM " + db.table(base) + " ORDER BY itfcode"));
+            assertEquals(List.of(List.of("idle", "0"), List.of("active.ready", "1"), List.of("active.busy", "2"),
+                            List.of("standby", "3"), List.of("out_of_service", "4")),
+                    rows(sql, "SELECT ilicode,itfcode FROM " + db.table(derived) + " ORDER BY itfcode"));
+        }
+    }
+
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void storedIdsAndInvalidLookupRows(Backend backend, int version) throws Exception {
         var db = target(backend, "stored-ids");
         var fixtures = new EnumerationFixtures(work, version);

@@ -1,6 +1,7 @@
 package guru.interlis.db;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.DomainReferenceType;
 import guru.interlis.model.DomainSymbol;
@@ -62,7 +63,7 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
                             new Row(BOOLEAN_DEFINITION, null, "true", 1, null, "true", null))));
         }
         var byTable = new LinkedHashMap<Symbol, List<Row>>();
-        for (var definition : definitions(plan, roots, objects, token)) {
+        for (var definition : definitions(plan, roots, objects, options.lookup(), token)) {
             var declaration = options.lookup() == DbEnumOptions.Lookup.WITH_ID
                     ? root(plan, definition.declaration()) : definition.declaration();
             byTable.computeIfAbsent(declaration, ignored -> new ArrayList<>())
@@ -130,7 +131,16 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
     }
 
     static List<Definition> definitions(TransferPlan plan, List<SymbolRef> models, List<ObjectDescriptor> objects,
-                                        CancellationToken token) {
+                                        DbEnumOptions.Lookup mode, CancellationToken token) {
+        var definitions = declaredDefinitions(plan, models, objects, token);
+        if (mode == DbEnumOptions.Lookup.WITH_ID) return definitions;
+        var result = new ArrayList<>(definitions);
+        result.addAll(inlineExtensions(plan, objects, token));
+        return List.copyOf(result);
+    }
+
+    private static List<Definition> declaredDefinitions(TransferPlan plan, List<SymbolRef> models,
+                                                         List<ObjectDescriptor> objects, CancellationToken token) {
         var roots = models.stream().map(SymbolRef::symbol).collect(Collectors.toSet());
         var definitions = new LinkedHashMap<SymbolId, Definition>();
         for (var symbol : plan.schema().semanticGraph().symbols()) {
@@ -166,8 +176,8 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
     private static List<Definition> storedDefinitions(TransferPlan plan, List<SymbolRef> models,
                                                        List<ObjectDescriptor> objects, DbInheritance layout,
                                                        CancellationToken token) {
-        var definitions = definitions(plan, models, objects, token);
-        var extensions = inlineExtensions(plan, objects, token);
+        var definitions = definitions(plan, models, objects, DbEnumOptions.Lookup.SINGLE, token);
+        var extensions = definitions.stream().filter(DbEnumLookup::inlineExtension).toList();
         if (extensions.isEmpty()) return definitions;
         var bases = extensions.stream().map(definition -> root(plan, definition.declaration()).id())
                 .collect(Collectors.toSet());
@@ -175,15 +185,14 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
                 .flatMap(relation -> relation.contributors().stream()
                         .flatMap(contributor -> DbMapping.storageAttributes(plan, layout.profile(), relation, contributor).stream()))
                 .map(slot -> slot.attribute().id()).collect(Collectors.toSet());
-        var result = new ArrayList<Definition>();
-        for (var definition : definitions) {
+        return definitions.stream().filter(definition -> {
             var id = definition.declaration().id();
-            if (!bases.contains(id) || stored.contains(id)) result.add(definition);
-        }
-        for (var definition : extensions) {
-            if (stored.contains(definition.declaration().id())) result.add(definition);
-        }
-        return List.copyOf(result);
+            return stored.contains(id) || (!inlineExtension(definition) && !bases.contains(id));
+        }).toList();
+    }
+
+    private static boolean inlineExtension(Definition definition) {
+        return definition.declaration() instanceof AttributeSymbol attribute && attribute.overrides().isPresent();
     }
 
     private static List<Definition> inlineExtensions(TransferPlan plan, List<ObjectDescriptor> objects,
