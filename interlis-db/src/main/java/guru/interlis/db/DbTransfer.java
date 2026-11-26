@@ -52,6 +52,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -82,7 +83,7 @@ final class DbTransfer {
 
     private DbTransfer() { }
 
-    static void exportData(Database db, DbMapping mapping, String dataset, Optional<String> outputModel,
+    static void exportData(Database db, DbMapping mapping, String dataset, List<String> bids, Optional<String> outputModel,
                            TransferWriter writer, CancellationToken token) throws SQLException {
         token.throwIfCancellationRequested();
         var ids = ExportIds.prepare(db, mapping, token);
@@ -90,8 +91,8 @@ final class DbTransfer {
         var output = outputModel.map(name -> plan.models().stream().filter(model -> model.name().declared().last().equals(name))
                 .findFirst().orElseThrow().symbol());
         if (!mapping.hasBasketColumn()) {
-            checkStructureOwners(db, mapping, 0, token);
-            checkLinkOwners(db, mapping, 0, token);
+            checkStructureOwners(db, mapping, ExportBaskets.UNPARTITIONED, token);
+            checkLinkOwners(db, mapping, ExportBaskets.UNPARTITIONED, token);
             var topics = plan.topics().stream().filter(topic -> mapping.models().contains(topic.model()))
                     .filter(topic -> !topic.abstractTopic()).toList();
             var exported = topics.stream().map(topic -> output.map(model -> mapping.translations().outputTopic(topic, model))
@@ -105,32 +106,46 @@ final class DbTransfer {
             writer.write(new TransferEvent.EndTransfer(), token);
             return;
         }
-        long datasetId = DbDatasetWrite.findDataset(db, dataset)
-                .orElseThrow(() -> new DbException("Dataset does not exist: " + dataset));
-        checkStructureOwners(db, mapping, datasetId, token);
-        checkLinkOwners(db, mapping, datasetId, token);
-        checkHierarchyTopics(db, mapping, datasetId, token);
-        checkCrossDatasetReferences(db, mapping, datasetId, token);
+        ExportBaskets selection;
+        if (bids.isEmpty()) {
+            long datasetId = DbDatasetWrite.findDataset(db, dataset)
+                    .orElseThrow(() -> new DbException("Dataset does not exist: " + dataset));
+            selection = new ExportBaskets("dataset = ?", List.of(datasetId));
+        } else {
+            selection = ExportBaskets.byValues(T_ILI_TID, bids);
+        }
         var topics = plan.topics().stream().filter(topic -> mapping.models().contains(topic.model()))
                 .collect(Collectors.toMap(topic -> topic.name().declared().toString(), Function.identity()));
-        var exported = new HashSet<SymbolRef>();
-        String modelQuery = "SELECT DISTINCT topic FROM " + db.technicalTable(BASKET) + " WHERE dataset = ?";
-        try (var statement = db.connection().prepareStatement(modelQuery)) {
-            statement.setLong(1, datasetId);
+        Set<String> selectedNames = new LinkedHashSet<>();
+        var missing = new LinkedHashSet<>(bids);
+        String modelQuery = bids.isEmpty() ? "SELECT DISTINCT topic FROM export_baskets"
+                : "SELECT topic, " + T_ILI_TID + " FROM export_baskets ORDER BY " + T_ID;
+        try (var statement = selection.prepare(db, modelQuery)) {
+            fetchInPages(db, statement);
             try (var rows = statement.executeQuery()) {
                 while (rows.next()) {
                     token.throwIfCancellationRequested();
-                    var stored = selectedTopic(topics, rows.getString(1));
-                    exported.add(output.map(model -> mapping.translations().outputTopic(stored, model)).orElse(stored).model());
+                    if (!bids.isEmpty() && !missing.remove(rows.getString(2))) {
+                        throw new DbException("Ambiguous basket BID: " + rows.getString(2));
+                    }
+                    selectedNames.add(rows.getString(1));
                 }
             }
         }
+        if (!missing.isEmpty()) throw new DbException("Basket does not exist: " + missing.getFirst());
+        var exported = new HashSet<SymbolRef>();
+        for (var name : selectedNames) {
+            var stored = selectedTopic(topics, name);
+            exported.add(output.map(model -> mapping.translations().outputTopic(stored, model)).orElse(stored).model());
+        }
         if (exported.isEmpty()) throw new DbException("Dataset has no baskets: " + dataset);
-        String sql = "SELECT " + T_ID + ", topic, " + T_ILI_TID + ", domains FROM "
-                + db.technicalTable(BASKET) + " WHERE dataset = ? ORDER BY " + T_ID;
-        try (var statement = db.connection().prepareStatement(sql)) {
+        checkStructureOwners(db, mapping, selection, token);
+        checkLinkOwners(db, mapping, selection, token);
+        checkHierarchyTopics(db, mapping, selection, token);
+        checkExternalExportReferences(db, mapping, selection, token);
+        String sql = "SELECT " + T_ID + ", topic, " + T_ILI_TID + ", domains FROM export_baskets ORDER BY " + T_ID;
+        try (var statement = selection.prepare(db, sql)) {
             fetchInPages(db, statement);
-            statement.setLong(1, datasetId);
             try (var rows = statement.executeQuery()) {
                 if (!rows.next()) {
                     throw new DbException("Dataset has no baskets: " + dataset);
@@ -149,6 +164,34 @@ final class DbTransfer {
             }
         }
         writer.write(new TransferEvent.EndTransfer(), token);
+    }
+
+    private record ExportBaskets(String condition, List<?> parameters) {
+        private static final ExportBaskets UNPARTITIONED = new ExportBaskets("", List.of());
+
+        static ExportBaskets byValues(String column, List<String> values) {
+            return new ExportBaskets(column + " IN (" + String.join(", ", Collections.nCopies(values.size(), "?")) + ")", values);
+        }
+
+        PreparedStatement prepare(Database db, String sql, Object... values) throws SQLException {
+            String prefix = condition.isEmpty() ? "" : "WITH export_baskets AS (SELECT "
+                    + T_ID + ", topic, " + T_ILI_TID + ", domains FROM " + db.technicalTable(BASKET)
+                    + " WHERE " + condition + ") ";
+            var statement = db.connection().prepareStatement(prefix + sql);
+            try {
+                int index = 1;
+                for (var parameter : parameters) statement.setObject(index++, parameter);
+                for (var value : values) statement.setObject(index++, value);
+                return statement;
+            } catch (SQLException error) {
+                try {
+                    statement.close();
+                } catch (SQLException closeError) {
+                    error.addSuppressed(closeError);
+                }
+                throw error;
+            }
+        }
     }
 
     private static void startTransfer(DbMapping mapping, Optional<SymbolRef> output, Set<SymbolRef> exported,
@@ -527,16 +570,15 @@ final class DbTransfer {
         }
     }
 
-    private static void checkHierarchyTopics(Database db, DbMapping mapping, long datasetId, CancellationToken token)
+    private static void checkHierarchyTopics(Database db, DbMapping mapping, ExportBaskets selection, CancellationToken token)
             throws SQLException {
         for (var table : mapping.tables()) {
             if (table.object().kind() == SymbolKind.STRUCTURE || (!table.hasDiscriminator() && !table.subtype())) continue;
             token.throwIfCancellationRequested();
-            String sql = "SELECT obj." + T_ID + " FROM " + db.table(table.name()) + " obj JOIN "
-                    + db.technicalTable(BASKET) + " basket ON basket." + T_ID + " = obj." + T_BASKET
-                    + " WHERE basket.dataset = ? AND basket.topic NOT IN " + topicNames(mapping, table) + " LIMIT 1";
-            try (var statement = db.connection().prepareStatement(sql)) {
-                statement.setLong(1, datasetId);
+            String sql = "SELECT obj." + T_ID + " FROM " + db.table(table.name())
+                    + " obj JOIN export_baskets basket ON basket." + T_ID + " = obj." + T_BASKET
+                    + " WHERE basket.topic NOT IN " + topicNames(mapping, table) + " LIMIT 1";
+            try (var statement = selection.prepare(db, sql)) {
                 try (var rows = statement.executeQuery()) {
                     if (rows.next()) {
                         throw new DbException("Inheritance row in " + table.name()
@@ -617,7 +659,7 @@ final class DbTransfer {
         }
     }
 
-    private static void checkCrossDatasetReferences(Database db, DbMapping mapping, long datasetId, CancellationToken token)
+    private static void checkExternalExportReferences(Database db, DbMapping mapping, ExportBaskets selection, CancellationToken token)
             throws SQLException {
         String baskets = db.technicalTable(BASKET);
         for (var table : mapping.tables()) {
@@ -627,14 +669,13 @@ final class DbTransfer {
                 var root = mapping.referenceRoot(column);
                 String targetTid = root.hasTidColumn() ? tidExpression(root, "ref") : "NULL";
                 String sql = "SELECT DISTINCT ref." + T_ID + ", " + targetTid + ", dst." + T_ILI_TID
-                        + " FROM " + db.table(table.name()) + " obj JOIN " + baskets
-                        + " src ON src." + T_ID + " = obj." + T_BASKET + " JOIN " + db.table(root.name())
+                        + " FROM " + db.table(table.name()) + " obj JOIN export_baskets src"
+                        + " ON src." + T_ID + " = obj." + T_BASKET + " JOIN " + db.table(root.name())
                         + " ref ON ref." + T_ID + " = obj." + quote(column.name()) + " JOIN " + baskets
-                        + " dst ON dst." + T_ID + " = ref." + T_BASKET + " WHERE src.dataset = ? AND (dst.dataset IS NULL OR dst.dataset <> ?)";
-                try (var statement = db.connection().prepareStatement(sql)) {
+                        + " dst ON dst." + T_ID + " = ref." + T_BASKET
+                        + " WHERE dst." + T_ID + " NOT IN (SELECT " + T_ID + " FROM export_baskets)";
+                try (var statement = selection.prepare(db, sql)) {
                     fetchInPages(db, statement);
-                    statement.setLong(1, datasetId);
-                    statement.setLong(2, datasetId);
                     try (var rows = statement.executeQuery()) {
                         while (rows.next()) {
                             token.throwIfCancellationRequested();
@@ -645,8 +686,9 @@ final class DbTransfer {
                                     : Optional.<String>empty();
                             var resolved = findReference(db, mapping, column, tid, bid);
                             if (resolved == null || resolved.id() != rows.getLong(1)
-                                    || hasExportedTid(db, mapping, datasetId, tid, token)) {
-                                throw new DbException("Cannot export cross-dataset reference to " + tid + " at " + context);
+                                    || hasExportedTid(db, mapping, selection, tid, token)) {
+                                throw new DbException("Cannot export external reference to " + tid
+                                        + " outside the selected baskets at " + context);
                             }
                         }
                     }
@@ -655,18 +697,16 @@ final class DbTransfer {
         }
     }
 
-    private static boolean hasExportedTid(Database db, DbMapping mapping, long dataset, String tid, CancellationToken token)
+    private static boolean hasExportedTid(Database db, DbMapping mapping, ExportBaskets selection, String tid, CancellationToken token)
             throws SQLException {
         for (var table : mapping.tables()) {
             if (!table.hasTidColumn() || table.object().kind() == SymbolKind.STRUCTURE) continue;
             token.throwIfCancellationRequested();
-            String sql = "SELECT 1 FROM " + db.table(table.name()) + " obj JOIN " + db.technicalTable(BASKET)
-                    + " basket ON basket." + T_ID + " = obj." + T_BASKET
-                    + " WHERE basket.dataset = ? AND basket.topic IN " + topicNames(mapping, table)
+            String sql = "SELECT 1 FROM " + db.table(table.name())
+                    + " obj JOIN export_baskets basket ON basket." + T_ID + " = obj." + T_BASKET
+                    + " WHERE basket.topic IN " + topicNames(mapping, table)
                     + " AND " + tidExpression(table, "obj") + " = ? LIMIT 1";
-            try (var statement = db.connection().prepareStatement(sql)) {
-                statement.setLong(1, dataset);
-                statement.setString(2, tid);
+            try (var statement = selection.prepare(db, sql, tid)) {
                 try (var rows = statement.executeQuery()) {
                     if (rows.next()) return true;
                 }
@@ -840,7 +880,7 @@ final class DbTransfer {
         return false;
     }
 
-    private static void checkLinkOwners(Database db, DbMapping mapping, long datasetId,
+    private static void checkLinkOwners(Database db, DbMapping mapping, ExportBaskets selection,
                                         CancellationToken token) throws SQLException {
         for (var association : mapping.associations()) {
             if (!association.linkTable()) continue;
@@ -851,8 +891,8 @@ final class DbTransfer {
             String basket = db.technicalTable(BASKET);
             String basketJoins = mapping.hasBasketColumn()
                     ? " LEFT JOIN " + basket + " lb ON lb." + T_ID + " = link." + T_BASKET
-                            + " LEFT JOIN " + basket + " pb ON pb." + T_ID + " = parent." + T_BASKET
-                            + " WHERE lb.dataset = ? OR pb.dataset = ?" : "";
+                            + " WHERE " + inExportBaskets("lb") + " OR parent." + T_BASKET
+                            + " IN (SELECT " + T_ID + " FROM export_baskets)" : "";
             String wrongBasket = mapping.hasBasketColumn() ? " OR lb." + T_ID + " IS NULL OR parent." + T_BASKET + " <> link."
                     + T_BASKET + " OR lb.topic NOT IN " + topicNames(mapping, parent) : "";
             String sql = "SELECT COUNT(*) FROM " + db.table(link.name()) + " link LEFT JOIN "
@@ -860,11 +900,7 @@ final class DbTransfer {
                     + basketJoins + " GROUP BY " + owner
                     + " HAVING COUNT(*) > 1 OR MAX(CASE WHEN parent." + T_ID + " IS NULL"
                     + wrongBasket + " THEN 1 ELSE 0 END) > 0 LIMIT 1";
-            try (var statement = db.connection().prepareStatement(sql)) {
-                if (mapping.hasBasketColumn()) {
-                    statement.setLong(1, datasetId);
-                    statement.setLong(2, datasetId);
-                }
+            try (var statement = selection.prepare(db, sql)) {
                 try (var rows = statement.executeQuery()) {
                     if (rows.next()) {
                         String problem = rows.getLong(1) > 1 ? "Multiple link rows" : "Missing or inconsistent link owner";
@@ -875,7 +911,7 @@ final class DbTransfer {
         }
     }
 
-    private static void checkStructureOwners(Database db, DbMapping mapping, long datasetId,
+    private static void checkStructureOwners(Database db, DbMapping mapping, ExportBaskets selection,
                                              CancellationToken token) throws SQLException {
         for (var table : mapping.tables()) {
             if (!table.hasSequenceColumn()) continue;
@@ -886,12 +922,11 @@ final class DbTransfer {
             }
             String wrongTopic = mapping.hasBasketColumn() && table.object().topic().isPresent()
                     ? " OR basket.topic NOT IN " + topicNames(mapping, table) : "";
-            String basketScope = mapping.hasBasketColumn() ? " JOIN " + db.technicalTable(BASKET)
-                    + " basket ON basket." + T_ID + " = child." + T_BASKET + " WHERE basket.dataset = ? AND " : " WHERE ";
+            String basketScope = mapping.hasBasketColumn() ? " JOIN export_baskets"
+                    + " basket ON basket." + T_ID + " = child." + T_BASKET + " WHERE " : " WHERE ";
             String sql = "SELECT child." + T_ID + " FROM " + db.table(table.name()) + " child" + basketScope
                     + "((" + ownerCount + ") <> 1" + wrongTopic + ") LIMIT 1";
-            try (var statement = db.connection().prepareStatement(sql)) {
-                if (mapping.hasBasketColumn()) statement.setLong(1, datasetId);
+            try (var statement = selection.prepare(db, sql)) {
                 try (var rows = statement.executeQuery()) {
                     if (rows.next()) {
                         throw new DbException("Expected exactly one structure owner in the correct topic for "
@@ -912,18 +947,14 @@ final class DbTransfer {
             boolean withBasket = mapping.hasBasketColumn();
             String basketJoins = withBasket ? " LEFT JOIN " + basket + " cb ON cb." + T_ID + " = child." + T_BASKET
                     + " LEFT JOIN " + basket + " pb ON pb." + T_ID + " = parent." + T_BASKET : "";
-            String basketScope = withBasket ? " AND (cb.dataset = ? OR pb.dataset = ?)" : "";
+            String basketScope = withBasket ? " AND (" + inExportBaskets("cb") + " OR " + inExportBaskets("pb") + ")" : "";
             String wrongBasket = withBasket ? " OR pb." + T_ID + " IS NULL OR cb." + T_ID
                     + " IS NULL OR parent." + T_BASKET + " <> child." + T_BASKET : "";
             String sql = "SELECT parent." + T_ID + " FROM " + db.table(child.name()) + " child LEFT JOIN "
                     + db.table(parent.name()) + " parent ON parent." + T_ID + " = " + owner
                     + basketJoins + " WHERE " + owner + " IS NOT NULL" + basketScope
                     + " AND (parent." + T_ID + " IS NULL" + wrongBasket + ") LIMIT 1";
-            try (var statement = db.connection().prepareStatement(sql)) {
-                if (withBasket) {
-                    statement.setLong(1, datasetId);
-                    statement.setLong(2, datasetId);
-                }
+            try (var statement = selection.prepare(db, sql)) {
                 try (var rows = statement.executeQuery()) {
                     if (rows.next()) {
                         String problem = rows.getObject(1) == null ? "Orphan structure row"
@@ -933,6 +964,10 @@ final class DbTransfer {
                 }
             }
         }
+    }
+
+    private static String inExportBaskets(String basketAlias) {
+        return basketAlias + "." + T_ID + " IN (SELECT " + T_ID + " FROM export_baskets)";
     }
 
     private static final class StructureRows implements AutoCloseable {

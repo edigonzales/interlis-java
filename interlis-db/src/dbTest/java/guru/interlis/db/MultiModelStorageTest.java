@@ -65,6 +65,9 @@ final class MultiModelStorageTest {
         byte[] published = Files.readAllBytes(output);
         assertCliFailure(db, "export", models.warehouse, "mixed", output, "outside the selected model: " + models.workshop + ".Data");
         assertArrayEquals(published, Files.readAllBytes(output));
+        assertCliFailure(db, "export", models.warehouse, null, output,
+                "outside the selected model: " + models.workshop + ".Data", "--basket", "mixed-workshop-basket");
+        assertArrayEquals(published, Files.readAllBytes(output));
         assertCliFailure(db, "export", models.warehouse, "mixed", output, "same INTERLIS language version", "--model", other);
         assertArrayEquals(published, Files.readAllBytes(output));
         models.run(db, "export", "warehouse-only", output);

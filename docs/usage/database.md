@@ -329,7 +329,12 @@ Transferkennung aus seinem SQL-Schlüssel und verwendet sie auch in
 Referenzen. Das gilt auch für Zeilen aus einem früheren Import ohne
 `--create-tid-col`.
 
-Schemata mit `T_basket` verwenden `--dataset` für den Transfer.
+Schemata mit `T_basket` verwenden `--dataset` für den Transfer. Beim Export
+kannst du alternativ einzelne Baskets mit je einem `--basket BID` auswählen.
+Jede BID muss im Schema eindeutig sein und zu einem gewählten Modell gehören.
+Der Export folgt der Reihenfolge der internen Basket-IDs. Baskets ohne
+Datensatzzuordnung können ebenfalls ausgewählt werden. Externe Verweise auf
+ausgelassene Ziele bleiben nur bei eindeutiger Auflösung exportierbar.
 
 ```sh
 ./gradlew :interlis-db:installDist

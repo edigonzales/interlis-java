@@ -490,6 +490,10 @@ fortgesetzte ID-Vergabe.
 Die `smart2*`-Fälle vergleichen das Ergänzen eines unabhängigen Modells
 mit ili2db und prüfen die geerbten Spalten in den neuen konkreten Tabellen.
 
+`--tests '*ExportSelectionInteropTest.*Baskets*'` vergleicht die
+Basket-Auswahl mit ili2db `--baskets` und importiert die XTF-Dateien mit
+dem jeweils anderen Werkzeug.
+
 `--tests '*TranslationInteropTest'` bündelt skalare und verschachtelte
 Baskets im Katalogvergleich und Werkzeugwechsel. Ein weiterer Fall
 ergänzt ein befülltes ili2db-Schema und prüft die erhaltenen IDs, den
