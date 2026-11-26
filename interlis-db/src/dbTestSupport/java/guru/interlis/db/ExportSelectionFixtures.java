@@ -40,6 +40,14 @@ final class ExportSelectionFixtures {
                 """);
     }
 
+    void addTopics() throws IOException {
+        String end = "END " + model + ".";
+        Files.writeString(source, Files.readString(source).replace(end, """
+                  TOPIC District EXTENDS Data = END District;
+                  TOPIC EmptyTopic = CLASS EmptyAsset = END EmptyAsset; END EmptyTopic;
+                """ + end));
+    }
+
     String asset(String tid, String label, boolean detail) {
         String note = version == 23 ? model + ".Data.Note" : "Note";
         return transfers.object(model, "Asset", tid, "<Label>" + label + "</Label>"

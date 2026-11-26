@@ -30,6 +30,10 @@ final class ExportSelectionInteropTest {
     @Test void geoPackageBaskets24() throws Exception { exchangeBaskets(24, null); }
     @Test void postgisBaskets23() throws Exception { exchangeBaskets(23, POSTGIS.container()); }
     @Test void postgisBaskets24() throws Exception { exchangeBaskets(24, POSTGIS.container()); }
+    @Test void geoPackageTopics23() throws Exception { compareTopics(23, null); }
+    @Test void geoPackageTopics24() throws Exception { compareTopics(24, null); }
+    @Test void postgisTopics23() throws Exception { compareTopics(23, POSTGIS.container()); }
+    @Test void postgisTopics24() throws Exception { compareTopics(24, POSTGIS.container()); }
 
     private void exchangeBaskets(int version, PostgreSQLContainer postgres) throws Exception {
         var fixture = new ExportSelectionFixtures(work, version);
@@ -64,5 +68,33 @@ final class ExportSelectionInteropTest {
                 fixture.model + ".Data:picked-too:d:second");
         fixture.assertImportedAssets(nativeTarget, expectedSql);
         fixture.assertImportedAssets(referenceTarget, expectedSql);
+    }
+
+    private void compareTopics(int version, PostgreSQLContainer postgres) throws Exception {
+        var fixture = new ExportSelectionFixtures(work, version);
+        fixture.addTopics();
+        var source = new TestDatabase(work, postgres, "topic_export", "v" + version + "_");
+        var reference = new ReferenceTool(work, source.postgis());
+        schema(reference, source, work, fixture.model, "newClass");
+        importDataset(reference, source, "first", fixture.delivery("first",
+                fixture.basket("Data", "picked", fixture.asset("a", "selected", false)),
+                fixture.basket("District", "ignored", fixture.asset("b", "ignored", false))));
+        assertCliSuccess(source, "import", fixture.model, "second", fixture.delivery("second",
+                fixture.basket("Data", "picked-too", fixture.asset("c", "second", false))));
+        String topic = fixture.model + ".Data";
+        var nativeOutput = work.resolve("native-topics.xtf");
+        var referenceOutput = work.resolve("reference-topics.xtf");
+        assertCliSuccess(source, "export", fixture.model, null, nativeOutput, "--topic", topic);
+        reference.run(source, "%ILI_FROM_DB", "--export", "--topics", topic, "--exportTid", referenceOutput.toString());
+        var expected = List.of("Data:picked:a:selected", "Data:picked-too:c:second");
+        assertEquals(expected, fixture.exportedAssets(nativeOutput));
+        assertEquals(Set.copyOf(expected), Set.copyOf(fixture.exportedAssets(referenceOutput)));
+
+        String empty = fixture.model + ".EmptyTopic";
+        assertCliSuccess(source, "export", fixture.model, null, nativeOutput, "--topic", empty);
+        var emptyOutput = work.resolve("reference-empty-topic.xtf");
+        reference.run(source, "%ILI_FROM_DB", "--export", "--topics", empty, "--exportTid", emptyOutput.toString());
+        assertEquals(List.of(), fixture.baskets(nativeOutput));
+        assertEquals(List.of(), fixture.baskets(emptyOutput));
     }
 }

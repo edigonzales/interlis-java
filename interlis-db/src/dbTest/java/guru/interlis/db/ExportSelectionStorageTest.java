@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
 import static guru.interlis.db.DbTestSupport.child;
@@ -93,6 +94,53 @@ final class ExportSelectionStorageTest {
         var duplicate = fixture.delivery("duplicate", fixture.basket("Data", "target", fixture.place("destination")));
         assertCliSuccess(db, "import", fixture.model, "other-target", duplicate);
         assertRejected(db, fixture.model, output, "Ambiguous stored reference target destination", "--basket", "source");
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void topicFiltersQualifiedBasketsAcrossDatasets(Backend backend, int version) throws Exception {
+        var fixture = new ExportSelectionFixtures(work, version);
+        fixture.addTopics();
+        var db = POSTGIS.target(work.resolve("topic-selection.gpkg"), backend);
+        assertSchemaWithIdentityColumns(db, fixture.model, fixture.source);
+        var first = fixture.delivery("one",
+                fixture.basket("Data", "first", fixture.asset("a", "original", false)),
+                fixture.basket("District", "derived", fixture.asset("b", "derived", false)));
+        assertCliSuccess(db, "import", fixture.model, "one", first);
+        assertCliSuccess(db, "import", fixture.model, "two", fixture.delivery("two",
+                fixture.basket("Data", "second", fixture.asset("c", "second", false))));
+        String data = fixture.model + ".Data";
+        String district = fixture.model + ".District";
+        var output = work.resolve("topics.xtf");
+        assertCliSuccess(db, "export", fixture.model, null, output, "--topic", data);
+        assertEquals(List.of("Data:first:a:original", "Data:second:c:second"), fixture.exportedAssets(output));
+        assertCliSuccess(db, "export", fixture.model, null, output, "--topic", district, "--topic", data);
+        assertEquals(List.of("Data:first:a:original", "District:derived:b:derived", "Data:second:c:second"),
+                fixture.exportedAssets(output));
+        var published = Files.readAllBytes(output);
+        var mixedFilters = cli(db, "export", fixture.model, null, output, CancellationToken.none(),
+                "--topic", data, "--basket", "first");
+        assertEquals(2, mixedFilters.code(), mixedFilters::diagnostics);
+        assertTrue(mixedFilters.diagnostics().contains("Choose one of --dataset, --basket or --topic"), mixedFilters::diagnostics);
+        var mixedDataset = cli(db, "export", fixture.model, "one", output, CancellationToken.none(), "--topic", data);
+        assertEquals(2, mixedDataset.code(), mixedDataset::diagnostics);
+        assertTrue(mixedDataset.diagnostics().contains("Choose one of --dataset, --basket or --topic"), mixedDataset::diagnostics);
+        var importFilter = cli(db, "import", fixture.model, "one", first, CancellationToken.none(), "--topic", data);
+        assertEquals(2, importFilter.code(), importFilter::diagnostics);
+        assertTrue(importFilter.diagnostics().contains("--topic is only valid with export"), importFilter::diagnostics);
+        assertArrayEquals(published, Files.readAllBytes(output));
+        assertRejected(db, fixture.model, output, "Unknown topic", "--topic", "Data");
+        assertRejected(db, fixture.model, output, "Unknown topic", "--topic", fixture.model + ".Absent");
+
+        assertCliSuccess(db, "import", fixture.model, "collision", fixture.delivery("duplicate-tid",
+                fixture.basket("Data", "duplicate-tid", fixture.asset("a", "collision", false))));
+        assertRejected(db, fixture.model, output, "Duplicate object ID a", "--topic", data);
+        assertCliSuccess(db, "import", fixture.model, "reused-bid", fixture.delivery("duplicate-bid",
+                fixture.basket("District", "derived", fixture.asset("new", "collision", false))));
+        assertRejected(db, fixture.model, output, "Duplicate basket ID derived", "--topic", district);
+        assertCliSuccess(db, "export", fixture.model, null, output, "--topic", fixture.model + ".EmptyTopic");
+        assertTrue(fixture.baskets(output).isEmpty());
+        assertCliFailure(db, "import", fixture.model, "empty", output, "A transfer must contain at least one basket");
     }
 
     private static void assertRejected(Target db, String model, Path output, String diagnostic, String... options) throws Exception {

@@ -335,6 +335,13 @@ Jede BID muss im Schema eindeutig sein und zu einem gewählten Modell gehören.
 Der Export folgt der Reihenfolge der internen Basket-IDs. Baskets ohne
 Datensatzzuordnung können ebenfalls ausgewählt werden. Externe Verweise auf
 ausgelassene Ziele bleiben nur bei eindeutiger Auflösung exportierbar.
+Mit je einem `--topic Modell.Topic` wählst du alle Baskets des angegebenen
+Topics über Datensatzgrenzen hinweg. Massgeblich ist der gespeicherte
+qualifizierte Name. Ein Basistopic wählt keine abgeleiteten Topics mit aus.
+Ein bekanntes Topic ohne Baskets ergibt einen Modellheader und einen
+leeren Datenabschnitt. Ein Datensatzimport erfordert mindestens einen Basket.
+Pro Export gilt eine Auswahlart. Die BIDs und TIDs im ausgegebenen Transfer
+müssen eindeutig sein. Kollisionen führen zum Abbruch.
 
 ```sh
 ./gradlew :interlis-db:installDist
@@ -347,10 +354,11 @@ interlis-db/build/install/interlis-db/bin/interlis-db import \
 
 Das PostgreSQL-Passwort wird bei Bedarf aus `INTERLIS_DB_PASSWORD` gelesen.
 Beim Export können mehrere Modelle derselben INTERLIS-Sprachversion über
-je ein `--model` ausgewählt werden. Die Auswahl muss sämtliche Baskets
-des Datensatzes abdecken. Der Header nennt die Modelle der exportierten
-Baskets. Ein Schema kann getrennte Datensätze in beiden Sprachversionen
-enthalten.
+je ein `--model` ausgewählt werden. Mit `--dataset` muss die Modellauswahl
+sämtliche Baskets des Datensatzes abdecken. Bei einem Datensatz- oder
+Basket-Export nennt der Header die Modelle der exportierten Baskets.
+Bei `--topic` nennt er die Modelle der gewählten Topics. Ein Schema kann
+getrennte Datensätze in beiden Sprachversionen enthalten.
 Mit `export --model ORIGINAL --export-model UEBERSETZUNG` wird ein
 XTF-2.3-Datensatz in der gewählten Modellsprache ausgegeben. `--model`
 bezeichnet die gespeicherten Baskets und `--export-model` deren Ausgabeform.

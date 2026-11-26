@@ -83,7 +83,8 @@ final class DbTransfer {
 
     private DbTransfer() { }
 
-    static void exportData(Database db, DbMapping mapping, String dataset, List<String> bids, Optional<String> outputModel,
+    static void exportData(Database db, DbMapping mapping, String dataset, List<String> bids, List<String> requestedTopics,
+                           Optional<String> outputModel,
                            TransferWriter writer, CancellationToken token) throws SQLException {
         token.throwIfCancellationRequested();
         var ids = ExportIds.prepare(db, mapping, token);
@@ -106,16 +107,54 @@ final class DbTransfer {
             writer.write(new TransferEvent.EndTransfer(), token);
             return;
         }
+        var topics = plan.topics().stream().filter(topic -> mapping.models().contains(topic.model()))
+                .collect(Collectors.toMap(topic -> topic.name().declared().toString(), Function.identity()));
         ExportBaskets selection;
-        if (bids.isEmpty()) {
+        if (!requestedTopics.isEmpty()) {
+            for (var name : requestedTopics) {
+                if (!topics.containsKey(name)) throw new DbException("Unknown topic in the selected models: " + name);
+            }
+            selection = ExportBaskets.byValues("topic", requestedTopics);
+        } else if (bids.isEmpty()) {
             long datasetId = DbDatasetWrite.findDataset(db, dataset)
                     .orElseThrow(() -> new DbException("Dataset does not exist: " + dataset));
             selection = new ExportBaskets("dataset = ?", List.of(datasetId));
         } else {
             selection = ExportBaskets.byValues(T_ILI_TID, bids);
         }
-        var topics = plan.topics().stream().filter(topic -> mapping.models().contains(topic.model()))
-                .collect(Collectors.toMap(topic -> topic.name().declared().toString(), Function.identity()));
+        var selectedNames = requestedTopics.isEmpty() ? selectedBasketTopics(db, selection, bids, token) : requestedTopics;
+        var exported = new HashSet<SymbolRef>();
+        for (var name : selectedNames) {
+            var stored = requestedTopics.isEmpty() ? selectedTopic(topics, name) : topics.get(name);
+            exported.add(output.map(model -> mapping.translations().outputTopic(stored, model)).orElse(stored).model());
+        }
+        if (exported.isEmpty()) throw new DbException("Dataset has no baskets: " + dataset);
+        checkStructureOwners(db, mapping, selection, token);
+        checkLinkOwners(db, mapping, selection, token);
+        checkHierarchyTopics(db, mapping, selection, token);
+        checkExternalExportReferences(db, mapping, selection, token);
+        String sql = "SELECT " + T_ID + ", topic, " + T_ILI_TID + ", domains FROM export_baskets ORDER BY " + T_ID;
+        try (var statement = selection.prepare(db, sql)) {
+            fetchInPages(db, statement);
+            try (var rows = statement.executeQuery()) {
+                startTransfer(mapping, output, exported, writer, token);
+                while (rows.next()) {
+                    token.throwIfCancellationRequested();
+                    var topicName = rows.getString(2);
+                    var stored = selectedTopic(topics, topicName);
+                    var topic = output.map(model -> mapping.translations().outputTopic(stored, model)).orElse(stored);
+                    String domains = rows.getString(4);
+                    var bid = new BasketId(identifier(rows.getString(3), "BID", topicName), IdOrigin.SOURCE);
+                    var bindings = DbDomains.read(plan, stored, domains, bid.value());
+                    writeBasket(db, mapping, ids, topic, rows.getLong(1), bid, bindings, writer, token);
+                }
+            }
+        }
+        writer.write(new TransferEvent.EndTransfer(), token);
+    }
+
+    private static Set<String> selectedBasketTopics(Database db, ExportBaskets selection, List<String> bids,
+                                                    CancellationToken token) throws SQLException {
         Set<String> selectedNames = new LinkedHashSet<>();
         var missing = new LinkedHashSet<>(bids);
         String modelQuery = bids.isEmpty() ? "SELECT DISTINCT topic FROM export_baskets"
@@ -133,37 +172,7 @@ final class DbTransfer {
             }
         }
         if (!missing.isEmpty()) throw new DbException("Basket does not exist: " + missing.getFirst());
-        var exported = new HashSet<SymbolRef>();
-        for (var name : selectedNames) {
-            var stored = selectedTopic(topics, name);
-            exported.add(output.map(model -> mapping.translations().outputTopic(stored, model)).orElse(stored).model());
-        }
-        if (exported.isEmpty()) throw new DbException("Dataset has no baskets: " + dataset);
-        checkStructureOwners(db, mapping, selection, token);
-        checkLinkOwners(db, mapping, selection, token);
-        checkHierarchyTopics(db, mapping, selection, token);
-        checkExternalExportReferences(db, mapping, selection, token);
-        String sql = "SELECT " + T_ID + ", topic, " + T_ILI_TID + ", domains FROM export_baskets ORDER BY " + T_ID;
-        try (var statement = selection.prepare(db, sql)) {
-            fetchInPages(db, statement);
-            try (var rows = statement.executeQuery()) {
-                if (!rows.next()) {
-                    throw new DbException("Dataset has no baskets: " + dataset);
-                }
-                startTransfer(mapping, output, exported, writer, token);
-                do {
-                    token.throwIfCancellationRequested();
-                    var topicName = rows.getString(2);
-                    var stored = selectedTopic(topics, topicName);
-                    var topic = output.map(model -> mapping.translations().outputTopic(stored, model)).orElse(stored);
-                    String domains = rows.getString(4);
-                    var bid = new BasketId(identifier(rows.getString(3), "BID", topicName), IdOrigin.SOURCE);
-                    var bindings = DbDomains.read(plan, stored, domains, bid.value());
-                    writeBasket(db, mapping, ids, topic, rows.getLong(1), bid, bindings, writer, token);
-                } while (rows.next());
-            }
-        }
-        writer.write(new TransferEvent.EndTransfer(), token);
+        return selectedNames;
     }
 
     private record ExportBaskets(String condition, List<?> parameters) {

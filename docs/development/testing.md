@@ -493,6 +493,9 @@ mit ili2db und prüfen die geerbten Spalten in den neuen konkreten Tabellen.
 `--tests '*ExportSelectionInteropTest.*Baskets*'` vergleicht die
 Basket-Auswahl mit ili2db `--baskets` und importiert die XTF-Dateien mit
 dem jeweils anderen Werkzeug.
+`--tests '*ExportSelectionInteropTest.*Topics*'` vergleicht die exakte
+Topic-Auswahl über mehrere Datensätze und den leeren Transfer mit
+ili2db `--topics`.
 
 `--tests '*TranslationInteropTest'` bündelt skalare und verschachtelte
 Baskets im Katalogvergleich und Werkzeugwechsel. Ein weiterer Fall
