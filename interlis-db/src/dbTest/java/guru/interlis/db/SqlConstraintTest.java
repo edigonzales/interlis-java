@@ -464,6 +464,32 @@ final class SqlConstraintTest {
         });
     }
 
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void nestedStructureConstraintRollsBackAllOwnerLevels(Backend backend, int version) throws Exception {
+        withDatabase(backend, db -> {
+            String model = "SqlNestedStructure";
+            var fixture = new ProfileFixtures(work, version);
+            DbTestSupport.assertSchemaWithIdentityColumns(db, model, fixture.nestedStructureModel(model),
+                    "--sql-not-null", "--create-fk");
+            assertCliSuccess(db, "import", model, "valid",
+                    fixture.data(model, "valid", fixture.nestedStructureObject(model, "kept", false)));
+            assertCliFailure(db, "import", model, "broken", fixture.data(model, "broken",
+                    fixture.nestedStructureObject(model, "broken-first", false)
+                            + fixture.nestedStructureObject(model, "broken-last", true)),
+                    db.postgis() ? "SQL code 23502)" : "SQL code 19)");
+            try (var sql = db.connect()) {
+                assertRolledBack(db, sql, 1, 1);
+                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("envelope")));
+                assertEquals("5", scalar(sql, "SELECT count(*) FROM " + db.table("memopart")));
+                assertEquals("set", scalar(sql, "SELECT e.heading FROM " + db.table("envelope")
+                        + " e JOIN " + db.table("asset") + " a ON e.asset_payload=a.t_id WHERE a.t_ili_tid='kept'"));
+                assertEquals("last", scalar(sql, "SELECT p.label FROM " + db.table("memopart")
+                        + " p JOIN " + db.table("envelope") + " e ON p.envelope_parts=e.t_id WHERE p.t_seq=1"));
+            }
+        });
+    }
+
     private static void assertRolledBack(Target db, Connection sql, int objects, int datasets) throws SQLException {
         assertEquals(Integer.toString(objects), scalar(sql, "SELECT count(*) FROM " + db.table("asset")));
         assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("asset") + " WHERE t_ili_tid LIKE 'broken-%'"));

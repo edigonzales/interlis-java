@@ -202,16 +202,11 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 enumLookups, Map.copyOf(uniqueKeys),
                 Map.copyOf(numericChecks), Map.copyOf(textChecks), Map.copyOf(temporalChecks),
                 schemaOptions.contains(SchemaOption.META_INFO) ? DbMetaInfo.plan(mapping, token) : List.of(),
-                sqlNotNull, sqlNotNull ? requiredColumns(mapping, addedTables, addedCompositions, multiSrs) : Map.of());
+                sqlNotNull, sqlNotNull ? requiredColumns(mapping, addedTables, multiSrs) : Map.of());
     }
 
     private static Map<String, Set<String>> requiredColumns(DbMapping mapping, List<DbMapping.Table> addedTables,
-                                                             List<DbMapping.Composition> addedCompositions, boolean multiSrs) {
-        for (var composition : addedCompositions) {
-            if (mapping.table(composition.parent()).object().kind() == SymbolKind.STRUCTURE) {
-                throw DbMapping.unsupported("--sql-not-null at " + composition.slot().name().declared());
-            }
-        }
+                                                             boolean multiSrs) {
         var required = new HashMap<String, Set<String>>();
         for (var table : addedTables) {
             var kind = table.object().kind();

@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -171,6 +172,42 @@ final class SchemaProfileCases {
         var detail = children(child(asset, "Detail")).getFirst();
         assertEquals(prefix + "-site", targetTid(child(detail, "AssignedSite")));
         if (version == 24) assertEquals(prefix + "-site", targetTid(child(asset, "DirectSite")));
+    }
+
+    void nestedStructures(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ProfileNestedStructures" + version;
+        Path ili = fixtures.nestedStructureModel(model);
+        referenceSchema(expected, ili, "--createFk");
+        schema(own, model, ili, "--sql-not-null", "--create-fk");
+        mixedObjects(expected, own, model, 1, prefix -> fixtures.nestedStructureObject(model, prefix + "-asset", false),
+                (prefix, rows) -> {
+                    var asset = rows.getFirst();
+                    assertEquals(prefix + "-asset", id(asset, version, "tid"));
+                    var envelope = children(child(asset, "Payload")).getFirst();
+                    assertEquals("set", child(envelope, "Heading").getTextContent());
+                    assertEquals(List.of("first"), structureLabels(envelope, "MainPart"));
+                    assertEquals(List.of("first", "last"), structureLabels(envelope, "Parts"));
+                    assertEquals(List.of("first", "first"), structureLabels(envelope, "Copies"));
+                });
+    }
+
+    private static List<String> structureLabels(Element owner, String field) {
+        return StructureMappingFixtures.members(owner, field).stream()
+                .map(value -> child(value, "Label").getTextContent()).toList();
+    }
+
+    private void mixedObjects(TestDatabase expected, TestDatabase own, String model, int count,
+                              Function<String, String> objects, BiConsumer<String, List<Element>> verify) throws Exception {
+        sameCatalog(expected, own);
+        Path output = work.resolve("output.xtf");
+        for (var db : List.of(expected, own)) {
+            referenceImport(db, "legacy", fixtures.data(model, "legacy", objects.apply("legacy")));
+            assertCliSuccess(db, "export", model, "legacy", output);
+            verify.accept("legacy", fixtures.rows(output, "legacy", count));
+            assertCliSuccess(db, "import", model, "native", fixtures.data(model, "native", objects.apply("native")));
+            referenceExport(db, "native", output);
+            verify.accept("native", fixtures.rows(output, "native", count));
+        }
     }
 
     void requiredGeometries(TestDatabase expected, TestDatabase own) throws Exception {

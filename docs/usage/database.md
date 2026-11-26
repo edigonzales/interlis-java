@@ -452,7 +452,7 @@ Das gilt auch für einen als `MANDATORY` deklarierten Einzelwert. Der
 Validator prüft, ob ein solcher Strukturwert beim Elternobjekt vorhanden ist.
 
 `schemaimport --sql-not-null` erzeugt ein striktes `newClass`-Schema für
-flache Klassen und flache Strukturen. Direkt gespeicherte skalare
+flache Klassen und ihre Strukturen. Direkt gespeicherte skalare
 Pflichtattribute, Pflichtgeometrien in flachen Klassen und lokale,
 ungeordnete 1:1- und 1:n-Rollen mit Kardinalität `{1}` und einer konkreten
 Zieltabelle erhalten `NOT NULL`. Geometrien verwenden ein festes CRS und
@@ -851,6 +851,9 @@ In XTF 2.3 und 2.4 FULL können Klassen und Strukturen optionale und obligatoris
 sowie `LIST OF`- und `BAG OF`-Attribute mit einem Strukturtyp aus dem
 Modell oder dem eigenen Topic enthalten. Verschachtelungen sind azyklisch.
 Strukturelemente verwenden die unterstützten skalaren Attributtypen.
+Im strikten `newClass`-Schema gilt `NOT NULL` für direkt gespeicherte
+skalare Pflichtfelder auch in verschachtelten Strukturtabellen. Die
+Rückverweise bleiben auf jeder Ebene nullable.
 Bei `LIST OF` und `BAG OF` mit `RESTRICTION` verwendet das
 `newClass`-Profil den Rückverweis der deklarierten Strukturhierarchie.
 `T_Type` bezeichnet den konkreten Strukturtyp der gespeicherten Zeile.

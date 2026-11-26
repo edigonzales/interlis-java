@@ -134,6 +134,32 @@ final class ProfileFixtures {
         return object(model, "Asset", tid, "<Detail><" + structure + ">" + fields + "</" + structure + "></Detail>" + direct);
     }
 
+    Path nestedStructureModel(String model) throws IOException {
+        return source(model, """
+                STRUCTURE MemoPart = Label : MANDATORY TEXT*30; END MemoPart;
+                STRUCTURE Envelope =
+                  Heading : MANDATORY TEXT*30;
+                  MainPart : MANDATORY MemoPart;
+                  Parts : LIST OF MemoPart;
+                  Copies : BAG OF MemoPart;
+                END Envelope;
+                CLASS Asset = Payload : Envelope; END Asset;
+                """);
+    }
+
+    String nestedStructureObject(String model, String tid, boolean missingLastLabel) {
+        String first = structure(model, "MemoPart", "<Label>first</Label>");
+        String last = structure(model, "MemoPart", missingLastLabel ? "" : "<Label>last</Label>");
+        String fields = "<Heading>set</Heading><MainPart>" + first + "</MainPart><Parts>" + first + last
+                + "</Parts><Copies>" + first + first + "</Copies>";
+        return object(model, "Asset", tid, "<Payload>" + structure(model, "Envelope", fields) + "</Payload>");
+    }
+
+    private String structure(String model, String type, String fields) {
+        String tag = version == 23 ? model + ".Data." + type : type;
+        return "<" + tag + ">" + fields + "</" + tag + ">";
+    }
+
     Path requiredGeometryModel(String model) throws IOException {
         String multi = version == 24
                 ? "CLASS Stops = Locations : MANDATORY MULTICOORD 0.000..100.000, 0.000..100.000; END Stops;"
