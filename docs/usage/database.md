@@ -312,6 +312,12 @@ Modelle mit gemeinsamen skalaren Domänen ergänzen. Die gespeicherte
 Quellversion einer gemeinsamen Domäne muss mit der über `--model-file`
 angegebenen Quelle übereinstimmen. Die konkreten Tabellen erhalten die
 geerbten Spalten gemäss dem gespeicherten Profil.
+Gemeinsam genutzte Strukturtabellen erhalten auch in Smart2 die nullable
+Rückverweisspalten für die neuen Eigentümer. Bei einer nachträglichen
+Smart2-Erweiterung konnte ili2gpkg 5.5.2 in XTF 2.3 und 2.4 die Einträge in
+`ATTRNAME` schreiben, ohne diese SQL-Spalten anzulegen. Der folgende Import
+scheiterte an den fehlenden Spalten. Das von `interlis-db` ergänzte Schema
+verwendet die Spaltenabbildung eines gemeinsamen Schemaimports beider Modelle.
 
 ## Aufruf
 

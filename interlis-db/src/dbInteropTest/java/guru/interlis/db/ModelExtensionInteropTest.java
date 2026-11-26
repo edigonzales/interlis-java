@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.nio.file.Path;
+import java.util.Locale;
 
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.InteropCommands.assertSharedIds;
@@ -25,14 +26,18 @@ final class ModelExtensionInteropTest {
         POSTGIS.close();
     }
 
-    @Test void geoPackage23() throws Exception { exchange(23, null, false); }
-    @Test void geoPackage24() throws Exception { exchange(24, null, false); }
-    @Test void postgis23() throws Exception { exchange(23, POSTGIS.container(), false); }
-    @Test void postgis24() throws Exception { exchange(24, POSTGIS.container(), false); }
-    @Test void strictGeoPackage23() throws Exception { exchange(23, null, true); }
-    @Test void strictGeoPackage24() throws Exception { exchange(24, null, true); }
-    @Test void strictPostgis23() throws Exception { exchange(23, POSTGIS.container(), true); }
-    @Test void strictPostgis24() throws Exception { exchange(24, POSTGIS.container(), true); }
+    @Test void geoPackage23() throws Exception { exchangeStructures(23, null, "newClass"); }
+    @Test void geoPackage24() throws Exception { exchangeStructures(24, null, "newClass"); }
+    @Test void postgis23() throws Exception { exchangeStructures(23, POSTGIS.container(), "newClass"); }
+    @Test void postgis24() throws Exception { exchangeStructures(24, POSTGIS.container(), "newClass"); }
+    @Test void strictGeoPackage23() throws Exception { exchangeStructures(23, null, "strict"); }
+    @Test void strictGeoPackage24() throws Exception { exchangeStructures(24, null, "strict"); }
+    @Test void strictPostgis23() throws Exception { exchangeStructures(23, POSTGIS.container(), "strict"); }
+    @Test void strictPostgis24() throws Exception { exchangeStructures(24, POSTGIS.container(), "strict"); }
+    @Test void smart2StructuresGeoPackage23() throws Exception { exchangeStructures(23, null, "smart2"); }
+    @Test void smart2StructuresGeoPackage24() throws Exception { exchangeStructures(24, null, "smart2"); }
+    @Test void smart2StructuresPostgis23() throws Exception { exchangeStructures(23, POSTGIS.container(), "smart2"); }
+    @Test void smart2StructuresPostgis24() throws Exception { exchangeStructures(24, POSTGIS.container(), "smart2"); }
     @Test void smart2GeoPackage23() throws Exception { exchangeSmart2(23, null); }
     @Test void smart2GeoPackage24() throws Exception { exchangeSmart2(24, null); }
     @Test void smart2Postgis23() throws Exception { exchangeSmart2(23, POSTGIS.container()); }
@@ -78,15 +83,16 @@ final class ModelExtensionInteropTest {
                 tableFor(db, fixture.added + ".Data.Entry"), tableFor(db, fixture.added + ".Data.Alternate"));
     }
 
-    private void exchange(int version, PostgreSQLContainer postgres, boolean strict) throws Exception {
-        var fixture = new ModelExtensionFixtures(work, version, strict);
-        var db = new TestDatabase(work, postgres, strict ? "append_strict_models" : "append_models", "v" + version + "_");
+    private void exchangeStructures(int version, PostgreSQLContainer postgres, String profile) throws Exception {
+        boolean strict = profile.equals("strict");
+        var fixture = new ModelExtensionFixtures(work, version, profile);
+        var db = new TestDatabase(work, postgres, "append_" + profile.toLowerCase(Locale.ROOT) + "_models", "v" + version + "_");
         var reference = new ReferenceTool(work, db.postgis());
         if (strict) {
             reference.run(db, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol", "--createTidCol",
                     "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", "--models", fixture.original);
         } else {
-            schema(reference, db, work, fixture.original, "newClass");
+            schema(reference, db, work, fixture.original, profile);
         }
         importDataset(reference, db, "original", fixture.originalInput);
 
@@ -95,6 +101,14 @@ final class ModelExtensionInteropTest {
             var ids = fixture.originalIds(db, sql);
             fixture.extend(db);
             String newTable = fixture.assertExtension(db, sql, before, ids);
+            if (profile.equals("smart2")) {
+                var expected = db.peer("append_shared_structures_reference");
+                schema(reference, expected, work, fixture.original + ";" + fixture.added, profile);
+                try (var expectedSql = expected.connect()) {
+                    DbSchemaCatalog.read(expectedSql, db.postgis(), expected.schema()).canonicalStructureOwners("detail")
+                            .assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()).canonicalStructureOwners("detail"));
+                }
+            }
             fixture.removeSources();
 
             Path output = work.resolve("original-native.xtf");

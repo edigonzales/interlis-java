@@ -1,8 +1,9 @@
 package guru.interlis.db;
 
 import guru.interlis.execution.CancellationToken;
-import guru.interlis.model.SymbolRef;
 import guru.interlis.execution.OperationCancelledException;
+import guru.interlis.model.SymbolKind;
+import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.TransferProtocolException;
 import guru.interlis.transfer.TransferReader;
 import guru.interlis.transfer.TransferWriter;
@@ -165,7 +166,7 @@ public final class Main {
         if (smart2) {
             for (var declaration : plan.mapping().inheritance().declarations()) {
                 String path = declaration.object().name().declared().toString();
-                if (names.hasClass(path)) {
+                if (names.hasClass(path) && declaration.object().kind() != SymbolKind.STRUCTURE) {
                     throw new DbException("Smart2 --add-models cannot yet reuse the stored mapping for " + path);
                 }
             }

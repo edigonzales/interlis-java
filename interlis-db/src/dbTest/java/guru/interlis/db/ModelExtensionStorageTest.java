@@ -26,13 +26,15 @@ final class ModelExtensionStorageTest {
         POSTGIS.close();
     }
 
-    @ParameterizedTest(name = "{0}, XTF {1}, strict={2}")
-    @CsvSource({"GEOPACKAGE,23,false", "GEOPACKAGE,24,false", "POSTGIS,23,false", "POSTGIS,24,false",
-            "GEOPACKAGE,23,true", "GEOPACKAGE,24,true", "POSTGIS,23,true", "POSTGIS,24,true"})
-    void addModelsIsTransactionalAndCanBeRetried(Backend backend, int version, boolean strict) throws Exception {
-        var fixture = new ModelExtensionFixtures(work, version, strict);
+    @ParameterizedTest(name = "{0}, XTF {1}, {2}")
+    @CsvSource({"GEOPACKAGE,23,newClass", "GEOPACKAGE,24,newClass", "POSTGIS,23,newClass", "POSTGIS,24,newClass",
+            "GEOPACKAGE,23,strict", "GEOPACKAGE,24,strict", "POSTGIS,23,strict", "POSTGIS,24,strict",
+            "GEOPACKAGE,23,smart2", "GEOPACKAGE,24,smart2", "POSTGIS,23,smart2", "POSTGIS,24,smart2"})
+    void addModelsIsTransactionalAndCanBeRetried(Backend backend, int version, String profile) throws Exception {
+        boolean smart2 = profile.equals("smart2");
+        var fixture = new ModelExtensionFixtures(work, version, profile);
         var db = POSTGIS.target(work.resolve("extension.gpkg"), backend);
-        fixture.initialSchema(db);
+        fixture.initialSchema(db, smart2);
         assertCliSuccess(db, "import", fixture.original, "original", fixture.originalInput);
 
         try (var sql = db.connect()) {
@@ -49,10 +51,11 @@ final class ModelExtensionStorageTest {
             assertEquals(ids, fixture.originalIds(db, sql));
 
             var checkpoints = new AtomicInteger();
-            var cancelled = schemaWithIdentityColumns(db, fixture.added, fixture.addedSource, cancelDuringDdl(checkpoints),
+            int checkpoint = smart2 ? 3 : 2;
+            var cancelled = schemaWithIdentityColumns(db, fixture.added, fixture.addedSource, cancelDuringDdl(checkpoints, checkpoint),
                     "--add-models", "--model-file", fixture.sharedSource.toString());
             assertEquals(130, cancelled.code(), cancelled::diagnostics);
-            assertEquals(2, checkpoints.get());
+            assertEquals(checkpoint, checkpoints.get());
             before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
             assertEquals(ids, fixture.originalIds(db, sql));
 
@@ -91,7 +94,7 @@ final class ModelExtensionStorageTest {
             before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
             var checkpoints = new AtomicInteger();
             var cancelled = schemaWithIdentityColumns(db, fixture.added, fixture.addedSource,
-                    cancelDuringDdl(checkpoints), "--add-models", "--model-file", fixture.originalSource.toString());
+                    cancelDuringDdl(checkpoints, 2), "--add-models", "--model-file", fixture.originalSource.toString());
             assertEquals(130, cancelled.code(), cancelled::diagnostics);
             assertEquals(2, checkpoints.get());
             before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
@@ -107,10 +110,10 @@ final class ModelExtensionStorageTest {
         }
     }
 
-    private static CancellationToken cancelDuringDdl(AtomicInteger checkpoints) {
+    private static CancellationToken cancelDuringDdl(AtomicInteger checkpoints, int checkpoint) {
         var stack = StackWalker.getInstance();
         return () -> stack.walk(frames -> frames.anyMatch(frame ->
                 frame.getClassName().equals(SchemaSql.class.getName()) && frame.getMethodName().equals("apply")))
-                && checkpoints.incrementAndGet() == 2;
+                && checkpoints.incrementAndGet() == checkpoint;
     }
 }

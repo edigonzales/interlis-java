@@ -31,6 +31,7 @@ final class ModelExtensionFixtures {
     private final Path work;
     private final int version;
     private final boolean strict;
+    private final String addedClass;
     final String original;
     final String added;
     final String library;
@@ -39,10 +40,11 @@ final class ModelExtensionFixtures {
     final Path originalInput;
     private final Path originalSource;
 
-    ModelExtensionFixtures(Path work, int version, boolean strict) throws Exception {
+    ModelExtensionFixtures(Path work, int version, String profile) throws Exception {
         this.work = work;
         this.version = version;
-        this.strict = strict;
+        strict = profile.equals("strict");
+        addedClass = profile.equals("smart2") ? "SurveyReport" : "Report";
         original = "DbImportedStruct" + version;
         added = "DbLaterStruct" + version;
         library = "DbSharedDetail" + version;
@@ -54,11 +56,14 @@ final class ModelExtensionFixtures {
             Files.writeString(sharedSource, Files.readString(sharedSource).replaceFirst("Label : TEXT", "Label : MANDATORY TEXT"));
         }
         addedSource = Files.writeString(work.resolve(added + ".ili"), Files.readString(originalSource).replace(original, added)
-                .replace("END Report;", "  RankNo : MANDATORY 0..100;\n      CommentText : TEXT*30;\n    END Report;"));
+                .replace("CLASS Report", "CLASS " + addedClass)
+                .replace("END Report;", "  RankNo : MANDATORY 0..100;\n      CommentText : TEXT*30;\n    END " + addedClass + ";"));
     }
 
-    void initialSchema(Target db) {
+    void initialSchema(Target db, boolean smart2) {
         if (strict) assertSchemaWithIdentityColumns(db, original, originalSource, "--model-file", sharedSource.toString(), "--sql-not-null");
+        else if (smart2) assertSchemaWithIdentityColumns(db, original, originalSource, "--model-file", sharedSource.toString(),
+                "--inheritance", "smart2");
         else assertSchemaWithIdentityColumns(db, original, originalSource, "--model-file", sharedSource.toString());
     }
 
@@ -75,15 +80,17 @@ final class ModelExtensionFixtures {
     Path addedDelivery(String prefix) throws Exception {
         return Files.writeString(work.resolve(prefix + "-input.xtf"), Files.readString(originalInput)
                 .replace(original, added).replace("fixture-", prefix + "-")
+                .replace(version == 23 ? ".Data.Report" : "<Report ", version == 23 ? ".Data." + addedClass : "<" + addedClass + " ")
+                .replace("</Report>", "</" + addedClass + ">")
                 .replace("</Observations>", "</Observations><RankNo>7</RankNo>"));
     }
 
     void assertOriginalDelivery(Path output) throws Exception {
-        assertStructures(output, version, original, library, "fixture");
+        assertStructures(output, version, original, library, "fixture", "Report");
     }
 
     void assertAddedDelivery(Path output, String prefix) throws Exception {
-        assertStructures(output, version, added, library, prefix);
+        assertStructures(output, version, added, library, prefix, addedClass);
         var report = children(children(readDataSection(output, version)).getFirst()).getFirst();
         assertEquals("7", child(report, "RankNo").getTextContent());
         assertNull(child(report, "CommentText"));
@@ -106,8 +113,8 @@ final class ModelExtensionFixtures {
                 .relations().get("settings"));
         assertEquals(ids, originalIds(db, sql));
         assertEquals("report", tableFor(db, original + ".Data.Report"));
-        String table = tableFor(db, added + ".Data.Report");
-        assertEquals("dblaterstrct" + version + "data_report", table);
+        String table = tableFor(db, added + ".Data." + addedClass);
+        assertEquals(addedClass.equals("Report") ? "dblaterstrct" + version + "data_report" : "surveyreport", table);
         assertEquals("3", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_model")));
         assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_model") + " WHERE modelname='" + library + "'"));
         assertEquals("detail", tableFor(db, library + ".Detail"));
@@ -130,9 +137,10 @@ final class ModelExtensionFixtures {
     }
 
     void assertOwnedDetails(Target db, Connection sql, String model, String table, String prefix) throws Exception {
+        String ownerClass = model.equals(original) ? "Report" : addedClass;
         for (String field : List.of("Summary", "Entries", "Observations")) {
             String ownerColumn = scalar(sql, "SELECT sqlname FROM " + db.table("t_ili2db_attrname")
-                    + " WHERE colowner='detail' AND target='" + table + "' AND iliname='" + model + ".Data.Report." + field + "'");
+                    + " WHERE colowner='detail' AND target='" + table + "' AND iliname='" + model + ".Data." + ownerClass + "." + field + "'");
             assertNotNull(ownerColumn, field);
             assertNullability(db, sql, "detail", ownerColumn, true);
             assertEquals(table, scalar(sql, "SELECT setting FROM " + db.table("t_ili2db_column_prop")

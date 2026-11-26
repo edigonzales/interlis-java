@@ -73,17 +73,21 @@ final class ModelFixtures {
         }
     }
 
-    static void assertStructures(Path file, int version, String model, String library, String prefix) throws Exception {
+    static void assertStructures(Path file, int version, String model, String library, String prefix, String className) throws Exception {
         var data = readDataSection(file, version);
         assertEquals(List.of(model), headerModels(data, version));
         assertEquals(1, children(data).size());
-        assertStructures(basket(data, version, model + ".Data", prefix + "-basket"), version, model, library, prefix);
+        assertStructures(basket(data, version, model + ".Data", prefix + "-basket"), version, model, library, prefix, className);
     }
 
     static void assertStructures(Element basket, int version, String model, String library, String prefix) {
+        assertStructures(basket, version, model, library, prefix, "Report");
+    }
+
+    private static void assertStructures(Element basket, int version, String model, String library, String prefix, String className) {
         assertEquals(1, children(basket).size());
         var report = children(basket).getFirst();
-        assertName(report, version, model + ".Data.Report");
+        assertName(report, version, model + ".Data." + className);
         assertEquals(prefix + "-report", id(report, version, "tid"));
         assertEquals(List.of("summary"), structureLabels(report, version, "Summary", library));
         assertEquals(List.of("second", "first"), structureLabels(report, version, "Entries", library));

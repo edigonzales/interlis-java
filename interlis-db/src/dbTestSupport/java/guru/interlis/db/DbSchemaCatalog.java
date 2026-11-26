@@ -131,18 +131,34 @@ record DbSchemaCatalog(Map<String, Set<List<String>>> relations) {
         }
         var columns = new HashSet<>(relations.get("columns"));
         for (var group : tables.entrySet()) {
-            if (group.getValue().size() < 2) continue;
-            var alternatives = columns.stream().filter(row -> row.getFirst().equals(group.getKey().getFirst())
-                            && group.getValue().contains(row.get(2)))
-                    .sorted(Comparator.comparing(row -> row.get(2))).toList();
-            var positions = alternatives.stream().mapToInt(row -> Integer.parseInt(row.get(1))).sorted().toArray();
-            columns.removeAll(alternatives);
-            for (int i = 0; i < positions.length; i++) {
-                var column = new ArrayList<>(alternatives.get(i));
-                column.set(1, Integer.toString(positions[i]));
-                columns.add(column);
-            }
+            sortColumnGroup(columns, group.getKey().getFirst(), group.getValue());
         }
+        return withColumns(columns);
+    }
+
+    DbSchemaCatalog canonicalStructureOwners(String table) {
+        // A combined schema import may visit the two owner classes in either order.
+        var owners = relations.get("attrname").stream().filter(row -> table.equals(row.get(2)) && row.get(3) != null)
+                .map(row -> row.get(1)).collect(java.util.stream.Collectors.toSet());
+        var columns = new HashSet<>(relations.get("columns"));
+        sortColumnGroup(columns, table, owners);
+        return withColumns(columns);
+    }
+
+    private static void sortColumnGroup(Set<List<String>> columns, String table, Set<String> names) {
+        if (names.size() < 2) return;
+        var group = columns.stream().filter(row -> row.getFirst().equals(table) && names.contains(row.get(2)))
+                .sorted(Comparator.comparing(row -> row.get(2))).toList();
+        var positions = group.stream().mapToInt(row -> Integer.parseInt(row.get(1))).sorted().toArray();
+        columns.removeAll(group);
+        for (int i = 0; i < positions.length; i++) {
+            var column = new ArrayList<>(group.get(i));
+            column.set(1, Integer.toString(positions[i]));
+            columns.add(column);
+        }
+    }
+
+    private DbSchemaCatalog withColumns(Set<List<String>> columns) {
         var result = new LinkedHashMap<>(relations);
         result.put("columns", columns);
         return new DbSchemaCatalog(result);
