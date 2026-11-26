@@ -172,7 +172,7 @@ MODEL BaseMapping23 (en) AT "https://example.org/interlis/db" VERSION "2026-11-2
     STRUCTURE TargetPair =
       Label : TEXT*12;
       RootTarget : REFERENCE TO ServiceBase;
-      BranchTarget : REFERENCE TO Tower;
+      BranchTarget : REFERENCE TO Tower RESTRICTION (Relay);
     END TargetPair;
     CLASS RefCarrier =
       Pairs : LIST {0..*} OF TargetPair;

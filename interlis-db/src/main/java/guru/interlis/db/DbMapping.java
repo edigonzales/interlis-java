@@ -1400,7 +1400,7 @@ final class DbMapping {
                     coordinates.multiCoordinate() ? Kind.MULTIPOINT : Kind.POINT;
             case GeometryType ignored when curve != null -> curve.kind();
             case ReferenceType reference when reference.target().isPresent()
-                    && reference.restrictions().isEmpty() && (optional(attr)
+                    && (optional(attr)
                     || (DbCatalogueReference.isReferenceField(attr) && DbCatalogueReference.isWrapper(plan, object))) ->
                     Kind.REFERENCE;
             default -> throw unsupported("attribute " + path + " (" + type.kind() + ")");

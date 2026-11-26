@@ -198,10 +198,10 @@ MODEL BaseMapping24 (en) AT "https://example.org/interlis/db" VERSION "2026-11-2
     STRUCTURE TargetPair =
       Label : TEXT*12;
       RootTarget : REFERENCE TO ServiceBase;
-      BranchTarget : REFERENCE TO Tower;
+      BranchTarget : REFERENCE TO Tower RESTRICTION (Relay);
     END TargetPair;
     CLASS RefCarrier =
-      DirectRoot : REFERENCE TO ServiceBase;
+      DirectRoot : REFERENCE TO ServiceBase RESTRICTION (ServiceUnit);
       DirectBranch : REFERENCE TO Tower;
       Pairs : LIST {0..*} OF TargetPair;
     END RefCarrier;

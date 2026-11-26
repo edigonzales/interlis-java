@@ -786,6 +786,10 @@ Bei `LIST OF` und `BAG OF` mit `RESTRICTION` verwendet das
 Topic-lokale Strukturen können optionale `REFERENCE TO`-Attribute auf eine
 Klasse desselben Topics und Baskets enthalten. Vorwärtsreferenzen werden
 am Basketende aufgelöst.
+Bei `REFERENCE TO … RESTRICTION` bestimmt die deklarierte Basisklasse
+die Fremdschlüsselabbildung. Smart2 behält die Zielspalten aller
+physischen Tabellen dieses Basistyps. Die fachliche Einschränkung prüft
+der Validator.
 Jeder Strukturtyp hat eine Tabelle.
 Die gespeicherte `ATTRNAME`-Zuordnung benennt je Elternattribut eine
 Rückverweisspalte in dieser Tabelle. Die Strukturzeilen erhalten eigene

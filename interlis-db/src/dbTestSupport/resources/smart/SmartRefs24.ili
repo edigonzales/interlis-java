@@ -20,7 +20,7 @@ MODEL SmartRefs24 AT "https://example.org/smart" VERSION "1" =
     END SmartUnit;
     CLASS Terminal EXTENDS Instrument = Socket : TEXT*12; END Terminal;
     STRUCTURE Note =
-      AnyInstrument : REFERENCE TO Instrument;
+      AnyInstrument : REFERENCE TO Instrument RESTRICTION (SmartUnit; Terminal);
       SmartTarget : REFERENCE TO SmartUnit;
     END Note;
     CLASS Survey = Details : Note; END Survey;
