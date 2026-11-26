@@ -1,5 +1,6 @@
 package guru.interlis.xtf24;
 
+import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.CollectionKind;
 import guru.interlis.model.QualifiedName;
 import guru.interlis.transfer.TransferEvent;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static guru.interlis.xtf24.Xtf24EnvelopeTest.read;
 import static guru.interlis.xtf24.Xtf24EnvelopeTest.write;
@@ -62,6 +64,22 @@ class Xtf24ValueTest {
                   END Data;
                 END Values.
                 """, "Values");
+    }
+
+    @Test
+    void readsRawTextOnlyForSelectedSimpleSlots() {
+        String xml = document("<enabled>true</enabled><exact> abc </exact><oid>space:Identifier</oid>");
+        var scope = Set.of(slot("exact"), slot("oid"));
+        try (var reader = Xtf24Reader.forIli2db(plan, new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)), scope)) {
+            var token = CancellationToken.none();
+            reader.readNext(token).orElseThrow();
+            reader.readNext(token).orElseThrow();
+            var occurrence = assertInstanceOf(ObjectEvent.class, reader.readNext(token).orElseThrow());
+            var object = occurrence.object();
+            assertEquals(new BooleanValue(true), field(object, "enabled"));
+            assertEquals(new Text(" abc "), field(object, "exact"));
+            assertEquals(new Oid("space:Identifier"), field(object, "oid"));
+        }
     }
 
     @Test

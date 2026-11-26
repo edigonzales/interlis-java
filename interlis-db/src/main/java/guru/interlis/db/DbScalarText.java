@@ -1,5 +1,7 @@
 package guru.interlis.db;
 
+import guru.interlis.model.SymbolRef;
+import guru.interlis.transfer.TransferSlot;
 import guru.interlis.transfer.TransferValue;
 import guru.interlis.transfer.TransferValue.Binary;
 import guru.interlis.transfer.TransferValue.BooleanValue;
@@ -13,10 +15,15 @@ import guru.interlis.xtf24.Xtf24Limits;
 import java.math.BigDecimal;
 import java.util.Base64;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /** The textual SQL representation of a simple INTERLIS attribute. */
 final class DbScalarText {
     private static final int BLACKBOX_LIMIT = Xtf24Limits.defaults().maxScalarCodeUnits();
+    private static final Pattern DATE = Pattern.compile("[0-9]{4}-[0-9]{2}-[0-9]{2}");
+    private static final Pattern TIME = Pattern.compile("[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]+)?");
+    private static final Pattern DATETIME = Pattern.compile(DATE.pattern() + "T" + TIME.pattern());
 
     private DbScalarText() { }
 
@@ -35,7 +42,8 @@ final class DbScalarText {
         if (value == null) return null;
         try {
             return switch (kind) {
-                case TEXT, FORMATTED, DATE, TIME, DATETIME -> new Text(value);
+                case DATE, TIME, DATETIME -> new Text(temporalLexeme(kind, value, context));
+                case TEXT, FORMATTED -> new Text(value);
                 case BOOLEAN -> switch (value) {
                     case "true" -> new BooleanValue(true);
                     case "false" -> new BooleanValue(false);
@@ -67,6 +75,28 @@ final class DbScalarText {
             case XmlFragment fragment -> fragment.xml();
             default -> throw new IllegalStateException("Expected a simple attribute value");
         };
+    }
+
+    static Set<SymbolRef> rawSlots(DbMapping mapping) {
+        if (!mapping.schemaOptions().contains(Ili2dbLayout.SchemaOption.SCALAR_TEXT)) {
+            throw new DbException("--raw-scalar-text requires SETTINGS.SqlColsAsText=enable");
+        }
+        return mapping.tables().stream().flatMap(table -> table.columns().stream())
+                .filter(column -> column.scalarText(mapping.schemaOptions()))
+                .map(DbMapping.Column::slot).map(TransferSlot::symbol).collect(Collectors.toUnmodifiableSet());
+    }
+
+    static String temporalLexeme(DbMapping.Kind kind, String value, String context) {
+        var pattern = switch (kind) {
+            case DATE -> DATE;
+            case TIME -> TIME;
+            case DATETIME -> DATETIME;
+            default -> null;
+        };
+        if (pattern != null && !pattern.matcher(value).matches()) {
+            throw new DbException("Invalid " + kind + " text at " + context);
+        }
+        return value;
     }
 
     private static String blackbox(String value) {

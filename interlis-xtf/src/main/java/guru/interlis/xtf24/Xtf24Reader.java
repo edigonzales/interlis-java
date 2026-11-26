@@ -67,6 +67,18 @@ public final class Xtf24Reader extends TransferReader {
 
     /** Creates a reader with nonnull arguments. Construction performs no stream I/O. */
     public Xtf24Reader(TransferPlan plan, InputStream input, Optional<SourceId> source, Xtf24Limits limits) {
+        this(plan, input, source, limits, Set.of());
+    }
+
+    /** Reads FULL transfers with selected simple text-node attributes delivered as exact
+     * {@link guru.interlis.transfer.TransferValue.Text}. The selector is copied and matched against declared
+     * slot identities. XML syntax, nesting, identity and resource limits still apply. */
+    public static Xtf24Reader forIli2db(TransferPlan plan, InputStream input, Set<SymbolRef> rawScalarSlots) {
+        return new Xtf24Reader(plan, input, Optional.empty(), Xtf24Limits.defaults(), rawScalarSlots);
+    }
+
+    private Xtf24Reader(TransferPlan plan, InputStream input, Optional<SourceId> source, Xtf24Limits limits,
+                        Set<SymbolRef> rawScalarSlots) {
         super(plan, true);
         this.plan = plan;
         this.source = Objects.requireNonNull(source, "source");
@@ -74,7 +86,7 @@ public final class Xtf24Reader extends TransferReader {
         this.input = new Xtf24Input(input, limits);
         layout = new Xtf24Layout(plan);
         names = layout.names();
-        values = new Xtf24ValueReader(plan, this.input, layout, limits);
+        values = new Xtf24ValueReader(plan, this.input, layout, limits, rawScalarSlots);
         domains = new Xtf24Domains(plan, names);
         identities = new Xtf24IdentityScope(limits);
     }

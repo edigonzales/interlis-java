@@ -1393,7 +1393,8 @@ final class DbTransfer {
     enum WriteMode { IMPORT, REPLACE, UPDATE }
 
     static void importData(Database db, DbMapping mapping, String dataset,
-                           TransferReader reader, WriteMode mode, CancellationToken token) throws SQLException {
+                           TransferReader reader, WriteMode mode, boolean rawScalarText, CancellationToken token)
+            throws SQLException {
         token.throwIfCancellationRequested();
         if (mode != WriteMode.IMPORT) DbDatasetWrite.lock(db, mapping);
         var existing = mapping.hasBasketColumn() ? DbDatasetWrite.findDataset(db, dataset)
@@ -1401,7 +1402,7 @@ final class DbTransfer {
         if (mode == WriteMode.IMPORT && existing.isPresent()) {
             throw new DbException("Dataset already exists: " + dataset);
         }
-        try (var importer = new Import(db, mapping, dataset, mode == WriteMode.UPDATE, token)) {
+        try (var importer = new Import(db, mapping, dataset, mode == WriteMode.UPDATE, rawScalarText, token)) {
             long datasetId = 0;
             boolean sawBasket = false;
             for (var next = reader.readNext(token); next.isPresent(); next = reader.readNext(token)) {
@@ -1573,10 +1574,12 @@ final class DbTransfer {
         private long basketId;
         private final String dataset;
         private final boolean datasetColumn;
+        private final boolean rawScalarText;
         private final AuditStamp audit;
         private GeometrySelection basketGeometry = new GeometrySelection(List.of(), Map.of());
 
-        Import(Database db, DbMapping mapping, String dataset, boolean updating, CancellationToken token) throws SQLException {
+        Import(Database db, DbMapping mapping, String dataset, boolean updating, boolean rawScalarText,
+               CancellationToken token) throws SQLException {
             this.db = db;
             this.mapping = mapping;
             this.dataset = dataset;
@@ -1586,6 +1589,7 @@ final class DbTransfer {
                             ? System.getProperty("user.name") : db.connection().getMetaData().getUserName()) : null;
             this.token = token;
             this.updating = updating;
+            this.rawScalarText = rawScalarText;
             referenceTargets = referenceTargets(false);
             externalTargets = referenceTargets(true);
             storedTids = mapping.tables().stream().anyMatch(Table::uuidIdentity)
@@ -2076,7 +2080,9 @@ final class DbTransfer {
                 return next;
             }
             if (column.scalarText(mapping.schemaOptions())) {
-                statement.setString(index, DbScalarText.write(value));
+                String text = DbScalarText.write(value);
+                if (!rawScalarText) DbScalarText.temporalLexeme(column.kind(), text, column.slot().name().declared().toString());
+                statement.setString(index, text);
                 return next;
             }
             switch (column.kind()) {

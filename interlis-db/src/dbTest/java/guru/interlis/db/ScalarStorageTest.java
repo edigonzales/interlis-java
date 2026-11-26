@@ -52,6 +52,37 @@ final class ScalarStorageTest {
 
     @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void correctsRawScalarsAndRollsBackMalformedXml(Backend backend, int version) throws Exception {
+        var db = target(backend);
+        var fixture = new ScalarFixtures(work, version);
+        String model = "ScalarMapping" + version;
+        assertSchemaWithIdentityColumns(db, model, fixture.copyModel(model), "--sql-cols-as-text");
+        String raw = field("Active", "maybe") + field("SmallNo", "abc") + field("CalendarDay", "bad date");
+        Path input = fixture.data(model, "raw", List.of(raw));
+        assertCliFailure(db, "import", model, "raw", input, "Expected XTF BOOLEAN");
+        assertCliSuccess(db, "import", model, "raw", input, "--raw-scalar-text");
+        Path output = Files.writeString(work.resolve("corrected.xtf"), "previous export");
+        assertCliFailure(db, "export", model, "raw", output, "Active of object raw-0");
+        assertEquals("previous export", Files.readString(output));
+
+        Path broken = fixture.data(model, "broken", List.of(raw, field("SmallNo", "<Nested/>")));
+        assertCliFailure(db, "import", model, "broken", broken, "Expected text without child elements", "--raw-scalar-text");
+        try (var sql = db.connect()) {
+            assertOnlyDataset(db, sql, 1);
+            assertEquals("maybe", stored(db, sql, "aactive", "raw", 0));
+            assertEquals("abc", stored(db, sql, "smallno", "raw", 0));
+            assertEquals("bad date", stored(db, sql, "calendarday", "raw", 0));
+            execute(sql, "UPDATE " + db.table("asset") + " SET aactive='true', smallno='13', calendarday='2024-02-29'");
+        }
+        assertCliSuccess(db, "export", model, "raw", output);
+        var row = fixture.rows(output, "raw", 1).getFirst();
+        assertEquals("true", child(row, "Active").getTextContent());
+        assertEquals("13", child(row, "SmallNo").getTextContent());
+        assertEquals("2024-02-29", child(row, "CalendarDay").getTextContent());
+    }
+
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void modelExtensionCannotChangeScalarStorage(Backend backend, int version) throws Exception {
         var db = target(backend);
         var fixture = new ScalarFixtures(work, version);

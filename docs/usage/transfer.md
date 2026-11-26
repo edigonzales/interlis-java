@@ -6,6 +6,12 @@ Writer für die jeweiligen FULL-Profile. Die Laufzeitclosure eines XML-Adapters
 enthält nur das Modell, den Transferkern und den Adapter sowie JDK-Module.
 Compiler, LSP und Browser nehmen den XML-Adapter über diese Ergänzung nicht auf.
 
+Die Factory-Überladungen `Xtf23Reader.forIli2db` und
+`Xtf24Reader.forIli2db` mit einer Slotmenge dienen dem Korrekturimport. Sie
+liefern einfache Textknoten der ausgewählten Attributdeklarationen als
+`TransferValue.Text`. Struktur, Identität und Ressourcenlimits gelten
+weiterhin. Die regulären Konstruktoren liefern typisierte Werte.
+
 ## XTF 2.4 verwenden
 
 Das Maven-Artefakt heisst `guru.interlis:interlis-xtf`, das JPMS-Modul

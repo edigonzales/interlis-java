@@ -437,6 +437,10 @@ des umgebenden XTF-Elements. Das Profil unterstützt Enum-Codes ohne
 zusätzliche Enum-Schemaoptionen und ohne `--expandStruct`.
 `schemaimport --sql-cols-as-text` erzeugt dieses Profil. `--add-models`
 übernimmt die Textabbildung aus dem bestehenden Schema.
+`import --raw-scalar-text` speichert den XML-Textinhalt direkt abgelegter
+skalarer Attribute in diesem Profil auch bei ungültiger Wertschreibweise.
+Referenzen, Geometrien, OIDs und BLACKBOX behalten ihre Transferkodierung.
+Nach der Korrektur der gespeicherten Werte kann der reguläre Export erfolgen.
 
 In bestehenden `newClass`-Schemata aus ili2db 5.5.2 mit
 `--coalesceCatalogueRef` verwendet der FULL-Transfer die Fremdschlüsselspalte

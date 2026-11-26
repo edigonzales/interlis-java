@@ -14,6 +14,7 @@ import java.math.BigInteger;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static guru.interlis.transfer.TransferIdentity.*;
 import static guru.interlis.transfer.TransferValue.*;
@@ -137,6 +138,21 @@ final class Xtf23ObjectEncodingTest {
             assertEquals(new NumberValue("1000.000", new BigDecimal("1000.000")), field(values, object, "quantity"));
             assertEquals(new Enumeration(List.of("dark", "unknown")), field(values, object, "shade"));
             assertTrue(object.value(slot(values, "Values.Data.Item", "flag")).isEmpty());
+        }
+    }
+
+    @Test
+    void readsRawTextOnlyForSelectedSimpleSlots() {
+        var quantity = slot(values, "Values.Data.Item", "quantity");
+        String fields = "<quantity> abc </quantity><flag>true</flag>";
+        try (var reader = Xtf23Reader.forIli2db(values, input(valuesDocument(VALUES, item("item", fields))), Set.of(quantity))) {
+            var object = objects(reader).getFirst();
+            assertEquals(new Text(" abc "), field(values, object, "quantity"));
+            assertEquals(new BooleanValue(true), field(values, object, "flag"));
+        }
+        String invalid = fields.replace("true", "maybe");
+        try (var reader = Xtf23Reader.forIli2db(values, input(valuesDocument(VALUES, item("item", invalid))), Set.of(quantity))) {
+            assertTrue(assertThrows(Xtf23Exception.class, () -> objects(reader)).getMessage().contains("BOOLEAN"));
         }
     }
 

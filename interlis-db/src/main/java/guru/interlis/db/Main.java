@@ -1,6 +1,7 @@
 package guru.interlis.db;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.SymbolRef;
 import guru.interlis.execution.OperationCancelledException;
 import guru.interlis.transfer.TransferProtocolException;
 import guru.interlis.transfer.TransferReader;
@@ -35,7 +36,7 @@ public final class Main {
     private static final String USAGE = """
             Usage: interlis-db export --model NAME [--model NAME]... [--export-model NAME] [--dataset NAME]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
-                   interlis-db import --model NAME [--model NAME]... [--dataset NAME]
+                   interlis-db import --model NAME [--model NAME]... [--dataset NAME] [--raw-scalar-text]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
                    interlis-db <replace|update> --model NAME [--model NAME]... --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
@@ -177,17 +178,18 @@ public final class Main {
         try (var database = options.open(password)) {
             var mapping = DbSchemaReader.read(database, options.models(), cancellation);
             checkTransferOptions(mapping, options);
+            var rawSlots = options.rawScalarText() ? DbScalarText.rawSlots(mapping) : Set.<SymbolRef>of();
             try (var input = Files.newInputStream(options.file());
                  TransferReader reader = switch (mapping.version()) {
-                     case ILI23 -> Xtf23Reader.forIli2db(mapping.plan(), input);
-                     case ILI24 -> new Xtf24Reader(mapping.plan(), input);
+                     case ILI23 -> Xtf23Reader.forIli2db(mapping.plan(), input, rawSlots);
+                     case ILI24 -> Xtf24Reader.forIli2db(mapping.plan(), input, rawSlots);
                  }) {
                 var mode = switch (options.command()) {
                     case REPLACE -> DbTransfer.WriteMode.REPLACE;
                     case UPDATE -> DbTransfer.WriteMode.UPDATE;
                     default -> DbTransfer.WriteMode.IMPORT;
                 };
-                DbTransfer.importData(database, mapping, options.dataset(), reader, mode, cancellation);
+                DbTransfer.importData(database, mapping, options.dataset(), reader, mode, options.rawScalarText(), cancellation);
             }
             cancellation.throwIfCancellationRequested();
             database.commit();
@@ -247,7 +249,7 @@ public final class Main {
                            boolean explicitEpsg, boolean explicitLayout, boolean strokeArcs, DbEnumOptions enumOptions,
                            Optional<DbCrsPair.Models> srsModels, List<Path> modelFiles, Optional<String> exportModel,
                            DbInheritance.Profile inheritance, Set<Ili2dbLayout.AttributeTransformation> transformations,
-                           Set<Ili2dbLayout.SchemaOption> schemaOptions) {
+                           Set<Ili2dbLayout.SchemaOption> schemaOptions, boolean rawScalarText) {
         private static final Set<String> NAMES = Set.of("--dataset", "--gpkg", "--pg-url", "--schema", "--user",
                 "--default-epsg", "--alt-srs-model", "--export-model", "--inheritance");
 
@@ -271,11 +273,16 @@ public final class Main {
             var schemaOptions = EnumSet.noneOf(Ili2dbLayout.SchemaOption.class);
             var modelFiles = new ArrayList<Path>();
             var models = new ArrayList<String>();
+            boolean rawScalarText = false;
             for (int i = 1; i < args.length; i++) {
                 String arg = args[i];
                 var transformation = Ili2dbLayout.AttributeTransformation.fromOption(arg);
                 var schemaOption = Ili2dbLayout.SchemaOption.fromOption(arg);
-                if (arg.equals("--stroke-arcs") || arg.equals("--create-geom-index") || arg.equals("--one-geom-per-table")
+                if (arg.equals("--raw-scalar-text")) {
+                    if (command != Command.IMPORT) throw new IllegalArgumentException(arg + " is only valid with import");
+                    if (rawScalarText) throw new IllegalArgumentException("Repeated option " + arg);
+                    rawScalarText = true;
+                } else if (arg.equals("--stroke-arcs") || arg.equals("--create-geom-index") || arg.equals("--one-geom-per-table")
                         || arg.equals("--gpkg-multi-geom-per-table") || arg.equals("--multi-srs") || arg.equals("--add-models")
                         || ENUM_OPTIONS.contains(arg) || transformation != null || schemaOption != null) {
                     if (command != Command.SCHEMAIMPORT) {
@@ -415,7 +422,8 @@ public final class Main {
                     schemaFlags.contains("--create-geom-index"),
                     oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg, multiSrs, addModels,
                     epsg != null, oneGeometryPerTable || multipleGeoPackageGeometries, strokeArcs, enumOptions, srsModels,
-                    List.copyOf(modelFiles), exportModel, inheritance, Set.copyOf(transformations), Set.copyOf(schemaOptions));
+                    List.copyOf(modelFiles), exportModel, inheritance, Set.copyOf(transformations),
+                    Set.copyOf(schemaOptions), rawScalarText);
         }
 
         void checkPaths() throws IOException {

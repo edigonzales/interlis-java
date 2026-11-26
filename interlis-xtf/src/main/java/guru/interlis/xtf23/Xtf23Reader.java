@@ -76,6 +76,7 @@ public final class Xtf23Reader extends TransferReader {
     static final int MAX_IDENTIFIER = 4096;
 
     private final TransferPlan plan;
+    private final Set<SymbolRef> rawScalarSlots;
     private final Xtf23Input xml;
     private final Optional<SourceId> source;
     private final Map<String, ModelDescriptor> models;
@@ -98,17 +99,26 @@ public final class Xtf23Reader extends TransferReader {
 
     /** Creates a reader with an optional nonnull opaque source identity for events. */
     public Xtf23Reader(TransferPlan plan, InputStream input, Optional<SourceId> source) {
-        this(plan, input, source, false);
+        this(plan, input, source, false, Set.of());
     }
 
     /** Reads the ili2db FULL profile, which declares translated models without ALIAS entries. */
     public static Xtf23Reader forIli2db(TransferPlan plan, InputStream input) {
-        return new Xtf23Reader(plan, input, Optional.empty(), true);
+        return forIli2db(plan, input, Set.of());
     }
 
-    private Xtf23Reader(TransferPlan plan, InputStream input, Optional<SourceId> source, boolean ili2db) {
+    /** Reads the ili2db FULL profile with selected simple text-node attributes delivered as exact
+     * {@link TransferValue.Text}. The selector is copied and matched against declared slot identities.
+     * XML syntax, nesting, identity and resource limits still apply. */
+    public static Xtf23Reader forIli2db(TransferPlan plan, InputStream input, Set<SymbolRef> rawScalarSlots) {
+        return new Xtf23Reader(plan, input, Optional.empty(), true, rawScalarSlots);
+    }
+
+    private Xtf23Reader(TransferPlan plan, InputStream input, Optional<SourceId> source, boolean ili2db,
+                        Set<SymbolRef> rawScalarSlots) {
         super(plan, ili2db);
         this.plan = plan;
+        this.rawScalarSlots = Set.copyOf(rawScalarSlots);
         this.ili2db = ili2db;
         this.source = Objects.requireNonNull(source, "source");
         xml = new Xtf23Input(input);
@@ -422,13 +432,24 @@ public final class Xtf23Reader extends TransferReader {
             lastPosition = positioned.position();
             var field = positioned.field();
             var value = field.embeddings().isEmpty() ? switch (field.slot()) {
-                case AttributeSlot attribute -> readValue(layout.type(attribute.effectiveType()), name);
+                case AttributeSlot attribute -> readAttribute(attribute, name);
                 case RoleSlot role -> readRole(role, name);
             } : readEmbedded(field, name);
             data.put(field.slot().symbol(), value);
             token = xml.nextTag();
         }
         return data;
+    }
+
+    private TransferValue readAttribute(AttributeSlot attribute, String tag) throws XMLStreamException {
+        var type = layout.type(attribute.effectiveType());
+        if (rawScalarSlots.contains(attribute.symbol()) && switch (type.kind()) {
+            case TEXT, FORMATTED, BOOLEAN, ENUMERATION, ALIGNMENT, NUMERIC -> true;
+            default -> false;
+        }) {
+            return readText(true);
+        }
+        return readValue(type, tag);
     }
 
     private TransferValue readValue(TypeDescriptor type, String tag) throws XMLStreamException {

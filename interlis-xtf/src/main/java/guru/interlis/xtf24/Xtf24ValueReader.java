@@ -34,12 +34,15 @@ final class Xtf24ValueReader {
     private final Xtf24Limits limits;
     private final Xtf24References references;
     private final Xtf24GeometryCodec geometry;
+    private final Set<SymbolRef> rawScalarSlots;
     private Consistency consistency = Consistency.COMPLETE;
 
-    Xtf24ValueReader(guru.interlis.transfer.TransferPlan plan, Xtf24Input input, Xtf24Layout layout, Xtf24Limits limits) {
+    Xtf24ValueReader(guru.interlis.transfer.TransferPlan plan, Xtf24Input input, Xtf24Layout layout, Xtf24Limits limits,
+                     Set<SymbolRef> rawScalarSlots) {
         this.input = input;
         this.layout = layout;
         this.limits = limits;
+        this.rawScalarSlots = Set.copyOf(rawScalarSlots);
         references = new Xtf24References(limits);
         geometry = new Xtf24GeometryCodec(plan, layout);
     }
@@ -108,7 +111,11 @@ final class Xtf24ValueReader {
                 } while (event == START_ELEMENT && input.cursor().getName().equals(name));
                 values.put(attribute.symbol(), new Repeated(collection.collectionKind(), items));
             } else {
-                values.put(attribute.symbol(), readValue(type, object.model(), concreteTypes, structureTypes, activeTypes));
+                boolean raw = rawScalarSlots.contains(attribute.symbol()) && switch (type.kind()) {
+                    case TEXT, FORMATTED, BOOLEAN, ENUMERATION, ALIGNMENT, NUMERIC -> true;
+                    default -> false;
+                };
+                values.put(attribute.symbol(), readValue(type, object.model(), concreteTypes, structureTypes, activeTypes, raw));
                 event = input.nextTag();
             }
         }
@@ -172,12 +179,19 @@ final class Xtf24ValueReader {
 
     private TransferValue readValue(TypeDescriptor type, SymbolRef containingModel, Map<SymbolRef, TypeRef> concreteTypes,
                                     Set<SymbolRef> structureTypes, Set<SymbolRef> activeTypes) throws XMLStreamException {
+        return readValue(type, containingModel, concreteTypes, structureTypes, activeTypes, false);
+    }
+
+    private TransferValue readValue(TypeDescriptor type, SymbolRef containingModel, Map<SymbolRef, TypeRef> concreteTypes,
+                                    Set<SymbolRef> structureTypes, Set<SymbolRef> activeTypes, boolean raw)
+            throws XMLStreamException {
         if (type instanceof ReferenceType reference) {
             return readReference(reference.external(), false, layout.stableTargets(reference.targetRoots()));
         }
         if (input.cursor().getAttributeCount() != 0) {
             throw input.error(UNSUPPORTED, "Unexpected attribute on XTF value element");
         }
+        if (raw) return new TransferValue.Text(input.text());
         return switch (type.kind()) {
             case BLACKBOX -> Xtf24Blackbox.read(input, (BlackboxType) type);
             case COORDINATE, GEOMETRY -> geometry.read(input, type, concreteTypes, consistency);
