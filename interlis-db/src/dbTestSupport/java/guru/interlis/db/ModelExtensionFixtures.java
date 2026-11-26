@@ -49,6 +49,7 @@ final class ModelExtensionFixtures {
         originalSource = fixture(work, original + ".ili");
         sharedSource = fixture(work, library + ".ili");
         originalInput = fixture(work, original + ".xtf");
+        Files.writeString(originalSource, Files.readString(originalSource).replace("Summary : ", "Summary : MANDATORY "));
         if (strict) {
             Files.writeString(sharedSource, Files.readString(sharedSource).replaceFirst("Label : TEXT", "Label : MANDATORY TEXT"));
         }

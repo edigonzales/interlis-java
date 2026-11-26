@@ -1446,7 +1446,6 @@ final class DbMapping {
             collectionKind = Optional.of(collection.collectionKind());
             structure = element;
         } else {
-            if (!optional(slot)) throw unsupported(feature);
             structure = (StructureValueType) type;
         }
         if (structure.target().isEmpty()) throw unsupported(feature);

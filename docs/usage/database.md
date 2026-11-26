@@ -448,6 +448,8 @@ Bedingungen durch. `schemaimport --add-models` übernimmt das
 Nullbarkeitsprofil des bestehenden `newClass`-Schemas. Für neue Tabellen
 gelten dieselben Pflichtspaltenregeln wie bei der Neuanlage. Neue
 Besitzerspalten in gemeinsam verwendeten Strukturtabellen bleiben nullable.
+Das gilt auch für einen als `MANDATORY` deklarierten Einzelwert. Der
+Validator prüft, ob ein solcher Strukturwert beim Elternobjekt vorhanden ist.
 
 `schemaimport --sql-not-null` erzeugt ein striktes `newClass`-Schema für
 flache Klassen und flache Strukturen. Direkt gespeicherte skalare
@@ -845,7 +847,7 @@ Richtungen geprüft.
 [ili2db-Quellcode](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/src/ch/ehi/ili2db/json/Iox2jsonUtility.java#L309-L339) ·
 [Reproduktion](../development/testing.md#ili2db-json-export-reproduzieren)
 
-In XTF 2.3 und 2.4 FULL können Klassen und Strukturen optionale Strukturwerte
+In XTF 2.3 und 2.4 FULL können Klassen und Strukturen optionale und obligatorische Strukturwerte
 sowie `LIST OF`- und `BAG OF`-Attribute mit einem Strukturtyp aus dem
 Modell oder dem eigenen Topic enthalten. Verschachtelungen sind azyklisch.
 Strukturelemente verwenden die unterstützten skalaren Attributtypen.

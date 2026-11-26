@@ -430,6 +430,40 @@ final class SqlConstraintTest {
         });
     }
 
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void requiredStructureUsesNullableOwnersAndRollsBackMissingField(Backend backend, int version) throws Exception {
+        withDatabase(backend, db -> {
+            String model = "SqlRequiredStructure";
+            var fixture = new ProfileFixtures(work, version);
+            var ili = fixture.source(model, """
+                    STRUCTURE Note = Label : MANDATORY TEXT*24; END Note;
+                    CLASS Asset = Brief : MANDATORY Note; Extra : Note; END Asset;
+                    """);
+            DbTestSupport.assertSchemaWithIdentityColumns(db, model, ili, "--sql-not-null", "--create-fk");
+            String note = version == 23 ? model + ".Data.Note" : "Note";
+            String valid = "<Extra><" + note + "><Label>optional</Label></" + note + "></Extra>";
+            assertCliSuccess(db, "import", model, "valid", fixture.data(model, "valid",
+                    fixture.object(model, "Asset", "valid-asset", valid)));
+            Path output = work.resolve("structure-export.xtf");
+            assertCliSuccess(db, "export", model, "valid", output);
+            var row = fixture.rows(output, "valid", 1).getFirst();
+            assertNull(child(row, "Brief"));
+            assertEquals("optional", child(children(child(row, "Extra")).getFirst(), "Label").getTextContent());
+
+            assertCliFailure(db, "import", model, "broken", fixture.data(model, "broken",
+                    fixture.object(model, "Asset", "broken-first", valid)
+                            + fixture.object(model, "Asset", "broken-last", "<Brief><" + note + "/></Brief>")),
+                    db.postgis() ? "SQL code 23502)" : "SQL code 19)");
+            try (var sql = db.connect()) {
+                assertRolledBack(db, sql, 1, 1);
+                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("note")));
+                assertEquals("optional", scalar(sql, "SELECT label FROM " + db.table("note") + " n JOIN "
+                        + db.table("asset") + " a ON n.asset_extra=a.t_id WHERE n.asset_brief IS NULL"));
+            }
+        });
+    }
+
     private static void assertRolledBack(Target db, Connection sql, int objects, int datasets) throws SQLException {
         assertEquals(Integer.toString(objects), scalar(sql, "SELECT count(*) FROM " + db.table("asset")));
         assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("asset") + " WHERE t_ili_tid LIKE 'broken-%'"));
