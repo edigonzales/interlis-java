@@ -92,7 +92,22 @@ Datensatzabschluss und das Schliessen der Ressourcen. Nach abgeschlossenem
 Datenlauf folgen `objects` (geprüfte Primärobjekte), `violations`, `diagnosticsTruncated`,
 `diagnostics` und `unchecked`. Ein Diagnosebeispiel enthält den Code und die
 Meldung sowie bei Datenbefunden `arguments`, `location`, `ruleLocation` und
-`relatedLocations`. Vor dem Datensatzabschluss meldet das Kommando die
+`relatedLocations`. Ein räumlich belegter Geometriebefund ergänzt
+`geometryEvidence` mit `code`, `detail`, `location`, `relatedLocations` und
+`witness`. Bei einem Lückenbefund enthält `relatedLocations` die weiteren
+beteiligten Flächen mit ihren Randpfaden, einschliesslich eingeschlossener
+Inseln derselben Lücke. Bei nativen XTF-AREA-Werten kann
+`GEOMETRY_BOUNDARY_MISMATCH` abweichende Transferdaten einer geometrisch
+gemeinsamen Kante melden. Der Punkt enthält `kind` und die Ordinaten `x` und
+`y` als Dezimalstrings in Achsenreihenfolge und Einheiten des Modells. `kind`
+unterscheidet `intersection`, `shared-boundary`, `contained-boundary`, `outside-boundary`,
+`gap-boundary` und `vertex`. Ein berechneter Punkt kann gerundete Ordinaten
+haben. Die Textausgabe nennt den Punkt als `XY=(x, y)` zusammen mit den
+beteiligten Datenorten. Bei verletzten Geometrieconstraints beschreibt
+`geometryEvidence` den konkreten Geometriekonflikt innerhalb der Diagnose
+für die verletzte Regel.
+
+Vor dem Datensatzabschluss meldet das Kommando die
 betroffene Phase und die bis dahin verfügbaren Diagnosen. Ist `completed`
 false, zählt `violations` nur die bis zur Unterbrechung beobachteten
 Verletzungen. Die Versionsabfrage

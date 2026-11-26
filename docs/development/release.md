@@ -26,9 +26,10 @@ Der [Workflow](../../.github/workflows/compiler-platforms.yml) verwendet Java
 25.0.3. Unter Linux führt er `./gradlew check packageTest compilerZipChecksum`
 aus. Danach folgen die swisstopo- und Codeberg-Konformitätssuites.
 Windows führt gezielte CLI-, Repository- und Validator-Tests und dieselben
-Paketprüfungen aus. macOS ARM64 führt die Paketprüfungen ebenfalls aus.
-Die Plattformjobs laden die geprüften Compiler- und Validator-Anwendungen
-inklusive Laufzeit als Workflow-Artefakte hoch.
+Paketprüfungen aus. Der macOS-ARM64-Job für Paketprüfungen und
+Plattformartefakte ist vorübergehend pausiert. Die aktiven Plattformjobs
+laden die geprüften Compiler- und Validator-Anwendungen inklusive Laufzeit
+als Workflow-Artefakte hoch.
 
 Der Portable-Job prüft die erzeugten TeaVM-JS- und WasmGC-Artefakte mit Node
 und Chromium. Dazu gehören Client, Worker, Diagrammprojektion und der

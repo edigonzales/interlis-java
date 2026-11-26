@@ -11,15 +11,19 @@ import guru.interlis.transfer.TransferValue;
 import guru.interlis.transfer.TransferIdentity.BasketId;
 import guru.interlis.validation.DataLocation;
 import guru.interlis.validation.GeometryEngine;
+import guru.interlis.validation.GeometryWitness;
 import guru.interlis.validation.ValidationCode;
+import guru.interlis.validation.ValidationOptions;
 import guru.interlis.validation.jts.JtsGeometryEngine;
 import org.junit.jupiter.api.Test;
+import org.locationtech.jts.operation.polygonize.Polygonizer;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static guru.interlis.validation.GeometryEngine.Check.*;
 import static guru.interlis.validation.ValidationCode.*;
@@ -33,17 +37,24 @@ class CurveValidityTest {
         var outcome = check(new Surface(shell, List.of()), GeometryKind.SURFACE, true, false);
         assertEquals(INVALID, outcome.status());
         assertEquals(List.of(GEOMETRY_SELF_INTERSECTION), outcome.codes());
-        assertTrue(outcome.findings().getFirst().relatedData().isEmpty());
+        var finding = outcome.findings().getFirst();
+        int first = finding.path().getLast().position();
+        int second = ((DataLocation.GeometryComponent) finding.relatedData().orElseThrow().path().getLast()).position();
+        assertEquals(3, Math.abs(first - second));
     }
 
     @Test
     void acceptsAnEnclaveTouchingTheShellInOneBoundaryWalk() {
         var walk = ring("0,0", "0,4", "2,3", "2,5", "0,4", "0,8", "8,8", "8,0", "0,0");
         var surface = new Surface(walk, List.of());
-        assertEquals(VALID, check(surface, GeometryKind.SURFACE, true, false).status());
+        // 2.3 §2.8.13 allows the boundary walk through the enclave's contact point.
+        // 2.4 §3.8.13 represents the enclave as another ring.
+        var old = input(surface, GeometryKind.SURFACE, true, false, LanguageVersion.ILI23, "0.001");
+        assertEquals(VALID, check(old).status());
+        assertEquals(INVALID, check(surface, GeometryKind.SURFACE, true, false).status());
         assertEquals(new GeometryEngine.Measurement.Value(62),
                 JtsGeometryEngine.standard().measure(GeometryEngine.Measure.AREA,
-                        input(surface, GeometryKind.SURFACE, true, false),
+                        old,
                         new GeometryEngine.Control(() -> {}, finding -> fail(finding.toString()))));
     }
 
@@ -141,6 +152,27 @@ class CurveValidityTest {
     }
 
     @Test
+    void validatesDisjointHolesWithinTheStandardObjectBudget() {
+        var shell = ring("0,0", "100,0", "100,100", "0,100", "0,0");
+        var holes = new ArrayList<Ring>();
+        for (int i = 0; i < 600; i++) {
+            int x = 2 + 3 * (i % 30);
+            int y = 2 + 3 * (i / 30);
+            var start = x + "," + y;
+            holes.add(ring(start, (x + 1) + "," + y, (x + 1) + "," + (y + 1), x + "," + (y + 1), start));
+        }
+        var visits = new AtomicLong();
+        long limit = ValidationOptions.defaults().maxValuesPerObject();
+        var control = new GeometryEngine.Control(() -> {
+            if (visits.incrementAndGet() > limit) {
+                fail("disjoint holes exhausted the standard object budget");
+            }
+        }, finding -> fail(finding.toString()));
+        assertEquals(VALID, JtsGeometryEngine.standard().checkValue(
+                input(new Surface(shell, holes), GeometryKind.SURFACE, true, false), control));
+    }
+
+    @Test
     void locatesHoleAgainstCircularBoundaryAndRejectsSharedMultiEdge() {
         var left = point("-4", "0");
         var right = point("4", "0");
@@ -179,7 +211,29 @@ class CurveValidityTest {
                 new Straight(point("2", "0")), new Straight(point("2", "1")),
                 new Straight(closeToArc), new Straight(end)))));
         assertEquals(List.of(GEOMETRY_SELF_INTERSECTION),
-                check(nonAdjacent, GeometryKind.POLYLINE, true, false).codes());
+                check(input(nonAdjacent, GeometryKind.POLYLINE, true, false, LanguageVersion.ILI23, "0.001")).codes());
+        assertEquals(VALID, check(nonAdjacent, GeometryKind.POLYLINE, true, false).status());
+    }
+
+    @Test
+    void testsBothSidesOfTheInclusiveOverlapLimitAndReportsTheSecondRoot() {
+        // Radius 5, chord endpoints (0,3) and (8,3), chord offset 3. The selected minor arc rises exactly 2.
+        var value = new Polyline(List.of(new CurvePart(point("9", "0"), List.of(
+                new Arc(point("4", "5"), point("0", "3"), Optional.empty()),
+                new Straight(point("9", "3"))))));
+        for (var language : LanguageVersion.values()) {
+            assertEquals(VALID, check(input(value, GeometryKind.POLYLINE, true, false, language, "2")).status());
+            assertEquals(VALID, check(input(value, GeometryKind.POLYLINE, true, false, language, "2.001")).status());
+            var outcome = check(input(value, GeometryKind.POLYLINE, true, false, language, "1.999"));
+            assertEquals(List.of(GEOMETRY_SELF_INTERSECTION), outcome.codes());
+            var finding = outcome.findings().getFirst();
+            assertTrue(finding.detail().contains("2 exceeds tolerance 1.999"), finding.detail());
+            var witness = finding.witness().orElseThrow();
+            assertEquals(GeometryWitness.Kind.INTERSECTION, witness.kind());
+            assertTrue(witness.x().subtract(new BigDecimal("8")).abs().compareTo(new BigDecimal("1E-30")) < 0,
+                    witness.toString());
+            assertEquals(0, new BigDecimal("3").compareTo(witness.y()));
+        }
     }
 
     @Test
@@ -197,6 +251,37 @@ class CurveValidityTest {
         assertEquals(INVALID, coverage(false, true, donut, donut).status());
         var open = new Surface(ring("0,0", "2,0", "2,2"), List.of());
         assertEquals(INVALID, coverage(true, true, open, separate).status());
+    }
+
+    @Test
+    void tracesThinGapsWithSharedEndpointsAgainstAnIndependentPolygonizer() throws Exception {
+        var upperLeft = new Surface(ring("0,0", "5,0.001", "5,1", "0,1", "0,0"), List.of());
+        var upperRight = new Surface(ring("5,0.001", "10,0", "10,1", "5,1", "5,0.001"), List.of());
+        var lower = new Surface(ring("10,0", "0,0", "0,-1", "10,-1", "10,0"), List.of());
+        var polygonizer = new Polygonizer();
+        polygonizer.add(new org.locationtech.jts.io.WKTReader().read(
+                "MULTILINESTRING ((0 0, 5 0.001, 10 0), (0 0, 10 0), "
+                        + "(10 0, 10 1, 0 1, 0 0), (0 0, 0 -1, 10 -1, 10 0))"));
+        java.util.Collection<?> polygons = polygonizer.getPolygons();
+        assertTrue(polygons.stream()
+                .map(org.locationtech.jts.geom.Polygon.class::cast)
+                .anyMatch(polygon -> Math.abs(polygon.getArea() - 0.005) < 1e-15));
+        assertEquals(VALID, coverage(true, false, upperLeft, upperRight, lower).status());
+        var outcome = coverage(true, true, upperLeft, upperRight, lower);
+        assertEquals(List.of(GEOMETRY_GAP), outcome.codes());
+        var gap = outcome.findings().getFirst();
+        assertNotEquals(gap.location().tid(), gap.relatedData().orElseThrow().tid());
+        assertEquals(2, gap.relatedLocations().size());
+        assertEquals(2, gap.relatedLocations().stream().map(DataLocation::tid).distinct().count());
+        assertEquals(GeometryWitness.Kind.GAP_BOUNDARY, gap.witness().orElseThrow().kind());
+    }
+
+    @Test
+    void tracesBoundedCurvedGapJoinedToTheExteriorAtItsEndpoints() {
+        var upper = curvedFace("0,0", "5,1", "10,0", "10,3", "0,3", "0,0");
+        var lower = new Surface(ring("10,0", "0,0", "0,-1", "10,-1", "10,0"), List.of());
+        assertEquals(VALID, coverage(true, false, upper, lower).status());
+        assertEquals(List.of(GEOMETRY_GAP), coverage(true, true, upper, lower).codes());
     }
 
     @Test
@@ -225,14 +310,18 @@ class CurveValidityTest {
     void matchesReversedSharedArcsInEitherOrderAndCancelsTheirGapEdges() {
         var first = curvedFace("4,5", "1,4", "1,6", "4,5");
         var adjacent = curvedFace("1.0,6.0", "1,4", "4,5", "5,5", "5,1", "-1,1", "-1,6", "1,6");
-        var overlapping = curvedFace("1,6", "1,4", "4,5", "5,0", "-2,0", "-2,10", "0,10", "1,6");
+        var adjacentOuter = curvedFace("1,6", "1,4", "4,5", "5,0", "-2,0", "-2,10", "0,10", "1,6");
+        // This counterclockwise shell covers the same side of the common major arc as the first face.
+        var overlapping = curvedFace("1,6", "1,4", "4,5", "5,7", "-1,7", "1,6");
         for (boolean reversed : List.of(false, true)) {
             var pair = reversed ? new Surface[]{adjacent, first} : new Surface[]{first, adjacent};
             var joined = coverage(true, true, pair);
             assertEquals(VALID, joined.status(), joined.findings().toString());
             assertTrue(joined.findings().isEmpty());
+            assertEquals(VALID, coverage(true, false, first, adjacentOuter).status());
             pair = reversed ? new Surface[]{overlapping, first} : new Surface[]{first, overlapping};
-            assertTrue(coverage(true, false, pair).codes().contains(GEOMETRY_AREA_OVERLAP));
+            var conflict = coverage(true, false, pair);
+            assertTrue(conflict.codes().contains(GEOMETRY_AREA_OVERLAP), conflict.toString());
         }
     }
 
@@ -250,17 +339,35 @@ class CurveValidityTest {
     }
 
     @Test
-    void reportsUnresolvedWhenDistinctBoundariesCollapseInTheCommonProjection() {
+    void decidesWhenDistinctPointsCollapseInTheCommonDoubleProjection() {
         var unit = new Surface(ring("0,0", "1,0", "1,1", "0,1", "0,0"), List.of());
         var east = new Surface(ring("2,0", "3,0", "3,1", "2,1", "2,0"), List.of());
         var distant = new Surface(ring("-100000000000000000000,0", "-100000000000000000000,2",
                 "-99999999999999999990,2", "-99999999999999999990,0", "-100000000000000000000,0"), List.of());
         for (var sequence : List.of(new Surface[]{unit, east, distant}, new Surface[]{distant, east, unit})) {
             var result = coverage(true, false, sequence);
-            assertEquals(NUMERICALLY_UNDETERMINED, result.status());
+            assertEquals(VALID, result.status());
             assertTrue(result.findings().isEmpty());
         }
         assertEquals(VALID, coverage(true, false, unit, east).status());
+    }
+
+    @Test
+    void preservesTheExactGapBetweenTwoStraightLegsOfOneRing() {
+        // The two horizontal legs have distinct y ordinates. Binary64 would put the top one through (8,10).
+        var shell = ring("0,0", "8,0", "8,10", "2,10", "1,10.00000000000000002",
+                "9,10.00000000000000002", "9,11", "0,11", "0,0");
+        assertEquals(VALID, check(new Surface(shell, List.of()), GeometryKind.SURFACE, true, false).status());
+    }
+
+    @Test
+    void doesNotRoundAnArcMidpointIntoADisjointFace() {
+        // The input semicircle's apex is 2e−17 below the other boundary.
+        var circle = curvedFace("0,0", "0.99999999999999996,0.99999999999999996", "1.99999999999999992,0", "0,0");
+        var above = new Surface(ring("0.8,0.99999999999999998", "1.2,0.99999999999999998",
+                "1.2,2", "0.8,2", "0.8,0.99999999999999998"), List.of());
+        assertEquals(VALID, coverage(true, false, circle, above).status());
+        assertEquals(VALID, coverage(true, true, above, circle).status());
     }
 
     @Test
@@ -366,19 +473,27 @@ class CurveValidityTest {
     }
 
     private static Outcome check(TransferGeometry value, GeometryKind kind, boolean simple, boolean partial) {
-        var input = input(value, kind, simple, partial);
+        return check(input(value, kind, simple, partial));
+    }
+
+    private static Outcome check(GeometryEngine.Input input) {
         var findings = new ArrayList<GeometryEngine.Finding>();
         var control = new GeometryEngine.Control(() -> {}, findings::add);
         return new Outcome(JtsGeometryEngine.standard().checkValue(input, control), List.copyOf(findings));
     }
 
     private static GeometryEngine.Input input(TransferGeometry value, GeometryKind kind, boolean simple, boolean partial) {
-        var type = new GeometryType(new TypeId("test"), new Origin.PredefinedOrigin(LanguageVersion.ILI24, "test"),
+        return input(value, kind, simple, partial, LanguageVersion.ILI24, "0.001");
+    }
+
+    private static GeometryEngine.Input input(TransferGeometry value, GeometryKind kind, boolean simple, boolean partial,
+                                              LanguageVersion language, String tolerance) {
+        var type = new GeometryType(new TypeId("test"), new Origin.PredefinedOrigin(language, "test"),
                 kind, List.of(), Optional.empty(), Optional.empty(), false, simple, Optional.empty());
         var location = new DataLocation(Optional.empty(), Optional.<BasketId>empty(), Optional.empty(),
                 Optional.empty(), Optional.empty(), List.of());
-        return new GeometryEngine.Input(value, type, location, LanguageVersion.ILI24,
-                Optional.of(new BigDecimal("0.001")), Optional.of(new BigDecimal("0.001")), partial);
+        return new GeometryEngine.Input(value, type, location, language,
+                Optional.of(new BigDecimal("0.001")), Optional.of(new BigDecimal(tolerance)), partial);
     }
 
     private static Ring ring(String... points) {

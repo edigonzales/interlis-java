@@ -111,6 +111,7 @@ public final class DatasetValidationSession implements AutoCloseable {
                 var event = next.orElseThrow();
                 if (event instanceof TransferEvent.StartTransfer) {
                     inputState.namespaces = Map.copyOf(reader.stableIdentityNamespaces());
+                    inputState.xtfEncoding = Objects.requireNonNull(reader.xtfEncoding(), "reader XTF encoding");
                 }
                 var selected = accept(inputOrdinal, input, inputState, event, cancellation);
                 if (checkLocal && selected.isPresent()) {
@@ -143,7 +144,8 @@ public final class DatasetValidationSession implements AutoCloseable {
                         throw new ValidationStreamException("Input model version differs from the dataset plan");
                     }
                 }
-                storage.table(StorageArea.METADATA).put(metadataKey((byte) 2, input), codec.encodeInput(descriptor, start, context.namespaces));
+                storage.table(StorageArea.METADATA).put(metadataKey((byte) 2, input),
+                        codec.encodeInput(descriptor, start, context.namespaces, context.xtfEncoding));
                 yield Optional.of(event);
             }
             case TransferEvent.StartBasket start -> {
@@ -383,5 +385,6 @@ public final class DatasetValidationSession implements AutoCloseable {
         private long basketOrdinal;
         private boolean ended;
         private Map<String, guru.interlis.model.QualifiedName> namespaces = Map.of();
+        private Optional<TransferReader.XtfEncoding> xtfEncoding = Optional.empty();
     }
 }

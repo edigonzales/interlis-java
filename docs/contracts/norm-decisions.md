@@ -89,13 +89,55 @@ Schnitte im Segmentinneren und Überlagerungen gelten die Konfliktprüfung
 und die definierte Bogenüberlappungstoleranz. Flächenränder verwenden
 die Flächentopologie.
 
+## Bogenüberlappung und Lücken
+
+INTERLIS 2.3 §2.8.12.2 beschränkt die Bogenoverlap-Ausnahme beim einzelnen
+`POLYLINE`-Linienzug auf aufeinanderfolgende Segmente. INTERLIS 2.4
+§3.8.12.2 bezieht dabei alle konkurrierenden Segmente des Linienzugs ein.
+Für `SURFACE` und `AREA` gelten die Konkurrenzregeln der Flächendefinition
+auch zwischen Randlinien. Bei einer zulässigen Linse liegt ein Schnittpunkt
+an einem gemeinsamen Segmentendpunkt. Die Pfeilhöhe bezieht sich auf die
+tatsächlich durchlaufenen Teilbögen zwischen den beiden Schnitten und darf
+die Modellgrenze erreichen. Ein gelieferter Radius bestimmt die Kreisgrösse,
+und der Bogenzwischenpunkt dient zur Wahl des durchlaufenen Bogens.
+Ein vollständig von Rändern eingeschlossener Rest ist eine Lücke für
+`areAreasWithoutGaps`. `areAreas` lässt solche Restflächen zu.
+[INTERLIS 2.3, §§2.8.12–13](https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf#page=49) ·
+[INTERLIS 2.4, §§3.8.12–13](https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=64) ·
+[INTERLIS 2.4, §3.14](https://geostandards-ch.github.io/doc_refhb24/#_funktionen)
+
+Für die Aufteilung von Flächenrändern erlaubt INTERLIS 2.3 mehrere
+Darstellungen derselben Fläche mit Stützpunktkontakten. INTERLIS 2.4
+verlangt für diesen Fall die Aufteilung aus Variante a. Die Transferdarstellung
+als einzelner Ring mit einem wiederholten inneren Stützpunkt bleibt ein
+Befund in 2.4. Für einen Randzug mit mehreren Schleifen in 2.3 entscheidet
+die Lage des Aussenrands unabhängig vom gewählten Ringstart. Mehrere Ränder
+am selben Stützpunkt bilden einen gemeinsamen Kontakt. Ein trennender Zyklus
+verläuft über verschiedene Kontaktpunkte.
+[INTERLIS 2.3, §2.8.13.1 und Figur 22](https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf#page=53) ·
+[INTERLIS 2.4, §3.8.13.1](https://geostandards-ch.github.io/doc_refhb24/#_geometrie_von_fl%C3%A4chen)
+
 ## Kontinuität von Flächenrändern
 
-INTERLIS 2.3 §2.8.12.1 und §3.3.11.14 sowie INTERLIS 2.4
+INTERLIS 2.3 §2.8.12.1 und §3.3.11.13 sowie INTERLIS 2.4
 §3.8.12.1 und §4.3.11.15 verlangen übereinstimmende Endpunkte beim
 Zusammensetzen und Schliessen der Randlinien. Der Validator vergleicht
-alle gelieferten Ordinaten numerisch. Flächentopologie und gemeinsame
-AREA-Kanten werden weiterhin in der Lageprojektion beurteilt.
+alle gelieferten Ordinaten numerisch. Die Flächentopologie und die geometrische
+Identität gemeinsamer Kanten werden in der Lageprojektion beurteilt.
+
+## Gemeinsame Kanten nativer AREA-Transfers
+
+Bei übertragenen `AREA`- und `MULTIAREA`-Werten prüft der Validator die
+Transferidentität geometrisch gemeinsamer Kanten zusätzlich zur Topologie.
+Er vergleicht alle Ordinaten der Stützpunkte auf dem wirksamen Modellraster,
+die Bogenzwischenpunkte mit gelieferter Präzision und die gelieferten Radien
+einschliesslich ihres Vorhandenseins. In XTF 2.3 wird bei gegenläufiger
+Übertragung das Vorzeichen des Radius umgekehrt. In XTF 2.4 müssen die
+gemeinsamen Kanten gegenläufig übertragen sein. `areAreas` und
+`areAreasWithoutGaps` prüfen die geometrische Gebietseinteilung.
+[INTERLIS 2.3, §3.3.11.13](https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf#page=92) ·
+[INTERLIS 2.4, §4.3.11.4](https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=108) ·
+[INTERLIS 2.4, §4.3.11.15](https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf#page=112)
 
 ## Weitere historische Fälle: ausdrücklich der Norm folgen
 
@@ -239,8 +281,14 @@ sein und der Zwischenpunkt wählt den Bogen (2.4 §3.8.12.2 und
 §4.3.11.14). Die neutrale Darstellung bewahrt Zahl und Konvention.
 Der XTF-2.4-Reader erhält numerisch dekodierbare nichtpositive Radien.
 Die Engine bewertet sie fachlich als ungültig, und der Writer weist
-sie zurück. Ein verwendbarer Bogen bleibt auch bei kleiner Pfeilhöhe
-analytisch. Die Werteprüfung bewahrt den ursprünglichen Transferwert.
+sie zurück. Bei explizitem Radius prüft die Engine zuerst, ob der
+Durchmesser die Sehne aufnehmen kann. Bei signiertem Radius kann der
+Zwischenpunkt innerhalb der erlaubten Abweichung auch auf der anderen
+Seite der Sehne liegen. Ein verwendbarer Bogen bleibt auch bei kleiner
+Pfeilhöhe analytisch. Die Werteprüfung bewahrt den ursprünglichen
+Transferwert. Die implizite Spurbreite in INTERLIS 2.4 ist die exakte
+Rasterweite geteilt durch die Quadratwurzel von zwei. Die
+Bogenoverlap-Prüfung schliesst die Gleichheit ein.
 
 AREA-Prüfungen verwenden die wirksame Attributdeklaration und
 vergleichbare Koordinatentypen. Restflächen sind zulässig. Die

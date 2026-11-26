@@ -1,0 +1,10 @@
+INTERLIS 2.4;
+MODEL CoverageGaps AT "https://example.org/coverage" VERSION "1" =
+  TOPIC Data =
+    DOMAIN Point = COORD -30.000 .. 2900000.000, -30.000 .. 1400000.000, ROTATION 2 -> 1;
+    CLASS Item =
+      shape : SURFACE WITH (STRAIGHTS, ARCS) VERTEX Point WITHOUT OVERLAPS > 3.000;
+      SET CONSTRAINT INTERLIS.areAreasWithoutGaps(ALL, UNDEFINED, >>shape);
+    END Item;
+  END Data;
+END CoverageGaps.

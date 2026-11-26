@@ -114,6 +114,11 @@ public final class Xtf23Reader extends TransferReader {
     }
 
     @Override
+    public Optional<XtfEncoding> xtfEncoding() {
+        return Optional.of(XtfEncoding.XTF23);
+    }
+
+    @Override
     public Map<String, guru.interlis.model.QualifiedName> stableIdentityNamespaces() {
         var result = new LinkedHashMap<String, guru.interlis.model.QualifiedName>();
         for (var space : oidSpaceDeclarations) {

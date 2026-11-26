@@ -1,0 +1,69 @@
+<?xml version='1.0' encoding='utf-8'?>
+<i:transfer xmlns="http://www.interlis.ch/xtf/2.4/CoverageGaps" xmlns:g="http://www.interlis.ch/geometry/1.0" xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS">
+  <i:headersection>
+    <i:models>
+      <i:model>CoverageGaps</i:model>
+    </i:models>
+    <i:sender>interlis-java</i:sender>
+  </i:headersection>
+  <i:datasection>
+    <Data i:bid="cases">
+      <Item i:tid="left">
+        <shape>
+          <g:surface>
+            <g:exterior>
+              <g:polyline>
+                <g:coord>
+                  <g:c1>2716165.803</g:c1>
+                  <g:c2>1280939.889</g:c2>
+                </g:coord>
+                <g:coord>
+                  <g:c1>2716166.623</g:c1>
+                  <g:c2>1280939.467</g:c2>
+                </g:coord>
+                <g:coord>
+                  <g:c1>2716177.128</g:c1>
+                  <g:c2>1280934.062</g:c2>
+                </g:coord>
+                <g:coord>
+                  <g:c1>2716168.000</g:c1>
+                  <g:c2>1280930.000</g:c2>
+                </g:coord>
+                <g:coord>
+                  <g:c1>2716165.803</g:c1>
+                  <g:c2>1280939.889</g:c2>
+                </g:coord>
+              </g:polyline>
+            </g:exterior>
+          </g:surface>
+        </shape>
+      </Item>
+      <Item i:tid="right">
+        <shape>
+          <g:surface>
+            <g:exterior>
+              <g:polyline>
+                <g:coord>
+                  <g:c1>2716177.128</g:c1>
+                  <g:c2>1280934.062</g:c2>
+                </g:coord>
+                <g:coord>
+                  <g:c1>2716165.803</g:c1>
+                  <g:c2>1280939.889</g:c2>
+                </g:coord>
+                <g:coord>
+                  <g:c1>2716170.000</g:c1>
+                  <g:c2>1280945.000</g:c2>
+                </g:coord>
+                <g:coord>
+                  <g:c1>2716177.128</g:c1>
+                  <g:c2>1280934.062</g:c2>
+                </g:coord>
+              </g:polyline>
+            </g:exterior>
+          </g:surface>
+        </shape>
+      </Item>
+    </Data>
+  </i:datasection>
+</i:transfer>

@@ -34,7 +34,7 @@ mit SDK 0.4 eingeführt.
 | Vertrag | Wert | Bedeutung |
 |---|---|---|
 | Werkzeug und Artefakte | `0.2.0-SNAPSHOT` | Entwicklungsstand der ausgelieferten Module |
-| Öffentliche Java-API | `0.11` | Öffentliche Packages und Typen von `guru.interlis` |
+| Öffentliche Java-API | `0.12` | Öffentliche Packages und Typen von `guru.interlis` |
 | Diagnosekatalog | `interlis-diagnostics/v4` | Stabile Diagnosecodes und typisierte Argumente |
 | Bridge | `interlis.compiler/2.0` | Nachrichtenhülle, Ergebnisse und Abfragen |
 | Quellformatierung | `2.0` | Formatierungsoptionen und Ergebnisvertrag |
@@ -216,14 +216,34 @@ Geometriewerte, aufgelöste Modellparameter, Datenorte und ein Arbeitsbudget.
 Die vorhandenen lokalen Werteregelprüfungen benötigen keine Engine. Eine
 Geometrieoperation ohne erforderliche Engine oder Parameter bleibt ungeprüft.
 
-Die unveröffentlichte API 0.10 umfasst auch die neue Record-Komponente
-`ValidationDiagnostic.relatedData()` für den zweiten Datenort paarweiser
-Geometriebefunde. Record-Patterns für `ValidationDiagnostic` müssen
-die zusätzliche Komponente aufnehmen.
+Java-API 0.12 ergänzt `ValidationDiagnostic.geometryEvidence()` für räumlich
+belegte Geometriebefunde. `ValidationDiagnostic.relatedData()` liefert
+weiterhin den zweiten Datenort paarweiser Befunde.
+Der Beleg enthält den Geometriecode, den Grund, die vollständigen Datenpfade
+der Beteiligten und den XY-Punkt in Achsenreihenfolge und Einheiten des Modells.
+Bei Constraints kann der Geometriecode vom Code der verletzten Regel abweichen.
+Engines übergeben den Punkt über `GeometryEngine.Finding.witness()` und
+weitere beteiligte Datenorte über `GeometryEngine.Finding.relatedLocations()`.
+`GeometryEngine.Finding.relatedData()` liefert weiterhin den ersten dieser Orte.
+Bei Flächenconstraints gibt `GeometryEngine.Source.reportLocalFindings()`
+an, dass Befunde zu einzelnen Eingabegeometrien als Beleg benötigt werden.
+Record-Patterns für `ValidationDiagnostic` und `GeometryEngine.Finding` müssen
+den neuen Record-Formen folgen. Bei `Finding` ersetzt `relatedLocations`
+die Record-Komponente `relatedData`, und `witness` kommt hinzu. Die bisherigen
+Konstruktoren bleiben als Überladungen aufrufbar.
 
-`GeometryEngine.Input.coordinateDomain()` gehört zur selben
-unveröffentlichten API 0.10. Der gebundene Koordinatentyp dient dem
-Vergleich der Koordinatenkontexte einer AREA-Menge.
+`GeometryEngine.Input.coordinateDomain()` liefert den gebundenen
+Koordinatentyp für den Vergleich der Koordinatenkontexte einer AREA-Menge.
+Java-API 0.12 ergänzt zwei Eingabewerte für die Overlap- und Transferprüfung.
+`GeometryEngine.Input.overlapTrackQuantum()` liefert bei einer impliziten
+Toleranz die exakte Rasterweite des dafür gebundenen Koordinatentyps.
+Die Toleranz ist diese Rasterweite geteilt durch die Quadratwurzel von zwei.
+`overlap()` liefert in diesem Fall weiterhin eine Dezimalnäherung für
+bestehende Aufrufer. `GeometryEngine.Input.xtfAreaEncoding()` bezeichnet die
+bekannte Übertragungsfassung eines nativen AREA-Werts. Sie stammt von der
+additiven Methode `TransferReader.xtfEncoding()`. Record-Patterns für `Input`
+nehmen die zusätzlichen Komponenten auf. Die bisherigen Input-Konstruktoren
+bleiben aufrufbar.
 
 Für JVM-Läufe kann der Host das optionale Artefakt
 `guru.interlis:interlis-validation-jts` mit
@@ -239,12 +259,15 @@ Die dritte Achse bleibt als Transferwert erhalten und unterliegt weiterhin
 der Werteprüfung. Die Engine unterstützt keine 3D-Messungen,
 geodätischen Messungen oder CRS-Transformationen. Nicht vergleichbare
 Koordinatentypen bleiben in einer gemeinsamen AREA-Prüfung ungeprüft.
-Die AREA-Prüfung vergleicht gemeinsame Kanten anhand exakter Transferwerte.
-Für die numerischen Kurvenoperationen verwendet sie näherungsweise
-Gleitkommazahlen und einen gemeinsamen, von der Objektreihenfolge unabhängigen
-Koordinatenursprung. Wenn eine verschobene Dezimalkoordinate beim Umwandeln
-in Double und zurück ihren Wert verliert, bleibt die betroffene Schlussprüfung
-unbestimmt.
+Für geometrisch gemeinsame Kanten prüft die Engine die XY-Endpunkte sowie bei Bögen
+den Kreis und den durchlaufenen Abschnitt. Verschiedene Zwischenpunkte
+können denselben Abschnitt beschreiben. Für native AREA-Werte mit bekannter
+XTF-Fassung folgen der Vergleich aller Stützpunktordinaten, Bogenzwischenpunkte
+und Radien sowie die Prüfung der Übertragungsrichtung gemäss der XTF-Fassung.
+Die Engine verwendet einen gemeinsamen,
+von der Objektreihenfolge unabhängigen Koordinatenursprung. Numerische
+Grenzfälle werden aus den Dezimalwerten nachgerechnet. Ein nach dem
+Nachrechnen offenes Prädikat wird als ungeprüfter Fall ausgewiesen.
 Benutzerdefinierte Linienformen und der netzweite Vergleich von
 LINEATTR-Werten sind ausserhalb dieses Profils.
 

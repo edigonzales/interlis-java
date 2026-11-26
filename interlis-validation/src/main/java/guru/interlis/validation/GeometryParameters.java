@@ -2,9 +2,11 @@ package guru.interlis.validation;
 
 import guru.interlis.model.CoordinateType;
 import guru.interlis.model.DecimalLiteral;
-import guru.interlis.model.GeometryType;
 import guru.interlis.model.DomainSymbol;
+import guru.interlis.model.GeometryType;
+import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.SymbolId;
+import guru.interlis.transfer.TransferGeometry;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -27,7 +29,7 @@ final class GeometryParameters {
         return type.filter(CoordinateType.class::isInstance).map(CoordinateType.class::cast).orElse(null);
     }
 
-    static Optional<BigDecimal> quantum(CoordinateType type) {
+    private static Optional<BigDecimal> quantum(CoordinateType type) {
         if (type == null || type.dimensions() < 2) {
             return Optional.empty();
         }
@@ -43,11 +45,20 @@ final class GeometryParameters {
         }));
     }
 
-    static Optional<BigDecimal> overlap(GeometryType type, Function<SymbolId, CoordinateType> coordinate) {
-        return type.overlap().flatMap(source -> switch (source) {
-            case GeometryType.Explicit explicit -> Optional.of(explicit.value().exactValue());
-            case GeometryType.TrackWidth width -> quantum(coordinate.apply(width.coordinateDomain()))
-                    .map(q -> q.divide(ROOT_TWO, MathContext.DECIMAL128));
-        });
+    static GeometryEngine.Input input(TransferGeometry value, GeometryType type, DataLocation location,
+                                      LanguageVersion language, Function<SymbolId, CoordinateType> coordinate,
+                                      boolean partial) {
+        var vertexDomain = type.vertexDomain();
+        var vertex = vertexDomain.map(coordinate);
+        var implicitQuantum = type.overlap().filter(GeometryType.TrackWidth.class::isInstance)
+                .map(GeometryType.TrackWidth.class::cast)
+                .map(GeometryType.TrackWidth::coordinateDomain)
+                .flatMap(domain -> vertexDomain.filter(domain::equals).isPresent()
+                        ? quantum(vertex.orElse(null)) : quantum(coordinate.apply(domain)));
+        var overlap = type.overlap().filter(GeometryType.Explicit.class::isInstance)
+                .map(GeometryType.Explicit.class::cast).map(explicit -> explicit.value().exactValue())
+                .or(() -> implicitQuantum.map(q -> q.divide(ROOT_TWO, MathContext.DECIMAL128)));
+        return new GeometryEngine.Input(value, type, location, language, quantum(vertex.orElse(null)), overlap,
+                partial, vertex.map(CoordinateType::id), implicitQuantum);
     }
 }

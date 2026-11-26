@@ -59,6 +59,10 @@ final class ActiveCoverage {
                 return reader.stableIdentityNamespaces();
             }
 
+            @Override public Optional<XtfEncoding> xtfEncoding() {
+                return reader.xtfEncoding();
+            }
+
             @Override protected void release() { }
         };
     }

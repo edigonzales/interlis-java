@@ -60,7 +60,7 @@ record GeometrySelection(List<SymbolId> holders, List<SymbolId> values) {
 
     GeometryEngine.Check check(DatasetRuleContext dataset, DatasetRuleContext.Occurrence origin,
                                GeometryEngine engine, GeometryEngine.Control control) {
-        return check(frame(dataset, origin), engine, control);
+        return check(frame(dataset, origin), engine, control, GeometryEngine.CoveragePurpose.AREA, true);
     }
 
     private static EvaluationFrame frame(DatasetRuleContext dataset, DatasetRuleContext.Occurrence origin) {
@@ -68,24 +68,30 @@ record GeometrySelection(List<SymbolId> holders, List<SymbolId> values) {
                 java.util.OptionalLong.empty(), dataset.cancellation()).withDataset(new DatasetPathContext(dataset, origin));
     }
 
-    GeometryEngine.Check check(EvaluationFrame frame, GeometryEngine engine, GeometryEngine.Control control) {
+    GeometryEngine.Check check(EvaluationFrame frame, GeometryEngine engine, GeometryEngine.Control control,
+                               GeometryEngine.CoveragePurpose purpose, boolean groupByHolder) {
         var missing = new boolean[] {frame.partial()};
-        if (holders.isEmpty()) {
+        if (!groupByHolder || holders.isEmpty()) {
             var inputs = new ArrayList<GeometryEngine.Input>();
             walk(0, frame.current(), null, frame, missing, inputs::add, null);
-            return check(engine, control, inputs, !missing[0]);
+            return check(engine, control, inputs, !missing[0], purpose);
         }
         var result = new GeometryEngine.Check[] {VALID};
         walk(0, frame.current(), null, frame, missing, null,
-                (inputs, complete) -> result[0] = combine(result[0], check(engine, control, inputs, complete)));
+                (inputs, complete) -> result[0] = combine(result[0], check(engine, control, inputs, complete, purpose)));
         return combine(result[0], missing[0] ? MISSING_PARAMETERS : VALID);
     }
 
     private static GeometryEngine.Check check(GeometryEngine engine, GeometryEngine.Control control,
-                                              List<GeometryEngine.Input> inputs, boolean complete) {
+                                              List<GeometryEngine.Input> inputs, boolean complete,
+                                              GeometryEngine.CoveragePurpose purpose) {
         return engine.checkCoverage(new GeometryEngine.Source() {
             @Override public boolean complete() {
                 return complete;
+            }
+
+            @Override public boolean reportLocalFindings() {
+                return true;
             }
 
             @Override public GeometryEngine.Cursor open() {
@@ -98,7 +104,7 @@ record GeometrySelection(List<SymbolId> holders, List<SymbolId> values) {
                     @Override public void close() { }
                 };
             }
-        }, GeometryEngine.CoveragePurpose.AREA, control);
+        }, purpose, control);
     }
 
     static GeometryEngine.Check combine(GeometryEngine.Check left, GeometryEngine.Check right) {
@@ -163,11 +169,9 @@ record GeometrySelection(List<SymbolId> holders, List<SymbolId> values) {
                 return;
             }
             var domains = frame.domains();
-            var vertex = type.vertexDomain().map(id -> GeometryParameters.coordinate(frame.plan(), domains, id));
-            output.accept(new GeometryEngine.Input(geometry, type, frame.geometryLocation(ValuePath.steps(at)),
-                    field.slot().attribute().languageVersion(), GeometryParameters.quantum(vertex.orElse(null)),
-                    GeometryParameters.overlap(type, id -> GeometryParameters.coordinate(frame.plan(), domains, id)),
-                    frame.partial(), vertex.map(guru.interlis.model.CoordinateType::id)));
+            output.accept(GeometryParameters.input(geometry, type, frame.geometryLocation(ValuePath.steps(at)),
+                    field.slot().attribute().languageVersion(), id -> GeometryParameters.coordinate(frame.plan(), domains, id),
+                    frame.partial()));
             return;
         }
         walk(index + 1, known.value(), at, frame.descend(owner, known.value()), missing, output, groups);

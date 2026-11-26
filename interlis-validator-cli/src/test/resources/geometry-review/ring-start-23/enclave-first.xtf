@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="test">
+    <MODELS>
+      <MODEL NAME="Contact" VERSION="1" URI="https://example.org/contact" />
+    </MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <Contact.Data BID="cases">
+      <Contact.Data.Piece TID="valid">
+        <shape>
+          <SURFACE>
+            <BOUNDARY>
+              <POLYLINE>
+                <COORD>
+                  <C1>0</C1>
+                  <C2>5</C2>
+                </COORD>
+                <COORD>
+                  <C1>0.000000000000000001</C1>
+                  <C2>9.999999999999999999</C2>
+                </COORD>
+                <COORD>
+                  <C1>9.999999999999999999</C1>
+                  <C2>9.999999999999999999</C2>
+                </COORD>
+                <COORD>
+                  <C1>9.999999999999999999</C1>
+                  <C2>0.000000000000000001</C2>
+                </COORD>
+                <COORD>
+                  <C1>0.000000000000000001</C1>
+                  <C2>0.000000000000000001</C2>
+                </COORD>
+                <COORD>
+                  <C1>0</C1>
+                  <C2>5</C2>
+                </COORD>
+                <COORD>
+                  <C1>0</C1>
+                  <C2>0</C2>
+                </COORD>
+                <COORD>
+                  <C1>10</C1>
+                  <C2>0</C2>
+                </COORD>
+                <COORD>
+                  <C1>10</C1>
+                  <C2>10</C2>
+                </COORD>
+                <COORD>
+                  <C1>0</C1>
+                  <C2>10</C2>
+                </COORD>
+                <COORD>
+                  <C1>0</C1>
+                  <C2>5</C2>
+                </COORD>
+              </POLYLINE>
+            </BOUNDARY>
+          </SURFACE>
+        </shape>
+      </Contact.Data.Piece>
+    </Contact.Data>
+  </DATASECTION>
+</TRANSFER>

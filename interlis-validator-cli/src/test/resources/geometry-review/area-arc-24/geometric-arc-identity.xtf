@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns="http://www.interlis.ch/xtf/2.4/ReviewSurface" xmlns:g="http://www.interlis.ch/geometry/1.0" xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS">
+  <i:headersection>
+    <i:models>
+      <i:model>ReviewSurface</i:model>
+    </i:models>
+    <i:sender>test</i:sender>
+  </i:headersection>
+  <i:datasection>
+    <Data i:bid="b">
+      <Object i:tid="1">
+        <shape>
+          <g:surface>
+            <g:exterior>
+              <g:polyline>
+                <g:coord>
+                  <g:c1>0</g:c1>
+                  <g:c2>5</g:c2>
+                </g:coord>
+                <g:arc>
+                  <g:c1>10</g:c1>
+                  <g:c2>5</g:c2>
+                  <g:a1>5</g:a1>
+                  <g:a2>10</g:a2>
+                </g:arc>
+                <g:coord>
+                  <g:c1>10</g:c1>
+                  <g:c2>0</g:c2>
+                </g:coord>
+                <g:coord>
+                  <g:c1>0</g:c1>
+                  <g:c2>0</g:c2>
+                </g:coord>
+                <g:coord>
+                  <g:c1>0</g:c1>
+                  <g:c2>5</g:c2>
+                </g:coord>
+              </g:polyline>
+            </g:exterior>
+          </g:surface>
+        </shape>
+      </Object>
+      <Object i:tid="2">
+        <shape>
+          <g:surface>
+            <g:exterior>
+              <g:polyline>
+                <g:coord>
+                  <g:c1>10</g:c1>
+                  <g:c2>5</g:c2>
+                </g:coord>
+                <g:arc>
+                  <g:c1>0</g:c1>
+                  <g:c2>5</g:c2>
+                  <g:a1>2</g:a1>
+                  <g:a2>9</g:a2>
+                </g:arc>
+                <g:coord>
+                  <g:c1>0</g:c1>
+                  <g:c2>12</g:c2>
+                </g:coord>
+                <g:coord>
+                  <g:c1>10</g:c1>
+                  <g:c2>12</g:c2>
+                </g:coord>
+                <g:coord>
+                  <g:c1>10</g:c1>
+                  <g:c2>5</g:c2>
+                </g:coord>
+              </g:polyline>
+            </g:exterior>
+          </g:surface>
+        </shape>
+      </Object>
+    </Data>
+  </i:datasection>
+</i:transfer>

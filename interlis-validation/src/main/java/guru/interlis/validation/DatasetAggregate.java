@@ -1,11 +1,13 @@
 package guru.interlis.validation;
 
+import guru.interlis.model.BinaryOperator;
 import guru.interlis.model.PlausibilityConstraint;
 import guru.interlis.model.SetConstraint;
 import guru.interlis.transfer.TransferValue;
 import guru.interlis.validation.DatasetScopeStore.Scope;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalLong;
 
@@ -79,6 +81,8 @@ final class DatasetAggregate {
         var population = entry.orElseThrow();
         var counts = population.counts();
         var condition = context.program(plausibility.condition());
+        var evidence = new ArrayList<GeometryEvidence>(1);
+        boolean excess = plausibility.direction() == BinaryOperator.LTE;
         context.forObjects(occurrence -> {
             if (!applicable(occurrence)) {
                 return;
@@ -93,12 +97,15 @@ final class DatasetAggregate {
                     if (value.value()) {
                         counts.satisfied++;
                     }
+                    if (value.value() == excess && evidence.isEmpty()) {
+                        known.geometryEvidence().ifPresent(evidence::add);
+                    }
                 }
                 case EvaluationResult.UndefinedByData ignored -> counts.satisfied++;
                 default -> counts.undecided++;
             }
         });
-        return List.of(condition.isPresent() ? evaluatePercentage(population, plausibility)
+        return List.of(condition.isPresent() ? evaluatePercentage(population, plausibility, evidence)
                 : coverage(population, DATASET, UNSUPPORTED, counts.candidates, 0, 0));
     }
 
@@ -121,6 +128,10 @@ final class DatasetAggregate {
                         return java.util.Optional.of(new GeometryEngine.Source() {
                             @Override public boolean complete() {
                                 return !incomplete[0];
+                            }
+
+                            @Override public boolean reportLocalFindings() {
+                                return true;
                             }
 
                             @Override public GeometryEngine.Cursor open() {
@@ -166,8 +177,10 @@ final class DatasetAggregate {
                 }));
         if (result instanceof EvaluationResult.Known known && known.value() instanceof TransferValue.BooleanValue value) {
             if (!value.value()) {
-                report.datasetViolation(rule.declaration(), ValidationCode.SET_CONSTRAINT_FALSE,
-                        context.scopeLocation(rule, ordinal), count.isPresent() ? List.of(Long.toString(count.getAsLong())) : List.of());
+                report.constraintViolation(rule.declaration(), ValidationCode.SET_CONSTRAINT_FALSE,
+                        context.scopeLocation(rule, ordinal),
+                        count.isPresent() ? List.of(Long.toString(count.getAsLong())) : List.of(),
+                        known.geometryEvidence());
                 return setCoverage(population, basket, VIOLATED, 1, 1);
             }
             return setCoverage(population, basket, SATISFIED, 1, 0);
@@ -176,7 +189,8 @@ final class DatasetAggregate {
                 ? UNSUPPORTED : UNDETERMINED, 0, 0);
     }
 
-    private DatasetRuleCoverage evaluatePercentage(Scope population, PlausibilityConstraint definition) {
+    private DatasetRuleCoverage evaluatePercentage(Scope population, PlausibilityConstraint definition,
+                                                    List<GeometryEvidence> evidence) {
         long denominator = population.counts().candidates;
         long satisfied = population.counts().satisfied;
         if (!complete(population)) {
@@ -195,9 +209,10 @@ final class DatasetAggregate {
             default -> throw new IllegalStateException("Unsupported plausibility direction");
         };
         if (!passes) {
-            report.datasetViolation(rule.declaration(), ValidationCode.PLAUSIBILITY_CONSTRAINT_FALSE,
+            report.constraintViolation(rule.declaration(), ValidationCode.PLAUSIBILITY_CONSTRAINT_FALSE,
                     context.scopeLocation(rule, 0), List.of(Long.toString(satisfied), Long.toString(denominator),
-                            definition.direction().name(), definition.percentage().toPlainString()));
+                            definition.direction().name(), definition.percentage().toPlainString()),
+                    evidence.stream().findFirst());
         }
         return coverage(population, DATASET, passes ? SATISFIED : VIOLATED, denominator, 1, passes ? 0 : 1);
     }

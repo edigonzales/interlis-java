@@ -11,6 +11,7 @@ import guru.interlis.source.SourceId;
 import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferIdentity;
 import guru.interlis.transfer.TransferObject;
+import guru.interlis.transfer.TransferReader;
 import guru.interlis.transfer.TransferValue;
 import guru.interlis.transfer.TransferValue.*;
 
@@ -70,13 +71,14 @@ final class StoredValueCodec {
     }
 
     byte[] encodeInput(InputDescriptor input, TransferEvent.StartTransfer header,
-                       java.util.Map<String, QualifiedName> namespaces) {
+                       java.util.Map<String, QualifiedName> namespaces, Optional<TransferReader.XtfEncoding> xtfEncoding) {
         return encodeRecord(out -> {
             text(out, input.id().value());
             text(out, input.role().name());
             optional(out, header.source(), source -> text(out, source.value()));
             optional(out, header.sender(), sender -> text(out, sender));
             optional(out, header.comment(), comment -> text(out, comment));
+            optional(out, xtfEncoding, encoding -> text(out, encoding.name()));
             out.writeInt(namespaces.size());
             for (var entry : new java.util.TreeMap<>(namespaces).entrySet()) {
                 text(out, entry.getKey());
@@ -97,6 +99,7 @@ final class StoredValueCodec {
             var source = optional(in, () -> new SourceId(text(in)));
             var sender = optional(in, () -> text(in));
             var comment = optional(in, () -> text(in));
+            var xtfEncoding = optional(in, () -> TransferReader.XtfEncoding.valueOf(text(in)));
             var namespaces = new LinkedHashMap<String, QualifiedName>();
             for (int n = length(in); n > 0; n--) {
                 namespaces.put(text(in), new QualifiedName(list(in, () -> text(in))));
@@ -105,12 +108,13 @@ final class StoredValueCodec {
                     guru.interlis.model.LanguageVersion.valueOf(text(in)), optional(in, () -> text(in)),
                     optional(in, () -> text(in))));
             return new StoredInput(input, new TransferEvent.StartTransfer(source, sender, comment, models),
-                    java.util.Map.copyOf(namespaces));
+                    java.util.Map.copyOf(namespaces), xtfEncoding);
         });
     }
 
     record StoredInput(InputDescriptor descriptor, TransferEvent.StartTransfer header,
-                       java.util.Map<String, QualifiedName> namespaces) { }
+                       java.util.Map<String, QualifiedName> namespaces,
+                       Optional<TransferReader.XtfEncoding> xtfEncoding) { }
 
     byte[] encodeBasket(long input, TransferEvent.StartBasket start) {
         return encodeRecord(out -> {

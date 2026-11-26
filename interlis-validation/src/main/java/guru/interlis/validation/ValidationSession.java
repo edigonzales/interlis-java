@@ -222,6 +222,12 @@ public final class ValidationSession implements AutoCloseable {
                 arguments, Optional.of(related));
     }
 
+    void constraintViolation(ConstraintSymbol declaration, ValidationCode code, DataLocation data,
+                             List<String> arguments, Optional<GeometryEvidence> geometryEvidence) {
+        diagnostic(code, data, ruleLocation(plan.ref(declaration.id()), declaration.origin()),
+                arguments, Optional.empty(), geometryEvidence);
+    }
+
     void identityConflict(TransferObject object, DataLocation data, List<String> origins, DataLocation related) {
         var declaration = plan.symbol(object.type().symbol()).orElseThrow();
         diagnostic(AMBIGUOUS_OBJECT_IDENTITY, data,
@@ -723,11 +729,8 @@ public final class ValidationSession implements AutoCloseable {
                 if (!value.value()) {
                     var code = declaration.definition() instanceof DomainConstraint
                             ? DOMAIN_CONSTRAINT_FALSE : MANDATORY_CONSTRAINT_FALSE;
-                    if (datasetLocation == null) {
-                        violation(root, path, declaration, code, List.of());
-                    } else {
-                        datasetViolation(declaration, code, datasetLocation, List.of());
-                    }
+                    var data = datasetLocation == null ? location(root, ValuePath.steps(path)) : datasetLocation;
+                    constraintViolation(declaration, code, data, List.of(), known.geometryEvidence());
                 }
                 yield ConstraintStatus.CHECKED;
             }
@@ -808,13 +811,11 @@ public final class ValidationSession implements AutoCloseable {
         if (!retainExample()) {
             return;
         }
-        var data = finding.location();
-        var path = new ArrayList<>(data.path());
-        path.addAll(finding.path());
-        examples.add(new ValidationDiagnostic(finding.code(), Severity.ERROR,
-                new DataLocation(data.source(), data.basket(), data.tid(), data.oid(), data.objectType(), path),
+        var evidence = finding.geometryEvidence();
+        var data = evidence.map(GeometryEvidence::location).orElseGet(finding::diagnosticLocation);
+        examples.add(new ValidationDiagnostic(finding.code(), Severity.ERROR, data,
                 ruleLocation(plan.ref(attribute.id()), attribute.origin()), List.of(finding.detail()),
-                finding.relatedData()));
+                finding.relatedData(), evidence));
     }
 
     private void checkTopology(GeometryType type, TransferGeometry value, DataLocation location, AttributeSymbol attribute,
@@ -825,9 +826,7 @@ public final class ValidationSession implements AutoCloseable {
             unsupported.merge(key, 1L, Math::addExact);
             return;
         }
-        var input = new GeometryEngine.Input(value, type, location, attribute.languageVersion(),
-                GeometryParameters.quantum(type.vertexDomain().map(coordinates).orElse(null)),
-                GeometryParameters.overlap(type, coordinates), partial);
+        var input = GeometryParameters.input(value, type, location, attribute.languageVersion(), coordinates, partial);
         var control = new GeometryEngine.Control(visit, finding -> geometryFinding(attribute, finding));
         switch (engine.orElseThrow().checkValue(input, control)) {
             case VALID, INVALID -> checked.merge(key, 1L, Math::addExact);
@@ -986,8 +985,14 @@ public final class ValidationSession implements AutoCloseable {
 
     private void diagnostic(ValidationCode code, DataLocation data, RuleLocation rule, List<String> arguments,
                             Optional<DataLocation> related) {
+        diagnostic(code, data, rule, arguments, related, Optional.empty());
+    }
+
+    private void diagnostic(ValidationCode code, DataLocation data, RuleLocation rule, List<String> arguments,
+                            Optional<DataLocation> related, Optional<GeometryEvidence> geometryEvidence) {
         if (retainExample()) {
-            examples.add(new ValidationDiagnostic(code, Severity.ERROR, data, rule, arguments, related));
+            examples.add(new ValidationDiagnostic(code, Severity.ERROR, data, rule, arguments, related,
+                    geometryEvidence));
         }
     }
 

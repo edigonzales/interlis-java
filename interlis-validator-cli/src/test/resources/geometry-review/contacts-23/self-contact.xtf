@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="witness-review">
+    <MODELS>
+      <MODEL NAME="Witness23" VERSION="1" URI="https://example.org/witness" />
+    </MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <Witness23.Data BID="review">
+      <Witness23.Data.AreaPart TID="pinch">
+        <shape>
+          <SURFACE>
+            <BOUNDARY>
+              <POLYLINE>
+                <COORD>
+                  <C1>0</C1>
+                  <C2>0</C2>
+                </COORD>
+                <COORD>
+                  <C1>6</C1>
+                  <C2>0</C2>
+                </COORD>
+                <COORD>
+                  <C1>6</C1>
+                  <C2>6</C2>
+                </COORD>
+                <COORD>
+                  <C1>4</C1>
+                  <C2>6</C2>
+                </COORD>
+                <COORD>
+                  <C1>3</C1>
+                  <C2>0</C2>
+                </COORD>
+                <COORD>
+                  <C1>2</C1>
+                  <C2>6</C2>
+                </COORD>
+                <COORD>
+                  <C1>0</C1>
+                  <C2>6</C2>
+                </COORD>
+                <COORD>
+                  <C1>0</C1>
+                  <C2>0</C2>
+                </COORD>
+              </POLYLINE>
+            </BOUNDARY>
+          </SURFACE>
+        </shape>
+      </Witness23.Data.AreaPart>
+    </Witness23.Data>
+  </DATASECTION>
+</TRANSFER>

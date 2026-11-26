@@ -29,7 +29,7 @@ class CliApplicationTest {
         Run version = run("version");
         assertEquals(0, version.result().exitCode());
         assertTrue(version.out().contains("INTERLIS 2.3, 2.4"));
-        assertTrue(version.out().contains("api: 0.11"));
+        assertTrue(version.out().contains("api: 0.12"));
         assertTrue(version.out().contains("diagnostics: interlis-diagnostics/v4"));
         assertTrue(version.out().contains("protocol: interlis.compiler/2.0"));
         assertTrue(version.out().contains("format: 2.0"));
@@ -41,7 +41,7 @@ class CliApplicationTest {
         Run capabilities = run("capabilities");
         assertEquals(0, capabilities.result().exitCode());
         assertTrue(capabilities.out().contains("\"protocol\":\"interlis.compiler/2.0\""));
-        assertTrue(capabilities.out().contains("\"apiVersion\":\"0.11\""));
+        assertTrue(capabilities.out().contains("\"apiVersion\":\"0.12\""));
         assertTrue(capabilities.out().contains("\"diagnosticCatalogVersion\":\"interlis-diagnostics/v4\""));
         assertTrue(capabilities.out().contains("\"formatVersion\":\"2.0\""));
         assertTrue(capabilities.out().contains("\"maxLineWidth\":{\"min\":40,\"max\":240,\"default\":120}"));

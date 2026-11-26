@@ -1,25 +1,33 @@
 package guru.interlis.validation.jts.internal;
 
+import guru.interlis.model.LanguageVersion;
 import guru.interlis.transfer.TransferGeometry.Coordinate;
 import guru.interlis.validation.DataLocation;
 import guru.interlis.validation.DataLocation.GeometryComponent;
 import guru.interlis.validation.GeometryEngine;
+import guru.interlis.validation.GeometryWitness;
 import guru.interlis.validation.ValidationCode;
-import org.locationtech.jts.algorithm.Orientation;
+import guru.interlis.validation.jts.internal.CurvePointLocation.Position;
+import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.index.strtree.STRtree;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LinearRing;
-import org.locationtech.jts.operation.valid.IsValidOp;
-import org.locationtech.jts.operation.valid.TopologyValidationError;
 
+import java.math.BigDecimal;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 
 import static guru.interlis.validation.GeometryEngine.Check.*;
+import static guru.interlis.validation.GeometryWitness.Kind.*;
 import static guru.interlis.validation.ValidationCode.*;
 import static guru.interlis.validation.jts.internal.CurveSegment.Point;
 import static guru.interlis.validation.jts.internal.TransferGeometryAdapter.*;
@@ -28,9 +36,37 @@ final class CurveValidity {
     private final GeometryEngine.Input input;
     private final GeometryEngine.Control control;
     private GeometryEngine.Input relatedSource;
-    private Optional<java.math.BigDecimal> overlap;
+    private TransferGeometryAdapter.Position origin;
+    private Optional<LensHeight.Tolerance> overlap;
     private GeometryEngine.Check status = VALID;
     private final List<Surface> checkedSurfaces = new ArrayList<>();
+
+    /** A directed segment span delimited by the two intersections of a permitted lens. */
+    record Span(Point start, Point end) {}
+    record Fragment(Span span, boolean withinSpans) {}
+
+    private record Lens(Point shared, Point crossing) {}
+    private record Conflict(Optional<CurveIntersections.Hit> hit, String detail, Optional<Lens> lens) {
+        static Conflict none() { return new Conflict(Optional.empty(), "", Optional.empty()); }
+    }
+
+    private static final class PairBoundaries {
+        private final Set<Segment> shared = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
+        private final Map<Segment, List<Span>> permitted = new IdentityHashMap<>();
+        private final Map<Segment, Set<Point>> contacts = new IdentityHashMap<>();
+
+        void contact(Segment a, Segment b, Point point) {
+            contacts.computeIfAbsent(a, ignored -> new HashSet<>()).add(point);
+            contacts.computeIfAbsent(b, ignored -> new HashSet<>()).add(point);
+        }
+
+        void add(Segment segment, Lens lens) {
+            var curve = segment.curve();
+            var span = curve.start().equals(lens.shared())
+                    ? new Span(lens.shared(), lens.crossing()) : new Span(lens.crossing(), lens.shared());
+            permitted.computeIfAbsent(segment, ignored -> new ArrayList<>()).add(span);
+        }
+    }
 
     List<Surface> checkedSurfaces() {
         return checkedSurfaces;
@@ -40,18 +76,19 @@ final class CurveValidity {
         this.input = input;
         this.control = control;
         this.relatedSource = input;
-        this.overlap = input.overlap();
+        this.overlap = LensHeight.Tolerance.from(input);
     }
 
     GeometryEngine.Check check(Result value) {
         control.visit().run();
+        origin = value.origin();
         if (value.check() != VALID) {
             return value.check();
         }
         for (Part part : value.lines()) {
             control.visit().run();
             if (part.segments().isEmpty() && !input.partial()) {
-                invalid(part.path(), GEOMETRY_DEGENERATE_SEGMENT, "Line has no segments");
+                invalid(part.path(), GEOMETRY_DEGENERATE_SEGMENT, "Line has no segments", part.start());
             }
             if (input.type().withoutOverlaps()) {
                 var segments = part.segments();
@@ -75,7 +112,7 @@ final class CurveValidity {
 
     private Surface surface(Surface surface) {
         var rings = rings(surface);
-        var segments = new ArrayList<List<Segment>>();
+        List<List<Segment>> segments = new ArrayList<>();
         for (Ring ring : rings) {
             var boundary = closed(ring);
             if (boundary.isEmpty()) {
@@ -83,140 +120,184 @@ final class CurveValidity {
             }
             segments.add(boundary);
         }
-        if (segments.stream().flatMap(List::stream).noneMatch(segment -> segment.curve() instanceof CircularArc)) {
-            return checkLinearSurface(surface, segments);
+        if (input.language() == LanguageVersion.ILI23) {
+            var decomposed = decompose(segments);
+            if (decomposed.size() > segments.size()) {
+                surface = normalizedSurface(decomposed);
+                rings = rings(surface);
+                segments = decomposed;
+            }
         }
         for (int i = 0; i < rings.size(); i++) {
             var ring = rings.get(i);
             var boundary = segments.get(i);
-            selfIntersections(boundary, true, false);
-            double area = signedArea(boundary);
-            if (!Double.isFinite(area)) {
+            if (!repeatedVertex(boundary)) {
+                selfIntersections(boundary, true, false);
+            }
+            int orientation = areaOrientation(boundary, control.visit());
+            if (orientation == 0 && boundary.stream().anyMatch(segment -> segment.curve() instanceof CircularArc)) {
                 uncertain();
-            } else if (area == 0) {
-                invalid(ring.path(), GEOMETRY_DEGENERATE_SEGMENT, "Ring encloses no area");
+            } else if (orientation == 0 && status != INVALID) {
+                invalid(ring.path(), GEOMETRY_DEGENERATE_SEGMENT, "Ring encloses no area",
+                        boundary.getFirst().edge().start());
             }
         }
-        if (status != VALID) {
+        if (status != VALID || rings.size() == 1) {
             return surface;
         }
-        // A cycle of boundary contacts cuts off part of the surface interior.
-        int[] connected = new int[rings.size()];
-        for (int i = 0; i < connected.length; i++) {
-            connected[i] = i;
+
+        var holeBounds = new ArrayList<Envelope>(rings.size() - 1);
+        var holeIndex = new STRtree();
+        for (int i = 1; i < rings.size(); i++) {
+            var bounds = new Envelope();
+            for (var segment : segments.get(i)) {
+                control.visit().run();
+                bounds.expandToInclude(segment.curve().envelope());
+            }
+            holeBounds.add(bounds);
+            holeIndex.insert(bounds, i);
         }
+        var junctions = new LinkedHashMap<Point, Set<Integer>>();
         for (int i = 1; i < rings.size(); i++) {
             var hole = segments.get(i);
-            for (int j = 0; j < i; j++) {
-                var other = segments.get(j);
-                var contacts = boundaryContacts(other, hole, GEOMETRY_SELF_INTERSECTION, null, false);
-                int first = root(connected, j);
-                int second = root(connected, i);
-                if (contacts.size() > 1 || !contacts.isEmpty() && first == second) {
-                    invalid(rings.get(i).path(), rings.get(j).path(), GEOMETRY_INTERIOR_DISCONNECTED, "Boundary contacts separate the interior");
-                } else if (!contacts.isEmpty()) {
-                    connected[first] = second;
-                }
-                if (j == 0 && location(other, hole, contacts) != Position.INSIDE) {
-                    invalid(rings.get(i).path(), rings.get(j).path(), GEOMETRY_HOLE_OUTSIDE_SHELL, "Hole is outside its shell");
-                }
-                if (j > 0 && (location(other, hole, contacts) == Position.INSIDE
-                        || location(hole, other, contacts) == Position.INSIDE)) {
-                    invalid(rings.get(i).path(), rings.get(j).path(), GEOMETRY_HOLE_OUTSIDE_SHELL, "Holes are nested");
-                }
-            }
-        }
-        return surface;
-    }
-
-    private Surface checkLinearSurface(Surface surface, List<List<Segment>> boundaries) {
-        var factory = new GeometryFactory();
-        var error = linearPolygonError(factory, boundaries);
-        if (error != null && error.getErrorType() == TopologyValidationError.RING_SELF_INTERSECTION) {
-            // INTERLIS allows a shell and its touching holes to be transferred as one walk.
-            var cycles = new ArrayList<List<Segment>>();
-            for (var boundary : boundaries) {
-                var split = splitLinearRing(boundary);
-                if (split.stream().anyMatch(cycle -> cycle.size() < 3)) {
-                    break;
-                }
-                cycles.addAll(split);
-            }
-            if (cycles.stream().mapToLong(List::size).sum()
-                    == boundaries.stream().mapToLong(List::size).sum()
-                    && cycles.size() > boundaries.size()
-                    && linearPolygonError(factory, cycles) == null) {
-                checkRingContactVertices(cycles);
-                var normalized = cycles.stream().map(cycle -> new Ring(List.of(), cycle.getFirst().path().stream()
-                        .takeWhile(component -> component.kind() != GeometryComponent.Kind.LINE).toList(), cycle))
-                        .toList();
-                return new Surface(normalized.getFirst(), normalized.subList(1, normalized.size()));
-            }
-        }
-        if (error == null && boundaries.size() > 1) {
-            checkRingContactVertices(boundaries);
-        }
-        if (error != null) {
-            var code = switch (error.getErrorType()) {
-                case TopologyValidationError.HOLE_OUTSIDE_SHELL, TopologyValidationError.NESTED_HOLES ->
-                        GEOMETRY_HOLE_OUTSIDE_SHELL;
-                case TopologyValidationError.DISCONNECTED_INTERIOR -> GEOMETRY_INTERIOR_DISCONNECTED;
-                case TopologyValidationError.TOO_FEW_POINTS -> GEOMETRY_DEGENERATE_SEGMENT;
-                default -> GEOMETRY_SELF_INTERSECTION;
-            };
-            var hit = error.getCoordinate();
-            var intersector = new org.locationtech.jts.algorithm.RobustLineIntersector();
-            List<GeometryComponent> first = null;
-            List<GeometryComponent> second = null;
-            var sourceRings = rings(surface);
-            for (int ring = 0; hit != null && ring < boundaries.size(); ring++) {
-                var boundary = boundaries.get(ring);
-                for (int index = 0; index < boundary.size(); index++) {
-                    control.visit().run();
-                    var segment = boundary.get(index);
-                    intersector.computeIntersection(hit, segment.curve().start().coordinate(),
-                            segment.curve().end().coordinate());
-                    if (!intersector.hasIntersection()) {
-                        continue;
-                    }
-                    var ringPath = sourceRings.get(ring).path();
-                    if (first == null) {
-                        first = code == GEOMETRY_SELF_INTERSECTION ? segment.path() : ringPath;
-                    } else if (code == GEOMETRY_INTERIOR_DISCONNECTED && !first.equals(ringPath)) {
-                        second = ringPath;
-                    }
-                }
-            }
-            if (code == GEOMETRY_SELF_INTERSECTION && hit != null) {
-                // JTS supplies the error point, which can also lie at adjacent segments.
-                // A single witness avoids attributing the error to an unverified pair.
-                invalid(first == null ? surface.shell().path() : first, code, error.getMessage());
-            } else if (error.getErrorType() == TopologyValidationError.HOLE_OUTSIDE_SHELL && first != null) {
-                invalid(first, surface.shell().path(), code, error.getMessage());
-            } else if (second != null) {
-                invalid(first, second, code, error.getMessage());
-            } else {
-                invalid(first == null ? surface.shell().path() : first, code, error.getMessage());
-            }
-        }
-        return surface;
-    }
-
-    private TopologyValidationError linearPolygonError(GeometryFactory factory, List<List<Segment>> boundaries) {
-        var rings = boundaries.stream().map(boundary -> {
-            var points = new org.locationtech.jts.geom.Coordinate[boundary.size() + 1];
-            for (int i = 0; i < boundary.size(); i++) {
+            var candidates = new ArrayList<Integer>();
+            candidates.add(0); // Even a hole disjoint from the shell must be checked against it.
+            for (var candidate : holeIndex.query(holeBounds.get(i - 1))) {
                 control.visit().run();
-                points[i] = boundary.get(i).curve().start().coordinate();
+                int earlier = (Integer) candidate;
+                if (earlier < i) {
+                    candidates.add(earlier);
+                }
             }
-            points[points.length - 1] = boundary.getLast().curve().end().coordinate();
-            return factory.createLinearRing(points);
-        }).toList();
-        return new IsValidOp(factory.createPolygon(rings.getFirst(),
-                rings.subList(1, rings.size()).toArray(LinearRing[]::new))).getValidationError();
+            candidates.sort(Integer::compareTo);
+            for (int j : candidates) {
+                var other = segments.get(j);
+                var contactsAndLenses = new PairBoundaries();
+                var contacts = boundaryContacts(other, hole, GEOMETRY_SELF_INTERSECTION, contactsAndLenses, false,
+                        Optional.empty());
+                for (var point : contacts) {
+                    control.visit().run();
+                    var incident = junctions.computeIfAbsent(point, ignored -> new LinkedHashSet<>());
+                    incident.add(j);
+                    incident.add(i);
+                }
+                if (status == INVALID) {
+                    continue;
+                }
+                var probe = location(other, hole, contacts, contactsAndLenses.permitted);
+                if (j == 0 && probe.position() == Position.OUTSIDE) {
+                    invalid(rings.get(i).path(), rings.get(j).path(), GEOMETRY_HOLE_OUTSIDE_SHELL,
+                            "Hole is outside its shell", OUTSIDE_BOUNDARY, probe.point());
+                }
+                if (j > 0) {
+                    boolean currentInside = probe.position() == Position.INSIDE;
+                    var inside = currentInside ? probe : location(hole, other, contacts, contactsAndLenses.permitted);
+                    if (inside.position() == Position.INSIDE) {
+                        int contained = currentInside ? i : j;
+                        int container = currentInside ? j : i;
+                        invalid(rings.get(contained).path(), rings.get(container).path(), GEOMETRY_HOLE_OUTSIDE_SHELL,
+                                "Holes are nested", CONTAINED_BOUNDARY, inside.point());
+                    }
+                }
+            }
+        }
+        if (status == VALID) {
+            checkContactCycles(segments, junctions);
+        }
+        return surface;
     }
 
-    private List<List<Segment>> splitLinearRing(List<Segment> boundary) {
+    private void checkContactCycles(List<List<Segment>> rings, Map<Point, Set<Integer>> junctions) {
+        if (junctions.isEmpty()) {
+            return;
+        }
+        // One node per ring and one per contact point. A junction of three rings is a star, not a cycle.
+        var points = new ArrayList<>(junctions.keySet());
+        int firstPoint = rings.size();
+        var parents = new int[firstPoint + points.size()];
+        var forest = new ArrayList<List<Integer>>(parents.length);
+        for (int i = 0; i < parents.length; i++) {
+            control.visit().run();
+            parents[i] = i;
+            forest.add(new ArrayList<>());
+        }
+        for (int i = 0; i < points.size(); i++) {
+            int node = firstPoint + i;
+            for (int ring : junctions.get(points.get(i))) {
+                control.visit().run();
+                int ringRoot = root(parents, ring);
+                int pointRoot = root(parents, node);
+                if (ringRoot == pointRoot) {
+                    reportContactCycle(rings, points, forest, ring, node);
+                    return;
+                }
+                parents[ringRoot] = pointRoot;
+                forest.get(node).add(ring);
+                forest.get(ring).add(node);
+            }
+        }
+    }
+
+    private void reportContactCycle(List<List<Segment>> rings, List<Point> points, List<List<Integer>> forest,
+                                    int ring, int junction) {
+        var predecessors = new int[forest.size()];
+        Arrays.fill(predecessors, -1);
+        predecessors[ring] = ring;
+        var queue = new ArrayDeque<Integer>();
+        queue.add(ring);
+        while (predecessors[junction] == -1) {
+            int node = queue.removeFirst();
+            for (int neighbour : forest.get(node)) {
+                control.visit().run();
+                if (predecessors[neighbour] == -1) {
+                    predecessors[neighbour] = node;
+                    queue.add(neighbour);
+                }
+            }
+        }
+        var related = new ArrayList<DataLocation>();
+        int point = junction;
+        for (int node = predecessors[point]; node != ring; node = predecessors[point]) {
+            related.add(dataPath(input, contactPath(rings.get(node), points.get(point - rings.size()))));
+            point = predecessors[node];
+        }
+        var witness = points.get(junction - rings.size());
+        invalid(contactPath(rings.get(ring), witness), GEOMETRY_INTERIOR_DISCONNECTED,
+                "Boundary contacts form a cycle that separates the interior", related, VERTEX, witness);
+    }
+
+    private List<GeometryComponent> contactPath(List<Segment> boundary, Point point) {
+        for (var segment : boundary) {
+            control.visit().run();
+            if (segment.curve().start().equals(point)) {
+                return segment.path();
+            }
+        }
+        throw new IllegalStateException("Certified boundary contact has no incident segment");
+    }
+
+    private List<List<Segment>> decompose(List<List<Segment>> boundaries) {
+        var result = new ArrayList<List<Segment>>();
+        for (var boundary : boundaries) {
+            var cycles = splitRing(boundary);
+            if (cycles.stream().mapToLong(List::size).sum() != boundary.size()
+                    || cycles.stream().anyMatch(cycle -> cycle.size() < 2
+                    || cycle.size() == 2 && cycle.stream().noneMatch(segment -> segment.curve() instanceof CircularArc))) {
+                return boundaries;
+            }
+            result.addAll(cycles);
+        }
+        return result;
+    }
+
+    private static Surface normalizedSurface(List<List<Segment>> cycles) {
+        var normalized = cycles.stream().map(cycle -> new Ring(List.of(), cycle.getFirst().path().stream()
+                .takeWhile(component -> component.kind() != GeometryComponent.Kind.LINE).toList(), cycle))
+                .toList();
+        return new Surface(normalized.getFirst(), normalized.subList(1, normalized.size()));
+    }
+
+    private List<List<Segment>> splitRing(List<Segment> boundary) {
         var cycles = new ArrayList<List<Segment>>();
         var open = new ArrayList<Segment>();
         var positions = new HashMap<TransferGeometryAdapter.Position, Integer>();
@@ -234,15 +315,15 @@ final class CurveValidity {
                 cycle.clear();
             }
         }
-        // The cycle enclosing all others has the largest unsigned area. JTS checks containment.
+        // The outer cycle has the largest area. Keep the comparison certified before checking containment.
         int largest = 0;
-        double largestArea = 0;
-        for (int i = 0; i < cycles.size(); i++) {
+        for (int i = 1; i < cycles.size(); i++) {
             control.visit().run();
-            double area = Math.abs(signedArea(cycles.get(i)));
-            if (area > largestArea) {
+            var candidate = cycles.get(i);
+            var current = cycles.get(largest);
+            int order = compareUnsignedArea(candidate, current);
+            if (order > 0 || order == 0 && location(candidate, current, Set.of(), Map.of()).position() == Position.INSIDE) {
                 largest = i;
-                largestArea = area;
             }
         }
         if (largest != 0) {
@@ -251,36 +332,31 @@ final class CurveValidity {
         return cycles;
     }
 
-    private void checkRingContactVertices(List<List<Segment>> boundaries) {
-        record RingSegment(int ring, Segment segment) { }
-        var index = new STRtree();
-        for (int ring = 0; ring < boundaries.size(); ring++) {
-            for (var segment : boundaries.get(ring)) {
-                control.visit().run();
-                index.insert(segment.curve().envelope(), new RingSegment(ring, segment));
+    private int compareUnsignedArea(List<Segment> first, List<Segment> second) {
+        int firstSign = areaOrientation(first, control.visit());
+        int secondSign = areaOrientation(second, control.visit());
+        if (firstSign == 0 || secondSign == 0) {
+            return 0;
+        }
+        // Linearity allows the exact chord terms and coincident circular corrections to cancel.
+        var difference = new ArrayList<Segment>(first.size() + second.size());
+        first.forEach(segment -> difference.add(firstSign > 0 ? segment : segment.reversed()));
+        second.forEach(segment -> difference.add(secondSign < 0 ? segment : segment.reversed()));
+        return areaOrientation(difference, control.visit());
+    }
+
+    private boolean repeatedVertex(List<Segment> boundary) {
+        var points = new HashMap<TransferGeometryAdapter.Position, Segment>();
+        for (var segment : boundary) {
+            control.visit().run();
+            var previous = points.putIfAbsent(segment.edge().start(), segment);
+            if (previous != null) {
+                invalid(segment.path(), previous.path(), GEOMETRY_SELF_INTERSECTION, "Ring visits a vertex more than once",
+                        VERTEX, segment.curve().start());
+                return true;
             }
         }
-        var intersector = new org.locationtech.jts.algorithm.RobustLineIntersector();
-        for (int ring = 0; ring < boundaries.size(); ring++) {
-            for (var segment : boundaries.get(ring)) {
-                control.visit().run();
-                var vertex = segment.curve().start();
-                for (var candidate : index.query(new org.locationtech.jts.geom.Envelope(vertex.coordinate()))) {
-                    control.visit().run();
-                    var other = (RingSegment) candidate;
-                    if (ring == other.ring() || endpoint(other.segment().curve(), vertex)) {
-                        continue;
-                    }
-                    intersector.computeIntersection(vertex.coordinate(), other.segment().curve().start().coordinate(),
-                            other.segment().curve().end().coordinate());
-                    if (intersector.hasIntersection()) {
-                        invalid(segment.path(), other.segment().path(), GEOMETRY_SELF_INTERSECTION,
-                                "Polygon rings may touch only at a vertex of both rings");
-                        return;
-                    }
-                }
-            }
-        }
+        return false;
     }
 
     private List<Segment> closed(Ring ring) {
@@ -289,14 +365,15 @@ final class CurveValidity {
         for (Part part : ring.parts()) {
             control.visit().run();
             if (part.segments().isEmpty() || end != null && !sameDeliveredPosition(end, part.first())) {
-                invalid(part.path(), GEOMETRY_RING_NOT_CLOSED, "Ring parts do not form a continuous boundary");
+                invalid(part.path(), GEOMETRY_RING_NOT_CLOSED, "Ring parts do not form a continuous boundary", part.start());
                 return List.of();
             }
             boundary.addAll(part.segments());
             end = part.last();
         }
         if (boundary.isEmpty() || !sameDeliveredPosition(ring.parts().getFirst().first(), end)) {
-            invalid(ring.path(), GEOMETRY_RING_NOT_CLOSED, "Ring is open");
+            invalid(ring.path(), GEOMETRY_RING_NOT_CLOSED, "Ring is open",
+                    boundary.isEmpty() ? null : boundary.getLast().edge().end());
             return List.of();
         }
         return boundary;
@@ -316,8 +393,9 @@ final class CurveValidity {
         return true;
     }
 
-    private void selfIntersections(List<Segment> segments, boolean closed, boolean allowSharedEndpoints) {
+    private void selfIntersections(List<Segment> segments, boolean closed, boolean line) {
         var index = new STRtree();
+        var contacts = new LinkedHashMap<Point, Set<List<GeometryComponent>>>();
         for (int i = 0; i < segments.size(); i++) {
             control.visit().run();
             index.insert(segments.get(i).curve().envelope(), i);
@@ -331,13 +409,11 @@ final class CurveValidity {
                     continue;
                 }
                 var b = segments.get(j);
-                var result = CurveIntersections.between(a.curve(), b.curve());
+                var result = intersections(a, b);
                 if (result.undetermined()) {
                     uncertain();
                 }
-                if (allowSharedEndpoints && result.hits().stream().allMatch(hit ->
-                        hit.kind() == CurveIntersections.Kind.CONTACT
-                                && endpoint(a.curve(), hit.point()) && endpoint(b.curve(), hit.point()))) {
+                if (line && result.hits().stream().allMatch(hit -> sharedContact(a, b, hit))) {
                     continue;
                 }
                 var allowed = new HashSet<Point>();
@@ -347,174 +423,373 @@ final class CurveValidity {
                 if (closed && i == 0 && j == segments.size() - 1) {
                     allowed.add(a.curve().start());
                 }
-                if (!conflicts(a.curve(), b.curve(), result.hits(), allowed)) {
-                    continue;
+                if (!line || input.language() == LanguageVersion.ILI24) {
+                    result.hits().stream().filter(hit -> sharedContact(a, b, hit))
+                            .map(CurveIntersections.Hit::point).forEach(allowed::add);
                 }
-                invalid(b.path(), a.path(), GEOMETRY_SELF_INTERSECTION, "Segments intersect within the same curve");
+                var conflict = conflicts(a.curve(), b.curve(), result.hits(), allowed);
+                conflict.hit().ifPresent(hit -> {
+                    if (hit.kind() == CurveIntersections.Kind.CONTACT && hit.point().isExact()) {
+                        var paths = contacts.computeIfAbsent(hit.point(), ignored -> new LinkedHashSet<>());
+                        paths.add(b.path());
+                        paths.add(a.path());
+                    } else {
+                        invalid(b.path(), a.path(), GEOMETRY_SELF_INTERSECTION,
+                                conflict.detail(), kind(hit), hit.point());
+                    }
+                });
             }
         }
+        contacts.forEach((point, paths) -> {
+            var locations = paths.iterator();
+            var first = locations.next();
+            var related = new ArrayList<DataLocation>();
+            locations.forEachRemaining(path -> related.add(dataPath(input, path)));
+            invalid(first, GEOMETRY_SELF_INTERSECTION, "Segments meet away from a common support position",
+                    related, INTERSECTION, point);
+        });
     }
 
-    private HashSet<Point> boundaryContacts(List<Segment> a, List<Segment> b, ValidationCode code,
-                                            Set<Edge> shared, boolean sameInteriorSide) {
+    private CurveIntersections.Result intersections(Segment a, Segment b) {
+        return CurveIntersections.between(a.curve(), b.curve(), control.visit());
+    }
+
+    private Set<Point> boundaryContacts(List<Segment> a, List<Segment> b, ValidationCode code,
+                                        PairBoundaries pair, boolean allowShared, Optional<Boolean> sameInteriorSide) {
         var index = new STRtree();
         for (Segment segment : a) {
             control.visit().run();
             index.insert(segment.curve().envelope(), segment);
         }
-        var contacts = new HashSet<Point>();
+        var contacts = new LinkedHashSet<Point>();
         for (Segment right : b) {
             control.visit().run();
             for (Object candidate : index.query(right.curve().envelope())) {
                 control.visit().run();
                 var left = (Segment) candidate;
-                if (shared != null) {
+                if (allowShared) {
                     boolean same = left.edge().equals(right.edge());
                     if (same || left.edge().equals(right.edge().reversed())) {
-                        if (same == sameInteriorSide) {
+                        if (sameInteriorSide.isPresent() && same == sameInteriorSide.orElseThrow()) {
                             invalid(right.path(), left.path(), GEOMETRY_AREA_OVERLAP,
-                                    "Faces have interior on the same side of a shared boundary");
+                                    "Faces have interior on the same side of a shared boundary",
+                                    SHARED_BOUNDARY, right.curve().start());
+                        } else if (sameInteriorSide.isPresent()) {
+                            right.transferIdentityMismatch(left, same).ifPresent(mismatch ->
+                                    invalid(right.path(), left.path(), GEOMETRY_BOUNDARY_MISMATCH,
+                                            mismatch.detail(), SHARED_BOUNDARY, mismatch.witness()));
                         }
-                        shared.add(left.edge());
-                        shared.add(right.edge());
+                        pair.shared.add(left);
+                        pair.shared.add(right);
                         continue;
                     }
                 }
-                var result = CurveIntersections.between(left.curve(), right.curve());
+                var result = intersections(left, right);
                 if (result.undetermined()) {
                     uncertain();
                 }
                 var allowed = new HashSet<Point>();
                 for (var hit : result.hits()) {
-                    if (hit.kind() == CurveIntersections.Kind.CONTACT) {
+                    if (sharedContact(left, right, hit)) {
                         allowed.add(hit.point());
                         contacts.add(hit.point());
-                    }
-                }
-                if (shared != null) {
-                    var aCurve = left.curve();
-                    var bCurve = right.curve();
-                    for (var hit : result.hits()) {
-                        if (hit.kind() == CurveIntersections.Kind.CONTACT
-                                && !(endpoint(aCurve, hit.point()) && endpoint(bCurve, hit.point()))) {
-                            invalid(right.path(), left.path(), GEOMETRY_BOUNDARY_MISMATCH,
-                                    "Shared boundaries have different support positions");
+                        if (pair != null) {
+                            pair.contact(left, right, hit.point());
                         }
                     }
                 }
-                if (conflicts(left.curve(), right.curve(), result.hits(), allowed)) {
-                    var finding = code == GEOMETRY_AREA_OVERLAP
-                            && result.hits().stream().anyMatch(hit -> hit.kind() == CurveIntersections.Kind.OVERLAP)
-                            ? GEOMETRY_BOUNDARY_MISMATCH : code;
-                    invalid(right.path(), left.path(), finding, "Surface boundaries cross or share a segment");
+                var conflict = conflicts(left.curve(), right.curve(), result.hits(), allowed);
+                if (conflict.hit().isPresent()) {
+                    var hit = conflict.hit().orElseThrow();
+                    boolean mismatch = hit.kind() == CurveIntersections.Kind.OVERLAP
+                            || hit.kind() == CurveIntersections.Kind.CONTACT;
+                    var finding = code == GEOMETRY_AREA_OVERLAP && mismatch ? GEOMETRY_BOUNDARY_MISMATCH : code;
+                    invalid(right.path(), left.path(), finding, conflict.detail(), kind(hit), hit.point());
+                }
+                if (pair != null) {
+                    conflict.lens().ifPresent(lens -> {
+                        pair.add(left, lens);
+                        pair.add(right, lens);
+                        pair.contact(left, right, lens.crossing());
+                    });
                 }
             }
         }
         return contacts;
     }
 
-    private boolean conflicts(CurveSegment a, CurveSegment b, List<CurveIntersections.Hit> hits,
-                              HashSet<Point> allowed) {
+    private static GeometryWitness.Kind kind(CurveIntersections.Hit hit) {
+        return hit.kind() == CurveIntersections.Kind.OVERLAP ? SHARED_BOUNDARY : INTERSECTION;
+    }
+
+    private static boolean sharedContact(Segment a, Segment b, CurveIntersections.Hit hit) {
+        return hit.kind() == CurveIntersections.Kind.CONTACT
+                && endpoint(a.curve(), hit.point()) && endpoint(b.curve(), hit.point());
+    }
+
+    private Conflict conflicts(CurveSegment a, CurveSegment b, List<CurveIntersections.Hit> hits,
+                               Set<Point> allowed) {
         var unexpected = hits.stream().filter(h -> h.kind() != CurveIntersections.Kind.CONTACT
                 || !allowed.contains(h.point())).toList();
         if (unexpected.isEmpty()) {
-            return false;
+            return Conflict.none();
         }
-        if (hits.size() != 2 || unexpected.size() != 1
-                || unexpected.getFirst().kind() != CurveIntersections.Kind.CROSSING) {
-            return true;
-        }
-        Point shared = null;
-        for (var hit : hits) {
-            if (allowed.contains(hit.point()) && endpoint(a, hit.point()) && endpoint(b, hit.point())) {
-                shared = hit.point();
-            }
-        }
-        if (shared == null || !(a instanceof CircularArc || b instanceof CircularArc)) {
-            return true;
+        var hit = unexpected.getFirst();
+        var shared = hits.stream().map(CurveIntersections.Hit::point)
+                .filter(point -> allowed.contains(point) && endpoint(a, point) && endpoint(b, point))
+                .findFirst();
+        if (hits.size() != 2 || unexpected.size() != 1 || hit.kind() != CurveIntersections.Kind.CROSSING
+                || shared.isEmpty() || !(a instanceof CircularArc || b instanceof CircularArc)) {
+            var detail = switch (hit.kind()) {
+                case CONTACT -> "Segments meet away from a common support position";
+                case CROSSING -> "Segments cross";
+                case OVERLAP -> "Segments share a boundary interval";
+            };
+            return new Conflict(Optional.of(hit), detail, Optional.empty());
         }
         if (overlap.isEmpty()) {
             if (status == VALID) {
                 status = MISSING_PARAMETERS;
             }
-            return false;
+            return Conflict.none();
         }
-        double height = sagitta(a, shared, unexpected.getFirst().point())
-                + sagitta(b, shared, unexpected.getFirst().point());
-        if (!Double.isFinite(height)) {
+        var start = shared.orElseThrow();
+        var tolerance = overlap.orElseThrow();
+        var assessment = LensHeight.compare(a, b, start, tolerance, control.visit());
+        if (assessment == null) {
             uncertain();
-            return false;
+            return Conflict.none();
         }
-        return height > overlap.orElseThrow().doubleValue();
+        if (!assessment.permitted()) {
+            return new Conflict(Optional.of(hit), "Overlap height " + assessment.height().stripTrailingZeros().toPlainString()
+                    + " exceeds tolerance " + tolerance.description(), Optional.empty());
+        }
+        return new Conflict(Optional.empty(), "", Optional.of(new Lens(start, hit.point())));
     }
 
     private static boolean endpoint(CurveSegment segment, Point point) {
         return segment.start().equals(point) || segment.end().equals(point);
     }
 
-    private static double sagitta(CurveSegment segment, Point shared, Point intersection) {
-        if (!(segment instanceof CircularArc arc)) {
-            return 0;
-        }
-        var from = shared.equals(arc.start()) ? arc : arc.reversed();
-        double angle = from.angle(intersection) - from.angle(shared);
-        angle *= Math.copySign(1, from.sweep());
-        if (angle < 0) {
-            angle += 2 * Math.PI;
-        }
-        double sine = Math.sin(angle / 4);
-        return arc.radius() * (2 * sine * sine);
-    }
-
     private void compareSurfaces(Surface first, Surface second) {
-        control.visit().run();
-        for (Ring a : rings(first)) {
-            for (Ring b : rings(second)) {
-                boundaryContacts(flat(a), flat(b), GEOMETRY_AREA_OVERLAP, null, false);
-            }
-        }
-        if (status != INVALID && (within(first, second, Set.of()) || within(second, first, Set.of()))) {
-            invalid(second.shell().path(), first.shell().path(), GEOMETRY_AREA_OVERLAP, "Surface interiors overlap");
-        }
+        statusAfterCoverage(first, second, false, false);
     }
 
-    GeometryEngine.Check coveragePair(Surface first, GeometryEngine.Input firstSource, Surface second,
-                                      Optional<java.math.BigDecimal> tolerance) {
-        relatedSource = firstSource;
-        overlap = tolerance;
+    private PairBoundaries compareSurfaces(Surface first, Surface second, boolean allowShared) {
+        control.visit().run();
         var left = rings(first);
         var right = rings(second);
-        var shared = new HashSet<Edge>();
+        var pair = new PairBoundaries();
         for (int i = 0; i < left.size(); i++) {
             var a = flat(left.get(i));
             for (int j = 0; j < right.size(); j++) {
                 control.visit().run();
                 var b = flat(right.get(j));
-                boolean sameSide = (signedArea(a) > 0 ^ i > 0) == (signedArea(b) > 0 ^ j > 0);
-                boundaryContacts(a, b, GEOMETRY_AREA_OVERLAP, shared, sameSide);
+                Optional<Boolean> sameSide = Optional.empty();
+                if (allowShared) {
+                    int leftOrientation = areaOrientation(a, control.visit());
+                    int rightOrientation = areaOrientation(b, control.visit());
+                    if (leftOrientation == 0 || rightOrientation == 0) {
+                        uncertain();
+                    } else {
+                        sameSide = Optional.of((leftOrientation > 0 ^ i > 0) == (rightOrientation > 0 ^ j > 0));
+                    }
+                }
+                boundaryContacts(a, b, GEOMETRY_AREA_OVERLAP, pair, allowShared, sameSide);
             }
         }
-        if (status != INVALID && (within(first, second, shared) || within(second, first, shared))) {
-            invalid(second.shell().path(), first.shell().path(), GEOMETRY_AREA_OVERLAP, "Surface interiors overlap");
+        return pair;
+    }
+
+    record CoveragePair(GeometryEngine.Check check, Map<Segment, List<Span>> submerged) {}
+
+    CoveragePair coveragePair(Surface first, GeometryEngine.Input firstSource, Surface second,
+                              Optional<LensHeight.Tolerance> tolerance, TransferGeometryAdapter.Position projectionOrigin,
+                              boolean traceBoundary) {
+        relatedSource = firstSource;
+        overlap = tolerance;
+        origin = projectionOrigin;
+        return new CoveragePair(statusAfterCoverage(first, second, true, traceBoundary), submerged);
+    }
+
+    private final Map<Segment, List<Span>> submerged = new IdentityHashMap<>();
+
+    private GeometryEngine.Check statusAfterCoverage(Surface first, Surface second, boolean allowShared, boolean traceBoundary) {
+        var pair = compareSurfaces(first, second, allowShared);
+        if (status != INVALID) {
+            within(first, second, pair, traceBoundary, false);
+        }
+        if (status != INVALID) {
+            within(second, first, pair, traceBoundary, true);
         }
         return status;
     }
 
-    private boolean within(Surface container, Surface other, Set<Edge> shared) {
-        var shell = flat(container.shell());
-        var holes = container.holes().stream().map(CurveValidity::flat).toList();
-        for (var segment : flat(other.shell())) {
-            control.visit().run();
-            if (shared.contains(segment.edge())) {
-                continue;
-            }
-            var point = midpoint(segment.curve());
-            if (locate(shell, point) == Position.INSIDE
-                    && holes.stream().noneMatch(hole -> locate(hole, point) != Position.OUTSIDE)) {
-                return true;
+    private void within(Surface container, Surface other, PairBoundaries pair, boolean traceBoundary, boolean reverse) {
+        for (var ring : rings(other)) {
+            for (var segment : flat(ring)) {
+                control.visit().run();
+                if (pair.shared.contains(segment)) {
+                    continue;
+                }
+                var curve = segment.curve();
+                var lenses = pair.permitted.getOrDefault(segment, List.of());
+                var contacts = pair.contacts.getOrDefault(segment, Set.of());
+                List<Fragment> fragments;
+                try {
+                    fragments = fragments(curve, lenses, control.visit());
+                } catch (CurveOrder.Unknown uncertainOrder) {
+                    uncertain();
+                    continue;
+                }
+                for (var fragment : fragments) {
+                    control.visit().run();
+                    var found = probe(container, curve, fragment.span(), contacts);
+                    if (found == null || found.position() != Position.INSIDE) {
+                        continue;
+                    }
+                    var point = found.point();
+                    if (!fragment.withinSpans()) {
+                        var primary = reverse ? container.shell().path() : segment.path();
+                        var related = reverse ? segment.path() : container.shell().path();
+                        invalid(primary, related, GEOMETRY_AREA_OVERLAP, "Surface interiors overlap",
+                                CONTAINED_BOUNDARY, point);
+                        return;
+                    }
+                    if (traceBoundary) {
+                        submerged.computeIfAbsent(segment, ignored -> new ArrayList<>()).add(fragment.span());
+                    }
+                }
             }
         }
-        return false;
+    }
+
+    private record Containment(Point point, Position position) {}
+
+    private Containment probe(Surface container, CurveSegment curve, Span fragment, Set<Point> contacts) {
+        for (var endpoint : List.of(fragment.start(), fragment.end())) {
+            if (!contacts.contains(endpoint)) {
+                var position = locate(container, endpoint);
+                if (position == Position.INSIDE || position == Position.OUTSIDE) {
+                    return new Containment(endpoint, position);
+                }
+            }
+        }
+        if (!(curve instanceof CircularArc)) {
+            if (fragment.start().equals(curve.start()) && fragment.end().equals(curve.end())) {
+                var middle = CurvePointLocation.midpoint(curve);
+                return new Containment(middle, locate(container, middle));
+            }
+        }
+        for (int digits = Interval.INITIAL_DIGITS; digits <= Interval.MAX_DIGITS; digits *= 2) {
+            control.visit().run();
+            var x = fragment.start().xInterval(digits);
+            var y = fragment.start().yInterval(digits);
+            var dx = fragment.end().xInterval(digits).subtract(x);
+            var dy = fragment.end().yInterval(digits).subtract(y);
+            if (curve instanceof CircularArc arc) {
+                var circle = arc.definition();
+                var chord = dx.square().add(dy.square()).sqrt();
+                if (chord.low().signum() == 0) {
+                    continue;
+                }
+                // From the centre, follow the perpendicular to this chord into the selected arc.
+                var normalScale = circle.radiusSquared().interval(digits).sqrt().divide(chord)
+                        .multiply(Interval.exact(BigDecimal.valueOf(arc.arcSide()), digits));
+                x = circle.centreX(digits).subtract(dy.multiply(normalScale));
+                y = circle.centreY(digits).add(dx.multiply(normalScale));
+            } else {
+                var start = curve.start();
+                var vx = Interval.exact(curve.end().exactX().subtract(start.exactX()), digits);
+                var vy = Interval.exact(curve.end().exactY().subtract(start.exactY()), digits);
+                var half = Interval.exact(new BigDecimal("0.5"), digits);
+                var px = x.add(dx.multiply(half)).subtract(Interval.exact(start.exactX(), digits));
+                var py = y.add(dy.multiply(half)).subtract(Interval.exact(start.exactY(), digits));
+                var fraction = px.multiply(vx).add(py.multiply(vy)).divide(vx.square().add(vy.square()));
+                x = Interval.exact(start.exactX(), digits).add(vx.multiply(fraction));
+                y = Interval.exact(start.exactY(), digits).add(vy.multiply(fraction));
+            }
+            if (separated(container, x, y)) {
+                var middle = new Point(x.middle(), y.middle());
+                return new Containment(middle, locate(container, middle));
+            }
+        }
+        uncertain();
+        return null;
+    }
+
+    private boolean separated(Surface container, Interval x, Interval y) {
+        int digits = x.digits();
+        var box = new org.locationtech.jts.geom.Envelope(CurveSegment.lower(x.low()), CurveSegment.upper(x.high()),
+                CurveSegment.lower(y.low()), CurveSegment.upper(y.high()));
+        for (var ring : rings(container)) {
+            for (var segment : flat(ring)) {
+                control.visit().run();
+                var curve = segment.curve();
+                if (!curve.envelope().intersects(box)) {
+                    continue;
+                }
+                if (curve instanceof CircularArc arc) {
+                    var circle = arc.definition();
+                    var radial = x.subtract(circle.centreX(digits)).square()
+                            .add(y.subtract(circle.centreY(digits)).square())
+                            .subtract(circle.radiusSquared().interval(digits));
+                    if (Math.abs(radial.sign()) == 1
+                            || CircularArc.side(curve.start(), curve.end(), x, y).sign() == -arc.arcSide()) {
+                        continue;
+                    }
+                } else if (Math.abs(CircularArc.side(curve.start(), curve.end(), x, y).sign()) == 1) {
+                    continue;
+                }
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private Position locate(Surface container, Point point) {
+        var shell = locate(flat(container.shell()), point);
+        if (shell != Position.INSIDE) {
+            return shell;
+        }
+        for (var hole : container.holes()) {
+            var position = locate(flat(hole), point);
+            if (position != Position.OUTSIDE) {
+                return position == Position.INSIDE ? Position.OUTSIDE : position;
+            }
+        }
+        return Position.INSIDE;
+    }
+
+    static List<Fragment> fragments(CurveSegment curve, List<Span> spans, Runnable visit) {
+        if (spans.isEmpty()) {
+            return List.of(new Fragment(new Span(curve.start(), curve.end()), false));
+        }
+        var positions = new TreeMap<Point, Integer>(new CurveOrder(curve, visit));
+        positions.put(curve.start(), 0);
+        positions.put(curve.end(), 0);
+        for (var span : spans) {
+            positions.merge(span.start(), 1, Integer::sum);
+            positions.merge(span.end(), -1, Integer::sum);
+        }
+        var fragments = new ArrayList<Fragment>();
+        Point previous = null;
+        int count = 0;
+        for (var entry : positions.entrySet()) {
+            if (previous != null) {
+                fragments.add(new Fragment(new Span(previous, entry.getKey()), count > 0));
+            }
+            previous = entry.getKey();
+            count += entry.getValue();
+        }
+        return fragments;
+    }
+
+    static CurveSegment subcurve(CurveSegment curve, Point start, Point end) {
+        if (start.equals(curve.start()) && end.equals(curve.end())) {
+            return curve;
+        }
+        return curve instanceof CircularArc arc ? arc.subArc(start, end) : new CurveSegment.Straight(start, end);
     }
 
     private static List<Ring> rings(Surface surface) {
@@ -528,98 +803,51 @@ final class CurveValidity {
         return ring.segments();
     }
 
-    private Position location(List<Segment> container, List<Segment> other, HashSet<Point> contacts) {
+    private Containment location(List<Segment> container, List<Segment> other, Set<Point> contacts,
+                                 Map<Segment, List<Span>> lenses) {
         for (Segment segment : other) {
             var start = segment.curve().start();
             if (!contacts.contains(start)) {
-                return locate(container, start);
-            }
-            var mid = midpoint(segment.curve());
-            if (!contacts.contains(mid)) {
-                return locate(container, mid);
+                var position = CurvePointLocation.locate(container, start, control.visit());
+                if (position == Position.INSIDE || position == Position.OUTSIDE) {
+                    return new Containment(start, position);
+                }
             }
         }
-        return Position.BOUNDARY;
+        // All support points can be contacts, for example when a hole has two curved sides.
+        for (var segment : other) {
+            var curve = segment.curve();
+            List<Fragment> fragments;
+            try {
+                fragments = fragments(curve, lenses.getOrDefault(segment, List.of()), control.visit());
+            } catch (CurveOrder.Unknown uncertainOrder) {
+                continue;
+            }
+            for (var fragment : fragments) {
+                control.visit().run();
+                if (fragment.withinSpans()) {
+                    continue;
+                }
+                var span = fragment.span();
+                var point = CurvePointLocation.midpoint(subcurve(curve, span.start(), span.end()));
+                if (point != null) {
+                    var position = CurvePointLocation.locate(container, point, control.visit());
+                    if (position == Position.INSIDE || position == Position.OUTSIDE) {
+                        return new Containment(point, position);
+                    }
+                }
+            }
+        }
+        uncertain();
+        return new Containment(null, Position.UNDETERMINED);
     }
-
-    private enum Position { OUTSIDE, INSIDE, BOUNDARY }
 
     private Position locate(List<Segment> boundary, Point point) {
-        int crossings = 0;
-        for (Segment segment : boundary) {
-            control.visit().run();
-            var curve = segment.curve();
-            if (endpoint(curve, point)) {
-                return Position.BOUNDARY;
-            }
-            if (curve instanceof CircularArc arc) {
-                var result = arcCrossings(arc, point);
-                if (result < 0) {
-                    return Position.BOUNDARY;
-                }
-                crossings += result;
-            } else {
-                Point a = curve.start();
-                Point b = curve.end();
-                int orientation = Orientation.index(a.coordinate(), b.coordinate(), point.coordinate());
-                if (orientation == 0 && curve.envelope().covers(point.x(), point.y())) {
-                    return Position.BOUNDARY;
-                }
-                if ((a.y() > point.y()) != (b.y() > point.y())
-                        && (b.y() > a.y() ? orientation > 0 : orientation < 0)) {
-                    crossings++;
-                }
-            }
+        var position = CurvePointLocation.locate(boundary, point, control.visit());
+        if (position == Position.UNDETERMINED) {
+            uncertain();
         }
-        return crossings % 2 == 0 ? Position.OUTSIDE : Position.INSIDE;
-    }
-
-    private static int arcCrossings(CircularArc arc, Point point) {
-        var splits = new ArrayList<Double>();
-        splits.add(0.0);
-        double start = arc.angle(arc.start());
-        double direction = Math.copySign(1, arc.sweep());
-        for (double extremum : new double[]{Math.PI / 2, -Math.PI / 2}) {
-            double delta = direction * (extremum - start);
-            if (delta < 0) {
-                delta += 2 * Math.PI;
-            }
-            if (delta > 0 && delta < Math.abs(arc.sweep())) {
-                splits.add(delta);
-            }
-        }
-        splits.add(Math.abs(arc.sweep()));
-        splits.sort(Double::compare);
-        double normalized = (point.y() - arc.center().y()) / arc.radius();
-        if (Math.abs(normalized) > 1) {
-            return 0;
-        }
-        double dx = arc.radius() * Math.sqrt((1 - normalized) * (1 + normalized));
-        int count = 0;
-        for (int i = 1; i < splits.size(); i++) {
-            double a = start + direction * splits.get(i - 1);
-            double b = start + direction * splits.get(i);
-            double ay = i == 1 ? arc.start().y() : arc.center().y() + arc.radius() * Math.sin(a);
-            double by = i == splits.size() - 1 ? arc.end().y() : arc.center().y() + arc.radius() * Math.sin(b);
-            double x = arc.center().x() + Math.copySign(dx, Math.cos((a + b) / 2));
-            if (x == point.x() && point.y() >= Math.min(ay, by) && point.y() <= Math.max(ay, by)) {
-                return -1;
-            }
-            if ((ay > point.y()) != (by > point.y()) && x > point.x()) {
-                count++;
-            }
-        }
-        return count;
-    }
-
-    private static Point midpoint(CurveSegment segment) {
-        if (segment instanceof CircularArc arc) {
-            double angle = arc.angle(arc.start()) + arc.sweep() / 2;
-            return new Point(Math.fma(arc.radius(), Math.cos(angle), arc.center().x()),
-                    Math.fma(arc.radius(), Math.sin(angle), arc.center().y()));
-        }
-        return new Point(segment.start().x() / 2 + segment.end().x() / 2,
-                segment.start().y() / 2 + segment.end().y() / 2);
+        return position;
     }
 
     static double signedArea(List<Segment> boundary) {
@@ -640,8 +868,13 @@ final class CurveValidity {
         return sum;
     }
 
+    static int areaOrientation(List<Segment> boundary, Runnable visit) {
+        return CurveAreaOrientation.sign(boundary, visit);
+    }
+
     private static int root(int[] links, int index) {
         while (links[index] != index) {
+            links[index] = links[links[index]];
             index = links[index];
         }
         return index;
@@ -654,18 +887,44 @@ final class CurveValidity {
     }
 
     private void invalid(List<GeometryComponent> path, List<GeometryComponent> related,
-                         ValidationCode code, String detail) {
-        var location = relatedSource.location();
-        var steps = new ArrayList<>(location.path());
-        steps.addAll(related);
-        var other = new DataLocation(location.source(), location.basket(), location.tid(), location.oid(),
-                location.objectType(), steps);
-        status = INVALID;
-        control.findings().accept(new GeometryEngine.Finding(input.location(), path, code, detail, Optional.of(other)));
+                         ValidationCode code, String detail, GeometryWitness.Kind kind, Point point) {
+        invalid(path, code, detail, List.of(dataPath(relatedSource, related)), kind, point);
     }
 
-    private void invalid(List<GeometryComponent> path, ValidationCode code, String detail) {
+    private static DataLocation dataPath(GeometryEngine.Input source, List<GeometryComponent> path) {
+        var location = source.location();
+        var steps = new ArrayList<>(location.path());
+        steps.addAll(path);
+        return new DataLocation(location.source(), location.basket(), location.tid(), location.oid(),
+                location.objectType(), steps);
+    }
+
+    private void invalid(List<GeometryComponent> path, ValidationCode code, String detail,
+                         List<DataLocation> related, GeometryWitness.Kind kind, Point point) {
         status = INVALID;
-        control.findings().accept(new GeometryEngine.Finding(input.location(), path, code, detail));
+        control.findings().accept(new GeometryEngine.Finding(input.location(), path, code, detail, related,
+                point == null ? Optional.empty() : Optional.of(witness(kind, point, origin))));
+    }
+
+    private void invalid(List<GeometryComponent> path, ValidationCode code, String detail,
+                         TransferGeometryAdapter.Position point) {
+        invalid(path, code, detail, point == null ? Optional.empty()
+                : Optional.of(new GeometryWitness(VERTEX, point.x(), point.y())));
+    }
+
+    private void invalid(List<GeometryComponent> path, ValidationCode code, String detail,
+                         GeometryWitness.Kind kind, Point point) {
+        invalid(path, code, detail, point == null ? Optional.empty() : Optional.of(witness(kind, point, origin)));
+    }
+
+    private void invalid(List<GeometryComponent> path, ValidationCode code, String detail,
+                         Optional<GeometryWitness> witness) {
+        status = INVALID;
+        control.findings().accept(new GeometryEngine.Finding(input.location(), path, code, detail,
+                Optional.empty(), witness));
+    }
+
+    static GeometryWitness witness(GeometryWitness.Kind kind, Point point, TransferGeometryAdapter.Position origin) {
+        return new GeometryWitness(kind, origin.x().add(point.exactX()), origin.y().add(point.exactY()));
     }
 }

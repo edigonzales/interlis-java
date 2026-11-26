@@ -1,0 +1,10 @@
+INTERLIS 2.4;
+MODEL Review AT "https://example.org/review" VERSION "1" =
+  DOMAIN Point = COORD 0 .. 20, 0 .. 20;
+  TOPIC Data =
+    CLASS Object =
+      shape : AREA WITH (STRAIGHTS, ARCS) VERTEX Point WITHOUT OVERLAPS > 1;
+
+    END Object;
+  END Data;
+END Review.

@@ -1,0 +1,9 @@
+INTERLIS 2.4;
+MODEL OutsideLens AT "https://example.org/review" VERSION "1" =
+  DOMAIN Point = COORD -10 .. 100, -10 .. 100;
+  TOPIC Data =
+    CLASS Object =
+      shape : SURFACE WITH (STRAIGHTS, ARCS) VERTEX Point;
+    END Object;
+  END Data;
+END OutsideLens.

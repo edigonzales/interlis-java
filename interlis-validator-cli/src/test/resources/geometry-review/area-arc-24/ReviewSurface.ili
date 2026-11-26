@@ -1,0 +1,10 @@
+INTERLIS 2.4;
+MODEL ReviewSurface AT "https://example.org/review" VERSION "1" =
+  DOMAIN Point = COORD 0 .. 20, 0 .. 20;
+  TOPIC Data =
+    CLASS Object =
+      shape : SURFACE WITH (STRAIGHTS, ARCS) VERTEX Point WITHOUT OVERLAPS > 1;
+      SET CONSTRAINT INTERLIS.areAreas(ALL, UNDEFINED, >>shape);
+    END Object;
+  END Data;
+END ReviewSurface.

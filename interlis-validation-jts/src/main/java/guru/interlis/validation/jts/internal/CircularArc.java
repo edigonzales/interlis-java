@@ -2,139 +2,226 @@ package guru.interlis.validation.jts.internal;
 
 import guru.interlis.transfer.TransferGeometry.ArcRadius;
 import guru.interlis.transfer.TransferGeometry.RadiusConvention;
-import org.locationtech.jts.algorithm.Orientation;
+import guru.interlis.validation.jts.internal.ExactCircle.Rational;
 import org.locationtech.jts.geom.Envelope;
-import org.locationtech.jts.geom.Triangle;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
-record CircularArc(Point start, Point end, Point center, double radius, double sweep) implements CurveSegment {
+record CircularArc(Point start, Point end, Point center, double radius, double sweep,
+                   ExactCircle definition, Envelope bounds) implements CurveSegment {
     private static final double TURN = 2 * Math.PI;
+
+    private CircularArc(Point start, Point end, Point center, double radius, double sweep, ExactCircle definition) {
+        this(start, end, center, radius, sweep, definition,
+                envelope(start, end, definition, sweep < 0 ? 1 : -1));
+    }
 
     sealed interface Construction {
         record Built(CircularArc arc) implements Construction {}
-        record Invalid(String detail) implements Construction {}
+        record Invalid(String detail, boolean chordTooLong) implements Construction {
+            Invalid(String detail) {
+                this(detail, false);
+            }
+        }
         record Undetermined(String detail) implements Construction {}
     }
 
     static Construction build(Point start, Point support, Point end, Optional<ArcRadius> specified,
                               double supportTolerance) {
+        return build(start, support, end, specified, BigDecimal.valueOf(supportTolerance), false, () -> {});
+    }
+
+    static Construction build(Point start, Point support, Point end, Optional<ArcRadius> specified,
+                              BigDecimal supportQuantum, boolean modelQuantum, Runnable visit) {
         if (start.equals(end) || start.equals(support) || end.equals(support)) {
             return new Construction.Invalid("Coincident arc positions");
         }
-        int side = Orientation.index(start.coordinate(), support.coordinate(), end.coordinate());
+        int supportDirection = Point.orientation(start, support, end);
         if (specified.isEmpty()) {
-            if (side == Orientation.COLLINEAR) {
+            if (supportDirection == 0) {
                 return new Construction.Invalid("Collinear arc positions");
             }
-            var center = Triangle.circumcentreDD(start.coordinate(), support.coordinate(), end.coordinate());
-            var point = new Point(center.x, center.y);
-            return candidate(start, end, point, point.distance(start), side);
+            return candidate(start, end, ExactCircle.through(start, support, end), supportDirection);
         }
 
         var input = specified.orElseThrow();
-        int sign = input.sourceValue().exactValue().signum();
+        var value = input.sourceValue().exactValue();
+        int sign = value.signum();
         boolean signed = input.convention() == RadiusConvention.SIGNED_CLOCKWISE;
         if (sign == 0 || !signed && sign < 0) {
             return new Construction.Invalid("Radius does not satisfy its convention");
         }
-        if (side == Orientation.COLLINEAR) {
+        var squaredRadius = value.pow(2);
+        var chordSquared = squaredDistance(start, end);
+        var diameterSquared = squaredRadius.multiply(BigDecimal.valueOf(4));
+        int feasible = diameterSquared.compareTo(chordSquared);
+        if (feasible < 0) {
+            return new Construction.Invalid("Radius is smaller than half the chord (squared chord "
+                    + chordSquared.toPlainString() + ", squared diameter " + diameterSquared.toPlainString() + ")", true);
+        }
+
+        // In XTF 2.3 the signed radius fixes the direction. The support selects between the two arcs
+        // in that direction, including when its allowed displacement takes it across the chord.
+        int direction = signed ? -sign : supportDirection;
+        if (direction == 0) {
             return new Construction.Undetermined("Collinear positions cannot select the prescribed arc");
         }
-        if (signed && -sign != side) {
-            return new Construction.Invalid("Radius direction contradicts intermediate position");
+        var radiusSquared = Rational.of(squaredRadius);
+        var a = ExactCircle.fromRadius(start, end, radiusSquared, 1);
+        var b = feasible == 0 ? a : ExactCircle.fromRadius(start, end, radiusSquared, -1);
+        if (supportDirection == direction && a.pointSide(support) == 0) {
+            return candidate(start, end, a, direction);
+        }
+        if (supportDirection == direction && b.pointSide(support) == 0) {
+            return candidate(start, end, b, direction);
         }
 
-        double radius = input.sourceValue().exactValue().abs().doubleValue();
-        double halfChord = start.distance(end) / 2;
-        if (!Double.isFinite(radius) || !Double.isFinite(halfChord) || radius == 0 || halfChord == 0) {
-            return new Construction.Undetermined("Radius or chord exceeds numerical resolution");
+        for (int digits = Interval.INITIAL_DIGITS; digits <= Interval.MAX_DIGITS; digits *= 2) {
+            visit.run();
+            var da = supportDistanceSquared(a, start, end, support, direction, digits);
+            var db = a == b ? da : supportDistanceSquared(b, start, end, support, direction, digits);
+            var tolerance = Interval.exact(supportQuantum.pow(2), digits);
+            if (modelQuantum) {
+                tolerance = signed ? tolerance.multiply(Interval.exact(BigDecimal.valueOf(4), digits))
+                        : tolerance.multiply(Interval.exact(new BigDecimal("0.5"), digits));
+            }
+            if (da.low().min(db.low()).compareTo(tolerance.high()) > 0) {
+                return new Construction.Invalid("Intermediate position is outside the prescribed arc");
+            }
+            if ((a == b || da.high().compareTo(db.low()) < 0) && da.high().compareTo(tolerance.low()) <= 0) {
+                return candidate(start, end, a, direction);
+            }
+            if (db.high().compareTo(da.low()) < 0 && db.high().compareTo(tolerance.low()) <= 0) {
+                return candidate(start, end, b, direction);
+            }
         }
-        if (radius < halfChord) {
-            return new Construction.Invalid("Radius is smaller than half the chord");
-        }
-        double ratio = halfChord / radius;
-        double offset = radius * Math.sqrt((1 - ratio) * (1 + ratio));
-        double dx = (end.x() - start.x()) / 2;
-        double dy = (end.y() - start.y()) / 2;
-        var middle = new Point(start.x() + dx, start.y() + dy);
-        var first = new Point(middle.x() - dy / halfChord * offset, middle.y() + dx / halfChord * offset);
-        var second = new Point(middle.x() + dy / halfChord * offset, middle.y() - dx / halfChord * offset);
-        var a = candidate(start, end, first, radius, side);
-        var b = offset == 0 ? a : candidate(start, end, second, radius, side);
-        double da = supportDistance(a, support);
-        double db = supportDistance(b, support);
-        if (!Double.isFinite(Math.min(da, db))) {
-            return new Construction.Undetermined("Cannot resolve prescribed circle");
-        }
-        if (Math.min(da, db) > supportTolerance) {
-            return new Construction.Invalid("Intermediate position is outside the prescribed arc");
-        }
-        if (offset != 0 && da == db) {
-            return new Construction.Undetermined("Intermediate position does not distinguish the two circles");
-        }
-        return da <= db ? a : b;
+        return new Construction.Undetermined("Intermediate position does not resolve the prescribed arc");
     }
 
-    private static Construction candidate(Point start, Point end, Point center, double radius, int direction) {
-        double ax = (start.x() - center.x()) / radius;
-        double ay = (start.y() - center.y()) / radius;
-        double bx = (end.x() - center.x()) / radius;
-        double by = (end.y() - center.y()) / radius;
-        double minorAngle = Math.atan2(Math.fma(ax, by, -ay * bx), Math.fma(ax, bx, ay * by));
-        double sweep = direction * positive(direction * minorAngle);
-        if (!Double.isFinite(sweep) || !Double.isFinite(radius * sweep) || sweep == 0) {
+    private static Interval supportDistanceSquared(ExactCircle circle, Point start, Point end, Point support,
+                                                   int direction, int digits) {
+        var cx = circle.centreX(digits);
+        var cy = circle.centreY(digits);
+        var dx = Interval.exact(support.exactX(), digits).subtract(cx);
+        var dy = Interval.exact(support.exactY(), digits).subtract(cy);
+        var distance = dx.square().add(dy.square()).sqrt();
+        var radius = circle.radiusSquared().interval(digits).sqrt();
+        var radial = distance.subtract(radius).square();
+        if (distance.high().signum() == 0) {
+            return radial;
+        }
+        var endpoint = Interval.exact(squaredDistance(start, support).min(squaredDistance(end, support)), digits);
+        if (distance.low().signum() > 0) {
+            var ratio = radius.divide(distance);
+            int side = side(start, end, cx.add(dx.multiply(ratio)), cy.add(dy.multiply(ratio))).sign();
+            if (side == -direction || side == 0) {
+                return radial;
+            }
+            if (side == direction) {
+                return endpoint;
+            }
+        }
+        return new Interval(radial.low().min(endpoint.low()), endpoint.high(), digits);
+    }
+
+    private static BigDecimal squaredDistance(Point first, Point second) {
+        return first.exactX().subtract(second.exactX()).pow(2)
+                .add(first.exactY().subtract(second.exactY()).pow(2));
+    }
+
+    private static Construction candidate(Point start, Point end, ExactCircle circle, int direction) {
+        var cx = circle.centreX(Interval.INITIAL_DIGITS).middle();
+        var cy = circle.centreY(Interval.INITIAL_DIGITS).middle();
+        var center = new Point(cx, cy);
+        double radius = circle.radiusSquared().interval(Interval.INITIAL_DIGITS).sqrt().middle().doubleValue();
+        double sweep = sweep(start, end, circle, direction);
+        if (!(radius > 0) || !Double.isFinite(radius * sweep) || sweep == 0
+                || !Double.isFinite(center.x()) || !Double.isFinite(center.y())) {
             return new Construction.Undetermined("Circle angle or radius exceeds numerical resolution");
         }
-        return new Construction.Built(new CircularArc(start, end, center, radius, sweep));
+        return new Construction.Built(new CircularArc(start, end, center, radius, sweep, circle));
     }
 
-    private static double supportDistance(Construction construction, Point support) {
-        if (!(construction instanceof Construction.Built built)) {
-            return Double.POSITIVE_INFINITY;
-        }
-        var arc = built.arc();
-        return arc.containsAngle(arc.angle(support))
-                ? Math.abs(arc.center.distance(support) - arc.radius)
-                : Math.min(arc.start.distance(support), arc.end.distance(support));
-    }
-
-    private static double positive(double angle) {
-        return angle < 0 ? angle + TURN : angle;
+    private static double sweep(Point start, Point end, ExactCircle circle, int direction) {
+        var ratio = ExactCircle.chordSquared(start, end)
+                .divide(circle.radiusSquared().multiply(Rational.of(4)));
+        double halfChordOverRadius = ratio.interval(Interval.INITIAL_DIGITS).sqrt().middle().doubleValue();
+        double minor = 2 * Math.asin(Math.min(1, halfChordOverRadius));
+        return direction * (circle.centreSide(start, end) == -direction ? TURN - minor : minor);
     }
 
     double angle(Point point) {
-        return Math.atan2(point.y() - center.y(), point.x() - center.x());
+        return Math.atan2(point.exactY().subtract(center.exactY()).doubleValue(),
+                point.exactX().subtract(center.exactX()).doubleValue());
     }
 
-    boolean containsAngle(double angle) {
-        double delta = angle - angle(start);
-        double directed = Math.copySign(1, sweep) * delta;
-        if (directed >= TURN) {
-            directed -= TURN;
-        }
-        return positive(directed) <= Math.abs(sweep);
+    int arcSide() {
+        return sweep < 0 ? 1 : -1;
+    }
+
+    boolean containsOnCircle(Point point) {
+        return start.equals(point) || end.equals(point) || Point.orientation(start, end, point) == arcSide();
+    }
+
+    static Interval side(Point start, Point end, Interval x, Interval y) {
+        int digits = x.digits();
+        var startX = start.xInterval(digits);
+        var startY = start.yInterval(digits);
+        return end.xInterval(digits).subtract(startX).multiply(y.subtract(startY))
+                .subtract(end.yInterval(digits).subtract(startY).multiply(x.subtract(startX)));
     }
 
     @Override public Envelope envelope() {
-        var bounds = new Envelope(start.coordinate(), end.coordinate());
-        for (int i = 0; i < 4; i++) {
-            double angle = i * (Math.PI / 2);
-            if (containsAngle(angle)) {
-                switch (i) {
-                    case 0 -> bounds.expandToInclude(center.x() + radius, center.y());
-                    case 1 -> bounds.expandToInclude(center.x(), center.y() + radius);
-                    case 2 -> bounds.expandToInclude(center.x() - radius, center.y());
-                    case 3 -> bounds.expandToInclude(center.x(), center.y() - radius);
-                    default -> throw new AssertionError(i);
-                }
-            }
-        }
+        return new Envelope(bounds);
+    }
+
+    @Override public Envelope bounds() {
+        return new Envelope(bounds);
+    }
+
+    private static Envelope envelope(Point start, Point end, ExactCircle definition, int arcSide) {
+        var bounds = new Straight(start, end).envelope();
+        int digits = Interval.INITIAL_DIGITS;
+        var cx = definition.centreX(digits);
+        var cy = definition.centreY(digits);
+        var r = definition.radiusSquared().interval(digits).sqrt();
+        includeExtremum(bounds, cx.add(r), cy, start, end, arcSide);
+        includeExtremum(bounds, cx.subtract(r), cy, start, end, arcSide);
+        includeExtremum(bounds, cx, cy.add(r), start, end, arcSide);
+        includeExtremum(bounds, cx, cy.subtract(r), start, end, arcSide);
         return bounds;
+    }
+
+    private static void includeExtremum(Envelope bounds, Interval x, Interval y, Point start, Point end, int arcSide) {
+        if (side(start, end, x, y).sign() != -arcSide) {
+            bounds.expandToInclude(CurveSegment.lower(x.low()), CurveSegment.lower(y.low()));
+            bounds.expandToInclude(CurveSegment.upper(x.high()), CurveSegment.upper(y.high()));
+        }
     }
 
     @Override public double length() {
         return radius * Math.abs(sweep);
+    }
+
+    CircularArc subArc(Point from, Point to) {
+        if (from.equals(start) && to.equals(end)) {
+            return this;
+        }
+        return new CircularArc(from, to, center, radius, sweep(from, to, definition, -arcSide()), definition);
+    }
+
+    Point pointAt(double fraction) {
+        if (fraction == 0) return start;
+        if (fraction == 1) return end;
+        var dx = start.exactX().subtract(center.exactX()).doubleValue();
+        var dy = start.exactY().subtract(center.exactY()).doubleValue();
+        double angle = sweep * fraction;
+        double halfSine = Math.sin(angle / 2);
+        double cosineMinusOne = -2 * halfSine * halfSine;
+        double sine = Math.sin(angle);
+        return new Point(start.exactX().add(BigDecimal.valueOf(Math.fma(cosineMinusOne, dx, -sine * dy))),
+                start.exactY().add(BigDecimal.valueOf(Math.fma(cosineMinusOne, dy, sine * dx))));
     }
 
     double signedArea(Point origin) {
@@ -149,6 +236,6 @@ record CircularArc(Point start, Point end, Point center, double radius, double s
     }
 
     @Override public CircularArc reversed() {
-        return new CircularArc(end, start, center, radius, -sweep);
+        return new CircularArc(end, start, center, radius, -sweep, definition, bounds);
     }
 }

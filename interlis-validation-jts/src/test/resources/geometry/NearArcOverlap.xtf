@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="test"><MODELS>
+    <MODEL NAME="NearArcOverlap" VERSION="1" URI="https://example.org/near-arc-overlap"/>
+  </MODELS></HEADERSECTION>
+  <DATASECTION>
+    <NearArcOverlap.Data BID="basket">
+      <NearArcOverlap.Data.Boundary TID="boundary">
+        <line><POLYLINE>
+          <COORD><C1>2754781.612</C1><C2>1260649.621</C2></COORD>
+          <COORD><C1>2754777.422</C1><C2>1260634.983</C2></COORD>
+          <ARC><C1>2754777.312</C1><C2>1260636.563</C2><A1>2754777.506</A1><A2>1260635.783</A2></ARC>
+        </POLYLINE></line>
+      </NearArcOverlap.Data.Boundary>
+    </NearArcOverlap.Data>
+  </DATASECTION>
+</TRANSFER>

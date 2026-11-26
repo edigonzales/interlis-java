@@ -5,6 +5,7 @@ import guru.interlis.model.GeometryType;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolId;
 import guru.interlis.transfer.TransferGeometry;
+import guru.interlis.transfer.TransferReader.XtfEncoding;
 import guru.interlis.transfer.TransferValue;
 
 import java.util.ArrayList;
@@ -120,6 +121,7 @@ final class GeometryScopeRunner {
         var type = (GeometryType) field.values().getFirst().type();
         var basket = ValidationSession.BasketContext.of(occurrence.basket(), dataset.plan);
         var value = owner.value(slot.symbol());
+        var encoding = value.isPresent() ? occurrence.input().xtfEncoding() : Optional.<XtfEncoding>empty();
         if (value.isEmpty() && field.derived() && path != null) {
             missing[0] = true;
         } else if (value.isEmpty() && field.derived()) {
@@ -137,13 +139,11 @@ final class GeometryScopeRunner {
             }
             return Optional.empty();
         }
-        var vertex = type.vertexDomain().map(id -> GeometryParameters.coordinate(dataset.plan, basket, id));
-        return Optional.of(new GeometryEngine.Input(geometry, type,
+        return Optional.of(GeometryParameters.input(geometry, type,
                 occurrence.location(ValidationSession.ValuePath.steps(new ValidationSession.ValuePath(path,
                         new DataLocation.Slot(slot.symbol())))), slot.attribute().languageVersion(),
-                GeometryParameters.quantum(vertex.orElse(null)),
-                GeometryParameters.overlap(type, id -> GeometryParameters.coordinate(dataset.plan, basket, id)),
-                occurrence.partial(), vertex.map(guru.interlis.model.CoordinateType::id)));
+                id -> GeometryParameters.coordinate(dataset.plan, basket, id), occurrence.partial())
+                .withXtfAreaEncoding(encoding));
     }
 
     private AttributeSymbol declaration(AttributeSymbol attribute) {
