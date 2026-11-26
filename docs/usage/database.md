@@ -464,8 +464,8 @@ nullable. XTF 2.3 überträgt diese Referenzattribute innerhalb einer Struktur.
 XTF 2.4 unterstützt zusätzlich direkte Klassenattribute. Ohne die Option
 gilt `SqlNull=enable`. Die Kombination mit `--create-mandatory-checks` ist
 auf das nullable Profil beschränkt.
-Für Geometriehilfstabellen, `--multi-srs` und Rollen mit Zielen in
-Vererbungshierarchien steht die Schemaerzeugung mit `SqlNull=enable` zur Verfügung.
+Für Geometriehilfstabellen und `--multi-srs` steht die Schemaerzeugung
+mit `SqlNull=enable` zur Verfügung.
 
 Der FULL-Transfer mit GeoPackage und PostGIS unterstützt bestehende
 ili2db-Schemata mit `--sqlColsAsText`. Einfache Attribute werden als SQL-Text
@@ -896,10 +896,11 @@ deklarierten Rolle speichert die Ziel-ID der ersten Rolle. Die Rollenspalte
 erlaubt unter `--sqlEnableNull` SQL `NULL`.
 In strikten `newClass`-Schemata bestimmt die Kardinalität der gespeicherten
 Rolle die Nullbarkeit. Der Import unterstützt Pflichtrollen einfacher lokaler
-1:1- und 1:n-Assoziationen zwischen flachen Klassen.
-Bei Vorwärtsreferenzen reserviert er die SQL-ID im Basket und belegt die
-Rollenspalte beim Einfügen. Ein vorhandener Fremdschlüssel ist wie bei
-ili2db `--createFk` aufgeschoben.
+1:1- und 1:n-Assoziationen mit einer Zieltabelle, auch bei Klassen in
+`newClass`-Hierarchien. Bei Vorwärtsreferenzen reserviert er pro Ziel-TID
+im Basket eine SQL-ID und belegt die Rollenspalte beim Einfügen. Trifft
+das Ziel ein, muss sein konkreter Typ zu allen wartenden Rollen passen.
+Ein vorhandener Fremdschlüssel ist wie bei ili2db `--createFk` aufgeschoben.
 
 Rollen dürfen auf beiden Seiten Klassen in Vererbungshierarchien deklarieren,
 einschliesslich abstrakter Basisklassen. Die Rollenspalte liegt in der

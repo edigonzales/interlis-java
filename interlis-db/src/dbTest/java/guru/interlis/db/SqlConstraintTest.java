@@ -523,6 +523,51 @@ final class SqlConstraintTest {
         });
     }
 
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void requiredHierarchyRolesShareTargetIdAndRejectInvalidTargets(Backend backend, int version) throws Exception {
+        withDatabase(backend, db -> {
+            String model = "SqlRequiredHierarchyRoles";
+            var fixture = new ProfileFixtures(work, version);
+            DbTestSupport.assertSchemaWithIdentityColumns(db, model, fixture.requiredHierarchyModel(model, true),
+                    "--sql-not-null", "--create-fk");
+            assertCliSuccess(db, "import", model, "jobs", fixture.data(model, "jobs",
+                    fixture.workOrder(model, "jobs", 2) + fixture.surveySite(model, "jobs", 4)));
+            try (var sql = db.connect()) {
+                String linked = " FROM " + db.table("jobbase") + " j JOIN " + db.table("workorder")
+                        + " w ON w.t_id=j.t_id JOIN " + db.table("basesite") + " b ON b.t_id=j.assigned"
+                        + " JOIN " + db.table("surveysite") + " s ON s.t_id=b.t_id AND s.t_id=w.inspected";
+                String ids = scalar(sql, "SELECT j.t_id || ':' || b.t_id" + linked);
+                assertNotNull(ids);
+                assertCliSuccess(db, "update", model, "jobs", fixture.data(model, "jobs",
+                        fixture.workOrder(model, "jobs", 8) + fixture.surveySite(model, "jobs", 7)));
+                assertCliFailure(db, "import", model, "missing",
+                        fixture.data(model, "missing", fixture.workOrder(model, "missing", 2)),
+                        "Assigned to missing-survey");
+                assertCliFailure(db, "import", model, "wrong", fixture.data(model, "wrong",
+                        fixture.workOrder(model, "wrong", 2)
+                                + fixture.object(model, "DepotSite", "wrong-survey", "<Caption>wrong branch</Caption>")),
+                        "Inspected to wrong-survey");
+                Path foreign = fixture.data(model, "foreign", fixture.workOrder(model, "foreign", 2));
+                String tag = version == 23 ? model + ".Data" : "Data";
+                String bid = version == 23 ? "BID" : "i:bid";
+                String end = version == 23 ? "</DATASECTION>" : "</i:datasection>";
+                Files.writeString(foreign, Files.readString(foreign).replace(end,
+                        "<" + tag + " " + bid + "=\"other-basket\">" + fixture.surveySite(model, "foreign", 3)
+                                + "</" + tag + ">" + end));
+                assertCliFailure(db, "import", model, "foreign", foreign, "Assigned to foreign-survey");
+                assertEquals(ids, scalar(sql, "SELECT j.t_id || ':' || b.t_id" + linked));
+                assertEquals("8", scalar(sql, "SELECT w.priority" + linked));
+                assertEquals("7", scalar(sql, "SELECT s.heightcode" + linked));
+                for (String table : List.of("jobbase", "workorder", "basesite", "surveysite", "t_ili2db_basket")) {
+                    assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table(table)), table);
+                }
+                assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("depotsite")));
+                assertEquals("jobs", scalar(sql, "SELECT datasetname FROM " + db.table("t_ili2db_dataset")));
+            }
+        });
+    }
+
     private static void assertRolledBack(Target db, Connection sql, int objects, int datasets) throws SQLException {
         assertEquals(Integer.toString(objects), scalar(sql, "SELECT count(*) FROM " + db.table("asset")));
         assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("asset") + " WHERE t_ili_tid LIKE 'broken-%'"));

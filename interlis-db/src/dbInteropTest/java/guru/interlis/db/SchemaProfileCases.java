@@ -212,10 +212,11 @@ final class SchemaProfileCases {
 
     void requiredHierarchy(TestDatabase expected, TestDatabase own) throws Exception {
         String model = "ProfileRequiredHierarchy" + version;
-        Path ili = fixtures.requiredHierarchyModel(model);
+        Path ili = fixtures.requiredHierarchyModel(model, true);
         referenceSchema(expected, ili, "--createFk");
         schema(own, model, ili, "--sql-not-null", "--create-fk");
-        mixedObjects(expected, own, model, 2, prefix -> fixtures.surveySite(model, prefix, 8) + fixtures.depotSite(model, prefix),
+        mixedObjects(expected, own, model, 3, prefix -> fixtures.workOrder(model, prefix, 2)
+                        + fixtures.surveySite(model, prefix, 8) + fixtures.depotSite(model, prefix),
                 (prefix, rows) -> {
                     var objects = rows.stream().collect(Collectors.toMap(row -> id(row, version, "tid"), Function.identity()));
                     var survey = objects.get(prefix + "-survey");
@@ -223,7 +224,23 @@ final class SchemaProfileCases {
                     assertEquals("8", child(survey, "HeightCode").getTextContent());
                     assertNull(child(survey, "Remark"));
                     assertEquals("depot", child(objects.get(prefix + "-depot"), "Caption").getTextContent());
+                    var order = objects.get(prefix + "-work");
+                    assertEquals(prefix + "-survey", targetTid(child(order, "Assigned")));
+                    assertEquals(prefix + "-survey", targetTid(child(order, "Inspected")));
+                    assertEquals("2", child(order, "Priority").getTextContent());
                 });
+        for (var db : List.of(expected, own)) {
+            try (var sql = db.connect()) {
+                var keys = foreignKeyColumns(db, sql);
+                assertTrue(keys.contains("jobbase:assigned:basesite"), keys::toString);
+                assertTrue(keys.contains("workorder:inspected:surveysite"), keys::toString);
+                assertEquals(Set.of("legacy-work:legacy-survey", "native-work:native-survey"),
+                        catalogKeys(sql, "SELECT j.t_ili_tid || ':' || b.t_ili_tid FROM " + db.table("jobbase") + " j JOIN "
+                                + db.table("workorder") + " w ON w.t_id=j.t_id JOIN " + db.table("basesite")
+                                + " b ON b.t_id=j.assigned JOIN " + db.table("surveysite")
+                                + " s ON s.t_id=b.t_id AND s.t_id=w.inspected"));
+            }
+        }
     }
 
     void requiredGeometries(TestDatabase expected, TestDatabase own) throws Exception {

@@ -433,7 +433,7 @@ final class DbMapping {
         roleOwners = associations.stream().filter(association -> !association.linkTable())
                 .collect(Collectors.toUnmodifiableMap(association -> association.role().symbol(), EmbeddedAssociation::owner));
         requiredEmbeddedRoles = tables.stream().flatMap(table -> table.columns().stream()
-                .filter(column -> notNullRoles.contains(column.slot().symbol()) && simpleEmbeddedRole(table, column)))
+                .filter(column -> notNullRoles.contains(column.slot().symbol()) && singleTargetEmbeddedRole(table, column)))
                 .map(column -> column.slot().symbol()).collect(Collectors.toUnmodifiableSet());
     }
 
@@ -504,14 +504,14 @@ final class DbMapping {
 
     boolean requiredEmbeddedRole(Column column) { return requiredEmbeddedRoles.contains(column.slot().symbol()); }
 
-    boolean simpleEmbeddedRole(Table table, Column column) {
+    boolean singleTargetEmbeddedRole(Table table, Column column) {
         if (profile() != DbInheritance.Profile.NEW_CLASS || column.kind() != Kind.REFERENCE
                 || !(column.slot() instanceof RoleSlot) || column.external() || column.positionColumn().isPresent()
                 || column.referenceTable().isPresent() || !table.object().symbol().equals(roleOwners.get(column.slot().symbol()))) {
             return false;
         }
         var target = table(column.targetRelation());
-        return flatClass(plan, table.object()) && flatClass(plan, target.object());
+        return table.object().kind() == SymbolKind.CLASS && target.object().kind() == SymbolKind.CLASS;
     }
 
     private static boolean flatClass(TransferPlan plan, ObjectDescriptor object) {

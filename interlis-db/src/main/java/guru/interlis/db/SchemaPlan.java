@@ -216,7 +216,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             }
             var columns = new HashSet<String>();
             for (var column : table.columns()) {
-                if (column.slot() instanceof RoleSlot role && mapping.simpleEmbeddedRole(table, column)) {
+                if (column.slot() instanceof RoleSlot role && mapping.singleTargetEmbeddedRole(table, column)) {
                     if (role.role().cardinality().lower().signum() > 0) columns.add(column.name());
                     continue;
                 }

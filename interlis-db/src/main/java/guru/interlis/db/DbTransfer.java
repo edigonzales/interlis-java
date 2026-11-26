@@ -1704,10 +1704,18 @@ final class DbTransfer {
                 DbDatasetWrite.checkStableObjectBasket(db, root, datasetId, basketId, tid.orElseThrow());
             }
             var reserved = tid.map(reservations::remove).orElse(null);
-            if (reserved != null && !reserved.target().type().equals(object.type())) {
-                checkReference(reserved.source(), null);
+            long id = previous != null ? previous.id() : reserved != null ? reserved.id() : db.nextId();
+            if (reserved != null || referenceTargets.contains(object.type())) {
+                var target = new StoredObject(id, object.type(), identity.currentBasket());
+                if (reserved != null) {
+                    for (var source : reserved.references()) {
+                        token.throwIfCancellationRequested();
+                        checkReference(source, target);
+                    }
+                }
+                // Publish the concrete type and ID before binding roles on this object, including self-references.
+                objects.put(tid.orElseThrow(), target);
             }
-            long id = previous != null ? previous.id() : reserved != null ? reserved.target().id() : db.nextId();
             String context = tid.orElseGet(() -> table.object().name().declared() + " T_Id " + id);
             int found = 0;
             for (var part : chain) {
@@ -1733,9 +1741,6 @@ final class DbTransfer {
                 if (value != null && value != Undefined.INSTANCE) {
                     insertLink(association, id, context, identity.currentBasket(), value);
                 }
-            }
-            if (referenceTargets.contains(object.type())) {
-                objects.put(tid.orElseThrow(), new StoredObject(id, object.type(), identity.currentBasket()));
             }
             if (externalTargets.contains(object.type()) || (!externalTargets.isEmpty() && tid.isPresent())) {
                 externalObjects.put(tid.orElseThrow(), new StoredObject(id, object.type(), identity.currentBasket()));
@@ -2180,11 +2185,11 @@ final class DbTransfer {
             }
             Optional<BigInteger> position = Optional.empty();
             if (column.kind() == DbMapping.Kind.REFERENCE && value instanceof Reference reference) {
-                var target = bindReference(table, column, id, context, basket, reference);
-                if (target == null) {
+                Long targetId = referenceId(table, column, id, context, basket, reference);
+                if (targetId == null) {
                     statement.setNull(index++, Types.BIGINT);
                 } else {
-                    statement.setLong(index++, target.id());
+                    statement.setLong(index++, targetId);
                 }
                 position = reference.orderPosition();
             } else {
@@ -2230,8 +2235,8 @@ final class DbTransfer {
             }
         }
 
-        private StoredObject bindReference(Table table, Column column, long id, String tid, BasketId basket,
-                                           Reference reference) throws SQLException {
+        private Long referenceId(Table table, Column column, long id, String tid, BasketId basket,
+                                 Reference reference) throws SQLException {
             if (column.slot() instanceof RoleSlot role && role.role().targets().size() > 1) {
                 if (reference.external() || reference.orderPosition().isPresent()
                         || reference.targetBasket().filter(target -> !target.value().equals(basket.value())).isPresent()) {
@@ -2253,30 +2258,26 @@ final class DbTransfer {
             var patch = new Pending(table, column, id, tid, targetTid, reference.targetBasket());
             var target = (external ? externalObjects : objects).get(patch.targetTid());
             if (target == null && mapping.requiredEmbeddedRole(column)) {
-                target = reserveReferenceTarget(patch, basket);
+                return reserveReferenceTarget(patch);
             }
             if (target == null) {
                 (external ? externalPending : pending).add(patch);
             } else {
                 checkReference(patch, target);
             }
-            return target != null && mappedInColumn(column, target) ? target : null;
+            return target != null && mappedInColumn(column, target) ? target.id() : null;
         }
 
-        private StoredObject reserveReferenceTarget(Pending source, BasketId basket) throws SQLException {
-            var type = source.column().targetRelation();
-            if (source.targetTid().equals(source.objectTid()) && type.equals(source.table().object().symbol())) {
-                return new StoredObject(source.objectId(), type, basket);
-            }
+        private long reserveReferenceTarget(Pending source) throws SQLException {
             var reserved = reservations.get(source.targetTid());
-            if (reserved != null) {
-                checkReference(source, reserved.target());
-                return reserved.target();
+            if (reserved == null) {
+                var family = mapping.identityFamily(source.column().targetRelation());
+                var previous = existingObjects.get(new DbDatasetWrite.ObjectKey(family, source.targetTid()));
+                reserved = new ReferenceReservation(previous == null ? db.nextId() : previous.id(), new ArrayList<>());
+                reservations.put(source.targetTid(), reserved);
             }
-            var previous = existingObjects.get(new DbDatasetWrite.ObjectKey(mapping.identityFamily(type), source.targetTid()));
-            var target = new StoredObject(previous == null ? db.nextId() : previous.id(), type, basket);
-            reservations.put(source.targetTid(), new ReferenceReservation(source, target));
-            return target;
+            reserved.references().add(source);
+            return reserved.id();
         }
 
         private boolean mappedInColumn(Column column, StoredObject target) {
@@ -2284,7 +2285,7 @@ final class DbTransfer {
         }
 
         void finishBasket() throws SQLException {
-            if (!reservations.isEmpty()) checkReference(reservations.values().iterator().next().source(), null);
+            if (!reservations.isEmpty()) checkReference(reservations.values().iterator().next().references().getFirst(), null);
             patchReferences(pending, objects);
             pending.clear();
             patchAlternativeRoles();
@@ -2406,7 +2407,7 @@ final class DbTransfer {
 
     private record StoredObject(long id, SymbolRef type, BasketId basket) { }
 
-    private record ReferenceReservation(Pending source, StoredObject target) { }
+    private record ReferenceReservation(long id, List<Pending> references) { }
 
     private record ReferenceColumn(Table table, Column column) { }
 

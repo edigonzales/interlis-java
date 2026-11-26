@@ -161,6 +161,22 @@ final class ProfileFixtures {
     }
 
     Path requiredHierarchyModel(String model) throws IOException {
+        return requiredHierarchyModel(model, false);
+    }
+
+    Path requiredHierarchyModel(String model, boolean withRoles) throws IOException {
+        String roles = withRoles ? """
+                CLASS JobBase (ABSTRACT) = Label : MANDATORY TEXT*30; END JobBase;
+                CLASS WorkOrder EXTENDS JobBase = Priority : MANDATORY 0..10; END WorkOrder;
+                ASSOCIATION Placement =
+                  Assigned -- {1} BaseSite;
+                  Jobs -- {0..*} JobBase;
+                END Placement;
+                ASSOCIATION Inspection =
+                  Inspected -- {1} SurveySite;
+                  Orders -- {0..1} WorkOrder;
+                END Inspection;
+                """ : "";
         return source(model, """
                 CLASS BaseSite (ABSTRACT) = Caption : MANDATORY TEXT*30; END BaseSite;
                 CLASS SurveySite EXTENDS BaseSite =
@@ -168,7 +184,7 @@ final class ProfileFixtures {
                   Remark : TEXT*30;
                 END SurveySite;
                 CLASS DepotSite EXTENDS BaseSite = END DepotSite;
-                """);
+                """ + roles);
     }
 
     String surveySite(String model, String prefix, Integer height) {
@@ -179,6 +195,12 @@ final class ProfileFixtures {
 
     String depotSite(String model, String prefix) {
         return object(model, "DepotSite", prefix + "-depot", "<Caption>depot</Caption>");
+    }
+
+    String workOrder(String model, String prefix, int priority) {
+        return object(model, "WorkOrder", prefix + "-work",
+                "<Label>repair</Label>" + reference("Assigned", prefix + "-survey")
+                        + "<Priority>" + priority + "</Priority>" + reference("Inspected", prefix + "-survey"));
     }
 
     Path requiredGeometryModel(String model) throws IOException {
