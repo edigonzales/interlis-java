@@ -177,6 +177,7 @@ final class SmartClassInteropTest {
                                                 int version, boolean smart2) throws Exception {
         fixtures.assertNumericOverrides(output, model, prefix);
         if (!smart2) {
+            fixtures.assertEnumOverrides(output, model, prefix);
             fixtures.assertReferences(output, model, prefix);
             return;
         }

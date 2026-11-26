@@ -24,6 +24,7 @@ import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.ScalarFixtures.assertNumber;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -89,6 +90,7 @@ final class SmartClassStorageTest {
         Path output = roundTrip(shared, smart1, input, "smart1");
         fixtures.assertReferences(output, smart1, "fixture");
         fixtures.assertNumericOverrides(output, smart1, "fixture");
+        fixtures.assertEnumOverrides(output, smart1, "fixture");
 
         Path bad = Files.writeString(work.resolve("wrong-target.xtf"), Files.readString(input)
                 .replace("fixture-", "bad-").replace("ref=\"bad-s\"", "ref=\"bad-t\"").replace("REF=\"bad-s\"", "REF=\"bad-t\""));
@@ -104,10 +106,16 @@ final class SmartClassStorageTest {
             assertEquals("smartunit", scalar(sql, "select t_type from " + instrument + " where t_ili_tid='fixture-s'"));
             assertStoredNumbers(sql, instrument, "fixture-m", "75", "45000000000", "12.50");
             assertStoredNumbers(sql, instrument, "fixture-s", "7", "35000000000", "-1.25");
+            assertEquals("standby", scalar(sql, "select astate from " + instrument + " where t_ili_tid='fixture-m'"));
+            assertEquals("active.ready", scalar(sql, "select astate from " + instrument + " where t_ili_tid='fixture-s'"));
             assertNumericCheck(shared, sql, instrument, "fixture-s", "counter", "100", "101");
             assertNumericCheck(shared, sql, instrument, "fixture-s", "widevalue", "50000000000", "50000000001");
             assertNumericCheck(shared, sql, instrument, "fixture-s", "tilt", "90.00", "90.01");
             String regional = shared.table("regionalreading");
+            assertEquals("active.ready", scalar(sql, "select readingstate from " + regional
+                    + " where t_ili_tid='fixture-local-reading'"));
+            assertNull(scalar(sql, "select readingstate from " + shared.table("sparereading")
+                    + " where t_ili_tid='fixture-spare-reading'"));
             assertEquals("localreading", scalar(sql, "select t_type from " + regional
                     + " where t_ili_tid='fixture-local-reading'"));
             assertNumericCheck(shared, sql, regional, "fixture-local-reading", "numericvalue", "79", "80");

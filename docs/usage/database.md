@@ -54,6 +54,10 @@ Inline-Aufzählungen mit `EXTENDED` verwenden im `newClass`-Standardprofil
 ebenfalls die Spalte und den `ATTRNAME`-Eintrag der Basisdeklaration.
 Der konkrete Typ liefert den als Text gespeicherten XTF-Code, auch für neu
 hinzugekommene Werte wie `active.ready`.
+In Smart1 gilt dieselbe Regel für gemeinsam gespeicherte Attribute.
+Beim Kopieren aus einer abstrakten Klasse kann die konkrete Tabelle
+eine Spalte für die erweiterte Deklaration erhalten. Ihr `ATTRNAME`-Eintrag
+bezeichnet dann diese Deklaration.
 Lokale Referenzen dürfen auf Objekte geerbter Klassen im selben Basket
 zeigen. Der Basket kann eingebettete Rollen des Basistopics übernehmen.
 Eine in einem abgeleiteten Topic deklarierte eingebettete 1:n-Rolle mit

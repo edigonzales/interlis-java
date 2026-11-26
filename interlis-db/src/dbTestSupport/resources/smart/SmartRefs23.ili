@@ -7,12 +7,14 @@ MODEL SmartRefs23 AT "https://example.org/smart" VERSION "1" =
       Counter : 0..100;
       WideValue : 0..50000000000;
       Tilt : -90.00..90.00;
+      State : (idle, active, standby) ORDERED;
     END Meter;
     CLASS SmartUnit EXTENDS Meter =
       Badge : TEXT*12;
       Counter (EXTENDED) : 0..49;
       WideValue (EXTENDED) : 0..40000000000;
       Tilt (EXTENDED) : -9.99..9.99;
+      State (EXTENDED) : (active (ready, busy), out_of_service);
     END SmartUnit;
     CLASS Terminal EXTENDS Instrument = Socket : TEXT*12; END Terminal;
     STRUCTURE Note =
@@ -24,10 +26,14 @@ MODEL SmartRefs23 AT "https://example.org/smart" VERSION "1" =
       Observed -- {0..1} Instrument;
       Surveyed -- {0..*} Survey;
     END Observation;
-    CLASS AbstractReading (ABSTRACT) = NumericValue : 0..99; END AbstractReading;
+    CLASS AbstractReading (ABSTRACT) =
+      NumericValue : 0..99;
+      ReadingState : (idle, active);
+    END AbstractReading;
     CLASS RegionalReading EXTENDS AbstractReading =
       RegionCode : TEXT*12;
       NumericValue (EXTENDED) : 0..79;
+      ReadingState (EXTENDED) : (active (ready));
     END RegionalReading;
     CLASS LocalReading EXTENDS RegionalReading =
       NumericValue (EXTENDED) : 0..49;

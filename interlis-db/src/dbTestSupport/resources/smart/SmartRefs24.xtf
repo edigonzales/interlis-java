@@ -7,10 +7,10 @@
         <Details><Note><AnyInstrument i:ref="fixture-t"/><SmartTarget i:ref="fixture-s"/></Note></Details>
         <Observed i:ref="fixture-m"/>
       </Survey>
-      <Meter i:tid="fixture-m"><Memo>meter</Memo><Counter>75</Counter><WideValue>45000000000</WideValue><Tilt>12.50</Tilt></Meter>
-      <SmartUnit i:tid="fixture-s"><Memo>smart</Memo><Counter>7</Counter><WideValue>35000000000</WideValue><Tilt>-1.25</Tilt><Badge>tag</Badge></SmartUnit>
+      <Meter i:tid="fixture-m"><Memo>meter</Memo><Counter>75</Counter><WideValue>45000000000</WideValue><Tilt>12.50</Tilt><State>standby</State></Meter>
+      <SmartUnit i:tid="fixture-s"><Memo>smart</Memo><Counter>7</Counter><WideValue>35000000000</WideValue><Tilt>-1.25</Tilt><State>active.ready</State><Badge>tag</Badge></SmartUnit>
       <Terminal i:tid="fixture-t"><Memo>terminal</Memo><Socket>p1</Socket></Terminal>
-      <LocalReading i:tid="fixture-local-reading"><NumericValue>42</NumericValue><RegionCode>local</RegionCode></LocalReading>
+      <LocalReading i:tid="fixture-local-reading"><NumericValue>42</NumericValue><ReadingState>active.ready</ReadingState><RegionCode>local</RegionCode></LocalReading>
       <SpareReading i:tid="fixture-spare-reading"><NumericValue>93</NumericValue><TagCode>spare</TagCode></SpareReading>
     </Data>
   </i:datasection>

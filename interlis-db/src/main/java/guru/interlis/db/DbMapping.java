@@ -994,7 +994,7 @@ final class DbMapping {
         if (type instanceof TextType text) return text.textKind() == TextKind.TEXT;
         Kind kind = scalarKind(type);
         if (kind == Kind.ENUMERATION) {
-            if (profile != DbInheritance.Profile.NEW_CLASS || !DbEnumOptions.DEFAULT.equals(enumOptions)
+            if (profile == DbInheritance.Profile.SMART2 || !DbEnumOptions.DEFAULT.equals(enumOptions)
                     || !inlineEnumeration(plan, attribute)) return false;
         } else if (kind != Kind.INTEGER && kind != Kind.BIGINT && kind != Kind.DECIMAL) {
             return false;
@@ -1062,7 +1062,7 @@ final class DbMapping {
         for (var slot : relation.object().slots()) {
             if (!(slot instanceof AttributeSlot override) || !override.member().overridden()
                     || override.attribute().transientAttribute()
-                    || !(plan.type(override.effectiveType()).known().orElseThrow() instanceof NumericType)) continue;
+                    || !copiedOverride(plan, override)) continue;
             var base = baseAttribute(plan, override.attribute());
             if (relation.contributors().stream().noneMatch(owner ->
                     base.header().owner().filter(owner.symbol().symbol()::equals).isPresent())) continue;
@@ -1076,6 +1076,11 @@ final class DbMapping {
         // A copied override keeps its position in the class that declares it.
         var declaration = (ClassSymbol) plan.symbol(contributor.symbol()).known().orElseThrow();
         return declaration.members().stream().map(fields::get).filter(attribute -> attribute != null).toList();
+    }
+
+    private static boolean copiedOverride(TransferPlan plan, AttributeSlot override) {
+        var type = plan.type(override.effectiveType()).known().orElseThrow();
+        return type instanceof NumericType || type instanceof EnumerationType;
     }
 
     static List<AssociationRole> describeRoles(TransferPlan plan, ObjectDescriptor association) {

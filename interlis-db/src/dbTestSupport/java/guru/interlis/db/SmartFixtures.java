@@ -138,6 +138,18 @@ final class SmartFixtures {
         assertEquals(prefix + "-m", id(child(survey, "Observed"), version, "ref"));
     }
 
+    void assertEnumOverrides(Path file, String model, String prefix) throws Exception {
+        var basket = children(readDataSection(file, version)).getFirst();
+        var meter = object(basket, model, "Meter", prefix + "-m");
+        var smart = object(basket, model, "SmartUnit", prefix + "-s");
+        assertEquals("standby", child(meter, "State").getTextContent());
+        assertEquals("active.ready", child(smart, "State").getTextContent());
+        var local = object(basket, model, "LocalReading", prefix + "-local-reading");
+        var spare = object(basket, model, "SpareReading", prefix + "-spare-reading");
+        assertEquals("active.ready", child(local, "ReadingState").getTextContent());
+        assertNull(child(spare, "ReadingState"));
+    }
+
     void assertScalarObjects(Path path, String model, String prefix, boolean emptyMemo) throws Exception {
         var basket = children(readDataSection(path, version)).getFirst();
         assertEquals(prefix + "-b", id(basket, version, "bid"));
