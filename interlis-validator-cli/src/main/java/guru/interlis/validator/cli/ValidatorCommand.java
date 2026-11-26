@@ -25,6 +25,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static guru.interlis.validator.cli.ValidatorOptions.Budget.AREA_COMPONENTS;
+import static guru.interlis.validator.cli.ValidatorOptions.Budget.CONSTRAINT_WORK;
+import static guru.interlis.validator.cli.ValidatorOptions.Budget.OBJECT_WORK;
+
 final class ValidatorCommand {
     private static final long MEMORY_BYTES = 256L * 1024 * 1024;
     private static final long DISK_BYTES = 4L * 1024 * 1024 * 1024;
@@ -95,7 +99,10 @@ final class ValidatorCommand {
         var primary = transfer.models().stream()
                 .filter(model -> models.primaryModels().contains(model.name().declared().toString()))
                 .map(model -> model.symbol()).toList();
-        var bindings = RuntimeBindings.empty().withGeometry(JtsGeometryEngine.standard());
+        var areaComponents = options.budgets().get(AREA_COMPONENTS);
+        var geometry = areaComponents == null ? JtsGeometryEngine.standard()
+                : JtsGeometryEngine.withAreaComponentLimit(areaComponents);
+        var bindings = RuntimeBindings.empty().withGeometry(geometry);
         var plan = switch (ValidationPlanner.plan(transfer, ValidationProfile.DATASET, bindings, primary)) {
             case ValidationPlanningResult.Ready ready -> ready.plan();
             case ValidationPlanningResult.Rejected rejected ->
@@ -103,8 +110,12 @@ final class ValidatorCommand {
         };
         var defaults = ValidationOptions.defaults();
         var local = new ValidationOptions(options.maxDiagnostics(), defaults.maxNestedDepth(),
-                defaults.maxValuesPerObject(), defaults.numericRounding());
-        var dataset = new DatasetOptions(local, DatasetLimits.defaults(), output.scope);
+                options.budgets().getOrDefault(OBJECT_WORK, defaults.maxValuesPerObject()), defaults.numericRounding());
+        var limits = DatasetLimits.defaults();
+        var dataset = new DatasetOptions(local,
+                new DatasetLimits(limits.maxInputs(), limits.maxBaskets(), limits.maxObjects(), limits.maxRecordBytes(),
+                        limits.maxRelationWork(), options.budgets().getOrDefault(CONSTRAINT_WORK, limits.maxConstraintWork()),
+                        limits.maxKeyBytes()), output.scope);
         var coverage = new ActiveCoverage(plan);
         ValidationReport report;
         output.phase = "storage";

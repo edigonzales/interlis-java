@@ -27,7 +27,6 @@ import static guru.interlis.validation.jts.internal.LensHeight.Radicals;
 import static guru.interlis.validation.jts.internal.TransferGeometryAdapter.*;
 
 final class CurveCoverage {
-    private static final int MAX_COMPONENT_VISITS = 600_000;
     private static final int MAX_FACE_PAIRS = 1_000_000;
 
     private record Face(GeometryEngine.Input source, Surface surface, Envelope bounds) {}
@@ -44,20 +43,21 @@ final class CurveCoverage {
     }
 
     static GeometryEngine.Check check(GeometryEngine.Source source, GeometryEngine.CoveragePurpose purpose,
-                                      GeometryEngine.Control control) {
-        var count = new int[]{0};
+                                      GeometryEngine.Control control, long maxAreaComponents) {
+        var remaining = new long[]{maxAreaComponents};
         var limited = new GeometryEngine.Control(() -> {
             control.visit().run();
-            if (++count[0] > MAX_COMPONENT_VISITS) {
+            if (remaining[0] == 0) {
                 throw new ValidationLimitException("Geometry coverage exceeds its prepared component budget");
             }
+            remaining[0]--;
         }, control.findings());
         var origin = coverageOrigin(source, control, limited.visit());
         if (origin == null) {
             origin = new Position(BigDecimal.ZERO, BigDecimal.ZERO);
         }
         // The origin prepass and preparation each stay within the component budget.
-        count[0] = 0;
+        remaining[0] = maxAreaComponents;
 
         var faces = new ArrayList<Face>();
         var index = new STRtree();

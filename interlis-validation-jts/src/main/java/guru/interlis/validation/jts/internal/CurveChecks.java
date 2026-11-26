@@ -56,7 +56,7 @@ public final class CurveChecks {
     }
 
     public static GeometryEngine.Check coverage(GeometryEngine.Source source, GeometryEngine.CoveragePurpose purpose,
-                                                GeometryEngine.Control control) {
-        return CurveCoverage.check(source, purpose, control);
+                                                GeometryEngine.Control control, long maxAreaComponents) {
+        return CurveCoverage.check(source, purpose, control, maxAreaComponents);
     }
 }

@@ -14,6 +14,7 @@ import guru.interlis.validation.DataLocation.GeometryComponent;
 import guru.interlis.validation.GeometryEngine;
 import guru.interlis.validation.GeometryWitness;
 import guru.interlis.validation.ValidationCode;
+import guru.interlis.validation.jts.JtsGeometryEngine;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -54,7 +55,8 @@ class CurveCoverageTest {
             }
         };
         var findings = new ArrayList<GeometryEngine.Finding>();
-        assertEquals(GeometryEngine.Check.INVALID, CurveCoverage.check(source, GeometryEngine.CoveragePurpose.AREA_WITHOUT_GAPS,
+        assertEquals(GeometryEngine.Check.INVALID, JtsGeometryEngine.standard().checkCoverage(
+                source, GeometryEngine.CoveragePurpose.AREA_WITHOUT_GAPS,
                 new GeometryEngine.Control(() -> {}, findings::add)));
         assertEquals(2, findings.size());
         assertGap(findings.getFirst(), "shell", "18", "2", Set.of("outerIsland", "secondIsland"));

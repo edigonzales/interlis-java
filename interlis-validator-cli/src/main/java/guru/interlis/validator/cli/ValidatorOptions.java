@@ -4,20 +4,41 @@ import guru.interlis.validation.ValidationOptions;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 record ValidatorOptions(List<Path> primary, List<Path> reference, List<String> repositories,
                         List<String> models, Set<String> flags, Storage storage, Optional<Path> tempDir,
-                        int maxDiagnostics) {
+                        int maxDiagnostics, Map<Budget, Long> budgets) {
     enum Storage { MEMORY, MVSTORE }
+
+    enum Budget {
+        OBJECT_WORK("object-work"),
+        AREA_COMPONENTS("area-components"),
+        CONSTRAINT_WORK("constraint-work");
+
+        private final String name;
+
+        Budget(String name) {
+            this.name = name;
+        }
+
+        static Budget named(String name) {
+            for (var budget : values()) {
+                if (budget.name.equals(name)) return budget;
+            }
+            throw new IllegalArgumentException("Unknown budget " + name);
+        }
+    }
 
     private static final Set<String> FLAGS = Set.of("--help", "--version", "--offline", "--verbose", "--partial", "--json");
     private static final Set<String> VALUES = Set.of("--repository", "--model", "--refdata", "--storage",
-            "--temp-dir", "--max-diagnostics");
-    private static final Set<String> REPEATABLE = Set.of("--repository", "--model", "--refdata");
+            "--temp-dir", "--max-diagnostics", "--budget");
+    private static final Set<String> REPEATABLE = Set.of("--repository", "--model", "--refdata", "--budget");
 
     static ValidatorOptions parse(List<String> args) {
         var flags = new LinkedHashSet<String>();
@@ -26,6 +47,7 @@ record ValidatorOptions(List<Path> primary, List<Path> reference, List<String> r
         var models = new ArrayList<String>();
         var primary = new ArrayList<Path>();
         var reference = new ArrayList<Path>();
+        var budgets = new EnumMap<Budget, Long>(Budget.class);
         Storage storage = Storage.MEMORY;
         Optional<Path> tempDir = Optional.empty();
         int maxDiagnostics = ValidationOptions.defaults().maxDiagnosticExamples();
@@ -55,6 +77,7 @@ record ValidatorOptions(List<Path> primary, List<Path> reference, List<String> r
                         default -> throw new IllegalArgumentException("Expected memory or mvstore for --storage");
                     };
                     case "--max-diagnostics" -> maxDiagnostics = diagnosticLimit(value);
+                    case "--budget" -> addBudget(budgets, value);
                     default -> throw new IllegalStateException("Unexpected option " + arg);
                 }
             } else if (!positional && arg.startsWith("-")) {
@@ -77,7 +100,26 @@ record ValidatorOptions(List<Path> primary, List<Path> reference, List<String> r
             throw new IllegalArgumentException("--temp-dir requires --storage mvstore");
         }
         return new ValidatorOptions(List.copyOf(primary), List.copyOf(reference), List.copyOf(repositories),
-                List.copyOf(models), Set.copyOf(flags), storage, tempDir, maxDiagnostics);
+                List.copyOf(models), Set.copyOf(flags), storage, tempDir, maxDiagnostics, Map.copyOf(budgets));
+    }
+
+    private static void addBudget(Map<Budget, Long> budgets, String value) {
+        int separator = value.indexOf('=');
+        if (separator < 1 || separator == value.length() - 1) {
+            throw new IllegalArgumentException("Expected NAME=N for --budget");
+        }
+        String name = value.substring(0, separator);
+        var budget = Budget.named(name);
+        long limit;
+        try {
+            limit = Long.parseLong(value.substring(separator + 1));
+        } catch (NumberFormatException invalid) {
+            throw new IllegalArgumentException("Budget " + name + " requires a positive integer");
+        }
+        if (limit < 1) throw new IllegalArgumentException("Budget " + name + " requires a positive integer");
+        if (budgets.putIfAbsent(budget, limit) != null) {
+            throw new IllegalArgumentException("Duplicate budget " + name);
+        }
     }
 
     private static int diagnosticLimit(String value) {
@@ -98,9 +140,11 @@ record ValidatorOptions(List<Path> primary, List<Path> reference, List<String> r
         return """
                 Usage: interlis-validator [--repository LOCATION] [--model NAME] [--refdata FILE]
                        [--offline] [--partial] [--storage memory|mvstore] [--temp-dir DIRECTORY]
-                       [--max-diagnostics N] [--json] [--verbose] [--] FILE [FILE ...]
+                       [--budget NAME=N] [--max-diagnostics N] [--json] [--verbose] [--] FILE [FILE ...]
                        interlis-validator --help
                        interlis-validator --version [--json]
+
+                Budget names: object-work, area-components, constraint-work
                 """;
     }
 }

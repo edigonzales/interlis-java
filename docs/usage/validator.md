@@ -65,6 +65,17 @@ Standardmässig dient `java.io.tmpdir` als Wurzel. Das Laufverzeichnis wird beim
 Schliessen des Speichers entfernt. Erreichte Ressourcenlimits führen zu
 Exitcode 3.
 
+`--budget NAME=N` überschreibt ein Arbeitsbudget für den aktuellen Lauf.
+Der Wert ist eine positive Ganzzahl. Die Option lässt sich für verschiedene
+Budgets wiederholen. Jeder Name darf einmal angegeben werden. Ohne die
+Option gelten die folgenden Standardwerte.
+
+| Name | Standard | Geltungsbereich |
+|---|---:|---|
+| `object-work` | 1’000’000 | Arbeitsgrenze pro Objekt für Traversierung, Rundung und lokale Prüfung |
+| `area-components` | 600’000 | Komponentenbesuche je Durchgang für Koordinatenursprung und Aufbereitung einer AREA-Prüfung |
+| `constraint-work` | 10’000’000 | Gemeinsame Arbeitsgrenze für datensatzweite Regeln, Views und AREA-Prüfungen beim Datensatzabschluss |
+
 ## Ausgabe und Exitcodes
 
 Der Textmodus schreibt auf stderr. `--json` schreibt genau ein UTF-8-Dokument
