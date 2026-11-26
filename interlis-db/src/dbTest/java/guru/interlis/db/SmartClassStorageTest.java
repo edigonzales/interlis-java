@@ -130,8 +130,20 @@ final class SmartClassStorageTest {
         output = roundTrip(concrete, smart2, fixtures.fixture(smart2 + ".xtf"), "smart2");
         fixtures.assertPolymorphicReferences(output, smart2, "fixture");
         fixtures.assertNumericOverrides(output, smart2, "fixture");
+        fixtures.assertEnumOverrides(output, smart2, "fixture");
         try (var sql = concrete.connect()) {
             SmartFixtures.assertReferenceStorage(concrete, sql, "smart2", 1);
+            String attributes = concrete.table("t_ili2db_attrname");
+            for (String table : List.of("sensor", "smartsensor", "sensorleaf")) {
+                String definition = table.equals("sensor") ? "Sensor" : "SmartSensor";
+                assertEquals(smart2 + ".Data." + definition + ".State", scalar(sql,
+                        "SELECT iliname FROM " + attributes + " WHERE sqlname='astate' AND colowner='" + table + "'"));
+            }
+            var order = new java.util.ArrayList<String>();
+            try (var columns = sql.getMetaData().getColumns(null, concrete.schema(), "smartsensor", null)) {
+                while (columns.next()) order.add(columns.getString("COLUMN_NAME"));
+            }
+            assertTrue(order.contains("label") && order.indexOf("label") < order.indexOf("astate"), order::toString);
             String meter = concrete.table("meter");
             String smartUnit = concrete.table("smartunit");
             assertStoredNumbers(sql, meter, "fixture-m", "75", "45000000000", "12.50");

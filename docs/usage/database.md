@@ -58,6 +58,9 @@ In Smart1 gilt dieselbe Regel für gemeinsam gespeicherte Attribute.
 Beim Kopieren aus einer abstrakten Klasse kann die konkrete Tabelle
 eine Spalte für die erweiterte Deklaration erhalten. Ihr `ATTRNAME`-Eintrag
 bezeichnet dann diese Deklaration.
+In Smart2 verwendet jede konkrete Tabelle die Aufzählungsdeklaration,
+die für ihre Klasse gilt. Geerbte Spalten behalten den Namen der
+Deklaration in `ATTRNAME`.
 Lokale Referenzen dürfen auf Objekte geerbter Klassen im selben Basket
 zeigen. Der Basket kann eingebettete Rollen des Basistopics übernehmen.
 Eine in einem abgeleiteten Topic deklarierte eingebettete 1:n-Rolle mit

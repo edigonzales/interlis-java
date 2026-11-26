@@ -9,6 +9,9 @@
       </SmartPoly23.Data.Survey>
       <SmartPoly23.Data.Meter TID="fixture-m"><Memo>meter</Memo><Counter>75</Counter><WideValue>45000000000</WideValue><Tilt>12.50</Tilt></SmartPoly23.Data.Meter>
       <SmartPoly23.Data.SmartUnit TID="fixture-s"><Memo>smart</Memo><Counter>7</Counter><WideValue>35000000000</WideValue><Tilt>-1.25</Tilt><Badge>tag</Badge></SmartPoly23.Data.SmartUnit>
+      <SmartPoly23.Data.Sensor TID="fixture-sensor"><State>standby</State></SmartPoly23.Data.Sensor>
+      <SmartPoly23.Data.SmartSensor TID="fixture-smart-sensor"><State>active.ready</State><Label>tag</Label></SmartPoly23.Data.SmartSensor>
+      <SmartPoly23.Data.SensorLeaf TID="fixture-sensor-leaf"><State>standby</State></SmartPoly23.Data.SensorLeaf>
       <SmartPoly23.Data.Terminal TID="fixture-t"><Memo>terminal</Memo><Socket>p1</Socket></SmartPoly23.Data.Terminal>
       <SmartPoly23.Data.CrossCheck><CheckedInstrument REF="fixture-t"/><CheckedSurvey REF="fixture-survey"/></SmartPoly23.Data.CrossCheck>
       <SmartPoly23.Data.CrossCheck><CheckedInstrument REF="fixture-s"/><CheckedSurvey REF="fixture-survey"/></SmartPoly23.Data.CrossCheck>

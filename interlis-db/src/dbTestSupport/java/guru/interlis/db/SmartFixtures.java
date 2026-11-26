@@ -140,6 +140,15 @@ final class SmartFixtures {
 
     void assertEnumOverrides(Path file, String model, String prefix) throws Exception {
         var basket = children(readDataSection(file, version)).getFirst();
+        if (model.equals("SmartPoly" + version)) {
+            var sensor = object(basket, model, "Sensor", prefix + "-sensor");
+            var smart = object(basket, model, "SmartSensor", prefix + "-smart-sensor");
+            var leaf = object(basket, model, "SensorLeaf", prefix + "-sensor-leaf");
+            assertEquals("standby", child(sensor, "State").getTextContent());
+            assertEquals("active.ready", child(smart, "State").getTextContent());
+            assertEquals("standby", child(leaf, "State").getTextContent());
+            return;
+        }
         var meter = object(basket, model, "Meter", prefix + "-m");
         var smart = object(basket, model, "SmartUnit", prefix + "-s");
         assertEquals("standby", child(meter, "State").getTextContent());

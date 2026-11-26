@@ -131,10 +131,11 @@ final class SmartClassInteropTest {
         try (var sql = own.connect()) {
             if (smart2) {
                 String ids = List.of("meter", "smartunit", "terminal", "survey", "extrasurvey", "note", "crosscheck",
+                        "sensor", "smartsensor", "sensorleaf",
                         "t_ili2db_basket", "t_ili2db_dataset").stream()
                         .map(table -> "SELECT t_id FROM " + own.table(table)).collect(Collectors.joining(" UNION ALL "));
-                assertEquals("30", scalar(sql, "SELECT count(*) FROM (" + ids + ") ids"));
-                assertEquals("30", scalar(sql, "SELECT count(DISTINCT t_id) FROM (" + ids + ") ids"));
+                assertEquals("39", scalar(sql, "SELECT count(*) FROM (" + ids + ") ids"));
+                assertEquals("39", scalar(sql, "SELECT count(DISTINCT t_id) FROM (" + ids + ") ids"));
             }
         }
     }
@@ -176,8 +177,8 @@ final class SmartClassInteropTest {
     private static void assertReferenceTransfer(SmartFixtures fixtures, Path output, String model, String prefix,
                                                 int version, boolean smart2) throws Exception {
         fixtures.assertNumericOverrides(output, model, prefix);
+        fixtures.assertEnumOverrides(output, model, prefix);
         if (!smart2) {
-            fixtures.assertEnumOverrides(output, model, prefix);
             fixtures.assertReferences(output, model, prefix);
             return;
         }

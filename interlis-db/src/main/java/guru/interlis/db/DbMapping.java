@@ -649,7 +649,7 @@ final class DbMapping {
         var roots = storageRoots(plan, crsPair);
         var objects = storageObjects(plan, roots, token);
         checkBasketLayout(plan, objects, schemaOptions);
-        checkLayout(plan, objects, profile, enumOptions);
+        checkLayout(plan, objects, enumOptions);
         var wrappedGeometries = DbWrappedGeometry.plan(plan, objects, transformations);
         var geometryComponents = wrappedGeometries.values().stream().map(binding -> binding.component().symbol())
                 .collect(Collectors.toSet());
@@ -840,8 +840,7 @@ final class DbMapping {
         }
     }
 
-    static void checkLayout(TransferPlan plan, List<ObjectDescriptor> objects, DbInheritance.Profile profile,
-                            DbEnumOptions enumOptions) {
+    static void checkLayout(TransferPlan plan, List<ObjectDescriptor> objects, DbEnumOptions enumOptions) {
         if (objects.stream().noneMatch(object -> object.kind() == SymbolKind.CLASS && object.topic().isPresent())) {
             throw unsupported("expected a selected model containing classes in topics");
         }
@@ -883,7 +882,7 @@ final class DbMapping {
                 throw unsupported("class layout or identity rules for " + object.name().declared());
             }
         }
-        if (!hierarchy.isEmpty()) checkInheritance(plan, objects, hierarchy, profile, enumOptions);
+        if (!hierarchy.isEmpty()) checkInheritance(plan, objects, hierarchy, enumOptions);
     }
 
     static void checkBasketLayout(TransferPlan plan, List<ObjectDescriptor> objects,
@@ -959,7 +958,7 @@ final class DbMapping {
     }
 
     private static void checkInheritance(TransferPlan plan, List<ObjectDescriptor> objects, Set<SymbolRef> hierarchy,
-                                         DbInheritance.Profile profile, DbEnumOptions enumOptions) {
+                                         DbEnumOptions enumOptions) {
         for (var object : objects) {
             if (!hierarchy.contains(object.symbol())) continue;
             boolean catalogueWrapper = object.kind() == SymbolKind.STRUCTURE && DbCatalogueReference.isWrapper(plan, object);
@@ -974,7 +973,7 @@ final class DbMapping {
                 boolean multilingual = DbTextExpansion.isInheritedCollection(plan, object, attribute);
                 if (attribute.member().overridden() && !multilingual
                         && !(catalogueWrapper && DbCatalogueReference.isReferenceField(attribute))
-                        && !supportsExtendedClassAttribute(plan, object, attribute, profile, enumOptions)) {
+                    && !supportsExtendedClassAttribute(plan, object, attribute, enumOptions)) {
                     throw unsupported("extended attribute in inheritance at " + attribute.name().declared());
                 }
                 if (object.kind() != SymbolKind.STRUCTURE || attribute.attribute().transientAttribute()) continue;
@@ -987,15 +986,13 @@ final class DbMapping {
     }
 
     private static boolean supportsExtendedClassAttribute(TransferPlan plan, ObjectDescriptor object,
-                                                          AttributeSlot attribute, DbInheritance.Profile profile,
-                                                          DbEnumOptions enumOptions) {
+                                                          AttributeSlot attribute, DbEnumOptions enumOptions) {
         if (object.kind() != SymbolKind.CLASS || attribute.attribute().transientAttribute()) return false;
         var type = plan.type(attribute.effectiveType()).known().orElseThrow();
         if (type instanceof TextType text) return text.textKind() == TextKind.TEXT;
         Kind kind = scalarKind(type);
         if (kind == Kind.ENUMERATION) {
-            if (profile == DbInheritance.Profile.SMART2 || !DbEnumOptions.DEFAULT.equals(enumOptions)
-                    || !inlineEnumeration(plan, attribute)) return false;
+            if (!DbEnumOptions.DEFAULT.equals(enumOptions) || !inlineEnumeration(plan, attribute)) return false;
         } else if (kind != Kind.INTEGER && kind != Kind.BIGINT && kind != Kind.DECIMAL) {
             return false;
         }

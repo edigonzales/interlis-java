@@ -9,6 +9,9 @@
       </Survey>
       <Meter i:tid="fixture-m"><Memo>meter</Memo><Counter>75</Counter><WideValue>45000000000</WideValue><Tilt>12.50</Tilt></Meter>
       <SmartUnit i:tid="fixture-s"><Memo>smart</Memo><Counter>7</Counter><WideValue>35000000000</WideValue><Tilt>-1.25</Tilt><Badge>tag</Badge></SmartUnit>
+      <Sensor i:tid="fixture-sensor"><State>standby</State></Sensor>
+      <SmartSensor i:tid="fixture-smart-sensor"><State>active.ready</State><Label>tag</Label></SmartSensor>
+      <SensorLeaf i:tid="fixture-sensor-leaf"><State>standby</State></SensorLeaf>
       <Terminal i:tid="fixture-t"><Memo>terminal</Memo><Socket>p1</Socket></Terminal>
       <CrossCheck><CheckedInstrument i:ref="fixture-t"/><CheckedSurvey i:ref="fixture-survey"/></CrossCheck>
       <CrossCheck><CheckedInstrument i:ref="fixture-s"/><CheckedSurvey i:ref="fixture-survey"/></CrossCheck>

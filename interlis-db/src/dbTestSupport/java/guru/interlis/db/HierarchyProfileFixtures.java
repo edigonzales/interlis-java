@@ -69,7 +69,7 @@ final class HierarchyProfileFixtures {
     }
 
     void assertHierarchy(Path output, String prefix, String memo) throws Exception {
-        var rows = fixtures.basketRows(output, prefix + "-b", 7);
+        var rows = fixtures.basketRows(output, prefix + "-b", 10);
         var smart = rows.stream().filter(row -> (prefix + "-s").equals(id(row, version, "tid"))).findFirst().orElseThrow();
         assertEquals(memo, child(smart, "Memo").getTextContent());
         var marker = rows.stream().filter(row -> (prefix + "-point").equals(id(row, version, "tid"))).findFirst().orElseThrow();
