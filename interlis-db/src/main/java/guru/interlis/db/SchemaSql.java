@@ -350,14 +350,13 @@ final class SchemaSql {
             if (newSchema) {
                 writeSettings(settings, d.gpkg(), plan);
                 if (createGeometryIndexes) row(settings, Ili2dbLayout.CREATE_GEOMETRY_INDEX, "True");
-                for (var declaration : plan.mapping().inheritance().declarations()) {
-                    if (declaration.strategy().createsTable()) continue;
-                    token.throwIfCancellationRequested();
-                    String name = declaration.object().name().declared().toString();
-                    row(classes, name, declaration.sqlName());
-                    row(inheritance, name, baseClass(plan, declaration.object()));
-                    row(transformations, name, INHERITANCE_TAG, declaration.strategy().value);
-                }
+            }
+            for (var declaration : plan.addedVirtualClasses()) {
+                token.throwIfCancellationRequested();
+                String name = declaration.object().name().declared().toString();
+                row(classes, name, declaration.sqlName());
+                row(inheritance, name, baseClass(plan, declaration.object()));
+                row(transformations, name, INHERITANCE_TAG, declaration.strategy().value);
             }
             for (var lookup : plan.enumLookups()) {
                 token.throwIfCancellationRequested();

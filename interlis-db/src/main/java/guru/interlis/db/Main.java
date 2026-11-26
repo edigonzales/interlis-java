@@ -146,7 +146,8 @@ public final class Main {
             }
         }
         var settings = DbSchemaReader.readSettings(db, options.models());
-        if (settings.inheritance() != DbInheritance.Profile.NEW_CLASS || settings.defaultEpsg() == 0
+        boolean smart2 = settings.inheritance() == DbInheritance.Profile.SMART2 && settings.sqlEnableNull();
+        if ((!smart2 && settings.inheritance() != DbInheritance.Profile.NEW_CLASS) || settings.defaultEpsg() == 0
                 || (options.explicitEpsg() && options.defaultEpsg() != settings.defaultEpsg())
                 || (options.explicitLayout() && options.splitGeometries() != settings.splitGeometries())
                 || (options.multiSrs() && !settings.multiSrs())
@@ -159,7 +160,15 @@ public final class Main {
                 settings.splitGeometries(), settings.defaultEpsg(), settings.multiSrs(), Optional.empty(), names,
                 settings.inheritance(), settings.structureTransformations(), settings.strokeArcs(), settings.enumOptions(),
                 settings.schemaOptions(), !settings.sqlEnableNull(), cancellation);
-        plan = plan.withModelFiles(DbSchemaReader.newModelFiles(db, plan.modelFiles(), cancellation));
+        var newFiles = DbSchemaReader.newModelFiles(db, plan.modelFiles(), cancellation);
+        if (smart2) {
+            for (var file : plan.modelFiles()) {
+                if (!newFiles.contains(file)) {
+                    throw new DbException("Smart2 --add-models requires independent model sources; already stored: " + file.filename());
+                }
+            }
+        }
+        plan = plan.withModelFiles(newFiles);
         if (plan.addedTables().isEmpty() && plan.modelFiles().isEmpty()) {
             throw new DbException("No new model tables or sources to add");
         }

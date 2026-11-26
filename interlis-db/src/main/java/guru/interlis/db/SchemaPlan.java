@@ -58,7 +58,8 @@ import static guru.interlis.db.DbMapping.metaText;
 
 /** Immutable SQL definitions and metadata for the tables to create. */
 record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
-                  List<DbMapping.Table> addedTables, List<DbMapping.EmbeddedAssociation> addedAssociations,
+                  List<DbMapping.Table> addedTables, List<DbInheritance.Declaration> addedVirtualClasses,
+                  List<DbMapping.EmbeddedAssociation> addedAssociations,
                   List<DbMapping.Composition> addedCompositions,
                   List<ColumnProperty> columnProperties, Map<String, List<GeometryColumn>> geometryColumns,
                   boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean strokeArcs, DbEnumOptions enumOptions,
@@ -86,6 +87,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     SchemaPlan {
         modelFiles = List.copyOf(modelFiles);
         addedTables = List.copyOf(addedTables);
+        addedVirtualClasses = List.copyOf(addedVirtualClasses);
         addedAssociations = List.copyOf(addedAssociations);
         addedCompositions = List.copyOf(addedCompositions);
         columnProperties = List.copyOf(columnProperties);
@@ -138,6 +140,9 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         }
         var addedTables = mapping.tables().stream()
                 .filter(table -> !names.hasClass(table.object().name().declared().toString())).toList();
+        var addedVirtualClasses = mapping.inheritance().declarations().stream()
+                .filter(declaration -> !declaration.strategy().createsTable()
+                        && !names.hasClass(declaration.object().name().declared().toString())).toList();
         var addedAssociations = mapping.associations().stream().filter(association -> !association.linkTable()
                 && !names.hasClass(association.object().name().declared().toString())).toList();
         var addedCompositions = mapping.compositions().stream()
@@ -197,7 +202,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             properties.add(new ColumnProperty(child.name(), null, composition.ownerColumn(),
                     Ili2dbLayout.PREFIX + "foreignKey", parent.name()));
         }
-        return new SchemaPlan(mapping, modelFiles, addedTables, addedAssociations, addedCompositions, properties, geometries,
+        return new SchemaPlan(mapping, modelFiles, addedTables, addedVirtualClasses, addedAssociations, addedCompositions, properties, geometries,
                 splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations,
                 enumLookups, Map.copyOf(uniqueKeys),
                 Map.copyOf(numericChecks), Map.copyOf(textChecks), Map.copyOf(temporalChecks),
@@ -417,7 +422,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     }
 
     SchemaPlan withModelFiles(List<ModelFile> files) {
-        return new SchemaPlan(mapping, files, addedTables, addedAssociations, addedCompositions, columnProperties,
+        return new SchemaPlan(mapping, files, addedTables, addedVirtualClasses, addedAssociations, addedCompositions, columnProperties,
                 geometryColumns, splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations, enumLookups,
                 uniqueKeys, numericChecks, textChecks, temporalChecks, metaInformation, sqlNotNull, requiredColumns);
     }

@@ -49,11 +49,7 @@ final class ModelExtensionStorageTest {
             assertEquals(ids, fixture.originalIds(db, sql));
 
             var checkpoints = new AtomicInteger();
-            var stack = StackWalker.getInstance();
-            CancellationToken duringDdl = () -> stack.walk(frames -> frames.anyMatch(frame ->
-                    frame.getClassName().equals(SchemaSql.class.getName()) && frame.getMethodName().equals("apply")))
-                    && checkpoints.incrementAndGet() == 2;
-            var cancelled = schemaWithIdentityColumns(db, fixture.added, fixture.addedSource, duringDdl,
+            var cancelled = schemaWithIdentityColumns(db, fixture.added, fixture.addedSource, cancelDuringDdl(checkpoints),
                     "--add-models", "--model-file", fixture.sharedSource.toString());
             assertEquals(130, cancelled.code(), cancelled::diagnostics);
             assertEquals(2, checkpoints.get());
@@ -74,5 +70,44 @@ final class ModelExtensionStorageTest {
             fixture.assertOwnedDetails(db, sql, fixture.added, table, "native");
             assertEquals(ids, fixture.originalIds(db, sql));
         }
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void smart2RequiresIndependentSourcesAndRollsBackDdl(Backend backend, int version) throws Exception {
+        var fixture = new Smart2ExtensionFixtures(work, version);
+        var db = POSTGIS.target(work.resolve("smart2-extension.gpkg"), backend);
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource, "--inheritance", "smart2");
+        assertCliSuccess(db, "import", fixture.original, "original", fixture.input(fixture.original, "original"));
+
+        try (var sql = db.connect()) {
+            var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+            var ids = fixture.originalRows(db);
+            assertCliFailure(db, "schemaimport", "DependentSmart", null, fixture.dependentSource(),
+                    "already stored: " + fixture.originalSource.getFileName(),
+                    "--add-models", "--model-file", fixture.originalSource.toString());
+            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+            var checkpoints = new AtomicInteger();
+            var cancelled = schemaWithIdentityColumns(db, fixture.added, fixture.addedSource,
+                    cancelDuringDdl(checkpoints), "--add-models");
+            assertEquals(130, cancelled.code(), cancelled::diagnostics);
+            assertEquals(2, checkpoints.get());
+            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+            assertEquals(ids, fixture.originalRows(db));
+
+            assertCliSuccess(db, "schemaimport", fixture.added, null, fixture.addedSource, "--add-models");
+            assertCliSuccess(db, "import", fixture.added, "added", fixture.input(fixture.added, "added"));
+            var output = work.resolve("added.xtf");
+            assertCliSuccess(db, "export", fixture.added, "added", output);
+            fixture.assertDelivery(output, fixture.added, "added");
+            assertEquals(ids, fixture.originalRows(db));
+        }
+    }
+
+    private static CancellationToken cancelDuringDdl(AtomicInteger checkpoints) {
+        var stack = StackWalker.getInstance();
+        return () -> stack.walk(frames -> frames.anyMatch(frame ->
+                frame.getClassName().equals(SchemaSql.class.getName()) && frame.getMethodName().equals("apply")))
+                && checkpoints.incrementAndGet() == 2;
     }
 }

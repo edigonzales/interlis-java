@@ -487,6 +487,8 @@ exportieren den bestehenden Datensatz.
 Die Mischläufe prüfen den Austausch des neuen Datensatzes, die Rückverweise
 für obligatorische Einzelwerte in der gemeinsamen Strukturtabelle und die
 fortgesetzte ID-Vergabe.
+Die `smart2*`-Fälle vergleichen das Ergänzen eines unabhängigen Modells
+mit ili2db und prüfen die geerbten Spalten in den neuen konkreten Tabellen.
 
 `--tests '*TranslationInteropTest'` bündelt skalare und verschachtelte
 Baskets im Katalogvergleich und Werkzeugwechsel. Ein weiterer Fall

@@ -307,6 +307,11 @@ Rückverweisspalten für neue Eigentümer. Ein bereits abgebildetes
 ausgewähltes Modell, eine abweichende gespeicherte Quelle oder eine
 widersprüchliche Schemaoption führt zum Abbruch.
 
+Im nullable Smart2-Profil kann `--add-models` unabhängige Modelle
+ergänzen. Die konkreten Tabellen erhalten die geerbten Spalten gemäss
+dem gespeicherten Profil. Quellen der neuen Modellclosure, die bereits
+im Schema gespeichert sind, führen vor dem Anlegen der Tabellen zum Abbruch.
+
 ## Aufruf
 
 ```sh
