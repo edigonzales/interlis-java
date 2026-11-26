@@ -53,7 +53,7 @@ public final class Main {
                     [--create-fk] [--create-fk-idx] [--sql-ext-ref-cols] [--sql-cols-as-text]
                     [--create-type-discriminator] [--create-type-constraint] [--create-dataset-col] [--create-std-cols]
                     [--create-unique] [--create-num-checks] [--create-text-checks] [--create-date-time-checks]
-                    [--create-mandatory-checks] [--create-meta-info]
+                    [--sql-not-null] [--create-mandatory-checks] [--create-meta-info]
                     [--stroke-arcs] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Use --dataset for transfers against schemas with T_basket.
@@ -123,7 +123,7 @@ public final class Main {
         var plan = SchemaPlan.read(options.models(), options.file(), options.modelFiles(), options.gpkg() != null,
                 options.splitGeometries(), options.defaultEpsg(), options.multiSrs(), options.srsModels(), new SqlNames(),
                 options.inheritance(), options.transformations(), options.strokeArcs(), options.enumOptions(),
-                options.schemaOptions(), cancellation);
+                options.schemaOptions(), options.sqlNotNull(), cancellation);
         cancellation.throwIfCancellationRequested();
         if (options.gpkg() != null) {
             GeoPackageSchema.create(options.gpkg(), plan, options.createGeometryIndexes(), cancellation);
@@ -159,7 +159,7 @@ public final class Main {
         var plan = SchemaPlan.read(options.models(), options.file(), options.modelFiles(), db.gpkg(),
                 settings.splitGeometries(), settings.defaultEpsg(), settings.multiSrs(), Optional.empty(), names,
                 settings.inheritance(), settings.structureTransformations(), settings.strokeArcs(), settings.enumOptions(),
-                settings.schemaOptions(), cancellation);
+                settings.schemaOptions(), false, cancellation);
         plan = plan.withModelFiles(DbSchemaReader.newModelFiles(db, plan.modelFiles(), cancellation));
         if (plan.addedTables().isEmpty() && plan.modelFiles().isEmpty()) {
             throw new DbException("No new model tables or sources to add");
@@ -250,7 +250,7 @@ public final class Main {
                            boolean explicitEpsg, boolean explicitLayout, boolean strokeArcs, DbEnumOptions enumOptions,
                            Optional<DbCrsPair.Models> srsModels, List<Path> modelFiles, Optional<String> exportModel,
                            DbInheritance.Profile inheritance, Set<Ili2dbLayout.AttributeTransformation> transformations,
-                           Set<Ili2dbLayout.SchemaOption> schemaOptions, boolean rawScalarText) {
+                           Set<Ili2dbLayout.SchemaOption> schemaOptions, boolean rawScalarText, boolean sqlNotNull) {
         private static final Set<String> NAMES = Set.of("--dataset", "--gpkg", "--pg-url", "--schema", "--user",
                 "--default-epsg", "--alt-srs-model", "--export-model", "--inheritance");
 
@@ -285,7 +285,7 @@ public final class Main {
                     rawScalarText = true;
                 } else if (arg.equals("--stroke-arcs") || arg.equals("--create-geom-index") || arg.equals("--one-geom-per-table")
                         || arg.equals("--gpkg-multi-geom-per-table") || arg.equals("--multi-srs") || arg.equals("--add-models")
-                        || ENUM_OPTIONS.contains(arg) || transformation != null || schemaOption != null) {
+                        || arg.equals("--sql-not-null") || ENUM_OPTIONS.contains(arg) || transformation != null || schemaOption != null) {
                     if (command != Command.SCHEMAIMPORT) {
                         throw new IllegalArgumentException(arg + " is only valid with schemaimport");
                     }
@@ -392,6 +392,13 @@ public final class Main {
                 case "smart2" -> DbInheritance.Profile.SMART2;
                 default -> throw new IllegalArgumentException("Expected --inheritance smart1 or smart2");
             };
+            boolean sqlNotNull = schemaFlags.contains("--sql-not-null");
+            if (sqlNotNull && (addModels || inheritance != DbInheritance.Profile.NEW_CLASS)) {
+                throw new IllegalArgumentException("--sql-not-null requires a new schema with newClass inheritance");
+            }
+            if (sqlNotNull && schemaOptions.contains(Ili2dbLayout.SchemaOption.MANDATORY_CHECKS)) {
+                throw new IllegalArgumentException("--sql-not-null cannot be combined with --create-mandatory-checks");
+            }
             if (!transformations.isEmpty() && (addModels || inheritance == DbInheritance.Profile.SMART1)) {
                 throw new IllegalArgumentException(transformations.iterator().next().option
                         + " requires a new schema with newClass or Smart2 inheritance");
@@ -424,7 +431,7 @@ public final class Main {
                     oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg, multiSrs, addModels,
                     epsg != null, oneGeometryPerTable || multipleGeoPackageGeometries, strokeArcs, enumOptions, srsModels,
                     List.copyOf(modelFiles), exportModel, inheritance, Set.copyOf(transformations),
-                    Set.copyOf(schemaOptions), rawScalarText);
+                    Set.copyOf(schemaOptions), rawScalarText, sqlNotNull);
         }
 
         void checkPaths() throws IOException {

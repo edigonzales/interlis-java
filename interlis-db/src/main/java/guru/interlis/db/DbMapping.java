@@ -214,8 +214,11 @@ final class DbMapping {
         String geometryType() { return geometryEncoding().sqlType(kind); }
 
         boolean scalarText(Set<Ili2dbLayout.SchemaOption> options) {
-            return options.contains(Ili2dbLayout.SchemaOption.SCALAR_TEXT)
-                    && !kind.geometry() && kind != Kind.REFERENCE && kind != Kind.REFERENCE_TEXT
+            return options.contains(Ili2dbLayout.SchemaOption.SCALAR_TEXT) && simpleScalar();
+        }
+
+        boolean simpleScalar() {
+            return !kind.geometry() && kind != Kind.REFERENCE && kind != Kind.REFERENCE_TEXT
                     && textExpansion.isEmpty() && expandedStructure.isEmpty() && jsonStructure.isEmpty() && array.isEmpty();
         }
 

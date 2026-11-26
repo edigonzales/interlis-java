@@ -182,11 +182,12 @@ final class SchemaSql {
             if (table.hasSequenceColumn()) {
                 columns.add(SEQ_COLUMN + " " + dialect.idType());
             }
+            var required = plan.requiredColumns().getOrDefault(table.name(), Set.of());
             for (var column : table.columns()) {
                 if (column.scalarText(plan.schemaOptions())) {
-                    columns.add(quote(column.name()) + " TEXT");
+                    columns.add(quote(column.name()) + " TEXT" + (required.contains(column.name()) ? " NOT NULL" : ""));
                 } else {
-                    addColumnDefinitions(columns, column, dialect);
+                    addColumnDefinitions(columns, column, dialect, required);
                 }
                 column.positionColumn().ifPresent(position -> columns.add(quote(position) + " " + dialect.idType()));
             }
@@ -480,16 +481,17 @@ final class SchemaSql {
         }
     }
 
-    private static void addColumnDefinitions(List<String> columns, DbMapping.Column column, Dialect dialect) {
+    private static void addColumnDefinitions(List<String> columns, DbMapping.Column column, Dialect dialect, Set<String> required) {
         if (column.expandedStructure().isPresent()) {
             for (var group : column.expandedStructure().orElseThrow().groups()) {
                 columns.add(quote(group.typeColumn()) + " " + dialect.text(60));
-                for (var field : group.fields()) addColumnDefinitions(columns, field, dialect);
+                for (var field : group.fields()) addColumnDefinitions(columns, field, dialect, required);
             }
         } else {
             var names = column.physicalNames();
             for (int i = 0; i < names.size(); i++) {
-                columns.add(quote(names.get(i)) + " " + dialect.columnType(column, i));
+                String name = names.get(i);
+                columns.add(quote(name) + " " + dialect.columnType(column, i) + (required.contains(name) ? " NOT NULL" : ""));
             }
         }
     }
@@ -526,7 +528,7 @@ final class SchemaSql {
 
     private static void writeSettings(PreparedStatement statement, boolean gpkg, SchemaPlan plan) throws SQLException {
         row(statement, PREFIX + "sender", SCHEMA_SENDER);
-        row(statement, PREFIX + "SqlNull", "enable");
+        if (!plan.sqlNotNull()) row(statement, PREFIX + "SqlNull", "enable");
         row(statement, PREFIX + "defaultSrsAuthority", "EPSG");
         row(statement, PREFIX + "defaultSrsCode", Integer.toString(plan.defaultEpsg()));
         row(statement, PREFIX + "maxSqlNameLength", "60");

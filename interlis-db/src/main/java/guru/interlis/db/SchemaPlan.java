@@ -42,6 +42,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -62,7 +63,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                   Set<AttributeTransformation> transformations, List<DbEnumLookup> enumLookups,
                   Map<String, List<List<String>>> uniqueKeys, Map<String, List<NumericCheck>> numericChecks,
                   Map<String, List<TextCheck>> textChecks, Map<String, List<TemporalCheck>> temporalChecks,
-                  List<DbMetaInfo.Row> metaInformation) {
+                  List<DbMetaInfo.Row> metaInformation, boolean sqlNotNull, Map<String, Set<String>> requiredColumns) {
     record ModelFile(String filename, LanguageVersion version, String modelNames, String content) { }
 
     record ColumnProperty(String table, String subtype, String column, String key, String value) { }
@@ -95,7 +96,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     static SchemaPlan read(List<String> models, Path file, List<Path> imports, boolean gpkg, boolean splitGeometries,
                            int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels, SqlNames names,
                            DbInheritance.Profile inheritance, Set<AttributeTransformation> transformations, boolean strokeArcs,
-                           DbEnumOptions enumOptions, Set<SchemaOption> schemaOptions, CancellationToken token)
+                           DbEnumOptions enumOptions, Set<SchemaOption> schemaOptions, boolean sqlNotNull, CancellationToken token)
             throws IOException {
         DbScalarText.checkProfile(schemaOptions, enumOptions, transformations);
         var files = new ArrayList<Path>();
@@ -195,7 +196,28 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations,
                 enumLookups, Map.copyOf(uniqueKeys),
                 Map.copyOf(numericChecks), Map.copyOf(textChecks), Map.copyOf(temporalChecks),
-                schemaOptions.contains(SchemaOption.META_INFO) ? DbMetaInfo.plan(mapping, token) : List.of());
+                schemaOptions.contains(SchemaOption.META_INFO) ? DbMetaInfo.plan(mapping, token) : List.of(),
+                sqlNotNull, sqlNotNull ? requiredColumns(mapping) : Map.of());
+    }
+
+    private static Map<String, Set<String>> requiredColumns(DbMapping mapping) {
+        var required = new HashMap<String, Set<String>>();
+        for (var table : mapping.tables()) {
+            if (table.object().kind() != SymbolKind.CLASS || table.subtype() || !table.secondaryGeometries().isEmpty()) {
+                throw DbMapping.unsupported("--sql-not-null at " + table.object().name().declared());
+            }
+            var columns = new HashSet<String>();
+            for (var column : table.columns()) {
+                if (!column.simpleScalar()) {
+                    throw DbMapping.unsupported("--sql-not-null at " + column.slot().name().declared());
+                }
+                if (column.slot() instanceof AttributeSlot attribute && attribute.cardinality().lower().signum() > 0) {
+                    columns.addAll(column.physicalNames());
+                }
+            }
+            if (!columns.isEmpty()) required.put(table.name(), Set.copyOf(columns));
+        }
+        return Map.copyOf(required);
     }
 
     List<String> addedStorageTables() { return DbMapping.storageTables(addedTables); }
@@ -364,7 +386,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     SchemaPlan withModelFiles(List<ModelFile> files) {
         return new SchemaPlan(mapping, files, addedTables, addedAssociations, addedCompositions, columnProperties,
                 geometryColumns, splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations, enumLookups,
-                uniqueKeys, numericChecks, textChecks, temporalChecks, metaInformation);
+                uniqueKeys, numericChecks, textChecks, temporalChecks, metaInformation, sqlNotNull, requiredColumns);
     }
 
     private static Origin.DeclaredOrigin origin(ModelSymbol model) {

@@ -146,7 +146,7 @@ final class BaseMappingStorageTest {
         var plan = SchemaPlan.read(List.of(model), ili, List.of(), !postgis, !postgis, 2056, false,
                 java.util.Optional.empty(), new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), false,
                 DbEnumOptions.DEFAULT, Set.of(Ili2dbLayout.SchemaOption.BASKET_COLUMN, Ili2dbLayout.SchemaOption.TID_COLUMN),
-                CancellationToken.none());
+                false, CancellationToken.none());
         if (postgis) {
             try (var reserved = Database.openPostgres(cancelledDb.url, "select", cancelledDb.user,
                     cancelledDb.password, true)) {

@@ -50,16 +50,20 @@ final class SchemaProfileCases {
         fixtures = new ProfileFixtures(work, version);
     }
 
-    void modelNullability(TestDatabase db) throws Exception {
+    void modelNullability(TestDatabase db, TestDatabase own) throws Exception {
         String model = "ProfileNullability" + version;
         Path ili = fixtures.source(model, "CLASS Asset = Label : MANDATORY TEXT*24; Remark : TEXT*20; END Asset;");
         referenceSchema(db, ili);
-        mixed(db, model, List.of("<Label>first</Label>", "<Label>second</Label><Remark>present</Remark>"), rows -> {
-            assertEquals("first", child(rows.getFirst(), "Label").getTextContent());
-            assertNull(child(rows.getFirst(), "Remark"));
-            assertEquals("second", child(rows.getLast(), "Label").getTextContent());
-            assertEquals("present", child(rows.getLast(), "Remark").getTextContent());
-        });
+        schema(own, model, ili, "--sql-not-null");
+        sameCatalog(db, own);
+        for (var target : List.of(db, own)) {
+            mixed(target, model, List.of("<Label>first</Label>", "<Label>second</Label><Remark>present</Remark>"), rows -> {
+                assertEquals("first", child(rows.getFirst(), "Label").getTextContent());
+                assertNull(child(rows.getFirst(), "Remark"));
+                assertEquals("second", child(rows.getLast(), "Label").getTextContent());
+                assertEquals("present", child(rows.getLast(), "Remark").getTextContent());
+            });
+        }
         assertCliFailure(db, "schemaimport", model, null, ili, "--add-models requires a schema with SqlNull=enable",
                 "--add-models");
         try (var sql = db.connect()) {

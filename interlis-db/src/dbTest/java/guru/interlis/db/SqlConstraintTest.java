@@ -300,6 +300,33 @@ final class SqlConstraintTest {
         });
     }
 
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void requiredScalarColumnsRollBackLateMissingValues(Backend backend, int version) throws Exception {
+        withDatabase(backend, db -> {
+            String model = "SqlRequired";
+            schema(db, model, version, """
+                    DOMAIN Identifier = MANDATORY 0..100;
+                    CLASS Asset =
+                      SerialNo : Identifier;
+                      Current : MANDATORY BOOLEAN;
+                      Remark : TEXT*24;
+                    END Asset;
+                    """, "--sql-not-null");
+            String valid = "<SerialNo>0</SerialNo><Current>false</Current>";
+            assertCliSuccess(db, "import", model, "valid", data(model, version, "valid", valid));
+            assertCliFailure(db, "import", model, "broken", data(model, version, "broken", valid, "<Current>false</Current>"),
+                    importSqlDiagnostic(db, "23502"));
+            try (var sql = db.connect()) {
+                assertRolledBack(db, sql, 1, 1);
+                assertEquals("0", scalar(sql, "SELECT serialno FROM " + db.table("asset")));
+                assertNull(scalar(sql, "SELECT remark FROM " + db.table("asset")));
+                assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_settings")
+                        + " WHERE tag='ch.ehi.ili2db.SqlNull'"));
+            }
+        });
+    }
+
     private static void assertRolledBack(Target db, Connection sql, int objects, int datasets) throws SQLException {
         assertEquals(Integer.toString(objects), scalar(sql, "SELECT count(*) FROM " + db.table("asset")));
         assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("asset") + " WHERE t_ili_tid LIKE 'broken-%'"));

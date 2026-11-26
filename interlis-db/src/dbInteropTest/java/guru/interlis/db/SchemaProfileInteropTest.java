@@ -25,7 +25,8 @@ final class SchemaProfileInteropTest {
 
     private void exchangeProfileNullability(int version, PostgreSQLContainer postgres) throws Exception {
         var expected = new TestDatabase(work, postgres, "profile_nullability_ref", "v" + version + "_");
-        new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version).modelNullability(expected);
+        new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version)
+                .modelNullability(expected, expected.peer("profile_nullability_own"));
     }
 
     @Test void geoPackageProfileForeignKeys23() throws Exception { exchangeProfileForeignKeys(23, null); }
