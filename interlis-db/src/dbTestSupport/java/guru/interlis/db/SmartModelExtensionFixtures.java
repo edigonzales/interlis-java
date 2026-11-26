@@ -12,7 +12,7 @@ import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.ModelFixtures.tableFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-final class Smart2ExtensionFixtures {
+final class SmartModelExtensionFixtures {
     final String original;
     final String added;
     final String specialized;
@@ -21,10 +21,12 @@ final class Smart2ExtensionFixtures {
     private final ProfileFixtures transfers;
     private final Path work;
     private final int version;
+    private final boolean sharedTable;
 
-    Smart2ExtensionFixtures(Path work, int version, boolean sharedDomains) throws Exception {
+    SmartModelExtensionFixtures(Path work, int version, boolean sharedDomains, boolean sharedTable) throws Exception {
         this.work = work;
         this.version = version;
+        this.sharedTable = sharedTable;
         transfers = new ProfileFixtures(work, version);
         original = "OriginalSmart" + version;
         added = "AddedSmart" + version;
@@ -82,6 +84,7 @@ final class Smart2ExtensionFixtures {
     private Path source(String name, boolean sharedDomains) throws Exception {
         String domains = sharedDomains ? "IMPORTS " + original + ";" : "DOMAIN Caption = TEXT*30; Amount = 0..100;";
         String qualifier = sharedDomains ? original + "." : "";
+        String alternate = sharedTable ? "EXTENDS Entry = BranchNote : TEXT*20;" : "EXTENDS BaseAsset =";
         return Files.writeString(work.resolve(name + ".ili"), """
                 INTERLIS 2.%d;
                 MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
@@ -89,16 +92,17 @@ final class Smart2ExtensionFixtures {
                   TOPIC Data =
                     CLASS BaseAsset (ABSTRACT) = Label : %sCaption; END BaseAsset;
                     CLASS Entry EXTENDS BaseAsset = Quantity : %sAmount; END Entry;
-                    CLASS Alternate EXTENDS BaseAsset = END Alternate;
+                    CLASS Alternate %s END Alternate;
                   END Data;
                 END %s.
-                """.formatted(version - 20, name, domains, qualifier, qualifier, name));
+                """.formatted(version - 20, name, domains, qualifier, qualifier, alternate, name));
     }
 
     Path input(String model, String prefix) throws Exception {
         return transfers.data(model, prefix,
                 transfers.object(model, "Entry", prefix + "-entry", "<Label>entry</Label><Quantity>7</Quantity>")
-                        + transfers.object(model, "Alternate", prefix + "-alternate", "<Label>alternate</Label>"));
+                        + transfers.object(model, "Alternate", prefix + "-alternate", "<Label>alternate</Label>"
+                        + (sharedTable ? "<BranchNote>branch</BranchNote>" : "")));
     }
 
     void assertDelivery(Path output, String model, String prefix) throws Exception {
@@ -114,6 +118,7 @@ final class Smart2ExtensionFixtures {
                 assertEquals(prefix + "-alternate", tid);
                 assertEquals(expectedPrefix + "Alternate", row.getLocalName());
                 assertEquals("alternate", child(row, "Label").getTextContent());
+                if (sharedTable) assertEquals("branch", child(row, "BranchNote").getTextContent());
             }
         }
         assertEquals(2, rows.stream().map(row -> id(row, version, "tid")).distinct().count());
@@ -121,12 +126,13 @@ final class Smart2ExtensionFixtures {
 
     List<String> originalRows(Target db) throws Exception {
         String entry = tableFor(db, original + ".Data.Entry");
-        String alternate = tableFor(db, original + ".Data.Alternate");
+        String alternate = sharedTable ? entry : tableFor(db, original + ".Data.Alternate");
         try (var sql = db.connect()) {
             return List.of(
                     scalar(sql, "SELECT t_id || ':' || t_basket || ':' || t_ili_tid || ':' || label || ':' || quantity FROM "
-                            + db.table(entry)),
-                    scalar(sql, "SELECT t_id || ':' || t_basket || ':' || t_ili_tid || ':' || label FROM " + db.table(alternate)),
+                            + db.table(entry) + " WHERE t_ili_tid='original-entry'"),
+                    scalar(sql, "SELECT t_id || ':' || t_basket || ':' || t_ili_tid || ':' || label FROM " + db.table(alternate)
+                            + " WHERE t_ili_tid='original-alternate'"),
                     scalar(sql, "SELECT t_id || ':' || dataset || ':' || t_ili_tid FROM " + db.table("t_ili2db_basket")
                             + " WHERE t_ili_tid='original-basket'"),
                     scalar(sql, "SELECT t_id FROM " + db.table("t_ili2db_dataset") + " WHERE datasetname='original'"));

@@ -147,8 +147,9 @@ public final class Main {
             }
         }
         var settings = DbSchemaReader.readSettings(db, options.models());
-        boolean smart2 = settings.inheritance() == DbInheritance.Profile.SMART2 && settings.sqlEnableNull();
-        if ((!smart2 && settings.inheritance() != DbInheritance.Profile.NEW_CLASS) || settings.defaultEpsg() == 0
+        boolean smart1 = settings.inheritance() == DbInheritance.Profile.SMART1;
+        boolean smart2 = settings.inheritance() == DbInheritance.Profile.SMART2;
+        if (((smart1 || smart2) && !settings.sqlEnableNull()) || settings.defaultEpsg() == 0
                 || (options.explicitEpsg() && options.defaultEpsg() != settings.defaultEpsg())
                 || (options.explicitLayout() && options.splitGeometries() != settings.splitGeometries())
                 || (options.multiSrs() && !settings.multiSrs())
@@ -162,6 +163,20 @@ public final class Main {
                 settings.inheritance(), settings.structureTransformations(), settings.strokeArcs(), settings.enumOptions(),
                 settings.schemaOptions(), !settings.sqlEnableNull(), cancellation);
         var newFiles = DbSchemaReader.newModelFiles(db, plan.modelFiles(), cancellation);
+        if (smart1) {
+            var mapping = plan.mapping();
+            for (var alias : mapping.inheritance().aliases()) {
+                var owner = mapping.table(alias.owner());
+                if (!names.hasClass(alias.object().name().declared().toString())
+                        && names.hasClass(owner.object().name().declared().toString())) {
+                    throw new DbException("Smart1 --add-models would change stored table " + owner.name()
+                            + " for subtype " + alias.object().name().declared());
+                }
+            }
+            if (newFiles.size() != plan.modelFiles().size()) {
+                throw new DbException("Smart1 --add-models requires independent model sources");
+            }
+        }
         if (smart2) {
             DbSchemaReader.checkSmart2SubtypeExtension(db, plan, names, cancellation);
             for (var table : plan.addedTables()) {

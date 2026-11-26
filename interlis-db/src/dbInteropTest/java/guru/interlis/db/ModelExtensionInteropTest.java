@@ -7,8 +7,10 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.nio.file.Path;
 import java.util.Locale;
+import java.util.Set;
 
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
+import static guru.interlis.db.DbTestSupport.catalogKeys;
 import static guru.interlis.db.InteropCommands.assertSharedIds;
 import static guru.interlis.db.InteropCommands.exportDataset;
 import static guru.interlis.db.InteropCommands.importDataset;
@@ -38,17 +40,21 @@ final class ModelExtensionInteropTest {
     @Test void smart2StructuresGeoPackage24() throws Exception { exchangeStructures(24, null, "smart2"); }
     @Test void smart2StructuresPostgis23() throws Exception { exchangeStructures(23, POSTGIS.container(), "smart2"); }
     @Test void smart2StructuresPostgis24() throws Exception { exchangeStructures(24, POSTGIS.container(), "smart2"); }
-    @Test void smart2GeoPackage23() throws Exception { exchangeSmart2(23, null); }
-    @Test void smart2GeoPackage24() throws Exception { exchangeSmart2(24, null); }
-    @Test void smart2Postgis23() throws Exception { exchangeSmart2(23, POSTGIS.container()); }
-    @Test void smart2Postgis24() throws Exception { exchangeSmart2(24, POSTGIS.container()); }
+    @Test void smart2GeoPackage23() throws Exception { exchangeSmartModels(23, null, "smart2"); }
+    @Test void smart2GeoPackage24() throws Exception { exchangeSmartModels(24, null, "smart2"); }
+    @Test void smart2Postgis23() throws Exception { exchangeSmartModels(23, POSTGIS.container(), "smart2"); }
+    @Test void smart2Postgis24() throws Exception { exchangeSmartModels(24, POSTGIS.container(), "smart2"); }
+    @Test void smart1GeoPackage23() throws Exception { exchangeSmartModels(23, null, "smart1"); }
+    @Test void smart1GeoPackage24() throws Exception { exchangeSmartModels(24, null, "smart1"); }
+    @Test void smart1Postgis23() throws Exception { exchangeSmartModels(23, POSTGIS.container(), "smart1"); }
+    @Test void smart1Postgis24() throws Exception { exchangeSmartModels(24, POSTGIS.container(), "smart1"); }
     @Test void smart2SubtypeGeoPackage23() throws Exception { exchangeSmart2Subtype(23, null); }
     @Test void smart2SubtypeGeoPackage24() throws Exception { exchangeSmart2Subtype(24, null); }
     @Test void smart2SubtypePostgis23() throws Exception { exchangeSmart2Subtype(23, POSTGIS.container()); }
     @Test void smart2SubtypePostgis24() throws Exception { exchangeSmart2Subtype(24, POSTGIS.container()); }
 
     private void exchangeSmart2Subtype(int version, PostgreSQLContainer postgres) throws Exception {
-        var fixture = new Smart2ExtensionFixtures(work, version, false);
+        var fixture = new SmartModelExtensionFixtures(work, version, false, false);
         var newSource = fixture.specializedSource();
         var db = new TestDatabase(work, postgres, "append_subtype", "v" + version + "_");
         var expected = db.peer("append_subtype_reference");
@@ -76,19 +82,21 @@ final class ModelExtensionInteropTest {
         assertEquals(original, fixture.originalRows(db));
     }
 
-    private void exchangeSmart2(int version, PostgreSQLContainer postgres) throws Exception {
-        var fixture = new Smart2ExtensionFixtures(work, version, true);
-        var db = new TestDatabase(work, postgres, "append_smart2", "v" + version + "_");
-        var expected = db.peer("append_smart2_reference");
+    private void exchangeSmartModels(int version, PostgreSQLContainer postgres, String profile) throws Exception {
+        boolean smart1 = profile.equals("smart1");
+        var fixture = new SmartModelExtensionFixtures(work, version, !smart1, smart1);
+        var db = new TestDatabase(work, postgres, "append_" + profile, "v" + version + "_");
+        var expected = db.peer("append_" + profile + "_reference");
         var reference = new ReferenceTool(work, db.postgis());
-        schema(reference, db, work, fixture.original, "smart2");
-        schema(reference, expected, work, fixture.original, "smart2");
+        schema(reference, db, work, fixture.original, profile);
+        schema(reference, expected, work, fixture.original, profile);
         importDataset(reference, db, "original", fixture.input(fixture.original, "original"));
         var original = fixture.originalRows(db);
-        schema(reference, expected, work, fixture.added, "smart2");
+        schema(reference, expected, work, fixture.added, profile);
         try (var sql = db.connect(); var expectedSql = expected.connect()) {
             var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
-            assertCliSuccess(db, "schemaimport", fixture.added, null, fixture.addedSource,
+            if (smart1) assertCliSuccess(db, "schemaimport", fixture.added, null, fixture.addedSource, "--add-models");
+            else assertCliSuccess(db, "schemaimport", fixture.added, null, fixture.addedSource,
                     "--add-models", "--model-file", fixture.originalSource.toString());
             var after = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
             assertEquals(before.relations().get("settings"), after.relations().get("settings"));
@@ -112,8 +120,18 @@ final class ModelExtensionInteropTest {
         assertCliSuccess(db, "export", fixture.added, "tail", output);
         fixture.assertDelivery(output, fixture.added, "tail");
         assertEquals(original, fixture.originalRows(db));
-        assertSharedIds(db, 16, tableFor(db, fixture.original + ".Data.Entry"), tableFor(db, fixture.original + ".Data.Alternate"),
-                tableFor(db, fixture.added + ".Data.Entry"), tableFor(db, fixture.added + ".Data.Alternate"));
+        String originalEntry = tableFor(db, fixture.original + ".Data.Entry");
+        String addedEntry = tableFor(db, fixture.added + ".Data.Entry");
+        if (smart1) {
+            assertSharedIds(db, 16, originalEntry, addedEntry);
+            try (var sql = db.connect()) {
+                assertEquals(Set.of(addedEntry, tableFor(db, fixture.added + ".Data.Alternate")),
+                        catalogKeys(sql, "SELECT DISTINCT t_type FROM " + db.table(addedEntry)));
+            }
+        } else {
+            assertSharedIds(db, 16, originalEntry, tableFor(db, fixture.original + ".Data.Alternate"),
+                    addedEntry, tableFor(db, fixture.added + ".Data.Alternate"));
+        }
     }
 
     private void exchangeStructures(int version, PostgreSQLContainer postgres, String profile) throws Exception {

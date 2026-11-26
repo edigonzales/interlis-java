@@ -78,7 +78,7 @@ final class ModelExtensionStorageTest {
     @ParameterizedTest(name = "{0}, XTF {1}")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void smart2ReusesDomainSourcesAndRollsBackDdl(Backend backend, int version) throws Exception {
-        var fixture = new Smart2ExtensionFixtures(work, version, true);
+        var fixture = new SmartModelExtensionFixtures(work, version, true, false);
         var db = POSTGIS.target(work.resolve("smart2-extension.gpkg"), backend);
         DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource, "--inheritance", "smart2");
         assertCliSuccess(db, "import", fixture.original, "original", fixture.input(fixture.original, "original"));
@@ -113,7 +113,7 @@ final class ModelExtensionStorageTest {
     @ParameterizedTest(name = "{0}, XTF {1}")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void smart2RejectsSubtypeThatWouldChangeStoredReference(Backend backend, int version) throws Exception {
-        var fixture = new Smart2ExtensionFixtures(work, version, false);
+        var fixture = new SmartModelExtensionFixtures(work, version, false, false);
         var db = POSTGIS.target(work.resolve("referenced-hierarchy.gpkg"), backend);
         String survey = "ExistingSurvey" + version;
         DbTestSupport.assertSchemaWithIdentityColumns(db, survey, fixture.externalRoleSource(survey, "BaseAsset"),
@@ -127,6 +127,38 @@ final class ModelExtensionStorageTest {
                     "would change stored reference " + survey + ".Data.AssetLink.Site",
                     "--add-models", "--model-file", fixture.originalSource.toString());
             before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+            assertEquals(rows, fixture.originalRows(db));
+        }
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void smart1AddsIndependentHierarchyAndPreservesStoredTable(Backend backend, int version) throws Exception {
+        var fixture = new SmartModelExtensionFixtures(work, version, false, true);
+        var db = POSTGIS.target(work.resolve("smart1-extension.gpkg"), backend);
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource, "--inheritance", "smart1");
+        assertCliSuccess(db, "import", fixture.original, "original", fixture.input(fixture.original, "original"));
+
+        try (var sql = db.connect()) {
+            var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+            var rows = fixture.originalRows(db);
+            assertCliFailure(db, "schemaimport", fixture.specialized, null, fixture.specializedSource(),
+                    "would change stored table entry for subtype " + fixture.specialized + ".Data.SpecializedEntry",
+                    "--add-models", "--model-file", fixture.originalSource.toString());
+            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+
+            var checkpoints = new AtomicInteger();
+            var cancelled = schemaWithIdentityColumns(db, fixture.added, fixture.addedSource,
+                    cancelDuringDdl(checkpoints, 2), "--add-models");
+            assertEquals(130, cancelled.code(), cancelled::diagnostics);
+            assertEquals(2, checkpoints.get());
+            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+
+            assertCliSuccess(db, "schemaimport", fixture.added, null, fixture.addedSource, "--add-models");
+            assertCliSuccess(db, "import", fixture.added, "added", fixture.input(fixture.added, "added"));
+            var output = work.resolve("independent.xtf");
+            assertCliSuccess(db, "export", fixture.added, "added", output);
+            fixture.assertDelivery(output, fixture.added, "added");
             assertEquals(rows, fixture.originalRows(db));
         }
     }
