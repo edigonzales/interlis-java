@@ -317,10 +317,10 @@ final class SchemaProfileCases {
                 "!!@example.model = \"profile\"\nMODEL " + model));
         referenceSchema(expected, ili, "--sqlEnableNull", "--smart2Inheritance", "--createMetaInfo", "--createFk",
                 "--createFkIdx", "--createUnique", "--createNumChecks", "--createGeomIdx", "--strokeArcs", "--createEnumTabs",
-                "--beautifyEnumDispName", "--createTextChecks", "--createDateTimeChecks");
+                "--beautifyEnumDispName", "--createTextChecks", "--createDateTimeChecks", "--createMandatoryChecks");
         schema(own, model, ili, "--inheritance", "smart2", "--create-meta-info", "--create-fk", "--create-fk-idx",
                 "--create-unique", "--create-num-checks", "--create-geom-index", "--stroke-arcs", "--create-enum-tabs",
-                "--beautify-enum-disp-name", "--create-text-checks", "--create-date-time-checks");
+                "--beautify-enum-disp-name", "--create-text-checks", "--create-date-time-checks", "--create-mandatory-checks");
         sameCatalog(expected, own);
         String relation = "t_ili2db_meta_attrs";
         try (var left = expected.connect(); var right = own.connect()) {
@@ -411,6 +411,7 @@ final class SchemaProfileCases {
                 + fixtures.reference("RefAsset", prefix + "-target");
         String mark = "<LocalMark>" + prefix + "-site</LocalMark>";
         return fixtures.data(model, prefix, fixtures.object(model, "Asset", prefix + "-asset", asset)
+                + fixtures.object(model, "Asset", prefix + "-unassigned", "<Label>unassigned-" + prefix + "</Label>")
                 + fixtures.object(model, "Target", prefix + "-target", "<Label>target</Label>")
                 + fixtures.object(model, "Measurement", prefix + "-reading-min", mark
                         + "<VariantNo>1</VariantNo><Rating>-20</Rating><WideNo>-9007199254740992</WideNo><Fraction>-2.500</Fraction>")
@@ -422,10 +423,11 @@ final class SchemaProfileCases {
     }
 
     private void assertMetaData(Path output, String prefix) throws Exception {
-        var objects = fixtures.rows(output, prefix, 5).stream().collect(Collectors.toMap(
+        var objects = fixtures.rows(output, prefix, 6).stream().collect(Collectors.toMap(
                 row -> id(row, version, "tid"), Function.identity()));
         var row = objects.get(prefix + "-asset");
         fixtures.assertLink(row, prefix);
+        assertNull(child(objects.get(prefix + "-unassigned"), "RefAsset"));
         assertEquals(prefix, child(row, "Label").getTextContent());
         assertEquals("in_progress", child(row, "Phase").getTextContent());
         assertEquals("15", child(row, "LevelNo").getTextContent());

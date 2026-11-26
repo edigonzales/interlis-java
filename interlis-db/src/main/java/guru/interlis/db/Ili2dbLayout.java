@@ -96,6 +96,7 @@ final class Ili2dbLayout {
         NUMERIC_CHECKS("--create-num-checks", "numericCheckConstraints", "create"),
         TEXT_CHECKS("--create-text-checks", "textCheckConstraints", "create"),
         DATE_TIME_CHECKS("--create-date-time-checks", "datetimeCheckConstraints", "create"),
+        MANDATORY_CHECKS("--create-mandatory-checks", "mandatoryCheckConstraints", "create"),
         META_INFO("--create-meta-info", "createMetaInfo", "True");
 
         final String option;

@@ -267,6 +267,39 @@ final class SqlConstraintTest {
         });
     }
 
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void mandatoryCheckOptionKeepsNullableProfile(Backend backend, int version) throws Exception {
+        withDatabase(backend, db -> {
+            String model = "SqlMandatory";
+            schema(db, model, version, """
+                    CLASS Place = END Place;
+                    STRUCTURE AssignmentDetail = Destination : REFERENCE TO Place; END AssignmentDetail;
+                    CLASS Asset =
+                      Label : MANDATORY TEXT*24;
+                      DetailValue : AssignmentDetail;
+                    END Asset;
+                    """, "--create-mandatory-checks");
+            String structure = version == 23 ? model + ".Data.AssignmentDetail" : "AssignmentDetail";
+            assertCliSuccess(db, "import", model, "nullable", data(model, version, "nullable",
+                    "<DetailValue><" + structure + "/></DetailValue>"));
+            try (var sql = db.connect()) {
+                String settings = db.table("t_ili2db_settings");
+                assertEquals("enable", scalar(sql, "SELECT setting FROM " + settings + " WHERE tag='ch.ehi.ili2db.SqlNull'"));
+                assertEquals("create", scalar(sql, "SELECT setting FROM " + settings
+                        + " WHERE tag='ch.ehi.ili2db.mandatoryCheckConstraints'"));
+                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("asset") + " WHERE label IS NULL"));
+                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("assignmentdetail")
+                        + " WHERE destination IS NULL"));
+            }
+            var output = work.resolve("nullable-export.xtf");
+            assertCliSuccess(db, "export", model, "nullable", output);
+            var row = exportedRows(output, version, "nullable", 1).getFirst();
+            assertNull(child(row, "Label"));
+            assertNull(child(children(child(row, "DetailValue")).getFirst(), "Destination"));
+        });
+    }
+
     private static void assertRolledBack(Target db, Connection sql, int objects, int datasets) throws SQLException {
         assertEquals(Integer.toString(objects), scalar(sql, "SELECT count(*) FROM " + db.table("asset")));
         assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("asset") + " WHERE t_ili_tid LIKE 'broken-%'"));

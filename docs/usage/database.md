@@ -197,6 +197,12 @@ Prüfungen nicht.
 die Einstellung. Temporale Formate in SQL-Textspalten bleiben frei von
 diesen SQL-Prüfungen.
 
+`schemaimport --create-mandatory-checks` speichert die Einstellung für
+ili2db `--createMandatoryChecks`. Im Profil mit `SqlNull=enable` erzeugt
+die Referenz dazu keine zusätzlichen Pflichtprüfungen. Die aktive
+strikte Variante von ili2pg 5.5.2 belegt auch optionale Referenzen mit
+`IS NOT NULL` und liegt ausserhalb dieses Schemaerzeugungsprofils.
+
 `schemaimport --create-meta-info` schreibt die Modellmetadaten in
 `T_ILI2DB_META_ATTRS`. Dazu gehören deklarierte Meta-Attribute,
 Kardinalitäten, Rollenarten und die SQL-Namen der Klassen eines Topics.
