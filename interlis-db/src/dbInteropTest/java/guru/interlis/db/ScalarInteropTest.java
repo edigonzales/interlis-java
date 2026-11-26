@@ -7,12 +7,16 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.w3c.dom.Element;
 
 import java.math.BigDecimal;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
+import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
 import static guru.interlis.db.DbTestSupport.child;
 import static guru.interlis.db.DbTestSupport.execute;
@@ -50,6 +54,11 @@ final class ScalarInteropTest {
     @Test void postgisScalars23() throws Exception { exchangeScalars(23, POSTGIS.container()); }
     @Test void postgisScalars24() throws Exception { exchangeScalars(24, POSTGIS.container()); }
 
+    @Test void geoPackageScalarText23() throws Exception { exchangeScalarText(23, null); }
+    @Test void geoPackageScalarText24() throws Exception { exchangeScalarText(24, null); }
+    @Test void postgisScalarText23() throws Exception { exchangeScalarText(23, POSTGIS.container()); }
+    @Test void postgisScalarText24() throws Exception { exchangeScalarText(24, POSTGIS.container()); }
+
     @Test void geoPackageDecimalArray23() throws Exception { exchangeDecimalArray(23, null); }
     @Test void geoPackageDecimalArray24() throws Exception { exchangeDecimalArray(24, null); }
     @Test void postgisDecimalArray23() throws Exception { exchangeDecimalArray(23, POSTGIS.container()); }
@@ -62,7 +71,7 @@ final class ScalarInteropTest {
         var fixture = new ScalarFixtures(work, version);
         String model = "ScalarMapping" + version;
         Path ili = fixture.copyModel(model);
-        referenceSchema(reference, old, ili, false);
+        referenceSchema(reference, old, ili);
         assertSchemaWithIdentityColumns(own, model, ili);
         compareCatalog(old, own);
 
@@ -125,6 +134,77 @@ final class ScalarInteropTest {
         }
     }
 
+    private void exchangeScalarText(int version, PostgreSQLContainer postgres) throws Exception {
+        var db = new TestDatabase(work, postgres, "scalar_text_reference", "v" + version + "_");
+        var reference = new ReferenceTool(work, db.postgis(), "UTC");
+        var fixture = new ScalarFixtures(work, version);
+        String model = "ScalarMapping" + version;
+        Path ili = fixture.copyModel(model);
+        referenceSchema(reference, db, ili, "--sqlColsAsText");
+
+        var scalars = new LinkedHashMap<String, String>();
+        scalars.put("Caption", "Caption");
+        scalars.put("Remarks", "line one\nline two");
+        scalars.put("Active", "true");
+        scalars.put("State", "More.Free");
+        scalars.put("WideNo", "9007199254740993");
+        scalars.put("PriceValue", HIGH_DECIMAL);
+        scalars.put("Measure", "2.250");
+        scalars.put("ReadingTime", "10:15:20.000");
+        scalars.put("ReadingStamp", "2024-02-29T10:15:20.120");
+        scalars.put("TicketCode", "0012");
+        String uuid = UUID.toUpperCase(Locale.ROOT);
+        String fields = scalars.entrySet().stream()
+                .map(entry -> field(entry.getKey(), entry.getValue())).collect(java.util.stream.Collectors.joining())
+                + fixture.uuidField(uuid) + fixture.binaryField("AAEC/w==")
+                + fixture.xmlField("<p:sample xmlns:p=\"urn:scalar\" p:code=\"x\">ascii</p:sample>");
+        var values = List.of(fields, "");
+        Path legacy = fixture.data(model, "legacy", values);
+        Path nativeInput = fixture.data(model, "native", values);
+        referenceImport(reference, db, "legacy", legacy);
+        Path exported = work.resolve("scalar-text-native.xtf");
+        assertCliSuccess(db, "export", model, "legacy", exported);
+        assertScalarText(fixture, exported, "legacy", scalars, uuid, false);
+
+        assertCliSuccess(db, "import", model, "native", nativeInput);
+        Path returned = work.resolve("scalar-text-reference.xtf");
+        referenceExport(reference, db, "native", returned);
+        assertScalarText(fixture, returned, "native", scalars, uuid, true);
+        try (var sql = db.connect()) {
+            for (String dataset : List.of("legacy", "native")) {
+                for (var entry : scalars.entrySet()) {
+                    String column = scalar(sql, "SELECT sqlname FROM " + db.table("t_ili2db_attrname")
+                            + " WHERE iliname='" + model + ".Data.Asset." + entry.getKey() + "'");
+                    assertEquals(entry.getValue(), stored(db, sql, column, dataset, 0), dataset + "." + column);
+                    assertNull(stored(db, sql, column, dataset, 1), dataset + "." + column);
+                }
+                assertEquals(uuid, stored(db, sql, "externalid", dataset, 0));
+                assertEquals("AAEC/w==", stored(db, sql, "binaryvalue", dataset, 0));
+                assertFragment(parseFragment(stored(db, sql, "xmlvalue", dataset, 0)), "ascii");
+            }
+            byte[] previous = Files.readAllBytes(exported);
+            execute(sql, "UPDATE " + db.table("asset") + " SET pricevalue='abc' WHERE t_ili_tid='legacy-0'");
+            assertCliFailure(db, "export", model, "legacy", exported, "PriceValue of object legacy-0");
+            assertArrayEquals(previous, Files.readAllBytes(exported));
+            execute(sql, "UPDATE " + db.table("asset") + " SET pricevalue='+.125' WHERE t_ili_tid='legacy-0'");
+            assertCliFailure(db, "export", model, "legacy", exported, "Object legacy-0: " + model + ".Data.Asset.PriceValue");
+            assertArrayEquals(previous, Files.readAllBytes(exported));
+        }
+    }
+
+    private static void assertScalarText(ScalarFixtures fixture, Path file, String dataset, Map<String, String> scalars,
+                                         String uuid, boolean referenceOutput) throws Exception {
+        var rows = fixture.rows(file, dataset, 2);
+        var first = rows.getFirst();
+        for (var entry : scalars.entrySet()) {
+            assertEquals(entry.getValue(), child(first, entry.getKey()).getTextContent(), entry.getKey());
+            assertNull(child(rows.getLast(), entry.getKey()), entry.getKey());
+        }
+        assertEquals(uuid, fixture.uuidValue(first));
+        assertArrayEquals(new byte[]{0, 1, 2, (byte) 0xff}, fixture.binaryValue(first));
+        assertFragment(fixture.xmlFragment(first, referenceOutput), "ascii");
+    }
+
     private void exchangeDecimalArray(int version, PostgreSQLContainer postgres) throws Exception {
         var old = new TestDatabase(work, postgres, "decimal_array_reference", "v" + version + "_");
         var own = old.peer("decimal_array_own");
@@ -132,7 +212,7 @@ final class ScalarInteropTest {
         var fixture = new ScalarFixtures(work, version);
         String model = "ScalarDecimalArray" + version;
         Path ili = fixture.copyModel(model);
-        referenceSchema(reference, old, ili, true);
+        referenceSchema(reference, old, ili, "--coalesceArray");
         assertSchemaWithIdentityColumns(own, model, ili, "--coalesce-array");
         compareCatalog(old, own);
         var values = List.of(fixture.decimalItems(model, DECIMAL_ITEMS), "");
@@ -218,10 +298,10 @@ final class ScalarInteropTest {
         assertNull(child(objects.getLast(), "Measurements"));
     }
 
-    private void referenceSchema(ReferenceTool reference, TestDatabase db, Path ili, boolean arrays) throws Exception {
+    private void referenceSchema(ReferenceTool reference, TestDatabase db, Path ili, String... extraOptions) throws Exception {
         var options = new java.util.ArrayList<>(List.of("--schemaimport", "--noSmartMapping", "--createBasketCol",
                 "--createTidCol", "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056"));
-        if (arrays) options.add("--coalesceArray");
+        options.addAll(List.of(extraOptions));
         options.add(ili.toString());
         reference.run(db, work.toString(), options.toArray(String[]::new));
     }

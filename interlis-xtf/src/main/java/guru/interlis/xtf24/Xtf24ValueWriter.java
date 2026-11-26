@@ -93,7 +93,12 @@ final class Xtf24ValueWriter {
                     writeValue(field.name(), element, item, object.model(), concreteTypes, structureTypes, activeTypes);
                 }
             } else {
-                writeValue(field.name(), type, value, object.model(), concreteTypes, structureTypes, activeTypes);
+                try {
+                    writeValue(field.name(), type, value, object.model(), concreteTypes, structureTypes, activeTypes);
+                } catch (Xtf24Exception failure) {
+                    throw new Xtf24Exception(failure.reason(), attribute.name().declared() + ": "
+                            + failure.getMessage(), -1, -1, failure);
+                }
             }
             written++;
         }

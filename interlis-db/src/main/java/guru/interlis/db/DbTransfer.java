@@ -37,6 +37,8 @@ import guru.interlis.transfer.TransferValue.Text;
 import guru.interlis.transfer.TransferValue.Undefined;
 import guru.interlis.transfer.TransferValue.XmlFragment;
 import guru.interlis.transfer.TransferWriter;
+import guru.interlis.xtf23.Xtf23Exception;
+import guru.interlis.xtf24.Xtf24Exception;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -287,7 +289,7 @@ final class DbTransfer {
                             : new Structured(table.object().symbol(), values);
                     var object = new TransferObject(identity, data);
                     object = mapping.translations().inTopic(object, topic);
-                    writer.write(new TransferEvent.ObjectEvent(object, Optional.empty(), Consistency.COMPLETE), token);
+                    writeObject(writer, object, ownerTid, rows.getLong(1), token);
                 }
                 structures.requireExhausted();
             }
@@ -380,7 +382,7 @@ final class DbTransfer {
                             : new Structured(actual.object().symbol(), values);
                     var object = new TransferObject(identity, data);
                     object = mapping.translations().inTopic(object, topic);
-                    writer.write(new TransferEvent.ObjectEvent(object, Optional.empty(), Consistency.COMPLETE), token);
+                    writeObject(writer, object, tid, id, token);
                 }
                 fragments.requireExhausted();
                 structures.requireExhausted();
@@ -553,7 +555,8 @@ final class DbTransfer {
             switch (column.kind()) {
                 case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE ->
                         projections.add(db.geometryProjection(field, column));
-                case BINARY -> projections.add(db.binaryProjection(field));
+                case BINARY -> projections.add(column.scalarText(mapping.schemaOptions())
+                        ? db.xmlProjection(field) : db.binaryProjection(field));
                 case XML -> projections.add(db.xmlProjection(field));
                 case REFERENCE -> {
                     String ref = alias + "ref" + refIndex++;
@@ -1144,8 +1147,20 @@ final class DbTransfer {
         }
     }
 
+    private static void writeObject(TransferWriter writer, TransferObject object, String tid, long id, CancellationToken token) {
+        try {
+            writer.write(new TransferEvent.ObjectEvent(object, Optional.empty(), Consistency.COMPLETE), token);
+        } catch (Xtf23Exception | Xtf24Exception failure) {
+            throw new DbException("Object " + (tid == null ? "T_Id " + id : tid) + ": " + failure.getMessage(), failure);
+        }
+    }
+
     private static TransferValue readValue(Database db, DbMapping mapping, ExportIds ids, ResultSet rows, int index,
                                            Column column, String ownerTid) throws SQLException {
+        if (column.scalarText(mapping.schemaOptions())) {
+            String context = column.slot().name().declared() + " of object " + ownerTid;
+            return DbScalarText.read(column.kind(), rows.getString(index), context);
+        }
         if (column.expandedStructure().isPresent()) {
             return readExpanded(db, rows, index, column.expandedStructure().orElseThrow(), ownerTid);
         }
@@ -2058,6 +2073,10 @@ final class DbTransfer {
             if (column.enumText().isPresent()) statement.setString(next++, label);
             if (value == null || value == Undefined.INSTANCE) {
                 statement.setNull(index, Types.NULL);
+                return next;
+            }
+            if (column.scalarText(mapping.schemaOptions())) {
+                statement.setString(index, DbScalarText.write(value));
                 return next;
             }
             switch (column.kind()) {

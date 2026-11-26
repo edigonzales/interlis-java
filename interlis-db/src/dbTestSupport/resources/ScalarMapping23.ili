@@ -7,6 +7,10 @@ MODEL ScalarMapping23 (en) AT "https://example.org/interlis/db" VERSION "1" =
       Ticket = FORMAT BASED ON Digits (Numeral/4) "0000" .. "9999";
       CalRange EXTENDS INTERLIS.XMLDate = "1900-01-01" .. "2100-12-31";
     CLASS Asset =
+      Caption : TEXT*16;
+      Remarks : MTEXT;
+      Active : BOOLEAN;
+      State : (One, More (Free, Busy));
       WideNo : -9223372036854775808 .. 9223372036854775807;
       SmallNo : -100 .. 100;
       PriceValue : -9999999999999999.999 .. 9999999999999999.999;

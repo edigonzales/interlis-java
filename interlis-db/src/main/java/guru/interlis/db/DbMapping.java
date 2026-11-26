@@ -213,6 +213,12 @@ final class DbMapping {
 
         String geometryType() { return geometryEncoding().sqlType(kind); }
 
+        boolean scalarText(Set<Ili2dbLayout.SchemaOption> options) {
+            return options.contains(Ili2dbLayout.SchemaOption.SCALAR_TEXT)
+                    && !kind.geometry() && kind != Kind.REFERENCE && kind != Kind.REFERENCE_TEXT
+                    && textExpansion.isEmpty() && expandedStructure.isEmpty() && jsonStructure.isEmpty() && array.isEmpty();
+        }
+
         List<String> physicalNames() {
             if (expandedStructure.isPresent()) return expandedStructure.orElseThrow().physicalNames();
             if (enumText.isPresent()) return List.of(name, enumText.orElseThrow().column());

@@ -427,6 +427,15 @@ Der Transfer liest auch Referenzschemata ohne `--sqlEnableNull`. Bei direkt
 gespeicherten Pflichtwerten setzt die Datenbank die vorhandenen `NOT NULL`-
 Bedingungen durch. `schemaimport --add-models` setzt `SqlNull=enable` voraus.
 
+Der FULL-Transfer mit GeoPackage und PostGIS unterstützt bestehende
+ili2db-Schemata mit `--sqlColsAsText`. Einfache Attribute werden als SQL-Text
+gespeichert. Der Transfer erhält unter anderem Zahlenschreibweisen,
+Zeitbruchteile, Enum-Codes und die Schreibweise von OID-Attributen.
+BLACKBOX verwendet Base64 beziehungsweise XML-Text. Bei reinem
+BLACKBOX-XML-Text speichert die Referenz-Textspalte keine Namespace-Bindungen
+des umgebenden XTF-Elements. Das Profil unterstützt Enum-Codes ohne
+zusätzliche Enum-Schemaoptionen und ohne `--expandStruct`.
+
 In bestehenden `newClass`-Schemata aus ili2db 5.5.2 mit
 `--coalesceCatalogueRef` verwendet der FULL-Transfer die Fremdschlüsselspalte
 des Fachattributs für CHBase-V1-Katalogreferenzen. Dies gilt für Einzelwerte

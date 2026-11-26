@@ -300,7 +300,14 @@ public final class Xtf23Writer extends TransferWriter {
                 writeEmbedded(field, value);
             } else {
                 switch (field.slot()) {
-                    case AttributeSlot attribute -> writeValue(layout.type(attribute.effectiveType()), value);
+                    case AttributeSlot attribute -> {
+                        try {
+                            writeValue(layout.type(attribute.effectiveType()), value);
+                        } catch (Xtf23Exception failure) {
+                            throw new Xtf23Exception(failure.reason(), attribute.name().declared() + ": "
+                                    + failure.getMessage(), -1, -1, failure);
+                        }
+                    }
                     case RoleSlot role -> writeReference(requireValue(value, Reference.class),
                             role.role().external(), role.role().ordered());
                 }

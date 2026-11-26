@@ -87,6 +87,7 @@ final class Ili2dbLayout {
         FOREIGN_KEY_INDEX("--create-fk-idx", "createForeignKeyIndex", "yes"),
         FOREIGN_KEY("--create-fk", "createForeignKey", "yes"),
         EXTERNAL_REFERENCE_TEXT("--sql-ext-ref-cols", "SqlExtRefCols", "enable"),
+        SCALAR_TEXT(null, "SqlColsAsText", "enable"),
         TYPE_DISCRIMINATOR("--create-type-discriminator", "typeDiscriminator", "always"),
         TYPE_CONSTRAINT("--create-type-constraint", "createTypeConstraint", "True"),
         DATASET_COLUMN("--create-dataset-col", "createDatasetCols", "addDatasetCol"),
@@ -107,7 +108,7 @@ final class Ili2dbLayout {
 
         static SchemaOption fromOption(String option) {
             for (var candidate : values()) {
-                if (candidate.option.equals(option)) return candidate;
+                if (option.equals(candidate.option)) return candidate;
             }
             return null;
         }

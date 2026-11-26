@@ -560,7 +560,6 @@ final class DbSchemaReader {
             case "smart2" -> DbInheritance.Profile.SMART2;
             default -> throw unsupported("SETTINGS.inheritanceTrafo");
         };
-        if (settings.containsKey(PREFIX + "SqlColsAsText")) throw unsupported("SETTINGS.SqlColsAsText");
         var enumOptions = new DbEnumOptions(optionalSetting(settings, Ili2dbLayout.ENUM_ITF_CODE, "yes"),
                 optionalSetting(settings, Ili2dbLayout.ENUM_TEXT_COLUMN, "addTxtCol"),
                 optionalSetting(settings, Ili2dbLayout.ENUM_BEAUTIFY, "underscore"),
@@ -605,6 +604,7 @@ final class DbSchemaReader {
             if (optionalSetting(settings, option.tag, option.setting)) schemaOptions.add(option);
         }
         var enabled = Set.copyOf(schemaOptions);
+        DbScalarText.checkProfile(enabled, enumOptions, structureTransformations);
         if (enabled.contains(Ili2dbLayout.SchemaOption.META_INFO)) {
             requireMetadataColumns(db, foldedName(Ili2dbLayout.META_ATTRS), "ilielement", "attr_name", "attr_value");
         }
@@ -976,7 +976,7 @@ final class DbSchemaReader {
             if (supplementary && !table.used().add(key(db, name))) {
                 throw new DbException("Inconsistent supplementary column " + name + " for " + path);
             }
-            Kind physical = supplementary && column.enumText().isPresent() ? Kind.TEXT
+            Kind physical = column.scalarText(settings.schemaOptions()) || (supplementary && column.enumText().isPresent()) ? Kind.TEXT
                     : column.enumeration().isPresent() ? Kind.REFERENCE : column.kind();
             requireColumns(db, table.name(), table.columns(), Map.of(name, physical));
         }
