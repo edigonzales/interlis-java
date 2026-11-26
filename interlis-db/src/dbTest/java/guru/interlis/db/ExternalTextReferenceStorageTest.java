@@ -9,6 +9,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
 import static guru.interlis.db.DbTestSupport.scalar;
@@ -68,5 +69,31 @@ final class ExternalTextReferenceStorageTest {
             assertNull(scalar(sql, "SELECT sitemark" + row));
             assertEquals(id, scalar(sql, "SELECT t_id" + row));
         }
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void rollsBackMissingLocalLinkAndKeepsTextAfterTargetDeletion(Backend backend, int version) throws Exception {
+        var fixture = new ExternalTextReferenceFixture(work, version);
+        var db = POSTGIS.target(work.resolve("text-links.gpkg"), backend);
+        String model = fixture.model();
+        assertSchemaWithIdentityColumns(db, model, fixture.source(model), "--sql-ext-ref-cols", "--create-fk");
+        assertCliSuccess(db, "import", model, "kept", fixture.transfer(model, "kept"));
+        var broken = fixture.transfer(model, "broken");
+        String attribute = version == 23 ? "REF" : "i:ref";
+        Files.writeString(broken, Files.readString(broken)
+                .replace("<ReportSide " + attribute + "=\"broken-report\"", "<ReportSide " + attribute + "=\"missing\""));
+        assertCliFailure(db, "import", model, "broken", broken, "ExternalLink.ReportSide");
+        try (var sql = db.connect()) {
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("externallink")));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket")));
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("report")));
+        }
+        assertCliSuccess(db, "import", model, "catalog", fixture.catalog(model));
+        assertCliSuccess(db, "delete", model, "catalog", null);
+        var out = work.resolve("kept.xtf");
+        assertCliSuccess(db, "export", model, "kept", out);
+        fixture.assertTransfer(out, "kept");
     }
 }

@@ -46,10 +46,14 @@ record ExternalTextReferenceFixture(Path work, int version) {
                       Reports -- {0..*} Report;
                       SiteMark (EXTERNAL) -- {0..1} %s.Catalog.Site;
                     END Marking;
+                    ASSOCIATION ExternalLink =
+                      LinkedSite (EXTERNAL) -- {0..*} %s.Catalog.Site;
+                      ReportSide -- {0..*} Report;
+                    END ExternalLink;
                   END Data;
                 END %s.
                 """.formatted(version - 20, model, model, model, version == 24
-                ? "DirectSite : REFERENCE TO (EXTERNAL) " + model + ".Catalog.Site;" : "", model, model));
+                ? "DirectSite : REFERENCE TO (EXTERNAL) " + model + ".Catalog.Site;" : "", model, model, model));
     }
 
     Path transfer(String model, String dataset) throws Exception {
@@ -61,8 +65,17 @@ record ExternalTextReferenceFixture(Path work, int version) {
         report += reference("SiteMark", REMOTE, true);
         String objects = object(model, "Report", dataset + "-report", report)
                 + object(model, "Report", dataset + "-empty", "<Note>" + object(model, "Annotation", null, "") + "</Note>")
-                + object(model, "Observation", local, "");
+                + object(model, "Observation", local, "")
+                + object(model, "ExternalLink", null, reference("LinkedSite", REMOTE, true)
+                + reference("ReportSide", dataset + "-report", false));
         return Files.writeString(work.resolve(dataset + ".xtf"), referenceDatasetFixture(model, version, dataset + "-basket", objects));
+    }
+
+    Path catalog(String model) throws Exception {
+        String text = referenceDatasetFixture(model, version, "loaded-catalog", object(model, "Site", REMOTE, ""));
+        text = version == 23 ? text.replace(model + ".Data", model + ".Catalog")
+                : text.replace("<Data ", "<Catalog ").replace("</Data>", "</Catalog>");
+        return Files.writeString(work.resolve("catalog.xtf"), text);
     }
 
     private String object(String model, String name, String tid, String fields) {
@@ -79,7 +92,8 @@ record ExternalTextReferenceFixture(Path work, int version) {
     void assertTransfer(Path path, String dataset) throws Exception {
         var basket = children(readDataSection(path, version)).getFirst();
         assertEquals(dataset + "-basket", id(basket, version, "bid"));
-        var objects = children(basket).stream().collect(Collectors.toMap(row -> id(row, version, "tid"), row -> row));
+        var objects = children(basket).stream().filter(row -> !id(row, version, "tid").isEmpty())
+                .collect(Collectors.toMap(row -> id(row, version, "tid"), row -> row));
         var report = objects.get(dataset + "-report");
         var note = children(child(report, "Note")).getFirst();
         assertTextReference(child(note, "SiteRef"), REMOTE);
@@ -88,6 +102,10 @@ record ExternalTextReferenceFixture(Path work, int version) {
         assertNull(child(children(child(empty, "Note")).getFirst(), "SiteRef"));
         assertTextReference(child(report, "SiteMark"), REMOTE);
         assertNull(child(empty, "SiteMark"));
+        var links = children(basket).stream().filter(row -> row.getLocalName().endsWith("ExternalLink")).toList();
+        assertEquals(1, links.size());
+        assertTextReference(child(links.getFirst(), "LinkedSite"), REMOTE);
+        assertEquals(dataset + "-report", id(child(links.getFirst(), "ReportSide"), version, "ref"));
         if (version == 24) {
             assertTextReference(child(report, "DirectSite"), REMOTE);
             assertNull(child(empty, "DirectSite"));
@@ -117,8 +135,11 @@ record ExternalTextReferenceFixture(Path work, int version) {
                 + "SELECT n.observationref" + joinedNote + "-report')"));
         var keys = foreignKeyColumns(db, sql);
         assertTrue(keys.contains("annotation:observationref:observation"), keys::toString);
+        assertTrue(keys.contains("externallink:reportside:report"), keys::toString);
         assertFalse(keys.stream().anyMatch(key -> key.startsWith("annotation:siteref:") || key.startsWith("report:directsite:")
-                || key.startsWith("report:sitemark:")));
+                || key.startsWith("report:sitemark:") || key.startsWith("externallink:linkedsite:")));
+        assertEquals(REMOTE, scalar(sql, "SELECT l.linkedsite FROM " + db.table("externallink") + " l JOIN " + report
+                + " r ON r.t_id=l.reportside AND r.t_basket=l.t_basket WHERE r.t_ili_tid='" + dataset + "-report'"));
         if (version == 24) assertEquals(REMOTE, scalar(sql, "SELECT directsite FROM " + report
                 + " WHERE t_ili_tid='" + dataset + "-report'"));
     }
