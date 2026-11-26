@@ -65,6 +65,9 @@ liegen bei der Extension.
 - Halte Tests direkt und verständlich. Testfälle sind Java-/JUnit- oder
   JavaScript-/Node-Code; INTERLIS- und Transferfixtures liegen als `.ili` bzw.
   `.xtf` vor. Kurze lokale Quelltexte und Parameterisierung im Test sind erlaubt.
+- Benenne Testklassen, Testmethoden und Fixtures nach dem geprüften fachlichen
+  Verhalten. Verweise auf Reviews, Projektphasen und Issues gehören in Kommentare
+  oder die Fixture-Dokumentation.
 - Keine separaten JSON-/YAML-/XML-/Properties-Testregistrierungen, Norm-Test-
   Mappings, generierten Testpläne oder künstlichen Coverage-Inventare. Keine
   gleichwertige Ersatzregistry in Java. Fachliche Ausnahmen sind eng begründete Abweichungen in den

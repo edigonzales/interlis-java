@@ -2,12 +2,12 @@
 <TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
   <HEADERSECTION VERSION="2.3" SENDER="test">
     <MODELS>
-      <MODEL NAME="Review" VERSION="1" URI="https://example.org/review" />
+      <MODEL NAME="AreaBoundaryRadius" VERSION="1" URI="https://example.org/review" />
     </MODELS>
   </HEADERSECTION>
   <DATASECTION>
-    <Review.Data BID="b">
-      <Review.Data.Object TID="1">
+    <AreaBoundaryRadius.Data BID="b">
+      <AreaBoundaryRadius.Data.Object TID="1">
         <shape>
           <SURFACE>
             <BOUNDARY>
@@ -39,8 +39,8 @@
             </BOUNDARY>
           </SURFACE>
         </shape>
-      </Review.Data.Object>
-      <Review.Data.Object TID="2">
+      </AreaBoundaryRadius.Data.Object>
+      <AreaBoundaryRadius.Data.Object TID="2">
         <shape>
           <SURFACE>
             <BOUNDARY>
@@ -72,7 +72,7 @@
             </BOUNDARY>
           </SURFACE>
         </shape>
-      </Review.Data.Object>
-    </Review.Data>
+      </AreaBoundaryRadius.Data.Object>
+    </AreaBoundaryRadius.Data>
   </DATASECTION>
 </TRANSFER>

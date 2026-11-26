@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<i:transfer xmlns="http://www.interlis.ch/xtf/2.4/ReviewSurface" xmlns:g="http://www.interlis.ch/geometry/1.0" xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS">
+<i:transfer xmlns="http://www.interlis.ch/xtf/2.4/SurfaceArcBoundary" xmlns:g="http://www.interlis.ch/geometry/1.0" xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS">
   <i:headersection>
     <i:models>
-      <i:model>ReviewSurface</i:model>
+      <i:model>SurfaceArcBoundary</i:model>
     </i:models>
     <i:sender>test</i:sender>
   </i:headersection>

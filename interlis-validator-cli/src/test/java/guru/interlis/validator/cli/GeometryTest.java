@@ -21,27 +21,27 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class GeometryReviewTest {
+class GeometryTest {
     @TempDir Path directory;
 
     @Test
     void distinguishesGeometricArcIdentityFromNativeXtfAreaIdentity() throws IOException {
         String group = "area-arc-24";
         // INTERLIS 2.4 §4.3.11.15. The same upper semicircle has supports (5,10) and (2,9).
-        passes(group, "ReviewSurface.ili", "geometric-arc-identity.xtf");
-        passes(group, "Review.ili", "matching-intermediate.xtf");
-        var support = evidence(group, "Review.ili", "different-intermediate.xtf",
+        passes(group, "SurfaceArcBoundary.ili", "geometric-arc-identity.xtf");
+        passes(group, "AreaArcBoundary.ili", "matching-intermediate.xtf");
+        var support = evidence(group, "AreaArcBoundary.ili", "different-intermediate.xtf",
                 "GEOMETRY_BOUNDARY_MISMATCH", "GEOMETRY_BOUNDARY_MISMATCH", "shared-boundary", "b",
                 participant("1", shape(1, 1)), participant("2", shape(1, 1)));
         assertPoint(support, "10", "5");
         assertTrue(support.get("detail").getAsString().contains("different intermediate ordinates"));
 
-        var radius = evidence(group, "Review.ili", "missing-reciprocal-radius.xtf",
+        var radius = evidence(group, "AreaArcBoundary.ili", "missing-reciprocal-radius.xtf",
                 "GEOMETRY_BOUNDARY_MISMATCH", "GEOMETRY_BOUNDARY_MISMATCH", "shared-boundary", "b",
                 participant("1", shape(1, 1)), participant("2", shape(1, 1)));
         assertPoint(radius, "10", "5");
         assertTrue(radius.get("detail").getAsString().contains("different transferred radii"));
-        passes("area-radius-23", "Review.ili", "opposite-signed-radii.xtf");
+        passes("area-radius-23", "AreaBoundaryRadius.ili", "opposite-signed-radii.xtf");
     }
 
     @Test
@@ -142,20 +142,20 @@ class GeometryReviewTest {
     @Test
     void testsTheDiameterBeforeUsingTheIntermediatePointAndRespectsTheSignedRadius() throws IOException {
         for (var group : List.of("radius-23", "radius-24")) {
-            var invalid = evidence(group, "Review.ili", "impossible.xtf",
+            var invalid = evidence(group, "ArcRadius.ili", "impossible.xtf",
                     "GEOMETRY_INVALID_ARC", "GEOMETRY_INVALID_ARC", "vertex", "b",
                     participant("o", "/line/PART[1]/SEGMENT[1]"));
             assertPoint(invalid, "10", "0");
             var detail = invalid.get("detail").getAsString();
             assertTrue(detail.contains("squared chord 100") && detail.contains("squared diameter 4"), detail);
         }
-        passes("radius-23", "Review.ili", "signed-offset.xtf");
+        passes("radius-23", "ArcRadius.ili", "signed-offset.xtf");
     }
 
     @Test
     void usesTheExactImplicitTrackWidthIncludingEquality() throws IOException {
-        passes("implicit-width", "Review.ili", "equal.xtf");
-        var overlap = evidence("implicit-width", "Review.ili", "above.xtf",
+        passes("implicit-width", "ImplicitTrackWidth.ili", "equal.xtf");
+        var overlap = evidence("implicit-width", "ImplicitTrackWidth.ili", "above.xtf",
                 "GEOMETRY_SELF_INTERSECTION", "GEOMETRY_SELF_INTERSECTION", "intersection", "b",
                 participant("o", "/line/PART[1]/SEGMENT[1]"), participant("o", "/line/PART[1]/SEGMENT[2]"));
         // On y=x the second root is 1+10^-35/2.
@@ -245,7 +245,7 @@ class GeometryReviewTest {
     private Path fixtures(String group, String model, String transfer) throws IOException {
         var input = Files.createDirectories(directory.resolve(group));
         for (var filename : List.of(model, transfer)) {
-            try (var source = getClass().getResourceAsStream("/geometry-review/" + group + "/" + filename)) {
+            try (var source = getClass().getResourceAsStream("/geometry/" + group + "/" + filename)) {
                 assertNotNull(source, filename);
                 Files.copy(source, input.resolve(filename), StandardCopyOption.REPLACE_EXISTING);
             }

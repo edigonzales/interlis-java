@@ -1,5 +1,5 @@
 INTERLIS 2.4;
-MODEL ReviewSurface AT "https://example.org/review" VERSION "1" =
+MODEL SurfaceArcBoundary AT "https://example.org/review" VERSION "1" =
   DOMAIN Point = COORD 0 .. 20, 0 .. 20;
   TOPIC Data =
     CLASS Object =
@@ -7,4 +7,4 @@ MODEL ReviewSurface AT "https://example.org/review" VERSION "1" =
       SET CONSTRAINT INTERLIS.areAreas(ALL, UNDEFINED, >>shape);
     END Object;
   END Data;
-END ReviewSurface.
+END SurfaceArcBoundary.
