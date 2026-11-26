@@ -25,6 +25,11 @@ final class DatasetObjectStore {
                 .orElseThrow(() -> new ValidationStreamException("Unknown dataset object handle"));
     }
 
+    StoredValueCodec.StoredObjectHeader getHeader(ObjectHandle handle) {
+        return table.get(key(handle)).map(codec::decodeObjectHeader)
+                .orElseThrow(() -> new ValidationStreamException("Unknown dataset object handle"));
+    }
+
     EntryCursor scan() {
         return table.scan(new byte[0], Optional.empty());
     }
@@ -35,6 +40,10 @@ final class DatasetObjectStore {
 
     StoredValueCodec.StoredObject decode(EntryCursor.Entry entry) {
         return codec.decodeObject(entry.value());
+    }
+
+    StoredValueCodec.StoredObjectHeader decodeHeader(EntryCursor.Entry entry) {
+        return codec.decodeObjectHeader(entry.value());
     }
 
     static ObjectHandle handle(EntryCursor.Entry entry) {

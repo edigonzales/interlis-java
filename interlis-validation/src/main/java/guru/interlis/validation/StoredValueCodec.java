@@ -30,6 +30,7 @@ import java.util.Optional;
 
 /** Internal byte representation of a neutral value within one bound store. */
 final class StoredValueCodec {
+    private static final int STRUCTURED_TAG = 10;
     private final SnapshotId snapshot;
     private final int maxBytes;
 
@@ -175,20 +176,38 @@ final class StoredValueCodec {
 
     StoredObject decodeObject(byte[] bytes) {
         return decodeRecord(bytes, in -> {
-            long input = in.readLong();
-            long basket = in.readLong();
-            var current = basket(in);
-            var original = optional(in, () -> basket(in));
-            var tid = optional(in, () -> new TransferId(text(in), IdOrigin.valueOf(text(in))));
-            var oid = optional(in, () -> new ObjectOid(text(in)));
-            var source = optional(in, () -> new SourceId(text(in)));
-            var operation = optional(in, () -> TransferEvent.Operation.valueOf(text(in)));
-            var consistency = TransferEvent.Consistency.valueOf(text(in));
-            var object = new TransferObject(new TransferIdentity(current, original, tid, oid, source),
-                    (Structured) read(in, 0));
-            return new StoredObject(input, basket, new TransferEvent.ObjectEvent(object, operation, consistency));
+            var header = readObjectHeader(in);
+            var object = new TransferObject(header.identity(), readStructured(in, header.type(), 0));
+            return new StoredObject(header.input(), header.basket(),
+                    new TransferEvent.ObjectEvent(object, header.operation(), header.consistency()));
         });
     }
+
+    /** Reads the prefix of a record written by encodeObject without decoding its fields. */
+    StoredObjectHeader decodeObjectHeader(byte[] bytes) {
+        return decodeRecord(bytes, this::readObjectHeader, false);
+    }
+
+    private StoredObjectHeader readObjectHeader(DataInputStream in) throws IOException {
+        long input = in.readLong();
+        long basket = in.readLong();
+        var current = basket(in);
+        var original = optional(in, () -> basket(in));
+        var tid = optional(in, () -> new TransferId(text(in), IdOrigin.valueOf(text(in))));
+        var oid = optional(in, () -> new ObjectOid(text(in)));
+        var source = optional(in, () -> new SourceId(text(in)));
+        var operation = optional(in, () -> TransferEvent.Operation.valueOf(text(in)));
+        var consistency = TransferEvent.Consistency.valueOf(text(in));
+        if (in.readUnsignedByte() != STRUCTURED_TAG) {
+            throw new IOException("Expected a structured stored object");
+        }
+        var identity = new TransferIdentity(current, original, tid, oid, source);
+        return new StoredObjectHeader(input, basket, identity, operation, consistency, symbol(in));
+    }
+
+    record StoredObjectHeader(long input, long basket, TransferIdentity identity,
+                              Optional<TransferEvent.Operation> operation, TransferEvent.Consistency consistency,
+                              SymbolRef type) { }
 
     record StoredObject(long input, long basket, TransferEvent.ObjectEvent event) { }
 
@@ -234,12 +253,16 @@ final class StoredValueCodec {
     }
 
     private <T> T decodeRecord(byte[] bytes, ReadRecord<T> read) {
+        return decodeRecord(bytes, read, true);
+    }
+
+    private <T> T decodeRecord(byte[] bytes, ReadRecord<T> read, boolean requireEof) {
         if (bytes.length > maxBytes) {
             throw new ValidationLimitException("Stored value exceeds the byte budget");
         }
         try (var in = new DataInputStream(new ByteArrayInputStream(bytes))) {
             var value = read.get(in);
-            if (in.available() != 0) {
+            if (requireEof && in.available() != 0) {
                 throw new IOException("Trailing bytes in stored value");
             }
             return value;
@@ -275,7 +298,7 @@ final class StoredValueCodec {
             case ClassName v -> { out.writeByte(8); list(out, v.name().segments(), x -> text(out, x)); }
             case AttributePath v -> { out.writeByte(9); list(out, v.name().segments(), x -> text(out, x)); }
             case Structured v -> {
-                out.writeByte(10);
+                out.writeByte(STRUCTURED_TAG);
                 symbol(out, v.type());
                 out.writeInt(v.values().size());
                 for (var field : v.values().entrySet()) {
@@ -352,14 +375,7 @@ final class StoredValueCodec {
             case 7 -> new Oid(text(in));
             case 8 -> new ClassName(new QualifiedName(list(in, () -> text(in))));
             case 9 -> new AttributePath(new QualifiedName(list(in, () -> text(in))));
-            case 10 -> {
-                var type = symbol(in);
-                var fields = new LinkedHashMap<SymbolRef, TransferValue>();
-                for (int n = length(in); n > 0; n--) {
-                    fields.put(symbol(in), read(in, depth + 1));
-                }
-                yield new Structured(type, fields);
-            }
+            case STRUCTURED_TAG -> readStructured(in, symbol(in), depth);
             case 11 -> new Repeated(CollectionKind.valueOf(text(in)), list(in, () -> read(in, depth + 1)));
             case 12 -> {
                 boolean transferId = in.readBoolean();
@@ -387,6 +403,14 @@ final class StoredValueCodec {
             case 18 -> new MultiSurface(list(in, () -> (Surface) read(in, depth + 1)));
             default -> throw new IOException("Unknown stored value tag");
         };
+    }
+
+    private Structured readStructured(DataInputStream in, SymbolRef type, int depth) throws IOException {
+        var fields = new LinkedHashMap<SymbolRef, TransferValue>();
+        for (int n = length(in); n > 0; n--) {
+            fields.put(symbol(in), read(in, depth + 1));
+        }
+        return new Structured(type, fields);
     }
 
     private void writeRing(DataOutputStream out, Ring ring, int depth) throws IOException {

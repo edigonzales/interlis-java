@@ -44,9 +44,8 @@ final class ReferenceResolver {
 
     private Result check(BasketHandle source, StartBasket sourceBasket, Reference reference, List<SymbolId> allowedRoots,
                          boolean external, ObjectHandle handle) {
-        var target = objects.get(handle);
-        var object = target.event().object();
-        var descriptor = plan.transferPlan().object(object.type()).orElseThrow();
+        var target = objects.getHeader(handle);
+        var descriptor = plan.transferPlan().object(target.type()).orElseThrow();
         if (!ModelValueRules.specializes(plan, descriptor, allowedRoots)) {
             return new InvalidTarget(handle, Reason.TYPE);
         }
@@ -56,7 +55,7 @@ final class ReferenceResolver {
                 && plan.transferPlan().model(sourceTopic.model()).orElseThrow().languageVersion() == LanguageVersion.ILI23;
         if (missingBasketId || (!sameBasket && (!external || descriptor.topic().filter(topic -> !topicReachable(sourceBasket, topic)).isPresent()))
                 || reference.targetBasket()
-                .filter(basket -> !basket.value().equals(object.identity().currentBasket().value())).isPresent()) {
+                .filter(basket -> !basket.value().equals(target.identity().currentBasket().value())).isPresent()) {
             return new InvalidTarget(handle, Reason.BASKET);
         }
         return new Found(handle);

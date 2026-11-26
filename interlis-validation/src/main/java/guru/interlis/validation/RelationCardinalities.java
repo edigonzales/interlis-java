@@ -71,7 +71,7 @@ final class RelationCardinalities {
     }
 
     private void observe(RelationProjector.Link link, ObjectHandle occurrence, CancellationToken cancellation) {
-        var source = objects.get(link.source());
+        var source = objects.getHeader(link.source());
         var basket = basket(source.basket());
         var input = input(source.input());
         var endpoints = new ArrayList<ObjectHandle>();
@@ -154,11 +154,11 @@ final class RelationCardinalities {
             for (var next = cursor.next(); next.isPresent(); next = cursor.next()) {
                 cancellation.throwIfCancellationRequested();
                 var entry = next.orElseThrow();
-                var stored = objects.decode(entry);
+                var header = objects.decodeHeader(entry);
                 last = DatasetObjectStore.handle(entry).ordinal();
-                if (stored.basket() != currentBasket) {
+                if (header.basket() != currentBasket) {
                     seedBasket(currentBasket, first, last, cancellation);
-                    currentBasket = stored.basket();
+                    currentBasket = header.basket();
                     first = last;
                 }
             }
@@ -187,7 +187,7 @@ final class RelationCardinalities {
             return;
         }
         var header = basket(ordinal);
-        var inputOrdinal = objects.get(new ObjectHandle(first)).input();
+        var inputOrdinal = objects.getHeader(new ObjectHandle(first)).input();
         if (input(inputOrdinal).descriptor().role() != InputRole.PRIMARY) {
             return;
         }
@@ -202,7 +202,7 @@ final class RelationCardinalities {
                     for (var next = cursor.next(); next.isPresent(); next = cursor.next()) {
                         spendWork(cancellation);
                         var entry = next.orElseThrow();
-                        var member = objects.decode(entry).event().object();
+                        var member = objects.decodeHeader(entry);
                         var type = plan.transferPlan().object(member.type()).orElseThrow();
                         if (ModelValueRules.specializes(plan, type, role.role().targetRoots())) {
                             temporary.put(memberKey(ordinal, membership, DatasetObjectStore.handle(entry).ordinal()),

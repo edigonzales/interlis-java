@@ -5,8 +5,12 @@ import guru.interlis.model.QualifiedName;
 import guru.interlis.model.SnapshotId;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolRef;
+import guru.interlis.source.SourceId;
+import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferGeometry.*;
+import guru.interlis.transfer.TransferIdentity;
 import guru.interlis.transfer.TransferIdentity.*;
+import guru.interlis.transfer.TransferObject;
 import guru.interlis.transfer.TransferValue;
 import guru.interlis.transfer.TransferValue.*;
 import org.junit.jupiter.api.Test;
@@ -23,6 +27,40 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 class StoredValueCodecTest {
+    @Test
+    void readsTheObjectHeaderIndependentlyOfItsValues() {
+        var snapshot = new SnapshotId("test");
+        var codec = new StoredValueCodec(snapshot, 20_000);
+        var type = new SymbolRef(snapshot, new SymbolId("structure"));
+        var slot = new SymbolRef(snapshot, new SymbolId("location"));
+        var number = new NumberValue("1.000E+2", new BigDecimal("100.0"));
+        var data = new Structured(type, Map.of(slot, new Coordinate(List.of(number, number))));
+        var identity = new TransferIdentity(new BasketId("current", IdOrigin.SOURCE),
+                Optional.of(new BasketId("original", IdOrigin.SOURCE)),
+                Optional.of(new TransferId("tid", IdOrigin.SYNTHETIC)),
+                Optional.of(new ObjectOid("space:ABC")), Optional.of(new SourceId("file:///transfer.xtf")));
+        var operation = Optional.of(TransferEvent.Operation.UPDATE);
+        var consistency = TransferEvent.Consistency.INCOMPLETE;
+        var stored = new StoredValueCodec.StoredObject(2, 7,
+                new TransferEvent.ObjectEvent(new TransferObject(identity, data), operation, consistency));
+        byte[] encoded = codec.encodeObject(stored);
+
+        assertEquals(stored, codec.decodeObject(encoded));
+        var header = new StoredValueCodec.StoredObjectHeader(2, 7, identity, operation, consistency, type);
+        assertEquals(header, codec.decodeObjectHeader(encoded));
+
+        byte[] truncatedValues = Arrays.copyOf(encoded, encoded.length - 1);
+        assertEquals(header, codec.decodeObjectHeader(truncatedValues));
+        assertThrows(UncheckedIOException.class, () -> codec.decodeObject(truncatedValues));
+        assertThrows(UncheckedIOException.class, () -> codec.decodeObject(Arrays.copyOf(encoded, encoded.length + 1)));
+
+        byte[] wrongRoot = encoded.clone();
+        wrongRoot[encoded.length - codec.encode(data).length] = 0;
+        assertThrows(UncheckedIOException.class, () -> codec.decodeObjectHeader(wrongRoot));
+        assertThrows(ValidationLimitException.class,
+                () -> new StoredValueCodec(snapshot, encoded.length - 1).decodeObjectHeader(encoded));
+    }
+
     @Test
     void retainsExactValuesAndInvalidButDecodableGeometry() {
         var snapshot = new SnapshotId("test");
