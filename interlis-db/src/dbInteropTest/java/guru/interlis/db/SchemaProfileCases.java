@@ -284,7 +284,7 @@ final class SchemaProfileCases {
                 DOMAIN StatusValue = (in_progress, done);
                 DOMAIN SmallReading = -20..30;
                 STRUCTURE Note = Message : MANDATORY TEXT*24; END Note;
-                CLASS Root (ABSTRACT) = Memo : TEXT*24; END Root;
+                CLASS Root (ABSTRACT) = Memo : MTEXT*24; END Root;
                 CLASS Target = Label : TEXT*24; END Target;
                 !!@example.class = "asset"
                 CLASS Asset EXTENDS Root =
@@ -314,13 +314,19 @@ final class SchemaProfileCases {
                 "!!@example.model = \"profile\"\nMODEL " + model));
         referenceSchema(expected, ili, "--sqlEnableNull", "--smart2Inheritance", "--createMetaInfo", "--createFk",
                 "--createFkIdx", "--createUnique", "--createNumChecks", "--createGeomIdx", "--strokeArcs", "--createEnumTabs",
-                "--beautifyEnumDispName");
+                "--beautifyEnumDispName", "--createTextChecks");
         schema(own, model, ili, "--inheritance", "smart2", "--create-meta-info", "--create-fk", "--create-fk-idx",
                 "--create-unique", "--create-num-checks", "--create-geom-index", "--stroke-arcs", "--create-enum-tabs",
-                "--beautify-enum-disp-name");
+                "--beautify-enum-disp-name", "--create-text-checks");
         sameCatalog(expected, own);
         String relation = "t_ili2db_meta_attrs";
         try (var left = expected.connect(); var right = own.connect()) {
+            if (expected.postgis()) {
+                var checks = textChecks(expected, left);
+                assertTrue(checks.stream().anyMatch(check -> check.startsWith("asset:") && check.contains("POSITION")),
+                        checks::toString);
+                assertEquals(checks, textChecks(own, right), "SQL text checks");
+            }
             String fields = "SELECT ilielement || '|' || attr_name || '|' || attr_value FROM ";
             var metadata = catalogKeys(left, fields + expected.table(relation));
             assertEquals(metadata, catalogKeys(right, fields + own.table(relation)));
@@ -380,6 +386,15 @@ final class SchemaProfileCases {
             assertEquals("extra", scalar(sql, "SELECT attr_value FROM " + extended.table(relation)
                     + " WHERE ilielement='" + next + ".Data' AND attr_name='ili2db.ili.topicClasses'"));
         }
+    }
+
+    private static Set<String> textChecks(TestDatabase db, java.sql.Connection sql) throws SQLException {
+        return catalogKeys(sql, """
+                SELECT t.relname || ':' || pg_get_constraintdef(c.oid)
+                FROM pg_constraint c JOIN pg_class t ON t.oid=c.conrelid
+                JOIN pg_namespace n ON n.oid=t.relnamespace
+                WHERE n.nspname='%s' AND c.contype='c' AND pg_get_constraintdef(c.oid) LIKE '%%length(%%'
+                """.formatted(db.schema()));
     }
 
     private Path metaData(String model, String prefix) throws Exception {

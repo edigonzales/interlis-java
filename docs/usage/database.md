@@ -184,6 +184,13 @@ Ganzzahl- und Festkommaspalten. Wie bei ili2db `--createNumChecks` bleiben
 Ganzzahlgrenzen exakt. Grenzen von Festkommazahlen werden für den SQL-Check
 mit Binary64-Genauigkeit übernommen.
 
+`schemaimport --create-text-checks` entspricht ili2db `--createTextChecks`.
+PostGIS prüft, dass belegte Textwerte nach dem Trimmen mindestens ein
+Zeichen enthalten. Normalisierte Textspalten übernehmen die
+Zeichenprüfungen der Referenz. GeoPackage speichert die Einstellung.
+`--sql-cols-as-text`-Spalten für einfache Attribute erhalten diese
+Prüfungen nicht.
+
 `schemaimport --create-meta-info` schreibt die Modellmetadaten in
 `T_ILI2DB_META_ATTRS`. Dazu gehören deklarierte Meta-Attribute,
 Kardinalitäten, Rollenarten und die SQL-Namen der Klassen eines Topics.

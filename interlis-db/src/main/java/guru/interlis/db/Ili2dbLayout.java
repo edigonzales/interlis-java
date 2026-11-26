@@ -94,6 +94,7 @@ final class Ili2dbLayout {
         STANDARD_COLUMNS("--create-std-cols", "createStdCols", "all"),
         UNIQUE("--create-unique", "uniqueConstraints", "create"),
         NUMERIC_CHECKS("--create-num-checks", "numericCheckConstraints", "create"),
+        TEXT_CHECKS("--create-text-checks", "textCheckConstraints", "create"),
         META_INFO("--create-meta-info", "createMetaInfo", "True");
 
         final String option;

@@ -45,6 +45,51 @@ final class SqlConstraintTest {
 
     @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void textChecksFollowBackendAndPhysicalStorage(Backend backend, int version) throws Exception {
+        withDatabase(backend, db -> {
+            String model = "SqlText";
+            String declarations = "CLASS Asset = Label : TEXT*24; Memo : MTEXT; END Asset;";
+            schema(db, model, version, declarations, "--create-text-checks");
+            assertCliSuccess(db, "import", model, "texts",
+                    data(model, version, "texts", "<Label>valid</Label><Memo>one\ntwo</Memo>", ""));
+            try (var sql = db.connect()) {
+                String table = db.table("asset");
+                String row = " WHERE t_ili_tid='texts-0'";
+                assertEquals("one\ntwo", scalar(sql, "SELECT memo FROM " + table + row));
+                assertNull(scalar(sql, "SELECT label FROM " + table + " WHERE t_ili_tid='texts-1'"));
+                if (db.postgis()) {
+                    for (String invalid : List.of("label=''", "label='   '", "memo='   '", "label='one\\ntwo'",
+                            "label='one\\rtwo'", "label='one\\ttwo'")) {
+                        var failure = assertThrows(SQLException.class, () -> execute(sql, "UPDATE " + table + " SET " + invalid + row));
+                        assertEquals("23514", failure.getSQLState(), invalid);
+                    }
+                    // The pinned reference checks the literal backslash sequences.
+                    execute(sql, "UPDATE " + table + " SET label='one\ntwo', memo='one\\ntwo'" + row);
+                    assertEquals("one\ntwo", scalar(sql, "SELECT label FROM " + table + row));
+                    assertCliFailure(db, "import", model, "broken-text",
+                            data(model, version, "broken-text", "<Label>valid</Label>", "<Label>   </Label>"), "23514");
+                    assertRolledBack(db, sql, 2, 1);
+                } else {
+                    execute(sql, "UPDATE " + table + " SET label='', memo='   '" + row);
+                    assertEquals("", scalar(sql, "SELECT label FROM " + table + row));
+                    assertEquals("   ", scalar(sql, "SELECT memo FROM " + table + row));
+                }
+                assertEquals("create", scalar(sql, "SELECT setting FROM " + db.table("t_ili2db_settings")
+                        + " WHERE tag='ch.ehi.ili2db.textCheckConstraints'"));
+            }
+            Path file = work.resolve("scalar-text.gpkg");
+            var text = db.postgis() ? POSTGIS.target(file) : new Target(file, null, "scalar_text");
+            schema(text, model, version, declarations, "--create-text-checks", "--sql-cols-as-text");
+            assertCliSuccess(text, "import", model, "raw-storage",
+                    data(model, version, "raw-storage", "<Label>   </Label>"));
+            try (var sql = text.connect()) {
+                assertEquals("   ", scalar(sql, "SELECT label FROM " + text.table("asset")));
+            }
+        });
+    }
+
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void uniqueKeysAndRollback(Backend backend, int version) throws Exception {
         withDatabase(backend, db -> {
             String model = "SqlUnique";
@@ -181,7 +226,7 @@ final class SqlConstraintTest {
         assertEquals(0, new BigDecimal(expected).compareTo(new BigDecimal(actual)), actual);
     }
 
-    private void schema(Target db, String model, int version, String declarations, String option) throws Exception {
+    private void schema(Target db, String model, int version, String declarations, String... options) throws Exception {
         var ili = Files.writeString(work.resolve(model + ".ili"), """
                 INTERLIS 2.%d;
                 MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
@@ -190,7 +235,7 @@ final class SqlConstraintTest {
                   END Data;
                 END %s.
                 """.formatted(version - 20, model, declarations, model));
-        var result = schemaWithIdentityColumns(db, model, ili, CancellationToken.none(), option);
+        var result = schemaWithIdentityColumns(db, model, ili, CancellationToken.none(), options);
         assertEquals(0, result.code(), result::diagnostics);
     }
 

@@ -60,12 +60,14 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                   boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean strokeArcs, DbEnumOptions enumOptions,
                   Set<AttributeTransformation> transformations, List<DbEnumLookup> enumLookups,
                   Map<String, List<List<String>>> uniqueKeys, Map<String, List<NumericCheck>> numericChecks,
-                  List<DbMetaInfo.Row> metaInformation) {
+                  Map<String, List<TextCheck>> textChecks, List<DbMetaInfo.Row> metaInformation) {
     record ModelFile(String filename, LanguageVersion version, String modelNames, String content) { }
 
     record ColumnProperty(String table, String subtype, String column, String key, String value) { }
 
     record NumericCheck(String column, String minimum, String maximum) { }
+
+    record TextCheck(String column, boolean normalized) { }
 
     record ForeignKey(String table, String column, String target, boolean index) {
         ForeignKey(String table, String column, String target) { this(table, column, target, true); }
@@ -139,6 +141,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         var geometries = new HashMap<String, List<GeometryColumn>>();
         var uniqueKeys = new HashMap<String, List<List<String>>>();
         var numericChecks = new HashMap<String, List<NumericCheck>>();
+        var textChecks = new HashMap<String, List<TextCheck>>();
         Map<SymbolId, List<ConstraintSymbol>> constraints = schemaOptions.contains(SchemaOption.UNIQUE)
                 ? uniqueConstraints(mapping) : Map.of();
         for (var table : addedTables) {
@@ -168,6 +171,9 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             if (schemaOptions.contains(SchemaOption.NUMERIC_CHECKS) && !schemaOptions.contains(SchemaOption.SCALAR_TEXT)) {
                 numericChecks.put(table.name(), table.columns().stream().flatMap(SchemaPlan::numericChecks).toList());
             }
+            if (!gpkg && schemaOptions.contains(SchemaOption.TEXT_CHECKS)) {
+                textChecks.put(table.name(), table.columns().stream().flatMap(column -> textChecks(column, schemaOptions)).toList());
+            }
         }
         for (var composition : addedCompositions) {
             token.throwIfCancellationRequested();
@@ -179,12 +185,27 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         return new SchemaPlan(mapping, modelFiles, addedTables, addedAssociations, addedCompositions, properties, geometries,
                 splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations,
                 enumLookups, Map.copyOf(uniqueKeys),
-                Map.copyOf(numericChecks), schemaOptions.contains(SchemaOption.META_INFO) ? DbMetaInfo.plan(mapping, token) : List.of());
+                Map.copyOf(numericChecks), Map.copyOf(textChecks),
+                schemaOptions.contains(SchemaOption.META_INFO) ? DbMetaInfo.plan(mapping, token) : List.of());
     }
 
     List<String> addedStorageTables() { return DbMapping.storageTables(addedTables); }
 
     Set<SchemaOption> schemaOptions() { return mapping.schemaOptions(); }
+
+    private static Stream<TextCheck> textChecks(DbMapping.Column column, Set<SchemaOption> options) {
+        if (column.expandedStructure().isPresent()) {
+            return column.expandedStructure().orElseThrow().groups().stream().flatMap(group -> group.fields().stream())
+                    .flatMap(field -> textChecks(field, options));
+        }
+        if (column.textExpansion().isPresent()) {
+            return column.textExpansion().orElseThrow().translations().isPresent()
+                    ? column.physicalNames().stream().map(name -> new TextCheck(name, false)) : Stream.empty();
+        }
+        if (column.array().isPresent() || column.scalarText(options)
+                || !(column.effectiveType().orElse(null) instanceof TextType text)) return Stream.empty();
+        return Stream.of(new TextCheck(column.name(), text.textKind() != TextKind.MTEXT));
+    }
 
     private static Stream<NumericCheck> numericChecks(DbMapping.Column column) {
         if (column.expandedStructure().isPresent()) {
@@ -311,7 +332,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     SchemaPlan withModelFiles(List<ModelFile> files) {
         return new SchemaPlan(mapping, files, addedTables, addedAssociations, addedCompositions, columnProperties,
                 geometryColumns, splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations, enumLookups,
-                uniqueKeys, numericChecks, metaInformation);
+                uniqueKeys, numericChecks, textChecks, metaInformation);
     }
 
     private static Origin.DeclaredOrigin origin(ModelSymbol model) {

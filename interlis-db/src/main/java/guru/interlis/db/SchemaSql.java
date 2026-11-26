@@ -205,6 +205,13 @@ final class SchemaSql {
             for (var check : plan.numericChecks().getOrDefault(table.name(), List.of())) {
                 columns.add("CHECK (" + quote(check.column()) + " BETWEEN " + check.minimum() + " AND " + check.maximum() + ")");
             }
+            for (var check : plan.textChecks().getOrDefault(table.name(), List.of())) {
+                String field = quote(check.column());
+                // Match ili2pg's literals under PostgreSQL's standard_conforming_strings default.
+                String normalized = check.normalized() ? "position('\\n' IN " + field + ") = 0 AND position('\\r' IN "
+                        + field + ") = 0 AND position('\\t' IN " + field + ") = 0 AND " : "";
+                columns.add("CHECK (" + normalized + "length(trim(" + field + ")) >= 1)");
+            }
             commands.add(dialect.create(table.name(), String.join(", ", columns), inlineKeys.getOrDefault(table.name(), List.of())));
             for (var geometry : table.secondaryGeometries()) {
                 commands.add(dialect.create(geometry.table(), dialect.primaryId()
