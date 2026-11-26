@@ -46,6 +46,11 @@ record ExternalTextReferenceFixture(Path work, int version) {
                       Reports -- {0..*} Report;
                       SiteMark (EXTERNAL) -- {0..1} %s.Catalog.Site;
                     END Marking;
+                    ASSOCIATION SiteReview =
+                      ReviewOwner -- {0..*} Report;
+                      ReviewedAt (EXTERNAL) -- {0..1} %s.Catalog.Site;
+                      ReviewMemo : TEXT*20;
+                    END SiteReview;
                     ASSOCIATION ExternalLink =
                       LinkedSite (EXTERNAL) -- {0..*} %s.Catalog.Site;
                       ReportSide -- {0..*} Report;
@@ -53,7 +58,7 @@ record ExternalTextReferenceFixture(Path work, int version) {
                   END Data;
                 END %s.
                 """.formatted(version - 20, model, model, model, version == 24
-                ? "DirectSite : REFERENCE TO (EXTERNAL) " + model + ".Catalog.Site;" : "", model, model, model));
+                ? "DirectSite : REFERENCE TO (EXTERNAL) " + model + ".Catalog.Site;" : "", model, model, model, model));
     }
 
     Path transfer(String model, String dataset) throws Exception {
@@ -62,9 +67,12 @@ record ExternalTextReferenceFixture(Path work, int version) {
                 + reference("ObservationRef", local, false));
         String report = "<Note>" + annotation + "</Note>";
         if (version == 24) report += reference("DirectSite", REMOTE, true);
+        report += "<ReviewedAt" + referenceAttributes(REMOTE, true) + ">"
+                + object(model, "SiteReview", null, "<ReviewMemo>seen</ReviewMemo>") + "</ReviewedAt>";
         report += reference("SiteMark", REMOTE, true);
         String objects = object(model, "Report", dataset + "-report", report)
                 + object(model, "Report", dataset + "-empty", "<Note>" + object(model, "Annotation", null, "") + "</Note>")
+                + object(model, "Report", dataset + "-direct", reference("ReviewedAt", REMOTE, true))
                 + object(model, "Observation", local, "")
                 + object(model, "ExternalLink", null, reference("LinkedSite", REMOTE, true)
                 + reference("ReportSide", dataset + "-report", false));
@@ -85,8 +93,12 @@ record ExternalTextReferenceFixture(Path work, int version) {
     }
 
     private String reference(String field, String target, boolean external) {
-        return "<" + field + (version == 23 ? " REF=\"" : " i:ref=\"") + target + "\""
-                + (version == 23 && external ? " BID=\"unloaded-basket\"" : "") + "/>";
+        return "<" + field + referenceAttributes(target, external) + "/>";
+    }
+
+    private String referenceAttributes(String target, boolean external) {
+        return (version == 23 ? " REF=\"" : " i:ref=\"") + target + "\""
+                + (version == 23 && external ? " BID=\"unloaded-basket\"" : "");
     }
 
     void assertTransfer(Path path, String dataset) throws Exception {
@@ -102,6 +114,13 @@ record ExternalTextReferenceFixture(Path work, int version) {
         assertNull(child(children(child(empty, "Note")).getFirst(), "SiteRef"));
         assertTextReference(child(report, "SiteMark"), REMOTE);
         assertNull(child(empty, "SiteMark"));
+        var review = child(report, "ReviewedAt");
+        assertTextReference(review, REMOTE);
+        assertEquals("seen", child(children(review).getFirst(), "ReviewMemo").getTextContent());
+        var direct = child(objects.get(dataset + "-direct"), "ReviewedAt");
+        assertTextReference(direct, REMOTE);
+        assertTrue(children(direct).isEmpty());
+        assertNull(child(empty, "ReviewedAt"));
         var links = children(basket).stream().filter(row -> row.getLocalName().endsWith("ExternalLink")).toList();
         assertEquals(1, links.size());
         assertTextReference(child(links.getFirst(), "LinkedSite"), REMOTE);
@@ -136,10 +155,19 @@ record ExternalTextReferenceFixture(Path work, int version) {
         var keys = foreignKeyColumns(db, sql);
         assertTrue(keys.contains("annotation:observationref:observation"), keys::toString);
         assertTrue(keys.contains("externallink:reportside:report"), keys::toString);
+        assertTrue(keys.contains("sitereview:reviewowner:report"), keys::toString);
         assertFalse(keys.stream().anyMatch(key -> key.startsWith("annotation:siteref:") || key.startsWith("report:directsite:")
-                || key.startsWith("report:sitemark:") || key.startsWith("externallink:linkedsite:")));
+                || key.startsWith("report:sitemark:") || key.startsWith("externallink:linkedsite:")
+                || key.startsWith("sitereview:reviewedat:")));
         assertEquals(REMOTE, scalar(sql, "SELECT l.linkedsite FROM " + db.table("externallink") + " l JOIN " + report
                 + " r ON r.t_id=l.reportside AND r.t_basket=l.t_basket WHERE r.t_ili_tid='" + dataset + "-report'"));
+        String joinedReview = " FROM " + db.table("sitereview") + " l JOIN " + report
+                + " r ON r.t_id=l.reviewowner AND r.t_basket=l.t_basket WHERE r.t_ili_tid='" + dataset;
+        assertEquals(REMOTE, scalar(sql, "SELECT l.reviewedat" + joinedReview + "-report'"));
+        assertEquals("seen", scalar(sql, "SELECT l.reviewmemo" + joinedReview + "-report'"));
+        assertEquals(REMOTE, scalar(sql, "SELECT l.reviewedat" + joinedReview + "-direct'"));
+        assertNull(scalar(sql, "SELECT l.reviewmemo" + joinedReview + "-direct'"));
+        assertEquals("0", scalar(sql, "SELECT count(*)" + joinedReview + "-empty'"));
         if (version == 24) assertEquals(REMOTE, scalar(sql, "SELECT directsite FROM " + report
                 + " WHERE t_ili_tid='" + dataset + "-report'"));
     }

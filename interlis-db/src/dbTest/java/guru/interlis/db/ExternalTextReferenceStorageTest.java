@@ -11,7 +11,9 @@ import java.nio.file.Path;
 
 import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
+import static guru.interlis.db.DbTestSupport.assertExportRejected;
 import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
+import static guru.interlis.db.DbTestSupport.execute;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -88,12 +90,31 @@ final class ExternalTextReferenceStorageTest {
             assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("externallink")));
             assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
             assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket")));
-            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("report")));
+            assertEquals("3", scalar(sql, "SELECT count(*) FROM " + db.table("report")));
         }
         assertCliSuccess(db, "import", model, "catalog", fixture.catalog(model));
         assertCliSuccess(db, "delete", model, "catalog", null);
         var out = work.resolve("kept.xtf");
         assertCliSuccess(db, "export", model, "kept", out);
         fixture.assertTransfer(out, "kept");
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void rejectsMultipleEmbeddedTextLinksAndPreservesThePreviousExport(Backend backend, int version) throws Exception {
+        var fixture = new ExternalTextReferenceFixture(work, version);
+        var db = POSTGIS.target(work.resolve("embedded-link.gpkg"), backend);
+        String model = fixture.model();
+        assertSchemaWithIdentityColumns(db, model, fixture.source(model), "--sql-ext-ref-cols");
+        assertCliSuccess(db, "import", model, "kept", fixture.transfer(model, "kept"));
+        var out = work.resolve("existing.xtf");
+        assertCliSuccess(db, "export", model, "kept", out);
+        fixture.assertTransfer(out, "kept");
+        try (var sql = db.connect()) {
+            String links = db.table("sitereview");
+            execute(sql, "INSERT INTO " + links + " (t_id,t_basket,reviewowner,reviewedat,reviewmemo)"
+                    + " SELECT 900001,t_basket,reviewowner,'other-site',NULL FROM " + links + " WHERE reviewmemo='seen'");
+        }
+        assertExportRejected(db, model, "kept", out, "Multiple link rows at " + model + ".Data.SiteReview.ReviewedAt");
     }
 }

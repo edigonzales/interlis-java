@@ -139,6 +139,10 @@ dieselbe Textkodierung in der Eigentümertabelle. `update` kann die Rolle
 In eigenständigen Linktabellen mit einem externen und einem lokalen Ende
 speichert die Zeile den externen `REF`-Text und die numerische ID des
 lokalen Ziels. `--create-fk` legt den Fremdschlüssel für das lokale Ziel an.
+Bei eingebetteten Assoziationen mit eigenen Attributen liegen der
+`REF`-Text, die Eigentümer-ID und die Attribute in der Beziehungstabelle.
+Der Export schreibt eine direkte Referenz für eine Zeile ohne Attributwerte
+und eine eingebettete Referenz, wenn Attributwerte vorliegen.
 Ein mitgeliefertes Ziel-`BID` aus XTF 2.3 wird gemäss Referenzprofil
 beim Export weggelassen. `--add-models` übernimmt die Einstellung.
 

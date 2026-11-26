@@ -180,6 +180,11 @@ die Projektion mit 32 polymorphen Referenzen.
 und Datensatzgrenzen. Es vergleicht TIDs und BID-Zuordnungen in SQL und XTF
 und prüft fehlende, mehrdeutige und typfremde Ziele. Abgewiesene Imports
 erhalten die gespeicherten Zeilen. Fehler beim Export erhalten die Datei.
+`ExternalTextReferenceStorageTest` prüft den unveränderten `REF`-Text
+ohne Zielbestand, Updates, Rollback für fehlende lokale Linkziele und
+den Erhalt der bisherigen XTF-Datei bei mehreren eingebetteten Links.
+`AlternativeRoleStorageTest` prüft die Zielspalte einer `OR`-Rolle,
+einen ungeeigneten Typ und den Export bei gleichzeitig belegten Spalten.
 
 `OrderedRoleStorageTest` prüft die Positionsspalten eigenständiger,
 eingebetteter und attributierter Rollen direkt per JDBC. Es prüft den
@@ -304,6 +309,13 @@ welche Positionswerte ili2db 5.5.2 beim Import und Export auslässt.
 `--tests '*CoreTransferInteropTest.*Oid*'` prüft UUID-Identitäten und externe
 Ziele in beiden Richtungen und Schematypen. Ein Folgeimport mit ili2db prüft
 die ID-Vergabe im eigenen Schema.
+
+`--tests '*AlternativeRoleInteropTest'` prüft je Backend und XTF-Version
+beide Zielzweige einer lokalen `OR`-Rolle in newClass, Smart1 und Smart2.
+`--tests '*ExternalTextReferenceInteropTest'` bündelt externe Attribute,
+eingebettete Rollen und beide Formen von Linktabellen im
+`--sql-ext-ref-cols`-Profil. Die Mischläufe prüfen den `REF`-Wert ohne
+geladenes Ziel und den Export ohne Ziel-`BID` in XTF 2.3.
 
 `--tests '*IdentityColumnInteropTest'` vergleicht in NewClass die Profile
 mit beiden und ohne beide Identitätsspalten. XTF 2.4 ergänzt Smart1 und Smart2

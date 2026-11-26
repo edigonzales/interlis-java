@@ -891,12 +891,8 @@ final class DbMapping {
         var relations = new HashSet<SymbolRef>();
         for (var reference : references) {
             if (reference.external() && options.contains(Ili2dbLayout.SchemaOption.EXTERNAL_REFERENCE_TEXT)) {
-                boolean embeddedLink = reference.slot() instanceof RoleSlot role
-                        && CardinalityUpper.finite(1).equals(role.role().cardinality().upper())
-                        && inheritance.declarations().stream().anyMatch(declaration ->
-                        role.role().owner().filter(declaration.object().symbol().symbol()::equals).isPresent());
                 if (inheritance.profile() != DbInheritance.Profile.NEW_CLASS || ordered || references.size() != 1
-                        || reference.catalogueReference().isPresent() || embeddedLink) {
+                        || reference.catalogueReference().isPresent()) {
                     throw unsupported("external reference as text at " + reference.slot().name().declared());
                 }
                 return List.of(reference.asTextReference());
