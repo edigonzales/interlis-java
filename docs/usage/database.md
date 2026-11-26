@@ -452,8 +452,10 @@ Das gilt auch für einen als `MANDATORY` deklarierten Einzelwert. Der
 Validator prüft, ob ein solcher Strukturwert beim Elternobjekt vorhanden ist.
 
 `schemaimport --sql-not-null` erzeugt ein striktes `newClass`-Schema für
-flache Klassen und ihre Strukturen. Direkt gespeicherte skalare
-Pflichtattribute, Pflichtgeometrien in flachen Klassen und lokale,
+Klassen und ihre Strukturen. Direkt gespeicherte skalare Pflichtattribute
+erhalten in einer Klassenhierarchie `NOT NULL` auf der Tabelle ihrer
+Deklaration. Die Fragmente eines Objekts verwenden dieselbe `T_Id`.
+Pflichtgeometrien in flachen Klassen und lokale,
 ungeordnete 1:1- und 1:n-Rollen mit Kardinalität `{1}` und einer konkreten
 Zieltabelle erhalten `NOT NULL`. Geometrien verwenden ein festes CRS und
 liegen in der jeweiligen Klassentabelle. Lokale Referenzattribute mit einer konkreten,

@@ -210,6 +210,22 @@ final class SchemaProfileCases {
         }
     }
 
+    void requiredHierarchy(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ProfileRequiredHierarchy" + version;
+        Path ili = fixtures.requiredHierarchyModel(model);
+        referenceSchema(expected, ili, "--createFk");
+        schema(own, model, ili, "--sql-not-null", "--create-fk");
+        mixedObjects(expected, own, model, 2, prefix -> fixtures.surveySite(model, prefix, 8) + fixtures.depotSite(model, prefix),
+                (prefix, rows) -> {
+                    var objects = rows.stream().collect(Collectors.toMap(row -> id(row, version, "tid"), Function.identity()));
+                    var survey = objects.get(prefix + "-survey");
+                    assertEquals("survey", child(survey, "Caption").getTextContent());
+                    assertEquals("8", child(survey, "HeightCode").getTextContent());
+                    assertNull(child(survey, "Remark"));
+                    assertEquals("depot", child(objects.get(prefix + "-depot"), "Caption").getTextContent());
+                });
+    }
+
     void requiredGeometries(TestDatabase expected, TestDatabase own) throws Exception {
         String model = "ProfileRequiredGeometry" + version;
         Path ili = fixtures.requiredGeometryModel(model);

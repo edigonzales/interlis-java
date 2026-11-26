@@ -160,6 +160,27 @@ final class ProfileFixtures {
         return "<" + tag + ">" + fields + "</" + tag + ">";
     }
 
+    Path requiredHierarchyModel(String model) throws IOException {
+        return source(model, """
+                CLASS BaseSite (ABSTRACT) = Caption : MANDATORY TEXT*30; END BaseSite;
+                CLASS SurveySite EXTENDS BaseSite =
+                  HeightCode : MANDATORY 0..100;
+                  Remark : TEXT*30;
+                END SurveySite;
+                CLASS DepotSite EXTENDS BaseSite = END DepotSite;
+                """);
+    }
+
+    String surveySite(String model, String prefix, Integer height) {
+        String fields = "<Caption>survey</Caption>";
+        if (height != null) fields += "<HeightCode>" + height + "</HeightCode>";
+        return object(model, "SurveySite", prefix + "-survey", fields);
+    }
+
+    String depotSite(String model, String prefix) {
+        return object(model, "DepotSite", prefix + "-depot", "<Caption>depot</Caption>");
+    }
+
     Path requiredGeometryModel(String model) throws IOException {
         String multi = version == 24
                 ? "CLASS Stops = Locations : MANDATORY MULTICOORD 0.000..100.000, 0.000..100.000; END Stops;"

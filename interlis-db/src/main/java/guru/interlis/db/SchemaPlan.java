@@ -210,7 +210,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         var required = new HashMap<String, Set<String>>();
         for (var table : addedTables) {
             var kind = table.object().kind();
-            if ((kind != SymbolKind.CLASS && kind != SymbolKind.STRUCTURE) || table.subtype()
+            if ((kind != SymbolKind.CLASS && (kind != SymbolKind.STRUCTURE || table.subtype()))
                     || !table.secondaryGeometries().isEmpty()) {
                 throw DbMapping.unsupported("--sql-not-null at " + table.object().name().declared());
             }

@@ -27,6 +27,7 @@ import static guru.interlis.db.DbTestSupport.referenceDatasetFixture;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -486,6 +487,38 @@ final class SqlConstraintTest {
                         + " e JOIN " + db.table("asset") + " a ON e.asset_payload=a.t_id WHERE a.t_ili_tid='kept'"));
                 assertEquals("last", scalar(sql, "SELECT p.label FROM " + db.table("memopart")
                         + " p JOIN " + db.table("envelope") + " e ON p.envelope_parts=e.t_id WHERE p.t_seq=1"));
+            }
+        });
+    }
+
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void requiredHierarchyFieldsKeepFragmentIdsAndRollBack(Backend backend, int version) throws Exception {
+        withDatabase(backend, db -> {
+            String model = "SqlRequiredHierarchy";
+            var fixture = new ProfileFixtures(work, version);
+            DbTestSupport.assertSchemaWithIdentityColumns(db, model, fixture.requiredHierarchyModel(model),
+                    "--sql-not-null", "--create-fk");
+            assertCliSuccess(db, "import", model, "sites", fixture.data(model, "sites",
+                    fixture.surveySite(model, "sites", 4) + fixture.depotSite(model, "sites")));
+            try (var sql = db.connect()) {
+                String survey = " FROM " + db.table("basesite") + " b JOIN " + db.table("surveysite")
+                        + " s ON s.t_id=b.t_id AND s.t_basket=b.t_basket WHERE b.t_ili_tid='sites-survey'";
+                String ids = scalar(sql, "SELECT b.t_id || ':' || b.t_basket" + survey);
+                assertNotNull(ids);
+                assertCliSuccess(db, "update", model, "sites", fixture.data(model, "sites",
+                        fixture.surveySite(model, "sites", 8) + fixture.depotSite(model, "sites")));
+                assertCliFailure(db, "import", model, "broken", fixture.data(model, "broken",
+                        fixture.depotSite(model, "broken") + fixture.surveySite(model, "broken", null)),
+                        db.postgis() ? "SQL code 23502)" : "SQL code 19)");
+                assertEquals(ids, scalar(sql, "SELECT b.t_id || ':' || b.t_basket" + survey));
+                assertEquals("8", scalar(sql, "SELECT s.heightcode" + survey));
+                assertNull(scalar(sql, "SELECT s.remark" + survey));
+                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("basesite")));
+                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("surveysite")));
+                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("depotsite")));
+                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket")));
+                assertEquals("sites", scalar(sql, "SELECT datasetname FROM " + db.table("t_ili2db_dataset")));
             }
         });
     }

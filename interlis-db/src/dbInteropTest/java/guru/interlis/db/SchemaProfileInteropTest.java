@@ -62,6 +62,17 @@ final class SchemaProfileInteropTest {
                 .nestedStructures(expected, expected.peer("profile_nested_own"));
     }
 
+    @Test void geoPackageProfileRequiredHierarchy23() throws Exception { exchangeProfileRequiredHierarchy(23, null); }
+    @Test void geoPackageProfileRequiredHierarchy24() throws Exception { exchangeProfileRequiredHierarchy(24, null); }
+    @Test void postgisProfileRequiredHierarchy23() throws Exception { exchangeProfileRequiredHierarchy(23, POSTGIS.container()); }
+    @Test void postgisProfileRequiredHierarchy24() throws Exception { exchangeProfileRequiredHierarchy(24, POSTGIS.container()); }
+
+    private void exchangeProfileRequiredHierarchy(int version, PostgreSQLContainer postgres) throws Exception {
+        var expected = new TestDatabase(work, postgres, "profile_strict_hierarchy_ref", "v" + version + "_");
+        new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version)
+                .requiredHierarchy(expected, expected.peer("profile_strict_hierarchy_own"));
+    }
+
     @Test void geoPackageProfileRequiredGeometries23() throws Exception { exchangeProfileRequiredGeometries(23, null); }
     @Test void geoPackageProfileRequiredGeometries24() throws Exception { exchangeProfileRequiredGeometries(24, null); }
     @Test void postgisProfileRequiredGeometries23() throws Exception { exchangeProfileRequiredGeometries(23, POSTGIS.container()); }
