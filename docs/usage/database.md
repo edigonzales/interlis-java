@@ -451,7 +451,7 @@ Besitzerspalten in gemeinsam verwendeten Strukturtabellen bleiben nullable.
 
 `schemaimport --sql-not-null` erzeugt ein striktes `newClass`-Schema für
 flache Klassen mit direkt gespeicherten skalaren Attributen und lokalen,
-ungeordneten 1:n-Rollen mit einer konkreten Zieltabelle sowie flache Strukturen.
+ungeordneten 1:1- und 1:n-Rollen mit einer konkreten Zieltabelle sowie flache Strukturen.
 Skalare Pflichtattribute und eingebettete Rollen mit Kardinalität `{1}`
 erhalten `NOT NULL`. Lokale Referenzattribute mit einer konkreten,
 vererbungsfreien Zielklasse bleiben auch bei `MANDATORY REFERENCE TO`
@@ -459,7 +459,7 @@ nullable. XTF 2.3 überträgt diese Referenzattribute innerhalb einer Struktur.
 XTF 2.4 unterstützt zusätzlich direkte Klassenattribute. Ohne die Option
 gilt `SqlNull=enable`. Die Kombination mit `--create-mandatory-checks` ist
 auf das nullable Profil beschränkt.
-Für Geometrien, 1:1-Assoziationen und Rollen mit Zielen in
+Für Geometrien und Rollen mit Zielen in
 Vererbungshierarchien steht die Schemaerzeugung mit `SqlNull=enable`
 zur Verfügung.
 
@@ -887,8 +887,9 @@ Rolle zur 1-Seite `{0..1}` oder `{1}`. Die Tabelle der n-Seite speichert die
 Ziel-ID. Bei 1:1 hat jede Rolle `{0..1}` oder `{1}`. Die Tabelle der zweiten
 deklarierten Rolle speichert die Ziel-ID der ersten Rolle. Die Rollenspalte
 erlaubt unter `--sqlEnableNull` SQL `NULL`.
-In bestehenden strikten `newClass`-Schemata unterstützt der Import einfache
-lokale 1:n-Pflichtrollen zwischen flachen Klassen mit einer Zieltabelle.
+In strikten `newClass`-Schemata bestimmt die Kardinalität der gespeicherten
+Rolle die Nullbarkeit. Der Import unterstützt Pflichtrollen einfacher lokaler
+1:1- und 1:n-Assoziationen zwischen flachen Klassen.
 Bei Vorwärtsreferenzen reserviert er die SQL-ID im Basket und belegt die
 Rollenspalte beim Einfügen. Ein vorhandener Fremdschlüssel ist wie bei
 ili2db `--createFk` aufgeschoben.

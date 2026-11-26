@@ -83,6 +83,20 @@ final class ProfileFixtures {
                   ReviewSite -- {0..1} Site;
                   ReviewedAssets -- {0..*} Asset;
                 END Review;
+                CLASS PairLeft = Label : TEXT*30; END PairLeft;
+                CLASS PairRight = END PairRight;
+                ASSOCIATION ForwardPair =
+                  RequiredLeft -- {1} PairLeft;
+                  OwnerRight -- {0..1} PairRight;
+                END ForwardPair;
+                ASSOCIATION ReversePair =
+                  RequiredRight -- {1} PairRight;
+                  OwnerLeft -- {0..1} PairLeft;
+                END ReversePair;
+                ASSOCIATION OptionalPair =
+                  MaybeRight -- {0..1} PairRight;
+                  MaybeLeft -- {0..1} PairLeft;
+                END OptionalPair;
                 """);
     }
 
@@ -93,6 +107,15 @@ final class ProfileFixtures {
 
     String assignedSite(String model, String prefix) {
         return object(model, "Site", prefix + "-site", "<Label>site</Label>");
+    }
+
+    String pairedLeft(String model, String prefix, String label) {
+        return object(model, "PairLeft", prefix + "-left", "<Label>" + label + "</Label>"
+                + reference("RequiredRight", prefix + "-right"));
+    }
+
+    String pairedRight(String model, String prefix) {
+        return object(model, "PairRight", prefix + "-right", reference("RequiredLeft", prefix + "-left"));
     }
 
     Path requiredReferenceModel(String model) throws IOException {

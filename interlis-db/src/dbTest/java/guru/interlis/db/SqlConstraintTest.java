@@ -369,6 +369,40 @@ final class SqlConstraintTest {
 
     @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void requiredOneToOneKeepsIdentityAndRollsBack(Backend backend, int version) throws Exception {
+        withDatabase(backend, db -> {
+            String model = "SqlRequiredPair";
+            var fixture = new ProfileFixtures(work, version);
+            DbTestSupport.assertSchemaWithIdentityColumns(db, model, fixture.requiredRoleModel(model),
+                    "--sql-not-null", "--create-fk");
+            String prefix = "pair";
+            assertCliSuccess(db, "import", model, prefix, fixture.data(model, prefix,
+                    fixture.pairedLeft(model, prefix, "original") + fixture.pairedRight(model, prefix)));
+            try (var sql = db.connect()) {
+                String left = db.table("pairleft");
+                String right = db.table("pairright");
+                String query = "SELECT l.t_id || ':' || r.t_id FROM " + left + " l JOIN " + right
+                        + " r ON l.requiredright=r.t_id AND r.requiredleft=l.t_id WHERE l.mayberight IS NULL";
+                String identity = scalar(sql, query);
+                assertTrue(identity.matches("[0-9]+:[0-9]+"), identity);
+                assertCliSuccess(db, "update", model, prefix, fixture.data(model, prefix,
+                        fixture.pairedLeft(model, prefix, "updated") + fixture.pairedRight(model, prefix)));
+                assertEquals(identity, scalar(sql, query));
+                assertCliFailure(db, "import", model, "broken", fixture.data(model, "broken",
+                        fixture.pairedLeft(model, "broken", "tentative")
+                                + fixture.object(model, "PairRight", "broken-right", "")),
+                        importSqlDiagnostic(db, "23502"));
+                assertRolledBack(db, sql, 0, 1);
+                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + left));
+                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + right));
+                assertEquals(identity, scalar(sql, query));
+                assertEquals("updated", scalar(sql, "SELECT label FROM " + left));
+            }
+        });
+    }
+
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void requiredReferenceAttributesRemainNullableAndRollBackUnresolvedTargets(Backend backend, int version) throws Exception {
         withDatabase(backend, db -> {
             String model = "SqlRequiredReference";

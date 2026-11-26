@@ -511,9 +511,7 @@ final class DbMapping {
             return false;
         }
         var target = table(column.targetRelation());
-        return flatClass(plan, table.object()) && flatClass(plan, target.object())
-                && associationsForOwner(associations, table.object().symbol()).stream()
-                .anyMatch(association -> association.role().symbol().equals(column.slot().symbol()) && !association.ownerRole().single());
+        return flatClass(plan, table.object()) && flatClass(plan, target.object());
     }
 
     private static boolean flatClass(TransferPlan plan, ObjectDescriptor object) {

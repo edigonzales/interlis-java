@@ -90,28 +90,45 @@ final class SchemaProfileCases {
     private void exchangeRequiredRoles(TestDatabase db, String model) throws Exception {
         Path output = work.resolve("required-role-output.xtf");
         Path legacy = fixtures.data(model, "legacy",
-                fixtures.assignedAsset(model, "legacy", 42) + fixtures.assignedSite(model, "legacy"));
+                fixtures.assignedAsset(model, "legacy", 42) + fixtures.assignedSite(model, "legacy")
+                        + fixtures.pairedLeft(model, "legacy", "paired") + fixtures.pairedRight(model, "legacy"));
         referenceImport(db, "legacy", legacy);
         assertCliSuccess(db, "export", model, "legacy", output);
         assertRequiredRole(output, "legacy");
         Path nativeInput = fixtures.data(model, "native",
-                fixtures.assignedAsset(model, "native", 42) + fixtures.assignedSite(model, "native"));
+                fixtures.assignedAsset(model, "native", 42) + fixtures.assignedSite(model, "native")
+                        + fixtures.pairedLeft(model, "native", "paired") + fixtures.pairedRight(model, "native"));
         assertCliSuccess(db, "import", model, "native", nativeInput);
         referenceExport(db, "native", output);
         assertRequiredRole(output, "native");
         try (var sql = db.connect()) {
+            var pairKeys = foreignKeyColumns(db, sql).stream()
+                    .filter(key -> key.startsWith("pairleft:") || key.startsWith("pairright:"))
+                    .collect(Collectors.toSet());
+            assertEquals(Set.of("pairleft:requiredright:pairright", "pairright:requiredleft:pairleft",
+                    "pairleft:mayberight:pairright", "pairleft:t_basket:t_ili2db_basket",
+                    "pairright:t_basket:t_ili2db_basket"), pairKeys);
             assertEquals(Set.of("legacy-asset:legacy-site", "native-asset:native-site"),
                     catalogKeys(sql, "SELECT a.t_ili_tid || ':' || s.t_ili_tid FROM " + db.table("asset") + " a JOIN "
                             + db.table("site") + " s ON s.t_id=a.assignedsite WHERE a.reviewsite IS NULL"));
+            assertEquals(Set.of("legacy-left:legacy-right", "native-left:native-right"),
+                    catalogKeys(sql, "SELECT l.t_ili_tid || ':' || r.t_ili_tid FROM " + db.table("pairleft") + " l JOIN "
+                            + db.table("pairright") + " r ON l.requiredright=r.t_id AND r.requiredleft=l.t_id"
+                            + " WHERE l.mayberight IS NULL"));
         }
     }
 
     private void assertRequiredRole(Path output, String prefix) throws Exception {
-        var asset = fixtures.rows(output, prefix, 2).stream()
-                .filter(row -> (prefix + "-asset").equals(id(row, version, "tid"))).findFirst().orElseThrow();
+        var rows = fixtures.rows(output, prefix, 4).stream()
+                .collect(Collectors.toMap(row -> id(row, version, "tid"), Function.identity()));
+        var asset = rows.get(prefix + "-asset");
         assertEquals(prefix + "-site", targetTid(child(asset, "AssignedSite")));
         assertEquals("42", child(asset, "SerialNo").getTextContent());
         assertNull(child(asset, "ReviewSite"));
+        var left = rows.get(prefix + "-left");
+        assertEquals(prefix + "-right", targetTid(child(left, "RequiredRight")));
+        assertNull(child(left, "MaybeRight"));
+        assertEquals(prefix + "-left", targetTid(child(rows.get(prefix + "-right"), "RequiredLeft")));
     }
 
     private String targetTid(Element reference) {
