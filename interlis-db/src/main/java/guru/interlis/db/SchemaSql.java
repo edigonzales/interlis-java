@@ -662,7 +662,7 @@ final class SchemaSql {
                 case DATE -> "DATE";
                 case TIME -> "TIME";
                 case DATETIME -> timestamp();
-                case FORMATTED, OID_TEXT -> text(255);
+                case FORMATTED, OID_TEXT, REFERENCE_TEXT -> text(255);
                 case UUID -> gpkg ? text(36) : "uuid";
                 case BINARY -> gpkg ? "BLOB" : "bytea";
                 case XML -> gpkg ? "TEXT" : "xml";

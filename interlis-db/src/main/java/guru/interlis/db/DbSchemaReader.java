@@ -560,9 +560,7 @@ final class DbSchemaReader {
             case "smart2" -> DbInheritance.Profile.SMART2;
             default -> throw unsupported("SETTINGS.inheritanceTrafo");
         };
-        for (String tag : List.of("SqlColsAsText", "SqlExtRefCols")) {
-            if (settings.containsKey(PREFIX + tag)) throw unsupported("SETTINGS." + tag);
-        }
+        if (settings.containsKey(PREFIX + "SqlColsAsText")) throw unsupported("SETTINGS.SqlColsAsText");
         var enumOptions = new DbEnumOptions(optionalSetting(settings, Ili2dbLayout.ENUM_ITF_CODE, "yes"),
                 optionalSetting(settings, Ili2dbLayout.ENUM_TEXT_COLUMN, "addTxtCol"),
                 optionalSetting(settings, Ili2dbLayout.ENUM_BEAUTIFY, "underscore"),
@@ -1069,13 +1067,13 @@ final class DbSchemaReader {
                                                 DbInheritance layout, Map<SymbolRef, String> tableNames,
                                                 List<Column> references, boolean ordered, Settings settings) throws SQLException {
         var columns = new ArrayList<Column>();
-        for (var reference : DbMapping.referenceAlternatives(layout, references, ordered)) {
+        for (var reference : DbMapping.referenceAlternatives(layout, references, ordered, settings.schemaOptions())) {
             String path = reference.slot().name().declared().toString();
             String targetName = tableNames.get(reference.targetRelation());
             var binding = names.take(path, table.name(), targetName);
             var column = bindColumn(db, table, tableNames, reference.withName(binding.name()), binding, path, settings);
-            if (settings.inheritance() == DbInheritance.Profile.SMART2 || reference.catalogueReference().isPresent()
-                    || references.size() > 1) {
+            if (column.kind() == Kind.REFERENCE && (settings.inheritance() == DbInheritance.Profile.SMART2
+                    || reference.catalogueReference().isPresent() || references.size() > 1)) {
                 requireForeignKey(db, table.name(), binding.name(), targetName, path);
             }
             columns.add(ordered ? bindPosition(db, table, column) : column);
@@ -1257,7 +1255,7 @@ final class DbSchemaReader {
             String type = physical.get(key(db, name));
             if (type == null) throw new DbException("Missing physical column " + table + "." + name);
             boolean supported = switch (kind) {
-                case TEXT, OID_TEXT, FORMATTED, ENUMERATION -> type.equals("text") || type.equals("varchar");
+                case TEXT, OID_TEXT, FORMATTED, ENUMERATION, REFERENCE_TEXT -> type.equals("text") || type.equals("varchar");
                 case BOOLEAN -> type.equals("boolean") || type.equals("bool");
                 case INTEGER -> type.equals("integer") || type.equals("int4") || type.equals("int2")
                         || type.equals("smallint");

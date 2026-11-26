@@ -128,6 +128,14 @@ einen Raumindex. GeoPackage registriert `gpkg_rtree_index` mit der
 virtuellen Tabelle und ihren Standardtriggern. PostGIS legt einen GiST-Index an.
 Die entsprechende Option in ili2db 5.5.2 ist `--createGeomIdx`.
 
+`schemaimport --sql-ext-ref-cols` entspricht ili2db `--sqlExtRefCols`.
+Im `newClass`-Profil speichert ein externes Referenzattribut den XTF-`REF`
+in einer Textspalte mit deklarierter Länge 255. Das funktioniert ohne
+geladenen Zielbestand. `ATTRNAME.target` bezeichnet das Modellziel,
+und lokale Referenzen behalten ihre numerische Abbildung.
+Ein mitgeliefertes Ziel-`BID` aus XTF 2.3 wird gemäss Referenzprofil
+beim Export weggelassen. `--add-models` übernimmt die Einstellung.
+
 `schemaimport --create-fk-idx` entspricht ili2db `--createFkIdx`.
 Es erzeugt Indizes für Basket-, Dataset-, Rollen- und Strukturverweise.
 `--add-models` übernimmt die Einstellung des bestehenden Schemas.

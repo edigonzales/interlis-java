@@ -49,7 +49,7 @@ public final class Main {
                     [--coalesce-multi-point] [--coalesce-multi-line] [--coalesce-multi-surface] [--expand-struct] [--coalesce-json] [--coalesce-array]
                     [--create-enum-col-as-itf-code] [--create-enum-txt-col] [--beautify-enum-disp-name]
                     [--create-single-enum-tab | --create-enum-tabs | --create-enum-tabs-with-id]
-                    [--create-fk] [--create-fk-idx]
+                    [--create-fk] [--create-fk-idx] [--sql-ext-ref-cols]
                     [--create-type-discriminator] [--create-type-constraint] [--create-dataset-col] [--create-std-cols]
                     [--create-unique] [--create-num-checks] [--create-meta-info]
                     [--stroke-arcs] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]

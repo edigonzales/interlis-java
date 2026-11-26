@@ -86,6 +86,7 @@ final class Ili2dbLayout {
         TID_COLUMN("--create-tid-col", "TidHandling", "property"),
         FOREIGN_KEY_INDEX("--create-fk-idx", "createForeignKeyIndex", "yes"),
         FOREIGN_KEY("--create-fk", "createForeignKey", "yes"),
+        EXTERNAL_REFERENCE_TEXT("--sql-ext-ref-cols", "SqlExtRefCols", "enable"),
         TYPE_DISCRIMINATOR("--create-type-discriminator", "typeDiscriminator", "always"),
         TYPE_CONSTRAINT("--create-type-constraint", "createTypeConstraint", "True"),
         DATASET_COLUMN("--create-dataset-col", "createDatasetCols", "addDatasetCol"),

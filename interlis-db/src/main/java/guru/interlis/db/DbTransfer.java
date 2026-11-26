@@ -619,7 +619,7 @@ final class DbTransfer {
         String baskets = db.technicalTable(BASKET);
         for (var table : mapping.tables()) {
             for (var column : table.columns()) {
-                if (!column.external()) continue;
+                if (column.kind() != DbMapping.Kind.REFERENCE || !column.external()) continue;
                 token.throwIfCancellationRequested();
                 var root = mapping.referenceRoot(column);
                 String targetTid = root.hasTidColumn() ? tidExpression(root, "ref") : "NULL";
@@ -1175,6 +1175,13 @@ final class DbTransfer {
                 }
                 yield readScalar(db, rows, index, column);
             }
+            case REFERENCE_TEXT -> {
+                String tid = rows.getString(index);
+                if (tid == null) yield null;
+                TransferIdentity.ObjectKey key = externalTextOid(mapping, column, tid)
+                        ? new ObjectOid(tid) : new TransferId(tid, IdOrigin.SOURCE);
+                yield new Reference(key, Optional.empty(), true, Optional.empty());
+            }
             case REFERENCE -> {
                 String path = column.slot().name().declared().toString();
                 String context = ownerTid == null ? path : path + " of object " + ownerTid;
@@ -1461,6 +1468,12 @@ final class DbTransfer {
         return mapping.version() == LanguageVersion.ILI24 && root.oidDomain().isPresent();
     }
 
+    private static boolean externalTextOid(DbMapping mapping, Column column, String tid) {
+        // XTF 2.3 distinguishes an OID by its wire spelling. XTF 2.4 uses the model.
+        return mapping.version() == LanguageVersion.ILI23 ? tid.indexOf(':') >= 0
+                : hasWireOid(mapping, mapping.referenceRoot(column));
+    }
+
     private static Optional<String> basketOid(DbMapping mapping, TopicDescriptor topic, BasketId bid) {
         var rule = topic.oidRules().stream().filter(ruleCandidate -> ruleCandidate.basket()).findFirst();
         if (rule.isEmpty()) return Optional.empty();
@@ -1566,7 +1579,7 @@ final class DbTransfer {
 
         private Set<SymbolRef> referenceTargets(boolean external) {
             var declaredTargets = mapping.tables().stream().flatMap(table -> table.columns().stream())
-                    .filter(column -> column.external() == external)
+                    .filter(column -> column.kind() != DbMapping.Kind.REFERENCE_TEXT && column.external() == external)
                     .flatMap(column -> column.target().or(() -> column.array().flatMap(DbArray::target)).stream())
                     .collect(Collectors.toSet());
             return mapping.objectStorage().stream().filter(storage -> storage.object().transferable())
@@ -2070,6 +2083,14 @@ final class DbTransfer {
                 case DATE -> db.bindDate(statement, index, (Text) value, column.slot().name().declared().toString());
                 case TIME -> db.bindTime(statement, index, (Text) value, column.slot().name().declared().toString());
                 case DATETIME -> db.bindTimestamp(statement, index, (Text) value, column.slot().name().declared().toString());
+                case REFERENCE_TEXT -> {
+                    var reference = (Reference) value;
+                    if (!reference.external() || reference.orderPosition().isPresent()
+                            || (reference.target() instanceof ObjectOid) != externalTextOid(mapping, column, reference.target().value())) {
+                        throw new DbException("Unsupported external text reference at " + column.slot().name().declared());
+                    }
+                    statement.setString(index, reference.target().value());
+                }
                 case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE ->
                         throw new DbException("Unsupported value for " + column.slot().name().declared());
             }

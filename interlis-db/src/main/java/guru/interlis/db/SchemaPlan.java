@@ -271,7 +271,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 keys.add(new ForeignKey(table.name(), Ili2dbLayout.BASKET_COLUMN, Ili2dbLayout.BASKET));
             }
             for (var column : table.columns()) {
-                if (column.target().isPresent()) {
+                if (column.kind() == DbMapping.Kind.REFERENCE) {
                     keys.add(new ForeignKey(table.name(), column.name(), mapping.table(column.targetRelation()).name()));
                 }
             }
@@ -387,7 +387,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             }
             return;
         }
-        if (column.target().isPresent()) {
+        if (column.kind() == DbMapping.Kind.REFERENCE) {
             property(properties, table, null, column, "foreignKey", mapping.table(column.targetRelation()).name());
         }
         if (!(column.slot() instanceof AttributeSlot attribute) || column.textExpansion().isPresent()) return;
@@ -437,7 +437,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             case POLYLINE, SURFACE -> ((GeometryType) effective).geometryKind().name();
             case MULTICURVE -> "MULTIPOLYLINE";
             case MULTISURFACE -> column.wrappedGeometry().isPresent() ? "MULTISURFACE" : ((GeometryType) effective).geometryKind().name();
-            case REFERENCE -> null;
+            case REFERENCE, REFERENCE_TEXT -> null;
         };
         if (typeKind != null) property(properties, table, subtype, column, "typeKind", typeKind);
         if (!expandedField && (column.kind() == DbMapping.Kind.BOOLEAN || column.kind() == DbMapping.Kind.ENUMERATION)) {

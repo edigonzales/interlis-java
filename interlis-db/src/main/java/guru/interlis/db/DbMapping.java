@@ -69,7 +69,8 @@ import static guru.interlis.db.Ili2dbLayout.reservedTable;
 /** The SQL names and storage bindings for a checked transfer plan. */
 final class DbMapping {
     enum Kind {
-        TEXT, BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, UUID, OID_TEXT, BINARY, XML, ENUMERATION, POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE;
+        TEXT, BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, UUID, OID_TEXT, BINARY, XML, ENUMERATION,
+        POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE, REFERENCE_TEXT;
 
         boolean geometry() { return this == POINT || this == POLYLINE || this == SURFACE || collection(); }
 
@@ -115,7 +116,7 @@ final class DbMapping {
                   Optional<DbArray> array, Optional<DbEnumeration> enumeration, Optional<DbEnumText> enumText) {
         Column {
             boolean role = slot instanceof RoleSlot;
-            if (effectiveType.isEmpty() != role || (role && kind != Kind.REFERENCE)) {
+            if (effectiveType.isEmpty() != role || (role && kind != Kind.REFERENCE && kind != Kind.REFERENCE_TEXT)) {
                 throw new IllegalArgumentException("Only a role reference can omit the effective attribute type");
             }
         }
@@ -179,6 +180,12 @@ final class DbMapping {
             return new Column(slot, name, kind, effectiveType, target, Optional.of(table), epsgCode, srsId,
                     legacyEpsgHeader, positionColumn, dimensions, domainBinding, catalogueReference, textExpansion,
                     wrappedGeometry, strokeTolerance, expandedStructure, jsonStructure, array, enumeration, enumText);
+        }
+
+        Column asTextReference() {
+            return new Column(slot, name, Kind.REFERENCE_TEXT, effectiveType, target, Optional.empty(), epsgCode, srsId,
+                    legacyEpsgHeader, positionColumn, dimensions, domainBinding, catalogueReference, textExpansion, wrappedGeometry,
+                    strokeTolerance, expandedStructure, jsonStructure, array, enumeration, enumText);
         }
 
         Column withStrokeArcs(TransferPlan plan, boolean strokeArcs) {
@@ -378,7 +385,7 @@ final class DbMapping {
         }
         storage = Map.copyOf(paths);
         referenceTables = this.tables.stream().flatMap(table -> table.columns().stream())
-                .filter(column -> column.target().isPresent())
+                .filter(column -> column.kind() == Kind.REFERENCE)
                 .collect(Collectors.groupingBy(column -> column.target().orElseThrow(),
                         Collectors.mapping(column -> table(column.targetRelation()), Collectors.collectingAndThen(
                                 Collectors.toCollection(java.util.LinkedHashSet::new), List::copyOf))));
@@ -745,7 +752,7 @@ final class DbMapping {
             var roles = linkRoles.getOrDefault(object.symbol(), List.of());
             for (var role : roles) {
                 columns.addAll(planReferences(allocator, names, inheritance, name, discriminator, gpkg,
-                        role.columns(), role.slot().role().ordered()));
+                        role.columns(), role.slot().role().ordered(), schemaOptions));
             }
             for (var contributor : relation.contributors()) {
                 for (var attribute : storageAttributes(plan, profile, relation, contributor)) {
@@ -755,7 +762,8 @@ final class DbMapping {
                             : Optional.<DbCatalogueReference>empty();
                     if (catalogue.isPresent()) {
                         var binding = catalogueColumn(plan, contributor, attribute, catalogue.orElseThrow());
-                        columns.addAll(planReferences(allocator, names, inheritance, name, discriminator, gpkg, binding, false));
+                        columns.addAll(planReferences(allocator, names, inheritance, name, discriminator, gpkg,
+                                binding, false, schemaOptions));
                         continue;
                     }
                     var text = DbTextExpansion.plan(plan, attribute, transformations);
@@ -812,7 +820,8 @@ final class DbMapping {
                     for (var binding : storageColumns(plan, declaration, attribute, crs, crsPair, wrapped,
                             geometryComponents.contains(attribute.symbol()))) {
                         if (binding.kind() == Kind.REFERENCE) {
-                            columns.addAll(planReferences(allocator, names, inheritance, name, discriminator, gpkg, binding, false));
+                            columns.addAll(planReferences(allocator, names, inheritance, name, discriminator, gpkg,
+                                binding, false, schemaOptions));
                             continue;
                         }
                         String storageName = multiSrs && binding.kind().geometry() ? attributeName + "_" + binding.epsgCode() : attributeName;
@@ -842,7 +851,7 @@ final class DbMapping {
                     if (association.linkTable()) continue;
                     var role = association.role();
                     columns.addAll(planReferences(allocator, names, inheritance, name, discriminator, gpkg,
-                            roleColumn(role, association.target(), role.name().declared().last()), association.ordered()));
+                            roleColumn(role, association.target(), role.name().declared().last()), association.ordered(), schemaOptions));
                 }
             }
             tables.add(new Table(object, name, relation.base(), columns, discriminator, relation.oidDomain(),
@@ -856,14 +865,14 @@ final class DbMapping {
 
     private static List<Column> planReferences(SqlNames allocator, Map<SymbolRef, String> names, DbInheritance inheritance,
                                                 String owner, boolean discriminator, boolean gpkg, Column reference,
-                                                boolean ordered) {
-        return planReferences(allocator, names, inheritance, owner, discriminator, gpkg, List.of(reference), ordered);
+                                                boolean ordered, Set<Ili2dbLayout.SchemaOption> options) {
+        return planReferences(allocator, names, inheritance, owner, discriminator, gpkg, List.of(reference), ordered, options);
     }
 
     private static List<Column> planReferences(SqlNames allocator, Map<SymbolRef, String> names, DbInheritance inheritance,
                                                String owner, boolean discriminator, boolean gpkg, List<Column> references,
-                                               boolean ordered) {
-        var alternatives = referenceAlternatives(inheritance, references, ordered);
+                                               boolean ordered, Set<Ili2dbLayout.SchemaOption> options) {
+        var alternatives = referenceAlternatives(inheritance, references, ordered, options);
         var result = new ArrayList<Column>();
         for (var reference : alternatives) {
             String field = reference.slot().name().declared().last();
@@ -876,10 +885,18 @@ final class DbMapping {
         return result;
     }
 
-    static List<Column> referenceAlternatives(DbInheritance inheritance, List<Column> references, boolean ordered) {
+    static List<Column> referenceAlternatives(DbInheritance inheritance, List<Column> references, boolean ordered,
+                                               Set<Ili2dbLayout.SchemaOption> options) {
         var alternatives = new ArrayList<Column>();
         var relations = new HashSet<SymbolRef>();
         for (var reference : references) {
+            if (reference.external() && options.contains(Ili2dbLayout.SchemaOption.EXTERNAL_REFERENCE_TEXT)) {
+                if (inheritance.profile() != DbInheritance.Profile.NEW_CLASS || ordered || references.size() != 1
+                        || reference.catalogueReference().isPresent() || reference.slot() instanceof RoleSlot) {
+                    throw unsupported("external reference as text at " + reference.slot().name().declared());
+                }
+                return List.of(reference.asTextReference());
+            }
             var declared = reference.target().orElseThrow();
             var tables = inheritance.referenceTables(declared);
             if (tables.isEmpty() || (ordered && tables.size() > 1)) {
