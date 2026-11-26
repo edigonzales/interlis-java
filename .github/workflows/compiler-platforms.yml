@@ -141,6 +141,8 @@ jobs:
 
   macos:
     name: JVM distributions (darwin-arm64)
+    # Hosted macOS ARM64 capacity is temporarily unavailable.
+    if: ${{ false }}
     runs-on: macos-15
     timeout-minutes: 25
     steps:
@@ -158,7 +160,7 @@ jobs:
 
   publish:
     name: Publish JVM snapshots
-    needs: [linux, portable, windows, macos]
+    needs: [linux, portable, windows]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
