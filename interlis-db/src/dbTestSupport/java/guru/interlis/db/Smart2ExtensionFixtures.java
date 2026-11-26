@@ -21,38 +21,30 @@ final class Smart2ExtensionFixtures {
     private final Path work;
     private final int version;
 
-    Smart2ExtensionFixtures(Path work, int version) throws Exception {
+    Smart2ExtensionFixtures(Path work, int version, boolean sharedDomains) throws Exception {
         this.work = work;
         this.version = version;
         transfers = new ProfileFixtures(work, version);
         original = "OriginalSmart" + version;
         added = "AddedSmart" + version;
-        originalSource = source(original);
-        addedSource = source(added);
+        originalSource = source(original, false);
+        addedSource = source(added, sharedDomains);
     }
 
-    private Path source(String name) throws Exception {
+    private Path source(String name, boolean sharedDomains) throws Exception {
+        String domains = sharedDomains ? "IMPORTS " + original + ";" : "DOMAIN Caption = TEXT*30; Amount = 0..100;";
+        String qualifier = sharedDomains ? original + "." : "";
         return Files.writeString(work.resolve(name + ".ili"), """
                 INTERLIS 2.%d;
                 MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
-                  DOMAIN Caption = TEXT*30;
+                  %s
                   TOPIC Data =
-                    CLASS BaseAsset (ABSTRACT) = Label : Caption; END BaseAsset;
-                    CLASS Entry EXTENDS BaseAsset = Quantity : 0..100; END Entry;
+                    CLASS BaseAsset (ABSTRACT) = Label : %sCaption; END BaseAsset;
+                    CLASS Entry EXTENDS BaseAsset = Quantity : %sAmount; END Entry;
                     CLASS Alternate EXTENDS BaseAsset = END Alternate;
                   END Data;
                 END %s.
-                """.formatted(version - 20, name, name));
-    }
-
-    Path dependentSource() throws Exception {
-        return Files.writeString(work.resolve("DependentSmart.ili"), """
-                INTERLIS 2.%d;
-                MODEL DependentSmart (en) AT "https://example.org/interlis/db" VERSION "1" =
-                  IMPORTS %s;
-                  TOPIC Data = CLASS Holder = Label : %s.Caption; END Holder; END Data;
-                END DependentSmart.
-                """.formatted(version - 20, original, original));
+                """.formatted(version - 20, name, domains, qualifier, qualifier, name));
     }
 
     Path input(String model, String prefix) throws Exception {

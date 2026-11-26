@@ -39,7 +39,7 @@ final class ModelExtensionInteropTest {
     @Test void smart2Postgis24() throws Exception { exchangeSmart2(24, POSTGIS.container()); }
 
     private void exchangeSmart2(int version, PostgreSQLContainer postgres) throws Exception {
-        var fixture = new Smart2ExtensionFixtures(work, version);
+        var fixture = new Smart2ExtensionFixtures(work, version, true);
         var db = new TestDatabase(work, postgres, "append_smart2", "v" + version + "_");
         var expected = db.peer("append_smart2_reference");
         var reference = new ReferenceTool(work, db.postgis());
@@ -50,7 +50,8 @@ final class ModelExtensionInteropTest {
         schema(reference, expected, work, fixture.added, "smart2");
         try (var sql = db.connect(); var expectedSql = expected.connect()) {
             var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
-            assertCliSuccess(db, "schemaimport", fixture.added, null, fixture.addedSource, "--add-models");
+            assertCliSuccess(db, "schemaimport", fixture.added, null, fixture.addedSource,
+                    "--add-models", "--model-file", fixture.originalSource.toString());
             var after = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
             assertEquals(before.relations().get("settings"), after.relations().get("settings"));
             DbSchemaCatalog.read(expectedSql, expected.postgis(), expected.schema()).assertSameAs(after);

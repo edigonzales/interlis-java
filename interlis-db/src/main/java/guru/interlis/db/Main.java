@@ -163,9 +163,10 @@ public final class Main {
                 settings.schemaOptions(), !settings.sqlEnableNull(), cancellation);
         var newFiles = DbSchemaReader.newModelFiles(db, plan.modelFiles(), cancellation);
         if (smart2) {
-            for (var file : plan.modelFiles()) {
-                if (!newFiles.contains(file)) {
-                    throw new DbException("Smart2 --add-models requires independent model sources; already stored: " + file.filename());
+            for (var declaration : plan.mapping().inheritance().declarations()) {
+                String path = declaration.object().name().declared().toString();
+                if (names.hasClass(path)) {
+                    throw new DbException("Smart2 --add-models cannot yet reuse the stored mapping for " + path);
                 }
             }
         }

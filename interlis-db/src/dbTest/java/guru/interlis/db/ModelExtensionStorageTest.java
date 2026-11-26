@@ -74,8 +74,8 @@ final class ModelExtensionStorageTest {
 
     @ParameterizedTest(name = "{0}, XTF {1}")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
-    void smart2RequiresIndependentSourcesAndRollsBackDdl(Backend backend, int version) throws Exception {
-        var fixture = new Smart2ExtensionFixtures(work, version);
+    void smart2ReusesDomainSourcesAndRollsBackDdl(Backend backend, int version) throws Exception {
+        var fixture = new Smart2ExtensionFixtures(work, version, true);
         var db = POSTGIS.target(work.resolve("smart2-extension.gpkg"), backend);
         DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource, "--inheritance", "smart2");
         assertCliSuccess(db, "import", fixture.original, "original", fixture.input(fixture.original, "original"));
@@ -83,19 +83,22 @@ final class ModelExtensionStorageTest {
         try (var sql = db.connect()) {
             var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
             var ids = fixture.originalRows(db);
-            assertCliFailure(db, "schemaimport", "DependentSmart", null, fixture.dependentSource(),
-                    "already stored: " + fixture.originalSource.getFileName(),
-                    "--add-models", "--model-file", fixture.originalSource.toString());
+            var changedSource = Files.writeString(work.resolve("changed.ili"),
+                    Files.readString(fixture.originalSource).replace("TEXT*30", "TEXT*31"));
+            assertCliFailure(db, "schemaimport", fixture.added, null, fixture.addedSource,
+                    "Stored MODEL source differs for " + fixture.original,
+                    "--add-models", "--model-file", changedSource.toString());
             before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
             var checkpoints = new AtomicInteger();
             var cancelled = schemaWithIdentityColumns(db, fixture.added, fixture.addedSource,
-                    cancelDuringDdl(checkpoints), "--add-models");
+                    cancelDuringDdl(checkpoints), "--add-models", "--model-file", fixture.originalSource.toString());
             assertEquals(130, cancelled.code(), cancelled::diagnostics);
             assertEquals(2, checkpoints.get());
             before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
             assertEquals(ids, fixture.originalRows(db));
 
-            assertCliSuccess(db, "schemaimport", fixture.added, null, fixture.addedSource, "--add-models");
+            assertCliSuccess(db, "schemaimport", fixture.added, null, fixture.addedSource,
+                    "--add-models", "--model-file", fixture.originalSource.toString());
             assertCliSuccess(db, "import", fixture.added, "added", fixture.input(fixture.added, "added"));
             var output = work.resolve("added.xtf");
             assertCliSuccess(db, "export", fixture.added, "added", output);
