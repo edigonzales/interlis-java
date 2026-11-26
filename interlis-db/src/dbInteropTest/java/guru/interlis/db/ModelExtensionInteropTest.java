@@ -62,14 +62,18 @@ final class ModelExtensionInteropTest {
     @Test void smart2RolesGeoPackage24() throws Exception { exchangeExternalRoles(24, null, "smart2"); }
     @Test void smart2RolesPostgis23() throws Exception { exchangeExternalRoles(23, POSTGIS.container(), "smart2"); }
     @Test void smart2RolesPostgis24() throws Exception { exchangeExternalRoles(24, POSTGIS.container(), "smart2"); }
-    @Test void smart1SharedSubtypeGeoPackage23() throws Exception { exchangeSmart1SharedSubtype(23, null); }
-    @Test void smart1SharedSubtypeGeoPackage24() throws Exception { exchangeSmart1SharedSubtype(24, null); }
-    @Test void smart1SharedSubtypePostgis23() throws Exception { exchangeSmart1SharedSubtype(23, POSTGIS.container()); }
-    @Test void smart1SharedSubtypePostgis24() throws Exception { exchangeSmart1SharedSubtype(24, POSTGIS.container()); }
+    @Test void smart1SharedSubtypeGeoPackage23() throws Exception { exchangeSmart1SharedSubtype(23, null, false); }
+    @Test void smart1SharedSubtypeGeoPackage24() throws Exception { exchangeSmart1SharedSubtype(24, null, false); }
+    @Test void smart1SharedSubtypePostgis23() throws Exception { exchangeSmart1SharedSubtype(23, POSTGIS.container(), false); }
+    @Test void smart1SharedSubtypePostgis24() throws Exception { exchangeSmart1SharedSubtype(24, POSTGIS.container(), false); }
     @Test void smart1FirstSubtypeGeoPackage23() throws Exception { exchangeSmart1FirstSubtype(23, null); }
     @Test void smart1FirstSubtypeGeoPackage24() throws Exception { exchangeSmart1FirstSubtype(24, null); }
     @Test void smart1FirstSubtypePostgis23() throws Exception { exchangeSmart1FirstSubtype(23, POSTGIS.container()); }
     @Test void smart1FirstSubtypePostgis24() throws Exception { exchangeSmart1FirstSubtype(24, POSTGIS.container()); }
+    @Test void smart1CheckedSubtypeGeoPackage23() throws Exception { exchangeSmart1SharedSubtype(23, null, true); }
+    @Test void smart1CheckedSubtypeGeoPackage24() throws Exception { exchangeSmart1SharedSubtype(24, null, true); }
+    @Test void smart1CheckedSubtypePostgis23() throws Exception { exchangeSmart1SharedSubtype(23, POSTGIS.container(), true); }
+    @Test void smart1CheckedSubtypePostgis24() throws Exception { exchangeSmart1SharedSubtype(24, POSTGIS.container(), true); }
 
     private void exchangeSmart1FirstSubtype(int version, PostgreSQLContainer postgres) throws Exception {
         var fixture = new SmartModelExtensionFixtures(work, version, false, false);
@@ -96,15 +100,17 @@ final class ModelExtensionInteropTest {
         fixture.assertSpecializedDelivery(output, "native");
     }
 
-    private void exchangeSmart1SharedSubtype(int version, PostgreSQLContainer postgres) throws Exception {
+    private void exchangeSmart1SharedSubtype(int version, PostgreSQLContainer postgres, boolean checked) throws Exception {
         var fixture = new SmartModelExtensionFixtures(work, version, false, true);
         var source = fixture.specializedSource();
         String further = "FurtherSmart" + version;
         var furtherSource = fixture.subtypeSource(further, "FurtherEntry", "Entry", "OtherExtra");
-        var db = new TestDatabase(work, postgres, "append_smart1_subtype", "v" + version + "_");
-        var expected = db.peer("append_smart1_subtype_reference");
+        String name = checked ? "append_smart1_checked" : "append_smart1_subtype";
+        var db = new TestDatabase(work, postgres, name, "v" + version + "_");
+        var expected = db.peer(name + "_reference");
         var reference = new ReferenceTool(work, db.postgis());
-        schema(reference, db, work, fixture.original, "smart1");
+        String[] options = checked ? new String[]{"--createTypeConstraint"} : new String[0];
+        schema(reference, db, work, fixture.original, "smart1", options);
         importDataset(reference, db, "original", fixture.input(fixture.original, "original"));
         var original = fixture.originalRows(db);
         assertCliSuccess(db, "schemaimport", fixture.specialized, null, source,
@@ -112,7 +118,7 @@ final class ModelExtensionInteropTest {
         importDataset(reference, db, "legacy", fixture.specializedInput("legacy"));
         assertCliSuccess(db, "schemaimport", further, null, furtherSource,
                 "--add-models", "--model-file", fixture.originalSource.toString());
-        schema(reference, expected, work, fixture.original + ";" + fixture.specialized + ";" + further, "smart1");
+        schema(reference, expected, work, fixture.original + ";" + fixture.specialized + ";" + further, "smart1", options);
         assertSubtypeCatalog(db, expected);
         try (var sql = db.connect()) {
             assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("entry")

@@ -170,8 +170,7 @@ final class SchemaSql {
                 if (plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.TYPE_CONSTRAINT)) {
                     var types = plan.discriminatorTypes(table);
                     if (!types.isEmpty()) {
-                        constraint = " CHECK (" + TYPE_COLUMN + " IN (" + types.stream().map(SchemaSql::literal)
-                                .collect(Collectors.joining(", ")) + "))";
+                        constraint = " CONSTRAINT " + quote(typeCheckName(table.name())) + " " + typeCheck(types);
                     }
                 }
                 columns.add(TYPE_COLUMN + " " + dialect.text(60) + " NOT NULL" + constraint);
@@ -227,12 +226,17 @@ final class SchemaSql {
             }
         }
         for (var change : plan.discriminatorChanges()) {
+            String table = dialect.table(change.table());
             change.initialType().ifPresent(type -> {
-                String table = dialect.table(change.table());
                 commands.add("ALTER TABLE " + table + " ADD COLUMN " + TYPE_COLUMN + " " + dialect.text(60));
                 commands.add("UPDATE " + table + " SET " + TYPE_COLUMN + " = " + literal(type));
                 commands.add("ALTER TABLE " + table + " ALTER COLUMN " + TYPE_COLUMN + " SET NOT NULL");
             });
+            if (plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.TYPE_CONSTRAINT)) {
+                change.existingCheck().ifPresent(name -> commands.add("ALTER TABLE " + table + " DROP CONSTRAINT " + quote(name)));
+                String name = change.existingCheck().orElseGet(() -> typeCheckName(change.table()));
+                commands.add("ALTER TABLE " + table + " ADD CONSTRAINT " + quote(name) + " " + typeCheck(change.types()));
+            }
         }
         for (var addition : plan.addedColumns()) {
             var field = addition.field();
@@ -564,7 +568,15 @@ final class SchemaSql {
         }
     }
 
-    private static String literal(String value) {
+    private static String typeCheckName(String table) {
+        return table.substring(0, Math.min(50, table.length())) + "_t_type_check";
+    }
+
+    private static String typeCheck(List<String> types) {
+        return "CHECK (" + TYPE_COLUMN + " IN (" + types.stream().map(SchemaSql::literal).collect(Collectors.joining(", ")) + "))";
+    }
+
+    static String literal(String value) {
         return "'" + value.replace("'", "''") + "'";
     }
 

@@ -777,15 +777,18 @@ final class DbSchemaReader {
             var stored = read(db, List.of(MetadataScope.modelName(ownerPath)), token);
             var oldTable = stored.tables().stream().filter(table -> table.object().name().declared().toString().equals(ownerPath))
                     .findFirst().orElseThrow(() -> new DbException("Missing stored Smart1 table for " + ownerPath));
-            if (oldTable.subtype() || !owner.hasDiscriminator()
-                    || extension.schemaOptions().contains(Ili2dbLayout.SchemaOption.TYPE_CONSTRAINT)) {
-                throw unsupported("Smart1 --add-models requires a shared root table without a type check in " + owner.name());
+            if (oldTable.subtype() || !owner.hasDiscriminator()) {
+                throw unsupported("Smart1 --add-models requires a shared root table in " + owner.name());
             }
             var oldTypes = stored.objectStorage().stream().filter(type -> type.root().equals(oldTable)
                     && !type.object().modifiers().contains(Modifier.ABSTRACT)).map(DbMapping.ObjectStorage::discriminator).sorted().toList();
             Optional<String> initialType = Optional.empty();
+            Optional<String> existingCheck = Optional.empty();
             if (oldTable.hasDiscriminator()) {
                 requireStoredDiscriminatorTypes(db, owner.name(), oldTypes);
+                if (extension.schemaOptions().contains(Ili2dbLayout.SchemaOption.TYPE_CONSTRAINT)) {
+                    existingCheck = Optional.of(storedDiscriminatorCheck(db, owner.name(), oldTypes));
+                }
             } else {
                 if (oldTypes.size() != 1) throw new DbException("Cannot determine initial T_Type for " + owner.name());
                 requireStoredDiscriminatorTypes(db, owner.name(), List.of());
@@ -814,9 +817,50 @@ final class DbSchemaReader {
                             SchemaPlan.columnChecks(List.of(field), db.gpkg(), extension.schemaOptions())));
                 }
             }
-            discriminators.add(new SchemaPlan.DiscriminatorChange(owner.name(), List.copyOf(types), initialType));
+            discriminators.add(new SchemaPlan.DiscriminatorChange(owner.name(), List.copyOf(types), initialType, existingCheck));
         }
         return extension.withExtension(newFiles, columns, discriminators);
+    }
+
+    private static String storedDiscriminatorCheck(Database db, String table, List<String> types) throws SQLException {
+        var names = new ArrayList<String>();
+        if (db.gpkg()) {
+            String values = types.stream().map(SchemaSql::literal).map(Pattern::quote).collect(Collectors.joining("\\s*,\\s*"));
+            var namedCheck = Pattern.compile("(?i:CONSTRAINT\\s+)(?:\"([^\"]+)\"|([a-zA-Z0-9_]+))"
+                    + "(?i:\\s+CHECK\\s*\\(\\s*\"?t_type\"?\\s+IN\\s*\\(\\s*)" + values + "\\s*\\)\\s*\\)");
+            try (var stmt = db.connection().prepareStatement("SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = ?")) {
+                stmt.setString(1, table);
+                try (var rows = stmt.executeQuery()) {
+                    if (rows.next()) {
+                        var matches = namedCheck.matcher(rows.getString(1));
+                        while (matches.find()) names.add(matches.group(1) == null ? matches.group(2) : matches.group(1));
+                    }
+                }
+            }
+        } else {
+            String sql = """
+                    SELECT c.conname, pg_get_expr(c.conbin, c.conrelid)
+                    FROM pg_constraint c JOIN pg_class t ON t.oid = c.conrelid
+                    JOIN pg_namespace n ON n.oid = t.relnamespace
+                    WHERE n.nspname = ? AND t.relname = ? AND c.contype = 'c'
+                    """;
+            String values = types.stream().map(SchemaSql::literal).collect(Collectors.joining(","));
+            try (var stmt = db.connection().prepareStatement(sql)) {
+                stmt.setString(1, db.schema());
+                stmt.setString(2, table);
+                try (var rows = stmt.executeQuery()) {
+                    while (rows.next()) {
+                        String expression = rows.getString(2).replaceAll("::character varying(?:\\[\\])?|::text(?:\\[\\])?|[()\\s]", "");
+                        if (expression.equals("t_type=ANYARRAY[" + values + "]")
+                                || types.size() == 1 && expression.equals("t_type=" + values)) {
+                            names.add(rows.getString(1));
+                        }
+                    }
+                }
+            }
+        }
+        if (names.size() != 1) throw new DbException("Expected one named T_Type check for " + table);
+        return names.getFirst();
     }
 
     private static void requireStoredDiscriminatorTypes(Database db, String table, List<String> types) throws SQLException {

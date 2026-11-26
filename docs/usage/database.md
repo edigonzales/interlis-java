@@ -326,7 +326,7 @@ eine bereits abgebildete Referenz für den neuen Typ weitere Zielspalten,
 bricht `--add-models` mit dem Namen der betroffenen Referenz ab.
 
 Im nullable Smart1-Profil ergänzt `--add-models` unabhängige Modelle und
-skalare Untertypen in einer bestehenden Tabelle mit `T_Type` ohne Typcheck.
+skalare Untertypen in einer bestehenden Tabelle mit `T_Type`.
 Die neuen Fachspalten sind nullable und übernehmen die aktiven SQL-Checks
 für Zahlen, Texte und Zeitwerte des Schemas. Die Liste der Typwerte umfasst auch
 Untertypen aus früheren Erweiterungen. Beim erneuten `--schemaimport` mit
@@ -335,6 +335,9 @@ Die Katalogreferenz ist hier der gemeinsame Schemaimport beider Modelle.
 Speicherte die Tabelle vorher genau einen konkreten Typ, ergänzt
 `--add-models` die Spalte `T_Type`, übernimmt den vorhandenen Typ in alle
 bisherigen Zeilen und setzt `NOT NULL`. Die Spalte erhält keinen Default.
+Bei `--create-type-constraint` erweitert `--add-models` auch einen eindeutig
+identifizierten benannten Typcheck. Ältere GeoPackage-Schemata mit anonymem
+Typcheck werden vor der DDL abgewiesen. Neue Typchecks erhalten einen Namen.
 
 In Smart1 und Smart2 kann ein neues Modell externe eingebettete Rollen auf
 Klassen in bereits abgebildeten Topics ergänzen. Die Rollenspalten stehen

@@ -81,7 +81,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
 
     record AddedColumn(String table, DbMapping.Column field, ColumnChecks checks) { }
 
-    record DiscriminatorChange(String table, List<String> types, Optional<String> initialType) {
+    record DiscriminatorChange(String table, List<String> types, Optional<String> initialType,
+                               Optional<String> existingCheck) {
         DiscriminatorChange { types = List.copyOf(types); }
     }
 

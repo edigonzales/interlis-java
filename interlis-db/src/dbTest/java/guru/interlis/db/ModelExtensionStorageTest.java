@@ -249,6 +249,63 @@ final class ModelExtensionStorageTest {
         }
     }
 
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void smart1ExtendsOnlyTheNamedTypeCheck(Backend backend, int version) throws Exception {
+        var fixture = new SmartModelExtensionFixtures(work, version, false, true);
+        var db = POSTGIS.target(work.resolve("checked-subtype.gpkg"), backend);
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource,
+                "--inheritance", "smart1", "--create-type-constraint");
+        assertCliSuccess(db, "import", fixture.original, "original", fixture.input(fixture.original, "original"));
+        var source = fixture.specializedSource();
+        String table = db.table("entry");
+        try (var sql = db.connect(); var statement = sql.createStatement()) {
+            statement.execute("ALTER TABLE " + table + " ADD CONSTRAINT keep_quantity CHECK (quantity IS NULL OR quantity >= 0)");
+            var checkpoints = new AtomicInteger();
+            var cancelled = schemaWithIdentityColumns(db, fixture.specialized, source,
+                    cancelDuringDdl(checkpoints, 2), "--add-models", "--model-file", fixture.originalSource.toString());
+            assertEquals(130, cancelled.code(), cancelled::diagnostics);
+            assertThrows(SQLException.class, () -> statement.executeUpdate("UPDATE " + table + " SET t_type = 'specializedentry'"));
+
+            assertCliSuccess(db, "schemaimport", fixture.specialized, null, source,
+                    "--add-models", "--model-file", fixture.originalSource.toString());
+            assertCliSuccess(db, "import", fixture.specialized, "added", fixture.specializedInput("added"));
+            assertEquals("specializedentry", scalar(sql, "SELECT t_type FROM " + table + " WHERE t_ili_tid='added-specialized'"));
+            assertThrows(SQLException.class, () -> statement.executeUpdate("UPDATE " + table + " SET t_type = 'unmapped'"));
+            assertThrows(SQLException.class, () -> statement.executeUpdate("UPDATE " + table + " SET quantity = -1"));
+
+            if (!db.postgis()) {
+                statement.execute("ALTER TABLE " + table + " DROP CONSTRAINT entry_t_type_check");
+                statement.execute("ALTER TABLE " + table + " ADD CHECK (t_type IN ('alternate','entry','specializedentry'))");
+                var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+                var further = fixture.subtypeSource("FurtherSmart" + version, "FurtherEntry", "Entry", "OtherExtra");
+                assertCliFailure(db, "schemaimport", "FurtherSmart" + version, null, further, "Expected one named T_Type check for entry",
+                        "--add-models", "--model-file", fixture.originalSource.toString());
+                before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+            }
+        }
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void smart1ExtendsANamedTypeCheckWithOneInitialType(Backend backend, int version) throws Exception {
+        var fixture = new SmartModelExtensionFixtures(work, version, false, false);
+        fixture.leaveOnlyOriginalEntry();
+        var db = POSTGIS.target(work.resolve("checked-single-type.gpkg"), backend);
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource,
+                "--inheritance", "smart1", "--create-type-discriminator", "--create-type-constraint");
+        assertCliSuccess(db, "import", fixture.original, "original", fixture.entryInput("original"));
+        assertCliSuccess(db, "schemaimport", fixture.specialized, null, fixture.specializedSource(),
+                "--add-models", "--model-file", fixture.originalSource.toString());
+        assertCliSuccess(db, "import", fixture.specialized, "added", fixture.specializedInput("added"));
+        try (var sql = db.connect(); var statement = sql.createStatement()) {
+            String table = db.table("entry");
+            assertEquals("entry", scalar(sql, "SELECT t_type FROM " + table + " WHERE t_ili_tid='original-entry'"));
+            assertEquals("specializedentry", scalar(sql, "SELECT t_type FROM " + table + " WHERE t_ili_tid='added-specialized'"));
+            assertThrows(SQLException.class, () -> statement.executeUpdate("UPDATE " + table + " SET t_type = 'unmapped'"));
+        }
+    }
+
     @ParameterizedTest(name = "{0}, XTF {1}, {2}")
     @CsvSource({"GEOPACKAGE,23,smart1", "GEOPACKAGE,24,smart1", "POSTGIS,23,smart1", "POSTGIS,24,smart1",
             "GEOPACKAGE,23,smart2", "GEOPACKAGE,24,smart2", "POSTGIS,23,smart2", "POSTGIS,24,smart2"})
