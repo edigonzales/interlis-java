@@ -78,6 +78,39 @@ final class SchemaProfileCases {
         }
     }
 
+    void requiredRoles(TestDatabase db) throws Exception {
+        String model = "ProfileRequiredRole" + version;
+        Path ili = fixtures.requiredRoleModel(model);
+        referenceSchema(db, ili, "--createFk");
+        Path output = work.resolve("required-role-output.xtf");
+        Path legacy = fixtures.data(model, "legacy",
+                fixtures.assignedAsset(model, "legacy", 42) + fixtures.assignedSite(model, "legacy"));
+        referenceImport(db, "legacy", legacy);
+        assertCliSuccess(db, "export", model, "legacy", output);
+        assertRequiredRole(output, "legacy");
+        Path nativeInput = fixtures.data(model, "native",
+                fixtures.assignedAsset(model, "native", 42) + fixtures.assignedSite(model, "native"));
+        assertCliSuccess(db, "import", model, "native", nativeInput);
+        referenceExport(db, "native", output);
+        assertRequiredRole(output, "native");
+        try (var sql = db.connect()) {
+            assertEquals(Set.of("legacy-asset:legacy-site", "native-asset:native-site"),
+                    catalogKeys(sql, "SELECT a.t_ili_tid || ':' || s.t_ili_tid FROM " + db.table("asset") + " a JOIN "
+                            + db.table("site") + " s ON s.t_id=a.assignedsite WHERE a.reviewsite IS NULL"));
+        }
+    }
+
+    private void assertRequiredRole(Path output, String prefix) throws Exception {
+        var asset = fixtures.rows(output, prefix, 2).stream()
+                .filter(row -> (prefix + "-asset").equals(id(row, version, "tid"))).findFirst().orElseThrow();
+        var role = child(asset, "AssignedSite");
+        String ref = version == 23 ? role.getAttribute("REF")
+                : role.getAttributeNS("http://www.interlis.ch/xtf/2.4/INTERLIS", "ref");
+        assertEquals(prefix + "-site", ref);
+        assertEquals("42", child(asset, "SerialNo").getTextContent());
+        assertNull(child(asset, "ReviewSite"));
+    }
+
     void foreignKeyProfiles(TestDatabase expected, TestDatabase own) throws Exception {
         String model = "ProfileFk" + version;
         Path ili = fixtures.linkedModel(model);

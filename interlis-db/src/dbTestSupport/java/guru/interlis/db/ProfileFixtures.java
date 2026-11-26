@@ -70,6 +70,31 @@ final class ProfileFixtures {
                 + object(model, "Target", prefix + "-target", "<Label>target</Label>"));
     }
 
+    Path requiredRoleModel(String model) throws IOException {
+        return source(model, """
+                CLASS Site = Label : MANDATORY TEXT*30; END Site;
+                CLASS Asset = SerialNo : MANDATORY 0..100; END Asset;
+                CLASS Other = END Other;
+                ASSOCIATION Assignment =
+                  AssignedSite -- {1} Site;
+                  Assets -- {0..*} Asset;
+                END Assignment;
+                ASSOCIATION Review =
+                  ReviewSite -- {0..1} Site;
+                  ReviewedAssets -- {0..*} Asset;
+                END Review;
+                """);
+    }
+
+    String assignedAsset(String model, String prefix, int serialNo) {
+        return object(model, "Asset", prefix + "-asset", "<SerialNo>" + serialNo + "</SerialNo>"
+                + reference("AssignedSite", prefix + "-site"));
+    }
+
+    String assignedSite(String model, String prefix) {
+        return object(model, "Site", prefix + "-site", "<Label>site</Label>");
+    }
+
     Path auditModel(String model) throws IOException {
         Path ili = linkedModel(model);
         return Files.writeString(ili, Files.readString(ili).replace("CLASS Asset = Label", """

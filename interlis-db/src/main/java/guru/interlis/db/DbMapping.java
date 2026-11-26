@@ -359,10 +359,11 @@ final class DbMapping {
     private final Map<SymbolRef, List<Composition>> byChild;
     private final List<EmbeddedAssociation> associations;
     private final Map<SymbolRef, SymbolRef> roleOwners;
+    private final Set<SymbolRef> requiredEmbeddedRoles;
 
     DbMapping(TransferPlan plan, LanguageVersion version, List<Table> tables, List<Composition> compositions,
               List<EmbeddedAssociation> associations, Optional<DbCrsPair> crsPair, List<SymbolRef> selectedModels,
-              DbInheritance inheritance, Set<Ili2dbLayout.SchemaOption> schemaOptions) {
+              DbInheritance inheritance, Set<Ili2dbLayout.SchemaOption> schemaOptions, Set<SymbolRef> notNullRoles) {
         this.plan = plan;
         this.schemaOptions = Set.copyOf(schemaOptions);
         this.inheritance = inheritance;
@@ -431,6 +432,9 @@ final class DbMapping {
         this.associations = List.copyOf(associations);
         roleOwners = associations.stream().filter(association -> !association.linkTable())
                 .collect(Collectors.toUnmodifiableMap(association -> association.role().symbol(), EmbeddedAssociation::owner));
+        requiredEmbeddedRoles = tables.stream().flatMap(table -> table.columns().stream()
+                .filter(column -> notNullRoles.contains(column.slot().symbol()) && simpleEmbeddedRole(table, column)))
+                .map(column -> column.slot().symbol()).collect(Collectors.toUnmodifiableSet());
     }
 
     private static Map<SymbolRef, List<Composition>> indexCompositions(List<Composition> compositions,
@@ -497,6 +501,25 @@ final class DbMapping {
     Collection<ObjectStorage> objectStorage() { return storage.values(); }
 
     Set<Ili2dbLayout.SchemaOption> schemaOptions() { return schemaOptions; }
+
+    boolean requiredEmbeddedRole(Column column) { return requiredEmbeddedRoles.contains(column.slot().symbol()); }
+
+    boolean simpleEmbeddedRole(Table table, Column column) {
+        if (profile() != DbInheritance.Profile.NEW_CLASS || column.kind() != Kind.REFERENCE
+                || !(column.slot() instanceof RoleSlot) || column.external() || column.positionColumn().isPresent()
+                || column.referenceTable().isPresent() || !table.object().symbol().equals(roleOwners.get(column.slot().symbol()))) {
+            return false;
+        }
+        var target = table(column.targetRelation());
+        return flatClass(table) && flatClass(target)
+                && associationsForOwner(associations, table.object().symbol()).stream()
+                .anyMatch(association -> association.role().symbol().equals(column.slot().symbol()) && !association.ownerRole().single());
+    }
+
+    private boolean flatClass(Table table) {
+        return table.object().kind() == SymbolKind.CLASS && !table.subtype()
+                && !table.object().modifiers().contains(Modifier.ABSTRACT) && !hasSubtypes(plan, table.object().symbol());
+    }
     boolean hasBasketColumn() { return schemaOptions.contains(Ili2dbLayout.SchemaOption.BASKET_COLUMN); }
     boolean storesTransferTids() { return schemaOptions.contains(Ili2dbLayout.SchemaOption.TID_COLUMN); }
 
@@ -867,7 +890,8 @@ final class DbMapping {
                     schemaOptions.contains(Ili2dbLayout.SchemaOption.TID_COLUMN), secondary));
         }
         var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
-        var mapping = new DbMapping(plan, version, tables, compositions, associations, crsPair, plan.rootModels(), inheritance, schemaOptions);
+        var mapping = new DbMapping(plan, version, tables, compositions, associations, crsPair, plan.rootModels(),
+                inheritance, schemaOptions, Set.of());
         mapping.checkEnumLookupIds(enumOptions);
         return mapping;
     }

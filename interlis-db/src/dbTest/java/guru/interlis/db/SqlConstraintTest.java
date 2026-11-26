@@ -327,6 +327,55 @@ final class SqlConstraintTest {
         });
     }
 
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void requiredRoleReservesTargetIdInBasket(Backend backend, int version) throws Exception {
+        withDatabase(backend, db -> {
+            String model = "SqlRequiredRole";
+            var fixture = new ProfileFixtures(work, version);
+            var modelFile = fixture.requiredRoleModel(model);
+            DbTestSupport.assertSchemaWithIdentityColumns(db, model, modelFile, "--create-fk");
+            try (var sql = db.connect()) {
+                if (db.postgis()) {
+                    execute(sql, "ALTER TABLE " + db.table("asset") + " ALTER COLUMN assignedsite SET NOT NULL");
+                } else {
+                    execute(sql, "DROP TABLE asset");
+                    execute(sql, """
+                            CREATE TABLE asset (t_id INTEGER PRIMARY KEY, t_basket INTEGER NOT NULL,
+                                t_ili_tid TEXT(255), serialno INTEGER, assignedsite INTEGER NOT NULL
+                                REFERENCES site(t_id) DEFERRABLE INITIALLY DEFERRED, reviewsite INTEGER)
+                            """);
+                }
+                execute(sql, "DELETE FROM " + db.table("t_ili2db_settings") + " WHERE tag='ch.ehi.ili2db.SqlNull'");
+            }
+            String forward = "forward";
+            String backward = "backward";
+            assertCliSuccess(db, "import", model, forward, fixture.data(model, forward,
+                    fixture.assignedAsset(model, forward, 1) + fixture.assignedSite(model, forward)));
+            assertCliSuccess(db, "import", model, backward, fixture.data(model, backward,
+                    fixture.assignedSite(model, backward) + fixture.assignedAsset(model, backward, 2)));
+            try (var sql = db.connect()) {
+                String query = "SELECT a.t_id || ':' || s.t_id FROM " + db.table("asset") + " a JOIN "
+                        + db.table("site") + " s ON s.t_id=a.assignedsite WHERE a.t_ili_tid='forward-asset' AND s.t_ili_tid='forward-site'";
+                String identity = scalar(sql, query);
+                assertTrue(identity.matches("[0-9]+:[0-9]+"), identity);
+                assertCliSuccess(db, "update", model, forward, fixture.data(model, forward,
+                        fixture.assignedAsset(model, forward, 3) + fixture.assignedSite(model, forward)));
+                assertEquals(identity, scalar(sql, query));
+                assertCliFailure(db, "update", model, forward, fixture.data(model, forward,
+                        fixture.assignedAsset(model, forward, 4)), "Cannot encode reference from forward-asset");
+                assertCliFailure(db, "import", model, "broken", fixture.data(model, "broken",
+                        fixture.assignedAsset(model, "broken", 5)
+                                + fixture.object(model, "Other", "broken-site", "")), "Cannot encode reference from broken-asset");
+                assertEquals(identity, scalar(sql, query));
+                assertEquals("3", scalar(sql, "SELECT serialno FROM " + db.table("asset") + " WHERE t_ili_tid='forward-asset'"));
+                assertRolledBack(db, sql, 2, 2);
+                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("site")));
+                assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("other")));
+            }
+        });
+    }
+
     private static void assertRolledBack(Target db, Connection sql, int objects, int datasets) throws SQLException {
         assertEquals(Integer.toString(objects), scalar(sql, "SELECT count(*) FROM " + db.table("asset")));
         assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("asset") + " WHERE t_ili_tid LIKE 'broken-%'"));

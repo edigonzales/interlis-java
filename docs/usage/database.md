@@ -875,6 +875,11 @@ Rolle zur 1-Seite `{0..1}` oder `{1}`. Die Tabelle der n-Seite speichert die
 Ziel-ID. Bei 1:1 hat jede Rolle `{0..1}` oder `{1}`. Die Tabelle der zweiten
 deklarierten Rolle speichert die Ziel-ID der ersten Rolle. Die Rollenspalte
 erlaubt unter `--sqlEnableNull` SQL `NULL`.
+In bestehenden strikten `newClass`-Schemata unterstützt der Import einfache
+lokale 1:n-Pflichtrollen zwischen flachen Klassen mit einer Zieltabelle.
+Bei Vorwärtsreferenzen reserviert er die SQL-ID im Basket und belegt die
+Rollenspalte beim Einfügen. Ein vorhandener Fremdschlüssel ist wie bei
+ili2db `--createFk` aufgeschoben.
 
 Rollen dürfen auf beiden Seiten Klassen in Vererbungshierarchien deklarieren,
 einschliesslich abstrakter Basisklassen. Die Rollenspalte liegt in der

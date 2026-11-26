@@ -19,6 +19,7 @@ import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
 import guru.interlis.transfer.AttributeSlot;
+import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.TransferPlan;
 
@@ -88,7 +89,8 @@ final class DbSchemaReader {
     private record Transformations(Map<String, String> classes, Map<String, String> secondary,
                                    Map<String, Ili2dbLayout.AttributeTransformation> attributes) { }
 
-    private record CatalogTable(String name, Map<String, String> columns, Set<String> used) { }
+    private record CatalogTable(String name, Map<String, String> columns, Set<String> notNull, Set<String> used) { }
+    private record PhysicalColumns(Map<String, String> types, Set<String> notNull) { }
 
     private DbSchemaReader() { }
 
@@ -419,8 +421,13 @@ final class DbSchemaReader {
             attrNames.ignoreOwners(unselectedOwners);
         }
         if (!attrNames.isEmpty()) throw new DbException("Extra ATTRNAME mappings for " + modelName);
+        var notNullRoles = tables.stream().flatMap(table -> {
+            var notNull = catalog.get(table.object().symbol()).notNull();
+            return table.columns().stream().filter(column -> column.slot() instanceof RoleSlot
+                    && notNull.contains(key(db, column.name())));
+        }).map(column -> column.slot().symbol()).collect(Collectors.toUnmodifiableSet());
         var mapping = new DbMapping(plan, version, tables, compositions, associations, crsPair, requestedRoots,
-                layout, settings.schemaOptions());
+                layout, settings.schemaOptions(), notNullRoles);
         mapping.checkEnumLookupIds(settings.enumOptions());
         return mapping;
     }
@@ -456,7 +463,8 @@ final class DbSchemaReader {
             token.throwIfCancellationRequested();
             var object = relation.object();
             String name = relation.declaration().sqlName();
-            var physical = physicalColumns(db, name);
+            var physicalColumns = readPhysicalColumns(db, name);
+            var physical = physicalColumns.types();
             requireIdPrimaryKey(db, name);
             var used = bindRowIdentity(db, name, physical, settings);
             bindAdditionalColumns(db, name, physical, used, settings);
@@ -480,7 +488,7 @@ final class DbSchemaReader {
                 requireColumns(db, name, physical, Map.of(T_SEQ, Kind.REFERENCE));
                 used.add(T_SEQ);
             }
-            result.put(object.symbol(), new CatalogTable(name, physical, used));
+            result.put(object.symbol(), new CatalogTable(name, physical, physicalColumns.notNull(), used));
         }
         return result;
     }
@@ -1203,6 +1211,10 @@ final class DbSchemaReader {
     }
 
     private static Map<String, String> physicalColumns(Database db, String name) throws SQLException {
+        return readPhysicalColumns(db, name).types();
+    }
+
+    private static PhysicalColumns readPhysicalColumns(Database db, String name) throws SQLException {
         var metadata = db.connection().getMetaData();
         String catalog = db.connection().getCatalog();
         String escape = metadata.getSearchStringEscape();
@@ -1214,12 +1226,15 @@ final class DbSchemaReader {
             }
         }
         var columns = new HashMap<String, String>();
+        var notNull = new HashSet<String>();
         try (var rows = metadata.getColumns(catalog, schemaPattern, pattern, null)) {
             while (rows.next()) {
-                columns.put(key(db, rows.getString("COLUMN_NAME")), rows.getString("TYPE_NAME").toLowerCase(Locale.ROOT));
+                String column = key(db, rows.getString("COLUMN_NAME"));
+                columns.put(column, rows.getString("TYPE_NAME").toLowerCase(Locale.ROOT));
+                if (rows.getInt("NULLABLE") == DatabaseMetaData.columnNoNulls && !rows.wasNull()) notNull.add(column);
             }
         }
-        return columns;
+        return new PhysicalColumns(columns, notNull);
     }
 
     private static String searchPattern(String name, String escape) {

@@ -29,6 +29,16 @@ final class SchemaProfileInteropTest {
                 .modelNullability(expected, expected.peer("profile_nullability_own"));
     }
 
+    @Test void geoPackageProfileRequiredRoles23() throws Exception { exchangeProfileRequiredRoles(23, null); }
+    @Test void geoPackageProfileRequiredRoles24() throws Exception { exchangeProfileRequiredRoles(24, null); }
+    @Test void postgisProfileRequiredRoles23() throws Exception { exchangeProfileRequiredRoles(23, POSTGIS.container()); }
+    @Test void postgisProfileRequiredRoles24() throws Exception { exchangeProfileRequiredRoles(24, POSTGIS.container()); }
+
+    private void exchangeProfileRequiredRoles(int version, PostgreSQLContainer postgres) throws Exception {
+        var expected = new TestDatabase(work, postgres, "profile_required_role_ref", "v" + version + "_");
+        new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version).requiredRoles(expected);
+    }
+
     @Test void geoPackageProfileForeignKeys23() throws Exception { exchangeProfileForeignKeys(23, null); }
     @Test void geoPackageProfileForeignKeys24() throws Exception { exchangeProfileForeignKeys(24, null); }
     @Test void postgisProfileForeignKeys23() throws Exception { exchangeProfileForeignKeys(23, POSTGIS.container()); }
