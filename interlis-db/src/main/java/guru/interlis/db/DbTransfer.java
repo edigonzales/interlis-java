@@ -83,7 +83,7 @@ final class DbTransfer {
 
     private DbTransfer() { }
 
-    static void exportData(Database db, DbMapping mapping, List<String> requestedModels, String dataset,
+    static void exportData(Database db, DbMapping mapping, List<String> requestedModels, List<String> datasets,
                            List<String> bids, List<String> requestedTopics, Optional<String> outputModel,
                            TransferWriter writer, CancellationToken token) throws SQLException {
         token.throwIfCancellationRequested();
@@ -116,10 +116,14 @@ final class DbTransfer {
             selection = ExportBaskets.byValues("topic", requestedTopics);
         } else if (!bids.isEmpty()) {
             selection = ExportBaskets.byValues(T_ILI_TID, bids);
-        } else if (dataset != null) {
-            long datasetId = DbDatasetWrite.findDataset(db, dataset)
-                    .orElseThrow(() -> new DbException("Dataset does not exist: " + dataset));
-            selection = new ExportBaskets("dataset = ?", List.of(datasetId));
+        } else if (!datasets.isEmpty()) {
+            var datasetIds = new ArrayList<Long>();
+            for (String dataset : datasets) {
+                token.throwIfCancellationRequested();
+                datasetIds.add(DbDatasetWrite.findDataset(db, dataset)
+                        .orElseThrow(() -> new DbException("Dataset does not exist: " + dataset)));
+            }
+            selection = ExportBaskets.byValues("dataset", datasetIds);
         } else {
             var modelNames = mapping.crsPair().isPresent() ? requestedModels : mapping.models().stream()
                     .map(ref -> plan.model(ref).orElseThrow().name().declared().last()).toList();
@@ -132,7 +136,7 @@ final class DbTransfer {
             selectedTopics.put(name, exportTopic(mapping, stored, output));
         }
         if (selectedTopics.isEmpty()) {
-            throw new DbException(dataset != null ? "Dataset has no baskets: " + dataset
+            throw new DbException(!datasets.isEmpty() ? "Dataset has no baskets: " + String.join(", ", datasets)
                     : "No baskets in the selected models: " + String.join(", ", requestedModels));
         }
         var exported = selectedTopics.values().stream().map(topic -> topic.output().model()).collect(Collectors.toSet());
@@ -191,7 +195,7 @@ final class DbTransfer {
     private record ExportBaskets(String condition, List<?> parameters) {
         private static final ExportBaskets UNPARTITIONED = new ExportBaskets("", List.of());
 
-        static ExportBaskets byValues(String column, List<String> values) {
+        static ExportBaskets byValues(String column, List<?> values) {
             return new ExportBaskets(column + " IN (" + String.join(", ", Collections.nCopies(values.size(), "?")) + ")", values);
         }
 

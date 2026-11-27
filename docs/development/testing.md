@@ -542,6 +542,9 @@ Importe und den Modellexport über Datensatzgrenzen hinweg aus derselben
 Referenzdatenbank. Die Auswahl `*MissingBid*` vergleicht den BID-Ersatzwert
 nach einem Referenzimport ohne `--importBid` und die Auflösung externer
 Verweise auf enthaltene und ausgelassene Zielbaskets.
+`--tests '*ExportSelectionInteropTest.*Datasets*'` prüft den gemeinsamen
+Export mehrerer Datensätze samt datensatzübergreifender Referenz und
+gegenseitigem Wiederimport.
 
 `--tests '*TranslationInteropTest'` bündelt skalare und verschachtelte
 Baskets im Katalogvergleich und Werkzeugwechsel. Ein weiterer Fall

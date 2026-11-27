@@ -35,7 +35,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 public final class Main {
     private static final String USAGE = """
             Usage: interlis-db export --model NAME [--model NAME]... [--export-model NAME]
-                    [--dataset NAME | --basket BID [--basket BID]... | --topic MODEL.TOPIC [--topic MODEL.TOPIC]...]
+                    [--dataset NAME [--dataset NAME]... | --basket BID [--basket BID]... | --topic MODEL.TOPIC [--topic MODEL.TOPIC]...]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
                    interlis-db import --model NAME [--model NAME]... [--dataset NAME] [--raw-scalar-text]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
@@ -58,7 +58,7 @@ public final class Main {
                     [--stroke-arcs] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
             Import names a dataset from the input file when --dataset is omitted in a schema with T_basket.
-            Export selects whole models by default, or the given dataset, baskets or topics.
+            Export selects whole models by default, or the given datasets, baskets or topics.
             --create-tid-col preserves ordinary transfer IDs. Concrete object OIDs are always stored.
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.
             """;
@@ -230,7 +230,7 @@ public final class Main {
                          case ILI23 -> Xtf23Writer.forIli2db(mapping.plan(), output);
                          case ILI24 -> new Xtf24Writer(mapping.plan(), output);
                      }) {
-                    DbTransfer.exportData(database, mapping, options.models(), options.dataset(), options.baskets(), options.topics(),
+                    DbTransfer.exportData(database, mapping, options.models(), options.datasets(), options.baskets(), options.topics(),
                             options.exportModel(), writer, cancellation);
                 }
                 database.commit();
@@ -245,7 +245,7 @@ public final class Main {
     private enum Command { IMPORT, REPLACE, UPDATE, DELETE, EXPORT, SCHEMAIMPORT }
 
     private static void checkTransferOptions(DbMapping mapping, Options options) {
-        if (!mapping.hasBasketColumn() && options.dataset() != null) {
+        if (!mapping.hasBasketColumn() && !options.datasets().isEmpty()) {
             throw new DbException("Dataset operations require a schema created with --create-basket-col");
         }
         boolean filtered = !options.baskets().isEmpty() || !options.topics().isEmpty();
@@ -254,7 +254,7 @@ public final class Main {
         }
     }
 
-    private record Options(Command command, List<String> models, String dataset, Path file, String fileArgument, Path gpkg,
+    private record Options(Command command, List<String> models, List<String> datasets, Path file, String fileArgument, Path gpkg,
                            String pgUrl, String schema, String user, boolean createGeometryIndexes,
                            boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean addModels,
                            boolean explicitEpsg, boolean explicitLayout, boolean strokeArcs, DbEnumOptions enumOptions,
@@ -262,11 +262,15 @@ public final class Main {
                            List<String> baskets, List<String> topics,
                            DbInheritance.Profile inheritance, Set<Ili2dbLayout.AttributeTransformation> transformations,
                            Set<Ili2dbLayout.SchemaOption> schemaOptions, boolean rawScalarText, boolean sqlNotNull) {
-        private static final Set<String> NAMES = Set.of("--dataset", "--gpkg", "--pg-url", "--schema", "--user",
+        private static final Set<String> NAMES = Set.of("--gpkg", "--pg-url", "--schema", "--user",
                 "--default-epsg", "--alt-srs-model", "--export-model", "--inheritance");
 
         private static final Set<String> ENUM_OPTIONS = Set.of("--create-enum-col-as-itf-code",
                 "--create-enum-txt-col", "--beautify-enum-disp-name", "--create-single-enum-tab", "--create-enum-tabs", "--create-enum-tabs-with-id");
+
+        String dataset() {
+            return datasets.isEmpty() ? null : datasets.getFirst();
+        }
 
         static Options parse(String[] args) {
             Command command = switch (args.length == 0 ? "" : args[0]) {
@@ -286,6 +290,7 @@ public final class Main {
             var schemaOptions = EnumSet.noneOf(Ili2dbLayout.SchemaOption.class);
             var modelFiles = new ArrayList<Path>();
             var models = new ArrayList<String>();
+            var datasets = new ArrayList<String>();
             var baskets = new ArrayList<String>();
             var topics = new ArrayList<String>();
             boolean rawScalarText = false;
@@ -322,12 +327,21 @@ public final class Main {
                     var source = Path.of(args[i]).toAbsolutePath().normalize();
                     if (modelFiles.contains(source)) throw new IllegalArgumentException("Repeated model file " + source);
                     modelFiles.add(source);
-                } else if (arg.equals("--basket") || arg.equals("--topic")) {
-                    if (command != Command.EXPORT) throw new IllegalArgumentException(arg + " is only valid with export");
+                } else if (arg.equals("--dataset") || arg.equals("--basket") || arg.equals("--topic")) {
+                    if (command != Command.EXPORT && !arg.equals("--dataset")) {
+                        throw new IllegalArgumentException(arg + " is only valid with export");
+                    }
                     if (++i == args.length || args[i].isBlank() || args[i].startsWith("--")) {
                         throw new IllegalArgumentException("Missing value for " + arg);
                     }
-                    var selection = arg.equals("--basket") ? baskets : topics;
+                    if (arg.equals("--dataset") && command != Command.EXPORT && !datasets.isEmpty()) {
+                        throw new IllegalArgumentException("Repeated option --dataset");
+                    }
+                    var selection = switch (arg) {
+                        case "--dataset" -> datasets;
+                        case "--basket" -> baskets;
+                        default -> topics;
+                    };
                     if (selection.contains(args[i])) throw new IllegalArgumentException("Repeated " + arg + " value " + args[i]);
                     selection.add(args[i]);
                 } else if (arg.startsWith("--")) {
@@ -348,8 +362,7 @@ public final class Main {
                     file = Path.of(arg).toAbsolutePath().normalize();
                 }
             }
-            String dataset = flags.get("--dataset");
-            if ((dataset != null && (!baskets.isEmpty() || !topics.isEmpty())) || (!baskets.isEmpty() && !topics.isEmpty())) {
+            if ((!datasets.isEmpty() && (!baskets.isEmpty() || !topics.isEmpty())) || (!baskets.isEmpty() && !topics.isEmpty())) {
                 throw new IllegalArgumentException("Choose one of --dataset, --basket or --topic");
             }
             var exportModel = Optional.ofNullable(flags.get("--export-model"));
@@ -360,15 +373,15 @@ public final class Main {
                 if (file == null || file.getParent() == null || models.isEmpty()) {
                     throw new IllegalArgumentException("An .ili path and --model are required");
                 }
-                if (dataset != null) throw new IllegalArgumentException("--dataset is not valid with schemaimport");
+                if (!datasets.isEmpty()) throw new IllegalArgumentException("--dataset is not valid with schemaimport");
                 if (modelFiles.contains(file)) throw new IllegalArgumentException("Repeated model file " + file);
             } else if (command == Command.DELETE) {
-                if (file != null || models.isEmpty() || dataset == null) {
+                if (file != null || models.isEmpty() || datasets.isEmpty()) {
                     throw new IllegalArgumentException("delete requires --model and --dataset without a file");
                 }
             } else if (file == null || file.getParent() == null || models.isEmpty()) {
                 throw new IllegalArgumentException("An XTF path and --model are required");
-            } else if ((command == Command.UPDATE || command == Command.REPLACE) && dataset == null) {
+            } else if ((command == Command.UPDATE || command == Command.REPLACE) && datasets.isEmpty()) {
                 throw new IllegalArgumentException("update and replace require --dataset");
             }
             String gpkgPath = flags.get("--gpkg");
@@ -453,7 +466,7 @@ public final class Main {
                     schemaFlags.contains("--create-enum-txt-col"), schemaFlags.contains("--beautify-enum-disp-name"),
                     enumLookup);
             var srsModels = Optional.ofNullable(alternateSrsModel).map(value -> DbCrsPair.Models.parse(value, models.getFirst()));
-            return new Options(command, List.copyOf(models), dataset, file, fileArgument, gpkg, pgUrl, schema, user,
+            return new Options(command, List.copyOf(models), List.copyOf(datasets), file, fileArgument, gpkg, pgUrl, schema, user,
                     schemaFlags.contains("--create-geom-index"),
                     oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg, multiSrs, addModels,
                     epsg != null, oneGeometryPerTable || multipleGeoPackageGeometries, strokeArcs, enumOptions, srsModels,

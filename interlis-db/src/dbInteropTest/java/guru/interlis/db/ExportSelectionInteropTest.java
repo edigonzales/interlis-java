@@ -49,6 +49,64 @@ final class ExportSelectionInteropTest {
     @Test void postgisMissingBid23() throws Exception { exchangeMissingBid(23, POSTGIS.container()); }
     @Test void postgisMissingBid24() throws Exception { exchangeMissingBid(24, POSTGIS.container()); }
 
+    @Test void geoPackageDatasets23() throws Exception { exchangeDatasets(23, null); }
+    @Test void geoPackageDatasets24() throws Exception { exchangeDatasets(24, null); }
+    @Test void postgisDatasets23() throws Exception { exchangeDatasets(23, POSTGIS.container()); }
+    @Test void postgisDatasets24() throws Exception { exchangeDatasets(24, POSTGIS.container()); }
+
+    private void exchangeDatasets(int version, PostgreSQLContainer postgres) throws Exception {
+        var fixture = new ExportSelectionFixtures(work, version);
+        var db = new TestDatabase(work, postgres, "dataset_export", "v" + version + "_");
+        var reference = new ReferenceTool(work, db.postgis());
+        schema(reference, db, work, fixture.model, "newClass");
+        importDataset(reference, db, "places", fixture.delivery("places",
+                fixture.basket("Data", "places-b", fixture.place("target"))));
+        assertCliSuccess(db, "import", fixture.model, "surveys", fixture.delivery("surveys",
+                fixture.basket("Data", "surveys-b", fixture.survey("source", "target", "places-b"))));
+        importDataset(reference, db, "unused", fixture.delivery("unused",
+                fixture.basket("Data", "unused-b", fixture.place("other"))));
+
+        var nativeOutput = work.resolve("native-datasets.xtf");
+        var referenceOutput = work.resolve("reference-datasets.xtf");
+        assertCliSuccess(db, "export", fixture.model, null, nativeOutput, "--dataset", "surveys", "--dataset", "places");
+        exportDataset(reference, db, "surveys;places", referenceOutput);
+        assertDatasetsExport(fixture, version, nativeOutput);
+        assertDatasetsExport(fixture, version, referenceOutput);
+        assertEquals(List.of("places-b", "surveys-b"), fixture.baskets(nativeOutput).stream()
+                .map(basket -> id(basket, version, "bid")).toList());
+
+        var nativeTarget = db.peer("dataset_export_import_native");
+        var referenceTarget = db.peer("dataset_export_import_reference");
+        assertSchemaWithIdentityColumns(nativeTarget, fixture.model, fixture.source);
+        assertSchemaWithIdentityColumns(referenceTarget, fixture.model, fixture.source);
+        assertCliSuccess(nativeTarget, "import", fixture.model, "combined", referenceOutput);
+        importDataset(reference, referenceTarget, "combined", nativeOutput);
+        for (var target : List.of(nativeTarget, referenceTarget)) {
+            try (var sql = target.connect()) {
+                assertEquals("source:target:combined:combined", scalar(sql, """
+                        SELECT s.t_ili_tid || ':' || p.t_ili_tid || ':' || sd.datasetname || ':' || pd.datasetname
+                        FROM %s s JOIN %s r ON r.survey_pointervalue=s.t_id JOIN %s p ON p.t_id=r.destination
+                        JOIN %s sb ON sb.t_id=s.t_basket JOIN %s pb ON pb.t_id=p.t_basket
+                        JOIN %s sd ON sd.t_id=sb.dataset JOIN %s pd ON pd.t_id=pb.dataset
+                        """.formatted(target.table("survey"), target.table("pointer"), target.table("place"),
+                            target.table("t_ili2db_basket"), target.table("t_ili2db_basket"),
+                            target.table("t_ili2db_dataset"), target.table("t_ili2db_dataset"))));
+            }
+        }
+    }
+
+    private static void assertDatasetsExport(ExportSelectionFixtures fixture, int version, Path output) throws Exception {
+        var baskets = fixture.baskets(output);
+        assertEquals(2, baskets.size());
+        assertEquals(Set.of("places-b", "surveys-b"), baskets.stream().map(basket -> id(basket, version, "bid"))
+                .collect(java.util.stream.Collectors.toSet()));
+        var place = baskets.stream().filter(basket -> id(basket, version, "bid").equals("places-b")).findFirst().orElseThrow();
+        assertEquals("target", id(DbTestSupport.children(place).getFirst(), version, "tid"));
+        var survey = baskets.stream().filter(basket -> id(basket, version, "bid").equals("surveys-b")).findFirst().orElseThrow();
+        assertEquals("source", id(DbTestSupport.children(survey).getFirst(), version, "tid"));
+        assertEquals("target", id(fixture.surveyReference(survey), version, "ref"));
+    }
+
     private void exchangeMissingBid(int version, PostgreSQLContainer postgres) throws Exception {
         var fixture = new ExportSelectionFixtures(work, version);
         var db = new TestDatabase(work, postgres, "missing_bid", "v" + version + "_");

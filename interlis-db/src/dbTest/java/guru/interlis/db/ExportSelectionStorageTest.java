@@ -238,6 +238,51 @@ final class ExportSelectionStorageTest {
         assertRejected(db, fixture.model, output, "Missing stable basket OID in " + fixture.model + ".Data");
     }
 
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void datasetUnionChecksNamesAndIdentitiesBeforePublishing(Backend backend, int version) throws Exception {
+        var fixture = new ExportSelectionFixtures(work, version);
+        var db = POSTGIS.target(work.resolve("dataset-union.gpkg"), backend);
+        assertSchemaWithIdentityColumns(db, fixture.model, fixture.source);
+        var first = fixture.delivery("first", fixture.basket("Data", "a-b", fixture.asset("shared", "first", false)));
+        assertCliSuccess(db, "import", fixture.model, "a", first);
+        assertCliSuccess(db, "import", fixture.model, "b",
+                fixture.delivery("second", fixture.basket("Data", "b-b", fixture.asset("different", "second", false))));
+        var output = work.resolve("published.xtf");
+        assertCliSuccess(db, "export", fixture.model, null, output, "--dataset", "b", "--dataset", "a");
+        assertEquals(List.of("Data:a-b:shared:first", "Data:b-b:different:second"), fixture.exportedAssets(output));
+        assertRejected(db, fixture.model, output, "Dataset does not exist: unknown", "--dataset", "a", "--dataset", "unknown");
+
+        byte[] published = Files.readAllBytes(output);
+        var filters = cli(db, "export", fixture.model, "a", output, CancellationToken.none(),
+                "--dataset", "b", "--basket", "b-b");
+        assertEquals(2, filters.code(), filters::diagnostics);
+        assertTrue(filters.diagnostics().contains("Choose one of --dataset, --basket or --topic"), filters::diagnostics);
+        assertArrayEquals(published, Files.readAllBytes(output));
+        var write = cli(db, "import", fixture.model, "a", first, CancellationToken.none(), "--dataset", "b");
+        assertEquals(2, write.code(), write::diagnostics);
+        assertTrue(write.diagnostics().contains("Repeated option --dataset"), write::diagnostics);
+
+        try (var sql = db.connect()) {
+            execute(sql, "UPDATE " + db.table("asset") + " SET t_ili_tid='shared' WHERE t_ili_tid='different'");
+        }
+        assertRejected(db, fixture.model, output, "Duplicate object ID shared", "--dataset", "a", "--dataset", "b");
+        String datasets = db.table("t_ili2db_dataset");
+        try (var sql = db.connect()) {
+            execute(sql, "UPDATE " + db.table("asset") + " SET t_ili_tid='different' WHERE label='second'");
+            execute(sql, "UPDATE " + db.table("t_ili2db_basket") + " SET t_ili_tid='a-b' WHERE t_ili_tid='b-b'");
+        }
+        assertRejected(db, fixture.model, output, "Duplicate basket ID a-b", "--dataset", "a", "--dataset", "b");
+        try (var sql = db.connect()) {
+            execute(sql, "ALTER TABLE " + datasets + " RENAME TO original_dataset");
+            execute(sql, "CREATE TABLE " + datasets + " (t_id "
+                    + (db.postgis() ? "BIGINT" : "INTEGER") + " PRIMARY KEY, datasetname VARCHAR(200))");
+            execute(sql, "INSERT INTO " + datasets + " SELECT * FROM " + db.table("original_dataset"));
+            execute(sql, "INSERT INTO " + datasets + " (t_id, datasetname) VALUES (10000,'b')");
+        }
+        assertRejected(db, fixture.model, output, "Dataset name is ambiguous: b", "--dataset", "a", "--dataset", "b");
+    }
+
     private static void assertRejected(Target db, String model, Path output, String diagnostic, String... options) throws Exception {
         var original = Files.readAllBytes(output);
         var result = cli(db, "export", model, null, output, CancellationToken.none(), options);
