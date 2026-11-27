@@ -78,6 +78,39 @@ final class DatasetMutationTest {
         updateExternalReferences(database(backend, "update-external"));
     }
 
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void stableUpdateRejectsClassWithoutOidInDeliveredTopic(Backend backend, int version) throws Exception {
+        this.version = version;
+        String model = "DbMutStable" + version;
+        Path ili = copyModel(model);
+        String source = Files.readString(ili).replace("  END Data;",
+                "    CLASS OrdinaryItem = Label : TEXT*40; END OrdinaryItem;\n  END Data;");
+        Files.writeString(ili, source);
+        var db = database(backend, "mixed-oids");
+        assertCliSuccess(db, "schemaimport", model, null, ili, "--create-basket-col");
+
+        String bid = identity("mixed-basket", true);
+        String oid = identity("stable-item", true);
+        Path original = delivery("mixed-original", model, new Basket(bid, item(model, oid, "before")
+                + object(model, "OrdinaryItem", "plain", "<Label>ordinary</Label>")));
+        assertCliSuccess(db, "import", model, "main", original);
+        Path changed = delivery("mixed-update", model, new Basket(bid, item(model, oid, "after")));
+        try (var sql = db.connect()) {
+            var before = rows(db, sql, "mutationitem");
+            String ordinary = "SELECT t_id || ':' || t_basket || ':' || label FROM " + db.table("ordinaryitem");
+            String beforeOrdinary = scalar(sql, ordinary);
+            assertTrue(beforeOrdinary.endsWith(":ordinary"));
+            var rejected = cli(db, "update", model, "main", changed, CancellationToken.none());
+            assertNotEquals(0, rejected.code(), rejected::diagnostics);
+            assertTrue(rejected.diagnostics().contains("Cannot update basket " + bid), rejected::diagnostics);
+            assertTrue(rejected.diagnostics().contains(model + ".Data.OrdinaryItem has no stored object OID"),
+                    rejected::diagnostics);
+            assertEquals(before, rows(db, sql, "mutationitem"));
+            assertEquals(beforeOrdinary, scalar(sql, ordinary));
+        }
+    }
+
     private Target database(Backend backend, String name) {
         return POSTGIS.target(work.resolve(name + ".gpkg"), backend);
     }
@@ -281,7 +314,8 @@ final class DatasetMutationTest {
 
     private void updateFlat(Target db, boolean stable) throws Exception {
         String model = (stable ? "DbMutStable" : "DbMutation") + version;
-        schema(db, model);
+        if (stable) assertCliSuccess(db, "schemaimport", model, null, copyModel(model), "--create-basket-col");
+        else schema(db, model);
         String main = identity("main", stable);
         String later = identity("later", stable);
         String clear = identity("clear", stable);
@@ -710,13 +744,17 @@ final class DatasetMutationTest {
     }
 
     private void schema(Target db, String model) throws Exception {
+        assertSchemaWithIdentityColumns(db, model, copyModel(model));
+    }
+
+    private Path copyModel(String model) throws Exception {
         Path ili = work.resolve(model + ".ili");
         if (Files.notExists(ili)) {
             try (var resource = DatasetMutationTest.class.getResourceAsStream("/" + ili.getFileName())) {
                 Files.copy(resource, ili);
             }
         }
-        assertSchemaWithIdentityColumns(db, model, ili);
+        return ili;
     }
 
     private Path mutate(Target db, String operation, String model, String dataset, Path transfer) throws Exception {

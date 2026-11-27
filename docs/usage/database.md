@@ -437,10 +437,13 @@ Lieferung verwenden die bestehende Suche im selben Schema.
 
 ## Baskets aktualisieren
 
-`update` verwendet dieselben Optionen wie der datensatzbezogene Import
-und setzt ein Schema mit `--create-tid-col` voraus. Ein fehlender Datensatz
-wird angelegt. Jeder gelieferte Basket enthält seinen vollständigen neuen
-Bestand. Vorhandene Baskets und überlebende Objekte behalten ihre internen IDs.
+`update` verwendet dieselben Optionen wie der datensatzbezogene Import.
+Ohne `--create-tid-col` setzt jeder gelieferte Basket eine deklarierte
+Basket-OID und eine gespeicherte Objekt-OID für jede konkrete Klasse seines
+Topics voraus. Dazu gehören geerbte Klassen und Klassen ohne Objekte in der
+Lieferung. Ein fehlender Datensatz wird angelegt. Jeder gelieferte Basket
+enthält seinen vollständigen neuen Bestand. Vorhandene Baskets und
+überlebende Objekte behalten ihre internen IDs.
 Ausgelassene Objekte im gelieferten Basket werden gelöscht. Ausgelassene
 Baskets bleiben erhalten. Bei fremder oder mehrdeutiger BID sowie bei einem
 abweichenden Topic bricht die Operation ab. Eine OID kann bei der
@@ -450,7 +453,8 @@ Modelle beschränken.
 
 Das Update-Profil unterstützt Klassen mit `UUIDOID`, `STANDARDOID`
 oder gespeicherten Transfer-IDs aus `--importTid --importBid`.
-BID und TID müssen für den Abgleich im Bestand vorliegen.
+Die gespeicherte BID und die Objekt-OID beziehungsweise Transfer-TID
+müssen für den Abgleich im Bestand vorliegen.
 Bei fehlender oder mehrdeutiger Zuordnung bricht das Update ab.
 In einer Klassenhierarchie teilen die aktualisierten Fragmente weiterhin
 dieselbe `T_Id`. Die konkrete Klasse eines bestehenden Objekts muss

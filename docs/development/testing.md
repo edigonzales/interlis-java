@@ -201,7 +201,9 @@ Exportdatei bei fehlenden OID-Metadaten. Für XTF 2.4 prüft er zusätzlich
 die Gross- und Kleinschreibung von Text-OIDs und die Diagnose bei Leerwerten.
 
 `DatasetMutationTest` prüft `update`, `replace` und `delete` mit stabilen
-und gespeicherten Identitäten. Die Fälle vergleichen Fach-, Struktur- und
+und gespeicherten Identitäten. Das Update ohne `--create-tid-col` prüft
+UUIDOID und STANDARDOID sowie die Abweisung eines Topics mit einer Klasse
+ohne Objekt-OID. Die Fälle vergleichen Fach-, Struktur- und
 Linkzeilen, unabhängige Datensätze und referenzierte Ziele. Sie prüfen auch
 Schreibkonkurrenz und Rollback bei fehlerhaftem XTF oder blockierenden Referenzen.
 
@@ -545,7 +547,9 @@ Datensätze bei Mutationen im NewClass-Layout.
 Werkzeugwechsel über `update`, `replace` und `delete`. SQL und XTF belegen
 die stabilen IDs beim Update und den Ersatz der Daten beim Replace. Ein
 weiterer ili2db-Import prüft die gemeinsame ID-Vergabe. Eine Gegenprobe
-prüft die Behandlung der `ORDERED`-Position beim gemischten Update.
+prüft die Behandlung der `ORDERED`-Position beim gemischten Update. In
+einem Schema ohne `--createTidCol` vergleichen beide Werkzeugrichtungen
+ausserdem die stabilen Basket- und Objekt-OIDs und die erhaltenen SQL-IDs.
 `--tests '*SpatialIndexInteropTest'` vergleicht die RTree- und GiST-Definitionen
 beider Schemaerzeuger. Die Fälle tauschen gerade und gebogene Geometrien
 gemeinsam aus und prüfen die räumlichen Treffer nach einem Update durch

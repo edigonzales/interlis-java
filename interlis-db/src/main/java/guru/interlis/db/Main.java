@@ -249,9 +249,6 @@ public final class Main {
         if (filtered && !mapping.hasBasketColumn()) {
             throw new DbException("Basket or topic export requires a schema created with --create-basket-col");
         }
-        if (options.command() == Command.UPDATE && !mapping.storesTransferTids()) {
-            throw new DbException("update requires a schema created with --create-tid-col");
-        }
     }
 
     private record Options(Command command, List<String> models, String dataset, Path file, Path gpkg,

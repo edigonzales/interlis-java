@@ -8,6 +8,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
+import java.util.List;
 
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
@@ -19,6 +20,7 @@ import static guru.interlis.db.DbTestSupport.referenceDatasetFixture;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -50,6 +52,57 @@ final class DatasetMutationInteropTest {
         lifecycle(reference, legacy, model, true);
         lifecycle(reference, own, model, false);
         orderedUpdate(reference, legacy.peer("ordered_reference"), own.peer("ordered_own"));
+        stableUpdate(reference, legacy.peer("stable_reference"), own.peer("stable_own"));
+    }
+
+    private void stableUpdate(ReferenceTool reference, TestDatabase legacy, TestDatabase own) throws Exception {
+        String model = "DbMutStable" + version;
+        Path ili = copyModel(model);
+        reference.run(legacy, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol",
+                "--sqlEnableNull", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", ili.toString());
+        assertCliSuccess(own, "schemaimport", model, null, ili, "--create-basket-col");
+
+        String bid = "72098762-3694-4c89-a663-d0af6687720e";
+        String oid = "65cc81e6-72a7-477b-a51f-792fc4f28a15";
+        String otherBid = "47fe158a-452c-4e3c-97c5-8c9660a3d11d";
+        String otherOid = "69b03972-1c8e-44cd-acfc-ae54034f9ee8";
+        var before = delivery("oid-before", model, new Basket(bid, item(model, oid, "before")));
+        var update = delivery("oid-update", model, new Basket(bid, item(model, oid, "after")));
+        var other = delivery("oid-other", model, new Basket(otherBid, item(model, otherOid, "untouched")));
+        for (var db : List.of(legacy, own)) {
+            if (db == legacy) {
+                reference.run(db, "%ILI_FROM_DB", "--import", "--dataset", "stable", before.toString());
+                reference.run(db, "%ILI_FROM_DB", "--import", "--dataset", "other", other.toString());
+            } else {
+                assertCliSuccess(db, "import", model, "stable", before);
+                assertCliSuccess(db, "import", model, "other", other);
+            }
+            try (var sql = db.connect()) {
+                String old = stableIdentity(db, sql, bid, oid, "before");
+                String control = stableIdentity(db, sql, otherBid, otherOid, "untouched");
+                assertNotNull(old);
+                assertNotNull(control);
+
+                Path output = work.resolve((db == legacy ? "oid-reference" : "oid-own") + ".xtf");
+                if (db == legacy) {
+                    assertCliSuccess(db, "update", model, "stable", update);
+                    reference.run(db, "%ILI_FROM_DB", "--export", "--dataset", "stable", output.toString());
+                } else {
+                    reference.run(db, "%ILI_FROM_DB", "--update", "--dataset", "stable", update.toString());
+                    assertCliSuccess(db, "export", model, "stable", output);
+                }
+                assertSingleExport(output, bid, oid, "after");
+                assertEquals(old, stableIdentity(db, sql, bid, oid, "after"));
+                assertEquals(control, stableIdentity(db, sql, otherBid, otherOid, "untouched"));
+            }
+        }
+    }
+
+    private static String stableIdentity(TestDatabase db, Connection sql, String bid, String oid, String label)
+            throws Exception {
+        return scalar(sql, "SELECT b.dataset || ':' || b.t_id || ':' || o.t_id FROM " + db.table("mutationitem")
+                + " o JOIN " + db.table("t_ili2db_basket") + " b ON b.t_id=o.t_basket"
+                + " WHERE b.t_ili_tid='" + bid + "' AND o.t_ili_tid='" + oid + "' AND o.label='" + label + "'");
     }
 
     private void lifecycle(ReferenceTool reference, TestDatabase db, String model, boolean referenceSchema) throws Exception {

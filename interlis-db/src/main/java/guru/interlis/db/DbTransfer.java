@@ -1736,6 +1736,7 @@ final class DbTransfer {
             String domains = DbDomains.format(mapping.plan(), start.domainBindings(), start.id().value());
             this.datasetId = datasetId;
             if (updating) {
+                if (!mapping.storesTransferTids()) requireStableUpdateOids(topic, start.id().value());
                 var stored = DbDatasetWrite.findBasket(db, mapping, datasetId, topic, start.id().value(), domainsForBasket);
                 if (stored.isPresent()) {
                     basketId = stored.getAsLong();
@@ -1757,6 +1758,22 @@ final class DbTransfer {
                 statement.setLong(5, datasetId);
                 statement.setString(6, domains);
                 statement.executeUpdate();
+            }
+        }
+
+        private void requireStableUpdateOids(TopicDescriptor topic, String bid) {
+            String context = "Cannot update basket " + bid + " without --create-tid-col because ";
+            if (!hasStableBasketOid(topic)) {
+                throw new DbException(context + topic.name().declared() + " has no basket OID");
+            }
+            // UPDATE replaces the complete basket contents, including types absent from the input.
+            for (var storage : mapping.objectStorage()) {
+                token.throwIfCancellationRequested();
+                var object = storage.object();
+                if (object.kind() == SymbolKind.CLASS && object.transferable() && storage.root().oidDomain().isEmpty()
+                        && object.topic().filter(declared -> mapping.includesTopic(topic.symbol(), declared)).isPresent()) {
+                    throw new DbException(context + object.name().declared() + " has no stored object OID");
+                }
             }
         }
 
