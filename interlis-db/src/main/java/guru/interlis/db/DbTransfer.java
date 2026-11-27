@@ -1849,7 +1849,7 @@ final class DbTransfer {
                 if (reserved != null) {
                     for (var source : reserved.references()) {
                         token.throwIfCancellationRequested();
-                        checkReference(source, target);
+                        checkReference(source, mappedInColumn(source.column(), target) ? target : null);
                     }
                 }
                 // Publish the concrete type and ID before binding roles on this object, including self-references.

@@ -559,6 +559,11 @@ Rollen mit einer Zielspalte erzeugt werden. Auf einer gemeinsamen Tabelle
 erhalten die skalaren Pflichtfelder ihrer Tabellenklasse `NOT NULL`.
 Pflichtfelder und Pflichtrollen der dort gespeicherten Untertypen bleiben
 nullable, damit Geschwistertypen die Tabelle ohne diese Werte nutzen können.
+Mit `--inheritance smart2 --sql-not-null` erhalten die konkreten Tabellen
+auch für kopierte skalare Pflichtfelder `NOT NULL`. Lokale, ungeordnete
+eingebettete Pflichtrollen, deren deklarierter Eigentümer die Tabellenklasse
+ist, erhalten `NOT NULL` bei genau einer Zielspalte. Der Import bindet
+diese Spalte auch dann, wenn das Ziel erst später im Basket folgt.
 
 Der FULL-Transfer mit GeoPackage und PostGIS unterstützt bestehende
 ili2db-Schemata mit `--sqlColsAsText`. Einfache Attribute werden als SQL-Text

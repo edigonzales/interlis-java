@@ -371,7 +371,10 @@ Rollenspalten und Vorwärtsreferenzen eigenständiger n:m-Links im strikten
 Schema. `SqlConstraintTest` prüft die stabilen IDs und den Rollback beim
 fehlenden oder falschen Ziel. `*ProfileStrictSmart1*` prüft ein
 gemeinsames Pflichtfeld und die nullable Spalten zweier Geschwistertypen in
-einer Smart1-Tabelle.
+einer Smart1-Tabelle. `*ProfileStrictSmart2*` prüft kopierte
+Pflichtfelder und eine zwingend belegte Rollenspalte auf einer konkreten
+Tabelle. `SqlConstraintTest` prüft stabile IDs beim Update und den Rollback
+bei einem fehlenden Pflichtfeld.
 `*ProfileNestedStructures*` prüft Einzelwerte, Listen und Bags in
 Strukturen. `*ProfileRequiredHierarchy*` prüft Pflichtfelder und zwei
 Rollen auf dasselbe Ziel in einer `newClass`-Hierarchie.

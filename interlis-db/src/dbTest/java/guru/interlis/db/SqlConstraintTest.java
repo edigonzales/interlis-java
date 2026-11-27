@@ -459,6 +459,39 @@ final class SqlConstraintTest {
 
     @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void strictSmart2BindsRequiredRolesAndKeepsIdsOnUpdate(Backend backend, int version) throws Exception {
+        withDatabase(backend, db -> {
+            String model = "SqlStrictSmart2";
+            var fixture = new ProfileFixtures(work, version);
+            DbTestSupport.assertSchemaWithIdentityColumns(db, model, fixture.strictSmartModel(model),
+                    "--inheritance", "smart2", "--sql-not-null", "--create-fk");
+            assertCliSuccess(db, "import", model, "original", fixture.data(model, "original",
+                    fixture.strictSmartObjects(model, "original", "serial")));
+            try (var sql = db.connect()) {
+                String station = db.table("station");
+                String mapsheet = db.table("mapsheet");
+                String identities = "SELECT s.t_id || ':' || d.t_id FROM " + station + " s JOIN "
+                        + db.table("depot") + " d ON d.t_id=s.atdepot WHERE s.common='station'";
+                String ids = scalar(sql, identities);
+                assertTrue(ids.matches("[0-9]+:[0-9]+"), ids);
+                assertEquals("map", scalar(sql, "SELECT common FROM " + mapsheet));
+                assertCliSuccess(db, "update", model, "original", fixture.data(model, "original",
+                        fixture.strictSmartObjects(model, "original", "updated")));
+                assertEquals(ids, scalar(sql, identities));
+
+                String broken = fixture.strictSmartObjects(model, "original", "tentative").replace("<Legend>legend</Legend>", "");
+                assertCliFailure(db, "update", model, "original", fixture.data(model, "original", broken),
+                        importSqlDiagnostic(db, "23502"));
+                assertEquals("updated", scalar(sql, "SELECT aserial FROM " + station));
+                assertEquals("legend", scalar(sql, "SELECT legend FROM " + mapsheet));
+                assertEquals(ids, scalar(sql, identities));
+                assertRolledBack(db, sql, 0, 1);
+            }
+        });
+    }
+
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void requiredReferenceAttributesRemainNullableAndRollBackUnresolvedTargets(Backend backend, int version) throws Exception {
         withDatabase(backend, db -> {
             String model = "SqlRequiredReference";

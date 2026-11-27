@@ -414,8 +414,8 @@ public final class Main {
                 default -> throw new IllegalArgumentException("Expected --inheritance smart1 or smart2");
             };
             boolean sqlNotNull = schemaFlags.contains("--sql-not-null");
-            if (sqlNotNull && (addModels || inheritance == DbInheritance.Profile.SMART2)) {
-                throw new IllegalArgumentException("--sql-not-null requires a new schema with newClass or Smart1 inheritance");
+            if (sqlNotNull && addModels) {
+                throw new IllegalArgumentException("--sql-not-null requires creation of a new schema");
             }
             if (sqlNotNull && schemaOptions.contains(Ili2dbLayout.SchemaOption.MANDATORY_CHECKS)) {
                 throw new IllegalArgumentException("--sql-not-null cannot be combined with --create-mandatory-checks");

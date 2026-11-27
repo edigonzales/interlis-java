@@ -184,6 +184,26 @@ final class SchemaProfileCases {
         }
     }
 
+    void strictSmart2(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ProfileStrictSmart2V" + version;
+        Path ili = fixtures.strictSmartModel(model);
+        referenceSchema(expected, ili, "--smart2Inheritance", "--createFk");
+        schema(own, model, ili, "--inheritance", "smart2", "--sql-not-null", "--create-fk");
+        mixedObjects(expected, own, model, 3, prefix -> fixtures.strictSmartObjects(model, prefix, "connected"),
+                this::assertStrictSmartObjects);
+        for (var db : List.of(expected, own)) {
+            try (var sql = db.connect()) {
+                var keys = foreignKeyColumns(db, sql);
+                assertTrue(keys.contains("station:atdepot:depot"), keys::toString);
+                assertEquals(Set.of("legacy-station:legacy-depot", "native-station:native-depot"),
+                        catalogKeys(sql, "SELECT s.t_ili_tid || ':' || d.t_ili_tid FROM " + db.table("station")
+                                + " s JOIN " + db.table("depot") + " d ON d.t_id=s.atdepot WHERE s.common='station'"));
+                assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("mapsheet")
+                        + " WHERE common='map' AND legend='legend'"));
+            }
+        }
+    }
+
     private void assertStrictSmartObjects(String prefix, List<Element> rows) {
         var objects = rows.stream().collect(Collectors.toMap(row -> id(row, version, "tid"), Function.identity()));
         var station = objects.get(prefix + "-station");
