@@ -55,15 +55,18 @@ Der Standardumfang ist `supplied-dataset`. `--partial` prüft einen partiellen
 Bestand. Beispielsweise kann ein fehlendes externes Referenzziel darin
 offenbleiben. Nachweisbare Verletzungen werden in beiden Modi gemeldet.
 
-`--storage memory` hält bis zu 1 Million Speichereinträge und 256 MiB
-logische Daten im Arbeitsspeicher. `--storage mvstore` verwendet ein privates
-Laufverzeichnis mit bis zu 50 Millionen Einträgen und je 4 GiB für logische
-Daten und Dateigrösse. Beide Speicher unterliegen den Datensatzlimits
+`--storage memory` ist der Standard und hält bis zu 1 Million Speichereinträge
+und 256 MiB logische Daten im Arbeitsspeicher. `--storage mvstore` und
+`--storage file-pool` verwenden ein privates Laufverzeichnis mit bis zu
+50 Millionen Einträgen und je 4 GiB für logische Daten und Dateigrösse.
+Der File-Pool hält Schlüssel und Dateipositionen im JVM-Heap. Er hängt Werte
+auch beim Überschreiben an die Datei an. Dadurch zählen frühere Werte
+bis zum Schliessen zur Dateigrösse. Alle Speicher unterliegen den Datensatzlimits
 von 1’024 Eingaben, 1 Million Baskets und 10 Millionen Objekten.
-`--temp-dir DIRECTORY` wählt bei MVStore ein bestehendes Wurzelverzeichnis.
-Standardmässig dient `java.io.tmpdir` als Wurzel. Das Laufverzeichnis wird beim
-Schliessen des Speichers entfernt. Erreichte Ressourcenlimits führen zu
-Exitcode 3.
+`--temp-dir DIRECTORY` wählt für die dateibasierten Speicher ein bestehendes
+Wurzelverzeichnis. Standardmässig dient `java.io.tmpdir` als Wurzel.
+Das Laufverzeichnis wird beim Schliessen des Speichers entfernt. Erreichte
+Ressourcenlimits führen zu Exitcode 3.
 
 `--budget NAME=N` überschreibt ein Ressourcenbudget für den aktuellen Lauf.
 Der Wert ist eine positive Ganzzahl. Die Option lässt sich für verschiedene

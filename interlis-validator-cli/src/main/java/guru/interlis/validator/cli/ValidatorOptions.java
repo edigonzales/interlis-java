@@ -14,7 +14,7 @@ import java.util.Set;
 record ValidatorOptions(List<Path> primary, List<Path> reference, List<String> repositories,
                         List<String> models, Set<String> flags, Storage storage, Optional<Path> tempDir,
                         int maxDiagnostics, Map<Budget, Long> budgets) {
-    enum Storage { MEMORY, MVSTORE }
+    enum Storage { MEMORY, MVSTORE, FILE_POOL }
 
     enum Budget {
         OBJECT_WORK("object-work"),
@@ -75,7 +75,8 @@ record ValidatorOptions(List<Path> primary, List<Path> reference, List<String> r
                     case "--storage" -> storage = switch (value) {
                         case "memory" -> Storage.MEMORY;
                         case "mvstore" -> Storage.MVSTORE;
-                        default -> throw new IllegalArgumentException("Expected memory or mvstore for --storage");
+                        case "file-pool" -> Storage.FILE_POOL;
+                        default -> throw new IllegalArgumentException("Expected memory, mvstore or file-pool for --storage");
                     };
                     case "--max-diagnostics" -> maxDiagnostics = diagnosticLimit(value);
                     case "--budget" -> addBudget(budgets, value);
@@ -97,8 +98,8 @@ record ValidatorOptions(List<Path> primary, List<Path> reference, List<String> r
         } else if (primary.isEmpty()) {
             throw new IllegalArgumentException("Expected at least one primary XTF file");
         }
-        if (tempDir.isPresent() && storage != Storage.MVSTORE) {
-            throw new IllegalArgumentException("--temp-dir requires --storage mvstore");
+        if (tempDir.isPresent() && storage == Storage.MEMORY) {
+            throw new IllegalArgumentException("--temp-dir requires --storage mvstore or --storage file-pool");
         }
         return new ValidatorOptions(List.copyOf(primary), List.copyOf(reference), List.copyOf(repositories),
                 List.copyOf(models), Set.copyOf(flags), storage, tempDir, maxDiagnostics, Map.copyOf(budgets));
@@ -140,7 +141,7 @@ record ValidatorOptions(List<Path> primary, List<Path> reference, List<String> r
     static String usage() {
         return """
                 Usage: interlis-validator [--repository LOCATION] [--model NAME] [--refdata FILE]
-                       [--offline] [--partial] [--storage memory|mvstore] [--temp-dir DIRECTORY]
+                       [--offline] [--partial] [--storage memory|mvstore|file-pool] [--temp-dir DIRECTORY]
                        [--budget NAME=N] [--max-diagnostics N] [--json] [--verbose] [--] FILE [FILE ...]
                        interlis-validator --help
                        interlis-validator --version [--json]

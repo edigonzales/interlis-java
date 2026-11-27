@@ -9,6 +9,7 @@ import guru.interlis.transfer.TransferPlanner;
 import guru.interlis.transfer.TransferPlanningResult;
 import guru.interlis.validation.*;
 import guru.interlis.validation.jts.JtsGeometryEngine;
+import guru.interlis.validation.mvstore.FilePoolValidationStorage;
 import guru.interlis.validation.mvstore.MvStoreOptions;
 import guru.interlis.validation.mvstore.MvStoreValidationStorage;
 import guru.interlis.xtf23.Xtf23Exception;
@@ -169,6 +170,8 @@ final class ValidatorCommand {
         return switch (options.storage()) {
             case MEMORY -> new InMemoryValidationStorage(1_000_000, MEMORY_BYTES);
             case MVSTORE -> MvStoreValidationStorage.open(options.tempDir().map(cwd::resolve)
+                    .orElseGet(() -> Path.of(System.getProperty("java.io.tmpdir"))), MvStoreOptions.defaults(DISK_BYTES));
+            case FILE_POOL -> FilePoolValidationStorage.open(options.tempDir().map(cwd::resolve)
                     .orElseGet(() -> Path.of(System.getProperty("java.io.tmpdir"))), MvStoreOptions.defaults(DISK_BYTES));
         };
     }

@@ -616,7 +616,7 @@ class ValidatorCommandTest {
     }
 
     @Test
-    void globalUniqueProducesTheSameBoundedJsonWithBothStores() throws Exception {
+    void globalUniqueProducesTheSameBoundedJsonWithAllStores() throws Exception {
         model(directory, "2.3", "UNIQUE name;");
         write("first file.xtf", legacy("<name>alpha</name>").replace("BID=\"basket\"", "BID=\"first\""));
         write("second.xtf", legacy("<name>alpha</name>").replace("BID=\"basket\"", "BID=\"second\""));
@@ -629,12 +629,15 @@ class ValidatorCommandTest {
         assertEquals(1, passed.json().get("objects").getAsLong());
         var args = List.of("--offline", "--json", "--max-diagnostics", "1", "first file.xtf", "second.xtf", "third.xtf", "fourth.xtf");
         var memory = run(args.toArray(String[]::new));
-        var diskArgs = new java.util.ArrayList<>(args);
-        diskArgs.addAll(List.of("--storage", "mvstore", "--temp-dir", "."));
-        var disk = run(diskArgs.toArray(String[]::new));
         assertEquals(1, memory.exit(), memory.error() + memory.output());
-        assertEquals(memory.exit(), disk.exit(), disk.error() + disk.output());
-        assertEquals(memory.json(), disk.json());
+        for (var storage : List.of("mvstore", "file-pool")) {
+            var diskArgs = new java.util.ArrayList<>(args);
+            diskArgs.addAll(List.of("--storage", storage, "--temp-dir", "."));
+            var disk = run(diskArgs.toArray(String[]::new));
+            assertEquals(memory.exit(), disk.exit(), disk.error() + disk.output());
+            assertEquals(memory.json(), disk.json());
+            assertNoRunDirectories();
+        }
         var json = memory.json();
         assertEquals("rejected", json.get("status").getAsString());
         assertTrue(json.get("completed").getAsBoolean());
@@ -649,7 +652,6 @@ class ValidatorCommandTest {
         assertTrue(diagnostic.getAsJsonObject("location").get("source").getAsString().endsWith(".xtf"));
         assertTrue(diagnostic.getAsJsonObject("ruleLocation").get("source").getAsString().endsWith(".ili"));
         assertEquals(1, diagnostic.getAsJsonArray("relatedLocations").size());
-        assertNoRunDirectories();
     }
 
     @Test
