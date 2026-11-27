@@ -1254,7 +1254,7 @@ final class DbTransfer {
     private static void writeObject(DbMapping mapping, TransferWriter writer, ExportTopic topic, TransferObject object,
                                     String tid, long id, CancellationToken token) {
         if (topic.projected()) {
-            var projected = DbBaseProjection.object(mapping.plan(), object, topic.output());
+            var projected = DbBaseProjection.object(mapping, object, topic.output());
             if (projected.isEmpty()) return;
             object = projected.orElseThrow();
         } else {

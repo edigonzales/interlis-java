@@ -7,7 +7,13 @@
   <i:datasection>
     <a:Region i:bid="region-b">
       <b:Marker i:tid="region-m"><b:Memo>inherited</b:Memo></b:Marker>
-      <a:LocalStation i:tid="region-s"><b:Memo>base</b:Memo><b:Center><g:coord><g:c1>2600123.125</g:c1><g:c2>1200321.625</g:c2></g:coord></b:Center><a:LocalMemo>child</a:LocalMemo></a:LocalStation>
+      <a:LocalStation i:tid="region-s"><b:Memo>base</b:Memo>
+        <b:Detail><b:Entry/></b:Detail>
+        <b:History>
+          <b:Entry><b:Note>alpha</b:Note></b:Entry>
+          <b:Entry><b:Note>bravo</b:Note></b:Entry>
+        </b:History>
+        <b:Center><g:coord><g:c1>2600123.125</g:c1><g:c2>1200321.625</g:c2></g:coord></b:Center><a:LocalMemo>child</a:LocalMemo></a:LocalStation>
     </a:Region>
   </i:datasection>
 </i:transfer>

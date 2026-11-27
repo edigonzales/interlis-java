@@ -19,6 +19,7 @@ import static guru.interlis.db.ModelFixtures.basket;
 import static guru.interlis.db.ModelFixtures.headerModels;
 import static guru.interlis.db.ModelFixtures.mergeDeliveries;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 final class TopicInheritanceFixtures {
     final String town;
@@ -113,10 +114,14 @@ final class TopicInheritanceFixtures {
         var region = basket(data, version, town + ".Core", prefix + "region-b");
         assertEquals(2, children(region).size());
         var station = object(region, town + ".Core.Station", prefix + "region-s");
-        assertEquals(2, children(station).size());
+        assertEquals(Set.of("Memo", "Center", "Detail", "History"),
+                children(station).stream().map(Element::getLocalName).collect(java.util.stream.Collectors.toSet()));
         assertField(station, town, "Memo", "base");
         assertCenter(station);
-        assertField(object(region, town + ".Core.Marker", prefix + "region-m"), town, "Memo", "inherited");
+        assertEntries(station);
+        var marker = object(region, town + ".Core.Marker", prefix + "region-m");
+        assertField(marker, town, "Memo", "inherited");
+        assertNull(child(marker, "Detail"));
         if (includeFlat) {
             var flatBasket = basket(data, version, town + ".Core", prefix + "flat-b");
             assertEquals(1, children(flatBasket).size());
@@ -146,12 +151,25 @@ final class TopicInheritanceFixtures {
         assertField(station, town, "Memo", baseMemo);
         assertField(station, child, "LocalMemo", localMemo);
         assertCenter(station);
+        assertEntries(station);
         assertField(marker, town, "Memo", markerMemo);
     }
 
     private void assertCenter(Element station) {
         if (version == 24) assertName(child(station, "Center"), version, town + ".Center");
         CrsFixtures.assertPoint(station, "Center", "2600123.125", "1200321.625");
+    }
+
+    private void assertEntries(Element station) {
+        var detail = children(child(station, "Detail")).getFirst();
+        assertName(detail, version, town + ".Core.Entry");
+        assertEquals(List.of(), children(detail));
+        var history = children(station).stream().filter(element -> "History".equals(element.getLocalName()))
+                .flatMap(element -> children(element).stream()).toList();
+        assertEquals(2, history.size());
+        history.forEach(entry -> assertName(entry, version, town + ".Core.Entry"));
+        assertField(history.get(0), town, "Note", "alpha");
+        assertField(history.get(1), town, "Note", "bravo");
     }
 
     private void assertRefinement(Element basket, String prefix, String text) {

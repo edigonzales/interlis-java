@@ -1,5 +1,6 @@
 package guru.interlis.db;
 
+import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CoordinateType;
 import guru.interlis.model.OidRule;
 import guru.interlis.model.SymbolKind;
@@ -33,7 +34,8 @@ final class DbBaseProjection {
                 + " for " + source.name().declared());
     }
 
-    static Optional<TransferObject> object(TransferPlan plan, TransferObject object, TopicDescriptor topic) {
+    static Optional<TransferObject> object(DbMapping mapping, TransferObject object, TopicDescriptor topic) {
+        var plan = mapping.plan();
         var source = plan.object(object.type()).orElseThrow();
         var target = source;
         if (!belongsTo(plan, source.topic().orElseThrow(), topic)) {
@@ -52,6 +54,7 @@ final class DbBaseProjection {
         var values = new LinkedHashMap<SymbolRef, TransferValue>();
         for (var field : target.slots()) {
             if (!(field instanceof AttributeSlot attribute) || attribute.attribute().transientAttribute()) continue;
+            var value = object.value(field.symbol());
             var type = plan.type(attribute.effectiveType()).known().orElseThrow();
             switch (type.kind()) {
                 case TEXT, BOOLEAN, NUMERIC, ENUMERATION, FORMATTED, OID, BLACKBOX -> { }
@@ -60,9 +63,18 @@ final class DbBaseProjection {
                         throw DbMapping.unsupported("base-model export of " + field.name().declared());
                     }
                 }
+                case STRUCTURE_VALUE, COLLECTION -> {
+                    var composition = mapping.compositionsForObject(target.symbol()).stream()
+                            .filter(binding -> binding.slot().symbol().equals(field.symbol()))
+                            .filter(binding -> binding.collectionKind().orElse(CollectionKind.LIST) == CollectionKind.LIST)
+                            .filter(binding -> plan.object(binding.child()).orElseThrow().model().equals(topic.model()))
+                            .findFirst();
+                    if (composition.isEmpty()) throw DbMapping.unsupported("base-model export of " + field.name().declared());
+                    value.ifPresent(structure -> checkStructure(plan, structure, topic.model(), attribute));
+                }
                 default -> throw DbMapping.unsupported("base-model export of " + field.name().declared());
             }
-            object.value(field.symbol()).ifPresent(value -> values.put(field.symbol(), value));
+            value.ifPresent(present -> values.put(field.symbol(), present));
         }
         for (var field : source.slots()) {
             if (field instanceof AttributeSlot attribute && attribute.member().overridden() && target != source
@@ -80,6 +92,24 @@ final class DbBaseProjection {
             }
         }
         return Optional.of(new TransferObject(object.identity(), new Structured(target.symbol(), values)));
+    }
+
+    private static void checkStructure(TransferPlan plan, TransferValue value, SymbolRef model, AttributeSlot field) {
+        switch (value) {
+            case Structured structure -> {
+                var type = plan.object(structure.type()).orElseThrow();
+                if (!type.model().equals(model)) {
+                    throw DbMapping.unsupported("base-model export of structure " + type.name().declared()
+                            + " at " + field.name().declared());
+                }
+                structure.values().values().forEach(part -> checkStructure(plan, part, model, field));
+            }
+            case TransferValue.Repeated elements ->
+                    elements.values().forEach(part -> checkStructure(plan, part, model, field));
+            case TransferValue.Reference ignored ->
+                    throw DbMapping.unsupported("base-model export of reference in " + field.name().declared());
+            default -> { }
+        }
     }
 
     private static boolean belongsTo(TransferPlan plan, SymbolRef declaredTopic, TopicDescriptor output) {

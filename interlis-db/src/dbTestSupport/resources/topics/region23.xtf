@@ -6,7 +6,13 @@
   <DATASECTION>
     <TownChild23.Region BID="region-b">
       <TownParent23.Core.Marker TID="region-m"><Memo>inherited</Memo></TownParent23.Core.Marker>
-      <TownChild23.Region.LocalStation TID="region-s"><Memo>base</Memo><Center><COORD><C1>2600123.125</C1><C2>1200321.625</C2></COORD></Center><LocalMemo>child</LocalMemo></TownChild23.Region.LocalStation>
+      <TownChild23.Region.LocalStation TID="region-s"><Memo>base</Memo>
+        <Detail><TownParent23.Core.Entry/></Detail>
+        <History>
+          <TownParent23.Core.Entry><Note>alpha</Note></TownParent23.Core.Entry>
+          <TownParent23.Core.Entry><Note>bravo</Note></TownParent23.Core.Entry>
+        </History>
+        <Center><COORD><C1>2600123.125</C1><C2>1200321.625</C2></COORD></Center><LocalMemo>child</LocalMemo></TownChild23.Region.LocalStation>
     </TownChild23.Region>
   </DATASECTION>
 </TRANSFER>

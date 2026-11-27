@@ -35,9 +35,9 @@ final class SmartMutationInteropTest {
         var fixtures = new SmartFixtures(work, version);
         var reference = new ReferenceTool(work, postgres != null);
         String model = "TownChild" + version;
-        fixtures.fixture("/topics/", "TownParent" + version + ".ili");
+        fixtures.fixture("TownParent" + version + ".ili");
         fixtures.fixture("/topics/", model + ".ili");
-        Path input = fixtures.fixture("/topics/", "region" + version + ".xtf");
+        Path input = fixtures.fixture("region" + version + ".xtf");
         Path updated = fixtures.changedRegion(input);
         for (String layout : List.of("smart1", "smart2")) {
             var db = new TestDatabase(work, postgres, "mutation_" + layout, "v" + version + "_");

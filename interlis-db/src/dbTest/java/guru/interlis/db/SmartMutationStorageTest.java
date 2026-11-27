@@ -41,10 +41,10 @@ final class SmartMutationStorageTest {
         String parent = "TownParent" + version;
         String model = "TownChild" + version;
         String incoming = "TownIncoming" + version;
-        Path parentIli = fixtures.fixture("/topics/", parent + ".ili");
+        Path parentIli = fixtures.fixture(parent + ".ili");
         Path childIli = fixtures.fixture("/topics/", model + ".ili");
         Path incomingIli = fixtures.fixture("/topics/", incoming + ".ili");
-        Path input = fixtures.fixture("/topics/", "region" + version + ".xtf");
+        Path input = fixtures.fixture("region" + version + ".xtf");
         Path referenceInput = fixtures.fixture("/topics/", "incoming" + version + ".xtf");
         String original = Files.readString(input);
         Path changed = fixtures.changedRegion(input);

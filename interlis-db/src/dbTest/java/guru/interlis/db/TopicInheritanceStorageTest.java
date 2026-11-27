@@ -13,7 +13,7 @@ import java.sql.Connection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 
 import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
@@ -119,8 +119,9 @@ final class TopicInheritanceStorageTest {
         var source = Files.readString(input);
         var independent = Files.writeString(work.resolve("independent.xtf"), source.replace("region-", "independent-"));
         var updated = fixture.updateRegion(input);
+        String stationTag = Pattern.quote(version == 23 ? fixture.child + ".Region.LocalStation" : "a:LocalStation");
         var removed = Files.writeString(work.resolve("removed-target.xtf"),
-                source.lines().filter(line -> !line.contains("region-s")).collect(Collectors.joining("\n"))
+                source.replaceFirst("(?s)<" + stationTag + " .*?</" + stationTag + ">", "")
                         .replace(">inherited<", ">must roll back<"));
         assertCliSuccess(db, "import", fixture.child, "inherited", input);
         assertCliSuccess(db, "import", incoming, "incoming", fixture.input("incoming"));
@@ -184,6 +185,17 @@ final class TopicInheritanceStorageTest {
             CrsFixtures.assertStoredEpsg(db, sql, "station", "center", "region-s", 2056);
         }
         var published = Files.readAllBytes(output);
+
+        try (var sql = db.connect()) {
+            execute(sql, "UPDATE " + db.table("entry") + " SET t_seq=0 WHERE note='bravo'");
+        }
+        assertCliFailure(db, "export", fixture.child, null, output,
+                "Duplicate or out-of-order T_Seq at " + fixture.town + ".Core.Station.History",
+                "--basket", "region-b", "--export-model", fixture.town);
+        assertArrayEquals(published, Files.readAllBytes(output));
+        try (var sql = db.connect()) {
+            execute(sql, "UPDATE " + db.table("entry") + " SET t_seq=1 WHERE note='bravo'");
+        }
 
         assertCliFailure(db, "export", fixture.child, null, output,
                 "No concrete base topic in " + fixture.town + " for " + fixture.refined + ".Region",
