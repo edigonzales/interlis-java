@@ -602,8 +602,10 @@ vergleicht `--export-model` mit ili2db `--exportModels`. Beide Werkzeuge
 importieren die Ausgabe des jeweils anderen in ein reines Basisschema.
 Der Mischlauf prüft Koordinaten und SRID eines geerbten Punkts sowie
 vorhandene und ausgelassene Struktur-Einzelwerte und die Listenreihenfolge.
-Der eigene Test prüft die unveränderte Zieldatei bei doppeltem `T_Seq`,
-einem unerreichbaren Basistopic oder einer im Basismodell verbleibenden Rolle.
+Eine geerbte 1:n-Rolle wird über ihren Zielverweis im XTF und den
+Fremdschlüssel im Ziel kontrolliert. Der eigene Test prüft die unveränderte
+Zieldatei bei doppeltem `T_Seq`, einem unerreichbaren Basistopic und einem
+bei der Projektion entfallenden Rollenziel.
 
 `--tests '*DatasetMutationInteropTest'` prüft in beiden Schematypen den
 Werkzeugwechsel über `update`, `replace` und `delete`. SQL und XTF belegen

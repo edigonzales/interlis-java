@@ -9,6 +9,10 @@ TOPIC Core =
     History : LIST {0..*} OF Entry;
     Center : COORD 2480000.000 .. 2840000.000, 1070000.000 .. 1300000.000;
   END Station;
+  ASSOCIATION Location =
+    LocatedAt -- {0..1} Marker;
+    LocatedStation -- {0..*} Station;
+  END Location;
 END Core;
 TOPIC Other = CLASS Spare = END Spare; END Other;
 END TownParent23.

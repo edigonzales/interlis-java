@@ -332,6 +332,7 @@ final class DbTransfer {
                 Consistency.COMPLETE, Optional.empty(), Optional.empty(), stableOid, bindings), token);
         var selection = new GeometrySelection(bindings,
                 mapping.crsPair().map(pair -> pair.epsgCodes(topic.rowTopic())).orElse(Map.of()));
+        var projection = topic.projected() ? new DbBaseProjection(mapping, topic.output()) : null;
         for (var table : mapping.tables()) {
             if (table.hasDiscriminator() && table.object().kind() == SymbolKind.STRUCTURE) {
                 checkStructureHierarchy(db, mapping, ids, table, basketId, token);
@@ -340,11 +341,12 @@ final class DbTransfer {
                 continue;
             }
             if (table.hasDiscriminator() && table.object().kind() != SymbolKind.STRUCTURE && !mapping.isEmbeddedLink(table)) {
-                writeHierarchyObjects(db, mapping, ids, table, basketId, bid, topic, selection, writer, token);
+                writeHierarchyObjects(db, mapping, ids, table, basketId, bid, topic, selection, projection, writer, token);
             } else if (table.object().transferable() && !mapping.isEmbeddedLink(table)) {
-                writeObjects(db, mapping, ids, table, basketId, bid, topic, selection, writer, token);
+                writeObjects(db, mapping, ids, table, basketId, bid, topic, selection, projection, writer, token);
             }
         }
+        if (projection != null) projection.requireReferenceTargets(bid, token);
         writer.write(new TransferEvent.EndBasket(bid), token);
     }
 
@@ -356,8 +358,8 @@ final class DbTransfer {
     }
 
     private static void writeObjects(Database db, DbMapping mapping, ExportIds ids, Table table, long basketId, BasketId bid,
-                                     ExportTopic topic, GeometrySelection selection, TransferWriter writer,
-                                     CancellationToken token) throws SQLException {
+                                     ExportTopic topic, GeometrySelection selection, DbBaseProjection projection,
+                                     TransferWriter writer, CancellationToken token) throws SQLException {
         var alternate = mapping.crsPair().flatMap(pair -> pair.alternateClass(topic.rowTopic(), table.object().symbol()));
         var projections = new StringJoiner(", ").add("obj." + db.rowId());
         if (table.carriesObjectId()) {
@@ -391,7 +393,7 @@ final class DbTransfer {
                                     mapping.crsPair().orElseThrow().alternateValues(table.object().symbol(), values))
                             : new Structured(table.object().symbol(), values);
                     var object = new TransferObject(identity, data);
-                    writeObject(mapping, writer, topic, object, ownerTid, rows.getLong(1), token);
+                    writeObject(mapping, writer, topic, projection, object, ownerTid, rows.getLong(1), token);
                 }
                 structures.requireExhausted();
             }
@@ -438,7 +440,7 @@ final class DbTransfer {
 
     private static void writeHierarchyObjects(Database db, DbMapping mapping, ExportIds ids, Table root, long basketId,
                                                BasketId bid, ExportTopic topic, GeometrySelection selection,
-                                               TransferWriter writer, CancellationToken token)
+                                               DbBaseProjection projection, TransferWriter writer, CancellationToken token)
             throws SQLException {
         boolean hasTid = root.carriesObjectId();
         var fields = new StringJoiner(", ").add("obj." + db.rowId());
@@ -483,7 +485,7 @@ final class DbTransfer {
                                     mapping.crsPair().orElseThrow().alternateValues(actual.object().symbol(), values))
                             : new Structured(actual.object().symbol(), values);
                     var object = new TransferObject(identity, data);
-                    writeObject(mapping, writer, topic, object, tid, id, token);
+                    writeObject(mapping, writer, topic, projection, object, tid, id, token);
                 }
                 fragments.requireExhausted();
                 structures.requireExhausted();
@@ -1251,10 +1253,10 @@ final class DbTransfer {
         }
     }
 
-    private static void writeObject(DbMapping mapping, TransferWriter writer, ExportTopic topic, TransferObject object,
-                                    String tid, long id, CancellationToken token) {
-        if (topic.projected()) {
-            var projected = DbBaseProjection.object(mapping, object, topic.output());
+    private static void writeObject(DbMapping mapping, TransferWriter writer, ExportTopic topic, DbBaseProjection projection,
+                                    TransferObject object, String tid, long id, CancellationToken token) {
+        if (projection != null) {
+            var projected = projection.object(object);
             if (projected.isEmpty()) return;
             object = projected.orElseThrow();
         } else {

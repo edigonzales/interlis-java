@@ -114,7 +114,7 @@ final class TopicInheritanceFixtures {
         var region = basket(data, version, town + ".Core", prefix + "region-b");
         assertEquals(2, children(region).size());
         var station = object(region, town + ".Core.Station", prefix + "region-s");
-        assertEquals(Set.of("Memo", "Center", "Detail", "History"),
+        assertEquals(Set.of("Memo", "Center", "Detail", "History", "LocatedAt"),
                 children(station).stream().map(Element::getLocalName).collect(java.util.stream.Collectors.toSet()));
         assertField(station, town, "Memo", "base");
         assertCenter(station);
@@ -122,6 +122,7 @@ final class TopicInheritanceFixtures {
         var marker = object(region, town + ".Core.Marker", prefix + "region-m");
         assertField(marker, town, "Memo", "inherited");
         assertNull(child(marker, "Detail"));
+        assertLocation(station, marker);
         if (includeFlat) {
             var flatBasket = basket(data, version, town + ".Core", prefix + "flat-b");
             assertEquals(1, children(flatBasket).size());
@@ -152,7 +153,14 @@ final class TopicInheritanceFixtures {
         assertField(station, child, "LocalMemo", localMemo);
         assertCenter(station);
         assertEntries(station);
+        assertLocation(station, marker);
         assertField(marker, town, "Memo", markerMemo);
+    }
+
+    private void assertLocation(Element station, Element marker) {
+        var location = child(station, "LocatedAt");
+        if (version == 24) assertName(location, version, town + ".LocatedAt");
+        assertEquals(id(marker, version, "tid"), id(location, version, "ref"));
     }
 
     private void assertCenter(Element station) {

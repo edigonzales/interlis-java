@@ -13,7 +13,7 @@
           <b:Entry><b:Note>alpha</b:Note></b:Entry>
           <b:Entry><b:Note>bravo</b:Note></b:Entry>
         </b:History>
-        <b:Center><g:coord><g:c1>2600123.125</g:c1><g:c2>1200321.625</g:c2></g:coord></b:Center><a:LocalMemo>child</a:LocalMemo></a:LocalStation>
+        <b:Center><g:coord><g:c1>2600123.125</g:c1><g:c2>1200321.625</g:c2></g:coord></b:Center><b:LocatedAt i:ref="region-m"/><a:LocalMemo>child</a:LocalMemo></a:LocalStation>
     </a:Region>
   </i:datasection>
 </i:transfer>

@@ -202,13 +202,43 @@ final class TopicInheritanceStorageTest {
                 "--model", fixture.refined, "--basket", "region-b", "--basket", "refine-b", "--export-model", fixture.town);
         assertArrayEquals(published, Files.readAllBytes(output));
 
-        assertCliFailure(db, "export", fixture.links, null, output,
-                "base-model export of role", "--basket", "links-b", "--export-model", fixture.linksBase);
-        assertArrayEquals(published, Files.readAllBytes(output));
+        var links = work.resolve("base-links.xtf");
+        assertCliSuccess(db, "export", fixture.links, null, links,
+                "--basket", "links-b", "--export-model", fixture.linksBase);
 
         var original = work.resolve("source-export.xtf");
         assertCliSuccess(db, "export", fixture.child, "source", original, fixture.modelsAfterChild());
         fixture.assertMixedDelivery(original, "", "text", false);
+    }
+
+    @ParameterizedTest(name = "{displayName} [XTF {0}, {1}]")
+    @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
+    void rejectsEmbeddedRoleWhenProjectionDropsItsTarget(int version, Backend backend) throws Exception {
+        var fixture = new TopicInheritanceFixtures(work, version);
+        var db = POSTGIS.target(work.resolve("base-role-export.gpkg"), backend);
+        var parent = fixture.source(fixture.town);
+        Files.writeString(parent, Files.readString(parent)
+                .replace("CLASS Marker =", "CLASS Marker (ABSTRACT) =")
+                .replace("  CLASS Station =", "  CLASS DefaultMarker EXTENDS Marker = END DefaultMarker;\n  CLASS Station ="));
+        var child = fixture.source(fixture.child);
+        String localMarker = "CLASS LocalMarker EXTENDS " + fixture.town + ".Core.Marker = END LocalMarker;";
+        Files.writeString(child, Files.readString(child).replace("    CLASS LocalStation",
+                "    " + localMarker + "\n    CLASS LocalStation"));
+        assertSchemaWithIdentityColumns(db, fixture.child, child, "--model-file", parent.toString());
+
+        var input = fixture.input("region");
+        String baseTag = version == 23 ? fixture.town + ".Core.Marker" : "b:Marker";
+        String localTag = version == 23 ? fixture.child + ".Region.LocalMarker" : "a:LocalMarker";
+        Files.writeString(input, Files.readString(input).replace(baseTag, localTag));
+        assertCliSuccess(db, "import", fixture.child, "source", input);
+
+        var output = work.resolve("base-role-export.xtf");
+        assertCliSuccess(db, "export", fixture.child, "source", output);
+        var published = Files.readAllBytes(output);
+        assertCliFailure(db, "export", fixture.child, null, output,
+                "Missing projected target region-m at " + fixture.town + ".Core.Location.LocatedAt of object region-s in basket region-b",
+                "--basket", "region-b", "--export-model", fixture.town);
+        assertArrayEquals(published, Files.readAllBytes(output));
     }
 
     private record RegionIds(String station, String marker, String basket, String dataset) { }

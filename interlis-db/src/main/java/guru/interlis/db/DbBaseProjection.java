@@ -1,5 +1,6 @@
 package guru.interlis.db;
 
+import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CoordinateType;
 import guru.interlis.model.OidRule;
@@ -7,17 +8,46 @@ import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.TopicDescriptor;
+import guru.interlis.transfer.TransferIdentity.BasketId;
 import guru.interlis.transfer.TransferObject;
 import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferValue;
+import guru.interlis.transfer.TransferValue.Reference;
 import guru.interlis.transfer.TransferValue.Structured;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /** Projects decoded export events through the model's checked inheritance. */
 final class DbBaseProjection {
-    private DbBaseProjection() { }
+    private record ProjectedRole(SymbolRef targetType, String role, String sourceTid, String targetTid) { }
+
+    private final DbMapping mapping;
+    private final TopicDescriptor topic;
+    private final Map<SymbolRef, DbMapping.EmbeddedAssociation> roles = new HashMap<>();
+    private final Map<String, SymbolRef> projectedObjects = new HashMap<>();
+    private final List<ProjectedRole> references = new ArrayList<>();
+
+    DbBaseProjection(DbMapping mapping, TopicDescriptor topic) {
+        this.mapping = mapping;
+        this.topic = topic;
+        for (var association : mapping.associations()) {
+            var owner = association.ownerRole();
+            var target = association.targetRole();
+            if (!association.linkTable() && !owner.single() && target.single()
+                    && owner.targets().size() == 1 && target.targets().size() == 1
+                    && !owner.external() && !target.external() && !association.ordered()
+                    && !association.role().role().ordered()
+                    && association.object().baseType().isEmpty()
+                    && association.object().topic().filter(declared -> belongsTo(mapping.plan(), declared, topic)).isPresent()) {
+                roles.put(association.role().symbol(), association);
+            }
+        }
+    }
 
     static TopicDescriptor topic(TransferPlan plan, TopicDescriptor source, SymbolRef model) {
         for (var candidate = source; candidate != null; candidate = baseTopic(plan, candidate)) {
@@ -34,7 +64,7 @@ final class DbBaseProjection {
                 + " for " + source.name().declared());
     }
 
-    static Optional<TransferObject> object(DbMapping mapping, TransferObject object, TopicDescriptor topic) {
+    Optional<TransferObject> object(TransferObject object) {
         var plan = mapping.plan();
         var source = plan.object(object.type()).orElseThrow();
         var target = source;
@@ -83,15 +113,36 @@ final class DbBaseProjection {
                 throw DbMapping.unsupported("base-model export of extended attribute " + field.name().declared());
             }
         }
-        for (var symbol : object.data().values().keySet()) {
-            var field = plan.symbol(symbol).known().orElseThrow();
+        if (!roles.isEmpty()) {
+            projectedObjects.put(object.identity().tid().orElseThrow().value(), target.symbol());
+        }
+        for (var entry : object.data().values().entrySet()) {
+            var field = plan.symbol(entry.getKey()).known().orElseThrow();
             if (field.kind() == SymbolKind.ROLE && field.owner().map(owner -> new SymbolRef(plan.snapshotId(), owner))
                     .flatMap(plan::object).flatMap(association -> association.topic())
                     .filter(declared -> belongsTo(plan, declared, topic)).isPresent()) {
-                throw DbMapping.unsupported("base-model export of role " + field.header().name());
+                var association = roles.get(entry.getKey());
+                if (association == null || !mapping.isAssignableTo(target.symbol(), association.owner())
+                        || !(entry.getValue() instanceof Reference reference)) {
+                    throw DbMapping.unsupported("base-model export of role " + field.header().name());
+                }
+                references.add(new ProjectedRole(association.target(), association.role().name().declared().toString(),
+                        object.identity().tid().orElseThrow().value(), reference.target().value()));
+                values.put(entry.getKey(), reference);
             }
         }
         return Optional.of(new TransferObject(object.identity(), new Structured(target.symbol(), values)));
+    }
+
+    void requireReferenceTargets(BasketId basket, CancellationToken token) {
+        for (var reference : references) {
+            token.throwIfCancellationRequested();
+            var target = projectedObjects.get(reference.targetTid());
+            if (target == null || !mapping.isAssignableTo(target, reference.targetType())) {
+                throw new DbException("Missing projected target " + reference.targetTid() + " at " + reference.role()
+                        + " of object " + reference.sourceTid() + " in basket " + basket.value());
+            }
+        }
     }
 
     private static void checkStructure(TransferPlan plan, TransferValue value, SymbolRef model, AttributeSlot field) {
