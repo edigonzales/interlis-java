@@ -102,6 +102,56 @@ record AlternativeRoleFixture(Path work, int version) {
                         .collect(Collectors.toSet()));
     }
 
+    String embeddedOwnerModel() {
+        return "EmbeddedAlternativeOwner" + version;
+    }
+
+    Path embeddedOwnerSource() throws Exception {
+        return new ProfileFixtures(work, version).source(embeddedOwnerModel(), """
+                CLASS Ticket = END Ticket;
+                CLASS Permit = END Permit;
+                CLASS Station = END Station;
+                ASSOCIATION Choice =
+                  Candidate -- {0..1} Station;
+                  Owner -- {0..*} Ticket OR Permit;
+                END Choice;
+                """);
+    }
+
+    Path embeddedOwnerTransfer(String file, String dataset, String ticketTarget) throws Exception {
+        var fixtures = new ProfileFixtures(work, version);
+        String model = embeddedOwnerModel();
+        String objects = fixtures.object(model, "Ticket", dataset + "-ticket",
+                ticketTarget == null ? "" : fixtures.reference("Candidate", dataset + "-" + ticketTarget))
+                + fixtures.object(model, "Permit", dataset + "-permit", fixtures.reference("Candidate", dataset + "-station"))
+                + fixtures.object(model, "Station", dataset + "-station", "")
+                + fixtures.object(model, "Station", dataset + "-other", "");
+        return Files.writeString(work.resolve(file + ".xtf"),
+                referenceDatasetFixture(model, version, dataset + "-basket", objects));
+    }
+
+    void assertEmbeddedOwnerTransfer(Path path, String dataset, String ticketTarget) throws Exception {
+        var rows = new ProfileFixtures(work, version).rows(path, dataset, 4);
+        for (var owner : new String[]{"ticket", "permit"}) {
+            var row = rows.stream().filter(object -> id(object, version, "tid").equals(dataset + "-" + owner))
+                    .findFirst().orElseThrow();
+            String target = owner.equals("ticket") ? ticketTarget : "station";
+            var role = child(row, "Candidate");
+            assertEquals(target == null ? null : dataset + "-" + target, role == null ? null : id(role, version, "ref"));
+        }
+    }
+
+    void assertEmbeddedOwnerMapping(DbTestSupport.Target db, Connection sql) throws Exception {
+        String association = embeddedOwnerModel() + ".Data.Choice";
+        var expected = Set.of("ticket:candidate:station", "permit:candidate:station");
+        assertEquals(expected, catalogKeys(sql, "SELECT colowner || ':' || sqlname || ':' || target FROM "
+                + db.table("t_ili2db_attrname") + " WHERE iliname='" + association + ".Candidate'"));
+        assertEquals(expected, foreignKeyColumns(db, sql).stream().filter(key -> key.contains(":candidate:"))
+                .collect(Collectors.toSet()));
+        assertEquals(Set.of("embedded"), catalogKeys(sql, "SELECT setting FROM " + db.table("t_ili2db_trafo")
+                + " WHERE iliname='" + association + "'"));
+    }
+
     private String object(String name, String tid, String fields) {
         String tag = version == 23 ? model() + ".Data." + name : name;
         String identity = tid == null ? "" : (version == 23 ? " TID=\"" : " i:tid=\"") + tid + "\"";

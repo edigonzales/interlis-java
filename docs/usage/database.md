@@ -1002,6 +1002,8 @@ Bei einer lokalen, ungeordneten 1:n-Assoziation ohne eigene Attribute kann
 das eingebettete Ende im nullable `newClass`-Profil ebenfalls zwei Ziele
 mit `OR` deklarieren. Die Eigentümertabelle erhält beide Zielspalten.
 Der XTF-Transfer verwendet eine Rolle und das Update ersetzt deren Ziel.
+Deklariert stattdessen die n-Seite zwei Eigentümerklassen mit `OR`, erhält
+jede Eigentümertabelle ihre eigene Spalte für die eingebettete Rolle.
 
 `CLASSNAME` und `INHERITANCE` führen die Assoziation, `TRAFO` kennzeichnet
 sie als `embedded` und `ATTRNAME` benennt Spalte und Ziel. Referenzen auf

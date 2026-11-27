@@ -61,6 +61,40 @@ final class AlternativeRoleInteropTest {
         }
     }
 
+    @Test void geoPackageEmbeddedOwners23() throws Exception { exchangeEmbeddedOwners(23, null); }
+    @Test void geoPackageEmbeddedOwners24() throws Exception { exchangeEmbeddedOwners(24, null); }
+    @Test void postgisEmbeddedOwners23() throws Exception { exchangeEmbeddedOwners(23, POSTGIS.container()); }
+    @Test void postgisEmbeddedOwners24() throws Exception { exchangeEmbeddedOwners(24, POSTGIS.container()); }
+
+    private void exchangeEmbeddedOwners(int version, PostgreSQLContainer postgres) throws Exception {
+        var fixture = new AlternativeRoleFixture(work, version);
+        var old = new TestDatabase(work, postgres, "embedded_owner_ref", "or_v" + version + "_");
+        var own = old.peer("embedded_owner_own");
+        var reference = new ReferenceTool(work, old.postgis());
+        String model = fixture.embeddedOwnerModel();
+        var source = fixture.embeddedOwnerSource();
+        schema(reference, old, work, model, "newClass", "--createFk");
+        assertSchemaWithIdentityColumns(own, model, source, "--create-fk");
+        try (var expected = old.connect(); var actual = own.connect()) {
+            DbSchemaCatalog.read(expected, old.postgis(), old.schema())
+                    .assertSameAs(DbSchemaCatalog.read(actual, own.postgis(), own.schema()));
+            fixture.assertEmbeddedOwnerMapping(old, expected);
+            fixture.assertEmbeddedOwnerMapping(own, actual);
+        }
+        var legacy = fixture.embeddedOwnerTransfer("legacy", "legacy", "station");
+        var nativeInput = fixture.embeddedOwnerTransfer("native", "native", "station");
+        for (var db : List.of(old, own)) {
+            importDataset(reference, db, "legacy", legacy);
+            var nativeOutput = work.resolve(db.schema() + "-legacy.xtf");
+            assertCliSuccess(db, "export", model, "legacy", nativeOutput);
+            fixture.assertEmbeddedOwnerTransfer(nativeOutput, "legacy", "station");
+            assertCliSuccess(db, "import", model, "native", nativeInput);
+            var referenceOutput = work.resolve(db.schema() + "-native.xtf");
+            exportDataset(reference, db, "native", referenceOutput);
+            fixture.assertEmbeddedOwnerTransfer(referenceOutput, "native", "station");
+        }
+    }
+
     private void exchange(int version, PostgreSQLContainer postgres) throws Exception {
         var fixture = new AlternativeRoleFixture(work, version);
         var reference = new ReferenceTool(work, postgres != null);

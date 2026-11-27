@@ -78,4 +78,34 @@ final class AlternativeRoleStorageTest {
         assertExportRejected(db, model, "kept", output, "Multiple stored values", "Choice.Candidate");
     }
 
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void updatesOneEmbeddedOwnerWithoutChangingTheOther(Backend backend, int version) throws Exception {
+        var fixture = new AlternativeRoleFixture(work, version);
+        var db = POSTGIS.target(work.resolve("embedded-owners.gpkg"), backend);
+        String model = fixture.embeddedOwnerModel();
+        assertSchemaWithIdentityColumns(db, model, fixture.embeddedOwnerSource(), "--create-fk");
+        assertCliSuccess(db, "import", model, "kept", fixture.embeddedOwnerTransfer("original", "kept", "station"));
+        String ticket = db.table("ticket");
+        String permit = db.table("permit");
+        String ticketId;
+        String permitBinding;
+        try (var sql = db.connect()) {
+            ticketId = scalar(sql, "SELECT t_id FROM " + ticket);
+            permitBinding = scalar(sql, "SELECT t_id || ':' || candidate FROM " + permit);
+        }
+
+        var output = work.resolve("embedded-owners.xtf");
+        assertCliSuccess(db, "update", model, "kept", fixture.embeddedOwnerTransfer("changed", "kept", "other"));
+        assertCliSuccess(db, "export", model, "kept", output);
+        fixture.assertEmbeddedOwnerTransfer(output, "kept", "other");
+        assertCliSuccess(db, "update", model, "kept", fixture.embeddedOwnerTransfer("cleared", "kept", null));
+        assertCliSuccess(db, "export", model, "kept", output);
+        fixture.assertEmbeddedOwnerTransfer(output, "kept", null);
+        try (var sql = db.connect()) {
+            assertEquals(ticketId, scalar(sql, "SELECT t_id FROM " + ticket + " WHERE candidate IS NULL"));
+            assertEquals(permitBinding, scalar(sql, "SELECT t_id || ':' || candidate FROM " + permit));
+        }
+    }
+
 }

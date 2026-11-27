@@ -263,6 +263,7 @@ final class DbMapping {
     record EmbeddedAssociation(ObjectDescriptor object, String name, AssociationRole ownerRole,
                                AssociationRole targetRole, boolean linkTable) {
         SymbolRef owner() { return ownerRole.target(); }
+        List<SymbolRef> owners() { return ownerRole.targets(); }
         SymbolRef target() { return targetRole.target(); }
         RoleSlot role() { return targetRole.slot(); }
         boolean ordered() { return ownerRole.slot().role().ordered(); }
@@ -430,7 +431,7 @@ final class DbMapping {
         byChild = indexCompositions(this.compositions, Composition::childRoot);
         checkCompositionCycles();
         this.associations = List.copyOf(associations);
-        roleOwners = associations.stream().filter(association -> !association.linkTable())
+        roleOwners = associations.stream().filter(association -> !association.linkTable() && association.owners().size() == 1)
                 .collect(Collectors.toUnmodifiableMap(association -> association.role().symbol(), EmbeddedAssociation::owner));
         requiredEmbeddedRoles = tables.stream().flatMap(table -> table.columns().stream()
                 .filter(column -> notNullRoles.contains(column.slot().symbol()) && singleTargetEmbeddedRole(table, column)))
@@ -1289,14 +1290,13 @@ final class DbMapping {
         // For 1:1, the second declared role's class owns the column for the first role.
         var target = first.single() ? first : second;
         var owner = first.single() ? second : first;
-        if (!owner.slot().role().targets().getFirst().restrictions().isEmpty()) {
+        if (owner.slot().role().targets().stream().anyMatch(alternative -> !alternative.restrictions().isEmpty())) {
             throw unsupported("restriction on the owner of an embedded association at " + association.name().declared());
         }
         boolean crossesTopic = roles.stream().flatMap(role -> role.targets().stream()).anyMatch(type ->
                 !plan.object(type).orElseThrow().topic().equals(association.topic()));
         if ((owner.targets().size() > 1 || target.targets().size() > 1)
-                && (profile != DbInheritance.Profile.NEW_CLASS || owner.targets().size() != 1
-                || owner.single() || crossesTopic || linkTable)) {
+                && (profile != DbInheritance.Profile.NEW_CLASS || owner.single() || crossesTopic || linkTable)) {
             throw unsupported("OR role at " + association.name().declared());
         }
         if (crossesTopic && owner.single()) {
@@ -1342,7 +1342,7 @@ final class DbMapping {
     }
 
     static List<EmbeddedAssociation> associationsForOwner(List<EmbeddedAssociation> associations, SymbolRef owner) {
-        return associations.stream().filter(association -> association.owner().equals(owner))
+        return associations.stream().filter(association -> association.owners().contains(owner))
                 .sorted(Comparator.comparing(association -> association.role().name().declared().last())).toList();
     }
 
