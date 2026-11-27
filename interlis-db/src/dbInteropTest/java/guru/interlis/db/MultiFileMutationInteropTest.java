@@ -45,6 +45,10 @@ final class MultiFileMutationInteropTest {
     @Test void geoPackageReplace24() throws Exception { exchangeReplace(24, null); }
     @Test void postgisReplace23() throws Exception { exchangeReplace(23, POSTGIS.container()); }
     @Test void postgisReplace24() throws Exception { exchangeReplace(24, POSTGIS.container()); }
+    @Test void geoPackageRepeatedBasket23() throws Exception { exchangeRepeatedBasket(23, null); }
+    @Test void geoPackageRepeatedBasket24() throws Exception { exchangeRepeatedBasket(24, null); }
+    @Test void postgisRepeatedBasket23() throws Exception { exchangeRepeatedBasket(23, POSTGIS.container()); }
+    @Test void postgisRepeatedBasket24() throws Exception { exchangeRepeatedBasket(24, POSTGIS.container()); }
 
     private void exchangeUpdate(int version, PostgreSQLContainer postgres) throws Exception {
         var fixture = new MultiFileImportFixtures(work, version);
@@ -148,6 +152,38 @@ final class MultiFileMutationInteropTest {
                 SELECT 'basket:' || t_id FROM %1$s WHERE dataset=%3$s
                 UNION ALL SELECT 'place:' || p.t_id FROM %2$s p JOIN %1$s b ON p.t_basket=b.t_id WHERE b.dataset=%3$s
                 """.formatted(db.table("t_ili2db_basket"), db.table("place"), datasetId));
+    }
+
+    private void exchangeRepeatedBasket(int version, PostgreSQLContainer postgres) throws Exception {
+        var fixture = new MultiFileImportFixtures(work, version);
+        var legacy = new TestDatabase(work, postgres, "repeated_basket_legacy", "v" + version + "_");
+        var own = legacy.peer("repeated_basket_own");
+        var reference = new ReferenceTool(work, legacy.postgis());
+        schema(reference, legacy, work, fixture.model, "newClass", "--createImportTabs");
+        assertSchemaWithIdentityColumns(own, fixture.model, fixture.source, "--create-import-tabs");
+        var original = fixture.delivery("original", fixture.basket("left", fixture.place("a", "Original")),
+                fixture.basket("skipped", fixture.place("c", "Preserve")));
+        importDataset(reference, legacy, "existing", original);
+        assertCliSuccess(own, "import", fixture.model, "existing", original);
+        var first = fixture.delivery("first", fixture.basket("left", fixture.place("intermediate", "Temporary")));
+        var last = fixture.delivery("last", fixture.basket("left", fixture.place("a", "Updated")));
+        for (var db : List.of(legacy, own)) {
+            var ids = retainedIds(db);
+            var output = work.resolve(db == legacy ? "reference-export.xtf" : "native-export.xtf");
+            if (db == legacy) {
+                assertCliSuccess(db, "update", fixture.model, "existing", last, "--basket", "left", first.toString());
+                exportDataset(reference, db, "existing", output);
+            } else {
+                reference.run(db, "%ILI_FROM_DB", "--update", "--dataset", "existing", "--importBid", "--importTid",
+                        "--baskets", "left", first + ";" + last);
+                assertCliSuccess(db, "export", fixture.model, "existing", output);
+            }
+            assertEquals(ids, retainedIds(db));
+            try (var sql = db.connect()) {
+                assertEquals(List.of(first + ":left:1", last + ":left:1"), changedBasketStatistics(db, sql, first, last));
+            }
+            assertExport(output, version, Set.of("left:a:Updated", "skipped:c:Preserve"));
+        }
     }
 
     private static Set<String> retainedIds(TestDatabase db) throws Exception {

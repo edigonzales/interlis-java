@@ -129,6 +129,9 @@ den Rollback bei fehlerhaftem XML in einer späteren Datei.
 `--tests '*MultiFileMutationInteropTest.*Replace*'` prüft den Werkzeugwechsel
 nach einem Mehrdatei-Ersatz. Die eigenen DB-Fälle prüfen doppelte Kennungen
 und den Erhalt des bisherigen Bestands bei Fehlern.
+`--tests '*MultiFileMutationInteropTest.*RepeatedBasket*'` prüft dieselbe
+BID über mehrere Update-Dateien. Die eigenen DB-Fälle prüfen den Rollback
+bei Referenzen auf verworfene Zwischenobjekte.
 
 Der GeoPackage-Selektor läuft ohne Docker. JUnit-XML liegt pro Aufgabe unter
 `interlis-db/build/test-results/` und der HTML-Bericht unter

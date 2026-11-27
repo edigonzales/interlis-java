@@ -1720,8 +1720,8 @@ final class DbTransfer {
         private final List<Pending> pending = new ArrayList<>();
         private final List<PendingRole> pendingRoles = new ArrayList<>();
         private final List<PendingArray> pendingArrays = new ArrayList<>();
-        private final List<Pending> externalPending = new ArrayList<>();
-        private final List<DbDatasetWrite.ExistingObject> removedObjects = new ArrayList<>();
+        private final Map<Long, List<Pending>> externalPendingByBasket = new LinkedHashMap<>();
+        private final Map<Long, List<DbDatasetWrite.ExistingObject>> removedByBasket = new LinkedHashMap<>();
         private Map<DbDatasetWrite.ObjectKey, DbDatasetWrite.ExistingObject> existingObjects = Map.of();
         private long datasetId;
         private long basketId;
@@ -1751,7 +1751,7 @@ final class DbTransfer {
             this.rawScalarText = rawScalarText;
             referenceTargets = referenceTargets(false);
             externalTargets = referenceTargets(true);
-            storedBids = multipleFiles ? Optional.of(new HashSet<>()) : Optional.empty();
+            storedBids = multipleFiles && !updating ? Optional.of(new HashSet<>()) : Optional.empty();
             storedTids = multipleFiles || mapping.tables().stream().anyMatch(Table::uuidIdentity)
                     ? Optional.of(new HashSet<>()) : Optional.empty();
         }
@@ -1847,6 +1847,7 @@ final class DbTransfer {
                     basketId = stored.getAsLong();
                     existingObjects = DbDatasetWrite.readObjects(db, mapping, topic, basketId, token);
                     DbDatasetWrite.clearBasketPayload(db, mapping, basketId, token);
+                    externalPendingByBasket.remove(basketId);
                     return;
                 }
                 existingObjects = new HashMap<>();
@@ -2483,7 +2484,11 @@ final class DbTransfer {
                 return reserveReferenceTarget(patch);
             }
             if (target == null) {
-                (external ? externalPending : pending).add(patch);
+                if (external) {
+                    externalPendingByBasket.computeIfAbsent(basketId, ignored -> new ArrayList<>()).add(patch);
+                } else {
+                    pending.add(patch);
+                }
             } else {
                 checkReference(patch, target);
             }
@@ -2515,7 +2520,13 @@ final class DbTransfer {
             patchArrayReferences();
             pendingArrays.clear();
             objects.clear();
-            removedObjects.addAll(existingObjects.values());
+            if (updating) {
+                if (existingObjects.isEmpty()) {
+                    removedByBasket.remove(basketId);
+                } else {
+                    removedByBasket.put(basketId, List.copyOf(existingObjects.values()));
+                }
+            }
             existingObjects = Map.of();
             if (importStatistics) writeBasketStatistics();
         }
@@ -2533,8 +2544,17 @@ final class DbTransfer {
         }
 
         void finishTransfer() throws SQLException {
+            // Only the last delivery of each basket contributes removals. Some targets were
+            // cached while processing an earlier version of a basket in the same update.
+            var removedObjects = removedByBasket.values().stream().flatMap(List::stream).toList();
             DbDatasetWrite.deleteRemovedObjects(db, mapping, removedObjects, token);
-            patchReferences(externalPending, externalObjects);
+            if (!removedObjects.isEmpty() && !externalObjects.isEmpty()) {
+                var removedIds = removedObjects.stream().map(DbDatasetWrite.ExistingObject::id).collect(Collectors.toSet());
+                externalObjects.values().removeIf(target -> removedIds.contains(target.id()));
+            }
+            for (var references : externalPendingByBasket.values()) {
+                patchReferences(references, externalObjects);
+            }
         }
 
         private void patchReferences(List<Pending> references, Map<String, StoredObject> targets) throws SQLException {
