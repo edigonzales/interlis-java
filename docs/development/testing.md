@@ -494,6 +494,9 @@ von `T_Type` und die erweiterten Typchecks. `ModelExtensionStorageTest`
 prüft zusätzlich die alten Zeilen, die SQL-Checks und den Rollback der DDL.
 Die `smart1Fragment*`-Fälle ergänzen nacheinander zwei Fragmenttabellen
 und prüfen die gemeinsame Objekt- und Basket-ID mit der bestehenden Wurzel.
+Die `smart1SubtypeStructures*`-Fälle prüfen zusätzliche Rückverweisspalten
+in einer belegten Strukturtabelle. Für den ili2db-Import verwendet die
+XTF-2.4-Fixture je Listenelement eine Attributhülle.
 
 `--tests '*SmartReferenceExtensionInteropTest'` prüft Smart2-Zielspalten
 für bestehende Rollen und Referenzattribute. Die Fälle vergleichen

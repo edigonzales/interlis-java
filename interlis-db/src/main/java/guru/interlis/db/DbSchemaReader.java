@@ -12,6 +12,7 @@ import guru.interlis.db.DbMapping.Kind;
 import guru.interlis.db.DbMapping.SecondaryGeometry;
 import guru.interlis.db.DbMapping.Table;
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.CollectionKind;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.Modifier;
@@ -816,6 +817,10 @@ final class DbSchemaReader {
                     throw unsupported("new Smart1 roles in shared table " + owner.name());
                 }
                 for (var attribute : DbMapping.attributes(object)) {
+                    if (extension.addedCompositions().stream().anyMatch(composition -> composition.slot().symbol().equals(attribute.symbol())
+                            && composition.parent().equals(owner.object().symbol()) && sharedSmart1Composition(mapping, composition))) {
+                        continue;
+                    }
                     var fields = owner.columns().stream().filter(column -> column.slot().symbol().equals(attribute.symbol())).toList();
                     if (fields.size() != 1 || fields.getFirst().kind().geometry() || fields.getFirst().target().isPresent()
                             || fields.getFirst().transformation() != null || fields.getFirst().enumText().isPresent()
@@ -834,6 +839,17 @@ final class DbSchemaReader {
         var discriminators = mapping.profile() == DbInheritance.Profile.SMART1
                 ? planSmart1Discriminators(db, extension, names, token) : List.<SchemaPlan.DiscriminatorChange>of();
         return extension.withExtension(newFiles, columns, discriminators, references);
+    }
+
+    private static boolean sharedSmart1Composition(DbMapping mapping, Composition composition) {
+        var plan = mapping.plan();
+        var child = plan.object(composition.child()).orElseThrow();
+        boolean supportedCardinality = composition.collectionKind().map(kind -> kind == CollectionKind.LIST)
+                .orElseGet(() -> !composition.slot().attribute().mandatory());
+        return supportedCardinality && composition.child().equals(composition.childRoot())
+                && !child.modifiers().contains(Modifier.ABSTRACT)
+                && plan.objects().stream().noneMatch(object -> object.baseType().filter(child.symbol()::equals).isPresent())
+                && DbMapping.attributes(child).stream().allMatch(field -> DbMapping.scalarKind(DbStructureShape.type(plan, field)) != null);
     }
 
     private static List<SchemaPlan.DiscriminatorChange> planSmart1Discriminators(Database db, SchemaPlan extension,

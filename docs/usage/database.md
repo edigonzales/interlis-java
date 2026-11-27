@@ -354,6 +354,12 @@ Zwischenklasse und des Untertyps. Wurzel und Fragment teilen `T_Id` und
 `T_Basket`. Weitere Erweiterungen berücksichtigen die bereits gespeicherten
 Fragmente auch bei einer separat gelieferten Modellquelle.
 
+Ein gemeinsam gespeicherter Smart1-Untertyp kann optionale Einzelstrukturen
+und `LIST OF` mit flachen skalaren Strukturtypen ergänzen. Die neuen
+nullable Rückverweisspalten stehen in der Strukturtabelle und zeigen auf
+die gemeinsame Klassentabelle. Bestehende Strukturzeilen behalten ihre
+Zuordnung. Ein Update kann die Liste kürzen und erhält die ID des Elternobjekts.
+
 In Smart1 und Smart2 kann ein neues Modell externe eingebettete Rollen auf
 Klassen in bereits abgebildeten Topics ergänzen. Die Rollenspalten stehen
 in der neuen Eigentümertabelle. Bei einem abstrakten Ziel bestimmt die

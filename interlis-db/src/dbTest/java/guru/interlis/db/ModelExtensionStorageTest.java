@@ -10,6 +10,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -374,6 +375,44 @@ final class ModelExtensionStorageTest {
             assertEquals("entry", scalar(sql, "SELECT t_type" + originalRow));
             assertEquals("1", scalar(sql, "SELECT count(*) FROM " + entry + " e JOIN " + db.table("specializedentry")
                     + " s ON s.t_id=e.t_id AND s.t_basket=e.t_basket WHERE e.t_type='specializedentry' AND s.score=5"));
+        }
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void smart1SubtypeStructuresKeepExistingOwnersOnUpdateAndRollback(Backend backend, int version) throws Exception {
+        var fixture = new Smart1StructureExtensionFixtures(work, version);
+        var db = POSTGIS.target(work.resolve("subtype-memos.gpkg"), backend);
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource, "--inheritance", "smart1");
+        assertCliSuccess(db, "import", fixture.original, "original", fixture.originalInput());
+        String notes = db.table("memopart");
+        String originalSql = "SELECT t_id || ':' || t_basket || ':' || entry_ownmemo || ':' || caption FROM " + notes
+                + " WHERE entry_ownmemo IS NOT NULL";
+        try (var sql = db.connect()) {
+            var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+            String original = scalar(sql, originalSql);
+            var cancelled = schemaWithIdentityColumns(db, fixture.subtype, fixture.subtypeSource,
+                    cancelDuringDdl(new AtomicInteger(), 3), "--add-models", "--model-file", fixture.originalSource.toString());
+            assertEquals(130, cancelled.code(), cancelled::diagnostics);
+            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+            assertEquals(original, scalar(sql, originalSql));
+
+            assertCliSuccess(db, "schemaimport", fixture.subtype, null, fixture.subtypeSource,
+                    "--add-models", "--model-file", fixture.originalSource.toString());
+            assertCliSuccess(db, "import", fixture.subtype, "new", fixture.subtypeInput("new", List.of("first", "second")));
+            String parent = "SELECT t_id FROM " + db.table("entry") + " WHERE t_ili_tid='new-entry'";
+            String parentId = scalar(sql, parent);
+            String listRows = " FROM " + notes + " WHERE entry_entries=" + parentId;
+            assertEquals("2", scalar(sql, "SELECT count(*)" + listRows));
+
+            assertCliSuccess(db, "update", fixture.subtype, "new", fixture.subtypeInput("new", List.of("second")));
+            assertEquals(parentId, scalar(sql, parent));
+            assertEquals("1", scalar(sql, "SELECT count(*)" + listRows));
+            assertEquals("second", scalar(sql, "SELECT caption" + listRows + " AND t_seq=0 AND entry_ownmemo IS NULL"));
+            assertEquals(original, scalar(sql, originalSql));
+            Path output = work.resolve("updated-subtype-memos.xtf");
+            assertCliSuccess(db, "export", fixture.subtype, "new", output);
+            fixture.assertSubtype(output, "new", List.of("second"));
         }
     }
 

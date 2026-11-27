@@ -81,6 +81,37 @@ final class ModelExtensionInteropTest {
     @Test void smart1FragmentGeoPackage24() throws Exception { exchangeSmart1Fragments(24, null); }
     @Test void smart1FragmentPostgis23() throws Exception { exchangeSmart1Fragments(23, POSTGIS.container()); }
     @Test void smart1FragmentPostgis24() throws Exception { exchangeSmart1Fragments(24, POSTGIS.container()); }
+    @Test void smart1SubtypeStructuresGeoPackage23() throws Exception { exchangeSmart1SubtypeStructures(23, null); }
+    @Test void smart1SubtypeStructuresGeoPackage24() throws Exception { exchangeSmart1SubtypeStructures(24, null); }
+    @Test void smart1SubtypeStructuresPostgis23() throws Exception { exchangeSmart1SubtypeStructures(23, POSTGIS.container()); }
+    @Test void smart1SubtypeStructuresPostgis24() throws Exception { exchangeSmart1SubtypeStructures(24, POSTGIS.container()); }
+
+    private void exchangeSmart1SubtypeStructures(int version, PostgreSQLContainer postgres) throws Exception {
+        var fixture = new Smart1StructureExtensionFixtures(work, version);
+        var db = new TestDatabase(work, postgres, "append_smart1_structure", "v" + version + "_");
+        var expected = db.peer("smart1_structure_reference");
+        var reference = new ReferenceTool(work, db.postgis());
+        schema(reference, db, work, fixture.original, "smart1", "--createFk", "--createFkIdx");
+        importDataset(reference, db, "original", fixture.originalInput());
+        assertCliSuccess(db, "schemaimport", fixture.subtype, null, fixture.subtypeSource,
+                "--add-models", "--model-file", fixture.originalSource.toString());
+        schema(reference, expected, work, fixture.original + ";" + fixture.subtype, "smart1", "--createFk", "--createFkIdx");
+        assertSubtypeCatalog(db, expected, "memopart");
+        try (var sql = db.connect(); var expectedSql = expected.connect()) {
+            assertEquals(foreignKeyColumns(expected, expectedSql), foreignKeyColumns(db, sql));
+        }
+
+        var output = work.resolve("subtype-memos.xtf");
+        var entries = List.of("before", "after");
+        importDataset(reference, db, "legacy", fixture.subtypeInput("legacy", entries));
+        assertCliSuccess(db, "export", fixture.subtype, "legacy", output);
+        fixture.assertSubtype(output, "legacy", entries);
+        assertCliSuccess(db, "import", fixture.subtype, "native", fixture.subtypeInput("native", entries));
+        exportDataset(reference, db, "native", output);
+        fixture.assertSubtype(output, "native", entries);
+        assertCliSuccess(db, "export", fixture.original, "original", output);
+        fixture.assertOriginal(output);
+    }
 
     private void exchangeSmart1Fragments(int version, PostgreSQLContainer postgres) throws Exception {
         var fixture = new SmartModelExtensionFixtures(work, version, false, false);
