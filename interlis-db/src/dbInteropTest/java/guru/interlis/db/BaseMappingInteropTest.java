@@ -23,6 +23,7 @@ import static guru.interlis.db.InteropCommands.exportDataset;
 import static guru.interlis.db.InteropCommands.importDataset;
 import static guru.interlis.db.InteropCommands.schema;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 final class BaseMappingInteropTest {
     private static final PostgisTestServer POSTGIS = new PostgisTestServer();
@@ -49,6 +50,13 @@ final class BaseMappingInteropTest {
         schema(reference, baseline, work, model, "newClass");
         assertSchemaWithIdentityColumns(own, model, source);
         compareCatalogs(baseline, own, version);
+        try (var sql = baseline.connect()) {
+            execute(sql, "ALTER TABLE " + baseline.table("place") + " ADD COLUMN editor_note TEXT");
+            execute(sql, "ALTER TABLE " + baseline.table("place")
+                    + " ADD COLUMN editor_state TEXT NOT NULL DEFAULT 'unreviewed'");
+            execute(sql, "ALTER TABLE " + baseline.table("detail") + " ADD COLUMN editor_note TEXT");
+            execute(sql, "ALTER TABLE " + baseline.table("annotatedlink") + " ADD COLUMN editor_note TEXT");
+        }
         Files.delete(source);
 
         String transfer = fixture.transfer();
@@ -56,6 +64,14 @@ final class BaseMappingInteropTest {
         var nativeInput = Files.writeString(work.resolve("native.xtf"), transfer.replace("legacy-", "native-"));
         for (var db : List.of(baseline, own)) {
             importDataset(reference, db, "legacy", legacy);
+            if (db == baseline) {
+                try (var sql = db.connect()) {
+                    String place = db.table("place") + " WHERE t_ili_tid = 'legacy-place-1'";
+                    assertNull(scalar(sql, "SELECT editor_note FROM " + place));
+                    execute(sql, "UPDATE " + db.table("place") + " SET editor_note='application text'"
+                            + " WHERE t_ili_tid = 'legacy-place-1'");
+                }
+            }
             assertReferenceEmptyTextAndRestoreSqlEmptyStrings(db);
             var output = work.resolve(db.schema() + "-native-export.xtf");
             assertCliSuccess(db, "export", model, "legacy", output);
@@ -68,6 +84,13 @@ final class BaseMappingInteropTest {
         }
         try (var sql = baseline.connect()) {
             assertRows(baseline, sql, version, 2);
+            String place = baseline.table("place");
+            assertEquals("application text", scalar(sql, "SELECT editor_note FROM " + place
+                    + " WHERE t_ili_tid='legacy-place-1'"));
+            assertNull(scalar(sql, "SELECT editor_note FROM " + place + " WHERE t_ili_tid='native-place-1'"));
+            assertEquals(Set.of("legacy-place-1:unreviewed", "native-place-1:unreviewed"), catalogKeys(sql,
+                    "SELECT t_ili_tid || ':' || editor_state FROM " + place
+                            + " WHERE t_ili_tid IN ('legacy-place-1','native-place-1')"));
         }
 
         var tail = Files.writeString(work.resolve("tail.xtf"), transfer.replace("legacy-", "tail-"));

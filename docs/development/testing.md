@@ -644,6 +644,12 @@ die Basket-Zuordnung und einen Marker mit seiner Verknüpfung. `GeometryStorageT
 prüft Rollback und Exportfehler für Geometrien sowie den Export leerer
 SQL-Sammlungen.
 
+Der Referenz-Basislauf enthält zusätzliche Anwendungsspalten in einer
+Fach-, einer Struktur- und einer Linktabelle. Der Test
+`BaseMappingStorageTest.applicationColumnsKeepValuesAndDatabaseDefaults`
+prüft Anwendungswerte auf erhaltenen Zeilen, SQL-Defaults auf neuen
+Zeilen und den Rollback bei einer zusätzlichen Pflichtspalte.
+
 Der Basislauf prüft die XTF-Ergebnisse. `BaseMappingStorageTest` prüft
 die physischen Zeilen, ihre Binärkodierung und Zuordnungen per JDBC.
 Eine beschädigte Zuordnung für `Place.Select` erhält die Exportdatei.

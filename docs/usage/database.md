@@ -67,6 +67,20 @@ Eine in einem abgeleiteten Topic deklarierte eingebettete 1:n-Rolle mit
 lokal deklarierter n-Klasse darf auf eine geerbte Klasse zeigen.
 [Referenzhandbuch](https://github.com/claeis/ili2db/blob/4607cc3a1171ed8a885ed83076c197a12559b41f/docs/ili2db.rst)
 
+## Anwendungsspalten in bestehenden Schemata
+
+Fach-, Struktur-, Link- und Geometriehilfstabellen können zusätzliche
+SQL-Spalten für Anwendungen enthalten. Die bestehenden ili2db-Zuordnungen,
+die technischen Spalten und die registrierten Geometrien bestimmen den
+Umfang des XTF-Transfers.
+
+Neue Zeilen erhalten für solche Anwendungsspalten die SQL-Defaults
+oder `NULL`. Auf weiterverwendeten Zeilen bleiben Anwendungswerte
+bei einem Update erhalten. Strukturen und anonyme Links, die beim Update neu
+aufgebaut werden, erhalten die Defaults für neue Zeilen. Verletzt ein
+`INSERT` eine Datenbankbedingung einer Anwendungsspalte, wird der
+gesamte Transfer zurückgerollt.
+
 ## Schemaerzeugung
 
 ```sh

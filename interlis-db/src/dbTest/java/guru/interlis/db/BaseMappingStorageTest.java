@@ -85,6 +85,79 @@ final class BaseMappingStorageTest {
         assertExportRejected(db, model, "legacy", output, "Select", "missing_select");
     }
 
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void applicationColumnsKeepValuesAndDatabaseDefaults(Backend backend, int version) throws Exception {
+        var db = POSTGIS.target(work.resolve("application-columns.gpkg"), backend);
+        var fixture = new ProfileFixtures(work, version);
+        String model = "ApplicationColumns";
+        Path ili = fixture.source(model, """
+                DOMAIN Position = COORD 0.000 .. 999999.000, 0.000 .. 999999.000;
+                CLASS Asset =
+                  Label : TEXT*24;
+                  Center : Position;
+                  Secondary : Position;
+                END Asset;
+                CLASS Blocked = END Blocked;
+                """);
+        if (db.postgis()) {
+            assertSchemaWithIdentityColumns(db, model, ili, "--one-geom-per-table");
+        } else {
+            assertSchemaWithIdentityColumns(db, model, ili);
+        }
+        String asset = db.table("asset");
+        String secondary = db.table("asset_secondary");
+        String blocked = db.table("blocked");
+        String geometry = "<Secondary>" + fixture.point("100.000", "200.000") + "</Secondary>";
+        try (var sql = db.connect()) {
+            execute(sql, "ALTER TABLE " + asset + " ADD COLUMN editor_note TEXT");
+            execute(sql, "ALTER TABLE " + asset + " ADD COLUMN editor_state TEXT NOT NULL DEFAULT 'unreviewed'");
+            execute(sql, "ALTER TABLE " + secondary + " ADD COLUMN editor_note TEXT");
+            execute(sql, "ALTER TABLE " + blocked + " ADD COLUMN required_note TEXT NOT NULL");
+            var input = fixture.data(model, "initial",
+                    fixture.object(model, "Asset", "initial-asset", "<Label>before</Label>" + geometry));
+            assertCliSuccess(db, "import", model, "initial", input);
+            assertNull(scalar(sql, "SELECT editor_note FROM " + asset));
+            assertEquals("unreviewed", scalar(sql, "SELECT editor_state FROM " + asset));
+            execute(sql, "UPDATE " + asset + " SET editor_note='edited', editor_state='reviewed'");
+            execute(sql, "UPDATE " + secondary + " SET editor_note='geometry edit'");
+            String objectId = scalar(sql, "SELECT t_id FROM " + asset);
+
+            var update = fixture.data(model, "initial",
+                    fixture.object(model, "Asset", "initial-asset", "<Label>after</Label>" + geometry));
+            assertCliSuccess(db, "update", model, "initial", update);
+            assertEquals(objectId, scalar(sql, "SELECT t_id FROM " + asset));
+            assertEquals("after:edited:reviewed", scalar(sql,
+                    "SELECT label || ':' || editor_note || ':' || editor_state FROM " + asset));
+            assertEquals("geometry edit", scalar(sql, "SELECT editor_note FROM " + secondary));
+
+            var broken = fixture.data(model, "broken",
+                    fixture.object(model, "Asset", "written-first", "<Label>temporary</Label>" + geometry)
+                            + fixture.object(model, "Blocked", "missing-app-value", ""));
+            var rejected = cli(db, "import", model, "broken", broken, CancellationToken.none());
+            assertEquals(1, rejected.code(), rejected::diagnostics);
+            assertTrue(rejected.diagnostics().contains("Database operation failed"), rejected::diagnostics);
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket")));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + asset));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + secondary));
+            assertEquals("0", scalar(sql, "SELECT count(*) FROM " + blocked));
+
+            Path output = work.resolve("application-export.xtf");
+            assertCliSuccess(db, "export", model, "initial", output);
+            var basket = children(readDataSection(output, version)).getFirst();
+            var object = children(basket).getFirst();
+            assertEquals("after", DbTestSupport.text(object, "Label"));
+            assertEquals(Set.of("Label", "Secondary"),
+                    children(object).stream().map(org.w3c.dom.Element::getLocalName)
+                            .collect(java.util.stream.Collectors.toSet()));
+            execute(sql, "INSERT INTO " + db.table("t_ili2db_column_prop")
+                    + " (tablename, columnname, tag, setting) VALUES ('asset', 'editor_note',"
+                    + " 'ch.ehi.ili2db.foreignKey', 'blocked')");
+            assertExportRejected(db, model, "initial", output, "asset.editor_note");
+        }
+    }
+
     private static void assertTowerRange(Target db, Connection sql, String column, String maximum, String outside)
             throws SQLException {
         String table = db.table("tower");

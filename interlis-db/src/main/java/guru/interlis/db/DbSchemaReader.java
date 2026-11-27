@@ -78,6 +78,9 @@ import static guru.interlis.db.Ili2dbLayout.foldedName;
 final class DbSchemaReader {
     private static final Pattern MODEL_DECLARATION = Pattern.compile("([^\\s{}]+)(?:\\s*\\{([^{}]*)\\})?\\s*");
 
+    private static final Set<String> SUPPLEMENTARY_COLUMNS =
+            Set.of(T_TYPE, T_SEQ, T_DATASET_NAME, T_USER, T_CREATE_DATE, T_LAST_CHANGE);
+
     private record StoredModel(String names, LanguageVersion version, String content, List<String> imports) { }
     private record AttributeName(String name, String owner, String target) { }
     record Settings(boolean splitGeometries, int defaultEpsg, String modelEpsgAssignments, boolean referenceEpsgHeader,
@@ -413,9 +416,7 @@ final class DbSchemaReader {
                     && !physical.columns().keySet().equals(physical.used())) {
                 bindOtherStructureOwners(db, scope, physical);
             }
-            if (!physical.columns().keySet().equals(physical.used())) {
-                throw new DbException("Unexpected physical columns in " + physical.name());
-            }
+            checkApplicationColumns(db, physical.name(), physical.columns(), physical.used());
         }
         if (!classNames.isEmpty() || !transformations.secondary().isEmpty()) {
             throw new DbException("Extra CLASSNAME/TRAFO mappings for " + modelName);
@@ -1304,7 +1305,7 @@ final class DbSchemaReader {
         requireIdPrimaryKey(db, table);
         used.add(key(db, column.name()));
         bindAdditionalColumns(db, table, physical, used, settings);
-        if (!physical.keySet().equals(used)) throw new DbException("Unexpected physical columns in " + table);
+        checkApplicationColumns(db, table, physical, used);
 
         String query = "SELECT setting FROM " + db.technicalTable(Ili2dbLayout.COLUMN_PROP)
                 + " WHERE tablename = ? AND subtype IS NULL AND lower(columnname) = ? AND tag = ?";
@@ -1319,6 +1320,47 @@ final class DbSchemaReader {
             }
         }
         return new SecondaryGeometry(table, bindGeometry(db, table, column, settings));
+    }
+
+    private static void checkApplicationColumns(Database db, String table, Map<String, String> physical, Set<String> used)
+            throws SQLException {
+        if (physical.keySet().equals(used)) return;
+        var extra = new HashSet<>(physical.keySet());
+        extra.removeAll(used);
+        for (String column : extra) {
+            String folded = foldedName(column);
+            String type = physical.get(column);
+            if (Ili2dbLayout.TECHNICAL_COLUMNS.contains(folded)
+                    || SUPPLEMENTARY_COLUMNS.contains(folded)
+                    || folded.endsWith("_" + T_SEQ) || type.equals("geometry") || type.equals("geography")) {
+                throw unexpectedColumn(table, column);
+            }
+        }
+
+        // Read mappings for the physical table even when their model lies outside the transfer scope.
+        String owner = db.gpkg() ? "lower(colowner)" : "colowner";
+        String tableName = db.gpkg() ? "lower(tablename)" : "tablename";
+        String sql = "SELECT sqlname FROM " + db.technicalTable(ATTRNAME) + " WHERE " + owner + " = ?"
+                + " UNION ALL SELECT columnname FROM " + db.technicalTable(Ili2dbLayout.COLUMN_PROP)
+                + " WHERE " + tableName + " = ?";
+        if (db.gpkg()) {
+            sql += " UNION ALL SELECT column_name FROM main.gpkg_geometry_columns WHERE lower(table_name) = ?";
+        }
+        try (var stmt = db.connection().prepareStatement(sql)) {
+            stmt.setString(1, key(db, table));
+            stmt.setString(2, key(db, table));
+            if (db.gpkg()) stmt.setString(3, key(db, table));
+            try (var rows = stmt.executeQuery()) {
+                while (rows.next()) {
+                    String column = rows.getString(1);
+                    if (column != null && extra.contains(key(db, column))) throw unexpectedColumn(table, column);
+                }
+            }
+        }
+    }
+
+    private static DbException unexpectedColumn(String table, String column) {
+        return new DbException("Unexpected physical column " + table + "." + column + " in the ili2db mapping");
     }
 
     private static Column bindGeometry(Database db, String table, Column column, Settings settings) throws SQLException {
