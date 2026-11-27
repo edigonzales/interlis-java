@@ -1,5 +1,6 @@
 package guru.interlis.db;
 
+import guru.interlis.model.CoordinateType;
 import guru.interlis.model.OidRule;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
@@ -51,9 +52,14 @@ final class DbBaseProjection {
         var values = new LinkedHashMap<SymbolRef, TransferValue>();
         for (var field : target.slots()) {
             if (!(field instanceof AttributeSlot attribute) || attribute.attribute().transientAttribute()) continue;
-            var kind = plan.type(attribute.effectiveType()).known().orElseThrow().kind();
-            switch (kind) {
+            var type = plan.type(attribute.effectiveType()).known().orElseThrow();
+            switch (type.kind()) {
                 case TEXT, BOOLEAN, NUMERIC, ENUMERATION, FORMATTED, OID, BLACKBOX -> { }
+                case COORDINATE -> {
+                    if (((CoordinateType) type).multiCoordinate()) {
+                        throw DbMapping.unsupported("base-model export of " + field.name().declared());
+                    }
+                }
                 default -> throw DbMapping.unsupported("base-model export of " + field.name().declared());
             }
             object.value(field.symbol()).ifPresent(value -> values.put(field.symbol(), value));

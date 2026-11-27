@@ -600,6 +600,7 @@ prüft stabile IDs, eingehende Referenzen und den Erhalt unabhängiger
 Datensätze bei Mutationen im NewClass-Layout. Der Basismodell-Export
 vergleicht `--export-model` mit ili2db `--exportModels`. Beide Werkzeuge
 importieren die Ausgabe des jeweils anderen in ein reines Basisschema.
+Der Mischlauf prüft auch die Koordinaten und den SRID eines geerbten Punkts.
 Der eigene Test prüft die unveränderte Zieldatei bei einem unerreichbaren
 Basistopic oder einer im Basismodell verbleibenden Rolle.
 

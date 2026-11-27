@@ -113,8 +113,9 @@ final class TopicInheritanceFixtures {
         var region = basket(data, version, town + ".Core", prefix + "region-b");
         assertEquals(2, children(region).size());
         var station = object(region, town + ".Core.Station", prefix + "region-s");
-        assertEquals(1, children(station).size());
+        assertEquals(2, children(station).size());
         assertField(station, town, "Memo", "base");
+        assertCenter(station);
         assertField(object(region, town + ".Core.Marker", prefix + "region-m"), town, "Memo", "inherited");
         if (includeFlat) {
             var flatBasket = basket(data, version, town + ".Core", prefix + "flat-b");
@@ -144,7 +145,13 @@ final class TopicInheritanceFixtures {
         var marker = object(basket, town + ".Core.Marker", prefix + "-m");
         assertField(station, town, "Memo", baseMemo);
         assertField(station, child, "LocalMemo", localMemo);
+        assertCenter(station);
         assertField(marker, town, "Memo", markerMemo);
+    }
+
+    private void assertCenter(Element station) {
+        if (version == 24) assertName(child(station, "Center"), version, town + ".Center");
+        CrsFixtures.assertPoint(station, "Center", "2600123.125", "1200321.625");
     }
 
     private void assertRefinement(Element basket, String prefix, String text) {

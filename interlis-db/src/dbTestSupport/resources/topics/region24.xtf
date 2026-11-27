@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
             xmlns:a="http://www.interlis.ch/xtf/2.4/TownChild24"
-            xmlns:b="http://www.interlis.ch/xtf/2.4/TownParent24">
+            xmlns:b="http://www.interlis.ch/xtf/2.4/TownParent24"
+            xmlns:g="http://www.interlis.ch/geometry/1.0">
   <i:headersection><i:models><i:model>TownChild24</i:model></i:models></i:headersection>
   <i:datasection>
     <a:Region i:bid="region-b">
       <b:Marker i:tid="region-m"><b:Memo>inherited</b:Memo></b:Marker>
-      <a:LocalStation i:tid="region-s"><b:Memo>base</b:Memo><a:LocalMemo>child</a:LocalMemo></a:LocalStation>
+      <a:LocalStation i:tid="region-s"><b:Memo>base</b:Memo><b:Center><g:coord><g:c1>2600123.125</g:c1><g:c2>1200321.625</g:c2></g:coord></b:Center><a:LocalMemo>child</a:LocalMemo></a:LocalStation>
     </a:Region>
   </i:datasection>
 </i:transfer>

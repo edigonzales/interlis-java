@@ -103,6 +103,7 @@ final class TopicInheritanceInteropTest {
             assertEquals(Set.of(prefix + "region-b", prefix + "flat-b"),
                     catalogKeys(sql, "SELECT t_ili_tid FROM " + baskets + " WHERE topic='" + fixture.town + ".Core'"));
             assertEquals(prefix + "region-s:base", scalar(sql, "SELECT t_ili_tid || ':' || memo FROM " + db.table("station")));
+            CrsFixtures.assertStoredEpsg(db, sql, "station", "center", prefix + "region-s", 2056);
             assertEquals(Set.of(prefix + "region-m:inherited", prefix + "flat-m:inherited"),
                     catalogKeys(sql, "SELECT t_ili_tid || ':' || memo FROM " + db.table("marker")));
         }

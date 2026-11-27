@@ -180,6 +180,9 @@ final class TopicInheritanceStorageTest {
         var output = work.resolve("base-export.xtf");
         assertCliSuccess(db, "export", fixture.child, null, output, "--basket", "region-b", "--export-model", fixture.town);
         fixture.assertBaseDelivery(output, "", false);
+        try (var sql = db.connect()) {
+            CrsFixtures.assertStoredEpsg(db, sql, "station", "center", "region-s", 2056);
+        }
         var published = Files.readAllBytes(output);
 
         assertCliFailure(db, "export", fixture.child, null, output,
