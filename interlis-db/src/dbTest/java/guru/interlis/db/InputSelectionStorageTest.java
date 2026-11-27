@@ -84,4 +84,35 @@ final class InputSelectionStorageTest {
             assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket")));
         }
     }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void skippedBasketStillProtectsReferencedObjectDuringUpdate(Backend backend, int version) throws Exception {
+        var fixture = new ExportSelectionFixtures(work, version);
+        var db = POSTGIS.target(work.resolve("selected-update.gpkg"), backend);
+        assertSchemaWithIdentityColumns(db, fixture.model, fixture.source, "--create-import-tabs");
+        assertCliSuccess(db, "import", fixture.model, "kept", fixture.delivery("initial",
+                fixture.basket("Data", "targets-b", fixture.place("target") + fixture.asset("asset", "before", false)),
+                fixture.basket("Data", "sources-b", fixture.survey("source", "target", "targets-b"))));
+        String target = "SELECT t_id FROM " + db.table("place") + " WHERE t_ili_tid='target'";
+        String targetId;
+        try (var sql = db.connect()) {
+            targetId = scalar(sql, target);
+        }
+        var update = fixture.delivery("update",
+                fixture.basket("Data", "targets-b", fixture.asset("asset", "after", false)),
+                fixture.basket("Data", "sources-b", ""));
+        assertCliFailure(db, "update", fixture.model, "kept", update, "Cannot delete referenced object T_Id " + targetId,
+                "--basket", "targets-b");
+        try (var sql = db.connect()) {
+            assertEquals("before", scalar(sql, "SELECT label FROM " + db.table("asset") + " WHERE t_ili_tid='asset'"));
+            assertEquals(targetId, scalar(sql, target));
+            assertEquals(targetId, scalar(sql, "SELECT destination FROM " + db.table("pointer")));
+            assertEquals("source", scalar(sql, "SELECT t_ili_tid FROM " + db.table("survey")));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_dataset")));
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket")));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_import")));
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_import_basket")));
+        }
+    }
 }

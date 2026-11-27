@@ -116,6 +116,9 @@ und für einen Wechsel der ili2db-Referenzversion vorgesehen.
 BID-/Topic-Filter und leere Auswahlen mit ili2db. `InputSelectionStorageTest`
 prüft den Import ohne Basket-Spalte, externe Zielauflösung und Rollback
 bei fehlerhaftem XML in einem ausgelassenen Basket.
+`--tests '*InputSelectionInteropTest.*Update*'` prüft den selektiven
+Basket-Ersatz und stabile IDs. Der eigene DB-Test prüft den Rollback bei
+einer Referenz aus einem ausgelassenen Basket.
 
 Der GeoPackage-Selektor läuft ohne Docker. JUnit-XML liegt pro Aufgabe unter
 `interlis-db/build/test-results/` und der HTML-Bericht unter

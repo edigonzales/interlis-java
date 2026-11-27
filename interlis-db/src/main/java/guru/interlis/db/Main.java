@@ -40,7 +40,10 @@ public final class Main {
                    interlis-db import --model NAME [--model NAME]... [--dataset NAME] [--raw-scalar-text]
                     [--basket BID]... [--topic MODEL.TOPIC]...
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
-                   interlis-db <replace|update> --model NAME [--model NAME]... --dataset NAME
+                   interlis-db update --model NAME [--model NAME]... --dataset NAME
+                    [--basket BID]... [--topic MODEL.TOPIC]...
+                    (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
+                   interlis-db replace --model NAME [--model NAME]... --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
                    interlis-db delete --model NAME [--model NAME]... --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME)
@@ -331,8 +334,9 @@ public final class Main {
                     if (modelFiles.contains(source)) throw new IllegalArgumentException("Repeated model file " + source);
                     modelFiles.add(source);
                 } else if (arg.equals("--dataset") || arg.equals("--basket") || arg.equals("--topic")) {
-                    if (!arg.equals("--dataset") && command != Command.EXPORT && command != Command.IMPORT) {
-                        throw new IllegalArgumentException(arg + " is only valid with export or import");
+                    if (!arg.equals("--dataset") && command != Command.EXPORT && command != Command.IMPORT
+                            && command != Command.UPDATE) {
+                        throw new IllegalArgumentException(arg + " is only valid with export, import or update");
                     }
                     if (++i == args.length || args[i].isBlank() || args[i].startsWith("--")) {
                         throw new IllegalArgumentException("Missing value for " + arg);

@@ -494,6 +494,12 @@ Aktualisierung innerhalb ihres Baskets wiederverwendet werden.
 Die Auswahl per `--model` kann sich bei einem Update auf die gelieferten
 Modelle beschränken.
 
+`update` unterstützt dieselbe BID- und Topic-Auswahl wie `import`.
+Jeder ausgewählte Basket enthält den vollständigen neuen Bestand. Die übrigen
+Baskets und ihre Referenzen bleiben erhalten. Hat die Auswahl keine Treffer,
+bleibt der vorhandene Bestand erhalten. Ein fehlender Datensatz wird angelegt.
+Bei aktivierter Importstatistik erhält der Lauf dann keine Basketstatistik.
+
 Das Update-Profil unterstützt Klassen mit `UUIDOID`, `STANDARDOID`
 oder gespeicherten Transfer-IDs aus `--importTid --importBid`.
 Die gespeicherte BID und die Objekt-OID beziehungsweise Transfer-TID
