@@ -204,6 +204,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     private static Map<String, Set<String>> requiredColumns(DbMapping mapping, List<DbMapping.Table> addedTables,
                                                              boolean multiSrs) {
         var required = new HashMap<String, Set<String>>();
+        boolean newClass = mapping.profile() == DbInheritance.Profile.NEW_CLASS;
         for (var table : addedTables) {
             var kind = table.object().kind();
             boolean standaloneLink = mapping.strictStandaloneLink(table);
@@ -217,7 +218,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                     continue;
                 }
                 if (column.slot() instanceof RoleSlot role && mapping.singleTargetEmbeddedRole(table, column)) {
-                    if (role.role().cardinality().lower().signum() > 0) columns.add(column.name());
+                    if (mapping.requiresEmbeddedRole(table, role)) columns.add(column.name());
                     continue;
                 }
                 if (column.kind() == DbMapping.Kind.REFERENCE && column.catalogueReference().isEmpty()
@@ -225,16 +226,17 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                         && DbMapping.simpleLocalReference(mapping.plan(), reference)) {
                     continue;
                 }
-                boolean directGeometry = kind == SymbolKind.CLASS && fixedGeometry(column, multiSrs);
+                boolean directGeometry = newClass && kind == SymbolKind.CLASS && fixedGeometry(column, multiSrs);
                 if (!column.simpleScalar() && !directGeometry) {
                     throw DbMapping.unsupported("--sql-not-null at " + column.slot().name().declared());
                 }
-                if (column.slot() instanceof AttributeSlot attribute && attribute.cardinality().lower().signum() > 0) {
+                if (column.slot() instanceof AttributeSlot attribute && attribute.cardinality().lower().signum() > 0
+                        && (newClass || mapping.isAssignableTo(table.object().symbol(), mapping.attributeOwner(attribute)))) {
                     columns.addAll(column.physicalNames());
                 }
             }
             if (!columns.isEmpty()) required.put(table.name(), Set.copyOf(columns));
-            if (!table.secondaryGeometries().isEmpty() && !DbMapping.flatClass(mapping.plan(), table.object())) {
+            if (!table.secondaryGeometries().isEmpty() && (!newClass || !DbMapping.flatClass(mapping.plan(), table.object()))) {
                 throw DbMapping.unsupported("--sql-not-null at " + table.object().name().declared());
             }
             for (var secondary : table.secondaryGeometries()) {

@@ -553,6 +553,13 @@ gilt `SqlNull=enable`. Die Kombination mit `--create-mandatory-checks` ist
 auf das nullable Profil beschränkt.
 Geometrieabbildungen mit `--multi-srs` verwenden das Profil mit `SqlNull=enable`.
 
+Mit `--inheritance smart1 --sql-not-null` kann ein neues Schema mit direkt
+gespeicherten skalaren Pflichtfeldern und lokalen, ungeordneten eingebetteten
+Rollen mit einer Zielspalte erzeugt werden. Auf einer gemeinsamen Tabelle
+erhalten die skalaren Pflichtfelder ihrer Tabellenklasse `NOT NULL`.
+Pflichtfelder und Pflichtrollen der dort gespeicherten Untertypen bleiben
+nullable, damit Geschwistertypen die Tabelle ohne diese Werte nutzen können.
+
 Der FULL-Transfer mit GeoPackage und PostGIS unterstützt bestehende
 ili2db-Schemata mit `--sqlColsAsText`. Einfache Attribute werden als SQL-Text
 gespeichert. Der Transfer erhält unter anderem Zahlenschreibweisen,

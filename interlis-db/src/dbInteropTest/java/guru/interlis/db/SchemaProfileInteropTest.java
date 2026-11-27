@@ -51,6 +51,17 @@ final class SchemaProfileInteropTest {
                 .strictLinks(expected, expected.peer("profile_strict_links_own"));
     }
 
+    @Test void geoPackageProfileStrictSmart123() throws Exception { exchangeProfileStrictSmart1(23, null); }
+    @Test void geoPackageProfileStrictSmart124() throws Exception { exchangeProfileStrictSmart1(24, null); }
+    @Test void postgisProfileStrictSmart123() throws Exception { exchangeProfileStrictSmart1(23, POSTGIS.container()); }
+    @Test void postgisProfileStrictSmart124() throws Exception { exchangeProfileStrictSmart1(24, POSTGIS.container()); }
+
+    private void exchangeProfileStrictSmart1(int version, PostgreSQLContainer postgres) throws Exception {
+        var expected = new TestDatabase(work, postgres, "profile_strict_smart1_ref", "v" + version + "_");
+        new SchemaProfileCases(work, new ReferenceTool(work, expected.postgis()), version)
+                .strictSmart1(expected, expected.peer("profile_strict_smart1_own"));
+    }
+
     @Test void geoPackageProfileRequiredReferences23() throws Exception { exchangeProfileRequiredReferences(23, null); }
     @Test void geoPackageProfileRequiredReferences24() throws Exception { exchangeProfileRequiredReferences(24, null); }
     @Test void postgisProfileRequiredReferences23() throws Exception { exchangeProfileRequiredReferences(23, POSTGIS.container()); }

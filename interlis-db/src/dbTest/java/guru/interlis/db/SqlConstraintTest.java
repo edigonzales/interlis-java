@@ -435,6 +435,30 @@ final class SqlConstraintTest {
 
     @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void strictSmart1KeepsSubtypeColumnsNullableInTheSharedTable(Backend backend, int version) throws Exception {
+        withDatabase(backend, db -> {
+            String model = "SqlStrictSmart1";
+            var fixture = new ProfileFixtures(work, version);
+            DbTestSupport.assertSchemaWithIdentityColumns(db, model, fixture.strictSmartModel(model),
+                    "--inheritance", "smart1", "--sql-not-null", "--create-fk");
+            assertCliSuccess(db, "import", model, "original", fixture.data(model, "original",
+                    fixture.strictSmartObjects(model, "original", "serial")));
+            try (var sql = db.connect()) {
+                String asset = db.table("asset");
+                assertEquals("serial", scalar(sql, "SELECT aserial FROM " + asset + " WHERE legend IS NULL"));
+                assertEquals("legend", scalar(sql, "SELECT legend FROM " + asset + " WHERE aserial IS NULL AND atdepot IS NULL"));
+                String broken = fixture.strictSmartObjects(model, "original", "tentative").replace("<Common>map</Common>", "");
+                assertCliFailure(db, "update", model, "original", fixture.data(model, "original", broken),
+                        importSqlDiagnostic(db, "23502"));
+                assertEquals("serial", scalar(sql, "SELECT aserial FROM " + asset + " WHERE legend IS NULL"));
+                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + asset + " WHERE common='map' AND legend='legend'"));
+                assertRolledBack(db, sql, 2, 1);
+            }
+        });
+    }
+
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void requiredReferenceAttributesRemainNullableAndRollBackUnresolvedTargets(Backend backend, int version) throws Exception {
         withDatabase(backend, db -> {
             String model = "SqlRequiredReference";

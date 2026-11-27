@@ -528,13 +528,18 @@ final class DbMapping {
     }
 
     boolean singleTargetEmbeddedRole(Table table, Column column) {
-        if (profile() != DbInheritance.Profile.NEW_CLASS || column.kind() != Kind.REFERENCE
-                || !(column.slot() instanceof RoleSlot) || column.external() || column.positionColumn().isPresent()
-                || column.referenceTable().isPresent() || !table.object().symbol().equals(roleOwners.get(column.slot().symbol()))) {
+        if (column.kind() != Kind.REFERENCE || !(column.slot() instanceof RoleSlot role)
+                || column.external() || column.positionColumn().isPresent() || role.role().targets().size() != 1
+                || !roleOwners.containsKey(role.symbol())) {
             return false;
         }
         var target = table(column.targetRelation());
-        return table.object().kind() == SymbolKind.CLASS && target.object().kind() == SymbolKind.CLASS;
+        return table.object().kind() == SymbolKind.CLASS && target.object().kind() == SymbolKind.CLASS
+                && table.columns().stream().noneMatch(other -> other != column && other.slot().symbol().equals(role.symbol()));
+    }
+
+    boolean requiresEmbeddedRole(Table table, RoleSlot role) {
+        return role.role().cardinality().lower().signum() > 0 && table.object().symbol().equals(roleOwners.get(role.symbol()));
     }
 
     static boolean flatClass(TransferPlan plan, ObjectDescriptor object) {
@@ -614,7 +619,7 @@ final class DbMapping {
         return profile() == DbInheritance.Profile.NEW_CLASS || isAssignableTo(actual, attributeOwner(composition.slot()));
     }
 
-    private SymbolRef attributeOwner(AttributeSlot attribute) {
+    SymbolRef attributeOwner(AttributeSlot attribute) {
         return new SymbolRef(plan.snapshotId(), attribute.attribute().owner().orElseThrow());
     }
     List<Table> hierarchy(Table root) { return hierarchies.getOrDefault(root, List.of()); }

@@ -138,6 +138,26 @@ final class ProfileFixtures {
                 + (targetClass == null ? "" : object(model, targetClass, prefix + "-site", ""));
     }
 
+    Path strictSmartModel(String model) throws IOException {
+        return source(model, """
+                CLASS Asset = Common : MANDATORY TEXT*30; END Asset;
+                CLASS Station EXTENDS Asset = Serial : MANDATORY TEXT*30; END Station;
+                CLASS MapSheet EXTENDS Asset = Legend : MANDATORY TEXT*30; END MapSheet;
+                CLASS Depot = END Depot;
+                ASSOCIATION Location =
+                  AtDepot -- {1} Depot;
+                  Stations -- {0..*} Station;
+                END Location;
+                """);
+    }
+
+    String strictSmartObjects(String model, String prefix, String serial) {
+        return object(model, "Station", prefix + "-station",
+                        "<Common>station</Common><Serial>" + serial + "</Serial>" + reference("AtDepot", prefix + "-depot"))
+                + object(model, "MapSheet", prefix + "-mapsheet", "<Common>map</Common><Legend>legend</Legend>")
+                + object(model, "Depot", prefix + "-depot", "");
+    }
+
     Path requiredReferenceModel(String model) throws IOException {
         String direct = version == 24 ? "DirectSite : MANDATORY REFERENCE TO Site;" : "";
         return source(model, """
