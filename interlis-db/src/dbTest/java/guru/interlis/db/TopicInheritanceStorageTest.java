@@ -170,6 +170,32 @@ final class TopicInheritanceStorageTest {
         }
     }
 
+    @ParameterizedTest(name = "{displayName} [XTF {0}, {1}]")
+    @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
+    void projectsOnlyReachableBaseTopicsAndPreservesExportOnFailure(int version, Backend backend) throws Exception {
+        var fixture = new TopicInheritanceFixtures(work, version);
+        var db = POSTGIS.target(work.resolve("base-export.gpkg"), backend);
+        fixture.mixedSchema(db, fixture.copySources());
+        assertCliSuccess(db, "import", fixture.child, "source", fixture.mixedInput(), fixture.modelsAfterChild());
+        var output = work.resolve("base-export.xtf");
+        assertCliSuccess(db, "export", fixture.child, null, output, "--basket", "region-b", "--export-model", fixture.town);
+        fixture.assertBaseDelivery(output, "", false);
+        var published = Files.readAllBytes(output);
+
+        assertCliFailure(db, "export", fixture.child, null, output,
+                "No concrete base topic in " + fixture.town + " for " + fixture.refined + ".Region",
+                "--model", fixture.refined, "--basket", "region-b", "--basket", "refine-b", "--export-model", fixture.town);
+        assertArrayEquals(published, Files.readAllBytes(output));
+
+        assertCliFailure(db, "export", fixture.links, null, output,
+                "base-model export of role", "--basket", "links-b", "--export-model", fixture.linksBase);
+        assertArrayEquals(published, Files.readAllBytes(output));
+
+        var original = work.resolve("source-export.xtf");
+        assertCliSuccess(db, "export", fixture.child, "source", original, fixture.modelsAfterChild());
+        fixture.assertMixedDelivery(original, "", "text", false);
+    }
+
     private record RegionIds(String station, String marker, String basket, String dataset) { }
 
     private static RegionIds regionIds(Target db, Connection sql, String dataset, String prefix) throws Exception {

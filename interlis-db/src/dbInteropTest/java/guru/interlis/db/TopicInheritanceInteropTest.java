@@ -8,8 +8,11 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
+import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
+import static guru.interlis.db.DbTestSupport.catalogKeys;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.InteropCommands.exportDataset;
 import static guru.interlis.db.InteropCommands.importDataset;
@@ -62,11 +65,47 @@ final class TopicInheritanceInteropTest {
             assertStoredValues(db, fixture);
         }
 
+        exchangeBaseProjection(fixture, reference, baseline, own);
+
         var updated = fixture.updateRegion(work.resolve("region" + version + ".xtf"));
         assertCliSuccess(own, "update", fixture.child, "legacy", updated);
         var output = work.resolve("topic-updated-reference.xtf");
         exportDataset(reference, own, "legacy", output);
         fixture.assertMixedDelivery(output, "", "text", true);
+    }
+
+    private void exchangeBaseProjection(TopicInheritanceFixtures fixture, ReferenceTool reference,
+                                        TestDatabase baseline, TestDatabase own) throws Exception {
+        var nativeOutput = work.resolve("projected-native.xtf");
+        assertCliSuccess(baseline, "export", fixture.child, null, nativeOutput, "--model", fixture.flat,
+                "--basket", "region-b", "--basket", "flat-b", "--export-model", fixture.town);
+        fixture.assertBaseDelivery(nativeOutput, "", true);
+
+        var referenceOutput = work.resolve("projected-reference.xtf");
+        reference.run(own, "%ILI_FROM_DB", "--export", "--baskets", "native-region-b;native-flat-b",
+                "--exportModels", fixture.town, "--exportTid", referenceOutput.toString());
+        fixture.assertBaseDelivery(referenceOutput, "native-", true);
+
+        var source = fixture.source(fixture.town);
+        var referenceTarget = baseline.peer("base_reference");
+        var nativeTarget = own.peer("base_native");
+        schema(reference, referenceTarget, work, fixture.town, "newClass");
+        assertSchemaWithIdentityColumns(nativeTarget, fixture.town, source);
+        importDataset(reference, referenceTarget, "projected", nativeOutput);
+        assertCliSuccess(nativeTarget, "import", fixture.town, "projected", referenceOutput);
+        assertProjectedRows(referenceTarget, fixture, "");
+        assertProjectedRows(nativeTarget, fixture, "native-");
+    }
+
+    private static void assertProjectedRows(TestDatabase db, TopicInheritanceFixtures fixture, String prefix) throws Exception {
+        try (var sql = db.connect()) {
+            String baskets = db.table("t_ili2db_basket");
+            assertEquals(Set.of(prefix + "region-b", prefix + "flat-b"),
+                    catalogKeys(sql, "SELECT t_ili_tid FROM " + baskets + " WHERE topic='" + fixture.town + ".Core'"));
+            assertEquals(prefix + "region-s:base", scalar(sql, "SELECT t_ili_tid || ':' || memo FROM " + db.table("station")));
+            assertEquals(Set.of(prefix + "region-m:inherited", prefix + "flat-m:inherited"),
+                    catalogKeys(sql, "SELECT t_ili_tid || ':' || memo FROM " + db.table("marker")));
+        }
     }
 
     private static void assertStoredValues(TestDatabase db, TopicInheritanceFixtures fixture) throws Exception {

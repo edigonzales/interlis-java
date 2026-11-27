@@ -95,14 +95,13 @@ final class DbTransfer {
             checkStructureOwners(db, mapping, ExportBaskets.UNPARTITIONED, token);
             checkLinkOwners(db, mapping, ExportBaskets.UNPARTITIONED, token);
             var topics = plan.topics().stream().filter(topic -> mapping.models().contains(topic.model()))
-                    .filter(topic -> !topic.abstractTopic()).toList();
-            var exported = topics.stream().map(topic -> output.map(model -> mapping.translations().outputTopic(topic, model))
-                    .orElse(topic).model()).collect(Collectors.toSet());
+                    .filter(topic -> !topic.abstractTopic()).map(topic -> exportTopic(mapping, topic, output)).toList();
+            var exported = topics.stream().map(topic -> topic.output().model()).collect(Collectors.toSet());
             startTransfer(mapping, output, exported, writer, token);
-            for (var stored : topics) {
-                var topic = output.map(model -> mapping.translations().outputTopic(stored, model)).orElse(stored);
-                var bid = new BasketId(ids.basket(stored), IdOrigin.SYNTHETIC);
-                writeBasket(db, mapping, ids, topic, 0, bid, DbDomains.read(plan, stored, null, bid.value()), writer, token);
+            for (var topic : topics) {
+                var bid = new BasketId(ids.basket(topic.stored()), IdOrigin.SYNTHETIC);
+                writeBasket(db, mapping, ids, topic, 0, bid, DbDomains.read(plan, topic.stored(), null, bid.value()),
+                        writer, token);
             }
             writer.write(new TransferEvent.EndTransfer(), token);
             return;
@@ -127,15 +126,16 @@ final class DbTransfer {
             selection = ExportBaskets.byModels(modelNames);
         }
         var selectedNames = requestedTopics.isEmpty() ? selectedBasketTopics(db, selection, bids, token) : requestedTopics;
-        var exported = new HashSet<SymbolRef>();
+        var selectedTopics = new HashMap<String, ExportTopic>();
         for (var name : selectedNames) {
             var stored = requestedTopics.isEmpty() ? selectedTopic(topics, name) : topics.get(name);
-            exported.add(output.map(model -> mapping.translations().outputTopic(stored, model)).orElse(stored).model());
+            selectedTopics.put(name, exportTopic(mapping, stored, output));
         }
-        if (exported.isEmpty()) {
+        if (selectedTopics.isEmpty()) {
             throw new DbException(dataset != null ? "Dataset has no baskets: " + dataset
                     : "No baskets in the selected models: " + String.join(", ", requestedModels));
         }
+        var exported = selectedTopics.values().stream().map(topic -> topic.output().model()).collect(Collectors.toSet());
         checkStructureOwners(db, mapping, selection, token);
         checkLinkOwners(db, mapping, selection, token);
         checkHierarchyTopics(db, mapping, selection, token);
@@ -149,7 +149,7 @@ final class DbTransfer {
                     token.throwIfCancellationRequested();
                     var topicName = rows.getString(2);
                     var stored = selectedTopic(topics, topicName);
-                    var topic = output.map(model -> mapping.translations().outputTopic(stored, model)).orElse(stored);
+                    var topic = selectedTopics.get(topicName);
                     String domains = rows.getString(4);
                     long basketId = rows.getLong(1);
                     var storedBid = storedBid(rows.getString(3));
@@ -297,25 +297,42 @@ final class DbTransfer {
         return topic;
     }
 
-    private static void writeBasket(Database db, DbMapping mapping, ExportIds ids, TopicDescriptor topic, long basketId,
+    private record ExportTopic(TopicDescriptor stored, TopicDescriptor output, boolean projected) {
+        SymbolRef rowTopic() { return (projected ? stored : output).symbol(); }
+    }
+
+    private static ExportTopic exportTopic(DbMapping mapping, TopicDescriptor stored, Optional<SymbolRef> outputModel) {
+        if (outputModel.isEmpty()) return new ExportTopic(stored, stored, false);
+        var plan = mapping.plan();
+        var model = outputModel.orElseThrow();
+        if (plan.model(stored.model()).orElseThrow().name().canonical().equals(plan.model(model).orElseThrow().name().canonical())) {
+            return new ExportTopic(stored, mapping.translations().outputTopic(stored, model), false);
+        }
+        return new ExportTopic(stored, DbBaseProjection.topic(plan, stored, model), true);
+    }
+
+    private static void writeBasket(Database db, DbMapping mapping, ExportIds ids, ExportTopic topic, long basketId,
                                     BasketId bid, List<TransferEvent.DomainBinding> bindings, TransferWriter writer,
                                     CancellationToken token) throws SQLException {
-        var stableOid = basketOid(mapping, topic, bid);
-        writer.write(new TransferEvent.StartBasket(bid, topic.symbol(), List.of(), BasketKind.FULL,
+        var stableOid = basketOid(mapping, topic.output(), bid);
+        if (topic.projected() && (!bindings.isEmpty() || mapping.crsPair().isPresent())) {
+            throw DbMapping.unsupported("base-model export with CRS bindings in " + topic.stored().name().declared());
+        }
+        writer.write(new TransferEvent.StartBasket(bid, topic.output().symbol(), List.of(), BasketKind.FULL,
                 Consistency.COMPLETE, Optional.empty(), Optional.empty(), stableOid, bindings), token);
         var selection = new GeometrySelection(bindings,
-                mapping.crsPair().map(pair -> pair.epsgCodes(topic.symbol())).orElse(Map.of()));
+                mapping.crsPair().map(pair -> pair.epsgCodes(topic.rowTopic())).orElse(Map.of()));
         for (var table : mapping.tables()) {
             if (table.hasDiscriminator() && table.object().kind() == SymbolKind.STRUCTURE) {
                 checkStructureHierarchy(db, mapping, ids, table, basketId, token);
             }
-            if (table.subtype() || table.object().topic().filter(declared -> mapping.includesTopic(topic.symbol(), declared)).isEmpty()) {
+            if (table.subtype() || table.object().topic().filter(declared -> mapping.includesTopic(topic.rowTopic(), declared)).isEmpty()) {
                 continue;
             }
             if (table.hasDiscriminator() && table.object().kind() != SymbolKind.STRUCTURE && !mapping.isEmbeddedLink(table)) {
-                writeHierarchyObjects(db, mapping, ids, table, basketId, bid, topic.symbol(), selection, writer, token);
+                writeHierarchyObjects(db, mapping, ids, table, basketId, bid, topic, selection, writer, token);
             } else if (table.object().transferable() && !mapping.isEmbeddedLink(table)) {
-                writeObjects(db, mapping, ids, table, basketId, bid, topic.symbol(), selection, writer, token);
+                writeObjects(db, mapping, ids, table, basketId, bid, topic, selection, writer, token);
             }
         }
         writer.write(new TransferEvent.EndBasket(bid), token);
@@ -329,9 +346,9 @@ final class DbTransfer {
     }
 
     private static void writeObjects(Database db, DbMapping mapping, ExportIds ids, Table table, long basketId, BasketId bid,
-                                     SymbolRef topic, GeometrySelection selection, TransferWriter writer,
+                                     ExportTopic topic, GeometrySelection selection, TransferWriter writer,
                                      CancellationToken token) throws SQLException {
-        var alternate = mapping.crsPair().flatMap(pair -> pair.alternateClass(topic, table.object().symbol()));
+        var alternate = mapping.crsPair().flatMap(pair -> pair.alternateClass(topic.rowTopic(), table.object().symbol()));
         var projections = new StringJoiner(", ").add("obj." + db.rowId());
         if (table.carriesObjectId()) {
             projections.add(ids.tid(table, "obj"));
@@ -364,8 +381,7 @@ final class DbTransfer {
                                     mapping.crsPair().orElseThrow().alternateValues(table.object().symbol(), values))
                             : new Structured(table.object().symbol(), values);
                     var object = new TransferObject(identity, data);
-                    object = mapping.translations().inTopic(object, topic);
-                    writeObject(writer, object, ownerTid, rows.getLong(1), token);
+                    writeObject(mapping, writer, topic, object, ownerTid, rows.getLong(1), token);
                 }
                 structures.requireExhausted();
             }
@@ -411,7 +427,7 @@ final class DbTransfer {
     }
 
     private static void writeHierarchyObjects(Database db, DbMapping mapping, ExportIds ids, Table root, long basketId,
-                                               BasketId bid, SymbolRef topic, GeometrySelection selection,
+                                               BasketId bid, ExportTopic topic, GeometrySelection selection,
                                                TransferWriter writer, CancellationToken token)
             throws SQLException {
         boolean hasTid = root.carriesObjectId();
@@ -441,7 +457,7 @@ final class DbTransfer {
                     long id = rows.getLong(1);
                     int field = 2;
                     String tid = hasTid ? identifier(rows.getString(field++), "TID", root.name()) : null;
-                    var actual = mapping.concreteType(root, rows.getString(field++), id, topic);
+                    var actual = mapping.concreteType(root, rows.getString(field++), id, topic.rowTopic());
                     var values = readFields(db, mapping, ids, rows, field, root, tid, selection, actual.object().symbol());
                     readEmbeddedLinks(db, mapping, ids, rows, field + projectionSize(mapping, root), links, tid, values);
                     fragments.readFor(actual, id, tid, values);
@@ -451,14 +467,13 @@ final class DbTransfer {
                         if (value != null) values.put(effective, value);
                     });
                     var identity = objectIdentity(mapping, ids, root, bid, tid);
-                    var alternate = mapping.crsPair().flatMap(pair -> pair.alternateClass(topic, actual.object().symbol()));
+                    var alternate = mapping.crsPair().flatMap(pair -> pair.alternateClass(topic.rowTopic(), actual.object().symbol()));
                     var data = alternate.isPresent()
                             ? new Structured(alternate.orElseThrow().symbol(),
                                     mapping.crsPair().orElseThrow().alternateValues(actual.object().symbol(), values))
                             : new Structured(actual.object().symbol(), values);
                     var object = new TransferObject(identity, data);
-                    object = mapping.translations().inTopic(object, topic);
-                    writeObject(writer, object, tid, id, token);
+                    writeObject(mapping, writer, topic, object, tid, id, token);
                 }
                 fragments.requireExhausted();
                 structures.requireExhausted();
@@ -1226,7 +1241,15 @@ final class DbTransfer {
         }
     }
 
-    private static void writeObject(TransferWriter writer, TransferObject object, String tid, long id, CancellationToken token) {
+    private static void writeObject(DbMapping mapping, TransferWriter writer, ExportTopic topic, TransferObject object,
+                                    String tid, long id, CancellationToken token) {
+        if (topic.projected()) {
+            var projected = DbBaseProjection.object(mapping.plan(), object, topic.output());
+            if (projected.isEmpty()) return;
+            object = projected.orElseThrow();
+        } else {
+            object = mapping.translations().inTopic(object, topic.output().symbol());
+        }
         try {
             writer.write(new TransferEvent.ObjectEvent(object, Optional.empty(), Consistency.COMPLETE), token);
         } catch (Xtf23Exception | Xtf24Exception failure) {

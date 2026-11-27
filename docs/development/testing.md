@@ -541,7 +541,11 @@ Geschwistertypen, gespeicherte abstrakte Baskets und den Rollback bei
 einer Referenz in den falschen Basket. Ein ili2db-Export nach nativem
 Update prüft die aktualisierten Werte der Fragmente. Der eigene DB-Test
 prüft stabile IDs, eingehende Referenzen und den Erhalt unabhängiger
-Datensätze bei Mutationen im NewClass-Layout.
+Datensätze bei Mutationen im NewClass-Layout. Der Basismodell-Export
+vergleicht `--export-model` mit ili2db `--exportModels`. Beide Werkzeuge
+importieren die Ausgabe des jeweils anderen in ein reines Basisschema.
+Der eigene Test prüft die unveränderte Zieldatei bei einem unerreichbaren
+Basistopic oder einer im Basismodell verbleibenden Rolle.
 
 `--tests '*DatasetMutationInteropTest'` prüft in beiden Schematypen den
 Werkzeugwechsel über `update`, `replace` und `delete`. SQL und XTF belegen

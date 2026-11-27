@@ -406,6 +406,16 @@ XTF-2.3-Datensatz in der gewählten Modellsprache ausgegeben. `--model`
 bezeichnet die gespeicherten Baskets und `--export-model` deren Ausgabeform.
 Für XTF 2.4 wählt auch der Name eines übersetzten Modells die Baskets des
 Originalmodells. Die Ausgabe verwendet das Originalmodell.
+
+Mit `export --model Kanton --export-model Bund` lassen sich abgeleitete
+Topics in XTF 2.3 und 2.4 als konkrete Topics des Basismodells ausgeben.
+Die Basketauswahl bezieht sich auf die gespeicherten Topics. Der Export
+behält BID und TID, übernimmt unveränderte skalare Basisattribute und
+lässt Klassen ohne übertragbare Basisklasse weg. Die Zieldatei deklariert
+das Basismodell. Für jeden ausgewählten Basket muss ein konkretes
+Basistopic erreichbar sein. Das Profil ist auf skalare Basiswerte
+und unveränderte Identitätsregeln begrenzt.
+
 Beim Import können ebenfalls mehrere Modelle derselben Sprachversion
 ausgewählt werden. Header und Baskets müssen zur Auswahl passen. Ein
 unzulässiger späterer Basket rollt den ganzen Import zurück.

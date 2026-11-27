@@ -112,16 +112,18 @@ final class DbSchemaReader {
         var settings = readSettings(db, selectedModels);
         db.setRowIdColumn(settings.rowIdColumn());
         var models = new LinkedHashSet<>(settings.srsModels().map(DbCrsPair.Models::names).orElse(selectedModels));
-        outputModel.ifPresent(models::add);
-        var initialPlan = readModelPlan(db, List.copyOf(models), token);
+        var compiledModels = new LinkedHashSet<>(models);
+        outputModel.ifPresent(compiledModels::add);
+        var initialPlan = readModelPlan(db, List.copyOf(compiledModels), token);
         var additionalTypes = switch (settings.inheritance()) {
             case SMART1 -> smart1Subtypes(db, initialPlan, token);
             case SMART2 -> storedReferenceSubtypes(db, initialPlan, token);
             case NEW_CLASS -> Set.<String>of();
         };
-        var storageModels = new LinkedHashSet<>(models);
-        additionalTypes.stream().sorted().map(MetadataScope::modelName).forEach(storageModels::add);
-        TransferPlan plan = storageModels.equals(models) ? initialPlan : readModelPlan(db, List.copyOf(storageModels), token);
+        var expandedModels = new LinkedHashSet<>(compiledModels);
+        additionalTypes.stream().sorted().map(MetadataScope::modelName).forEach(expandedModels::add);
+        TransferPlan plan = expandedModels.equals(compiledModels)
+                ? initialPlan : readModelPlan(db, List.copyOf(expandedModels), token);
         var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
         if (plan.rootModels().stream().map(ref -> plan.model(ref).orElseThrow().languageVersion())
                 .anyMatch(language -> language != version)) {
@@ -138,10 +140,6 @@ final class DbSchemaReader {
                     .findFirst().orElseThrow();
             if (version == LanguageVersion.ILI24 && !target.symbol().equals(target.name().canonical())) {
                 throw unsupported("XTF 2.4 exports require the original model instead of " + output);
-            }
-            if (requestedRoots.stream().map(ref -> plan.model(ref).orElseThrow().name().canonical())
-                    .noneMatch(target.name().canonical()::equals)) {
-                throw unsupported("export model " + output + " is outside the selected translation families");
             }
         }
         var roots = DbMapping.storageRoots(plan, crsPair).stream().filter(ref -> plan.models().stream().anyMatch(model ->

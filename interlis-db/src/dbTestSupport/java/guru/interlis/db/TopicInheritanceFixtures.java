@@ -106,6 +106,23 @@ final class TopicInheritanceFixtures {
         assertFragments(basket(data, version, child + ".Region", prefix + "-b"), prefix, markerMemo, baseMemo, localMemo);
     }
 
+    void assertBaseDelivery(Path file, String prefix, boolean includeFlat) throws Exception {
+        var data = readDataSection(file, version);
+        assertEquals(List.of(town), headerModels(data, version));
+        assertEquals(includeFlat ? 2 : 1, children(data).size());
+        var region = basket(data, version, town + ".Core", prefix + "region-b");
+        assertEquals(2, children(region).size());
+        var station = object(region, town + ".Core.Station", prefix + "region-s");
+        assertEquals(1, children(station).size());
+        assertField(station, town, "Memo", "base");
+        assertField(object(region, town + ".Core.Marker", prefix + "region-m"), town, "Memo", "inherited");
+        if (includeFlat) {
+            var flatBasket = basket(data, version, town + ".Core", prefix + "flat-b");
+            assertEquals(1, children(flatBasket).size());
+            assertField(object(flatBasket, town + ".Core.Marker", prefix + "flat-m"), town, "Memo", "inherited");
+        }
+    }
+
     void assertRefinementDelivery(Path file, String prefix, String text) throws Exception {
         var data = readDataSection(file, version);
         assertEquals(List.of(refined), headerModels(data, version));
