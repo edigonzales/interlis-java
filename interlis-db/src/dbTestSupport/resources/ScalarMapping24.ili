@@ -23,6 +23,9 @@ MODEL ScalarMapping24 (en) AT "https://example.org/interlis/db" VERSION "1" =
       RestrictedDay : CalRange;
       NameCode : NAME;
       UriCode : URI;
+      ClassValue : CLASS;
+      StructureValue : STRUCTURE;
+      PropertyPath : ATTRIBUTE;
       ExternalId : INTERLIS.UUIDOID;
       BinaryValue : BLACKBOX BINARY;
       XmlValue : BLACKBOX XML;

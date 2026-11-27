@@ -11,7 +11,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -47,6 +49,14 @@ final class ScalarFixtures {
             Files.copy(Objects.requireNonNull(source, model), path);
         }
         return path;
+    }
+
+    static Map<String, String> modelPaths(String model) {
+        var paths = new LinkedHashMap<String, String>();
+        paths.put("ClassValue", model + ".Data.Asset");
+        paths.put("StructureValue", model + ".Data.Digits");
+        paths.put("PropertyPath", model + ".Data.Digits.Numeral");
+        return paths;
     }
 
     String uuidField(String value) {

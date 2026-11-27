@@ -791,6 +791,11 @@ ili2gpkg-Schreibweise mit `Z`. PostGIS verwendet einen
 Felder einschliesslich Millisekunden.
 `FORMAT`, `NAME` und `URI` verwenden die ili2db-Textspalten und
 Typmetadaten. Dazu gehören eingeschränkte temporale Formatdomänen.
+`CLASS`, `STRUCTURE` und `ATTRIBUTE` speichern qualifizierte Modellnamen in
+Textspalten mit 255 Zeichen. Die Typmetadaten lauten `CLASSQNAME` für Klassen
+und Strukturen sowie `ATTRIBUTEQNAME` für Attribute. Mit `--sql-cols-as-text`
+gilt die unbeschränkte Textspalte. Die Prüfung, ob der gespeicherte Name ein
+gültiges Modellelement bezeichnet, liegt beim Validator.
 Fachattribute vom Typ `INTERLIS.UUIDOID` liegen als `TEXT(36)` in
 GeoPackage und als `uuid` in PostGIS. Das Kommando normalisiert die
 Schreibweise auf Kleinbuchstaben. XTF 2.3 verwendet das `OID`-Attribut,

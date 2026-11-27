@@ -1,10 +1,13 @@
 package guru.interlis.db;
 
+import guru.interlis.model.QualifiedName;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.TransferSlot;
 import guru.interlis.transfer.TransferValue;
+import guru.interlis.transfer.TransferValue.AttributePath;
 import guru.interlis.transfer.TransferValue.Binary;
 import guru.interlis.transfer.TransferValue.BooleanValue;
+import guru.interlis.transfer.TransferValue.ClassName;
 import guru.interlis.transfer.TransferValue.Enumeration;
 import guru.interlis.transfer.TransferValue.NumberValue;
 import guru.interlis.transfer.TransferValue.Oid;
@@ -55,6 +58,8 @@ final class DbScalarText {
                 }
                 case ENUMERATION -> DbTransfer.readEnumeration(value, context);
                 case UUID, OID_TEXT -> new Oid(value);
+                case CLASS_NAME -> new ClassName(QualifiedName.of(value.split("\\.", -1)));
+                case ATTRIBUTE_PATH -> new AttributePath(QualifiedName.of(value.split("\\.", -1)));
                 case BINARY -> new Binary(Base64.getDecoder().decode(blackbox(value).replaceAll("[ \\r\\n\\t]", "")));
                 case XML -> new XmlFragment(blackbox(value));
                 default -> throw new IllegalStateException("Expected a simple attribute: " + kind);
@@ -71,6 +76,8 @@ final class DbScalarText {
             case NumberValue number -> number.lexeme();
             case Enumeration enumeration -> String.join(".", enumeration.path());
             case Oid oid -> oid.lexeme();
+            case ClassName name -> name.name().toString();
+            case AttributePath path -> path.name().toString();
             case Binary binary -> Base64.getEncoder().encodeToString(binary.bytes());
             case XmlFragment fragment -> fragment.xml();
             default -> throw new IllegalStateException("Expected a simple attribute value");

@@ -1296,7 +1296,8 @@ final class DbTransfer {
         }
         return switch (column.kind()) {
             case POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE -> readGeometry(db, rows, index, column);
-            case BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, UUID, OID_TEXT, BINARY, XML, ENUMERATION ->
+            case BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, UUID, OID_TEXT,
+                    CLASS_NAME, ATTRIBUTE_PATH, BINARY, XML, ENUMERATION ->
                     readScalar(db, rows, index, column);
             case TEXT -> {
                 if (column.textExpansion().isPresent()) {
@@ -1392,6 +1393,8 @@ final class DbTransfer {
                         ? column.enumeration().orElseThrow().read(value, column.slot().name().declared().toString())
                         : readEnumeration(value, column);
             }
+            case CLASS_NAME, ATTRIBUTE_PATH -> DbScalarText.read(column.kind(), rows.getString(index),
+                    column.slot().name().declared().toString());
             case BINARY -> db.readBinary(rows, index, column.slot().name().declared().toString());
             case XML -> db.readXml(rows, index, column.slot().name().declared().toString());
             case UUID -> {
@@ -2325,6 +2328,7 @@ final class DbTransfer {
             switch (column.kind()) {
                 case TEXT, FORMATTED -> statement.setString(index, ((Text) value).value());
                 case OID_TEXT -> statement.setString(index, ((Oid) value).lexeme());
+                case CLASS_NAME, ATTRIBUTE_PATH -> statement.setString(index, DbScalarText.write(value));
                 case BINARY -> statement.setBytes(index, ((Binary) value).bytes());
                 case XML -> db.bindXml(statement, index, (XmlFragment) value);
                 case UUID -> db.bindUuid(statement, index,

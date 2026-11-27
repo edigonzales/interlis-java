@@ -258,6 +258,39 @@ final class ScalarStorageTest {
         }
     }
 
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void preservesModelNamesAndRejectsDamagedPaths(Backend backend, int version) throws Exception {
+        var fixture = new ScalarFixtures(work, version);
+        String model = "ScalarMapping" + version;
+        Path source = fixture.copyModel(model);
+        var paths = ScalarFixtures.modelPaths("Outside");
+        var fields = paths.entrySet().stream().map(path -> field(path.getKey(), path.getValue()))
+                .collect(Collectors.joining());
+        Path input = fixture.data(model, "paths", List.of(fields, ""));
+        for (boolean textProfile : List.of(false, true)) {
+            var db = POSTGIS.target(work.resolve("paths-" + textProfile + ".gpkg"), backend);
+            assertSchemaWithIdentityColumns(db, model, source, textProfile ? new String[]{"--sql-cols-as-text"} : new String[0]);
+            assertCliSuccess(db, "import", model, "paths", input);
+            Path output = work.resolve("paths-out-" + textProfile + ".xtf");
+            assertCliSuccess(db, "export", model, "paths", output);
+            var rows = fixture.rows(output, "paths", 2);
+            byte[] previous = Files.readAllBytes(output);
+            try (var sql = db.connect()) {
+                for (var path : paths.entrySet()) {
+                    String column = path.getKey().toLowerCase(Locale.ROOT);
+                    assertEquals(path.getValue(), child(rows.getFirst(), path.getKey()).getTextContent());
+                    assertNull(child(rows.getLast(), path.getKey()));
+                    assertEquals(path.getValue(), stored(db, sql, column, "paths", 0));
+                    assertNull(stored(db, sql, column, "paths", 1));
+                }
+                execute(sql, "UPDATE " + db.table("asset") + " SET propertypath='Outside..broken' WHERE t_ili_tid='paths-0'");
+            }
+            assertCliFailure(db, "export", model, "paths", output, model + ".Data.Asset.PropertyPath");
+            assertArrayEquals(previous, Files.readAllBytes(output));
+        }
+    }
+
     private Target target(Backend backend) {
         return POSTGIS.target(work.resolve("scalars.gpkg"), backend);
     }

@@ -579,6 +579,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             case DATETIME -> "DATETIME";
             case FORMATTED -> "FORMATTED";
             case UUID, OID_TEXT -> "OID";
+            case CLASS_NAME -> "CLASSQNAME";
+            case ATTRIBUTE_PATH -> "ATTRIBUTEQNAME";
             case BINARY -> "BINARY";
             case XML -> "XML";
             case INTEGER, BIGINT, DECIMAL -> "NUMERIC";

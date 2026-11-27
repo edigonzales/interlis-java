@@ -1,11 +1,13 @@
 package guru.interlis.db;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.AttributePathType;
 import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.BlackboxKind;
 import guru.interlis.model.BlackboxType;
 import guru.interlis.model.CardinalityUpper;
 import guru.interlis.model.ClassSymbol;
+import guru.interlis.model.ClassValueType;
 import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.CoordinateType;
@@ -69,7 +71,8 @@ import static guru.interlis.db.Ili2dbLayout.reservedTable;
 /** The SQL names and storage bindings for a checked transfer plan. */
 final class DbMapping {
     enum Kind {
-        TEXT, BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, UUID, OID_TEXT, BINARY, XML, ENUMERATION,
+        TEXT, BOOLEAN, INTEGER, BIGINT, DECIMAL, DATE, TIME, DATETIME, FORMATTED, UUID, OID_TEXT, CLASS_NAME, ATTRIBUTE_PATH,
+        BINARY, XML, ENUMERATION,
         POINT, POLYLINE, SURFACE, MULTIPOINT, MULTICURVE, MULTISURFACE, REFERENCE, REFERENCE_TEXT;
 
         boolean geometry() { return this == POINT || this == POLYLINE || this == SURFACE || collection(); }
@@ -1450,6 +1453,8 @@ final class DbMapping {
             case NumericType number when integerRange(number, Long.MIN_VALUE, Long.MAX_VALUE) -> Kind.BIGINT;
             case NumericType number when DbDecimal.fixedScale(number) -> Kind.DECIMAL;
             case EnumerationType ignored -> Kind.ENUMERATION;
+            case ClassValueType ignored -> Kind.CLASS_NAME;
+            case AttributePathType ignored -> Kind.ATTRIBUTE_PATH;
             case FormattedType format when format.origin() instanceof Origin.PredefinedOrigin -> switch (format.predefined().orElse(null)) {
                 case DATE -> Kind.DATE;
                 case TIMEOFDAY -> Kind.TIME;
