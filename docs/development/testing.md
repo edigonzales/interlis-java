@@ -480,7 +480,11 @@ Werkzeugrichtungen in beiden Schematypen prüfen doppelte Punkte, gerichtete
 Linien, Kreisbögen, Innenringe und die SRIDs. Ein ili2db-Folgeimport prüft
 die gemeinsame ID-Vergabe. Die separat auswählbaren Smart2-Fälle verbinden
 geerbte Sprachwerte mit einer Multipunkt-Hilfstabelle und prüfen den
-ili2db-Export nach einem nativen Update.
+ili2db-Export nach einem nativen Update. Die Auswahl `*Xyz*` in
+`ChbaseGeometryInteropTest` prüft alle drei kompakten XYZ-Geometrien
+in Hilfstabellen sowie Z-Werte an Punkten und Bogenendpunkten.
+`ChbaseGeometryStorageTest` prüft die Z-Grenzen, das Leeren einer
+Geometrie, stabile IDs und den Rollback bei einer späten fehlenden Ordinate.
 
 `--tests '*SmartClassInteropTest'` prüft skalare Werte, polymorphe
 Referenzen und den Katalog beider Schemaerzeuger. Die Smart1-Skalarfälle

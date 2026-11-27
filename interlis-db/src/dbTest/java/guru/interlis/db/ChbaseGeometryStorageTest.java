@@ -1,5 +1,6 @@
 package guru.interlis.db;
 
+import guru.interlis.db.DbTestSupport.Target;
 import guru.interlis.db.PostgisTestServer.Backend;
 import guru.interlis.execution.CancellationToken;
 import org.junit.jupiter.api.AfterAll;
@@ -9,8 +10,13 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
+import static guru.interlis.db.ChbaseXyzGeometryFixtures.assertColumn;
 import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.cli;
@@ -72,6 +78,53 @@ final class ChbaseGeometryStorageTest {
         assertCliFailure(db, "export", fixture.model(), "shapes", output,
                 db.postgis() ? "Expected an EPSG:21781" : "GeoPackage", fixture.extraModels());
         assertArrayEquals(previous, Files.readAllBytes(output));
+    }
+
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void keepsXyzCollectionsAndOwnerIdsAcrossUpdates(Backend backend, int version) throws Exception {
+        var fixture = new ChbaseXyzGeometryFixtures(work, version);
+        var db = POSTGIS.target(work.resolve("chbase-xyz.gpkg"), backend);
+        fixture.schema(db);
+        assertCliSuccess(db, "import", fixture.model, "survey", fixture.input);
+
+        try (var sql = db.connect()) {
+            assertColumn(db, sql, "pins", "MULTIPOINT", 2056, "-999.125", "999.875");
+            assertColumn(db, sql, "paths", "MULTICURVE", 2056, "-999.125", "999.875");
+            assertColumn(db, sql, "tiles", "MULTISURFACE", 21781, "-888.125", "888.875");
+            var before = xyzGeometryRows(db, sql);
+            assertCliFailure(db, "update", fixture.model, "survey", fixture.invalidAfterValidAsset(),
+                    version == 23 ? "Expected C3" : "Expected a 3D coordinate");
+            assertEquals(before, xyzGeometryRows(db, sql));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("asset")));
+
+            var pinTable = db.table("asset_pins");
+            var owner = scalar(sql, "SELECT CAST(t_id AS text) || ':' || CAST(t_basket AS text) FROM " + pinTable);
+            assertNotNull(owner);
+            assertSearch(db, sql, "asset_pins", "pins", "2600010", "1200010", true);
+            assertCliSuccess(db, "update", fixture.model, "survey", fixture.withoutPins());
+            var after = xyzGeometryRows(db, sql);
+            for (String column : List.of("anchor", "paths", "tiles")) {
+                assertEquals(before.get(column), after.get(column), column);
+            }
+            assertEquals(owner + ":null", after.get("pins"));
+            assertSearch(db, sql, "asset_pins", "pins", "2600010", "1200010", false);
+        }
+
+        var output = work.resolve("updated-xyz.xtf");
+        assertCliSuccess(db, "export", fixture.model, "survey", output);
+        fixture.assertDelivery(output, "fixture", false);
+    }
+
+    private static Map<String, String> xyzGeometryRows(Target db, Connection sql) throws SQLException {
+        var result = new LinkedHashMap<String, String>();
+        for (String column : List.of("anchor", "pins", "paths", "tiles")) {
+            String table = db.table(column.equals("anchor") ? "asset" : "asset_" + column);
+            String bytes = db.postgis() ? "encode(ST_AsEWKB(" + column + "), 'hex')" : "hex(" + column + ")";
+            result.put(column, scalar(sql, "SELECT CAST(t_id AS text) || ':' || CAST(t_basket AS text)"
+                    + " || ':' || CASE WHEN " + column + " IS NULL THEN 'null' ELSE " + bytes + " END FROM " + table));
+        }
+        return result;
     }
 
     @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")

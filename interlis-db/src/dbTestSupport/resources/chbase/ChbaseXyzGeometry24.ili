@@ -1,0 +1,39 @@
+INTERLIS 2.4;
+MODEL ChbaseXyzGeometry24 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  DOMAIN
+    Position3 = COORD 2460000.125 .. 2870000.750, 1045000.500 .. 1310000.250, -999.125 .. 999.875;
+    !!@CRS=EPSG:21781
+    SurfacePosition3 = COORD 460000.000 .. 870000.000, 45000.000 .. 310000.000, -888.125 .. 888.875;
+  TOPIC Data =
+    STRUCTURE Pin =
+      Position : Position3;
+    END Pin;
+    !!@ili2db.mapping=MultiPoint
+    STRUCTURE MultiPoint =
+      Parts : BAG {1..*} OF Pin;
+    END MultiPoint;
+
+    STRUCTURE Path =
+      Line : POLYLINE WITH (STRAIGHTS, ARCS) VERTEX Position3;
+    END Path;
+    !!@ili2db.mapping=MultiLine
+    STRUCTURE MultiLine =
+      Parts : BAG {1..*} OF Path;
+    END MultiLine;
+
+    STRUCTURE Tile =
+      Face : SURFACE WITH (STRAIGHTS, ARCS) VERTEX SurfacePosition3 WITHOUT OVERLAPS > 0.001;
+    END Tile;
+    !!@ili2db.mapping=MultiSurface
+    STRUCTURE MultiSurface =
+      Parts : BAG {1..*} OF Tile;
+    END MultiSurface;
+
+    CLASS Asset =
+      Anchor : Position3;
+      Pins : MultiPoint;
+      Paths : MultiLine;
+      Tiles : MultiSurface;
+    END Asset;
+  END Data;
+END ChbaseXyzGeometry24.

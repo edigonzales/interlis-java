@@ -1463,7 +1463,6 @@ final class DbMapping {
                                                  CrsDefaults defaults) {
         var component = describeColumn(plan, plan.object(binding.element()).orElseThrow(), binding.component(), defaults,
                 Optional.empty(), true);
-        if (component.dimensions() != 2) throw unsupported("coalesced geometry dimensions at " + outer.name().declared());
         return new Column(outer, outer.name().declared().last(), binding.kind(), component.effectiveType(),
                 Optional.empty(), Optional.empty(), component.epsgCode(), component.srsId(), false, Optional.empty(),
                 component.dimensions(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.of(binding));
@@ -1628,7 +1627,7 @@ final class DbMapping {
         return new Curve(kind, coordinates.dimensions(), epsg);
     }
 
-    private static boolean storageDimensions(CoordinateType coordinates) {
+    static boolean storageDimensions(CoordinateType coordinates) {
         return coordinates.dimensions() == 2 || coordinates.dimensions() == 3;
     }
 

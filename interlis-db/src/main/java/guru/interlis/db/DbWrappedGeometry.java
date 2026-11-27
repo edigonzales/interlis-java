@@ -81,7 +81,7 @@ record DbWrappedGeometry(AttributeTransformation transformation, SymbolRef struc
         var type = type(plan, component);
         boolean matches = switch (transformation) {
             case MULTIPOINT -> type instanceof CoordinateType coordinate
-                    && !coordinate.multiCoordinate() && coordinate.dimensions() == 2;
+                    && !coordinate.multiCoordinate() && DbMapping.storageDimensions(coordinate);
             case MULTILINE -> type instanceof GeometryType geometry && geometry.geometryKind() == GeometryKind.POLYLINE;
             case MULTISURFACE -> type instanceof GeometryType geometry && geometry.geometryKind() == GeometryKind.SURFACE;
             default -> false;

@@ -249,9 +249,9 @@ aktivieren die entsprechenden CHBase-Textabbildungen bei der
 Schemaerzeugung. Beide Optionen können kombiniert werden.
 Mit `--coalesce-multi-point`, `--coalesce-multi-line` und
 `--coalesce-multi-surface` lassen sich die drei kompakten
-Geometrieabbildungen für zweidimensionale Strukturen einzeln aktivieren.
-Die Geometriespalte übernimmt den CRS und die Grenzen der Koordinatendomäne
-der inneren Struktur.
+Geometrieabbildungen für XY- und XYZ-Strukturen einzeln aktivieren.
+Die Geometriespalte übernimmt den CRS, die Dimension und die Grenzen
+der Koordinatendomäne der inneren Struktur.
 
 Mit `schemaimport --expand-struct` legt das Kommando ein `newClass`- oder
 Smart2-Schema mit den Fachspalten für `ili2db.mapping=EXPAND` an. In
@@ -622,16 +622,17 @@ Basisspalte, die optionale Sprache in `<stamm>_lang`. Das gilt für
 Bei `--coalesceMultiPoint` verwendet der FULL-Transfer in bestehenden
 `newClass`-Schemata eine `MULTIPOINT`-Spalte für
 `ili2db.mapping=MultiPoint`. Das Einzelattribut enthält eine Struktur
-mit einem BAG aus zweidimensionalen Koordinatenstrukturen. Die
-Komponenten und ihre Duplikate bleiben im XTF erhalten.
+mit einem BAG aus XY- oder XYZ-Koordinatenstrukturen. Die Komponenten
+und ihre Duplikate bleiben im XTF erhalten.
 `--coalesceMultiLine` bildet `MultiLine` und `MultiDirectedLine`
 aus CHBase V1 sowie gleich aufgebaute, mit
 `ili2db.mapping=MultiLine` markierte Strukturen in einer
 `MULTICURVE`-Spalte ab. Der Transfer erhält Kreisbogen und Linienrichtung.
 `--coalesceMultiSurface` verwendet für die CHBase-V1-Struktur
 `MultiSurface` und für entsprechend markierte Strukturen eine
-`MULTISURFACE`-Spalte. Die zweidimensionale Abbildung erhält
-Aussenringe, Innenringe und Kreisbogen.
+`MULTISURFACE`-Spalte. Die XY- und XYZ-Abbildung erhält
+Aussenringe, Innenringe und Kreisbogen. Bei XYZ erhalten Punkte und
+Bogenendpunkte ihre Z-Werte im XTF auch über Geometriehilfstabellen.
 
 Das kombinierte Smart2-Profil ist mit flachen, über `ili2db.mapping`
 markierten Strukturtypen geprüft. Ein geerbtes mehrsprachiges Attribut

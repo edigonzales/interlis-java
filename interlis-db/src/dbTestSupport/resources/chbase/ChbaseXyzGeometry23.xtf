@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION SENDER="fixture" VERSION="2.3"><MODELS><MODEL NAME="ChbaseXyzGeometry23" VERSION="1" URI="https://example.org/interlis/db"/></MODELS></HEADERSECTION>
+  <DATASECTION>
+    <ChbaseXyzGeometry23.Data BID="fixture-b">
+      <ChbaseXyzGeometry23.Data.Asset TID="fixture-asset">
+      <Anchor><COORD><C1>2600001</C1><C2>1200001</C2><C3>10.125</C3></COORD></Anchor>
+      <Pins><ChbaseXyzGeometry23.Data.MultiPoint>
+        <Parts>
+          <ChbaseXyzGeometry23.Data.Pin><Position><COORD><C1>2600010</C1><C2>1200010</C2><C3>-15.25</C3></COORD></Position></ChbaseXyzGeometry23.Data.Pin>
+          <ChbaseXyzGeometry23.Data.Pin><Position><COORD><C1>2600020</C1><C2>1200020</C2><C3>16.5</C3></COORD></Position></ChbaseXyzGeometry23.Data.Pin>
+        </Parts>
+      </ChbaseXyzGeometry23.Data.MultiPoint></Pins>
+      <Paths><ChbaseXyzGeometry23.Data.MultiLine>
+        <Parts>
+          <ChbaseXyzGeometry23.Data.Path><Line><POLYLINE><COORD><C1>2600100</C1><C2>1200100</C2><C3>20</C3></COORD><ARC><C1>2600140</C1><C2>1200100</C2><C3>30</C3><A1>2600120</A1><A2>1200110</A2></ARC></POLYLINE></Line></ChbaseXyzGeometry23.Data.Path>
+          <ChbaseXyzGeometry23.Data.Path><Line><POLYLINE><COORD><C1>2600200</C1><C2>1200200</C2><C3>40</C3></COORD><COORD><C1>2600240</C1><C2>1200240</C2><C3>50</C3></COORD></POLYLINE></Line></ChbaseXyzGeometry23.Data.Path>
+        </Parts>
+      </ChbaseXyzGeometry23.Data.MultiLine></Paths>
+      <Tiles><ChbaseXyzGeometry23.Data.MultiSurface>
+        <Parts>
+          <ChbaseXyzGeometry23.Data.Tile><Face><SURFACE><BOUNDARY><POLYLINE><COORD><C1>600000</C1><C2>200000</C2><C3>60</C3></COORD><ARC><C1>600020</C1><C2>200000</C2><C3>70</C3><A1>600010</A1><A2>199995</A2></ARC><COORD><C1>600020</C1><C2>200020</C2><C3>80</C3></COORD><COORD><C1>600000</C1><C2>200020</C2><C3>90</C3></COORD><COORD><C1>600000</C1><C2>200000</C2><C3>60</C3></COORD></POLYLINE></BOUNDARY></SURFACE></Face></ChbaseXyzGeometry23.Data.Tile>
+          <ChbaseXyzGeometry23.Data.Tile><Face><SURFACE><BOUNDARY><POLYLINE><COORD><C1>600100</C1><C2>200100</C2><C3>100</C3></COORD><COORD><C1>600120</C1><C2>200100</C2><C3>110</C3></COORD><COORD><C1>600120</C1><C2>200120</C2><C3>120</C3></COORD><COORD><C1>600100</C1><C2>200100</C2><C3>100</C3></COORD></POLYLINE></BOUNDARY></SURFACE></Face></ChbaseXyzGeometry23.Data.Tile>
+        </Parts>
+      </ChbaseXyzGeometry23.Data.MultiSurface></Tiles>
+      </ChbaseXyzGeometry23.Data.Asset>
+    </ChbaseXyzGeometry23.Data>
+  </DATASECTION>
+</TRANSFER>

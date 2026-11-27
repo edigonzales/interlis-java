@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns:g="http://www.interlis.ch/geometry/1.0">
+  <i:headersection><i:models><i:model>ChbaseXyzGeometry24</i:model></i:models></i:headersection>
+  <i:datasection>
+    <Data xmlns="http://www.interlis.ch/xtf/2.4/ChbaseXyzGeometry24" i:bid="fixture-b">
+      <Asset i:tid="fixture-asset">
+      <Anchor><g:coord><g:c1>2600001</g:c1><g:c2>1200001</g:c2><g:c3>10.125</g:c3></g:coord></Anchor>
+      <Pins><MultiPoint>
+        <Parts>
+          <Pin><Position><g:coord><g:c1>2600010</g:c1><g:c2>1200010</g:c2><g:c3>-15.25</g:c3></g:coord></Position></Pin>
+          <Pin><Position><g:coord><g:c1>2600020</g:c1><g:c2>1200020</g:c2><g:c3>16.5</g:c3></g:coord></Position></Pin>
+        </Parts>
+      </MultiPoint></Pins>
+      <Paths><MultiLine>
+        <Parts>
+          <Path><Line><g:polyline><g:coord><g:c1>2600100</g:c1><g:c2>1200100</g:c2><g:c3>20</g:c3></g:coord><g:arc><g:c1>2600140</g:c1><g:c2>1200100</g:c2><g:c3>30</g:c3><g:a1>2600120</g:a1><g:a2>1200110</g:a2></g:arc></g:polyline></Line></Path>
+          <Path><Line><g:polyline><g:coord><g:c1>2600200</g:c1><g:c2>1200200</g:c2><g:c3>40</g:c3></g:coord><g:coord><g:c1>2600240</g:c1><g:c2>1200240</g:c2><g:c3>50</g:c3></g:coord></g:polyline></Line></Path>
+        </Parts>
+      </MultiLine></Paths>
+      <Tiles><MultiSurface>
+        <Parts>
+          <Tile><Face><g:surface><g:exterior><g:polyline><g:coord><g:c1>600000</g:c1><g:c2>200000</g:c2><g:c3>60</g:c3></g:coord><g:arc><g:c1>600020</g:c1><g:c2>200000</g:c2><g:c3>70</g:c3><g:a1>600010</g:a1><g:a2>199995</g:a2></g:arc><g:coord><g:c1>600020</g:c1><g:c2>200020</g:c2><g:c3>80</g:c3></g:coord><g:coord><g:c1>600000</g:c1><g:c2>200020</g:c2><g:c3>90</g:c3></g:coord><g:coord><g:c1>600000</g:c1><g:c2>200000</g:c2><g:c3>60</g:c3></g:coord></g:polyline></g:exterior></g:surface></Face></Tile>
+          <Tile><Face><g:surface><g:exterior><g:polyline><g:coord><g:c1>600100</g:c1><g:c2>200100</g:c2><g:c3>100</g:c3></g:coord><g:coord><g:c1>600120</g:c1><g:c2>200100</g:c2><g:c3>110</g:c3></g:coord><g:coord><g:c1>600120</g:c1><g:c2>200120</g:c2><g:c3>120</g:c3></g:coord><g:coord><g:c1>600100</g:c1><g:c2>200100</g:c2><g:c3>100</g:c3></g:coord></g:polyline></g:exterior></g:surface></Face></Tile>
+        </Parts>
+      </MultiSurface></Tiles>
+      </Asset>
+    </Data>
+  </i:datasection>
+</i:transfer>

@@ -39,6 +39,45 @@ final class ChbaseGeometryInteropTest {
     @Test void postgisSmart223() throws Exception { exchangeSmart2(23, POSTGIS.container()); }
     @Test void postgisSmart224() throws Exception { exchangeSmart2(24, POSTGIS.container()); }
 
+    @Test void geoPackageXyz23() throws Exception { exchangeXyz(23, null); }
+    @Test void geoPackageXyz24() throws Exception { exchangeXyz(24, null); }
+    @Test void postgisXyz23() throws Exception { exchangeXyz(23, POSTGIS.container()); }
+    @Test void postgisXyz24() throws Exception { exchangeXyz(24, POSTGIS.container()); }
+
+    private void exchangeXyz(int version, PostgreSQLContainer postgres) throws Exception {
+        var fixture = new ChbaseXyzGeometryFixtures(work, version);
+        var baseline = new TestDatabase(work, postgres, "chbase_xyz_reference", "v" + version + "_");
+        var own = baseline.peer("chbase_xyz_native");
+        var reference = new ReferenceTool(work, own.postgis());
+        var options = new ArrayList<>(List.of("--coalesceMultiPoint", "--coalesceMultiLine", "--coalesceMultiSurface", "--createGeomIdx"));
+        if (own.postgis()) options.add("--oneGeomPerTable");
+        schema(reference, baseline, work, fixture.model, "newClass", options.toArray(String[]::new));
+        fixture.schema(own);
+        try (var expected = baseline.connect(); var actual = own.connect()) {
+            var catalog = DbSchemaCatalog.read(expected, baseline.postgis(), baseline.schema());
+            if (!baseline.postgis()) {
+                catalog = catalog.expectGeoPackageGeometryExtension("asset_paths", "paths", "MULTICURVE")
+                        .expectGeoPackageGeometryExtension("asset_tiles", "tiles", "MULTISURFACE")
+                        .expectGeoPackageGeometryExtension("apath", "line", "COMPOUNDCURVE")
+                        .expectGeoPackageGeometryExtension("tile", "face", "CURVEPOLYGON");
+            }
+            catalog.assertSameAs(DbSchemaCatalog.read(actual, own.postgis(), own.schema()));
+        }
+
+        var nativeInput = withPrefix(work, fixture.input, "native");
+        for (var db : List.of(baseline, own)) {
+            importDataset(reference, db, "legacy", fixture.input);
+            var nativeOutput = work.resolve(db.schema() + "-xyz-native.xtf");
+            assertCliSuccess(db, "export", fixture.model, "legacy", nativeOutput);
+            fixture.assertDelivery(nativeOutput, "fixture", true);
+
+            assertCliSuccess(db, "import", fixture.model, "native", nativeInput);
+            var referenceOutput = work.resolve(db.schema() + "-xyz-reference.xtf");
+            exportDataset(reference, db, "native", referenceOutput);
+            fixture.assertDelivery(referenceOutput, "native", true);
+        }
+    }
+
     private void exchange(int version, PostgreSQLContainer postgres) throws Exception {
         var fixture = new ChbaseGeometryFixtures(work, version);
         var baseline = new TestDatabase(work, postgres, "chbase_geometry_reference", "v" + version + "_");
