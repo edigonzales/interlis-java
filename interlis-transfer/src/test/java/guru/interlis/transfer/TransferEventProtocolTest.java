@@ -226,6 +226,29 @@ class TransferEventProtocolTest {
     }
 
     @Test
+    void observesOnlyEventsAcceptedByTheTransferSequence() {
+        var start = startTransfer();
+        var basket = startBasket();
+        var tid = new TransferId("object", SOURCE);
+        var object = object(schema, BASKET, Optional.of(tid), Optional.empty());
+        List<TransferEvent> accepted = List.of(start, basket, object);
+        var observed = new ArrayList<TransferEvent>();
+
+        try (var reader = new MemoryReader(plan, List.<TransferEvent>of(start, basket, object, object).iterator())) {
+            reader.observeEvents((event, cancellation) -> {
+                assertSame(TOKEN, cancellation);
+                observed.add(event);
+            });
+            for (var event : accepted) {
+                assertSame(event, reader.readNext(TOKEN).orElseThrow());
+            }
+            expect(DUPLICATE_ID, () -> reader.readNext(TOKEN));
+            assertEquals(accepted, observed);
+            expect(FAILED, () -> reader.readNext(TOKEN));
+        }
+    }
+
+    @Test
     void rejectsForeignModelAndTopicReferencesDespiteEqualSymbolIds() {
         var foreign = compile(MODEL, new SourceText(new SourceId("memory:/" + MODEL + ".ili"),
                 new SourceRevision(2), MODEL_TEXT));

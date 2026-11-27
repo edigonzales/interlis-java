@@ -82,7 +82,6 @@ public final class Xtf23Reader extends TransferReader {
     private final Map<String, TopicDescriptor> topics;
     private final Map<String, ObjectDescriptor> objects;
     private final Xtf23Layout layout;
-    private final Xtf23IdentityScope identities = new Xtf23IdentityScope();
     private final Map<SymbolRef, Map<String, PositionedField>> fieldIndexes = new HashMap<>();
     private Map<String, Xtf23OidSpace> oidSpaces = Map.of();
     private Set<SymbolRef> activeTypes = Set.of();
@@ -105,7 +104,7 @@ public final class Xtf23Reader extends TransferReader {
      * The nonnull input remains owned by the caller.
      */
     public Xtf23Reader(TransferPlan plan, InputStream input, Optional<SourceId> source, Xtf23ReadLimits limits) {
-        super(plan);
+        super(plan, false, IdentityScope.SHARED_BID_FULL_TID);
         this.plan = plan;
         this.source = Objects.requireNonNull(source, "source");
         xml = new Xtf23Input(input, limits);
@@ -170,7 +169,6 @@ public final class Xtf23Reader extends TransferReader {
     private void clearTransferState() {
         basket = null;
         oidSpaces = Map.of();
-        identities.release();
         clearBasketState();
     }
 
@@ -324,7 +322,7 @@ public final class Xtf23Reader extends TransferReader {
             }
         }
         var consistency = consistency(attributes);
-        if (!identities.claim(id)) {
+        if (isSharedIdentityRegistered(id.value())) {
             throw xml.error(DUPLICATE_ID, "XTF FULL BID/TID collision for " + id.value());
         }
         var allowed = new HashSet<>(topic.objectTypes());
@@ -376,7 +374,7 @@ public final class Xtf23Reader extends TransferReader {
         var tid = Optional.ofNullable(attributes.get("TID"))
                 .map(value -> new TransferId(identifier(value), IdOrigin.SOURCE));
         tid.ifPresent(value -> {
-            if (!identities.claim(value)) {
+            if (isSharedIdentityRegistered(value.value())) {
                 throw xml.error(DUPLICATE_ID, "XTF FULL BID/TID collision for " + value.value());
             }
         });

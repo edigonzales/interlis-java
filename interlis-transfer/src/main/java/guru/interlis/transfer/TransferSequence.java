@@ -30,10 +30,11 @@ import static guru.interlis.transfer.TransferProtocolException.Reason.UNKNOWN_MO
 final class TransferSequence {
     private final TransferPlan plan;
     private final boolean includeModelImports;
+    private final boolean sharedIdentityScope;
     private State state = State.BEFORE_TRANSFER;
     private Set<SymbolRef> declaredModels = Set.of();
     private Set<String> basketIds = new HashSet<>();
-    private Set<String> fullObjectIds = new HashSet<>();
+    private Set<String> fullObjectIds;
     private ActiveBasket basket;
     private boolean closed;
     private boolean failed;
@@ -43,8 +44,21 @@ final class TransferSequence {
     }
 
     TransferSequence(TransferPlan plan, boolean includeModelImports) {
+        this(plan, includeModelImports, false);
+    }
+
+    TransferSequence(TransferPlan plan, boolean includeModelImports, boolean sharedIdentityScope) {
         this.plan = Objects.requireNonNull(plan, "plan");
         this.includeModelImports = includeModelImports;
+        this.sharedIdentityScope = sharedIdentityScope;
+        this.fullObjectIds = sharedIdentityScope ? basketIds : new HashSet<>();
+    }
+
+    boolean hasSharedIdentity(String id) {
+        if (!sharedIdentityScope) {
+            throw new IllegalStateException("Transfer sequence uses separate identity scopes");
+        }
+        return basketIds.contains(id);
     }
 
     void requireOpen() {

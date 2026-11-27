@@ -13,6 +13,7 @@ import guru.interlis.validation.InputRole;
 import guru.interlis.validation.ValidationPlan;
 import guru.interlis.validation.UncheckedRuleInfo;
 import guru.interlis.validation.ValidationCoverage;
+import guru.interlis.xtf23.Xtf23Reader;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -35,23 +36,33 @@ final class ActiveCoverage {
     TransferReader observe(TransferReader reader, TransferPlan plan, InputRole role,
                            boolean explicitPrimary) {
         boolean requirePrimary = role == InputRole.PRIMARY && explicitPrimary;
-        return new TransferReader(plan) {
+        class InputObservation {
             private boolean selected;
 
-            @Override protected Optional<TransferEvent> readEvent(CancellationToken token) {
-                var event = reader.readNext(token);
-                if (requirePrimary && event.orElse(null) instanceof TransferEvent.StartTransfer transfer
+            void accept(TransferEvent event, CancellationToken token) {
+                if (requirePrimary && event instanceof TransferEvent.StartTransfer transfer
                         && transfer.models().stream().noneMatch(model -> validation.selectsPrimaryModel(model.model()))) {
                     throw new PrimaryModelMismatch("No declared transfer model matches the requested primary models");
                 }
-                if (event.orElse(null) instanceof TransferEvent.StartBasket basket) {
+                if (event instanceof TransferEvent.StartBasket basket) {
                     selected = role == InputRole.PRIMARY && validation.selectsPrimaryBasket(basket);
                     if (requirePrimary && !selected) {
                         throw new PrimaryModelMismatch("Basket is outside the requested primary models");
                     }
-                } else if (selected && !planned.isEmpty() && event.orElse(null) instanceof TransferEvent.ObjectEvent object) {
+                } else if (selected && !planned.isEmpty() && event instanceof TransferEvent.ObjectEvent object) {
                     collect(object.object().data(), token);
                 }
+            }
+        }
+        var observation = new InputObservation();
+        if (reader instanceof Xtf23Reader) {
+            reader.observeEvents(observation::accept);
+            return reader;
+        }
+        return new TransferReader(plan) {
+            @Override protected Optional<TransferEvent> readEvent(CancellationToken token) {
+                var event = reader.readNext(token);
+                event.ifPresent(value -> observation.accept(value, token));
                 return event;
             }
 
