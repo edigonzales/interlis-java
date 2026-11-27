@@ -40,7 +40,7 @@ public final class Main {
                     [--basket BID]... [--topic MODEL.TOPIC]...
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf [FILE.xtf]...
                    interlis-db replace --model NAME [--model NAME]... --dataset NAME
-                    (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
+                    (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf [FILE.xtf]...
                    interlis-db delete --model NAME [--model NAME]... --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME)
                    interlis-db schemaimport --model NAME [--model NAME]...
@@ -280,6 +280,10 @@ public final class Main {
                 case "schemaimport" -> Command.SCHEMAIMPORT;
                 default -> throw new IllegalArgumentException("Expected import, replace, update, delete, export or schemaimport");
             };
+            boolean multipleInputs = switch (command) {
+                case IMPORT, UPDATE, REPLACE -> true;
+                case EXPORT, SCHEMAIMPORT, DELETE -> false;
+            };
             var flags = new HashMap<String, String>();
             var files = new ArrayList<DbTransfer.InputFile>();
             var schemaFlags = new HashSet<String>();
@@ -353,7 +357,7 @@ public final class Main {
                         throw new IllegalArgumentException("Repeated option " + arg);
                     }
                 } else {
-                    if (arg.isBlank() || (command != Command.IMPORT && command != Command.UPDATE && !files.isEmpty())) {
+                    if (arg.isBlank() || (!multipleInputs && !files.isEmpty())) {
                         throw new IllegalArgumentException("Expected exactly one source or destination file");
                     }
                     files.add(new DbTransfer.InputFile(Path.of(arg).toAbsolutePath().normalize(), arg));

@@ -8,6 +8,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -19,10 +20,12 @@ import static guru.interlis.db.DbTestSupport.child;
 import static guru.interlis.db.DbTestSupport.children;
 import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.readDataSection;
+import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.InteropCommands.exportDataset;
 import static guru.interlis.db.InteropCommands.importDataset;
 import static guru.interlis.db.InteropCommands.schema;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class MultiFileMutationInteropTest {
     private static final PostgisTestServer POSTGIS = new PostgisTestServer();
@@ -38,6 +41,10 @@ final class MultiFileMutationInteropTest {
     @Test void geoPackageUpdate24() throws Exception { exchangeUpdate(24, null); }
     @Test void postgisUpdate23() throws Exception { exchangeUpdate(23, POSTGIS.container()); }
     @Test void postgisUpdate24() throws Exception { exchangeUpdate(24, POSTGIS.container()); }
+    @Test void geoPackageReplace23() throws Exception { exchangeReplace(23, null); }
+    @Test void geoPackageReplace24() throws Exception { exchangeReplace(24, null); }
+    @Test void postgisReplace23() throws Exception { exchangeReplace(23, POSTGIS.container()); }
+    @Test void postgisReplace24() throws Exception { exchangeReplace(24, POSTGIS.container()); }
 
     private void exchangeUpdate(int version, PostgreSQLContainer postgres) throws Exception {
         var fixture = new MultiFileImportFixtures(work, version);
@@ -80,6 +87,67 @@ final class MultiFileMutationInteropTest {
         var expected = Set.of("left:a:Updated left", "left:s-a:b", "right:b:Updated right", "right:s-b:a", "skipped:c:Preserve");
         assertExport(legacyOutput, version, expected);
         assertExport(ownOutput, version, expected);
+    }
+
+    private void exchangeReplace(int version, PostgreSQLContainer postgres) throws Exception {
+        var fixture = new MultiFileImportFixtures(work, version);
+        var legacy = new TestDatabase(work, postgres, "batch_replace_legacy", "v" + version + "_");
+        var own = legacy.peer("batch_replace_own");
+        var reference = new ReferenceTool(work, legacy.postgis());
+        schema(reference, legacy, work, fixture.model, "newClass", "--createImportTabs");
+        assertSchemaWithIdentityColumns(own, fixture.model, fixture.source, "--create-import-tabs");
+        var original = fixture.delivery("original",
+                fixture.basket("left", fixture.place("a", "Initially left")),
+                fixture.basket("right", fixture.place("b", "Initially right")),
+                fixture.basket("obsolete", fixture.place("removed", "Remove")));
+        var control = fixture.delivery("control", fixture.basket("independent", fixture.place("control", "Preserve")));
+        importDataset(reference, legacy, "existing", original);
+        importDataset(reference, legacy, "control", control);
+        assertCliSuccess(own, "import", fixture.model, "existing", original);
+        assertCliSuccess(own, "import", fixture.model, "control", control);
+
+        var first = fixture.delivery("replace-first",
+                fixture.basket("left", fixture.place("a", "Replaced left"), fixture.externalSurvey("s-a", "b", "right")));
+        var last = fixture.delivery("replace-last",
+                fixture.basket("right", fixture.place("b", "Replaced right"), fixture.externalSurvey("s-b", "a", "left")));
+        var expected = Set.of("left:a:Replaced left", "left:s-a:b", "right:b:Replaced right", "right:s-b:a");
+        for (var db : List.of(legacy, own)) {
+            try (var sql = db.connect()) {
+                var datasetId = scalar(sql, "SELECT t_id FROM " + db.table("t_ili2db_dataset") + " WHERE datasetname='existing'");
+                String controlState = """
+                        SELECT b.dataset || ':' || b.t_id || ':' || p.t_id || ':' || p.label
+                        FROM %s p JOIN %s b ON p.t_basket=b.t_id WHERE b.t_ili_tid='independent' AND p.t_ili_tid='control'
+                        """.formatted(db.table("place"), db.table("t_ili2db_basket"));
+                var beforeControl = scalar(sql, controlState);
+                var oldIds = basketAndPlaceIds(db, sql, datasetId);
+                assertEquals(6, oldIds.size());
+
+                var output = work.resolve(db == legacy ? "reference-export.xtf" : "native-export.xtf");
+                if (db == legacy) {
+                    assertCliSuccess(db, "replace", fixture.model, "existing", last, first.toString());
+                    exportDataset(reference, db, "existing", output);
+                } else {
+                    reference.run(db, "%ILI_FROM_DB", "--replace", "--dataset", "existing", "--importBid", "--importTid",
+                            first + ";" + last);
+                    assertCliSuccess(db, "export", fixture.model, "existing", output);
+                }
+                assertExport(output, version, expected);
+                assertEquals(datasetId, scalar(sql, "SELECT t_id FROM " + db.table("t_ili2db_dataset") + " WHERE datasetname='existing'"));
+                assertEquals(beforeControl, scalar(sql, controlState));
+                var newIds = basketAndPlaceIds(db, sql, datasetId);
+                assertEquals(4, newIds.size());
+                assertTrue(Collections.disjoint(oldIds, newIds), () -> oldIds + " / " + newIds);
+                assertCrossedReferences(db, sql);
+                assertEquals(List.of(first + ":left:2", last + ":right:2"), changedBasketStatistics(db, sql, first, last));
+            }
+        }
+    }
+
+    private static Set<String> basketAndPlaceIds(TestDatabase db, Connection sql, String datasetId) throws Exception {
+        return catalogKeys(sql, """
+                SELECT 'basket:' || t_id FROM %1$s WHERE dataset=%3$s
+                UNION ALL SELECT 'place:' || p.t_id FROM %2$s p JOIN %1$s b ON p.t_basket=b.t_id WHERE b.dataset=%3$s
+                """.formatted(db.table("t_ili2db_basket"), db.table("place"), datasetId));
     }
 
     private static Set<String> retainedIds(TestDatabase db) throws Exception {

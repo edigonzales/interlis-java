@@ -484,8 +484,11 @@ Daten und Statistik der früheren Dateien zurück.
 
 ## Datensätze ersetzen
 
-`replace` verlangt `--dataset` und eine XTF-Datei. Es behält die interne ID
-des benannten Datensatzes und ersetzt alle seine Baskets und Objekte. Die neuen
+`replace` verlangt `--dataset` und mindestens eine XTF-Datei. Bei mehreren
+Dateien wird der bestehende Datensatzinhalt einmal entfernt. Alle Dateien
+bilden eine Transaktion mit einem Statistiklauf pro Datei. Die BIDs und
+TIDs müssen über alle Dateien hinweg eindeutig sein. `replace` behält die
+interne ID des benannten Datensatzes. Die neuen
 Zeilen erhalten neue interne IDs, auch bei gleicher BID oder TID. Ein fehlender
 Datensatz wird angelegt. Die Änderung wird erst nach dem bestätigten Ende des
 XTF-FULL-Transfers veröffentlicht. Die Löschung erfasst auch Klassenfragmente, Strukturen, Linkzeilen und

@@ -54,6 +54,40 @@ final class MultiFileMutationStorageTest {
         }
     }
 
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void lateReplaceFailuresRestorePreviousDataset(Backend backend, int version) throws Exception {
+        Target db = POSTGIS.target(work.resolve("replace-rollback.gpkg"), backend);
+        var fixture = new MultiFileImportFixtures(work, version);
+        assertSchemaWithIdentityColumns(db, fixture.model, fixture.source, "--create-import-tabs");
+        var initial = fixture.delivery("initial", fixture.basket("original", fixture.place("a", "Original")));
+        var control = fixture.delivery("control", fixture.basket("control-b", fixture.place("control", "Preserve")));
+        assertCliSuccess(db, "import", fixture.model, "existing", initial);
+        assertCliSuccess(db, "import", fixture.model, "control", control);
+        var before = placesWithIds(db);
+        assertEquals(2, before.size());
+
+        var first = fixture.delivery("first", fixture.basket("replace", fixture.place("a", "Replacement")));
+        var malformed = fixture.delivery("malformed", fixture.basket("last-b", fixture.place("b", "Written")));
+        Files.writeString(malformed, Files.readString(malformed) + "<trailing/>");
+        assertCliFailure(db, "replace", fixture.model, "existing", malformed,
+                version == 23 ? "Malformed XML" : "Malformed XTF 2.4 XML", first.toString());
+        assertEquals(before, placesWithIds(db));
+
+        var repeatedBid = fixture.delivery("bid", fixture.basket("replace", fixture.place("b", "Duplicate basket")));
+        assertCliFailure(db, "replace", fixture.model, "existing", repeatedBid, "Duplicate basket ID replace", first.toString());
+        assertEquals(before, placesWithIds(db));
+
+        var repeatedTid = fixture.delivery("tid", fixture.basket("last-b", fixture.place("a", "Duplicate object")));
+        assertCliFailure(db, "replace", fixture.model, "existing", repeatedTid, "Duplicate stored object TID a", first.toString());
+        assertEquals(before, placesWithIds(db));
+        try (var sql = db.connect()) {
+            assertEquals(Set.of(initial.toString(), control.toString()),
+                    catalogKeys(sql, "SELECT importfile FROM " + db.table("t_ili2db_import")));
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_import_basket")));
+        }
+    }
+
     private static Set<String> placesWithIds(Target db) throws Exception {
         try (var sql = db.connect()) {
             return catalogKeys(sql, """
