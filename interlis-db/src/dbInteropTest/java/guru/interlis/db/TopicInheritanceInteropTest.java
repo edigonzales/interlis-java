@@ -35,6 +35,48 @@ final class TopicInheritanceInteropTest {
     @Test void geoPackage24() throws Exception { exchange(24, null); }
     @Test void postgis23() throws Exception { exchange(23, POSTGIS.container()); }
     @Test void postgis24() throws Exception { exchange(24, POSTGIS.container()); }
+    @Test void geoPackageExportModels23() throws Exception { exchangeExportModels(23, null); }
+    @Test void geoPackageExportModels24() throws Exception { exchangeExportModels(24, null); }
+    @Test void postgisExportModels23() throws Exception { exchangeExportModels(23, POSTGIS.container()); }
+    @Test void postgisExportModels24() throws Exception { exchangeExportModels(24, POSTGIS.container()); }
+
+    private void exchangeExportModels(int version, PostgreSQLContainer postgres) throws Exception {
+        var fixture = new ExportModelsFixtures(work, version);
+        var legacy = new TestDatabase(work, postgres, "export_models_reference", "v" + version + "_");
+        var own = legacy.peer("export_models_native");
+        var reference = new ReferenceTool(work, legacy.postgis());
+        String sourceModels = fixture.child + ";" + fixture.otherChild;
+        schema(reference, legacy, work, sourceModels, "newClass");
+        fixture.createSchema(own, List.of(fixture.child, fixture.otherChild));
+        assertCliSuccess(legacy, "import", fixture.child, "regions", fixture.delivery, "--model", fixture.otherChild);
+        importDataset(reference, own, "regions", fixture.delivery);
+
+        var targets = fixture.targets();
+        var fromNative = work.resolve("native-models.xtf");
+        var fromReference = work.resolve("reference-models.xtf");
+        assertCliSuccess(legacy, "export", fixture.child, "regions", fromNative, fixture.exportOptions(targets.reversed()));
+        fixture.assertDelivery(fromNative, targets.reversed());
+        assertCliSuccess(legacy, "export", fixture.child, "regions", fromNative, fixture.exportOptions(targets));
+        fixture.assertDelivery(fromNative, targets);
+        exportDataset(reference, own, "regions", fromReference, "--exportModels", String.join(";", targets.reversed()));
+        fixture.assertDelivery(fromReference, targets.reversed());
+
+        var referenceTarget = legacy.peer("export_models_target_reference");
+        var nativeTarget = own.peer("export_models_target_native");
+        schema(reference, referenceTarget, work, String.join(";", targets), "newClass");
+        fixture.createSchema(nativeTarget, targets);
+        importDataset(reference, referenceTarget, "projected", fromNative);
+        assertCliSuccess(nativeTarget, "import", targets.getFirst(), "projected", fromReference,
+                ExportModelsFixtures.flags("--model", targets.subList(1, targets.size())));
+        for (var db : List.of(referenceTarget, nativeTarget)) {
+            try (var sql = db.connect()) {
+                assertEquals(Set.of("north-b:" + fixture.parent + ".County", "south-b:" + fixture.otherBase + ".Core"),
+                        catalogKeys(sql, "SELECT t_ili_tid || ':' || topic FROM " + db.table("t_ili2db_basket")));
+                assertEquals("north-t:north", scalar(sql, "SELECT t_ili_tid || ':' || label FROM " + db.table("northnote")));
+                assertEquals("south-t:south", scalar(sql, "SELECT t_ili_tid || ':' || label FROM " + db.table("southnote")));
+            }
+        }
+    }
 
     private void exchange(int version, PostgreSQLContainer postgres) throws Exception {
         var fixture = new TopicInheritanceFixtures(work, version);

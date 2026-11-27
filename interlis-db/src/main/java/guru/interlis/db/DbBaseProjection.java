@@ -73,9 +73,9 @@ final class DbBaseProjection {
         }
     }
 
-    static TopicDescriptor topic(TransferPlan plan, TopicDescriptor source, SymbolRef model) {
+    static TopicDescriptor topic(TransferPlan plan, TopicDescriptor source, List<SymbolRef> models) {
         for (var candidate = source; candidate != null; candidate = baseTopic(plan, candidate)) {
-            if (candidate.model().equals(model) && !candidate.abstractTopic()) {
+            if (models.contains(candidate.model()) && !candidate.abstractTopic()) {
                 var sourceOid = source.oidRules().stream().filter(OidRule::basket).findFirst().flatMap(OidRule::domain);
                 var outputOid = candidate.oidRules().stream().filter(OidRule::basket).findFirst().flatMap(OidRule::domain);
                 if (!sourceOid.equals(outputOid)) {
@@ -84,8 +84,8 @@ final class DbBaseProjection {
                 return candidate;
             }
         }
-        throw new DbException("No concrete base topic in " + plan.model(model).orElseThrow().name().declared()
-                + " for " + source.name().declared());
+        var names = models.stream().map(model -> plan.model(model).orElseThrow().name().declared().toString()).toList();
+        throw new DbException("No concrete base topic in " + String.join(", ", names) + " for " + source.name().declared());
     }
 
     Optional<TransferObject> object(TransferObject object) {

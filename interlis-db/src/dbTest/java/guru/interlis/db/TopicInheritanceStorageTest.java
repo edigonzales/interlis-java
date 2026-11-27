@@ -262,6 +262,26 @@ final class TopicInheritanceStorageTest {
         assertArrayEquals(published, Files.readAllBytes(output));
     }
 
+    @ParameterizedTest(name = "{displayName} [XTF {0}, {1}]")
+    @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
+    void requiresReachableExportModelsAndPreservesPublishedFile(int version, Backend backend) throws Exception {
+        var fixture = new ExportModelsFixtures(work, version);
+        var db = POSTGIS.target(work.resolve("export-models.gpkg"), backend);
+        fixture.createSchema(db, List.of(fixture.child, fixture.otherChild));
+        assertCliSuccess(db, "import", fixture.child, "regions", fixture.delivery, "--model", fixture.otherChild);
+        var output = work.resolve("exported.xtf");
+        assertCliSuccess(db, "export", fixture.child, "regions", output, fixture.exportOptions(fixture.targets()));
+        fixture.assertDelivery(output, fixture.targets());
+        var published = Files.readAllBytes(output);
+
+        assertCliFailure(db, "export", fixture.child, "regions", output,
+                "for " + fixture.otherChild + ".South", fixture.exportOptions(List.of(fixture.parent, fixture.grand)));
+        assertArrayEquals(published, Files.readAllBytes(output));
+        assertCliFailure(db, "export", fixture.child, "regions", output,
+                "UnknownTarget", fixture.exportOptions(List.of(fixture.parent, "UnknownTarget")));
+        assertArrayEquals(published, Files.readAllBytes(output));
+    }
+
     private record RegionIds(String station, String marker, String basket, String dataset) { }
 
     private static RegionIds regionIds(Target db, Connection sql, String dataset, String prefix) throws Exception {

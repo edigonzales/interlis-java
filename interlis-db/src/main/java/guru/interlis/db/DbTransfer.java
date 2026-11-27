@@ -90,13 +90,13 @@ final class DbTransfer {
     private DbTransfer() { }
 
     static void exportData(Database db, DbMapping mapping, List<String> requestedModels, List<String> datasets,
-                           List<String> bids, List<String> requestedTopics, Optional<String> outputModel,
+                           List<String> bids, List<String> requestedTopics, List<String> outputModels,
                            TransferWriter writer, CancellationToken token) throws SQLException {
         token.throwIfCancellationRequested();
         var ids = ExportIds.prepare(db, mapping, token);
         var plan = mapping.plan();
-        var output = outputModel.map(name -> plan.models().stream().filter(model -> model.name().declared().last().equals(name))
-                .findFirst().orElseThrow().symbol());
+        var output = outputModels.stream().map(name -> plan.models().stream()
+                .filter(model -> model.name().declared().last().equals(name)).findFirst().orElseThrow().symbol()).toList();
         if (!mapping.hasBasketColumn()) {
             checkStructureOwners(db, mapping, ExportBaskets.UNPARTITIONED, token);
             checkLinkOwners(db, mapping, ExportBaskets.UNPARTITIONED, token);
@@ -237,11 +237,12 @@ final class DbTransfer {
         }
     }
 
-    private static void startTransfer(DbMapping mapping, Optional<SymbolRef> output, Set<SymbolRef> exported,
+    private static void startTransfer(DbMapping mapping, List<SymbolRef> output, Set<SymbolRef> exported,
                                       TransferWriter writer, CancellationToken token) {
         var plan = mapping.plan();
         boolean ili23 = mapping.version() == LanguageVersion.ILI23;
-        var declarations = (output.isPresent() ? output.stream() : mapping.models().stream()).filter(exported::contains).map(ref -> {
+        var header = output.isEmpty() ? mapping.models().stream().filter(exported::contains) : output.stream();
+        var declarations = header.map(ref -> {
             var model = plan.model(ref).orElseThrow();
             var symbol = (ModelSymbol) plan.symbol(ref).known().orElseThrow();
             return new TransferEvent.ModelDeclaration(ref, mapping.version(),
@@ -311,14 +312,16 @@ final class DbTransfer {
         SymbolRef rowTopic() { return (projected ? stored : output).symbol(); }
     }
 
-    private static ExportTopic exportTopic(DbMapping mapping, TopicDescriptor stored, Optional<SymbolRef> outputModel) {
-        if (outputModel.isEmpty()) return new ExportTopic(stored, stored, false);
+    private static ExportTopic exportTopic(DbMapping mapping, TopicDescriptor stored, List<SymbolRef> outputModels) {
+        if (outputModels.isEmpty() || outputModels.contains(stored.model())) return new ExportTopic(stored, stored, false);
         var plan = mapping.plan();
-        var model = outputModel.orElseThrow();
-        if (plan.model(stored.model()).orElseThrow().name().canonical().equals(plan.model(model).orElseThrow().name().canonical())) {
-            return new ExportTopic(stored, mapping.translations().outputTopic(stored, model), false);
+        var canonical = plan.model(stored.model()).orElseThrow().name().canonical();
+        for (var model : outputModels) {
+            if (plan.model(model).orElseThrow().name().canonical().equals(canonical)) {
+                return new ExportTopic(stored, mapping.translations().outputTopic(stored, model), false);
+            }
         }
-        return new ExportTopic(stored, DbBaseProjection.topic(plan, stored, model), true);
+        return new ExportTopic(stored, DbBaseProjection.topic(plan, stored, outputModels), true);
     }
 
     private static void writeBasket(Database db, DbMapping mapping, ExportIds ids, ExportTopic topic, long basketId,

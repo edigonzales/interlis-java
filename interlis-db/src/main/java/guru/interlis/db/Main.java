@@ -30,7 +30,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public final class Main {
     private static final String USAGE = """
-            Usage: interlis-db export --model NAME [--model NAME]... [--export-model NAME]
+            Usage: interlis-db export --model NAME [--model NAME]... [--export-model NAME]...
                     [--dataset NAME [--dataset NAME]... | --basket BID [--basket BID]... | --topic MODEL.TOPIC [--topic MODEL.TOPIC]...]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
                    interlis-db import --model NAME [--model NAME]... [--dataset NAME] [--raw-scalar-text]
@@ -217,7 +217,7 @@ public final class Main {
         Path temporary = Files.createTempFile(options.file().getParent(), ".interlis-db-", ".xtf");
         try {
             try (var database = options.open(password)) {
-                var mapping = DbSchemaReader.read(database, options.models(), options.exportModel(), cancellation);
+                var mapping = DbSchemaReader.read(database, options.models(), options.exportModels(), cancellation);
                 checkTransferOptions(mapping, options);
                 try (var output = Files.newOutputStream(temporary);
                      TransferWriter writer = switch (mapping.version()) {
@@ -225,7 +225,7 @@ public final class Main {
                          case ILI24 -> new Xtf24Writer(mapping.plan(), output);
                      }) {
                     DbTransfer.exportData(database, mapping, options.models(), options.datasets(), options.baskets(), options.topics(),
-                            options.exportModel(), writer, cancellation);
+                            options.exportModels(), writer, cancellation);
                 }
                 database.commit();
             }
@@ -252,12 +252,12 @@ public final class Main {
                            String pgUrl, String schema, String user, boolean createGeometryIndexes,
                            boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean addModels,
                            boolean explicitEpsg, boolean explicitLayout, boolean strokeArcs, DbEnumOptions enumOptions,
-                           Optional<DbCrsPair.Models> srsModels, List<Path> modelFiles, Optional<String> exportModel,
+                           Optional<DbCrsPair.Models> srsModels, List<Path> modelFiles, List<String> exportModels,
                            List<String> baskets, List<String> topics,
                            DbInheritance.Profile inheritance, Set<Ili2dbLayout.AttributeTransformation> transformations,
                            Set<Ili2dbLayout.SchemaOption> schemaOptions, boolean rawScalarText, boolean sqlNotNull) {
         private static final Set<String> NAMES = Set.of("--gpkg", "--pg-url", "--schema", "--user",
-                "--default-epsg", "--alt-srs-model", "--export-model", "--inheritance");
+                "--default-epsg", "--alt-srs-model", "--inheritance");
 
         private static final Set<String> ENUM_OPTIONS = Set.of("--create-enum-col-as-itf-code",
                 "--create-enum-txt-col", "--beautify-enum-disp-name", "--create-single-enum-tab", "--create-enum-tabs", "--create-enum-tabs-with-id");
@@ -291,6 +291,7 @@ public final class Main {
             var schemaOptions = EnumSet.noneOf(Ili2dbLayout.SchemaOption.class);
             var modelFiles = new ArrayList<Path>();
             var models = new ArrayList<String>();
+            var exportModels = new ArrayList<String>();
             var datasets = new ArrayList<String>();
             var baskets = new ArrayList<String>();
             var topics = new ArrayList<String>();
@@ -312,12 +313,19 @@ public final class Main {
                     if (!schemaFlags.add(arg)) throw new IllegalArgumentException("Repeated option " + arg);
                     if (transformation != null) transformations.add(transformation);
                     if (schemaOption != null) schemaOptions.add(schemaOption);
-                } else if (arg.equals("--model")) {
+                } else if (arg.equals("--model") || arg.equals("--export-model")) {
+                    boolean exportModel = arg.equals("--export-model");
+                    if (exportModel && command != Command.EXPORT) {
+                        throw new IllegalArgumentException("--export-model is only valid with export");
+                    }
                     if (++i == args.length || args[i].isBlank() || args[i].startsWith("--")) {
                         throw new IllegalArgumentException("Missing value for " + arg);
                     }
-                    if (models.contains(args[i])) throw new IllegalArgumentException("Repeated model " + args[i]);
-                    models.add(args[i]);
+                    var names = exportModel ? exportModels : models;
+                    if (names.contains(args[i])) {
+                        throw new IllegalArgumentException((exportModel ? "Repeated export model " : "Repeated model ") + args[i]);
+                    }
+                    names.add(args[i]);
                 } else if (arg.equals("--model-file")) {
                     if (command != Command.SCHEMAIMPORT) {
                         throw new IllegalArgumentException(arg + " is only valid with schemaimport");
@@ -366,10 +374,6 @@ public final class Main {
             if (command == Command.EXPORT && ((!datasets.isEmpty() && (!baskets.isEmpty() || !topics.isEmpty()))
                     || (!baskets.isEmpty() && !topics.isEmpty()))) {
                 throw new IllegalArgumentException("Choose one of --dataset, --basket or --topic");
-            }
-            var exportModel = Optional.ofNullable(flags.get("--export-model"));
-            if (exportModel.isPresent() && command != Command.EXPORT) {
-                throw new IllegalArgumentException("--export-model is only valid with export");
             }
             var file = files.isEmpty() ? null : files.getFirst().path();
             if (command == Command.SCHEMAIMPORT) {
@@ -473,7 +477,7 @@ public final class Main {
                     schemaFlags.contains("--create-geom-index"),
                     oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg, multiSrs, addModels,
                     epsg != null, oneGeometryPerTable || multipleGeoPackageGeometries, strokeArcs, enumOptions, srsModels,
-                    List.copyOf(modelFiles), exportModel, List.copyOf(baskets), List.copyOf(topics), inheritance, Set.copyOf(transformations),
+                    List.copyOf(modelFiles), List.copyOf(exportModels), List.copyOf(baskets), List.copyOf(topics), inheritance, Set.copyOf(transformations),
                     Set.copyOf(schemaOptions), rawScalarText, sqlNotNull);
         }
 

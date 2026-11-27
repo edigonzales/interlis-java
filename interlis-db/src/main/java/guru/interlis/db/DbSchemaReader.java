@@ -102,10 +102,10 @@ final class DbSchemaReader {
     private DbSchemaReader() { }
 
     static DbMapping read(Database db, List<String> selectedModels, CancellationToken token) throws SQLException {
-        return read(db, selectedModels, Optional.empty(), token);
+        return read(db, selectedModels, List.of(), token);
     }
 
-    static DbMapping read(Database db, List<String> selectedModels, Optional<String> outputModel, CancellationToken token)
+    static DbMapping read(Database db, List<String> selectedModels, List<String> outputModels, CancellationToken token)
             throws SQLException {
         token.throwIfCancellationRequested();
         String modelName = String.join(", ", selectedModels);
@@ -113,7 +113,7 @@ final class DbSchemaReader {
         db.setRowIdColumn(settings.rowIdColumn());
         var models = new LinkedHashSet<>(settings.srsModels().map(DbCrsPair.Models::names).orElse(selectedModels));
         var compiledModels = new LinkedHashSet<>(models);
-        outputModel.ifPresent(compiledModels::add);
+        compiledModels.addAll(outputModels);
         var initialPlan = readModelPlan(db, List.copyOf(compiledModels), token);
         var additionalTypes = switch (settings.inheritance()) {
             case SMART1 -> smart1Subtypes(db, initialPlan, token);
@@ -134,12 +134,12 @@ final class DbSchemaReader {
                 settings.crs(pair.alternate())));
         var requestedRoots = plan.rootModels().stream().filter(ref ->
                 selectedModels.contains(plan.model(ref).orElseThrow().name().declared().last())).toList();
-        if (outputModel.isPresent()) {
-            String output = outputModel.orElseThrow();
-            var target = plan.models().stream().filter(model -> model.name().declared().last().equals(output))
-                    .findFirst().orElseThrow();
-            if (version == LanguageVersion.ILI24 && !target.symbol().equals(target.name().canonical())) {
-                throw unsupported("XTF 2.4 exports require the original model instead of " + output);
+        if (version == LanguageVersion.ILI24) {
+            for (var target : plan.models()) {
+                String name = target.name().declared().last();
+                if (outputModels.contains(name) && !target.symbol().equals(target.name().canonical())) {
+                    throw unsupported("XTF 2.4 exports require the original model instead of " + name);
+                }
             }
         }
         var roots = DbMapping.storageRoots(plan, crsPair).stream().filter(ref -> plan.models().stream().anyMatch(model ->

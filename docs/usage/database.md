@@ -442,6 +442,10 @@ die bestehende Exportdatei erhalten. Klassen ohne übertragbare Basisklasse entf
 Die Zieldatei deklariert das Basismodell.
 Für jeden ausgewählten Basket muss unter denselben Identitätsregeln ein
 konkretes Basistopic erreichbar sein.
+Mit mehreren `--export-model`-Optionen wählt jeder Basket entlang seiner
+Topic-Vererbung das nächstgelegene erreichbare konkrete Basistopic. Der
+Header deklariert alle ausdrücklich angegebenen Ausgabemodelle in
+Argumentreihenfolge, auch wenn eines davon keine Baskets erhält.
 
 Im `newClass`-Profil liegt ein textkodiertes Inline-Enum auch dann in der
 Spalte der Basisdeklaration, wenn es in einem abgeleiteten Topic per
