@@ -800,6 +800,14 @@ gültiges Modellelement bezeichnet, liegt beim Validator.
 `enumDomain` bezeichnet die vordefinierte oder die deklarierte benannte Domäne.
 `--create-enum-txt-col` ergänzt die Anzeigetextspalten. Im Textprofil bleibt
 `enumDomain` erhalten.
+Direkt deklarierte Alignments unterstützen auch ITF-Codes sowie zentrale
+und separate Lookup-Tabellen. Die horizontalen Codes zählen ab null in der
+Reihenfolge `Left`, `Center`, `Right`. Für die vertikalen Codes gilt
+`Top`, `Cap`, `Half`, `Base`, `Bottom`. Mit `--create-enum-tabs-with-id`
+verweisen die Felder auf die gespeicherten Lookup-IDs. ili2db 5.5.2 meldet
+für benannte Alignment-Domänen mit Lookup-Tabellen einen Typfehler bei der
+Schemaerzeugung. Mit ITF-Codes, Anzeigetexten und einer zentralen Lookup-Tabelle
+scheitert der Referenzimport an der fehlenden Tabelle `halignment`.
 Fachattribute vom Typ `INTERLIS.UUIDOID` liegen als `TEXT(36)` in
 GeoPackage und als `uuid` in PostGIS. Das Kommando normalisiert die
 Schreibweise auf Kleinbuchstaben. XTF 2.3 verwendet das `OID`-Attribut,

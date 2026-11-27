@@ -19,6 +19,7 @@ import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
 import static guru.interlis.db.DbTestSupport.execute;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
+import static guru.interlis.db.EnumerationFixtures.ALIGNMENT;
 import static guru.interlis.db.EnumerationFixtures.BASE;
 import static guru.interlis.db.EnumerationFixtures.assertItfRows;
 import static guru.interlis.db.EnumerationFixtures.mappedTable;
@@ -358,6 +359,30 @@ final class EnumerationStorageTest {
                 "--expand-struct", "--create-enum-col-as-itf-code");
         assertEquals(1, rejected.code(), rejected::diagnostics);
         assertTrue(rejected.diagnostics().contains("enumeration column options for expanded field"), rejected::diagnostics);
+    }
+
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void alignmentNumericMappingsRollBackUnknownCodes(Backend backend, int version) throws Exception {
+        var fixtures = new EnumerationFixtures(work, version);
+        String model = "AlignmentLookup" + version;
+        Path ili = fixtures.source(model, ALIGNMENT);
+        Path input = fixtures.alignmentDataset(model, "native");
+        for (var option : List.of("--create-enum-col-as-itf-code", "--create-enum-tabs-with-id")) {
+            var db = target(backend, option);
+            assertSchemaWithIdentityColumns(db, model, ili, option);
+            Path output = roundTrip(db, model, "native", input);
+            fixtures.assertAlignment(output, "native");
+            try (var sql = db.connect()) {
+                execute(sql, "UPDATE " + db.table("asset") + " SET hvalue=99 WHERE t_ili_tid='native-value'");
+                assertExportRejected(db, model, "native", output, "Unknown numeric enumeration value 99");
+                var invalid = fixtures.dataset(model, "broken",
+                        fixtures.object(model, "Asset", "broken-first", "<HValue>Right</HValue>")
+                        + fixtures.object(model, "Asset", "broken-last", "<HValue>UnknownCode</HValue>"));
+                assertCliFailure(db, "import", model, "broken", invalid, "Cannot encode enumeration value UnknownCode");
+                assertOnlyDataset(db, sql);
+            }
+        }
     }
 
     private Target target(Backend backend, String name) {

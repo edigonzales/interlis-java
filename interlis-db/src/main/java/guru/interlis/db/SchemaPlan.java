@@ -175,8 +175,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             for (var column : table.columns()) {
                 addProperties(properties, geometries, mapping, table, table.name(), column);
                 if (!enumTables.isEmpty() && column.kind() == DbMapping.Kind.ENUMERATION && column.array().isEmpty()) {
-                    var definition = DbEnumeration.definition(mapping.plan(), (AttributeSlot) column.slot());
-                    String target = enumTables.get(DbEnumLookup.name(mapping.plan(), DbEnumLookup.root(mapping.plan(), definition)));
+                    String target = enumTables.get(DbEnumLookup.storedDefinitionName(mapping.plan(), column));
                     if (target == null) {
                         throw new DbException("Missing planned enumeration lookup for " + column.slot().name().declared());
                     }

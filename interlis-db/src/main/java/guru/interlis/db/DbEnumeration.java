@@ -35,6 +35,13 @@ record DbEnumeration(Map<String, Long> numbers, Map<Long, String> paths, Map<Str
         };
     }
 
+    static List<String> alignmentCodes(AlignmentKind kind) {
+        return switch (kind) {
+            case HORIZONTAL -> List.of("Left", "Center", "Right");
+            case VERTICAL -> List.of("Top", "Cap", "Half", "Base", "Bottom");
+        };
+    }
+
     static List<EnumerationValue> values(EnumerationType type) {
         if (type.treeValues()) return type.values();
         var parents = new HashSet<String>();
@@ -85,12 +92,20 @@ record DbEnumeration(Map<String, Long> numbers, Map<Long, String> paths, Map<Str
 
     static DbEnumeration itfCodes(EnumerationType type, String path) {
         if (type.treeValues()) throw DbMapping.unsupported("ITF codes for ALL OF at " + path);
+        return orderedItfCodes(values(type).stream().map(EnumerationValue::path).toList());
+    }
+
+    static DbEnumeration itfCodes(AlignmentKind kind) {
+        return orderedItfCodes(alignmentCodes(kind));
+    }
+
+    private static DbEnumeration orderedItfCodes(List<String> values) {
         var numbers = new HashMap<String, Long>();
         var paths = new HashMap<Long, String>();
         long code = 0;
-        for (var value : values(type)) {
-            numbers.put(value.path(), code);
-            paths.put(code++, value.path());
+        for (var value : values) {
+            numbers.put(value, code);
+            paths.put(code++, value);
         }
         return new DbEnumeration(numbers, paths, Map.of());
     }

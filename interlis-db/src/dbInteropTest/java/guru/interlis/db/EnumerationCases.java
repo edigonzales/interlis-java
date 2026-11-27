@@ -12,6 +12,7 @@ import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.execute;
 import static guru.interlis.db.DbTestSupport.foreignKeyColumns;
 import static guru.interlis.db.DbTestSupport.scalar;
+import static guru.interlis.db.EnumerationFixtures.ALIGNMENT;
 import static guru.interlis.db.EnumerationFixtures.BASE;
 import static guru.interlis.db.EnumerationFixtures.ABSTRACT_INLINE_OVERRIDES;
 import static guru.interlis.db.EnumerationFixtures.INLINE_OVERRIDES;
@@ -452,6 +453,88 @@ final class EnumerationCases {
         assertCliSuccess(db, "import", model, "native", fixtures.scalars(model, "native"));
         referenceExport(db, "native", output);
         fixtures.assertScalars(output, "native");
+    }
+
+    void alignmentLookup(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "AlignmentLookup" + version;
+        var ili = fixtures.source(model, ALIGNMENT);
+
+        schema(expected, model, "--createSingleEnumTab");
+        create(own, model, ili, "--create-single-enum-tab");
+        assertAlignmentExchange(expected, own, model, DbEnumOptions.Lookup.SINGLE, false);
+
+        var codeReference = expected.peer("alignment_code_ref");
+        var codeOwn = own.peer("alignment_code_own");
+        schema(codeReference, model, "--createEnumTabs", "--createEnumColAsItfCode", "--createEnumTxtCol");
+        create(codeOwn, model, ili, "--create-enum-tabs", "--create-enum-col-as-itf-code", "--create-enum-txt-col");
+        assertAlignmentExchange(codeReference, codeOwn, model, DbEnumOptions.Lookup.PER_DEFINITION, true);
+
+        var idReference = expected.peer("alignment_id_ref");
+        var idOwn = own.peer("alignment_id_own");
+        schema(idReference, model, "--createEnumTabsWithId", "--createFk");
+        create(idOwn, model, ili, "--create-enum-tabs-with-id", "--create-fk");
+        assertAlignmentExchange(idReference, idOwn, model, DbEnumOptions.Lookup.WITH_ID, false);
+    }
+
+    private void assertAlignmentExchange(TestDatabase expected, TestDatabase own, String model,
+                                         DbEnumOptions.Lookup lookup, boolean itfCodes) throws Exception {
+        assertSameCatalog(expected, own);
+        for (var db : List.of(expected, own)) {
+            String hTable;
+            String vTable;
+            try (var sql = db.connect()) {
+                if (lookup == DbEnumOptions.Lookup.SINGLE) {
+                    hTable = vTable = db.table("t_ili2db_enum");
+                    assertAlignmentRows(sql, hTable, " WHERE thisclass='INTERLIS.HALIGNMENT'", List.of("Left", "Center", "Right"));
+                    assertAlignmentRows(sql, vTable, " WHERE thisclass='INTERLIS.VALIGNMENT'", List.of("Top", "Cap", "Half", "Base", "Bottom"));
+                } else {
+                    hTable = db.table(mappedTable(db, sql, "INTERLIS.HALIGNMENT"));
+                    vTable = db.table(mappedTable(db, sql, "INTERLIS.VALIGNMENT"));
+                    assertAlignmentRows(sql, hTable, "", List.of("Left", "Center", "Right"));
+                    assertAlignmentRows(sql, vTable, "", List.of("Top", "Cap", "Half", "Base", "Bottom"));
+                }
+                if (lookup == DbEnumOptions.Lookup.WITH_ID) {
+                    execute(sql, "UPDATE " + hTable + " SET t_id = t_id + 20");
+                    execute(sql, "UPDATE " + vTable + " SET t_id = t_id + 50");
+                }
+            }
+            Path output = work.resolve("alignment-lookup.xtf");
+            referenceImport(db, "legacy", fixtures.alignmentDataset(model, "legacy"));
+            assertCliSuccess(db, "export", model, "legacy", output);
+            fixtures.assertAlignment(output, "legacy");
+            assertCliSuccess(db, "import", model, "native", fixtures.alignmentDataset(model, "native"));
+            referenceExport(db, "native", output);
+            fixtures.assertAlignment(output, "native");
+            try (var sql = db.connect()) {
+                for (var prefix : List.of("legacy", "native")) {
+                    String value = " FROM " + db.table("asset") + " WHERE t_ili_tid='" + prefix + "-value'";
+                    String missing = " FROM " + db.table("asset") + " WHERE t_ili_tid='" + prefix + "-missing'";
+                    assertEquals(lookup == DbEnumOptions.Lookup.WITH_ID
+                                    ? scalar(sql, "SELECT t_id FROM " + hTable + " WHERE ilicode='Right'") : itfCodes ? "2" : "Right",
+                            scalar(sql, "SELECT hvalue" + value));
+                    assertEquals(lookup == DbEnumOptions.Lookup.WITH_ID
+                                    ? scalar(sql, "SELECT t_id FROM " + vTable + " WHERE ilicode='Bottom'") : itfCodes ? "4" : "Bottom",
+                            scalar(sql, "SELECT vvalue" + value));
+                    assertNull(scalar(sql, "SELECT hvalue" + missing));
+                    assertNull(scalar(sql, "SELECT vvalue" + missing));
+                    if (itfCodes) {
+                        assertEquals("Right", scalar(sql, "SELECT hvalue_txt" + value));
+                        assertEquals("Bottom", scalar(sql, "SELECT vvalue_txt" + value));
+                        assertNull(scalar(sql, "SELECT hvalue_txt" + missing));
+                        assertNull(scalar(sql, "SELECT vvalue_txt" + missing));
+                    }
+                }
+            }
+        }
+    }
+
+    private static void assertAlignmentRows(Connection sql, String table, String filter, List<String> codes) throws Exception {
+        var expected = new java.util.ArrayList<List<String>>();
+        for (int i = 0; i < codes.size(); i++) {
+            String code = Integer.toString(i);
+            expected.add(List.of(codes.get(i), code, code, codes.get(i)));
+        }
+        assertEquals(expected, rows(sql, "SELECT ilicode, itfcode, seq, dispname FROM " + table + filter + " ORDER BY itfcode"));
     }
 
     private void mixInline(TestDatabase db, String model) throws Exception {

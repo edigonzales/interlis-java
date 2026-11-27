@@ -27,6 +27,9 @@ final class EnumerationFixtures {
               Active : BOOLEAN;
             END Asset;
             """;
+    static final String ALIGNMENT = """
+            CLASS Asset = HValue : HALIGNMENT; VValue : VALIGNMENT; END Asset;
+            """;
     static final String INLINE_OVERRIDES = """
             CLASS Meter = State : (idle, active, standby) ORDERED; END Meter;
             CLASS SmartUnit EXTENDS Meter =
@@ -120,6 +123,22 @@ final class EnumerationFixtures {
                   END Data;
                 END %s.
                 """.formatted(version - 20, model, header, declarations, model));
+    }
+
+    Path alignmentDataset(String model, String prefix) throws Exception {
+        return dataset(model, prefix, object(model, "Asset", prefix + "-value", "<HValue>Right</HValue><VValue>Bottom</VValue>")
+                + object(model, "Asset", prefix + "-missing", ""));
+    }
+
+    void assertAlignment(Path file, String prefix) throws Exception {
+        var objects = children(children(readDataSection(file, version)).getFirst());
+        assertEquals(2, objects.size());
+        var value = objects.stream().filter(object -> id(object, version, "tid").equals(prefix + "-value")).findFirst().orElseThrow();
+        var missing = objects.stream().filter(object -> id(object, version, "tid").equals(prefix + "-missing")).findFirst().orElseThrow();
+        assertEquals("Right", child(value, "HValue").getTextContent());
+        assertEquals("Bottom", child(value, "VValue").getTextContent());
+        assertNull(child(missing, "HValue"));
+        assertNull(child(missing, "VValue"));
     }
 
     Path dataset(String model, String prefix, String objects) throws Exception {

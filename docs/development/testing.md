@@ -454,6 +454,8 @@ IDs und einen ili2db-Folgeimport. Inline-Aufzählungen mit `EXTENDED`
 prüfen geteilte und kopierte Spalten, die Lookup-Zeilen je Deklaration
 sowie Lookup-IDs mit Fremdschlüssel und Anzeigetext. Weitere Fälle prüfen
 den Werkzeugwechsel nach `--add-models` sowie Arrays mit ITF-Codes oder Lookup-IDs.
+Die Alignment-Fälle prüfen gespeicherte Codes und Lookup-IDs, Anzeigetexte
+und die Reihenfolge der vordefinierten Lookup-Werte.
 
 `--tests '*ArrayScalarInteropTest'` bündelt skalare LIST- und BAG-Arrays,
 optionale Einzelstrukturen sowie EXPAND und JSON in einem Modell pro

@@ -1,6 +1,8 @@
 package guru.interlis.db;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.AlignmentKind;
+import guru.interlis.model.AlignmentType;
 import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.DomainReferenceType;
@@ -52,11 +54,13 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
         if (options.lookup() != DbEnumOptions.Lookup.PER_DEFINITION) {
             definitions = storedDefinitions(plan, definitions, mapping.inheritance());
         }
+        var alignments = alignmentKinds(plan, objects);
         if (options.lookup() == DbEnumOptions.Lookup.SINGLE) {
             var rows = new ArrayList<Row>();
             for (var definition : definitions) {
                 rows.addAll(rows(plan, definition, orderedDeclarations, options.beautify(), token));
             }
+            for (var alignment : alignments) rows.addAll(alignmentRows(alignment));
             return List.of(new DbEnumLookup(Ili2dbLayout.ENUM, Optional.empty(), !names.hasTable(Ili2dbLayout.ENUM), rows));
         }
         var lookups = new ArrayList<DbEnumLookup>();
@@ -65,6 +69,11 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
             lookups.add(new DbEnumLookup(table, Optional.of(BOOLEAN_DEFINITION), !names.hasClass(BOOLEAN_DEFINITION),
                     List.of(new Row(BOOLEAN_DEFINITION, null, "false", 0, null, "false", null),
                             new Row(BOOLEAN_DEFINITION, null, "true", 1, null, "true", null))));
+        }
+        for (var alignment : alignments) {
+            String definition = DbEnumeration.alignmentName(alignment);
+            String table = names.mappedTable(definition, "INTERLIS", null, definition.substring("INTERLIS.".length()));
+            lookups.add(new DbEnumLookup(table, Optional.of(definition), !names.hasClass(definition), alignmentRows(alignment)));
         }
         var byTable = new LinkedHashMap<Symbol, List<Row>>();
         for (var definition : definitions) {
@@ -78,6 +87,32 @@ record DbEnumLookup(String table, Optional<String> mappedName, boolean create, L
             lookups.add(new DbEnumLookup(table(plan, names, declaration, path), Optional.of(path), !names.hasClass(path), rows));
         });
         return List.copyOf(lookups);
+    }
+
+    static List<AlignmentKind> alignmentKinds(TransferPlan plan, List<ObjectDescriptor> objects) {
+        return objects.stream().flatMap(object -> DbMapping.attributes(object).stream())
+                .map(slot -> plan.type(slot.effectiveType()).known().orElseThrow())
+                .filter(AlignmentType.class::isInstance).map(AlignmentType.class::cast)
+                .map(AlignmentType::alignment).distinct().sorted().toList();
+    }
+
+    private static List<Row> alignmentRows(AlignmentKind kind) {
+        String definition = DbEnumeration.alignmentName(kind);
+        var rows = new ArrayList<Row>();
+        int code = 0;
+        for (var value : DbEnumeration.alignmentCodes(kind)) {
+            rows.add(new Row(definition, null, value, code, code, value, null));
+            code++;
+        }
+        return rows;
+    }
+
+    static String storedDefinitionName(TransferPlan plan, DbMapping.Column column) {
+        if (column.effectiveType().orElseThrow() instanceof AlignmentType alignment) {
+            return DbEnumeration.alignmentName(alignment.alignment());
+        }
+        var definition = DbEnumeration.definition(plan, (AttributeSlot) column.slot());
+        return name(plan, root(plan, definition));
     }
 
     static boolean hasBoolean(TransferPlan plan, List<ObjectDescriptor> objects) {

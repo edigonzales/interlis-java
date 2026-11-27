@@ -83,6 +83,17 @@ final class EnumerationInteropTest {
         new EnumerationCases(work, new ReferenceTool(work, db.postgis()), version).appendEnums(expected, db);
     }
 
+    @Test void geoPackageAlignmentLookup23() throws Exception { exchangeAlignmentLookup(23, null); }
+    @Test void geoPackageAlignmentLookup24() throws Exception { exchangeAlignmentLookup(24, null); }
+    @Test void postgisAlignmentLookup23() throws Exception { exchangeAlignmentLookup(23, POSTGIS.container()); }
+    @Test void postgisAlignmentLookup24() throws Exception { exchangeAlignmentLookup(24, POSTGIS.container()); }
+
+    private void exchangeAlignmentLookup(int version, PostgreSQLContainer postgres) throws Exception {
+        var expected = new TestDatabase(work, postgres, "alignment_lookup_ref", "v" + version + "_");
+        var own = expected.peer("alignment_lookup_own");
+        new EnumerationCases(work, new ReferenceTool(work, own.postgis()), version).alignmentLookup(expected, own);
+    }
+
     @Test void geoPackageEnumNumericArrays23() throws Exception { exchangeEnumNumericArrays(23, null); }
     @Test void geoPackageEnumNumericArrays24() throws Exception { exchangeEnumNumericArrays(24, null); }
     @Test void postgisEnumNumericArrays23() throws Exception { exchangeEnumNumericArrays(23, POSTGIS.container()); }

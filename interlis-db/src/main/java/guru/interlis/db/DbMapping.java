@@ -148,7 +148,9 @@ final class DbMapping {
         }
 
         Column withItfCodes() {
-            return withEnumeration(DbEnumeration.itfCodes((EnumerationType) effectiveType.orElseThrow(), slot.name().declared().toString()));
+            var type = effectiveType.orElseThrow();
+            return withEnumeration(type instanceof AlignmentType alignment ? DbEnumeration.itfCodes(alignment.alignment())
+                    : DbEnumeration.itfCodes((EnumerationType) type, slot.name().declared().toString()));
         }
 
         Column withEnumeration(DbEnumeration binding) {
@@ -933,7 +935,7 @@ final class DbMapping {
                         String column = allocator.column(owner, storageName);
                         checkColumnName(attribute, column, object.kind() == SymbolKind.STRUCTURE, !split && discriminator, gpkg);
                         var named = binding.withName(column).withStrokeArcs(plan, strokeArcs);
-                        enumOptions.checkAlignment(named);
+                        enumOptions.checkAlignment(plan, named);
                         if (enumOptions.itfCodes() && named.kind() == Kind.ENUMERATION) named = named.withItfCodes();
                         if (enumOptions.textColumns() && (named.kind() == Kind.ENUMERATION || named.kind() == Kind.BOOLEAN)) {
                             var textLabel = DbEnumText.describe(plan, named, enumOptions.beautify());

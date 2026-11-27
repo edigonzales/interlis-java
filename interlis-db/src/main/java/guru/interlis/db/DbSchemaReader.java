@@ -10,6 +10,7 @@ import guru.interlis.db.DbMapping.Kind;
 import guru.interlis.db.DbMapping.SecondaryGeometry;
 import guru.interlis.db.DbMapping.Table;
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.AlignmentType;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.Modifier;
@@ -155,6 +156,7 @@ final class DbSchemaReader {
         roots.stream().map(ref -> plan.model(ref).orElseThrow().name().declared().last()).forEach(mappedModels::add);
         var enumDefinitions = new LinkedHashMap<String, String>();
         var enumLookup = settings.enumOptions().lookup();
+        List<String> alignments = List.of();
         List<DbEnumLookup.Definition> definitions = List.of();
         if (enumLookup == DbEnumOptions.Lookup.PER_DEFINITION || enumLookup == DbEnumOptions.Lookup.WITH_ID) {
             definitions = DbEnumLookup.definitions(plan, roots, selected, token);
@@ -164,6 +166,8 @@ final class DbSchemaReader {
                         ? DbEnumLookup.root(plan, declaration) : declaration;
                 enumDefinitions.put(DbEnumLookup.name(plan, declaration), DbEnumLookup.name(plan, storedDefinition));
             }
+            alignments = DbEnumLookup.alignmentKinds(plan, selected).stream().map(DbEnumeration::alignmentName).toList();
+            for (var name : alignments) enumDefinitions.put(name, name);
             if (enumLookup == DbEnumOptions.Lookup.PER_DEFINITION && DbEnumLookup.hasBoolean(plan, selected)) {
                 enumDefinitions.put(DbEnumLookup.BOOLEAN_DEFINITION, DbEnumLookup.BOOLEAN_DEFINITION);
             }
@@ -235,6 +239,7 @@ final class DbSchemaReader {
         if (enumLookup == DbEnumOptions.Lookup.WITH_ID) {
             var stored = DbEnumLookup.storedDefinitions(plan, definitions, layout).stream()
                     .map(definition -> DbEnumLookup.name(plan, definition.declaration())).collect(Collectors.toSet());
+            stored.addAll(alignments);
             enumDefinitions.keySet().retainAll(stored);
         }
         var enumerations = readEnumTables(db, classNames, usedNames, enumDefinitions, enumLookup, token);
@@ -377,12 +382,14 @@ final class DbSchemaReader {
                         }
                         var mapping = attrNames.take(attribute, table == null ? parent.name() : table, null);
                         var column = described.withName(mapping.name()).withStrokeArcs(plan, settings.strokeArcs());
-                        settings.enumOptions().checkAlignment(column);
+                        settings.enumOptions().checkAlignment(plan, column);
                         if (column.kind() == Kind.ENUMERATION) {
                             if (settings.enumOptions().itfCodes()) {
                                 column = column.withItfCodes();
                             } else if (enumLookup == DbEnumOptions.Lookup.WITH_ID) {
-                                String definition = DbEnumLookup.name(plan, DbEnumeration.definition(plan, attr));
+                                String definition = column.effectiveType().orElseThrow() instanceof AlignmentType alignment
+                                        ? DbEnumeration.alignmentName(alignment.alignment())
+                                        : DbEnumLookup.name(plan, DbEnumeration.definition(plan, attr));
                                 column = column.withEnumeration(enumeration(enumerations, definition));
                             }
                         }
