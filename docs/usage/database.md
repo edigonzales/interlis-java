@@ -501,7 +501,11 @@ Lieferung verwenden die bestehende Suche im selben Schema.
 
 ## Baskets aktualisieren
 
-`update` verlangt `--dataset` und eine XTF-Datei.
+`update` verlangt `--dataset` und mindestens eine XTF-Datei. Mehrere
+Dateien bilden eine Transaktion. Die ausgewählten BIDs und TIDs müssen
+über die Dateien hinweg eindeutig sein. `EXTERNAL`-Referenzen können auf
+Ziele in späteren Dateien zeigen. Die Importstatistik erfasst jede Datei
+als eigenen Lauf.
 Ohne `--create-tid-col` setzt jeder gelieferte Basket eine deklarierte
 Basket-OID und eine gespeicherte Objekt-OID für jede konkrete Klasse seines
 Topics voraus. Dazu gehören geerbte Klassen und Klassen ohne Objekte in der

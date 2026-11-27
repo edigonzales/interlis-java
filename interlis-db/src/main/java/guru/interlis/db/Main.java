@@ -38,7 +38,7 @@ public final class Main {
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf [FILE.xtf]...
                    interlis-db update --model NAME [--model NAME]... --dataset NAME
                     [--basket BID]... [--topic MODEL.TOPIC]...
-                    (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
+                    (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf [FILE.xtf]...
                    interlis-db replace --model NAME [--model NAME]... --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
                    interlis-db delete --model NAME [--model NAME]... --dataset NAME
@@ -353,7 +353,7 @@ public final class Main {
                         throw new IllegalArgumentException("Repeated option " + arg);
                     }
                 } else {
-                    if (arg.isBlank() || (command != Command.IMPORT && !files.isEmpty())) {
+                    if (arg.isBlank() || (command != Command.IMPORT && command != Command.UPDATE && !files.isEmpty())) {
                         throw new IllegalArgumentException("Expected exactly one source or destination file");
                     }
                     files.add(new DbTransfer.InputFile(Path.of(arg).toAbsolutePath().normalize(), arg));

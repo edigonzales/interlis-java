@@ -123,6 +123,9 @@ einer Referenz aus einem ausgelassenen Basket.
 XTF-Dateien, dateiübergreifende `EXTERNAL`-Referenzen und die Importstatistik.
 `MultiFileImportStorageTest` prüft unter anderem Rollback bei Fehlern in
 einer späteren Datei.
+`--tests '*MultiFileMutationInteropTest.*Update*'` prüft den Werkzeugwechsel
+nach einem gefilterten Mehrdatei-Update. `MultiFileMutationStorageTest` prüft
+den Rollback bei fehlerhaftem XML in einer späteren Datei.
 
 Der GeoPackage-Selektor läuft ohne Docker. JUnit-XML liegt pro Aufgabe unter
 `interlis-db/build/test-results/` und der HTML-Bericht unter
