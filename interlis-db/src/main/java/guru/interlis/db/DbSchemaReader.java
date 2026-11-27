@@ -433,13 +433,16 @@ final class DbSchemaReader {
             }
         }
         if (!attrNames.isEmpty()) throw new DbException("Extra ATTRNAME mappings for " + modelName);
-        var notNullRoles = tables.stream().flatMap(table -> {
+        var notNullReferences = new HashMap<String, Set<String>>();
+        for (var table : tables) {
             var notNull = catalog.get(table.object().symbol()).notNull();
-            return table.columns().stream().filter(column -> column.slot() instanceof RoleSlot
-                    && notNull.contains(key(db, column.name())));
-        }).map(column -> column.slot().symbol()).collect(Collectors.toUnmodifiableSet());
+            var references = table.columns().stream().filter(column -> column.kind() == Kind.REFERENCE
+                            && notNull.contains(key(db, column.name())))
+                    .map(Column::name).collect(Collectors.toUnmodifiableSet());
+            if (!references.isEmpty()) notNullReferences.put(table.name(), references);
+        }
         var mapping = new DbMapping(plan, version, tables, compositions, associations, crsPair, requestedRoots,
-                layout, settings.schemaOptions(), notNullRoles);
+                layout, settings.schemaOptions(), notNullReferences);
         mapping.checkEnumLookupIds(settings.enumOptions());
         return mapping;
     }

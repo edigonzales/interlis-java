@@ -137,6 +137,32 @@ final class SchemaProfileCases {
                 : reference.getAttributeNS("http://www.interlis.ch/xtf/2.4/INTERLIS", "ref");
     }
 
+    void strictLinks(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ProfileStrictLinks" + version;
+        Path ili = fixtures.strictLinkModel(model);
+        referenceSchema(expected, ili, "--createFk");
+        schema(own, model, ili, "--sql-not-null", "--create-fk");
+        mixedObjects(expected, own, model, 3, prefix -> fixtures.strictLinkObjects(model, prefix, "connected", "Site"),
+                (prefix, rows) -> {
+                    var link = rows.stream().filter(row -> row.getLocalName().endsWith("Membership")).findFirst().orElseThrow();
+                    assertEquals(prefix + "-asset", targetTid(child(link, "AssetEnd")));
+                    assertEquals(prefix + "-site", targetTid(child(link, "SiteEnd")));
+                    var asset = rows.stream().filter(row -> (prefix + "-asset").equals(id(row, version, "tid")))
+                            .findFirst().orElseThrow();
+                    assertEquals("connected", child(asset, "Label").getTextContent());
+                });
+        for (var db : List.of(expected, own)) {
+            try (var sql = db.connect()) {
+                var keys = foreignKeyColumns(db, sql);
+                assertTrue(keys.containsAll(Set.of("membership:assetend:asset", "membership:siteend:site")), keys::toString);
+                assertEquals(Set.of("legacy-asset:legacy-site", "native-asset:native-site"),
+                        catalogKeys(sql, "SELECT a.t_ili_tid || ':' || s.t_ili_tid FROM " + db.table("membership")
+                                + " m JOIN " + db.table("asset") + " a ON a.t_id=m.assetend JOIN "
+                                + db.table("site") + " s ON s.t_id=m.siteend"));
+            }
+        }
+    }
+
     void requiredReferences(TestDatabase expected, TestDatabase own) throws Exception {
         String model = "ProfileRequiredReference" + version;
         Path ili = fixtures.requiredReferenceModel(model);

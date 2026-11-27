@@ -540,7 +540,10 @@ erhalten in einer Klassenhierarchie `NOT NULL` auf der Tabelle ihrer
 Deklaration. Die Fragmente eines Objekts verwenden dieselbe `T_Id`.
 Pflichtgeometrien in flachen Klassen und lokale, ungeordnete 1:1- und
 1:n-Rollen mit Kardinalität `{1}` und einer konkreten
-Zieltabelle erhalten `NOT NULL`. Geometrien verwenden ein festes CRS.
+Zieltabelle erhalten `NOT NULL`. Eigenständige lokale, ungeordnete binäre
+n:m-Assoziationen speichern beide Rollenspalten mit `NOT NULL`, auch bei
+einer Kardinalität `{0..*}`. Der Import reserviert die SQL-IDs für noch
+folgende Zielobjekte innerhalb des Baskets. Geometrien verwenden ein festes CRS.
 Bei der Aufteilung der Geometriespalten einer flachen Klasse gilt die
 Nullbarkeit auch auf der jeweiligen Hilfstabelle. Lokale Referenzattribute
 mit einer konkreten, vererbungsfreien Zielklasse bleiben auch bei `MANDATORY REFERENCE TO`

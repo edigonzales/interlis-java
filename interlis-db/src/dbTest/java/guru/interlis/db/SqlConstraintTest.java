@@ -404,6 +404,37 @@ final class SqlConstraintTest {
 
     @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void strictLinksReserveBothEndpointsAndRollBackUnresolvedTargets(Backend backend, int version) throws Exception {
+        withDatabase(backend, db -> {
+            String model = "SqlStrictLinks";
+            var fixture = new ProfileFixtures(work, version);
+            DbTestSupport.assertSchemaWithIdentityColumns(db, model, fixture.strictLinkModel(model), "--sql-not-null", "--create-fk");
+            assertCliSuccess(db, "import", model, "valid", fixture.data(model, "valid",
+                    fixture.strictLinkObjects(model, "valid", "original", "Site")));
+            try (var sql = db.connect()) {
+                String link = db.table("membership");
+                String endpoints = "SELECT assetend || ':' || siteend FROM " + link;
+                String ids = scalar(sql, endpoints);
+                assertTrue(ids.matches("[0-9]+:[0-9]+"), ids);
+                assertCliSuccess(db, "update", model, "valid", fixture.data(model, "valid",
+                        fixture.strictLinkObjects(model, "valid", "updated", "Site")));
+                assertEquals(ids, scalar(sql, endpoints));
+
+                assertCliFailure(db, "update", model, "valid", fixture.data(model, "valid",
+                        fixture.strictLinkObjects(model, "valid", "cancelled", null)), "to valid-site");
+                assertCliFailure(db, "import", model, "wrong-target", fixture.data(model, "wrong-target",
+                        fixture.strictLinkObjects(model, "wrong-target", "wrong", "Other")), "to wrong-target-site");
+                assertEquals(ids, scalar(sql, endpoints));
+                assertEquals("updated", scalar(sql, "SELECT label FROM " + db.table("asset")));
+                assertRolledBack(db, sql, 1, 1);
+                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("site")));
+                assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("other")));
+            }
+        });
+    }
+
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void requiredReferenceAttributesRemainNullableAndRollBackUnresolvedTargets(Backend backend, int version) throws Exception {
         withDatabase(backend, db -> {
             String model = "SqlRequiredReference";

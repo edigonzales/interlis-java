@@ -118,6 +118,26 @@ final class ProfileFixtures {
         return object(model, "PairRight", prefix + "-right", reference("RequiredLeft", prefix + "-left"));
     }
 
+    Path strictLinkModel(String model) throws IOException {
+        return source(model, """
+                CLASS Asset = Label : MANDATORY TEXT*30; END Asset;
+                CLASS Site = END Site;
+                CLASS Other = END Other;
+                ASSOCIATION Membership =
+                  AssetEnd -- {0..*} Asset;
+                  SiteEnd -- {0..*} Site;
+                END Membership;
+                """);
+    }
+
+    String strictLinkObjects(String model, String prefix, String label, String targetClass) {
+        String tag = version == 23 ? model + ".Data.Membership" : "Membership";
+        return "<" + tag + ">" + reference("AssetEnd", prefix + "-asset")
+                + reference("SiteEnd", prefix + "-site") + "</" + tag + ">"
+                + object(model, "Asset", prefix + "-asset", "<Label>" + label + "</Label>")
+                + (targetClass == null ? "" : object(model, targetClass, prefix + "-site", ""));
+    }
+
     Path requiredReferenceModel(String model) throws IOException {
         String direct = version == 24 ? "DirectSite : MANDATORY REFERENCE TO Site;" : "";
         return source(model, """

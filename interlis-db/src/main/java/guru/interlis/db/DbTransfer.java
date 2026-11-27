@@ -2396,7 +2396,7 @@ final class DbTransfer {
             String targetTid = storedTid(root, reference.target().value());
             var patch = new Pending(table, column, id, tid, targetTid, reference.targetBasket());
             var target = (external ? externalObjects : objects).get(patch.targetTid());
-            if (target == null && mapping.requiredEmbeddedRole(column)) {
+            if (target == null && mapping.requiresEarlyReference(table, column)) {
                 return reserveReferenceTarget(patch);
             }
             if (target == null) {

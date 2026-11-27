@@ -206,11 +206,16 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         var required = new HashMap<String, Set<String>>();
         for (var table : addedTables) {
             var kind = table.object().kind();
-            if (kind != SymbolKind.CLASS && (kind != SymbolKind.STRUCTURE || table.subtype())) {
+            boolean standaloneLink = mapping.strictStandaloneLink(table);
+            if (!standaloneLink && kind != SymbolKind.CLASS && (kind != SymbolKind.STRUCTURE || table.subtype())) {
                 throw DbMapping.unsupported("--sql-not-null at " + table.object().name().declared());
             }
             var columns = new HashSet<String>();
             for (var column : table.columns()) {
+                if (standaloneLink && column.slot() instanceof RoleSlot) {
+                    columns.add(column.name());
+                    continue;
+                }
                 if (column.slot() instanceof RoleSlot role && mapping.singleTargetEmbeddedRole(table, column)) {
                     if (role.role().cardinality().lower().signum() > 0) columns.add(column.name());
                     continue;

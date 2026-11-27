@@ -366,7 +366,10 @@ Werte in Referenzschemata ohne `--sqlEnableNull` aus. Sie prüfen den
 Rollback bei einer verletzten SQL-Pflichtspalte.
 Die `*ProfileRequiredRoles*`- und `*ProfileRequiredGeometries*`-Fälle
 vergleichen strikte Referenz- und eigene Schemata und prüfen den
-Werkzeugwechsel in beiden Richtungen.
+Werkzeugwechsel in beiden Richtungen. `*ProfileStrictLinks*` prüft beide
+Rollenspalten und Vorwärtsreferenzen eigenständiger n:m-Links im strikten
+Schema. `SqlConstraintTest` prüft die stabilen IDs und den Rollback beim
+fehlenden oder falschen Ziel.
 `*ProfileNestedStructures*` prüft Einzelwerte, Listen und Bags in
 Strukturen. `*ProfileRequiredHierarchy*` prüft Pflichtfelder und zwei
 Rollen auf dasselbe Ziel in einer `newClass`-Hierarchie.

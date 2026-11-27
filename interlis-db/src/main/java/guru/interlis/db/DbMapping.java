@@ -360,11 +360,11 @@ final class DbMapping {
     private final Map<SymbolRef, List<Composition>> byChild;
     private final List<EmbeddedAssociation> associations;
     private final Map<SymbolRef, SymbolRef> roleOwners;
-    private final Set<SymbolRef> requiredEmbeddedRoles;
+    private final Map<String, Set<String>> earlyReferences;
 
     DbMapping(TransferPlan plan, LanguageVersion version, List<Table> tables, List<Composition> compositions,
               List<EmbeddedAssociation> associations, Optional<DbCrsPair> crsPair, List<SymbolRef> selectedModels,
-              DbInheritance inheritance, Set<Ili2dbLayout.SchemaOption> schemaOptions, Set<SymbolRef> notNullRoles) {
+              DbInheritance inheritance, Set<Ili2dbLayout.SchemaOption> schemaOptions, Map<String, Set<String>> notNullReferences) {
         this.plan = plan;
         this.schemaOptions = Set.copyOf(schemaOptions);
         this.inheritance = inheritance;
@@ -433,9 +433,16 @@ final class DbMapping {
         this.associations = List.copyOf(associations);
         roleOwners = associations.stream().filter(association -> !association.linkTable() && association.owners().size() == 1)
                 .collect(Collectors.toUnmodifiableMap(association -> association.role().symbol(), EmbeddedAssociation::owner));
-        requiredEmbeddedRoles = tables.stream().flatMap(table -> table.columns().stream()
-                .filter(column -> notNullRoles.contains(column.slot().symbol()) && singleTargetEmbeddedRole(table, column)))
-                .map(column -> column.slot().symbol()).collect(Collectors.toUnmodifiableSet());
+        var early = new HashMap<String, Set<String>>();
+        for (var table : tables) {
+            var required = notNullReferences.getOrDefault(table.name(), Set.of());
+            if (required.isEmpty()) continue;
+            var references = table.columns().stream().filter(column -> required.contains(column.name())
+                            && (singleTargetEmbeddedRole(table, column) || strictStandaloneLinkRole(table, column)))
+                    .map(Column::name).collect(Collectors.toUnmodifiableSet());
+            if (!references.isEmpty()) early.put(table.name(), references);
+        }
+        earlyReferences = Map.copyOf(early);
     }
 
     private static Map<SymbolRef, List<Composition>> indexCompositions(List<Composition> compositions,
@@ -503,7 +510,22 @@ final class DbMapping {
 
     Set<Ili2dbLayout.SchemaOption> schemaOptions() { return schemaOptions; }
 
-    boolean requiredEmbeddedRole(Column column) { return requiredEmbeddedRoles.contains(column.slot().symbol()); }
+    boolean requiresEarlyReference(Table table, Column column) {
+        return earlyReferences.getOrDefault(table.name(), Set.of()).contains(column.name());
+    }
+
+    boolean strictStandaloneLink(Table table) {
+        if (profile() != DbInheritance.Profile.NEW_CLASS || table.object().kind() != SymbolKind.ASSOCIATION
+                || table.object().baseType().isPresent() || hasSubtypes(plan, table.object().symbol())) return false;
+        var roles = roleSlots(table.object());
+        return roles.size() == 2 && roles.stream().allMatch(role -> !role.role().external() && !role.role().ordered()
+                && role.role().targets().size() == 1 && role.role().aggregation() == RoleAggregation.NONE
+                && !CardinalityUpper.finite(1).equals(role.role().cardinality().upper()));
+    }
+
+    private boolean strictStandaloneLinkRole(Table table, Column column) {
+        return column.slot() instanceof RoleSlot && column.kind() == Kind.REFERENCE && strictStandaloneLink(table);
+    }
 
     boolean singleTargetEmbeddedRole(Table table, Column column) {
         if (profile() != DbInheritance.Profile.NEW_CLASS || column.kind() != Kind.REFERENCE
@@ -901,7 +923,7 @@ final class DbMapping {
         }
         var version = plan.model(plan.rootModels().getFirst()).orElseThrow().languageVersion();
         var mapping = new DbMapping(plan, version, tables, compositions, associations, crsPair, plan.rootModels(),
-                inheritance, schemaOptions, Set.of());
+                inheritance, schemaOptions, Map.of());
         mapping.checkEnumLookupIds(enumOptions);
         return mapping;
     }
