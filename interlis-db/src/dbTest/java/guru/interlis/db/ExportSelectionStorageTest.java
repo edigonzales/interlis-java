@@ -128,9 +128,9 @@ final class ExportSelectionStorageTest {
         var mixedDataset = cli(db, "export", fixture.model, "one", output, CancellationToken.none(), "--topic", data);
         assertEquals(2, mixedDataset.code(), mixedDataset::diagnostics);
         assertTrue(mixedDataset.diagnostics().contains("Choose one of --dataset, --basket or --topic"), mixedDataset::diagnostics);
-        var importFilter = cli(db, "import", fixture.model, "one", first, CancellationToken.none(), "--topic", data);
-        assertEquals(2, importFilter.code(), importFilter::diagnostics);
-        assertTrue(importFilter.diagnostics().contains("--topic is only valid with export"), importFilter::diagnostics);
+        var replaceFilter = cli(db, "replace", fixture.model, "one", first, CancellationToken.none(), "--topic", data);
+        assertEquals(2, replaceFilter.code(), replaceFilter::diagnostics);
+        assertTrue(replaceFilter.diagnostics().contains("--topic is only valid with export"), replaceFilter::diagnostics);
         assertArrayEquals(published, Files.readAllBytes(output));
         assertRejected(db, fixture.model, output, "Unknown topic", "--topic", "Data");
         assertRejected(db, fixture.model, output, "Unknown topic", "--topic", fixture.model + ".Absent");

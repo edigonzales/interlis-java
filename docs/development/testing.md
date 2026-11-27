@@ -112,6 +112,11 @@ und für einen Wechsel der ili2db-Referenzversion vorgesehen.
 ./gradlew :interlis-db:dbInteropTest --tests '*BaseMappingInteropTest.geoPackage*'
 ```
 
+`--tests '*InputSelectionInteropTest.*Import*'` vergleicht die
+BID-/Topic-Filter und leere Auswahlen mit ili2db. `InputSelectionStorageTest`
+prüft den Import ohne Basket-Spalte, externe Zielauflösung und Rollback
+bei fehlerhaftem XML in einem ausgelassenen Basket.
+
 Der GeoPackage-Selektor läuft ohne Docker. JUnit-XML liegt pro Aufgabe unter
 `interlis-db/build/test-results/` und der HTML-Bericht unter
 `interlis-db/build/reports/tests/`.

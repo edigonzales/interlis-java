@@ -38,6 +38,7 @@ public final class Main {
                     [--dataset NAME [--dataset NAME]... | --basket BID [--basket BID]... | --topic MODEL.TOPIC [--topic MODEL.TOPIC]...]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
                    interlis-db import --model NAME [--model NAME]... [--dataset NAME] [--raw-scalar-text]
+                    [--basket BID]... [--topic MODEL.TOPIC]...
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
                    interlis-db <replace|update> --model NAME [--model NAME]... --dataset NAME
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
@@ -201,7 +202,9 @@ public final class Main {
                     default -> DbTransfer.WriteMode.IMPORT;
                 };
                 DbTransfer.importData(database, mapping, options.dataset(), options.file().getFileName().toString(),
-                        options.fileArgument(), reader, mode, options.rawScalarText(), cancellation);
+                        options.fileArgument(), reader, mode, options.rawScalarText(),
+                        new DbTransfer.InputSelection(Set.copyOf(options.baskets()), Set.copyOf(options.topics())),
+                        cancellation);
             }
             cancellation.throwIfCancellationRequested();
             database.commit();
@@ -249,7 +252,7 @@ public final class Main {
             throw new DbException("Dataset operations require a schema created with --create-basket-col");
         }
         boolean filtered = !options.baskets().isEmpty() || !options.topics().isEmpty();
-        if (filtered && !mapping.hasBasketColumn()) {
+        if (filtered && options.command() == Command.EXPORT && !mapping.hasBasketColumn()) {
             throw new DbException("Basket or topic export requires a schema created with --create-basket-col");
         }
     }
@@ -328,8 +331,8 @@ public final class Main {
                     if (modelFiles.contains(source)) throw new IllegalArgumentException("Repeated model file " + source);
                     modelFiles.add(source);
                 } else if (arg.equals("--dataset") || arg.equals("--basket") || arg.equals("--topic")) {
-                    if (command != Command.EXPORT && !arg.equals("--dataset")) {
-                        throw new IllegalArgumentException(arg + " is only valid with export");
+                    if (!arg.equals("--dataset") && command != Command.EXPORT && command != Command.IMPORT) {
+                        throw new IllegalArgumentException(arg + " is only valid with export or import");
                     }
                     if (++i == args.length || args[i].isBlank() || args[i].startsWith("--")) {
                         throw new IllegalArgumentException("Missing value for " + arg);
@@ -362,7 +365,8 @@ public final class Main {
                     file = Path.of(arg).toAbsolutePath().normalize();
                 }
             }
-            if ((!datasets.isEmpty() && (!baskets.isEmpty() || !topics.isEmpty())) || (!baskets.isEmpty() && !topics.isEmpty())) {
+            if (command == Command.EXPORT && ((!datasets.isEmpty() && (!baskets.isEmpty() || !topics.isEmpty()))
+                    || (!baskets.isEmpty() && !topics.isEmpty()))) {
                 throw new IllegalArgumentException("Choose one of --dataset, --basket or --topic");
             }
             var exportModel = Optional.ofNullable(flags.get("--export-model"));

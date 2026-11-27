@@ -446,9 +446,24 @@ Nach dem Rollback lässt sich der Import mit demselben Datensatznamen
 wiederholen.
 PostgreSQL-Sequenznummern können nach einem Rollback Lücken aufweisen.
 
+## Eingabebaskets auswählen
+
+Bei `import` wählen wiederholte `--basket BID` und `--topic Modell.Topic`
+die Baskets der Eingabedatei. Je Option reicht ein passender Wert. Wenn beide
+Optionen gesetzt sind, muss der gelieferte Basket beide erfüllen. Die
+Topic-Auswahl verwendet den qualifizierten Namen im XTF. Abgeleitete Topics
+brauchen ihren eigenen Namen. Der Reader dekodiert die ganze Datei bis zum
+Dateiende. Fehler auch in ausgelassenen Baskets rollen den Import zurück.
+
+Bei leerer Auswahl legt der Import in einem Schema mit `T_basket` einen
+leeren Datensatz an. Aktivierte Importstatistik erfasst dafür den Lauf ohne
+Basket-Zeilen. Im unbenannten Profil ohne `T_basket` wirken die Filter auf
+die Fachzeilen. Die Zuordnung von `EXTERNAL`-Referenzen berücksichtigt
+ausgewählte Eingabeobjekte sowie bereits gespeicherte Ziele.
+
 ## Datensätze ersetzen
 
-`replace` verwendet dieselben Optionen wie `import`. Es behält die interne ID
+`replace` verlangt `--dataset` und eine XTF-Datei. Es behält die interne ID
 des benannten Datensatzes und ersetzt alle seine Baskets und Objekte. Die neuen
 Zeilen erhalten neue interne IDs, auch bei gleicher BID oder TID. Ein fehlender
 Datensatz wird angelegt. Die Änderung wird erst nach dem bestätigten Ende des
@@ -465,7 +480,7 @@ Lieferung verwenden die bestehende Suche im selben Schema.
 
 ## Baskets aktualisieren
 
-`update` verwendet dieselben Optionen wie der datensatzbezogene Import.
+`update` verlangt `--dataset` und eine XTF-Datei.
 Ohne `--create-tid-col` setzt jeder gelieferte Basket eine deklarierte
 Basket-OID und eine gespeicherte Objekt-OID für jede konkrete Klasse seines
 Topics voraus. Dazu gehören geerbte Klassen und Klassen ohne Objekte in der

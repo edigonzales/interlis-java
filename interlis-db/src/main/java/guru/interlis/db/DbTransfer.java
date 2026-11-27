@@ -24,6 +24,7 @@ import guru.interlis.transfer.TransferIdentity.IdOrigin;
 import guru.interlis.transfer.TransferIdentity.ObjectOid;
 import guru.interlis.transfer.TransferIdentity.TransferId;
 import guru.interlis.transfer.TransferObject;
+import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferReader;
 import guru.interlis.transfer.TransferValue;
 import guru.interlis.transfer.TransferValue.Binary;
@@ -1498,8 +1499,20 @@ final class DbTransfer {
 
     enum WriteMode { IMPORT, REPLACE, UPDATE }
 
+    record InputSelection(Set<String> bids, Set<String> topics) {
+        boolean filtered() {
+            return !bids.isEmpty() || !topics.isEmpty();
+        }
+
+        boolean includes(TransferPlan plan, TransferEvent.StartBasket basket) {
+            return (bids.isEmpty() || bids.contains(basket.id().value()))
+                    && (topics.isEmpty() || topics.contains(plan.topic(basket.topic()).orElseThrow().name().declared().toString()));
+        }
+    }
+
     static void importData(Database db, DbMapping mapping, String dataset, String filename, String fileArgument,
-                           TransferReader reader, WriteMode mode, boolean rawScalarText, CancellationToken token)
+                           TransferReader reader, WriteMode mode, boolean rawScalarText, InputSelection selection,
+                           CancellationToken token)
             throws SQLException {
         token.throwIfCancellationRequested();
         if (!mapping.hasBasketColumn() && mapping.schemaOptions().contains(Ili2dbLayout.SchemaOption.IMPORT_TABS)) {
@@ -1514,6 +1527,7 @@ final class DbTransfer {
         try (var importer = new Import(db, mapping, dataset, mode == WriteMode.UPDATE, rawScalarText, token)) {
             long datasetId = 0;
             boolean sawBasket = false;
+            boolean selectedBasket = false;
             for (var next = reader.readNext(token); next.isPresent(); next = reader.readNext(token)) {
                 switch (next.orElseThrow()) {
                     case TransferEvent.StartTransfer start -> {
@@ -1531,16 +1545,23 @@ final class DbTransfer {
                         importer.startStatistics(datasetId, fileArgument);
                     }
                     case TransferEvent.StartBasket start -> {
-                        importer.startBasket(datasetId, start);
-                        sawBasket = true;
+                        selectedBasket = selection.includes(mapping.plan(), start);
+                        if (selectedBasket) {
+                            importer.startBasket(datasetId, start);
+                            sawBasket = true;
+                        }
                     }
-                    case TransferEvent.ObjectEvent event -> importer.insertObject(event);
-                    case TransferEvent.EndBasket ignored -> importer.finishBasket();
+                    case TransferEvent.ObjectEvent event -> {
+                        if (selectedBasket) importer.insertObject(event);
+                    }
+                    case TransferEvent.EndBasket ignored -> {
+                        if (selectedBasket) importer.finishBasket();
+                    }
                     case TransferEvent.EndTransfer ignored -> { }
                 }
             }
             token.throwIfCancellationRequested();
-            if (!sawBasket) {
+            if (!sawBasket && !selection.filtered()) {
                 throw new DbException("A transfer must contain at least one basket");
             }
             importer.finishTransfer();
