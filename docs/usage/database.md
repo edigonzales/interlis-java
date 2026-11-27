@@ -461,6 +461,27 @@ Basket-Zeilen. Im unbenannten Profil ohne `T_basket` wirken die Filter auf
 die Fachzeilen. Die Zuordnung von `EXTERNAL`-Referenzen berücksichtigt
 ausgewählte Eingabeobjekte sowie bereits gespeicherte Ziele.
 
+## Mehrere XTF-Dateien importieren
+
+```sh
+interlis-db import --gpkg data.gpkg --model Example --dataset delivery first.xtf second.xtf
+```
+
+`import` liest die Dateien in Argumentreihenfolge und speichert sie in einer
+Transaktion im selben Datensatz. Ohne `--dataset` wird der bereinigte Name
+der letzten Datei samt Erweiterung als Basis für den Datensatznamen verwendet.
+Die BID- und Topic-Filter gelten für alle Dateien. Die BIDs der ausgewählten
+Baskets und die TIDs ihrer Objekte müssen über die Dateien hinweg eindeutig sein.
+`EXTERNAL`-Referenzen können Ziele in früheren und späteren Dateien verwenden.
+Lokale Referenzen bleiben auf ihren Basket beschränkt.
+
+Jede Datei braucht einen passenden XTF-Header und ein gültiges Dateiende.
+Bei aktivierter Importstatistik erhält jede Datei ihren eigenen Lauf mit dem
+übergebenen Pfad. Dateien ohne ausgewählte Baskets erhalten keine
+Basketstatistik. Mehrere leere Dateien ergeben in einem Schema mit `T_basket`
+einen leeren Datensatz. Ein Fehler in einer späteren Datei rollt auch die
+Daten und Statistik der früheren Dateien zurück.
+
 ## Datensätze ersetzen
 
 `replace` verlangt `--dataset` und eine XTF-Datei. Es behält die interne ID

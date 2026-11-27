@@ -40,10 +40,15 @@ import guru.interlis.transfer.TransferValue.Undefined;
 import guru.interlis.transfer.TransferValue.XmlFragment;
 import guru.interlis.transfer.TransferWriter;
 import guru.interlis.xtf23.Xtf23Exception;
+import guru.interlis.xtf23.Xtf23Reader;
 import guru.interlis.xtf24.Xtf24Exception;
+import guru.interlis.xtf24.Xtf24Reader;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -1499,6 +1504,8 @@ final class DbTransfer {
 
     enum WriteMode { IMPORT, REPLACE, UPDATE }
 
+    record InputFile(Path path, String argument) { }
+
     record InputSelection(Set<String> bids, Set<String> topics) {
         boolean filtered() {
             return !bids.isEmpty() || !topics.isEmpty();
@@ -1510,10 +1517,9 @@ final class DbTransfer {
         }
     }
 
-    static void importData(Database db, DbMapping mapping, String dataset, String filename, String fileArgument,
-                           TransferReader reader, WriteMode mode, boolean rawScalarText, InputSelection selection,
-                           CancellationToken token)
-            throws SQLException {
+    static void importData(Database db, DbMapping mapping, String dataset, List<InputFile> files, WriteMode mode,
+                           boolean rawScalarText, InputSelection selection, CancellationToken token)
+            throws IOException, SQLException {
         token.throwIfCancellationRequested();
         if (!mapping.hasBasketColumn() && mapping.schemaOptions().contains(Ili2dbLayout.SchemaOption.IMPORT_TABS)) {
             throw new DbException("Import statistics require --create-basket-col");
@@ -1524,44 +1530,39 @@ final class DbTransfer {
         if (mode == WriteMode.IMPORT && existing.isPresent()) {
             throw new DbException("Dataset already exists: " + dataset);
         }
-        try (var importer = new Import(db, mapping, dataset, mode == WriteMode.UPDATE, rawScalarText, token)) {
+        boolean multipleFiles = files.size() > 1;
+        var models = mapping.plan().modelImportClosure(Set.copyOf(mapping.models()));
+        var rawSlots = rawScalarText ? DbScalarText.rawSlots(mapping) : Set.<SymbolRef>of();
+        try (var importer = new Import(db, mapping, dataset, mode == WriteMode.UPDATE, rawScalarText, multipleFiles, token)) {
             long datasetId = 0;
             boolean sawBasket = false;
-            boolean selectedBasket = false;
-            for (var next = reader.readNext(token); next.isPresent(); next = reader.readNext(token)) {
-                switch (next.orElseThrow()) {
-                    case TransferEvent.StartTransfer start -> {
-                        var models = mapping.plan().modelImportClosure(Set.copyOf(mapping.models()));
-                        if (start.models().isEmpty() || start.models().stream().anyMatch(model -> !models.contains(model.model()))
-                                || !reader.stableIdentityNamespaces().isEmpty()) {
-                            throw new DbException("Expected the selected model and transfer-scoped identities in XTF");
-                        }
+            for (int index = 0; index < files.size(); index++) {
+                token.throwIfCancellationRequested();
+                var file = files.get(index);
+                try (var input = Files.newInputStream(file.path());
+                     TransferReader reader = switch (mapping.version()) {
+                         case ILI23 -> Xtf23Reader.forIli2db(mapping.plan(), input, rawSlots);
+                         case ILI24 -> Xtf24Reader.forIli2db(mapping.plan(), input, rawSlots);
+                     }) {
+                    if (!(reader.readNext(token).orElseThrow() instanceof TransferEvent.StartTransfer start)
+                            || start.models().isEmpty() || start.models().stream().anyMatch(model -> !models.contains(model.model()))
+                            || !reader.stableIdentityNamespaces().isEmpty()) {
+                        throw new DbException("Expected the selected model and transfer-scoped identities in XTF");
+                    }
+                    if (index == 0) {
                         if (existing.isPresent()) {
                             datasetId = existing.orElseThrow();
                             if (mode == WriteMode.REPLACE) DbDatasetWrite.clearDataset(db, mapping, datasetId, "replace", token);
                         } else if (mapping.hasBasketColumn()) {
-                            datasetId = importer.insertDataset(filename);
-                        }
-                        importer.startStatistics(datasetId, fileArgument);
-                    }
-                    case TransferEvent.StartBasket start -> {
-                        selectedBasket = selection.includes(mapping.plan(), start);
-                        if (selectedBasket) {
-                            importer.startBasket(datasetId, start);
-                            sawBasket = true;
+                            datasetId = importer.insertDataset(files.getLast().path().getFileName().toString());
                         }
                     }
-                    case TransferEvent.ObjectEvent event -> {
-                        if (selectedBasket) importer.insertObject(event);
-                    }
-                    case TransferEvent.EndBasket ignored -> {
-                        if (selectedBasket) importer.finishBasket();
-                    }
-                    case TransferEvent.EndTransfer ignored -> { }
+                    importer.startStatistics(datasetId, file.argument());
+                    sawBasket |= importer.readBaskets(reader, datasetId, selection);
                 }
             }
             token.throwIfCancellationRequested();
-            if (!sawBasket && !selection.filtered()) {
+            if (!sawBasket && !selection.filtered() && !multipleFiles) {
                 throw new DbException("A transfer must contain at least one basket");
             }
             importer.finishTransfer();
@@ -1713,6 +1714,7 @@ final class DbTransfer {
         private final Set<SymbolRef> externalTargets;
         private final Map<String, StoredObject> objects = new HashMap<>();
         private final Map<String, ReferenceReservation> reservations = new LinkedHashMap<>();
+        private final Optional<Set<String>> storedBids;
         private final Optional<Set<String>> storedTids;
         private final Map<String, StoredObject> externalObjects = new HashMap<>();
         private final List<Pending> pending = new ArrayList<>();
@@ -1733,7 +1735,7 @@ final class DbTransfer {
         private final AuditStamp audit;
         private GeometrySelection basketGeometry = new GeometrySelection(List.of(), Map.of());
 
-        Import(Database db, DbMapping mapping, String dataset, boolean updating, boolean rawScalarText,
+        Import(Database db, DbMapping mapping, String dataset, boolean updating, boolean rawScalarText, boolean multipleFiles,
                CancellationToken token) throws SQLException {
             this.db = db;
             this.mapping = mapping;
@@ -1749,7 +1751,8 @@ final class DbTransfer {
             this.rawScalarText = rawScalarText;
             referenceTargets = referenceTargets(false);
             externalTargets = referenceTargets(true);
-            storedTids = mapping.tables().stream().anyMatch(Table::uuidIdentity)
+            storedBids = multipleFiles ? Optional.of(new HashSet<>()) : Optional.empty();
+            storedTids = multipleFiles || mapping.tables().stream().anyMatch(Table::uuidIdentity)
                     ? Optional.of(new HashSet<>()) : Optional.empty();
         }
 
@@ -1792,8 +1795,36 @@ final class DbTransfer {
             }
         }
 
+        boolean readBaskets(TransferReader reader, long datasetId, InputSelection selection) throws SQLException {
+            boolean sawBasket = false;
+            boolean selectedBasket = false;
+            for (var next = reader.readNext(token); next.isPresent(); next = reader.readNext(token)) {
+                switch (next.orElseThrow()) {
+                    case TransferEvent.StartTransfer ignored -> throw new DbException("Unexpected XTF header");
+                    case TransferEvent.StartBasket start -> {
+                        selectedBasket = selection.includes(mapping.plan(), start);
+                        if (selectedBasket) {
+                            startBasket(datasetId, start);
+                            sawBasket = true;
+                        }
+                    }
+                    case TransferEvent.ObjectEvent event -> {
+                        if (selectedBasket) insertObject(event);
+                    }
+                    case TransferEvent.EndBasket ignored -> {
+                        if (selectedBasket) finishBasket();
+                    }
+                    case TransferEvent.EndTransfer ignored -> { }
+                }
+            }
+            return sawBasket;
+        }
+
         void startBasket(long datasetId, TransferEvent.StartBasket start) throws SQLException {
             basketObjectCount = 0;
+            storedBids.ifPresent(seen -> {
+                if (!seen.add(start.id().value())) throw new DbException("Duplicate basket ID " + start.id().value());
+            });
             var topic = mapping.plan().topic(start.topic()).orElseThrow();
             if (!mapping.models().contains(topic.model())
                     || start.kind() != BasketKind.FULL || start.consistency() != Consistency.COMPLETE

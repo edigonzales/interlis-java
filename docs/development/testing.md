@@ -119,6 +119,10 @@ bei fehlerhaftem XML in einem ausgelassenen Basket.
 `--tests '*InputSelectionInteropTest.*Update*'` prüft den selektiven
 Basket-Ersatz und stabile IDs. Der eigene DB-Test prüft den Rollback bei
 einer Referenz aus einem ausgelassenen Basket.
+`--tests '*MultiFileImportInteropTest'` prüft den Werkzeugwechsel mit mehreren
+XTF-Dateien, dateiübergreifende `EXTERNAL`-Referenzen und die Importstatistik.
+`MultiFileImportStorageTest` prüft unter anderem Rollback bei Fehlern in
+einer späteren Datei.
 
 Der GeoPackage-Selektor läuft ohne Docker. JUnit-XML liegt pro Aufgabe unter
 `interlis-db/build/test-results/` und der HTML-Bericht unter

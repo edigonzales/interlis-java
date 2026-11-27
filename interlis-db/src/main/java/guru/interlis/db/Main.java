@@ -2,15 +2,11 @@ package guru.interlis.db;
 
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
-import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.TransferProtocolException;
-import guru.interlis.transfer.TransferReader;
 import guru.interlis.transfer.TransferWriter;
 import guru.interlis.xtf23.Xtf23Exception;
-import guru.interlis.xtf23.Xtf23Reader;
 import guru.interlis.xtf23.Xtf23Writer;
 import guru.interlis.xtf24.Xtf24Exception;
-import guru.interlis.xtf24.Xtf24Reader;
 import guru.interlis.xtf24.Xtf24Writer;
 
 import java.io.IOException;
@@ -39,7 +35,7 @@ public final class Main {
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
                    interlis-db import --model NAME [--model NAME]... [--dataset NAME] [--raw-scalar-text]
                     [--basket BID]... [--topic MODEL.TOPIC]...
-                    (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
+                    (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf [FILE.xtf]...
                    interlis-db update --model NAME [--model NAME]... --dataset NAME
                     [--basket BID]... [--topic MODEL.TOPIC]...
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) FILE.xtf
@@ -193,22 +189,14 @@ public final class Main {
         try (var database = options.open(password)) {
             var mapping = DbSchemaReader.read(database, options.models(), cancellation);
             checkTransferOptions(mapping, options);
-            var rawSlots = options.rawScalarText() ? DbScalarText.rawSlots(mapping) : Set.<SymbolRef>of();
-            try (var input = Files.newInputStream(options.file());
-                 TransferReader reader = switch (mapping.version()) {
-                     case ILI23 -> Xtf23Reader.forIli2db(mapping.plan(), input, rawSlots);
-                     case ILI24 -> Xtf24Reader.forIli2db(mapping.plan(), input, rawSlots);
-                 }) {
-                var mode = switch (options.command()) {
-                    case REPLACE -> DbTransfer.WriteMode.REPLACE;
-                    case UPDATE -> DbTransfer.WriteMode.UPDATE;
-                    default -> DbTransfer.WriteMode.IMPORT;
-                };
-                DbTransfer.importData(database, mapping, options.dataset(), options.file().getFileName().toString(),
-                        options.fileArgument(), reader, mode, options.rawScalarText(),
-                        new DbTransfer.InputSelection(Set.copyOf(options.baskets()), Set.copyOf(options.topics())),
-                        cancellation);
-            }
+            var mode = switch (options.command()) {
+                case REPLACE -> DbTransfer.WriteMode.REPLACE;
+                case UPDATE -> DbTransfer.WriteMode.UPDATE;
+                default -> DbTransfer.WriteMode.IMPORT;
+            };
+            DbTransfer.importData(database, mapping, options.dataset(), options.files(), mode, options.rawScalarText(),
+                    new DbTransfer.InputSelection(Set.copyOf(options.baskets()), Set.copyOf(options.topics())),
+                    cancellation);
             cancellation.throwIfCancellationRequested();
             database.commit();
         }
@@ -260,7 +248,7 @@ public final class Main {
         }
     }
 
-    private record Options(Command command, List<String> models, List<String> datasets, Path file, String fileArgument, Path gpkg,
+    private record Options(Command command, List<String> models, List<String> datasets, List<DbTransfer.InputFile> files, Path gpkg,
                            String pgUrl, String schema, String user, boolean createGeometryIndexes,
                            boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean addModels,
                            boolean explicitEpsg, boolean explicitLayout, boolean strokeArcs, DbEnumOptions enumOptions,
@@ -278,6 +266,10 @@ public final class Main {
             return datasets.isEmpty() ? null : datasets.getFirst();
         }
 
+        Path file() {
+            return files.getFirst().path();
+        }
+
         static Options parse(String[] args) {
             Command command = switch (args.length == 0 ? "" : args[0]) {
                 case "import" -> Command.IMPORT;
@@ -289,8 +281,7 @@ public final class Main {
                 default -> throw new IllegalArgumentException("Expected import, replace, update, delete, export or schemaimport");
             };
             var flags = new HashMap<String, String>();
-            Path file = null;
-            String fileArgument = null;
+            var files = new ArrayList<DbTransfer.InputFile>();
             var schemaFlags = new HashSet<String>();
             var transformations = EnumSet.noneOf(Ili2dbLayout.AttributeTransformation.class);
             var schemaOptions = EnumSet.noneOf(Ili2dbLayout.SchemaOption.class);
@@ -362,11 +353,10 @@ public final class Main {
                         throw new IllegalArgumentException("Repeated option " + arg);
                     }
                 } else {
-                    if (file != null || arg.isBlank()) {
+                    if (arg.isBlank() || (command != Command.IMPORT && !files.isEmpty())) {
                         throw new IllegalArgumentException("Expected exactly one source or destination file");
                     }
-                    fileArgument = arg;
-                    file = Path.of(arg).toAbsolutePath().normalize();
+                    files.add(new DbTransfer.InputFile(Path.of(arg).toAbsolutePath().normalize(), arg));
                 }
             }
             if (command == Command.EXPORT && ((!datasets.isEmpty() && (!baskets.isEmpty() || !topics.isEmpty()))
@@ -377,6 +367,7 @@ public final class Main {
             if (exportModel.isPresent() && command != Command.EXPORT) {
                 throw new IllegalArgumentException("--export-model is only valid with export");
             }
+            var file = files.isEmpty() ? null : files.getFirst().path();
             if (command == Command.SCHEMAIMPORT) {
                 if (file == null || file.getParent() == null || models.isEmpty()) {
                     throw new IllegalArgumentException("An .ili path and --model are required");
@@ -387,7 +378,7 @@ public final class Main {
                 if (file != null || models.isEmpty() || datasets.isEmpty()) {
                     throw new IllegalArgumentException("delete requires --model and --dataset without a file");
                 }
-            } else if (file == null || file.getParent() == null || models.isEmpty()) {
+            } else if (file == null || files.stream().anyMatch(input -> input.path().getParent() == null) || models.isEmpty()) {
                 throw new IllegalArgumentException("An XTF path and --model are required");
             } else if ((command == Command.UPDATE || command == Command.REPLACE) && datasets.isEmpty()) {
                 throw new IllegalArgumentException("update and replace require --dataset");
@@ -474,7 +465,7 @@ public final class Main {
                     schemaFlags.contains("--create-enum-txt-col"), schemaFlags.contains("--beautify-enum-disp-name"),
                     enumLookup);
             var srsModels = Optional.ofNullable(alternateSrsModel).map(value -> DbCrsPair.Models.parse(value, models.getFirst()));
-            return new Options(command, List.copyOf(models), List.copyOf(datasets), file, fileArgument, gpkg, pgUrl, schema, user,
+            return new Options(command, List.copyOf(models), List.copyOf(datasets), List.copyOf(files), gpkg, pgUrl, schema, user,
                     schemaFlags.contains("--create-geom-index"),
                     oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg, multiSrs, addModels,
                     epsg != null, oneGeometryPerTable || multipleGeoPackageGeometries, strokeArcs, enumOptions, srsModels,
@@ -487,9 +478,13 @@ public final class Main {
                 if (!Files.isRegularFile(gpkg)) {
                     throw new DbException("Expected an existing GeoPackage file");
                 }
-                if (command != Command.SCHEMAIMPORT && file != null
-                        && (file.equals(gpkg) || (Files.exists(file) && Files.isSameFile(file, gpkg)))) {
-                    throw new DbException("The XTF and GeoPackage paths must identify different files");
+                if (command != Command.SCHEMAIMPORT) {
+                    for (var entry : files) {
+                        var path = entry.path();
+                        if (path.equals(gpkg) || (Files.exists(path) && Files.isSameFile(path, gpkg))) {
+                            throw new DbException("The XTF and GeoPackage paths must identify different files");
+                        }
+                    }
                 }
             }
         }
