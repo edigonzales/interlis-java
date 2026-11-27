@@ -1035,7 +1035,7 @@ final class DbMapping {
         for (var topic : plan.topics()) {
             if (!topics.contains(topic.symbol()) && !plan.rootModels().contains(topic.model())) continue;
             if (topic.oidRules().stream().anyMatch(rule -> !Ili2dbLayout.UUID_OID.equals(oidDomain(plan, rule))
-                    && !isTextOid(plan, rule))
+                    && !isTextOid(plan, rule) && !isNumericOid(plan, rule))
                     || topic.genericBindings().stream().anyMatch(binding -> binding.state() == TopicSymbol.BindingState.ABSTRACT)) {
                 throw unsupported("topic " + topic.name().declared());
             }

@@ -379,6 +379,9 @@ geerbte Objekt-OIDs, Assoziations-OIDs und ein skalares `OID TEXT`-Attribut.
 Objekt-OIDs mit UUID-Baskets und modellierten Objektkennungen ohne
 `--create-tid-col`. Die Mischläufe prüfen den Katalog, den XTF-Wert,
 das Update und das datensatzübergreifende Referenzziel.
+`--tests '*NumericIdentityInteropTest.*BasketOid*'` prüft denselben
+Werkzeugwechsel mit numerischen Basket-OIDs und UUID-Objekt-OIDs ohne
+Import- oder Exportoptionen zur Übernahme von Transferkennungen.
 Der Katalogvergleich und der native XTF-Transfer über Referenzschemata
 decken alle drei Vererbungsprofile ab. `ObjectIdStorageTest` prüft diese
 Profile in eigenen Schemata.

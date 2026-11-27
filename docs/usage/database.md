@@ -1347,6 +1347,10 @@ als Textspalte der Länge 200 mit `oidDomain`, auch bei einem Schema ohne
 `--create-tid-col`. XTF und Referenzauflösung verwenden die gespeicherte
 Schreibweise, etwa `0011`. Updates behalten `T_Id` und die auf das Objekt
 zeigenden Fremdschlüssel.
+Ein Topic mit `BASKET OID AS INTERLIS.I32OID` oder einer modellierten
+numerischen OID-Domäne speichert die BID in `T_ILI2DB_BASKET.T_Ili_Tid`.
+Selektion, Update und XTF-Ausgabe verwenden die Schreibweise der BID.
+So lassen sich `0010` und `10` als verschiedene Kennungen ansprechen.
 
 Zum weiteren Ausbau gehören weitere Assoziationsformen mit Hierarchie-Enden
 sowie weitere `EXTENDED`-Abbildungen. Weitere Grenzen sind andere OID-Regeln, eigene Linienformen,

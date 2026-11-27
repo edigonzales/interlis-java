@@ -15,47 +15,71 @@ import static guru.interlis.db.DbTestSupport.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 final class NumericIdentityFixtures {
-    static final String SITE_BID = "7216a4c0-42af-4475-b96b-b156ae8872ec";
-    static final String INSPECTION_BID = "b33dcbde-765e-4611-91e4-1620803a0516";
-    static final String SITE_OID = "0011";
-    static final String INSPECTION_OID = "0021";
+    private static final String SITE_UUID = "7216a4c0-42af-4475-b96b-b156ae8872ec";
+    private static final String INSPECTION_UUID = "b33dcbde-765e-4611-91e4-1620803a0516";
 
     private final Path work;
     private final int version;
+    private final String siteDomain;
+    private final String inspectionDomain;
+    private final String inspectionOid;
     final String model;
     final Path ili;
+    final String siteBid;
+    final String inspectionBid;
+    final String siteOid;
 
     NumericIdentityFixtures(Path work, int version) throws Exception {
+        this(work, version, false);
+    }
+
+    static NumericIdentityFixtures forBasketOids(Path work, int version) throws Exception {
+        return new NumericIdentityFixtures(work, version, true);
+    }
+
+    private NumericIdentityFixtures(Path work, int version, boolean numericBasket) throws Exception {
         this.work = work;
         this.version = version;
-        model = "NumericObjectOid" + version;
+        model = (numericBasket ? "NumericBasketOid" : "NumericObjectOid") + version;
+        String numericDomain = model + ".NumericKey";
+        String basketDomain = numericBasket ? (version == 23 ? "INTERLIS.I32OID" : numericDomain) : "INTERLIS.UUIDOID";
+        siteDomain = numericBasket ? "INTERLIS.UUIDOID" : numericDomain;
+        inspectionDomain = numericBasket ? "INTERLIS.UUIDOID" : "INTERLIS.I32OID";
+        siteBid = numericBasket ? "0010" : SITE_UUID;
+        inspectionBid = numericBasket ? "0020" : INSPECTION_UUID;
+        siteOid = numericBasket ? SITE_UUID : "0011";
+        inspectionOid = numericBasket ? INSPECTION_UUID : "0021";
         ili = Files.writeString(work.resolve(model + ".ili"), """
                 INTERLIS 2.%d;
                 %sMODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
-                  DOMAIN SiteKey = OID 0 .. 999999;
+                  DOMAIN NumericKey = OID 0 .. 999999;
                   TOPIC Data =
-                    BASKET OID AS INTERLIS.UUIDOID;
-                    CLASS Site = OID AS %s.SiteKey; Label : TEXT*30; END Site;
+                    BASKET OID AS %s;
+                    CLASS Site = OID AS %s; Label : TEXT*30; END Site;
                     STRUCTURE Pointer = Destination : REFERENCE TO (EXTERNAL) Site; END Pointer;
                     CLASS Inspection =
-                      OID AS INTERLIS.I32OID;
+                      OID AS %s;
                       SiteLink : Pointer;
                     END Inspection;
                   END Data;
                 END %s.
-                """.formatted(version - 20, version == 23 ? "CONTRACTED " : "", model, model, model));
+                """.formatted(version - 20, version == 23 ? "CONTRACTED " : "", model, basketDomain, siteDomain, inspectionDomain, model));
     }
 
     Path site(String name, String bid, String label) throws Exception {
-        return transfer(name, bid, object("Site", SITE_OID, "<Label>" + label + "</Label>"));
+        return site(name, bid, siteOid, label);
+    }
+
+    Path site(String name, String bid, String oid, String label) throws Exception {
+        return transfer(name, bid, object("Site", oid, "<Label>" + label + "</Label>"));
     }
 
     Path inspection() throws Exception {
         String pointer = version == 23 ? model + ".Data.Pointer" : "Pointer";
-        String target = version == 23 ? "<Destination REF=\"" + SITE_OID + "\" BID=\"" + SITE_BID + "\"/>"
-                : "<Destination i:ref=\"" + SITE_OID + "\"/>";
+        String target = version == 23 ? "<Destination REF=\"" + siteOid + "\" BID=\"" + siteBid + "\"/>"
+                : "<Destination i:ref=\"" + siteOid + "\"/>";
         String fields = "<SiteLink><" + pointer + ">" + target + "</" + pointer + "></SiteLink>";
-        return transfer("inspection", INSPECTION_BID, object("Inspection", INSPECTION_OID, fields));
+        return transfer("inspection", inspectionBid, object("Inspection", inspectionOid, fields));
     }
 
     private String object(String name, String oid, String fields) {
@@ -69,40 +93,45 @@ final class NumericIdentityFixtures {
     }
 
     void assertSite(Path output, String label) throws Exception {
+        assertSite(output, siteBid, siteOid, label);
+    }
+
+    void assertSite(Path output, String bid, String oid, String label) throws Exception {
         var basket = children(readDataSection(output, version)).getFirst();
-        assertEquals(SITE_BID, id(basket, version, "bid"));
+        assertEquals(bid, id(basket, version, "bid"));
         var site = children(basket).getFirst();
         assertEquals("Site", site.getLocalName().substring(site.getLocalName().lastIndexOf('.') + 1));
-        assertEquals(SITE_OID, id(site, version, "tid"));
+        assertEquals(oid, id(site, version, "tid"));
         assertEquals(label, child(site, "Label").getTextContent());
     }
 
     void assertInspection(Path output) throws Exception {
         var basket = children(readDataSection(output, version)).getFirst();
-        assertEquals(INSPECTION_BID, id(basket, version, "bid"));
+        assertEquals(inspectionBid, id(basket, version, "bid"));
         var inspection = children(basket).getFirst();
-        assertEquals(INSPECTION_OID, id(inspection, version, "tid"));
+        assertEquals(inspectionOid, id(inspection, version, "tid"));
         var pointer = children(child(inspection, "SiteLink")).getFirst();
-        assertEquals(SITE_OID, id(child(pointer, "Destination"), version, "ref"));
+        assertEquals(siteOid, id(child(pointer, "Destination"), version, "ref"));
     }
 
     void assertObjectOidMetadata(Target db, Connection sql) throws Exception {
         String columnProps = db.table("t_ili2db_column_prop");
-        assertEquals(model + ".SiteKey", scalar(sql, "SELECT setting FROM " + columnProps
+        assertEquals(siteDomain, scalar(sql, "SELECT setting FROM " + columnProps
                 + " WHERE tablename='site' AND lower(columnname)='t_ili_tid' AND tag='ch.ehi.ili2db.oidDomain'"));
-        assertEquals("INTERLIS.I32OID", scalar(sql, "SELECT setting FROM " + columnProps
+        assertEquals(inspectionDomain, scalar(sql, "SELECT setting FROM " + columnProps
                 + " WHERE tablename='inspection' AND lower(columnname)='t_ili_tid' AND tag='ch.ehi.ili2db.oidDomain'"));
     }
 
-    static String siteIds(Target db, Connection sql) throws Exception {
+    String siteIds(Target db, Connection sql) throws Exception {
         return scalar(sql, "SELECT basket.dataset || ':' || basket.t_id || ':' || site.t_id FROM " + db.table("site")
-                + " site JOIN " + db.table("t_ili2db_basket") + " basket ON site.t_basket=basket.t_id");
+                + " site JOIN " + db.table("t_ili2db_basket") + " basket ON site.t_basket=basket.t_id"
+                + " WHERE CAST(site.t_ili_tid AS TEXT)='" + siteOid + "'");
     }
 
     void assertStoredSiteAndReference(Target db, Connection sql, String label) throws Exception {
-        assertEquals(label, scalar(sql, "SELECT label FROM " + db.table("site") + " WHERE t_ili_tid='" + SITE_OID + "'"));
-        assertEquals(INSPECTION_OID, scalar(sql, "SELECT t_ili_tid FROM " + db.table("inspection")));
-        assertEquals(SITE_OID, scalar(sql, "SELECT site.t_ili_tid FROM " + db.table("pointer") + " link JOIN "
+        assertEquals(label, scalar(sql, "SELECT label FROM " + db.table("site") + " WHERE t_ili_tid='" + siteOid + "'"));
+        assertEquals(inspectionOid, scalar(sql, "SELECT t_ili_tid FROM " + db.table("inspection")));
+        assertEquals(siteOid, scalar(sql, "SELECT site.t_ili_tid FROM " + db.table("pointer") + " link JOIN "
                 + db.table("site") + " site ON link.destination=site.t_id"));
     }
 }
