@@ -8,8 +8,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
+import static guru.interlis.db.DbTestSupport.catalogKeys;
 import static guru.interlis.db.DbTestSupport.child;
 import static guru.interlis.db.DbTestSupport.children;
 import static guru.interlis.db.DbTestSupport.execute;
@@ -56,9 +58,9 @@ final class IdentityColumnFixtures {
     Path roundTrip(Target db, String label, String profile, boolean baskets, boolean tids)
             throws Exception {
         String dataset = baskets ? "objects" : null;
-        if (!baskets) insertDirectly(db);
+        if (!baskets) insertDirectly(db, false);
         assertCliSuccess(db, "import", model, dataset, input);
-        if (baskets) insertDirectly(db);
+        if (baskets) insertDirectly(db, true);
         var output = work.resolve(label + ".xtf");
         assertCliSuccess(db, "export", model, dataset, output);
         var groups = children(readDataSection(output, version));
@@ -82,7 +84,10 @@ final class IdentityColumnFixtures {
         assertEquals(UUID_OID, id(objects.stream().filter(object -> typeName(object).equals("StableUuid"))
                 .findFirst().orElseThrow(), version, "tid"));
         try (var sql = db.connect()) {
-            assertEquals(baskets ? "2" : "0", scalar(sql, "select count(*) from " + db.table("t_ili2db_basket")));
+            String basketTable = db.table("t_ili2db_basket");
+            assertEquals("2", scalar(sql, "select count(*) from " + basketTable));
+            assertEquals(Set.of("source-basket", "next-basket"),
+                    catalogKeys(sql, "select t_ili_tid from " + basketTable));
             if (!baskets && !tids && profile.equals("newclass")) {
                 String targetColumn = scalar(sql, "select sqlname from " + db.table("t_ili2db_attrname")
                         + " where iliname='" + model + ".Data.Detail.Target'");
@@ -100,14 +105,13 @@ final class IdentityColumnFixtures {
         return output;
     }
 
-    private void insertDirectly(Target db) throws Exception {
+    private void insertDirectly(Target db, boolean baskets) throws Exception {
         try (var sql = db.connect()) {
-            String basket = scalar(sql, "select t_id from " + db.table("t_ili2db_basket") + " where t_ili_tid='source-basket'");
-            // Query returns null when the schema does not track baskets.
-            if (basket == null) {
-                execute(sql, "insert into " + db.table("marker") + " (label) values ('Direct SQL')");
-            } else {
+            if (baskets) {
+                String basket = scalar(sql, "select t_id from " + db.table("t_ili2db_basket") + " where t_ili_tid='source-basket'");
                 execute(sql, "insert into " + db.table("marker") + " (label, t_basket) values ('Direct SQL', " + basket + ")");
+            } else {
+                execute(sql, "insert into " + db.table("marker") + " (label) values ('Direct SQL')");
             }
         }
     }

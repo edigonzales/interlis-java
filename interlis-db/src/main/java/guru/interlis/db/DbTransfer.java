@@ -1553,7 +1553,7 @@ final class DbTransfer {
                         if (existing.isPresent()) {
                             datasetId = existing.orElseThrow();
                             if (mode == WriteMode.REPLACE) DbDatasetWrite.clearDataset(db, mapping, datasetId, "replace", token);
-                        } else if (mapping.hasBasketColumn()) {
+                        } else {
                             datasetId = importer.insertDataset(files.getLast().path().getFileName().toString());
                         }
                     }
@@ -1837,7 +1837,6 @@ final class DbTransfer {
             var domainsForBasket = DbDomains.resolve(mapping.plan(), topic, start.domainBindings(), start.id().value());
             basketGeometry = new GeometrySelection(domainsForBasket,
                     mapping.crsPair().map(pair -> pair.epsgCodes(topic.symbol())).orElse(Map.of()));
-            if (!mapping.hasBasketColumn()) return;
             String domains = DbDomains.format(mapping.plan(), start.domainBindings(), start.id().value());
             this.datasetId = datasetId;
             if (updating) {

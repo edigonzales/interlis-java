@@ -132,6 +132,9 @@ und den Erhalt des bisherigen Bestands bei Fehlern.
 `--tests '*MultiFileMutationInteropTest.*RepeatedBasket*'` prüft dieselbe
 BID über mehrere Update-Dateien. Die eigenen DB-Fälle prüfen den Rollback
 bei Referenzen auf verworfene Zwischenobjekte.
+`--tests '*InputSelectionInteropTest.*UnpartitionedImport*'` vergleicht die
+Datensatz- und Basketmetadaten sowie die Fachwerte beim Werkzeugwechsel
+in Schemata ohne `T_basket`.
 
 Der GeoPackage-Selektor läuft ohne Docker. JUnit-XML liegt pro Aufgabe unter
 `interlis-db/build/test-results/` und der HTML-Bericht unter

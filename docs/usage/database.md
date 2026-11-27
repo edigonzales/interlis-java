@@ -365,9 +365,12 @@ interlis-db export --gpkg data.gpkg --model Example result.xtf
 
 Bei einem Schema ohne `T_basket` liest der Import die Kennungen für die
 Referenzauflösung aus dem XTF und fügt die Objekte zu den Fachtabellen
-hinzu. Der Export fasst die Zeilen der ausgewählten Modelle je konkretem
-Topic in einem erzeugten Basket zusammen. Direkt per SQL eingefügte
-Fachzeilen brauchen in diesem Schema keine Basket-ID. Fehlt einem Objekt
+hinzu. Der unbenannte Import legt auch hier einen automatisch benannten
+Datensatz in `T_ILI2DB_DATASET` an und speichert Topics und BIDs der
+ausgewählten Baskets in `T_ILI2DB_BASKET`. Der Export fasst die Zeilen der
+ausgewählten Modelle je konkretem Topic in einem erzeugten Basket zusammen.
+Direkt per SQL eingefügte Fachzeilen brauchen in diesem Schema keine
+Basket-ID. Fehlt einem Objekt
 ohne fachliche OID die gespeicherte TID, erzeugt der Export eine
 Transferkennung aus seinem SQL-Schlüssel und verwendet sie auch in
 Referenzen. Das gilt auch für Zeilen aus einem früheren Import ohne
@@ -458,8 +461,9 @@ Dateiende. Fehler auch in ausgelassenen Baskets rollen den Import zurück.
 Bei leerer Auswahl legt der Import in einem Schema mit `T_basket` einen
 leeren Datensatz an. Aktivierte Importstatistik erfasst dafür den Lauf ohne
 Basket-Zeilen. Im unbenannten Profil ohne `T_basket` wirken die Filter auf
-die Fachzeilen. Die Zuordnung von `EXTERNAL`-Referenzen berücksichtigt
-ausgewählte Eingabeobjekte sowie bereits gespeicherte Ziele.
+die Fachzeilen und die technischen Basket-Zeilen. Die Zuordnung von
+`EXTERNAL`-Referenzen berücksichtigt ausgewählte Eingabeobjekte sowie bereits
+gespeicherte Ziele.
 
 ## Mehrere XTF-Dateien importieren
 

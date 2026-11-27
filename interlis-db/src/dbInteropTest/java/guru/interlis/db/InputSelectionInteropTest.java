@@ -15,6 +15,9 @@ import java.util.stream.Collectors;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
 import static guru.interlis.db.DbTestSupport.catalogKeys;
+import static guru.interlis.db.DbTestSupport.child;
+import static guru.interlis.db.DbTestSupport.children;
+import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.InteropCommands.exportDataset;
 import static guru.interlis.db.InteropCommands.schema;
@@ -39,6 +42,54 @@ final class InputSelectionInteropTest {
     @Test void geoPackageUpdate24() throws Exception { exchangeUpdate(24, null); }
     @Test void postgisUpdate23() throws Exception { exchangeUpdate(23, POSTGIS.container()); }
     @Test void postgisUpdate24() throws Exception { exchangeUpdate(24, POSTGIS.container()); }
+
+    @Test void geoPackageUnpartitionedImport23() throws Exception { exchangeUnpartitionedImport(23, null); }
+    @Test void geoPackageUnpartitionedImport24() throws Exception { exchangeUnpartitionedImport(24, null); }
+    @Test void postgisUnpartitionedImport23() throws Exception { exchangeUnpartitionedImport(23, POSTGIS.container()); }
+    @Test void postgisUnpartitionedImport24() throws Exception { exchangeUnpartitionedImport(24, POSTGIS.container()); }
+
+    private void exchangeUnpartitionedImport(int version, PostgreSQLContainer postgres) throws Exception {
+        var fixture = new ExportSelectionFixtures(work, version);
+        var legacy = new TestDatabase(work, postgres, "unpartitioned_reference", "v" + version + "_");
+        var own = legacy.peer("unpartitioned_native");
+        var reference = new ReferenceTool(work, legacy.postgis());
+        reference.run(legacy, work.toString(), "--schemaimport", "--createTidCol", "--sqlEnableNull",
+                "--noSmartMapping", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", "--models", fixture.model);
+        assertCliSuccess(own, "schemaimport", fixture.model, null, fixture.source, "--create-tid-col");
+
+        Path input = fixture.delivery("unnamed delivery",
+                fixture.basket("Data", "included", fixture.asset("record", "Chosen", false)),
+                fixture.basket("Data", "excluded", fixture.asset("skipped", "Excluded", false)));
+        reference.run(own, "%ILI_FROM_DB", "--import", "--importBid", "--importTid", "--baskets", "included", input.toString());
+        assertCliSuccess(legacy, "import", fixture.model, null, input, "--basket", "included");
+
+        for (var db : List.of(legacy, own)) {
+            try (var sql = db.connect()) {
+                String datasets = db.table("t_ili2db_dataset");
+                String baskets = db.table("t_ili2db_basket");
+                String expectedName = "unnameddelivery.xtf-" + scalar(sql, "SELECT t_id FROM " + datasets);
+                assertEquals(expectedName, scalar(sql, "SELECT datasetname FROM " + datasets));
+                assertEquals(fixture.model + ".Data:included:" + expectedName, scalar(sql, """
+                        SELECT b.topic || ':' || b.t_ili_tid || ':' || d.datasetname
+                        FROM %s b JOIN %s d ON d.t_id=b.dataset
+                        """.formatted(baskets, datasets)));
+                assertEquals("1", scalar(sql, "SELECT count(*) FROM " + baskets));
+            }
+        }
+
+        var fromReference = work.resolve("reference-import-unpartitioned.xtf");
+        var fromOwn = work.resolve("native-import-unpartitioned.xtf");
+        assertCliSuccess(own, "export", fixture.model, null, fromReference);
+        reference.run(legacy, "%ILI_FROM_DB", "--export", "--models", fixture.model, "--exportTid", fromOwn.toString());
+        for (var output : List.of(fromReference, fromOwn)) {
+            var baskets = fixture.baskets(output);
+            assertEquals(1, baskets.size());
+            var assets = children(baskets.getFirst());
+            assertEquals(1, assets.size());
+            assertEquals("record", id(assets.getFirst(), version, "tid"));
+            assertEquals("Chosen", child(assets.getFirst(), "Label").getTextContent());
+        }
+    }
 
     private void exchangeImport(int version, PostgreSQLContainer postgres) throws Exception {
         var fixture = new ExportSelectionFixtures(work, version);

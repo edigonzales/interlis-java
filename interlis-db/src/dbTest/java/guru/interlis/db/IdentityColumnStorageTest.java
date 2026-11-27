@@ -86,6 +86,8 @@ final class IdentityColumnStorageTest {
         assertNotEquals(0, result.code(), result::diagnostics);
         try (var sql = db.connect()) {
             assertEquals("0", scalar(sql, "select count(*) from " + db.table("marker")));
+            assertEquals("0", scalar(sql, "select count(*) from " + db.table("t_ili2db_dataset")));
+            assertEquals("0", scalar(sql, "select count(*) from " + db.table("t_ili2db_basket")));
         }
         assertCliFailure(db, "import", fixture.model, "named", bad, "require a schema created with --create-basket-col");
     }
