@@ -99,14 +99,19 @@ final class DatasetUnique {
     }
 
     private void checkObjects(boolean hasAssociation, boolean globalComplete) {
-        context.forObjects(occurrence -> {
+        context.forUniqueObjects(occurrence -> {
             var root = occurrence.object().data();
             var frame = new EvaluationFrame(context.plan, root, occurrence.partial(), context::visit,
                     java.util.OptionalLong.empty(), context.cancellation())
                     .withDataset(new DatasetPathContext(context, occurrence));
-            binding(occurrence, root.type()).ifPresent(binding ->
-                    inspect(occurrence, frame, -1, globalComplete, binding));
-            if (!hasAssociation) {
+            binding(occurrence, root.type()).ifPresent(binding -> {
+                if (occurrence.stored().projected() && !context.plan.retention().supportsUnique(
+                        binding.rule().key(), root.type())) {
+                    throw new ValidationStreamException("Dataset UNIQUE requires a full payload");
+                }
+                inspect(occurrence, frame, -1, globalComplete, binding);
+            });
+            if (!hasAssociation || occurrence.stored().projected()) {
                 return;
             }
             int field = 0;
@@ -217,8 +222,8 @@ final class DatasetUnique {
                     continue;
                 }
                 long scope = ByteBuffer.wrap(entry.key()).getLong(1 + Integer.BYTES);
-                var selected = context.occurrence(new ObjectHandle(group.selected()));
-                var witness = context.occurrence(new ObjectHandle(group.selected() == group.first()
+                var selected = context.retainedOccurrence(new ObjectHandle(group.selected()));
+                var witness = context.retainedOccurrence(new ObjectHandle(group.selected() == group.first()
                         ? group.second() : group.first()));
                 var arguments = new ArrayList<>(witness.witness());
                 arguments.add(Long.toString(group.size()));

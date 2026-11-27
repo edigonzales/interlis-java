@@ -9,6 +9,7 @@ import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.model.UniquenessConstraint;
 import guru.interlis.transfer.TransferEvent;
+import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TransferReader;
 import guru.interlis.transfer.TransferValue;
 
@@ -199,14 +200,14 @@ public final class DatasetValidationSession implements AutoCloseable {
                     throw new ValidationStreamException("Dataset object is outside the plan or basket");
                 }
                 boolean selected = plan.subjects().selects(descriptor.role(), context.basket);
-                checkHandles(object.data(), selected, cancellation);
+                var projection = checkHandles(object.data(), selected, cancellation);
                 deliveredObjectTypes.add(object.type());
                 if (objects == options.limits().maxObjects()) {
                     throw new ValidationLimitException("Dataset object budget exceeded");
                 }
                 var handle = new ObjectHandle(++objects);
                 var prepared = NumericRounding.prepare(occurrence, plan, context.validationBasket, options.localOptions(), cancellation);
-                objectStore.add(handle, new BasketHandle(input, context.basketOrdinal), prepared);
+                objectStore.add(handle, new BasketHandle(input, context.basketOrdinal), prepared, projection);
                 object.identity().tid().ifPresent(tid -> identities.addTemporary(input, tid.value(), handle));
                 object.identity().oid().ifPresent(oid -> {
                     var key = StableIdentity.bind(context.namespaces, oid.value());
@@ -230,7 +231,9 @@ public final class DatasetValidationSession implements AutoCloseable {
         };
     }
 
-    private void checkHandles(TransferValue.Structured root, boolean selected, CancellationToken cancellation) {
+    private Set<SymbolRef> checkHandles(TransferValue.Structured root, boolean selected, CancellationToken cancellation) {
+        var projection = options.localOptions().maxNestedDepth() <= StoredValueCodec.MAX_DEPTH
+                ? plan.retention().slots(root.type()) : null;
         var pending = new ArrayDeque<java.util.Iterator<? extends TransferValue>>();
         pending.push(List.of(root).iterator());
         long visits = 0;
@@ -252,6 +255,9 @@ public final class DatasetValidationSession implements AutoCloseable {
                 if (type == null) {
                     throw new ValidationStreamException("Dataset value type is outside the plan");
                 }
+                if (projection != null && plan.retention().slots(data.type()) == null) {
+                    projection = null;
+                }
                 if (selected && !hasDeferredChecks && plan.objectMayHaveDeferredChecks(data.type())) {
                     hasDeferredChecks = true;
                 }
@@ -267,16 +273,24 @@ public final class DatasetValidationSession implements AutoCloseable {
                             throw new ValidationStreamException("Dataset value slot is outside its type");
                         }
                         hasReferencesOrLinks = true;
+                        projection = null;
                     }
                 }
             } else if (value instanceof TransferValue.Reference) {
                 hasReferencesOrLinks = true;
+                projection = null;
             }
             var children = ValidationSession.valueChildren(value, options.localOptions(), cancellation);
             if (children != null) {
+                // The stored geometry format also nests curve parts and their ordinates.
+                if (projection != null && value instanceof TransferGeometry
+                        && (pending.size() > StoredValueCodec.MAX_DEPTH - 4 || children.hasNext())) {
+                    projection = null;
+                }
                 pending.push(children);
             }
         }
+        return projection;
     }
 
     private boolean embeddedField(SymbolRef slot, TransferValue value) {

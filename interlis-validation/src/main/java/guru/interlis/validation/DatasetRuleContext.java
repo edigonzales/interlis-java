@@ -95,7 +95,10 @@ final class DatasetRuleContext {
                     }
                     visit();
                     var value = entry.orElseThrow();
-                    values = select.apply(occurrence(DatasetObjectStore.handle(value), objects.decode(value))).iterator();
+                    var stored = objects.decodeRetained(value);
+                    if (!stored.projected()) {
+                        values = select.apply(occurrence(DatasetObjectStore.handle(value), stored)).iterator();
+                    }
                 }
                 return Optional.of(values.next());
             }
@@ -107,17 +110,32 @@ final class DatasetRuleContext {
     }
 
     void forObjects(Consumer<Occurrence> consumer) {
+        forObjects(false, consumer);
+    }
+
+    void forUniqueObjects(Consumer<Occurrence> consumer) {
+        forObjects(true, consumer);
+    }
+
+    private void forObjects(boolean includeProjections, Consumer<Occurrence> consumer) {
         try (var cursor = objects.scan()) {
             for (var next = cursor.next(); next.isPresent(); next = cursor.next()) {
                 visit();
                 var entry = next.orElseThrow();
-                consumer.accept(occurrence(DatasetObjectStore.handle(entry), objects.decode(entry)));
+                var stored = objects.decodeRetained(entry);
+                if (includeProjections || !stored.projected()) {
+                    consumer.accept(occurrence(DatasetObjectStore.handle(entry), stored));
+                }
             }
         }
     }
 
     Occurrence occurrence(ObjectHandle handle) {
         return occurrence(handle, objects.get(handle));
+    }
+
+    Occurrence retainedOccurrence(ObjectHandle handle) {
+        return occurrence(handle, objects.getRetained(handle));
     }
 
     private Occurrence occurrence(ObjectHandle handle, StoredValueCodec.StoredObject stored) {

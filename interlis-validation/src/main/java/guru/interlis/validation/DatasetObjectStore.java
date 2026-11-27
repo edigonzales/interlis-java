@@ -1,7 +1,11 @@
 package guru.interlis.validation;
 
+import guru.interlis.model.SymbolRef;
+import guru.interlis.transfer.TransferEvent;
+
 import java.nio.ByteBuffer;
 import java.util.Optional;
+import java.util.Set;
 
 /** Maps object handles to independently owned neutral values. */
 final class DatasetObjectStore {
@@ -13,9 +17,10 @@ final class DatasetObjectStore {
         this.codec = codec;
     }
 
-    void add(ObjectHandle handle, BasketHandle basket, guru.interlis.transfer.TransferEvent.ObjectEvent event) {
+    void add(ObjectHandle handle, BasketHandle basket, TransferEvent.ObjectEvent event, Set<SymbolRef> projection) {
         var value = new StoredValueCodec.StoredObject(basket.input(), basket.ordinal(), event);
-        if (table.putIfAbsent(key(handle), codec.encodeObject(value)).isPresent()) {
+        var bytes = projection == null ? codec.encodeObject(value) : codec.encodeProjection(value, projection);
+        if (table.putIfAbsent(key(handle), bytes).isPresent()) {
             throw new ValidationStreamException("Dataset object handle was reused");
         }
     }
@@ -30,6 +35,11 @@ final class DatasetObjectStore {
                 .orElseThrow(() -> new ValidationStreamException("Unknown dataset object handle"));
     }
 
+    StoredValueCodec.StoredObject getRetained(ObjectHandle handle) {
+        return table.get(key(handle)).map(codec::decodeRetainedObject)
+                .orElseThrow(() -> new ValidationStreamException("Unknown dataset object handle"));
+    }
+
     EntryCursor scan() {
         return table.scan(new byte[0], Optional.empty());
     }
@@ -38,8 +48,8 @@ final class DatasetObjectStore {
         return table.scan(key(first), Optional.of(ByteBuffer.allocate(Long.BYTES).putLong(exclusiveUpper).array()));
     }
 
-    StoredValueCodec.StoredObject decode(EntryCursor.Entry entry) {
-        return codec.decodeObject(entry.value());
+    StoredValueCodec.StoredObject decodeRetained(EntryCursor.Entry entry) {
+        return codec.decodeRetainedObject(entry.value());
     }
 
     StoredValueCodec.StoredObjectHeader decodeHeader(EntryCursor.Entry entry) {

@@ -184,12 +184,12 @@ public final class ValidationSession implements AutoCloseable {
         return completedReport(coverage, Optional.of(scope));
     }
 
-    void relationCardinality(TransferObject object, Symbol declaration, DataLocation data, long targets,
+    void relationCardinality(SymbolRef type, Symbol declaration, DataLocation data, long targets,
                              guru.interlis.model.Cardinality bounds, boolean complete) {
         var actual = BigInteger.valueOf(targets);
         var upper = bounds.upper();
         boolean over = upper instanceof CardinalityUpper.Finite maximum && actual.compareTo(maximum.value()) > 0;
-        var key = new SlotKey(object.type(), plan.ref(declaration.id()), CARDINALITY);
+        var key = new SlotKey(type, plan.ref(declaration.id()), CARDINALITY);
         if (!complete && !over) {
             missingRuntime.merge(key, 1L, Math::addExact);
             return;
@@ -202,9 +202,9 @@ public final class ValidationSession implements AutoCloseable {
         }
     }
 
-    void relationFinding(TransferObject object, Symbol declaration, DataLocation data,
+    void relationFinding(SymbolRef type, Symbol declaration, DataLocation data,
                          Optional<ValidationCode> violation, boolean complete, List<String> arguments) {
-        var key = new SlotKey(object.type(), plan.ref(declaration.id()), CARDINALITY);
+        var key = new SlotKey(type, plan.ref(declaration.id()), CARDINALITY);
         if (violation.isPresent()) {
             diagnostic(violation.orElseThrow(), data,
                     ruleLocation(plan.ref(declaration.id()), declaration.origin()), arguments);
@@ -228,10 +228,10 @@ public final class ValidationSession implements AutoCloseable {
                 arguments, Optional.empty(), geometryEvidence);
     }
 
-    void identityConflict(TransferObject object, DataLocation data, List<String> origins, DataLocation related) {
-        var declaration = plan.symbol(object.type().symbol()).orElseThrow();
+    void identityConflict(SymbolRef type, DataLocation data, List<String> origins, DataLocation related) {
+        var declaration = plan.symbol(type.symbol()).orElseThrow();
         diagnostic(AMBIGUOUS_OBJECT_IDENTITY, data,
-                ruleLocation(object.type(), declaration.origin()), origins, Optional.of(related));
+                ruleLocation(type, declaration.origin()), origins, Optional.of(related));
     }
 
     void referenceResult(TransferObject object, Symbol slot, DataLocation data, ReferenceResolver.Result result) {

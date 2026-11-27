@@ -46,7 +46,7 @@ class StoredValueCodecTest {
         byte[] encoded = codec.encodeObject(stored);
 
         assertEquals(stored, codec.decodeObject(encoded));
-        var header = new StoredValueCodec.StoredObjectHeader(2, 7, identity, operation, consistency, type);
+        var header = new StoredValueCodec.StoredObjectHeader(2, 7, identity, operation, consistency, type, false);
         assertEquals(header, codec.decodeObjectHeader(encoded));
 
         byte[] truncatedValues = Arrays.copyOf(encoded, encoded.length - 1);

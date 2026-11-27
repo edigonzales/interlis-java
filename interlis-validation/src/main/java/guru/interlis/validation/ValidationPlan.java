@@ -49,6 +49,7 @@ public final class ValidationPlan {
     private final List<SymbolRef> rootModels;
     private final Map<SymbolId, SymbolId> originals;
     private final Map<TypeId, TypeId> originalEnumerations;
+    private final DatasetRetention retention;
 
     ValidationPlan(TransferPlan transferPlan, SemanticGraph graph, Map<SymbolRef, ObjectValidationPlan> objects,
                    List<UncheckedRuleInfo> uncheckedRules, Map<ExpressionId, Optional<ExpressionProgram>> expressions,
@@ -100,6 +101,7 @@ public final class ValidationPlan {
             }
         }
         this.originalEnumerations = Map.copyOf(translatedTypes);
+        this.retention = DatasetRetention.compile(this);
     }
 
     /**
@@ -302,6 +304,15 @@ public final class ValidationPlan {
                 value.genericDomain().isPresent() || value.constraints().stream().anyMatch(declaration ->
                         declaration.definition() instanceof DomainConstraint constraint
                                 && deferredExpressions.contains(constraint.condition()))));
+    }
+
+    boolean hasPopulationExpressions() {
+        return expressions.values().stream().flatMap(Optional::stream)
+                .anyMatch(program -> program.requirements().populationRequired());
+    }
+
+    DatasetRetention retention() {
+        return retention;
     }
 
     boolean requiresDataset(ExpressionProgram program) {

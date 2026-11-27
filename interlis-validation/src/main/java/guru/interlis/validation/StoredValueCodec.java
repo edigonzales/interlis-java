@@ -26,11 +26,15 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /** Internal byte representation of a neutral value within one bound store. */
 final class StoredValueCodec {
     private static final int STRUCTURED_TAG = 10;
+    private static final int PROJECTED_OBJECT_TAG = 19;
+    static final int MAX_DEPTH = 128;
     private final SnapshotId snapshot;
     private final int maxBytes;
 
@@ -156,34 +160,75 @@ final class StoredValueCodec {
 
     byte[] encodeObject(StoredObject stored) {
         return encodeRecord(out -> {
-            out.writeLong(stored.input());
-            out.writeLong(stored.basket());
-            var event = stored.event();
-            var id = event.object().identity();
-            basket(out, id.currentBasket());
-            optional(out, id.originalBasket(), value -> basket(out, value));
-            optional(out, id.tid(), tid -> {
-                text(out, tid.value());
-                text(out, tid.origin().name());
-            });
-            optional(out, id.oid(), oid -> text(out, oid.value()));
-            optional(out, id.source(), source -> text(out, source.value()));
-            optional(out, event.operation(), operation -> text(out, operation.name()));
-            text(out, event.consistency().name());
-            write(out, event.object().data(), 0);
+            writeObjectMetadata(out, stored);
+            write(out, stored.event().object().data(), 0);
         });
+    }
+
+    byte[] encodeProjection(StoredObject stored, Set<SymbolRef> slots) {
+        return encodeRecord(out -> {
+            writeObjectMetadata(out, stored);
+            var object = stored.event().object();
+            out.writeByte(PROJECTED_OBJECT_TAG);
+            symbol(out, object.type());
+            var values = object.data().values();
+            int fields = 0;
+            for (var slot : slots) {
+                if (values.containsKey(slot)) fields++;
+            }
+            if (fields != 0) {
+                out.writeInt(fields);
+                for (var slot : slots) {
+                    var value = values.get(slot);
+                    if (value != null) {
+                        symbol(out, slot);
+                        write(out, value, 1);
+                    }
+                }
+            }
+        });
+    }
+
+    private static void writeObjectMetadata(DataOutputStream out, StoredObject stored) throws IOException {
+        out.writeLong(stored.input());
+        out.writeLong(stored.basket());
+        var event = stored.event();
+        var id = event.object().identity();
+        basket(out, id.currentBasket());
+        optional(out, id.originalBasket(), value -> basket(out, value));
+        optional(out, id.tid(), tid -> {
+            text(out, tid.value());
+            text(out, tid.origin().name());
+        });
+        optional(out, id.oid(), oid -> text(out, oid.value()));
+        optional(out, id.source(), source -> text(out, source.value()));
+        optional(out, event.operation(), operation -> text(out, operation.name()));
+        text(out, event.consistency().name());
     }
 
     StoredObject decodeObject(byte[] bytes) {
+        return decodeStoredObject(bytes, false);
+    }
+
+    StoredObject decodeRetainedObject(byte[] bytes) {
+        return decodeStoredObject(bytes, true);
+    }
+
+    private StoredObject decodeStoredObject(byte[] bytes, boolean allowProjection) {
         return decodeRecord(bytes, in -> {
             var header = readObjectHeader(in);
-            var object = new TransferObject(header.identity(), readStructured(in, header.type(), 0));
+            if (header.projected() && !allowProjection) {
+                throw new ValidationStreamException("Full dataset object payload was not retained");
+            }
+            var data = header.projected() && in.available() == 0
+                    ? new Structured(header.type(), Map.of()) : readStructured(in, header.type(), 0);
+            var object = new TransferObject(header.identity(), data);
             return new StoredObject(header.input(), header.basket(),
-                    new TransferEvent.ObjectEvent(object, header.operation(), header.consistency()));
+                    new TransferEvent.ObjectEvent(object, header.operation(), header.consistency()), header.projected());
         });
     }
 
-    /** Reads the prefix of a record written by encodeObject without decoding its fields. */
+    /** Reads the prefix of a full or projected object without decoding its fields. */
     StoredObjectHeader decodeObjectHeader(byte[] bytes) {
         return decodeRecord(bytes, this::readObjectHeader, false);
     }
@@ -198,18 +243,24 @@ final class StoredValueCodec {
         var source = optional(in, () -> new SourceId(text(in)));
         var operation = optional(in, () -> TransferEvent.Operation.valueOf(text(in)));
         var consistency = TransferEvent.Consistency.valueOf(text(in));
-        if (in.readUnsignedByte() != STRUCTURED_TAG) {
+        int tag = in.readUnsignedByte();
+        if (tag != STRUCTURED_TAG && tag != PROJECTED_OBJECT_TAG) {
             throw new IOException("Expected a structured stored object");
         }
         var identity = new TransferIdentity(current, original, tid, oid, source);
-        return new StoredObjectHeader(input, basket, identity, operation, consistency, symbol(in));
+        return new StoredObjectHeader(input, basket, identity, operation, consistency, symbol(in),
+                tag == PROJECTED_OBJECT_TAG);
     }
 
     record StoredObjectHeader(long input, long basket, TransferIdentity identity,
                               Optional<TransferEvent.Operation> operation, TransferEvent.Consistency consistency,
-                              SymbolRef type) { }
+                              SymbolRef type, boolean projected) { }
 
-    record StoredObject(long input, long basket, TransferEvent.ObjectEvent event) { }
+    record StoredObject(long input, long basket, TransferEvent.ObjectEvent event, boolean projected) {
+        StoredObject(long input, long basket, TransferEvent.ObjectEvent event) {
+            this(input, basket, event, false);
+        }
+    }
 
     private static void basket(DataOutputStream out, BasketId id) throws IOException {
         text(out, id.value());
@@ -433,7 +484,7 @@ final class StoredValueCodec {
     }
 
     private static void depth(int depth) {
-        if (depth > 128) {
+        if (depth > MAX_DEPTH) {
             throw new ValidationLimitException("Stored value exceeds the depth budget");
         }
     }

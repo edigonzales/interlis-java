@@ -66,7 +66,10 @@ final class DatasetReferences {
             for (var next = cursor.next(); next.isPresent(); next = cursor.next()) {
                 cancellation.throwIfCancellationRequested();
                 var entry = next.orElseThrow();
-                var stored = objects.decode(entry);
+                var stored = objects.decodeRetained(entry);
+                if (stored.projected()) {
+                    continue;
+                }
                 if (stored.input() != lastInput) {
                     lastInput = stored.input();
                     input = readInput(lastInput);
@@ -90,18 +93,18 @@ final class DatasetReferences {
     }
 
     private void identityConflict(ObjectHandle first, ObjectHandle duplicate) {
-        var original = objects.get(first);
-        var stored = objects.get(duplicate);
+        var original = objects.getHeader(first);
+        var stored = objects.getHeader(duplicate);
         var input = readInput(stored.input());
         var other = readInput(original.input());
-        var object = stored.event().object();
-        report.identityConflict(object, identityLocation(object, input),
-                List.of(other.descriptor().id().value(), original.event().object().identity().currentBasket().value(),
-                        input.descriptor().id().value(), object.identity().currentBasket().value()),
-                identityLocation(original.event().object(), other));
+        report.identityConflict(stored.type(), identityLocation(stored, input),
+                List.of(other.descriptor().id().value(), original.identity().currentBasket().value(),
+                        input.descriptor().id().value(), stored.identity().currentBasket().value()),
+                identityLocation(original, other));
     }
 
-    private static DataLocation identityLocation(TransferObject object, StoredValueCodec.StoredInput input) {
+    private static DataLocation identityLocation(StoredValueCodec.StoredObjectHeader object,
+                                                 StoredValueCodec.StoredInput input) {
         var id = object.identity();
         return new DataLocation(id.source().or(() -> input.header().source()), id.currentBasket(),
                 id.tid(), id.oid(), Optional.of(object.type()), List.of());

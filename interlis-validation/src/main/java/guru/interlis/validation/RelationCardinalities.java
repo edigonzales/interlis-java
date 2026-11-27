@@ -282,13 +282,13 @@ final class RelationCardinalities {
                 : plan.transferPlan().object(plan.ref(group.role())).orElseThrow();
         Cardinality bounds = declaration instanceof RoleSymbol role
                 ? role.cardinality() : association.associationCardinality().orElseThrow();
-        StoredValueCodec.StoredObject representative = null;
+        StoredValueCodec.StoredObjectHeader representative = null;
         boolean complete = closedDelivery || roles(association).stream().noneMatch(slot -> slot.role().external());
         for (var counterpart : group.counterparts()) {
-            var stored = objects.get(counterpart);
+            var stored = objects.getHeader(counterpart);
             var input = input(stored.input());
             var basket = basket(stored.basket());
-            if (selected(input, basket, stored.event().object().type())
+            if (selected(input, basket, stored.type())
                     && representative == null) {
                 representative = stored;
             }
@@ -297,14 +297,13 @@ final class RelationCardinalities {
         if (representative == null) {
             return;
         }
-        var object = representative.event().object();
-        var id = object.identity();
+        var id = representative.identity();
         var source = input(representative.input()).header().source();
         var path = declaration instanceof RoleSymbol ? List.<DataLocation.Step>of(new DataLocation.Slot(plan.ref(group.role())))
                 : List.<DataLocation.Step>of();
         var data = new DataLocation(id.source().or(() -> source), id.currentBasket(), id.tid(), id.oid(),
-                Optional.of(object.type()), path);
-        report.relationCardinality(object, declaration, data, group.targets(), bounds, complete);
+                Optional.of(representative.type()), path);
+        report.relationCardinality(representative.type(), declaration, data, group.targets(), bounds, complete);
     }
 
     private boolean completeOrderedRelation(long ordinal, SymbolId declaration) {
@@ -323,21 +322,20 @@ final class RelationCardinalities {
 
     private void reportFinding(ObjectHandle source, List<ObjectHandle> counterparts, SymbolId role,
                                Optional<ValidationCode> violation, boolean complete, List<String> arguments) {
-        var stored = objects.get(source);
+        var stored = objects.getHeader(source);
         var input = input(stored.input());
-        var object = stored.event().object();
         var basket = basket(stored.basket());
-        if (selected(input, basket, object.type()) || counterparts.stream().anyMatch(this::selected)) {
-            var id = object.identity();
+        if (selected(input, basket, stored.type()) || counterparts.stream().anyMatch(this::selected)) {
+            var id = stored.identity();
             var data = new DataLocation(id.source().or(() -> input.header().source()), id.currentBasket(),
-                    id.tid(), id.oid(), Optional.of(object.type()), List.of(new DataLocation.Slot(plan.ref(role))));
-            report.relationFinding(object, plan.symbol(role).orElseThrow(), data, violation, complete, arguments);
+                    id.tid(), id.oid(), Optional.of(stored.type()), List.of(new DataLocation.Slot(plan.ref(role))));
+            report.relationFinding(stored.type(), plan.symbol(role).orElseThrow(), data, violation, complete, arguments);
         }
     }
 
     private boolean selected(ObjectHandle handle) {
-        var stored = objects.get(handle);
-        return selected(input(stored.input()), basket(stored.basket()), stored.event().object().type());
+        var stored = objects.getHeader(handle);
+        return selected(input(stored.input()), basket(stored.basket()), stored.type());
     }
 
     private boolean selected(StoredValueCodec.StoredInput input, TransferEvent.StartBasket basket,

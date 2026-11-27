@@ -270,6 +270,13 @@ privates Arbeitsverzeichnis an und entfernt es beim Schliessen. Reader und
 Speicher bleiben im Besitz des Hosts. Die Session meldet Lese-, Budget- und
 Speicherfehler vor einem Bericht.
 
+Der Datensatzplan behält Objektidentität und Herkunft für spätere
+Referenzprüfungen und Diagnosen. Wenn die geplanten Regeln keinen vollständigen
+Objektinhalt benötigen, speichert die Session nur den Objektkopf und gegebenenfalls
+die direkt gebundenen numerischen Schlüssel für globale `UNIQUE`-Regeln.
+Die lokalen Prüfungen erhalten das vollständige dekodierte Objekt. Das Bytebudget
+pro gespeichertem Datensatz gilt für die tatsächlich abgelegte Darstellung.
+
 Das Profil prüft aufgelöste Referenzen, Rollen- und Linkkardinalitäten,
 Positionen geordneter Rollen und Kompositionen. Es prüft globale und
 basketbezogene `UNIQUE`-Regeln mit ausführbarem `WHERE` sowie
