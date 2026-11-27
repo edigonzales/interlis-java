@@ -273,7 +273,7 @@ final class DbMapping {
             targets = List.copyOf(targets);
         }
 
-        // Embedded associations have one declared target per role.
+        // Used for roles with a single declared target.
         SymbolRef target() { return targets.getFirst(); }
 
         List<Column> columns() {
@@ -765,7 +765,7 @@ final class DbMapping {
             }
             if (object.kind() == SymbolKind.ASSOCIATION) {
                 var roles = describeRoles(plan, object);
-                var embedded = embeddedAssociation(plan, object, name, roles);
+                var embedded = embeddedAssociation(plan, object, name, roles, profile);
                 if (embedded.isPresent()) {
                     associations.add(embedded.orElseThrow());
                     if (!embedded.orElseThrow().linkTable()) continue;
@@ -776,7 +776,7 @@ final class DbMapping {
         }
         var referenced = new HashSet<SymbolRef>();
         linkRoles.values().forEach(roles -> roles.forEach(role -> referenced.addAll(role.targets())));
-        associations.forEach(association -> referenced.add(association.target()));
+        associations.forEach(association -> referenced.addAll(association.targetRole().targets()));
         var inheritance = DbInheritance.plan(plan, objects, names, profile, allocator, referenced,
                 schemaOptions.contains(Ili2dbLayout.SchemaOption.TYPE_DISCRIMINATOR));
         var discriminated = inheritance.relations().stream().filter(DbInheritance.Relation::discriminator)
@@ -891,9 +891,8 @@ final class DbMapping {
                 }
                 for (var association : associationsForOwner(associations, contributor.symbol())) {
                     if (association.linkTable()) continue;
-                    var role = association.role();
                     columns.addAll(planReferences(allocator, names, inheritance, name, discriminator, gpkg,
-                            roleColumn(role, association.target(), role.name().declared().last()), association.ordered(), schemaOptions));
+                            association.targetRole().columns(), association.ordered(), schemaOptions));
                 }
             }
             tables.add(new Table(object, name, relation.base(), columns, discriminator, relation.oidDomain(),
@@ -1252,8 +1251,7 @@ final class DbMapping {
         if (alternatives > 0 && (alternatives != 1 || roles.size() != 2 || identified || external > 0
                 || association.baseType().isPresent() || hasSubtypes(plan, association.symbol())
                 || roles.stream().anyMatch(role -> role.role().targets().size() > 2 || role.role().ordered()
-                || role.role().aggregation() != RoleAggregation.NONE
-                || CardinalityUpper.finite(1).equals(role.role().cardinality().upper())))) {
+                || role.role().aggregation() != RoleAggregation.NONE))) {
             throw unsupported("OR role at " + association.name().declared());
         }
         return roles.stream().map(role -> new AssociationRole(role, roleTargets(plan, association, role))).toList();
@@ -1280,7 +1278,7 @@ final class DbMapping {
     }
 
     static Optional<EmbeddedAssociation> embeddedAssociation(TransferPlan plan, ObjectDescriptor association, String name,
-                                                              List<AssociationRole> roles) {
+                                                              List<AssociationRole> roles, DbInheritance.Profile profile) {
         if (roles.size() != 2) return Optional.empty();
         var first = roles.getFirst();
         var second = roles.getLast();
@@ -1294,8 +1292,13 @@ final class DbMapping {
         if (!owner.slot().role().targets().getFirst().restrictions().isEmpty()) {
             throw unsupported("restriction on the owner of an embedded association at " + association.name().declared());
         }
-        boolean crossesTopic = roles.stream().anyMatch(role ->
-                !plan.object(role.target()).orElseThrow().topic().equals(association.topic()));
+        boolean crossesTopic = roles.stream().flatMap(role -> role.targets().stream()).anyMatch(type ->
+                !plan.object(type).orElseThrow().topic().equals(association.topic()));
+        if ((owner.targets().size() > 1 || target.targets().size() > 1)
+                && (profile != DbInheritance.Profile.NEW_CLASS || owner.targets().size() != 1
+                || owner.single() || crossesTopic || linkTable)) {
+            throw unsupported("OR role at " + association.name().declared());
+        }
         if (crossesTopic && owner.single()) {
             throw unsupported("one-to-one associations between topics at " + association.name().declared());
         }

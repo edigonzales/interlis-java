@@ -998,6 +998,10 @@ Bei binären lokalen n:m-Assoziationen mit ungeordneten Rollen kann ein Ende
 zwei getrennte Zielzweige mit `OR` deklarieren. Die Linktabelle erhält
 die alternativen Fremdschlüsselspalten der physischen Zieltabellen.
 Pro Linkzeile wird genau eine Spalte dieser Rolle verwendet.
+Bei einer lokalen, ungeordneten 1:n-Assoziation ohne eigene Attribute kann
+das eingebettete Ende im nullable `newClass`-Profil ebenfalls zwei Ziele
+mit `OR` deklarieren. Die Eigentümertabelle erhält beide Zielspalten.
+Der XTF-Transfer verwendet eine Rolle und das Update ersetzt deren Ziel.
 
 `CLASSNAME` und `INHERITANCE` führen die Assoziation, `TRAFO` kennzeichnet
 sie als `embedded` und `ATTRNAME` benennt Spalte und Ziel. Referenzen auf

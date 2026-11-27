@@ -27,6 +27,40 @@ final class AlternativeRoleInteropTest {
     @Test void postgis23() throws Exception { exchange(23, POSTGIS.container()); }
     @Test void postgis24() throws Exception { exchange(24, POSTGIS.container()); }
 
+    @Test void geoPackageEmbeddedTargets23() throws Exception { exchangeEmbeddedTargets(23, null); }
+    @Test void geoPackageEmbeddedTargets24() throws Exception { exchangeEmbeddedTargets(24, null); }
+    @Test void postgisEmbeddedTargets23() throws Exception { exchangeEmbeddedTargets(23, POSTGIS.container()); }
+    @Test void postgisEmbeddedTargets24() throws Exception { exchangeEmbeddedTargets(24, POSTGIS.container()); }
+
+    private void exchangeEmbeddedTargets(int version, PostgreSQLContainer postgres) throws Exception {
+        var fixture = new AlternativeRoleFixture(work, version);
+        var old = new TestDatabase(work, postgres, "embedded_target_ref", "or_v" + version + "_");
+        var own = old.peer("embedded_target_own");
+        var reference = new ReferenceTool(work, old.postgis());
+        String model = fixture.embeddedTargetModel();
+        var source = fixture.embeddedTargetSource();
+        schema(reference, old, work, model, "newClass", "--createFk");
+        assertSchemaWithIdentityColumns(own, model, source, "--create-fk");
+        try (var expected = old.connect(); var actual = own.connect()) {
+            DbSchemaCatalog.read(expected, old.postgis(), old.schema()).canonicalReferenceAlternatives()
+                    .assertSameAs(DbSchemaCatalog.read(actual, own.postgis(), own.schema()).canonicalReferenceAlternatives());
+            fixture.assertEmbeddedTargetMapping(old, expected);
+            fixture.assertEmbeddedTargetMapping(own, actual);
+        }
+        var legacy = fixture.embeddedTargetTransfer("legacy", "legacy", "station");
+        var nativeInput = fixture.embeddedTargetTransfer("native", "native", "landmark");
+        for (var db : List.of(old, own)) {
+            importDataset(reference, db, "legacy", legacy);
+            var nativeOutput = work.resolve(db.schema() + "-legacy.xtf");
+            assertCliSuccess(db, "export", model, "legacy", nativeOutput);
+            fixture.assertEmbeddedTargetTransfer(nativeOutput, "legacy", "station");
+            assertCliSuccess(db, "import", model, "native", nativeInput);
+            var referenceOutput = work.resolve(db.schema() + "-native.xtf");
+            exportDataset(reference, db, "native", referenceOutput);
+            fixture.assertEmbeddedTargetTransfer(referenceOutput, "native", "landmark");
+        }
+    }
+
     private void exchange(int version, PostgreSQLContainer postgres) throws Exception {
         var fixture = new AlternativeRoleFixture(work, version);
         var reference = new ReferenceTool(work, postgres != null);

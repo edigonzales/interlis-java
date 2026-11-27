@@ -321,6 +321,9 @@ die ID-Vergabe im eigenen Schema.
 
 `--tests '*AlternativeRoleInteropTest'` prüft je Backend und XTF-Version
 beide Zielzweige einer lokalen `OR`-Rolle in newClass, Smart1 und Smart2.
+Die Auswahl `*EmbeddedTargets*` prüft den eingebetteten 1:n-Fall in
+newClass mit Katalogvergleich und tatsächlichen Fremdschlüsseln.
+`AlternativeRoleStorageTest` prüft den Zielwechsel und die stabile ID.
 `--tests '*ExternalTextReferenceInteropTest'` bündelt externe Attribute,
 eingebettete Rollen und beide Formen von Linktabellen im
 `--sql-ext-ref-cols`-Profil. Die Mischläufe prüfen den `REF`-Wert ohne

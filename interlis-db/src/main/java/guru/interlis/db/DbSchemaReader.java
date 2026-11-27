@@ -205,7 +205,7 @@ final class DbSchemaReader {
             }
             if (object.kind() == SymbolKind.ASSOCIATION) {
                 var roles = DbMapping.describeRoles(plan, object);
-                var embedded = DbMapping.embeddedAssociation(plan, object, name, roles);
+                var embedded = DbMapping.embeddedAssociation(plan, object, name, roles, settings.inheritance());
                 if (embedded.isPresent()) {
                     var association = embedded.orElseThrow();
                     associations.add(association);
@@ -399,8 +399,7 @@ final class DbSchemaReader {
                 for (var association : DbMapping.associationsForOwner(associations, contributor.symbol())) {
                     if (association.linkTable()) continue;
                     columns.addAll(bindReferences(db, parent, attrNames, layout, names,
-                            DbMapping.roleColumn(association.role(), association.target(), association.role().name().declared().last()),
-                            association.ordered(), settings));
+                            association.targetRole().columns(), association.ordered(), settings));
                 }
             }
             if (settings.splitGeometries()) DbMapping.requireSingleGeometry(object, columns);

@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import static guru.interlis.db.DbTestSupport.catalogKeys;
 import static guru.interlis.db.DbTestSupport.child;
 import static guru.interlis.db.DbTestSupport.children;
+import static guru.interlis.db.DbTestSupport.foreignKeyColumns;
 import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.readDataSection;
 import static guru.interlis.db.DbTestSupport.referenceDatasetFixture;
@@ -50,6 +51,55 @@ record AlternativeRoleFixture(Path work, int version) {
                 + object("StationLeaf", dataset + "-station", "") + object("Hidden", dataset + "-hidden", "");
         return Files.writeString(work.resolve(dataset + ".xtf"),
                 referenceDatasetFixture(model(), version, dataset + "-basket", objects));
+    }
+
+    String embeddedTargetModel() {
+        return "EmbeddedAlternativeTarget" + version;
+    }
+
+    Path embeddedTargetSource() throws Exception {
+        return new ProfileFixtures(work, version).source(embeddedTargetModel(), """
+                CLASS Station = END Station;
+                CLASS Landmark = END Landmark;
+                CLASS Ticket = END Ticket;
+                CLASS Hidden = END Hidden;
+                ASSOCIATION Choice =
+                  Owner -- {0..*} Ticket;
+                  Candidate -- {0..1} Station OR Landmark;
+                END Choice;
+                """);
+    }
+
+    Path embeddedTargetTransfer(String file, String dataset, String target) throws Exception {
+        var fixtures = new ProfileFixtures(work, version);
+        String model = embeddedTargetModel();
+        String objects = fixtures.object(model, "Ticket", dataset + "-ticket",
+                fixtures.reference("Candidate", dataset + "-" + target))
+                + fixtures.object(model, "Station", dataset + "-station", "")
+                + fixtures.object(model, "Landmark", dataset + "-landmark", "")
+                + fixtures.object(model, "Hidden", dataset + "-hidden", "");
+        return Files.writeString(work.resolve(file + ".xtf"),
+                referenceDatasetFixture(model, version, dataset + "-basket", objects));
+    }
+
+    void assertEmbeddedTargetTransfer(Path path, String dataset, String target) throws Exception {
+        var rows = new ProfileFixtures(work, version).rows(path, dataset, 4);
+        var ticket = rows.stream().filter(row -> id(row, version, "tid").equals(dataset + "-ticket"))
+                .findFirst().orElseThrow();
+        assertEquals(dataset + "-" + target, id(child(ticket, "Candidate"), version, "ref"));
+    }
+
+    void assertEmbeddedTargetMapping(DbTestSupport.Target db, Connection sql) throws Exception {
+        String role = embeddedTargetModel() + ".Data.Choice.Candidate";
+        assertEquals(Set.of("ticket:candidate_station:station", "ticket:candidate_landmark:landmark"),
+                catalogKeys(sql, "SELECT colowner || ':' || sqlname || ':' || target FROM " + db.table("t_ili2db_attrname")
+                        + " WHERE iliname='" + role + "'"));
+        assertEquals(Set.of("candidate_station:station", "candidate_landmark:landmark"),
+                catalogKeys(sql, "SELECT columnname || ':' || setting FROM " + db.table("t_ili2db_column_prop")
+                        + " WHERE tablename='ticket' AND tag='ch.ehi.ili2db.foreignKey'"));
+        assertEquals(Set.of("ticket:candidate_station:station", "ticket:candidate_landmark:landmark"),
+                foreignKeyColumns(db, sql).stream().filter(key -> key.startsWith("ticket:candidate_"))
+                        .collect(Collectors.toSet()));
     }
 
     private String object(String name, String tid, String fields) {
