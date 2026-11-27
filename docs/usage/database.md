@@ -357,8 +357,17 @@ Transferkennung aus seinem SQL-Schlüssel und verwendet sie auch in
 Referenzen. Das gilt auch für Zeilen aus einem früheren Import ohne
 `--create-tid-col`.
 
-Schemata mit `T_basket` verwenden `--dataset` für den Transfer. Beim Export
-kannst du alternativ einzelne Baskets mit je einem `--basket BID` auswählen.
+Bei einem Schema mit `T_basket` kann ein Import den Datensatz automatisch
+benennen. Ohne `--dataset` verwendet er wie ili2db den bereinigten Dateinamen
+mit Endung und die vergebene SQL-ID, etwa `incomingdelivery.xtf-17`.
+Baskets und optionale `T_datasetname`-Spalten erhalten diese Zuordnung.
+`update`, `replace` und `delete` verwenden den expliziten `--dataset`-Namen.
+
+Beim Export wählt `--model` ohne weiteren Filter die Baskets der angegebenen
+Modelle anhand des gespeicherten qualifizierten Topic-Namens aus. Die Auswahl
+umfasst auch Baskets ohne Datensatzzuordnung. Eine leere Modellauswahl in
+einem Schema mit `T_basket` führt zum Abbruch. Für eine gezielte Auswahl
+verwende `--dataset` oder gib je Basket `--basket BID` an.
 Jede BID muss im Schema eindeutig sein und zu einem gewählten Modell gehören.
 Der Export folgt der Reihenfolge der internen Basket-IDs. Baskets ohne
 Datensatzzuordnung können ebenfalls ausgewählt werden. Externe Verweise auf
@@ -390,7 +399,8 @@ getrennte Datensätze in beiden Sprachversionen enthalten.
 Mit `export --model ORIGINAL --export-model UEBERSETZUNG` wird ein
 XTF-2.3-Datensatz in der gewählten Modellsprache ausgegeben. `--model`
 bezeichnet die gespeicherten Baskets und `--export-model` deren Ausgabeform.
-Für XTF 2.4 ist als Ausgabeform das Originalmodell zulässig.
+Für XTF 2.4 wählt auch der Name eines übersetzten Modells die Baskets des
+Originalmodells. Die Ausgabe verwendet das Originalmodell.
 Beim Import können ebenfalls mehrere Modelle derselben Sprachversion
 ausgewählt werden. Header und Baskets müssen zur Auswahl passen. Ein
 unzulässiger späterer Basket rollt den ganzen Import zurück.

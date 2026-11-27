@@ -63,6 +63,8 @@ final class TranslationInteropTest {
             var output = work.resolve(db.schema() + "-legacy.xtf");
             assertCliSuccess(db, "export", fixture.translated, "legacy", output, "--model", fixture.nestedTranslated);
             fixture.assertMixedDelivery(output, fixture.scalarLabel, "nested", "text");
+            assertCliSuccess(db, "export", fixture.translated, null, output, "--model", fixture.nestedTranslated);
+            fixture.assertMixedDelivery(output, fixture.scalarLabel, "nested", "text");
 
             assertCliSuccess(db, "import", fixture.translated, "native", nativeInput, "--model", fixture.nestedTranslated);
             output = work.resolve(db.schema() + "-native.xtf");

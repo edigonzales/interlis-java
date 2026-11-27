@@ -11,6 +11,7 @@ import java.util.Set;
 
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
+import static guru.interlis.db.DbTestSupport.catalogKeys;
 import static guru.interlis.db.DbTestSupport.execute;
 import static guru.interlis.db.InteropCommands.importDataset;
 import static guru.interlis.db.InteropCommands.schema;
@@ -34,6 +35,50 @@ final class ExportSelectionInteropTest {
     @Test void geoPackageTopics24() throws Exception { compareTopics(24, null); }
     @Test void postgisTopics23() throws Exception { compareTopics(23, POSTGIS.container()); }
     @Test void postgisTopics24() throws Exception { compareTopics(24, POSTGIS.container()); }
+
+    @Test void geoPackageModels23() throws Exception { exchangeModels(23, null); }
+    @Test void geoPackageModels24() throws Exception { exchangeModels(24, null); }
+    @Test void postgisModels23() throws Exception { exchangeModels(23, POSTGIS.container()); }
+    @Test void postgisModels24() throws Exception { exchangeModels(24, POSTGIS.container()); }
+
+    private void exchangeModels(int version, PostgreSQLContainer postgres) throws Exception {
+        var fixture = new ExportSelectionFixtures(work, version);
+        var other = new ProfileFixtures(work, version);
+        other.source("ForeignModel", "CLASS ExportedElsewhere = END ExportedElsewhere;");
+        var db = new TestDatabase(work, postgres, "model_export", "v" + version + "_");
+        var reference = new ReferenceTool(work, db.postgis());
+        schema(reference, db, work, fixture.model + ";ForeignModel", "newClass", "--createDatasetCol");
+
+        Path input = fixture.delivery("incoming delivery",
+                fixture.basket("Data", "reference", fixture.asset("a", "reference import", true)));
+        reference.run(db, "%ILI_FROM_DB", "--import", "--importBid", "--importTid", input.toString());
+        assertCliSuccess(db, "import", fixture.model, null, fixture.delivery("incoming delivery",
+                fixture.basket("Data", "native", fixture.asset("b", "native import", true))));
+        assertCliSuccess(db, "import", fixture.model, "detached", fixture.delivery("detached",
+                fixture.basket("Data", "detached", fixture.asset("c", "unassigned", false))));
+        importDataset(reference, db, "other", other.data("ForeignModel", "other", other.object(
+                "ForeignModel", "ExportedElsewhere", "elsewhere", "")));
+
+        try (var sql = db.connect()) {
+            String dataset = db.table("t_ili2db_dataset");
+            String basket = db.table("t_ili2db_basket");
+            assertEquals(Set.of("reference", "native"), catalogKeys(sql, """
+                    SELECT b.t_ili_tid FROM %s b JOIN %s d ON d.t_id=b.dataset
+                    JOIN %s a ON a.t_basket=b.t_id JOIN %s n ON n.asset_detail=a.t_id
+                    WHERE d.datasetname='incomingdelivery.xtf-' || d.t_id
+                        AND a.t_datasetname=d.datasetname AND n.t_datasetname=d.datasetname
+                    """.formatted(basket, dataset, db.table("asset"), db.table("note"))));
+            execute(sql, "UPDATE " + basket + " SET dataset=NULL WHERE t_ili_tid='detached'");
+        }
+
+        Path nativeOutput = work.resolve("native-model.xtf");
+        Path referenceOutput = work.resolve("reference-model.xtf");
+        assertCliSuccess(db, "export", fixture.model, null, nativeOutput);
+        reference.run(db, "%ILI_FROM_DB", "--export", "--models", fixture.model, "--exportTid", referenceOutput.toString());
+        var expected = List.of("Data:reference:a:reference import", "Data:native:b:native import", "Data:detached:c:unassigned");
+        assertEquals(expected, fixture.exportedAssets(nativeOutput));
+        assertEquals(Set.copyOf(expected), Set.copyOf(fixture.exportedAssets(referenceOutput)));
+    }
 
     private void exchangeBaskets(int version, PostgreSQLContainer postgres) throws Exception {
         var fixture = new ExportSelectionFixtures(work, version);

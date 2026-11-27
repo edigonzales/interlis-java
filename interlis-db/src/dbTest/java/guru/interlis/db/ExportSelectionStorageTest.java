@@ -11,15 +11,18 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 
 import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
+import static guru.interlis.db.DbTestSupport.catalogKeys;
 import static guru.interlis.db.DbTestSupport.child;
 import static guru.interlis.db.DbTestSupport.children;
 import static guru.interlis.db.DbTestSupport.cli;
 import static guru.interlis.db.DbTestSupport.execute;
 import static guru.interlis.db.DbTestSupport.id;
+import static guru.interlis.db.DbTestSupport.scalar;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -141,6 +144,46 @@ final class ExportSelectionStorageTest {
         assertCliSuccess(db, "export", fixture.model, null, output, "--topic", fixture.model + ".EmptyTopic");
         assertTrue(fixture.baskets(output).isEmpty());
         assertCliFailure(db, "import", fixture.model, "empty", output, "A transfer must contain at least one basket");
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void modelExportAndUnnamedImportRespectSelectionAndTransactions(Backend backend, int version) throws Exception {
+        var fixture = new ExportSelectionFixtures(work, version);
+        var other = new ProfileFixtures(work, version);
+        Path foreign = other.source("ForeignModel", "CLASS Elsewhere = END Elsewhere;");
+        var db = POSTGIS.target(work.resolve("model-selection.gpkg"), backend);
+        assertSchemaWithIdentityColumns(db, fixture.model, fixture.source, "--model", "ForeignModel", "--model-file",
+                foreign.toString(), "--create-dataset-col");
+        assertCliSuccess(db, "import", "ForeignModel", "foreign", other.data("ForeignModel", "foreign",
+                other.object("ForeignModel", "Elsewhere", "elsewhere", "")));
+        Path output = Files.writeString(work.resolve("selected.xtf"), "preserve");
+        assertRejected(db, fixture.model, output, "No baskets in the selected models: " + fixture.model);
+
+        assertCliSuccess(db, "import", fixture.model, null, fixture.delivery("drop in",
+                fixture.basket("Data", "first", fixture.asset("a", "one", false))));
+        assertCliSuccess(db, "import", fixture.model, null, fixture.delivery("drop in",
+                fixture.basket("Data", "second", fixture.asset("b", "two", false))));
+        assertCliSuccess(db, "export", fixture.model, null, output);
+        assertEquals(List.of("Data:first:a:one", "Data:second:b:two"), fixture.exportedAssets(output));
+
+        Path late = fixture.delivery("late", fixture.basket("Data", "late", fixture.asset("c", "rollback", true)));
+        Files.writeString(late, Files.readString(late) + "<trailing/>");
+        var result = cli(db, "import", fixture.model, null, late, CancellationToken.none());
+        assertEquals(1, result.code(), result::diagnostics);
+        try (var sql = db.connect()) {
+            String dataset = db.table("t_ili2db_dataset");
+            String basket = db.table("t_ili2db_basket");
+            assertEquals(Set.of("first", "second"), catalogKeys(sql, """
+                    SELECT b.t_ili_tid FROM %s b JOIN %s d ON d.t_id=b.dataset
+                    JOIN %s a ON a.t_basket=b.t_id
+                    WHERE d.datasetname='dropin.xtf-' || d.t_id AND a.t_datasetname=d.datasetname
+                    """.formatted(basket, dataset, db.table("asset"))));
+            assertEquals("3", scalar(sql, "SELECT count(*) FROM " + dataset));
+            assertEquals("3", scalar(sql, "SELECT count(*) FROM " + basket));
+            assertEquals(Set.of("a", "b"), catalogKeys(sql, "SELECT t_ili_tid FROM " + db.table("asset")));
+            assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("note")));
+        }
     }
 
     private static void assertRejected(Target db, String model, Path output, String diagnostic, String... options) throws Exception {

@@ -57,7 +57,8 @@ public final class Main {
                     [--sql-not-null] [--create-mandatory-checks] [--create-meta-info]
                     [--stroke-arcs] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
                     (--gpkg FILE | --pg-url JDBC_URL --schema NAME --user NAME) MODEL.ili
-            Use --dataset for transfers against schemas with T_basket. Export also accepts --basket or --topic.
+            Import names a dataset from the input file when --dataset is omitted in a schema with T_basket.
+            Export selects whole models by default, or the given dataset, baskets or topics.
             --create-tid-col preserves ordinary transfer IDs. Concrete object OIDs are always stored.
             Set INTERLIS_DB_PASSWORD for password authentication with PostgreSQL.
             """;
@@ -196,7 +197,8 @@ public final class Main {
                     case UPDATE -> DbTransfer.WriteMode.UPDATE;
                     default -> DbTransfer.WriteMode.IMPORT;
                 };
-                DbTransfer.importData(database, mapping, options.dataset(), reader, mode, options.rawScalarText(), cancellation);
+                DbTransfer.importData(database, mapping, options.dataset(), options.file().getFileName().toString(),
+                        reader, mode, options.rawScalarText(), cancellation);
             }
             cancellation.throwIfCancellationRequested();
             database.commit();
@@ -225,7 +227,7 @@ public final class Main {
                          case ILI23 -> Xtf23Writer.forIli2db(mapping.plan(), output);
                          case ILI24 -> new Xtf24Writer(mapping.plan(), output);
                      }) {
-                    DbTransfer.exportData(database, mapping, options.dataset(), options.baskets(), options.topics(),
+                    DbTransfer.exportData(database, mapping, options.models(), options.dataset(), options.baskets(), options.topics(),
                             options.exportModel(), writer, cancellation);
                 }
                 database.commit();
@@ -246,10 +248,6 @@ public final class Main {
         boolean filtered = !options.baskets().isEmpty() || !options.topics().isEmpty();
         if (filtered && !mapping.hasBasketColumn()) {
             throw new DbException("Basket or topic export requires a schema created with --create-basket-col");
-        }
-        if (mapping.hasBasketColumn() && options.dataset() == null && !filtered) {
-            if (options.command() == Command.EXPORT) throw new DbException("Choose --dataset, --basket or --topic for export with T_basket");
-            throw new DbException("--dataset is required for schemas with T_basket");
         }
         if (options.command() == Command.UPDATE && !mapping.storesTransferTids()) {
             throw new DbException("update requires a schema created with --create-tid-col");

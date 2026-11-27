@@ -514,6 +514,9 @@ dem jeweils anderen Werkzeug.
 `--tests '*ExportSelectionInteropTest.*Topics*'` vergleicht die exakte
 Topic-Auswahl über mehrere Datensätze und den leeren Transfer mit
 ili2db `--topics`.
+`--tests '*ExportSelectionInteropTest.*Models*'` prüft automatisch benannte
+Importe und den Modellexport über Datensatzgrenzen hinweg aus derselben
+Referenzdatenbank.
 
 `--tests '*TranslationInteropTest'` bündelt skalare und verschachtelte
 Baskets im Katalogvergleich und Werkzeugwechsel. Ein weiterer Fall

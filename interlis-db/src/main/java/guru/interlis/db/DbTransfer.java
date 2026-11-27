@@ -82,8 +82,8 @@ final class DbTransfer {
 
     private DbTransfer() { }
 
-    static void exportData(Database db, DbMapping mapping, String dataset, List<String> bids, List<String> requestedTopics,
-                           Optional<String> outputModel,
+    static void exportData(Database db, DbMapping mapping, List<String> requestedModels, String dataset,
+                           List<String> bids, List<String> requestedTopics, Optional<String> outputModel,
                            TransferWriter writer, CancellationToken token) throws SQLException {
         token.throwIfCancellationRequested();
         var ids = ExportIds.prepare(db, mapping, token);
@@ -114,12 +114,16 @@ final class DbTransfer {
                 if (!topics.containsKey(name)) throw new DbException("Unknown topic in the selected models: " + name);
             }
             selection = ExportBaskets.byValues("topic", requestedTopics);
-        } else if (bids.isEmpty()) {
+        } else if (!bids.isEmpty()) {
+            selection = ExportBaskets.byValues(T_ILI_TID, bids);
+        } else if (dataset != null) {
             long datasetId = DbDatasetWrite.findDataset(db, dataset)
                     .orElseThrow(() -> new DbException("Dataset does not exist: " + dataset));
             selection = new ExportBaskets("dataset = ?", List.of(datasetId));
         } else {
-            selection = ExportBaskets.byValues(T_ILI_TID, bids);
+            var modelNames = mapping.crsPair().isPresent() ? requestedModels : mapping.models().stream()
+                    .map(ref -> plan.model(ref).orElseThrow().name().declared().last()).toList();
+            selection = ExportBaskets.byModels(modelNames);
         }
         var selectedNames = requestedTopics.isEmpty() ? selectedBasketTopics(db, selection, bids, token) : requestedTopics;
         var exported = new HashSet<SymbolRef>();
@@ -127,7 +131,10 @@ final class DbTransfer {
             var stored = requestedTopics.isEmpty() ? selectedTopic(topics, name) : topics.get(name);
             exported.add(output.map(model -> mapping.translations().outputTopic(stored, model)).orElse(stored).model());
         }
-        if (exported.isEmpty()) throw new DbException("Dataset has no baskets: " + dataset);
+        if (exported.isEmpty()) {
+            throw new DbException(dataset != null ? "Dataset has no baskets: " + dataset
+                    : "No baskets in the selected models: " + String.join(", ", requestedModels));
+        }
         checkStructureOwners(db, mapping, selection, token);
         checkLinkOwners(db, mapping, selection, token);
         checkHierarchyTopics(db, mapping, selection, token);
@@ -179,6 +186,17 @@ final class DbTransfer {
 
         static ExportBaskets byValues(String column, List<String> values) {
             return new ExportBaskets(column + " IN (" + String.join(", ", Collections.nCopies(values.size(), "?")) + ")", values);
+        }
+
+        static ExportBaskets byModels(List<String> models) {
+            var parameters = new ArrayList<String>();
+            for (String model : models) {
+                String prefix = model + ".";
+                parameters.add(prefix);
+                parameters.add(prefix);
+            }
+            return new ExportBaskets(String.join(" OR ",
+                    Collections.nCopies(models.size(), "substr(topic, 1, length(?)) = ?")), parameters);
         }
 
         PreparedStatement prepare(Database db, String sql, Object... values) throws SQLException {
@@ -1435,12 +1453,12 @@ final class DbTransfer {
 
     enum WriteMode { IMPORT, REPLACE, UPDATE }
 
-    static void importData(Database db, DbMapping mapping, String dataset,
+    static void importData(Database db, DbMapping mapping, String dataset, String filename,
                            TransferReader reader, WriteMode mode, boolean rawScalarText, CancellationToken token)
             throws SQLException {
         token.throwIfCancellationRequested();
         if (mode != WriteMode.IMPORT) DbDatasetWrite.lock(db, mapping);
-        var existing = mapping.hasBasketColumn() ? DbDatasetWrite.findDataset(db, dataset)
+        var existing = mapping.hasBasketColumn() && dataset != null ? DbDatasetWrite.findDataset(db, dataset)
                 : Optional.<Long>empty();
         if (mode == WriteMode.IMPORT && existing.isPresent()) {
             throw new DbException("Dataset already exists: " + dataset);
@@ -1460,7 +1478,7 @@ final class DbTransfer {
                             datasetId = existing.orElseThrow();
                             if (mode == WriteMode.REPLACE) DbDatasetWrite.clearDataset(db, mapping, datasetId, "replace", token);
                         } else if (mapping.hasBasketColumn()) {
-                            datasetId = importer.insertDataset(dataset);
+                            datasetId = importer.insertDataset(filename);
                         }
                     }
                     case TransferEvent.StartBasket start -> {
@@ -1478,6 +1496,17 @@ final class DbTransfer {
             }
             importer.finishTransfer();
         }
+    }
+
+    private static String generatedDatasetName(String filename, long id) {
+        var name = new StringBuilder();
+        for (char character : filename.toCharArray()) {
+            if (Character.isLetter(character) || character == '_'
+                    || (!name.isEmpty() && (Character.isDigit(character) || character == '-' || character == '.'))) {
+                name.append(character);
+            }
+        }
+        return name.append('-').append(id).toString();
     }
 
     private static List<Reference> readArrayReferences(Database db, DbMapping mapping, ExportIds ids, Table target, long basket,
@@ -1616,7 +1645,7 @@ final class DbTransfer {
         private Map<DbDatasetWrite.ObjectKey, DbDatasetWrite.ExistingObject> existingObjects = Map.of();
         private long datasetId;
         private long basketId;
-        private final String dataset;
+        private String dataset;
         private final boolean datasetColumn;
         private final boolean rawScalarText;
         private final AuditStamp audit;
@@ -1651,8 +1680,9 @@ final class DbTransfer {
                     .collect(Collectors.toSet());
         }
 
-        long insertDataset(String dataset) throws SQLException {
+        long insertDataset(String filename) throws SQLException {
             long id = db.nextId();
+            if (dataset == null) dataset = generatedDatasetName(filename, id);
             String sql = "INSERT INTO " + db.technicalTable(DATASET)
                     + " (" + db.rowId() + ", datasetname) VALUES (?, ?)";
             try (var statement = db.connection().prepareStatement(sql)) {
