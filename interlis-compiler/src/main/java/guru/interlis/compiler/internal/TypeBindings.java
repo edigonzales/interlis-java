@@ -564,9 +564,12 @@ final class TypeBindings {
                 DeclInfo declaration = index.byId(context).orElseThrow();
                 TypeDescriptor inherited = null;
                 if (declaration.kind() == SymbolKind.ATTRIBUTE && declaration.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
-                    SymbolId owner = declaration.owner().orElse(null);
-                    AttributeSymbol baseAttribute = owner == null ? null : inheritance.findBaseAttribute(state.baseOf(owner), declaration.name());
-                    if (baseAttribute != null) inherited = effectiveDescriptor(baseAttribute.declaredType());
+                    var base = Optional.ofNullable(state.baseOf(declaration.id()));
+                    TypeId baseType = base.flatMap(index::byId).filter(d -> d.kind() == SymbolKind.ATTRIBUTE)
+                            .map(this::attributeType).orElseGet(() -> base.map(state::symbol)
+                                    .filter(AttributeSymbol.class::isInstance).map(AttributeSymbol.class::cast)
+                                    .map(AttributeSymbol::declaredType).orElse(null));
+                    inherited = effectiveDescriptor(baseType);
                 }
                 // Domains are merged after their base reference has been bound.
                 yield declaration.kind() == SymbolKind.DOMAIN

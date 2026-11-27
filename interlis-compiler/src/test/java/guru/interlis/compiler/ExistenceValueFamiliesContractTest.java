@@ -78,6 +78,47 @@ class ExistenceValueFamiliesContractTest {
         }
     }
 
+    @Test void inlineEnumerationOverrideAcrossModelsUsesItsBaseInEitherSourceOrder() {
+        for (var version : List.of("2.3", "2.4")) {
+            for (var derivedFirst : List.of(false, true)) {
+                var base = CompilerTestSupport.source(derivedFirst ? "memory:/1.ili" : "memory:/0.ili", """
+                        INTERLIS %s;
+                        MODEL Base AT "https://example.org" VERSION "1" =
+                          TOPIC Core = CLASS Station = State : (open, closed); END Station; END Core;
+                        END Base.
+                        """.formatted(version));
+                var derived = CompilerTestSupport.source(derivedFirst ? "memory:/0.ili" : "memory:/1.ili", """
+                        INTERLIS %s;
+                        MODEL Derived AT "https://example.org" VERSION "1" =
+                          IMPORTS Base;
+                          TOPIC Region EXTENDS Base.Core =
+                            CLASS LocalStation EXTENDS Base.Core.Station =
+                              State (EXTENDED) : (open (daily, weekend));
+                            END LocalStation;
+                          END Region;
+                        END Derived.
+                        """.formatted(version));
+                var binding = CompilerTestSupport.binding(CompilerTestSupport.parse(derived),
+                        "Base", base, CompilerTestSupport.parse(base));
+                var request = CompilerTestSupport.request(List.of("Derived"), Map.of(base.id(), base, derived.id(), derived),
+                        List.of(binding), CompilerOptions.defaults());
+                var result = CompilerEngines.create().compile(request, TOKEN);
+                var success = assertInstanceOf(CompilationOutcome.Succeeded.class, result,
+                        () -> result instanceof CompilationOutcome.Rejected rejected
+                                ? rejected.analysis().diagnostics().toString() : result.toString());
+                var graph = success.schema().semanticGraph();
+                var extension = graph.symbols().stream().filter(AttributeSymbol.class::isInstance)
+                        .map(AttributeSymbol.class::cast).filter(a -> a.overrides().isPresent()).findFirst().orElseThrow();
+                var inherited = assertInstanceOf(AttributeSymbol.class,
+                        graph.symbol(extension.overrides().orElseThrow()).orElseThrow());
+                var type = assertInstanceOf(EnumerationType.class, graph.type(extension.declaredType()).orElseThrow());
+                assertEquals(Optional.of(inherited.declaredType()), type.baseType());
+                assertEquals(List.of("open", "open.daily", "open.weekend", "closed"),
+                        type.values().stream().map(EnumerationValue::path).toList());
+            }
+        }
+    }
+
     @Test void oidCarriersAndExtensionRulesRemainTypedInSchema() {
         for (String version : List.of("2.3", "2.4")) {
             var graph = ok(version, existence("DOMAIN Id = OID TEXT*36;", "Id", "Id")).schema().semanticGraph();

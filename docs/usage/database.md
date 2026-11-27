@@ -443,6 +443,10 @@ Die Zieldatei deklariert das Basismodell.
 Für jeden ausgewählten Basket muss unter denselben Identitätsregeln ein
 konkretes Basistopic erreichbar sein.
 
+Im `newClass`-Profil liegt ein textkodiertes Inline-Enum auch dann in der
+Spalte der Basisdeklaration, wenn es in einem abgeleiteten Topic per
+`EXTENDED` unterteilt wird. Ein normaler Export erhält den Kindmodellcode.
+
 Beim Import können ebenfalls mehrere Modelle derselben Sprachversion
 ausgewählt werden. Header und Baskets müssen zur Auswahl passen. Ein
 unzulässiger späterer Basket rollt den ganzen Import zurück.

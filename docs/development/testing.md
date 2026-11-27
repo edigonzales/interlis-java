@@ -607,6 +607,11 @@ im XTF und die Fremdschlüssel im Ziel kontrolliert. Der eigene Test prüft
 die unveränderte Zieldatei bei doppeltem `T_Seq`, einem unerreichbaren Basistopic und einem
 bei der Projektion entfallenden Rollenziel.
 
+`--tests '*TopicEnumInteropTest'` vergleicht die Abbildung einer
+Enum-Verfeinerung im abgeleiteten Topic in beiden Werkzeugrichtungen.
+`TopicEnumStorageTest` prüft die unveränderte SQL-Identität beim Update
+des Kindmodellcodes in der Basisspalte.
+
 `--tests '*DatasetMutationInteropTest'` prüft in beiden Schematypen den
 Werkzeugwechsel über `update`, `replace` und `delete`. SQL und XTF belegen
 die stabilen IDs beim Update und den Ersatz der Daten beim Replace. Ein
