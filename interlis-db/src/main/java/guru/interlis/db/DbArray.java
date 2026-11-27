@@ -5,6 +5,7 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import guru.interlis.db.DbMapping.Kind;
+import guru.interlis.model.AlignmentType;
 import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.DomainReferenceType;
@@ -89,8 +90,8 @@ record DbArray(Optional<CollectionKind> collection, Optional<Wrapper> wrapper, K
             return new DbArray(collection, wrapper, Kind.REFERENCE, type, Optional.of(symbol), Optional.empty());
         }
         var kind = DbMapping.scalarKind(type);
-        if (kind != Kind.TEXT && kind != Kind.BOOLEAN && kind != Kind.INTEGER && kind != Kind.DECIMAL
-                && kind != Kind.ENUMERATION) {
+        if (type instanceof AlignmentType || (kind != Kind.TEXT && kind != Kind.BOOLEAN && kind != Kind.INTEGER
+                && kind != Kind.DECIMAL && kind != Kind.ENUMERATION)) {
             throw DbMapping.unsupported("coalesced array element at " + path);
         }
         return new DbArray(collection, wrapper, kind, type, Optional.empty(), Optional.empty());

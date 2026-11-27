@@ -377,6 +377,7 @@ final class DbSchemaReader {
                         }
                         var mapping = attrNames.take(attribute, table == null ? parent.name() : table, null);
                         var column = described.withName(mapping.name()).withStrokeArcs(plan, settings.strokeArcs());
+                        settings.enumOptions().checkAlignment(column);
                         if (column.kind() == Kind.ENUMERATION) {
                             if (settings.enumOptions().itfCodes()) {
                                 column = column.withItfCodes();

@@ -64,6 +64,11 @@ final class ScalarInteropTest {
     @Test void postgisDecimalArray23() throws Exception { exchangeDecimalArray(23, POSTGIS.container()); }
     @Test void postgisDecimalArray24() throws Exception { exchangeDecimalArray(24, POSTGIS.container()); }
 
+    @Test void geoPackageAlignmentLabels23() throws Exception { exchangeAlignmentLabels(23, null); }
+    @Test void geoPackageAlignmentLabels24() throws Exception { exchangeAlignmentLabels(24, null); }
+    @Test void postgisAlignmentLabels23() throws Exception { exchangeAlignmentLabels(23, POSTGIS.container()); }
+    @Test void postgisAlignmentLabels24() throws Exception { exchangeAlignmentLabels(24, POSTGIS.container()); }
+
     private void exchangeScalars(int version, PostgreSQLContainer postgres) throws Exception {
         var old = new TestDatabase(work, postgres, "scalar_reference", "v" + version + "_");
         var own = old.peer("scalar_own");
@@ -82,8 +87,8 @@ final class ScalarInteropTest {
                         + field("Measure", "2.250") + field("CalendarDay", "2024-02-29") + field("ReadingTime", "00:00:00.000")
                         + field("ReadingStamp", GAP) + field("TicketCode", "0012") + field("RestrictedDay", "2024-02-29")
                         + field("NameCode", "A_1") + field("UriCode", uri)
-                        + ScalarFixtures.modelPaths(model).entrySet().stream()
-                                .map(path -> field(path.getKey(), path.getValue())).collect(java.util.stream.Collectors.joining())
+                        + ScalarFixtures.scalarFields(ScalarFixtures.modelPaths(model))
+                        + ScalarFixtures.scalarFields(ScalarFixtures.alignmentValues())
                         + fixture.uuidField(UUID.toUpperCase(Locale.ROOT))
                         + fixture.binaryField("AAEC/w==") + fixture.xmlField(ascii),
                 field("WideNo", WIDE_VALUES.get(1)) + field("CalendarDay", "1999-12-31")
@@ -160,6 +165,7 @@ final class ScalarInteropTest {
         scalars.put("ReadingStamp", "2024-02-29T10:15:20.120");
         scalars.put("TicketCode", "0012");
         scalars.putAll(ScalarFixtures.modelPaths(model));
+        scalars.putAll(ScalarFixtures.alignmentValues());
         String uuid = UUID.toUpperCase(Locale.ROOT);
         String fields = scalars.entrySet().stream()
                 .map(entry -> field(entry.getKey(), entry.getValue())).collect(java.util.stream.Collectors.joining())
@@ -238,6 +244,43 @@ final class ScalarInteropTest {
         assertFragment(fixture.xmlFragment(first, referenceOutput), "ascii");
     }
 
+    private void exchangeAlignmentLabels(int version, PostgreSQLContainer postgres) throws Exception {
+        var legacy = new TestDatabase(work, postgres, "alignment_labels_ref", "v" + version + "_");
+        var own = legacy.peer("alignment_labels_own");
+        var reference = new ReferenceTool(work, legacy.postgis());
+        var fixture = new ScalarFixtures(work, version);
+        String model = "ScalarMapping" + version;
+        Path ili = fixture.copyModel(model);
+        referenceSchema(reference, legacy, ili, "--createEnumTxtCol");
+        assertSchemaWithIdentityColumns(own, model, ili, "--create-enum-txt-col");
+        compareCatalog(legacy, own);
+
+        var alignments = ScalarFixtures.alignmentValues();
+        var values = List.of(ScalarFixtures.scalarFields(alignments), "");
+        Path legacyInput = fixture.data(model, "legacy", values);
+        Path nativeInput = fixture.data(model, "native", values);
+        for (var db : List.of(legacy, own)) {
+            referenceImport(reference, db, "legacy", legacyInput);
+            Path nativeOutput = work.resolve("alignment-native.xtf");
+            assertCliSuccess(db, "export", model, "legacy", nativeOutput);
+            assertScalarValues(fixture.rows(nativeOutput, "legacy", 2), alignments);
+            assertCliSuccess(db, "import", model, "native", nativeInput);
+            Path referenceOutput = work.resolve("alignment-reference.xtf");
+            referenceExport(reference, db, "native", referenceOutput);
+            assertScalarValues(fixture.rows(referenceOutput, "native", 2), alignments);
+            try (var sql = db.connect()) {
+                for (var dataset : List.of("legacy", "native")) {
+                    assertStoredScalars(db, sql, dataset, alignments, 1);
+                    for (var entry : alignments.entrySet()) {
+                        String label = entry.getKey().toLowerCase(Locale.ROOT) + "_txt";
+                        assertEquals(entry.getValue(), stored(db, sql, label, dataset, 0));
+                        assertNull(stored(db, sql, label, dataset, 1));
+                    }
+                }
+            }
+        }
+    }
+
     private void exchangeDecimalArray(int version, PostgreSQLContainer postgres) throws Exception {
         var old = new TestDatabase(work, postgres, "decimal_array_reference", "v" + version + "_");
         var own = old.peer("decimal_array_own");
@@ -293,10 +336,8 @@ final class ScalarInteropTest {
         assertEquals("2024-02-29", child(first, "RestrictedDay").getTextContent());
         assertEquals("A_1", child(first, "NameCode").getTextContent());
         assertEquals(URI, child(first, "UriCode").getTextContent());
-        for (var path : ScalarFixtures.modelPaths(model).entrySet()) {
-            assertEquals(path.getValue(), child(first, path.getKey()).getTextContent());
-            assertNull(child(objects.getLast(), path.getKey()));
-        }
+        assertScalarValues(objects, ScalarFixtures.modelPaths(model));
+        assertScalarValues(objects, ScalarFixtures.alignmentValues());
         assertEquals(UUID, fixture.uuidValue(first));
         assertEquals(UUID, fixture.uuidValue(objects.get(1)));
         assertArrayEquals(new byte[]{0, 1, 2, (byte) 0xff}, fixture.binaryValue(first));
@@ -318,11 +359,8 @@ final class ScalarInteropTest {
         assertEquals(db.postgis() ? SPRING.replace('T', ' ') : SPRING + "Z",
                 stored(db, sql, db.postgis() ? "readingstamp::text" : "readingstamp", dataset, 1));
         assertEquals("0012", stored(db, sql, ticketColumn, dataset, 0));
-        for (var path : ScalarFixtures.modelPaths(model).entrySet()) {
-            var column = path.getKey().toLowerCase(Locale.ROOT);
-            assertEquals(path.getValue(), stored(db, sql, column, dataset, 0));
-            assertNull(stored(db, sql, column, dataset, 3));
-        }
+        assertStoredScalars(db, sql, dataset, ScalarFixtures.modelPaths(model), 3);
+        assertStoredScalars(db, sql, dataset, ScalarFixtures.alignmentValues(), 3);
         assertEquals(UUID, stored(db, sql, "externalid", dataset, 0));
         String hex = db.postgis() ? "lower(encode(binaryvalue,'hex'))" : "lower(hex(binaryvalue))";
         assertEquals("000102ff", stored(db, sql, hex, dataset, 0));
@@ -330,6 +368,22 @@ final class ScalarInteropTest {
         for (var column : List.of("wideno", "pricevalue", "calendarday", "readingtime", "readingstamp",
                 ticketColumn, "externalid", "binaryvalue", "xmlvalue")) {
             assertNull(stored(db, sql, column, dataset, 3), column);
+        }
+    }
+
+    private static void assertScalarValues(List<Element> objects, Map<String, String> values) {
+        for (var entry : values.entrySet()) {
+            assertEquals(entry.getValue(), child(objects.getFirst(), entry.getKey()).getTextContent());
+            assertNull(child(objects.getLast(), entry.getKey()));
+        }
+    }
+
+    private static void assertStoredScalars(TestDatabase db, Connection sql, String dataset,
+                                            Map<String, String> values, int nullRow) throws Exception {
+        for (var entry : values.entrySet()) {
+            String column = entry.getKey().toLowerCase(Locale.ROOT);
+            assertEquals(entry.getValue(), stored(db, sql, column, dataset, 0));
+            assertNull(stored(db, sql, column, dataset, nullRow));
         }
     }
 

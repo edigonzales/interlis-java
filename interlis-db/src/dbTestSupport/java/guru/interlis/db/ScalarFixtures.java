@@ -59,6 +59,18 @@ final class ScalarFixtures {
         return paths;
     }
 
+    static Map<String, String> alignmentValues() {
+        var values = new LinkedHashMap<String, String>();
+        values.put("HValue", "Center");
+        values.put("VValue", "Cap");
+        values.put("VAlias", "Bottom");
+        return values;
+    }
+
+    static String scalarFields(Map<String, String> values) {
+        return values.entrySet().stream().map(entry -> field(entry.getKey(), entry.getValue())).collect(Collectors.joining());
+    }
+
     String uuidField(String value) {
         return version == 23 ? "<ExternalId OID=\"" + value + "\"/>" : field("ExternalId", value);
     }

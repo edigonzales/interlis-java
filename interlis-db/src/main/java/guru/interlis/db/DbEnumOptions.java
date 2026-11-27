@@ -1,9 +1,17 @@
 package guru.interlis.db;
 
+import guru.interlis.model.AlignmentType;
+
 record DbEnumOptions(boolean itfCodes, boolean textColumns, boolean beautify, Lookup lookup) {
     static final DbEnumOptions DEFAULT = new DbEnumOptions(false, false, false, Lookup.NONE);
 
     boolean numeric() { return itfCodes || lookup == Lookup.WITH_ID; }
+
+    void checkAlignment(DbMapping.Column column) {
+        if ((itfCodes || lookup != Lookup.NONE) && column.effectiveType().orElse(null) instanceof AlignmentType) {
+            throw DbMapping.unsupported("enumeration lookup or numeric alignment at " + column.slot().name().declared());
+        }
+    }
 
     void checkExpandedField(DbMapping.Kind kind, String path) {
         if ((kind == DbMapping.Kind.ENUMERATION && (numeric() || textColumns))

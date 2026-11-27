@@ -440,7 +440,9 @@ Schema pro Backend und XTF-Version. Die Fälle vergleichen Katalog und
 Fachwerte in beiden Werkzeugrichtungen und Schematypen. Sie prüfen auch
 die Dezimalrundung beim ili2db-Import, den gespeicherten SQL-Namen einer
 umbenannten FORMAT-Spalte und den Unicode-Exportfehler von ili2gpkg
-in XTF 2.3. Modellnamenswerte werden im Standard- und im Textprofil geprüft.
+in XTF 2.3. Modellnamenswerte und Alignment-Codes werden im Standard- und
+im Textprofil geprüft. Die Alignment-Fälle vergleichen auch die benannte
+Domäne und die Anzeigetextspalten.
 Die Dezimalarrays verwenden ein eigenes `--coalesceArray`-Profil
 und prüfen die Reihenfolge, Duplikate, SQL `NULL` und die numerische Kodierung.
 

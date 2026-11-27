@@ -291,6 +291,37 @@ final class ScalarStorageTest {
         }
     }
 
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void storesAlignmentCodesAndLabels(Backend backend, int version) throws Exception {
+        var db = target(backend);
+        var fixture = new ScalarFixtures(work, version);
+        String model = "ScalarMapping" + version;
+        assertSchemaWithIdentityColumns(db, model, fixture.copyModel(model), "--create-enum-txt-col");
+        var values = ScalarFixtures.alignmentValues();
+        values.put("HValue", "UnknownCode");
+        Path input = fixture.data(model, "alignment", List.of(ScalarFixtures.scalarFields(values), ""));
+        assertCliSuccess(db, "import", model, "alignment", input);
+        Path output = work.resolve("alignment-out.xtf");
+        assertCliSuccess(db, "export", model, "alignment", output);
+        var rows = fixture.rows(output, "alignment", 2);
+        try (var sql = db.connect()) {
+            for (var value : values.entrySet()) {
+                String column = value.getKey().toLowerCase(Locale.ROOT);
+                assertEquals(value.getValue(), stored(db, sql, column, "alignment", 0));
+                assertEquals(value.getValue(), stored(db, sql, column + "_txt", "alignment", 0));
+                assertNull(stored(db, sql, column, "alignment", 1));
+                assertNull(stored(db, sql, column + "_txt", "alignment", 1));
+                assertEquals(value.getValue(), child(rows.getFirst(), value.getKey()).getTextContent());
+                assertNull(child(rows.getLast(), value.getKey()));
+            }
+            execute(sql, "UPDATE " + db.table("asset") + " SET hvalue='Invalid..Code' WHERE t_ili_tid='alignment-0'");
+        }
+        byte[] previous = Files.readAllBytes(output);
+        assertCliFailure(db, "export", model, "alignment", output, model + ".Data.Asset.HValue");
+        assertArrayEquals(previous, Files.readAllBytes(output));
+    }
+
     private Target target(Backend backend) {
         return POSTGIS.target(work.resolve("scalars.gpkg"), backend);
     }

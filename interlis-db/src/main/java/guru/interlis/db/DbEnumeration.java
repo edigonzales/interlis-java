@@ -1,5 +1,6 @@
 package guru.interlis.db;
 
+import guru.interlis.model.AlignmentKind;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.EnumerationValue;
 import guru.interlis.model.AttributeSymbol;
@@ -25,6 +26,13 @@ record DbEnumeration(Map<String, Long> numbers, Map<Long, String> paths, Map<Str
         numbers = Map.copyOf(numbers);
         paths = Map.copyOf(paths);
         labels = Map.copyOf(labels);
+    }
+
+    static String alignmentName(AlignmentKind kind) {
+        return switch (kind) {
+            case HORIZONTAL -> "INTERLIS.HALIGNMENT";
+            case VERTICAL -> "INTERLIS.VALIGNMENT";
+        };
     }
 
     static List<EnumerationValue> values(EnumerationType type) {

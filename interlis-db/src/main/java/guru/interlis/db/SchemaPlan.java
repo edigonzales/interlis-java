@@ -4,6 +4,7 @@ import guru.interlis.db.Ili2dbLayout.AttributeTransformation;
 import guru.interlis.db.Ili2dbLayout.SchemaOption;
 import guru.interlis.compiler.AnalysisBudget;
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.AlignmentType;
 import guru.interlis.model.ConstraintSymbol;
 import guru.interlis.model.DecimalLiteral;
 import guru.interlis.model.DomainReferenceType;
@@ -600,6 +601,8 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 domain = qualifiedName(mapping, symbol(mapping, new SymbolRef(mapping.plan().snapshotId(), alias.targetDomain())));
             } else if (column.kind() == DbMapping.Kind.BOOLEAN) {
                 domain = "INTERLIS.BOOLEAN";
+            } else if (effective instanceof AlignmentType alignment) {
+                domain = DbEnumeration.alignmentName(alignment.alignment());
             }
             if (domain != null) {
                 if (mapping.profile() == DbInheritance.Profile.NEW_CLASS && !DbTextExpansion.isLocalisationBase(owner.object())) {

@@ -1,6 +1,7 @@
 package guru.interlis.db;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.AlignmentType;
 import guru.interlis.model.AttributePathType;
 import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.BlackboxKind;
@@ -932,6 +933,7 @@ final class DbMapping {
                         String column = allocator.column(owner, storageName);
                         checkColumnName(attribute, column, object.kind() == SymbolKind.STRUCTURE, !split && discriminator, gpkg);
                         var named = binding.withName(column).withStrokeArcs(plan, strokeArcs);
+                        enumOptions.checkAlignment(named);
                         if (enumOptions.itfCodes() && named.kind() == Kind.ENUMERATION) named = named.withItfCodes();
                         if (enumOptions.textColumns() && (named.kind() == Kind.ENUMERATION || named.kind() == Kind.BOOLEAN)) {
                             var textLabel = DbEnumText.describe(plan, named, enumOptions.beautify());
@@ -1453,6 +1455,7 @@ final class DbMapping {
             case NumericType number when integerRange(number, Long.MIN_VALUE, Long.MAX_VALUE) -> Kind.BIGINT;
             case NumericType number when DbDecimal.fixedScale(number) -> Kind.DECIMAL;
             case EnumerationType ignored -> Kind.ENUMERATION;
+            case AlignmentType ignored -> Kind.ENUMERATION;
             case ClassValueType ignored -> Kind.CLASS_NAME;
             case AttributePathType ignored -> Kind.ATTRIBUTE_PATH;
             case FormattedType format when format.origin() instanceof Origin.PredefinedOrigin -> switch (format.predefined().orElse(null)) {
@@ -1472,7 +1475,8 @@ final class DbMapping {
 
     static Column structureScalar(TransferPlan plan, ObjectDescriptor structure, AttributeSlot field) {
         var column = describeColumn(plan, structure, field, new CrsDefaults(0, 0), Optional.empty(), false);
-        if (column.kind() == Kind.REFERENCE || column.kind().geometry()) {
+        if (column.kind() == Kind.REFERENCE || column.kind().geometry()
+                || column.effectiveType().orElseThrow() instanceof AlignmentType) {
             throw unsupported("structure scalar field " + field.name().declared());
         }
         return column;

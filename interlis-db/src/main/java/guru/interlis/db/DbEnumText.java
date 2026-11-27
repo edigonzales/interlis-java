@@ -1,5 +1,6 @@
 package guru.interlis.db;
 
+import guru.interlis.model.AlignmentType;
 import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolRef;
@@ -23,7 +24,9 @@ record DbEnumText(String column, Map<String, String> labels, boolean beautify) {
             if (column.enumeration().filter(value -> !value.labels().isEmpty()).isPresent()) {
                 return new DbEnumText(column.name() + "_txt", column.enumeration().orElseThrow().labels(), beautify);
             }
-            return new DbEnumText(column.name() + "_txt", modelLabels(plan, (AttributeSlot) column.slot()), beautify);
+            if (!(column.effectiveType().orElse(null) instanceof AlignmentType)) {
+                return new DbEnumText(column.name() + "_txt", modelLabels(plan, (AttributeSlot) column.slot()), beautify);
+            }
         }
         return new DbEnumText(column.name() + "_txt", Map.of(), beautify);
     }

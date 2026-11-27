@@ -3,6 +3,7 @@ MODEL ScalarMapping23 (en) AT "https://example.org/interlis/db" VERSION "1" =
   TOPIC Data =
     STRUCTURE Digits = Numeral : 0..9999; END Digits;
     DOMAIN
+      NamedVertical = VALIGNMENT;
       Length = -100.000 .. 100.000 [INTERLIS.m];
       Ticket = FORMAT BASED ON Digits (Numeral/4) "0000" .. "9999";
       CalRange EXTENDS INTERLIS.XMLDate = "1900-01-01" .. "2100-12-31";
@@ -25,6 +26,9 @@ MODEL ScalarMapping23 (en) AT "https://example.org/interlis/db" VERSION "1" =
       ClassValue : CLASS;
       StructureValue : STRUCTURE;
       PropertyPath : ATTRIBUTE;
+      HValue : HALIGNMENT;
+      VValue : VALIGNMENT;
+      VAlias : NamedVertical;
       ExternalId : INTERLIS.UUIDOID;
       BinaryValue : BLACKBOX BINARY;
       XmlValue : BLACKBOX XML;
