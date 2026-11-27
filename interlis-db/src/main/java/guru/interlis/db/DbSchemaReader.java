@@ -229,6 +229,7 @@ final class DbSchemaReader {
             throw new DbException("Extra CLASSNAME/TRAFO/INHERITANCE mappings for " + modelName);
         }
         checkSystemTables(db);
+        if (settings.schemaOptions().contains(Ili2dbLayout.SchemaOption.IMPORT_TABS)) checkImportTables(db);
         var layout = new DbInheritance(plan, declarations, settings.inheritance(),
                 settings.schemaOptions().contains(Ili2dbLayout.SchemaOption.TYPE_DISCRIMINATOR));
         if (enumLookup == DbEnumOptions.Lookup.WITH_ID) {
@@ -1602,6 +1603,17 @@ final class DbSchemaReader {
         requireColumns(db, datasets, datasetColumns, Map.of(db.rowIdColumn(), Kind.REFERENCE));
         requireIdPrimaryKey(db, datasets);
         requireColumns(db, datasets, datasetColumns, Map.of("datasetname", Kind.TEXT));
+    }
+
+    private static void checkImportTables(Database db) throws SQLException {
+        String run = foldedName(Ili2dbLayout.IMPORT_RUN);
+        requireColumns(db, run, physicalColumns(db, run), Map.of(db.rowIdColumn(), Kind.REFERENCE,
+                "dataset", Kind.REFERENCE, "importdate", Kind.DATETIME, "importuser", Kind.TEXT, "importfile", Kind.TEXT));
+        requireIdPrimaryKey(db, run);
+        String baskets = foldedName(Ili2dbLayout.IMPORT_BASKET);
+        requireColumns(db, baskets, physicalColumns(db, baskets), Map.of(db.rowIdColumn(), Kind.REFERENCE,
+                "importrun", Kind.REFERENCE, "basket", Kind.REFERENCE, "objectcount", Kind.INTEGER));
+        requireIdPrimaryKey(db, baskets);
     }
 
     private static Map<String, String> physicalColumns(Database db, String name) throws SQLException {

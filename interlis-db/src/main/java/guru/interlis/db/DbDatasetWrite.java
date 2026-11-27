@@ -324,6 +324,10 @@ final class DbDatasetWrite {
                     + " IN (SELECT " + db.rowId() + " FROM " + baskets + " WHERE dataset = ?)", dataset);
         }
         token.throwIfCancellationRequested();
+        if (mapping.schemaOptions().contains(Ili2dbLayout.SchemaOption.IMPORT_TABS)) {
+            delete(db, "DELETE FROM " + db.technicalTable(Ili2dbLayout.IMPORT_BASKET)
+                    + " WHERE basket IN (SELECT " + db.rowId() + " FROM " + baskets + " WHERE dataset = ?)", dataset);
+        }
         delete(db, "DELETE FROM " + baskets + " WHERE dataset = ?", dataset);
     }
 

@@ -33,6 +33,8 @@ import static guru.interlis.db.Ili2dbLayout.EMBEDDED;
 import static guru.interlis.db.Ili2dbLayout.ID_COLUMN;
 import static guru.interlis.db.Ili2dbLayout.INHERITANCE;
 import static guru.interlis.db.Ili2dbLayout.INHERITANCE_TAG;
+import static guru.interlis.db.Ili2dbLayout.IMPORT_BASKET;
+import static guru.interlis.db.Ili2dbLayout.IMPORT_RUN;
 import static guru.interlis.db.Ili2dbLayout.KEY_OBJECT;
 import static guru.interlis.db.Ili2dbLayout.LAST_CHANGE_COLUMN;
 import static guru.interlis.db.Ili2dbLayout.META_ATTRS;
@@ -225,6 +227,18 @@ final class SchemaSql {
             }
         }
         if (newSchema) commands.addAll(metadataDdl(dialect, inlineKeys.getOrDefault(BASKET, List.of())));
+        if (newSchema && plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.IMPORT_TABS)) {
+            commands.add(dialect.create(IMPORT_RUN, dialect.primaryId() + ", dataset " + dialect.idType()
+                    + " NOT NULL, importDate " + dialect.timestamp() + " NOT NULL, importUser " + dialect.text(40)
+                    + " NOT NULL, importFile " + dialect.text(200)));
+            commands.add(dialect.create(IMPORT_BASKET, dialect.primaryId() + ", importrun " + dialect.idType()
+                    + " NOT NULL, basket " + dialect.idType() + " NOT NULL, objectCount INTEGER",
+                    inlineKeys.getOrDefault(IMPORT_BASKET, List.of())));
+            if (createForeignKeyIndexes) {
+                commands.add(dialect.index(IMPORT_RUN, "dataset"));
+                commands.add(dialect.index(IMPORT_BASKET, "basket"));
+            }
+        }
         if (newSchema && plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.META_INFO)) {
             commands.add(dialect.create(META_ATTRS, "ilielement " + dialect.text(255) + " NOT NULL, attr_name "
                     + dialect.text(1024) + " NOT NULL, attr_value " + dialect.text(8000) + " NOT NULL"));

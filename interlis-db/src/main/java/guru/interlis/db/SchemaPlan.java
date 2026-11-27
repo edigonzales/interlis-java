@@ -409,7 +409,12 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
 
     List<ForeignKey> foreignKeys(boolean newSchema) {
         var keys = new ArrayList<ForeignKey>();
-        if (newSchema) keys.add(new ForeignKey(Ili2dbLayout.BASKET, "dataset", Ili2dbLayout.DATASET));
+        if (newSchema) {
+            keys.add(new ForeignKey(Ili2dbLayout.BASKET, "dataset", Ili2dbLayout.DATASET));
+            if (schemaOptions().contains(SchemaOption.IMPORT_TABS)) {
+                keys.add(new ForeignKey(Ili2dbLayout.IMPORT_BASKET, "importrun", Ili2dbLayout.IMPORT_RUN));
+            }
+        }
         for (var table : addedTables) {
             table.baseTable().ifPresent(base -> keys.add(new ForeignKey(table.name(), Ili2dbLayout.ID_COLUMN,
                     mapping.table(base).name(), false)));

@@ -186,6 +186,17 @@ Fachtabellen und Geometriehilfstabellen. GeoPackage speichert die beiden
 Zeitwerte als Unix-Millisekunden, PostgreSQL als lokale SQL-Zeitstempel.
 Ein `update` erhält das Erstellungsdatum bestehender Zeilen.
 
+`schemaimport --create-import-tabs` entspricht ili2db `--createImportTabs`
+im Profil mit `--create-basket-col`. Import, Update und Replace schreiben
+einen Lauf mit Datensatz-ID, Benutzer, Zeit und übergebenem XTF-Pfad in
+`T_ILI2DB_IMPORT`. In `T_ILI2DB_IMPORT_BASKET` steht pro geliefertem
+Basket die Anzahl der XTF-Objekte. Ein leerer Basket erhält den Zähler 0.
+Beide Tabellen verwenden die gemeinsame ID-Vergabe und sind Teil
+derselben Transaktion wie die Nutzdaten. Update ergänzt die Statistik
+erhaltener Baskets. Replace und Delete entfernen die Statistik gelöschter
+Baskets und behalten die bisherigen Importläufe.
+Für Schreiboperationen mit Importstatistik ist eine Basket-Spalte erforderlich.
+
 `schemaimport --create-unique` übernimmt unbedingte `UNIQUE`-Regeln mit
 direkten, in derselben Tabelle gespeicherten Schlüsselspalten. Bei
 `UNIQUE (BASKET)` in INTERLIS 2.4 enthält der SQL-Schlüssel zusätzlich

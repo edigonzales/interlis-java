@@ -9,9 +9,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.util.List;
+import java.util.Set;
 
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
+import static guru.interlis.db.DbTestSupport.catalogKeys;
 import static guru.interlis.db.DbTestSupport.child;
 import static guru.interlis.db.DbTestSupport.children;
 import static guru.interlis.db.DbTestSupport.id;
@@ -19,6 +21,7 @@ import static guru.interlis.db.DbTestSupport.readDataSection;
 import static guru.interlis.db.DbTestSupport.referenceDatasetFixture;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -47,8 +50,12 @@ final class DatasetMutationInteropTest {
         var reference = new ReferenceTool(work, legacy.postgis());
         String model = "DbMutation" + version;
         Path ili = copyModel(model);
-        referenceSchema(reference, legacy, ili);
-        assertSchemaWithIdentityColumns(own, model, ili);
+        InteropCommands.schema(reference, legacy, work, model, "newClass", "--createImportTabs", "--createFk", "--createFkIdx");
+        assertSchemaWithIdentityColumns(own, model, ili, "--create-import-tabs", "--create-fk", "--create-fk-idx");
+        try (var expected = legacy.connect(); var actual = own.connect()) {
+            DbSchemaCatalog.read(expected, legacy.postgis(), legacy.schema())
+                    .assertSameAs(DbSchemaCatalog.read(actual, own.postgis(), own.schema()));
+        }
         lifecycle(reference, legacy, model, true);
         lifecycle(reference, own, model, false);
         orderedUpdate(reference, legacy.peer("ordered_reference"), own.peer("ordered_own"));
@@ -107,10 +114,11 @@ final class DatasetMutationInteropTest {
 
     private void lifecycle(ReferenceTool reference, TestDatabase db, String model, boolean referenceSchema) throws Exception {
         var original = delivery("original", model, new Basket("main", item(model, "kept", "initial")),
-                new Basket("obsolete", item(model, "removed", "discard")));
+                new Basket("obsolete", item(model, "removed", "discard")), new Basket("empty", ""));
         var other = delivery("other", model, new Basket("other", item(model, "other-item", "separate")));
         var update = delivery("update", model, new Basket("main", item(model, "kept", "updated")));
         var replace = delivery("replace", model, new Basket("main", item(model, "kept", "replaced")));
+        long started = System.currentTimeMillis();
 
         if (referenceSchema) {
             referenceWrite(reference, db, "import", "main", original);
@@ -126,6 +134,7 @@ final class DatasetMutationInteropTest {
             String dataset = datasetId(db, sql, "main");
             String otherId = scalar(sql, "SELECT t_id FROM " + objects + " WHERE t_ili_tid='other-item' AND label='separate'");
 
+            assertImportRun(db, sql, dataset, original, started, Set.of("main:1", "obsolete:1", "empty:0"));
             Path output = exchangeWrite(reference, db, model, "main", "update", update, referenceSchema);
             var mainBasket = children(readDataSection(output, version)).stream()
                     .filter(basket -> "main".equals(id(basket, version, "bid"))).findFirst().orElseThrow();
@@ -135,6 +144,8 @@ final class DatasetMutationInteropTest {
             assertEquals(old, scalar(sql, "SELECT t_id" + keeper));
             assertEquals("updated", scalar(sql, "SELECT label" + keeper));
             assertEquals("1", scalar(sql, "SELECT count(*) FROM " + objects + " WHERE t_ili_tid='removed'"));
+            assertImportRun(db, sql, dataset, original, started, Set.of("main:1", "obsolete:1", "empty:0"));
+            assertImportRun(db, sql, dataset, update, started, Set.of("main:1"));
 
             output = exchangeWrite(reference, db, model, "main", "replace", replace, referenceSchema);
             assertSingleExport(output, "main", "kept", "replaced");
@@ -142,6 +153,9 @@ final class DatasetMutationInteropTest {
             String replacementId = scalar(sql, "SELECT t_id" + keeper);
             assertNotEquals(old, replacementId);
             assertEquals("0", scalar(sql, "SELECT count(*) FROM " + objects + " WHERE t_ili_tid='removed'"));
+            assertImportRun(db, sql, dataset, original, started, Set.of());
+            assertImportRun(db, sql, dataset, update, started, Set.of());
+            assertImportRun(db, sql, dataset, replace, started, Set.of("main:1"));
 
             if (referenceSchema) assertCliSuccess(db, "delete", model, "main", null);
             else reference.run(db, "%ILI_FROM_DB", "--delete", "--dataset", "main");
@@ -149,12 +163,39 @@ final class DatasetMutationInteropTest {
             assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_basket") + " WHERE dataset=" + dataset));
             assertNull(scalar(sql, "SELECT t_id" + keeper));
             assertEquals(otherId, scalar(sql, "SELECT t_id FROM " + objects + " WHERE t_ili_tid='other-item' AND label='separate'"));
+            assertImportRun(db, sql, dataset, replace, started, Set.of());
+            assertImportRun(db, sql, datasetId(db, sql, "other"), other, started, Set.of("other:1"));
+            assertEquals("3", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_import") + " WHERE dataset=" + dataset));
 
             if (!referenceSchema) {
                 referenceWrite(reference, db, "import", "follow-up", replace);
                 assertTrue(Long.parseLong(scalar(sql, "SELECT t_id" + keeper)) > Long.parseLong(replacementId));
             }
         }
+        InteropCommands.assertSharedIds(db, referenceSchema ? 8 : 13,
+                "mutationitem", "t_ili2db_import", "t_ili2db_import_basket");
+    }
+
+    private static void assertImportRun(TestDatabase db, Connection sql, String dataset, Path delivery, long started,
+                                        Set<String> expected) throws Exception {
+        String runs = db.table("t_ili2db_import");
+        long run;
+        try (var query = sql.prepareStatement("SELECT t_id, importdate, importuser FROM " + runs
+                + " WHERE dataset = ? AND importfile = ?")) {
+            query.setLong(1, Long.parseLong(dataset));
+            query.setString(2, delivery.toString());
+            try (var rows = query.executeQuery()) {
+                assertTrue(rows.next(), delivery.toString());
+                run = rows.getLong(1);
+                long imported = db.postgis() ? rows.getTimestamp(2).getTime() : rows.getLong(2);
+                assertTrue(imported >= started && imported <= System.currentTimeMillis(), delivery.toString());
+                assertEquals(db.postgis() ? db.user : System.getProperty("user.name"), rows.getString(3));
+                assertFalse(rows.next(), delivery.toString());
+            }
+        }
+        assertEquals(expected, catalogKeys(sql, "SELECT b.t_ili_tid || ':' || s.objectcount FROM "
+                + db.table("t_ili2db_import_basket") + " s LEFT JOIN " + db.table("t_ili2db_basket")
+                + " b ON b.t_id = s.basket WHERE s.importrun = " + run), delivery.toString());
     }
 
     private void orderedUpdate(ReferenceTool reference, TestDatabase legacy, TestDatabase own) throws Exception {

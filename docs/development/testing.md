@@ -571,6 +571,9 @@ weiterer ili2db-Import prüft die gemeinsame ID-Vergabe. Eine Gegenprobe
 prüft die Behandlung der `ORDERED`-Position beim gemischten Update. In
 einem Schema ohne `--createTidCol` vergleichen beide Werkzeugrichtungen
 ausserdem die stabilen Basket- und Objekt-OIDs und die erhaltenen SQL-IDs.
+Der Mischlauf vergleicht auch die Tabellen zu `--createImportTabs` und
+prüft die Statistik beider Werkzeuge einschliesslich leerer Baskets.
+`DatasetMutationTest` prüft ihren Rollback bei einem späten Fehler.
 `--tests '*SpatialIndexInteropTest'` vergleicht die RTree- und GiST-Definitionen
 beider Schemaerzeuger. Die Fälle tauschen gerade und gebogene Geometrien
 gemeinsam aus und prüfen die räumlichen Treffer nach einem Update durch

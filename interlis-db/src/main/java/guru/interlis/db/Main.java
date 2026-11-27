@@ -52,7 +52,7 @@ public final class Main {
                     [--create-enum-col-as-itf-code] [--create-enum-txt-col] [--beautify-enum-disp-name]
                     [--create-single-enum-tab | --create-enum-tabs | --create-enum-tabs-with-id]
                     [--create-fk] [--create-fk-idx] [--sql-ext-ref-cols] [--sql-cols-as-text]
-                    [--create-type-discriminator] [--create-type-constraint] [--create-dataset-col] [--create-std-cols]
+                    [--create-type-discriminator] [--create-type-constraint] [--create-dataset-col] [--create-std-cols] [--create-import-tabs]
                     [--create-unique] [--create-num-checks] [--create-text-checks] [--create-date-time-checks]
                     [--sql-not-null] [--create-mandatory-checks] [--create-meta-info]
                     [--stroke-arcs] [--create-geom-index] [--one-geom-per-table | --gpkg-multi-geom-per-table]
@@ -201,7 +201,7 @@ public final class Main {
                     default -> DbTransfer.WriteMode.IMPORT;
                 };
                 DbTransfer.importData(database, mapping, options.dataset(), options.file().getFileName().toString(),
-                        reader, mode, options.rawScalarText(), cancellation);
+                        options.fileArgument(), reader, mode, options.rawScalarText(), cancellation);
             }
             cancellation.throwIfCancellationRequested();
             database.commit();
@@ -254,7 +254,7 @@ public final class Main {
         }
     }
 
-    private record Options(Command command, List<String> models, String dataset, Path file, Path gpkg,
+    private record Options(Command command, List<String> models, String dataset, Path file, String fileArgument, Path gpkg,
                            String pgUrl, String schema, String user, boolean createGeometryIndexes,
                            boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean addModels,
                            boolean explicitEpsg, boolean explicitLayout, boolean strokeArcs, DbEnumOptions enumOptions,
@@ -280,6 +280,7 @@ public final class Main {
             };
             var flags = new HashMap<String, String>();
             Path file = null;
+            String fileArgument = null;
             var schemaFlags = new HashSet<String>();
             var transformations = EnumSet.noneOf(Ili2dbLayout.AttributeTransformation.class);
             var schemaOptions = EnumSet.noneOf(Ili2dbLayout.SchemaOption.class);
@@ -343,6 +344,7 @@ public final class Main {
                     if (file != null || arg.isBlank()) {
                         throw new IllegalArgumentException("Expected exactly one source or destination file");
                     }
+                    fileArgument = arg;
                     file = Path.of(arg).toAbsolutePath().normalize();
                 }
             }
@@ -403,6 +405,10 @@ public final class Main {
                 throw new IllegalArgumentException("--alt-srs-model requires one --model");
             }
             boolean addModels = schemaFlags.contains("--add-models");
+            if (!addModels && schemaOptions.contains(Ili2dbLayout.SchemaOption.IMPORT_TABS)
+                    && !schemaOptions.contains(Ili2dbLayout.SchemaOption.BASKET_COLUMN)) {
+                throw new IllegalArgumentException("--create-import-tabs requires --create-basket-col");
+            }
             if (addModels && alternateSrsModel != null) {
                 throw new IllegalArgumentException("--add-models uses the existing schema's CRS settings");
             }
@@ -447,7 +453,7 @@ public final class Main {
                     schemaFlags.contains("--create-enum-txt-col"), schemaFlags.contains("--beautify-enum-disp-name"),
                     enumLookup);
             var srsModels = Optional.ofNullable(alternateSrsModel).map(value -> DbCrsPair.Models.parse(value, models.getFirst()));
-            return new Options(command, List.copyOf(models), dataset, file, gpkg, pgUrl, schema, user,
+            return new Options(command, List.copyOf(models), dataset, file, fileArgument, gpkg, pgUrl, schema, user,
                     schemaFlags.contains("--create-geom-index"),
                     oneGeometryPerTable || (gpkg != null && !multipleGeoPackageGeometries), defaultEpsg, multiSrs, addModels,
                     epsg != null, oneGeometryPerTable || multipleGeoPackageGeometries, strokeArcs, enumOptions, srsModels,

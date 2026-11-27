@@ -1494,10 +1494,13 @@ final class DbTransfer {
 
     enum WriteMode { IMPORT, REPLACE, UPDATE }
 
-    static void importData(Database db, DbMapping mapping, String dataset, String filename,
+    static void importData(Database db, DbMapping mapping, String dataset, String filename, String fileArgument,
                            TransferReader reader, WriteMode mode, boolean rawScalarText, CancellationToken token)
             throws SQLException {
         token.throwIfCancellationRequested();
+        if (!mapping.hasBasketColumn() && mapping.schemaOptions().contains(Ili2dbLayout.SchemaOption.IMPORT_TABS)) {
+            throw new DbException("Import statistics require --create-basket-col");
+        }
         if (mode != WriteMode.IMPORT) DbDatasetWrite.lock(db, mapping);
         var existing = mapping.hasBasketColumn() && dataset != null ? DbDatasetWrite.findDataset(db, dataset)
                 : Optional.<Long>empty();
@@ -1521,6 +1524,7 @@ final class DbTransfer {
                         } else if (mapping.hasBasketColumn()) {
                             datasetId = importer.insertDataset(filename);
                         }
+                        importer.startStatistics(datasetId, fileArgument);
                     }
                     case TransferEvent.StartBasket start -> {
                         importer.startBasket(datasetId, start);
@@ -1696,6 +1700,10 @@ final class DbTransfer {
         private long basketId;
         private String dataset;
         private final boolean datasetColumn;
+        private final boolean standardColumns;
+        private final boolean importStatistics;
+        private long importRunId;
+        private long basketObjectCount;
         private final boolean rawScalarText;
         private final AuditStamp audit;
         private GeometrySelection basketGeometry = new GeometrySelection(List.of(), Map.of());
@@ -1706,7 +1714,9 @@ final class DbTransfer {
             this.mapping = mapping;
             this.dataset = dataset;
             datasetColumn = mapping.schemaOptions().contains(Ili2dbLayout.SchemaOption.DATASET_COLUMN);
-            audit = mapping.schemaOptions().contains(Ili2dbLayout.SchemaOption.STANDARD_COLUMNS)
+            standardColumns = mapping.schemaOptions().contains(Ili2dbLayout.SchemaOption.STANDARD_COLUMNS);
+            importStatistics = mapping.schemaOptions().contains(Ili2dbLayout.SchemaOption.IMPORT_TABS);
+            audit = standardColumns || importStatistics
                     ? new AuditStamp(new Timestamp(System.currentTimeMillis()), db.gpkg()
                             ? System.getProperty("user.name") : db.connection().getMetaData().getUserName()) : null;
             this.token = token;
@@ -1742,7 +1752,23 @@ final class DbTransfer {
             return id;
         }
 
+        void startStatistics(long datasetId, String fileArgument) throws SQLException {
+            if (!importStatistics) return;
+            importRunId = db.nextId();
+            String sql = "INSERT INTO " + db.technicalTable(Ili2dbLayout.IMPORT_RUN)
+                    + " (" + db.rowId() + ", dataset, importdate, importuser, importfile) VALUES (?, ?, ?, ?, ?)";
+            try (var statement = db.connection().prepareStatement(sql)) {
+                statement.setLong(1, importRunId);
+                statement.setLong(2, datasetId);
+                bindAuditTime(statement, 3);
+                statement.setString(4, audit.user());
+                statement.setString(5, fileArgument);
+                statement.executeUpdate();
+            }
+        }
+
         void startBasket(long datasetId, TransferEvent.StartBasket start) throws SQLException {
+            basketObjectCount = 0;
             var topic = mapping.plan().topic(start.topic()).orElseThrow();
             if (!mapping.models().contains(topic.model())
                     || start.kind() != BasketKind.FULL || start.consistency() != Consistency.COMPLETE
@@ -1801,6 +1827,7 @@ final class DbTransfer {
         }
 
         void insertObject(TransferEvent.ObjectEvent event) throws SQLException {
+            if (importStatistics) basketObjectCount++;
             var object = mapping.crsPair().map(pair -> pair.originalObject(event.object())).orElse(event.object());
             object = mapping.translations().toOriginal(object);
             var identity = object.identity();
@@ -2133,7 +2160,7 @@ final class DbTransfer {
 
         private int bindRowMetadata(PreparedStatement statement, int index, boolean update) throws SQLException {
             if (datasetColumn) statement.setString(index++, dataset);
-            if (audit != null) {
+            if (standardColumns) {
                 bindAuditTime(statement, index++);
                 if (!update) bindAuditTime(statement, index++);
                 statement.setString(index++, audit.user());
@@ -2149,7 +2176,7 @@ final class DbTransfer {
         private List<String> writeMetadataColumns(boolean update) {
             var columns = new ArrayList<String>(4);
             if (datasetColumn) columns.add(T_DATASET_NAME);
-            if (audit != null) {
+            if (standardColumns) {
                 columns.add(T_LAST_CHANGE);
                 if (!update) columns.add(T_CREATE_DATE);
                 columns.add(T_USER);
@@ -2434,6 +2461,19 @@ final class DbTransfer {
             objects.clear();
             removedObjects.addAll(existingObjects.values());
             existingObjects = Map.of();
+            if (importStatistics) writeBasketStatistics();
+        }
+
+        private void writeBasketStatistics() throws SQLException {
+            String sql = "INSERT INTO " + db.technicalTable(Ili2dbLayout.IMPORT_BASKET)
+                    + " (" + db.rowId() + ", importrun, basket, objectcount) VALUES (?, ?, ?, ?)";
+            try (var statement = db.connection().prepareStatement(sql)) {
+                statement.setLong(1, db.nextId());
+                statement.setLong(2, importRunId);
+                statement.setLong(3, basketId);
+                statement.setLong(4, basketObjectCount);
+                statement.executeUpdate();
+            }
         }
 
         void finishTransfer() throws SQLException {

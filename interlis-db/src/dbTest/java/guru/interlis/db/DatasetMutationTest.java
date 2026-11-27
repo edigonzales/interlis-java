@@ -111,6 +111,34 @@ final class DatasetMutationTest {
         }
     }
 
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void importStatisticsFollowTheDatasetTransaction(Backend backend, int version) throws Exception {
+        this.version = version;
+        String model = "DbMutation" + version;
+        var db = database(backend, "statistics");
+        Path ili = copyModel(model);
+        var rejected = cli(db, "schemaimport", model, null, ili, CancellationToken.none(), "--create-import-tabs");
+        assertEquals(2, rejected.code(), rejected::diagnostics);
+        assertTrue(rejected.diagnostics().contains("--create-import-tabs requires --create-basket-col"), rejected::diagnostics);
+        assertSchemaWithIdentityColumns(db, model, ili, "--create-import-tabs", "--create-fk");
+        Path original = delivery("initial-statistics", model, new Basket("before", item(model, "item", "original")),
+                new Basket("empty", ""));
+        assertCliSuccess(db, "import", model, "retain", original);
+        Path broken = delivery("invalid-statistics", model, new Basket("written", item(model, "written", "rollback")));
+        Files.writeString(broken, Files.readString(broken) + "<trailing/>");
+        var failure = cli(db, "replace", model, "retain", broken, CancellationToken.none());
+        assertEquals(1, failure.code(), failure::diagnostics);
+        try (var sql = db.connect()) {
+            assertEquals("original", scalar(sql, "SELECT label FROM " + db.table("mutationitem")));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_import")));
+            assertEquals("2", scalar(sql, "SELECT count(*) FROM " + db.table("t_ili2db_import_basket")));
+            assertEquals(List.of("before:1", "empty:0"), strings(sql,
+                    "SELECT b.t_ili_tid || ':' || s.objectcount FROM " + db.table("t_ili2db_import_basket")
+                            + " s JOIN " + db.table("t_ili2db_basket") + " b ON b.t_id = s.basket ORDER BY b.t_id"));
+        }
+    }
+
     private Target database(Backend backend, String name) {
         return POSTGIS.target(work.resolve(name + ".gpkg"), backend);
     }
