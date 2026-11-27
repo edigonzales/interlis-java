@@ -120,6 +120,10 @@ final class InputSelectionInteropTest {
                 "--baskets", "empty-district", "--topics", topic);
         assertCliSuccess(own, "import", fixture.model, "empty", noMatch, "--basket", "empty-district", "--topic", topic);
 
+        Path emptyTransfer = fixture.delivery("empty-transfer");
+        referenceWrite(reference, legacy, "import", "empty_transfer", emptyTransfer);
+        assertCliSuccess(own, "import", fixture.model, "empty_transfer", emptyTransfer);
+
         var selected = Set.of("Data:combined-left:combined-a:Left");
         for (var db : List.of(legacy, own)) {
             try (var sql = db.connect()) {
@@ -131,6 +135,7 @@ final class InputSelectionInteropTest {
                         Set.of("Data:topic-left:topic-a:Left", "Data:topic-right:topic-b:Right"),
                         1, Set.of("topic-left:1:1", "topic-right:1:1"));
                 assertSelection(db, sql, fixture.model, "empty", Set.of(), 1, Set.of());
+                assertSelection(db, sql, fixture.model, "empty_transfer", Set.of(), 1, Set.of());
             }
         }
 

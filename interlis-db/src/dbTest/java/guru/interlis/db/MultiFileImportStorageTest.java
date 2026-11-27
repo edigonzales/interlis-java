@@ -105,20 +105,27 @@ final class MultiFileImportStorageTest {
 
     @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
-    void batchOfEmptyTransfersCreatesOneDatasetAndTwoAuditRuns(Backend backend, int version) throws Exception {
+    void emptyTransfersCreateDatasetAndAuditPerFile(Backend backend, int version) throws Exception {
         Target db = POSTGIS.target(work.resolve("empty.gpkg"), backend);
         var fixture = new MultiFileImportFixtures(work, version);
         assertSchemaWithIdentityColumns(db, fixture.model, fixture.source, "--create-import-tabs");
+        Path single = fixture.delivery("single");
         Path first = fixture.delivery("first");
         Path last = fixture.delivery("last");
+        Path malformed = fixture.delivery("malformed-empty");
+        Files.writeString(malformed, Files.readString(malformed) + "<trailing/>");
 
-        assertCliFailure(db, "import", fixture.model, "empty", first, "A transfer must contain at least one basket");
-        assertCliSuccess(db, "import", fixture.model, "empty", last, first.toString());
+        assertCliFailure(db, "import", fixture.model, "invalid", malformed,
+                version == 23 ? "Malformed XML" : "Malformed XTF 2.4 XML");
+        assertCliSuccess(db, "import", fixture.model, "single", single);
+        assertCliSuccess(db, "import", fixture.model, "batch", last, first.toString());
         try (var sql = db.connect()) {
-            assertEquals("empty", scalar(sql, "SELECT datasetname FROM " + db.table("t_ili2db_dataset")));
-            assertEquals(Set.of(first.toString(), last.toString()), catalogKeys(sql, """
-                    SELECT i.importfile FROM %s i JOIN %s d ON i.dataset=d.t_id
-                    """.formatted(db.table("t_ili2db_import"), db.table("t_ili2db_dataset"))));
+            String datasets = db.table("t_ili2db_dataset");
+            String imports = db.table("t_ili2db_import");
+            assertEquals(Set.of("single", "batch"), catalogKeys(sql, "SELECT datasetname FROM " + datasets));
+            assertEquals(Set.of("single:" + single, "batch:" + first, "batch:" + last), catalogKeys(sql, """
+                    SELECT d.datasetname || ':' || i.importfile FROM %s i JOIN %s d ON i.dataset=d.t_id
+                    """.formatted(imports, datasets)));
             for (String table : Set.of("t_ili2db_basket", "t_ili2db_import_basket", "place")) {
                 assertEquals("0", scalar(sql, "SELECT count(*) FROM " + db.table(table)), table);
             }

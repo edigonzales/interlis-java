@@ -143,7 +143,7 @@ final class ExportSelectionStorageTest {
         assertRejected(db, fixture.model, output, "Duplicate basket ID derived", "--topic", district);
         assertCliSuccess(db, "export", fixture.model, null, output, "--topic", fixture.model + ".EmptyTopic");
         assertTrue(fixture.baskets(output).isEmpty());
-        assertCliFailure(db, "import", fixture.model, "empty", output, "A transfer must contain at least one basket");
+        assertCliSuccess(db, "import", fixture.model, "empty", output);
     }
 
     @ParameterizedTest(name = "{0}, XTF {1}")

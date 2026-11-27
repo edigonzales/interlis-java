@@ -1562,7 +1562,7 @@ final class DbTransfer {
                 }
             }
             token.throwIfCancellationRequested();
-            if (!sawBasket && !selection.filtered() && !multipleFiles) {
+            if (mode != WriteMode.IMPORT && !sawBasket && !selection.filtered() && !multipleFiles) {
                 throw new DbException("A transfer must contain at least one basket");
             }
             importer.finishTransfer();

@@ -441,10 +441,12 @@ Beim Import können ebenfalls mehrere Modelle derselben Sprachversion
 ausgewählt werden. Header und Baskets müssen zur Auswahl passen. Ein
 unzulässiger späterer Basket rollt den ganzen Import zurück.
 Ein Import legt den angegebenen Datensatz an. Einen bereits vorhandenen
-Datensatznamen meldet er als Fehler. Ein erfolgreicher Export ersetzt die
-ausdrücklich gewählte Zieldatei atomar. Ein abgebrochener Export belässt eine
-bisherige Zieldatei. Ein Import schreibt Objekte, Baskets und den Datensatz
-in einer Transaktion und bestätigt das XTF-Quellenende vor dem Commit.
+Datensatznamen meldet er als Fehler. Eine FULL-Datei mit gültigem Header und
+leerem Datenabschnitt legt einen leeren Datensatz an. Bei aktivierter
+Importstatistik entsteht ein Lauf ohne Basketstatistik. Ein erfolgreicher Export
+ersetzt die ausdrücklich gewählte Zieldatei atomar. Ein abgebrochener Export
+belässt eine bisherige Zieldatei. Ein Import schreibt Objekte, Baskets und den
+Datensatz in einer Transaktion und bestätigt das XTF-Quellenende vor dem Commit.
 Nach dem Rollback lässt sich der Import mit demselben Datensatznamen
 wiederholen.
 PostgreSQL-Sequenznummern können nach einem Rollback Lücken aufweisen.
@@ -588,8 +590,7 @@ Für die Erzeugung mit dem Originalwerkzeug verwende
 --defaultSrsAuth EPSG --defaultSrsCode 2056` an. Verwende beim Referenzimport
 `--importTid --importBid` und beim Referenzexport `--exportTid`. Dieses
 Profil bewahrt die gespeicherten BID und TID beim Werkzeugwechsel.
-Ein Datensatz enthält mindestens einen Basket. Baskets ohne Objekte sind
-zulässig.
+Ein Datensatz kann leer sein. Baskets ohne Objekte sind zulässig.
 
 `import`, `export`, `update`, `replace` und `delete` unterstützen auch
 Referenzschemata mit einem technischen Primärschlüssel aus `--t_id_Name`.

@@ -112,10 +112,11 @@ und für einen Wechsel der ili2db-Referenzversion vorgesehen.
 ./gradlew :interlis-db:dbInteropTest --tests '*BaseMappingInteropTest.geoPackage*'
 ```
 
-`--tests '*InputSelectionInteropTest.*Import*'` vergleicht die
-BID-/Topic-Filter und leere Auswahlen mit ili2db. `InputSelectionStorageTest`
-prüft den Import ohne Basket-Spalte, externe Zielauflösung und Rollback
-bei fehlerhaftem XML in einem ausgelassenen Basket.
+`--tests '*InputSelectionInteropTest.geoPackageImport*'` und
+`--tests '*InputSelectionInteropTest.postgisImport*'` vergleichen die
+BID-/Topic-Filter, leere Auswahlen und leere FULL-Dateien mit ili2db.
+`InputSelectionStorageTest` prüft den Import ohne Basket-Spalte, externe
+Zielauflösung und Rollback bei fehlerhaftem XML in einem ausgelassenen Basket.
 `--tests '*InputSelectionInteropTest.*Update*'` prüft den selektiven
 Basket-Ersatz und stabile IDs. Der eigene DB-Test prüft den Rollback bei
 einer Referenz aus einem ausgelassenen Basket.
