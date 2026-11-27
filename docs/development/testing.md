@@ -611,6 +611,10 @@ bei der Projektion entfallenden Rollenziel.
 Enum-Verfeinerung im abgeleiteten Topic in beiden Werkzeugrichtungen.
 `TopicEnumStorageTest` prüft die unveränderte SQL-Identität beim Update
 des Kindmodellcodes in der Basisspalte.
+Der anschliessende Basismodell-Export reduziert unterteilte Enum-Blätter.
+Die Mischläufe importieren die Ausgabe des jeweils anderen Werkzeugs ins
+Basisschema. Der eigene Test prüft die unveränderte Zieldatei bei einem Code
+ohne Basiswert.
 
 `--tests '*DatasetMutationInteropTest'` prüft in beiden Schematypen den
 Werkzeugwechsel über `update`, `replace` und `delete`. SQL und XTF belegen

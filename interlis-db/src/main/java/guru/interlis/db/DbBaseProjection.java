@@ -3,16 +3,20 @@ package guru.interlis.db;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CoordinateType;
+import guru.interlis.model.EnumerationType;
+import guru.interlis.model.EnumerationValue;
 import guru.interlis.model.OidRule;
 import guru.interlis.model.RoleAggregation;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
+import guru.interlis.model.TypeId;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.TopicDescriptor;
 import guru.interlis.transfer.TransferIdentity.BasketId;
 import guru.interlis.transfer.TransferObject;
 import guru.interlis.transfer.TransferPlan;
 import guru.interlis.transfer.TransferValue;
+import guru.interlis.transfer.TransferValue.Enumeration;
 import guru.interlis.transfer.TransferValue.Reference;
 import guru.interlis.transfer.TransferValue.Structured;
 
@@ -22,6 +26,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /** Projects decoded export events through the model's checked inheritance. */
 final class DbBaseProjection {
@@ -33,6 +39,7 @@ final class DbBaseProjection {
     private final Map<SymbolRef, List<DbMapping.AssociationRole>> links = new HashMap<>();
     private final Map<String, SymbolRef> projectedObjects = new HashMap<>();
     private final List<ProjectedRole> references = new ArrayList<>();
+    private final Map<TypeId, Set<String>> enumLeaves = new HashMap<>();
 
     DbBaseProjection(DbMapping mapping, TopicDescriptor topic) {
         this.mapping = mapping;
@@ -100,8 +107,16 @@ final class DbBaseProjection {
         }
 
         var values = new LinkedHashMap<SymbolRef, TransferValue>();
+        var extensions = mapping.extendedFields(source.symbol());
         for (var field : target.slots()) {
             if (!(field instanceof AttributeSlot attribute) || attribute.attribute().transientAttribute()) continue;
+            var extension = extensions.get(field.symbol());
+            if (extension != null) {
+                var extended = source.slots().stream().filter(slot -> slot.symbol().equals(extension))
+                        .map(AttributeSlot.class::cast).findFirst().orElseThrow();
+                projectEnum(extended, attribute, object).ifPresent(value -> values.put(field.symbol(), value));
+                continue;
+            }
             var value = object.value(field.symbol());
             var type = plan.type(attribute.effectiveType()).known().orElseThrow();
             switch (type.kind()) {
@@ -123,13 +138,6 @@ final class DbBaseProjection {
                 default -> throw DbMapping.unsupported("base-model export of " + field.name().declared());
             }
             value.ifPresent(present -> values.put(field.symbol(), present));
-        }
-        for (var field : source.slots()) {
-            if (field instanceof AttributeSlot attribute && attribute.member().overridden() && target != source
-                    && target.slots().stream().anyMatch(base -> base.name().declared().last().equals(field.name().declared().last())
-                            && !base.symbol().equals(field.symbol()))) {
-                throw DbMapping.unsupported("base-model export of extended attribute " + field.name().declared());
-            }
         }
         if (linkEnds != null) {
             for (var end : linkEnds) {
@@ -162,6 +170,33 @@ final class DbBaseProjection {
             }
         }
         return Optional.of(new TransferObject(object.identity(), new Structured(target.symbol(), values)));
+    }
+
+    private Optional<TransferValue> projectEnum(AttributeSlot source, AttributeSlot target, TransferObject object) {
+        var plan = mapping.plan();
+        if (!DbMapping.inlineEnumeration(plan, source) || !DbMapping.inlineEnumeration(plan, target)) {
+            throw DbMapping.unsupported("base-model export of extended attribute " + source.name().declared());
+        }
+        return object.value(source.symbol()).map(value -> {
+            var enumeration = (Enumeration) value;
+            var path = enumeration.path();
+            String code = String.join(".", path);
+            if (enumLeaves(source).contains(code)) {
+                var targetLeaves = enumLeaves(target);
+                for (int length = path.size(); length > 0; length--) {
+                    var prefix = path.subList(0, length);
+                    if (targetLeaves.contains(String.join(".", prefix))) return new Enumeration(prefix);
+                }
+            }
+            throw new DbException("Cannot project enumeration value " + code + " at " + source.name().declared()
+                    + " into " + target.name().declared());
+        });
+    }
+
+    private Set<String> enumLeaves(AttributeSlot attribute) {
+        var type = (EnumerationType) mapping.plan().type(attribute.effectiveType()).known().orElseThrow();
+        return enumLeaves.computeIfAbsent(type.id(), id -> DbEnumeration.values(type).stream()
+                .map(EnumerationValue::path).collect(Collectors.toUnmodifiableSet()));
     }
 
     void requireReferenceTargets(BasketId basket, CancellationToken token) {

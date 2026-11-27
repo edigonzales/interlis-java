@@ -51,5 +51,20 @@ final class TopicEnumInteropTest {
         var referenceOutput = work.resolve("reference.xtf");
         exportDataset(reference, own, "input", referenceOutput);
         fixture.assertValues(referenceOutput, "open.weekend");
+
+        assertCliSuccess(baseline, "export", fixture.derived, "input", nativeOutput, "--export-model", fixture.base);
+        fixture.assertProjected(nativeOutput);
+        reference.run(own, "%ILI_FROM_DB", "--export", "--dataset", "input",
+                "--exportModels", fixture.base, "--exportTid", referenceOutput.toString());
+        fixture.assertProjected(referenceOutput);
+
+        var referenceBase = baseline.peer("base_reference");
+        schema(reference, referenceBase, work, fixture.base, "newClass");
+        importDataset(reference, referenceBase, "reduced", nativeOutput);
+        fixture.assertBaseStored(referenceBase);
+        var nativeBase = own.peer("base_native");
+        assertSchemaWithIdentityColumns(nativeBase, fixture.base, fixture.baseSource);
+        assertCliSuccess(nativeBase, "import", fixture.base, "reduced", referenceOutput);
+        fixture.assertBaseStored(nativeBase);
     }
 }

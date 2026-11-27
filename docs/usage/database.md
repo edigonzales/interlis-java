@@ -446,6 +446,12 @@ konkretes Basistopic erreichbar sein.
 Im `newClass`-Profil liegt ein textkodiertes Inline-Enum auch dann in der
 Spalte der Basisdeklaration, wenn es in einem abgeleiteten Topic per
 `EXTENDED` unterteilt wird. Ein normaler Export erhält den Kindmodellcode.
+Beim Export ins Basismodell wird etwa `open.weekend` auf das Basisblatt
+`open` reduziert. Vorhandene Basiswerte und fehlende Werte behalten ihre
+Bedeutung. Ein untergeordnetes Attribut mit dem zusätzlichen Geschwisterwert
+`parked` hat für diesen Code kein Basisblatt. `interlis-db` meldet den
+betroffenen Wert und das Attribut und erhält die bestehende Zieldatei.
+ili2db 5.5.2 meldet in diesem Fall beim Export eine `NoSuchElementException`.
 
 Beim Import können ebenfalls mehrere Modelle derselben Sprachversion
 ausgewählt werden. Header und Baskets müssen zur Auswahl passen. Ein

@@ -79,12 +79,20 @@ final class TopicEnumFixtures {
     }
 
     void assertValues(Path file, String openValue) throws Exception {
+        assertValues(file, derived, derived + ".Region", derived + ".Region.LocalStation", openValue);
+    }
+
+    void assertProjected(Path file) throws Exception {
+        assertValues(file, base, base + ".Core", base + ".Core.Station", "open");
+    }
+
+    private void assertValues(Path file, String model, String topic, String type, String openValue) throws Exception {
         var data = readDataSection(file, version);
-        assertEquals(List.of(derived), headerModels(data, version));
-        var objects = children(basket(data, version, derived + ".Region", "region"));
+        assertEquals(List.of(model), headerModels(data, version));
+        var objects = children(basket(data, version, topic, "region"));
         assertEquals(3, objects.size());
         for (var object : objects) {
-            assertName(object, version, derived + ".Region.LocalStation");
+            assertName(object, version, type);
             var state = child(object, "State");
             String tid = id(object, version, "tid");
             if (tid.equals("three")) {
@@ -108,5 +116,12 @@ final class TopicEnumFixtures {
         assertEquals(Set.of(base + ".Core.Station.State:station:astate"), catalogKeys(sql,
                 "SELECT iliname || ':' || colowner || ':' || sqlname FROM " + db.table("t_ili2db_attrname")
                 + " WHERE iliname LIKE '%.State'"));
+    }
+
+    void assertBaseStored(DbTestSupport.Target db) throws Exception {
+        try (var sql = db.connect()) {
+            assertEquals(Set.of("one:open", "two:closed", "three:NULL"), catalogKeys(sql,
+                    "SELECT t_ili_tid || ':' || COALESCE(astate, 'NULL') FROM " + db.table("station")));
+        }
     }
 }
