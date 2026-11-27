@@ -49,6 +49,21 @@ class ValidationBudgetTest {
     }
 
     @Test
+    void reappliesTheXmlEventBudgetForAnXtf23ObjectAfterExhaustion() throws IOException {
+        writeParcel();
+        var limited = run("--budget", "xtf23-object-events=1");
+        assertFailure(limited, 3, "transfer", "XML event budget of 1");
+        assertEquals("LIMIT_EXCEEDED",
+                limited.report().getAsJsonArray("diagnostics").get(0).getAsJsonObject().get("code").getAsString());
+
+        var recovered = run("--budget", "xtf23-object-events=1000");
+        assertEquals(0, recovered.exit(), recovered.report().toString());
+        assertTrue(recovered.report().get("completed").getAsBoolean());
+        assertEquals(1, recovered.report().get("objects").getAsInt());
+        assertEquals(run(), recovered);
+    }
+
+    @Test
     void reappliesDatasetConstraintWorkBudgetAfterExhaustion() throws IOException {
         writeParcel();
         assertFailure(run("--budget", "constraint-work=1"), 3, "validation", "Dataset constraint work limit exceeded");

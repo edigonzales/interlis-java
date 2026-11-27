@@ -63,8 +63,8 @@ import static javax.xml.stream.XMLStreamConstants.*;
  * Events are immutable and can be retained after the reader advances.
  * The XML reader bounds depth to 128 elements, scalar text to 1,048,576 UTF-16
  * code units, and input read during any individual parser advance to 8 MiB.
- * One object, including its nested values, is limited to 1,000,000 XML events and
- * 16,777,216 UTF-16 code units of XML text and attribute values.
+ * One object, including its nested values, defaults to a limit of 1,000,000 XML events.
+ * The character budget is 16,777,216 UTF-16 code units of XML text and attribute values per object.
  * The reader holds a transfer-wide index of occurrence IDs whose size grows with
  * the number of distinct BIDs and TIDs.
  */
@@ -97,10 +97,18 @@ public final class Xtf23Reader extends TransferReader {
 
     /** Creates a reader with an optional nonnull opaque source identity for events. */
     public Xtf23Reader(TransferPlan plan, InputStream input, Optional<SourceId> source) {
+        this(plan, input, source, Xtf23ReadLimits.defaults());
+    }
+
+    /**
+     * Creates a reader with explicit object event limits and a nonnull optional opaque source identity.
+     * The nonnull input remains owned by the caller.
+     */
+    public Xtf23Reader(TransferPlan plan, InputStream input, Optional<SourceId> source, Xtf23ReadLimits limits) {
         super(plan);
         this.plan = plan;
         this.source = Objects.requireNonNull(source, "source");
-        xml = new Xtf23Input(input);
+        xml = new Xtf23Input(input, limits);
         models = index(plan.models(), ModelDescriptor::name);
         topics = index(plan.topics(), TopicDescriptor::name);
         objects = index(plan.objects(), ObjectDescriptor::name);

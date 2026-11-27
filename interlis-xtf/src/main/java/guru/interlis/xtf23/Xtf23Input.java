@@ -24,20 +24,25 @@ final class Xtf23Input {
     static final int MAX_TEXT = 1_048_576;
     static final int MAX_TOKEN_BYTES = 8 * MAX_TEXT;
     static final int MAX_OBJECT_UNITS = 16 * MAX_TEXT;
-    private static final int MAX_OBJECT_TOKENS = 1_000_000;
     static final int MAX_DEPTH = 128;
     static final int MAX_ATTRIBUTES = 64;
     private static final int MAX_NAME = 1024;
 
     private final BorrowedInput input;
+    private final long maxObjectEvents;
     private XMLStreamReader xml;
     private int depth;
     private final ArrayDeque<NamespaceScope> namespaces = new ArrayDeque<>();
-    private int objectTokens = -1;
+    private long objectEvents = -1;
     private long objectUnits;
 
     Xtf23Input(InputStream input) {
+        this(input, Xtf23ReadLimits.defaults());
+    }
+
+    Xtf23Input(InputStream input, Xtf23ReadLimits limits) {
         this.input = new BorrowedInput(Objects.requireNonNull(input, "input"));
+        this.maxObjectEvents = Objects.requireNonNull(limits, "limits").maxObjectEvents();
     }
 
     void begin(CancellationToken cancellation) {
@@ -86,20 +91,22 @@ final class Xtf23Input {
     }
 
     void beginObject() {
-        objectTokens = MAX_OBJECT_TOKENS;
+        objectEvents = maxObjectEvents;
         objectUnits = MAX_OBJECT_UNITS;
         accountObjectToken(START_ELEMENT);
     }
 
     void endObject() {
-        objectTokens = -1;
+        objectEvents = -1;
     }
 
     private void accountObjectToken(int token) {
-        if (objectTokens < 0) {
+        if (objectEvents < 0) {
             return;
         }
-        objectTokens--;
+        if (objectEvents-- == 0) {
+            throw error(LIMIT_EXCEEDED, "XTF object exceeds its XML event budget of " + maxObjectEvents);
+        }
         switch (token) {
             case START_ELEMENT -> {
                 for (int i = 0; i < xml.getAttributeCount(); i++) {
@@ -113,8 +120,9 @@ final class Xtf23Input {
             case PROCESSING_INSTRUCTION -> objectUnits -= Objects.toString(xml.getPIData(), "").length();
             default -> { }
         }
-        if (objectTokens < 0 || objectUnits < 0) {
-            throw error(LIMIT_EXCEEDED, "XTF object exceeds its XML event or character budget");
+        if (objectUnits < 0) {
+            throw error(LIMIT_EXCEEDED, "XTF object exceeds its XML character budget of " + MAX_OBJECT_UNITS
+                    + " UTF-16 code units");
         }
     }
 

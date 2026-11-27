@@ -19,7 +19,8 @@ record ValidatorOptions(List<Path> primary, List<Path> reference, List<String> r
     enum Budget {
         OBJECT_WORK("object-work"),
         AREA_COMPONENTS("area-components"),
-        CONSTRAINT_WORK("constraint-work");
+        CONSTRAINT_WORK("constraint-work"),
+        XTF23_OBJECT_EVENTS("xtf23-object-events");
 
         private final String name;
 
@@ -144,7 +145,7 @@ record ValidatorOptions(List<Path> primary, List<Path> reference, List<String> r
                        interlis-validator --help
                        interlis-validator --version [--json]
 
-                Budget names: object-work, area-components, constraint-work
+                Budget names: object-work, area-components, constraint-work, xtf23-object-events
                 """;
     }
 }

@@ -12,6 +12,7 @@ import guru.interlis.validation.jts.JtsGeometryEngine;
 import guru.interlis.validation.mvstore.MvStoreOptions;
 import guru.interlis.validation.mvstore.MvStoreValidationStorage;
 import guru.interlis.xtf23.Xtf23Exception;
+import guru.interlis.xtf23.Xtf23ReadLimits;
 import guru.interlis.xtf23.Xtf23Reader;
 import guru.interlis.xtf24.Xtf24Exception;
 import guru.interlis.xtf24.Xtf24Reader;
@@ -28,6 +29,7 @@ import java.util.Set;
 import static guru.interlis.validator.cli.ValidatorOptions.Budget.AREA_COMPONENTS;
 import static guru.interlis.validator.cli.ValidatorOptions.Budget.CONSTRAINT_WORK;
 import static guru.interlis.validator.cli.ValidatorOptions.Budget.OBJECT_WORK;
+import static guru.interlis.validator.cli.ValidatorOptions.Budget.XTF23_OBJECT_EVENTS;
 
 final class ValidatorCommand {
     private static final long MEMORY_BYTES = 256L * 1024 * 1024;
@@ -117,6 +119,8 @@ final class ValidatorCommand {
                         limits.maxRelationWork(), options.budgets().getOrDefault(CONSTRAINT_WORK, limits.maxConstraintWork()),
                         limits.maxKeyBytes()), output.scope);
         var coverage = new ActiveCoverage(plan);
+        var objectEvents = options.budgets().get(XTF23_OBJECT_EVENTS);
+        var xtf23Limits = objectEvents == null ? Xtf23ReadLimits.defaults() : new Xtf23ReadLimits(objectEvents);
         ValidationReport report;
         output.phase = "storage";
         try (var storage = openStorage(options, cwd);
@@ -126,7 +130,7 @@ final class ValidatorCommand {
                 output.phase = "transfer";
                 for (var input : inputs) {
                     output.currentInput = input.path();
-                    read(input, transfer, run, coverage, !options.models().isEmpty(), token);
+                    read(input, transfer, run, coverage, !options.models().isEmpty(), xtf23Limits, token);
                 }
                 output.currentInput = null;
                 output.phase = "validation";
@@ -170,11 +174,12 @@ final class ValidatorCommand {
     }
 
     private static void read(ValidationInput input, TransferPlan transfer, DatasetValidationSession run,
-                             ActiveCoverage coverage, boolean explicitPrimary, CancellationToken token) throws IOException {
+                             ActiveCoverage coverage, boolean explicitPrimary, Xtf23ReadLimits xtf23Limits,
+                             CancellationToken token) throws IOException {
         var source = new SourceId(input.path().toUri().toString());
         try (var stream = Files.newInputStream(input.path());
              var reader = input.header().xtf23()
-                     ? new Xtf23Reader(transfer, stream, Optional.of(source))
+                     ? new Xtf23Reader(transfer, stream, Optional.of(source), xtf23Limits)
                      : new Xtf24Reader(transfer, stream, Optional.of(source));
              var observed = coverage.observe(reader, transfer, input.role(), explicitPrimary)) {
             run.readInput(new InputDescriptor(new InputId(source.value()), input.role()), observed, token);

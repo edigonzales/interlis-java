@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.util.Enumeration;
+import java.util.List;
+import java.util.Optional;
 
 import static guru.interlis.xtf23.Xtf23Exception.Reason.LIMIT_EXCEEDED;
 import static guru.interlis.xtf23.Xtf23TestData.*;
@@ -65,6 +67,32 @@ final class Xtf23StreamingTest {
     }
 
     @Test
+    void limitsXmlEventsPerObjectAndResetsTheCounterForTheNextObject() {
+        String xml = document(MODELS, """
+                <Reference23.Records BID="basket">
+                  <Reference23.Records.Parent TID="p1"/>
+                  <Reference23.Records.Parent TID="p2"/>
+                </Reference23.Records>
+                """);
+        try (var reader = new Xtf23Reader(plan, input(xml), Optional.empty(), new Xtf23ReadLimits(1))) {
+            assertInstanceOf(TransferEvent.StartTransfer.class, reader.readNext(TOKEN).orElseThrow());
+            assertInstanceOf(TransferEvent.StartBasket.class, reader.readNext(TOKEN).orElseThrow());
+            var failure = assertThrows(Xtf23Exception.class, () -> reader.readNext(TOKEN));
+            assertEquals(LIMIT_EXCEEDED, failure.reason());
+            assertTrue(failure.getMessage().contains("XML event budget of 1"), failure::getMessage);
+            assertTrue(failure.line() > 0);
+        }
+        try (var reader = new Xtf23Reader(plan, input(xml), Optional.empty(), new Xtf23ReadLimits(2))) {
+            var events = readAll(reader);
+            var ids = events.stream().filter(TransferEvent.ObjectEvent.class::isInstance)
+                    .map(TransferEvent.ObjectEvent.class::cast)
+                    .map(event -> event.object().identity().tid().orElseThrow().value()).toList();
+            assertEquals(List.of("p1", "p2"), ids);
+            assertInstanceOf(TransferEvent.EndTransfer.class, events.getLast());
+        }
+    }
+
+    @Test
     void limitsTheSumOfTextInOneObjectEvenWhenEachValueFits() {
         String description = "<Reference23.Records.Detail><description>" + "x".repeat(Xtf23Input.MAX_TEXT)
                 + "</description></Reference23.Records.Detail>";
@@ -73,12 +101,12 @@ final class Xtf23StreamingTest {
                   <details>%s</details>
                 </Reference23.Records.Item></Reference23.Records>
                 """.formatted(description.repeat(Xtf23Input.MAX_OBJECT_UNITS / Xtf23Input.MAX_TEXT + 1)));
-        try (var reader = new Xtf23Reader(plan, input(xml))) {
+        try (var reader = new Xtf23Reader(plan, input(xml), Optional.empty(), new Xtf23ReadLimits(Long.MAX_VALUE))) {
             reader.readNext(TOKEN);
             reader.readNext(TOKEN);
             var failure = assertThrows(Xtf23Exception.class, () -> reader.readNext(TOKEN));
             assertEquals(LIMIT_EXCEEDED, failure.reason());
-            assertTrue(failure.getMessage().contains("object exceeds"), failure::getMessage);
+            assertTrue(failure.getMessage().contains("XML character budget"), failure::getMessage);
         }
     }
 }

@@ -103,6 +103,11 @@ und aggregierte Zeichen, Bytes eines Parserfortschritts sowie transferweite
 Identitäten. Zusätzlich gelten 64 Attribute und 64 Namespace-Deklarationen pro
 Element und 4096 Modelle im Header. DTD und externe Entities sind gesperrt.
 
+Beim XTF-2.3-Reader kann `Xtf23ReadLimits` das Standardbudget von
+1’000’000 XML-Ereignissen pro Objekt überschreiben. Der Zähler startet für
+jedes Objekt neu und erfasst auch die Ereignisse seiner verschachtelten Werte.
+Die weiteren XML-Sicherheitsgrenzen gelten unabhängig davon.
+
 Reader und Writer puffern jeweils ein Objekt und behalten Identitätsmengen bis
 Abschluss, Fehler oder Close. Der Speicher wächst somit mit der Objektgrösse
 und der Anzahl eindeutiger IDs. Auch bei einer direkten Reader-Writer-Pipeline
