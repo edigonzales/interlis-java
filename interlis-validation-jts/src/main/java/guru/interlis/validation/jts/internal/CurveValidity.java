@@ -626,6 +626,7 @@ final class CurveValidity {
     }
 
     private void within(Surface container, Surface other, PairBoundaries pair, boolean traceBoundary, boolean reverse) {
+        var locator = new SurfaceLocator(container);
         for (var ring : rings(other)) {
             for (var segment : flat(ring)) {
                 control.visit().run();
@@ -644,7 +645,7 @@ final class CurveValidity {
                 }
                 for (var fragment : fragments) {
                     control.visit().run();
-                    var found = probe(container, curve, fragment.span(), contacts);
+                    var found = probe(locator, curve, fragment.span(), contacts);
                     if (found == null || found.position() != Position.INSIDE) {
                         continue;
                     }
@@ -666,10 +667,10 @@ final class CurveValidity {
 
     private record Containment(Point point, Position position) {}
 
-    private Containment probe(Surface container, CurveSegment curve, Span fragment, Set<Point> contacts) {
+    private Containment probe(SurfaceLocator locator, CurveSegment curve, Span fragment, Set<Point> contacts) {
         for (var endpoint : List.of(fragment.start(), fragment.end())) {
             if (!contacts.contains(endpoint)) {
-                var position = locate(container, endpoint);
+                var position = locator.locate(endpoint);
                 if (position == Position.INSIDE || position == Position.OUTSIDE) {
                     return new Containment(endpoint, position);
                 }
@@ -678,7 +679,7 @@ final class CurveValidity {
         if (!(curve instanceof CircularArc)) {
             if (fragment.start().equals(curve.start()) && fragment.end().equals(curve.end())) {
                 var middle = CurvePointLocation.midpoint(curve);
-                return new Containment(middle, locate(container, middle));
+                return new Containment(middle, locator.locate(middle));
             }
         }
         for (int digits = Interval.INITIAL_DIGITS; digits <= Interval.MAX_DIGITS; digits *= 2) {
@@ -709,9 +710,9 @@ final class CurveValidity {
                 x = Interval.exact(start.exactX(), digits).add(vx.multiply(fraction));
                 y = Interval.exact(start.exactY(), digits).add(vy.multiply(fraction));
             }
-            if (separated(container, x, y)) {
+            if (separated(locator.surface, x, y)) {
                 var middle = new Point(x.middle(), y.middle());
-                return new Containment(middle, locate(container, middle));
+                return new Containment(middle, locator.locate(middle));
             }
         }
         uncertain();
@@ -747,18 +748,39 @@ final class CurveValidity {
         return true;
     }
 
-    private Position locate(Surface container, Point point) {
-        var shell = locate(flat(container.shell()), point);
-        if (shell != Position.INSIDE) {
-            return shell;
+    private final class SurfaceLocator {
+        private final Surface surface;
+        private final CurvePointLocation.PreparedRing shell;
+        private final List<CurvePointLocation.PreparedRing> holes;
+
+        SurfaceLocator(Surface surface) {
+            this.surface = surface;
+            shell = new CurvePointLocation.PreparedRing(flat(surface.shell()));
+            holes = surface.holes().stream()
+                    .map(ring -> new CurvePointLocation.PreparedRing(flat(ring))).toList();
         }
-        for (var hole : container.holes()) {
-            var position = locate(flat(hole), point);
-            if (position != Position.OUTSIDE) {
-                return position == Position.INSIDE ? Position.OUTSIDE : position;
+
+        Position locate(Point point) {
+            var outer = locate(shell, point);
+            if (outer != Position.INSIDE) {
+                return outer;
             }
+            for (var hole : holes) {
+                var position = locate(hole, point);
+                if (position != Position.OUTSIDE) {
+                    return position == Position.INSIDE ? Position.OUTSIDE : position;
+                }
+            }
+            return Position.INSIDE;
         }
-        return Position.INSIDE;
+
+        private Position locate(CurvePointLocation.PreparedRing ring, Point point) {
+            var position = ring.locate(point, control.visit());
+            if (position == Position.UNDETERMINED) {
+                uncertain();
+            }
+            return position;
+        }
     }
 
     static List<Fragment> fragments(CurveSegment curve, List<Span> spans, Runnable visit) {
@@ -840,14 +862,6 @@ final class CurveValidity {
         }
         uncertain();
         return new Containment(null, Position.UNDETERMINED);
-    }
-
-    private Position locate(List<Segment> boundary, Point point) {
-        var position = CurvePointLocation.locate(boundary, point, control.visit());
-        if (position == Position.UNDETERMINED) {
-            uncertain();
-        }
-        return position;
     }
 
     static double signedArea(List<Segment> boundary) {

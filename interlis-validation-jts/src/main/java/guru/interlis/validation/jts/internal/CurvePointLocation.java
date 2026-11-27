@@ -1,5 +1,8 @@
 package guru.interlis.validation.jts.internal;
 
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.index.strtree.STRtree;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -13,8 +16,63 @@ final class CurvePointLocation {
 
     private static final int ON_BOUNDARY = -1;
     private static final int UNDETERMINED = -2;
+    private static final int MIN_INDEXED_RING_SIZE = 32;
 
     private CurvePointLocation() {}
+
+    /** Prepares a ring for repeated exact point queries against its straight, exact edges. */
+    static final class PreparedRing {
+        private final List<Segment> boundary;
+        private boolean attempted;
+        private STRtree index;
+
+        PreparedRing(List<Segment> boundary) {
+            this.boundary = boundary;
+        }
+
+        Position locate(Point point, Runnable visit) {
+            if (boundary.size() < MIN_INDEXED_RING_SIZE || !point.isExact()) {
+                return CurvePointLocation.locate(boundary, point, visit);
+            }
+            if (!Double.isFinite(point.x()) || !Double.isFinite(point.y())) {
+                return CurvePointLocation.locate(boundary, point, visit);
+            }
+            if (!attempted) {
+                index = prepareIndex(visit);
+                attempted = true;
+            }
+            if (index == null) {
+                return CurvePointLocation.locate(boundary, point, visit);
+            }
+            visit.run();
+            // Monotone projection and inclusive, outward segment envelopes keep every possible hit.
+            // Exact straight predicates have no undetermined result, so candidate order is immaterial.
+            @SuppressWarnings("unchecked")
+            List<Segment> candidates = index.query(new Envelope(point.x(), Double.MAX_VALUE, point.y(), point.y()));
+            return CurvePointLocation.locate(candidates, point, visit);
+        }
+
+        private STRtree prepareIndex(Runnable visit) {
+            for (var segment : boundary) {
+                visit.run();
+                if (!(segment.curve() instanceof CurveSegment.Straight line)
+                        || !line.start().isExact() || !line.end().isExact()) {
+                    return null;
+                }
+            }
+            var tree = new STRtree();
+            for (var segment : boundary) {
+                visit.run();
+                var bounds = segment.curve().envelope();
+                if (!Double.isFinite(bounds.getMinX()) || !Double.isFinite(bounds.getMaxX())
+                        || !Double.isFinite(bounds.getMinY()) || !Double.isFinite(bounds.getMaxY())) {
+                    return null;
+                }
+                tree.insert(bounds, segment);
+            }
+            return tree;
+        }
+    }
 
     static Position locate(List<Segment> boundary, Point point, Runnable visit) {
         var query = point.isExact() ? point : Point.exact(point.exactX(), point.exactY());
