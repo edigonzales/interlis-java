@@ -254,6 +254,9 @@ der Exportdatei bei beschädigten Typmarkierungen oder JSON-Werten.
 Weitere Fälle prüfen die JSON-Typen und leere gespeicherte Sammlungen,
 die stabilen IDs beim Update und das Freigeben belegter Spalten.
 
+`StructurePointStorageTest` prüft Punktwerte in Einzel- und Listenstrukturen
+und die räumlichen Treffer nach einem Update und nach einem Rollback.
+
 `CrsDefaultsStorageTest` prüft die Schema-Standards EPSG:21781 und 4326,
 fehlende oder widersprüchliche CRS-Metadaten und statische generische
 Domain-Zuweisungen. Der GeoPackage-Fall prüft konkurrierende lokale SRS-IDs.
@@ -474,6 +477,10 @@ Eigentümertabellen und den gemischten Export nach Update. Das JSON-Schema
 kombiniert JSON und expandierte Spalten in derselben Tabelle und
 unterscheidet SQL `NULL` vom leeren Objekt. Die Schemafälle prüfen
 `--add-models` und einen weiteren ili2db-Import zur ID-Vergabe.
+
+`--tests '*StructurePointInteropTest'` vergleicht die Kataloge für einen Punkt
+in der regulären Strukturtabelle. Die Mischläufe prüfen SRID, Koordinaten,
+Rückverweise und Listenpositionen in beiden Werkzeugrichtungen.
 
 <a id="ili2db-json-export-reproduzieren"></a>
 

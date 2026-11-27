@@ -370,7 +370,11 @@ final class DbSchemaReader {
                         String attribute = Ili2dbLayout.geometryAttribute(path, described.epsgCode(), settings.multiSrs());
                         String owner = object.name().declared().toString();
                         String secondaryKey = Ili2dbLayout.secondaryClass(attribute, owner);
+                        DbMapping.checkStructurePoint(object, columns, described);
                         String table = settings.splitGeometries() && described.kind().geometry() ? classNames.remove(secondaryKey) : null;
+                        if (table != null && object.kind() == SymbolKind.STRUCTURE && described.kind() == Kind.POINT) {
+                            throw unsupported("secondary geometry table for structure point " + path);
+                        }
                         var mapping = attrNames.take(attribute, table == null ? parent.name() : table, null);
                         var column = described.withName(mapping.name()).withStrokeArcs(plan, settings.strokeArcs());
                         if (column.kind() == Kind.ENUMERATION) {

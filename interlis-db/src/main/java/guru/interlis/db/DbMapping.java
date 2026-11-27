@@ -684,6 +684,14 @@ final class DbMapping {
         }
     }
 
+    static void checkStructurePoint(ObjectDescriptor object, List<Column> columns, Column next) {
+        if (object.kind() == SymbolKind.STRUCTURE && next.kind().geometry()
+                && columns.stream().anyMatch(previous -> previous.kind().geometry()
+                && (previous.kind() == Kind.POINT || next.kind() == Kind.POINT))) {
+            throw unsupported("multiple geometries in a structure with a point at " + object.name().declared());
+        }
+    }
+
     static Set<SymbolRef> baseTables(List<ObjectDescriptor> objects) {
         return objects.stream().flatMap(object -> object.baseType().stream()).collect(Collectors.toSet());
     }
@@ -910,6 +918,7 @@ final class DbMapping {
                             continue;
                         }
                         String storageName = multiSrs && binding.kind().geometry() ? attributeName + "_" + binding.epsgCode() : attributeName;
+                        checkStructurePoint(object, columns, binding);
                         boolean split = splitGeometries && geometrySeen && binding.kind().geometry();
                         String owner = split ? allocator.geometryTable(plan.model(object.model()).orElseThrow().name().declared().last(),
                                 object.topic().flatMap(plan::topic).orElseThrow().name().declared().last(),
@@ -1518,7 +1527,13 @@ final class DbMapping {
 
     static List<Column> describeColumns(TransferPlan plan, ObjectDescriptor object, AttributeSlot attr, CrsDefaults defaults) {
         var generic = DbDomains.geometryBinding(plan, object, attr);
-        if (generic.isEmpty()) return List.of(describeColumn(plan, object, attr, defaults, Optional.empty(), false));
+        if (generic.isEmpty()) {
+            boolean structurePoint = object.kind() == SymbolKind.STRUCTURE
+                    && object.baseType().isEmpty() && !hasSubtypes(plan, object.symbol())
+                    && plan.type(attr.effectiveType()).known().orElseThrow() instanceof CoordinateType coordinate
+                    && !coordinate.multiCoordinate() && coordinate.dimensions() == 2;
+            return List.of(describeColumn(plan, object, attr, defaults, Optional.empty(), structurePoint));
+        }
         var binding = generic.orElseThrow();
         var columns = new ArrayList<Column>();
         var codes = new HashSet<Integer>();
@@ -1538,7 +1553,7 @@ final class DbMapping {
     }
 
     private static Column describeColumn(TransferPlan plan, ObjectDescriptor object, AttributeSlot attr,
-                                         CrsDefaults defaults, Optional<DomainBinding> selection, boolean geometryComponent) {
+                                         CrsDefaults defaults, Optional<DomainBinding> selection, boolean allowStructureGeometry) {
         String path = attr.name().declared().toString();
         String name = attr.name().declared().last();
         if (!CardinalityUpper.finite(1).equals(attr.cardinality().upper())) throw unsupported(path);
@@ -1547,7 +1562,7 @@ final class DbMapping {
         if (!(type instanceof GeometryType) && concrete.isPresent()) {
             type = plan.type(new TypeRef(plan.snapshotId(), concrete.orElseThrow().typeId())).known().orElseThrow();
         }
-        boolean geometrySupported = optional(attr) || geometryComponent
+        boolean geometrySupported = optional(attr) || allowStructureGeometry
                 || ((type instanceof CoordinateType || type instanceof GeometryType)
                 && selection.isEmpty() && flatClass(plan, object));
         var curve = type instanceof GeometryType geometry && geometrySupported
@@ -1564,7 +1579,7 @@ final class DbMapping {
                     Kind.REFERENCE;
             default -> throw unsupported("attribute " + path + " (" + type.kind() + ")");
         };
-        if ((object.kind() == SymbolKind.STRUCTURE && kind.geometry() && !geometryComponent)
+        if ((object.kind() == SymbolKind.STRUCTURE && kind.geometry() && !allowStructureGeometry)
                 || (object.kind() == SymbolKind.ASSOCIATION && (kind.geometry() || kind == Kind.REFERENCE))) {
             throw unsupported("attribute " + path + " (" + type.kind() + ")");
         }

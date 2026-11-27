@@ -1027,6 +1027,9 @@ In XTF 2.3 und 2.4 FULL können Klassen und Strukturen optionale und
 obligatorische Strukturwerte sowie `LIST OF`- und `BAG OF`-Attribute mit einem Strukturtyp aus dem
 Modell oder dem eigenen Topic enthalten. Verschachtelungen sind azyklisch.
 Strukturelemente verwenden die unterstützten skalaren Attributtypen.
+Eine Struktur ohne Vererbung kann zusätzlich einen XY-Punkt mit festem CRS
+enthalten. Bei einem Einzelwert und bei `LIST OF` wird der Punkt direkt in der
+Strukturtabelle neben dem Rückverweis und `T_Seq` gespeichert.
 Im strikten `newClass`-Schema gilt `NOT NULL` für direkt gespeicherte
 skalare Pflichtfelder auch in verschachtelten Strukturtabellen. Die
 Rückverweise bleiben auf jeder Ebene nullable.
