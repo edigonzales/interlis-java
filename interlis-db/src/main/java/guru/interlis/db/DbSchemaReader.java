@@ -87,7 +87,7 @@ final class DbSchemaReader {
                     boolean multiSrs, Optional<DbCrsPair.Models> srsModels, boolean createGeometryIndexes, boolean sqlEnableNull,
                     DbInheritance.Profile inheritance, boolean strokeArcs,
                     Set<Ili2dbLayout.AttributeTransformation> structureTransformations, DbEnumOptions enumOptions,
-                    Set<Ili2dbLayout.SchemaOption> schemaOptions) {
+                    Set<Ili2dbLayout.SchemaOption> schemaOptions, String rowIdColumn) {
         CrsDefaults crs(String model) {
             return new CrsDefaults(defaultEpsg, modelEpsg(modelEpsgAssignments, model));
         }
@@ -110,6 +110,7 @@ final class DbSchemaReader {
         token.throwIfCancellationRequested();
         String modelName = String.join(", ", selectedModels);
         var settings = readSettings(db, selectedModels);
+        db.setRowIdColumn(settings.rowIdColumn());
         var models = new LinkedHashSet<>(settings.srsModels().map(DbCrsPair.Models::names).orElse(selectedModels));
         outputModel.ifPresent(models::add);
         var initialPlan = readModelPlan(db, List.copyOf(models), token);
@@ -586,8 +587,8 @@ final class DbSchemaReader {
     }
 
     private static Set<String> bindRowIdentity(Database db, String table, Map<String, String> physical, Settings settings) {
-        requireColumns(db, table, physical, Map.of(T_ID, Kind.REFERENCE));
-        var used = new HashSet<>(Set.of(T_ID));
+        requireColumns(db, table, physical, Map.of(db.rowIdColumn(), Kind.REFERENCE));
+        var used = new HashSet<>(Set.of(key(db, db.rowIdColumn())));
         if (settings.schemaOptions().contains(Ili2dbLayout.SchemaOption.BASKET_COLUMN)) {
             requireColumns(db, table, physical, Map.of(T_BASKET, Kind.REFERENCE));
             used.add(T_BASKET);
@@ -636,6 +637,11 @@ final class DbSchemaReader {
         if (!SCHEMA_SENDER.equals(sender) && !isSender(sender, tool + "-5.5.1") && !isSender(sender, tool + "-5.5.2")) {
             throw unsupported("expected a supported schema created by interlis-db or " + tool + " 5.5.1 or 5.5.2");
         }
+        String rowIdColumn = settings.getOrDefault(Ili2dbLayout.ID_COLUMN_SETTING, T_ID);
+        if (rowIdColumn == null || rowIdColumn.isBlank() || rowIdColumn.indexOf(0) >= 0) {
+            throw new DbException("Invalid SETTINGS.colName_T_ID");
+        }
+        if (!db.gpkg()) rowIdColumn = foldedName(rowIdColumn);
         boolean sqlEnableNull = optionalSetting(settings, PREFIX + "SqlNull", "enable");
         requireSetting(settings, "defaultSrsAuthority", "EPSG");
         String value = settings.get(PREFIX + "defaultSrsCode");
@@ -697,14 +703,14 @@ final class DbSchemaReader {
         }
         if (Ili2dbLayout.MULTIPLE_GEOMETRIES.equals(geometryLayout)) {
             return new Settings(false, defaultEpsg, modelEpsg, referenceEpsgHeader, multiSrs, srsModels, indexes,
-                    sqlEnableNull, inheritance, strokeArcs, structureTransformations, enumOptions, enabled);
+                    sqlEnableNull, inheritance, strokeArcs, structureTransformations, enumOptions, enabled, rowIdColumn);
         }
         if (geometryLayout != null && !Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout)) {
             throw unsupported("SETTINGS.geomAttrPerTable=" + geometryLayout);
         }
         return new Settings(db.gpkg() || Ili2dbLayout.SINGLE_GEOMETRY.equals(geometryLayout), defaultEpsg, modelEpsg,
                 referenceEpsgHeader, multiSrs, srsModels, indexes, sqlEnableNull, inheritance, strokeArcs,
-                structureTransformations, enumOptions, enabled);
+                structureTransformations, enumOptions, enabled, rowIdColumn);
     }
 
     private static boolean optionalSetting(Map<String, String> settings, String key, String supported) {
@@ -1296,7 +1302,8 @@ final class DbSchemaReader {
     private static SecondaryGeometry bindSecondaryGeometry(Database db, Column column, AttributeName mapping,
                                                            String parent, String table, String path, Settings settings)
             throws SQLException {
-        if (!column.kind().geometry() || mapping.target() != null || Ili2dbLayout.TECHNICAL_COLUMNS.contains(key(db, column.name()))) {
+        if (!column.kind().geometry() || mapping.target() != null || Ili2dbLayout.TECHNICAL_COLUMNS.contains(key(db, column.name()))
+                || key(db, db.rowIdColumn()).equals(key(db, column.name()))) {
             throw new DbException("Invalid secondary geometry column for " + path);
         }
         var physical = physicalColumns(db, table);
@@ -1311,7 +1318,7 @@ final class DbSchemaReader {
                 + " WHERE tablename = ? AND subtype IS NULL AND lower(columnname) = ? AND tag = ?";
         try (var stmt = db.connection().prepareStatement(query)) {
             stmt.setString(1, table);
-            stmt.setString(2, T_ID);
+            stmt.setString(2, foldedName(db.rowIdColumn()));
             stmt.setString(3, PREFIX + "foreignKey");
             try (var rows = stmt.executeQuery()) {
                 if (!rows.next() || !parent.equals(rows.getString(1)) || rows.next()) {
@@ -1496,7 +1503,10 @@ final class DbSchemaReader {
                     throw new DbException("Missing or inconsistent enumeration CLASSNAME mapping for " + root);
                 }
                 requireEnumTable(db, table, ids);
-                if (ids) requireColumns(db, table, physicalColumns(db, table), Map.of(T_ID, Kind.REFERENCE));
+                if (ids) {
+                    requireColumns(db, table, physicalColumns(db, table), Map.of(db.rowIdColumn(), Kind.REFERENCE));
+                    requireIdPrimaryKey(db, table);
+                }
                 tables.put(root, table);
             }
             if (ids) bindings.put(definition, readEnumerationIds(db, table, definition, token));
@@ -1515,7 +1525,7 @@ final class DbSchemaReader {
         var numbers = new HashMap<String, Long>();
         var paths = new HashMap<Long, String>();
         var labels = new HashMap<String, String>();
-        String sql = "SELECT " + T_ID + ", ilicode, dispname FROM " + db.table(table) + " WHERE thisclass = ?";
+        String sql = "SELECT " + db.rowId() + ", ilicode, dispname FROM " + db.table(table) + " WHERE thisclass = ?";
         try (var statement = db.connection().prepareStatement(sql)) {
             statement.setString(1, definition);
             try (var rows = statement.executeQuery()) {
@@ -1543,14 +1553,16 @@ final class DbSchemaReader {
 
     private static void checkSystemTables(Database db) throws SQLException {
         String baskets = foldedName(BASKET);
-        requireColumns(db, baskets, physicalColumns(db, baskets), Map.of(T_ID, Kind.REFERENCE,
-                "dataset", Kind.REFERENCE, "topic", Kind.TEXT, T_ILI_TID, Kind.TEXT,
-                "attachmentkey", Kind.TEXT, "domains", Kind.TEXT));
+        var basketColumns = physicalColumns(db, baskets);
+        requireColumns(db, baskets, basketColumns, Map.of(db.rowIdColumn(), Kind.REFERENCE));
         requireIdPrimaryKey(db, baskets);
+        requireColumns(db, baskets, basketColumns, Map.of("dataset", Kind.REFERENCE, "topic", Kind.TEXT,
+                T_ILI_TID, Kind.TEXT, "attachmentkey", Kind.TEXT, "domains", Kind.TEXT));
         String datasets = foldedName(DATASET);
-        requireColumns(db, datasets, physicalColumns(db, datasets),
-                Map.of(T_ID, Kind.REFERENCE, "datasetname", Kind.TEXT));
+        var datasetColumns = physicalColumns(db, datasets);
+        requireColumns(db, datasets, datasetColumns, Map.of(db.rowIdColumn(), Kind.REFERENCE));
         requireIdPrimaryKey(db, datasets);
+        requireColumns(db, datasets, datasetColumns, Map.of("datasetname", Kind.TEXT));
     }
 
     private static Map<String, String> physicalColumns(Database db, String name) throws SQLException {
@@ -1608,8 +1620,8 @@ final class DbSchemaReader {
     private static void requireIdPrimaryKey(Database db, String table) throws SQLException {
         var metadata = db.connection().getMetaData();
         try (var keys = metadata.getPrimaryKeys(db.connection().getCatalog(), db.schema(), table)) {
-            if (!keys.next() || !T_ID.equals(key(db, keys.getString("COLUMN_NAME"))) || keys.next()) {
-                throw new DbException("Expected T_Id primary key in " + table);
+            if (!keys.next() || !key(db, db.rowIdColumn()).equals(key(db, keys.getString("COLUMN_NAME"))) || keys.next()) {
+                throw new DbException("Expected " + db.rowIdColumn() + " primary key in " + table);
             }
         }
     }

@@ -488,6 +488,13 @@ Profil bewahrt die gespeicherten BID und TID beim Werkzeugwechsel.
 Ein Datensatz enthält mindestens einen Basket. Baskets ohne Objekte sind
 zulässig.
 
+`import`, `export`, `update`, `replace` und `delete` unterstützen auch
+Referenzschemata mit einem technischen Primärschlüssel aus `--t_id_Name`.
+Der Spaltenname stammt aus `T_ILI2DB_SETTINGS`. Die Spalte muss der einzige
+numerische Primärschlüssel der betroffenen Tabellen sein. GeoPackage
+verwendet weiterhin den Zähler `T_Id` in `T_KEY_OBJECT`. Eigene Schemata
+und `schemaimport --add-models` verwenden den Standardnamen `T_Id`.
+
 Der Transfer liest auch Referenzschemata ohne `--sqlEnableNull`. Bei direkt
 gespeicherten Pflichtwerten setzt die Datenbank die vorhandenen `NOT NULL`-
 Bedingungen durch. `schemaimport --add-models` übernimmt das

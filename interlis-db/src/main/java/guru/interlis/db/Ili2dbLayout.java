@@ -49,6 +49,7 @@ final class Ili2dbLayout {
     static final String ATTRNAME_KEY = ATTRNAME + "_ColOwner_SqlName_key";
 
     static final String ID_COLUMN = "T_Id";
+    static final String ID_COLUMN_SETTING = PREFIX + "colName_T_ID";
     static final String BASKET_COLUMN = "T_basket";
     static final String DATASET_NAME_COLUMN = "T_datasetname";
     static final String LAST_CHANGE_COLUMN = "T_LastChange";

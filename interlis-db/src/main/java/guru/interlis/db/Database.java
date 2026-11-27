@@ -41,6 +41,7 @@ import static guru.interlis.db.Ili2dbLayout.DATASET;
 import static guru.interlis.db.Ili2dbLayout.ID_COLUMN;
 import static guru.interlis.db.Ili2dbLayout.KEY_OBJECT;
 import static guru.interlis.db.Ili2dbLayout.SEQUENCE;
+import static guru.interlis.db.Ili2dbLayout.T_ID;
 
 /** One JDBC connection and transaction against an existing ili2db schema. */
 final class Database implements AutoCloseable {
@@ -58,6 +59,7 @@ final class Database implements AutoCloseable {
     private record GeometryColumn(String table, String name) { }
 
     private final Set<GeometryColumn> indexedGeometry = new HashSet<>();
+    private String rowIdColumn = T_ID;
     private PreparedStatement allocateId;
     private boolean active = true;
 
@@ -161,6 +163,18 @@ final class Database implements AutoCloseable {
 
     String technicalTable(String name) {
         return table(Ili2dbLayout.tableName(name, gpkg()));
+    }
+
+    void setRowIdColumn(String name) {
+        rowIdColumn = name;
+    }
+
+    String rowIdColumn() {
+        return rowIdColumn;
+    }
+
+    String rowId() {
+        return quote(rowIdColumn);
     }
 
     static String quote(String name) {
@@ -452,7 +466,7 @@ final class Database implements AutoCloseable {
             }
         }
         if (!importing) return;
-        var indexed = GeoPackageRtree.indexedColumns(connection, table, columns.stream().map(Column::name).toList());
+        var indexed = GeoPackageRtree.indexedColumns(connection, table, rowIdColumn, columns.stream().map(Column::name).toList());
         if (!indexed.isEmpty() && indexedGeometry.isEmpty()) GeoPackageRtree.register(connection);
         for (var column : columns) {
             if (indexed.contains(column.name())) indexedGeometry.add(new GeometryColumn(table, column.name()));
@@ -582,18 +596,21 @@ final class Database implements AutoCloseable {
         String sql = """
                 SELECT DISTINCT s.name FROM sqlite_schema s
                 JOIN %s c ON lower(c.sqlname) = lower(s.name)
-                JOIN pragma_table_info(s.name) p ON p.name = '%s' COLLATE NOCASE AND p.pk = 1
+                JOIN pragma_table_info(s.name) p ON p.name = ? COLLATE NOCASE AND p.pk = 1
                 WHERE s.type = 'table'
-                """.formatted(technicalTable(CLASSNAME), ID_COLUMN);
-        try (var statement = connection.createStatement(); var rows = statement.executeQuery(sql)) {
-            while (rows.next()) tables.add(table(rows.getString(1)));
+                """.formatted(technicalTable(CLASSNAME));
+        try (var statement = connection.prepareStatement(sql)) {
+            statement.setString(1, rowIdColumn);
+            try (var rows = statement.executeQuery()) {
+                while (rows.next()) tables.add(table(rows.getString(1)));
+            }
         }
         tables.add(technicalTable(BASKET));
         tables.add(technicalTable(DATASET));
         long highest = 0;
         try (var statement = connection.createStatement()) {
             for (String table : tables) {
-                try (var rows = statement.executeQuery("SELECT MAX(" + ID_COLUMN + ") FROM " + table)) {
+                try (var rows = statement.executeQuery("SELECT MAX(" + rowId() + ") FROM " + table)) {
                     if (rows.next()) highest = Math.max(highest, rows.getLong(1));
                 }
             }

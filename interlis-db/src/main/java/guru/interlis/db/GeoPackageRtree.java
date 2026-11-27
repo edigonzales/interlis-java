@@ -24,7 +24,7 @@ final class GeoPackageRtree {
     static void create(Connection connection, String table, String column) throws SQLException {
         try (var statement = connection.createStatement()) {
             statement.execute(createIndex(indexName(table, column)));
-            for (String trigger : new TreeMap<>(triggers(table, column)).values()) statement.execute(trigger);
+            for (String trigger : new TreeMap<>(triggers(table, column, ID_COLUMN)).values()) statement.execute(trigger);
         }
         try (var registration = connection.prepareStatement("""
                 INSERT INTO gpkg_extensions (table_name, column_name, extension_name, definition, scope)
@@ -37,11 +37,11 @@ final class GeoPackageRtree {
         }
     }
 
-    static Set<String> indexedColumns(Connection connection, String table, List<String> columns) throws SQLException {
+    static Set<String> indexedColumns(Connection connection, String table, String rowIdColumn, List<String> columns) throws SQLException {
         var stored = indexTriggers(connection, table);
         var indexed = new HashSet<String>();
         for (String column : columns) {
-            if (check(connection, table, column, stored)) indexed.add(column);
+            if (check(connection, table, column, rowIdColumn, stored)) indexed.add(column);
         }
         if (!stored.isEmpty()) {
             throw new DbException("Invalid GeoPackage RTree at " + table + ": unexpected trigger " + stored.firstKey());
@@ -65,12 +65,13 @@ final class GeoPackageRtree {
         return stored;
     }
 
-    private static boolean check(Connection connection, String table, String column, Map<String, String> stored)
+    private static boolean check(Connection connection, String table, String column, String rowIdColumn,
+                                 Map<String, String> stored)
             throws SQLException {
         String index = indexName(table, column);
         String virtual = sql(connection, "table", index);
         int registration = registration(connection, table, column);
-        var triggers = triggers(table, column);
+        var triggers = triggers(table, column, rowIdColumn);
         int matches = 0;
         for (var trigger : triggers.entrySet()) {
             String actual = stored.remove(trigger.getKey());
@@ -123,12 +124,12 @@ final class GeoPackageRtree {
         return "CREATE VIRTUAL TABLE " + quote(name) + " USING rtree(id,minx,maxx,miny,maxy)";
     }
 
-    private static Map<String, String> triggers(String table, String column) {
+    private static Map<String, String> triggers(String table, String column, String rowIdColumn) {
         String name = indexName(table, column);
         String key = name.toLowerCase(Locale.ROOT);
         String field = "NEW." + quote(column);
-        String oldId = "OLD." + quote(ID_COLUMN);
-        String newId = "NEW." + quote(ID_COLUMN);
+        String oldId = "OLD." + quote(rowIdColumn);
+        String newId = "NEW." + quote(rowIdColumn);
         String present = "(" + field + " NOT NULL AND NOT ST_IsEmpty(" + field + "))";
         String empty = "(" + field + " ISNULL OR ST_IsEmpty(" + field + "))";
         String unchanged = oldId + " = " + newId + " AND ";

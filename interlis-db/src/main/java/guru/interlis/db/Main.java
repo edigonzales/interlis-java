@@ -147,6 +147,9 @@ public final class Main {
             }
         }
         var settings = DbSchemaReader.readSettings(db, options.models());
+        if (!Ili2dbLayout.T_ID.equalsIgnoreCase(settings.rowIdColumn())) {
+            throw new DbException("--add-models requires the standard T_Id primary key");
+        }
         boolean smart = settings.inheritance() != DbInheritance.Profile.NEW_CLASS;
         if ((smart && !settings.sqlEnableNull()) || settings.defaultEpsg() == 0
                 || (options.explicitEpsg() && options.defaultEpsg() != settings.defaultEpsg())

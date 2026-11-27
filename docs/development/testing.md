@@ -344,6 +344,13 @@ Der Katalogvergleich und der native XTF-Transfer über Referenzschemata
 decken alle drei Vererbungsprofile ab. `ObjectIdStorageTest` prüft diese
 Profile in eigenen Schemata.
 
+`--tests '*CustomRowIdInteropTest'` prüft in beiden Werkzeugrichtungen
+Referenzschemata mit `--t_id_Name Row_Custom`. Der Austausch enthält eine
+Struktur, eine Rolle und indizierte Punkte in Haupt- und Hilfstabelle.
+`CustomRowIdStorageTest` prüft Update, Replace und Delete, die GeoPackage-
+ID-Vergabe oberhalb eines manuell gesetzten Werts und die Ablehnung
+inkonsistenter Primärschlüssel.
+
 Die SQL-Profilfälle liegen in `SchemaProfileInteropTest`. Für diese Auswahl
 verwende `./gradlew :interlis-db:dbInteropTest --tests '*SchemaProfileInteropTest'`.
 

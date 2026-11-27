@@ -27,7 +27,6 @@ import static guru.interlis.db.Ili2dbLayout.COLUMN_PROP;
 import static guru.interlis.db.Ili2dbLayout.DATASET;
 import static guru.interlis.db.Ili2dbLayout.PREFIX;
 import static guru.interlis.db.Ili2dbLayout.T_BASKET;
-import static guru.interlis.db.Ili2dbLayout.T_ID;
 import static guru.interlis.db.Ili2dbLayout.T_ILI_TID;
 import static guru.interlis.db.Ili2dbLayout.T_TYPE;
 import static guru.interlis.db.Ili2dbLayout.TRAFO;
@@ -56,7 +55,7 @@ final class DbDatasetWrite {
     static OptionalLong findBasket(Database db, DbMapping mapping, long dataset, TopicDescriptor topic,
                                    String bid, List<DomainBinding> bindings) throws SQLException {
         String baskets = db.technicalTable(BASKET);
-        String sql = "SELECT " + T_ID + ", dataset, topic, domains FROM " + baskets + " WHERE " + T_ILI_TID + " = ?";
+        String sql = "SELECT " + db.rowId() + ", dataset, topic, domains FROM " + baskets + " WHERE " + T_ILI_TID + " = ?";
         String topicName = topic.name().declared().toString();
         try (var statement = db.connection().prepareStatement(sql)) {
             statement.setString(1, bid);
@@ -97,7 +96,7 @@ final class DbDatasetWrite {
                     || table.object().topic().filter(declared -> mapping.includesTopic(topic.symbol(), declared)).isEmpty()) continue;
             token.throwIfCancellationRequested();
             String discriminator = table.hasDiscriminator() ? ", " + T_TYPE : "";
-            String sql = "SELECT " + T_ID + ", " + T_ILI_TID + discriminator + " FROM " + db.table(table.name())
+            String sql = "SELECT " + db.rowId() + ", " + T_ILI_TID + discriminator + " FROM " + db.table(table.name())
                     + " WHERE " + T_BASKET + " = ?";
             try (var statement = db.connection().prepareStatement(sql)) {
                 statement.setLong(1, basket);
@@ -126,9 +125,9 @@ final class DbDatasetWrite {
 
     static void checkStableObjectBasket(Database db, Table table, long dataset, long basket, String tid) throws SQLException {
         String sql = """
-                SELECT 1 FROM %s obj JOIN %s b ON b.t_id = obj.t_basket
-                WHERE b.dataset = ? AND b.t_id <> ? AND %s = ? LIMIT 1
-                """.formatted(db.table(table.name()), db.technicalTable(BASKET), DbTransfer.tidExpression(table, "obj"));
+                SELECT 1 FROM %1$s obj JOIN %2$s b ON b.%3$s = obj.t_basket
+                WHERE b.dataset = ? AND b.%3$s <> ? AND %4$s = ? LIMIT 1
+                """.formatted(db.table(table.name()), db.technicalTable(BASKET), db.rowId(), DbTransfer.tidExpression(table, "obj"));
         try (var statement = db.connection().prepareStatement(sql)) {
             statement.setLong(1, dataset);
             statement.setLong(2, basket);
@@ -197,7 +196,7 @@ final class DbDatasetWrite {
         for (int offset = 0; offset < targetIds.size(); offset += batchSize) {
             token.throwIfCancellationRequested();
             int batch = Math.min(batchSize, targetIds.size() - offset);
-            String sql = "SELECT src." + T_ID + ", " + value + " FROM " + relation + " WHERE " + value
+            String sql = "SELECT src." + db.rowId() + ", " + value + " FROM " + relation + " WHERE " + value
                     + " IN (" + String.join(", ", Collections.nCopies(batch, "?")) + ")";
             try (var statement = db.connection().prepareStatement(sql)) {
                 for (int i = 0; i < batch; i++) statement.setLong(i + 1, targetIds.get(offset + i));
@@ -226,7 +225,7 @@ final class DbDatasetWrite {
 
     private static void deleteObjectRow(Database db, String table, ExistingObject object) throws SQLException {
         try (var statement = db.connection().prepareStatement("DELETE FROM " + db.table(table)
-                + " WHERE " + T_ID + " = ? AND " + T_BASKET + " = ?")) {
+                + " WHERE " + db.rowId() + " = ? AND " + T_BASKET + " = ?")) {
             statement.setLong(1, object.id());
             statement.setLong(2, object.basket());
             if (statement.executeUpdate() != 1) {
@@ -260,8 +259,8 @@ final class DbDatasetWrite {
                     if (tables.contains(catalogName(db, rows.getString(3)))
                             && !tables.contains(catalogName(db, rows.getString(1)))) {
                         String column = rows.getString(2);
-                        references.add(new IncomingReference(rows.getString(1), T_ID.equalsIgnoreCase(column) ? T_ID : column,
-                                rows.getString(3), rows.getBoolean(4)));
+                        if (db.rowIdColumn().equalsIgnoreCase(column)) column = db.rowIdColumn();
+                        references.add(new IncomingReference(rows.getString(1), column, rows.getString(3), rows.getBoolean(4)));
                     }
                 }
             }
@@ -274,7 +273,7 @@ final class DbDatasetWrite {
     }
 
     static Optional<Long> findDataset(Database db, String dataset) throws SQLException {
-        String sql = "SELECT " + T_ID + " FROM " + db.technicalTable(DATASET)
+        String sql = "SELECT " + db.rowId() + " FROM " + db.technicalTable(DATASET)
                 + " WHERE datasetname = ?";
         try (var statement = db.connection().prepareStatement(sql)) {
             statement.setString(1, dataset);
@@ -298,7 +297,7 @@ final class DbDatasetWrite {
         long id = findDataset(db, dataset).orElseThrow(() -> new DbException("Dataset does not exist: " + dataset));
         clearDataset(db, mapping, id, "delete", token);
         token.throwIfCancellationRequested();
-        delete(db, "DELETE FROM " + db.technicalTable(DATASET) + " WHERE " + T_ID + " = ?", id);
+        delete(db, "DELETE FROM " + db.technicalTable(DATASET) + " WHERE " + db.rowId() + " = ?", id);
     }
 
     static void clearDataset(Database db, DbMapping mapping, long dataset, String operation, CancellationToken token) throws SQLException {
@@ -322,7 +321,7 @@ final class DbDatasetWrite {
         for (var table : mapping.storageTables().reversed()) {
             token.throwIfCancellationRequested();
             delete(db, "DELETE FROM " + db.table(table) + " WHERE " + T_BASKET
-                    + " IN (SELECT " + T_ID + " FROM " + baskets + " WHERE dataset = ?)", dataset);
+                    + " IN (SELECT " + db.rowId() + " FROM " + baskets + " WHERE dataset = ?)", dataset);
         }
         token.throwIfCancellationRequested();
         delete(db, "DELETE FROM " + baskets + " WHERE dataset = ?", dataset);
@@ -330,13 +329,14 @@ final class DbDatasetWrite {
 
     private static void checkDatasetGeometryFragments(Database db, DbMapping mapping, long dataset,
                                                        CancellationToken token) throws SQLException {
-        String datasetBaskets = "(SELECT " + T_ID + " FROM " + db.technicalTable(BASKET) + " WHERE dataset = ?)";
+        String datasetBaskets = "(SELECT " + db.rowId() + " FROM " + db.technicalTable(BASKET) + " WHERE dataset = ?)";
         for (var table : mapping.tables()) {
             for (var geometry : table.secondaryGeometries()) {
                 token.throwIfCancellationRequested();
                 // Check both sides of the basket boundary. An orphan left by ili2db UPDATE has no owner
                 // row and can be removed by its own basket.
-                String from = db.table(table.name()) + " obj LEFT JOIN " + db.table(geometry.table()) + " geom ON obj.t_id = geom.t_id";
+                String from = db.table(table.name()) + " obj LEFT JOIN " + db.table(geometry.table())
+                        + " geom ON obj." + db.rowId() + " = geom." + db.rowId();
                 String problem = "(geom.t_basket IS NULL OR geom.t_basket <> obj.t_basket)";
                 var root = mapping.rootTable(table.object().symbol());
                 if (mapping.profile() != DbInheritance.Profile.NEW_CLASS && root.hasDiscriminator()) {
@@ -347,18 +347,18 @@ final class DbDatasetWrite {
                             .map(type -> "'" + type.replace("'", "''") + "'").collect(Collectors.joining(", "));
                     String typeAlias = "obj";
                     if (!root.equals(table)) {
-                        from += " LEFT JOIN " + db.table(root.name()) + " root ON root.t_id=obj.t_id";
+                        from += " LEFT JOIN " + db.table(root.name()) + " root ON root." + db.rowId() + " = obj." + db.rowId();
                         typeAlias = "root";
                     }
                     String applies = types.isEmpty() ? "FALSE" : typeAlias + ".t_type IN (" + types + ")";
-                    problem = "(CASE WHEN " + applies + " THEN " + problem + " ELSE geom.t_id IS NOT NULL END)";
+                    problem = "(CASE WHEN " + applies + " THEN " + problem + " ELSE geom." + db.rowId() + " IS NOT NULL END)";
                 }
                 String sql = """
-                        SELECT obj.t_id FROM %s
-                        WHERE (obj.t_basket IN %s AND %s)
-                           OR (geom.t_basket IN %s AND geom.t_basket <> obj.t_basket)
+                        SELECT obj.%1$s FROM %2$s
+                        WHERE (obj.t_basket IN %3$s AND %4$s)
+                           OR (geom.t_basket IN %3$s AND geom.t_basket <> obj.t_basket)
                         LIMIT 1
-                        """.formatted(from, datasetBaskets, problem, datasetBaskets);
+                        """.formatted(db.rowId(), from, datasetBaskets, problem);
                 try (var statement = db.connection().prepareStatement(sql)) {
                     statement.setLong(1, dataset);
                     statement.setLong(2, dataset);
@@ -396,16 +396,16 @@ final class DbDatasetWrite {
         token.throwIfCancellationRequested();
         String baskets = db.technicalTable(BASKET);
         String surviving = mapped ? " AND NOT EXISTS (SELECT 1 FROM " + baskets
-                + " own WHERE own.t_id = src.t_basket AND own.dataset = ?)" : "";
+                + " own WHERE own." + db.rowId() + " = src.t_basket AND own.dataset = ?)" : "";
         String field = "src." + Database.quote(column);
         String relation = db.table(source) + " src" + (array ? db.referenceArrayJoin(field) : "");
         String value = array ? db.referenceArrayElement() : field;
         String sql = """
-                SELECT ref.t_id FROM %s JOIN %s ref ON ref.t_id = %s
-                JOIN %s dst ON dst.t_id = ref.t_basket
-                WHERE dst.dataset = ?%s
+                SELECT ref.%1$s FROM %2$s JOIN %3$s ref ON ref.%1$s = %4$s
+                JOIN %5$s dst ON dst.%1$s = ref.t_basket
+                WHERE dst.dataset = ?%6$s
                 LIMIT 1
-                """.formatted(relation, db.table(target), value, baskets, surviving);
+                """.formatted(db.rowId(), relation, db.table(target), value, baskets, surviving);
         try (var statement = db.connection().prepareStatement(sql)) {
             statement.setLong(1, dataset);
             if (mapped) statement.setLong(2, dataset);
