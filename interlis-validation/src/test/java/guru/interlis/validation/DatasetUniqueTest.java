@@ -142,6 +142,43 @@ class DatasetUniqueTest {
     }
 
     @Test
+    void unusedDatasetRulesKeepTheirCoverageWithoutReplayingUnrelatedObjects() {
+        var plan = plan("""
+                CLASS Other = END Other;
+                CLASS Target = amount: 0..100; END Target;
+                STRUCTURE Pointer = target: REFERENCE TO Target; END Pointer;
+                CLASS Item =
+                  code: TEXT*20;
+                  pointer: Pointer;
+                  UNIQUE code;
+                  MANDATORY CONSTRAINT pointer->target->amount == 5;
+                END Item;
+                """);
+        var rows = new StringBuilder();
+        for (int i = 0; i < 256; i++) {
+            rows.append("<Other i:tid='other").append(i).append("'/>");
+        }
+        var defaults = DatasetLimits.defaults();
+        var limits = new DatasetLimits(defaults.maxInputs(), defaults.maxBaskets(), defaults.maxObjects(),
+                defaults.maxRecordBytes(), defaults.maxRelationWork(), 128, defaults.maxKeyBytes());
+        var options = new DatasetOptions(ValidationOptions.defaults(), limits, DatasetScope.PARTIAL_DATASET);
+        var token = CancellationToken.none();
+        try (var storage = new InMemoryValidationStorage(10_000, 10_000_000);
+             var session = DatasetValidator.session(plan, options, storage);
+             var reader = reader(plan, basket("data", rows.toString()))) {
+            session.readInput(new InputDescriptor(new InputId("primary"), InputRole.PRIMARY), reader, token);
+            var report = session.finish(token);
+            assertEquals(256, report.inspectedObjects());
+            assertEquals(0, report.detectedViolations());
+            var coverage = report.coverage().datasetRules().getFirst();
+            assertEquals(DatasetRuleCoverage.Outcome.NO_VIOLATION_IN_AVAILABLE_SCOPE, coverage.outcome());
+            assertEquals(1, coverage.scopes());
+            assertEquals(0, coverage.candidates());
+            assertEquals(0, coverage.evaluations());
+        }
+    }
+
+    @Test
     void translatesEnumeratedKeyLabelsToTheOriginalDomain() {
         var schema = ValidationPlannerTest.compile("""
                 INTERLIS 2.4;

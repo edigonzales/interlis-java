@@ -53,8 +53,11 @@ final class DatasetReferences {
         this.incompleteLinks = storage.table(StorageArea.TEMPORARY);
     }
 
-    void check(CancellationToken cancellation) {
+    void check(boolean hasReferencesOrLinks, CancellationToken cancellation) {
         identities.checkStableCollisions(cancellation, this::identityConflict);
+        if (!hasReferencesOrLinks) {
+            return;
+        }
         long lastInput = 0;
         long lastBasket = 0;
         StoredValueCodec.StoredInput input = null;

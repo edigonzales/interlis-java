@@ -5,6 +5,7 @@ import guru.interlis.model.ExistenceConstraint;
 import guru.interlis.model.PlausibilityConstraint;
 import guru.interlis.model.SetConstraint;
 import guru.interlis.model.SymbolId;
+import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.model.UniquenessConstraint;
 import guru.interlis.transfer.TransferEvent;
@@ -15,12 +16,14 @@ import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /** Single-caller dataset run. Inputs and storage remain owned by the caller. */
 public final class DatasetValidationSession implements AutoCloseable {
@@ -36,6 +39,10 @@ public final class DatasetValidationSession implements AutoCloseable {
     private final ValidationSession local;
     private final Map<InputId, Long> inputs = new HashMap<>();
     private final LinkedHashSet<SymbolRef> primaryTopics;
+    private final Set<SymbolRef> deliveredObjectTypes = new HashSet<>();
+    private boolean hasReferencesOrLinks;
+    private boolean hasDeferredChecks;
+    private boolean hasRequiredAssociations;
     private State state = State.OPEN;
     private long baskets;
     private long objects;
@@ -169,6 +176,9 @@ public final class DatasetValidationSession implements AutoCloseable {
                     primaryTopics.add(start.topic());
                     primaryTopics.addAll(start.additionalTopics());
                 }
+                if (descriptor.role() == InputRole.PRIMARY && !hasRequiredAssociations) {
+                    hasRequiredAssociations = RelationCardinalities.hasRequiredAssociations(plan, start);
+                }
                 completeDelivery &= start.consistency() == TransferEvent.Consistency.COMPLETE;
                 context.basket = start;
                 context.validationBasket = ValidationSession.BasketContext.of(start, plan);
@@ -188,7 +198,9 @@ public final class DatasetValidationSession implements AutoCloseable {
                 if (context.basket == null || plan.object(object.type()) == null) {
                     throw new ValidationStreamException("Dataset object is outside the plan or basket");
                 }
-                checkHandles(object.data(), cancellation);
+                boolean selected = plan.subjects().selects(descriptor.role(), context.basket);
+                checkHandles(object.data(), selected, cancellation);
+                deliveredObjectTypes.add(object.type());
                 if (objects == options.limits().maxObjects()) {
                     throw new ValidationLimitException("Dataset object budget exceeded");
                 }
@@ -204,8 +216,7 @@ public final class DatasetValidationSession implements AutoCloseable {
                     completeDelivery = false;
                     storage.table(StorageArea.TEMPORARY).put(metadataKey((byte) 9, context.basketOrdinal), new byte[0]);
                 }
-                yield plan.subjects().selects(descriptor.role(), context.basket)
-                        ? Optional.of(prepared) : Optional.empty();
+                yield selected ? Optional.of(prepared) : Optional.empty();
             }
             case TransferEvent.EndBasket ignored -> {
                 context.basket = null;
@@ -219,7 +230,7 @@ public final class DatasetValidationSession implements AutoCloseable {
         };
     }
 
-    private void checkHandles(TransferValue.Structured root, CancellationToken cancellation) {
+    private void checkHandles(TransferValue.Structured root, boolean selected, CancellationToken cancellation) {
         var pending = new ArrayDeque<java.util.Iterator<? extends TransferValue>>();
         pending.push(List.of(root).iterator());
         long visits = 0;
@@ -241,15 +252,25 @@ public final class DatasetValidationSession implements AutoCloseable {
                 if (type == null) {
                     throw new ValidationStreamException("Dataset value type is outside the plan");
                 }
+                if (selected && !hasDeferredChecks && plan.objectMayHaveDeferredChecks(data.type())) {
+                    hasDeferredChecks = true;
+                }
+                if (!hasReferencesOrLinks && type.descriptor().kind() == SymbolKind.ASSOCIATION) {
+                    hasReferencesOrLinks = true;
+                }
                 for (var field : data.values().entrySet()) {
                     cancellation.throwIfCancellationRequested();
                     var slot = field.getKey();
                     requireSnapshot(slot);
-                    if (type.descriptor().slots().stream().noneMatch(candidate -> candidate.symbol().equals(slot))
-                            && !embeddedField(slot, field.getValue())) {
-                        throw new ValidationStreamException("Dataset value slot is outside its type");
+                    if (type.descriptor().slots().stream().noneMatch(candidate -> candidate.symbol().equals(slot))) {
+                        if (!embeddedField(slot, field.getValue())) {
+                            throw new ValidationStreamException("Dataset value slot is outside its type");
+                        }
+                        hasReferencesOrLinks = true;
                     }
                 }
+            } else if (value instanceof TransferValue.Reference) {
+                hasReferencesOrLinks = true;
             }
             var children = ValidationSession.valueChildren(value, options.localOptions(), cancellation);
             if (children != null) {
@@ -276,11 +297,15 @@ public final class DatasetValidationSession implements AutoCloseable {
                 throw new ValidationStreamException("Dataset requires a primary input");
             }
             storage.checkpoint();
-            new DatasetReferences(plan, storage, codec, objectStore, identities, options, completeDelivery, local).check(cancellation);
-            new RelationCardinalities(plan, storage, codec, objectStore, identities, options, completeDelivery, local).check(cancellation);
+            new DatasetReferences(plan, storage, codec, objectStore, identities, options, completeDelivery, local)
+                    .check(hasReferencesOrLinks, cancellation);
+            new RelationCardinalities(plan, storage, codec, objectStore, identities, options, completeDelivery, local)
+                    .check(hasRequiredAssociations, cancellation);
             var context = new DatasetRuleContext(plan, storage, codec, objectStore, identities, options,
                     completeDelivery, List.copyOf(primaryTopics), cancellation);
-            context.checkDeferredConstraints(local);
+            if (hasDeferredChecks) {
+                context.checkDeferredConstraints(local);
+            }
             new ViewExecutor(context).check(local);
             var coverage = new ArrayList<>(checkDatasetRules(context));
             coverage.addAll(new GeometryScopeRunner(context).check(local));
@@ -317,7 +342,7 @@ public final class DatasetValidationSession implements AutoCloseable {
                 case UniquenessConstraint ignored -> {
                     var group = uniqueGroups.remove(plan.canonical(rule.key().declaration().symbol()));
                     if (group != null) {
-                        coverage.put(rule.key(), new DatasetUnique(context, local, group, ordinal).check());
+                        coverage.put(rule.key(), new DatasetUnique(context, local, group, ordinal).check(deliveredObjectTypes, hasReferencesOrLinks));
                     }
                 }
                 case ExistenceConstraint existence -> coverage.put(rule.key(),

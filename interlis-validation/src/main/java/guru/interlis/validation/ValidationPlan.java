@@ -2,7 +2,9 @@ package guru.interlis.validation;
 
 import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.DomainSymbol;
+import guru.interlis.model.DomainConstraint;
 import guru.interlis.model.EnumerationType;
+import guru.interlis.model.MandatoryConstraint;
 import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.ExpressionId;
 import guru.interlis.model.QualifiedName;
@@ -38,6 +40,7 @@ public final class ValidationPlan {
     private final boolean relationPaths;
     private final Set<ExpressionId> deferredExpressions;
     private final Set<SymbolId> deferredAttributes;
+    private final Set<SymbolRef> objectsWithDeferredChecks;
     private final Map<SymbolId, ViewPlan> views;
     private final List<UncheckedRuleInfo> uncheckedRules;
     private final ValidationProfile profile;
@@ -72,6 +75,9 @@ public final class ValidationPlan {
         }
         this.deferredExpressions = Set.copyOf(deferred);
         this.deferredAttributes = Set.copyOf(attributes);
+        this.objectsWithDeferredChecks = deferred.isEmpty() ? Set.of() : this.objects.entrySet().stream()
+                .filter(entry -> hasDeferredChecks(entry.getValue())).map(Map.Entry::getKey)
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
         this.profile = profile;
         this.bindings = bindings;
         this.datasetRules = List.copyOf(datasetRules);
@@ -278,6 +284,24 @@ public final class ValidationPlan {
 
     boolean hasDeferredPaths() {
         return !deferredExpressions.isEmpty();
+    }
+
+    boolean objectMayHaveDeferredChecks(SymbolRef type) {
+        return objectsWithDeferredChecks.contains(type);
+    }
+
+    private boolean hasDeferredChecks(ObjectValidationPlan object) {
+        if (object.constraints().stream().anyMatch(declaration ->
+                declaration.definition() instanceof MandatoryConstraint constraint
+                        && deferredExpressions.contains(constraint.condition()))) {
+            return true;
+        }
+        // A derivation can supply a structure absent from the transfer. Generic domains
+        // can contribute rules selected by the basket. Leave both to the deferred pass.
+        return object.fields().stream().anyMatch(field -> field.derived() || field.values().stream().anyMatch(value ->
+                value.genericDomain().isPresent() || value.constraints().stream().anyMatch(declaration ->
+                        declaration.definition() instanceof DomainConstraint constraint
+                                && deferredExpressions.contains(constraint.condition()))));
     }
 
     boolean requiresDataset(ExpressionProgram program) {

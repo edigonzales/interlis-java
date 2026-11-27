@@ -55,7 +55,7 @@ final class RelationCardinalities {
         this.remainingWork = options.limits().maxRelationWork();
     }
 
-    void check(CancellationToken cancellation) {
+    void check(boolean hasRequiredAssociations, CancellationToken cancellation) {
         try (var cursor = links.scan(new byte[0], Optional.empty())) {
             for (var next = cursor.next(); next.isPresent(); next = cursor.next()) {
                 cancellation.throwIfCancellationRequested();
@@ -64,7 +64,9 @@ final class RelationCardinalities {
                         cancellation);
             }
         }
-        seedGroups(cancellation);
+        if (hasRequiredAssociations) {
+            seedGroups(cancellation);
+        }
         groups.groups(cancellation, this::checkGroup);
         ordering.check(cancellation, this::completeOrderedRelation, this::reportFinding);
         composition.check(cancellation, this::reportFinding);
@@ -166,7 +168,11 @@ final class RelationCardinalities {
         seedBasket(currentBasket, first, Math.incrementExact(last), cancellation);
     }
 
-    private List<ObjectDescriptor> associations(TransferEvent.StartBasket basket) {
+    static boolean hasRequiredAssociations(ValidationPlan plan, TransferEvent.StartBasket basket) {
+        return !requiredAssociations(plan, basket).isEmpty();
+    }
+
+    private static List<ObjectDescriptor> requiredAssociations(ValidationPlan plan, TransferEvent.StartBasket basket) {
         var candidates = new LinkedHashSet<SymbolRef>();
         var topics = new ArrayList<>(basket.additionalTopics());
         topics.addFirst(basket.topic());
@@ -192,7 +198,7 @@ final class RelationCardinalities {
             return;
         }
         int nextMembership = 0;
-        for (var association : associations(header)) {
+        for (var association : requiredAssociations(plan, header)) {
             var roles = roles(association);
             var participants = new ArrayList<Integer>();
             for (var role : roles) {

@@ -9,10 +9,12 @@ import guru.interlis.transfer.TransferValue;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Map;
+import java.util.Set;
 
 import static guru.interlis.validation.DatasetScopeStore.Completeness.*;
 import static guru.interlis.validation.DatasetRuleCoverage.ScopeKind.*;
@@ -67,7 +69,7 @@ final class DatasetUnique {
                 context.plan.object(occurrence.object().type()).descriptor(), slot, value, occurrence.basket());
     }
 
-    List<DatasetRuleCoverage> check() {
+    List<DatasetRuleCoverage> check(Set<SymbolRef> deliveredTypes, boolean hasReferencesOrLinks) {
         boolean globalComplete = !basket && context.declaredComplete(rule.key().applicationRoot());
         for (var binding : bindings) {
             context.initializeScopes(binding.rule(), basket, (ordinal, completeness) -> {
@@ -82,6 +84,21 @@ final class DatasetUnique {
         }
         boolean hasAssociation = byType.keySet().stream().anyMatch(type ->
                 context.plan.object(type).descriptor().kind() == SymbolKind.ASSOCIATION);
+        if (!Collections.disjoint(byType.keySet(), deliveredTypes) || hasAssociation && hasReferencesOrLinks) {
+            checkObjects(hasAssociation, globalComplete);
+            reportDuplicates();
+        }
+        var coverage = new DatasetScopeCounts.Coverage();
+        scopes.forScopes((ordinal, scope) -> {
+            context.visit();
+            coverage.add(scope.counts().coverage(rule.key(), basket ? BASKET : DATASET, scope.completeness()));
+        });
+        var reports = coverage.reports();
+        return reports.isEmpty() ? List.of(new DatasetRuleCoverage(rule.key(), basket ? BASKET : DATASET,
+                DatasetRuleCoverage.Outcome.NOT_APPLICABLE, 0, 0, 0, 0, 0)) : reports;
+    }
+
+    private void checkObjects(boolean hasAssociation, boolean globalComplete) {
         context.forObjects(occurrence -> {
             var root = occurrence.object().data();
             var frame = new EvaluationFrame(context.plan, root, occurrence.partial(), context::visit,
@@ -114,15 +131,6 @@ final class DatasetUnique {
                         }));
             }
         });
-        reportDuplicates();
-        var coverage = new DatasetScopeCounts.Coverage();
-        scopes.forScopes((ordinal, scope) -> {
-            context.visit();
-            coverage.add(scope.counts().coverage(rule.key(), basket ? BASKET : DATASET, scope.completeness()));
-        });
-        var reports = coverage.reports();
-        return reports.isEmpty() ? List.of(new DatasetRuleCoverage(rule.key(), basket ? BASKET : DATASET,
-                DatasetRuleCoverage.Outcome.NOT_APPLICABLE, 0, 0, 0, 0, 0)) : reports;
     }
 
     private void inspect(DatasetRuleContext.Occurrence occurrence, EvaluationFrame frame, int field,
