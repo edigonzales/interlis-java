@@ -20,6 +20,9 @@ import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.schemaWithIdentityColumns;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.ModelFixtures.tableFor;
+import static guru.interlis.db.Smart2LinkExtensionFixtures.ORIGINAL;
+import static guru.interlis.db.Smart2LinkExtensionFixtures.specialized;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -119,7 +122,7 @@ final class ModelExtensionStorageTest {
 
     @ParameterizedTest(name = "{0}, XTF {1}")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
-    void smart2RejectsExpansionOfStoredLinkTable(Backend backend, int version) throws Exception {
+    void smart2RejectsExpansionOfEmbeddedLinkWithAttributes(Backend backend, int version) throws Exception {
         var fixture = new SmartModelExtensionFixtures(work, version, false, false);
         var db = POSTGIS.target(work.resolve("referenced-hierarchy.gpkg"), backend);
         String survey = "ExistingSurvey" + version;
@@ -137,6 +140,50 @@ final class ModelExtensionStorageTest {
                     "--add-models", "--model-file", fixture.originalSource.toString());
             before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
             assertEquals(rows, fixture.originalRows(db));
+        }
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void smart2ExpandsStoredLinkTableAndRejectsDuplicateTargets(Backend backend, int version) throws Exception {
+        var fixture = new Smart2LinkExtensionFixtures(work, version);
+        var catalog = fixture.catalog;
+        var db = POSTGIS.target(work.resolve("widen-link.gpkg"), backend);
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.survey, fixture.surveySource, "--inheritance", "smart2",
+                "--model-file", catalog.originalSource.toString(), "--create-fk", "--create-fk-idx");
+        assertCliSuccess(db, "import", catalog.original, "original", catalog.input(catalog.original, "original"));
+        assertCliSuccess(db, "import", fixture.survey, "old", fixture.linkInput("old", ORIGINAL));
+        var source = catalog.specializedSource();
+        String link = db.table(tableFor(db, fixture.associationPath()));
+        String oldLink = "SELECT t_id || ':' || t_basket || ':' || visits || ':' || sites_entry FROM " + link
+                + " WHERE sites_entry IS NOT NULL";
+        try (var sql = db.connect(); var edit = sql.createStatement()) {
+            var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+            String original = scalar(sql, oldLink);
+            var cancelled = schemaWithIdentityColumns(db, catalog.specialized, source,
+                    cancelDuringDdl(new AtomicInteger(), 3), "--add-models", "--model-file", catalog.originalSource.toString());
+            assertEquals(130, cancelled.code(), cancelled::diagnostics);
+            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+            assertEquals(original, scalar(sql, oldLink));
+
+            assertCliSuccess(db, "schemaimport", catalog.specialized, null, source,
+                    "--add-models", "--model-file", catalog.originalSource.toString());
+            assertCliSuccess(db, "import", catalog.specialized, "catalog", catalog.specializedInput("catalog"));
+            var target = specialized("catalog");
+            assertCliSuccess(db, "import", fixture.survey, "new", fixture.linkInput("new", target));
+            assertEquals(original, scalar(sql, oldLink));
+            String targetId = scalar(sql, "SELECT t_id FROM " + db.table("specializedentry") + " WHERE t_ili_tid='catalog-specialized'");
+            assertEquals(targetId, scalar(sql, "SELECT sites_specializedentry FROM " + link
+                    + " WHERE sites_specializedentry IS NOT NULL AND sites_entry IS NULL AND sites_alternate IS NULL"));
+            Path output = work.resolve("links.xtf");
+            assertCliSuccess(db, "export", fixture.survey, "new", output);
+            fixture.assertLinks(output, "new", true, target);
+            byte[] published = Files.readAllBytes(output);
+
+            assertEquals(1, edit.executeUpdate("UPDATE " + link + " SET sites_entry=(SELECT t_id FROM "
+                    + db.table("entry") + " WHERE t_ili_tid='original-entry') WHERE sites_specializedentry IS NOT NULL"));
+            assertCliFailure(db, "export", fixture.survey, "new", output, "Multiple stored values for " + fixture.associationPath() + ".Sites");
+            assertArrayEquals(published, Files.readAllBytes(output));
         }
     }
 

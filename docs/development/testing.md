@@ -503,6 +503,9 @@ für bestehende Rollen und Referenzattribute. Die Fälle vergleichen
 Metadaten und Fremdschlüssel und tauschen Daten in beiden Werkzeugrichtungen
 aus. `ModelExtensionStorageTest` prüft dazu Rollback, Zielwechsel beim
 Update und einen Export mit konkurrierenden Zielspalten.
+Die `linkTable*`-Fälle prüfen denselben Werkzeugwechsel für anonyme
+n:m-Linkzeilen. Die XTF-2.3-Prüfung berücksichtigt, dass ili2db 5.5.2
+externe Ziele mit `REF` allein ausgibt.
 
 `--tests '*ExportSelectionInteropTest.*Baskets*'` vergleicht die
 Basket-Auswahl mit ili2db `--baskets` und importiert die XTF-Dateien mit

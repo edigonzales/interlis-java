@@ -12,9 +12,14 @@ import java.util.stream.Collectors;
 
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.foreignKeyColumns;
+import static guru.interlis.db.DbTestSupport.indexColumns;
+import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.InteropCommands.exportDataset;
 import static guru.interlis.db.InteropCommands.importDataset;
 import static guru.interlis.db.InteropCommands.schema;
+import static guru.interlis.db.ModelFixtures.tableFor;
+import static guru.interlis.db.Smart2LinkExtensionFixtures.ORIGINAL;
+import static guru.interlis.db.Smart2LinkExtensionFixtures.specialized;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 final class SmartReferenceExtensionInteropTest {
@@ -36,6 +41,48 @@ final class SmartReferenceExtensionInteropTest {
     @Test void attributeGeoPackage24() throws Exception { exchange(24, null, false, true); }
     @Test void attributePostgis23() throws Exception { exchange(23, POSTGIS.container(), false, true); }
     @Test void attributePostgis24() throws Exception { exchange(24, POSTGIS.container(), false, true); }
+    @Test void linkTableGeoPackage23() throws Exception { exchangeLinkTable(23, null); }
+    @Test void linkTableGeoPackage24() throws Exception { exchangeLinkTable(24, null); }
+    @Test void linkTablePostgis23() throws Exception { exchangeLinkTable(23, POSTGIS.container()); }
+    @Test void linkTablePostgis24() throws Exception { exchangeLinkTable(24, POSTGIS.container()); }
+
+    private void exchangeLinkTable(int version, PostgreSQLContainer postgres) throws Exception {
+        var fixture = new Smart2LinkExtensionFixtures(work, version);
+        var catalog = fixture.catalog;
+        var subtype = catalog.specializedSource();
+        var db = new TestDatabase(work, postgres, "widen_link_table", "v" + version + "_");
+        var expected = db.peer("widen_link_table_reference");
+        var reference = new ReferenceTool(work, db.postgis());
+        schema(reference, db, work, fixture.survey, "smart2", "--createFk", "--createFkIdx");
+        importDataset(reference, db, "original", catalog.input(catalog.original, "original"));
+        importDataset(reference, db, "old-links", fixture.linkInput("old-links", ORIGINAL));
+        String link = db.table(tableFor(db, fixture.associationPath()));
+        String originalLink = "SELECT t_id || ':' || t_basket || ':' || visits || ':' || sites_entry FROM " + link
+                + " WHERE t_basket=(SELECT t_id FROM " + db.table("t_ili2db_basket") + " WHERE t_ili_tid='old-links-basket')";
+        Path output = work.resolve("links.xtf");
+        try (var sql = db.connect()) {
+            String row = scalar(sql, originalLink);
+            assertCliSuccess(db, "schemaimport", catalog.specialized, null, subtype,
+                    "--add-models", "--model-file", catalog.originalSource.toString());
+            schema(reference, expected, work, fixture.survey + ";" + catalog.specialized, "smart2", "--createFk", "--createFkIdx");
+            try (var expectedSql = expected.connect()) {
+                var actualCatalog = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+                var referenceCatalog = DbSchemaCatalog.read(expectedSql, expected.postgis(), expected.schema());
+                referenceCatalog.canonicalReferenceAlternatives().assertSameAs(actualCatalog.canonicalReferenceAlternatives());
+                assertEquals(foreignKeyColumns(expected, expectedSql), foreignKeyColumns(db, sql));
+                assertEquals(indexColumns(expected, expectedSql), indexColumns(db, sql));
+            }
+            assertCliSuccess(db, "export", fixture.survey, "old-links", output);
+            fixture.assertLinks(output, "old-links", true, ORIGINAL);
+            importDataset(reference, db, "legacy", fixture.combined("legacy"));
+            assertCliSuccess(db, "export", fixture.survey, "legacy", output, "--model", catalog.specialized);
+            fixture.assertLinks(output, "legacy", true, ORIGINAL, specialized("legacy-catalog"));
+            assertCliSuccess(db, "import", fixture.survey, "native", fixture.combined("native"), "--model", catalog.specialized);
+            exportDataset(reference, db, "native", output);
+            fixture.assertLinks(output, "native", false, ORIGINAL, specialized("native-catalog"));
+            assertEquals(row, scalar(sql, originalLink));
+        }
+    }
 
     private void exchange(int version, PostgreSQLContainer postgres, boolean singleTarget, boolean attribute) throws Exception {
         var fixture = new SmartReferenceExtensionFixtures(work, version, attribute);

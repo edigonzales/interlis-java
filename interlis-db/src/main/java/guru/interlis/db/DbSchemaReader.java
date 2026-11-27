@@ -987,11 +987,12 @@ final class DbSchemaReader {
                     var targets = roots.stream().filter(affectedTargets::containsKey).flatMap(root -> affectedTargets.get(root).stream())
                             .collect(Collectors.toCollection(java.util.TreeSet::new));
                     if (targets.isEmpty()) continue;
-                    if (mapping.profile() != DbInheritance.Profile.SMART2 || !expandableReference(source, object, slot)) {
+                    var bindings = storedNames.get(path);
+                    if (mapping.profile() != DbInheritance.Profile.SMART2 || !expandableReference(source, object, slot, bindings)) {
                         throw new DbException("--add-models would change stored reference " + path);
                     }
                     processed.add(path);
-                    var byOwner = storedNames.get(path).stream().collect(Collectors.groupingBy(AttributeName::owner,
+                    var byOwner = bindings.stream().collect(Collectors.groupingBy(AttributeName::owner,
                             LinkedHashMap::new, Collectors.toList()));
                     for (var owner : byOwner.entrySet()) {
                         String table = owner.getKey();
@@ -1016,15 +1017,27 @@ final class DbSchemaReader {
         return additions;
     }
 
-    private static boolean expandableReference(TransferPlan plan, ObjectDescriptor object, TransferSlot slot) {
+    private static boolean expandableReference(TransferPlan plan, ObjectDescriptor object, TransferSlot slot,
+                                               List<AttributeName> bindings) {
         return switch (slot) {
-            case RoleSlot role -> object.kind() == SymbolKind.ASSOCIATION
-                    && DbMapping.embeddedAssociation(plan, object, "", DbMapping.describeRoles(plan, object)).stream()
-                    .anyMatch(association -> association.role().symbol().equals(role.symbol())
-                            && !association.linkTable() && !association.ordered());
+            case RoleSlot role -> expandableRole(plan, object, role, bindings.size());
             case AttributeSlot attribute -> (object.kind() == SymbolKind.CLASS || object.kind() == SymbolKind.STRUCTURE)
                     && DbStructureShape.type(plan, attribute) instanceof ReferenceType reference && reference.restrictions().isEmpty();
         };
+    }
+
+    private static boolean expandableRole(TransferPlan plan, ObjectDescriptor object, RoleSlot role, int storedTargets) {
+        if (object.kind() != SymbolKind.ASSOCIATION) return false;
+        var roles = DbMapping.describeRoles(plan, object);
+        var embedded = DbMapping.embeddedAssociation(plan, object, "", roles);
+        if (embedded.isPresent()) {
+            var association = embedded.orElseThrow();
+            return association.role().symbol().equals(role.symbol()) && !association.linkTable() && !association.ordered();
+        }
+        // describeRoles already requires a transferable binary association with unordered -- roles for an external end.
+        return role.role().external() && storedTargets >= 2 && roles.stream().noneMatch(AssociationRole::single)
+                && object.slots().stream().noneMatch(AttributeSlot.class::isInstance)
+                && role.role().targets().getFirst().restrictions().isEmpty();
     }
 
     private static Map<String, List<AttributeName>> readReferenceNames(Database db, CancellationToken token) throws SQLException {

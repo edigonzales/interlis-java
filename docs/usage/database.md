@@ -333,6 +333,14 @@ Suffix der neuen Zieltabelle. Dieselbe Erweiterung gilt für einfache
 Referenzattribute in Klassen mit XTF 2.4. Für weitere Referenzabbildungen
 nennt ein Abbruch die betroffene Rolle oder das Attribut.
 
+Eine eigenständige, anonyme n:m-Assoziation ohne eigene Attribute kann
+auch in ihrer bestehenden Smart2-Beziehungstabelle ein weiteres Ziel
+erhalten. Das gilt für eine ungeordnete `EXTERNAL`-Rolle mit mehreren
+bisherigen Zielspalten. Die neuen Spalten, Schlüssel und Indizes folgen
+dem gespeicherten Profil. Beim gestuften Schemaimport mit ili2gpkg 5.5.2
+ergänzte die Referenzprobe `ATTRNAME`, liess aber die physische Spalte weg.
+Der gemeinsame Schemaimport erzeugte die vollständige Abbildung.
+
 Im nullable Smart1-Profil ergänzt `--add-models` unabhängige Modelle und
 skalare Untertypen in einer bestehenden Tabelle mit `T_Type`.
 Die neuen Fachspalten sind nullable und übernehmen die aktiven SQL-Checks
