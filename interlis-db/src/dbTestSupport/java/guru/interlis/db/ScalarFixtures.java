@@ -80,6 +80,19 @@ final class ScalarFixtures {
         return version == 23 ? value.getAttribute("OID") : value.getTextContent();
     }
 
+    String numericOidLexeme() {
+        return version == 23 ? "12" : "0012";
+    }
+
+    String numericOidField(String value) {
+        return version == 23 ? "<NumberKey OID=\"" + value + "\"/>" : field("NumberKey", value);
+    }
+
+    String numericOidValue(Element row) {
+        var value = child(row, "NumberKey");
+        return version == 23 ? value.getAttribute("OID") : value.getTextContent();
+    }
+
     String binaryField(String base64) {
         return field("BinaryValue", version == 23 ? field("BINBLBOX", base64) : base64);
     }

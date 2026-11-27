@@ -1468,7 +1468,7 @@ final class DbMapping {
             };
             case FormattedType ignored -> Kind.FORMATTED;
             case OidType oid when oid.oidKind() == OidKind.UUID -> Kind.UUID;
-            case OidType oid when oid.oidKind() == OidKind.TEXT -> Kind.OID_TEXT;
+            case OidType oid when oid.oidKind() == OidKind.TEXT || oid.oidKind() == OidKind.NUMERIC -> Kind.OID_TEXT;
             case BlackboxType box when box.blackboxKind() == BlackboxKind.BINARY -> Kind.BINARY;
             case BlackboxType box when box.blackboxKind() == BlackboxKind.XML -> Kind.XML;
             default -> type.kind() == TypeKind.BOOLEAN ? Kind.BOOLEAN : null;

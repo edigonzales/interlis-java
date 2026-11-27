@@ -90,6 +90,7 @@ final class ScalarInteropTest {
                         + ScalarFixtures.scalarFields(ScalarFixtures.modelPaths(model))
                         + ScalarFixtures.scalarFields(ScalarFixtures.alignmentValues())
                         + fixture.uuidField(UUID.toUpperCase(Locale.ROOT))
+                        + fixture.numericOidField(fixture.numericOidLexeme())
                         + fixture.binaryField("AAEC/w==") + fixture.xmlField(ascii),
                 field("WideNo", WIDE_VALUES.get(1)) + field("CalendarDay", "1999-12-31")
                         + field("ReadingTime", "23:59:58.125") + field("ReadingStamp", SPRING) + fixture.uuidField(UUID),
@@ -116,8 +117,8 @@ final class ScalarInteropTest {
                 Path returned = work.resolve("scalars-reference-" + suffix + ".xtf");
                 referenceExport(reference, db, "native", returned);
                 assertScalars(fixture, fixture.rows(returned, "native", values.size()), model, true);
-                assertStoredScalars(db, sql, ticketColumn, model, "legacy");
-                assertStoredScalars(db, sql, ticketColumn, model, "native");
+                assertStoredScalars(db, sql, ticketColumn, model, "legacy", fixture.numericOidLexeme());
+                assertStoredScalars(db, sql, ticketColumn, model, "native", fixture.numericOidLexeme());
                 assertEquals("m", scalar(sql, "SELECT setting FROM " + db.table("t_ili2db_column_prop")
                         + " WHERE tablename='asset' AND columnname='measure' AND tag='ch.ehi.ili2db.unit'"));
                 if (db.postgis()) {
@@ -340,16 +341,17 @@ final class ScalarInteropTest {
         assertScalarValues(objects, ScalarFixtures.alignmentValues());
         assertEquals(UUID, fixture.uuidValue(first));
         assertEquals(UUID, fixture.uuidValue(objects.get(1)));
+        assertEquals(fixture.numericOidLexeme(), fixture.numericOidValue(first));
         assertArrayEquals(new byte[]{0, 1, 2, (byte) 0xff}, fixture.binaryValue(first));
         assertFragment(fixture.xmlFragment(first, referenceOutput), "ascii");
         for (var name : List.of("WideNo", "PriceValue", "CalendarDay", "ReadingTime", "ReadingStamp",
-                "TicketCode", "ExternalId", "BinaryValue", "XmlValue")) {
+                "TicketCode", "ExternalId", "NumberKey", "BinaryValue", "XmlValue")) {
             assertNull(child(objects.getLast(), name), name);
         }
     }
 
-    private static void assertStoredScalars(TestDatabase db, Connection sql, String ticketColumn, String model, String dataset)
-            throws Exception {
+    private static void assertStoredScalars(TestDatabase db, Connection sql, String ticketColumn, String model,
+                                            String dataset, String numericOid) throws Exception {
         for (int i = 0; i < WIDE_VALUES.size(); i++) {
             assertEquals(WIDE_VALUES.get(i), stored(db, sql, "wideno", dataset, i));
         }
@@ -362,11 +364,12 @@ final class ScalarInteropTest {
         assertStoredScalars(db, sql, dataset, ScalarFixtures.modelPaths(model), 3);
         assertStoredScalars(db, sql, dataset, ScalarFixtures.alignmentValues(), 3);
         assertEquals(UUID, stored(db, sql, "externalid", dataset, 0));
+        assertEquals(numericOid, stored(db, sql, "numberkey", dataset, 0));
         String hex = db.postgis() ? "lower(encode(binaryvalue,'hex'))" : "lower(hex(binaryvalue))";
         assertEquals("000102ff", stored(db, sql, hex, dataset, 0));
         assertFragment(parseFragment(stored(db, sql, db.postgis() ? "xmlvalue::text" : "xmlvalue", dataset, 0)), "ascii");
         for (var column : List.of("wideno", "pricevalue", "calendarday", "readingtime", "readingstamp",
-                ticketColumn, "externalid", "binaryvalue", "xmlvalue")) {
+                ticketColumn, "externalid", "numberkey", "binaryvalue", "xmlvalue")) {
             assertNull(stored(db, sql, column, dataset, 3), column);
         }
     }

@@ -812,6 +812,10 @@ Fachattribute vom Typ `INTERLIS.UUIDOID` liegen als `TEXT(36)` in
 GeoPackage und als `uuid` in PostGIS. Das Kommando normalisiert die
 Schreibweise auf Kleinbuchstaben. XTF 2.3 verwendet das `OID`-Attribut,
 XTF 2.4 den UUID-Wert als Text.
+Numerische OID-Attribute wie `INTERLIS.I32OID` verwenden `TEXT(255)`
+in GeoPackage und `varchar(255)` in PostGIS mit `typeKind=OID`.
+Der Transfer erhält die Schreibweise des Werts. XTF 2.3 codiert numerische
+OID-Attribute ohne führende Nullen. XTF 2.4 erhält auch führende Nullen.
 `BLACKBOX BINARY` belegt `BLOB` in GeoPackage und `bytea` in PostGIS.
 Der Adapter unterscheidet leere Binärwerte und SQL `NULL` und begrenzt
 die gelesene Bytezahl anhand des Base64-Limits der XTF-Codecs.

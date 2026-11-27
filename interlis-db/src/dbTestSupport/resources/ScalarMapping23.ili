@@ -30,6 +30,7 @@ MODEL ScalarMapping23 (en) AT "https://example.org/interlis/db" VERSION "1" =
       VValue : VALIGNMENT;
       VAlias : NamedVertical;
       ExternalId : INTERLIS.UUIDOID;
+      NumberKey : INTERLIS.I32OID;
       BinaryValue : BLACKBOX BINARY;
       XmlValue : BLACKBOX XML;
     END Asset;

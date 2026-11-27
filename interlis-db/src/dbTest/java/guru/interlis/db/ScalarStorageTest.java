@@ -205,6 +205,28 @@ final class ScalarStorageTest {
 
     @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void numericOidAttributesKeepTheirLexemeAndRejectInvalidStoredValues(Backend backend, int version) throws Exception {
+        var db = target(backend);
+        var fixture = new ScalarFixtures(work, version);
+        String model = "ScalarMapping" + version;
+        String value = fixture.numericOidLexeme();
+        assertSchemaWithIdentityColumns(db, model, fixture.copyModel(model));
+        Path output = roundTrip(db, fixture, model, "numeric-oid", List.of(fixture.numericOidField(value), ""));
+        var objects = fixture.rows(output, "numeric-oid", 2);
+        assertEquals(value, fixture.numericOidValue(objects.getFirst()));
+        assertNull(child(objects.getLast(), "NumberKey"));
+        try (var sql = db.connect()) {
+            assertEquals(value, stored(db, sql, "numberkey", "numeric-oid", 0));
+            assertNull(stored(db, sql, "numberkey", "numeric-oid", 1));
+            assertEquals("OID", scalar(sql, "SELECT setting FROM " + db.table("t_ili2db_column_prop")
+                    + " WHERE tablename='asset' AND columnname='numberkey' AND tag='ch.ehi.ili2db.typeKind'"));
+            execute(sql, "UPDATE " + db.table("asset") + " SET numberkey='NotANumber' WHERE t_ili_tid='numeric-oid-0'");
+        }
+        assertExportRejected(db, model, "numeric-oid", output, "NumberKey");
+    }
+
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void blackboxValuesAndAtomicExport(Backend backend, int version) throws Exception {
         var db = target(backend);
         var fixture = new ScalarFixtures(work, version);
