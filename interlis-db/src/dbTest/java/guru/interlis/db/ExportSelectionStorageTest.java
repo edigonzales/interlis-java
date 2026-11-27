@@ -186,6 +186,58 @@ final class ExportSelectionStorageTest {
         }
     }
 
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void syntheticBidIsExportOnlyAndPreservesAtomicity(Backend backend, int version) throws Exception {
+        var fixture = new ExportSelectionFixtures(work, version);
+        var db = POSTGIS.target(work.resolve("synthetic-bid.gpkg"), backend);
+        assertSchemaWithIdentityColumns(db, fixture.model, fixture.source);
+        assertCliSuccess(db, "import", fixture.model, "target", fixture.delivery("target",
+                fixture.basket("Data", "forgotten", fixture.place("destination"))));
+        String generated;
+        try (var sql = db.connect()) {
+            String baskets = db.table("t_ili2db_basket");
+            execute(sql, "UPDATE " + baskets + " SET t_ili_tid='' WHERE t_ili_tid='forgotten'");
+            generated = scalar(sql, "SELECT t_id FROM " + baskets + " WHERE t_ili_tid=''");
+        }
+        assertCliSuccess(db, "import", fixture.model, "source", fixture.delivery("source",
+                fixture.basket("Data", "source", fixture.survey("survey", "destination", null))));
+        Path output = work.resolve("synthesized.xtf");
+        assertCliSuccess(db, "export", fixture.model, "target", output);
+        assertEquals(generated, id(fixture.baskets(output).getFirst(), version, "bid"));
+        assertRejected(db, fixture.model, output, "Basket does not exist: " + generated, "--basket", generated);
+        assertCliSuccess(db, "export", fixture.model, null, output, "--basket", "source");
+        assertEquals("", id(fixture.surveyReference(fixture.baskets(output).getFirst()), version, "bid"));
+
+        assertCliSuccess(db, "import", fixture.model, "collision", fixture.delivery("duplicate-target",
+                fixture.basket("Data", "duplicate", fixture.place("destination"))));
+        assertRejected(db, fixture.model, output, "Ambiguous stored reference target destination", "--basket", "source");
+        assertCliSuccess(db, "delete", fixture.model, "collision", null);
+
+        try (var sql = db.connect()) {
+            execute(sql, "UPDATE " + db.table("t_ili2db_basket") + " SET t_ili_tid=" + generated + " WHERE t_ili_tid='source'");
+        }
+        assertRejected(db, fixture.model, output, "Duplicate basket ID " + generated);
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void missingStableBasketOidPreservesPublishedFile(Backend backend, int version) throws Exception {
+        var fixture = new ExportSelectionFixtures(work, version);
+        Files.writeString(fixture.source, Files.readString(fixture.source)
+                .replace("TOPIC Data =", "TOPIC Data = BASKET OID AS INTERLIS.UUIDOID;"));
+        var db = POSTGIS.target(work.resolve("missing-oid.gpkg"), backend);
+        assertSchemaWithIdentityColumns(db, fixture.model, fixture.source);
+        var input = fixture.delivery("stable", fixture.basket("Data", "832615d2-21be-4fbc-b7d4-e53ccf0ccaaf",
+                fixture.asset("a", "label", false)));
+        assertCliSuccess(db, "import", fixture.model, "stable", input);
+        try (var sql = db.connect()) {
+            execute(sql, "UPDATE " + db.table("t_ili2db_basket") + " SET t_ili_tid=NULL");
+        }
+        Path output = Files.writeString(work.resolve("published.xtf"), "preserve");
+        assertRejected(db, fixture.model, output, "Missing stable basket OID in " + fixture.model + ".Data");
+    }
+
     private static void assertRejected(Target db, String model, Path output, String diagnostic, String... options) throws Exception {
         var original = Files.readAllBytes(output);
         var result = cli(db, "export", model, null, output, CancellationToken.none(), options);

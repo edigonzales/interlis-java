@@ -516,7 +516,9 @@ Topic-Auswahl über mehrere Datensätze und den leeren Transfer mit
 ili2db `--topics`.
 `--tests '*ExportSelectionInteropTest.*Models*'` prüft automatisch benannte
 Importe und den Modellexport über Datensatzgrenzen hinweg aus derselben
-Referenzdatenbank.
+Referenzdatenbank. Die Auswahl `*MissingBid*` vergleicht den BID-Ersatzwert
+nach einem Referenzimport ohne `--importBid` und die Auflösung externer
+Verweise auf enthaltene und ausgelassene Zielbaskets.
 
 `--tests '*TranslationInteropTest'` bündelt skalare und verschachtelte
 Baskets im Katalogvergleich und Werkzeugwechsel. Ein weiterer Fall

@@ -372,6 +372,11 @@ Jede BID muss im Schema eindeutig sein und zu einem gewählten Modell gehören.
 Der Export folgt der Reihenfolge der internen Basket-IDs. Baskets ohne
 Datensatzzuordnung können ebenfalls ausgewählt werden. Externe Verweise auf
 ausgelassene Ziele bleiben nur bei eindeutiger Auflösung exportierbar.
+Fehlt einem gewöhnlichen Basket die gespeicherte BID, verwendet der Export
+seine dezimale SQL-ID. Ein externer Verweis auf einen solchen Zielbasket
+verwendet bei eindeutiger Auflösung `REF`. `--basket` und `update` verwenden
+die gespeicherte BID. Ein Topic mit `BASKET OID AS` benötigt beim Export
+seine gespeicherte Basket-OID.
 Mit je einem `--topic Modell.Topic` wählst du alle Baskets des angegebenen
 Topics über Datensatzgrenzen hinweg. Massgeblich ist der gespeicherte
 qualifizierte Name. Ein Basistopic wählt keine abgeleiteten Topics mit aus.
@@ -1118,9 +1123,10 @@ Baskets desselben Topics und Datensatzes. In 2.3 liegt das Attribut in einer
 Struktur, in 2.4 auch direkt in einer Klasse. Die Spalte speichert weiterhin
 die numerische `T_Id` des Zielobjekts. Beim Import werden noch offene Ziele
 nach dem bestätigten Transferende aufgelöst. In XTF 2.3 gibt der Export für
-ein Ziel in einem anderen Basket dessen BID aus. Der Import akzeptiert die
-von ili2db 5.5.2 ausgegebene Form mit `REF` allein und prüft eine mitgelieferte
-BID gegen den tatsächlichen Zielbasket. In XTF 2.4 genügt `ili:ref`.
+ein Ziel in einem anderen Basket die gespeicherte Ziel-BID aus, sofern sie
+vorliegt. Der Import akzeptiert die von ili2db 5.5.2 ausgegebene Form mit
+`REF` allein und prüft eine mitgelieferte BID gegen den tatsächlichen
+Zielbasket. In XTF 2.4 genügt `ili:ref`.
 
 Fehlt ein `EXTERNAL`-Attributziel im aktuellen Transfer, sucht der Import
 im selben Schema nach einem eindeutigen Treffer im deklarierten Typzweig.

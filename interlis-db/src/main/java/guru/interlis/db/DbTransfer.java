@@ -9,6 +9,7 @@ import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.Modifier;
+import guru.interlis.model.OidRule;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.RoleSlot;
@@ -150,9 +151,15 @@ final class DbTransfer {
                     var stored = selectedTopic(topics, topicName);
                     var topic = output.map(model -> mapping.translations().outputTopic(stored, model)).orElse(stored);
                     String domains = rows.getString(4);
-                    var bid = new BasketId(identifier(rows.getString(3), "BID", topicName), IdOrigin.SOURCE);
+                    long basketId = rows.getLong(1);
+                    var storedBid = storedBid(rows.getString(3));
+                    if (storedBid.isEmpty() && hasStableBasketOid(stored)) {
+                        throw new DbException("Missing stable basket OID in " + topicName + " (SQL ID " + basketId + ")");
+                    }
+                    var bid = storedBid.map(value -> new BasketId(value, IdOrigin.SOURCE))
+                            .orElseGet(() -> new BasketId(Long.toString(basketId), IdOrigin.SYNTHETIC));
                     var bindings = DbDomains.read(plan, stored, domains, bid.value());
-                    writeBasket(db, mapping, ids, topic, rows.getLong(1), bid, bindings, writer, token);
+                    writeBasket(db, mapping, ids, topic, basketId, bid, bindings, writer, token);
                 }
             }
         }
@@ -708,8 +715,7 @@ final class DbTransfer {
                             String context = column.slot().name().declared().toString();
                             String tid = storedTid(root, identifier(rows.getString(2), "reference target TID", context));
                             var bid = mapping.version() == LanguageVersion.ILI23
-                                    ? Optional.of(identifier(rows.getString(3), "reference target BID", context))
-                                    : Optional.<String>empty();
+                                    ? storedBid(rows.getString(3)) : Optional.<String>empty();
                             var resolved = findReference(db, mapping, column, tid, bid);
                             if (resolved == null || resolved.id() != rows.getLong(1)
                                     || hasExportedTid(db, mapping, selection, tid, token)) {
@@ -765,8 +771,9 @@ final class DbTransfer {
         String baskets = mapping.hasBasketColumn() ? " JOIN " + db.technicalTable(BASKET)
                 + " basket ON basket." + db.rowId() + " = ref." + T_BASKET : "";
         String topic = mapping.hasBasketColumn() ? "basket.topic IN " + topicNames(mapping, declared) + " AND " : "";
+        String basketTopic = mapping.hasBasketColumn() ? ", basket.topic" : "";
         String sql = "SELECT ref." + db.rowId() + ", " + (mapping.hasBasketColumn() ? "basket." + T_ILI_TID : "NULL")
-                + discriminator + " FROM " + db.table(root.name()) + " ref" + baskets
+                + discriminator + basketTopic + " FROM " + db.table(root.name()) + " ref" + baskets
                 + " WHERE " + topic + tidExpression(root, "ref") + " = ?"
                 + (bid.isPresent() ? " AND basket." + T_ILI_TID + " = ?" : "") + fragment;
         try (var statement = db.connection().prepareStatement(sql)) {
@@ -780,10 +787,21 @@ final class DbTransfer {
                             : root.object().symbol();
                     if (!mapping.isAssignableTo(type, declared)) continue;
                     if (result != null) throw ambiguousTarget(tid, context);
-                    var basket = mapping.hasBasketColumn()
-                            ? new BasketId(identifier(rows.getString(2), "reference target BID", context), IdOrigin.SOURCE)
-                            : new BasketId(root.object().topic().flatMap(mapping.plan()::topic).orElseThrow()
-                                    .name().declared().toString(), IdOrigin.SYNTHETIC);
+                    Optional<BasketId> basket;
+                    if (mapping.hasBasketColumn()) {
+                        basket = storedBid(rows.getString(2)).map(value -> new BasketId(value, IdOrigin.SOURCE));
+                        if (basket.isEmpty()) {
+                            String storedTopic = rows.getString(root.hasDiscriminator() ? 4 : 3);
+                            if (mapping.plan().topics().stream().anyMatch(topicDescriptor ->
+                                    topicDescriptor.name().declared().toString().equals(storedTopic)
+                                            && hasStableBasketOid(topicDescriptor))) {
+                                throw new DbException("Missing stable basket OID of reference target in " + context);
+                            }
+                        }
+                    } else {
+                        var name = root.object().topic().flatMap(mapping.plan()::topic).orElseThrow().name().declared();
+                        basket = Optional.of(new BasketId(name.toString(), IdOrigin.SYNTHETIC));
+                    }
                     result = new StoredObject(id, type, basket);
                 }
                 return result;
@@ -1277,8 +1295,8 @@ final class DbTransfer {
                         throw new DbException("Unexpected reference type " + actual.discriminator() + " at " + context);
                     }
                 }
-                var bid = projectsTargetBid(mapping, column) ? Optional.ofNullable(rows.getString(next))
-                        .map(value -> new BasketId(identifier(value, "reference target BID", context), ids.origin(value)))
+                var bid = projectsTargetBid(mapping, column) ? storedBid(rows.getString(next))
+                        .map(value -> new BasketId(value, ids.origin(value)))
                         : Optional.<BasketId>empty();
                 String value = storedTid(root, tid);
                 TransferIdentity.ObjectKey key = hasWireOid(mapping, root)
@@ -1562,6 +1580,14 @@ final class DbTransfer {
                 : hasWireOid(mapping, mapping.referenceRoot(column));
     }
 
+    private static Optional<String> storedBid(String value) {
+        return Optional.ofNullable(value).filter(bid -> !bid.isEmpty());
+    }
+
+    private static boolean hasStableBasketOid(TopicDescriptor topic) {
+        return topic.oidRules().stream().anyMatch(OidRule::basket);
+    }
+
     private static Optional<String> basketOid(DbMapping mapping, TopicDescriptor topic, BasketId bid) {
         var rule = topic.oidRules().stream().filter(ruleCandidate -> ruleCandidate.basket()).findFirst();
         if (rule.isEmpty()) return Optional.empty();
@@ -1779,7 +1805,7 @@ final class DbTransfer {
             var reserved = tid.map(reservations::remove).orElse(null);
             long id = previous != null ? previous.id() : reserved != null ? reserved.id() : db.nextId();
             if (reserved != null || referenceTargets.contains(object.type())) {
-                var target = new StoredObject(id, object.type(), identity.currentBasket());
+                var target = new StoredObject(id, object.type(), Optional.of(identity.currentBasket()));
                 if (reserved != null) {
                     for (var source : reserved.references()) {
                         token.throwIfCancellationRequested();
@@ -1816,7 +1842,7 @@ final class DbTransfer {
                 }
             }
             if (externalTargets.contains(object.type()) || (!externalTargets.isEmpty() && tid.isPresent())) {
-                externalObjects.put(tid.orElseThrow(), new StoredObject(id, object.type(), identity.currentBasket()));
+                externalObjects.put(tid.orElseThrow(), new StoredObject(id, object.type(), Optional.of(identity.currentBasket())));
             }
         }
 
@@ -2461,10 +2487,12 @@ final class DbTransfer {
                         + patch.column().slot().name().declared() + " to " + patch.targetTid()
                         + " as an ID in the mapped target table in this " + (patch.column().external() ? "dataset" : "basket"));
             }
-            if (patch.targetBasket().filter(bid -> !bid.value().equals(target.basket().value())).isPresent()) {
+            var expectedBid = target.basket().map(BasketId::value);
+            var requestedBid = patch.targetBasket().map(BasketId::value);
+            if (requestedBid.isPresent() && !requestedBid.equals(expectedBid)) {
                 throw new DbException("Wrong target BID for reference from " + patch.objectTid() + " at "
                         + patch.column().slot().name().declared() + " to " + patch.targetTid()
-                        + ": expected " + target.basket().value() + ", got " + patch.targetBasket().orElseThrow().value());
+                        + ": expected " + expectedBid.orElse("<none>") + ", got " + requestedBid.orElseThrow());
             }
         }
 
@@ -2478,7 +2506,7 @@ final class DbTransfer {
         }
     }
 
-    private record StoredObject(long id, SymbolRef type, BasketId basket) { }
+    private record StoredObject(long id, SymbolRef type, Optional<BasketId> basket) { }
 
     private record ReferenceReservation(long id, List<Pending> references) { }
 

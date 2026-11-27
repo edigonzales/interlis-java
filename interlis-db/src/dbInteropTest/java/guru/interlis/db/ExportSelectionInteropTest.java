@@ -13,7 +13,10 @@ import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
 import static guru.interlis.db.DbTestSupport.catalogKeys;
 import static guru.interlis.db.DbTestSupport.execute;
+import static guru.interlis.db.DbTestSupport.id;
+import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.InteropCommands.importDataset;
+import static guru.interlis.db.InteropCommands.exportDataset;
 import static guru.interlis.db.InteropCommands.schema;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -40,6 +43,66 @@ final class ExportSelectionInteropTest {
     @Test void geoPackageModels24() throws Exception { exchangeModels(24, null); }
     @Test void postgisModels23() throws Exception { exchangeModels(23, POSTGIS.container()); }
     @Test void postgisModels24() throws Exception { exchangeModels(24, POSTGIS.container()); }
+
+    @Test void geoPackageMissingBid23() throws Exception { exchangeMissingBid(23, null); }
+    @Test void geoPackageMissingBid24() throws Exception { exchangeMissingBid(24, null); }
+    @Test void postgisMissingBid23() throws Exception { exchangeMissingBid(23, POSTGIS.container()); }
+    @Test void postgisMissingBid24() throws Exception { exchangeMissingBid(24, POSTGIS.container()); }
+
+    private void exchangeMissingBid(int version, PostgreSQLContainer postgres) throws Exception {
+        var fixture = new ExportSelectionFixtures(work, version);
+        var db = new TestDatabase(work, postgres, "missing_bid", "v" + version + "_");
+        var reference = new ReferenceTool(work, db.postgis());
+        schema(reference, db, work, fixture.model, "newClass");
+        reference.run(db, "%ILI_FROM_DB", "--import", "--dataset", "target", "--importTid",
+                fixture.delivery("target", fixture.basket("Data", "discarded", fixture.place("destination"))).toString());
+        assertCliSuccess(db, "import", fixture.model, "source", fixture.delivery("source",
+                fixture.basket("Data", "source", fixture.survey("survey", "destination", null))));
+        String generated;
+        try (var sql = db.connect()) {
+            generated = scalar(sql, "SELECT t_id FROM " + db.table("t_ili2db_basket") + " WHERE t_ili_tid IS NULL");
+        }
+
+        Path nativeOutput = work.resolve("native-missing-bid.xtf");
+        Path referenceOutput = work.resolve("reference-missing-bid.xtf");
+        assertCliSuccess(db, "export", fixture.model, "source", nativeOutput);
+        exportDataset(reference, db, "source", referenceOutput);
+        assertMissingBidExport(fixture, version, nativeOutput, Set.of("source"));
+        assertMissingBidExport(fixture, version, referenceOutput, Set.of("source"));
+
+        assertCliSuccess(db, "export", fixture.model, null, nativeOutput);
+        reference.run(db, "%ILI_FROM_DB", "--export", "--models", fixture.model, "--exportTid", referenceOutput.toString());
+        Set<String> bids = Set.of(generated, "source");
+        assertMissingBidExport(fixture, version, nativeOutput, bids);
+        assertMissingBidExport(fixture, version, referenceOutput, bids);
+
+        var nativeTarget = db.peer("missing_bid_native_import");
+        var referenceTarget = db.peer("missing_bid_reference_import");
+        assertSchemaWithIdentityColumns(nativeTarget, fixture.model, fixture.source);
+        assertSchemaWithIdentityColumns(referenceTarget, fixture.model, fixture.source);
+        assertCliSuccess(nativeTarget, "import", fixture.model, "selected", referenceOutput);
+        importDataset(reference, referenceTarget, "selected", nativeOutput);
+        for (var imported : List.of(nativeTarget, referenceTarget)) {
+            try (var sql = imported.connect()) {
+                assertEquals("destination:" + generated, scalar(sql, """
+                        SELECT p.t_ili_tid || ':' || b.t_ili_tid FROM %s r JOIN %s p ON p.t_id=r.destination
+                        JOIN %s b ON b.t_id=p.t_basket
+                        """.formatted(imported.table("pointer"), imported.table("place"), imported.table("t_ili2db_basket"))));
+            }
+        }
+    }
+
+    private static void assertMissingBidExport(ExportSelectionFixtures fixture, int version, Path file, Set<String> bids)
+            throws Exception {
+        var baskets = fixture.baskets(file);
+        assertEquals(bids.size(), baskets.size());
+        assertEquals(bids, baskets.stream().map(basket -> id(basket, version, "bid"))
+                .collect(java.util.stream.Collectors.toSet()));
+        var source = baskets.stream().filter(basket -> id(basket, version, "bid").equals("source")).findFirst().orElseThrow();
+        var reference = fixture.surveyReference(source);
+        assertEquals("destination", id(reference, version, "ref"));
+        assertEquals("", id(reference, version, "bid"));
+    }
 
     private void exchangeModels(int version, PostgreSQLContainer postgres) throws Exception {
         var fixture = new ExportSelectionFixtures(work, version);

@@ -60,9 +60,16 @@ final class ExportSelectionFixtures {
 
     String survey(String tid, String target, String targetBid) {
         String pointer = version == 23 ? model + ".Data.Pointer" : "Pointer";
-        String reference = version == 23 ? "<Destination REF=\"" + target + "\" BID=\"" + targetBid + "\"/>"
-                : transfers.reference("Destination", target);
+        String reference = transfers.reference("Destination", target);
+        if (version == 23 && targetBid != null) {
+            reference = reference.replace("/>", " BID=\"" + targetBid + "\"/>");
+        }
         return transfers.object(model, "Survey", tid, "<PointerValue><" + pointer + ">" + reference + "</" + pointer + "></PointerValue>");
+    }
+
+    Element surveyReference(Element basket) {
+        var survey = children(basket).getFirst();
+        return child(children(child(survey, "PointerValue")).getFirst(), "Destination");
     }
 
     String basket(String topic, String bid, String objects) {
