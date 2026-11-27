@@ -13,6 +13,11 @@ TOPIC Core =
     LocatedAt -- {0..1} Marker;
     LocatedStation -- {0..*} Station;
   END Location;
+  ASSOCIATION Visit =
+    VisitedMarker -- {0..*} Marker;
+    VisitingStation -- {0..*} Station;
+    VisitNote : TEXT*30;
+  END Visit;
 END Core;
 TOPIC Other = CLASS Spare = END Spare; END Other;
 END TownParent23.

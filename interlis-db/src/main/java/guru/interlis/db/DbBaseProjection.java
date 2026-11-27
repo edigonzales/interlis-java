@@ -4,6 +4,7 @@ import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CoordinateType;
 import guru.interlis.model.OidRule;
+import guru.interlis.model.RoleAggregation;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.AttributeSlot;
@@ -24,11 +25,12 @@ import java.util.Optional;
 
 /** Projects decoded export events through the model's checked inheritance. */
 final class DbBaseProjection {
-    private record ProjectedRole(SymbolRef targetType, String role, String sourceTid, String targetTid) { }
+    private record ProjectedRole(SymbolRef targetType, String role, String source, String targetTid) { }
 
     private final DbMapping mapping;
     private final TopicDescriptor topic;
     private final Map<SymbolRef, DbMapping.EmbeddedAssociation> roles = new HashMap<>();
+    private final Map<SymbolRef, List<DbMapping.AssociationRole>> links = new HashMap<>();
     private final Map<String, SymbolRef> projectedObjects = new HashMap<>();
     private final List<ProjectedRole> references = new ArrayList<>();
 
@@ -45,6 +47,21 @@ final class DbBaseProjection {
                     && association.object().baseType().isEmpty()
                     && association.object().topic().filter(declared -> belongsTo(mapping.plan(), declared, topic)).isPresent()) {
                 roles.put(association.role().symbol(), association);
+            }
+        }
+        var plan = mapping.plan();
+        for (var table : mapping.tables()) {
+            var association = table.object();
+            if (association.kind() != SymbolKind.ASSOCIATION || table.carriesObjectId()
+                    || mapping.isEmbeddedLink(table) || association.baseType().isPresent()
+                    || association.topic().filter(declared -> belongsTo(plan, declared, topic)).isEmpty()) {
+                continue;
+            }
+            var ends = DbMapping.describeRoles(plan, association);
+            if (ends.size() == 2 && ends.stream().allMatch(end -> !end.single() && end.targets().size() == 1
+                    && !end.external() && !end.slot().role().ordered()
+                    && end.slot().role().aggregation() == RoleAggregation.NONE)) {
+                links.put(association.symbol(), ends);
             }
         }
     }
@@ -74,7 +91,8 @@ final class DbBaseProjection {
             }
         }
         if (target == null || !target.transferable()) return Optional.empty();
-        if (target.kind() != SymbolKind.CLASS) {
+        var linkEnds = links.get(target.symbol());
+        if (target.kind() != SymbolKind.CLASS && (target != source || linkEnds == null)) {
             throw DbMapping.unsupported("base-model export of association " + target.name().declared());
         }
         if (!DbMapping.oidDomain(plan, source).equals(DbMapping.oidDomain(plan, target))) {
@@ -113,7 +131,19 @@ final class DbBaseProjection {
                 throw DbMapping.unsupported("base-model export of extended attribute " + field.name().declared());
             }
         }
-        if (!roles.isEmpty()) {
+        if (linkEnds != null) {
+            for (var end : linkEnds) {
+                var role = end.slot();
+                if (!(object.value(role.symbol()).orElse(null) instanceof Reference reference)) {
+                    throw DbMapping.unsupported("base-model export of link role " + role.name().declared());
+                }
+                references.add(new ProjectedRole(end.target(), role.name().declared().toString(),
+                        "link " + target.name().declared(), reference.target().value()));
+                values.put(role.symbol(), reference);
+            }
+            return Optional.of(new TransferObject(object.identity(), new Structured(target.symbol(), values)));
+        }
+        if (!roles.isEmpty() || !links.isEmpty()) {
             projectedObjects.put(object.identity().tid().orElseThrow().value(), target.symbol());
         }
         for (var entry : object.data().values().entrySet()) {
@@ -127,7 +157,7 @@ final class DbBaseProjection {
                     throw DbMapping.unsupported("base-model export of role " + field.header().name());
                 }
                 references.add(new ProjectedRole(association.target(), association.role().name().declared().toString(),
-                        object.identity().tid().orElseThrow().value(), reference.target().value()));
+                        "object " + object.identity().tid().orElseThrow().value(), reference.target().value()));
                 values.put(entry.getKey(), reference);
             }
         }
@@ -140,7 +170,7 @@ final class DbBaseProjection {
             var target = projectedObjects.get(reference.targetTid());
             if (target == null || !mapping.isAssignableTo(target, reference.targetType())) {
                 throw new DbException("Missing projected target " + reference.targetTid() + " at " + reference.role()
-                        + " of object " + reference.sourceTid() + " in basket " + basket.value());
+                        + " of " + reference.source() + " in basket " + basket.value());
             }
         }
     }

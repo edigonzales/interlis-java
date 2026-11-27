@@ -108,11 +108,15 @@ final class TopicInheritanceFixtures {
     }
 
     void assertBaseDelivery(Path file, String prefix, boolean includeFlat) throws Exception {
+        assertBaseDelivery(file, prefix, includeFlat, "planned");
+    }
+
+    void assertBaseDelivery(Path file, String prefix, boolean includeFlat, String visitNote) throws Exception {
         var data = readDataSection(file, version);
         assertEquals(List.of(town), headerModels(data, version));
         assertEquals(includeFlat ? 2 : 1, children(data).size());
         var region = basket(data, version, town + ".Core", prefix + "region-b");
-        assertEquals(2, children(region).size());
+        assertEquals(3, children(region).size());
         var station = object(region, town + ".Core.Station", prefix + "region-s");
         assertEquals(Set.of("Memo", "Center", "Detail", "History", "LocatedAt"),
                 children(station).stream().map(Element::getLocalName).collect(java.util.stream.Collectors.toSet()));
@@ -123,6 +127,7 @@ final class TopicInheritanceFixtures {
         assertField(marker, town, "Memo", "inherited");
         assertNull(child(marker, "Detail"));
         assertLocation(station, marker);
+        assertVisit(region, prefix + "region", visitNote);
         if (includeFlat) {
             var flatBasket = basket(data, version, town + ".Core", prefix + "flat-b");
             assertEquals(1, children(flatBasket).size());
@@ -146,7 +151,7 @@ final class TopicInheritanceFixtures {
     }
 
     private void assertFragments(Element basket, String prefix, String markerMemo, String baseMemo, String localMemo) {
-        assertEquals(2, children(basket).size());
+        assertEquals(3, children(basket).size());
         var station = object(basket, child + ".Region.LocalStation", prefix + "-s");
         var marker = object(basket, town + ".Core.Marker", prefix + "-m");
         assertField(station, town, "Memo", baseMemo);
@@ -155,6 +160,18 @@ final class TopicInheritanceFixtures {
         assertEntries(station);
         assertLocation(station, marker);
         assertField(marker, town, "Memo", markerMemo);
+        assertVisit(basket, prefix, "planned");
+    }
+
+    private void assertVisit(Element basket, String prefix, String note) {
+        var visit = children(basket).stream().filter(element -> element.getLocalName().endsWith("Visit"))
+                .findFirst().orElseThrow();
+        assertName(visit, version, town + ".Core.Visit");
+        assertEquals("", id(visit, version, "tid"));
+        assertEquals(prefix + "-m", id(child(visit, "VisitedMarker"), version, "ref"));
+        assertEquals(prefix + "-s", id(child(visit, "VisitingStation"), version, "ref"));
+        if (note == null) assertNull(child(visit, "VisitNote"));
+        else assertField(visit, town, "VisitNote", note);
     }
 
     private void assertLocation(Element station, Element marker) {

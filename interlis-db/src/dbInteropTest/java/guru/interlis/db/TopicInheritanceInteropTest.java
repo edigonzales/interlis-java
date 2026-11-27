@@ -113,6 +113,10 @@ final class TopicInheritanceInteropTest {
             assertEquals("0", scalar(sql, "SELECT COUNT(*) FROM " + entries + " WHERE marker_detail IS NOT NULL"));
             assertEquals(prefix + "region-m", scalar(sql, "SELECT m.t_ili_tid FROM " + stations + " s JOIN "
                     + db.table("marker") + " m ON m.t_id=s.locatedat AND m.t_basket=s.t_basket"));
+            assertEquals(prefix + "region-m:" + prefix + "region-s:planned", scalar(sql,
+                    "SELECT m.t_ili_tid || ':' || s.t_ili_tid || ':' || v.visitnote FROM " + db.table("visit") + " v JOIN "
+                    + db.table("marker") + " m ON m.t_id=v.visitedmarker AND m.t_basket=v.t_basket JOIN "
+                    + stations + " s ON s.t_id=v.visitingstation AND s.t_basket=v.t_basket"));
             assertEquals(Set.of(prefix + "region-m:inherited", prefix + "flat-m:inherited"),
                     catalogKeys(sql, "SELECT t_ili_tid || ':' || memo FROM " + db.table("marker")));
         }

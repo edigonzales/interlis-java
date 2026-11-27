@@ -120,8 +120,10 @@ final class TopicInheritanceStorageTest {
         var independent = Files.writeString(work.resolve("independent.xtf"), source.replace("region-", "independent-"));
         var updated = fixture.updateRegion(input);
         String stationTag = Pattern.quote(version == 23 ? fixture.child + ".Region.LocalStation" : "a:LocalStation");
+        String visitTag = Pattern.quote(version == 23 ? fixture.town + ".Core.Visit" : "b:Visit");
         var removed = Files.writeString(work.resolve("removed-target.xtf"),
                 source.replaceFirst("(?s)<" + stationTag + " .*?</" + stationTag + ">", "")
+                        .replaceFirst("(?s)<" + visitTag + ">.*?</" + visitTag + ">", "")
                         .replace(">inherited<", ">must roll back<"));
         assertCliSuccess(db, "import", fixture.child, "inherited", input);
         assertCliSuccess(db, "import", incoming, "incoming", fixture.input("incoming"));
@@ -163,7 +165,7 @@ final class TopicInheritanceStorageTest {
             assertCliSuccess(db, "delete", fixture.child, "inherited", null);
             assertEquals(kept, regionIds(db, sql, "independent", "independent"));
             assertEquals("independent", scalar(sql, "SELECT datasetname FROM " + db.table("t_ili2db_dataset")));
-            for (var table : List.of("station", "localstation", "marker", "t_ili2db_basket")) {
+            for (var table : List.of("station", "localstation", "marker", "visit", "t_ili2db_basket")) {
                 assertEquals("1", scalar(sql, "SELECT COUNT(*) FROM " + db.table(table)), table);
             }
             assertCliSuccess(db, "export", fixture.child, "independent", output);
@@ -209,11 +211,17 @@ final class TopicInheritanceStorageTest {
         var original = work.resolve("source-export.xtf");
         assertCliSuccess(db, "export", fixture.child, "source", original, fixture.modelsAfterChild());
         fixture.assertMixedDelivery(original, "", "text", false);
+
+        try (var sql = db.connect()) {
+            execute(sql, "UPDATE " + db.table("visit") + " SET visitnote=NULL");
+        }
+        assertCliSuccess(db, "export", fixture.child, null, output, "--basket", "region-b", "--export-model", fixture.town);
+        fixture.assertBaseDelivery(output, "", false, null);
     }
 
     @ParameterizedTest(name = "{displayName} [XTF {0}, {1}]")
     @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
-    void rejectsEmbeddedRoleWhenProjectionDropsItsTarget(int version, Backend backend) throws Exception {
+    void rejectsRolesWhenProjectionDropsTheirTarget(int version, Backend backend) throws Exception {
         var fixture = new TopicInheritanceFixtures(work, version);
         var db = POSTGIS.target(work.resolve("base-role-export.gpkg"), backend);
         var parent = fixture.source(fixture.town);
@@ -231,12 +239,25 @@ final class TopicInheritanceStorageTest {
         String localTag = version == 23 ? fixture.child + ".Region.LocalMarker" : "a:LocalMarker";
         Files.writeString(input, Files.readString(input).replace(baseTag, localTag));
         assertCliSuccess(db, "import", fixture.child, "source", input);
+        try (var sql = db.connect()) {
+            execute(sql, "DELETE FROM " + db.table("visit"));
+        }
 
         var output = work.resolve("base-role-export.xtf");
         assertCliSuccess(db, "export", fixture.child, "source", output);
         var published = Files.readAllBytes(output);
         assertCliFailure(db, "export", fixture.child, null, output,
                 "Missing projected target region-m at " + fixture.town + ".Core.Location.LocatedAt of object region-s in basket region-b",
+                "--basket", "region-b", "--export-model", fixture.town);
+        assertArrayEquals(published, Files.readAllBytes(output));
+
+        assertCliSuccess(db, "replace", fixture.child, "source", input);
+        try (var sql = db.connect()) {
+            execute(sql, "UPDATE " + db.table("station") + " SET locatedat=NULL");
+        }
+        assertCliFailure(db, "export", fixture.child, null, output,
+                "Missing projected target region-m at " + fixture.town + ".Core.Visit.VisitedMarker of link "
+                        + fixture.town + ".Core.Visit in basket region-b",
                 "--basket", "region-b", "--export-model", fixture.town);
         assertArrayEquals(published, Files.readAllBytes(output));
     }

@@ -6,6 +6,7 @@
   <DATASECTION>
     <TownChild23.Region BID="region-b">
       <TownParent23.Core.Marker TID="region-m"><Memo>inherited</Memo></TownParent23.Core.Marker>
+      <TownParent23.Core.Visit><VisitedMarker REF="region-m"/><VisitingStation REF="region-s"/><VisitNote>planned</VisitNote></TownParent23.Core.Visit>
       <TownChild23.Region.LocalStation TID="region-s"><Memo>base</Memo>
         <Detail><TownParent23.Core.Entry/></Detail>
         <History>
