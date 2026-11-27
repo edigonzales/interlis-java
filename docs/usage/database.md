@@ -347,6 +347,13 @@ Bei `--create-type-constraint` erweitert `--add-models` auch einen eindeutig
 identifizierten benannten Typcheck. Ältere GeoPackage-Schemata mit anonymem
 Typcheck werden vor der DDL abgewiesen. Neue Typchecks erhalten einen Namen.
 
+Führt eine neue abstrakte Zwischenklasse in Smart1 zu einer eigenen Tabelle
+für den konkreten Untertyp, erhält die bestehende Wurzel den zusätzlichen
+`T_Type`-Wert. Die Fragmenttabelle speichert die skalaren Felder der
+Zwischenklasse und des Untertyps. Wurzel und Fragment teilen `T_Id` und
+`T_Basket`. Weitere Erweiterungen berücksichtigen die bereits gespeicherten
+Fragmente auch bei einer separat gelieferten Modellquelle.
+
 In Smart1 und Smart2 kann ein neues Modell externe eingebettete Rollen auf
 Klassen in bereits abgebildeten Topics ergänzen. Die Rollenspalten stehen
 in der neuen Eigentümertabelle. Bei einem abstrakten Ziel bestimmt die

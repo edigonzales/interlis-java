@@ -9,7 +9,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-/** Stored inheritance and SQL names used to discover tables shared across model sources. */
+/** Stored inheritance and SQL names used to discover physical mappings across model sources. */
 final class DbStoredClasses {
     record Entry(String path, String base, String name, String strategy) { }
 
@@ -42,18 +42,18 @@ final class DbStoredClasses {
         return new DbStoredClasses(entries);
     }
 
-    Set<String> sharedSubtypes(Set<String> selected) {
+    Set<String> smart1Subtypes(Set<String> selected) {
         var subtypes = new HashSet<String>();
         for (var entry : byPath.values()) {
-            if (!DbInheritance.Strategy.SUPER_CLASS.value.equals(entry.strategy()) || selected.contains(entry.path())) continue;
-            var ancestors = new HashSet<String>();
-            for (var base = byPath.get(entry.base()); base != null && ancestors.add(base.path()); base = byPath.get(base.base())) {
-                if (Ili2dbLayout.NEW_CLASS.equals(base.strategy())) {
-                    if (selected.contains(base.path())) subtypes.add(entry.path());
-                    break;
-                }
+            if (entry.base() == null || selected.contains(entry.path())
+                    || !(Ili2dbLayout.NEW_CLASS.equals(entry.strategy())
+                        || DbInheritance.Strategy.SUPER_CLASS.value.equals(entry.strategy()))) continue;
+            var parents = ancestry(entry);
+            if (parents.stream().anyMatch(path -> selected.contains(path) && Ili2dbLayout.NEW_CLASS.equals(byPath.get(path).strategy()))) {
+                subtypes.addAll(parents);
             }
         }
+        subtypes.removeAll(selected);
         return subtypes;
     }
 

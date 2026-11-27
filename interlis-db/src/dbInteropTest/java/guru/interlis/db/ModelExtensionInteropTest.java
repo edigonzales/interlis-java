@@ -6,8 +6,11 @@ import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.catalogKeys;
@@ -74,6 +77,61 @@ final class ModelExtensionInteropTest {
     @Test void smart1CheckedSubtypeGeoPackage24() throws Exception { exchangeSmart1SharedSubtype(24, null, true); }
     @Test void smart1CheckedSubtypePostgis23() throws Exception { exchangeSmart1SharedSubtype(23, POSTGIS.container(), true); }
     @Test void smart1CheckedSubtypePostgis24() throws Exception { exchangeSmart1SharedSubtype(24, POSTGIS.container(), true); }
+    @Test void smart1FragmentGeoPackage23() throws Exception { exchangeSmart1Fragments(23, null); }
+    @Test void smart1FragmentGeoPackage24() throws Exception { exchangeSmart1Fragments(24, null); }
+    @Test void smart1FragmentPostgis23() throws Exception { exchangeSmart1Fragments(23, POSTGIS.container()); }
+    @Test void smart1FragmentPostgis24() throws Exception { exchangeSmart1Fragments(24, POSTGIS.container()); }
+
+    private void exchangeSmart1Fragments(int version, PostgreSQLContainer postgres) throws Exception {
+        var fixture = new SmartModelExtensionFixtures(work, version, false, false);
+        fixture.leaveOnlyOriginalEntry();
+        String firstType = "SpecializedEntry";
+        String next = "FurtherSmart" + version;
+        String nextType = "FurtherEntry";
+        var firstSource = fixture.fragmentSource(fixture.specialized, firstType);
+        var nextSource = fixture.fragmentSource(next, nextType);
+        var db = new TestDatabase(work, postgres, "append_smart1_fragments", "v" + version + "_");
+        var expected = db.peer("smart1_fragments_reference");
+        var reference = new ReferenceTool(work, db.postgis());
+        String[] options = {"--createFk", "--createTypeConstraint"};
+        schema(reference, db, work, fixture.original, "smart1", options);
+        importDataset(reference, db, "original", fixture.entryInput("original"));
+        String entry = db.table("entry");
+        String idQuery = "SELECT t_id || ':' || t_basket FROM " + entry + " WHERE t_ili_tid='original-entry'";
+        var output = work.resolve("fragments.xtf");
+        try (var sql = db.connect()) {
+            String originalId = scalar(sql, idQuery);
+            assertCliSuccess(db, "schemaimport", fixture.specialized, null, firstSource,
+                    "--add-models", "--model-file", fixture.originalSource.toString());
+            importDataset(reference, db, "legacy", fixture.fragmentInput(fixture.specialized, firstType, "legacy"));
+            assertCliSuccess(db, "schemaimport", next, null, nextSource,
+                    "--add-models", "--model-file", fixture.originalSource.toString());
+            schema(reference, expected, work, fixture.original + ";" + fixture.specialized + ";" + next, "smart1", options);
+            String first = tableFor(db, fixture.specialized + ".Data." + firstType);
+            String second = tableFor(db, next + ".Data." + nextType);
+            assertSubtypeCatalog(db, expected, first, second);
+            try (var expectedSql = expected.connect()) {
+                assertEquals(foreignKeyColumns(expected, expectedSql), foreignKeyColumns(db, sql));
+            }
+            assertEquals(originalId, scalar(sql, idQuery));
+            assertCliSuccess(db, "export", fixture.original, "original", output);
+            fixture.assertEntryDelivery(output, "original");
+            assertCliSuccess(db, "export", fixture.specialized, "legacy", output);
+            fixture.assertFragmentDelivery(output, fixture.specialized, firstType, "legacy");
+            assertCliSuccess(db, "import", next, "native", fixture.fragmentInput(next, nextType, "native"));
+            exportDataset(reference, db, "native", output);
+            fixture.assertFragmentDelivery(output, next, nextType, "native");
+            assertFragmentIdentity(db, sql, first, "legacy");
+            assertFragmentIdentity(db, sql, second, "native");
+        }
+    }
+
+    private static void assertFragmentIdentity(TestDatabase db, java.sql.Connection sql, String fragment, String prefix)
+            throws Exception {
+        assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("entry") + " root JOIN "
+                + db.table(fragment) + " fragment ON root.t_id=fragment.t_id AND root.t_basket=fragment.t_basket"
+                + " WHERE root.t_type='" + fragment + "' AND root.t_ili_tid='" + prefix + "-fragment'"));
+    }
 
     private void exchangeSmart1FirstSubtype(int version, PostgreSQLContainer postgres) throws Exception {
         var fixture = new SmartModelExtensionFixtures(work, version, false, false);
@@ -135,18 +193,22 @@ final class ModelExtensionInteropTest {
         assertEquals(original, fixture.originalRows(db));
     }
 
-    private static void assertSubtypeCatalog(TestDatabase db, TestDatabase expected) throws Exception {
+    private static void assertSubtypeCatalog(TestDatabase db, TestDatabase expected, String... fragmentTables) throws Exception {
         try (var sql = db.connect(); var expectedSql = expected.connect()) {
             var actualCatalog = DbSchemaCatalog.read(sql, db.postgis(), db.schema()).relations();
             var referenceCatalog = DbSchemaCatalog.read(expectedSql, db.postgis(), expected.schema()).relations();
-            for (String relation : java.util.List.of("classname", "attrname", "column_prop", "trafo", "inheritance")) {
+            for (String relation : List.of("classname", "attrname", "column_prop", "trafo", "inheritance")) {
                 assertEquals(referenceCatalog.get(relation), actualCatalog.get(relation), relation);
             }
-            var actual = actualCatalog.get("columns").stream().filter(row -> row.getFirst().equals("entry"))
-                    .map(row -> row.subList(2, row.size())).collect(java.util.stream.Collectors.toSet());
-            var canonical = referenceCatalog.get("columns").stream().filter(row -> row.getFirst().equals("entry"))
-                    .map(row -> row.subList(2, row.size())).collect(java.util.stream.Collectors.toSet());
-            assertEquals(canonical, actual);
+            var tables = new HashSet<>(List.of(fragmentTables));
+            tables.add("entry");
+            for (String table : tables) {
+                var actual = actualCatalog.get("columns").stream().filter(row -> row.getFirst().equals(table))
+                        .map(row -> row.subList(2, row.size())).collect(Collectors.toSet());
+                var canonical = referenceCatalog.get("columns").stream().filter(row -> row.getFirst().equals(table))
+                        .map(row -> row.subList(2, row.size())).collect(Collectors.toSet());
+                assertEquals(canonical, actual, table);
+            }
         }
     }
 

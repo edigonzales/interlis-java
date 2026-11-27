@@ -350,6 +350,35 @@ final class ModelExtensionStorageTest {
 
     @ParameterizedTest(name = "{0}, XTF {1}")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void smart1RollsBackFragmentAndDiscriminatorBackfill(Backend backend, int version) throws Exception {
+        var fixture = new SmartModelExtensionFixtures(work, version, false, false);
+        fixture.leaveOnlyOriginalEntry();
+        var db = POSTGIS.target(work.resolve("fragment.gpkg"), backend);
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource, "--inheritance", "smart1");
+        assertCliSuccess(db, "import", fixture.original, "original", fixture.entryInput("original"));
+        var source = fixture.fragmentSource(fixture.specialized, "SpecializedEntry");
+        String entry = db.table("entry");
+        String originalRow = " FROM " + entry + " WHERE t_ili_tid='original-entry'";
+        try (var sql = db.connect()) {
+            var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+            String row = scalar(sql, "SELECT t_id || ':' || t_basket || ':' || label || ':' || quantity" + originalRow);
+            var cancelled = schemaWithIdentityColumns(db, fixture.specialized, source,
+                    cancelDuringDdl(new AtomicInteger(), 4), "--add-models", "--model-file", fixture.originalSource.toString());
+            assertEquals(130, cancelled.code(), cancelled::diagnostics);
+            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+            assertEquals(row, scalar(sql, "SELECT t_id || ':' || t_basket || ':' || label || ':' || quantity" + originalRow));
+
+            assertCliSuccess(db, "schemaimport", fixture.specialized, null, source,
+                    "--add-models", "--model-file", fixture.originalSource.toString());
+            assertCliSuccess(db, "import", fixture.specialized, "new", fixture.fragmentInput(fixture.specialized, "SpecializedEntry", "new"));
+            assertEquals("entry", scalar(sql, "SELECT t_type" + originalRow));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + entry + " e JOIN " + db.table("specializedentry")
+                    + " s ON s.t_id=e.t_id AND s.t_basket=e.t_basket WHERE e.t_type='specializedentry' AND s.score=5"));
+        }
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void smart1ExtendsOnlyTheNamedTypeCheck(Backend backend, int version) throws Exception {
         var fixture = new SmartModelExtensionFixtures(work, version, false, true);
         var db = POSTGIS.target(work.resolve("checked-subtype.gpkg"), backend);

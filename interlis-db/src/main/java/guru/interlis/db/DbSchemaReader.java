@@ -113,7 +113,7 @@ final class DbSchemaReader {
         outputModel.ifPresent(models::add);
         var initialPlan = readModelPlan(db, List.copyOf(models), token);
         var additionalTypes = switch (settings.inheritance()) {
-            case SMART1 -> sharedSubtypes(db, initialPlan, token);
+            case SMART1 -> smart1Subtypes(db, initialPlan, token);
             case SMART2 -> storedReferenceSubtypes(db, initialPlan, token);
             case NEW_CLASS -> Set.<String>of();
         };
@@ -447,10 +447,10 @@ final class DbSchemaReader {
         return mapping;
     }
 
-    private static Set<String> sharedSubtypes(Database db, TransferPlan plan, CancellationToken token) throws SQLException {
+    private static Set<String> smart1Subtypes(Database db, TransferPlan plan, CancellationToken token) throws SQLException {
         var selected = DbMapping.storageObjects(plan, DbMapping.storageRoots(plan, Optional.empty()), token).stream()
                 .map(object -> object.name().declared().toString()).collect(Collectors.toSet());
-        return DbStoredClasses.read(db, token).sharedSubtypes(selected);
+        return DbStoredClasses.read(db, token).smart1Subtypes(selected);
     }
 
     private static Set<String> storedReferenceSubtypes(Database db, TransferPlan plan, CancellationToken token) throws SQLException {
@@ -799,7 +799,6 @@ final class DbSchemaReader {
         }
         var references = planStoredReferenceExpansion(db, extension, names, token);
         var columns = new ArrayList<SchemaPlan.AddedColumn>();
-        var discriminators = new ArrayList<SchemaPlan.DiscriminatorChange>();
         var aliases = mapping.inheritance().aliases().stream()
                 .filter(alias -> !names.hasClass(alias.object().name().declared().toString())
                         && names.hasClass(mapping.table(alias.owner()).object().name().declared().toString()))
@@ -807,32 +806,12 @@ final class DbSchemaReader {
         for (var entry : aliases.entrySet()) {
             token.throwIfCancellationRequested();
             var owner = mapping.table(entry.getKey());
-            String ownerPath = owner.object().name().declared().toString();
-            var stored = read(db, List.of(MetadataScope.modelName(ownerPath)), token);
-            var oldTable = stored.tables().stream().filter(table -> table.object().name().declared().toString().equals(ownerPath))
-                    .findFirst().orElseThrow(() -> new DbException("Missing stored Smart1 table for " + ownerPath));
-            if (oldTable.subtype() || !owner.hasDiscriminator()) {
+            if (owner.subtype() || !owner.hasDiscriminator()) {
                 throw unsupported("Smart1 --add-models requires a shared root table in " + owner.name());
             }
-            var oldTypes = stored.objectStorage().stream().filter(type -> type.root().equals(oldTable)
-                    && !type.object().modifiers().contains(Modifier.ABSTRACT)).map(DbMapping.ObjectStorage::discriminator).sorted().toList();
-            Optional<String> initialType = Optional.empty();
-            Optional<String> existingCheck = Optional.empty();
-            if (oldTable.hasDiscriminator()) {
-                requireStoredDiscriminatorTypes(db, owner.name(), oldTypes);
-                if (extension.schemaOptions().contains(Ili2dbLayout.SchemaOption.TYPE_CONSTRAINT)) {
-                    existingCheck = Optional.of(storedDiscriminatorCheck(db, owner.name(), oldTypes));
-                }
-            } else {
-                if (oldTypes.size() != 1) throw new DbException("Cannot determine initial T_Type for " + owner.name());
-                requireStoredDiscriminatorTypes(db, owner.name(), List.of());
-                initialType = Optional.of(oldTypes.getFirst());
-            }
-            var types = new java.util.TreeSet<>(oldTypes);
             var physical = readPhysicalColumns(db, owner.name()).types();
             for (var alias : entry.getValue()) {
                 var object = alias.object();
-                if (!object.modifiers().contains(Modifier.ABSTRACT)) types.add(alias.discriminator());
                 if (mapping.associations().stream().anyMatch(association -> association.owner().equals(object.symbol()))) {
                     throw unsupported("new Smart1 roles in shared table " + owner.name());
                 }
@@ -851,9 +830,50 @@ final class DbSchemaReader {
                             SchemaPlan.columnChecks(List.of(field), db.gpkg(), extension.schemaOptions())));
                 }
             }
-            discriminators.add(new SchemaPlan.DiscriminatorChange(owner.name(), List.copyOf(types), initialType, existingCheck));
         }
+        var discriminators = mapping.profile() == DbInheritance.Profile.SMART1
+                ? planSmart1Discriminators(db, extension, names, token) : List.<SchemaPlan.DiscriminatorChange>of();
         return extension.withExtension(newFiles, columns, discriminators, references);
+    }
+
+    private static List<SchemaPlan.DiscriminatorChange> planSmart1Discriminators(Database db, SchemaPlan extension,
+                                                                                SqlNames names, CancellationToken token)
+            throws SQLException {
+        var newTypes = extension.mapping().objectStorage().stream()
+                .filter(type -> type.object().kind() == SymbolKind.CLASS && !type.object().modifiers().contains(Modifier.ABSTRACT)
+                        && !names.hasClass(type.object().name().declared().toString())
+                        && names.hasClass(type.root().object().name().declared().toString()))
+                .collect(Collectors.groupingBy(DbMapping.ObjectStorage::root, LinkedHashMap::new, Collectors.toList()));
+        var changes = new ArrayList<SchemaPlan.DiscriminatorChange>();
+        for (var entry : newTypes.entrySet()) {
+            token.throwIfCancellationRequested();
+            var root = entry.getKey();
+            String path = root.object().name().declared().toString();
+            var stored = read(db, List.of(MetadataScope.modelName(path)), token);
+            var oldRoot = stored.tables().stream().filter(table -> table.object().name().declared().toString().equals(path))
+                    .findFirst().orElseThrow(() -> new DbException("Missing stored Smart1 table for " + path));
+            if (oldRoot.subtype() || !root.hasDiscriminator()) {
+                throw unsupported("Smart1 --add-models requires a shared root table in " + root.name());
+            }
+            var oldTypes = stored.objectStorage().stream().filter(type -> type.root().equals(oldRoot)
+                    && !type.object().modifiers().contains(Modifier.ABSTRACT)).map(DbMapping.ObjectStorage::discriminator).sorted().toList();
+            Optional<String> initialType = Optional.empty();
+            Optional<String> existingCheck = Optional.empty();
+            if (oldRoot.hasDiscriminator()) {
+                requireStoredDiscriminatorTypes(db, root.name(), oldTypes);
+                if (extension.schemaOptions().contains(Ili2dbLayout.SchemaOption.TYPE_CONSTRAINT)) {
+                    existingCheck = Optional.of(storedDiscriminatorCheck(db, root.name(), oldTypes));
+                }
+            } else {
+                if (oldTypes.size() != 1) throw new DbException("Cannot determine initial T_Type for " + root.name());
+                requireStoredDiscriminatorTypes(db, root.name(), List.of());
+                initialType = Optional.of(oldTypes.getFirst());
+            }
+            var types = new java.util.TreeSet<>(oldTypes);
+            entry.getValue().stream().map(DbMapping.ObjectStorage::discriminator).forEach(types::add);
+            changes.add(new SchemaPlan.DiscriminatorChange(root.name(), List.copyOf(types), initialType, existingCheck));
+        }
+        return changes;
     }
 
     private static String storedDiscriminatorCheck(Database db, String table, List<String> types) throws SQLException {

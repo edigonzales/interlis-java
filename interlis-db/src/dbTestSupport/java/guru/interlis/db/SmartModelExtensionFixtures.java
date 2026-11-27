@@ -57,11 +57,43 @@ final class SmartModelExtensionFixtures {
     }
 
     Path specializedInput(String prefix) throws Exception {
-        String inherited = version == 23 ? "<Label>inherited</Label><Quantity>17</Quantity>"
+        return transfers.data(specialized, prefix, transfers.object(specialized, "SpecializedEntry", prefix + "-specialized",
+                inheritedFields() + "<Extra>local</Extra>"));
+    }
+
+    Path fragmentSource(String model, String type) throws Exception {
+        String fields = type + "Fields";
+        return Files.writeString(work.resolve(model + ".ili"), """
+                INTERLIS 2.%d;
+                MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
+                  IMPORTS %s;
+                  TOPIC Data EXTENDS %s.Data =
+                    CLASS %s (ABSTRACT) EXTENDS %s.Data.Entry = Detail : TEXT*20; END %s;
+                    CLASS %s EXTENDS %s = Score : 0..10; END %s;
+                  END Data;
+                END %s.
+                """.formatted(version - 20, model, original, original, fields, original, fields, type, fields, type, model));
+    }
+
+    Path fragmentInput(String model, String type, String prefix) throws Exception {
+        return transfers.data(model, prefix, transfers.object(model, type, prefix + "-fragment",
+                inheritedFields() + "<Detail>branch</Detail><Score>5</Score>"));
+    }
+
+    void assertFragmentDelivery(Path output, String model, String type, String prefix) throws Exception {
+        var object = transfers.rows(output, prefix, 1).getFirst();
+        ModelFixtures.assertName(object, version, model + ".Data." + type);
+        assertEquals(prefix + "-fragment", id(object, version, "tid"));
+        assertEquals("inherited", child(object, "Label").getTextContent());
+        assertEquals("17", child(object, "Quantity").getTextContent());
+        assertEquals("branch", child(object, "Detail").getTextContent());
+        assertEquals("5", child(object, "Score").getTextContent());
+    }
+
+    private String inheritedFields() {
+        return version == 23 ? "<Label>inherited</Label><Quantity>17</Quantity>"
                 : "<o:Label xmlns:o=\"http://www.interlis.ch/xtf/2.4/" + original + "\">inherited</o:Label>"
                     + "<o:Quantity xmlns:o=\"http://www.interlis.ch/xtf/2.4/" + original + "\">17</o:Quantity>";
-        return transfers.data(specialized, prefix, transfers.object(specialized, "SpecializedEntry", prefix + "-specialized",
-                inherited + "<Extra>local</Extra>"));
     }
 
     void assertSpecializedDelivery(Path output, String prefix) throws Exception {

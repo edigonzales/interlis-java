@@ -492,6 +492,8 @@ mit ili2db und prüfen die geerbten Spalten in den neuen konkreten Tabellen.
 Die `smart1*Subtype*`-Fälle vergleichen gemeinsame Tabellen, das Ergänzen
 von `T_Type` und die erweiterten Typchecks. `ModelExtensionStorageTest`
 prüft zusätzlich die alten Zeilen, die SQL-Checks und den Rollback der DDL.
+Die `smart1Fragment*`-Fälle ergänzen nacheinander zwei Fragmenttabellen
+und prüfen die gemeinsame Objekt- und Basket-ID mit der bestehenden Wurzel.
 
 `--tests '*SmartReferenceExtensionInteropTest'` prüft Smart2-Zielspalten
 für bestehende Rollen und Referenzattribute. Die Fälle vergleichen
