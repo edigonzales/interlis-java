@@ -375,6 +375,10 @@ Datenbankziel unverändert.
 
 `--tests '*TextOidInteropTest'` prüft Modell- und Topicdomänen,
 geerbte Objekt-OIDs, Assoziations-OIDs und ein skalares `OID TEXT`-Attribut.
+`--tests '*NumericIdentityInteropTest.*ObjectOid*'` prüft numerische
+Objekt-OIDs mit UUID-Baskets und modellierten Objektkennungen ohne
+`--create-tid-col`. Die Mischläufe prüfen den Katalog, den XTF-Wert,
+das Update und das datensatzübergreifende Referenzziel.
 Der Katalogvergleich und der native XTF-Transfer über Referenzschemata
 decken alle drei Vererbungsprofile ab. `ObjectIdStorageTest` prüft diese
 Profile in eigenen Schemata.

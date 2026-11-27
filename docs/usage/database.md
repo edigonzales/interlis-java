@@ -1341,6 +1341,13 @@ Import, Export und Referenzauflösung erhalten die Gross- und
 Kleinschreibung. Klassen mit explizitem `NO OID` behalten ihre
 Transferkennung in `T_Ili_Tid`.
 
+Flache Klassen können `OID AS INTERLIS.I32OID` oder eine modellierte
+numerische OID-Domäne verwenden. Die Wurzeltabelle erhält `T_Ili_Tid`
+als Textspalte der Länge 200 mit `oidDomain`, auch bei einem Schema ohne
+`--create-tid-col`. XTF und Referenzauflösung verwenden die gespeicherte
+Schreibweise, etwa `0011`. Updates behalten `T_Id` und die auf das Objekt
+zeigenden Fremdschlüssel.
+
 Zum weiteren Ausbau gehören weitere Assoziationsformen mit Hierarchie-Enden
 sowie weitere `EXTENDED`-Abbildungen. Weitere Grenzen sind andere OID-Regeln, eigene Linienformen,
 inkrementelle XTF-Transfers. Der gespeicherte Modelltext

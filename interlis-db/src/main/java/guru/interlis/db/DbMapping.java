@@ -1055,8 +1055,9 @@ final class DbMapping {
             boolean flat = object.baseType().isEmpty() && !bases.contains(object.symbol());
             boolean standard = domain.filter(Ili2dbLayout.STANDARD_OID::equals).isPresent();
             boolean text = !standard && objectOidRule(object).filter(rule -> isTextOid(plan, rule)).isPresent();
+            boolean numeric = objectOidRule(object).filter(rule -> isNumericOid(plan, rule)).isPresent();
             boolean supportedIdentity = object.oidRules().isEmpty() || switch (object.kind()) {
-                case CLASS -> domain.isEmpty() || abstractAnyOid(plan, object) || (standard && flat)
+                case CLASS -> domain.isEmpty() || abstractAnyOid(plan, object) || ((standard || numeric) && flat)
                         || ((uuid || text || standard) && object.baseType().flatMap(plan::object)
                         .map(base -> oidDomain(plan, base).equals(domain) || abstractAnyOid(plan, base)).orElse(!standard));
                 case ASSOCIATION -> (uuid || text) && flat;
@@ -1113,6 +1114,10 @@ final class DbMapping {
 
     private static boolean isTextOid(TransferPlan plan, OidRule rule) {
         return oidKind(plan, rule).filter(OidKind.TEXT::equals).isPresent();
+    }
+
+    private static boolean isNumericOid(TransferPlan plan, OidRule rule) {
+        return oidKind(plan, rule).filter(OidKind.NUMERIC::equals).isPresent();
     }
 
     private static Optional<OidKind> oidKind(TransferPlan plan, OidRule rule) {
